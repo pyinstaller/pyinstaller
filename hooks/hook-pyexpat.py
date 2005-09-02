@@ -1,0 +1,2 @@
+#pyexpat
+hiddenimports = ['xmlparse', 'xmltok']

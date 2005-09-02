@@ -1,0 +1,60 @@
+<HTML>
+<HEAD>
+<TITLE>
+Standalone Executables
+</TITLE>
+
+</HEAD>
+
+<BODY>
+<FONT FACE="Helvetica"><TABLE CELLPADDING=5 CELLSPACING=5>
+  <TR ALIGN="center">
+      <TD COLSPAN=2><IMG SRC="me_inc.gif" HEIGHT=36 WIDTH=480><HR></TD>
+    </TR>
+  <TR>
+      <TD VALIGN="top" NOWRAP BGCOLOR="#D8D0F0"><H4>Sitemap</H4><SMALL><A HREF="begin.html">Getting Started</A><BR><A HREF="utilities.html">Utilities</A><BR><A HREF="specfiles.html">Spec Files</A><BR><A HREF="help.html">When Things Go Wrong</A><BR>Standalone Executables<BR><A HREF="archives.html">Python Archives</A><BR><A HREF="mf4.html">Analyzing Python Modules</A><BR><A HREF="iu4.html">An Import Framework</A><BR><BR><a href="http://www.mcmillan-inc.com/cgi-bin/BTSCGI.py/BTS/">Bug Tracker</a><BR></SMALL></TD>
+        <TD ROWSPAN=2><P><h4>Self-extracting executables</h4></P>
+      <P>The ELF executable format (Windows, Linux and some others) allows arbitrary data to be concatenated to the end of the executable without disturbing it's functionality. 
+      For this reason, a <A HREF="archives.html">CArchive</A>'s Table of Contents is at the end of the archive. 
+      The executable can open itself as a binary file name, seek to the end and 'open' the CArchive (see figure 3). </P>
+      <P>On other platforms, the archive and the executable are separate, but the archive is named <i>executable</i>.pkg, and expected to be in the same directory. Other than that, the process is the same.</P>
+      <P><h4>One Pass Execution</h4></P>
+      <P>In a single directory deployment (<code>--onedir</code>, which is the default), all of the binaries are already in the file system. In that case, the embedding app:
+      <ul>
+       <li>opens the archive
+       <li>starts Python (on Windows, this is done with dynamic loading so one embedding app binary can be used with any Python version)
+       <li>imports all the modules which are at the top level of the archive (basically, bootstraps the import hooks)
+       <li>mounts the ZlibArchive(s) in the outer archive
+       <li>runs all the scripts which are at the top level of the archive
+       <li>finalizes Python
+      </ul></P>
+      <P><h4>Two Pass Execution</h4></P>
+      <P>There are a couple situations which require two passes:
+      <ul>
+       <li>a <code>--onefile</code> deployment (on Windows, the files can't be cleaned up afterwards because Python does not call <code>FreeLibrary</code>; on other platforms, Python won't find them if they're extracted in the same process that uses them)
+       <li><code>LD_LIBRARY_PATH</code> needs to be set to find the binaries (not extension modules, but modules the extensions are linked to).
+      </ul></P>
+      <P>The first pass:
+      <ul>
+       <li>opens the archive
+       <li>extracts all the binaries in the archive (in 5b5, this is always to a temporary directory).
+       <li>sets a magic environment variable
+       <li>sets <code>LD_LIBRARY_PATH</code> (non-Windows)
+       <li>executes itself as a child process (letting the child use his stdin, stdout and stderr)
+       <li>waits for the child to exit (on *nix, the child actually replaces the parent)
+       <li>cleans up the extracted binaries (so on *nix, this is done by the child)
+      </ul></P>
+      <P>The child process executes as in One Pass Execution above (the magic environment variable is what tells it that this is pass two).</P>
+      <P><img src="SE_exe.gif">
+      figure 3 - Self Extracting Executable</P>
+      <P>There are, of course, quite a few differences between the Windows and Unix/Linux versions. The major one is that because <b>all</b> of Python on Windows is in pythonXX.dll, and dynamic loading is so simple-minded, I can use one binary with any version of Python. There's much in common, though, and that C code can be found in <code>source/common/launch.c</code>.</P>
+      <P>The Unix/Linux build process (which you need to run just once for any version of Python) makes use of the config information in your install (if you installed from RPM, you need the Python-development RPM). It also overrides <code>getpath.c</code> since we don't want it hunting around the filesystem to build <code>sys.path</code>. </P>
+      <P>In both cases, while one Installer download can be used with any Python version, you need to have separate installations for each Python version.</P>
+      </TD>
+    </TR>
+  <TR>
+      <TD VALIGN="bottom" BGCOLOR="#D8D0F0"><SMALL>copyright 1999-2002<BR>McMillan Enterprises, Inc.<BR></SMALL></TD>
+    </TR>
+  </TABLE></FONT>
+</BODY>
+</HTML>

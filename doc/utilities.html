@@ -1,0 +1,51 @@
+<HTML>
+<HEAD>
+<TITLE>
+Utilities
+</TITLE>
+
+</HEAD>
+
+<BODY>
+<FONT FACE="Helvetica"><TABLE CELLPADDING=5 CELLSPACING=5>
+  <TR ALIGN="center">
+      <TD COLSPAN=2><IMG SRC="me_inc.gif" HEIGHT=36 WIDTH=480><HR></TD>
+    </TR>
+  <TR>
+      <TD VALIGN="top" NOWRAP BGCOLOR="#D8D0F0"><H4>Sitemap</H4><SMALL><A HREF="begin.html">Getting Started</A><BR>Utilities<BR><A HREF="specfiles.html">Spec Files</A><BR><A HREF="help.html">When Things Go Wrong</A><BR><A HREF="standalones.html">Standalone Executables</A><BR><A HREF="archives.html">Python Archives</A><BR><A HREF="mf4.html">Analyzing Python Modules</A><BR><A HREF="iu4.html">An Import Framework</A><BR><BR><a href="http://www.mcmillan-inc.com/cgi-bin/BTSCGI.py/BTS/">Bug Tracker</a><BR></SMALL></TD>
+        <TD ROWSPAN=2><P><center><h1>The Utilities</h1></center></P>
+      <P><ul>
+       <li><a href="#ArchiveViewer">ArchiveViewer</a>
+       <li><a href="#GrabVersion">GrabVersion</a>
+       <li><a href="#seealso">Others</a>
+      </ul></P>
+      <P><a name="ArchiveViewer"><h2>ArchiveViewer</h2></a></P>
+      <P><code><pre>
+      &gt;python ArchiveViewer.py <i>archivefile</i>
+      </pre></code></P>
+      <P>ArchiveViewer lets you examine the contents of any Installer-built archive or executable (PYZ, PKG or exe). Invoke it with the target as the first arg (I have it set up as a Send-To so it shows on my context menu in Explorer). You can navigate through the archive with these commands:
+      <dl>
+       <dt><b>O &lt;nm&gt;</b><dd>Open the embedded archive &lt;nm&gt; (will prompt if omitted).
+       <dt><b>U</b><dd>Go up one level (go back to viewing the embedding archive).
+       <dt><b>X &lt;nm&gt;</b><dd>Extract <b>nm</b> (will prompt if omitted). Prompts for output filename. If none given, extracted to stdout.
+       <dt><b>Q</b><dd>Quit.
+      </dl></P>
+      <P><a name="GrabVersion"><h2>GrabVersion (Windows)</h2></a></P>
+      <P><code><pre>
+      &gt;python GrabVersion.py <i>executable_with_version_resource</i>
+      </pre></code></P>
+      <P>GrabVersion outputs text which can be eval'ed by versionInfo to reproduce a version resource. Invoke it with the full path name of a Windows executable (with a version resource) as the first argument. If you cut & paste (or redirect to a file), you can then edit the version information. The edited text file can be used in a <code>version = myversion.txt</code> option on any executable in an Installer spec file.</P>
+      <P>I did it this way because version resources are rather strange beasts, and fully understanding them is probably impossible. Some elements are optional, others required, but you could spend unbounded amounts of time figuring this out, because it's not well documented. When you view the version tab on a properties dialog, there's no straightforward relationship between how the data is displayed and the structure of the resource itself. So the easiest thing to do is find an executable that displays the kind of information you want, grab it's resource and edit it. Certainly easier than the Version resource wizard in VC++.</P>
+      <P><a name="seealso"><h2>Others</h2></a></P>
+      <P><h3>Analyzing Dependencies</h3></P>
+      <P>You can interactively track down dependencies, including getting cross-references by using mf.py, documented <A HREF="mf4.html">here</A>.</P>
+      <P></P>
+      <P>  </P>
+      </TD>
+    </TR>
+  <TR>
+      <TD VALIGN="bottom" BGCOLOR="#D8D0F0"><SMALL>copyright 1999-2002<BR>McMillan Enterprises, Inc.<BR></SMALL></TD>
+    </TR>
+  </TABLE></FONT>
+</BODY>
+</HTML>

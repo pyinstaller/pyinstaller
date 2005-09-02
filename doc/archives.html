@@ -1,0 +1,36 @@
+<HTML>
+<HEAD>
+<TITLE>
+Python Archives
+</TITLE>
+
+</HEAD>
+
+<BODY>
+<FONT FACE="Helvetica"><TABLE CELLPADDING=5 CELLSPACING=5>
+  <TR ALIGN="center">
+      <TD COLSPAN=2><IMG SRC="me_inc.gif" HEIGHT=36 WIDTH=480><HR></TD>
+    </TR>
+  <TR>
+      <TD VALIGN="top" NOWRAP BGCOLOR="#D8D0F0"><H4>Sitemap</H4><SMALL><A HREF="begin.html">Getting Started</A><BR><A HREF="utilities.html">Utilities</A><BR><A HREF="specfiles.html">Spec Files</A><BR><A HREF="help.html">When Things Go Wrong</A><BR><A HREF="standalones.html">Standalone Executables</A><BR>Python Archives<BR><A HREF="mf4.html">Analyzing Python Modules</A><BR><A HREF="iu4.html">An Import Framework</A><BR><BR><a href="http://www.mcmillan-inc.com/cgi-bin/BTSCGI.py/BTS/">Bug Tracker</a><BR></SMALL></TD>
+        <TD ROWSPAN=2><P><h2>Archives</h2></P>
+      <P>You know what an archive is: a .tar file, a .jar file, a .zip file. Two kinds of archives are used here. One is equivalent to a Java .jar file - it allows Python modules to be stored efficiently and, (with some import hooks) imported directly. This is a <i>ZlibArchive</i>. The other (a <i>CArchive</i>) is equivalent to a .zip file - a general way of packing up (and optionally compressing) arbitrary blobs of data. It gets its name from the fact that it can be manipulated easily from C, as well as from Python. Both of these derive from a common base class, making it fairly easy to create new kinds of archives.</P>
+      <P><h3>ZlibArchive</h3></P>
+      <P>A ZlibArchive contains compressed .pyc (or .pyo) files. The Table of Contents is a marshalled dictionary, with the key (the module's name as given in an "import" statement) associated with a seek position and length. Because it is all marshaled Python, ZlibArchives are completely cross-platform.</P>
+      <P>A ZlibArchive hooks in with <A HREF="iu4.html">iu.py</A> so that, with a little setup, the archived modules can be imported transparently. Even with compression at level 9, this works out to being faster than the normal import. Instead of searching sys.path, there's a lookup in the dictionary. There's no stat-ing of the .py and .pyc and no file opens (the file is already open). There's just a seek, a read and a decompress. A traceback will point to the source file the archive entry was created from (the __file__ attribute from the time the .pyc was compiled). On a user's box with no source installed, this is not terribly useful, but if they send you the traceback, at least you can make sense of it.
+      <img src="ZlibArchive.gif" ></P>
+      <P><h3>CArchive</h3></P>
+      <P><img src="CArchive.gif"></P>
+      <P>A CArchive contains whatever you want to stuff into it. It's very much like a .zip file. They are easy to create in Python and unpack from C code. CArchives can be appended to other files (like ELF and COFF executables, for example). To allow this, they are opened from the end, so the TOC for a CArchive is at the back, followed only by a cookie that tells you where the TOC starts and where the archive itself starts. </P>
+      <P>CArchives can also be embedded within other CArchives. The inner archive can be opened in place (without extraction).</P>
+      <P>Each TOC entry is variable length. The first field in the entry tells you the length of the entry. The last field is the name of the corresponding packed file. The name is null terminated. Compression is optional by member.</P>
+      <P>There is also a type code associated with each entry. If you're using a CArchive as a .zip file, you don't need to worry about this. The type codes are used by the <A HREF="standalones.html">self-extracting executables</a>.
+      </P>
+      </TD>
+    </TR>
+  <TR>
+      <TD VALIGN="bottom" BGCOLOR="#D8D0F0"><SMALL>copyright 1999-2002<BR>McMillan Enterprises, Inc.<BR></SMALL></TD>
+    </TR>
+  </TABLE></FONT>
+</BODY>
+</HTML>

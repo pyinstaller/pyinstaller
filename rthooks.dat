@@ -1,0 +1,5 @@
+{
+    'pythoncom':  ['support/rthooks/versioneddll.py'],
+    'pywintypes': ['support/rthooks/versioneddll.py'],
+    'win32com':   ['support/rthooks/win32comgenpy.py'],
+}

@@ -1,0 +1,38 @@
+VSVersionInfo(
+    ffi=FixedFileInfo(
+		filevers=(96, 12, 19, 1), 
+		prodvers=(4, 1, 2, 1),
+ 		mask=0x3f, 
+		flags=0x0, 
+		OS=0x40004, 
+		fileType=0x1, 
+		subtype=0x0, 
+		date=(0, 0)
+	), 
+    kids=[
+	StringFileInfo(
+	    [
+		StringTable(
+		    '040904b0', 
+		    [
+			StringStruct('Comments', 'Designed and coded by Elmer Fudd'), 
+			StringStruct('CompanyName', 'Fuddy Duddies, Inc. 8 Flossie Dr. Arlington, VA 00001'), 
+			StringStruct('FileDescription', 'Silly stuff'), 
+			StringStruct('FileVersion', '96, 12, 19, 1'), 
+			StringStruct('InternalName', 'SILLINESS'), 
+			StringStruct('LegalCopyright', 'Copyright 2001 Fuddy Duddies, Inc.'), 
+			StringStruct('LegalTrademarks', 'SILLINESS is a registered trademark of Fuddy Duddies, Inc.'), 
+			StringStruct('OriginalFilename', 'silliness.exe'), 
+			StringStruct('ProductName', 'SILLINESS'), 
+			StringStruct('ProductVersion', '2, 0, 3, 0')
+		    ]
+		)
+	    ]
+	),
+	VarFileInfo(
+	    [
+		VarStruct('Translation', [1033, 1200])
+	    ]
+	)
+    ]
+)

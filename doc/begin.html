@@ -1,0 +1,149 @@
+<HTML>
+<HEAD>
+<TITLE>
+Getting Started
+</TITLE>
+
+</HEAD>
+
+<BODY>
+<FONT FACE="Helvetica"><TABLE CELLPADDING=5 CELLSPACING=5>
+  <TR ALIGN="center">
+      <TD COLSPAN=2><IMG SRC="me_inc.gif" HEIGHT=36 WIDTH=480><HR></TD>
+    </TR>
+  <TR>
+      <TD VALIGN="top" NOWRAP BGCOLOR="#D8D0F0"><H4>Sitemap</H4><SMALL>Getting Started<BR><A HREF="utilities.html">Utilities</A><BR><A HREF="specfiles.html">Spec Files</A><BR><A HREF="help.html">When Things Go Wrong</A><BR><A HREF="standalones.html">Standalone Executables</A><BR><A HREF="archives.html">Python Archives</A><BR><A HREF="mf4.html">Analyzing Python Modules</A><BR><A HREF="iu4.html">An Import Framework</A><BR><BR><a href="http://www.mcmillan-inc.com/cgi-bin/BTSCGI.py/BTS/">Bug Tracker</a><BR></SMALL></TD>
+        <TD ROWSPAN=2><P><h1>Getting Started</h1></P>
+      <P>Contents:<br>
+      <ul>
+       <li><a href="#step0">Installing</a></li>
+       <li><a href="#step1">Building the runtime executables</a> (on non-Windows)</li>
+       <li><a href="#step2">Configuring your Installer setup</a></li>
+       <li><a href="#step3">Create a spec file for your project</a></li>
+       <li><a href="#step4">Build your project</a></li>
+       <li><a href="#comserver">Windows COM Server support</a></li>
+       <li><a href="#optimized">Building Optimized</a></li>
+       <li><a href="#upx">A Note on using UPX</a></li>
+       <li><a href="#onefile">A Note on --onefile</a></li>
+       <li><a href="#sponsor">Sponsorship</a></li>
+       <li><a href="#license">License</a></li>
+       <li><a href="#reportingbugs">Reporting Bugs</a></li>
+      </ul>
+       
+      <a name="step0"><h2>Installing Installer</h2></a></P>
+      <P>First, unpack the archive <b>wherever you want to</b>. Installer is not a Python package, so it doesn't need to go in <code>site-packages</code>, or have a <code>.pth</code> file. You will be using a couple of scripts in the root directory, and these will find everything they need from their own location. Since you will be running a couple scripts, you might want to keep the paths to these scripts short (don't install in a deeply nested subdirectory).</P>
+      <P>You <b>will</b> need a separate copy for each Python version you wish to work with (or you'll need to rerun
+      <code>Configure.py</code> every time you switch).</P>
+      <P><a name="step1"><h2>I - Building the runtime executables</h2></a></P>
+      <P>Windows users can skip this step, because all of Python is contained in pythonXX.dll, and Installer will use your pythonXX.dll.</P>
+      <P>On non-Windows platforms, the first thing to do is build the runtime executables. </P>
+      <P>Change to the <code>source/linux</code> subdirectory. Run <code>Make.py [-n|-e]</code> and then <code>make</code>. This will produce <code>support/run</code> and <code>support/run_d</code>. If you have multiple versions of Python, the Python you use to run <code>Make.py</code> is the one whose configuration is used.</P>
+      <P><font size=-1>
+      The <code>-n</code> and <code>-e</code> options set a <b>n</b>on-elf or <b>e</b>lf flag in your config.dat. As of 5b5, the executable will try both strategies, and this flag just sets how you want your executables built. In the <b>elf</b> strategy, the archive is concatenated to the executable. In the <b>non-elf</b> strategy, the executable expects an archive with the same name as itself in the executable's directory. Note that the executable chases down symbolic links before determining it's name and directory, so putting the archive in the same directory as the symbolic link will not work.</P>
+      <P>Windows distributions come with four executables in the <code>support</code> dir: run.exe, run_d.exe, runw.exe and runw_d.exe. There are also two dlls, inprocsrvr.dll and inprocsrvr_d.dll for doing in-process COM servers. All of these can be rebuilt from the MSVC workspace in <code>source/windows</code>. Please be careful of MS's optimizations - I suggest you disable them in the release builds. (I'm fairly sure these could be built using MinGW, too, but I haven't yet tried it).</P>
+      <P>Note that the <code>_d</code> suffix does not mean the same as it does with extension modules - you don't need a debug build of Python to use them.
+      </font></P>
+      <P><a name="step2"><h2>II - Configuring your Installer setup</h2></a></P>
+      <P>In the root directory, run <code>Configure.py</code>. This saves some information into <code>config.dat</code> that would otherwise be recomputed every time. It can be rerun at any time if your configuration changes. It must be run before trying to build anything.</P>
+      <P><a name="step3"><h2>III - Create a spec file for your project</h2></a></P>
+      <P>[For Windows COM server support, see <a href="#comserver">below</a>.]</P>
+      <P>The root directory has a script <code>Makespec.py</code> for this purpose.
+      <code><pre>
+       &gt;python Makespec.py [OPTIONS] script...
+      </pre></code>
+      Where allowed options are:
+      <dl>
+       <dt>--onefile<dd>produce a single file deployment (see <a href="#onefile">below</a>).
+       <dt>--onedir<dd>produce a single directory deployment (default).
+       <dt>--tk<dd>include TCL/TK in the deployment.
+       <dt>--ascii<dd>do <b>not</b> include encodings. The default (on Python versions with unicode support) is now to include all encodings.
+       <dt>--debug<dd>use debug (verbose) versions of the executables.
+       <dt>--noconsole<dd>Windows: use the Windows subsystem executable (runw.exe or runw_d.exe).
+       <dt>--strip<dd>the executable and all shared libraries will be run through <code>strip</code>. Note that cygwin's <code>strip</code> tends to render normal Win32 dlls unusable.
+       <dt>--upx<dd>if you have <a href="http://upx.sourceforge.net/">UPX</a> installed (detected by Configure), this will use it to compress your executable (and, on Windows, your dlls). See note <a href="#upx">below</a>.
+       <dt>--out <i>directory</i><dd>create the spec file in <i>directory</i>. If not specified, and the current  directory is Installer's root directory, an output subdirectory will be created. Otherwise the current directory is used.
+       <dt>--icon <i>file.ico</i><dd>add <i>file.ico</i> to the executable's resources (Windows only).
+       <dt>--icon <i>file.exe,n</i><dd>add the <i>n</i>th incon in <i>file.exe</i> to the executable's resources (Windows only).
+       <dt>--version <i>verfile</i><dd>add <i>verfile</i> as a version resource to the executable (Windows only).
+       <dt>--name <i>name</i><dd>optional name to assign to the project (from which the spec file name is generated). If omitted, the basename of the (first) script is used.
+      </dl>
+       
+      [For building with optimization on (like <code>Python -O</code>), see <a href="#optimized">below</a>.]</P>
+      <P>For simple projects, the generated spec file will probably be sufficient. For more complex projects, it should be regarded as a template. The spec file is actually Python code, and modifying it should be <b>much</b> easier than working with the config files used in earlier Installer releases. See <A HREF="specfiles.html">Spec Files</A> for details.</P>
+      <P><a name="step4"><h2>IV - Build your project</h2></a></P>
+      <P><code><pre>
+      &gt;python Build.py <i>specfile</i>
+      </pre></code>
+      A <code>build<i>project</i></code> subdirectory will be created in the <i>specfile</i>'s directory. This is a <b>private workspace</b> so that <code>Build</code> can act like a makefile. Any named targets will appear in the specfile's directory. For --onedir configurations, that include <b><code>dist<i>project</i></code></b>, which is the directory you're interested in. For a --onefile, the executable will be in the specfile's directory.</P>
+      <P>In most cases, this will be all you have to do. If not, see <A HREF="help.html">When things go wrong</A> and be sure to read the introduction to <A HREF="specfiles.html">Spec Files</A>.</P>
+      <P><a name="comserver"><h2>Windows COM Server support</h2></a></P>
+      <P><pre><code>
+       &gt;python MakeCOMServer.py [OPTION] script...
+      </code></pre>
+      will generate a new script <code>drive<i>script</i>.py</code> and a spec file for the script.</P>
+      <P>[For Win32all builds before 151, use <code>MakeCOMServer_old.py</code>.]</P>
+      <P>These options are allowed:
+      <dl>
+       <dt>--debug<dd>Use the verbose version of the executable.
+       <dt>--verbose<dd>Register the COM server(s) with the quiet flag off.
+       <dt>--ascii<dd>do <b>not</b> include encodings (this is passed through to Makespec).
+       <dt>--out <i>dir</i><dd>Generate the driver script and spec file in <i>dir</i>.
+      </dl></P>
+      <P>Now run <code>Build.py</code> on the generated spec file. </P>
+      <P>If you have the <code>win32dbg</code> package installed, you can use it with the generated COM server. In the driver script, set <code>debug=1</code> in the registration line.</P>
+      <P><b>Warnings</b>: the inprocess COM server support will <b>not</b> work when the client process already has Python loaded. It would be rather tricky to non-obtrusively hook into an already running Python, but the show-stopper is that the Python/C API won't let me find out which interpreter instance I should hook into. (If this is important to you, you might experiment with using apartment threading, which seems the best possibility to get this to work).
+      To use a "frozen" COM server from a Python process, you'll have to load it as an exe:
+      <code><pre>
+      o = win32com.client.Dispatch(<i>progid</i>,
+                       clsctx=pythoncom.CLSCTX_LOCAL_SERVER)
+      </pre></code></P>
+      <P>MakeCOMServer also assumes that your top level code (registration etc.) is "normal". If it's not, you will have to edit the generated script.</P>
+      <P><a name="optimized"><h2>Building Optimized</h2></a></P>
+      <P>There are two facets to running optimized: gathering <code>.pyo</code>'s, and setting the <code>Py_OptimizeFlag</code>. Installer will gather <code>.pyo</code>'s if it is run optimized: 
+      <code><pre>
+       &gt;python -O Build.py ...
+      </pre></code></P>
+      <P>The <code>Py_OptimizeFlag</code> will be set if you use a <code>('O','','OPTION')</code> in one of the <code>TOC</code>s building the <code>EXE</code>.
+      <code><pre>
+      exe = EXE(pyz,
+                a.scripts + [('O','','OPTION')],
+                ...
+      </pre></code></P>
+      <P>See <A HREF="specfiles.html">Spec Files</A> for details.</P>
+      <P><a name="upx"><h2>A Note on using UPX</h2></a></P>
+      <P>On both Windows and Linux, UPX can give truly startling compression - the days of fitting something useful on a diskette are not gone forever! Installer has been tested with UPX 1.24 without problems. Just <a href="http://upx.sourceforge.net/">get it</a> and install it on your PATH, then rerun configure. For Windows, that's all you need to know.</P>
+      <P>For Linux, a bit more discussion is in order. First, UPX is only useful on executables, not shared libs. Installer accounts for that, but to get the full benefit, you might rebuild Python with more things statically linked.</P>
+      <P>More importantly, when run finds that it's sys.argv[0] does <b>not</b> contain a path, it will use <code>/proc/<i>pid</i>/exe</code> to find itself (if it can). This happens, for example, when executed by Apache. If it has been upx-ed, this symbolic link points to the tempfile created by the upx stub and Installer will fail (please see the UPX docs for more information). So for now, at least, you can't use upx for CGI's executed by Apache. Otherwise, you can ignore the warnings in the UPX docs, since what Installer opens is the executable Installer created, not the temporary upx-created executable.</P>
+      <P><a name="onefile"><h2>A Note on --onefile</h2></a></P>
+      <P>A <code>--onefile</code> works by packing all the shared libs / dlls into the archive attached to the executable (or next to the executable in a nonelf configuration). When first started, it finds that it needs to extract these files before it can run "for real". That's because locating and loading a shared lib or linked-in dll is a system level action, not user-level. Before 5b5, a --onefile would extract into the executable's directory (if possible). With 5b5 it now <b>always</b> uses a temporary directory (<code>_MEI<i>pid</i></code>) in the user's temp directory. It then executes itself again, setting things up so the system will be able to load the shared libs / dlls. When executing is complete, it recursively removes the entire directory it created.</P>
+      <P>This has a number of implications.
+      <ul>
+       <li>You can run multiple copies - they won't collide.
+       <li>Running multiple copies will be rather expensive to the system (nothing is shared).
+       <li>If you're using the cheat of adding user data as 'BINARY', it will be in <code>os.environ['_MEIPASS2']</code>, not the executable's directory.
+       <li>On Windows, using Task Manager to kill the parent process will leave the directory behind.
+       <li>On *nix, a kill -9 (or crash) will leave the directory behind.
+       <li>Otherwise, on both platforms, the directory will be recursively deleted.
+       <li>So any files you might create in <code>os.environ['_MEIPASS2']</code> will be deleted.
+       <li>The executable can be in a protected or read-only directory.
+      </ul></P>
+      <P>While I am not a security expert, I believe the scheme is reasonably safe. If for some reason, the <code>_MEI<i>pid</i></code> directory already exists, the executable will fail. It is created mode <code>0700</code>, so only the one user can modify it (on *nix, of course). If the executable does a setuid root, a determined hacker could possibly (given enough tries) introduce a malicious lookalike of one of the shared libraries during the hole between when the library is extracted and when it gets loaded by the execvp'd process. So maybe you shouldn't do setuid root programs using --onefile.</P>
+      <P><a name="sponsor"><h3>Sponsorship</h3></a></P>
+      <P><b>Please</b> show your appreciation and help fund continued development of Installer by
+      making a <a href="http://www.mcmillan-inc.com/sponsor.html">contribution</a>. To date, the contributions I have received amount to a tiny bit more than I pay for the hosting of this site for one month. If Installer is contributing
+      to your commercial success, please let your conscience be your guide. I really do not want to go to a dual-licensed model.</P>
+      <P><a name="license"><h3>License</h3></a></P>
+      <P>This code is licensed under the MIT license. Please see <a href="license.txt">license.txt</a>. Note that I do 
+      <b>not</b> consider that Installer includes significant portions of itself in the executables it produces, so I make no restrictions on their licensing.</P>
+      <P><a name="reportingbugs"><h3>Reporting Bugs</h3></a></P>
+      <P>Report bugs (or feature requests, or send patches) <a href="/cgi-bin/BTSCGI.py/BTS/">here</a>. Please make sure you set <b>Product</b> to <code>Installer</code>. (If you choose not to become a registered user, please include some contact information in the report itself.) The bug tracker does <b>not</b> send out email, and email addresses are obsfucated in the user list. </P>
+      <P>Subscribe to the Installer <a href="http://trixie.triqs.com/mailman/listinfo/installer">Mailing List</a> to discuss Installer related issues. Having been discovered by the SPAM monsters, you now need to join before you can post (it is a low volume list).
+      </P>
+      </TD>
+    </TR>
+  <TR>
+      <TD VALIGN="bottom" BGCOLOR="#D8D0F0"><SMALL>copyright 1999-2002<BR>McMillan Enterprises, Inc.<BR></SMALL></TD>
+    </TR>
+  </TABLE></FONT>
+</BODY>
+</HTML>

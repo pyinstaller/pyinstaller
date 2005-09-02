@@ -1,0 +1,103 @@
+<HTML>
+<HEAD>
+<TITLE>
+Analyzing Python Modules
+</TITLE>
+
+</HEAD>
+
+<BODY>
+<FONT FACE="Helvetica"><TABLE CELLPADDING=5 CELLSPACING=5>
+  <TR ALIGN="center">
+      <TD COLSPAN=2><IMG SRC="me_inc.gif" HEIGHT=36 WIDTH=480><HR></TD>
+    </TR>
+  <TR>
+      <TD VALIGN="top" NOWRAP BGCOLOR="#D8D0F0"><H4>Sitemap</H4><SMALL><A HREF="begin.html">Getting Started</A><BR><A HREF="utilities.html">Utilities</A><BR><A HREF="specfiles.html">Spec Files</A><BR><A HREF="help.html">When Things Go Wrong</A><BR><A HREF="standalones.html">Standalone Executables</A><BR><A HREF="archives.html">Python Archives</A><BR>Analyzing Python Modules<BR><A HREF="iu4.html">An Import Framework</A><BR><BR><a href="http://www.mcmillan-inc.com/cgi-bin/BTSCGI.py/BTS/">Bug Tracker</a><BR></SMALL></TD>
+        <TD ROWSPAN=2><P><h1>A modulefinder Replacement</h1></P>
+      <P>[This is part of Installer release 5. It can also be <a href="dnld/mf.py">downloaded</a> separately.]</P>
+      <P>Module <code>mf</code> is modelled after <a HREF="iu4.html"><code>iu</code></a> (well, actually I wrote this one first, and it worked so well I created a real importer from it).</P>
+      <P>It also uses <code>ImportDirector</code>s and <code>Owner</code>s to partition the import name space. Except for the fact that these return <code>Module</code> instances instead of real module objects, they are identical.</P>
+      <P>Instead of an <code>ImportManager</code>, <code>mf</code> has an <code>ImportTracker</code> managing things.</P>
+      <P><h2>ImportTracker</h2></P>
+      <P><code>ImportTracker</code> can be called in two ways: <code>analyze_one(<i>name</i>, <i>importername</i>=None)</code> or <code>analyze_r(<i>name</i>, <i>importername</i>=None)</code>. The second method does what <code>modulefinder</code> does - it recursively finds all the module names that importing <i>name</i> would cause to appear in <code>sys.modules</code>. The first method is non-recursive. This is useful, because it is the only way of answering the question "Who imports <i>name</i>?" But since it is somewhat unrealistic (very few real imports do not involve recursion), it deserves some explanation.
+               
+      <h2>analyze_one()</h2></P>
+      <P>When a <i>name</i> is imported, there are <b>structural</b> and <b>dynamic</b> effects. The dynamic effects are due to the execution of the top-level code in the module (or modules) that get imported. The structural effects have to do with whether the import is relative or absolute, and whether the name is a dotted name (if there are <b>N</b> dots in the name, then <b>N+1</b> modules will be imported even without any code running).</P>
+      <P>The <code>analyze_one</code> method determines the structural effects, and defers the dynamic effects. For example, <code>analyze_one("B.C", "A")</code> could return <code>["B", "B.C"]</code> or <code>["A.B", "A.B.C"]</code> depending on whether the import turns out to be relative or absolute. In addition, <code>ImportTracker</code>'s <code>modules</code> dict will have <code>Module</code> instances for them.</P>
+      <P><h2>Module Classes</h2></P>
+      <P>There are <code>Module</code> subclasses for builtins, extensions, packages and (normal) modules. Besides the normal module object attributes, they have an attribute <code>imports</code>. For packages and normal modules, <code>imports</code> is a list populated by scanning the code object (and therefor, the names in this list may be relative or absolute names - we don't know until they have been analyzed).</P>
+      <P>The highly astute will notice that there is a hole in <code>analyze_one()</code> here. The first thing that happens when <code>B.C</code> is being imported is that <code>B</code> is imported and it's top-level code executed. That top-level code can do various things so that when the import of <code>B.C</code> finally occurs, something completely different happens (from what a structural analysis would predict). But <code>mf</code> can handle this through it's <i>hooks</i> mechanism.
+               
+      <h2>code scanning</h2></P>
+      <P>Like <code>modulefinder</code>, <code>mf</code> scans the byte code of a module, looking for imports. In addition, <code>mf</code> will pick out a module's <code>__all__</code> attribute, if it is built as a list of constant names. This means that if a package declares an <code>__all__</code> list as a list of names, <code>ImportTracker</code> will track those names if asked to analyze <code>package.*</code>. The code scan also notes the occurance of <code>__import__</code>, <code>exec</code> and <code>eval</code>, and can issue warnings when they're found.</P>
+      <P>The code scanning also keeps track (as well as it can) of the context of an import. It recognizes when imports are found at the top-level, and when they are found inside definitions (deferred imports). Within that, it also tracks whether the import is inside a condition (conditional imports).</P>
+      <P><h2>Hooks</h2></P>
+      <P>In <code>modulefinder</code>, scanning the code takes the place of executing the code object. <code>mf</code> goes further and allows a module to be hooked (after it has been scanned, but before <code>analyze_one</code> is done with it). A <i>hook</i> is a module named <code>hook-<i>fullyqualifiedname</i></code> in the <code>hooks</code> package. These modules should have one or more of the following three global names defined:
+      <dl>
+       <dt><code>hiddenimports</code>
+        <dd>a list of modules names (relative or absolute) that the module imports in some untrackable way.
+       <dt><code>attrs</code>
+        <dd>a list of <code>(<i>name</i>, <i>value</i>)</code> pairs, (where <i>value</i> is normally meaningless). 
+       <dt><code>hook(mod)</code>
+        <dd>a function taking a Module instance and returning a Module instance (so it can modify or replace).
+      </dl></P>
+      <P>The first hook (<code>hiddenimports</code>) extends the list created by scanning the code. <code>ExtensionModule</code>s, of course, don't get scanned, so this is the only way of recording any imports they do.</P>
+      <P>The second hook (<code>attrs</code>) exists mainly so that <code>ImportTracker</code> won't issue spurious warnings when the rightmost node in a dotted name turns out to be an attribute in a package module, instead of a missing submodule. </P>
+      <P>The callable hook exists for things like dynamic modification of a package's <code>__path__</code> or perverse situations, like <code>xml.__init__</code> replacing itself in <code>sys.modules</code> with <code>_xmlplus.__init__</code>. (It takes nine hook modules to properly trace through PyXML-using code, and I can't believe that it's any easier for the poor programmer using that package). As of Installer 5b5, the <code>hook(mod)</code> (if it exists) is called before looking at the others - that way it can, for example, test sys.version and adjust what's in <code>hiddenimports</code>.</P>
+      <P><b>[Download an example hooks package (as a <a href="dnld/hooks.zip">zip</a> or <a href="dnld/hooks.tar.gz">tar.gz</a> file) - Installer 5 already contains these files.]</b></P>
+      <P><h2>Warnings</h2></P>
+      <P><code>ImportTracker</code> has a <code>getwarnings()</code> method that returns all the warnings accumulated by the instance, and by the <code>Module</code> instances in its <code>modules</code> dict. Generally, it is <code>ImportTracker</code> who will accumulate the warnings generated during the structural phase, and <code>Module</code>s that will get the warnings generated during the code scan.</P>
+      <P>Note that by using a hook module, you can silence some particularly tiresome warnings, but not all of them.</P>
+      <P><h2>Cross Reference</h2></P>
+      <P>Once a full analysis (that is, an <code>analyze_r</code>) has been done, you can get a cross reference by using <code>getxref()</code>. This returns a list of tuples. Each tuple is <code>(modulename, importers)</code>, where <code>importers</code> is a list of the (fully qualified) names of the modules importing <code>modulename</code>. Both the returned list and the importers list are sorted.</P>
+      <P><h2>Usage</h2></P>
+      <P>A simple example follows:
+      <pre>
+      &gt;&gt;&gt; import mf
+      &gt;&gt;&gt; a = mf.ImportTracker()
+      &gt;&gt;&gt; a.analyze_r("os")
+      ['os', 'sys', 'posixpath', 'nt', 'stat', 'string', 'strop', 
+      're', 'pcre', 'ntpath', 'dospath', 'macpath', 'win32api', 
+      'UserDict', 'copy', 'types', 'repr', 'tempfile'] 
+      &gt;&gt;&gt; a.analyze_one("os")
+      ['os']
+      &gt;&gt;&gt; a.modules['string'].imports
+      [('strop', 0, 0), ('strop.*', 0, 0), ('re', 1, 1)]
+      &gt;&gt;&gt;
+      </pre></P>
+      <P>The tuples in the <code>imports</code> list are (<i>name</i>, <code>delayed</code>, <code>conditional</code>).</P>
+      <P><pre>
+      &gt;&gt;&gt; for w in a.modules['string'].warnings: print w
+      ...
+      W: delayed  eval hack detected at line 359
+      W: delayed  eval hack detected at line 389
+      W: delayed  eval hack detected at line 418
+      &gt;&gt;&gt; for w in a.getwarnings(): print w
+      ...
+      W: no module named pwd (delayed, conditional import by posixpath)
+      W: no module named dos (conditional import by os)
+      W: no module named os2 (conditional import by os)
+      W: no module named posix (conditional import by os)
+      W: no module named mac (conditional import by os)
+      W: no module named MACFS (delayed, conditional import by tempfile)
+      W: no module named macfs (delayed, conditional import by tempfile)
+      W: top-level conditional exec statment detected at line 47 
+         - os (C:\Program Files\Python\Lib\os.py)
+      W: delayed  eval hack detected at line 359 
+         - string (C:\Program Files\Python\Lib\string.py)
+      W: delayed  eval hack detected at line 389 
+         - string (C:\Program Files\Python\Lib\string.py)
+      W: delayed  eval hack detected at line 418 
+         - string (C:\Program Files\Python\Lib\string.py)
+      &gt;&gt;&gt;
+      </pre></P>
+      <P>(The historically minded will note the antiquity of the Python used to demonstrate this.)
+      </P>
+      </TD>
+    </TR>
+  <TR>
+      <TD VALIGN="bottom" BGCOLOR="#D8D0F0"><SMALL>copyright 1999-2002<BR>McMillan Enterprises, Inc.<BR></SMALL></TD>
+    </TR>
+  </TABLE></FONT>
+</BODY>
+</HTML>
