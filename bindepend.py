@@ -302,7 +302,7 @@ def getWindowsPath():
                 print "W: or install starship.python.net/skippy/win32/Downloads.html"
             else:
                 sysdir = win32api.GetSystemDirectory()
-                sysdir2 = os.path.join(sysdir, '../SYSTEM')
+                sysdir2 = os.path.normpath(os.path.join(sysdir, '..', 'SYSTEM'))
                 windir = win32api.GetWindowsDirectory()
                 _bpath = [sysdir, sysdir2, windir]
         _bpath.extend(string.split(os.environ.get('PATH', ''), os.pathsep))
