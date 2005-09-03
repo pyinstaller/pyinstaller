@@ -137,7 +137,7 @@ def getImports2x(pth):
           idata = f[idatastart:idatastart+seclist[i][1]]
           i = 0
           while 1:
-	      chunk = idata[i*20:(i+1)*20]
+              chunk = idata[i*20:(i+1)*20]
               if len(chunk) != 20:
                   print "E: premature end of import table (chunk is %d, not 20)" % len(chunk)
                   break
