@@ -308,3 +308,8 @@ def getWindowsPath():
         _bpath.extend(string.split(os.environ.get('PATH', ''), os.pathsep))
     return _bpath
 
+if __name__ == "__main__":
+  if len(sys.argv) < 2:
+    print "Usage: python %s BINARYFILE" % sys.argv[0]
+    sys.exit(0)
+  print getImports(sys.argv[1])
