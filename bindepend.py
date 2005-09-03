@@ -216,7 +216,7 @@ def getImports2(path):
     dlls = []
     while data:
         iid = struct.unpack(iidescrfmt, data[:iidescrsz])
-        if iid[CHARACTERISTICS] == 0:
+        if iid[NAMERVA] == 0:
             break
         f.seek(importsection[POINTERTORAW] + iid[NAMERVA] - importsection[VIRTADDRESS])
         nm = f.read(256)
