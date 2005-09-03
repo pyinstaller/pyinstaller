@@ -183,7 +183,7 @@ def parseUString(data, start, limit):
 
 class FixedFileInfo:
     def __init__(self, filevers=(0, 0, 0, 0), prodvers=(0, 0, 0, 0), mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)):
-        self.sig = 0xfeef04bd
+        self.sig = 0xfeef04bdL
         self.strucVersion = 0x10000
         self.fileVersionMS = (filevers[0] << 16) | (filevers[1] & 0xffff)
         self.fileVersionLS = (filevers[2] << 16) | (filevers[3] & 0xffff)
