@@ -33,16 +33,16 @@ else:
 ##    WORD  wLength;        // Specifies the length of the VS_VERSION_INFO structure
 ##    WORD  wValueLength;   // Specifies the length of the Value member
 ##    WORD  wType;          // 1 means text, 0 means binary
-##    WCHAR szKey[];        // Contains the Unicode string “VS_VERSION_INFO”. 
+##    WCHAR szKey[];        // Contains the Unicode string "VS_VERSION_INFO".
 ##    WORD  Padding1[];
-##    VS_FIXEDFILEINFO Value; 
+##    VS_FIXEDFILEINFO Value;
 ##    WORD  Padding2[];
-##    WORD  Children[];     // Specifies a list of zero or more StringFileInfo or VarFileInfo structures (or both) that are children of the current version structure. 
-##}; 
+##    WORD  Children[];     // Specifies a list of zero or more StringFileInfo or VarFileInfo structures (or both) that are children of the current version structure.
+##};
 def decode(pathnm):
     h = win32api.LoadLibraryEx(pathnm, 0, LOAD_LIBRARY_AS_DATAFILE)
     nm = win32api.EnumResourceNames(h, RT_VERSION)[0]
-    data = win32api.LoadResource(h, RT_VERSION, nm) 
+    data = win32api.LoadResource(h, RT_VERSION, nm)
     vs = VSVersionInfo()
     j = vs.fromRaw(data)
     if TEST:
@@ -167,19 +167,19 @@ def parseUString(data, start, limit):
 
 ##VS_FIXEDFILEINFO {  // vsffi
 ##    DWORD dwSignature;        //Contains the value 0xFEEFO4BD
-##    DWORD dwStrucVersion;     //Specifies the binary version number of this structure. The high-order word of this member contains the major version number, and the low-order word contains the minor version number. 
-##    DWORD dwFileVersionMS;    // Specifies the most significant 32 bits of the file’s binary version number
+##    DWORD dwStrucVersion;     //Specifies the binary version number of this structure. The high-order word of this member contains the major version number, and the low-order word contains the minor version number.
+##    DWORD dwFileVersionMS;    // Specifies the most significant 32 bits of the file's binary version number
 ##    DWORD dwFileVersionLS;    //
 ##    DWORD dwProductVersionMS; // Specifies the most significant 32 bits of the binary version number of the product with which this file was distributed
 ##    DWORD dwProductVersionLS; //
-##    DWORD dwFileFlagsMask;    // Contains a bitmask that specifies the valid bits in dwFileFlags. A bit is valid only if it was defined when the file was created. 
+##    DWORD dwFileFlagsMask;    // Contains a bitmask that specifies the valid bits in dwFileFlags. A bit is valid only if it was defined when the file was created.
 ##    DWORD dwFileFlags;        // VS_FF_DEBUG, VS_FF_PATCHED etc.
 ##    DWORD dwFileOS;           // VOS_NT, VOS_WINDOWS32 etc.
 ##    DWORD dwFileType;         // VFT_APP etc.
 ##    DWORD dwFileSubtype;      // 0 unless VFT_DRV or VFT_FONT or VFT_VXD
-##    DWORD dwFileDateMS; 
+##    DWORD dwFileDateMS;
 ##    DWORD dwFileDateLS;
-##}; 
+##};
 
 class FixedFileInfo:
     def __init__(self, filevers=(0, 0, 0, 0), prodvers=(0, 0, 0, 0), mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)):
@@ -246,10 +246,10 @@ class FixedFileInfo:
 ##    WORD        wLength;      // Specifies the length of the version resource
 ##    WORD        wValueLength; // Specifies the length of the Value member in the current VS_VERSION_INFO structure
 ##    WORD        wType;        // 1 means text, 0 means binary
-##    WCHAR       szKey[];      // Contains the Unicode string “StringFileInfo”. 
-##    WORD        Padding[]; 
+##    WCHAR       szKey[];      // Contains the Unicode string "StringFileInfo".
+##    WORD        Padding[];
 ##    StringTable Children[];   // Specifies a list of zero or more String structures
-##}; 
+##};
 
 class StringFileInfo:
     def __init__(self, kids=None):
@@ -303,13 +303,13 @@ class StringFileInfo:
             tmp.append(kid.__repr__(newindent))
         tmp = string.join(tmp, ', \n')
         return "%sStringFileInfo(\n%s[\n%s\n%s])" % (indent, newindent, tmp, newindent)
-        
+
 ##StringTable {
 ##    WORD   wLength;
 ##    WORD   wValueLength;
-##    WORD   wType; 
+##    WORD   wType;
 ##    WCHAR  szKey[];
-##    String Children[];    // Specifies a list of zero or more String structures. 
+##    String Children[];    // Specifies a list of zero or more String structures.
 ##};
 
 class StringTable:
@@ -359,11 +359,11 @@ class StringTable:
             tmp.append(repr(kid))
         tmp = string.join(tmp, ',\n%s' % newindent)
         return "%sStringTable(\n%s'%s', \n%s[%s])" % (indent, newindent, str(self.name), newindent, tmp)
-    
+
 ##String {
 ##    WORD   wLength;
 ##    WORD   wValueLength;
-##    WORD   wType; 
+##    WORD   wType;
 ##    WCHAR  szKey[];
 ##    WORD   Padding[];
 ##    String Value[];
@@ -412,10 +412,10 @@ def parseCodePage(data, i, limit):
 ##    WORD  wLength;        // Specifies the length of the version resource
 ##    WORD  wValueLength;   // Specifies the length of the Value member in the current VS_VERSION_INFO structure
 ##    WORD  wType;          // 1 means text, 0 means binary
-##    WCHAR szKey[];        // Contains the Unicode string “VarFileInfo”. 
+##    WCHAR szKey[];        // Contains the Unicode string "VarFileInfo".
 ##    WORD  Padding[];
 ##    Var   Children[];     // Specifies a list of zero or more Var structures
-##}; 
+##};
 
 class VarFileInfo:
     def __init__(self, kids=None):
@@ -460,7 +460,7 @@ class VarFileInfo:
 ##    WORD  wLength;        // Specifies the length of the version resource
 ##    WORD  wValueLength;   // Specifies the length of the Value member in the current VS_VERSION_INFO structure
 ##    WORD  wType;          // 1 means text, 0 means binary
-##    WCHAR szKey[];        // Contains the Unicode string “Translation” or a user-defined key string value
+##    WCHAR szKey[];        // Contains the Unicode string "Translation" or a user-defined key string value
 ##    WORD  Padding[];      //
 ##    WORD  Value[];        // Specifies a list of one or more values that are language and code-page identifiers
 ##};
