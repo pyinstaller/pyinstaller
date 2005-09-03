@@ -22,8 +22,8 @@ seen = {}
 _bpath = None
 iswin = sys.platform[:3] == 'win'
 cygwin = sys.platform == 'cygwin'
-excludes = {'KERNEL32.DLL':1, 
-      'ADVAPI.DLL':1, 
+excludes = {'KERNEL32.DLL':1,
+      'ADVAPI.DLL':1,
       'MSVCRT.DLL':1,
       'ADVAPI32.DLL':1,
       'COMCTL32.DLL':1,
@@ -53,11 +53,11 @@ excludes = {'KERNEL32.DLL':1,
       'GLU32.DLL':1,
       'GLUB32.DLL':1,
       '/usr/lib':1,
-      '/lib':1,}     
+      '/lib':1,}
 
 def getfullnameof(mod, xtrapath = None):
   """Return the full path name of MOD.
-  
+
       MOD is the basename of a dll or pyd.
       XTRAPATH is a path or list of paths to search first.
       Return the full path name of MOD.
@@ -73,10 +73,10 @@ def getfullnameof(mod, xtrapath = None):
     if os.path.exists(npth):
       return npth
   return ''
-  
+
 def getImports1(pth):
     """Find the binary dependencies of PTH.
-    
+
         This implementation (not used right now) uses the MSVC utility dumpbin"""
     import tempfile
     rslt = []
@@ -92,10 +92,10 @@ def getImports1(pth):
             rslt.append(string.strip(tokens[0]))
         i = i + 1
     return rslt
-    
+
 def getImports2x(pth):
     """Find the binary dependencies of PTH.
-    
+
         This implementation walks through the PE header"""
     import struct
     rslt = []
@@ -117,7 +117,7 @@ def getImports2x(pth):
           return rslt
       numdirs = struct.unpack('l', f[pehdrd+numdictoffset:pehdrd+numdictoffset+4])[0]
       idata = ''
-      if magic == 17744:  
+      if magic == 17744:
           importsec, sz = struct.unpack('2l', f[pehdrd+importoffset:pehdrd+importoffset+8])
           if sz == 0:
               return rslt
@@ -160,7 +160,7 @@ def getImports2x(pth):
 
 def getImports2(path):
     """Find the binary dependencies of PTH.
-    
+
         This implementation walks through the PE header"""
     import struct
     f = open(path, 'rb')
@@ -174,7 +174,7 @@ def getImports2(path):
     rawcoffhdr = f.read(struct.calcsize(coffhdrfmt))
     coffhdr = struct.unpack(coffhdrfmt, rawcoffhdr)
     coffhdr_numsections = coffhdr[1]
-    
+
     opthdrfmt = 'hbblllllllllhhhhhhllllhhllllll'
     rawopthdr = f.read(struct.calcsize(opthdrfmt))
     opthdr = struct.unpack(opthdrfmt, rawopthdr)
@@ -192,7 +192,7 @@ def getImports2(path):
     for i in range(coffhdr_numsections):
         rawsection = f.read(sectionsize)
         sections.append(struct.unpack(sectionfmt, rawsection))
-        
+
     importva, importsz = datadirs[1]
     if importsz == 0:
         return []
@@ -225,10 +225,10 @@ def getImports2(path):
             dlls.append(nm)
         data = data[iidescrsz:]
     return dlls
-    
+
 def Dependencies(lTOC):
   """Expand LTOC to include all the closure of binary dependencies.
-  
+
      LTOC is a logical table of contents, ie, a seq of tuples (name, path).
      Return LTOC expanded by all the binary dependencies of the entries
      in LTOC, except those listed in the module global EXCLUDES"""
@@ -257,10 +257,10 @@ def Dependencies(lTOC):
         else:
             print "E: lib not found:", lib, "dependency of", pth
   return lTOC
-    
+
 def getImports3(pth):
     """Find the binary dependencies of PTH.
-    
+
         This implementation is for ldd platforms"""
     import tempfile
     rslt = []
@@ -280,14 +280,14 @@ def getImports3(pth):
                 print 'E: cannot find %s needed by %s' % (tokens[0], pth)
         i = i + 1
     return rslt
-    
+
 def getImports(pth):
     """Forwards to either getImports2 or getImports3
     """
     if sys.platform[:3] == 'win' or sys.platform == 'cygwin':
         return getImports2(pth)
     return getImports3(pth)
- 
+
 def getWindowsPath():
     """Return the path that Windows will search for dlls."""
     global _bpath

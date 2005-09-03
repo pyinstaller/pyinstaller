@@ -80,7 +80,7 @@ class DirOwner(Owner):
         else:
             mod = PyModule(nm, pth, co)
         return mod
-    
+
 class PYZOwner(Owner):
     def __init__(self, path):
         import archive
@@ -361,7 +361,7 @@ class ImportTracker:
         mod = PyScript(fnm, co)
         self.modules['__main__'] = mod
         return self.analyze_r('__main__')
-    
+
 
     def ispackage(self, nm):
         return self.modules[nm].ispackage()
@@ -406,7 +406,7 @@ class ImportTracker:
                 if hasattr(hook, 'attrs'):
                     for attr, val in hook.attrs:
                         setattr(mod, attr, val)
-                
+
                 if fqname != mod.__name__:
                     print "W: %s is changing it's name to %s" % (fqname, mod.__name__)
                     self.modules[mod.__name__] = mod
@@ -500,7 +500,7 @@ class PkgModule(PyModule):
         if mod:
             mod.__name__ = self.__name__ + '.' + mod.__name__
         return mod
-    
+
 class PkgInPYZModule(PyModule):
     def __init__(self, nm, co, pyzowner):
         PyModule.__init__(self, nm, co.co_filename, co)
@@ -568,7 +568,7 @@ def pass1(code):
         else:
             instrs.append((op, oparg, incondition, curline))
     return instrs
-    
+
 def scan_code(co, m=None, w=None, nested=0):
     instrs = pass1(co.co_code)
     if m is None:

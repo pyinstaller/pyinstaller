@@ -85,7 +85,7 @@ class IconFile:
             i = i + 1
             data = data + e.tostring()
         return data
-            
+
 
 def CopyIcons_FromIco (dstpath, srcpath):
     f = IconFile (srcpath)

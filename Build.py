@@ -16,10 +16,10 @@ try:
 except IOError:
     print "You must run Configure.py before building!"
     sys.exit(1)
-    
+
 if config['hasRsrcUpdate']:
     import icon, versionInfo
-    
+
 def build(spec):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks
     rthooks = eval(open(os.path.join(HOMEPATH, 'rthooks.dat'), 'r').read())
@@ -44,7 +44,7 @@ def mtime(fnm):
         return os.stat(fnm)[8]
     except:
         return 0
-    
+
 class Target:
     invcnum = 0
     def __init__(self):
@@ -56,7 +56,7 @@ class Target:
         print "checking %s" % (self.__class__.__name__,)
         if self.check_guts(mtime(self.out)):
             self.assemble()
-            
+
 class Analysis(Target):
     def __init__(self, scripts=None, pathex=None, hookspath=None, excludes=None):
         Target.__init__(self)
@@ -274,7 +274,7 @@ def checkCache(fnm, strip, upx):
         if strip:
             fnm = checkCache(fnm, 1, 0)
         cmd = "upx --best -q %s" % cachedfile
-    else:    
+    else:
         cmd = "strip %s" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
@@ -363,10 +363,10 @@ class PKG(Target):
                 if self.exclude_binaries:
                     self.dependencies.append((inm, fnm, typ))
                 else:
-                    fnm = checkCache(fnm, self.strip_binaries, 
-                                     self.upx_binaries and ( iswin or cygwin ) 
+                    fnm = checkCache(fnm, self.strip_binaries,
+                                     self.upx_binaries and ( iswin or cygwin )
                                       and config['hasUPX'])
-                    mytoc.append((inm, fnm, self.cdict.get(typ,0), 
+                    mytoc.append((inm, fnm, self.cdict.get(typ,0),
                                   self.xformdict.get(typ,'b')))
             elif typ == 'OPTION':
                 mytoc.append((inm, '', 0, 'o'))
@@ -453,7 +453,7 @@ class ELFEXE(Target):
         if mtm < mtime(self.pkg.out):
             print "rebuilding %s because pkg is more recent" % outnm
             return 1
-        return 0    
+        return 0
     def assemble(self):
         print "building ELFEXE", os.path.basename(self.out)
         trash = []
@@ -463,7 +463,7 @@ class ELFEXE(Target):
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
-        exe = os.path.join(HOMEPATH, exe)     
+        exe = os.path.join(HOMEPATH, exe)
         if iswin or cygwin:
             exe = exe + '.exe'
         if config['hasRsrcUpdate']:
@@ -487,7 +487,7 @@ class ELFEXE(Target):
         outf.close()
         os.chmod(self.name, 0755)
         f = open(self.out, 'w')
-        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc, 
+        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
                        self.strip, self.upx, mtime(self.name)), f)
         f.close()
         for item in trash:
@@ -501,7 +501,7 @@ class ELFEXE(Target):
                 break
             outf.write(data)
 
-class DLL(ELFEXE):  
+class DLL(ELFEXE):
     def assemble(self):
         print "building DLL", os.path.basename(self.out)
         outf = open(self.name, 'wb')
@@ -514,12 +514,12 @@ class DLL(ELFEXE):
         outf.close()
         os.chmod(self.name, 0755)
         f = open(self.out, 'w')
-        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc, 
+        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
                        self.strip, self.upx, mtime(self.name)), f)
         f.close()
         return 1
 
-class NonELFEXE(ELFEXE):  
+class NonELFEXE(ELFEXE):
     def assemble(self):
         print "building NonELFEXE", os.path.basename(self.out)
         trash = []
@@ -534,7 +534,7 @@ class NonELFEXE(ELFEXE):
         os.chmod(self.name, 0755)
         shutil.copy2(self.pkg.name, self.name+'.pkg')
         f = open(self.out, 'w')
-        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc, 
+        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
                        self.strip, self.upx, mtime(self.name)), f)
         f.close()
         for fnm in trash:
@@ -617,8 +617,8 @@ class COLLECT(Target):
             if not os.path.exists(todir):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, self.strip_binaries, 
-                                 self.upx_binaries and ( iswin or cygwin ) 
+                fnm = checkCache(fnm, self.strip_binaries,
+                                 self.upx_binaries and ( iswin or cygwin )
                                   and config['hasUPX'])
             shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
@@ -778,7 +778,7 @@ if __name__ == '__main__':
         print usage % sys.argv[0]
     else:
         build(sys.argv[1])
-    
 
 
-            
+
+

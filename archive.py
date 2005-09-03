@@ -28,7 +28,7 @@ for nm in ('nt', 'posix', 'dos', 'os2', 'mac'):
         _listdir = mod.listdir
         _environ = mod.environ
         break
-        
+
 if hasattr(sys, 'version_info'):
     versuffix = '%d%d'%(sys.version_info[0],sys.version_info[1])
 else:
@@ -44,10 +44,10 @@ else:
     else:
         dot2 = len(vers)
     versuffix = '%s%s' % (vers[:dot1], vers[dot1+1:dot2])
-    
+
 if "-vi" in sys.argv[1:]:
     _verbose = 1
-    
+
 class Archive:
     """ A base class for a repository of python code objects.
         The extract method is used by imputil.ArchiveImporter
@@ -74,7 +74,7 @@ class Archive:
             self.lib = open(self.path, 'rb')
             self.checkmagic()
             self.loadtoc()
-            
+
             ####### Sub-methods of __init__ - override as needed #############
     def checkmagic(self):
         """ Overridable.
@@ -88,7 +88,7 @@ class Archive:
         if self.lib.read(len(self.pymagic)) != self.pymagic:
             raise RuntimeError, "%s has version mismatch to dll" % (self.path)
         self.lib.read(4)
-        
+
     def loadtoc(self):
         """ Overridable.
             Default: After magic comes an int (4 byte native) giving the
@@ -99,7 +99,7 @@ class Archive:
         (offset,) = struct.unpack('=i', self.lib.read(4))
         self.lib.seek(self.start + offset)
         self.toc = marshal.load(self.lib)
-        
+
         ######## This is what is called by FuncImporter #######
         ## Since an Archive is flat, we ignore parent and modname.
         #XXX obsolete - imputil only code
@@ -112,17 +112,17 @@ class Archive:
         ####        if _verbose:
         ####            print "I: get_code: iname is %s" % iname
         ##    rslt = self.extract(iname) # None if not found, (ispkg, code) otherwise
-        ####    if _verbose: 
+        ####    if _verbose:
         ####        print 'I: get_code: rslt', rslt
         ##    if rslt is None:
-        ####      if _verbose: 
+        ####      if _verbose:
         ####          print 'I: get_code: importer', getattr(parent, "__importer__", None),'self',self
         ##      # check the cache if there is no parent or self is the parents importer
         ##      if parent is None or getattr(parent, "__importer__", None) is self:
-        ####            if _verbose: 
-        ####                print 'I: get_code: cached 1',iname 
+        ####            if _verbose:
+        ####                print 'I: get_code: cached 1',iname
         ##            file, desc = Archive._bincache.get(iname, (None, None))
-        ####            if _verbose: 
+        ####            if _verbose:
         ####                print 'I: get_code: file',file,'desc',desc
         ##            if file:
         ##              try:
@@ -136,7 +136,7 @@ class Archive:
         ##                return 0, module, {'__file__':file}
         ##      if _verbose:
         ##          print "I: import %s failed" % fqname
-        ##      
+        ##
         ##      return None
         ##
         ##    ispkg, code = rslt
@@ -146,7 +146,7 @@ class Archive:
         ##    if _verbose:
         ##        print "I: import %s found %s" % (fqname, iname)
         ##    return ispkg, code, values
-        
+
         ####### Core method - Override as needed  #########
     def extract(self, name):
         """ Get the object corresponding to name, or None.
@@ -166,20 +166,20 @@ class Archive:
             return None
         self.lib.seek(self.start + pos)
         return ispkg, marshal.load(self.lib)
-        
+
         ########################################################################
         # Informational methods
-        
+
     def contents(self):
         """Return a list of the contents
            Default implementation assumes self.toc is a dict like object.
            Not required by ArchiveImporter.
         """
         return self.toc.keys()
-        
+
         ########################################################################
         # Building
-        
+
         ####### Top level method - shouldn't need overriding #######
     def build(self, path, lTOC):
         """Create an archive file of name 'path'.
@@ -192,26 +192,26 @@ class Archive:
         #reserve space for the header
         if self.HDRLEN:
             self.lib.write('\0'*self.HDRLEN)
-            
+
             #create an empty toc
-            
+
         if type(self.TOCTMPLT) == type({}):
             self.toc = {}
-        else:       # assume callable  
+        else:       # assume callable
             self.toc = self.TOCTMPLT()
-            
+
         for tocentry in lTOC:
             self.add(tocentry)   # the guts of the archive
-            
-        tocpos = self.lib.tell() 
+
+        tocpos = self.lib.tell()
         self.save_toc(tocpos)
         if self.TRLLEN:
             self.save_trailer(tocpos)
         if self.HDRLEN:
-            self.update_headers(tocpos) 
+            self.update_headers(tocpos)
         self.lib.close()
-        
-        
+
+
         ####### manages keeping the internal TOC and the guts in sync #######
     def add(self, entry):
         """Override this to influence the mechanics of the Archive.
@@ -232,30 +232,30 @@ class Archive:
         f = open(entry[1], 'rb')
         f.seek(8)	#skip magic and timestamp
         self.lib.write(f.read())
-        
+
     def save_toc(self, tocpos):
         """Default - toc is a dict
            Gets marshaled to self.lib
         """
         marshal.dump(self.toc, self.lib)
-        
+
     def save_trailer(self, tocpos):
         """Default - not used"""
         pass
-        
+
     def update_headers(self, tocpos):
         """Default - MAGIC + Python's magic + tocpos"""
         self.lib.seek(self.start)
         self.lib.write(self.MAGIC)
         self.lib.write(self.pymagic)
         self.lib.write(struct.pack('=i', tocpos))
-        
+
 class DummyZlib:
     def decompress(self, data):
         return data
     def compress(self, data, lvl):
         return data
-        
+
 import iu
 ##############################################################
 #
@@ -268,7 +268,7 @@ class ZlibArchive(Archive):
     TRLLEN = 0
     TOCTMPLT = {}
     LEVEL = 9
-    
+
     def __init__(self, path=None, offset=None, level=9):
         if path is None:
             offset = 0
@@ -291,8 +291,8 @@ class ZlibArchive(Archive):
                 zlib = DummyZlib()
         else:
             zlib = DummyZlib()
-            
-            
+
+
     def extract(self, name):
         (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
         if pos is None:
@@ -303,7 +303,7 @@ class ZlibArchive(Archive):
         except EOFError:
             raise ImportError, "PYZ entry '%s' failed to unmarshal" % name
         return ispkg, co
-        
+
     def add(self, entry):
         if self.os is None:
             import os
@@ -341,7 +341,7 @@ class ZlibArchive(Archive):
     def checkmagic(self):
         Archive.checkmagic(self)
         self.LEVEL = struct.unpack('!i', self.lib.read(4))[0]
-        
+
 class PYZOwner(iu.Owner):
     def __init__(self, path):
         self.pyz = ZlibArchive(path)
@@ -370,7 +370,7 @@ class PYZOwner(iu.Owner):
             mod.__importsub__ = importer.getmod
         mod.__co__ = co
         return mod
-        
+
 class PkgInPYZImporter:
     def __init__(self, name, owner):
         self.name = name
@@ -384,7 +384,7 @@ class ExtInPkgImporter(iu.DirOwner):
         self.prefix = prefix
     def getmod(self, nm):
         return iu.DirOwner.getmod(self, self.prefix+'.'+nm)
-        
+
         #XXX this should also get moved out
         ##iu._globalownertypes.insert(0, PYZOwner)
         ##iu.ImportManager().install()

@@ -32,7 +32,7 @@ if sys.frozen!="dll":
         if string.find(arg, "/unreg") > -1 or string.find(arg, "--unreg") > -1:
             DllUnregisterServer()
             break
-        
+
         # MS seems to like /automate to run the class factories.
         if string.find(arg, "/automate") > -1:
             clsids = []

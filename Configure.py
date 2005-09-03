@@ -165,7 +165,7 @@ except Exception, e:
     print 'I: ...exception result in testing for UPX'
     print e, e.args
 config['hasUPX'] = hasUPX
-        
+
 # now write out config, so Build can load
 outf = open(configfile, 'w')
 import pprint

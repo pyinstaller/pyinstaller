@@ -91,11 +91,11 @@ def make_variable_path(filename, conversions = path_conversions):
             "path '%s' should already be absolute" % (from_path,)
         if filename.startswith(from_path):
             rest = filename[len(from_path):]
-            if rest[0] in "\\/": 
+            if rest[0] in "\\/":
                 rest = rest[1:]
             return to_name, rest
     return None, filename
-        
+
 # An object used in place of a "path string" which knows how to repr()
 # itself using variable names instead of hard-coded paths.
 class Path:
@@ -108,7 +108,7 @@ class Path:
         if self.variable_prefix is None:
             return repr(self.path)
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
-        
+
 def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
          comserver=0, ascii=0, workdir=None, pathex=None, version_file=None, icon_file=None):
     if name is None:

@@ -11,4 +11,4 @@ if len(sys.argv) < 2:
 else:
     vs  = versionInfo.decode(sys.argv[1])
     print vs
-                                            
+

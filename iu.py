@@ -9,7 +9,7 @@ import marshal
 # There could be owners for zip files, or even URLs.
 # A shadowpath (a dictionary mapping the names in
 # sys.path to their owners) is used so that sys.path
-# (or a package's __path__) is still a bunch of strings, 
+# (or a package's __path__) is still a bunch of strings,
 
 STRINGTYPE = type('')
 
@@ -156,7 +156,7 @@ class RegistryImportDirector(ImportDirector):
             mod.__file__ = fnm
             return mod
         return None
-    
+
 class PathImportDirector(ImportDirector):
     def __init__(self, pathlist=None, importers=None, ownertypes=None):
         if pathlist is None:
@@ -290,14 +290,14 @@ class ImportManager:
                 i = i + 1
             if i:
                 break
-            
+
         if i<len(nmparts):
             if ctx and hasattr(sys.modules[ctx], nmparts[i]):
                 #print "importHook done with %s %s %s (case 1)" % (name, globals['__name__'], fromlist)
                 return sys.modules[nmparts[0]]
             del sys.modules[fqname]
             raise ImportError, "No module named %s" % fqname
-        if fromlist is None: 
+        if fromlist is None:
             #print "importHook done with %s %s %s (case 2)" % (name, globals['__name__'], fromlist)
             if context:
                 return sys.modules[context+'.'+nmparts[0]]
@@ -483,7 +483,7 @@ def _os_bootstrap():
                         return a[:i+1]
                     return a[:i]
             return ''
-    
+
     global _os_stat
     _os_stat = stat
 
@@ -492,9 +492,9 @@ def _os_bootstrap():
 
     global _os_path_dirname
     _os_path_dirname = dirname
-    
+
     global _os_getcwd
     _os_getcwd = getcwd
-    
+
 _os_bootstrap()
 

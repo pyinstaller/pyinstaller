@@ -132,9 +132,9 @@ class ZlibArchive(archive.ZlibArchive):
             raise RuntimeError, "%s is not a valid %s archive file" \
               % (self.path, self.__class__.__name__)
         if self.lib.read(len(self.pymagic)) != self.pymagic:
-            print "Warning: pyz is from a different Python version" 
+            print "Warning: pyz is from a different Python version"
         self.lib.read(4)
-        
+
 if __name__ == '__main__':
     main()
 
