@@ -1,4 +1,5 @@
 import os, sys, glob, string
+import shutil
 try:
     here=os.path.dirname(__file__)
 except NameError:
@@ -6,36 +7,19 @@ except NameError:
 PYTHON = sys.executable
 if sys.platform[:3] == 'win':
     if string.find(PYTHON, ' ') > -1:
-        PYTHON="%s" % PYTHON
+        PYTHON='"%s"' % PYTHON
 
-def empty(dir):
-    for fnm in os.listdir(dir):
-        path = os.path.join(dir, fnm)
-        if os.path.isdir(path):
-            empty(path)
-            try:
-                os.rmdir(path)
-            except:
-                pass
-        else:
-            try:
-                os.remove(path)
-            except:
-                pass
-    
 def clean():
     distdirs = glob.glob(os.path.join(here, 'disttest*'))
     for dir in distdirs:
         try:
-            empty(dir)
-            os.rmdir(dir)
+            shutil.rmtree(dir)
         except OSError, e:
             print e
     builddirs = glob.glob(os.path.join(here, 'buildtest*'))
     for dir in builddirs:
         try:
-            empty(dir)
-            os.rmdir(dir)
+            shutil.rmtree(dir)
         except OSError, e:
             print e
     wfiles = glob.glob(os.path.join(here, 'warn*.txt'))
@@ -44,6 +28,7 @@ def clean():
             os.remove(file)
         except OSError, e:
             print e
+
 def runtests():
     specs = glob.glob(os.path.join(here, 'test*.spec'))
     for spec in specs:
