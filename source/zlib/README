@@ -1,0 +1,3 @@
+This directory contains a prebuilt static version of zlib 1.2.3 for Windows,
+download from http://www.winimage.com/zLibDll/. For Linux builds, we assume
+that zlib is already configured and installed in the system.
