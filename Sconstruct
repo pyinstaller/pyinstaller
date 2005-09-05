@@ -1,0 +1,65 @@
+# Sconstruct file to build the bootloader
+# Copyright (C) 2005, Giovanni Bajo
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+platform = Platform()
+envs = []
+
+if platform.name == "win32":
+
+    # For Windows, we need generate several different versions of the bootloader:
+    # - Either runtime-compatible with Visual Studio 6.0 or with Visual Studio 7.1
+    #   (the former is used in all Python versions up to 2.3, the latter since
+    #   Python 2.4).
+    # - Either debug build (with debug messages) or release build.
+    # - Either console program or windowed program.
+    for msvs_ver in "6.0", "7.1":
+        base_env = Environment(MSVS_VERSION = msvs_ver)
+
+        for flavour in "debug", "release":
+            for mode in "cons", "win":
+                env = base_env.Copy()
+
+                if flavour == "debug":
+                    # Use debug multithreaded DLL runtime, and no optimization
+                    env.Append(CCFLAGS = ["/MDd", "/Od"])
+                    # Each object has its own pdb, so -jN works
+                    env.Append(CCFLAGS = ["/Zi", "/Fd${TARGET}.pdb"])
+                    env.Append(LINKFLAGS = ["/DEBUG"])
+                else:
+                    # Use multithreaded DLL runtime, and some sensible amount of optimization
+                    env.Append(CCFLAGS = ["/MD", "/Ox", "/DNDEBUG"])
+
+                if mode == "cons":
+                    env.Append(CPPDEFINES = ["_CONSOLE"])
+
+                env["PYINST_FLAVOUR"] = flavour
+                env["PYINST_SUFFIX"] = "%c%c%c" % (msvs_ver[0], flavour[0], mode[0])
+
+                env.Append(CPPDEFINES = ["WIN32"])
+                env.Append(LIBS = ["user32.lib", "kernel32.lib", "ws2_32.lib"])
+
+                envs.append(env)
+
+for env in envs:
+    run,dll = SConscript("source/SConscript", exports = ["env"],
+                         build_dir = "build/" + env["PYINST_SUFFIX"],
+                         duplicate = 0)
+
+    env.InstallAs(target="support/loader/run_" + env["PYINST_SUFFIX"] + env["PROGSUFFIX"],
+                  source=run)
+    env.InstallAs(target="support/loader/inprocsrvr_" + env["PYINST_SUFFIX"] + env["SHLIBSUFFIX"],
+                  source=run)
