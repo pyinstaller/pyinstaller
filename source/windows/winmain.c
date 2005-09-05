@@ -10,11 +10,11 @@ int relaunch(char *thisfile, char *workpath)
 	PROCESS_INFORMATION pi;
 	int rc = 0;
 
-    // the parent process should ignore all signals it can
-    signal(SIGABRT, SIG_IGN);
-    signal(SIGINT, SIG_IGN);
-    signal(SIGTERM, SIG_IGN);
-    signal(SIGBREAK, SIG_IGN);
+	// the parent process should ignore all signals it can
+	signal(SIGABRT, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
+	signal(SIGBREAK, SIG_IGN);
 
 	VS("Setting up to run child\n");
 	sa.nLength = sizeof(sa);
@@ -94,9 +94,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	len = p - here;
 
 	workpath = getenv( "_MEIPASS2" );
-    rc = init(here, &thisfile[len], workpath);
-    if (rc)
-        return rc;
+	rc = init(here, &thisfile[len], workpath);
+	if (rc)
+		return rc;
 	if (workpath) {
 		// we're the "child" process
 		rc = doIt(argc, argv);
@@ -107,7 +107,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			VS("Error extracting binaries");
 			return -1;
 		}
-        // if workpath got set to non-NULL, we've extracted stuff
+		// if workpath got set to non-NULL, we've extracted stuff
 		if (workpath) {
 			// run the "child" process, then clean up
 			rc = relaunch(thisfile, workpath);
@@ -117,7 +117,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			rc = doIt(argc, argv);
 			finalizePython();
 		}
-        cleanUp();
+		cleanUp();
 	}
 	return rc;
 }
