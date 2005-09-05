@@ -47,6 +47,7 @@ if platform.name == "win32":
                     env.Append(CPPDEFINES = ["_CONSOLE"])
 
                 env["PYINST_FLAVOUR"] = flavour
+                env["PYINST_MODE"] = mode
                 env["PYINST_SUFFIX"] = "%c%c%c" % (msvs_ver[0], flavour[0], mode[0])
 
                 env.Append(CPPDEFINES = ["WIN32"])

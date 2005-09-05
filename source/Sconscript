@@ -30,8 +30,13 @@ if Platform().name == "win32":
     env.Append(LIBS = ["zlibstat.lib"])
     env.Append(LIBPATH = ["zlib"])
 
+    if env["PYINST_MODE"] == "cons":
+        resfile = env.RES("windows/run.rc")
+    else:
+        resfile = env.RES("windows/runw.rc")
+
 run = env.Program("run",
-                 ["common/launch.c", "windows/winmain.c"])
+                 ["common/launch.c", "windows/winmain.c", resfile])
 dll = env.SharedLibrary("inprocsrvr",
                         ["common/launch.c", "windows/dllmain.c", "windows/dllmain.def"])
 
