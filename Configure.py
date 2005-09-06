@@ -10,6 +10,9 @@ try:
 except IOError:
     config = {'useELFEXE':1}    # if not set by Make.py we can assume Windows
 
+# Save Python version, to detect and avoid conflicts
+config["pythonVersion"] = sys.version
+
 import mf, bindepend
 
 # EXE_dependencies

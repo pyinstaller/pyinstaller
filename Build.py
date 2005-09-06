@@ -17,6 +17,11 @@ except IOError:
     print "You must run Configure.py before building!"
     sys.exit(1)
 
+if config['pythonVersion'] != sys.version:
+    print "The current version of Python is not the same with which PyInstaller was configured."
+    print "Please re-run Configure.py with this version."
+    sys.exit(1)
+
 if config['hasRsrcUpdate']:
     import icon, versionInfo
 
