@@ -1,0 +1,258 @@
+<HTML>
+<HEAD>
+<TITLE>
+Spec Files
+</TITLE>
+
+</HEAD>
+
+<BODY>
+<FONT FACE="Helvetica"><TABLE CELLPADDING=5 CELLSPACING=5>
+  <TR ALIGN="center">
+      <TD COLSPAN=2><IMG SRC="me_inc.gif" HEIGHT=36 WIDTH=480><HR></TD>
+    </TR>
+  <TR>
+      <TD VALIGN="top" NOWRAP BGCOLOR="#D8D0F0"><H4>Sitemap</H4><SMALL><A HREF="begin.html">Getting Started</A><BR><A HREF="utilities.html">Utilities</A><BR>Spec Files<BR><A HREF="help.html">When Things Go Wrong</A><BR><A HREF="standalones.html">Standalone Executables</A><BR><A HREF="archives.html">Python Archives</A><BR><A HREF="mf4.html">Analyzing Python Modules</A><BR><A HREF="iu4.html">An Import Framework</A><BR><BR><a href="http://www.mcmillan-inc.com/cgi-bin/BTSCGI.py/BTS/">Bug Tracker</a><BR></SMALL></TD>
+        <TD ROWSPAN=2><P><h1>Spec Files</h1></P>
+      <P>Contents:</br>
+      <ul>
+       <li><a href="#intro">Introduction</a></li>
+       <li><a href="#toc">TOC Class (Table of Contents)</a></li>
+       <li><a href="#subclasses">Target Subclasses</a></li>
+        <ul>
+         <li><a href="#analysis">Analysis</a></li>
+         <li><a href="#pyz">PYZ</a></li>
+         <li><a href="#pkg">PKG</a></li>
+         <li><a href="#exe">EXE</a></li>
+         <li><a href="#dll">DLL</a></li>
+         <li><a href="#collect">COLLECT</a></li>
+         <li><a href="#tree">Tree</a></li>
+        </ul>
+      </ul></P>
+      <P><a name="intro"><h2>Introduction</h2></P>
+      <P>Spec files are in Python syntax. They are evaluated by <code>Build.py</code>. A simplistic spec file might look like this:
+      <code><pre>
+      a = Analysis(['myscript.py'])
+      pyz = PYZ(a.pure)
+      exe = EXE(pyz, a.scripts, a.binaries, name="myapp.exe")
+      </pre></code></P>
+      <P>This creates a single file deployment with all binaries (extension modules and their dependencies) packed into the executable.</P>
+      <P>A simplistic single directory deployment might look like this:
+      <code><pre>
+      a = Analysis(['myscript.py'])
+      pyz = PYZ(a.pure)
+      exe = EXE(a.scripts, pyz, name="myapp.exe", exclude_binaries=1)
+      dist = COLLECT(exe, a.binaries, name="dist")
+      </pre></code></P>
+      <P>Note that neither of these examples are realistic. Use <code>Makespec.py</code> (documented <A HREF="begin.html">here</A>) to create your specfile, and tweak it (if necessary) from there.</P>
+      <P>All of the classes you see above are subclasses of <code>Build.Target</code>. A <code>Target</code> acts like a rule in a makefile. It knows enough to cache its last inputs and outputs. If its inputs haven't changed, it can assume its outputs wouldn't change on recomputation. So a spec file acts much like a makefile, only rebuilding as much as needs rebuilding. This means, for example, that if you change an <code>EXE</code> from <code>debug=1</code> to <code>debug=0</code> that the rebuild will be nearly instantaneous.</P>
+      <P>The high level view is that an Analysis takes a list of scripts as input, and generates three "outputs", held in attributes named <code>scripts</code>, <code>pure</code> and <code>binaries</code>. A <code>PYZ</code> (a .pyz archive) is built from the modules in <code>pure</code>. The <code>EXE</code> is built from the <code>PYZ</code>, the <code>scripts</code> and, in the case of a single-file deployment, the <code>binaries</code>. In a single-directory deployment, a directory is built containing a slim <code>EXE</code> and the <code>binaries</code>.</P>
+      <P><a name="toc"><h2>TOC Class (Table of Contents)</h2></a></P>
+      <P>Before you can do much with a spec file, you need to understand the <code>TOC</code> (Table Of Contents) class.</P>
+      <P>A <code>TOC</code> appears to be a list of tuples of the form <code>(name, path, typecode)</code>. In fact, it's an <b>ordered set</b>, not a list. A <code>TOC</code> contains no duplicates, where uniqueness is based on <code>name</code> only. Furthermore, within this constraint, a <code>TOC</code> preserves order.</P>
+      <P>Besides the normal list methods and operations, <code>TOC</code> supports taking <b>differences</b> and <b>intersections</b> (and note that adding or extending is really equivalent to <b>union</b>). Furthermore, the operations can take a real list of tuples on the right hand side. This makes excluding modules quite easy:
+      <code><pre>
+      pyz = PYZ(a.pure - [('badmodule', '', '')])
+      </pre></code>
+      for a pure Python module and
+      <code><pre>
+      dist = COLLECT(..., a.binaries - [('badmodule', '', '')], ...)
+      </pre></code>
+      for an extension module in a single-directory deployment, or
+      <code><pre>
+      exe = EXE(..., a.binaries - [('badmodule', '', '')], ...)
+      </pre></code>
+      for a single-file deployment.</P>
+      <P>To add files to a <code>TOC</code>, you need to know about the <code>typecode</code>s (or the step using the <code>TOC</code> won't know what to do with the entry).</P>
+      <P><table>
+       <tr>
+        <th>typecode</th><th>description</th><th>name</th><th>path</th>
+       </tr>
+       <tr>
+        <td>'EXTENSION'</td>
+        <td>An extension module.</td>
+        <td>Python internal name.</td>
+        <td>Full path name in build.</td>
+       </tr>
+       <tr>
+        <td>'PYSOURCE'</td>
+        <td>A script.</td>
+        <td>Python internal name.</td>
+        <td>Full path name in build.</td>
+       </tr>
+       <tr>
+        <td>'PYMODULE'</td>
+        <td>A pure Python module (including <code>__init__</code> modules).</td>
+        <td>Python internal name.</td>
+        <td>Full path name in build.</td>
+       </tr>
+       <tr>
+        <td>'PYZ'</td>
+        <td>A .pyz archive (<code>archive_rt.ZlibArchive</code>).</td>
+        <td>Runtime name.</td>
+        <td>Full path name in build.</td>
+       </tr>
+       <tr>
+        <td>'PKG'</td>
+        <td>A pkg archive (<code>carchive4.CArchive</code>).</td>
+        <td>Runtime name.</td>
+        <td>Full path name in build.</td>
+       </tr>
+       <tr>
+        <td>'BINARY'</td>
+        <td>A shared library.</td>
+        <td>Runtime name.</td>
+        <td>Full path name in build.</td>
+       </tr>
+       <tr>
+        <td>'DATA'</td>
+        <td>Aribitrary files.</td>
+        <td>Runtime name.</td>
+        <td>Full path name in build.</td>
+       </tr>
+       <tr>
+        <td>'OPTION'</td>
+        <td>A runtime runtime option (frozen into the executable).</td>
+        <td>The option.</td>
+        <td>Unused.</td>
+       </tr>
+      </table></P>
+      <P>You can force the include of any file in much the same way you do excludes.
+      <code><pre>
+      collect = COLLECT(a.binaries + 
+                [('readme', '/my/project/readme', 'DATA')], ...)
+      </pre></code>
+      or even
+      <code><pre>
+      collect = COLLECT(a.binaries, 
+                [('readme', '/my/project/readme', 'DATA')], ...)
+      </pre></code>
+      (that is, you can use a list of tuples in place of a <code>TOC</code> in most cases).</P>
+      <P>There's not much reason to use this technique for <code>PYSOURCE</code>, since an Analysis takes a list of scripts as input. For <code>PYMODULE</code>s and <code>EXTENSION</code>s, the hook mechanism discussed <a HREF="help.html">here</a> is better because you won't have to remember how you got it working next time.</P>
+      <P>This technique is most useful for data files (see the <code>Tree</code> class below for a way to build a <code>TOC</code> from a directory tree), and for runtime options. The options the <code>run</code> executables understand are:</P>
+      <P><table>
+       <tr>
+        <th>Option</th><th>Description</th><th>Example</th><th>Notes</th>
+       </tr>
+       <tr>
+        <td>v</td>
+        <td>Verbose imports</td>
+        <td>('v', '', 'OPTION')</td>
+        <td>Same as <code>Python -v ...</code></td>
+       </tr>
+       <tr>
+        <td>u</td>
+        <td>Unbuffered stdio</td>
+        <td>('u', '', 'OPTION')</td>
+        <td>Same as <code>Python -u ...</code></td>
+       </tr>
+       <tr>
+        <td nowrap>W <i>spec</i></td>
+        <td>Warning option</td>
+        <td>('W ignore', '', 'OPTION')</td>
+        <td>Python 2.1+ only.</td>
+       </tr>
+       <tr>
+        <td>s</td>
+        <td>Use site.py</td>
+        <td>('s', '', 'OPTION')</td>
+        <td>The <b>opposite</b> of Python's -S flag. Note that site.py must be in the executable's directory to be used.</td>
+       </tr>
+       <tr>
+        <td>f</td>
+        <td>Force execvp</td>
+        <td>('f', '', 'OPTION')</td>
+        <td>Linux/unix only. Ensures that <code>LD_LIBRARY_PATH</code> is set properly.</td>
+       </tr>
+      </table></P>
+      <P>Advanced users should note that by using set differences and intersections, it becomes possible to factor out common modules, and deploy a project containing multiple executables with minimal redundancy. You'll need some top level code in each executable to mount the common <code>PYZ</code>.</P>
+      <P><a name="subclasses"><h2>Target Subclasses</h2></a></P>
+      <P><a name="analysis"><h3>Analysis</h3></a></P>
+      <P><code><pre>
+      Analysis(scripts, pathex=None, hookspath=None, excludes=None)
+      </pre></code>
+      <dl>
+       <dt>scripts<dd>a list of scripts specified as file names.
+       <dt>pathex<dd>an optional list of paths to be searched before sys.path.
+       <dt>hookspath<dd>an optional list of paths used to extend the <code>hooks</code> package.
+       <dt>excludes<dd>an optional list of module or package names (their Python names, not path names) that will be ignored (as though they were not found).
+      </dl>
+      An Analysis has three outputs, all <code>TOC</code>s accessed as attributes of the Analysis.
+      <dl>
+       <dt>scripts<dd>The scripts you gave Analysis as input, with any runtime hook scripts prepended.
+       <dt>pure<dd>The pure Python modules.
+       <dt>binaries<dd>The extension modules and their dependencies. The secondary dependencies are filtered. On Windows, a long list of MS dlls are excluded. On Linux/Unix, any shared lib in <code>/lib</code> or <code>/usr/lib</code> is excluded.
+      </dl></P>
+      <P><a name="pyz"><h3>PYZ</h3></a></P>
+      <P><code><pre>
+      PYZ(toc, name=None, level=9)
+      </pre></code>
+      <dl>
+       <dt>toc<dd>a <code>TOC</code>, normally an <code>Analysis.pure</code>.
+       <dt>name<dd>A filename for the .pyz. Normally not needed, as the generated name will do fine.
+       <dt>level<dd>The Zlib compression level to use. If <code>0</code>, the <code>zlib</code> module is not required.
+      </dl></P>
+      <P><a name="pyz"><h3>PKG</h3></a></P>
+      <P>Generally, you will not need to create your own <code>PKG</code>s, as the <code>EXE</code> will do it for you. This is one way to include read-only data in a single-file deployment, however. A single-file deployment including TK support will use this technique.</P>
+      <P><code><pre>
+      PKG(toc, name=None, cdict=None, exclude_binaries=0)
+      </pre></code>
+      <dl>
+       <dt>toc<dd>a <code>TOC</code>
+       <dt>name<dd>a filename for the pkg (optional).
+       <dt>cdict<dd>a dictionary that specifies compression by typecode. For example,  <code>PYZ</code> is left uncompressed so that it can be accessed inside the <code>PKG</code>. The default uses sensible values. If <code>zlib</code> is not available, no compression is used.
+       <dt>exclude_binaries<dd>If 1, <code>EXTENSION</code>s and <code>BINARY</code>s will be left out of the <code>PKG</code>, and forwarded to its container (ususally a <code>COLLECT</code>).
+      </dl></P>
+      <P><a name="exe"><h3>EXE</h3></a></P>
+      <P><code><pre>
+      EXE(*args, **kws)
+      </pre></code>
+      <dl>
+       <dt>args<dd>One or more arguments which are either <code>TOC</code>s or <code>Target</code>s.
+       <dt>kws<dd>
+        <dl>
+         <dt>console<dd>Always 1 on Linux/unix. On Windows, governs whether to use the console executable, or the Windows subsystem executable.
+         <dt>debug<dd>Setting to 1 gives you progress messages from the executable (for a <code>console=0</code>, these will be annoying MessageBoxes).
+         <dt>name<dd>The filename for the executable.
+         <dt>exclude_binaries<dd>Forwarded to the <code>PKG</code> the <code>EXE</code> builds.
+         <dt>icon<dd>Windows NT family only. <code>icon='myicon.ico'</code> to use an icon file, or <code>icon='notepad.exe,0'</code> to grab an icon resource.
+         <dt>version<dd>Windows NT family only. <code>version='myversion.txt'</code>. Use <code>GrabVersion.py</code> to steal a version resource from an executable, and then edit the ouput to create your own. (The syntax of version resources is so arcane that I wouldn't attempt to write one from scratch.)
+        </dl>
+      </dl></P>
+      <P>There are actually two <code>EXE</code> classes - one for ELF platforms (where the <code>run</code> executable and the <code>PKG</code> are concatenated), and one for non-ELF platforms (where the <code>run</code> executable is simply renamed, and expects a <code><i>exename</i>.pkg</code> in the same directory). Which class becomes available as <code>EXE</code> is determined by a flag in <code>config.dat</code>. This flag is set to non-ELF when using <code>Make.py -n</code>.</P>
+      <P><a name="dll"><h3>DLL</h3></a></P>
+      <P>On Windows, this provides support for doing in-process COM servers. It is not generalized. However, embedders can follow the same model to build a special purpose DLL so the Python support in their app is hidden. You will need to write your own dll, but thanks to Allan Green for refactoring the C code and making that a managable task.</P>
+      <P><a name="collect"><h3>COLLECT</h3></a></P>
+      <P><code><pre>
+      COLLECT(*args, **kws)
+      </pre></code>
+      <dl>
+       <dt>args<dd>One or more arguments which are either <code>TOC</code>s or <code>Target</code>s.
+       <dt>kws<dd>
+        <dl>
+          <dt>name<dd>The name of the directory to be built.
+         </dl>
+      </dl></P>
+      <P><a name="tree"><h3>Tree</h3></a></P>
+      <P><code><pre>
+      Tree(root, prefix=None, excludes=None)
+      </code></pre>
+      <dl>
+       <dt>root<dd>The root of the tree (on the build system).
+       <dt>prefix<dd>Optional prefix to the names on the target system.
+       <dt>excludes<dd>A list of names to exclude. Two forms are allowed:
+        <dl>
+         <dt>name<dd>files with this basename will be excluded (do not include the path).
+         <dt>*.ext<dd>any file with the given extension will be excluded.
+        </dl>
+      </dl></P>
+      <P>Since a <code>Tree</code> is a <code>TOC</code>, you can also use the exclude technique described above in the section on <a href="#toc"><code>TOC</code>s</a>. 
+      </P>
+      </TD>
+    </TR>
+  <TR>
+      <TD VALIGN="bottom" BGCOLOR="#D8D0F0"><SMALL>copyright 1999-2002<BR>McMillan Enterprises, Inc.<BR></SMALL></TD>
+    </TR>
+  </TABLE></FONT>
+</BODY>
+</HTML>

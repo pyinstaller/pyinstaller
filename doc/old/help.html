@@ -1,0 +1,143 @@
+<HTML>
+<HEAD>
+<TITLE>
+When Things Go Wrong
+</TITLE>
+
+</HEAD>
+
+<BODY>
+<FONT FACE="Helvetica"><TABLE CELLPADDING=5 CELLSPACING=5>
+  <TR ALIGN="center">
+      <TD COLSPAN=2><IMG SRC="me_inc.gif" HEIGHT=36 WIDTH=480><HR></TD>
+    </TR>
+  <TR>
+      <TD VALIGN="top" NOWRAP BGCOLOR="#D8D0F0"><H4>Sitemap</H4><SMALL><A HREF="begin.html">Getting Started</A><BR><A HREF="utilities.html">Utilities</A><BR><A HREF="specfiles.html">Spec Files</A><BR>When Things Go Wrong<BR><A HREF="standalones.html">Standalone Executables</A><BR><A HREF="archives.html">Python Archives</A><BR><A HREF="mf4.html">Analyzing Python Modules</A><BR><A HREF="iu4.html">An Import Framework</A><BR><BR><a href="http://www.mcmillan-inc.com/cgi-bin/BTSCGI.py/BTS/">Bug Tracker</a><BR></SMALL></TD>
+        <TD ROWSPAN=2><P><h1>When Things Go Wrong</h1></P>
+      <P><h4>Contents</h4>
+      <ul>
+       <li><a href="#start">Finding out What Went Wrong</a></li>
+        <ul>
+         <li><a href="#warnings">Buildtime Warnings</a></li>
+         <li><a href="#run_d">Getting Debug Messages</a></li>
+         <li><a href="#verboseimport">Getting Python's Verbose Imports</a></li>
+        </ul>
+       <li><a href="#finding">Helping Installer Find Modules</a></li>
+        <ul>
+         <li><a href="#syspath">Extending the Path</a></li>
+         <li><a href="#hooks">Listing Hidden Imports</a></li>
+         <li><a href="#__path__">Extending a Package's __path__</a></li>
+         <li><a href="#rthooks">Changing Runtime Behavior</a></li>
+         <li><a href="#sysfrozen">Adapting to being "frozen"</a></li>
+        </ul>
+       <li><a href="#datafiles">Accessing Data Files</a></li>
+       <li><a href="#reporting">Reporting Bugs</a></li>
+       <li><a href="#misc">Miscellaneous</a></li>
+        <ul>
+         <li><a href="#pmw">Pmw</a></li>
+         <li><a href="#win9xpopen">Win9xpopen</a></li>
+        </ul>
+      </ul></P>
+      <P><a name="#start"><h2>Finding out What Went Wrong</h2></a></P>
+      <P> <a name="warnings"><h3>Buildtime Warnings</h3></a></P>
+      <P>When an Analysis step runs, it produces a warnings file (named <code>warn<i>project</i>.txt</code>) in the spec file's directory. Generally, most of these warnings are harmless. For example, <code>os.py</code> (which is cross-platform) works by figuring out what platform it is on, then importing (and rebinding names from) the appropriate platform-specific module. So analyzing <code>os.py</code> will produce a set of warnings like:
+      <pre>
+      W: no module named dos (conditional import by os)
+      W: no module named ce (conditional import by os)
+      W: no module named os2 (conditional import by os)
+      </pre>
+      Note that the analysis has detected that the import is within a conditional block (an <code>if</code> statement). The analysis also detects if an import within a function or class, (delayed) or at the top level. A top-level, non-conditional import failure is really a hard error. There's at least a reasonable chance that conditional and / or delayed import will be handled gracefully at runtime.</P>
+      <P>Ignorable warnings may also be produced when a class or function is declared in a package (an <code>__init__.py</code> module), and the import specifies <i>package.name</i>. In this case, the analysis can't tell if <i>name</i> is supposed to refer to a submodule of <i>package</i>.</P>
+      <P>Warnings are also produced when an <code>__import__</code>, <code>exec</code> or <code>eval</code> statement is encountered. The <code>__import__</code> warnings should almost certainly be investigated. Both <code>exec</code> and <code>eval</code> can be used to implement import hacks, but usually their use is more benign.</P>
+      <P>Any problem detected here can be handled by hooking the analysis of the module. See <a href="#hooks">Listing Hidden Imports</a> below for how to do it.</P>
+      <P> <a name="run_d"><h3>Getting Debug Messages</h3></a></P>
+      <P>Setting <code>debug=1</code> on an <code>EXE</code> will cause the executable to put out progress messages (for console apps, these go to <code>stdout</code>; for Windows apps, these show as <code>MessageBox</code>es). This can be useful if you are doing complex packaging, or your app doesn't seem to be starting, or just to learn how the runtime works.</P>
+      <P><a name="verboseimport"> <h3>Getting Python's Verbose Imports</h3> </a></P>
+      <P>You can also pass a <b>-v</b> (verbose imports) flag to the embedded Python. This can be extremely useful. I usually try it even on apparently working apps, just to make sure that I'm always getting my copies of the modules and no import has leaked out to the installed Python.</P>
+      <P>You set this (like the other runtime options) by feeding a phone TOC entry to the EXE. The easiest way to do this is to change the EXE from:
+      <pre><code>
+       EXE(..., anal.scripts, ....)
+       </code>to<code>
+       EXE(..., anal.scripts + [('v', '', 'OPTION')], ...)
+      </code></pre></P>
+      <P>These messages will always go to stdout, so you won't see them on Windows if <code>console=0</code>.
+       
+      <a name="finding"><h2>Helping Installer Find Modules</h2></a></P>
+      <P> <a name="syspath"><h3>Extending the Path</h3></a></P>
+      <P>When the analysis phase cannot find needed modules, it may be that the code is manipulating <code>sys.path</code>. The easiest thing to do in this case is tell Analysis about the new directory through the second arg to the constructor.
+      <code><pre>
+       anal = Analysis(['somedir/myscript.py'], 
+                       ['path/to/thisdir', 'path/to/thatdir'])
+      </pre></code>
+      In this case, the Analysis will have a search path:
+      <code><pre>
+       ['somedir', 'path/to/thisdir', 'path/to/thatdir'] + sys.path
+      </pre></code></P>
+      <P>You can do the same when running <code>Makespec</code by using
+      <code><pre>
+       Makespec.py --paths=path/to/thisdir;path/to/thatdir ...
+      </pre></code>
+      (on *nix, use <code>:</code> as the path separator).</P>
+      <P><a name="hooks"> <h3>Listing Hidden Imports</h3> </a></P>
+      <P>Hidden imports are fairly common. These can occur when the code is using <code>__import__</code> (or, perhaps <code>exec</code> or <code>eval</code>), in which case you will see a warning in the <code>warn<i>project</i>.txt</code> file. They can also occur when an extension module uses the Python/C API to do an import, in which case Analysis can't detect anything. You can verify that hidden import is the problem by using Python's <a href="#verboseimport">verbose</a> imports flag. If the import messages say "module not found", but the <code>warn<i>project</i>.txt</code> file has no "no module named..." message for the same module, then the problem is a hidden import.</P>
+      <P>Hidden imports are handled by hooking the module (the one doing the hidden imports) at Analysis time. Do this by creating a file named <code>hook-<i>module</i>.py</code> (where <i>module</i> is the fully-qualified Python name, eg, <code>hook-xml.dom.py</code>), and placing it in the <code>hooks</code> package under Installer's root directory, (alternatively, you can save it elsewhere, and then use the <code>hookspath</code> arg to <code>Analysis</code> so your private hooks directory will be searched). Normally, it will have only one line:
+      <code><pre>
+      hiddenimports = ['module1', 'module2']
+      </pre></code>
+      When the Analysis finds this file, it will proceed exactly as though the module explicitly imported <code>module1</code> and <code>module2</code>. (Full details on the analysis-time hook mechanism is <A HREF="mf4.html">here</A>).</P>
+      <P>If you successfully hook a publicly distributed module in this way, please send me the hook so I can make it available to others.</P>
+      <P> <a name="__path__"><h3>Extending a Package's __path__</h3></a></P>
+      <P>Python allows a package to extend the search path used to find modules and sub-packages through the <code>__path__</code> mechanism. Normally, a package's <code>__path__</code> has only one entry - the directory in which the <code>__init__.py</code> was found. But <code>__init__.py</code> is free to extend its <code>__path__</code> to include other directories. For example, the <code>win32com.shell.shell</code> module actually resolves to <code>win32com/win32comext/shell/shell.pyd</code>. This is because <code>win32com/__init__.py</code> appends <code>../win32comext</code> to its <code>__path__</code>.</P>
+      <P>Because the <code>__init__.py</code> is not actually run during an analysis, we use the same hook mechanism we use for hiddenimports. A static list of names won't do, however, because the new entry on <code>__path__</code> may well require computation. So <code>hook-<i>module</i>.py</code> should define a method <code>hook(mod)</code>. The <code>mod</code> argument is an instance of <code>mf.Module</code> which has (more or less) the same attributes as a real <code>module</code> object. The <code>hook</code> function should return a <code>mf.Module</code> instance - perhaps a brand new one, but more likely the same one used as an arg, but mutated. See <A HREF="mf4.html">mf</A> for details, and <code>hook/hook-win32com.py</code> for an example.</P>
+      <P>Note that manipulations of <code>__path__</code> hooked in this way apply to the analysis, and only the analysis. That is, at runtime <code>win32com.shell</code> is resolved the same way as <code>win32com.<i>anythingelse</i></code>, and <code>win32com.__path__</code> knows nothing of <code>../win32comext</code>.</P>
+      <P>Once in awhile, that's not enough.</P>
+      <P> <a name="rthooks"><h3>Changing Runtime Behavior</h3></a></P>
+      <P>More bizarre situations can be accomodated with runtime hooks. These are small scripts that manipulate the environment before your main script runs, effectively providing additional top-level code to your script.</P>
+      <P>At the tail end of an analysis, the module list is examined for matches in <code>rthooks.dat</code>, which is the string representation of a Python dictionary. The key is the module name, and the value is a list of hook-script pathnames.</P>
+      <P>So putting an entry:
+      <code><pre>
+       'somemodule': ['path/to/somescript.py'],
+      </pre></code>
+      into <code>rthooks.dat</code> is <b>almost</b> the same thing as
+      <code><pre>
+       anal = Analysis(['path/to/somescript.py', 'main.py'], ...
+      </pre></code>
+      except that in using the hook, <code>path/to/somescript.py</code> will <b>not</b> be analyzed, (that's not a feature - I just haven't found a sane way fit the recursion into my persistence scheme).</P>
+      <P>Hooks done in this way, while they need to be careful of what they import, are free to do almost anything. One provided hook sets things up so that <code>win32com</code> can generate modules at runtime (to disk), and the generated modules can be found in the <code>win32com</code> package.</P>
+      <P><a name="sysfrozen"><h3>Adapting to being "frozen"</h3></a></P>
+      <P>In most sophisticated apps, it becomes necessary to figure out (at runtime) whether you're running "live" or "frozen". For example, you might have a configuration file that (running "live") you locate based on a module's <code>__file__</code> attribute. That won't work once the code is packaged up. You'll probably want to look for it based on <code>sys.executable</code> instead.</P>
+      <P>The <code>run</code> executables set <code>sys.frozen=1</code> (and, for in-process COM servers, the embedding DLL sets <code>sys.frozen='dll'</code>).</P>
+      <P>For <i>really</i> advanced users, you can access the <code>iu.ImportManager</code> as <code>sys.importManager</code>. See <A HREF="iu4.html">iu</A> for how you might make use of this fact.</P>
+      <P><a name="datafiles"><h2>Accessing Data Files</h2></a></P>
+      <P>In a <code>--onedir</code> distribution, this is easy: pass a list of your data files (in <code>TOC</code> format) to the <code>COLLECT</code>, and they will show up in the distribution
+      directory tree. The <code>name</code> in the <code>(name, path, 'DATA')</code> tuple can be a relative
+      path name. Then, at runtime, you can use code like this to find the file:<code><pre>
+       os.path.join(os.path.dirname(sys.executable), <i>relativename</i>))
+      </pre></code></P>
+      <P>In a <code>--onefile</code>, it's a bit trickier. You can cheat, and add the files to the <code>EXE</code> as <code>BINARY</code>. They will then be extracted at runtime into the work directory by the C code (which does <b>not</b> create directories, so the <code>name</code> must be a plain name), and cleaned up on exit. The work directory is best found by <code>os.environ['_MEIPASS2']</code>. Be awawre, though, that if you use <code>--strip</code> or <code>--upx</code>, strange things may happen to your data - <code>BINARY</code> is really for shared libs / dlls.</P>
+      <P>If you add them as <code>'DATA'</code> to the <code>EXE</code>, then it's up to you to extract them.
+      Use code like this:<code><pre>
+       import sys, carchive
+       this = carchive.CArchive(sys.executable)
+       data = this.extract('mystuff')[1]
+      </pre></code>
+      to get the contents as a binary string. See <code>support/unpackTK.py</code> for an advanced example (the TCL and TK lib files are in a <code>PKG</code> which is opened in place, and
+      then extracted to the filesystem).</P>
+      <P><a name="reporting"><h2>Reporting Bugs</h2></a></P>
+      <P> Report bugs (or feature requests) <a href="http://www.mcmillan-inc.com/cgi-bin/BTSCGI.py/BTS/">here</a>. Please make sure you set <b>Product</b> to <code>Installer</code>. (If you choose not to become a registered user, please include some contact information in the report itself.) Subscribe to the Installer <a href="http://trixie.triqs.com/mailman/listinfo/installer">Mailing List</a> to discuss Installer related issues. And don't forget to show your appreciation <a href="http://www.mcmillan-inc.com/sponsor.html">here</a>.</P>
+      <P><a name="misc"><h2>Miscellaneous</h2></a></P>
+      <P><a name="pmw"><h3>Pmw</h3></a></P>
+      <P>Pmw comes with a script named <CODE>bundlepmw</CODE> in the <CODE>bin</CODE> directory. If you follow the instructions in that script, you'll end up with a module named <CODE>Pmw.py</CODE>. Ensure that Builder finds that module and not the development package.</P>
+      <P><a name="win9xpopen"><h3>Win9xpopen</h3></a></P>
+      <P>If you're using <code>popen</code> on Windows and want the code to work on Win9x, you'll need to distribute
+      <code>win9xpopen.exe</code> with your app. On older Pythons with Win32all, this would apply to <code>Win32pipe</code> and <code>win32popenWin9x.exe</code>. (On yet older Pythons, no form of popen
+      worked on Win9x).
+      </P>
+      </TD>
+    </TR>
+  <TR>
+      <TD VALIGN="bottom" BGCOLOR="#D8D0F0"><SMALL>copyright 1999-2002<BR>McMillan Enterprises, Inc.<BR></SMALL></TD>
+    </TR>
+  </TABLE></FONT>
+</BODY>
+</HTML>

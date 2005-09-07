@@ -1,0 +1,73 @@
+<HTML>
+<HEAD>
+<TITLE>
+An Import Framework
+</TITLE>
+
+</HEAD>
+
+<BODY>
+<FONT FACE="Helvetica"><TABLE CELLPADDING=5 CELLSPACING=5>
+  <TR ALIGN="center">
+      <TD COLSPAN=2><IMG SRC="me_inc.gif" HEIGHT=36 WIDTH=480><HR></TD>
+    </TR>
+  <TR>
+      <TD VALIGN="top" NOWRAP BGCOLOR="#D8D0F0"><H4>Sitemap</H4><SMALL><A HREF="begin.html">Getting Started</A><BR><A HREF="utilities.html">Utilities</A><BR><A HREF="specfiles.html">Spec Files</A><BR><A HREF="help.html">When Things Go Wrong</A><BR><A HREF="standalones.html">Standalone Executables</A><BR><A HREF="archives.html">Python Archives</A><BR><A HREF="mf4.html">Analyzing Python Modules</A><BR>An Import Framework<BR><BR><a href="http://www.mcmillan-inc.com/cgi-bin/BTSCGI.py/BTS/">Bug Tracker</a><BR></SMALL></TD>
+        <TD ROWSPAN=2><P><h1>An imputil replacement</h1></P>
+      <P>[This is part of Installer release 5. It can also be <a href="dnld/iu.py">downloaded</a> separately.]</P>
+      <P>Module <code>iu</code> grows out of the pioneering work that Greg Stein did with <code>imputil</code> (actually, it includes some verbatim <code>imputil</code> code, but since Greg didn't copyright it, I won't mention it). Both modules can take over Python's builtin import and ease writing of at least certain kinds of import hooks.</P>
+      <P><code>iu</code> differs from <code>imputil</code>:
+      <ul>
+       <li>faster
+       <li>better emulation of builtin <code>import</code> 
+       <li>more managable
+      </ul></P>
+      <P>There is an <i>ImportManager</i> which provides the replacement for builtin <code>import</code> and hides all the semantic complexities of a Python import request from it's delegates..</P>
+      <P><h2>ImportManager</h2></P>
+      <P><code>ImportManager</code> formalizes the concept of a <i>metapath</i>. This concept implicitly exists in native Python in that builtins and frozen modules are searched before <code>sys.path</code>, (on Windows there's also a search of the registry while on Mac, resources may be searched). This metapath is a list populated with <i>ImportDirector</i> instances. There are <code>ImportDirector</code> subclasses for builtins, frozen modules, (on Windows) modules found through the registry and a <i>PathImportDirector</i> for handling <code>sys.path</code>. For a top-level import (that is, not an import of a module in a package), <code>ImportManager</code> tries each director on it's metapath until one succeeds.</P>
+      <P><code>ImportManager</code> hides the semantic complexity of an import from the directors. It's up to the <code>ImportManager</code> to decide if an import is relative or absolute; to see if the module has already been imported; to keep <code>sys.modules</code> up to date; to handle the fromlist and return the correct module object.</P>
+      <P><h2>ImportDirectors</h2></P>
+      <P>An <code>ImportDirector</code> just needs to respond to <code>getmod(name)</code> by returning a module object or None. As you will see, an <code>ImportDirector</code> can consider <i>name</i> to be atomic - it has no need to examine <i>name</i> to see if it is dotted.</P>
+      <P>To see how this works, we need to examine the <code>PathImportDirector</code>.</P>
+      <P><h2>PathImportDirector</h2></P>
+      <P>The <code>PathImportDirector</code> subclass manages a list of names - most notably, <code>sys.path</code>. To do so, it maintains a <i>shadowpath</i> - a dictionary mapping the names on it's pathlist (eg, <code>sys.path</code>) to their associated <i>Owners</i>. (It could do this directly, but the assumption that <code>sys.path</code> is occupied solely by strings seems ineradicable.) <code>Owner</code>s of the appropriate kind are created as needed (if all your <code>import</code>s are satisfied by the first two elements of <code>sys.path</code>, the <code>PathImportDirector</code>'s <code>shadowpath</code> will only have two entries).</P>
+      <P><h2>Owners</h2></P>
+      <P>An <code>Owner</code> is much like an <code>ImportDirector</code> but manages a much more concrete piece of turf. For example, a <i>DirOwner</i> manages one directory. Since there are no other officially recognized filesystem-like namespaces for importing, that's all that's included in <code>iu</code>, but it's easy to imagine <code>Owner</code>s for zip files (and I have one for my own .pyz archive format) or even URLs.</P>
+      <P>As with <code>ImportDirector</code>s, an <code>Owner</code> just needs to respond to <code>getmod(name)</code> by returning a module object or None, and it can consider <i>name</i> to be atomic.</P>
+      <P>So structurally, we have a tree, rooted at the <code>ImportManager</code>. At the next level, we have a set of <code>ImportDirector</code>s. At least one of those directors, the <code>PathImportDirector</code> in charge of <code>sys.path</code>, has another level beneath it, consisting of <code>Owners</code>. This much of the tree covers the entire top-level import namespace.</P>
+      <P>The rest of the import namespace is covered by treelets, each rooted in a package module (an <code>__init__.py</code>).</P>
+      <P><h2>Packages</h2></P>
+      <P>To make this work, <code>Owner</code>s need to recognize when a module is a package. For a <code>DirOwner</code>, this means that <i>name</i> is a subdirectory which contains an <code>__init__.py</code>. The <code>__init__</code> module is loaded and it's <code>__path__</code> is initialized with the subdirectory. Then, a <code>PathImportDirector</code> is created to manage this <code>__path__</code>. Finally the new <code>PathImportDirector</code>'s <code>getmod</code> is assigned to the package's <code>__importsub__</code> function.</P>
+      <P>When a module within the package is imported, the request is routed (by the <code>ImportManager</code>) diretly to the package's <code>__importsub__</code>. In a hierarchical namespace (like a filesystem), this means that <code>__importsub__</code> (which is really the bound  <code>getmod</code> method of a <code>PathImportDirector</code> instance) needs only the <i>module</i> name, not the package name or the fully qualified name. And that's exactly what it gets. (In a flat namespace - like most archives - it is perfectly easy to route the request back up the package tree to the archive <code>Owner</code>, qualifying the name at each step.)</P>
+      <P><h2>Possibilities</h2></P>
+      <P>Let's say we want to import from .zip files. So, we subclass <code>Owner</code>. The <code>__init__</code> method should take a filename, and raise a <code>ValueError</code> if the file is not an acceptable .zip file, (when a new name is encountered on <code>sys.path</code> or a package's <code>__path__</code>, registered <code>Owner</code>s are tried until one accepts the name). The <code>getmod</code> method would check the .zip file's contents and return <code>None</code> if the name is not found. Otherwise, it would extract the marshalled code object from the .zip, create a new module object and perform a bit of initialization (12 lines of code all told for my own archive format, including initializing a package with it's <code>__subimporter__</code>).</P>
+      <P>Once the new <code>Owner</code> class is registered with <code>iu4</code>, you can put a .zip file on <code>sys.path</code>. A package could even put a .zip file on it's <code>__path__</code>.</P>
+      <P><h2>Compatibility</h2></P>
+      <P>This code has been tested with the PyXML, mxBase and Win32 packages, covering over a dozen import hacks from manipulations of <code>__path__</code> to replacing a module in <code>sys.modules</code> with a different one. Emulation of Python's native import is nearly exact, including the names recorded in <code>sys.modules</code> and module attributes (packages imported through <code>iu</code> have an extra attribute - <code>__importsub__</code>).</P>
+      <P><h2>Performance</h2></P>
+      <P>In most cases, <code>iu</code> is slower than builtin import (by 15 to 20%) but faster than <code>imputil</code> (by 15 to 20%). By inserting archives at the front of <code>sys.path</code> containing the standard lib and the package being tested, this can be reduced to 5 to 10% slower (or, on my 1.52 box, 10% faster!) than builtin import. A bit more can be shaved off by manipulating the <code>ImportManager</code>'s metapath.</P>
+      <P><h2>Limitations</h2></P>
+      <P>This module makes no attempt to facilitate <i>policy</i> import hacks. It is easy to implement certain kinds of policies <i>within a particular domain</i>, but fundamentally <code>iu</code> works by dividing up the import namespace into independent domains.</P>
+      <P>Quite simply, I think cross-domain import hacks are a very bad idea. As author of Installer, I have been dealing with import hacks for three years now. Many of them are highly fragile; they often rely on  undocumented (maybe even accidental) features of implementation. A cross-domain import hack is not likely to work with PyXML, for example.</P>
+      <P>That rant aside, you can modify <code>ImportManger</code> to implement different policies. For example, I have a version that implements three import primitives: absolute import, relative import and recursive-relative import. I have no idea what the Python sytax for those should be, but <code>__aimport__</code>, <code>__rimport__</code> and <code>__rrimport__</code> were easy to implement.</P>
+      <P><h2>Usage</h2></P>
+      <P>Here's a simple example of using <code>iu</code> as a builtin import replacement.</P>
+      <P><pre>
+      &gt;&gt;&gt; import iu
+      &gt;&gt;&gt; iu.ImportManager().install()
+      &gt;&gt;&gt;
+      &gt;&gt;&gt; import DateTime
+      &gt;&gt;&gt; DateTime.__importsub__
+      &lt;method PathImportDirector.getmod 
+        of PathImportDirector instance at 825900&gt;
+      &gt;&gt;&gt;
+      </pre>
+      </P>
+      </TD>
+    </TR>
+  <TR>
+      <TD VALIGN="bottom" BGCOLOR="#D8D0F0"><SMALL>copyright 1999-2002<BR>McMillan Enterprises, Inc.<BR></SMALL></TD>
+    </TR>
+  </TABLE></FONT>
+</BODY>
+</HTML>
