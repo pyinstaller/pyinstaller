@@ -1,0 +1,25 @@
+==========
+KNOWN BUGS
+==========
+
+- wxPython hidden dependencies not included
+
+
+
+
+New platforms development status
+================================
+**NOTE**: These platforms are not supported, they are in development
+
+MacOS X (darwin)
+----------------
+	- python framework not detected correctly (broken path in generated Makefile)
+	- multiple definition of objects
+
+SGI IRIX
+--------
+	- (will be started soon)
+
+Solaris
+-------
+	- (need developer)
