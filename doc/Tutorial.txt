@@ -3,16 +3,6 @@ PyInstaller Documentation
 =========================
 
 PyInstaller: HOME_
-Getting Started: begin.txt
-Utilities: utilities.txt
-Spec Files: specfiles.txt
-When Things Go Wrong: help.txt
-Standalone Executables: standalones.txt
-Python Archives: archives.txt
-Analyzing Python Modules: mf4.txt
-An import Framework: iu4.txt
-Bug Tracker: `Submit a Bug`_
-
 
 Table of Contents:
 * `Getting Started`_
@@ -42,15 +32,15 @@ Table of Contents:
 		* Tree
 * `When Things Go Wrong`_
     * Finding out What Went Wrong
-          o Buildtime Warnings
-          o Getting Debug Messages
-          o Getting Python's Verbose Imports
+	* Buildtime Warnings
+	* Getting Debug Messages
+	* Getting Python's Verbose Imports
     * Helping Installer Find Modules
-          o Extending the Path
-          o Listing Hidden Imports
-          o Extending a Package's __path__
-          o Changing Runtime Behavior
-          o Adapting to being "frozen"
+	* Extending the Path
+	* Listing Hidden Imports
+	* Extending a Package's __path__
+	* Changing Runtime Behavior
+	* Adapting to being "frozen"
     * Accessing Data Files
     * Reporting Bugs
     * Miscellaneous
@@ -60,10 +50,12 @@ Table of Contents:
 	* `Archives Introduction`_
 	* `ZlibArchive`_
 	* `CArchive`_
+* `Submit a Bug`_
 * `License`_
 * `Appendix`_
 	* `mf.py: A Modulefinder Replacement`_
 	* `iu.py: An *imputil* Replacement`_
+
 
 
 ===============
@@ -1428,7 +1420,7 @@ Here's a simple example of using iu as a builtin import replacement.
       
 
 .. _HOME: http://pyinstaller.hpcf.upr.edu
-.. _Submit a Bug: http://pyinstaller.hpcf.upr.edu
+.. _`Submit a Bug`: http://pyinstaller.hpcf.upr.edu
 .. |ZlibArchiveImage| image:: ZlibArchive.gif
 .. |CArchiveImage| image:: CArchive.gif
 .. |SE_exeImage| image:: SE_exe.gif
