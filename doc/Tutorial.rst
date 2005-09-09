@@ -1,25 +1,41 @@
-=========================
-PyInstaller Documentation
-=========================
-
-PyInstaller: HOME_
-
+.. _top:
+=======================
+`PyInstaller`_ Tutorial
+=======================
+==================
 Table of Contents:
+==================
+
 * `Getting Started`_
+
 	* `Installing PyInstaller`_
+
 	* `Building the runtime executables`_
+
 	* `Configuring your PyInstaller setup`_
+
 	* `Create a spec file for your project`_
+
 	* `Build your project`_
+
 	* `Windows COM Server support`_
+
 	* `Building Optimized`_
+
 	* `A Note on using UPX`_
+
 	* `A Note on --onefile`_
-* `PyInstaller Utilities`
+
+* `PyInstaller Utilities`_
+
 	* `ArchiveViewer`_
+
 	* `GrabVersion (Windows)`_
+
 	* `Analyzing Dependencies`_
-* `PyInstaller Spec Files`
+
+* `PyInstaller Spec Files`_
+
 	* Introduction
 	* TOC Class (Table of Contents)
 	* Target Subclasses
@@ -54,7 +70,7 @@ Table of Contents:
 * `License`_
 * `Appendix`_
 	* `mf.py: A Modulefinder Replacement`_
-	* `iu.py: An *imputil* Replacement`_
+	* `iu.py`_: An *imputil* Replacement
 
 
 
@@ -77,6 +93,8 @@ other words, you will need a separate copy of |PyInstaller| for each Python
 version you wish to work with *or* you'll need to rerun Configure.py every time
 you switch the Python version).
 
+|GOBACK|
+
 
 Building the runtime executables
 --------------------------------
@@ -86,7 +104,7 @@ pythonXX.dll, and |PyInstaller| will use your pythonXX.dll.
 
 On Linux the first thing to do is build the runtime executables.
 
-Change to the |install_path|source/linux subdirectory. Run Make.py [-n|-e] and
+Change to the |install_path| source/linux subdirectory. Run Make.py [-n|-e] and
 then make. This will produce support/run and support/run_d.
 
 *Note:* If you have multiple versions of Python, the Python you use to run
@@ -110,6 +128,8 @@ optimizations - I suggest you disable them in the release builds.
 Note that the \_d suffix does not mean the same as it does with extension
 modules - you don't need a debug build of Python to use them.
 
+|GOBACK|
+
 Configuring your PyInstaller setup
 ----------------------------------
 
@@ -117,6 +137,8 @@ In the |install_path| directory, run Configure.py. This saves some information
 into config.dat that would otherwise be recomputed every time. It can be rerun
 at any time if your configuration changes. It must be run before trying to
 build anything.
+
+|GOBACK|
 
 
 Create a spec file for your project
@@ -184,6 +206,8 @@ actually Python code, and modifying it should be ease. See Spec Files for
 details.
 
 
+|GOBACK|
+
 Build your project
 ------------------
 
@@ -198,6 +222,8 @@ include distproject, which is the directory you're interested in. For a
 
 In most cases, this will be all you have to do. If not, see When things go
 wrong and be sure to read the introduction to Spec Files.
+
+|GOBACK|
 
 Windows COM Server support
 --------------------------
@@ -244,6 +270,7 @@ exe:
 MakeCOMServer also assumes that your top level code (registration etc.) is
 "normal". If it's not, you will have to edit the generated script.
 
+|GOBACK|
 
 
 Building Optimized
@@ -263,6 +290,8 @@ TOCs building the EXE.
                 ...
 
 See `Spec Files` for details.
+
+|GOBACK|
 
 
 A Note on using UPX
@@ -286,6 +315,8 @@ upx for CGI's executed by Apache. Otherwise, you can ignore the warnings in
 the UPX docs, since what Installer opens is the executable Installer created,
 not the temporary upx-created executable.
 
+|GOBACK|
+
 A Note on --onefile
 -------------------
 
@@ -302,19 +333,27 @@ complete, it recursively removes the entire directory it created.
 This has a number of implications:
 
 * You can run multiple copies - they won't collide.
+
 * Running multiple copies will be rather expensive to the system (nothing is
   shared).
+
 * If you're using the cheat of adding user data as 'BINARY', it will be in
   os.environ['_MEIPASS2'], not the executable's directory.
+
 * On Windows, using Task Manager to kill the parent process will leave the
   directory behind.
-* On *nix, a kill -9 (or crash) will leave the directory behind.
+
+* On \*nix, a kill -9 (or crash) will leave the directory behind.
+
 * Otherwise, on both platforms, the directory will be recursively deleted.
+
 * So any files you might create in os.environ['_MEIPASS2'] will be deleted.
+
 * The executable can be in a protected or read-only directory. 
+
 * If for some reason, the _MEIpid directory already exists, the executable
   will fail. It is created mode 0700, so only the one user can modify it
-  (on *nix, of course).
+  (on \*nix, of course).
 
 
 While we are not a security expert, we believe the scheme is good enough for
@@ -325,8 +364,8 @@ library is extracted and when it gets loaded by the execvp'd process. So maybe
 you shouldn't do setuid root programs using --onefile. **In fact, we do not
 recomend the use of --onefile on setuid programs.**
 
+|GOBACK|
 
-====================
 PyInstaller Utilities
 =====================
 
@@ -355,6 +394,8 @@ Q
     Quit.
 
 
+|GOBACK|
+
 
 GrabVersion (Windows)
 ---------------------
@@ -379,15 +420,17 @@ easiest thing to do is find an executable that displays the kind of
 information you want, grab it's resource and edit it. Certainly easier than
 the Version resource wizard in VC++.
 
+|GOBACK|
 
 
 Analyzing Dependencies
 ----------------------
 
 You can interactively track down dependencies, including getting
-cross-references by using mf.py, documented in section `A modulefinder
+cross-references by using mf.py, documented in section `mf.py: A modulefinder
 Replacement`_
 
+|GOBACK|
 
 ======================
 PyInstaller Spec Files
@@ -432,6 +475,8 @@ A PYZ (a .pyz archive) is built from the modules in pure. The EXE is built from
 the PYZ, the scripts and, in the case of a single-file deployment, the
 binaries. In a single-directory deployment, a directory is built containing a
 slim EXE and the binaries.
+
+|GOBACK|
 
 TOC Class (Table of Contents)
 -----------------------------
@@ -529,6 +574,7 @@ becomes possible to factor out common modules, and deploy a project containing
 multiple executables with minimal redundancy. You'll need some top level code
 in each executable to mount the common PYZ.
 
+|GOBACK|
 
 Target Subclasses
 -----------------
@@ -566,6 +612,7 @@ binaries
     filtered. On Windows, a long list of MS dlls are excluded. On Linux/Unix,
     any shared lib in /lib or /usr/lib is excluded. 
 
+|GOBACK|
 
 PYZ
 ---
@@ -582,6 +629,8 @@ name
 level
     The Zlib compression level to use. If 0, the zlib module is not required. 
 
+
+|GOBACK|
 
 PKG
 ---
@@ -608,9 +657,11 @@ exclude_binaries
     If 1, EXTENSIONs and BINARYs will be left out of the PKG, and forwarded to
     its container (ususally a COLLECT). 
 
+|GOBACK|
+
 EXE
 ---
-      EXE(*args, **kws)
+      EXE(\*args, \*\*kws)
       
 
 args
@@ -649,6 +700,8 @@ the run executable is simply renamed, and expects a exename.pkg in the same
 directory). Which class becomes available as EXE is determined by a flag in
 config.dat. This flag is set to non-ELF when using Make.py -n.
 
+|GOBACK|
+
 DLL
 ---
 
@@ -658,10 +711,12 @@ purpose DLL so the Python support in their app is hidden. You will need to
 write your own dll, but thanks to Allan Green for refactoring the C code and
 making that a managable task.
 
+|GOBACK|
+
 COLLECT
 -------
 
-      COLLECT(*args, **kws)
+      COLLECT(\*args, \*\*kws)
       
 
 args
@@ -671,6 +726,8 @@ kws
 
     name
         The name of the directory to be built. 
+
+|GOBACK|
 
 Tree
 ----
@@ -689,13 +746,14 @@ excludes
     name
         files with this basename will be excluded (do not include the path). 
 
-    *.ext
+    \*.ext
         any file with the given extension will be excluded. 
 
 Since a Tree is a TOC, you can also use the exclude technique described above
 in the section on TOCs. 
 
 
+|GOBACK|
 
 ====================
 When Things Go Wrong
@@ -738,6 +796,8 @@ is more benign.
 Any problem detected here can be handled by hooking the analysis of the module.
 See *Listing Hidden Imports* below for how to do it.
 
+|GOBACK|
+
 Getting Debug Messages
 ----------------------
 
@@ -745,6 +805,8 @@ Setting debug=1 on an EXE will cause the executable to put out progress
 messages (for console apps, these go to stdout; for Windows apps, these show as
 MessageBoxes). This can be useful if you are doing complex packaging, or your
 app doesn't seem to be starting, or just to learn how the runtime works.
+
+|GOBACK|
 
 Getting Python's Verbose Imports
 --------------------------------
@@ -765,6 +827,8 @@ the EXE. The easiest way to do this is to change the EXE from:
 
 These messages will always go to stdout, so you won't see them on Windows if
 console=0.
+
+|GOBACK|
 
 Helping Installer Find Modules
 ------------------------------
@@ -790,7 +854,9 @@ You can do the same when running Makespec
        Makespec.py --paths=path/to/thisdir;path/to/thatdir ...
       
 
-(on *nix, use : as the path separator).
+(on \*nix, use : as the path separator).
+
+|GOBACK|
 
 Listing Hidden Imports
 ----------------------
@@ -822,6 +888,8 @@ hook mechanism is here).
 If you successfully hook a publicly distributed module in this way, please send
 us the hook so I can make it available to others.
 
+|GOBACK|
+
 Extending a Package's __path__
 ------------------------------
 
@@ -848,6 +916,8 @@ and only the analysis. That is, at runtime win32com.shell is resolved the same
 way as win32com.anythingelse, and win32com.__path__ knows nothing of ../win32comext.
 
 Once in awhile, that's not enough.
+
+|GOBACK|
 
 Changing Runtime Behavior
 -------------------------
@@ -879,6 +949,8 @@ free to do almost anything. One provided hook sets things up so that win32com
 can generate modules at runtime (to disk), and the generated modules can be
 found in the win32com package.
 
+|GOBACK|
+
 Adapting to being "frozen"
 --------------------------
 
@@ -893,6 +965,8 @@ embedding DLL sets sys.frozen='dll').
 
 For really advanced users, you can access the iu.ImportManager as
 sys.importManager. See iu for how you might make use of this fact.
+
+|GOBACK|
 
 Accessing Data Files
 --------------------
@@ -925,6 +999,8 @@ to get the contents as a binary string. See support/unpackTK.py for an advanced
 example (the TCL and TK lib files are in a PKG which is opened in place, and
 then extracted to the filesystem).
 
+|GOBACK|
+
 Miscellaneous
 -------------
 
@@ -935,6 +1011,8 @@ Pmw comes with a script named bundlepmw in the bin directory. If you follow the
 instructions in that script, you'll end up with a module named Pmw.py. Ensure
 that Builder finds that module and not the development package.
 
+|GOBACK|
+
 Win9xpopen
 ----------
 
@@ -943,6 +1021,7 @@ need to distribute win9xpopen.exe with your app. On older Pythons with
 Win32all, this would apply to Win32pipe and win32popenWin9x.exe. (On yet older
 Pythons, no form of popen worked on Win9x). 
 
+|GOBACK|
 
 ===========================
 Self-extracting executables
@@ -958,6 +1037,8 @@ On other platforms, the archive and the executable are separate, but the
 archive is named executable.pkg, and expected to be in the same directory.
 Other than that, the process is the same.
 
+|GOBACK|
+
 One Pass Execution
 ------------------
 
@@ -965,13 +1046,20 @@ In a single directory deployment (--onedir, which is the default), all of the
 binaries are already in the file system. In that case, the embedding app:
 
 * opens the archive
+
 * starts Python (on Windows, this is done with dynamic loading so one embedding
   app binary can be used with any Python version)
+
 * imports all the modules which are at the top level of the archive (basically,
   bootstraps the import hooks)
+
 * mounts the ZlibArchive(s) in the outer archive
+
 * runs all the scripts which are at the top level of the archive
+
 * finalizes Python
+
+|GOBACK|
 
 Two Pass Execution
 ------------------
@@ -981,20 +1069,27 @@ There are a couple situations which require two passes:
 * a --onefile deployment (on Windows, the files can't be cleaned up afterwards
   because Python does not call FreeLibrary; on other platforms, Python won't
   find them if they're extracted in the same process that uses them)
+
 * LD_LIBRARY_PATH needs to be set to find the binaries (not extension modules,
   but modules the extensions are linked to). 
 
 The first pass:
 
 * opens the archive
+
 * extracts all the binaries in the archive (in 5b5, this is always to a
   temporary directory).
+
 * sets a magic environment variable
+
 * sets LD_LIBRARY_PATH (non-Windows)
+
 * executes itself as a child process (letting the child use his stdin, stdout
   and stderr)
-* waits for the child to exit (on *nix, the child actually replaces the parent)
-* cleans up the extracted binaries (so on *nix, this is done by the child) 
+
+* waits for the child to exit (on \*nix, the child actually replaces the parent)
+
+* cleans up the extracted binaries (so on \*nix, this is done by the child) 
 
 The child process executes as in One Pass Execution above (the magic
 environment variable is what tells it that this is pass two).
@@ -1016,6 +1111,7 @@ sys.path.
 In both cases, while one Installer download can be used with any Python
 version, you need to have separate installations for each Python version.
 
+|GOBACK|
 
 ====================
 PyInstaller Archives
@@ -1032,6 +1128,8 @@ blobs of data. It gets its name from the fact that it can be manipulated easily
 from C, as well as from Python. Both of these derive from a common base class,
 making it fairly easy to create new kinds of archives.
 
+|GOBACK|
+
 ZlibArchive
 -----------
 A ZlibArchive contains compressed .pyc (or .pyo) files. The Table of Contents
@@ -1039,7 +1137,7 @@ is a marshalled dictionary, with the key (the module's name as given in an
 "import" statement) associated with a seek position and length. Because it is
 all marshaled Python, ZlibArchives are completely cross-platform.
 
-A ZlibArchive hooks in with iu.py_ so that, with a little setup, the archived
+A ZlibArchive hooks in with `iu.py`_ so that, with a little setup, the archived
 modules can be imported transparently. Even with compression at level 9, this
 works out to being faster than the normal import. Instead of searching
 sys.path, there's a lookup in the dictionary. There's no stat-ing of the .py
@@ -1050,6 +1148,8 @@ compiled). On a user's box with no source installed, this is not terribly
 useful, but if they send you the traceback, at least you can make sense of it.
 
 |ZlibArchiveImage|
+
+|GOBACK|
 
 CArchive
 --------
@@ -1073,10 +1173,15 @@ are used by the self-extracting executables.
 
 |CArchiveImage|
 
+|GOBACK|
+
+
 =======
 License
 =======
 See License.txt
+
+|GOBACK|
 
 ========
 Appendix
@@ -1094,6 +1199,8 @@ objects, they are identical.
 
 Instead of an ImportManager, mf has an ImportTracker managing things.
 
+|GOBACK|
+
 ImportTracker
 -------------
 
@@ -1104,6 +1211,8 @@ cause to appear in sys.modules. The first method is non-recursive. This is
 useful, because it is the only way of answering the question "Who imports
 name?" But since it is somewhat unrealistic (very few real imports do not
 involve recursion), it deserves some explanation.
+
+|GOBACK|
 
 analyze_one()
 -------------
@@ -1121,6 +1230,8 @@ or ["A.B", "A.B.C"] depending on whether the import turns out to be relative or
 absolute. In addition, ImportTracker's modules dict will have Module instances
 for them.
 
+|GOBACK|
+
 Module Classes
 --------------
 
@@ -1137,6 +1248,8 @@ when the import of B.C finally occurs, something completely different happens
 (from what a structural analysis would predict). But mf can handle this through
 it's hooks mechanism.
 
+|GOBACK|
+
 code scanning
 -------------
 
@@ -1151,6 +1264,8 @@ The code scanning also keeps track (as well as it can) of the context of an
 import. It recognizes when imports are found at the top-level, and when they
 are found inside definitions (deferred imports). Within that, it also tracks
 whether the import is inside a condition (conditional imports).
+
+|GOBACK|
 
 Hooks
 -----
@@ -1187,6 +1302,8 @@ the poor programmer using that package). The hook(mod) (if it exists) is
 called before looking at the others - that way it can, for example, test
 sys.version and adjust what's in hiddenimports.
 
+|GOBACK|
+
 Warnings
 --------
 
@@ -1199,6 +1316,8 @@ during the code scan.
 Note that by using a hook module, you can silence some particularly tiresome
 warnings, but not all of them.
 
+|GOBACK|
+
 Cross Reference
 ---------------
 
@@ -1207,6 +1326,8 @@ cross reference by using getxref(). This returns a list of tuples. Each tuple
 is (modulename, importers), where importers is a list of the (fully qualified)
 names of the modules importing modulename. Both the returned list and the
 importers list are sorted.
+
+|GOBACK|
 
 Usage
 -----
@@ -1253,11 +1374,12 @@ The tuples in the imports list are (name, delayed, conditional).
       >>>
       
 
+|GOBACK|
 
-==============================
-iu.py An *imputil* Replacement
-==============================
-
+===============================
+iu.py: An *imputil* Replacement
+===============================
+_`iu.py`
 Module iu grows out of the pioneering work that Greg Stein did with imputil
 (actually, it includes some verbatim imputil code, but since Greg didn't
 copyright it, we won't mention it). Both modules can take over Python's
@@ -1271,6 +1393,8 @@ builtin import and ease writing of at least certain kinds of import hooks.
 There is an ImportManager which provides the replacement for builtin import
 and hides all the semantic complexities of a Python import request from it's
 delegates..
+
+|GOBACK|
 
 ImportManager
 -------------
@@ -1290,6 +1414,8 @@ It's up to the ImportManager to decide if an import is relative or absolute;
 to see if the module has already been imported; to keep sys.modules up to
 date; to handle the fromlist and return the correct module object.
 
+|GOBACK|
+
 ImportDirectors
 ---------------
 
@@ -1298,6 +1424,8 @@ object or None. As you will see, an ImportDirector can consider name to be
 atomic - it has no need to examine name to see if it is dotted.
 
 To see how this works, we need to examine the PathImportDirector.
+
+|GOBACK|
 
 PathImportDirector
 ------------------
@@ -1309,6 +1437,8 @@ directly, but the assumption that sys.path is occupied solely by strings seems
 ineradicable.) Owners of the appropriate kind are created as needed (if all
 your imports are satisfied by the first two elements of sys.path, the
 PathImportDirector's shadowpath will only have two entries).
+
+|GOBACK|
 
 Owners
 ------
@@ -1331,6 +1461,8 @@ namespace.
 The rest of the import namespace is covered by treelets, each rooted in a
 package module (an __init__.py).
 
+|GOBACK|
+
 Packages
 --------
 
@@ -1350,6 +1482,8 @@ exactly what it gets. (In a flat namespace - like most archives - it is
 perfectly easy to route the request back up the package tree to the archive
 Owner, qualifying the name at each step.)
 
+|GOBACK|
+
 Possibilities
 -------------
 
@@ -1366,6 +1500,8 @@ age with it's __subimporter__).
 Once the new Owner class is registered with iu4, you can put a .zip file on
 sys.path. A package could even put a .zip file on it's __path__.
 
+|GOBACK|
+
 Compatibility
 -------------
 
@@ -1375,6 +1511,8 @@ in sys.modules with a different one. Emulation of Python's native import is
 nearly exact, including the names recorded in sys.modules and module attributes
 (packages imported through iu have an extra attribute - __importsub__).
 
+|GOBACK|
+
 Performance
 -----------
 
@@ -1383,6 +1521,8 @@ imputil (by 15 to 20%). By inserting archives at the front of sys.path
 containing the standard lib and the package being tested, this can be reduced
 to 5 to 10% slower (or, on my 1.52 box, 10% faster!) than builtin import. A bit
 more can be shaved off by manipulating the ImportManager's metapath.
+
+|GOBACK|
 
 Limitations
 -----------
@@ -1418,11 +1558,15 @@ Here's a simple example of using iu as a builtin import replacement.
         of PathImportDirector instance at 825900>
       >>>
       
+|GOBACK|
 
-.. _HOME: http://pyinstaller.hpcf.upr.edu
+.. _PyInstaller: http://pyinstaller.hpcf.upr.edu
 .. _`Submit a Bug`: http://pyinstaller.hpcf.upr.edu
 .. |ZlibArchiveImage| image:: ZlibArchive.gif
 .. |CArchiveImage| image:: CArchive.gif
 .. |SE_exeImage| image:: SE_exe.gif
-.. |PyInstaller| replace:: PyInstaller v1.0
+.. |PyInstaller| replace:: PyInstaller
+.. |PyInstallerVersion| replace:: PyInstaller v1.0
+.. |InitialVersion| replace:: v1.0
 .. |install_path| replace:: /your/path/to/pyinstaller/
+.. |GOBACK| replace:: top_
