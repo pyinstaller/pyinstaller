@@ -94,7 +94,7 @@ def make_variable_path(filename, conversions = path_conversions):
     for (from_path, to_name) in conversions:
         assert os.path.abspath(from_path)==from_path, \
             "path '%s' should already be absolute" % (from_path,)
-        if filename.startswith(from_path):
+        if filename[:len(from_path)] == from_path:
             rest = filename[len(from_path):]
             if rest[0] in "\\/":
                 rest = rest[1:]
@@ -105,7 +105,7 @@ def make_variable_path(filename, conversions = path_conversions):
 # itself using variable names instead of hard-coded paths.
 class Path:
     def __init__(self, *parts):
-        self.path = os.path.join(*parts)
+        self.path = apply(os.path.join, parts)
         self.variable_prefix = self.filename_suffix = None
     def __repr__(self):
         if self.filename_suffix is None:
