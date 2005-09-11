@@ -33,15 +33,20 @@ if platform.name == "win32":
             for mode in "cons", "win":
                 env = base_env.Copy()
 
+                # The DLL runtime must be the same of that used by the python DLL.
+                # I cannot think of a way to guess it from here, so let's assume
+                # the user has a non-debug build of Python in his system.
+                env.Append(CCFLAGS = ["/MD"])
+
                 if flavour == "debug":
-                    # Use debug multithreaded DLL runtime, and no optimization
-                    env.Append(CCFLAGS = ["/MDd", "/Od"])
+                    # No optimizations
+                    env.Append(CCFLAGS = ["/Od"])
                     # Each object has its own pdb, so -jN works
                     env.Append(CCFLAGS = ["/Zi", "/Fd${TARGET}.pdb"])
                     env.Append(LINKFLAGS = ["/DEBUG"])
                 else:
-                    # Use multithreaded DLL runtime, and some sensible amount of optimization
-                    env.Append(CCFLAGS = ["/MD", "/Ox", "/DNDEBUG"])
+                    # Use some sensible amount of optimizations
+                    env.Append(CCFLAGS = ["/Ox", "/DNDEBUG"])
 
                 if mode == "cons":
                     env.Append(CPPDEFINES = ["_CONSOLE"])
