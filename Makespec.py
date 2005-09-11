@@ -123,10 +123,7 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
     if pathex is None:
         pathex = []
     elif type(pathex) is type(''):
-        if iswin:
-            pathex = string.split(pathex, ';')
-        else:
-            pathex = string.split(pathex, ':')
+        pathex = string.split(pathex, os.pathsep)
     if workdir is None:
         workdir = os.getcwd()
         pathex.append(workdir)
