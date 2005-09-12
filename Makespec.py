@@ -158,7 +158,8 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
     if not ascii and config['hasUnicode']:
         scripts.insert(0, os.path.join(HOME, 'support', 'useUnicode.py'))
     for i in range(len(scripts)):
-        scripts[i] = Path(scripts[i])
+        scripts[i] = Path(os.path.abspath(scripts[i])) # Use absolute path in specfiles to avoid problems
+
     d = {'tktree':'',
          'tkpkg' :'',
          'scripts':scripts,
@@ -214,7 +215,7 @@ Usage: python %s [options] <scriptname> [<scriptname> ...]
  --icon file.exe,id -> add the icon with id from file.exe to the exe (Windows only)
  --version verfile -> add a version resource from verfile to the exe (Windows only)
 The next step is to run Build.py against the generated spec file.
-See doc/begin.html for details.
+See doc/Tutorial.html for details.
 """
 
 #scripts, name=None, tk=0, freeze=0, console=1, debug=0,workdir=None, pathex=None

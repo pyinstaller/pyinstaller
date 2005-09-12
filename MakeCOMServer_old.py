@@ -139,7 +139,7 @@ Usage: python %s [options] <scriptname>.py [<scriptname>.py ...]
  --out dir -> generate script and spec file in dir
 
 The next step is to run Build.py against the generated spec file.
-See doc/begin.html for details.
+See doc/Tutorial.html for details.
 """
 
 if __name__ == '__main__':

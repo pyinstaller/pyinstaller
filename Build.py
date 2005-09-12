@@ -487,7 +487,7 @@ class ELFEXE(Target):
             exe = exe + "rd"[self.debug]
             exe = exe + "wc"[self.console]
         else:
-            exe = 'support/run'
+            exe = 'support/loader/run'
             if not self.console:
                 exe = exe + 'w'
             if self.debug:
@@ -534,7 +534,7 @@ class DLL(ELFEXE):
     def assemble(self):
         print "building DLL", os.path.basename(self.out)
         outf = open(self.name, 'wb')
-        dll = 'support/inprocsrvr'
+        dll = 'support/loader/inprocsrvr'
         if self.debug:
             dll = dll + '_d'
         dll = os.path.join(HOMEPATH, dll)  + '.dll'
@@ -552,7 +552,7 @@ class NonELFEXE(ELFEXE):
     def assemble(self):
         print "building NonELFEXE", os.path.basename(self.out)
         trash = []
-        exe = 'support/run'
+        exe = 'support/loader/run'
         if not self.console:
             exe = exe + 'w'
         if self.debug:
@@ -799,7 +799,7 @@ def TkPKG():
 usage = """\
 Usage: python %s <specfile>
 
-See doc/specfiles.html for details.
+See doc/Tutorial.html for details.
 """
 
 if __name__ == '__main__':

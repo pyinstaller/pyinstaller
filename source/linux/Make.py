@@ -106,8 +106,8 @@ def main():
     configf.close()
 
     targets = [None, None]
-    targets[0] = os.path.join('../../support', 'run')
-    targets[1] = os.path.join('../../support', 'run_d')
+    targets[0] = os.path.join('../../support/loader/', 'run')
+    targets[1] = os.path.join('../../support/loader/', 'run_d')
 
     includes = ['-I../common', '-I' + incldir, '-I' + config_h_dir]
 
