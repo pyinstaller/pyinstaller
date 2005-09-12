@@ -1,10 +1,11 @@
-.. _top:
-=======================
-`PyInstaller`_ Tutorial
-=======================
-==================
+====================
+PyInstaller Tutorial
+====================
+
 Table of Contents:
-==================
+++++++++++++++++++
+
+* `PyInstaller`_ Home Page
 
 * `Getting Started`_
 
@@ -74,12 +75,11 @@ Table of Contents:
 
 
 
-===============
 Getting Started
-===============
++++++++++++++++
 
-_`Installing PyInstaller`
--------------------------
+Installing PyInstaller
+----------------------
 
 First, unpack the archive on you path of choice. Installer is **not** a Python
 package, so it doesn't need to go in site-packages, or have a .pth file. For
@@ -367,7 +367,7 @@ recomend the use of --onefile on setuid programs.**
 |GOBACK|
 
 PyInstaller Utilities
-=====================
++++++++++++++++++++++
 
 ArchiveViewer
 -------------
@@ -432,9 +432,9 @@ Replacement`_
 
 |GOBACK|
 
-======================
+
 PyInstaller Spec Files
-======================
+++++++++++++++++++++++
 
 Introduction
 ------------
@@ -577,7 +577,7 @@ in each executable to mount the common PYZ.
 |GOBACK|
 
 Target Subclasses
------------------
++++++++++++++++++
 
 Analysis
 --------
@@ -755,15 +755,14 @@ in the section on TOCs.
 
 |GOBACK|
 
-====================
 When Things Go Wrong
-====================
+++++++++++++++++++++
 
 Finding out What Went Wrong
 ---------------------------
 
 Buildtime Warnings
-------------------
+******************
 
 When an Analysis step runs, it produces a warnings file (named warnproject.txt)
 in the spec file's directory. Generally, most of these warnings are harmless.
@@ -799,7 +798,7 @@ See *Listing Hidden Imports* below for how to do it.
 |GOBACK|
 
 Getting Debug Messages
-----------------------
+**********************
 
 Setting debug=1 on an EXE will cause the executable to put out progress
 messages (for console apps, these go to stdout; for Windows apps, these show as
@@ -809,7 +808,7 @@ app doesn't seem to be starting, or just to learn how the runtime works.
 |GOBACK|
 
 Getting Python's Verbose Imports
---------------------------------
+********************************
 
 You can also pass a -v (verbose imports) flag to the embedded Python. This can
 be extremely useful. I usually try it even on apparently working apps, just to
@@ -834,7 +833,7 @@ Helping Installer Find Modules
 ------------------------------
 
 Extending the Path
-------------------
+******************
 
 When the analysis phase cannot find needed modules, it may be that the code is
 manipulating sys.path. The easiest thing to do in this case is tell Analysis
@@ -859,7 +858,7 @@ You can do the same when running Makespec
 |GOBACK|
 
 Listing Hidden Imports
-----------------------
+**********************
 
 Hidden imports are fairly common. These can occur when the code is using
 __import__ (or, perhaps exec or eval), in which case you will see a warning in
@@ -891,7 +890,7 @@ us the hook so I can make it available to others.
 |GOBACK|
 
 Extending a Package's __path__
-------------------------------
+******************************
 
 Python allows a package to extend the search path used to find modules and
 sub-packages through the __path__ mechanism. Normally, a package's __path__ has
@@ -920,7 +919,7 @@ Once in awhile, that's not enough.
 |GOBACK|
 
 Changing Runtime Behavior
--------------------------
+*************************
 
 More bizarre situations can be accomodated with runtime hooks. These are small
 scripts that manipulate the environment before your main script runs,
@@ -952,7 +951,7 @@ found in the win32com package.
 |GOBACK|
 
 Adapting to being "frozen"
---------------------------
+**************************
 
 In most sophisticated apps, it becomes necessary to figure out (at runtime)
 whether you're running "live" or "frozen". For example, you might have a
@@ -969,7 +968,7 @@ sys.importManager. See iu for how you might make use of this fact.
 |GOBACK|
 
 Accessing Data Files
---------------------
+********************
 
 In a --onedir distribution, this is easy: pass a list of your data files
 (in TOC format) to the COLLECT, and they will show up in the distribution
@@ -1002,7 +1001,7 @@ then extracted to the filesystem).
 |GOBACK|
 
 Miscellaneous
--------------
++++++++++++++
 
 Pmw
 ---
@@ -1023,9 +1022,8 @@ Pythons, no form of popen worked on Win9x).
 
 |GOBACK|
 
-===========================
 Self-extracting executables
-===========================
+---------------------------
 
 The ELF executable format (Windows, Linux and some others) allows arbitrary
 data to be concatenated to the end of the executable without disturbing it's
@@ -1113,9 +1111,8 @@ version, you need to have separate installations for each Python version.
 
 |GOBACK|
 
-====================
 PyInstaller Archives
-====================
+++++++++++++++++++++
 
 Archives Introduction
 ---------------------
@@ -1176,20 +1173,37 @@ are used by the self-extracting executables.
 |GOBACK|
 
 
-=======
 License
-=======
-See License.txt
++++++++
+PyInstaller is mainly distributed  under the
+`GPL License <http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/doc/LICENSE.GPL?rev=latest>`_
+but it has an exception such that you can use it to compile commercial products.
+
+In a nutshell the license is GPL for the source code with the exception that:
+
+ #. You may use PyInstaller to compile commercial applications out of your
+    source code
+
+ #. The resulting binaries generated by PyInstaller of your source code can be
+    shipped with whatever license you want.
+
+ #. You may modify PyInstaller for your own needs but *this* changes to the
+    PyInstaller source code falls under the terms of the GPL license. In other
+    words, any modifications to will *have* to be distributed under GPL.
+
+For updated information or clarification see our
+`FAQ <http://pyinstaller.hpcf.upr.edu/pyinstaller/wiki/FAQ>`_ at `PyInstaller`_
+home page: http://pyinstaller.hpcf.upr.edu
+
+
 
 |GOBACK|
 
-========
 Appendix
-========
+++++++++
 
-=================================
 mf.py: A Modulefinder Replacement
-=================================
+---------------------------------
 
 Module mf is modelled after iu.
 
@@ -1376,10 +1390,12 @@ The tuples in the imports list are (name, delayed, conditional).
 
 |GOBACK|
 
-===============================
+
+.. _iu.py:
+
 iu.py: An *imputil* Replacement
-===============================
-_`iu.py`
+-------------------------------
+
 Module iu grows out of the pioneering work that Greg Stein did with imputil
 (actually, it includes some verbatim imputil code, but since Greg didn't
 copyright it, we won't mention it). Both modules can take over Python's
@@ -1560,8 +1576,8 @@ Here's a simple example of using iu as a builtin import replacement.
       
 |GOBACK|
 
-.. _PyInstaller: http://pyinstaller.hpcf.upr.edu
-.. _`Submit a Bug`: http://pyinstaller.hpcf.upr.edu
+.. _PyInstaller: http://pyinstaller.hpcf.upr.edu/pyinstaller
+.. _`Submit a Bug`: http://pyinstaller.hpcf.upr.edu/pyinstaller/newticket
 .. |ZlibArchiveImage| image:: ZlibArchive.gif
 .. |CArchiveImage| image:: CArchive.gif
 .. |SE_exeImage| image:: SE_exe.gif
@@ -1569,4 +1585,5 @@ Here's a simple example of using iu as a builtin import replacement.
 .. |PyInstallerVersion| replace:: PyInstaller v1.0
 .. |InitialVersion| replace:: v1.0
 .. |install_path| replace:: /your/path/to/pyinstaller/
-.. |GOBACK| replace:: top_
+.. |GOBACK| replace:: `Back to Top`_
+.. _`Back to Top`: `PyInstaller Tutorial`_
