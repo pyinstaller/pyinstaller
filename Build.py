@@ -463,11 +463,18 @@ class ELFEXE(Target):
         print "building ELFEXE", os.path.basename(self.out)
         trash = []
         outf = open(self.name, 'wb')
-        exe = 'support/run'
-        if not self.console:
-            exe = exe + 'w'
-        if self.debug:
-            exe = exe + '_d'
+        if iswin:
+            exe = 'support/loader/run_'
+            is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
+            exe = exe + "67"[is24]
+            exe = exe + "rd"[self.debug]
+            exe = exe + "wc"[self.console]
+        else:
+            exe = 'support/run'
+            if not self.console:
+                exe = exe + 'w'
+            if self.debug:
+                exe = exe + '_d'
         exe = os.path.join(HOMEPATH, exe)
         if iswin or cygwin:
             exe = exe + '.exe'
