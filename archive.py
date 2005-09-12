@@ -15,11 +15,12 @@
 _verbose = 0
 _listdir = None
 _environ = None
+
+# **NOTE** This module is used during bootstrap. Import *ONLY* builtin modules.
 import marshal
 import struct
 import imp
 import sys
-import string
 
 _c_suffixes = filter(lambda x: x[2] == imp.C_EXTENSION, imp.get_suffixes())
 
@@ -325,7 +326,7 @@ class ZlibArchive(Archive):
             except (IOError, ValueError, EOFError, AttributeError):
                 raise ValueError("bad bytecode in %s and no source" % pth)
         else:
-            txt = string.join(string.split(txt, '\r\n'), '\n')
+            txt = iu._string_replace(txt, '\r\n', '\n')
             try:
                 co = compile(txt, "%s/%s" % (self.path, nm), 'exec')
             except SyntaxError, e:

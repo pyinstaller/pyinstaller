@@ -1,3 +1,4 @@
+# **NOTE** This module is used during bootstrap. Import *ONLY* builtin modules.
 import sys
 import imp
 import marshal
@@ -496,5 +497,61 @@ def _os_bootstrap():
     global _os_getcwd
     _os_getcwd = getcwd
 
-_os_bootstrap()
+_string_replace = _string_join = _string_split = None
+def _string_bootstrap():
+    """
+    Set up 'string' module replacement functions for use during import bootstrap.
 
+    During bootstrap, we can use only builtin modules since import does not work
+    yet. For Python 2.0+, we can use string methods so this is not a problem.
+    For Python 1.5, we would need the string module, so we need replacements.
+    """
+    s = type('')
+
+    global _string_replace, _string_join, _string_split
+
+    if hasattr(s, "join"):
+        _string_join = s.join
+    else:
+        def join(sep, words):
+            res = ''
+            for w in words:
+                    res = res + (sep + w)
+            return res[len(sep):]
+        _string_join = join
+
+    if hasattr(s, "split"):
+        _string_split = s.split
+    else:
+        def split(s, sep, maxsplit=0):
+            res = []
+            nsep = len(sep)
+            if nsep == 0:
+                    return [s]
+            ns = len(s)
+            if maxsplit <= 0: maxsplit = ns
+            i = j = 0
+            count = 0
+            while j+nsep <= ns:
+                    if s[j:j+nsep] == sep:
+                            count = count + 1
+                            res.append(s[i:j])
+                            i = j = j + nsep
+                            if count >= maxsplit: break
+                    else:
+                            j = j + 1
+            res.append(s[i:])
+            return res
+        _string_split = split
+
+    if hasattr(s, "replace"):
+        _string_replace = s.replace
+    else:
+        def replace(str, old, new):
+            return _string_join(new, _string_split(str, old))
+        _string_replace = replace
+
+
+
+_os_bootstrap()
+_string_bootstrap()
