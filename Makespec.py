@@ -158,7 +158,7 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
     if not ascii and config['hasUnicode']:
         scripts.insert(0, os.path.join(HOME, 'support', 'useUnicode.py'))
     for i in range(len(scripts)):
-        scripts[i] = Path(os.path.abspath(scripts[i])) # Use absolute path in specfiles to avoid problems
+        scripts[i] = Path(scripts[i]) # Use relative path in specfiles
 
     d = {'tktree':'',
          'tkpkg' :'',
