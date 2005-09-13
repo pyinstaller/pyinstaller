@@ -14,6 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+# This program will execute any file with name test*<digit>.py. If your test
+# need an aditional dependency name it test*<digit><letter>.py to be ignored
+# by this program but be recognizable by any one as a dependency of that
+# particual test.
+
 import os, sys, glob, string
 import shutil
 try:
@@ -45,15 +51,26 @@ def clean():
         except OSError, e:
             print e
 
+    specfiles = glob.glob(os.path.join(here, 'test*.spec'))
+    for file in specfiles:
+        try:
+            os.remove(file)
+        except OSError, e:
+            print e
+
+
 def runtests():
-    specs = glob.glob(os.path.join(here, 'test*.spec'))
-    for spec in specs:
+    global here
+    sources = glob.glob(os.path.join(here, 'test*[0-9].py'))
+    for src in sources:
         print
-        print "Running %s" % spec
+	print "################## EXECUTING TEST %s ################################" % src
         print
-        test = os.path.splitext(os.path.basename(spec))[0]
-        os.system('%s ../Build.py %s' % (PYTHON, spec))
-        os.system('dist%s%s%s.exe' % (test, os.sep, test)) # specs have .exe hardcoded
+        os.system('%s ../Makespec.py %s' % (PYTHON, src))
+        test = os.path.splitext(os.path.basename(src))[0]
+        os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
+        os.system('dist%s%s%s' % (test, os.sep, test))
+	print "################## FINISHING TEST %s  ################################" % src
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
