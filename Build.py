@@ -380,6 +380,7 @@ class PKG(Target):
                 if not os.path.splitext(inm)[1] == binext:
                     inm = inm + binext
             toc.append((inm, fnm, typ))
+        seen = {}
         for inm, fnm, typ in toc:
             if typ in ('BINARY', 'EXTENSION'):
                 if self.exclude_binaries:
@@ -388,6 +389,12 @@ class PKG(Target):
                     fnm = checkCache(fnm, self.strip_binaries,
                                      self.upx_binaries and ( iswin or cygwin )
                                       and config['hasUPX'])
+                    # Avoid importing the same binary extension twice. This might
+                    # happen if they come from different sources (eg. once from
+                    # binary dependence, and once from direct import).
+                    if typ == 'BINARY' and seen.has_key(fnm):
+                        continue
+                    seen[fnm] = 1
                     mytoc.append((inm, fnm, self.cdict.get(typ,0),
                                   self.xformdict.get(typ,'b')))
             elif typ == 'OPTION':
