@@ -67,6 +67,9 @@ class SettingsSpec(docutils.SettingsSpec):
           ['--recurse'],
           {'action': 'store_true', 'default': 1,
            'validator': frontend.validate_boolean}),
+         ('Generate output files in the specified directory.  The default is '
+          'to put them in the same directory of the input files.',
+          ['--outpath'], {'metavar': '<directory>', 'type': 'string'}),
          ('Do not scan subdirectories for files to process.',
           ['--local'], {'dest': 'recurse', 'action': 'store_false'}),
          ('Do not process files in <directory>.  This option may be used '
@@ -217,6 +220,10 @@ class Builder:
             return 1
         settings._source = os.path.normpath(os.path.join(directory, name))
         settings._destination = settings._source[:-4]+'.html'
+        if settings.outpath:
+            # FIXME: we should probably try and recreate the exising structure here,
+            # but that's more work than we need right now.
+            settings._destination = os.path.join(settings.outpath, os.path.basename(settings._destination))
         if not self.initial_settings.silent:
             print >>sys.stderr, '    ::: Processing:', name
             sys.stderr.flush()
