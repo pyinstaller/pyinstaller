@@ -1578,9 +1578,9 @@ Here's a simple example of using iu as a builtin import replacement.
 
 .. _PyInstaller: http://pyinstaller.hpcf.upr.edu/pyinstaller
 .. _`Submit a Bug`: http://pyinstaller.hpcf.upr.edu/pyinstaller/newticket
-.. |ZlibArchiveImage| image:: images/ZlibArchive.gif
-.. |CArchiveImage| image:: images/CArchive.gif
-.. |SE_exeImage| image:: images/SE_exe.gif
+.. |ZlibArchiveImage| image:: images/ZlibArchive.png
+.. |CArchiveImage| image:: images/CArchive.png
+.. |SE_exeImage| image:: images/SE_exe.png
 .. |PyInstaller| replace:: PyInstaller
 .. |PyInstallerVersion| replace:: PyInstaller v1.0
 .. |InitialVersion| replace:: v1.0
