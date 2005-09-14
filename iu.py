@@ -275,6 +275,10 @@ class ImportManager:
             importernm = globals.get('__name__', '')
             if importernm:
                 if hasattr(_sys_modules_get(importernm), '__path__'):
+                    # If you use the "from __init__ import" syntax, the package
+                    # name will have a __init__ in it. We want to strip it.
+                    if importernm[-len(".__init__"):] == ".__init__":
+                        importernm = importernm[:-len(".__init__")]
                     contexts.insert(0,importernm)
                 else:
                     pkgnm = packagename(importernm)
