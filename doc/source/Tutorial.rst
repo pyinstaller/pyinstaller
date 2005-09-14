@@ -9,69 +9,107 @@ Table of Contents:
 
 * `Getting Started`_
 
-	* `Installing PyInstaller`_
+    * `Installing PyInstaller`_
 
-	* `Building the runtime executables`_
+    * `Building the runtime executables`_
 
-	* `Configuring your PyInstaller setup`_
+    * `Configuring your PyInstaller setup`_
 
-	* `Create a spec file for your project`_
+    * `Create a spec file for your project`_
 
-	* `Build your project`_
+    * `Build your project`_
 
-	* `Windows COM Server support`_
+    * `Windows COM Server support`_
 
-	* `Building Optimized`_
+    * `Building Optimized`_
 
-	* `A Note on using UPX`_
+    * `A Note on using UPX`_
 
-	* `A Note on --onefile`_
+    * `A Note on --onefile`_
 
 * `PyInstaller Utilities`_
 
-	* `ArchiveViewer`_
+    * `ArchiveViewer`_
 
-	* `GrabVersion (Windows)`_
+    * `GrabVersion (Windows)`_
 
-	* `Analyzing Dependencies`_
+    * `Analyzing Dependencies`_
 
 * `Spec Files`_
 
-	* Introduction
-	* TOC Class (Table of Contents)
-	* Target Subclasses
-		* Analysis
-		* PYZ
-		* PKG
-		* EXE
-		* DLL
-		* COLLECT
-		* Tree
+    * `Introduction`_
+
+    * `TOC Class (Table of Contents)`_
+
+    * `Target Subclasses`_
+
+	* `Analysis`_
+
+	* `PYZ`_
+
+	* `PKG`_
+
+	* `EXE`_
+
+	* `DLL`_
+
+	* `COLLECT`_
+
+	* `Tree`_
+
 * `When Things Go Wrong`_
-    * Finding out What Went Wrong
-	* Buildtime Warnings
-	* Getting Debug Messages
-	* Getting Python's Verbose Imports
-    * Helping Installer Find Modules
-	* Extending the Path
-	* Listing Hidden Imports
-	* Extending a Package's __path__
-	* Changing Runtime Behavior
-	* Adapting to being "frozen"
-    * Accessing Data Files
-    * Reporting Bugs
-    * Miscellaneous
-	* Pmw
-	* Win9xpopen
+
+    * `Finding out What Went Wrong`_
+
+	* `Buildtime Warnings`_
+
+	* `Getting Debug Messages`_
+
+	* `Getting Python's Verbose Imports`_
+
+    * `Helping Installer Find Modules`_
+
+	* `Extending the Path`_
+
+	* `Listing Hidden Imports`_
+
+	* `Extending a Package's __path__`_
+
+	* `Changing Runtime Behavior`_
+
+	* `Adapting to being "frozen"`_
+
+    * `Accessing Data Files`_
+
+* `Miscellaneous`_
+
+    * `Pmw`_
+
+    * `Win9xpopen`_
+
+    * `Self-extracting executables`_
+
+    * `One Pass Execution`_
+
+    * `Two Pass Execution`_
+
 * `PyInstaller Archives`_
-	* `Archives Introduction`_
-	* `ZlibArchive`_
-	* `CArchive`_
+
+    * `Archives Introduction`_
+
+    * `ZlibArchive`_
+
+    * `CArchive`_
+
 * `Submit a Bug`_
+
 * `License`_
+
 * `Appendix`_
-	* `mf.py: A Modulefinder Replacement`_
-	* `iu.py`_: An *imputil* Replacement
+
+    * `mf.py: A Modulefinder Replacement`_
+
+    * `iu.py`_: An *imputil* Replacement
 
 
 
@@ -444,7 +482,7 @@ Introduction
 ------------
 
 Spec files are in Python syntax. They are evaluated by Build.py. A simplistic
-spec file might look like this:
+spec file might look like this::
 
       a = Analysis(['myscript.py'])
       pyz = PYZ(a.pure)
@@ -453,7 +491,7 @@ spec file might look like this:
 This creates a single file deployment with all binaries (extension modules and
 their dependencies) packed into the executable.
 
-A simplistic single directory deployment might look like this:
+A simplistic single directory deployment might look like this::
 
       a = Analysis(['myscript.py'])
       pyz = PYZ(a.pure)
@@ -578,10 +616,10 @@ in each executable to mount the common PYZ.
 |GOBACK|
 
 Target Subclasses
-+++++++++++++++++
+-----------------
 
 Analysis
---------
+********
 
 ::
 
@@ -618,7 +656,7 @@ binaries
 |GOBACK|
 
 PYZ
----
+***
 
 ::
 
@@ -638,7 +676,7 @@ level
 |GOBACK|
 
 PKG
----
+***
 
 Generally, you will not need to create your own PKGs, as the EXE will do it for
 you. This is one way to include read-only data in a single-file deployment,
@@ -667,7 +705,7 @@ exclude_binaries
 |GOBACK|
 
 EXE
----
+***
 
 ::
 
@@ -713,7 +751,7 @@ config.dat. This flag is set to non-ELF when using Make.py -n.
 |GOBACK|
 
 DLL
----
+***
 
 On Windows, this provides support for doing in-process COM servers. It is not
 generalized. However, embedders can follow the same model to build a special
@@ -724,7 +762,7 @@ making that a managable task.
 |GOBACK|
 
 COLLECT
--------
+*******
 
 ::
 
@@ -742,7 +780,7 @@ kws
 |GOBACK|
 
 Tree
-----
+****
 
 ::
 
@@ -1230,7 +1268,7 @@ Instead of an ImportManager, mf has an ImportTracker managing things.
 |GOBACK|
 
 ImportTracker
--------------
+*************
 
 ImportTracker can be called in two ways: analyze_one(name, importername=None)
 or analyze_r(name, importername=None). The second method does what modulefinder
@@ -1243,7 +1281,7 @@ involve recursion), it deserves some explanation.
 |GOBACK|
 
 analyze_one()
--------------
+*************
 
 When a name is imported, there are structural and dynamic effects. The dynamic
 effects are due to the execution of the top-level code in the module (or
@@ -1261,7 +1299,7 @@ for them.
 |GOBACK|
 
 Module Classes
---------------
+**************
 
 There are Module subclasses for builtins, extensions, packages and (normal)
 modules. Besides the normal module object attributes, they have an attribute
@@ -1279,7 +1317,7 @@ it's hooks mechanism.
 |GOBACK|
 
 code scanning
--------------
+*************
 
 Like modulefinder, mf scans the byte code of a module, looking for imports. In
 addition, mf will pick out a module's __all__ attribute, if it is built as a
@@ -1296,7 +1334,7 @@ whether the import is inside a condition (conditional imports).
 |GOBACK|
 
 Hooks
------
+*****
 
 In modulefinder, scanning the code takes the place of executing the code
 object. mf goes further and allows a module to be hooked (after it has been
@@ -1333,7 +1371,7 @@ sys.version and adjust what's in hiddenimports.
 |GOBACK|
 
 Warnings
---------
+********
 
 ImportTracker has a getwarnings() method that returns all the warnings
 accumulated by the instance, and by the Module instances in its modules dict.
@@ -1347,7 +1385,7 @@ warnings, but not all of them.
 |GOBACK|
 
 Cross Reference
----------------
+***************
 
 Once a full analysis (that is, an analyze_r) has been done, you can get a
 cross reference by using getxref(). This returns a list of tuples. Each tuple
@@ -1358,7 +1396,7 @@ importers list are sorted.
 |GOBACK|
 
 Usage
------
+*****
 
 A simple example follows:
 
@@ -1427,7 +1465,7 @@ delegates..
 |GOBACK|
 
 ImportManager
--------------
+*************
 
 ImportManager formalizes the concept of a metapath. This concept implicitly
 exists in native Python in that builtins and frozen modules are searched
@@ -1447,7 +1485,7 @@ date; to handle the fromlist and return the correct module object.
 |GOBACK|
 
 ImportDirectors
----------------
+***************
 
 An ImportDirector just needs to respond to getmod(name) by returning a module
 object or None. As you will see, an ImportDirector can consider name to be
@@ -1458,7 +1496,7 @@ To see how this works, we need to examine the PathImportDirector.
 |GOBACK|
 
 PathImportDirector
-------------------
+******************
 
 The PathImportDirector subclass manages a list of names - most notably,
 sys.path. To do so, it maintains a shadowpath - a dictionary mapping the names
@@ -1471,7 +1509,7 @@ PathImportDirector's shadowpath will only have two entries).
 |GOBACK|
 
 Owners
-------
+******
 
 An Owner is much like an ImportDirector but manages a much more concrete piece
 of turf. For example, a DirOwner manages one directory. Since there are no
@@ -1494,7 +1532,7 @@ package module (an __init__.py).
 |GOBACK|
 
 Packages
---------
+********
 
 To make this work, Owners need to recognize when a module is a package. For a
 DirOwner, this means that name is a subdirectory which contains an __init__.py.
@@ -1515,7 +1553,7 @@ Owner, qualifying the name at each step.)
 |GOBACK|
 
 Possibilities
--------------
+*************
 
 Let's say we want to import from .zip files. So, we subclass Owner. The
 __init__ method should take a filename, and raise a ValueError if the file is
@@ -1533,7 +1571,7 @@ sys.path. A package could even put a .zip file on it's __path__.
 |GOBACK|
 
 Compatibility
--------------
+*************
 
 This code has been tested with the PyXML, mxBase and Win32 packages, covering
 over a dozen import hacks from manipulations of __path__ to replacing a module
@@ -1544,7 +1582,7 @@ nearly exact, including the names recorded in sys.modules and module attributes
 |GOBACK|
 
 Performance
------------
+***********
 
 In most cases, iu is slower than builtin import (by 15 to 20%) but faster than
 imputil (by 15 to 20%). By inserting archives at the front of sys.path
@@ -1555,7 +1593,7 @@ more can be shaved off by manipulating the ImportManager's metapath.
 |GOBACK|
 
 Limitations
------------
+***********
 
 This module makes no attempt to facilitate policy import hacks. It is easy to
 implement certain kinds of policies within a particular domain, but
@@ -1576,6 +1614,7 @@ easy to implement.
 
 
 Usage
+*****
 
 Here's a simple example of using iu as a builtin import replacement.
 
