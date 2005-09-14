@@ -492,22 +492,19 @@ preserves order.
 Besides the normal list methods and operations, TOC supports taking differences
 and intersections (and note that adding or extending is really equivalent to
 union). Furthermore, the operations can take a real list of tuples on the right
-hand side. This makes excluding modules quite easy:
+hand side. This makes excluding modules quite easy. For a pure Python module::
 
       pyz = PYZ(a.pure - [('badmodule', '', '')])
 
 
-for a pure Python module and
+or for an extension module in a single-directory deployment::
 
       dist = COLLECT(..., a.binaries - [('badmodule', '', '')], ...)
 
 
-for an extension module in a single-directory deployment, or
+or for a single-file deployment::
 
       exe = EXE(..., a.binaries - [('badmodule', '', '')], ...)
-
-
-for a single-file deployment.
 
 To add files to a TOC, you need to know about the typecodes (or the step using
 the TOC won't know what to do with the entry).
@@ -532,13 +529,13 @@ the TOC won't know what to do with the entry).
 | 'OPTION' 	| A runtime runtime option (frozen into the executable).| The option.		| Unused.			|
 +---------------+-------------------------------------------------------+-----------------------+-------------------------------+
 
-You can force the include of any file in much the same way you do excludes.
+You can force the include of any file in much the same way you do excludes::
 
       collect = COLLECT(a.binaries +
                 [('readme', '/my/project/readme', 'DATA')], ...)
 
 
-or even
+or even::
 
       collect = COLLECT(a.binaries,
                 [('readme', '/my/project/readme', 'DATA')], ...)
@@ -582,6 +579,8 @@ Target Subclasses
 Analysis
 --------
 
+::
+
       Analysis(scripts, pathex=None, hookspath=None, excludes=None)
 
 
@@ -617,6 +616,8 @@ binaries
 PYZ
 ---
 
+::
+
       PYZ(toc, name=None, level=9)
 
 
@@ -638,6 +639,8 @@ PKG
 Generally, you will not need to create your own PKGs, as the EXE will do it for
 you. This is one way to include read-only data in a single-file deployment,
 however. A single-file deployment including TK support will use this technique.
+
+::
 
       PKG(toc, name=None, cdict=None, exclude_binaries=0)
 
@@ -661,7 +664,10 @@ exclude_binaries
 
 EXE
 ---
-      EXE(\*args, \*\*kws)
+
+::
+
+      EXE(*args, **kws)
 
 
 args
@@ -716,6 +722,8 @@ making that a managable task.
 COLLECT
 -------
 
+::
+
       COLLECT(\*args, \*\*kws)
 
 
@@ -731,6 +739,9 @@ kws
 
 Tree
 ----
+
+::
+
       Tree(root, prefix=None, excludes=None)
 
 
@@ -769,7 +780,7 @@ in the spec file's directory. Generally, most of these warnings are harmless.
 For example, os.py (which is cross-platform) works by figuring out what
 platform it is on, then importing (and rebinding names from) the appropriate
 platform-specific module. So analyzing os.py will produce a set of warnings
-like:
+like::
 
       W: no module named dos (conditional import by os)
       W: no module named ce (conditional import by os)
@@ -816,13 +827,13 @@ make sure that I'm always getting my copies of the modules and no import has
 leaked out to the installed Python.
 
 You set this (like the other runtime options) by feeding a phone TOC entry to
-the EXE. The easiest way to do this is to change the EXE from:
-
+the EXE. The easiest way to do this is to change the EXE from::
 
        EXE(..., anal.scripts, ....)
-       to
-       EXE(..., anal.scripts + [('v', '', 'OPTION')], ...)
 
+to::
+
+       EXE(..., anal.scripts + [('v', '', 'OPTION')], ...)
 
 These messages will always go to stdout, so you won't see them on Windows if
 console=0.
@@ -837,18 +848,18 @@ Extending the Path
 
 When the analysis phase cannot find needed modules, it may be that the code is
 manipulating sys.path. The easiest thing to do in this case is tell Analysis
-about the new directory through the second arg to the constructor.
+about the new directory through the second arg to the constructor::
 
        anal = Analysis(['somedir/myscript.py'],
                        ['path/to/thisdir', 'path/to/thatdir'])
 
 
-In this case, the Analysis will have a search path:
+In this case, the Analysis will have a search path::
 
        ['somedir', 'path/to/thisdir', 'path/to/thatdir'] + sys.path
 
 
-You can do the same when running Makespec
+You can do the same when running Makespec::
 
        Makespec.py --paths=path/to/thisdir;path/to/thatdir ...
 
@@ -875,7 +886,7 @@ imports) at Analysis time. Do this by creating a file named hook-module.py
 placing it in the hooks package under Installer's root directory,
 (alternatively, you can save it elsewhere, and then use the hookspath arg to
 Analysis so your private hooks directory will be searched). Normally, it will
-have only one line:
+have only one line::
 
       hiddenimports = ['module1', 'module2']
 
@@ -929,12 +940,11 @@ At the tail end of an analysis, the module list is examined for matches in
 rthooks.dat, which is the string representation of a Python dictionary. The
 key is the module name, and the value is a list of hook-script pathnames.
 
-So putting an entry:
+So putting an entry::
 
        'somemodule': ['path/to/somescript.py'],
 
-
-into rthooks.dat is almost the same thing as
+into rthooks.dat is almost the same thing as doing this::
 
        anal = Analysis(['path/to/somescript.py', 'main.py'], ...
 
@@ -973,7 +983,7 @@ Accessing Data Files
 In a --onedir distribution, this is easy: pass a list of your data files
 (in TOC format) to the COLLECT, and they will show up in the distribution
 directory tree. The name in the (name, path, 'DATA') tuple can be a relative
-path name. Then, at runtime, you can use code like this to find the file:
+path name. Then, at runtime, you can use code like this to find the file::
 
        os.path.join(os.path.dirname(sys.executable), relativename))
 
@@ -987,7 +997,7 @@ strange things may happen to your data - BINARY is really for shared
 libs / dlls.
 
 If you add them as 'DATA' to the EXE, then it's up to you to extract them. Use
-code like this:
+code like this::
 
        import sys, carchive
        this = carchive.CArchive(sys.executable)
