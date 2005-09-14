@@ -35,7 +35,7 @@ Table of Contents:
 
 	* `Analyzing Dependencies`_
 
-* `PyInstaller Spec Files`_
+* `Spec Files`_
 
 	* Introduction
 	* TOC Class (Table of Contents)
@@ -83,15 +83,15 @@ Installing PyInstaller
 
 First, unpack the archive on you path of choice. Installer is **not** a Python
 package, so it doesn't need to go in site-packages, or have a .pth file. For
-the purpose of this documentation we will asume |install_path|. You will be
+the purpose of this documentation we will assume |install_path|. You will be
 using a couple of scripts in the |install_path| directory, and these will find
 everything they need from their own location. For convenience, keep the paths
 to these scripts short (don't install in a deeply nested subdirectory).
 
 |PyInstaller| is dependant to the version of python you configure it for. In
 other words, you will need a separate copy of |PyInstaller| for each Python
-version you wish to work with *or* you'll need to rerun Configure.py every time
-you switch the Python version).
+version you wish to work with *or* you'll need to rerun ``Configure.py`` every
+time you switch the Python version).
 
 |GOBACK|
 
@@ -104,36 +104,34 @@ pythonXX.dll, and |PyInstaller| will use your pythonXX.dll.
 
 On Linux the first thing to do is build the runtime executables.
 
-Change to the |install_path| source/linux subdirectory. Run Make.py [-n|-e] and
-then make. This will produce support/run and support/run_d.
+Change to the |install_path| ``source/linux`` subdirectory. Run ``Make.py
+[-n|-e]`` and then make. This will produce ``support/loader/run`` and
+``support/loader/run_d``, which are the bootloaders.
 
 *Note:* If you have multiple versions of Python, the Python you use to run
-Make.py is the one whose configuration is used.
+``Make.py`` is the one whose configuration is used.
 
-The -n and -e options set a non-elf or elf flag in your config.dat. As of
-|InitialVersion|, the executable will try both strategies, and this flag just
-sets how you want your executables built. In the elf strategy, the archive is
-concatenated to the executable. In the non-elf strategy, the executable
+The ``-n`` and ``-e`` options set a non-elf or elf flag in your ``config.dat``.
+As of |InitialVersion|, the executable will try both strategies, and this flag
+just sets how you want your executables built. In the elf strategy, the archive
+is concatenated to the executable. In the non-elf strategy, the executable
 expects an archive with the same name as itself in the executable's directory.
-Note that the executable chases down symbolic links before determining it's
-name and directory, so putting the archive in the same directory as the
-symbolic link will not work.
+Note that the executable chases down symbolic links before determining it's name
+and directory, so putting the archive in the same directory as the symbolic link
+will not work.
 
-Windows distributions come with four executables in the support dir: run.exe,
-run_d.exe, runw.exe and runw_d.exe. There are also two dlls, inprocsrvr.dll and
-inprocsrvr_d.dll for doing in-process COM servers. All of these can be rebuilt
-from the MSVC workspace in source/windows. Please be careful of MS's
-optimizations - I suggest you disable them in the release builds.
-
-Note that the \_d suffix does not mean the same as it does with extension
-modules - you don't need a debug build of Python to use them.
+Windows distributions come with several executables in the ``support/loader``
+directory: ``run_\*.exe`` (bootloader for regular programs), and
+``inprocsrvr_\*.dll`` (bootloader for in-process COM servers). To rebuild this,
+you need to install Scons_, and then just run ``scons`` from the |install_path|
+directory.
 
 |GOBACK|
 
 Configuring your PyInstaller setup
 ----------------------------------
 
-In the |install_path| directory, run Configure.py. This saves some information
+In the |install_path| directory, run ``Configure.py``. This saves some information
 into config.dat that would otherwise be recomputed every time. It can be rerun
 at any time if your configuration changes. It must be run before trying to
 build anything.
@@ -146,9 +144,9 @@ Create a spec file for your project
 
 [For Windows COM server support, see section `Windows COM Server Support`_]
 
-The root directory has a script Makespec.py for this purpose.
+The root directory has a script Makespec.py for this purpose::
 
-       > python Makespec.py [OPTIONS] script...
+       python Makespec.py [OPTIONS] script...
 
 Where allowed OPTIONS are:
 
@@ -169,7 +167,8 @@ Where allowed OPTIONS are:
     use debug (verbose) versions of the executables.
 
 --noconsole
-    Windows: use the Windows subsystem executable (runw.exe or runw_d.exe).
+    Use the Windows subsystem executable, which does not open
+    the console when the program is launched. **(Windows only)**
 
 --strip
     the executable and all shared libraries will be run through strip. Note
@@ -179,22 +178,23 @@ Where allowed OPTIONS are:
     if you have UPX installed (detected by Configure), this will use it to
     compress your executable (and, on Windows, your dlls). See note below.
 
---out directory
-    create the spec file in directory. If not specified, and the current
+--out <directory>
+    create the spec file in *directory*. If not specified, and the current
     directory is Installer's root directory, an output subdirectory will be
     created. Otherwise the current directory is used.
 
---icon file.ico
-    add file.ico to the executable's resources (Windows only).
+--icon <file.ico>
+    add *file.ico* to the executable's resources. **(Windows only)**
 
---icon file.exe,n
-    add the nth incon in file.exe to the executable's resources (Windows only).
+--icon <file.exe,n>
+    add the *n*-th incon in *file.exe* to the executable's resources. **(Windows
+    only)**
 
---version verfile
-    add verfile as a version resource to the executable (Windows only).
+--version <verfile>
+    add verfile as a version resource to the executable. **(Windows only)**
 
---name name
-    optional name to assign to the project (from which the spec file name is
+--name <name>
+    optional *name* to assign to the project (from which the spec file name is
     generated). If omitted, the basename of the (first) script is used.
 
 [For building with optimization on (like Python -O), see section
@@ -218,12 +218,12 @@ Build your project
 
 A buildproject subdirectory will be created in the specfile's directory. This
 is a private workspace so that Build can act like a makefile. Any named targets
-will appear in the specfile's directory. For --onedir configurations, that
+will appear in the specfile's directory. For ``--onedir`` configurations, that
 include distproject, which is the directory you're interested in. For a
---onefile, the executable will be in the specfile's directory.
+``--onefile``, the executable will be in the specfile's directory.
 
-In most cases, this will be all you have to do. If not, see When things go
-wrong and be sure to read the introduction to Spec Files.
+In most cases, this will be all you have to do. If not, see `When things go
+wrong`_ and be sure to read the introduction to `Spec Files`_.
 
 |GOBACK|
 
@@ -250,7 +250,7 @@ These options are allowed:
 --ascii
     do not include encodings (this is passed through to Makespec).
 
---out dir
+--out <dir>
     Generate the driver script and spec file in dir.
 
 Now `Build your project`_ on the generated spec file.
@@ -437,8 +437,8 @@ Replacement`_
 |GOBACK|
 
 
-PyInstaller Spec Files
-++++++++++++++++++++++
+Spec Files
+++++++++++
 
 Introduction
 ------------
@@ -1592,6 +1592,7 @@ Here's a simple example of using iu as a builtin import replacement.
 
 .. _PyInstaller: http://pyinstaller.hpcf.upr.edu/pyinstaller
 .. _`Submit a Bug`: http://pyinstaller.hpcf.upr.edu/pyinstaller/newticket
+.. _Scons: http://www.scons.org
 .. |ZlibArchiveImage| image:: images/ZlibArchive.png
 .. |CArchiveImage| image:: images/CArchive.png
 .. |SE_exeImage| image:: images/SE_exe.png
