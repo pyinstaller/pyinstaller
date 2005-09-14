@@ -137,7 +137,7 @@ if iswin:
         config['hasRsrcUpdate'] = 0
         print 'I: ... resource update unavailable -', detail
     else:
-        test_exe = os.path.join(HOME, r'support\run.exe')
+        test_exe = os.path.join(HOME, r'support\loader\run_7rw.exe')
         if not os.path.exists( test_exe ):
             config['hasRsrcUpdate'] = 0
             print 'E: ... resource update unavailable - %s not found' % test_exe
