@@ -212,7 +212,7 @@ Build your project
 ------------------
 
       > python Build.py specfile
-      
+
 
 A buildproject subdirectory will be created in the specfile's directory. This
 is a private workspace so that Build can act like a makefile. Any named targets
@@ -231,7 +231,7 @@ Windows COM Server support
 For Windows COM support execute
 
        > python MakeCOMServer.py [OPTION] script...
-      
+
 
 This will generate a new script drivescript.py and a spec file for the script.
 
@@ -265,7 +265,7 @@ exe:
 
       o = win32com.client.Dispatch(progid,
                        clsctx=pythoncom.CLSCTX_LOCAL_SERVER)
-      
+
 
 MakeCOMServer also assumes that your top level code (registration etc.) is
 "normal". If it's not, you will have to edit the generated script.
@@ -280,7 +280,7 @@ There are two facets to running optimized: gathering .pyo's, and setting the
 Py_OptimizeFlag. Installer will gather .pyo's if it is run optimized:
 
        >python -O Build.py ...
-      
+
 
 The Py_OptimizeFlag will be set if you use a ('O','','OPTION') in one of the
 TOCs building the EXE.
@@ -349,7 +349,7 @@ This has a number of implications:
 
 * So any files you might create in os.environ['_MEIPASS2'] will be deleted.
 
-* The executable can be in a protected or read-only directory. 
+* The executable can be in a protected or read-only directory.
 
 * If for some reason, the _MEIpid directory already exists, the executable
   will fail. It is created mode 0700, so only the one user can modify it
@@ -373,7 +373,7 @@ ArchiveViewer
 -------------
 
       >python ArchiveViewer.py archivefile
-      
+
 
 ArchiveViewer lets you examine the contents of any archive build with
 |PyInstaller| or executable (PYZ, PKG or exe). Invoke it with the target as the
@@ -388,7 +388,7 @@ U
 
 X <nm>
     Extract nm (will prompt if omitted). Prompts for output filename. If none
-    given, extracted to stdout. 
+    given, extracted to stdout.
 
 Q
     Quit.
@@ -401,7 +401,7 @@ GrabVersion (Windows)
 ---------------------
 
       >python GrabVersion.py executable_with_version_resource
-      
+
 
 GrabVersion outputs text which can be eval'ed by versionInfo to reproduce
 a version resource. Invoke it with the full path name of a Windows executable
@@ -455,7 +455,7 @@ A simplistic single directory deployment might look like this:
       pyz = PYZ(a.pure)
       exe = EXE(a.scripts, pyz, name="myapp.exe", exclude_binaries=1)
       dist = COLLECT(exe, a.binaries, name="dist")
-      
+
 
 Note that neither of these examples are realistic. Use Makespec.py (documented
 in section `Create a spec file for your project`_) to create your specfile,
@@ -495,17 +495,17 @@ union). Furthermore, the operations can take a real list of tuples on the right
 hand side. This makes excluding modules quite easy:
 
       pyz = PYZ(a.pure - [('badmodule', '', '')])
-      
+
 
 for a pure Python module and
 
       dist = COLLECT(..., a.binaries - [('badmodule', '', '')], ...)
-      
+
 
 for an extension module in a single-directory deployment, or
 
       exe = EXE(..., a.binaries - [('badmodule', '', '')], ...)
-      
+
 
 for a single-file deployment.
 
@@ -534,15 +534,15 @@ the TOC won't know what to do with the entry).
 
 You can force the include of any file in much the same way you do excludes.
 
-      collect = COLLECT(a.binaries + 
+      collect = COLLECT(a.binaries +
                 [('readme', '/my/project/readme', 'DATA')], ...)
-      
+
 
 or even
 
-      collect = COLLECT(a.binaries, 
+      collect = COLLECT(a.binaries,
                 [('readme', '/my/project/readme', 'DATA')], ...)
-      
+
 
 (that is, you can use a list of tuples in place of a TOC in most cases).
 
@@ -583,34 +583,34 @@ Analysis
 --------
 
       Analysis(scripts, pathex=None, hookspath=None, excludes=None)
-      
+
 
 scripts
-    a list of scripts specified as file names. 
+    a list of scripts specified as file names.
 
 pathex
-    an optional list of paths to be searched before sys.path. 
+    an optional list of paths to be searched before sys.path.
 
 hookspath
-    an optional list of paths used to extend the hooks package. 
+    an optional list of paths used to extend the hooks package.
 
 excludes
     an optional list of module or package names (their Python names, not path
-    names) that will be ignored (as though they were not found). 
+    names) that will be ignored (as though they were not found).
 
 An Analysis has three outputs, all TOCs accessed as attributes of the Analysis.
 
 scripts
     The scripts you gave Analysis as input, with any runtime hook scripts
-    prepended. 
+    prepended.
 
 pure
-    The pure Python modules. 
+    The pure Python modules.
 
 binaries
     The extension modules and their dependencies. The secondary dependencies are
     filtered. On Windows, a long list of MS dlls are excluded. On Linux/Unix,
-    any shared lib in /lib or /usr/lib is excluded. 
+    any shared lib in /lib or /usr/lib is excluded.
 
 |GOBACK|
 
@@ -618,16 +618,16 @@ PYZ
 ---
 
       PYZ(toc, name=None, level=9)
-      
+
 
 toc
-    a TOC, normally an Analysis.pure. 
+    a TOC, normally an Analysis.pure.
 
 name
-    A filename for the .pyz. Normally not needed, as the generated name will do fine. 
+    A filename for the .pyz. Normally not needed, as the generated name will do fine.
 
 level
-    The Zlib compression level to use. If 0, the zlib module is not required. 
+    The Zlib compression level to use. If 0, the zlib module is not required.
 
 
 |GOBACK|
@@ -640,58 +640,58 @@ you. This is one way to include read-only data in a single-file deployment,
 however. A single-file deployment including TK support will use this technique.
 
       PKG(toc, name=None, cdict=None, exclude_binaries=0)
-      
+
 
 toc
     a TOC
 
 name
-    a filename for the pkg (optional). 
+    a filename for the pkg (optional).
 
 cdict
     a dictionary that specifies compression by typecode. For example, PYZ is
     left uncompressed so that it can be accessed inside the PKG. The default
-    uses sensible values. If zlib is not available, no compression is used. 
+    uses sensible values. If zlib is not available, no compression is used.
 
 exclude_binaries
     If 1, EXTENSIONs and BINARYs will be left out of the PKG, and forwarded to
-    its container (ususally a COLLECT). 
+    its container (ususally a COLLECT).
 
 |GOBACK|
 
 EXE
 ---
       EXE(\*args, \*\*kws)
-      
+
 
 args
-    One or more arguments which are either TOCs or Targets. 
+    One or more arguments which are either TOCs or Targets.
 
 kws
 
     console
         Always 1 on Linux/unix. On Windows, governs whether to use the console
-        executable, or the Windows subsystem executable. 
+        executable, or the Windows subsystem executable.
 
     debug
         Setting to 1 gives you progress messages from the executable (for a
-        console=0, these will be annoying MessageBoxes). 
+        console=0, these will be annoying MessageBoxes).
 
     name
-        The filename for the executable. 
+        The filename for the executable.
 
     exclude_binaries
-        Forwarded to the PKG the EXE builds. 
+        Forwarded to the PKG the EXE builds.
 
     icon
         Windows NT family only. icon='myicon.ico' to use an icon file, or
-        icon='notepad.exe,0' to grab an icon resource. 
+        icon='notepad.exe,0' to grab an icon resource.
 
     version
         Windows NT family only. version='myversion.txt'. Use GrabVersion.py to
         steal a version resource from an executable, and then edit the ouput to
         create your own. (The syntax of version resources is so arcane that I
-        wouldn't attempt to write one from scratch.) 
+        wouldn't attempt to write one from scratch.)
 
 
 There are actually two EXE classes - one for ELF platforms (where the run
@@ -717,40 +717,40 @@ COLLECT
 -------
 
       COLLECT(\*args, \*\*kws)
-      
+
 
 args
-    One or more arguments which are either TOCs or Targets. 
+    One or more arguments which are either TOCs or Targets.
 
 kws
 
     name
-        The name of the directory to be built. 
+        The name of the directory to be built.
 
 |GOBACK|
 
 Tree
 ----
       Tree(root, prefix=None, excludes=None)
-      
+
 
 root
-    The root of the tree (on the build system). 
+    The root of the tree (on the build system).
 
 prefix
-    Optional prefix to the names on the target system. 
+    Optional prefix to the names on the target system.
 
 excludes
     A list of names to exclude. Two forms are allowed:
 
     name
-        files with this basename will be excluded (do not include the path). 
+        files with this basename will be excluded (do not include the path).
 
     \*.ext
-        any file with the given extension will be excluded. 
+        any file with the given extension will be excluded.
 
 Since a Tree is a TOC, you can also use the exclude technique described above
-in the section on TOCs. 
+in the section on TOCs.
 
 
 |GOBACK|
@@ -774,7 +774,7 @@ like:
       W: no module named dos (conditional import by os)
       W: no module named ce (conditional import by os)
       W: no module named os2 (conditional import by os)
-      
+
 
 Note that the analysis has detected that the import is within a conditional
 block (an if statement). The analysis also detects if an import within a
@@ -822,7 +822,7 @@ the EXE. The easiest way to do this is to change the EXE from:
        EXE(..., anal.scripts, ....)
        to
        EXE(..., anal.scripts + [('v', '', 'OPTION')], ...)
-      
+
 
 These messages will always go to stdout, so you won't see them on Windows if
 console=0.
@@ -839,19 +839,19 @@ When the analysis phase cannot find needed modules, it may be that the code is
 manipulating sys.path. The easiest thing to do in this case is tell Analysis
 about the new directory through the second arg to the constructor.
 
-       anal = Analysis(['somedir/myscript.py'], 
+       anal = Analysis(['somedir/myscript.py'],
                        ['path/to/thisdir', 'path/to/thatdir'])
-      
+
 
 In this case, the Analysis will have a search path:
 
        ['somedir', 'path/to/thisdir', 'path/to/thatdir'] + sys.path
-      
+
 
 You can do the same when running Makespec
 
        Makespec.py --paths=path/to/thisdir;path/to/thatdir ...
-      
+
 
 (on \*nix, use : as the path separator).
 
@@ -878,7 +878,7 @@ Analysis so your private hooks directory will be searched). Normally, it will
 have only one line:
 
       hiddenimports = ['module1', 'module2']
-      
+
 
 When the Analysis finds this file, it will proceed exactly as though the module
 explicitly imported module1 and module2. (Full details on the analysis-time
@@ -932,12 +932,12 @@ key is the module name, and the value is a list of hook-script pathnames.
 So putting an entry:
 
        'somemodule': ['path/to/somescript.py'],
-      
+
 
 into rthooks.dat is almost the same thing as
 
        anal = Analysis(['path/to/somescript.py', 'main.py'], ...
-      
+
 
 except that in using the hook, path/to/somescript.py will not be analyzed,
 (that's not a feature - I just haven't found a sane way fit the recursion into
@@ -976,7 +976,7 @@ directory tree. The name in the (name, path, 'DATA') tuple can be a relative
 path name. Then, at runtime, you can use code like this to find the file:
 
        os.path.join(os.path.dirname(sys.executable), relativename))
-      
+
 
 In a --onefile, it's a bit trickier. You can cheat, and add the files to the
 EXE as BINARY. They will then be extracted at runtime into the work directory
@@ -992,7 +992,7 @@ code like this:
        import sys, carchive
        this = carchive.CArchive(sys.executable)
        data = this.extract('mystuff')[1]
-      
+
 
 to get the contents as a binary string. See support/unpackTK.py for an advanced
 example (the TCL and TK lib files are in a PKG which is opened in place, and
@@ -1018,7 +1018,7 @@ Win9xpopen
 If you're using popen on Windows and want the code to work on Win9x, you'll
 need to distribute win9xpopen.exe with your app. On older Pythons with
 Win32all, this would apply to Win32pipe and win32popenWin9x.exe. (On yet older
-Pythons, no form of popen worked on Win9x). 
+Pythons, no form of popen worked on Win9x).
 
 |GOBACK|
 
@@ -1069,7 +1069,7 @@ There are a couple situations which require two passes:
   find them if they're extracted in the same process that uses them)
 
 * LD_LIBRARY_PATH needs to be set to find the binaries (not extension modules,
-  but modules the extensions are linked to). 
+  but modules the extensions are linked to).
 
 The first pass:
 
@@ -1087,7 +1087,7 @@ The first pass:
 
 * waits for the child to exit (on \*nix, the child actually replaces the parent)
 
-* cleans up the extracted binaries (so on \*nix, this is done by the child) 
+* cleans up the extracted binaries (so on \*nix, this is done by the child)
 
 The child process executes as in One Pass Execution above (the magic
 environment variable is what tells it that this is pass two).
@@ -1294,10 +1294,10 @@ hiddenimports
     a list of modules names (relative or absolute) that the module imports in some untrackable way.
 
 attrs
-    a list of (name, value) pairs, (where value is normally meaningless). 
+    a list of (name, value) pairs, (where value is normally meaningless).
 
 hook(mod)
-    a function taking a Module instance and returning a Module instance (so it can modify or replace). 
+    a function taking a Module instance and returning a Module instance (so it can modify or replace).
 
 
 The first hook (hiddenimports) extends the list created by scanning the code.
@@ -1351,15 +1351,15 @@ A simple example follows:
       >>> import mf
       >>> a = mf.ImportTracker()
       >>> a.analyze_r("os")
-      ['os', 'sys', 'posixpath', 'nt', 'stat', 'string', 'strop', 
-      're', 'pcre', 'ntpath', 'dospath', 'macpath', 'win32api', 
-      'UserDict', 'copy', 'types', 'repr', 'tempfile'] 
+      ['os', 'sys', 'posixpath', 'nt', 'stat', 'string', 'strop',
+      're', 'pcre', 'ntpath', 'dospath', 'macpath', 'win32api',
+      'UserDict', 'copy', 'types', 'repr', 'tempfile']
       >>> a.analyze_one("os")
       ['os']
       >>> a.modules['string'].imports
       [('strop', 0, 0), ('strop.*', 0, 0), ('re', 1, 1)]
       >>>
-      
+
 
 The tuples in the imports list are (name, delayed, conditional).
 
@@ -1377,16 +1377,16 @@ The tuples in the imports list are (name, delayed, conditional).
       W: no module named mac (conditional import by os)
       W: no module named MACFS (delayed, conditional import by tempfile)
       W: no module named macfs (delayed, conditional import by tempfile)
-      W: top-level conditional exec statment detected at line 47 
+      W: top-level conditional exec statment detected at line 47
          - os (C:\Program Files\Python\Lib\os.py)
-      W: delayed  eval hack detected at line 359 
+      W: delayed  eval hack detected at line 359
          - string (C:\Program Files\Python\Lib\string.py)
-      W: delayed  eval hack detected at line 389 
+      W: delayed  eval hack detected at line 389
          - string (C:\Program Files\Python\Lib\string.py)
-      W: delayed  eval hack detected at line 418 
+      W: delayed  eval hack detected at line 418
          - string (C:\Program Files\Python\Lib\string.py)
       >>>
-      
+
 
 |GOBACK|
 
@@ -1570,10 +1570,10 @@ Here's a simple example of using iu as a builtin import replacement.
       >>>
       >>> import DateTime
       >>> DateTime.__importsub__
-      <method PathImportDirector.getmod 
+      <method PathImportDirector.getmod
         of PathImportDirector instance at 825900>
       >>>
-      
+
 |GOBACK|
 
 .. _PyInstaller: http://pyinstaller.hpcf.upr.edu/pyinstaller
