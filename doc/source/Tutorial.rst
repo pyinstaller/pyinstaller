@@ -51,8 +51,8 @@ and directory, so putting the archive in the same directory as the symbolic link
 will not work.
 
 Windows distributions come with several executables in the ``support/loader``
-directory: ``run_\*.exe`` (bootloader for regular programs), and
-``inprocsrvr_\*.dll`` (bootloader for in-process COM servers). To rebuild this,
+directory: ``run_*.exe`` (bootloader for regular programs), and
+``inprocsrvr_*.dll`` (bootloader for in-process COM servers). To rebuild this,
 you need to install Scons_, and then just run ``scons`` from the |install_path|
 directory.
 
@@ -61,10 +61,10 @@ directory.
 Configuring your PyInstaller setup
 ----------------------------------
 
-In the |install_path| directory, run ``Configure.py``. This saves some information
-into config.dat that would otherwise be recomputed every time. It can be rerun
-at any time if your configuration changes. It must be run before trying to
-build anything.
+In the |install_path| directory, run ``Configure.py``. This saves some
+information into ``config.dat`` that would otherwise be recomputed every time.
+It can be rerun at any time if your configuration changes. It must be run before
+trying to build anything.
 
 |GOBACK|
 
@@ -127,7 +127,7 @@ Where allowed OPTIONS are:
     optional *name* to assign to the project (from which the spec file name is
     generated). If omitted, the basename of the (first) script is used.
 
-[For building with optimization on (like Python -O), see section
+[For building with optimization on (like ``Python -O``), see section
 `Building Optimized`_]
 
 For simple projects, the generated spec file will probably be sufficient. For
@@ -147,10 +147,11 @@ Build your project
 
 
 A buildproject subdirectory will be created in the specfile's directory. This
-is a private workspace so that Build can act like a makefile. Any named targets
-will appear in the specfile's directory. For ``--onedir`` configurations, that
-include distproject, which is the directory you're interested in. For a
-``--onefile``, the executable will be in the specfile's directory.
+is a private workspace so that ``Build.py`` can act like a makefile. Any named
+targets will appear in the specfile's directory. For ``--onedir``
+configurations, that include distproject, which is the directory you're
+interested in. For a ``--onefile``, the executable will be in the specfile's
+directory.
 
 In most cases, this will be all you have to do. If not, see `When things go
 wrong`_ and be sure to read the introduction to `Spec Files`_.
@@ -160,14 +161,12 @@ wrong`_ and be sure to read the introduction to `Spec Files`_.
 Windows COM Server support
 --------------------------
 
-For Windows COM support execute
-
-::
+For Windows COM support execute::
 
        python MakeCOMServer.py [OPTION] script...
 
 
-This will generate a new script drivescript.py and a spec file for the script.
+This will generate a new script ``drivescript.py`` and a spec file for the script.
 
 These options are allowed:
 
@@ -186,7 +185,7 @@ These options are allowed:
 Now `Build your project`_ on the generated spec file.
 
 If you have the win32dbg package installed, you can use it with the generated
-COM server. In the driver script, set debug=1 in the registration line.
+COM server. In the driver script, set ``debug=1`` in the registration line.
 
 Warnings: the inprocess COM server support will not work when the client
 process already has Python loaded. It would be rather tricky to
@@ -210,14 +209,14 @@ MakeCOMServer also assumes that your top level code (registration etc.) is
 Building Optimized
 ------------------
 
-There are two facets to running optimized: gathering .pyo's, and setting the
-Py_OptimizeFlag. Installer will gather .pyo's if it is run optimized::
+There are two facets to running optimized: gathering ``.pyo``'s, and setting the
+``Py_OptimizeFlag``. Installer will gather ``.pyo``'s if it is run optimized::
 
        python -O Build.py ...
 
 
-The Py_OptimizeFlag will be set if you use a ('O','','OPTION') in one of the
-TOCs building the EXE::
+The ``Py_OptimizeFlag`` will be set if you use a ``('O','','OPTION')`` in one of
+the TOCs building the ``EXE``::
 
       exe = EXE(pyz,
                 a.scripts + [('O','','OPTION')],
@@ -233,33 +232,36 @@ A Note on using UPX
 
 On both Windows and Linux, UPX can give truly startling compression - the days
 of fitting something useful on a diskette are not gone forever! Installer has
-been tested with UPX 1.24 without problems. Just get it and install it on your
-PATH, then rerun configure. For Windows, that's all you need to know.
+been tested with many UPX versions without problems. Just get it and install it
+on your PATH, then rerun configure. For Windows, that's all you need to know.
+
+** NOTE: The information below apply to UPX 1.24 for Linux. They could be
+inexact for newer UPX versions, but we have yet to verify it at this point.**
 
 For Linux, a bit more discussion is in order. First, UPX is only useful on
 executables, not shared libs. Installer accounts for that, but to get the full
 benefit, you might rebuild Python with more things statically linked.
 
-More importantly, when run finds that it's sys.argv[0] does not contain a path,
-it will use /proc/pid/exe to find itself (if it can). This happens, for
+More importantly, when ``run`` finds that its ``sys.argv[0]`` does not contain a path,
+it will use ``/proc/pid/exe`` to find itself (if it can). This happens, for
 example, when executed by Apache. If it has been upx-ed, this symbolic link
-points to the tempfile created by the upx stub and Installer will fail (please
-see the UPX docs for more information). So for now, at least, you can't use
-upx for CGI's executed by Apache. Otherwise, you can ignore the warnings in
-the UPX docs, since what Installer opens is the executable Installer created,
-not the temporary upx-created executable.
+points to the tempfile created by the upx stub and |PyInstaller| will fail (please
+see the UPX docs for more information). So for now, at least, you can't use upx
+for CGI's executed by Apache. Otherwise, you can ignore the warnings in the UPX
+docs, since what PyInstaller opens is the executable Installer created, not the
+temporary upx-created executable.
 
 |GOBACK|
 
-A Note on --onefile
--------------------
+A Note on ``--onefile``
+-----------------------
 
-A --onefile works by packing all the shared libs / dlls into the archive
-attached to the executable (or next to the executable in a nonelf
+A ``--onefile`` works by packing all the shared libs / dlls into the archive
+attached to the bootloader executable (or next to the executable in a non-elf
 configuration). When first started, it finds that it needs to extract these
 files before it can run "for real". That's because locating and loading a
 shared lib or linked-in dll is a system level action, not user-level. With
-|PyInstallerVersion| it always uses a temporary directory (_MEIpid) in the\
+|PyInstallerVersion| it always uses a temporary directory (``_MEIpid``) in the
 user's temp directory. It then executes itself again, setting things up so
 the system will be able to load the shared libs / dlls. When executing is
 complete, it recursively removes the entire directory it created.
@@ -271,8 +273,8 @@ This has a number of implications:
 * Running multiple copies will be rather expensive to the system (nothing is
   shared).
 
-* If you're using the cheat of adding user data as 'BINARY', it will be in
-  os.environ['_MEIPASS2'], not the executable's directory.
+* If you're using the cheat of adding user data as ``'BINARY'``, it will be in
+  ``os.environ['_MEIPASS2']``, not in the executable's directory.
 
 * On Windows, using Task Manager to kill the parent process will leave the
   directory behind.
@@ -281,11 +283,11 @@ This has a number of implications:
 
 * Otherwise, on both platforms, the directory will be recursively deleted.
 
-* So any files you might create in os.environ['_MEIPASS2'] will be deleted.
+* So any files you might create in ``os.environ['_MEIPASS2']`` will be deleted.
 
 * The executable can be in a protected or read-only directory.
 
-* If for some reason, the _MEIpid directory already exists, the executable
+* If for some reason, the ``_MEIpid`` directory already exists, the executable
   will fail. It is created mode 0700, so only the one user can modify it
   (on \*nix, of course).
 
@@ -295,7 +297,7 @@ most of the users. Now, take notice that if the executable does a setuid root,
 a determined hacker could possibly (given enough tries) introduce a malicious
 lookalike of one of the shared libraries during the hole between when the
 library is extracted and when it gets loaded by the execvp'd process. So maybe
-you shouldn't do setuid root programs using --onefile. **In fact, we do not
+you shouldn't do setuid root programs using ``--onefile``. **In fact, we do not
 recomend the use of --onefile on setuid programs.**
 
 |GOBACK|
@@ -306,13 +308,15 @@ PyInstaller Utilities
 ArchiveViewer
 -------------
 
-      >python ArchiveViewer.py archivefile
+::
+
+      python ArchiveViewer.py archivefile
 
 
 ArchiveViewer lets you examine the contents of any archive build with
 |PyInstaller| or executable (PYZ, PKG or exe). Invoke it with the target as the
 first arg (It has been set up as a Send-To so it shows on the context menu in
-Explorer). The archive can be naviaged using these commands:
+Explorer). The archive can be navigated using these commands:
 
 O <nm>
     Open the embedded archive <nm> (will prompt if omitted).
@@ -334,14 +338,16 @@ Q
 GrabVersion (Windows)
 ---------------------
 
-      >python GrabVersion.py executable_with_version_resource
+::
+
+      python GrabVersion.py executable_with_version_resource
 
 
-GrabVersion outputs text which can be eval'ed by versionInfo to reproduce
+GrabVersion outputs text which can be eval'ed by ``versionInfo.py`` to reproduce
 a version resource. Invoke it with the full path name of a Windows executable
 (with a version resource) as the first argument. If you cut & paste (or
 redirect to a file), you can then edit the version information. The edited
-text file can be used in a version = myversion.txt option on any executable
+text file can be used in a ``version = myversion.txt`` option on any executable
 in an |PyInstaller| spec file.
 
 This was done in this way because version resources are rather strange beasts,
@@ -361,7 +367,7 @@ Analyzing Dependencies
 ----------------------
 
 You can interactively track down dependencies, including getting
-cross-references by using mf.py, documented in section `mf.py: A modulefinder
+cross-references by using ``mf.py``, documented in section `mf.py: A modulefinder
 Replacement`_
 
 |GOBACK|
@@ -391,24 +397,24 @@ A simplistic single directory deployment might look like this::
       dist = COLLECT(exe, a.binaries, name="dist")
 
 
-Note that neither of these examples are realistic. Use Makespec.py (documented
+Note that neither of these examples are realistic. Use ``Makespec.py`` (documented
 in section `Create a spec file for your project`_) to create your specfile,
 and tweak it (if necessary) from there.
 
-All of the classes you see above are subclasses of Build.Target. A Target acts
+All of the classes you see above are subclasses of ``Build.Target``. A Target acts
 like a rule in a makefile. It knows enough to cache its last inputs and
 outputs. If its inputs haven't changed, it can assume its outputs wouldn't
 change on recomputation. So a spec file acts much like a makefile, only
 rebuilding as much as needs rebuilding. This means, for example, that if you
-change an EXE from debug=1 to debug=0 that the rebuild will be nearly
+change an ``EXE`` from ``debug=1`` to ``debug=0``, the rebuild will be nearly
 instantaneous.
 
-The high level view is that an Analysis takes a list of scripts as input, and
-generates three "outputs", held in attributes named scripts, pure and binaries.
-A PYZ (a .pyz archive) is built from the modules in pure. The EXE is built from
-the PYZ, the scripts and, in the case of a single-file deployment, the
-binaries. In a single-directory deployment, a directory is built containing a
-slim EXE and the binaries.
+The high level view is that an ``Analysis`` takes a list of scripts as input,
+and generates three "outputs", held in attributes named ``scripts``, ``pure``
+and ``binaries``. A ``PYZ`` (a ``.pyz`` archive) is built from the modules in
+pure. The ``EXE`` is built from the ``PYZ``, the scripts and, in the case of a
+single-file deployment, the binaries. In a single-directory deployment, a
+directory is built containing a slim executable and the binaries.
 
 |GOBACK|
 
@@ -416,9 +422,9 @@ TOC Class (Table of Contents)
 -----------------------------
 
 Before you can do much with a spec file, you need to understand the
-TOC (Table Of Contents) class.
+``TOC`` (Table Of Contents) class.
 
-A TOC appears to be a list of tuples of the form (name, path, typecode).
+A ``TOC`` appears to be a list of tuples of the form (name, path, typecode).
 In fact, it's an ordered set, not a list. A TOC contains no duplicates, where
 uniqueness is based on name only. Furthermore, within this constraint, a TOC
 preserves order.
@@ -475,15 +481,15 @@ or even::
                 [('readme', '/my/project/readme', 'DATA')], ...)
 
 
-(that is, you can use a list of tuples in place of a TOC in most cases).
+(that is, you can use a list of tuples in place of a ``TOC`` in most cases).
 
-There's not much reason to use this technique for PYSOURCE, since an Analysis
-takes a list of scripts as input. For PYMODULEs and EXTENSIONs, the hook
+There's not much reason to use this technique for ``PYSOURCE``, since an ``Analysis``
+takes a list of scripts as input. For ``PYMODULEs`` and ``EXTENSIONs``, the hook
 mechanism discussed here is better because you won't have to remember how you
 got it working next time.
 
-This technique is most useful for data files (see the Tree class below for a
-way to build a TOC from a directory tree), and for runtime options. The options
+This technique is most useful for data files (see the ``Tree`` class below for a
+way to build a ``TOC`` from a directory tree), and for runtime options. The options
 the run executables understand are:
 
 +---------------+-----------------------+-------------------------------+-------------------------------------------------------------------------------------------------------+
@@ -503,7 +509,7 @@ the run executables understand are:
 Advanced users should note that by using set differences and intersections, it
 becomes possible to factor out common modules, and deploy a project containing
 multiple executables with minimal redundancy. You'll need some top level code
-in each executable to mount the common PYZ.
+in each executable to mount the common ``PYZ``.
 
 |GOBACK|
 
@@ -531,7 +537,7 @@ excludes
     an optional list of module or package names (their Python names, not path
     names) that will be ignored (as though they were not found).
 
-An Analysis has three outputs, all TOCs accessed as attributes of the Analysis.
+An Analysis has three outputs, all ``TOCs`` accessed as attributes of the ``Analysis``.
 
 scripts
     The scripts you gave Analysis as input, with any runtime hook scripts
@@ -543,7 +549,7 @@ pure
 binaries
     The extension modules and their dependencies. The secondary dependencies are
     filtered. On Windows, a long list of MS dlls are excluded. On Linux/Unix,
-    any shared lib in /lib or /usr/lib is excluded.
+    any shared lib in ``/lib`` or ``/usr/lib`` is excluded.
 
 |GOBACK|
 
@@ -556,10 +562,10 @@ PYZ
 
 
 toc
-    a TOC, normally an Analysis.pure.
+    a ``TOC``, normally an ``Analysis.pure``.
 
 name
-    A filename for the .pyz. Normally not needed, as the generated name will do fine.
+    A filename for the ``.pyz``. Normally not needed, as the generated name will do fine.
 
 level
     The Zlib compression level to use. If 0, the zlib module is not required.
@@ -570,7 +576,7 @@ level
 PKG
 ***
 
-Generally, you will not need to create your own PKGs, as the EXE will do it for
+Generally, you will not need to create your own ``PKGs``, as the ``EXE`` will do it for
 you. This is one way to include read-only data in a single-file deployment,
 however. A single-file deployment including TK support will use this technique.
 
@@ -583,16 +589,16 @@ toc
     a TOC
 
 name
-    a filename for the pkg (optional).
+    a filename for the ``PKG`` (optional).
 
 cdict
-    a dictionary that specifies compression by typecode. For example, PYZ is
-    left uncompressed so that it can be accessed inside the PKG. The default
+    a dictionary that specifies compression by typecode. For example, ``PYZ`` is
+    left uncompressed so that it can be accessed inside the ``PKG``. The default
     uses sensible values. If zlib is not available, no compression is used.
 
 exclude_binaries
-    If 1, EXTENSIONs and BINARYs will be left out of the PKG, and forwarded to
-    its container (ususally a COLLECT).
+    If 1, ``EXTENSIONs`` and ``BINARYs`` will be left out of the ``PKG``, and
+    forwarded to its container (usually a ``COLLECT``).
 
 |GOBACK|
 
@@ -605,7 +611,7 @@ EXE
 
 
 args
-    One or more arguments which are either TOCs or Targets.
+    One or more arguments which are either ``TOCs`` or ``Targets``.
 
 kws
 
@@ -615,30 +621,31 @@ kws
 
     debug
         Setting to 1 gives you progress messages from the executable (for a
-        console=0, these will be annoying MessageBoxes).
+        ``console=0``, these will be annoying MessageBoxes).
 
     name
         The filename for the executable.
 
     exclude_binaries
-        Forwarded to the PKG the EXE builds.
+        Forwarded to the ``PKG`` the ``EXE`` builds.
 
     icon
-        Windows NT family only. icon='myicon.ico' to use an icon file, or
-        icon='notepad.exe,0' to grab an icon resource.
+        Windows NT family only. ``icon='myicon.ico'`` to use an icon file, or
+        ``icon='notepad.exe,0'`` to grab an icon resource.
 
     version
-        Windows NT family only. version='myversion.txt'. Use GrabVersion.py to
+        Windows NT family only. ``version='myversion.txt'``. Use ``GrabVersion.py`` to
         steal a version resource from an executable, and then edit the ouput to
         create your own. (The syntax of version resources is so arcane that I
         wouldn't attempt to write one from scratch.)
 
 
-There are actually two EXE classes - one for ELF platforms (where the run
-executable and the PKG are concatenated), and one for non-ELF platforms (where
-the run executable is simply renamed, and expects a exename.pkg in the same
-directory). Which class becomes available as EXE is determined by a flag in
-config.dat. This flag is set to non-ELF when using Make.py -n.
+There are actually two ``EXE`` classes - one for ELF platforms (where the
+bootloader, that is the ``run`` executable, and the ``PKG`` are concatenated),
+and one for non-ELF platforms (where the run executable is simply renamed, and
+expects a ``exename.pkg`` in the same directory). Which class becomes available
+as ``EXE`` is determined by a flag in ``config.dat``. This flag is set to
+non-ELF when using ``Make.py -n``.
 
 |GOBACK|
 
@@ -662,7 +669,7 @@ COLLECT
 
 
 args
-    One or more arguments which are either TOCs or Targets.
+    One or more arguments which are either ``TOCs`` or ``Targets``.
 
 kws
 
@@ -694,8 +701,8 @@ excludes
     \*.ext
         any file with the given extension will be excluded.
 
-Since a Tree is a TOC, you can also use the exclude technique described above
-in the section on TOCs.
+Since a ``Tree`` is a ``TOC``, you can also use the exclude technique described above
+in the section on ``TOCs``.
 
 
 |GOBACK|
@@ -709,11 +716,11 @@ Finding out What Went Wrong
 Buildtime Warnings
 ******************
 
-When an Analysis step runs, it produces a warnings file (named warnproject.txt)
+When an ``Analysis`` step runs, it produces a warnings file (named ``warnproject.txt``)
 in the spec file's directory. Generally, most of these warnings are harmless.
-For example, os.py (which is cross-platform) works by figuring out what
+For example, ``os.py`` (which is cross-platform) works by figuring out what
 platform it is on, then importing (and rebinding names from) the appropriate
-platform-specific module. So analyzing os.py will produce a set of warnings
+platform-specific module. So analyzing ``os.py`` will produce a set of warnings
 like::
 
       W: no module named dos (conditional import by os)
@@ -728,24 +735,24 @@ import failure is really a hard error. There's at least a reasonable chance
 that conditional and / or delayed import will be handled gracefully at runtime.
 
 Ignorable warnings may also be produced when a class or function is declared in
-a package (an __init__.py module), and the import specifies package.name. In
-this case, the analysis can't tell if name is supposed to refer to a submodule
-of package.
+a package (an ``__init__.py`` module), and the import specifies
+``package.name``. In this case, the analysis can't tell if name is supposed to
+refer to a submodule of package.
 
-Warnings are also produced when an __import__, exec or eval statement is
-encountered. The __import__ warnings should almost certainly be investigated.
-Both exec and eval can be used to implement import hacks, but usually their use
+Warnings are also produced when an ``__import__``, ``exec`` or ``eval`` statement is
+encountered. The ``__import__`` warnings should almost certainly be investigated.
+Both ``exec`` and ``eval`` can be used to implement import hacks, but usually their use
 is more benign.
 
 Any problem detected here can be handled by hooking the analysis of the module.
-See *Listing Hidden Imports* below for how to do it.
+See `Listing Hidden Imports`_ below for how to do it.
 
 |GOBACK|
 
 Getting Debug Messages
 **********************
 
-Setting debug=1 on an EXE will cause the executable to put out progress
+Setting ``debug=1`` on an ``EXE`` will cause the executable to put out progress
 messages (for console apps, these go to stdout; for Windows apps, these show as
 MessageBoxes). This can be useful if you are doing complex packaging, or your
 app doesn't seem to be starting, or just to learn how the runtime works.
@@ -755,13 +762,13 @@ app doesn't seem to be starting, or just to learn how the runtime works.
 Getting Python's Verbose Imports
 ********************************
 
-You can also pass a -v (verbose imports) flag to the embedded Python. This can
+You can also pass a ``-v`` (verbose imports) flag to the embedded Python. This can
 be extremely useful. I usually try it even on apparently working apps, just to
 make sure that I'm always getting my copies of the modules and no import has
 leaked out to the installed Python.
 
-You set this (like the other runtime options) by feeding a phone TOC entry to
-the EXE. The easiest way to do this is to change the EXE from::
+You set this (like the other runtime options) by feeding a phone ``TOC`` entry to
+the ``EXE``. The easiest way to do this is to change the ``EXE`` from::
 
        EXE(..., anal.scripts, ....)
 
@@ -769,8 +776,8 @@ to::
 
        EXE(..., anal.scripts + [('v', '', 'OPTION')], ...)
 
-These messages will always go to stdout, so you won't see them on Windows if
-console=0.
+These messages will always go to ``stdout``, so you won't see them on Windows if
+``console=0``.
 
 |GOBACK|
 
@@ -781,24 +788,24 @@ Extending the Path
 ******************
 
 When the analysis phase cannot find needed modules, it may be that the code is
-manipulating sys.path. The easiest thing to do in this case is tell Analysis
+manipulating ``sys.path``. The easiest thing to do in this case is tell ``Analysis``
 about the new directory through the second arg to the constructor::
 
        anal = Analysis(['somedir/myscript.py'],
                        ['path/to/thisdir', 'path/to/thatdir'])
 
 
-In this case, the Analysis will have a search path::
+In this case, the ``Analysis`` will have a search path::
 
        ['somedir', 'path/to/thisdir', 'path/to/thatdir'] + sys.path
 
 
-You can do the same when running Makespec::
+You can do the same when running ``Makespec.py``::
 
        Makespec.py --paths=path/to/thisdir;path/to/thatdir ...
 
 
-(on \*nix, use : as the path separator).
+(on \*nix, use ``:`` as the path separator).
 
 |GOBACK|
 
@@ -806,36 +813,36 @@ Listing Hidden Imports
 **********************
 
 Hidden imports are fairly common. These can occur when the code is using
-__import__ (or, perhaps exec or eval), in which case you will see a warning in
-the warnproject.txt file. They can also occur when an extension module uses the
+``__import__`` (or, perhaps ``exec`` or ``eval``), in which case you will see a warning in
+the ``warnproject.txt`` file. They can also occur when an extension module uses the
 Python/C API to do an import, in which case Analysis can't detect anything. You
 can verify that hidden import is the problem by using Python's verbose imports
-flag. If the import messages say "module not found", but the warnproject.txt
+flag. If the import messages say "module not found", but the ``warnproject.txt``
 file has no "no module named..." message for the same module, then the problem
 is a hidden import.
 
 Hidden imports are handled by hooking the module (the one doing the hidden
-imports) at Analysis time. Do this by creating a file named hook-module.py
-(where module is the fully-qualified Python name, eg, hook-xml.dom.py), and
-placing it in the hooks package under Installer's root directory,
-(alternatively, you can save it elsewhere, and then use the hookspath arg to
-Analysis so your private hooks directory will be searched). Normally, it will
+imports) at ``Analysis`` time. Do this by creating a file named ``hook-module.py``
+(where module is the fully-qualified Python name, eg, ``hook-xml.dom.py``), and
+placing it in the ``hooks`` package under |PyInstaller|'s root directory,
+(alternatively, you can save it elsewhere, and then use the ``hookspath`` arg to
+``Analysis`` so your private hooks directory will be searched). Normally, it will
 have only one line::
 
       hiddenimports = ['module1', 'module2']
 
 
-When the Analysis finds this file, it will proceed exactly as though the module
-explicitly imported module1 and module2. (Full details on the analysis-time
-hook mechanism is here).
+When the ``Analysis`` finds this file, it will proceed exactly as though the module
+explicitly imported ``module1`` and ``module2``. (Full details on the analysis-time
+hook mechanism is in the `Hooks`_ section).
 
 If you successfully hook a publicly distributed module in this way, please send
-us the hook so I can make it available to others.
+us the hook so we can make it available to others.
 
 |GOBACK|
 
-Extending a Package's __path__
-******************************
+Extending a Package's ``__path__``
+**********************************
 
 Python allows a package to extend the search path used to find modules and
 sub-packages through the __path__ mechanism. Normally, a package's __path__ has
