@@ -211,7 +211,9 @@ details.
 Build your project
 ------------------
 
-      > python Build.py specfile
+::
+
+      python Build.py specfile
 
 
 A buildproject subdirectory will be created in the specfile's directory. This
@@ -230,7 +232,9 @@ Windows COM Server support
 
 For Windows COM support execute
 
-       > python MakeCOMServer.py [OPTION] script...
+::
+
+       python MakeCOMServer.py [OPTION] script...
 
 
 This will generate a new script drivescript.py and a spec file for the script.
@@ -261,7 +265,7 @@ that the Python/C API won't let us find out which interpreter instance I should
 hook into. (If this is important to you, you might experiment with using
 apartment threading, which seems the best possibility to get this to work). To
 use a "frozen" COM server from a Python process, you'll have to load it as an
-exe:
+exe::
 
       o = win32com.client.Dispatch(progid,
                        clsctx=pythoncom.CLSCTX_LOCAL_SERVER)
@@ -277,13 +281,13 @@ Building Optimized
 ------------------
 
 There are two facets to running optimized: gathering .pyo's, and setting the
-Py_OptimizeFlag. Installer will gather .pyo's if it is run optimized:
+Py_OptimizeFlag. Installer will gather .pyo's if it is run optimized::
 
-       >python -O Build.py ...
+       python -O Build.py ...
 
 
 The Py_OptimizeFlag will be set if you use a ('O','','OPTION') in one of the
-TOCs building the EXE.
+TOCs building the EXE::
 
       exe = EXE(pyz,
                 a.scripts + [('O','','OPTION')],
