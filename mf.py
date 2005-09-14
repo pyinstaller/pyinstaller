@@ -632,7 +632,7 @@ def scan_code(co, m=None, w=None, nested=0):
         elif op == EXEC_STMT:
             cndtl = ['', 'conditional'][conditional]
             lvl = ['top-level', 'delayed'][nested]
-            w.append("W: %s %s exec statment detected at line %s"  % (lvl, cndtl, curline))
+            w.append("W: %s %s exec statement detected at line %s"  % (lvl, cndtl, curline))
         else:
             lastname = None
     for c in co.co_consts:
