@@ -845,26 +845,26 @@ Extending a Package's ``__path__``
 **********************************
 
 Python allows a package to extend the search path used to find modules and
-sub-packages through the __path__ mechanism. Normally, a package's __path__ has
-only one entry - the directory in which the __init__.py was found. But
-__init__.py is free to extend its __path__ to include other directories. For
-example, the win32com.shell.shell module actually resolves to
-win32com/win32comext/shell/shell.pyd. This is because win32com/__init__.py
-appends ../win32comext to its __path__.
+sub-packages through the ``__path__`` mechanism. Normally, a package's ``__path__`` has
+only one entry - the directory in which the ``__init__.py`` was found. But
+``__init__.py`` is free to extend its ``__path__`` to include other directories. For
+example, the ``win32com.shell.shell`` module actually resolves to
+``win32com/win32comext/shell/shell.pyd``. This is because ``win32com/__init__.py``
+appends ``../win32comext`` to its ``__path__``.
 
-Because the __init__.py is not actually run during an analysis, we use the same
-hook mechanism we use for hiddenimports. A static list of names won't do,
-however, because the new entry on __path__ may well require computation. So
-hook-module.py should define a method hook(mod). The mod argument is an
-instance of mf.Module which has (more or less) the same attributes as a real
-module object. The hook function should return a mf.Module instance - perhaps
+Because the ``__init__.py`` is not actually run during an analysis, we use the same
+hook mechanism we use for hidden imports. A static list of names won't do,
+however, because the new entry on ``__path__`` may well require computation. So
+``hook-module.py`` should define a method ``hook(mod)``. The mod argument is an
+instance of ``mf.Module`` which has (more or less) the same attributes as a real
+module object. The hook function should return a ``mf.Module`` instance - perhaps
 a brand new one, but more likely the same one used as an arg, but mutated.
-See `mf.py: A Modulefinder Replacement`_ for details, and hook/hook-win32com.py
+See `mf.py: A Modulefinder Replacement`_ for details, and `hooks\/hook-win32com.py`_
 for an example.
 
-Note that manipulations of __path__ hooked in this way apply to the analysis,
-and only the analysis. That is, at runtime win32com.shell is resolved the same
-way as win32com.anythingelse, and win32com.__path__ knows nothing of ../win32comext.
+Note that manipulations of ``__path__`` hooked in this way apply to the analysis,
+and only the analysis. That is, at runtime ``win32com.shell`` is resolved the same
+way as ``win32com.anythingelse``, and ``win32com.__path__`` knows nothing of ``../win32comext``.
 
 Once in awhile, that's not enough.
 
@@ -878,20 +878,20 @@ scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.
 
 At the tail end of an analysis, the module list is examined for matches in
-rthooks.dat, which is the string representation of a Python dictionary. The
+``rthooks.dat``, which is the string representation of a Python dictionary. The
 key is the module name, and the value is a list of hook-script pathnames.
 
 So putting an entry::
 
        'somemodule': ['path/to/somescript.py'],
 
-into rthooks.dat is almost the same thing as doing this::
+into ``rthooks.dat`` is almost the same thing as doing this::
 
        anal = Analysis(['path/to/somescript.py', 'main.py'], ...
 
 
-except that in using the hook, path/to/somescript.py will not be analyzed,
-(that's not a feature - I just haven't found a sane way fit the recursion into
+except that in using the hook, ``path/to/somescript.py`` will not be analyzed,
+(that's not a feature - we just haven't found a sane way fit the recursion into
 my persistence scheme).
 
 Hooks done in this way, while they need to be careful of what they import, are
@@ -907,37 +907,37 @@ Adapting to being "frozen"
 In most sophisticated apps, it becomes necessary to figure out (at runtime)
 whether you're running "live" or "frozen". For example, you might have a
 configuration file that (running "live") you locate based on a module's
-__file__ attribute. That won't work once the code is packaged up. You'll
-probably want to look for it based on sys.executable instead.
+``__file__`` attribute. That won't work once the code is packaged up. You'll
+probably want to look for it based on ``sys.executable`` instead.
 
-The run executables set sys.frozen=1 (and, for in-process COM servers, the
-embedding DLL sets sys.frozen='dll').
+The bootloaders set ``sys.frozen=1`` (and, for in-process COM servers, the
+embedding DLL sets ``sys.frozen='dll'``).
 
-For really advanced users, you can access the iu.ImportManager as
-sys.importManager. See iu for how you might make use of this fact.
+For really advanced users, you can access the ``iu.ImportManager`` as
+``sys.importManager``. See `iu.py`_ for how you might make use of this fact.
 
 |GOBACK|
 
 Accessing Data Files
 ********************
 
-In a --onedir distribution, this is easy: pass a list of your data files
-(in TOC format) to the COLLECT, and they will show up in the distribution
-directory tree. The name in the (name, path, 'DATA') tuple can be a relative
+In a ``--onedir`` distribution, this is easy: pass a list of your data files
+(in ``TOC`` format) to the ``COLLECT``, and they will show up in the distribution
+directory tree. The name in the ``(name, path, 'DATA')`` tuple can be a relative
 path name. Then, at runtime, you can use code like this to find the file::
 
        os.path.join(os.path.dirname(sys.executable), relativename))
 
 
-In a --onefile, it's a bit trickier. You can cheat, and add the files to the
-EXE as BINARY. They will then be extracted at runtime into the work directory
+In a ``--onefile``, it's a bit trickier. You can cheat, and add the files to the
+``EXE`` as ``BINARY``. They will then be extracted at runtime into the work directory
 by the C code (which does not create directories, so the name must be a plain
 name), and cleaned up on exit. The work directory is best found by
-os.environ['_MEIPASS2']. Be awawre, though, that if you use --strip or --upx,
-strange things may happen to your data - BINARY is really for shared
+``os.environ['_MEIPASS2']``. Be awawre, though, that if you use ``--strip`` or ``--upx``,
+strange things may happen to your data - ``BINARY`` is really for shared
 libs / dlls.
 
-If you add them as 'DATA' to the EXE, then it's up to you to extract them. Use
+If you add them as ``'DATA'`` to the ``EXE``, then it's up to you to extract them. Use
 code like this::
 
        import sys, carchive
@@ -945,7 +945,7 @@ code like this::
        data = this.extract('mystuff')[1]
 
 
-to get the contents as a binary string. See support/unpackTK.py for an advanced
+to get the contents as a binary string. See `support\/unpackTK.py`_ for an advanced
 example (the TCL and TK lib files are in a PKG which is opened in place, and
 then extracted to the filesystem).
 
@@ -954,11 +954,11 @@ then extracted to the filesystem).
 Miscellaneous
 +++++++++++++
 
-Pmw
----
+Pmw -- Python Mega Widgets
+--------------------------
 
-Pmw comes with a script named bundlepmw in the bin directory. If you follow the
-instructions in that script, you'll end up with a module named Pmw.py. Ensure
+`Pmw`_ comes with a script named ``bundlepmw`` in the bin directory. If you follow the
+instructions in that script, you'll end up with a module named ``Pmw.py``. Ensure
 that Builder finds that module and not the development package.
 
 |GOBACK|
@@ -967,8 +967,8 @@ Win9xpopen
 ----------
 
 If you're using popen on Windows and want the code to work on Win9x, you'll
-need to distribute win9xpopen.exe with your app. On older Pythons with
-Win32all, this would apply to Win32pipe and win32popenWin9x.exe. (On yet older
+need to distribute ``win9xpopen.exe`` with your app. On older Pythons with
+Win32all, this would apply to Win32pipe and ``win32popenWin9x.exe``. (On yet older
 Pythons, no form of popen worked on Win9x).
 
 |GOBACK|
@@ -977,13 +977,13 @@ Self-extracting executables
 ---------------------------
 
 The ELF executable format (Windows, Linux and some others) allows arbitrary
-data to be concatenated to the end of the executable without disturbing it's
-functionality. For this reason, a CArchive's Table of Contents is at the end of
+data to be concatenated to the end of the executable without disturbing its
+functionality. For this reason, a ``CArchive``'s Table of Contents is at the end of
 the archive. The executable can open itself as a binary file name, seek to the
-end and 'open' the CArchive (see figure 3).
+end and 'open' the ``CArchive`` (see figure 3).
 
 On other platforms, the archive and the executable are separate, but the
-archive is named executable.pkg, and expected to be in the same directory.
+archive is named ``executable.pkg``, and expected to be in the same directory.
 Other than that, the process is the same.
 
 |GOBACK|
@@ -991,7 +991,7 @@ Other than that, the process is the same.
 One Pass Execution
 ------------------
 
-In a single directory deployment (--onedir, which is the default), all of the
+In a single directory deployment (``--onedir``, which is the default), all of the
 binaries are already in the file system. In that case, the embedding app:
 
 * opens the archive
@@ -1002,7 +1002,7 @@ binaries are already in the file system. In that case, the embedding app:
 * imports all the modules which are at the top level of the archive (basically,
   bootstraps the import hooks)
 
-* mounts the ZlibArchive(s) in the outer archive
+* mounts the ``ZlibArchive(s)`` in the outer archive
 
 * runs all the scripts which are at the top level of the archive
 
@@ -1015,23 +1015,23 @@ Two Pass Execution
 
 There are a couple situations which require two passes:
 
-* a --onefile deployment (on Windows, the files can't be cleaned up afterwards
-  because Python does not call FreeLibrary; on other platforms, Python won't
+* a ``--onefile`` deployment (on Windows, the files can't be cleaned up afterwards
+  because Python does not call ``FreeLibrary``; on other platforms, Python won't
   find them if they're extracted in the same process that uses them)
 
-* LD_LIBRARY_PATH needs to be set to find the binaries (not extension modules,
+* ``LD_LIBRARY_PATH`` needs to be set to find the binaries (not extension modules,
   but modules the extensions are linked to).
 
 The first pass:
 
 * opens the archive
 
-* extracts all the binaries in the archive (in 5b5, this is always to a
+* extracts all the binaries in the archive (in |PyInstallerVersion|, this is always to a
   temporary directory).
 
 * sets a magic environment variable
 
-* sets LD_LIBRARY_PATH (non-Windows)
+* sets ``LD_LIBRARY_PATH`` (non-Windows)
 
 * executes itself as a child process (letting the child use his stdin, stdout
   and stderr)
@@ -1531,6 +1531,9 @@ Here's a simple example of using iu as a builtin import replacement.
 .. _PyInstaller: http://pyinstaller.hpcf.upr.edu/pyinstaller
 .. _`Submit a Bug`: http://pyinstaller.hpcf.upr.edu/pyinstaller/newticket
 .. _Scons: http://www.scons.org
+.. _hooks\/hook-win32com.py: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/hooks/hook-win32com.py?rev=latest
+.. _support\/unpackTK.py: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/support/unpackTK.py?rev=latest
+.. _Pmw: http://pmw.sourceforge.net/
 .. |ZlibArchiveImage| image:: images/ZlibArchive.png
 .. |CArchiveImage| image:: images/CArchive.png
 .. |SE_exeImage| image:: images/SE_exe.png
