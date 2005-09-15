@@ -38,6 +38,13 @@ Change to the |install_path| ``source/linux`` subdirectory. Run ``Make.py
 [-n|-e]`` and then make. This will produce ``support/loader/run`` and
 ``support/loader/run_d``, which are the bootloaders.
 
+.. sidebar:: Bootloader
+
+   The bootloader (also known as *stub* in literature) is the small program
+   which starts up your packaged program. Usually, the archive containing the
+   bytecoded modules of your program is simply attended to it. See
+   `Self-extracting executables`_ for more details on the process.
+
 *Note:* If you have multiple versions of Python, the Python you use to run
 ``Make.py`` is the one whose configuration is used.
 
@@ -235,8 +242,12 @@ of fitting something useful on a diskette are not gone forever! Installer has
 been tested with many UPX versions without problems. Just get it and install it
 on your PATH, then rerun configure. For Windows, that's all you need to know.
 
-** NOTE: The information below apply to UPX 1.24 for Linux. They could be
-inexact for newer UPX versions, but we have yet to verify it at this point.**
+.. sidebar:: UPX and Unix
+
+    Under UNIX, old versions of UPX were not able to expand and execute the
+    executable in memory, and they were extracting it into a temporary file
+    in the filesystem, before spawning it. This is no longer valid under Linux,
+    but the information in this paragraph still needs to be updated.
 
 For Linux, a bit more discussion is in order. First, UPX is only useful on
 executables, not shared libs. Installer accounts for that, but to get the full
@@ -291,7 +302,6 @@ This has a number of implications:
   will fail. It is created mode 0700, so only the one user can modify it
   (on \*nix, of course).
 
-
 While we are not a security expert, we believe the scheme is good enough for
 most of the users. Now, take notice that if the executable does a setuid root,
 a determined hacker could possibly (given enough tries) introduce a malicious
@@ -301,6 +311,20 @@ you shouldn't do setuid root programs using ``--onefile``. **In fact, we do not
 recomend the use of --onefile on setuid programs.**
 
 |GOBACK|
+
+
+``--onefile`` and Python 2.4 for Windows (**important**)
+--------------------------------------------------------
+
+Currently, there is an issue when using ``--onefile`` with Python 2.4: the
+resulting executable will depend on ``MSVCR71.DLL``. This is a standard
+Microsoft library which was not present on older Windows (like Win9x), so
+you are forced to ship it with your application if you need compatibility
+with those operating systems. We plan to fix this issue in a future version
+of |PyInstaller| (consult our Roadmap_ for more information).
+
+|GOBACK|
+
 
 PyInstaller Utilities
 +++++++++++++++++++++
@@ -821,6 +845,14 @@ flag. If the import messages say "module not found", but the ``warnproject.txt``
 file has no "no module named..." message for the same module, then the problem
 is a hidden import.
 
+.. sidebar:: Standard hidden imports are already included!
+
+    If you are getting worried while reading this paragraph, do not worry:
+    having hidden imports is the exception, not the norm! And anyway,
+    PyInstaller already ships with a large set of hooks that take care of
+    hidden imports for the most common packages out there. For instance,
+    PIL_, PyWin32_, PyQt_ are already taken care of.
+
 Hidden imports are handled by hooking the module (the one doing the hidden
 imports) at ``Analysis`` time. Do this by creating a file named ``hook-module.py``
 (where module is the fully-qualified Python name, eg, ``hook-xml.dom.py``), and
@@ -830,7 +862,6 @@ placing it in the ``hooks`` package under |PyInstaller|'s root directory,
 have only one line::
 
       hiddenimports = ['module1', 'module2']
-
 
 When the ``Analysis`` finds this file, it will proceed exactly as though the module
 explicitly imported ``module1`` and ``module2``. (Full details on the analysis-time
@@ -989,7 +1020,7 @@ Other than that, the process is the same.
 |GOBACK|
 
 One Pass Execution
-------------------
+******************
 
 In a single directory deployment (``--onedir``, which is the default), all of the
 binaries are already in the file system. In that case, the embedding app:
@@ -1011,7 +1042,7 @@ binaries are already in the file system. In that case, the embedding app:
 |GOBACK|
 
 Two Pass Execution
-------------------
+******************
 
 There are a couple situations which require two passes:
 
@@ -1529,11 +1560,15 @@ Here's a simple example of using iu as a builtin import replacement.
 |GOBACK|
 
 .. _PyInstaller: http://pyinstaller.hpcf.upr.edu/pyinstaller
+.. _Roadmap: http://pyinstaller.hpcf.upr.edu/pyinstaller/roadmap
 .. _`Submit a Bug`: http://pyinstaller.hpcf.upr.edu/pyinstaller/newticket
 .. _Scons: http://www.scons.org
 .. _hooks\/hook-win32com.py: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/hooks/hook-win32com.py?rev=latest
 .. _support\/unpackTK.py: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/support/unpackTK.py?rev=latest
 .. _Pmw: http://pmw.sourceforge.net/
+.. _PIL: http://www.pythonware.com/products/pil/
+.. _PyQt: http://www.riverbankcomputing.co.uk/pyqt/index.php
+.. _PyWin32: http://starship.python.net/crew/mhammond/win32/
 .. |ZlibArchiveImage| image:: images/ZlibArchive.png
 .. |CArchiveImage| image:: images/CArchive.png
 .. |SE_exeImage| image:: images/SE_exe.png
