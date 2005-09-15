@@ -2,7 +2,7 @@
 KNOWN BUGS
 ==========
 
-- wxPython hidden dependencies not included
+- flowtools hidden dependencies not included
 
 
 
@@ -18,7 +18,7 @@ MacOS X (darwin)
 
 SGI IRIX
 --------
-	- (will be started soon)
+	- Done
 
 Solaris
 -------

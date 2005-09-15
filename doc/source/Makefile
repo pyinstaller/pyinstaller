@@ -16,7 +16,7 @@ Tutorial.tex: Tutorial.rst
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Tutorial.rst Tutorial.tex
 
 ../Tutorial.pdf: Tutorial.tex
-	pdflatex -output-directory=.. Tutorial.tex
+	cd .. ; pdflatex source/Tutorial.tex
 
 clean:
 	rm -f ../*.html
