@@ -144,7 +144,7 @@ Where allowed OPTIONS are:
 
 For simple projects, the generated spec file will probably be sufficient. For
 more complex projects, it should be regarded as a template. The spec file is
-actually Python code, and modifying it should be ease. See Spec Files for
+actually Python code, and modifying it should be ease. See `Spec Files`_ for
 details.
 
 
@@ -158,10 +158,10 @@ Build your project
       python Build.py specfile
 
 
-A buildproject subdirectory will be created in the specfile's directory. This
+A ``buildproject`` subdirectory will be created in the specfile's directory. This
 is a private workspace so that ``Build.py`` can act like a makefile. Any named
 targets will appear in the specfile's directory. For ``--onedir``
-configurations, that include distproject, which is the directory you're
+configurations, it will create also ``distproject``, which is the directory you're
 interested in. For a ``--onefile``, the executable will be in the specfile's
 directory.
 
@@ -199,7 +199,7 @@ Now `Build your project`_ on the generated spec file.
 If you have the win32dbg package installed, you can use it with the generated
 COM server. In the driver script, set ``debug=1`` in the registration line.
 
-Warnings: the inprocess COM server support will not work when the client
+**Warnings**: the inprocess COM server support will not work when the client
 process already has Python loaded. It would be rather tricky to
 non-obtrusively hook into an already running Python, but the show-stopper is
 that the Python/C API won't let us find out which interpreter instance I should
@@ -228,13 +228,13 @@ There are two facets to running optimized: gathering ``.pyo``'s, and setting the
 
 
 The ``Py_OptimizeFlag`` will be set if you use a ``('O','','OPTION')`` in one of
-the TOCs building the ``EXE``::
+the ``TOCs`` building the ``EXE``::
 
       exe = EXE(pyz,
                 a.scripts + [('O','','OPTION')],
                 ...
 
-See `Spec Files` for details.
+See `Spec Files`_ for details.
 
 |GOBACK|
 
@@ -308,7 +308,9 @@ This has a number of implications:
   (on \*nix, of course).
 
 While we are not a security expert, we believe the scheme is good enough for
-most of the users. Now, take notice that if the executable does a setuid root,
+most of the users.
+
+**Notes for \*nix users**: Take notice that if the executable does a setuid root,
 a determined hacker could possibly (given enough tries) introduce a malicious
 lookalike of one of the shared libraries during the hole between when the
 library is extracted and when it gets loaded by the execvp'd process. So maybe
@@ -339,7 +341,7 @@ ArchiveViewer
 
 ::
 
-      python ArchiveViewer.py archivefile
+      python ArchiveViewer.py <archivefile>
 
 
 ArchiveViewer lets you examine the contents of any archive build with
@@ -364,12 +366,26 @@ Q
 |GOBACK|
 
 
+bindepend
+---------
+
+::
+
+    python bindepend.py <executable_or_dynamic_library>
+
+bindepend will analyze the executable you pass to it, and write to stdout all
+its binary dependencies. This is handy to find out which DLLs are required by
+an executable or another DLL. This module is used by |PyInstaller| itself to
+follow the chain of dependencies of binary extensions and make sure that all
+of them get included in the final package.
+
+
 GrabVersion (Windows)
 ---------------------
 
 ::
 
-      python GrabVersion.py executable_with_version_resource
+      python GrabVersion.py <executable_with_version_resource>
 
 
 GrabVersion outputs text which can be eval'ed by ``versionInfo.py`` to reproduce
