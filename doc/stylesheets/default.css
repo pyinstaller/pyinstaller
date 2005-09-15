@@ -69,6 +69,26 @@ tt, code {
 	font-weight: bold;
 }
 
+div.sidebar {
+	margin-left: 1em;
+	margin-bottom: 1em;
+	font-size: smaller;
+	border: medium outset;
+	padding: 1em 0em;  /* needed by IE */
+	background-color: #ffffee;
+	width: 35%;
+	float: right;
+	clear: right;
+}
+
+p.sidebar-title {
+	font-weight: bold;
+	font-size: larger;
+	color: #006699;
+	font-variant: small-caps;
+}
+
+
 /*
  * END OF FILE
  */
