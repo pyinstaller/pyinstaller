@@ -3,7 +3,8 @@ PyInstaller Tutorial
 ====================
 :Author: William Caban (based on Gordon McMillan's manual)
 :Contact: william@hpcf.upr.edu
-:Revision: $Id$
+:Revision: $LastChangedRev: $
+:Source URL: $HeadURL$
 :Copyright: This document has been placed in the public domain.
 
 .. contents::
