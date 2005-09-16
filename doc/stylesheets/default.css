@@ -55,6 +55,7 @@ td {
 }
 
 dt {
+	/* FIXME: why this does not work with Firefox? */
 	background: #FFD596;
 	font-size: larger;
 	width: 0%;
