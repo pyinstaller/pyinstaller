@@ -55,11 +55,10 @@ td {
 }
 
 dt {
-	/* FIXME: why this does not work with Firefox? */
-	background: #FFD596;
+	font-family: monospace;
+	white-space: nowrap;
 	font-size: larger;
-	width: 0%;
-	white-space: nowrap
+	font-weight: bold;
 }
 
 pre {
