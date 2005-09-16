@@ -1,7 +1,7 @@
-Installer version 5 beta 5
+PyInstaller version 1.0
 
-Use: 
-    see doc/begin.html
+Use:
+    see doc/Tutorial.txt
 
 Installation in brief:
 
@@ -13,10 +13,12 @@ Non-Windows users should:
 Everyone should:
     python Configure.py
 
-Now you're ready to use it!
-  see Makespec in doc/begin.html
+    python Makespec.py /path/to/yourscript.py /path/for/specfile.spec
+
+    python Build.py /path/for/specfile.spec
+
+    .done.
 
 Major changes in this release:
- --onefile always creates a temporary directory (see doc/begin.html)
- - can use UPX if you have it installed
- - many bug fixes.
+ * __write_changes_here__
+ * many bug fixes.

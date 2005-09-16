@@ -1,3 +1,19 @@
+# Copyright (C) 2005, Giovanni Bajo
+# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 import sys, string, os, imp, marshal
 
 #=======================Owners==========================#
@@ -80,7 +96,7 @@ class DirOwner(Owner):
         else:
             mod = PyModule(nm, pth, co)
         return mod
-    
+
 class PYZOwner(Owner):
     def __init__(self, path):
         import archive
@@ -361,7 +377,7 @@ class ImportTracker:
         mod = PyScript(fnm, co)
         self.modules['__main__'] = mod
         return self.analyze_r('__main__')
-    
+
 
     def ispackage(self, nm):
         return self.modules[nm].ispackage()
@@ -406,7 +422,7 @@ class ImportTracker:
                 if hasattr(hook, 'attrs'):
                     for attr, val in hook.attrs:
                         setattr(mod, attr, val)
-                
+
                 if fqname != mod.__name__:
                     print "W: %s is changing it's name to %s" % (fqname, mod.__name__)
                     self.modules[mod.__name__] = mod
@@ -500,7 +516,7 @@ class PkgModule(PyModule):
         if mod:
             mod.__name__ = self.__name__ + '.' + mod.__name__
         return mod
-    
+
 class PkgInPYZModule(PyModule):
     def __init__(self, nm, co, pyzowner):
         PyModule.__init__(self, nm, co.co_filename, co)
@@ -568,7 +584,7 @@ def pass1(code):
         else:
             instrs.append((op, oparg, incondition, curline))
     return instrs
-    
+
 def scan_code(co, m=None, w=None, nested=0):
     instrs = pass1(co.co_code)
     if m is None:
@@ -616,7 +632,7 @@ def scan_code(co, m=None, w=None, nested=0):
         elif op == EXEC_STMT:
             cndtl = ['', 'conditional'][conditional]
             lvl = ['top-level', 'delayed'][nested]
-            w.append("W: %s %s exec statment detected at line %s"  % (lvl, cndtl, curline))
+            w.append("W: %s %s exec statement detected at line %s"  % (lvl, cndtl, curline))
         else:
             lastname = None
     for c in co.co_consts:

@@ -1,3 +1,29 @@
+# Copyright (C) 2005, Giovanni Bajo
+# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# In addition to the permissions in the GNU General Public License, the
+# authors give you unlimited permission to link or embed the compiled
+# version of this file into combinations with other programs, and to
+# distribute those combinations without any restriction coming from the
+# use of this file. (The General Public License restrictions do apply in
+# other respects; for example, they cover modification of the file, and
+# distribution when not linked into a combine executable.)
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+# **NOTE** This module is used during bootstrap. Import *ONLY* builtin modules.
 import sys
 import imp
 import marshal
@@ -9,7 +35,7 @@ import marshal
 # There could be owners for zip files, or even URLs.
 # A shadowpath (a dictionary mapping the names in
 # sys.path to their owners) is used so that sys.path
-# (or a package's __path__) is still a bunch of strings, 
+# (or a package's __path__) is still a bunch of strings,
 
 STRINGTYPE = type('')
 
@@ -156,7 +182,7 @@ class RegistryImportDirector(ImportDirector):
             mod.__file__ = fnm
             return mod
         return None
-    
+
 class PathImportDirector(ImportDirector):
     def __init__(self, pathlist=None, importers=None, ownertypes=None):
         if pathlist is None:
@@ -249,6 +275,10 @@ class ImportManager:
             importernm = globals.get('__name__', '')
             if importernm:
                 if hasattr(_sys_modules_get(importernm), '__path__'):
+                    # If you use the "from __init__ import" syntax, the package
+                    # name will have a __init__ in it. We want to strip it.
+                    if importernm[-len(".__init__"):] == ".__init__":
+                        importernm = importernm[:-len(".__init__")]
                     contexts.insert(0,importernm)
                 else:
                     pkgnm = packagename(importernm)
@@ -290,14 +320,14 @@ class ImportManager:
                 i = i + 1
             if i:
                 break
-            
+
         if i<len(nmparts):
             if ctx and hasattr(sys.modules[ctx], nmparts[i]):
                 #print "importHook done with %s %s %s (case 1)" % (name, globals['__name__'], fromlist)
                 return sys.modules[nmparts[0]]
             del sys.modules[fqname]
             raise ImportError, "No module named %s" % fqname
-        if fromlist is None: 
+        if fromlist is None:
             #print "importHook done with %s %s %s (case 2)" % (name, globals['__name__'], fromlist)
             if context:
                 return sys.modules[context+'.'+nmparts[0]]
@@ -483,7 +513,7 @@ def _os_bootstrap():
                         return a[:i+1]
                     return a[:i]
             return ''
-    
+
     global _os_stat
     _os_stat = stat
 
@@ -492,9 +522,65 @@ def _os_bootstrap():
 
     global _os_path_dirname
     _os_path_dirname = dirname
-    
+
     global _os_getcwd
     _os_getcwd = getcwd
-    
-_os_bootstrap()
 
+_string_replace = _string_join = _string_split = None
+def _string_bootstrap():
+    """
+    Set up 'string' module replacement functions for use during import bootstrap.
+
+    During bootstrap, we can use only builtin modules since import does not work
+    yet. For Python 2.0+, we can use string methods so this is not a problem.
+    For Python 1.5, we would need the string module, so we need replacements.
+    """
+    s = type('')
+
+    global _string_replace, _string_join, _string_split
+
+    if hasattr(s, "join"):
+        _string_join = s.join
+    else:
+        def join(sep, words):
+            res = ''
+            for w in words:
+                    res = res + (sep + w)
+            return res[len(sep):]
+        _string_join = join
+
+    if hasattr(s, "split"):
+        _string_split = s.split
+    else:
+        def split(s, sep, maxsplit=0):
+            res = []
+            nsep = len(sep)
+            if nsep == 0:
+                    return [s]
+            ns = len(s)
+            if maxsplit <= 0: maxsplit = ns
+            i = j = 0
+            count = 0
+            while j+nsep <= ns:
+                    if s[j:j+nsep] == sep:
+                            count = count + 1
+                            res.append(s[i:j])
+                            i = j = j + nsep
+                            if count >= maxsplit: break
+                    else:
+                            j = j + 1
+            res.append(s[i:])
+            return res
+        _string_split = split
+
+    if hasattr(s, "replace"):
+        _string_replace = s.replace
+    else:
+        def replace(str, old, new):
+            return _string_join(new, _string_split(str, old))
+        _string_replace = replace
+
+
+
+_os_bootstrap()
+_string_bootstrap()

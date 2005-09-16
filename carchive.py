@@ -1,9 +1,20 @@
-# copyright 1999 McMillan Enterprises, Inc.
-# license: use as you please. No warranty.
+# Subclass of Archive that can be understood by a C program (see launch.c).
+# Copyright (C) 2005, Giovanni Bajo
+# Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
 #
-# A subclass of Archive that can be understood
-# by a C program. See uplaunch.cpp for unpacking
-# from C.
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 import archive
 import struct
 try:
@@ -23,22 +34,22 @@ else:
 
 class CTOC:
   """A class encapsulating the table of contents of a CArchive.
-  
+
      When written to disk, it is easily read from C."""
   ENTRYSTRUCT = '!iiiibc' #(structlen, dpos, dlen, ulen, flag, typcd) followed by name
   def __init__(self):
     self.data = []
-  
+
   def frombinary(self, s):
     """Decode the binary string into an in memory list.
-    
+
         S is a binary string."""
     entrylen = struct.calcsize(self.ENTRYSTRUCT)
     p = 0
     while p<len(s):
-      (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT, 
-                                                  s[p:p+entrylen]) 
-      nmlen = slen - entrylen 
+      (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT,
+                                                  s[p:p+entrylen])
+      nmlen = slen - entrylen
       p = p + entrylen
       (nm,) = struct.unpack(`nmlen`+'s', s[p:p+nmlen])
       p = p + nmlen
@@ -52,7 +63,7 @@ class CTOC:
       else:
           self.data.append((dpos, dlen, ulen, flag, typcd, nm[:pos]))
       #end version 5
-                         
+
 
   def tobinary(self):
     """Return self as a binary string."""
@@ -76,12 +87,12 @@ class CTOC:
       rslt.append(struct.pack(self.ENTRYSTRUCT+`nmlen`+'s',
                       nmlen+entrylen, dpos, dlen, ulen, flag, typcd, nm+pad))
       # end version 5
-                                  
+
     return string.join(rslt, '')
 
   def add(self, dpos, dlen, ulen, flag, typcd, nm):
     """Add an entry to the table of contents.
-    
+
        DPOS is data position.
        DLEN is data length.
        ULEN is the uncompressed data len.
@@ -99,7 +110,7 @@ class CTOC:
 
   def find(self, name):
     """Return the index of the toc entry with name NAME.
-    
+
        Return -1 for failure."""
     for i in range(len(self.data)):
       if self.data[i][-1] == name:
@@ -108,7 +119,7 @@ class CTOC:
 
 class CArchive(archive.Archive):
   """An Archive subclass that an hold arbitrary data.
-  
+
      Easily handled from C or from Python."""
   MAGIC = 'MEI\014\013\012\013\016'
   HDRLEN = 0
@@ -118,7 +129,7 @@ class CArchive(archive.Archive):
   LEVEL = 9
   def __init__(self, path=None, start=0, len=0):
     """Constructor.
-    
+
        PATH is path name of file (create an empty CArchive if path is None).
        START is the seekposition within PATH.
        LEN is the length of the CArchive (if 0, then read till EOF). """
@@ -127,7 +138,7 @@ class CArchive(archive.Archive):
 
   def checkmagic(self):
     """Verify that self is a valid CArchive.
-    
+
         Magic signature is at end of the archive."""
     #magic is at EOF; if we're embedded, we need to figure where that is
     if self.len:
@@ -139,7 +150,7 @@ class CArchive(archive.Archive):
       self.lib.seek(self.start+self.len-self.TRLLEN, 0)
     else:
       self.lib.seek(-self.TRLLEN, 2)
-    (magic, totallen, tocpos, toclen, pyvers) = struct.unpack(self.TRLSTRUCT, 
+    (magic, totallen, tocpos, toclen, pyvers) = struct.unpack(self.TRLSTRUCT,
                         self.lib.read(self.TRLLEN))
     if magic != self.MAGIC:
       raise RuntimeError, "%s is not a valid %s archive file" \
@@ -159,7 +170,7 @@ class CArchive(archive.Archive):
 
   def extract(self, name):
     """Get the contents of an entry.
-    
+
        NAME is an entry name.
        Return the tuple (ispkg, contents).
        For non-Python resoures, ispkg is meaningless (and 0).
@@ -188,7 +199,7 @@ class CArchive(archive.Archive):
 
   def add(self, entry):
     """Add an ENTRY to the CArchive.
-    
+
        ENTRY must have:
          entry[0] is name (under which it will be saved).
          entry[1] is fullpathname of the file.
@@ -236,7 +247,7 @@ class CArchive(archive.Archive):
 
   def save_trailer(self, tocpos):
     """Save the trailer to disk.
-    
+
        CArchives can be opened from the end - the trailer points
        back to the start. """
     totallen = tocpos + self.toclen + self.TRLLEN
@@ -245,7 +256,7 @@ class CArchive(archive.Archive):
     else:
         toks = split(sys.version, '.', 2)
         pyvers = int(toks[0])*10 + int(toks[1])
-    trl = struct.pack(self.TRLSTRUCT, self.MAGIC, totallen, 
+    trl = struct.pack(self.TRLSTRUCT, self.MAGIC, totallen,
                       tocpos, self.toclen, pyvers)
     self.lib.write(trl)
 

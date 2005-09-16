@@ -1,4 +1,21 @@
 #! /usr/bin/env/python
+# Automatically build spec files containing a description of the project
+# Copyright (C) 2005, Giovanni Bajo
+# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import sys, os, string
 
@@ -71,6 +88,11 @@ except IOError:
     print "You must run Configure.py before building!"
     sys.exit(1)
 
+if config['pythonVersion'] != sys.version:
+    print "The current version of Python is not the same with which PyInstaller was configured."
+    print "Please re-run Configure.py with this version."
+    sys.exit(1)
+
 def quote_win_filepath( path ):
     # quote all \ with another \ after using normpath to clean up the path
     return string.join( string.split( os.path.normpath( path ), '\\' ), '\\\\' )
@@ -89,18 +111,18 @@ def make_variable_path(filename, conversions = path_conversions):
     for (from_path, to_name) in conversions:
         assert os.path.abspath(from_path)==from_path, \
             "path '%s' should already be absolute" % (from_path,)
-        if filename.startswith(from_path):
+        if filename[:len(from_path)] == from_path:
             rest = filename[len(from_path):]
-            if rest[0] in "\\/": 
+            if rest[0] in "\\/":
                 rest = rest[1:]
             return to_name, rest
     return None, filename
-        
+
 # An object used in place of a "path string" which knows how to repr()
 # itself using variable names instead of hard-coded paths.
 class Path:
     def __init__(self, *parts):
-        self.path = os.path.join(*parts)
+        self.path = apply(os.path.join, parts)
         self.variable_prefix = self.filename_suffix = None
     def __repr__(self):
         if self.filename_suffix is None:
@@ -108,7 +130,7 @@ class Path:
         if self.variable_prefix is None:
             return repr(self.path)
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
-        
+
 def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
          comserver=0, ascii=0, workdir=None, pathex=None, version_file=None, icon_file=None):
     if name is None:
@@ -118,10 +140,7 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
     if pathex is None:
         pathex = []
     elif type(pathex) is type(''):
-        if iswin:
-            pathex = string.split(pathex, ';')
-        else:
-            pathex = string.split(pathex, ':')
+        pathex = string.split(pathex, os.pathsep)
     if workdir is None:
         workdir = os.getcwd()
         pathex.append(workdir)
@@ -139,7 +158,8 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
     if not ascii and config['hasUnicode']:
         scripts.insert(0, os.path.join(HOME, 'support', 'useUnicode.py'))
     for i in range(len(scripts)):
-        scripts[i] = Path(scripts[i])
+        scripts[i] = Path(scripts[i]) # Use relative path in specfiles
+
     d = {'tktree':'',
          'tkpkg' :'',
          'scripts':scripts,
@@ -195,7 +215,7 @@ Usage: python %s [options] <scriptname> [<scriptname> ...]
  --icon file.exe,id -> add the icon with id from file.exe to the exe (Windows only)
  --version verfile -> add a version resource from verfile to the exe (Windows only)
 The next step is to run Build.py against the generated spec file.
-See doc/begin.html for details.
+See doc/Tutorial.html for details.
 """
 
 #scripts, name=None, tk=0, freeze=0, console=1, debug=0,workdir=None, pathex=None

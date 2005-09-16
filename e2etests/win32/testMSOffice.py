@@ -1,3 +1,21 @@
+# Copyright (C) 2005, Giovanni Bajo
+# Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+
 # Test MSOffice
 #
 # Main purpose of test is to ensure that Dynamic COM objects
@@ -24,7 +42,7 @@ def TestWord():
 		word = win32com.client.dynamic.Dispatch("Word.Application")
 		TestWord8(word)
 
-		word = None		
+		word = None
 		# Now we will test Dispatch without the new "lazy" capabilities
 		print "Starting Word 8 for non-lazy dynamic test"
 		dispatch = win32com.client.dynamic._GetGoodDispatch("Word.Application")
@@ -39,14 +57,14 @@ def TestWord():
 		print "Starting Word 7 for dynamic test"
 		word = win32com.client.Dispatch("Word.Basic")
 		TestWord7(word)
-	
+
 	try:
 		print "Starting MSWord for generated test"
 		# Typelib, lcid, major and minor for the typelib
-                try:
-		    o = gencache.EnsureModule("{00020905-0000-0000-C000-000000000046}", 1033, 8, 0, bForDemand=1)
-                except TypeError:
-                    o = gencache.EnsureModule("{00020905-0000-0000-C000-000000000046}", 1033, 8, 0)
+		try:
+			o = gencache.EnsureModule("{00020905-0000-0000-C000-000000000046}", 1033, 8, 0, bForDemand=1)
+		except TypeError:
+			o = gencache.EnsureModule("{00020905-0000-0000-C000-000000000046}", 1033, 8, 0)
 		if o is None :
 			raise ImportError, "Can not load the Word8 typelibrary."
 		word = win32com.client.Dispatch("Word.Application.8")
@@ -58,11 +76,11 @@ def TestWord7(word):
 	word.FileNew()
 	# If not shown, show the app.
 	if not word.AppShow(): word._proc_("AppShow")
-		
+
 	for i in xrange(12):
 		word.FormatFont(Color=i+1, Points=i+12)
 		word.Insert("Hello from Python %d\n" % i)
-	
+
 	word.FileClose(2)
 
 def TestWord8(word):
@@ -91,7 +109,7 @@ def TestWord8OldStyle():
 	except ImportError:
 		print "Can not do old style test"
 
-	
+
 def TextExcel(xl):
 	xl.Visible = 0
 	if xl.Visible: raise error, "Visible property is true."
@@ -102,7 +120,7 @@ def TextExcel(xl):
 		xl.Workbooks.Add()
 	else:
 		xl.Workbooks().Add()
-		
+
 
 	xl.Range("A1:C1").Value = (1,2,3)
 	xl.Range("A2:C2").Value = ('x','y','z')
@@ -151,10 +169,10 @@ def TestAll():
 
 		try:
 			print "Starting Excel 8 for generated excel8.py test..."
-                        try:
-			    mod = gencache.EnsureModule("{00020813-0000-0000-C000-000000000046}", 0, 1, 2, bForDemand=1)
-                        except TypeError:
-			    mod = gencache.EnsureModule("{00020813-0000-0000-C000-000000000046}", 0, 1, 2)
+			try:
+				mod = gencache.EnsureModule("{00020813-0000-0000-C000-000000000046}", 0, 1, 2, bForDemand=1)
+			except TypeError:
+				mod = gencache.EnsureModule("{00020813-0000-0000-C000-000000000046}", 0, 1, 2)
 			xl = win32com.client.Dispatch("Excel.Application")
 			TextExcel(xl)
 		except ImportError:

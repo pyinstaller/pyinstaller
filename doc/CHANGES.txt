@@ -1,0 +1,22 @@
+(+ user visible changes, * internal stuff)
+
+
+
+PyInstaller 1.0 (with respect to McMillan's Python Installer 5b5):
+---------------
+
+ + Add support for Python 2.3 (fix packaging of codecs).
+ + Add support for Python 2.4 (under Windows, needed to recompiled the
+   bootloader with a different compiler version).
+ + Fix support for Python 1.5.2, should be fully functional now (required
+   to rewrite some parts of the string module for the bootloader).
+ + Fix a rare bug in extracting the dependencies of a DLL (bug in PE header
+   parser).
+ + Fix packaging of PyQt programs (needed an import hook for a hidden import).
+ + Fix imports calculation for modules using the "from __init__ import" syntax.
+ + Fix a packaging bug when a module was being import both through binary
+   dependency and direct import.
+
+ * Restyle documentation (now using docutils and reStructuredText).
+ * New Windows build system for automatic compilations of bootloader in all
+   the required flavours (using Scons)

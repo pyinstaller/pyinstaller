@@ -1,0 +1,98 @@
+/*
+ * CSS for PyInstaller Documentation
+ */
+
+body, th, td {
+	font-family: verdana, Arial, sans-serif;
+	font-size: 10pt;
+	background-color: white;
+}
+
+p, dl, table {
+	margin-left: 2em;
+	margin-right: 2em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	color: #006699;
+}
+
+h1 {
+	text-align: center;
+ 	font-size: 24pt;
+	font-variant: small-caps;
+}
+h2 {
+ 	font-size: 14pt;
+}
+
+h3 {
+	font-size: 12pt;
+}
+
+h4 {
+	font-size: 11pt;
+}
+
+ul {background: #FFD596;}
+
+ul, a:link, a:visited { color: #006699; }
+
+a:hover {background-color:#006699; color:white;}
+li { color: #006699; margin-left: 2 em; }
+
+table { font-size: 12pt; }
+table.option-list td {padding: 3px; background: #FFD596; white-space: nowrap }
+
+th {
+  	background: #FFD596;
+	font-weight: bold;
+	font-variant: small-caps;
+}
+
+td {
+  	background: white;;
+}
+
+dt {
+	white-space: nowrap;
+	font-weight: bold;
+}
+
+pre {
+  border: solid 1px black;
+  background: #FFD596;
+  font-size: 12pt;
+  padding: 1em;
+  margin-left: 4em;
+  margin-right: 4em;
+}
+
+tt, code {
+	font-family: monospace;
+	font-size: larger;
+}
+
+div.sidebar {
+	margin-left: 1em;
+	margin-bottom: 1em;
+	font-size: smaller;
+	border: medium outset;
+	padding: 1em 0em;  /* needed by IE */
+	background-color: #ffffee;
+	width: 35%;
+	float: right;
+	clear: right;
+}
+
+p.sidebar-title {
+	font-weight: bold;
+	font-size: larger;
+	color: #006699;
+	font-variant: small-caps;
+}
+
+
+/*
+ * END OF FILE
+ */

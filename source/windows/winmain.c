@@ -1,3 +1,30 @@
+/*
+ * Bootloader for a packed executable.
+ * Copyright (C) 2005, Giovanni Bajo
+ * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * In addition to the permissions in the GNU General Public License, the
+ * authors give you unlimited permission to link or embed the compiled
+ * version of this file into combinations with other programs, and to
+ * distribute those combinations without any restriction coming from the
+ * use of this file. (The General Public License restrictions do apply in
+ * other respects; for example, they cover modification of the file, and
+ * distribution when not linked into a combine executable.)
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
 #include "launch.h"
 #include <windows.h>
 #include <signal.h>
@@ -10,11 +37,11 @@ int relaunch(char *thisfile, char *workpath)
 	PROCESS_INFORMATION pi;
 	int rc = 0;
 
-    // the parent process should ignore all signals it can
-    signal(SIGABRT, SIG_IGN);
-    signal(SIGINT, SIG_IGN);
-    signal(SIGTERM, SIG_IGN);
-    signal(SIGBREAK, SIG_IGN);
+	// the parent process should ignore all signals it can
+	signal(SIGABRT, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
+	signal(SIGBREAK, SIG_IGN);
 
 	VS("Setting up to run child\n");
 	sa.nLength = sizeof(sa);
@@ -94,9 +121,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	len = p - here;
 
 	workpath = getenv( "_MEIPASS2" );
-    rc = init(here, &thisfile[len], workpath);
-    if (rc)
-        return rc;
+	rc = init(here, &thisfile[len], workpath);
+	if (rc)
+		return rc;
 	if (workpath) {
 		// we're the "child" process
 		rc = doIt(argc, argv);
@@ -107,7 +134,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			VS("Error extracting binaries");
 			return -1;
 		}
-        // if workpath got set to non-NULL, we've extracted stuff
+		// if workpath got set to non-NULL, we've extracted stuff
 		if (workpath) {
 			// run the "child" process, then clean up
 			rc = relaunch(thisfile, workpath);
@@ -117,7 +144,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			rc = doIt(argc, argv);
 			finalizePython();
 		}
-        cleanUp();
+		cleanUp();
 	}
 	return rc;
 }

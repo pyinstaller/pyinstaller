@@ -28,7 +28,7 @@ class McGUI:
         fr4.pack(side="bottom")
         getFileButton = Button(fr1)
         getFileButton["text"] = "Script..."
-        getFileButton.bind("<Button>",self.GetFile) 
+        getFileButton.bind("<Button>",self.GetFile)
         getFileButton.pack(side="left")
         self.filein = Entry(fr1)
         self.filein.pack(side="right")
@@ -59,7 +59,7 @@ class McGUI:
         self.noconsolecheck.pack()
         okaybutton = Button(fr4)
         okaybutton["text"] = "Okay   "
-        okaybutton.bind("<Button>",self.makePackage) 
+        okaybutton.bind("<Button>",self.makePackage)
         okaybutton.pack(side="left")
         cancelbutton = Button(fr4)
         cancelbutton["text"] = "Cancel"
