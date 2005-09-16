@@ -39,10 +39,10 @@ ul {background: #FFD596;}
 ul, a:link, a:visited { color: #006699; }
 
 a:hover {background-color:#006699; color:white;}
-li { font-variant: small-caps; color: #006699; }
+li { color: #006699; margin-left: 2 em; }
 
 table { font-size: 12pt; }
-table.option-list td {padding: 3px; background: #FFD596; }
+table.option-list td {padding: 3px; background: #FFD596; white-space: nowrap }
 
 th {
   	background: #FFD596;
@@ -54,6 +54,12 @@ td {
   	background: white;;
 }
 
+dt {
+	background: #FFD596;
+	font-size: larger;
+	width: 0%;
+	white-space: nowrap
+}
 
 pre {
   border: solid 1px black;
