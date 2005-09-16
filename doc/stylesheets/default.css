@@ -65,8 +65,8 @@ pre {
 }
 
 tt, code {
-	font-size: 120%;
-	font-weight: bold;
+	font-family: monospace;
+	font-size: larger;
 }
 
 div.sidebar {

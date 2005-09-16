@@ -1092,24 +1092,24 @@ The first pass:
 
 * cleans up the extracted binaries (so on \*nix, this is done by the child)
 
-The child process executes as in One Pass Execution above (the magic
+The child process executes as in `One Pass Execution`_ above (the magic
 environment variable is what tells it that this is pass two).
 
 |SE_exeImage| figure 3 - Self Extracting Executable
 
 There are, of course, quite a few differences between the Windows and
 Unix/Linux versions. The major one is that because all of Python on Windows is
-in pythonXX.dll, and dynamic loading is so simple-minded, that one binary can
+in ``pythonXX.dll``, and dynamic loading is so simple-minded, that one binary can
 be use with any version of Python. There's much in common, though, and that C
-code can be found in source/common/launch.c.
+code can be found in `source/common/launch.c`_.
 
 The Unix/Linux build process (which you need to run just once for any version
 of Python) makes use of the config information in your install (if you
 installed from RPM, you need the Python-development RPM). It also overrides
-getpath.c since we don't want it hunting around the filesystem to build
-sys.path.
+``getpath.c`` since we don't want it hunting around the filesystem to build
+``sys.path``.
 
-In both cases, while one Installer download can be used with any Python
+In both cases, while one |PyInstaller| download can be used with any Python
 version, you need to have separate installations for each Python version.
 
 |GOBACK|
@@ -1119,11 +1119,11 @@ PyInstaller Archives
 
 Archives Introduction
 ---------------------
-You know what an archive is: a .tar file, a .jar file, a .zip file. Two kinds
-of archives are used here. One is equivalent to a Java .jar file - it allows
+You know what an archive is: a ``.tar`` file, a ``.jar`` file, a ``.zip`` file. Two kinds
+of archives are used here. One is equivalent to a Java ``.jar`` file - it allows
 Python modules to be stored efficiently and, (with some import hooks) imported
-directly. This is a *ZlibArchive*. The other (a *CArchive*) is equivalent to a
-.zip file - a general way of packing up (and optionally compressing) arbitrary
+directly. This is a ``ZlibArchive``. The other (a ``CArchive``) is equivalent to a
+``.zip`` file - a general way of packing up (and optionally compressing) arbitrary
 blobs of data. It gets its name from the fact that it can be manipulated easily
 from C, as well as from Python. Both of these derive from a common base class,
 making it fairly easy to create new kinds of archives.
@@ -1586,6 +1586,7 @@ Here's a simple example of using iu as a builtin import replacement.
 .. _Scons: http://www.scons.org
 .. _hooks\/hook-win32com.py: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/hooks/hook-win32com.py?rev=latest
 .. _support\/unpackTK.py: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/support/unpackTK.py?rev=latest
+.. _source/common/launch.c: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/source/common/launch.c?rev=latest
 .. _Pmw: http://pmw.sourceforge.net/
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _PyQt: http://www.riverbankcomputing.co.uk/pyqt/index.php
