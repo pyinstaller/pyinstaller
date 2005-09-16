@@ -1230,18 +1230,18 @@ Instead of an ``ImportManager``, ``mf`` has an ``ImportTracker`` managing things
 ImportTracker
 *************
 
-ImportTracker can be called in two ways: analyze_one(name, importername=None)
-or analyze_r(name, importername=None). The second method does what modulefinder
+``ImportTracker`` can be called in two ways: ``analyze_one(name, importername=None)``
+or ``analyze_r(name, importername=None)``. The second method does what modulefinder
 does - it recursively finds all the module names that importing name would
-cause to appear in sys.modules. The first method is non-recursive. This is
+cause to appear in ``sys.modules``. The first method is non-recursive. This is
 useful, because it is the only way of answering the question "Who imports
 name?" But since it is somewhat unrealistic (very few real imports do not
 involve recursion), it deserves some explanation.
 
 |GOBACK|
 
-analyze_one()
-*************
+``analyze_one()``
+*****************
 
 When a name is imported, there are structural and dynamic effects. The dynamic
 effects are due to the execution of the top-level code in the module (or
@@ -1251,8 +1251,8 @@ are N dots in the name, then N+1 modules will be imported even without any code
 running).
 
 The analyze_one method determines the structural effects, and defers the
-dynamic effects. For example, analyze_one("B.C", "A") could return ["B", "B.C"]
-or ["A.B", "A.B.C"] depending on whether the import turns out to be relative or
+dynamic effects. For example, ``analyze_one("B.C", "A")`` could return ``["B", "B.C"]``
+or ``["A.B", "A.B.C"]`` depending on whether the import turns out to be relative or
 absolute. In addition, ImportTracker's modules dict will have Module instances
 for them.
 
@@ -1267,10 +1267,10 @@ imports. For packages and normal modules, imports is a list populated by
 scanning the code object (and therefor, the names in this list may be relative
 or absolute names - we don't know until they have been analyzed).
 
-The highly astute will notice that there is a hole in analyze_one() here. The
-first thing that happens when B.C is being imported is that B is imported and
+The highly astute will notice that there is a hole in ``analyze_one()`` here. The
+first thing that happens when ``B.C`` is being imported is that ``B`` is imported and
 it's top-level code executed. That top-level code can do various things so that
-when the import of B.C finally occurs, something completely different happens
+when the import of ``B.C`` finally occurs, something completely different happens
 (from what a structural analysis would predict). But mf can handle this through
 it's hooks mechanism.
 
@@ -1279,11 +1279,11 @@ it's hooks mechanism.
 code scanning
 *************
 
-Like modulefinder, mf scans the byte code of a module, looking for imports. In
-addition, mf will pick out a module's __all__ attribute, if it is built as a
-list of constant names. This means that if a package declares an __all__ list
+Like modulefinder, ``mf`` scans the byte code of a module, looking for imports. In
+addition, ``mf`` will pick out a module's ``__all__`` attribute, if it is built as a
+list of constant names. This means that if a package declares an ``__all__`` list
 as a list of names, ImportTracker will track those names if asked to analyze
-package.*. The code scan also notes the occurance of __import__, exec and eval,
+``package.*``. The code scan also notes the occurance of ``__import__``, ``exec`` and ``eval``,
 and can issue warnings when they're found.
 
 The code scanning also keeps track (as well as it can) of the context of an
@@ -1297,46 +1297,46 @@ Hooks
 *****
 
 In modulefinder, scanning the code takes the place of executing the code
-object. mf goes further and allows a module to be hooked (after it has been
+object. ``mf`` goes further and allows a module to be hooked (after it has been
 scanned, but before analyze_one is done with it). A hook is a module named
-hook-fullyqualifiedname in the hooks package. These modules should have one or
+``hook-fullyqualifiedname`` in the ``hooks`` package. These modules should have one or
 more of the following three global names defined:
 
-hiddenimports
+``hiddenimports``
     a list of modules names (relative or absolute) that the module imports in some untrackable way.
 
-attrs
-    a list of (name, value) pairs, (where value is normally meaningless).
+``attrs``
+    a list of ``(name, value)`` pairs (where value is normally meaningless).
 
-hook(mod)
-    a function taking a Module instance and returning a Module instance (so it can modify or replace).
+``hook(mod)``
+    a function taking a ``Module`` instance and returning a ``Module`` instance (so it can modify or replace).
 
 
-The first hook (hiddenimports) extends the list created by scanning the code.
-ExtensionModules, of course, don't get scanned, so this is the only way of
+The first hook (``hiddenimports``) extends the list created by scanning the code.
+``ExtensionModules``, of course, don't get scanned, so this is the only way of
 recording any imports they do.
 
-The second hook (attrs) exists mainly so that ImportTracker won't issue
+The second hook (``attrs``) exists mainly so that ImportTracker won't issue
 spurious warnings when the rightmost node in a dotted name turns out to be an
 attribute in a package module, instead of a missing submodule.
 
 The callable hook exists for things like dynamic modification of a package's
-__path__ or perverse situations, like xml.__init__ replacing itself in
-sys.modules with _xmlplus.__init__. (It takes nine hook modules to properly
+``__path__`` or perverse situations, like ``xml.__init__`` replacing itself in
+``sys.modules`` with ``_xmlplus.__init__``. (It takes nine hook modules to properly
 trace through PyXML-using code, and I can't believe that it's any easier for
-the poor programmer using that package). The hook(mod) (if it exists) is
+the poor programmer using that package). The ``hook(mod)`` (if it exists) is
 called before looking at the others - that way it can, for example, test
-sys.version and adjust what's in hiddenimports.
+``sys.version`` and adjust what's in ``hiddenimports``.
 
 |GOBACK|
 
 Warnings
 ********
 
-ImportTracker has a getwarnings() method that returns all the warnings
-accumulated by the instance, and by the Module instances in its modules dict.
-Generally, it is ImportTracker who will accumulate the warnings generated
-during the structural phase, and Modules that will get the warnings generated
+``ImportTracker`` has a ``getwarnings()`` method that returns all the warnings
+accumulated by the instance, and by the ``Module`` instances in its modules dict.
+Generally, it is ``ImportTracker`` who will accumulate the warnings generated
+during the structural phase, and ``Modules`` that will get the warnings generated
 during the code scan.
 
 Note that by using a hook module, you can silence some particularly tiresome
@@ -1347,10 +1347,10 @@ warnings, but not all of them.
 Cross Reference
 ***************
 
-Once a full analysis (that is, an analyze_r) has been done, you can get a
-cross reference by using getxref(). This returns a list of tuples. Each tuple
-is (modulename, importers), where importers is a list of the (fully qualified)
-names of the modules importing modulename. Both the returned list and the
+Once a full analysis (that is, an ``analyze_r`` call) has been done, you can get a
+cross reference by using ``getxref()``. This returns a list of tuples. Each tuple
+is ``(modulename, importers)``, where importers is a list of the (fully qualified)
+names of the modules importing ``modulename``. Both the returned list and the
 importers list are sorted.
 
 |GOBACK|
@@ -1405,11 +1405,11 @@ The tuples in the imports list are (name, delayed, conditional).
 
 .. _iu.py:
 
-iu.py: An *imputil* Replacement
--------------------------------
+``iu.py``: An *imputil* Replacement
+-----------------------------------
 
-Module iu grows out of the pioneering work that Greg Stein did with imputil
-(actually, it includes some verbatim imputil code, but since Greg didn't
+Module ``iu`` grows out of the pioneering work that Greg Stein did with ``imputil``
+(actually, it includes some verbatim ``imputil`` code, but since Greg didn't
 copyright it, we won't mention it). Both modules can take over Python's
 builtin import and ease writing of at least certain kinds of import hooks.
 
@@ -1418,115 +1418,115 @@ builtin import and ease writing of at least certain kinds of import hooks.
 * better emulation of builtin import
 * more managable
 
-There is an ImportManager which provides the replacement for builtin import
+There is an ``ImportManager`` which provides the replacement for builtin import
 and hides all the semantic complexities of a Python import request from it's
-delegates..
+delegates.
 
 |GOBACK|
 
-ImportManager
-*************
+``ImportManager``
+*****************
 
-ImportManager formalizes the concept of a metapath. This concept implicitly
+``ImportManager`` formalizes the concept of a metapath. This concept implicitly
 exists in native Python in that builtins and frozen modules are searched
-before sys.path, (on Windows there's also a search of the registry while on
+before ``sys.path``, (on Windows there's also a search of the registry while on
 Mac, resources may be searched). This metapath is a list populated with
-ImportDirector instances. There are ImportDirector subclasses for builtins,
+``ImportDirector`` instances. There are ``ImportDirector`` subclasses for builtins,
 frozen modules, (on Windows) modules found through the registry and a
-PathImportDirector for handling sys.path. For a top-level import (that is, not
-an import of a module in a package), ImportManager tries each director on it's
+``PathImportDirector`` for handling ``sys.path``. For a top-level import (that is, not
+an import of a module in a package), ``ImportManager`` tries each director on it's
 metapath until one succeeds.
 
-ImportManager hides the semantic complexity of an import from the directors.
-It's up to the ImportManager to decide if an import is relative or absolute;
-to see if the module has already been imported; to keep sys.modules up to
+``ImportManager`` hides the semantic complexity of an import from the directors.
+It's up to the ``ImportManager`` to decide if an import is relative or absolute;
+to see if the module has already been imported; to keep ``sys.modules`` up to
 date; to handle the fromlist and return the correct module object.
 
 |GOBACK|
 
-ImportDirectors
-***************
-
-An ImportDirector just needs to respond to getmod(name) by returning a module
-object or None. As you will see, an ImportDirector can consider name to be
-atomic - it has no need to examine name to see if it is dotted.
-
-To see how this works, we need to examine the PathImportDirector.
-
-|GOBACK|
-
-PathImportDirector
+``ImportDirector``
 ******************
 
-The PathImportDirector subclass manages a list of names - most notably,
-sys.path. To do so, it maintains a shadowpath - a dictionary mapping the names
-on it's pathlist (eg, sys.path) to their associated Owners. (It could do this
-directly, but the assumption that sys.path is occupied solely by strings seems
-ineradicable.) Owners of the appropriate kind are created as needed (if all
-your imports are satisfied by the first two elements of sys.path, the
-PathImportDirector's shadowpath will only have two entries).
+An ``ImportDirector`` just needs to respond to ``getmod(name)`` by returning a module
+object or ``None``. As you will see, an ``ImportDirector`` can consider name to be
+atomic - it has no need to examine name to see if it is dotted.
+
+To see how this works, we need to examine the ``PathImportDirector``.
 
 |GOBACK|
 
-Owners
-******
+``PathImportDirector``
+**********************
 
-An Owner is much like an ImportDirector but manages a much more concrete piece
-of turf. For example, a DirOwner manages one directory. Since there are no
+The ``PathImportDirector`` subclass manages a list of names - most notably,
+``sys.path``. To do so, it maintains a shadowpath - a dictionary mapping the names
+on its pathlist (eg, ``sys.path``) to their associated ``Owners``. (It could do this
+directly, but the assumption that sys.path is occupied solely by strings seems
+ineradicable.) ``Owners`` of the appropriate kind are created as needed (if all
+your imports are satisfied by the first two elements of ``sys.path``, the
+``PathImportDirector``'s shadowpath will only have two entries).
+
+|GOBACK|
+
+``Owner``
+*********
+
+An ``Owner`` is much like an ``ImportDirector`` but manages a much more concrete piece
+of turf. For example, a ``DirOwner`` manages one directory. Since there are no
 other officially recognized filesystem-like namespaces for importing, that's
-all that's included in iu, but it's easy to imagine Owners for zip files
-(and I have one for my own .pyz archive format) or even URLs.
+all that's included in iu, but it's easy to imagine ``Owners`` for zip files
+(and I have one for my own ``.pyz`` archive format) or even URLs.
 
-As with ImportDirectors, an Owner just needs to respond to getmod(name) by
-returning a module object or None, and it can consider name to be atomic.
+As with ``ImportDirectors``, an ``Owner`` just needs to respond to ``getmod(name)`` by
+returning a module object or ``None``, and it can consider name to be atomic.
 
-So structurally, we have a tree, rooted at the ImportManager. At the next
-level, we have a set of ImportDirectors. At least one of those directors, the
-PathImportDirector in charge of sys.path, has another level beneath it,
-consisting of Owners. This much of the tree covers the entire top-level import
+So structurally, we have a tree, rooted at the ``ImportManager``. At the next
+level, we have a set of ``ImportDirectors``. At least one of those directors, the
+``PathImportDirector`` in charge of ``sys.path``, has another level beneath it,
+consisting of ``Owners``. This much of the tree covers the entire top-level import
 namespace.
 
 The rest of the import namespace is covered by treelets, each rooted in a
-package module (an __init__.py).
+package module (an ``__init__.py``).
 
 |GOBACK|
 
 Packages
 ********
 
-To make this work, Owners need to recognize when a module is a package. For a
-DirOwner, this means that name is a subdirectory which contains an __init__.py.
-The __init__ module is loaded and it's __path__ is initialized with the
-subdirectory. Then, a PathImportDirector is created to manage this __path__.
-Finally the new PathImportDirector's getmod is assigned to the package's
-__importsub__ function.
+To make this work, ``Owners`` need to recognize when a module is a package. For a
+``DirOwner``, this means that name is a subdirectory which contains an ``__init__.py``.
+The ``__init__`` module is loaded and its ``__path__`` is initialized with the
+subdirectory. Then, a ``PathImportDirector`` is created to manage this ``__path__``.
+Finally the new ``PathImportDirector``'s ``getmod`` is assigned to the package's
+``__importsub__`` function.
 
 When a module within the package is imported, the request is routed (by the
-ImportManager) diretly to the package's __importsub__. In a hierarchical
-namespace (like a filesystem), this means that __importsub__ (which is really
-the bound getmod method of a PathImportDirector instance) needs only the
+``ImportManager``) diretly to the package's ``__importsub__``. In a hierarchical
+namespace (like a filesystem), this means that ``__importsub__`` (which is really
+the bound getmod method of a ``PathImportDirector`` instance) needs only the
 module name, not the package name or the fully qualified name. And that's
 exactly what it gets. (In a flat namespace - like most archives - it is
 perfectly easy to route the request back up the package tree to the archive
-Owner, qualifying the name at each step.)
+``Owner``, qualifying the name at each step.)
 
 |GOBACK|
 
 Possibilities
 *************
 
-Let's say we want to import from .zip files. So, we subclass Owner. The
-__init__ method should take a filename, and raise a ValueError if the file is
-not an acceptable .zip file, (when a new name is encountered on sys.path or a
-package's __path__, registered Owners are tried until one accepts the name).
-The getmod method would check the .zip file's contents and return None if the
+Let's say we want to import from zip files. So, we subclass ``Owner``. The
+``__init__`` method should take a filename, and raise a ``ValueError`` if the file is
+not an acceptable ``.zip`` file, (when a new name is encountered on ``sys.path`` or a
+package's ``__path__``, registered Owners are tried until one accepts the name).
+The ``getmod`` method would check the zip file's contents and return ``None`` if the
 name is not found. Otherwise, it would extract the marshalled code object from
-the .zip, create a new module object and perform a bit of initialization (12
+the zip, create a new module object and perform a bit of initialization (12
 lines of code all told for my own archive format, including initializing a pack
-age with it's __subimporter__).
+age with it's ``__subimporter__``).
 
-Once the new Owner class is registered with iu4, you can put a .zip file on
-sys.path. A package could even put a .zip file on it's __path__.
+Once the new ``Owner`` class is registered with ``iu``, you can put a zip file on
+``sys.path``. A package could even put a zip file on its ``__path__``.
 
 |GOBACK|
 
@@ -1534,21 +1534,21 @@ Compatibility
 *************
 
 This code has been tested with the PyXML, mxBase and Win32 packages, covering
-over a dozen import hacks from manipulations of __path__ to replacing a module
-in sys.modules with a different one. Emulation of Python's native import is
-nearly exact, including the names recorded in sys.modules and module attributes
-(packages imported through iu have an extra attribute - __importsub__).
+over a dozen import hacks from manipulations of ``__path__`` to replacing a module
+in ``sys.modules`` with a different one. Emulation of Python's native import is
+nearly exact, including the names recorded in ``sys.modules`` and module attributes
+(packages imported through ``iu`` have an extra attribute - ``__importsub__``).
 
 |GOBACK|
 
 Performance
 ***********
 
-In most cases, iu is slower than builtin import (by 15 to 20%) but faster than
-imputil (by 15 to 20%). By inserting archives at the front of sys.path
+In most cases, ``iu`` is slower than builtin import (by 15 to 20%) but faster than
+``imputil`` (by 15 to 20%). By inserting archives at the front of ``sys.path``
 containing the standard lib and the package being tested, this can be reduced
 to 5 to 10% slower (or, on my 1.52 box, 10% faster!) than builtin import. A bit
-more can be shaved off by manipulating the ImportManager's metapath.
+more can be shaved off by manipulating the ``ImportManager``'s metapath.
 
 |GOBACK|
 
@@ -1561,22 +1561,22 @@ fundamentally iu works by dividing up the import namespace into independent
 domains.
 
 Quite simply, I think cross-domain import hacks are a very bad idea. As author
-of the original package in which |PyInstaller| is based, McMillan worked with
+of the original package on which |PyInstaller| is based, McMillan worked with
 import hacks for many years. Many of them are highly fragile; they often rely
 on undocumented (maybe even accidental) features of implementation.
 A cross-domain import hack is not likely to work with PyXML, for example.
 
-That rant aside, you can modify ImportManger to implement different policies.
+That rant aside, you can modify ``ImportManger`` to implement different policies.
 For example, a version that implements three import primitives: absolute
 import, relative import and recursive-relative import. No idea what the Python
-sytax for those should be, but __aimport__, __rimport__ and __rrimport__ were
+syntax for those should be, but ``__aimport__``, ``__rimport__`` and ``__rrimport__`` were
 easy to implement.
 
 
 Usage
 *****
 
-Here's a simple example of using iu as a builtin import replacement.
+Here's a simple example of using ``iu`` as a builtin import replacement.
 
       >>> import iu
       >>> iu.ImportManager().install()
