@@ -14,21 +14,21 @@ doc: html pdf cleanlogs
 	@echo "Documentation generated: Please see ../*.html and ../*.pdf for files"
 
 
-html: ../Tutorial.html
-pdf: ../Tutorial.pdf
+html: ../Manual.html
+pdf: ../Manual.pdf
 
-../Tutorial.html: Tutorial.rst
-	tools/buildrecursive.py --local --strict --title='PyInstaller Tutorial' --outpath=..
+../Manual.html: Manual.rst
+	tools/buildrecursive.py --local --strict --title='PyInstaller Manual' --outpath=..
 
-Tutorial.tex: Tutorial.rst
-	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Tutorial.rst Tutorial.tex
+Manual.tex: Manual.rst
+	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
 
-../Tutorial.pdf: Tutorial.tex
-	cd .. ; pdflatex source/Tutorial.tex
+../Manual.pdf: Manual.tex
+	cd .. ; pdflatex source/Manual.tex
 	@echo "#############################################################################"
 	@echo "# Executing again to fix Table of Content...                                #"
 	@echo "#############################################################################"
-	cd .. ; pdflatex source/Tutorial.tex
+	cd .. ; pdflatex source/Manual.tex
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
