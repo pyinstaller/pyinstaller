@@ -1,6 +1,6 @@
-====================
-PyInstaller Tutorial
-====================
+==================
+PyInstaller Manual
+==================
 :Author: William Caban (based on Gordon McMillan's manual)
 :Contact: william@hpcf.upr.edu
 :Revision: $Rev$
@@ -1608,4 +1608,4 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. |InitialVersion| replace:: v1.0
 .. |install_path| replace:: /your/path/to/pyinstaller/
 .. |GOBACK| replace:: `Back to Top`_
-.. _`Back to Top`: `PyInstaller Tutorial`_
+.. _`Back to Top`: `PyInstaller Manual`_
