@@ -55,9 +55,7 @@ td {
 }
 
 dt {
-	font-family: monospace;
 	white-space: nowrap;
-	font-size: larger;
 	font-weight: bold;
 }
 

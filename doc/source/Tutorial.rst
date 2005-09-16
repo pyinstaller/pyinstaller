@@ -569,29 +569,29 @@ Analysis
       Analysis(scripts, pathex=None, hookspath=None, excludes=None)
 
 
-scripts
+``scripts``
     a list of scripts specified as file names.
 
-pathex
+``pathex``
     an optional list of paths to be searched before sys.path.
 
-hookspath
+``hookspath``
     an optional list of paths used to extend the hooks package.
 
-excludes
+``excludes``
     an optional list of module or package names (their Python names, not path
     names) that will be ignored (as though they were not found).
 
 An Analysis has three outputs, all ``TOCs`` accessed as attributes of the ``Analysis``.
 
-scripts
+``scripts``
     The scripts you gave Analysis as input, with any runtime hook scripts
     prepended.
 
-pure
+``pure``
     The pure Python modules.
 
-binaries
+``binaries``
     The extension modules and their dependencies. The secondary dependencies are
     filtered. On Windows, a long list of MS dlls are excluded. On Linux/Unix,
     any shared lib in ``/lib`` or ``/usr/lib`` is excluded.
@@ -606,13 +606,13 @@ PYZ
       PYZ(toc, name=None, level=9)
 
 
-toc
+``toc``
     a ``TOC``, normally an ``Analysis.pure``.
 
-name
+``name``
     A filename for the ``.pyz``. Normally not needed, as the generated name will do fine.
 
-level
+``level``
     The Zlib compression level to use. If 0, the zlib module is not required.
 
 
@@ -630,18 +630,18 @@ however. A single-file deployment including TK support will use this technique.
       PKG(toc, name=None, cdict=None, exclude_binaries=0)
 
 
-toc
-    a TOC
+``toc``
+    a ``TOC``.
 
-name
+``name``
     a filename for the ``PKG`` (optional).
 
-cdict
+``cdict``
     a dictionary that specifies compression by typecode. For example, ``PYZ`` is
     left uncompressed so that it can be accessed inside the ``PKG``. The default
     uses sensible values. If zlib is not available, no compression is used.
 
-exclude_binaries
+``exclude_binaries``
     If 1, ``EXTENSIONs`` and ``BINARYs`` will be left out of the ``PKG``, and
     forwarded to its container (usually a ``COLLECT``).
 
@@ -655,31 +655,31 @@ EXE
       EXE(*args, **kws)
 
 
-args
+``args``
     One or more arguments which are either ``TOCs`` or ``Targets``.
 
-kws
+``kws``
     Possible keyword arguments:
 
-    console
+    ``console``
         Always 1 on Linux/unix. On Windows, governs whether to use the console
         executable, or the Windows subsystem executable.
 
-    debug
+    ``debug``
         Setting to 1 gives you progress messages from the executable (for a
         ``console=0``, these will be annoying MessageBoxes).
 
-    name
+    ``name``
         The filename for the executable.
 
-    exclude_binaries
+    ``exclude_binaries``
         Forwarded to the ``PKG`` the ``EXE`` builds.
 
-    icon
+    ``icon``
         Windows NT family only. ``icon='myicon.ico'`` to use an icon file, or
         ``icon='notepad.exe,0'`` to grab an icon resource.
 
-    version
+    ``version``
         Windows NT family only. ``version='myversion.txt'``. Use ``GrabVersion.py`` to
         steal a version resource from an executable, and then edit the ouput to
         create your own. (The syntax of version resources is so arcane that I
@@ -714,13 +714,13 @@ COLLECT
       COLLECT(*args, **kws)
 
 
-args
+``args``
     One or more arguments which are either ``TOCs`` or ``Targets``.
 
-kws
+``kws``
     Possible keyword arguments:
-    
-    name
+
+    ``name``
         The name of the directory to be built.
 
 |GOBACK|
@@ -733,19 +733,19 @@ Tree
       Tree(root, prefix=None, excludes=None)
 
 
-root
+``root``
     The root of the tree (on the build system).
 
-prefix
+``prefix``
     Optional prefix to the names on the target system.
 
-excludes
+``excludes``
     A list of names to exclude. Two forms are allowed:
 
-    name
+    ``name``
         files with this basename will be excluded (do not include the path).
 
-    \*.ext
+    ``*.ext``
         any file with the given extension will be excluded.
 
 Since a ``Tree`` is a ``TOC``, you can also use the exclude technique described above
