@@ -55,13 +55,17 @@ def clean():
 def runtests():
     global here
     sources = glob.glob(os.path.join(here, 'test*[0-9].py'))
+    path = os.environ["PATH"]
     for src in sources:
         print
         print "################## EXECUTING TEST %s ################################" % src
         print
         test = os.path.splitext(os.path.basename(src))[0]
         os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
+        # Run the test in a clean environment to make sure they're really self-contained
+        del os.environ["PATH"]
         os.system('dist%s%s%s' % (test, os.sep, test))
+        os.environ["PATH"] = path
         print "################## FINISHING TEST %s  ################################" % src
 
 if __name__ == '__main__':
