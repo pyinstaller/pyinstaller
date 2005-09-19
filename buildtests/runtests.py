@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
@@ -51,26 +52,21 @@ def clean():
         except OSError, e:
             print e
 
-    specfiles = glob.glob(os.path.join(here, 'test*.spec'))
-    for file in specfiles:
-        try:
-            os.remove(file)
-        except OSError, e:
-            print e
-
-
 def runtests():
     global here
     sources = glob.glob(os.path.join(here, 'test*[0-9].py'))
+    path = os.environ["PATH"]
     for src in sources:
         print
-	print "################## EXECUTING TEST %s ################################" % src
+        print "################## EXECUTING TEST %s ################################" % src
         print
-        os.system('%s ../Makespec.py %s' % (PYTHON, src))
         test = os.path.splitext(os.path.basename(src))[0]
         os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
+        # Run the test in a clean environment to make sure they're really self-contained
+        del os.environ["PATH"]
         os.system('dist%s%s%s' % (test, os.sep, test))
-	print "################## FINISHING TEST %s  ################################" % src
+        os.environ["PATH"] = path
+        print "################## FINISHING TEST %s  ################################" % src
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
