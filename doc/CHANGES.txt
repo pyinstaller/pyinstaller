@@ -1,6 +1,8 @@
 (+ user visible changes, * internal stuff)
 
-
+ + Fix problem with rare encodings introduced in newer Python versions: now all
+   the encodings are automatically found and included, so this problem should
+   be gone forever.
 
 PyInstaller 1.0 (with respect to McMillan's Python Installer 5b5):
 ---------------
