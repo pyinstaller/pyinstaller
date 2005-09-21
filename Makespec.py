@@ -212,8 +212,6 @@ if __name__ == '__main__':
                  help="create a single file deployment")
     p.add_option("-D", "--onedir", dest="freeze", action="store_false",
                  help="create a single directory deployment (default)")
-    p.add_option("-K", "--tk", default=False, action="store_true",
-                 help="include TCL/TK in the deployment")
     p.add_option("-w", "--windowed", "--noconsole", dest="console",
                  action="store_false", default=True,
                  help="use a Windows subsystem executable (Windows only)")
@@ -232,14 +230,20 @@ if __name__ == '__main__':
     p.add_option("-X", "--upx", action="store_true", default=False,
                  help="use UPX if available (works differently between "
                       "Windows and *nix)")
+    p.add_option("-K", "--tk", default=False, action="store_true",
+                 help="include TCL/TK in the deployment")
     p.add_option("-o", "--out", type="string", default=None,
                  dest="workdir", metavar="DIR",
                  help="generate the spec file in the specified directory")
+    p.add_option("-n", "--name", type="string", default=None,
+                 help="name to assign to the project, from which the spec file "
+                      "name is generated. (default: use the basename of the "
+                      "(first) script)")
     p.add_option("-p", "--paths", type="string", default=[], dest="pathex",
                  metavar="DIR", action="append",
                  help="set base path for import (like using PYTHONPATH). "
                       "Multiple directories are allowed, separating them "
-                      "with %s, or using this option multiple times."
+                      "with %s, or using this option multiple times"
                       % repr(os.pathsep))
     p.add_option("-v", "--version", type="string",
                  dest="version_file", metavar="FILE",
@@ -250,7 +254,7 @@ if __name__ == '__main__':
                  help="If FILE is an .ico file, add the icon to the final "
                       "executable. Otherwise, the syntax 'file.exe,id' to "
                       "extract the icon with the specified id "
-                      "from file.exe and add it to the final executable.")
+                      "from file.exe and add it to the final executable")
 
     opts,args = p.parse_args()
 
