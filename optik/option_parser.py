@@ -27,11 +27,9 @@ try:
     True, False
 except NameError:
     (True, False) = (1, 0)
-try:
-    basestring
-except NameError:
-    basestring = (str, unicode)
 
+def isbasestring(x):
+    return isinstance(x, types.StringType) or isinstance(x, types.UnicodeType)
 
 class Values:
 
@@ -45,16 +43,13 @@ class Values:
 
     __repr__ = _repr
 
-    def __eq__(self, other):
+    def __cmp__(self, other):
         if isinstance(other, Values):
-            return self.__dict__ == other.__dict__
-        elif isinstance(other, dict):
-            return self.__dict__ == other
+            return cmp(self.__dict__, other.__dict__)
+        elif isinstance(other, types.DictType):
+            return cmp(self.__dict__, other)
         else:
-            return False
-
-    def __ne__(self, other):
-        return not (self == other)
+            return -1
 
     def _update_careful(self, dict):
         """
@@ -480,7 +475,7 @@ class OptionParser (OptionContainer):
         defaults = self.defaults.copy()
         for option in self._get_all_options():
             default = defaults.get(option.dest)
-            if isinstance(default, basestring):
+            if isbasestring(default):
                 opt_str = option.get_opt_string()
                 defaults[option.dest] = option.check_value(opt_str, default)
 

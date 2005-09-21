@@ -272,7 +272,7 @@ class Option:
                     self.type = "string"
         else:
             # Allow type objects as an alternative to their names.
-            if type(self.type) is type:
+            if hasattr(self.type, "__name__"):
                 self.type = self.type.__name__
             if self.type == "str":
                 self.type = "string"

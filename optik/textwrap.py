@@ -8,6 +8,7 @@
 __revision__ = "$Id: textwrap.py,v 1.35 2004/06/03 01:59:40 gward Exp $"
 
 import string, re
+import types
 
 # Do the right thing with boolean values for all known Python versions
 # (so this module can be copied to projects that don't depend on Python
@@ -120,9 +121,9 @@ class TextWrapper:
         if self.expand_tabs:
             text = text.expandtabs()
         if self.replace_whitespace:
-            if isinstance(text, str):
+            if isinstance(text, types.StringType):
                 text = text.translate(self.whitespace_trans)
-            elif isinstance(text, unicode):
+            elif isinstance(text, types.UnicodeType):
                 text = text.translate(self.unicode_whitespace_trans)
         return text
 
