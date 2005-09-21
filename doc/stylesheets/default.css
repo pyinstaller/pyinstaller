@@ -42,7 +42,7 @@ a:hover {background-color:#006699; color:white;}
 li { color: #006699; margin-left: 2 em; }
 
 table { font-size: 12pt; }
-table.option-list td {padding: 3px; background: #FFD596; white-space: nowrap }
+table.option-list kbd {padding: 3px; background: #FFD596; white-space: nowrap }
 
 th {
   	background: #FFD596;
