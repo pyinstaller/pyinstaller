@@ -1,9 +1,14 @@
 (+ user visible changes, * internal stuff)
 
+Current changes since PyInstaller 1.0
+-------------------------------------
+
  + Fix problem with rare encodings introduced in newer Python versions: now all
    the encodings are automatically found and included, so this problem should
    be gone forever.
  + Add import hook for dnspython (tested with 1.3.4)
+
+
 
 PyInstaller 1.0 (with respect to McMillan's Python Installer 5b5):
 ---------------
