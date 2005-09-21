@@ -8,9 +8,11 @@ to generate formatted help text.
 # See the README.txt distributed with Optik for licensing terms.
 
 import os
+import string
 import textwrap
 from optik.option import NO_DEFAULT
-from optik.errors import gettext as _
+from optik.errors import gettext
+_ = gettext
 
 __revision__ = "$Id: help.py 470 2004-12-07 01:39:56Z gward $"
 
@@ -74,7 +76,7 @@ class HelpFormatter:
                 width = int(os.environ['COLUMNS'])
             except (KeyError, ValueError):
                 width = 80
-            width -= 2
+            width = width - 2
         self.width = width
         self.current_indent = 0
         self.level = 0
@@ -101,13 +103,13 @@ class HelpFormatter:
         self._long_opt_fmt = "%s" + delim + "%s"
 
     def indent(self):
-        self.current_indent += self.indent_increment
-        self.level += 1
+        self.current_indent = self.current_indent + self.indent_increment
+        self.level = self.level + 1
 
     def dedent(self):
-        self.current_indent -= self.indent_increment
+        self.current_indent = self.current_indent - self.indent_increment
         assert self.current_indent >= 0, "Indent decreased below 0."
-        self.level -= 1
+        self.level = self.level - 1
 
     def format_usage(self, usage):
         raise NotImplementedError, "subclasses must implement"
@@ -133,7 +135,7 @@ class HelpFormatter:
         if default_value is NO_DEFAULT or default_value is None:
             default_value = self.NO_DEFAULT_VALUE
 
-        return option.help.replace(self.default_tag, str(default_value))
+        return string.replace(option.help, self.default_tag, str(default_value))
 
     def format_option(self, option):
         # The help for each option consists of two parts:
@@ -164,11 +166,11 @@ class HelpFormatter:
             help_text = self.expand_default(option)
             help_lines = textwrap.wrap(help_text, self.help_width)
             result.append("%*s%s\n" % (indent_first, "", help_lines[0]))
-            result.extend(["%*s%s\n" % (self.help_position, "", line)
-                           for line in help_lines[1:]])
+            for line in help_lines[1:]:
+                result.append("%*s%s\n" % (self.help_position, "", line))
         elif opts[-1] != "\n":
             result.append("\n")
-        return "".join(result)
+        return string.join(result, "")
 
     def store_option_strings(self, parser):
         self.indent()
@@ -191,11 +193,13 @@ class HelpFormatter:
     def format_option_strings(self, option):
         """Return a comma-separated list of option strings & metavariables."""
         if option.takes_value():
-            metavar = option.metavar or option.dest.upper()
-            short_opts = [self._short_opt_fmt % (sopt, metavar)
-                          for sopt in option._short_opts]
-            long_opts = [self._long_opt_fmt % (lopt, metavar)
-                         for lopt in option._long_opts]
+            metavar = option.metavar or string.upper(option.dest)
+            short_opts = []
+            for sopt in option._short_opts:
+                short_opts.append(self._short_opt_fmt % (sopt, metavar))
+            long_opts = []
+            for lopt in option._long_opts:
+                long_opts.append(self._long_opt_fmt % (lopt, metavar))
         else:
             short_opts = option._short_opts
             long_opts = option._long_opts
@@ -205,7 +209,7 @@ class HelpFormatter:
         else:
             opts = long_opts + short_opts
 
-        return ", ".join(opts)
+        return string.join(opts, ", ")
 
 class IndentedHelpFormatter (HelpFormatter):
     """Format help with indented section bodies.

@@ -7,11 +7,12 @@ Provides the OptionParser and Values classes.
 # See the README.txt distributed with Optik for licensing terms.
 
 import sys, os
-import types
+import types, string
 from optik.option import Option, NO_DEFAULT, _repr
 from optik.help import IndentedHelpFormatter
 from optik import errors
-from optik.errors import gettext as _
+from optik.errors import gettext
+_ = gettext
 
 __revision__ = "$Id: option_parser.py 470 2004-12-07 01:39:56Z gward $"
 
@@ -27,9 +28,12 @@ try:
     True, False
 except NameError:
     (True, False) = (1, 0)
-
 def isbasestring(x):
     return isinstance(x, types.StringType) or isinstance(x, types.UnicodeType)
+if not hasattr(string, "startswith"):
+    def startswith(s, prefix):
+        return s[:len(prefix)] == prefix
+    string.startswith = startswith
 
 class Values:
 
@@ -78,7 +82,7 @@ class Values:
         elif mode == "loose":
             self._update_loose(dict)
         else:
-            raise ValueError, "invalid update mode: %r" % mode
+            raise ValueError, "invalid update mode: %s" % repr(mode)
 
     def read_module(self, modname, mode="careful"):
         __import__(modname)
@@ -157,7 +161,7 @@ class OptionContainer:
 
     def set_conflict_handler(self, handler):
         if handler not in ("error", "resolve"):
-            raise ValueError, "invalid conflict_resolution value %r" % handler
+            raise ValueError, "invalid conflict_resolution value %s" % repr(handler)
         self.conflict_handler = handler
 
     def set_description(self, description):
@@ -181,13 +185,16 @@ class OptionContainer:
         if conflict_opts:
             handler = self.conflict_handler
             if handler == "error":
+                opts = []
+                for co in conflict_opts:
+                    opts.append(co[0])
                 raise errors.OptionConflictError(
                     "conflicting option string(s): %s"
-                    % ", ".join([co[0] for co in conflict_opts]),
+                    % string.join(opts, ", "),
                     option)
             elif handler == "resolve":
                 for (opt, c_option) in conflict_opts:
-                    if opt.startswith("--"):
+                    if string.startswith(opt, "--"):
                         c_option._long_opts.remove(opt)
                         del self._long_opt[opt]
                     else:
@@ -201,11 +208,11 @@ class OptionContainer:
            add_option(opt_str, ..., kwarg=val, ...)
         """
         if type(args[0]) is types.StringType:
-            option = self.option_class(*args, **kwargs)
+            option = apply(self.option_class, args, kwargs)
         elif len(args) == 1 and not kwargs:
             option = args[0]
             if not isinstance(option, Option):
-                raise TypeError, "not an Option instance: %r" % option
+                raise TypeError, "not an Option instance: %s" % repr(option)
         else:
             raise TypeError, "invalid arguments"
 
@@ -245,7 +252,7 @@ class OptionContainer:
         if option is None:
             option = self._long_opt.get(opt_str)
         if option is None:
-            raise ValueError("no such option %r" % opt_str)
+            raise ValueError("no such option %s" % repr(opt_str))
 
         for opt in option._short_opts:
             del self._short_opt[opt]
@@ -263,7 +270,7 @@ class OptionContainer:
         for option in self.option_list:
             if not option.help is SUPPRESS_HELP:
                 result.append(formatter.format_option(option))
-        return "".join(result)
+        return string.join(result, "")
 
     def format_description(self, formatter):
         return formatter.format_description(self.get_description())
@@ -274,7 +281,7 @@ class OptionContainer:
             result.append(self.format_description(formatter))
         if self.option_list:
             result.append(self.format_option_help(formatter))
-        return "\n".join(result)
+        return string.join(result, "\n")
 
 
 class OptionGroup (OptionContainer):
@@ -297,7 +304,7 @@ class OptionGroup (OptionContainer):
     def format_help(self, formatter):
         result = formatter.format_heading(self.title)
         formatter.indent()
-        result += OptionContainer.format_help(self, formatter)
+        result = result + OptionContainer.format_help(self, formatter)
         formatter.dedent()
         return result
 
@@ -441,7 +448,7 @@ class OptionParser (OptionContainer):
         elif usage is SUPPRESS_USAGE:
             self.usage = None
         # For backwards compatibility with Optik 1.3 and earlier.
-        elif usage.startswith("usage:" + " "):
+        elif string.startswith(usage, "usage:" + " "):
             self.usage = usage[7:]
         else:
             self.usage = usage
@@ -487,11 +494,11 @@ class OptionParser (OptionContainer):
     def add_option_group(self, *args, **kwargs):
         # XXX lots of overlap with OptionContainer.add_option()
         if type(args[0]) is types.StringType:
-            group = OptionGroup(self, *args, **kwargs)
+            group = apply(OptionGroup, (self,) + args, kwargs)
         elif len(args) == 1 and not kwargs:
             group = args[0]
             if not isinstance(group, OptionGroup):
-                raise TypeError, "not an OptionGroup instance: %r" % group
+                raise TypeError, "not an OptionGroup instance: %s" % repr(group)
             if group.parser is not self:
                 raise ValueError, "invalid OptionGroup (wrong parser)"
         else:
@@ -634,7 +641,7 @@ class OptionParser (OptionContainer):
         # Value explicitly attached to arg?  Pretend it's the next
         # argument.
         if "=" in arg:
-            (opt, next_arg) = arg.split("=", 1)
+            (opt, next_arg) = string.split(arg, "=", 1)
             rargs.insert(0, next_arg)
             had_explicit_value = True
         else:
@@ -672,7 +679,7 @@ class OptionParser (OptionContainer):
         for ch in arg[1:]:
             opt = "-" + ch
             option = self._short_opt.get(opt)
-            i += 1                      # we have consumed a character
+            i = i+1                      # we have consumed a character
 
             if not option:
                 raise errors.BadOptionError(opt)
@@ -715,7 +722,7 @@ class OptionParser (OptionContainer):
             return self.prog
 
     def expand_prog_name(self, s):
-        return s.replace("%prog", self.get_prog_name())
+        return string.replace(s, "%prog", self.get_prog_name())
 
     def get_description(self):
         return self.expand_prog_name(self.description)
@@ -752,7 +759,9 @@ class OptionParser (OptionContainer):
         or not defined.
         """
         if self.usage:
-            print >>file, self.get_usage()
+            if file is None:
+                file = sys.stdout
+            file.write(self.get_usage() + "\n")
 
     def get_version(self):
         if self.version:
@@ -769,7 +778,9 @@ class OptionParser (OptionContainer):
         name.  Does nothing if self.version is empty or undefined.
         """
         if self.version:
-            print >>file, self.get_version()
+            if file is None:
+                file = sys.stdout
+            file.write(self.get_version() + "\n")
 
     def format_option_help(self, formatter=None):
         if formatter is None:
@@ -786,7 +797,7 @@ class OptionParser (OptionContainer):
             result.append("\n")
         formatter.dedent()
         # Drop the last "\n", or the header if no options or option groups:
-        return "".join(result[:-1])
+        return string.join(result[:-1], "")
 
     def format_help(self, formatter=None):
         if formatter is None:
@@ -797,7 +808,7 @@ class OptionParser (OptionContainer):
         if self.description:
             result.append(self.format_description(formatter) + "\n")
         result.append(self.format_option_help(formatter))
-        return "".join(result)
+        return string.join(result, "")
 
     def print_help(self, file=None):
         """print_help(file : file = stdout)
@@ -824,8 +835,10 @@ def _match_abbrev(s, wordmap):
         return s
     else:
         # Isolate all words with s as a prefix.
-        possibilities = [word for word in wordmap.keys()
-                         if word.startswith(s)]
+        possibilities = []
+        for word in wordmap.keys():
+            if string.startswith(word, s):
+                possibilities.append(word)
         # No exact match, so there had better be just one possibility.
         if len(possibilities) == 1:
             return possibilities[0]

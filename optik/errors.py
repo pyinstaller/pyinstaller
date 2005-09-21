@@ -6,6 +6,7 @@ Exception classes used by Optik.
 # Copyright (c) 2001-2004 Gregory P. Ward.  All rights reserved.
 # See the README.txt distributed with Optik for licensing terms.
 
+import string
 try:
     from gettext import gettext
 except ImportError:
@@ -74,4 +75,4 @@ class AmbiguousOptionError (BadOptionError):
 
     def __str__(self):
         return (_("ambiguous option: %s (%s?)")
-                % (self.opt_str, ", ".join(self.possibilities)))
+                % (self.opt_str, string.join(self.possibilities, ", ")))

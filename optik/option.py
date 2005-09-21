@@ -7,8 +7,9 @@ Defines the Option class and some standard value-checking functions.
 # See the README.txt distributed with Optik for licensing terms.
 
 import sys
-import types
-from optik.errors import OptionError, OptionValueError, gettext as _
+import types, string
+from optik.errors import OptionError, OptionValueError, gettext
+_ = gettext
 
 __revision__ = "$Id: option.py 470 2004-12-07 01:39:56Z gward $"
 
@@ -20,6 +21,16 @@ try:
 except NameError:
     (True, False) = (1, 0)
 
+# For Python 1.5, just ignore unicode (try it as str)
+try:
+    unicode
+except NameError:
+    unicode=str
+try:
+    types.UnicodeType
+except AttributeError:
+    types.UnicodeType = types.StringType
+
 _idmax = 2L * sys.maxint + 1
 
 def _repr(self):
@@ -28,9 +39,9 @@ def _repr(self):
                                  self)
 
 def _parse_num(val, type):
-    if val[:2].lower() == "0x":         # hexadecimal
+    if string.lower(val[:2]) == "0x":   # hexadecimal
         radix = 16
-    elif val[:2].lower() == "0b":       # binary
+    elif string.lower(val[:2]) == "0b": # binary
         radix = 2
         val = val[2:] or "0"            # have to remove "0b" prefix
     elif val[:1] == "0":                # octal
@@ -38,7 +49,13 @@ def _parse_num(val, type):
     else:                               # decimal
         radix = 10
 
-    return type(val, radix)
+    try:
+        return type(val, radix)
+    except TypeError:
+        # In Python pre-2.0, int() and long() did not support the radix
+        # argument. We catch the type error (not to be confused with ValueError,
+        # which is a real parsing failure), and try again with string.atol.
+        return type(string.atol(val, radix))
 
 def _parse_int(val):
     return _parse_num(val, int)
@@ -57,16 +74,16 @@ def check_builtin(option, opt, value):
         return cvt(value)
     except ValueError:
         raise OptionValueError(
-            _("option %s: invalid %s value: %r") % (opt, what, value))
+            _("option %s: invalid %s value: %s") % (opt, what, repr(value)))
 
 def check_choice(option, opt, value):
     if value in option.choices:
         return value
     else:
-        choices = ", ".join(map(repr, option.choices))
+        choices = string.join(map(repr, option.choices), ", ")
         raise OptionValueError(
-            _("option %s: invalid choice: %r (choose from %s)")
-            % (opt, value, choices))
+            _("option %s: invalid choice: %s (choose from %s)")
+            % (opt, repr(value), choices))
 
 # Not supplying a default is different from a default of None,
 # so we need an explicit "not supplied" value.
@@ -220,20 +237,20 @@ class Option:
         for opt in opts:
             if len(opt) < 2:
                 raise OptionError(
-                    "invalid option string %r: "
-                    "must be at least two characters long" % opt, self)
+                    "invalid option string %s: "
+                    "must be at least two characters long" % repr(opt), self)
             elif len(opt) == 2:
                 if not (opt[0] == "-" and opt[1] != "-"):
                     raise OptionError(
-                        "invalid short option string %r: "
-                        "must be of the form -x, (x any non-dash char)" % opt,
+                        "invalid short option string %s: "
+                        "must be of the form -x, (x any non-dash char)" % repr(opt),
                         self)
                 self._short_opts.append(opt)
             else:
                 if not (opt[0:2] == "--" and opt[2] != "-"):
                     raise OptionError(
-                        "invalid long option string %r: "
-                        "must start with --, followed by non-dash" % opt,
+                        "invalid long option string %s: "
+                        "must start with --, followed by non-dash" % repr(opt),
                         self)
                 self._long_opts.append(opt)
 
@@ -249,7 +266,7 @@ class Option:
                     setattr(self, attr, None)
         if attrs:
             raise OptionError(
-                "invalid keyword arguments: %s" % ", ".join(attrs.keys()),
+                "invalid keyword arguments: %s" % string.join(attrs.keys(), ", "),
                 self)
 
 
@@ -259,7 +276,7 @@ class Option:
         if self.action is None:
             self.action = "store"
         elif self.action not in self.ACTIONS:
-            raise OptionError("invalid action: %r" % self.action, self)
+            raise OptionError("invalid action: %s" % repr(self.action), self)
 
     def _check_type(self):
         if self.type is None:
@@ -278,10 +295,10 @@ class Option:
                 self.type = "string"
 
             if self.type not in self.TYPES:
-                raise OptionError("invalid option type: %r" % self.type, self)
+                raise OptionError("invalid option type: %s" % repr(self.type), self)
             if self.action not in self.TYPED_ACTIONS:
                 raise OptionError(
-                    "must not supply a type for action %r" % self.action, self)
+                    "must not supply a type for action %s" % repr(self.action), self)
 
     def _check_choice(self):
         if self.type == "choice":
@@ -291,10 +308,10 @@ class Option:
             elif type(self.choices) not in (types.TupleType, types.ListType):
                 raise OptionError(
                     "choices must be a list of strings ('%s' supplied)"
-                    % str(type(self.choices)).split("'")[1], self)
+                    % string.split(str(type(self.choices)), "'")[1], self)
         elif self.choices is not None:
             raise OptionError(
-                "must not supply choices for type %r" % self.type, self)
+                "must not supply choices for type %s" % repr(self.type), self)
 
     def _check_dest(self):
         # No destination given, and we need one for this action.  The
@@ -307,14 +324,14 @@ class Option:
             # or from the first short option string if no long options.
             if self._long_opts:
                 # eg. "--foo-bar" -> "foo_bar"
-                self.dest = self._long_opts[0][2:].replace('-', '_')
+                self.dest = string.replace(self._long_opts[0][2:], '-', '_')
             else:
                 self.dest = self._short_opts[0][1]
 
     def _check_const(self):
         if self.action not in self.CONST_ACTIONS and self.const is not None:
             raise OptionError(
-                "'const' must not be supplied for action %r" % self.action,
+                "'const' must not be supplied for action %s" % repr(self.action),
                 self)
 
     def _check_nargs(self):
@@ -323,29 +340,29 @@ class Option:
                 self.nargs = 1
         elif self.nargs is not None:
             raise OptionError(
-                "'nargs' must not be supplied for action %r" % self.action,
+                "'nargs' must not be supplied for action %s" % repr(self.action),
                 self)
 
     def _check_callback(self):
         if self.action == "callback":
             if not callable(self.callback):
                 raise OptionError(
-                    "callback not callable: %r" % self.callback, self)
+                    "callback not callable: %s" % repr(self.callback), self)
             if (self.callback_args is not None and
                 type(self.callback_args) is not types.TupleType):
                 raise OptionError(
-                    "callback_args, if supplied, must be a tuple: not %r"
-                    % self.callback_args, self)
+                    "callback_args, if supplied, must be a tuple: not %s"
+                    % repr(self.callback_args), self)
             if (self.callback_kwargs is not None and
                 type(self.callback_kwargs) is not types.DictType):
                 raise OptionError(
-                    "callback_kwargs, if supplied, must be a dict: not %r"
-                    % self.callback_kwargs, self)
+                    "callback_kwargs, if supplied, must be a dict: not %s"
+                    % repr(self.callback_kwargs), self)
         else:
             if self.callback is not None:
                 raise OptionError(
-                    "callback supplied (%r) for non-callback option"
-                    % self.callback, self)
+                    "callback supplied (%s) for non-callback option"
+                    % repr(self.callback), self)
             if self.callback_args is not None:
                 raise OptionError(
                     "callback_args supplied for non-callback option", self)
@@ -366,7 +383,7 @@ class Option:
     # -- Miscellaneous methods -----------------------------------------
 
     def __str__(self):
-        return "/".join(self._short_opts + self._long_opts)
+        return string.join(self._short_opts + self._long_opts, "/")
 
     __repr__ = _repr
 
@@ -394,7 +411,7 @@ class Option:
             if self.nargs == 1:
                 return self.check_value(opt, value)
             else:
-                return tuple([self.check_value(opt, v) for v in value])
+                return tuple(map(lambda v,self=self,opt=opt: self.check_value(opt, v), value))
 
     def process(self, opt, value, values, parser):
 
@@ -426,7 +443,7 @@ class Option:
         elif action == "callback":
             args = self.callback_args or ()
             kwargs = self.callback_kwargs or {}
-            self.callback(self, opt, value, parser, *args, **kwargs)
+            apply(self.callback, (self, opt, value, parser)+args, kwargs)
         elif action == "help":
             parser.print_help()
             parser.exit()
@@ -434,7 +451,7 @@ class Option:
             parser.print_version()
             parser.exit()
         else:
-            raise RuntimeError, "unknown action %r" % self.action
+            raise RuntimeError, "unknown action %s" % repr(self.action)
 
         return 1
 
