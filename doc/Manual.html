@@ -21,7 +21,7 @@
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference" href="mailto:william&#64;hpcf.upr.edu">william&#64;hpcf.upr.edu</a></td></tr>
 <tr><th class="docinfo-name">Revision:</th>
-<td>88</td></tr>
+<td>94</td></tr>
 <tr class="field"><th class="docinfo-name">Source URL:</th><td class="field-body">svn://pyinstaller/trunk/doc/source/Manual.rst</td>
 </tr>
 <tr><th class="docinfo-name">Copyright:</th>
@@ -191,7 +191,7 @@ trying to build anything.</p>
 <p>[For Windows COM server support, see section <a class="reference" href="#windows-com-server-support">Windows COM Server Support</a>]</p>
 <p>The root directory has a script Makespec.py for this purpose:</p>
 <pre class="literal-block">
-python Makespec.py [OPTIONS] script...
+python Makespec.py [opts] &lt;scriptname&gt; [&lt;scriptname&gt; ...]
 </pre>
 <p>Where allowed OPTIONS are:</p>
 <table class="docutils option-list" frame="void" rules="none">
@@ -199,55 +199,67 @@ python Makespec.py [OPTIONS] script...
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group">
-<kbd><span class="option">--onefile</span></kbd></td>
+<kbd><span class="option">-F</span>, <span class="option">--onefile</span></kbd></td>
 <td>produce a single file deployment (see below).</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">--onedir</span></kbd></td>
+<kbd><span class="option">-D</span>, <span class="option">--onedir</span></kbd></td>
 <td>produce a single directory deployment (default).</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">--tk</span></kbd></td>
+<kbd><span class="option">-K</span>, <span class="option">--tk</span></kbd></td>
 <td>include TCL/TK in the deployment.</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">--ascii</span></kbd></td>
+<kbd><span class="option">-a</span>, <span class="option">--ascii</span></kbd></td>
 <td>do not include encodings. The default (on Python versions with unicode
 support) is now to include all encodings.</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">--debug</span></kbd></td>
+<kbd><span class="option">-d</span>, <span class="option">--debug</span></kbd></td>
 <td>use debug (verbose) versions of the executables.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">--noconsole</span></kbd></td>
-<td>Use the Windows subsystem executable, which does not open
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-w</span>, <span class="option">--windowed</span>, <span class="option">--noconsole</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Use the Windows subsystem executable, which does not open
 the console when the program is launched. <strong>(Windows only)</strong></td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-c</span>, <span class="option">--nowindowed</span>, <span class="option">--console</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Use the console subsystem executable. This is the default. <strong>(Windows only)</strong></td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">--strip</span></kbd></td>
+<kbd><span class="option">-s</span>, <span class="option">--strip</span></kbd></td>
 <td>the executable and all shared libraries will be run through strip. Note
 that cygwin's strip tends to render normal Win32 dlls unusable.</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">--upx</span></kbd></td>
+<kbd><span class="option">-X</span>, <span class="option">--upx</span></kbd></td>
 <td>if you have UPX installed (detected by Configure), this will use it to
 compress your executable (and, on Windows, your dlls). See note below.</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--out <var>&lt;directory&gt;</var></span></kbd></td>
+<kbd><span class="option">-o <var>DIR</var></span>, <span class="option">--out=<var>DIR</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>create the spec file in <em>directory</em>. If not specified, and the current
 directory is Installer's root directory, an output subdirectory will be
 created. Otherwise the current directory is used.</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--icon <var>&lt;file.ico&gt;</var></span></kbd></td>
+<kbd><span class="option">-p <var>DIR</var></span>, <span class="option">--paths=<var>DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>set base path for import (like using PYTHONPATH). Multiple directories are
+allowed, separating them with the path separator (';' under Windows, ':'
+under Linux), or using this option multiple times.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--icon=<var>&lt;FILE.ICO&gt;</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>add <em>file.ico</em> to the executable's resources. <strong>(Windows only)</strong></td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--icon <var>&lt;file.exe,n&gt;</var></span></kbd></td>
+<kbd><span class="option">--icon=<var>&lt;FILE.EXE,N&gt;</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>add the <em>n</em>-th incon in <em>file.exe</em> to the executable's resources. <strong>(Windows
 only)</strong></td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--version <var>&lt;verfile&gt;</var></span></kbd></td>
+<kbd><span class="option">-v <var>FILE</var></span>, <span class="option">--version=<var>FILE</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>add verfile as a version resource to the executable. <strong>(Windows only)</strong></td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">--name <var>&lt;name&gt;</var></span></kbd></td>
-<td>optional <em>name</em> to assign to the project (from which the spec file name is
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-n <var>NAME</var></span>, <span class="option">--name=<var>NAME</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>optional <em>name</em> to assign to the project (from which the spec file name is
 generated). If omitted, the basename of the (first) script is used.</td></tr>
 </tbody>
 </table>
@@ -1524,7 +1536,7 @@ easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference" href="source/Manual.rst">View document source</a>.
-Generated on: 2005-09-16 17:59 UTC.
+Generated on: 2005-09-21 18:11 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
