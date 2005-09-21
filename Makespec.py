@@ -19,6 +19,12 @@
 
 import sys, os, string
 
+# For Python 1.5 compatibility
+try:
+    True
+except:
+    True,False = 1,0
+
 freezetmplt = """\
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
@@ -132,15 +138,12 @@ class Path:
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
 def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
-         comserver=0, ascii=0, workdir=None, pathex=None, version_file=None, icon_file=None):
+         comserver=0, ascii=0, workdir=None, pathex=[], version_file=None, icon_file=None):
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
     distdir = "dist%s" % name
     builddir = "build%s" % name
-    if pathex is None:
-        pathex = []
-    elif type(pathex) is type(''):
-        pathex = string.split(pathex, os.pathsep)
+    pathex = pathex[:]
     if workdir is None:
         workdir = os.getcwd()
         pathex.append(workdir)
@@ -199,73 +202,68 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
     specfile.close()
     return specfnm
 
-usage = """\
-Usage: python %s [options] <scriptname> [<scriptname> ...]
- --onefile -> create a single file deployment
- --onedir  -> create a single directory deployment (default)
- --tk -> include TCL/TK in the deployment
- --noconsole -> use a Windows subsystem executable (Windows only)
- --ascii -> do NOT include unicode encodings (default: included if available)
- --debug -> use the debug (verbose) build of the executable
- --strip -> strip the exe and shared libs (don't try this on Windows)
- --upx -> use UPX if available (works differently Windows / Linux)
- --out dir -> gemerate the spec file in dir
- --paths pathstring -> like using PYTHONPATH
- --icon file.ico -> add the icon in file.ico to the exe (Windows only)
- --icon file.exe,id -> add the icon with id from file.exe to the exe (Windows only)
- --version verfile -> add a version resource from verfile to the exe (Windows only)
-The next step is to run Build.py against the generated spec file.
-See doc/Tutorial.html for details.
-"""
-
-#scripts, name=None, tk=0, freeze=0, console=1, debug=0,workdir=None, pathex=None
 if __name__ == '__main__':
-    import getopt
-    tk = freeze = debug = ascii = strip = upx = 0
-    console = 1
-    workdir = name = pathex = None
-    icon_file = None
-    version_file = None
-    opts, args = getopt.getopt(sys.argv[1:], '',
-            ['onefile', 'onedir', 'tk', 'noconsole', 'debug', 'ascii',
-             'strip', 'upx', 'out=', 'name=', 'paths=', 'version=', 'icon='])
-    for opt, val in opts:
-        if opt == '--onefile':
-            freeze = 1
-        elif opt == '--onedir':
-            freeze = 0
-        elif opt == '--tk':
-            tk = 1
-        elif opt == '--noconsole':
-            console = 0
-        elif opt == '--debug':
-            debug = 1
-        elif opt == '--out':
-            workdir = val
-        elif opt == '--name':
-            name = val
-        elif opt == '--ascii':
-            ascii = 1
-        elif opt == '--strip':
-            strip = 1
-        elif opt == '--upx':
-            upx = 1
-        elif opt == '--icon':
-            icon_file = val
-        elif opt == '--version':
-            version_file = val
-        elif opt == '--paths':
-            pathex = val
-        else:
-            print "bad option: %s" % (opt, val)
-            print usage % sys.argv[0]
-            sys.exit(1)
-    if not args:
-        print usage % sys.argv[0]
-    else:
-        nm = main(args, name=name, tk=tk, freeze=freeze, console=console,
-                  debug=debug, strip=strip, upx=upx, ascii=ascii,
-                  workdir=workdir, pathex=pathex,
-                  version_file=version_file, icon_file=icon_file)
-        print "wrote %s" % nm
+    import optparse
+    p = optparse.OptionParser(
+        usage="python %prog [opts] <scriptname> [<scriptname> ...]"
+    )
+    p.add_option("-F", "--onefile", dest="freeze",
+                 action="store_true", default=False,
+                 help="create a single file deployment")
+    p.add_option("-D", "--onedir", dest="freeze", action="store_false",
+                 help="create a single directory deployment (default)")
+    p.add_option("-K", "--tk", default=False, action="store_true",
+                 help="include TCL/TK in the deployment")
+    p.add_option("-w", "--windowed", "--noconsole", dest="console",
+                 action="store_false", default=True,
+                 help="use a Windows subsystem executable (Windows only)")
+    p.add_option("-c", "--nowindowed", "--console", dest="console",
+                 action="store_true",
+                 help="use a console subsystem executable (Windows only) "
+                      "(default)")
+    p.add_option("-a", "--ascii", action="store_true", default=False,
+                 help="do NOT include unicode encodings "
+                      "(default: included if available)")
+    p.add_option("-d", "--debug", action="store_true", default=False,
+                 help="use the debug (verbose) build of the executable")
+    p.add_option("-s", "--strip", action="store_true", default=False,
+                 help="strip the exe and shared libs "
+                      "(don't try this on Windows)")
+    p.add_option("-X", "--upx", action="store_true", default=False,
+                 help="use UPX if available (works differently between "
+                      "Windows and *nix)")
+    p.add_option("-o", "--out", type="string", default=None,
+                 dest="workdir", metavar="DIR",
+                 help="generate the spec file in the specified directory")
+    p.add_option("-p", "--paths", type="string", default=[], dest="pathex",
+                 metavar="DIR", action="append",
+                 help="set base path for import (like using PYTHONPATH). "
+                      "Multiple directories are allowed, separating them "
+                      "with %s, or using this option multiple times."
+                      % repr(os.pathsep))
+    p.add_option("-v", "--version", type="string",
+                 dest="version_file", metavar="FILE",
+                 help="add a version resource from FILE to the exe "
+                      "(Windows only)")
+    p.add_option("--icon", type="string", dest="icon_file",
+                 metavar="FILE.ICO or FILE.EXE,ID",
+                 help="If FILE is an .ico file, add the icon to the final "
+                      "executable. Otherwise, the syntax 'file.exe,id' to "
+                      "extract the icon with the specified id "
+                      "from file.exe and add it to the final executable.")
 
+    opts,args = p.parse_args()
+
+    # Split pathex by using the path separator
+    temppaths = opts.pathex[:]
+    opts.pathex = []
+    for p in temppaths:
+        opts.pathex.extend(string.split(p, os.pathsep))
+
+    if not args:
+        p.print_help()
+        sys.exit(1)
+
+    nm = apply(main, (args,), opts.__dict__)
+    print "wrote %s" % nm
+    print "now run Build.py to build the executable"
