@@ -34,6 +34,18 @@ import bkfile
 import makemakefile
 import pprint
 
+
+# NOTE: This is an temporary incomplete fix. Distutils should be used to get all the values
+# of all these variable to make it more portable.
+# (William Caban will work on completing this during the next few days)
+try:
+	import distutils.sysconfig
+except:
+	print "ERROR: distutils required"
+	sys.exit(1)
+
+
+
 def main():
     dirnm = os.path.dirname(sys.argv[0])
     if dirnm not in ('', '.'):
@@ -87,13 +99,12 @@ def main():
     else:
         if cygwin:
             binlib = os.path.join('/lib', 'python%s' % sys.version[:3], 'config')
-        else:
-            binlib = os.path.join(exec_prefix,
-                              'lib', 'python%s' % sys.version[:3], 'config')
-        incldir = os.path.join(prefix, 'include', 'python%s' % sys.version[:3])
-        config_h_dir = os.path.join(exec_prefix, 'include',
-                                    'python%s' % sys.version[:3])
-        makefile_in = os.path.join(binlib, 'Makefile')
+	else:
+	    binlib = os.path.join (distutils.sysconfig.get_python_lib(True, True, exec_prefix), 'config')
+	# TODO: Is it possible to have more than one path returned? if so fix "includes" list
+	incldir =  distutils.sysconfig.get_config_vars('INCLUDEDIR')[0]
+	config_h_dir =  os.path.join (distutils.sysconfig.get_python_inc(True,exec_prefix))
+        makefile_in = distutils.sysconfig.get_makefile_filename()
 
     # salt config.dat with the exe type
     try:
