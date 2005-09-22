@@ -68,4 +68,4 @@ for env in envs:
     env.InstallAs(target="support/loader/run_" + env["PYINST_SUFFIX"] + env["PROGSUFFIX"],
                   source=run)
     env.InstallAs(target="support/loader/inprocsrvr_" + env["PYINST_SUFFIX"] + env["SHLIBSUFFIX"],
-                  source=run)
+                  source=dll[0])
