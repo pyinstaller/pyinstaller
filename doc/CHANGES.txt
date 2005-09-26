@@ -3,6 +3,7 @@
 Current changes since PyInstaller 1.0
 -------------------------------------
 
+ + Fix problem with incorrect python path detection. Now using distutils.
  + Fix problem with rare encodings introduced in newer Python versions: now all
    the encodings are automatically found and included, so this problem should
    be gone forever.
