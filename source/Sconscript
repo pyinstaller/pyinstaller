@@ -27,17 +27,22 @@ if Platform().name == "win32":
     # We use a prebuilt binary version of zlib [http://www.winimage.com/zLibDll/].
     # It was compiled with the WINAPI convention.
     env.Append(CPPDEFINES = [ "ZLIB_WINAPI" ])
-    env.Append(LIBS = ["zlibstat.lib"])
-    env.Append(LIBPATH = ["zlib"])
 
     if env["PYINST_MODE"] == "cons":
         resfile = env.RES("windows/run.rc")
     else:
         resfile = env.RES("windows/runw.rc")
 
+zlib = env.Library("zlib",
+                    ["zlib/inflate.c",
+                     "zlib/crc32.c",
+                     "zlib/adler32.c",
+                     "zlib/zutil.c",
+                     "zlib/inffast.c",
+                     "zlib/inftrees.c"])
 run = env.Program("run",
-                 ["common/launch.c", "windows/winmain.c", resfile])
+                 ["common/launch.c", "windows/winmain.c", zlib])
 dll = env.SharedLibrary("inprocsrvr",
-                        ["common/launch.c", "windows/dllmain.c", "windows/dllmain.def"])
+                        ["common/launch.c", "windows/dllmain.c", zlib])
 
 Return("run", "dll")
