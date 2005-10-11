@@ -328,19 +328,6 @@ recomend the use of --onefile on setuid programs.**
 |GOBACK|
 
 
-``--onefile`` and Python 2.4 for Windows (**important**)
---------------------------------------------------------
-
-Currently, there is an issue when using ``--onefile`` with Python 2.4: the
-resulting executable will depend on ``MSVCR71.DLL``. This is a standard
-Microsoft library which was not present on older Windows (like Win9x), so
-you are forced to ship it with your application if you need compatibility
-with those operating systems. We plan to fix this issue in a future version
-of |PyInstaller| (consult our Roadmap_ for more information).
-
-|GOBACK|
-
-
 PyInstaller Utilities
 +++++++++++++++++++++
 

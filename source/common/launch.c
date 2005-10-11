@@ -63,7 +63,7 @@ DECLPROC(PyObject_SetAttrString);
 DECLPROC(PyList_New);
 DECLPROC(PyList_Append);
 DECLPROC(Py_BuildValue);
-DECLPROC(PyFile_FromFile);
+DECLPROC(PyFile_FromString);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyModule_GetDict);
 DECLPROC(PyDict_GetItemString);
@@ -273,7 +273,7 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyList_New);
 	GETPROC(dll, PyList_Append);
 	GETPROC(dll, Py_BuildValue);
-	GETPROC(dll, PyFile_FromFile);
+	GETPROC(dll, PyFile_FromString);
 	GETPROC(dll, PyObject_CallFunction);
 	GETPROC(dll, PyModule_GetDict);
 	GETPROC(dll, PyDict_GetItemString);
@@ -570,6 +570,8 @@ int importModules()
 	TOC *ptoc;
 	PyObject *co;
 	PyObject *mod;
+	PyObject *res;
+	char buf[32];
 
 	VS("importing modules from CArchive\n"); 
 
@@ -581,8 +583,17 @@ int importModules()
 	marshaldict = PyModule_GetDict(marshal);
 	loadfunc = PyDict_GetItemString(marshaldict, "load");
 
-	/* Make a Python file object from f_fp */
-	pyfile = PyFile_FromFile(f_fp, f_archivename, "rb+", 0);
+	/* Reopen the archive as a Python file. We cannot use PyFile_FromFile
+	 * because that would require this boot-loader and Python DLL to share
+	 * the same libc, while they purposely don't.
+	 */
+	fclose(f_fp);
+	pyfile = PyFile_FromString(f_archivename, "rb");
+	if (PyErr_Occurred())
+	{
+		PyErr_Print();
+		return -1;
+	}
 
 	/* Iterate through toc looking for module entries (type 'm')
 		* this is normally just bootstrap stuff (archive and iu)
@@ -593,8 +604,11 @@ int importModules()
 		{
 			VS(ptoc->name);
 			VS("\n");
+			
 			/* Go to start of Python module (start + 8) and load the code object */
-			fseek(f_fp, f_pkgstart + ntohl(ptoc->pos) + 8, SEEK_SET);
+			res = PyObject_CallMethod(pyfile, "seek", "(ii)", f_pkgstart + ntohl(ptoc->pos) + 8, 0);
+			Py_XDECREF(res);
+
 			co = PyObject_CallFunction(loadfunc, "O", pyfile);
 			mod = PyImport_ExecCodeModule(ptoc->name, co);
 
@@ -602,18 +616,27 @@ int importModules()
 			if (mod == NULL) {
 				FATALERROR("mod is NULL - ");
 				FATALERROR(ptoc->name);
-				//return -1;
 			}
 			if (PyErr_Occurred())
 			{
 				PyErr_Print();
 				PyErr_Clear();
-				//FATALERROR("PyErr loading mod - ");
-				//FATALERROR(ptoc->name);
-				//return -1;
 			}
 		}
 		ptoc = incrementTocPtr(ptoc); 
+	}
+
+	/* Close the file and release the object. */
+	res = PyObject_CallMethod(pyfile, "close", "()");
+	Py_XDECREF(res);
+	Py_DECREF(pyfile);
+
+	/* After closing the python file, we can reopen it as normal file. */
+	f_fp = fopen(f_archivename, "rb");
+	if (f_fp == NULL) {
+		VS("Cannot reopen archive: ");
+		VS(f_archivename);
+		VS("\n");
 	}
 	return 0;
 }

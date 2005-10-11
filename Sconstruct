@@ -33,10 +33,11 @@ if platform.name == "win32":
             for mode in "cons", "win":
                 env = base_env.Copy()
 
-                # The DLL runtime must be the same of that used by the python DLL.
-                # I cannot think of a way to guess it from here, so let's assume
-                # the user has a non-debug build of Python in his system.
-                env.Append(CCFLAGS = ["/MD"])
+                # The bootloader is built as a static executable. We want it
+                # to be self-contained. Extra care was put in writing it so
+                # that it does not share objects/memory with python.dll (which
+                # it loads).
+                env.Append(CCFLAGS = ["/ML"])
 
                 if flavour == "debug":
                     # No optimizations
