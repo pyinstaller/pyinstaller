@@ -25,7 +25,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#include <stdio.h>
 #ifdef WIN32
  #include <windows.h>
  #include <direct.h>
@@ -1020,6 +1019,7 @@ int doIt(int argc, char *argv[])
 }
 void clear(const char *dir);
 #ifdef WIN32
+/*
 void removeOne(char *fnm, int pos, struct _finddata_t finfo)
 {
 	if ( strcmp(finfo.name, ".")==0  || strcmp(finfo.name, "..") == 0 )
@@ -1053,6 +1053,22 @@ void clear(const char *dir)
 	}
 	rmdir(dir);
 }
+*/
+void clear(const char *dir)
+{
+	SHFILEOPSTRUCT op;
+	char buf[_MAX_PATH+10];
+
+	ZeroMemory(&buf, sizeof(buf));
+	ZeroMemory(&op, sizeof(op));
+
+	op.wFunc = FO_DELETE;
+	op.pFrom = dir;
+	op.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
+
+	SHFileOperation(&op);
+}
+
 #else
 void removeOne(char *pnm, int pos, const char *fnm)
 {

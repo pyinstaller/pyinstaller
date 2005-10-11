@@ -24,14 +24,15 @@ if env["PYINST_FLAVOUR"] == "debug":
     env.Append(CPPDEFINES = ["LAUNCH_DEBUG"])
 
 if Platform().name == "win32":
-    # We use a prebuilt binary version of zlib [http://www.winimage.com/zLibDll/].
-    # It was compiled with the WINAPI convention.
     env.Append(CPPDEFINES = [ "ZLIB_WINAPI" ])
 
     if env["PYINST_MODE"] == "cons":
         resfile = env.RES("windows/run.rc")
     else:
         resfile = env.RES("windows/runw.rc")
+
+    #####COMMENT THIS######
+    env.Append(CPPDEFINES = [ "_CRTIMP=" ])
 
 zlib = env.Library("zlib",
                     ["zlib/inflate.c",
@@ -41,8 +42,8 @@ zlib = env.Library("zlib",
                      "zlib/inffast.c",
                      "zlib/inftrees.c"])
 run = env.Program("run",
-                 ["common/launch.c", "windows/winmain.c", zlib])
+                 ["common/launch.c", "windows/winmain.c", "windows/minilibc.c", zlib])
 dll = env.SharedLibrary("inprocsrvr",
-                        ["common/launch.c", "windows/dllmain.c", zlib])
+                        ["common/launch.c", "windows/dllmain.c", "windows/minilibc.c", zlib])
 
 Return("run", "dll")

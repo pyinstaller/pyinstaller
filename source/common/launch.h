@@ -27,11 +27,13 @@
  */
 #ifndef LAUNCH_H
 #define LAUNCH_H
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #ifdef WIN32
 #include <io.h>
+#include <malloc.h>
 #else
 #include <unistd.h>
 #endif

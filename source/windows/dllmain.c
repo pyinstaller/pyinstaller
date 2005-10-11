@@ -152,7 +152,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 	char msg[40];
 
 	if ( dwReason == DLL_PROCESS_ATTACH) {
-		sprintf(msg, "Attach from thread %x", GetCurrentThreadId()); 
+		wsprintf(msg, "Attach from thread %x", GetCurrentThreadId()); 
 		VS(msg);
 		gInstance = hInstance;
 	}
@@ -171,10 +171,10 @@ int LoadPythonCom()
 	char dllpath[_MAX_PATH+1];
 	VS("Loading Pythoncom");
 	// see if pythoncom is already loaded
-	sprintf(dllpath, "pythoncom%02d.dll", getPyVersion());
+	wsprintf(dllpath, "pythoncom%02d.dll", getPyVersion());
 	gPythoncom = GetModuleHandle(dllpath);
 	if (gPythoncom == NULL) {
-		sprintf(dllpath, "%spythoncom%02d.dll", here, getPyVersion());
+		wsprintf(dllpath, "%spythoncom%02d.dll", here, getPyVersion());
 		//VS(dllpath);
 		gPythoncom = LoadLibraryEx( dllpath, // points to name of executable module 
 					   NULL, // HANDLE hFile, // reserved, must be NULL 
@@ -222,12 +222,12 @@ HRESULT __stdcall DllCanUnloadNow(void)
 	char msg[80];
 	HRESULT rc;
 
-	sprintf(msg, "DllCanUnloadNow from thread %x", GetCurrentThreadId()); 
+	wsprintf(msg, "DllCanUnloadNow from thread %x", GetCurrentThreadId()); 
 	VS(msg);
 	if (gPythoncom == 0)
 		startUp();
 	rc = Pyc_DllCanUnloadNow();
-	sprintf(msg, "DllCanUnloadNow returns %x", rc); 
+	wsprintf(msg, "DllCanUnloadNow returns %x", rc); 
 	VS(msg);
 	//if (rc == S_OK)
 	//	PyCom_CoUninitialize();
@@ -239,12 +239,12 @@ HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
 	char msg[80];
 	HRESULT rc;
-	sprintf(msg, "DllGetClassObject from thread %x", GetCurrentThreadId()); 
+	wsprintf(msg, "DllGetClassObject from thread %x", GetCurrentThreadId()); 
 	VS(msg);
 	if (gPythoncom == 0)
 		startUp();
 	rc = Pyc_DllGetClassObject(rclsid, riid, ppv);
-	sprintf(msg, "DllGetClassObject set %x and returned %x", *ppv, rc);
+	wsprintf(msg, "DllGetClassObject set %x and returned %x", *ppv, rc);
 	VS(msg);
 	return rc;
 }
@@ -252,7 +252,7 @@ HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 __declspec(dllexport) int DllRegisterServerEx(LPCSTR fileName)
 {
 	char msg[40];
-	sprintf(msg, "DllRegisterServerEx from thread %x", GetCurrentThreadId()); 
+	wsprintf(msg, "DllRegisterServerEx from thread %x", GetCurrentThreadId()); 
 	VS(msg);
 	if (gPythoncom == 0)
 		startUp();

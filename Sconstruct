@@ -56,7 +56,10 @@ if platform.name == "win32":
                 env["PYINST_SUFFIX"] = "%c%c%c" % (msvs_ver[0], flavour[0], mode[0])
 
                 env.Append(CPPDEFINES = ["WIN32"])
-                env.Append(LIBS = ["user32.lib", "kernel32.lib", "ws2_32.lib"])
+                env.Append(LIBS = ["user32.lib", "kernel32.lib", "ws2_32.lib", "shell32.lib"])
+
+                # Skip default libraries to aovid depending on MSVCRT(71).DLL
+                env.Append(LINKFLAGS = ["/NODEFAULTLIB"])
 
                 envs.append(env)
 
