@@ -419,7 +419,7 @@ class ImportManager:
             self.lockcount = self.lockcount - 1
 ##            print "_release decrementing lockcount to", self.lockcount
         else:
-	    self.locker = None
+            self.locker = None
             self.rlock.release()
 ##            print "_release releasing lock!"
 
