@@ -8,6 +8,7 @@ Current changes since PyInstaller 1.0
  + Fix problem with rare encodings introduced in newer Python versions: now all
    the encodings are automatically found and included, so this problem should
    be gone forever.
+ + Add import hook for GTK.
  + Add import hook for dnspython (tested with 1.3.4)
  + Add import hook for KInterbasDB  (courtesy of Eugene Prigorodov)
  + (Windows) Make single-file packages not depend on MSVCRT71.DLL anymore,
