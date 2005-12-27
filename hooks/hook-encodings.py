@@ -19,8 +19,10 @@
 attrs = [('search_function',0)]
 
 import os, sys, glob
+from distutils import sysconfig
 hiddenimports = []
-for f in glob.glob(os.path.join(sys.prefix, "Lib", "encodings", "*.py")):
+libpath = sysconfig.get_python_lib(plat_specific=0, standard_lib=1)
+for f in glob.glob(os.path.join(libpath, "encodings", "*.py")):
     f = os.path.basename(f)
     f = os.path.splitext(f)[0]
     if f != "__init__":

@@ -13,6 +13,7 @@ Current changes since PyInstaller 1.0
  + (Windows) Make single-file packages not depend on MSVCRT71.DLL anymore,
    even under Python 2.4. You can eventually ship your programs really as
    single-file executables, even when using the newest Python version!
+ * (Linux) Fix problem with finding the encodings modules.
 
 
 PyInstaller 1.0 (with respect to McMillan's Python Installer 5b5):
