@@ -226,7 +226,7 @@ def findRTHook(modnm):
 
 class PYZ(Target):
     typ = 'PYZ'
-    def __init__(self, toc, name=None, level=9):
+    def __init__(self, toc, name=None, level=9, crypt=None):
         Target.__init__(self)
         self.toc = toc
         self.name = name
@@ -236,6 +236,10 @@ class PYZ(Target):
             self.level = level
         else:
             self.level = 0
+        if config['useCrypt']:
+            self.crypt = crypt
+        else:
+            self.crypt = None
         self.dependencies = config['PYZ_dependencies']
         self.__postinit__()
     def check_guts(self, last_build):
@@ -244,7 +248,7 @@ class PYZ(Target):
             print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
             return 1
         try:
-            name, level, toc = eval(open(self.out, 'r').read())
+            name, level, crypt, toc = eval(open(self.out, 'r').read())
         except:
             print "rebuilding %s because missing" % outnm
             return 1
@@ -257,6 +261,9 @@ class PYZ(Target):
         if toc != self.toc:
             print "rebuilding %s because toc changed" % outnm
             return 1
+        if crypt != self.crypt:
+            print "rebuilding %s because crypt changed" % outnm
+            return 1
         for (nm, fnm, typ) in toc:
             if mtime(fnm) > last_build:
                 print "rebuilding %s because %s changed" % (outnm, fnm)
@@ -268,14 +275,14 @@ class PYZ(Target):
         return 0
     def assemble(self):
         print "building PYZ", os.path.basename(self.out)
-        pyz = archive.ZlibArchive(level=self.level)
+        pyz = archive.ZlibArchive(level=self.level, crypt=self.crypt)
         toc = self.toc - config['PYZ_dependencies']
         for (nm, fnm, typ) in toc:
             if mtime(fnm[:-1]) > mtime(fnm):
                 py_compile.compile(fnm[:-1])
         pyz.build(self.name, toc)
         outf = open(self.out, 'w')
-        pprint.pprint((self.name, self.level, self.toc), outf)
+        pprint.pprint((self.name, self.level, self.crypt, self.toc), outf)
         outf.close()
         return 1
 

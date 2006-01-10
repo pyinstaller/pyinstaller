@@ -287,12 +287,12 @@ import iu
 class ZlibArchive(Archive):
     MAGIC = 'PYZ\0'
     TOCPOS = 8
-    HDRLEN = 16
+    HDRLEN = Archive.HDRLEN + 5
     TRLLEN = 0
     TOCTMPLT = {}
     LEVEL = 9
 
-    def __init__(self, path=None, offset=None, level=9):
+    def __init__(self, path=None, offset=None, level=9, crypt=None):
         if path is None:
             offset = 0
         elif offset is None:
@@ -303,8 +303,17 @@ class ZlibArchive(Archive):
                     break
             else:
                 offset = 0
+
         self.LEVEL = level
+        if crypt is not None:
+            self.crypted = 1
+            self.key = (crypt + "*"*32)[:32]
+        else:
+            self.crypted = 0
+            self.key = None
+
         Archive.__init__(self, path, offset)
+
         # dynamic import so not imported if not needed
         global zlib
         if self.LEVEL:
@@ -315,14 +324,32 @@ class ZlibArchive(Archive):
         else:
             zlib = DummyZlib()
 
+        global AES
+        if self.crypted:
+            import AES
+
+    def _iv(self, nm):
+        IV = nm * ((AES.block_size + len(nm) - 1) // len(nm))
+        return IV[:AES.block_size]
 
     def extract(self, name):
         (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
         if pos is None:
             return None
         self.lib.seek(self.start + pos)
+        obj = self.lib.read(lngth)
+        if self.crypted:
+            if self.key is None:
+                raise RuntimeError, "decryption key not found"
+            obj = AES.new(self.key, AES.MODE_CFB, self._iv(name)).decrypt(obj)
         try:
-            co = marshal.loads(zlib.decompress(self.lib.read(lngth)))
+            obj = zlib.decompress(obj)
+        except zlib.error:
+            if not self.crypted:
+                raise
+            raise RuntimeError, "invalid decryption key"
+        try:
+            co = marshal.loads(obj)
         except EOFError:
             raise ImportError, "PYZ entry '%s' failed to unmarshal" % name
         return ispkg, co
@@ -355,19 +382,24 @@ class ZlibArchive(Archive):
                 print e.args
                 raise
             obj = zlib.compress(marshal.dumps(co), self.LEVEL)
+            if self.crypted:
+                print "encrypting", nm
+                obj = AES.new(self.key, AES.MODE_CFB, self._iv(nm)).encrypt(obj)
         self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
     def update_headers(self, tocpos):
         """add level"""
         Archive.update_headers(self, tocpos)
-        self.lib.write(struct.pack('!i', self.LEVEL))
+        self.lib.write(struct.pack('!iB', self.LEVEL, self.crypted))
+        print "updatedheaders", self.crypted
     def checkmagic(self):
         Archive.checkmagic(self)
-        self.LEVEL = struct.unpack('!i', self.lib.read(4))[0]
+        self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
+        print "checkmagic", self.crypted
 
 class PYZOwner(iu.Owner):
     def __init__(self, path):
-        self.pyz = ZlibArchive(path)
+        self.pyz = ZlibArchive(path, crypt="MY_SECRET_KEY")
         iu.Owner.__init__(self, path)
     def getmod(self, nm, newmod=imp.new_module):
         rslt = self.pyz.extract(nm)

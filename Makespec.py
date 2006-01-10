@@ -28,7 +28,7 @@ except:
 freezetmplt = """\
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, crypt=%(crypt)s)
 exe = EXE(%(tkpkg)s pyz,
           a.scripts,
           a.binaries,
@@ -42,7 +42,7 @@ exe = EXE(%(tkpkg)s pyz,
 collecttmplt = """\
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, crypt=%(crypt)s)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
@@ -61,7 +61,7 @@ coll = COLLECT(%(tktree)s exe,
 comsrvrtmplt = """\
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, crypt=%(crypt)s)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
@@ -138,7 +138,8 @@ class Path:
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
 def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
-         comserver=0, ascii=0, workdir=None, pathex=[], version_file=None, icon_file=None):
+         comserver=0, ascii=0, workdir=None, pathex=[], version_file=None, icon_file=None,
+         crypt=None):
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
     distdir = "dist%s" % name
@@ -173,6 +174,7 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
          'debug': debug,
          'strip': strip,
          'upx' : upx,
+         'crypt' : repr(crypt),
          'console': console or debug,
          'exe_options': exe_options}
     if tk:
@@ -230,6 +232,8 @@ if __name__ == '__main__':
     p.add_option("-X", "--upx", action="store_true", default=False,
                  help="use UPX if available (works differently between "
                       "Windows and *nix)")
+    p.add_option("-Y", "--crypt", type="string", default=None, metavar="FILE",
+                 help="encrypt pyc/pyo files")
     p.add_option("-K", "--tk", default=False, action="store_true",
                  help="include TCL/TK in the deployment")
     p.add_option("-o", "--out", type="string", default=None,
