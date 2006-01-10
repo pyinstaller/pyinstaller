@@ -383,7 +383,6 @@ class ZlibArchive(Archive):
                 raise
             obj = zlib.compress(marshal.dumps(co), self.LEVEL)
             if self.crypted:
-                print "encrypting", nm
                 obj = AES.new(self.key, AES.MODE_CFB, self._iv(nm)).encrypt(obj)
         self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
@@ -391,11 +390,9 @@ class ZlibArchive(Archive):
         """add level"""
         Archive.update_headers(self, tocpos)
         self.lib.write(struct.pack('!iB', self.LEVEL, self.crypted))
-        print "updatedheaders", self.crypted
     def checkmagic(self):
         Archive.checkmagic(self)
         self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
-        print "checkmagic", self.crypted
 
 class PYZOwner(iu.Owner):
     def __init__(self, path):
