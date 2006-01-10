@@ -127,6 +127,25 @@ else:
     config['useZLIB'] = 1
     print 'I: ... Zlib available'
 
+
+#Crypt support. We need to build the AES module and we'll use distutils
+# for that. FIXME: the day we'll use distutils for everything this will be
+# a solved problem.
+print "I: trying to build crypt support..."
+from distutils.core import run_setup
+cwd = os.getcwd()
+try:
+    os.chdir(os.path.join(HOME, "source", "crypto"))
+    dist = run_setup("setup.py", ["install"])
+    if dist.have_run.get("install", 0):
+        config["useCrypt"] = 1
+        print "I: ... crypto support available"
+    else:
+        config["useCrypt"] = 0
+        print "I: ... error building crypto support"
+finally:
+    os.chdir(cwd)
+
 #hasRsrcUpdate
 if iswin:
     # only available on windows
