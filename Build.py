@@ -237,7 +237,7 @@ class PYZ(Target):
         else:
             self.level = 0
         if config['useCrypt']:
-            self.crypt = crypt
+            self.crypt = archive.Keyfile(crypt).key
         else:
             self.crypt = None
         self.dependencies = config['PYZ_dependencies']

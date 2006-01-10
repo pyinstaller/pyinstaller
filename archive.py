@@ -340,14 +340,14 @@ class ZlibArchive(Archive):
         obj = self.lib.read(lngth)
         if self.crypted:
             if self.key is None:
-                raise RuntimeError, "decryption key not found"
+                raise ImportError, "decryption key not found"
             obj = AES.new(self.key, AES.MODE_CFB, self._iv(name)).decrypt(obj)
         try:
             obj = zlib.decompress(obj)
         except zlib.error:
             if not self.crypted:
                 raise
-            raise RuntimeError, "invalid decryption key"
+            raise ImportError, "invalid decryption key"
         try:
             co = marshal.loads(obj)
         except EOFError:
@@ -394,9 +394,23 @@ class ZlibArchive(Archive):
         Archive.checkmagic(self)
         self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
 
+class Keyfile:
+    def __init__(self, fn=None):
+        if fn is None:
+            fn = sys.argv[0]
+            if fn[-4] == '.':
+                fn = fn[:-4]
+            fn += ".key"
+
+        execfile(fn, {"__builtins__": None}, self.__dict__)
+        if not hasattr(self, "key"):
+            self.key = None
+
 class PYZOwner(iu.Owner):
     def __init__(self, path):
-        self.pyz = ZlibArchive(path, crypt="MY_SECRET_KEY")
+        if not hasattr(sys, "keyfile"):
+            sys.keyfile = Keyfile()
+        self.pyz = ZlibArchive(path, crypt=sys.keyfile.key)
         iu.Owner.__init__(self, path)
     def getmod(self, nm, newmod=imp.new_module):
         rslt = self.pyz.extract(nm)
