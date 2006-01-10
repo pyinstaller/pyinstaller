@@ -735,7 +735,7 @@ _MODULE_NAME (void)
 	ALGtype.ob_type = &PyType_Type;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("Crypto.Cipher." _MODULE_STRING, modulemethods);
+	m = Py_InitModule(_MODULE_STRING, modulemethods);
 
 	PyModule_AddIntConstant(m, "MODE_ECB", MODE_ECB);
 	PyModule_AddIntConstant(m, "MODE_CBC", MODE_CBC);
