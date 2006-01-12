@@ -36,6 +36,7 @@ exe = EXE(%(tkpkg)s pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          crypt=%(crypted)s,
           console=%(console)s %(exe_options)s)
 """ # pathex scripts exename tkpkg debug console
 
@@ -50,6 +51,7 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          crypt=%(crypted)s,
           console=%(console)s %(exe_options)s)
 coll = COLLECT(%(tktree)s exe,
                a.binaries,
@@ -69,6 +71,7 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          crypt=%(crypted)s,
           console=%(console)s %(exe_options)s)
 dll = DLL(pyz,
           a.scripts,
@@ -175,6 +178,7 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
          'strip': strip,
          'upx' : upx,
          'crypt' : repr(crypt),
+         'crypted': crypt is not None,
          'console': console or debug,
          'exe_options': exe_options}
     if tk:

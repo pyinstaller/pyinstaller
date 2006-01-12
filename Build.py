@@ -322,7 +322,7 @@ class PKG(Target):
                  'BINARY': 'b',
                  'EXECUTABLE': 'b'}
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0):
+                 strip_binaries=0, upx_binaries=0, crypt=0):
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -330,6 +330,7 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
+        self.crypt = crypt
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -338,8 +339,11 @@ class PKG(Target):
                               'DATA':COMPRESSED,
                               'BINARY':COMPRESSED,
                               'EXECUTABLE':COMPRESSED,
-                              'PYSOURCE':ENCRYPTED,
-                              'PYMODULE':ENCRYPTED }
+                              'PYSOURCE':COMPRESSED,
+                              'PYMODULE':COMPRESSED }
+                if self.crypt:
+                    self.cdict['PYSOURCE'] = ENCRYPTED
+                    self.cdict['PYMODULE'] = ENCRYPTED
             else:
                 self.cdict = { 'PYSOURCE':UNCOMPRESSED }
         self.__postinit__()
@@ -349,7 +353,7 @@ class PKG(Target):
             print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
             return 1
         try:
-            name, cdict, toc, exclude_binaries, strip_binaries, upx_binaries = eval(open(self.out, 'r').read())
+            name, cdict, toc, exclude_binaries, strip_binaries, upx_binaries, crypt = eval(open(self.out, 'r').read())
         except:
             print "rebuilding %s because %s is missing" % (outnm, outnm)
             return 1
@@ -370,6 +374,9 @@ class PKG(Target):
             return 1
         if upx_binaries != self.upx_binaries:
             print "rebuilding %s because upx_binaries changed" % outnm
+            return 1
+        if crypt != self.crypt:
+            print "rebuilding %s because crypt changed" % outnm
             return 1
         for (nm, fnm, typ) in toc:
             if mtime(fnm) > last_build:
@@ -412,7 +419,7 @@ class PKG(Target):
         archive = carchive.CArchive()
         archive.build(self.name, mytoc)
         outf = open(self.out, 'w')
-        pprint.pprint((self.name, self.cdict, self.toc, self.exclude_binaries, self.strip_binaries, self.upx_binaries), outf)
+        pprint.pprint((self.name, self.cdict, self.toc, self.exclude_binaries, self.strip_binaries, self.upx_binaries, self.crypt), outf)
         outf.close()
         for item in trash:
             os.remove(item)
@@ -430,6 +437,7 @@ class ELFEXE(Target):
         self.versrsrc = kws.get('version',None)
         self.strip = kws.get('strip',None)
         self.upx = kws.get('upx',None)
+        self.crypt = kws.get('crypt', 0)
         self.exclude_binaries = kws.get('exclude_binaries',0)
         if self.name is None:
             self.name = self.out[:-3] + 'exe'
@@ -446,7 +454,7 @@ class ELFEXE(Target):
                 self.toc.extend(arg)
         self.toc.extend(config['EXE_dependencies'])
         self.pkg = PKG(self.toc, cdict=kws.get('cdict',None), exclude_binaries=self.exclude_binaries,
-                       strip_binaries=self.strip, upx_binaries=self.upx)
+                       strip_binaries=self.strip, upx_binaries=self.upx, crypt=self.crypt)
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
     def check_guts(self, last_build):
@@ -455,7 +463,7 @@ class ELFEXE(Target):
             print "rebuilding %s because %s missing" % (outnm, os.path.basename(self.name))
             return 1
         try:
-            name, console, debug, icon, versrsrc, strip, upx, mtm = eval(open(self.out, 'r').read())
+            name, console, debug, icon, versrsrc, strip, upx, crypt, mtm = eval(open(self.out, 'r').read())
         except:
             print "rebuilding %s because %s missing or bad" % (outnm, outnm)
             return 1
@@ -483,6 +491,9 @@ class ELFEXE(Target):
             return 1
         if upx != self.upx:
             print "rebuilding %s because upx option changed" % outnm
+            return 1
+        if crypt != self.crypt:
+            print "rebuilding %s because crypt option changed" % outnm
             return 1
         if mtm != mtime(self.name):
             print "rebuilding %s because mtimes don't match" % outnm
@@ -532,7 +543,7 @@ class ELFEXE(Target):
         os.chmod(self.name, 0755)
         f = open(self.out, 'w')
         pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
-                       self.strip, self.upx, mtime(self.name)), f)
+                       self.strip, self.upx, self.crypt, mtime(self.name)), f)
         f.close()
         for item in trash:
             os.remove(item)
