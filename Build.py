@@ -338,7 +338,8 @@ class PKG(Target):
                               'DATA':COMPRESSED,
                               'BINARY':COMPRESSED,
                               'EXECUTABLE':COMPRESSED,
-                              'PYSOURCE':COMPRESSED }
+                              'PYSOURCE':COMPRESSED,
+                              'PYMODULE':COMPRESSED }
             else:
                 self.cdict = { 'PYSOURCE':UNCOMPRESSED }
         self.__postinit__()
