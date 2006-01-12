@@ -310,7 +310,7 @@ def checkCache(fnm, strip, upx):
     os.system(cmd)
     return cachedfile
 
-UNCOMPRESSED, COMPRESSED = range(3)
+UNCOMPRESSED, COMPRESSED = range(2)
 class PKG(Target):
     typ = 'PKG'
     xformdict = {'PYMODULE' : 'm',
