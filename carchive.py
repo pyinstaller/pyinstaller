@@ -184,7 +184,13 @@ class CArchive(archive.Archive):
     (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
     self.lib.seek(self.pkgstart+dpos)
     rslt = self.lib.read(dlen)
-    if flag == 1:
+    if flag == 2:
+      global AES
+      import AES
+      key = rslt[:32]
+      # Note: keep this in sync with bootloader's code
+      rslt = AES.new(key, AES.MODE_CFB, "\0"*AES.block_size).decrypt(rslt[32:])
+    if flag == 1 or flag == 2:
       rslt = zlib.decompress(rslt)
     if typcd == 'M':
       return (1, rslt)
@@ -204,7 +210,7 @@ class CArchive(archive.Archive):
          entry[0] is name (under which it will be saved).
          entry[1] is fullpathname of the file.
          entry[2] is a flag for it's storage format (0==uncompressed,
-         1==compressed)
+         1==compressed, 2==compressed+encrypted)
          entry[3] is the entry's type code.
          Version 5:
            If the type code is 'o':
@@ -230,8 +236,15 @@ class CArchive(archive.Archive):
       print "Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd)
       raise
     ulen = len(s)
-    if flag == 1:
+    assert flag in range(3)
+    if flag == 1 or flag == 2:
       s = zlib.compress(s, self.LEVEL)
+    if flag == 2:
+      global AES
+      import AES, Crypt
+      key = Crypt.gen_random_key(32)
+      # Note: keep this in sync with bootloader's code
+      s = key + AES.new(key, AES.MODE_CFB, "\0"*AES.block_size).encrypt(s)
     dlen = len(s)
     where = self.lib.tell()
     if typcd == 'm':

@@ -65,6 +65,7 @@ DECLPROC(PyList_Append);
 DECLPROC(Py_BuildValue);
 DECLPROC(PyFile_FromString);
 DECLPROC(PyString_FromStringAndSize);
+DECLPROC(PyString_AsString);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyModule_GetDict);
 DECLPROC(PyDict_GetItemString);
@@ -112,6 +113,7 @@ static int f_pkgstart;
 static TOC *f_tocbuff = NULL;
 static TOC *f_tocend = NULL;
 static COOKIE f_cookie;
+static PyObject *AES = NULL;
 
 unsigned char *extract(TOC *ptoc);
 
@@ -278,6 +280,7 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, Py_BuildValue);
 	GETPROC(dll, PyFile_FromString);
 	GETPROC(dll, PyString_FromStringAndSize);
+	GETPROC(dll, PyString_AsString);
 	GETPROC(dll, PyObject_CallFunction);
 	GETPROC(dll, PyModule_GetDict);
 	GETPROC(dll, PyDict_GetItemString);
@@ -602,6 +605,7 @@ int importModules()
 			PyObject *mods = PyString_FromStringAndSize(modbuf + 8,
 				ntohl(ptoc->ulen) - 8);
             
+			VS("extracted ");
 			VS(ptoc->name);
 			VS("\n");
 			
@@ -743,7 +747,36 @@ unsigned char *extract(TOC *ptoc)
 		return NULL;
 	}
 	fread(data, ntohl(ptoc->len), 1, f_fp);
-	if (ptoc->cflag == '\1') {
+	if (ptoc->cflag == '\2') {
+		PyObject *func_new;
+		PyObject *aes_dict;
+		PyObject *aes_obj;
+		PyObject *ddata;
+		long block_size;
+		char *iv;
+
+		if (!AES)
+			AES = PyImport_ImportModule("AES");
+		aes_dict = PyModule_GetDict(AES);
+		func_new = PyDict_GetItemString(aes_dict, "new");
+		block_size = PyInt_AsLong(PyDict_GetItemString(aes_dict, "block_size"));
+		iv = malloc(block_size);
+		memset(iv, 0, block_size);
+        
+		aes_obj = PyObject_CallFunction(func_new, "s#Os#",
+			data, 32,
+			PyDict_GetItemString(aes_dict, "MODE_CFB"),
+			iv, block_size);
+
+		ddata = PyObject_CallMethod(aes_obj, "decrypt", "s#", data+32, ntohl(ptoc->len)-32);
+		memcpy(data, PyString_AsString(ddata), ntohl(ptoc->len)-32);
+		Py_DECREF(aes_obj);
+		Py_DECREF(ddata);
+		VS("decrypted ");
+		VS(ptoc->name);
+		VS("\n");
+	}
+	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
 #ifndef NOZLIB
 		tmp = decompress(data, ptoc);
 		free(data);
