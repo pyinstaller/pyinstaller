@@ -64,7 +64,6 @@ DECLPROC(PyList_New);
 DECLPROC(PyList_Append);
 DECLPROC(Py_BuildValue);
 DECLPROC(PyFile_FromString);
-DECLPROC(PyString_FromStringAndSize);
 DECLPROC(PyString_AsString);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyModule_GetDict);
@@ -279,7 +278,6 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyList_Append);
 	GETPROC(dll, Py_BuildValue);
 	GETPROC(dll, PyFile_FromString);
-	GETPROC(dll, PyString_FromStringAndSize);
 	GETPROC(dll, PyString_AsString);
 	GETPROC(dll, PyObject_CallFunction);
 	GETPROC(dll, PyModule_GetDict);
@@ -599,17 +597,14 @@ int importModules()
 		{
 			unsigned char *modbuf = extract(ptoc);
 
-			/* .pyc/.pyo files have 8 bytes header. Skip it and get a Python
-			 * string directly pointing at the marshalled code.
-			 */
-			PyObject *mods = PyString_FromStringAndSize(modbuf + 8,
-				ntohl(ptoc->ulen) - 8);
-            
 			VS("extracted ");
 			VS(ptoc->name);
 			VS("\n");
 			
-			co = PyObject_CallFunction(loadfunc, "O", mods);
+			/* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
+			 * data form the right point.
+			 */
+			co = PyObject_CallFunction(loadfunc, "s#", modbuf+8, ntohl(ptoc->ulen)-8);
 			mod = PyImport_ExecCodeModule(ptoc->name, co);
 
 			/* Check for errors in loading */
@@ -623,7 +618,6 @@ int importModules()
 				PyErr_Clear();
 			}
 
-			Py_DECREF(mods);
 			free(modbuf);
 		}
 		ptoc = incrementTocPtr(ptoc); 
