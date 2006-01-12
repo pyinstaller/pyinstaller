@@ -17,9 +17,9 @@ def gen_random_key(size=32):
 
     # Try using PyCrypto if available
     try:
-        from Crypto.Util.randpool import RandPool
-        from Crypto.Hash import SHA512
-        return RandPool(hash=SHA512).get_bytes(size)
+        from Crypto.Util.randpool import RandomPool
+        from Crypto.Hash import SHA256
+        return RandomPool(hash=SHA256).get_bytes(size)
 
     except ImportError:
         print >>sys.stderr, "WARNING: The generated key will not be cryptographically-secure key. Consider using Python 2.4+ to generate the key, or install PyCrypto."
