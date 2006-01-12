@@ -7,11 +7,29 @@ class ArgsError(Exception):
     pass
 
 def gen_random_key(size=32):
-    import random
-    L = []
-    for i in range(size):
-        L.append(chr(random.randint(0, 255)))
-    return "".join(L)
+    """
+    Generate a cryptographically-secure random key. This is done by using
+    Python 2.4's os.urandom, or PyCrypto.
+    """
+    import os
+    if hasattr(os, "urandom"): # Python 2.4+
+        return os.urandom(size)
+
+    # Try using PyCrypto if available
+    try:
+        from Crypto.Util.randpool import RandPool
+        from Crypto.Hash import SHA512
+        return RandPool(hash=SHA512).get_bytes(size)
+
+    except ImportError:
+        print >>sys.stderr, "WARNING: The generated key will not be cryptographically-secure key. Consider using Python 2.4+ to generate the key, or install PyCrypto."
+
+        # Stupid random generation
+        import random
+        L = []
+        for i in range(size):
+            L.append(chr(random.randint(0, 255)))
+        return "".join(L)
 
 def cmd_genkey(args):
     import pprint
@@ -20,7 +38,7 @@ def cmd_genkey(args):
 
     key_file = args[0]
     key = gen_random_key()
-    f = file(key_file, "w")
+    f = open(key_file, "w")
     print >>f, "key = %s" % repr(key)
     return 0
 
