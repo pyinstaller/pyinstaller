@@ -236,7 +236,7 @@ class PYZ(Target):
             self.level = level
         else:
             self.level = 0
-        if config['useCrypt']:
+        if config['useCrypt'] and crypt is not None:
             self.crypt = archive.Keyfile(crypt).key
         else:
             self.crypt = None

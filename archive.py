@@ -408,9 +408,11 @@ class Keyfile:
 
 class PYZOwner(iu.Owner):
     def __init__(self, path):
-        if not hasattr(sys, "keyfile"):
-            sys.keyfile = Keyfile()
-        self.pyz = ZlibArchive(path, crypt=sys.keyfile.key)
+        self.pyz = ZlibArchive(path)
+        if self.pyz.crypted:
+            if not hasattr(sys, "keyfile"):
+                sys.keyfile = Keyfile()
+            self.pyz = ZlibArchive(path, crypt=sys.keyfile.key)
         iu.Owner.__init__(self, path)
     def getmod(self, nm, newmod=imp.new_module):
         rslt = self.pyz.extract(nm)
