@@ -865,17 +865,18 @@ int runScripts()
 			data = extract(ptoc);
 			/* Run it */
 			rc = PyRun_SimpleString(data);
-			/* log errors and go on */
+			/* log errors and abort */
 			if (rc != 0) {
 				sprintf(msg, " RC: %d from %s\n", rc, ptoc->name);
 				VS(msg);
+				return rc;
 			}
 			free(data);
 		}
 
 		ptoc = incrementTocPtr(ptoc); 
 	}
-	return rc;
+	return 0;
 }
 
 /* 
