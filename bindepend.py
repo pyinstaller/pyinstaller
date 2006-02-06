@@ -33,6 +33,7 @@ import os
 import time
 import string
 import sys
+import re
 
 seen = {}
 _bpath = None
@@ -278,19 +279,12 @@ def getImports3(pth):
     """Find the binary dependencies of PTH.
 
         This implementation is for ldd platforms"""
-    import tempfile
     rslt = []
-    tmpf = tempfile.mktemp()
-    os.system('ldd "%s" >%s' %(pth, tmpf))
-    time.sleep(0.1)
-    txt = open(tmpf,'r').readlines()
-    os.remove(tmpf)
-    i = 0
-    while i < len(txt):
-        tokens = string.split(string.strip(txt[i]))
-        if len(tokens) > 2 and tokens[1] == '=>':
-            lib = string.strip(tokens[2])
-            if string.strip(tokens[0])[:10] == 'linux-gate':
+    for line in os.popen('ldd "%s"' % pth).readlines():
+        m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
+        if m:
+            name, lib = m.group(1), m.group(2)
+            if name[:10] == 'linux-gate':
                 # linux-gate is a fake library which does not exist and
                 # should be ignored. See also:
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
@@ -298,8 +292,8 @@ def getImports3(pth):
             if os.path.exists(lib):
                 rslt.append(lib)
             else:
-                print 'E: cannot find %s needed by %s' % (tokens[0], pth)
-        i = i + 1
+                print 'E: cannot find %s in path %s (needed by %s)' % \
+                      (name, lib, pth)
     return rslt
 
 def getImports(pth):
