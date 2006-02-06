@@ -8,6 +8,8 @@ Current changes since PyInstaller 1.0
  + Fix problem with rare encodings introduced in newer Python versions: now all
    the encodings are automatically found and included, so this problem should
    be gone forever.
+ + Fix building of COM servers (was broken in 1.0 because of the new build
+   system).
  + Mimic Python 2.4 behaviour with broken imports: sys.modules is cleaned up
    afterwise. This allows to package SQLObject applications under Windows
    with Python 2.4 and above.
