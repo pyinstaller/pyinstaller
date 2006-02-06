@@ -290,6 +290,11 @@ def getImports3(pth):
         tokens = string.split(string.strip(txt[i]))
         if len(tokens) > 2 and tokens[1] == '=>':
             lib = string.strip(tokens[2])
+            if string.strip(tokens[0])[:10] == 'linux-gate':
+                # linux-gate is a fake library which does not exist and
+                # should be ignored. See also:
+                # http://www.trilithium.com/johan/2005/08/linux-gate/
+                continue
             if os.path.exists(lib):
                 rslt.append(lib)
             else:
