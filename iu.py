@@ -28,6 +28,11 @@ import sys
 import imp
 import marshal
 
+try:
+    py_version = sys.version_info
+except AttributeError:
+    py_version = (1,5)
+
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
 # That is, there's an Owner for each thing on sys.path
@@ -386,10 +391,22 @@ class ImportManager:
             if hasattr(mod, '__co__'):
                 co = mod.__co__
                 del mod.__co__
-                if reload:
-                    exec co in sys.modules[fqname].__dict__
-                else:
-                    exec co in mod.__dict__
+                try:
+                    if reload:
+                        exec co in sys.modules[fqname].__dict__
+                    else:
+                        exec co in mod.__dict__
+                except:
+                    # In Python 2.4 and above, sys.modules is left clean
+                    # after a broken import. We need to do the same to
+                    # achieve perfect compatibility (see ticket #32).
+                    if py_version >= (2,4,0):
+                        # FIXME: how can we recover from a broken reload()?
+                        # Should we save the mod dict and restore it in case
+                        # of failure?
+                        if not reload:
+                            del sys.modules[fqname]
+                    raise
             if fqname == 'thread' and not self.threaded:
 ##                print "thread detected!"
                 self.setThreaded()
