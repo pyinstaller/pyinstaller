@@ -8,6 +8,9 @@ Current changes since PyInstaller 1.0
  + Fix problem with rare encodings introduced in newer Python versions: now all
    the encodings are automatically found and included, so this problem should
    be gone forever.
+ + Mimic Python 2.4 behaviour with broken imports: sys.modules is cleaned up
+   afterwise. This allows to package SQLObject applications under Windows
+   with Python 2.4 and above.
  + Add import hook for GTK.
  + Add import hook for PyOpenGL.
  + Add import hook for dnspython (tested with 1.3.4)
