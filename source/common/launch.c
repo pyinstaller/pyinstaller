@@ -862,13 +862,13 @@ int runScripts()
 	while (ptoc < f_tocend) {
 		if (ptoc->typcd == 's') {
 			/* Get data out of the archive.  */
-		data = extract(ptoc);
+			data = extract(ptoc);
 			/* Run it */
 			rc = PyRun_SimpleString(data);
 			/* log errors and go on */
 			if (rc != 0) {
-		sprintf(msg, " RC: %d from %s\n", rc, ptoc->name);
-		VS(msg);
+				sprintf(msg, " RC: %d from %s\n", rc, ptoc->name);
+				VS(msg);
 			}
 			free(data);
 		}
