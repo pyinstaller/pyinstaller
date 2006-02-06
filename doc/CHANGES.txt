@@ -22,6 +22,9 @@ Current changes since PyInstaller 1.0
    single-file executables, even when using the newest Python version!
  + (Linux) Ignore linux-gate.so while calculating dependencies (fix provided
    by Vikram Aggarwal).
+ + (Windows) With Python 2.4, setup UPX properly so to be able to compress
+   binaries generated with Visual Studio .NET 2003 (such as most of the
+   extensions).
 
 
 PyInstaller 1.0 (with respect to McMillan's Python Installer 5b5):

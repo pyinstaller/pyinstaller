@@ -42,6 +42,20 @@ if config['pythonVersion'] != sys.version:
 if config['hasRsrcUpdate']:
     import icon, versionInfo
 
+def setupUPXFlags():
+    f = os.environ.get("UPX", "")
+    is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
+    if iswin and is24:
+        # Binaries built with Visual Studio 7.1 require --strip-loadconf
+        # or they won't compress. Configure.py makes sure that UPX is new
+        # enough to support --strip-loadconf.
+        f = "--strip-loadconf " + f
+    f = "--best " + f
+    os.environ["UPX"] = f
+
+if config['hasUPX']:
+    setupUPXFlags()
+
 def build(spec):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks
     rthooks = eval(open(os.path.join(HOMEPATH, 'rthooks.dat'), 'r').read())

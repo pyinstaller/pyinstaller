@@ -20,6 +20,7 @@
 import os, sys, string, shutil
 HOME = os.path.dirname(sys.argv[0])
 iswin = sys.platform[:3] == 'win'
+is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
 cygwin = sys.platform == 'cygwin'
 configfile = os.path.join(HOME, 'config.dat')
 try:
@@ -192,16 +193,16 @@ except ImportError:
 print 'I: testing for UPX...'
 hasUPX = 0
 try:
-    if iswin:
-        os.system('upx -V >upx.txt')
-        txt = open('upx.txt','r').read()
-        os.remove('upx.txt')
-        if txt[:3] == 'upx':
-            hasUPX = 1
+    vers = os.popen("upx -V").readlines()
+    if not vers:
+        hasUPX = 0
     else:
-        rc = os.system('upx -V >/dev/null')
-        hasUPX = ( rc == 0 )
-    print 'I: ...UPX %s' % (('unavailable','available')[hasUPX])
+        v = string.split(vers[0])[1]
+        hasUPX = tuple(map(int, string.split(v, ".")))
+        if iswin and is24 and hasUPX < (1,92):
+            print 'E: UPX is too old! Python 2.4 under Windows requires UPX 1.92+'
+            hasUPX = 0
+    print 'I: ...UPX %s' % (('unavailable','available')[hasUPX != 0])
 except Exception, e:
     print 'I: ...exception result in testing for UPX'
     print e, e.args
