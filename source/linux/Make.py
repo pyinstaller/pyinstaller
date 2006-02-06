@@ -34,6 +34,14 @@ import bkfile
 import makemakefile
 import pprint
 
+try:
+	from distutils import sysconfig
+except:
+	print "ERROR: distutils with sysconfig required"
+	sys.exit(1)
+
+
+
 def main():
     dirnm = os.path.dirname(sys.argv[0])
     if dirnm not in ('', '.'):
@@ -45,6 +53,7 @@ def main():
     if ( sys.platform[:5] == 'linux' or
          sys.platform[:3] == 'win' or
          sys.platform[:7] == 'freebsd' or
+	 sys.platform[:7] == 'darwin' or
          sys.platform[:6] == 'cygwin' ):
         non_elf = 0                         # settable with -n option
 
@@ -71,12 +80,13 @@ def main():
         if prefix:
             exec_prefix = prefix
         else:
-            exec_prefix = sys.exec_prefix
+            exec_prefix = sysconfig.EXEC_PREFIX
     if not prefix:
-        prefix = sys.prefix
+        prefix = sysconfig.PREFIX
     # determine whether -p points to the Python source tree
     ishome = os.path.exists(os.path.join(prefix, 'Python', 'ceval.c'))
     cygwin = sys.platform == 'cygwin'
+    darwin = sys.platform[:7] == 'darwin'
 
     if ishome:
         print "(Using Python source directory)"
@@ -85,15 +95,16 @@ def main():
         config_h_dir = exec_prefix
         makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
     else:
-        if cygwin:
-            binlib = os.path.join('/lib', 'python%s' % sys.version[:3], 'config')
-        else:
-            binlib = os.path.join(exec_prefix,
-                              'lib', 'python%s' % sys.version[:3], 'config')
-        incldir = os.path.join(prefix, 'include', 'python%s' % sys.version[:3])
-        config_h_dir = os.path.join(exec_prefix, 'include',
-                                    'python%s' % sys.version[:3])
-        makefile_in = os.path.join(binlib, 'Makefile')
+	binlib = os.path.join (sysconfig.get_python_lib(True, True, exec_prefix), 'config')
+	# TODO: Is it possible to have more than one path returned? if so fix "includes" list
+	incldir_list =  sysconfig.get_config_vars('INCLUDEDIR')
+	includes = []
+	for dir in incldir_list:
+		if dir != None:
+			includes.append('-I' + dir)
+	config_h_dir =  os.path.join (sysconfig.get_python_inc(True,exec_prefix))
+        includes.append('-I' + config_h_dir)
+        makefile_in = sysconfig.get_makefile_filename()
 
     # salt config.dat with the exe type
     try:
@@ -109,7 +120,8 @@ def main():
     targets[0] = os.path.join('../../support/loader/', 'run')
     targets[1] = os.path.join('../../support/loader/', 'run_d')
 
-    includes = ['-I../common', '-I' + incldir, '-I' + config_h_dir]
+    # include local 'common' dir
+    includes.append('-I../common')
 
     have_warnings = 0
     import exceptions
@@ -136,7 +148,10 @@ def main():
         outfp.write('\n};\n')
         outfp.close()
 
-    cflags = includes + ['$(OPT)']
+    includes.append('$(OPT)')
+    cflags = includes
+    cflags.append(sysconfig.get_config_vars('CFLAGS')[0]) #save sysconfig CFLAGS
+
     if have_warnings:
         cflags.append('-DHAVE_WARNINGS')
     if freeze_exceptions:
@@ -144,14 +159,12 @@ def main():
         cflags.append('-DEXCEPTIONS_LEN=%d' % codelen)
     if non_elf:
         cflags.append('-DNONELF')
-    if cygwin:
-        libs = [os.path.join(binlib, 'libpython$(VERSION).dll.a')]
-    else:
-        libs = [os.path.join(binlib, 'libpython$(VERSION).a')]
+
+    libs = [os.path.join(binlib, sysconfig.get_config_vars('INSTSONAME')[0])]
 
     somevars = {}
     if os.path.exists(makefile_in):
-        makevars = parsesetup.getmakevars(makefile_in)
+        makevars = sysconfig.parse_makefile(makefile_in)
     else:
         raise ValueError, "Makefile '%s' not found" % makefile_in
     for key in makevars.keys():

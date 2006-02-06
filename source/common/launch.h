@@ -136,7 +136,7 @@ EXTDECLPROC(int, PyObject_SetAttrString, (PyObject *, char *, PyObject *));
 EXTDECLPROC(PyObject *, PyList_New, (int));
 EXTDECLPROC(int, PyList_Append, (PyObject *, PyObject *));
 EXTDECLPROC(PyObject *, Py_BuildValue, (char *, ...));
-EXTDECLPROC(PyObject *, PyFile_FromFile, (FILE *, char *, char *, int));
+EXTDECLPROC(PyObject *, PyFile_FromString, (char *, char *));
 EXTDECLPROC(PyObject *, PyObject_CallFunction, (PyObject *, char *, ...));
 EXTDECLPROC(PyObject *, PyModule_GetDict, (PyObject *));
 EXTDECLPROC(PyObject *, PyDict_GetItemString, (PyObject *, char *));

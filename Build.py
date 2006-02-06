@@ -483,22 +483,24 @@ class ELFEXE(Target):
             print "rebuilding %s because pkg is more recent" % outnm
             return 1
         return 0
-    def assemble(self):
-        print "building ELFEXE", os.path.basename(self.out)
-        trash = []
-        outf = open(self.name, 'wb')
+    def _bootloader_postfix(self, exe):
         if iswin:
-            exe = 'support/loader/run_'
+            exe = exe + "_"
             is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
             exe = exe + "67"[is24]
             exe = exe + "rd"[self.debug]
             exe = exe + "wc"[self.console]
         else:
-            exe = 'support/loader/run'
             if not self.console:
                 exe = exe + 'w'
             if self.debug:
                 exe = exe + '_d'
+        return exe
+    def assemble(self):
+        print "building ELFEXE", os.path.basename(self.out)
+        trash = []
+        outf = open(self.name, 'wb')
+        exe = self._bootloader_postfix('support/loader/run')
         exe = os.path.join(HOMEPATH, exe)
         if iswin or cygwin:
             exe = exe + '.exe'
@@ -541,9 +543,7 @@ class DLL(ELFEXE):
     def assemble(self):
         print "building DLL", os.path.basename(self.out)
         outf = open(self.name, 'wb')
-        dll = 'support/loader/inprocsrvr'
-        if self.debug:
-            dll = dll + '_d'
+        dll = self._bootloader_postfix('support/loader/inprocsrvr')
         dll = os.path.join(HOMEPATH, dll)  + '.dll'
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)

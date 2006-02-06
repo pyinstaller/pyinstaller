@@ -88,54 +88,62 @@ Create a spec file for your project
 
 The root directory has a script Makespec.py for this purpose::
 
-       python Makespec.py [OPTIONS] script...
+       python Makespec.py [opts] <scriptname> [<scriptname> ...]
 
 Where allowed OPTIONS are:
 
---onefile
+-F, --onefile
     produce a single file deployment (see below).
 
---onedir
+-D, --onedir
     produce a single directory deployment (default).
 
---tk
+-K, --tk
     include TCL/TK in the deployment.
 
---ascii
+-a, --ascii
     do not include encodings. The default (on Python versions with unicode
     support) is now to include all encodings.
 
---debug
+-d, --debug
     use debug (verbose) versions of the executables.
 
---noconsole
+-w, --windowed, --noconsole
     Use the Windows subsystem executable, which does not open
     the console when the program is launched. **(Windows only)**
 
---strip
+-c, --nowindowed, --console
+    Use the console subsystem executable. This is the default. **(Windows only)**
+
+-s, --strip
     the executable and all shared libraries will be run through strip. Note
     that cygwin's strip tends to render normal Win32 dlls unusable.
 
---upx
+-X, --upx
     if you have UPX installed (detected by Configure), this will use it to
     compress your executable (and, on Windows, your dlls). See note below.
 
---out <directory>
+-o DIR, --out=DIR
     create the spec file in *directory*. If not specified, and the current
     directory is Installer's root directory, an output subdirectory will be
     created. Otherwise the current directory is used.
 
---icon <file.ico>
+-p DIR, --paths=DIR
+    set base path for import (like using PYTHONPATH). Multiple directories are
+    allowed, separating them with the path separator (';' under Windows, ':'
+    under Linux), or using this option multiple times.
+
+--icon=<FILE.ICO>
     add *file.ico* to the executable's resources. **(Windows only)**
 
---icon <file.exe,n>
+--icon=<FILE.EXE,N>
     add the *n*-th incon in *file.exe* to the executable's resources. **(Windows
     only)**
 
---version <verfile>
+-v FILE, --version=FILE
     add verfile as a version resource to the executable. **(Windows only)**
 
---name <name>
+-n NAME, --name=NAME
     optional *name* to assign to the project (from which the spec file name is
     generated). If omitted, the basename of the (first) script is used.
 
@@ -316,19 +324,6 @@ lookalike of one of the shared libraries during the hole between when the
 library is extracted and when it gets loaded by the execvp'd process. So maybe
 you shouldn't do setuid root programs using ``--onefile``. **In fact, we do not
 recomend the use of --onefile on setuid programs.**
-
-|GOBACK|
-
-
-``--onefile`` and Python 2.4 for Windows (**important**)
---------------------------------------------------------
-
-Currently, there is an issue when using ``--onefile`` with Python 2.4: the
-resulting executable will depend on ``MSVCR71.DLL``. This is a standard
-Microsoft library which was not present on older Windows (like Win9x), so
-you are forced to ship it with your application if you need compatibility
-with those operating systems. We plan to fix this issue in a future version
-of |PyInstaller| (consult our Roadmap_ for more information).
 
 |GOBACK|
 

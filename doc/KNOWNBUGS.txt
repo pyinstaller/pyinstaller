@@ -1,12 +1,9 @@
 ==========
 KNOWN BUGS
 ==========
-Consult also http://pyinstaller.hpcf.upr.edu/pyinstaller/report/1. This file
-is possibly lagging behind the web (this will be fixed ASAP).
 
-- flowtools hidden dependencies not included
-
-
+Consult http://pyinstaller.hpcf.upr.edu/cgi-bin/trac.cgi/report/1 for the
+current list of Known Bugs.
 
 
 New platforms development status
