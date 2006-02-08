@@ -3,6 +3,9 @@
 Current changes since PyInstaller 1.0
 -------------------------------------
 
+ + (Windows) Make single-file packages not depend on MSVCRT71.DLL anymore,
+   even under Python 2.4. You can eventually ship your programs really as
+   single-file executables, even when using the newest Python version!
  + Fix problem with incorrect python path detection. Now using helpers from
    distutils.
  + Fix problem with rare encodings introduced in newer Python versions: now all
@@ -13,19 +16,17 @@ Current changes since PyInstaller 1.0
  + Mimic Python 2.4 behaviour with broken imports: sys.modules is cleaned up
    afterwise. This allows to package SQLObject applications under Windows
    with Python 2.4 and above.
+ + Add import hook for the following packages:
+     + GTK
+     + PyOpenGL (tested 2.0.1.09)
+     + dsnpython (tested 1.3.4)
+     + KInterasDB (courtesy of Eugene Prigorodov)
  + Fix packaging of code using "time.strptime" under Python 2.3+.
- + Add import hook for GTK.
- + Add import hook for PyOpenGL.
- + Add import hook for dnspython (tested with 1.3.4)
- + Add import hook for KInterbasDB  (courtesy of Eugene Prigorodov)
- + (Windows) Make single-file packages not depend on MSVCRT71.DLL anymore,
-   even under Python 2.4. You can eventually ship your programs really as
-   single-file executables, even when using the newest Python version!
  + (Linux) Ignore linux-gate.so while calculating dependencies (fix provided
    by Vikram Aggarwal).
  + (Windows) With Python 2.4, setup UPX properly so to be able to compress
    binaries generated with Visual Studio .NET 2003 (such as most of the
-   extensions).
+   extensions). UPX 1.92+ is needed for this.
 
 
 PyInstaller 1.0 (with respect to McMillan's Python Installer 5b5):
