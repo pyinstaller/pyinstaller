@@ -337,6 +337,34 @@ recomend the use of --onefile on setuid programs.**
 
 |GOBACK|
 
+A Note on .egg files and setuptools
+-----------------------------------
+`setuptools`_ is a distutils extensions which provide many benefits, including
+the ability to distribute the extension as ``egg`` files. Together with the
+nifty `easy_install`_ (a tool which automatically locates, downloads and
+installs Python extensions), ``egg`` files are becoming more and more
+widespread as a way for distributing Python extensions.
+
+``egg`` files are actually ZIP files under the hood, and they rely on the fact
+that Python 2.4 is able to transparently import modules stored within ZIP
+files. PyInstaller is currently *not* able to import and extract modules
+within ZIP files, so code which uses extensions packaged as ``egg`` files
+cannot be packaged with PyInstaller.
+
+The workaround is pretty easy: you can use ``easy_install -Z`` at installation
+time to ask ``easy_install`` to always decompress egg files. This will allow
+PyInstaller to see the files and make the package correctly. If you have already
+installed the modules, you can simply decompress them within a directory with
+the same name of the ``egg`` file (including also the extension).
+
+Support for ``egg`` files is planned for a future release of PyInstaller.
+
+.. _`setuptools`: http://peak.telecommunity.com/DevCenter/setuptools
+.. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
+
+
+|GOBACK|
+
 
 PyInstaller Utilities
 +++++++++++++++++++++
