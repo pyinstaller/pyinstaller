@@ -817,7 +817,7 @@ int extract2fs(TOC *ptoc)
 
 	if (out == NULL)  {
 		FATALERROR(ptoc->name);
-		FATALERROR("could not be extracted!\n");
+		FATALERROR(" could not be extracted!\n");
 	}
 	else {
 		fwrite(data, ntohl(ptoc->ulen), 1, out);
