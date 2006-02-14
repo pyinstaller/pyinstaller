@@ -1,7 +1,12 @@
 (+ user visible changes, * internal stuff)
 
-Current changes since PyInstaller 1.0
+Current changes since PyInstaller 1.1
 -------------------------------------
+ + Fix a crash when invoking UPX with certain kinds of builds.
+
+
+PyInstaller 1.1
+---------------
 
  + (Windows) Make single-file packages not depend on MSVCRT71.DLL anymore,
    even under Python 2.4. You can eventually ship your programs really as
