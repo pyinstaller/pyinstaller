@@ -296,6 +296,14 @@ class PYZ(Target):
 def checkCache(fnm, strip, upx):
     if not strip and not upx:
         return fnm
+    if strip:
+        strip = 1
+    else:
+        strip = 0
+    if upx:
+        upx = 1
+    else:
+        upx = 0
     cachedir = os.path.join(HOMEPATH, 'bincache%d%d' %  (strip, upx))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
