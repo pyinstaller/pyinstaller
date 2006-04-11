@@ -29,7 +29,6 @@ import os
 import getopt
 import string
 import marshal
-import parsesetup
 import bkfile
 import makemakefile
 import pprint
@@ -52,8 +51,7 @@ def main():
     non_elf = 1                         # settable with -e option
     if ( sys.platform[:5] == 'linux' or
          sys.platform[:3] == 'win' or
-         sys.platform[:7] == 'freebsd' or
-	 sys.platform[:7] == 'darwin' or
+         sys.platform[:7] in ['freebsd','darwin'] or
          sys.platform[:6] == 'cygwin' ):
         non_elf = 0                         # settable with -n option
 
@@ -83,8 +81,10 @@ def main():
             exec_prefix = sysconfig.EXEC_PREFIX
     if not prefix:
         prefix = sysconfig.PREFIX
+
     # determine whether -p points to the Python source tree
     ishome = os.path.exists(os.path.join(prefix, 'Python', 'ceval.c'))
+
     cygwin = sys.platform == 'cygwin'
     darwin = sys.platform[:7] == 'darwin'
 
@@ -95,7 +95,8 @@ def main():
         config_h_dir = exec_prefix
         makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
     else:
-	binlib = os.path.join (sysconfig.get_python_lib(True, True, exec_prefix), 'config')
+#	binlib = os.path.join (sysconfig.get_python_lib(True, True, exec_prefix), 'config')
+	binlib = sysconfig.get_config_vars('LIBDIR')[0]
 	# TODO: Is it possible to have more than one path returned? if so fix "includes" list
 	incldir_list =  sysconfig.get_config_vars('INCLUDEDIR')
 	includes = []
@@ -160,7 +161,9 @@ def main():
     if non_elf:
         cflags.append('-DNONELF')
 
-    libs = [os.path.join(binlib, sysconfig.get_config_vars('INSTSONAME')[0])]
+#    libs = [os.path.join(binlib, sysconfig.get_config_vars('INSTSONAME')[0])]
+    libs = [os.path.join(sysconfig.get_config_vars('LIBDIR')[0], sysconfig.get_config_vars('INSTSONAME')[0])]
+
 
     somevars = {}
     if os.path.exists(makefile_in):
