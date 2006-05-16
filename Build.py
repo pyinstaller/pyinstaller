@@ -317,9 +317,9 @@ def checkCache(fnm, strip, upx):
     if upx:
         if strip:
             fnm = checkCache(fnm, 1, 0)
-        cmd = "upx --best -q %s" % cachedfile
+        cmd = "upx --best -q \"%s\"" % cachedfile
     else:
-        cmd = "strip %s" % cachedfile
+        cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
     os.system(cmd)
