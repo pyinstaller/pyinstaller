@@ -1,5 +1,7 @@
-a = Analysis([os.path.join(HOMEPATH,'support\\_mountzlib.py'), os.path.join(HOMEPATH,'support\\useUnicode.py'), 'test8.py'],
-             pathex=['D:\\Work\\pyinstaller\\buildtests'])
+a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
+              os.path.join(HOMEPATH,'support', 'useUnicode.py'),
+              'test8.py'],
+             pathex=['.'])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,

@@ -296,6 +296,14 @@ class PYZ(Target):
 def checkCache(fnm, strip, upx):
     if not strip and not upx:
         return fnm
+    if strip:
+        strip = 1
+    else:
+        strip = 0
+    if upx:
+        upx = 1
+    else:
+        upx = 0
     cachedir = os.path.join(HOMEPATH, 'bincache%d%d' %  (strip, upx))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
@@ -309,9 +317,9 @@ def checkCache(fnm, strip, upx):
     if upx:
         if strip:
             fnm = checkCache(fnm, 1, 0)
-        cmd = "upx --best -q %s" % cachedfile
+        cmd = "upx --best -q \"%s\"" % cachedfile
     else:
-        cmd = "strip %s" % cachedfile
+        cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
     os.system(cmd)
