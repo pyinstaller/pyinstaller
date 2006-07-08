@@ -1,7 +1,13 @@
 (+ user visible changes, * internal stuff)
 
-Current changes since PyInstaller 1.1
+Current changes since PyInstaller 1.2
 -------------------------------------
+ + Fix bug with user-provided icons disappearing from built executables
+   when these were compressed with UPX.
+ 
+
+PyInstaller 1.2
+---------------
  + Fix a crash when invoking UPX with certain kinds of builds.
  + Fix icon support by re-adding a resource section in the bootloader
    executable.
