@@ -4,7 +4,11 @@ Current changes since PyInstaller 1.2
 -------------------------------------
  + Fix bug with user-provided icons disappearing from built executables
    when these were compressed with UPX.
- 
+ + Fix problems with packaging of applications using PIL (that was broken
+   because of a bug in Python's import machinery, in recent Python
+   versions). Also add a workaround including Tcl/Tk with PIL unless
+   ImageTk is imported.
+
 
 PyInstaller 1.2
 ---------------

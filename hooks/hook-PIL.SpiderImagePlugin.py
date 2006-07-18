@@ -1,4 +1,4 @@
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2006, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -15,27 +15,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-hiddenimports = []
-
-# FIXME: for a strange bug in Python's import machinery, we need to adjust
-# the module name before proceeding to the PIL import. The name would
-# otherwise be "hooks.hook-PIL.Image", which will then produce this
-# monstruosity:
-#   <module 'hooks.hook-PIL.PIL.Image' from 'C:\python24\lib\site-packages\PIL\Image.pyc'>
-#
-__name__ = "hook-image"
-
-def install_Image(lis):
-    import Image
-    # PIL uses lazy initialization.
-    # you candecide if you want only the
-    # default stuff:
-    Image.preinit()
-    # or just everything:
-    Image.init()
-    import sys
-    for name in sys.modules:
-        if name[-11:] == "ImagePlugin":
-            lis.append(name)
-
-install_Image(hiddenimports)
+# PIL's SpiderImagePlugin features a tkPhotoImage() method which imports
+# ImageTk (and thus brings the whole Tcl/Tk library in).
+# We cheat a little and remove the ImageTk import: I assume that if people
+# are really using ImageTk in their application, they will also import it
+# directly.
+def hook(mod):
+    for i in range(len(mod.imports)):
+        if mod.imports[i][0] == "ImageTk":
+            del mod.imports[i]
+            break
+    return mod
