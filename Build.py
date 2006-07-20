@@ -42,6 +42,20 @@ if config['pythonVersion'] != sys.version:
 if config['hasRsrcUpdate']:
     import icon, versionInfo
 
+def setupUPXFlags():
+    f = os.environ.get("UPX", "")
+    is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
+    if iswin and is24:
+        # Binaries built with Visual Studio 7.1 require --strip-loadconf
+        # or they won't compress. Configure.py makes sure that UPX is new
+        # enough to support --strip-loadconf.
+        f = "--strip-loadconf " + f
+    f = "--best " + f
+    os.environ["UPX"] = f
+
+if config['hasUPX']:
+    setupUPXFlags()
+
 def build(spec):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks
     rthooks = eval(open(os.path.join(HOMEPATH, 'rthooks.dat'), 'r').read())
@@ -289,6 +303,14 @@ class PYZ(Target):
 def checkCache(fnm, strip, upx):
     if not strip and not upx:
         return fnm
+    if strip:
+        strip = 1
+    else:
+        strip = 0
+    if upx:
+        upx = 1
+    else:
+        upx = 0
     cachedir = os.path.join(HOMEPATH, 'bincache%d%d' %  (strip, upx))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
@@ -302,9 +324,9 @@ def checkCache(fnm, strip, upx):
     if upx:
         if strip:
             fnm = checkCache(fnm, 1, 0)
-        cmd = "upx --best -q %s" % cachedfile
+        cmd = "upx --best -q \"%s\"" % cachedfile
     else:
-        cmd = "strip %s" % cachedfile
+        cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
     os.system(cmd)
@@ -502,22 +524,24 @@ class ELFEXE(Target):
             print "rebuilding %s because pkg is more recent" % outnm
             return 1
         return 0
-    def assemble(self):
-        print "building ELFEXE", os.path.basename(self.out)
-        trash = []
-        outf = open(self.name, 'wb')
+    def _bootloader_postfix(self, exe):
         if iswin:
-            exe = 'support/loader/run_'
+            exe = exe + "_"
             is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
             exe = exe + "67"[is24]
             exe = exe + "rd"[self.debug]
             exe = exe + "wc"[self.console]
         else:
-            exe = 'support/loader/run'
             if not self.console:
                 exe = exe + 'w'
             if self.debug:
                 exe = exe + '_d'
+        return exe
+    def assemble(self):
+        print "building ELFEXE", os.path.basename(self.out)
+        trash = []
+        outf = open(self.name, 'wb')
+        exe = self._bootloader_postfix('support/loader/run')
         exe = os.path.join(HOMEPATH, exe)
         if iswin or cygwin:
             exe = exe + '.exe'
@@ -560,9 +584,7 @@ class DLL(ELFEXE):
     def assemble(self):
         print "building DLL", os.path.basename(self.out)
         outf = open(self.name, 'wb')
-        dll = 'support/loader/inprocsrvr'
-        if self.debug:
-            dll = dll + '_d'
+        dll = self._bootloader_postfix('support/loader/inprocsrvr')
         dll = os.path.join(HOMEPATH, dll)  + '.dll'
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)

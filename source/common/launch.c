@@ -831,7 +831,7 @@ int extract2fs(TOC *ptoc)
 
 	if (out == NULL)  {
 		FATALERROR(ptoc->name);
-		FATALERROR("could not be extracted!\n");
+		FATALERROR(" could not be extracted!\n");
 	}
 	else {
 		fwrite(data, ntohl(ptoc->ulen), 1, out);
@@ -876,20 +876,21 @@ int runScripts()
 	while (ptoc < f_tocend) {
 		if (ptoc->typcd == 's') {
 			/* Get data out of the archive.  */
-		data = extract(ptoc);
+			data = extract(ptoc);
 			/* Run it */
 			rc = PyRun_SimpleString(data);
-			/* log errors and go on */
+			/* log errors and abort */
 			if (rc != 0) {
-		sprintf(msg, " RC: %d from %s\n", rc, ptoc->name);
-		VS(msg);
+				sprintf(msg, " RC: %d from %s\n", rc, ptoc->name);
+				VS(msg);
+				return rc;
 			}
 			free(data);
 		}
 
 		ptoc = incrementTocPtr(ptoc); 
 	}
-	return rc;
+	return 0;
 }
 
 /* 
