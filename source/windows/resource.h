@@ -30,6 +30,8 @@
 // Used by launchw.rc
 //
 #define IDI_ICON1                       101
+#define IDR_MANIFEST                    1
+#define RT_MANIFEST                     24
 
 // Next default values for new objects
 // 
