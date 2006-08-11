@@ -8,6 +8,10 @@ Current changes since PyInstaller 1.2
    because of a bug in Python's import machinery, in recent Python
    versions). Also add a workaround including Tcl/Tk with PIL unless
    ImageTk is imported.
+ + (Windows) When used under Windows XP, packaged programs now have
+   the correct look & feel and follow user's themes (thanks to the manifest
+   file being linked within the generated executable). This is especially
+   useful for applications using wxPython.
 
 
 PyInstaller 1.2
