@@ -64,6 +64,7 @@ DECLPROC(PyList_New);
 DECLPROC(PyList_Append);
 DECLPROC(Py_BuildValue);
 DECLPROC(PyFile_FromString);
+DECLPROC(PyString_FromStringAndSize);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyModule_GetDict);
 DECLPROC(PyDict_GetItemString);
@@ -111,6 +112,8 @@ static int f_pkgstart;
 static TOC *f_tocbuff = NULL;
 static TOC *f_tocend = NULL;
 static COOKIE f_cookie;
+
+unsigned char *extract(TOC *ptoc);
 
 /*
  * The functions in this file defined in reverse order so that forward 
@@ -274,6 +277,7 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyList_Append);
 	GETPROC(dll, Py_BuildValue);
 	GETPROC(dll, PyFile_FromString);
+	GETPROC(dll, PyString_FromStringAndSize);
 	GETPROC(dll, PyObject_CallFunction);
 	GETPROC(dll, PyModule_GetDict);
 	GETPROC(dll, PyDict_GetItemString);
@@ -581,19 +585,7 @@ int importModules()
 		*/
 	marshal = PyImport_ImportModule("marshal");
 	marshaldict = PyModule_GetDict(marshal);
-	loadfunc = PyDict_GetItemString(marshaldict, "load");
-
-	/* Reopen the archive as a Python file. We cannot use PyFile_FromFile
-	 * because that would require this boot-loader and Python DLL to share
-	 * the same libc, while they purposely don't.
-	 */
-	fclose(f_fp);
-	pyfile = PyFile_FromString(f_archivename, "rb");
-	if (PyErr_Occurred())
-	{
-		PyErr_Print();
-		return -1;
-	}
+	loadfunc = PyDict_GetItemString(marshaldict, "loads");
 
 	/* Iterate through toc looking for module entries (type 'm')
 		* this is normally just bootstrap stuff (archive and iu)
@@ -602,14 +594,18 @@ int importModules()
 	while (ptoc < f_tocend) {
 		if (ptoc->typcd == 'm' || ptoc->typcd == 'M') 
 		{
+			unsigned char *modbuf = extract(ptoc);
+
+			/* .pyc/.pyo files have 8 bytes header. Skip it and get a Python
+			 * string directly pointing at the marshalled code.
+			 */
+			PyObject *mods = PyString_FromStringAndSize(modbuf + 8,
+				ntohl(ptoc->ulen) - 8);
+            
 			VS(ptoc->name);
 			VS("\n");
 			
-			/* Go to start of Python module (start + 8) and load the code object */
-			res = PyObject_CallMethod(pyfile, "seek", "(ii)", f_pkgstart + ntohl(ptoc->pos) + 8, 0);
-			Py_XDECREF(res);
-
-			co = PyObject_CallFunction(loadfunc, "O", pyfile);
+			co = PyObject_CallFunction(loadfunc, "O", mods);
 			mod = PyImport_ExecCodeModule(ptoc->name, co);
 
 			/* Check for errors in loading */
@@ -622,22 +618,13 @@ int importModules()
 				PyErr_Print();
 				PyErr_Clear();
 			}
+
+			Py_DECREF(mods);
+			free(modbuf);
 		}
 		ptoc = incrementTocPtr(ptoc); 
 	}
 
-	/* Close the file and release the object. */
-	res = PyObject_CallMethod(pyfile, "close", "()");
-	Py_XDECREF(res);
-	Py_DECREF(pyfile);
-
-	/* After closing the python file, we can reopen it as normal file. */
-	f_fp = fopen(f_archivename, "rb");
-	if (f_fp == NULL) {
-		VS("Cannot reopen archive: ");
-		VS(f_archivename);
-		VS("\n");
-	}
 	return 0;
 }
 

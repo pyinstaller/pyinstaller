@@ -325,7 +325,7 @@ def checkCache(fnm, strip, upx):
     os.system(cmd)
     return cachedfile
 
-UNCOMPRESSED, COMPRESSED, SOURCEFORM = range(3)
+UNCOMPRESSED, COMPRESSED = range(2)
 class PKG(Target):
     typ = 'PKG'
     xformdict = {'PYMODULE' : 'm',
@@ -353,9 +353,10 @@ class PKG(Target):
                               'DATA':COMPRESSED,
                               'BINARY':COMPRESSED,
                               'EXECUTABLE':COMPRESSED,
-                              'PYSOURCE':SOURCEFORM }
+                              'PYSOURCE':COMPRESSED,
+                              'PYMODULE':COMPRESSED }
             else:
-                self.cdict = { 'PYSOURCE':SOURCEFORM }
+                self.cdict = { 'PYSOURCE':UNCOMPRESSED }
         self.__postinit__()
     def check_guts(self, last_build):
         outnm = os.path.basename(self.out)

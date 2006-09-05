@@ -204,7 +204,7 @@ class CArchive(archive.Archive):
          entry[0] is name (under which it will be saved).
          entry[1] is fullpathname of the file.
          entry[2] is a flag for it's storage format (0==uncompressed,
-         1==compressed, 2==Python source format)
+         1==compressed)
          entry[3] is the entry's type code.
          Version 5:
            If the type code is 'o':
@@ -219,7 +219,9 @@ class CArchive(archive.Archive):
       if typcd == 'o':
           s = ''
           flag = 0
-      elif flag == 2:
+      elif typcd == 's':
+          # If it's a source code file, add \0 terminator as it will be
+          # executed as-is by the bootloader.
           s = open(pathnm, 'r').read()
           s = s + '\n\0'
       else:
