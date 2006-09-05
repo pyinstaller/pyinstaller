@@ -472,7 +472,7 @@ int startPython(int argc, char *argv[])
 	static char pypath[2*_MAX_PATH + 14];
 	int pathlen = 1;
 	int i;
-	char cmd[80];
+	char cmd[_MAX_PATH+1+80];
 	char tmp[_MAX_PATH+1];
 	PyObject *py_argv;
 	PyObject *val;
