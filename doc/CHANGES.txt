@@ -15,6 +15,8 @@ Current changes since PyInstaller 1.2
  + Fix a buffer overrun in the bootloader (which could lead to a crash)
    when the built executable is run from within a deep directory (more than
    70-80 characters in the pathname).
+ * Bootstrap modules are now compressed in the executable (so that they
+   are not visible in plaintext by just looking at it with a hex editor).
 
 
 PyInstaller 1.2
