@@ -13,9 +13,9 @@ Non-Windows users should:
 Everyone should:
     python Configure.py
 
-    python Makespec.py /path/to/yourscript.py /path/for/specfile.spec
+    python Makespec.py /path/to/yourscript.py
 
-    python Build.py /path/for/specfile.spec
+    python Build.py /path/to/yourscript.spec
 
     .done.
 
