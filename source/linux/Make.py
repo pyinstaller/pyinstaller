@@ -161,9 +161,9 @@ def main():
     if non_elf:
         cflags.append('-DNONELF')
 
-    libs = [os.path.join(binlib, sysconfig.get_config_vars('INSTSONAME')[0])]
-#    libs = [os.path.join(sysconfig.get_config_vars('LIBDIR')[0], sysconfig.get_config_vars('INSTSONAME')[0])]
-
+    libs = [os.path.join(sysconfig.get_config_vars('LIBPL')[0], sysconfig.get_config_vars('LIBRARY')[0])]
+    if not os.path.isfile(libs[0]):
+        print "WARNING: could not find Python static library at:", libs[0]
 
     somevars = {}
     if os.path.exists(makefile_in):
