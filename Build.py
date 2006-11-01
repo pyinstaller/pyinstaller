@@ -174,7 +174,7 @@ class Analysis(Target):
             dirs[d] = 1
             pynms.append(pynm)
         analyzer = mf.ImportTracker(dirs.keys()+paths, self.hookspath, self.excludes)
-        #print analyzer.path
+        print analyzer.path
         scripts = []
         for i in range(len(self.inputs)):
             script = self.inputs[i]

@@ -68,9 +68,10 @@ excludes = {'KERNEL32.DLL':1,
       'DCIMAN32.DLL':1,
       'OPENGL32.DLL':1,
       'GLU32.DLL':1,
-      'GLUB32.DLL':1,
       '/usr/lib':1,
-      '/lib':1,}
+      '/lib':1,
+      '/System/Librbry/Frameworks':1,
+      'GLUB32.DLL':1,}
 
 def getfullnameof(mod, xtrapath = None):
   """Return the full path name of MOD.
@@ -280,15 +281,17 @@ def getImports3(pth):
 
         This implementation is for ldd platforms"""
     rslt = []
-    for line in os.popen('ldd "%s"' % pth).readlines():
-        m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
+    for line in os.popen('otool -L "%s"' % pth).readlines():
+        #m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
+        m = re.search(r"\s+(.*?)\s+\(.*\)", line)
         if m:
-            name, lib = m.group(1), m.group(2)
-            if name[:10] == 'linux-gate':
+            #name, lib = m.group(1), m.group(2)
+            lib = m.group(1)
+            """if name[:10] == 'linux-gate':
                 # linux-gate is a fake library which does not exist and
                 # should be ignored. See also:
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
-                continue
+                continue"""
             if os.path.exists(lib):
                 rslt.append(lib)
             else:
