@@ -281,9 +281,16 @@ def getImports3(pth):
 
         This implementation is for ldd platforms"""
     rslt = []
-    for line in os.popen('otool -L "%s"' % pth).readlines():
-        #m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
-        m = re.search(r"\s+(.*?)\s+\(.*\)", line)
+    command = 'ldd' 
+    if sys.platform == 'darwin':
+	command = 'otool -L'
+
+    for line in os.popen('%s "%s"' % (command, pth)).readlines():
+	if sys.platform == 'darwin':
+            m = re.search(r"\s+(.*?)\s+\(.*\)", line)
+	else:
+            m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
+
         if m:
             #name, lib = m.group(1), m.group(2)
             lib = m.group(1)
