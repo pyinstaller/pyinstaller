@@ -73,6 +73,8 @@ excludes = {'KERNEL32.DLL':1,
       '/System/Librbry/Frameworks':1,
       'GLUB32.DLL':1,}
 
+excludesRX = {'CF*':1}
+
 def getfullnameof(mod, xtrapath = None):
   """Return the full path name of MOD.
 
@@ -244,6 +246,13 @@ def getImports2(path):
         data = data[iidescrsz:]
     return dlls
 
+def MatchExclude( str ):
+  for regExp in excludesRX:
+    if ( re.search( re.compile( regExp, re.IGNORECASE ), str ) ):
+      return 1
+
+  return 0;
+
 def Dependencies(lTOC):
   """Expand LTOC to include all the closure of binary dependencies.
 
@@ -265,6 +274,8 @@ def Dependencies(lTOC):
             if excludes.get(dir,0):
                 continue
         if excludes.get(string.upper(lib),0):
+            continue
+        if MatchExclude( string.upper(lib) ):
             continue
         if seen.get(string.upper(lib),0):
             continue
