@@ -17,6 +17,8 @@ Current changes since PyInstaller 1.2
    70-80 characters in the pathname).
  * Bootstrap modules are now compressed in the executable (so that they
    are not visible in plaintext by just looking at it with a hex editor).
+ * Fixed a regression introduced in 1.1: under Linux, the bootloader does
+   not depend on libpythonX.X.so anymore.
 
 
 PyInstaller 1.2
