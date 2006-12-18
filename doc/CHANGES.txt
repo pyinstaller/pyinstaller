@@ -1,7 +1,8 @@
 (+ user visible changes, * internal stuff)
 
-Current changes since PyInstaller 1.2
--------------------------------------
+
+PyInstaller 1.3
+---------------
  + Fix bug with user-provided icons disappearing from built executables
    when these were compressed with UPX.
  + Fix problems with packaging of applications using PIL (that was broken

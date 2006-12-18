@@ -1,16 +1,20 @@
-PyInstaller version 1.0
+_PyInstaller 1.3_
+=================
 
-Use:
-    see doc/Tutorial.txt
+Use
+===
+ See doc/Tutorial.txt
 
-Installation in brief:
+Installation in brief
+=====================
+ Non-Windows users should:
+    cd source/linux
 
-Non-Windows users should:
-    cd to source/linux
-    python Make.py
+    python ./Make.py
+
     make
 
-Everyone should:
+ Everyone should:
     python Configure.py
 
     python Makespec.py /path/to/yourscript.py
@@ -19,6 +23,7 @@ Everyone should:
 
     .done.
 
-Major changes in this release:
- * __write_changes_here__
- * many bug fixes.
+Major changes in this release
+=============================
+ See doc/CHANGES.txt
+
