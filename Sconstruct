@@ -57,7 +57,7 @@ if platform.name == "win32":
                 env["PYINST_SUFFIX"] = "%c%c%c" % (msvs_ver[0], flavour[0], mode[0])
 
                 env.Append(CPPDEFINES = ["WIN32"])
-                env.Append(LIBS = ["user32.lib", "kernel32.lib", "ws2_32.lib"])
+                env.Append(LIBS = ["user32.lib", "comctl32.lib", "kernel32.lib", "ws2_32.lib"])
 
                 envs.append(env)
 

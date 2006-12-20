@@ -27,6 +27,7 @@
  */
 #include "launch.h"
 #include <windows.h>
+#include <commctrl.h> // InitCommonControls
 #include <signal.h>
 
 int relaunch(char *thisfile, char *workpath)
@@ -103,6 +104,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	int argc = __argc;
 	char **argv = __argv;
 #endif
+
+	// Initialize common controls (needed to link with commctrl32.dll and
+	// obtain native XP look & feel).
+	InitCommonControls();
 
 	// fill in thisfile
 	if (!GetModuleFileNameA(NULL, thisfile, _MAX_PATH)) {

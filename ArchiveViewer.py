@@ -125,8 +125,6 @@ def getData(nm, arch):
     ndx = arch.toc.find(nm)
     dpos, dlen, ulen, flag, typcd, nm = arch.toc[ndx]
     x, data = arch.extract(ndx)
-    if flag == 1:
-        return zlib.decompress(data)
     return data
 
 def show(nm, arch):

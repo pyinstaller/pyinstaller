@@ -1,7 +1,29 @@
 (+ user visible changes, * internal stuff)
 
-Current changes since PyInstaller 1.1
--------------------------------------
+
+PyInstaller 1.3
+---------------
+ + Fix bug with user-provided icons disappearing from built executables
+   when these were compressed with UPX.
+ + Fix problems with packaging of applications using PIL (that was broken
+   because of a bug in Python's import machinery, in recent Python
+   versions). Also add a workaround including Tcl/Tk with PIL unless
+   ImageTk is imported.
+ + (Windows) When used under Windows XP, packaged programs now have
+   the correct look & feel and follow user's themes (thanks to the manifest
+   file being linked within the generated executable). This is especially
+   useful for applications using wxPython.
+ + Fix a buffer overrun in the bootloader (which could lead to a crash)
+   when the built executable is run from within a deep directory (more than
+   70-80 characters in the pathname).
+ * Bootstrap modules are now compressed in the executable (so that they
+   are not visible in plaintext by just looking at it with a hex editor).
+ * Fixed a regression introduced in 1.1: under Linux, the bootloader does
+   not depend on libpythonX.X.so anymore.
+
+
+PyInstaller 1.2
+---------------
  + Fix a crash when invoking UPX with certain kinds of builds.
  + Fix icon support by re-adding a resource section in the bootloader
    executable.
