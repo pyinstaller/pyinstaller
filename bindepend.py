@@ -68,12 +68,18 @@ excludes = {'KERNEL32.DLL':1,
       'DCIMAN32.DLL':1,
       'OPENGL32.DLL':1,
       'GLU32.DLL':1,
-      '/usr/lib':1,
-      '/lib':1,
-      '/System/Librbry/Frameworks':1,
-      'GLUB32.DLL':1,}
+      'GLUB32.DLL':1,
+      'NETAPI32.DLL':1,
+            'PSAPI.DLL':1,
+            'MSVCP80.DLL':1,
+            'MSVCR80.DLL':1,
+            '^/usr/lib':1,
+            '^/lib':1,
+            '^/lib/tls':1,
+      '^/System/Library/Frameworks':1,
+      }
 
-excludesRX = {'CF*':1}
+excludesRe = re.compile('|'.join(excludes.keys()), re.I)
 
 def getfullnameof(mod, xtrapath = None):
   """Return the full path name of MOD.
@@ -82,7 +88,8 @@ def getfullnameof(mod, xtrapath = None):
       XTRAPATH is a path or list of paths to search first.
       Return the full path name of MOD.
       Will search the full Windows search path, as well as sys.path"""
-  epath = getWindowsPath() + sys.path
+  # Search sys.path first!
+  epath = sys.path + getWindowsPath()
   if xtrapath is not None:
     if type(xtrapath) == type(''):
       epath.insert(0, xtrapath)
@@ -246,13 +253,6 @@ def getImports2(path):
         data = data[iidescrsz:]
     return dlls
 
-def MatchExclude( str ):
-  for regExp in excludesRX:
-    if ( re.search( re.compile( regExp, re.IGNORECASE ), str ) ):
-      return 1
-
-  return 0;
-
 def Dependencies(lTOC):
   """Expand LTOC to include all the closure of binary dependencies.
 
@@ -273,14 +273,12 @@ def Dependencies(lTOC):
             dir, lib = os.path.split(lib)
             if excludes.get(dir,0):
                 continue
-        if excludes.get(string.upper(lib),0):
-            continue
-        if MatchExclude( string.upper(lib) ):
+        else:
+            npth = getfullnameof(lib, os.path.dirname(pth))
+        if excludesRe.search(npth):
             continue
         if seen.get(string.upper(lib),0):
             continue
-        if iswin or cygwin:
-            npth = getfullnameof(lib, os.path.dirname(pth))
         if npth:
             lTOC.append((lib, npth, 'BINARY'))
         else:
@@ -291,30 +289,41 @@ def getImports3(pth):
     """Find the binary dependencies of PTH.
 
         This implementation is for ldd platforms"""
+    import tempfile
     rslt = []
-    command = 'ldd' 
+    tmpf = tempfile.mktemp()
     if sys.platform == 'darwin':
-	command = 'otool -L'
-
-    for line in os.popen('%s "%s"' % (command, pth)).readlines():
-	if sys.platform == 'darwin':
+        for line in os.popen('otool -L "%s"' % pth).readlines():
+            #m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
             m = re.search(r"\s+(.*?)\s+\(.*\)", line)
-	else:
-            m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
-
-        if m:
-            #name, lib = m.group(1), m.group(2)
-            lib = m.group(1)
-            """if name[:10] == 'linux-gate':
-                # linux-gate is a fake library which does not exist and
-                # should be ignored. See also:
-                # http://www.trilithium.com/johan/2005/08/linux-gate/
-                continue"""
-            if os.path.exists(lib):
-                rslt.append(lib)
-            else:
-                print 'E: cannot find %s in path %s (needed by %s)' % \
-                      (name, lib, pth)
+            if m:
+                #name, lib = m.group(1), m.group(2)
+                lib = m.group(1)
+                """if name[:10] == 'linux-gate':
+                    # linux-gate is a fake library which does not exist and
+                    # should be ignored. See also:
+                    # http://www.trilithium.com/johan/2005/08/linux-gate/
+                    continue"""
+                if os.path.exists(lib):
+                    rslt.append(lib)
+                else:
+                    print 'E: cannot find %s in path %s (needed by %s)' % \
+                          (name, lib, pth)
+    else:
+        os.system('ldd "%s" >%s' %(pth, tmpf))
+        time.sleep(0.1)
+        txt = open(tmpf,'r').readlines()
+        os.remove(tmpf)
+        i = 0
+        while i < len(txt):
+            tokens = string.split(string.strip(txt[i]))
+            if len(tokens) > 2 and tokens[1] == '=>':
+                lib = string.strip(tokens[2])
+                if os.path.exists(lib):
+                    rslt.append(lib)
+                else:
+                    print 'E: cannot find %s needed by %s' % (tokens[0], pth)
+            i = i + 1
     return rslt
 
 def getImports(pth):

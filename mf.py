@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-import sys, string, os, imp, marshal
+import sys, string, os, imp, marshal, dircache
 
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
@@ -25,6 +25,15 @@ import sys, string, os, imp, marshal
 # but str(sys.path[n]) should yield the original string.
 
 STRINGTYPE = type('')
+
+if not os.environ.has_key('PYTHONCASEOK') and sys.version_info >= (2, 1):
+    def caseOk(filename):
+        files = set(dircache.listdir(os.path.dirname(filename)))
+        return os.path.basename(filename) in files
+else:
+    def caseOk(filename):
+        return True
+
 
 class Owner:
     def __init__(self, path):
@@ -55,6 +64,9 @@ class DirOwner(Owner):
                 except:
                     pass
                 else:
+                    # Check case
+                    if not caseOk(attempt):
+                        continue
                     if typ == imp.C_EXTENSION:
                         return ExtensionModule(nm, attempt)
                     elif typ == imp.PY_SOURCE:
@@ -68,7 +80,7 @@ class DirOwner(Owner):
         while 1:
             if pyc is None or py and pyc[1][8] < py[1][8]:
                 try:
-                    co = compile(open(py[0], 'r').read()+'\n', py[0], 'exec')
+                    co = compile(open(py[0], 'rU').read()+'\n', py[0], 'exec')
                     if __debug__:
                         pth = py[0] + 'c'
                     else:
@@ -179,7 +191,7 @@ class RegistryImportDirector(ImportDirector):
                 return ExtensionModule(nm, fnm)
             elif typ == imp.PY_SOURCE:
                 try:
-                    co = compile(open(fnm, 'r').read()+'\n', fnm, 'exec')
+                    co = compile(open(fnm, 'rU').read()+'\n', fnm, 'exec')
                 except SyntaxError, e:
                     print "Invalid syntax in %s" % py[0]
                     print e.args
@@ -369,7 +381,7 @@ class ImportTracker:
 
     def analyze_script(self, fnm):
         try:
-            co = compile(open(fnm, 'r').read()+'\n', fnm, 'exec')
+            co = compile(open(fnm, 'rU').read()+'\n', fnm, 'exec')
         except SyntaxError, e:
             print "Invalid syntax in %s" % fnm
             print e.args
