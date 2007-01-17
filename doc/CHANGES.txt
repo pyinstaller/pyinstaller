@@ -1,5 +1,9 @@
 (+ user visible changes, * internal stuff)
 
+Changes since PyInstaller 1.3
+-----------------------------
+ + Add import hooks for PyQt4 (thanks to Pascal Veret)
+
 
 PyInstaller 1.3
 ---------------
