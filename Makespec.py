@@ -1,4 +1,4 @@
-#! /usr/bin/env/python
+#!/usr/bin/env python
 # Automatically build spec files containing a description of the project
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
