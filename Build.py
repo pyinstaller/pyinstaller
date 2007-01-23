@@ -697,16 +697,26 @@ class TOC(UserList.UserList):
                 self.append(tpl)
     def append(self, tpl):
         try:
-            if not self.fltr.get(tpl[0]):
+            fn = tpl[0]
+            if tpl[2] == "BINARY":
+                # Normalize the case for binary files only (to avoid duplicates
+                # for different cases under Windows). We can't do that for
+                # Python files because the import semantic (even at runtime)
+                # depends on the case.
+                fn = os.path.normcase(fn)
+            if not self.fltr.get(fn):
                 self.data.append(tpl)
-                self.fltr[tpl[0]] = 1
+                self.fltr[fn] = 1
         except TypeError:
             print "TOC found a %s, not a tuple" % tpl
             raise
     def insert(self, pos, tpl):
-        if not self.fltr.get(tpl[0]):
+        fn = tpl[0]
+        if tpl[2] == "BINARY":
+            fn = os.path.normcase(fn)
+        if not self.fltr.get(fn):
             self.data.insert(pos, tpl)
-            self.fltr[tpl[0]] = 1
+            self.fltr[fn] = 1
     def __add__(self, other):
         rslt = TOC(self.data)
         rslt.extend(other)
