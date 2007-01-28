@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 #ifdef FREEZE_EXCEPTIONS
     PyImport_FrozenModules = _PyImport_FrozenModules;
 #endif
-    // fill in thisfile
+    /* fill in thisfile */
 #ifdef __CYGWIN__
     if (strncasecmp(&argv[0][strlen(argv[0])-4], ".exe", 4)) {
         strcpy(thisfile, argv[0]);
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     VS(workpath);
     VS(" is _MEIPASS2 (workpath)\n");
 
-    // fill in here (directory of thisfile)
+    /* fill in here (directory of thisfile) */
     strcpy(homepath, Py_GetPrefix());
     strcat(homepath, "/");
     VS(homepath);
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     }
 
     if (workpath) {
-        // we're the "child" process
+        /* we're the "child" process */
         VS("Already have a workpath - running!\n");
         rc = doIt(argc, argv);
         if (strcmp(workpath, homepath)!=0)
@@ -110,11 +110,11 @@ int main(int argc, char* argv[])
         }
         if (workpath) {
             VS("Executing self as child with ");
-            // run the "child" process, then clean up
+            /* run the "child" process, then clean up */
             strcpy(magic_envvar, "_MEIPASS2=");
             strcat(magic_envvar, workpath);
             putenv(magic_envvar);
-            // now LD_LIBRARY_PATH
+            /* now LD_LIBRARY_PATH */
             strcpy(ldlib_envvar, "LD_LIBRARY_PATH=");
             strcat(ldlib_envvar, workpath);
             ldlib_envvar[strlen(ldlib_envvar)-1] = '\0';
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
             VS("Back to parent...\n");
         }
         else
-            // no "child" process necessary
+            /* no "child" process necessary */
             rc = doIt(argc, argv);
     }
     return rc;
