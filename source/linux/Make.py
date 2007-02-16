@@ -39,7 +39,10 @@ except:
 	print "ERROR: distutils with sysconfig required"
 	sys.exit(1)
 
-
+try:
+    True
+except NameError:
+    True, False = 1, 0
 
 def main():
     dirnm = os.path.dirname(sys.argv[0])
