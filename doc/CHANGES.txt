@@ -4,6 +4,7 @@ Changes since PyInstaller 1.3
 -----------------------------
  + Add import hooks for PyQt4 (thanks to Pascal Veret)
  + Add import hooks for pyodbc (thanks to Don Dwiggins)
+ + Improve import hooks for PyGTK (thanks to Marco Bonifazi and foxx).
  + Add fix for the very annoying "MSVCRT71 could not be extracted" bug,
    which was caused by the DLL being packaged twice (thanks to Idris
    Aykun).
