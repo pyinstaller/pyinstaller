@@ -20,11 +20,16 @@ hiddenimports = ['xml.sax.xmlreader','xml.sax.expatreader']
 def hook(mod):
     import os, tempfile, sys, string, marshal
     fnm = tempfile.mktemp()
-    if string.find(sys.executable, ' ') > -1:
-        exe = '"%s"' % sys.executable
+
+    exe = sys.executable
+
+    # Using "echo on" as a workaround for a bug in NT4 shell
+    if os.name == "nt":
+        cmd = '"echo on && "%s" -c "import xml;print xml.__file__" > "%s""' % (exe, fnm)
     else:
-        exe = sys.executable
-    os.system('%s -c "import xml;print xml.__file__" >"%s"' % (exe, fnm))
+        cmd = '""%s" -c "import xml;print xml.__file__" > "%s""' % (exe, fnm)
+    os.system(cmd)
+
     txt = open(fnm, 'r').read()[:-1]
     os.remove(fnm)
     if string.find(txt, '_xmlplus') > -1:
