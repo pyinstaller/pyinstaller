@@ -68,7 +68,8 @@ class DirOwner(Owner):
         while 1:
             if pyc is None or py and pyc[1][8] < py[1][8]:
                 try:
-                    co = compile(open(py[0], 'r').read()+'\n', py[0], 'exec')
+                    stuff = open(py[0], 'r').read()+'\n'
+                    co = compile(string.replace(stuff, "\r\n", "\n"), py[0], 'exec')
                     if __debug__:
                         pth = py[0] + 'c'
                     else:
@@ -179,7 +180,8 @@ class RegistryImportDirector(ImportDirector):
                 return ExtensionModule(nm, fnm)
             elif typ == imp.PY_SOURCE:
                 try:
-                    co = compile(open(fnm, 'r').read()+'\n', fnm, 'exec')
+                    stuff = open(fnm, 'r').read()+'\n'
+                    co = compile(string.replace(stuff, "\r\n", "\n"), fnm, 'exec')
                 except SyntaxError, e:
                     print "Invalid syntax in %s" % py[0]
                     print e.args
@@ -369,7 +371,8 @@ class ImportTracker:
 
     def analyze_script(self, fnm):
         try:
-            co = compile(open(fnm, 'r').read()+'\n', fnm, 'exec')
+            stuff = open(fnm, 'r').read()+'\n'
+            co = compile(string.replace(stuff, "\r\n", "\n"), fnm, 'exec')
         except SyntaxError, e:
             print "Invalid syntax in %s" % fnm
             print e.args

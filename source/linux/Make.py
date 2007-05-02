@@ -39,7 +39,10 @@ except:
 	print "ERROR: distutils with sysconfig required"
 	sys.exit(1)
 
-
+try:
+    True
+except NameError:
+    True, False = 1, 0
 
 def main():
     dirnm = os.path.dirname(sys.argv[0])
@@ -161,7 +164,9 @@ def main():
     if non_elf:
         cflags.append('-DNONELF')
 
-    libs = [os.path.join(binlib, sysconfig.get_config_vars('INSTSONAME')[0])]
+    libs = [os.path.join(sysconfig.get_config_vars('LIBPL')[0], sysconfig.get_config_vars('LIBRARY')[0])]
+    if not os.path.isfile(libs[0]):
+        print "WARNING: could not find Python static library at:", libs[0]
 #    libs = [os.path.join(sysconfig.get_config_vars('LIBDIR')[0], sysconfig.get_config_vars('INSTSONAME')[0])]
 
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2007, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -15,8 +15,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-# Submited by Seth Remington (ticket#15)
-# Refined by Marco Bonifazi (via e-mail)
-hiddenimports = ['gtkglext', 'gdkgl', 'gdkglext', 'gdk', 'gtk.gdk', 'gtk.gtkgl',
-                 'gtk.gtkgl._gtkgl', 'gtkgl', 'pangocairo', 'pango', 'atk',
-                 'gobject', 'gtk.glade', 'cairo']
+# Contributed by Greg Copeland
+import sqlalchemy.databases
+hiddenimports = []
+
+for n in sqlalchemy.databases.__all__:
+    hiddenimports.append("sqlalchemy.databases." + n)

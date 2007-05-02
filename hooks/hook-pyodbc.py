@@ -15,8 +15,5 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-# Submited by Seth Remington (ticket#15)
-# Refined by Marco Bonifazi (via e-mail)
-hiddenimports = ['gtkglext', 'gdkgl', 'gdkglext', 'gdk', 'gtk.gdk', 'gtk.gtkgl',
-                 'gtk.gtkgl._gtkgl', 'gtkgl', 'pangocairo', 'pango', 'atk',
-                 'gobject', 'gtk.glade', 'cairo']
+# Contributed by Don Dwiggins
+hiddenimports = ['datetime', 'decimal']

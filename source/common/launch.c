@@ -477,7 +477,7 @@ int startPython(int argc, char *argv[])
 	static char pypath[2*_MAX_PATH + 14];
 	int pathlen = 1;
 	int i;
-	char cmd[80];
+	char cmd[_MAX_PATH+1+80];
 	char tmp[_MAX_PATH+1];
 	PyObject *py_argv;
 	PyObject *val;
@@ -637,7 +637,7 @@ int installZlib(TOC *ptoc)
 	char *tmpl = "sys.path.append(r\"%s?%d\")\n";
 	char *cmd = (char *) malloc(strlen(tmpl) + strlen(f_archivename) + 32);
 	sprintf(cmd, tmpl, f_archivename, zlibpos);
-	//VS(cmd);
+	/*VS(cmd);*/
 	rc = PyRun_SimpleString(cmd);
 	if (rc != 0)
 	{
@@ -733,7 +733,7 @@ unsigned char *extract(TOC *ptoc)
 	char msg[400];
 
 	sprintf( msg, " extracting %1.20s (%d, %c)\n", ptoc->name, ptoc->cflag, ptoc->typcd);
-	//VS(msg);
+	/*VS(msg);*/
 	fseek(f_fp, f_pkgstart + ntohl(ptoc->pos), SEEK_SET);
 	data = (unsigned char *)malloc(ntohl(ptoc->len));
 	if (data == NULL) {
@@ -929,7 +929,7 @@ int callSimpleEntryPoint(char *name, int *presult)
 	*presult = PyInt_AsLong(pyresult);
 	rc = PyErr_Occurred() ? -1 : 0;
 	VS( rc ? "Finished with failure\n" : "Finished OK\n");
-	// all done!
+	/* all done! */
 done:
 	Py_XDECREF(func);
 	Py_XDECREF(pyresult);
@@ -987,8 +987,7 @@ int launchembedded(char const * archivePath, char  const * archiveName)
 		return -1;
 	VS("All scripts run\n");
 	if (PyErr_Occurred()) {
-		// PyErr_Print();
-		//PyErr_Clear();
+		/*PyErr_Clear();*/
 		VS("Some error occurred\n");
 	}
 	VS("OK.\n");
