@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-import sys, os, shutil, mf, archive, iu, carchive, pprint, time, py_compile, bindepend, tempfile
+import sys, os, shutil, mf, archive, iu, carchive, pprint, time, py_compile, bindepend, tempfile, md5
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
@@ -293,6 +293,11 @@ class PYZ(Target):
         outf.close()
         return 1
 
+def cacheDigest(fnm):
+    data = open(fnm, "rb").read()
+    digest = md5.new(data).digest()
+    return digest
+
 def checkCache(fnm, strip, upx):
     if not strip and not upx:
         return fnm
@@ -304,13 +309,23 @@ def checkCache(fnm, strip, upx):
         upx = 1
     else:
         upx = 0
+
+    # Load cache index
     cachedir = os.path.join(HOMEPATH, 'bincache%d%d' %  (strip, upx))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
-    basenm = os.path.basename(fnm)
-    cachedfile = os.path.join(cachedir, basenm )
-    if os.path.exists(cachedfile):
-        if mtime(fnm) > mtime(cachedfile):
+    cacheindexfn = os.path.join(cachedir, "index.dat")
+    if os.path.exists(cacheindexfn):
+        cache_index = eval(open(cacheindexfn, "r").read())
+    else:
+        cache_index = {}
+
+    # Verify if the file we're looking for is present in the cache.
+    basenm = os.path.normcase(os.path.basename(fnm))
+    digest = cacheDigest(fnm)
+    cachedfile = os.path.join(cachedir, basenm)
+    if cache_index.has_key(basenm):
+        if digest != cache_index[basenm]:
             os.remove(cachedfile)
         else:
             return cachedfile
@@ -323,6 +338,13 @@ def checkCache(fnm, strip, upx):
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
     os.system(cmd)
+
+    # update cache index
+    cache_index[basenm] = digest
+    outf = open(cacheindexfn, 'w')
+    pprint.pprint(cache_index, outf)
+    outf.close()
+
     return cachedfile
 
 UNCOMPRESSED, COMPRESSED = range(2)
