@@ -18,6 +18,8 @@
 hiddenimports = ['xml.sax.xmlreader','xml.sax.expatreader']
 
 def hook(mod):
+    # This hook checks for the infamous _xmlcore hack
+    # http://www.amk.ca/diary/2003/03/pythons__xmlplus_hack.html
     import os, tempfile, sys, string, marshal
     fnm = tempfile.mktemp()
 
