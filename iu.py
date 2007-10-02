@@ -271,12 +271,14 @@ class ImportManager:
         import __builtin__
         __builtin__.__import__ = self.importHook
         __builtin__.reload = self.reloadHook
-    def importHook(self, name, globals=None, locals=None, fromlist=None):
+    def importHook(self, name, globals=None, locals=None, fromlist=None, level=-1):
         # first see if we could be importing a relative name
         #print "importHook(%s, %s, locals, %s)" % (name, globals['__name__'], fromlist)
         _sys_modules_get = sys.modules.get
         contexts = [None]
-        if globals:
+        if globals and level == -1:
+            # The level indicates we should attempt relative imports, add the
+            # package to searched contexts
             importernm = globals.get('__name__', '')
             if importernm:
                 if hasattr(_sys_modules_get(importernm), '__path__'):
