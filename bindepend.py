@@ -69,9 +69,12 @@ excludes = {'KERNEL32.DLL':1,
       'OPENGL32.DLL':1,
       'GLU32.DLL':1,
       'GLUB32.DLL':1,
-      '/usr/lib':1,
-      '/lib':1,
-      '/System/Library/Frameworks':1,}
+      '^/usr/lib':1,
+      '^/lib':1,
+      '^/System/Library/Frameworks':1,
+      }
+
+excludesRe = re.compile('|'.join(excludes.keys()), re.I)
 
 def getfullnameof(mod, xtrapath = None):
   """Return the full path name of MOD.
@@ -265,12 +268,12 @@ def Dependencies(lTOC):
             dir, lib = os.path.split(lib)
             if excludes.get(dir,0):
                 continue
-        if excludes.get(string.upper(lib),0):
+        else:
+            npth = getfullnameof(lib, os.path.dirname(pth))
+        if excludesRe.search(npth):
             continue
         if seen.get(string.upper(lib),0):
             continue
-        if iswin or cygwin:
-            npth = getfullnameof(lib, os.path.dirname(pth))
         if npth:
             lTOC.append((lib, npth, 'BINARY'))
         else:
