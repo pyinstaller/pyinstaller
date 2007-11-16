@@ -70,7 +70,8 @@ excludes = {'KERNEL32.DLL':1,
       'GLU32.DLL':1,
       'GLUB32.DLL':1,
       '/usr/lib':1,
-      '/lib':1,}
+      '/lib':1,
+      '/System/Library/Frameworks':1,}
 
 def getfullnameof(mod, xtrapath = None):
   """Return the full path name of MOD.
@@ -91,7 +92,7 @@ def getfullnameof(mod, xtrapath = None):
       return npth
   return ''
 
-def getImports1(pth):
+def _getImports_dumpbin(pth):
     """Find the binary dependencies of PTH.
 
         This implementation (not used right now) uses the MSVC utility dumpbin"""
@@ -110,7 +111,7 @@ def getImports1(pth):
         i = i + 1
     return rslt
 
-def getImports2x(pth):
+def _getImports_pe_x(pth):
     """Find the binary dependencies of PTH.
 
         This implementation walks through the PE header"""
@@ -175,7 +176,7 @@ def getImports2x(pth):
     #    print "E: bindepend cannot analyze %s - error walking thru pehdr" % pth
     return rslt
 
-def getImports2(path):
+def _getImports_pe(path):
     """Find the binary dependencies of PTH.
 
         This implementation walks through the PE header"""
@@ -275,7 +276,7 @@ def Dependencies(lTOC):
             print "E: lib not found:", lib, "dependency of", pth
   return lTOC
 
-def getImports3(pth):
+def _getImports_ldd(pth):
     """Find the binary dependencies of PTH.
 
         This implementation is for ldd platforms"""
@@ -296,12 +297,32 @@ def getImports3(pth):
                       (name, lib, pth)
     return rslt
 
+def _getImports_otool(pth):
+    """Find the binary dependencies of PTH.
+
+        This implementation is for otool platforms"""
+    rslt = []
+    for line in os.popen('otool -L "%s"' % pth).readlines():
+        m = re.search(r"\s+(.*?)\s+\(.*\)", line)
+        if m:
+            lib = m.group(1)
+            if os.path.exists(lib):
+                rslt.append(lib)
+            else:
+                print 'E: cannot find path %s (needed by %s)' % \
+                      (lib, pth)
+
+    return rslt
+
 def getImports(pth):
-    """Forwards to either getImports2 or getImports3
+    """Forwards to the correct getImports implementation for the platform.
     """
     if sys.platform[:3] == 'win' or sys.platform == 'cygwin':
-        return getImports2(pth)
-    return getImports3(pth)
+        return _getImports_pe(pth)
+    elif sys.platform == 'darwin':
+        return _getImports_otool(pth)
+    else:
+        return _getImports_ldd(pth)
 
 def getWindowsPath():
     """Return the path that Windows will search for dlls."""
