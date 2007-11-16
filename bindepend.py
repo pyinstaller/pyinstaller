@@ -69,8 +69,13 @@ excludes = {'KERNEL32.DLL':1,
       'OPENGL32.DLL':1,
       'GLU32.DLL':1,
       'GLUB32.DLL':1,
+      'NETAPI32.DLL':1,
+      'PSAPI.DLL':1,
+      'MSVCP80.DLL':1,
+      'MSVCR80.DLL':1,
       '^/usr/lib':1,
       '^/lib':1,
+      '^/lib/tls':1,
       '^/System/Library/Frameworks':1,
       }
 
