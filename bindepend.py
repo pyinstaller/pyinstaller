@@ -80,7 +80,8 @@ def getfullnameof(mod, xtrapath = None):
       XTRAPATH is a path or list of paths to search first.
       Return the full path name of MOD.
       Will search the full Windows search path, as well as sys.path"""
-  epath = getWindowsPath() + sys.path
+  # Search sys.path first!
+  epath = sys.path + getWindowsPath()
   if xtrapath is not None:
     if type(xtrapath) == type(''):
       epath.insert(0, xtrapath)
