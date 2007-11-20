@@ -149,11 +149,8 @@ void startUp()
 
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 {
-	char msg[40];
-
 	if ( dwReason == DLL_PROCESS_ATTACH) {
-		sprintf(msg, "Attach from thread %x", GetCurrentThreadId()); 
-		VS(msg);
+		VS("Attach from thread %x", GetCurrentThreadId());
 		gInstance = hInstance;
 	}
 	else if ( dwReason == DLL_PROCESS_DETACH ) {
@@ -219,16 +216,13 @@ void releasePythonCom(void)
 //STDAPI
 HRESULT __stdcall DllCanUnloadNow(void)
 {
-	char msg[80];
 	HRESULT rc;
 
-	sprintf(msg, "DllCanUnloadNow from thread %x", GetCurrentThreadId()); 
-	VS(msg);
+	VS("DllCanUnloadNow from thread %x", GetCurrentThreadId());
 	if (gPythoncom == 0)
 		startUp();
 	rc = Pyc_DllCanUnloadNow();
-	sprintf(msg, "DllCanUnloadNow returns %x", rc); 
-	VS(msg);
+	VS("DllCanUnloadNow returns %x", rc);
 	//if (rc == S_OK)
 	//	PyCom_CoUninitialize();
 	return rc;
@@ -237,23 +231,20 @@ HRESULT __stdcall DllCanUnloadNow(void)
 //__declspec(dllexport) int __stdcall DllGetClassObject(void *rclsid, void *riid, void *ppv)
 HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
-	char msg[80];
 	HRESULT rc;
-	sprintf(msg, "DllGetClassObject from thread %x", GetCurrentThreadId()); 
-	VS(msg);
+
+	VS("DllGetClassObject from thread %x", GetCurrentThreadId());
 	if (gPythoncom == 0)
 		startUp();
 	rc = Pyc_DllGetClassObject(rclsid, riid, ppv);
-	sprintf(msg, "DllGetClassObject set %x and returned %x", *ppv, rc);
-	VS(msg);
+	VS("DllGetClassObject set %x and returned %x", *ppv, rc);
+
 	return rc;
 }
 
 __declspec(dllexport) int DllRegisterServerEx(LPCSTR fileName)
 {
-	char msg[40];
-	sprintf(msg, "DllRegisterServerEx from thread %x", GetCurrentThreadId()); 
-	VS(msg);
+	VS("DllRegisterServerEx from thread %x", GetCurrentThreadId());
 	if (gPythoncom == 0)
 		startUp();
 	return Pyc_DllRegisterServerEx(fileName);

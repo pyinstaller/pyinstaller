@@ -136,7 +136,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	}
 	else {
 		if (extractBinaries(&workpath)) {
-			VS("Error extracting binaries");
+			VS("Error extracting binaries\n");
 			return -1;
 		}
 		// if workpath got set to non-NULL, we've extracted stuff

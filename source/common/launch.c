@@ -260,9 +260,7 @@ int openArchive()
 	/* Physically open the file */
 	f_fp = fopen(f_archivename, "rb");
 	if (f_fp == NULL) {
-		VS("Cannot open archive: ");
-		VS(f_archivename);
-		VS("\n");
+		VS("Cannot open archive: %s\n", f_archivename);
 		return -1;
 	}
 
@@ -271,8 +269,7 @@ int openArchive()
 	filelen = ftell(f_fp);
 	if (fseek(f_fp, -(int)sizeof(COOKIE), SEEK_END)) 
 	{
-		VS(f_archivename);
-		VS(" appears to be an invalid archive\n");
+		VS("%s appears to be an invalid archive\n", f_archivename);
 		return -1;
 	}
 
@@ -280,8 +277,7 @@ int openArchive()
 	fread(&f_cookie, sizeof(COOKIE), 1, f_fp);
 	if (strncmp(f_cookie.magic, MAGIC, strlen(MAGIC))) 
 	{
-		VS(f_archivename);
-		VS(" has bad magic!\n");
+		VS("%s has bad magic!\n", f_archivename);
 		return -1;
 	}
 
@@ -374,21 +370,18 @@ int loadPython()
 	/* Load the DLL */
 	dll = LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);  
 	if (dll) {
-		VS(dllpath);
-		VS("\n");
+		VS("%s\n", dllpath);
 	}
 	else {
 		sprintf(dllpath, "%spython%02d.dll", f_temppathraw, ntohl(f_cookie.pyvers));
 		dll = LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
 		if (dll) {
-			VS(dllpath); 
-			VS("\n");
+			VS("%s\n", dllpath);
 		}
 	}
 	if (dll == 0) {
-		FATALERROR("Error loading Python DLL: ");
-		FATALERROR(dllpath);
-		FATALERROR("\n");
+		FATALERROR("Error loading Python DLL: %s (error code %d)\n",
+			dllpath, GetLastError());
 		return -1;
 	}
 
@@ -460,8 +453,7 @@ int setRuntimeOptions(void)
 	TOC *ptoc = f_tocbuff;
 	while (ptoc < f_tocend) {
 		if (ptoc->typcd == 'o') {
-			VS(ptoc->name);
-			VS("\n");
+			VS("%s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
 #if defined  WIN32 
@@ -556,8 +548,7 @@ int startPython(int argc, char *argv[])
 		pypath[strlen(pypath)-1] = '\0';
 
 	putenv(pypath);
-	VS(pypath); 
-	VS("\n");
+	VS("%s\n", pypath);
 	/* Clear out PYTHONHOME to avoid clashing with any installation */
 #ifdef WIN32
 	putenv("PYTHONHOME=");
@@ -653,16 +644,14 @@ int importModules()
 			PyObject *mods = PyString_FromStringAndSize(modbuf + 8,
 				ntohl(ptoc->ulen) - 8);
             
-			VS(ptoc->name);
-			VS("\n");
+			VS("%s\n", ptoc->name);
 			
 			co = PyObject_CallFunction(loadfunc, "O", mods);
 			mod = PyImport_ExecCodeModule(ptoc->name, co);
 
 			/* Check for errors in loading */
 			if (mod == NULL) {
-				FATALERROR("mod is NULL - ");
-				FATALERROR(ptoc->name);
+				FATALERROR("mod is NULL - %s", ptoc->name);
 			}
 			if (PyErr_Occurred())
 			{
@@ -694,8 +683,7 @@ int installZlib(TOC *ptoc)
 	rc = PyRun_SimpleString(cmd);
 	if (rc != 0)
 	{
-		FATALERROR("Error in command.");
-		FATALERROR(cmd);
+		FATALERROR("Error in command: %s\n", cmd);
 		free(cmd);
 		return -1;
 	}
@@ -719,8 +707,7 @@ int installZlibs()
 	while (ptoc < f_tocend) {
 		if (ptoc->typcd == 'z') 
 		{
-			VS(ptoc->name);
-			VS("\n");
+			VS("%s\n", ptoc->name);
 			installZlib(ptoc);
 		}
 
@@ -739,7 +726,6 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 	unsigned char *out;
 	z_stream zstream;
 	int rc;
-	char msg[400];
 
 	ver = (zlibVersion)();
 	out = (unsigned char *)malloc(ntohl(ptoc->ulen));
@@ -762,16 +748,16 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 			rc = (inflateEnd)(&zstream);
 		}
 		else {
-			sprintf(msg, "Error %d from inflate: %s\n", rc, zstream.msg);
-			OTHERERROR(msg);
+			OTHERERROR("Error %d from inflate: %s\n", rc,
+					zstream.msg);
 			return NULL;
 		}
 	}
 	else {
-		sprintf(msg, "Error %d from inflateInit: %s\n", rc, zstream.msg);
-		OTHERERROR(msg);
+		OTHERERROR("Error %d from inflateInit: %s\n", rc, zstream.msg);
 		return NULL;
 	}	
+
 	return out;
 }
 #endif
@@ -783,10 +769,7 @@ unsigned char *extract(TOC *ptoc)
 {
 	unsigned char *data;
 	unsigned char *tmp;
-	char msg[400];
 
-	sprintf( msg, " extracting %1.20s (%d, %c)\n", ptoc->name, ptoc->cflag, ptoc->typcd);
-	/*VS(msg);*/
 	fseek(f_fp, f_pkgstart + ntohl(ptoc->pos), SEEK_SET);
 	data = (unsigned char *)malloc(ntohl(ptoc->len));
 	if (data == NULL) {
@@ -800,8 +783,7 @@ unsigned char *extract(TOC *ptoc)
 		free(data);
 		data = tmp;
 		if (data == NULL) {
-			sprintf(msg, "Error decompressing %s\n", ptoc->name);
-			OTHERERROR(msg);
+			OTHERERROR("Error decompressing %s\n", ptoc->name);
 			return NULL;
 		}
 #else
@@ -822,8 +804,7 @@ FILE *openTarget(char *path, char*name)
 	strcpy(fnm, path);
 	strcat(fnm, name);
 	if (stat(fnm, &sbuf) == -1) {
-		VS(fnm);
-		VS("\n");
+		VS("%s\n", fnm);
 		return fopen(fnm, "wb");
 	}
 	return NULL;
@@ -854,8 +835,7 @@ int extract2fs(TOC *ptoc)
 	out = openTarget(f_workpath, ptoc->name);
 
 	if (out == NULL)  {
-		FATALERROR(ptoc->name);
-		FATALERROR(" could not be extracted!\n");
+		FATALERROR("%s could not be extracted!\n", ptoc->name);
 	}
 	else {
 		fwrite(data, ntohl(ptoc->ulen), 1, out);
@@ -893,7 +873,6 @@ int runScripts()
 	unsigned char *data;
 	int rc = 0;
 	TOC * ptoc = f_tocbuff;
-	char msg[400];
 	VS("Running scripts\n");
 
 	/* Iterate through toc looking for scripts (type 's') */
@@ -905,8 +884,7 @@ int runScripts()
 			rc = PyRun_SimpleString(data);
 			/* log errors and abort */
 			if (rc != 0) {
-				sprintf(msg, " RC: %d from %s\n", rc, ptoc->name);
-				VS(msg);
+				VS("RC: %d from %s\n", rc, ptoc->name);
 				return rc;
 			}
 			free(data);
