@@ -142,6 +142,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	if (workpath) {
 		// we're the "child" process
 		rc = doIt(argc, argv);
+		if (rc) {
+			return rc;
+		}
 		finalizePython();
 	}
 	else {
@@ -157,6 +160,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		else {
 			// no "child" process necessary
 			rc = doIt(argc, argv);
+			if (rc) {
+				return rc;
+			}
 			finalizePython();
 		}
 		cleanUp();
