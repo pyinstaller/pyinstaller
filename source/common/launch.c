@@ -36,7 +36,6 @@
  #include <fcntl.h>
  #include <dirent.h>
 #endif
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "launch.h"
@@ -119,6 +118,58 @@ unsigned char *extract(TOC *ptoc);
  * The functions in this file defined in reverse order so that forward 
  * declarations are not necessary.
  */
+
+
+#ifndef _CONSOLE
+/* This code will be used only on windows as for other platforms _CONSOLE
+ * will be true. The code duplication in the functions below are because
+ * standard macros with variable numer of arguments (variadic macros) are
+ * supported by Microsoft only starting from Visual C++ 2005.
+ */
+
+#define MBTXTLEN 200
+
+void mbfatalerror(const char *fmt, ...)
+{
+	char msg[MBTXTLEN];
+	va_list args;
+
+	va_start(args, fmt);
+	_vsnprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = '\0';
+	va_end(args);
+
+	MessageBox(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
+}
+
+void mbothererror(const char *fmt, ...)
+{
+	char msg[MBTXTLEN];
+	va_list args;
+
+	va_start(args, fmt);
+	_vsnprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = '\0';
+	va_end(args);
+
+	MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
+}
+
+void mbvs(const char *fmt, ...)
+{
+	char msg[MBTXTLEN];
+	va_list args;
+
+	va_start(args, fmt);
+	_vsnprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = '\0';
+	va_end(args);
+
+	MessageBox(NULL, msg, "Tracing", MB_OK);
+}
+
+#endif /* _CONSOLE */
+
 
 int testTempPath(char *buff)
 {

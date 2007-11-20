@@ -196,21 +196,25 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 #endif
 
 #ifdef _CONSOLE
-# define FATALERROR(x) printf(x)
-# define OTHERERROR(x) printf(x)
+# define FATALERROR printf
+# define OTHERERROR printf
 #else
-# define FATALERROR(x) MessageBox(NULL, x, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION)
-# define OTHERERROR(x) MessageBox(NULL, x, "Error!", MB_OK | MB_ICONWARNING)
+# define FATALERROR mbfatalerror
+# define OTHERERROR mbothererror
 #endif
 
 #ifdef LAUNCH_DEBUG
 # ifdef _CONSOLE
-#  define VS(arg) printf(arg)
+#  define VS printf
 # else
-#  define VS(arg) MessageBox(NULL, arg, "Tracing", MB_OK)
+#  define VS mbvs
 # endif
 #else
-# define VS(arg) 
+# ifdef WIN32
+#  define VS
+# else
+#  define VS(...)
+# endif
 #endif
 
 /* TOC entry for a CArchive */
