@@ -584,9 +584,7 @@ int startPython(int argc, char *argv[])
 	Py_NoSiteFlag = 1;
 #endif
 	setRuntimeOptions();
-#ifdef WIN32
 	Py_SetProgramName(f_archivename); /*XXX*/
-#endif
 	Py_Initialize();
 
 	/* Set sys.path */
