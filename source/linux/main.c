@@ -26,6 +26,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #include "launch.h"
+#include "getpath.h"
 
 #ifdef FREEZE_EXCEPTIONS
 extern unsigned char M_exceptions[];
@@ -54,19 +55,19 @@ int main(int argc, char* argv[])
     if (strncasecmp(&argv[0][strlen(argv[0])-4], ".exe", 4)) {
         strcpy(thisfile, argv[0]);
         strcat(thisfile, ".exe");
-        Py_SetProgramName(thisfile);
+        PI_SetProgramName(thisfile);
     }
     else 
 #endif
-        Py_SetProgramName(argv[0]);
-    strcpy(thisfile, Py_GetProgramFullPath());
+        PI_SetProgramName(argv[0]);
+    strcpy(thisfile, PI_GetProgramFullPath());
     VS("thisfile is %s\n", thisfile);
     
     workpath = getenv( "_MEIPASS2" );
     VS("_MEIPASS2 (workpath) is %s\n", (workpath ? workpath : "NULL"));
 
     /* fill in here (directory of thisfile) */
-    strcpy(homepath, Py_GetPrefix());
+    strcpy(homepath, PI_GetPrefix());
     strcat(homepath, "/");
     VS("homepath is %s\n", homepath);
 

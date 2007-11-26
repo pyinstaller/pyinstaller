@@ -276,7 +276,8 @@ def Dependencies(lTOC):
         else:
             npth = getfullnameof(lib, os.path.dirname(pth))
         if excludesRe.search(npth):
-            continue
+            if 'libpython' not in npth:
+                continue
         if seen.get(string.upper(lib),0):
             continue
         if npth:

@@ -36,7 +36,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Return the initial module search path. */
 
-#include "Python.h"
+#include "getpath.h"
 #include "osdefs.h"
 
 #include <sys/types.h>
@@ -149,7 +149,7 @@ joinpath(char *buffer, char *stuff)
 static void
 calculate_path(void)
 {
-	char *prog = Py_GetProgramName();	/* use Py_SetProgramName(argv[0]) before Py_Initialize() */
+	char *prog = PI_GetProgramName();	/* use Py_SetProgramName(argv[0]) before Py_Initialize() */
 	char argv0_path[MAXPATHLEN+1];
 	char *epath;
 	char *path = NULL;
@@ -236,8 +236,23 @@ calculate_path(void)
 }
 /* External interface */
 
+static char *progname = "python";
+
+void
+PI_SetProgramName(char *pn)
+{
+	if (pn && *pn)
+		progname = pn;
+}
+
 char *
-Py_GetPath(void)
+PI_GetProgramName(void)
+{
+	return progname;
+}
+
+char *
+PI_GetPath(void)
 {
 	if (!module_search_path)
 		calculate_path();
@@ -245,7 +260,7 @@ Py_GetPath(void)
 }
 
 char *
-Py_GetPrefix(void)
+PI_GetPrefix(void)
 {
 	if (!module_search_path)
 		calculate_path();
@@ -253,7 +268,7 @@ Py_GetPrefix(void)
 }
 
 char *
-Py_GetExecPrefix(void)
+PI_GetExecPrefix(void)
 {
 	if (!module_search_path)
 		calculate_path();
@@ -261,7 +276,7 @@ Py_GetExecPrefix(void)
 }
 
 char *
-Py_GetProgramFullPath(void)
+PI_GetProgramFullPath(void)
 {
 	if (!module_search_path)
 		calculate_path();

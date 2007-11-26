@@ -34,6 +34,7 @@
 #else
  #include <unistd.h>
  #include <fcntl.h>
+ #include <dlfcn.h>
  #include <dirent.h>
 #endif
 #include <sys/types.h>
@@ -42,7 +43,7 @@
 #ifndef NOZLIB
 #include "zlib.h"
 #endif
-#ifdef WIN32
+
 /*
  * Python Entry point declarations (see macros in launch.h).
  */
@@ -87,7 +88,6 @@ DECLPROC(Py_NewInterpreter);
 DECLPROC(Py_EndInterpreter);
 DECLPROC(PyInt_AsLong);
 DECLPROC(PySys_SetObject);
-#endif
 
 #ifdef WIN32
 #define PATHSEP ";"
@@ -303,7 +303,11 @@ int openArchive()
 	}
 	return 0;
 }
-#ifdef WIN32
+#ifndef WIN32
+#define HMODULE void *
+#define HINSTANCE void *
+#endif
+
 int mapNames(HMODULE dll)
 {
     /* Get all of the entry points that we are interested in */
@@ -348,22 +352,20 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyInterpreterState_New);
 	GETPROC(dll, Py_NewInterpreter);
 	GETPROC(dll, Py_EndInterpreter);
-	GETPROC(dll, PyErr_Print);
 	GETPROC(dll, PyInt_AsLong);
 	GETPROC(dll, PySys_SetObject);
 	return 0;
 }
-#endif
+
 /*
  * Load the Python DLL, and get all of the necessary entry points
- * Windows only (dynamic load)
  */
 int loadPython()
 {
-#ifdef WIN32
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
 
+#ifdef WIN32
 	/* Determine the path */
 	sprintf(dllpath, "%spython%02d.dll", f_homepathraw, ntohl(f_cookie.pyvers));
 
@@ -386,11 +388,30 @@ int loadPython()
 	}
 
 	mapNames(dll);
+#else
+
+	/* Determine the path */
+	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0", f_homepath,
+	   ntohl(f_cookie.pyvers) / 10, ntohl(f_cookie.pyvers) % 10);
+
+	/* Load the DLL */
+	dll = dlopen(dllpath, RTLD_NOW|RTLD_GLOBAL);
+	if (dll) {
+		VS("%s\n", dllpath);
+	}
+	if (dll == 0) {
+		FATALERROR("Error loading Python lib '%s': %s\n",
+			dllpath, dlerror());
+		return -1;
+	}
+
+	mapNames(dll);
+
 #endif
 
 	return 0;
 }
-#ifdef WIN32
+
 /*
  * use this from a dll instead of loadPython()
  * it will attach to an existing pythonXX.dll,
@@ -398,6 +419,7 @@ int loadPython()
  */
 int attachPython(int *loadedNew)
 {
+#ifdef WIN32
 	HMODULE dll;
 	char nm[_MAX_PATH + 1];
 
@@ -412,9 +434,9 @@ int attachPython(int *loadedNew)
 	}
 	mapNames(dll);
 	*loadedNew = 0;
+#endif
 	return 0;
 }
-#endif
 
 /*
  * Return pointer to next toc entry.

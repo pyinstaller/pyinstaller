@@ -42,16 +42,17 @@
 #include <netinet/in.h>
 #endif
 
-/* On Windows, we use dynamic loading so one binary 
+/* We use dynamic loading so one binary
    can be used with (nearly) any Python version.
-   This is the cruft necessary to do Windows dynamic loading
+   This is the cruft necessary to do dynamic loading
 */
 
-#ifdef WIN32
 /*
  * These macros used to define variables to hold dynamically accessed entry 
  * points. These are declared 'extern' in this header, and defined fully later.
  */
+#ifdef WIN32
+
 #define EXTDECLPROC(result, name, args)\
     typedef result (__cdecl *__PROC__##name) args;\
     extern __PROC__##name name;
@@ -60,7 +61,19 @@
     typedef vartyp __VAR__##name;\
     extern __VAR__##name *name;
 
-/* 
+#else
+
+#define EXTDECLPROC(result, name, args)\
+    typedef result (*__PROC__##name) args;\
+    extern __PROC__##name name;
+
+#define EXTDECLVAR(vartyp, name)\
+    typedef vartyp __VAR__##name;\
+    extern __VAR__##name *name;
+
+#endif /* WIN32 */
+
+/*
  * These types and macros are included from the Python header file object.h
  * They are needed to do very basic Python functionality.
  */
@@ -159,13 +172,14 @@ EXTDECLPROC(void, PyThreadState_Delete, (PyThreadState *) );
 EXTDECLPROC(PyInterpreterState *, PyInterpreterState_New, () );
 EXTDECLPROC(PyThreadState *, Py_NewInterpreter, () );
 EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
-EXTDECLPROC(void, PyErr_Print, () );
 EXTDECLPROC(long, PyInt_AsLong, (PyObject *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
 /* Macros to declare and get Python entry points in the C file.
  * Typedefs '__PROC__...' have been done above
  */
+#ifdef WIN32
+
 #define DECLPROC(name)\
     __PROC__##name name = NULL;
 #define GETPROC(dll, name)\
@@ -182,9 +196,27 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
         FATALERROR ("Cannot GetProcAddress for " #name);\
         return -1;\
     }
+
 #else
-#include <Python.h>
-#endif /* WIN32 dynamic load cruft */
+
+#define DECLPROC(name)\
+    __PROC__##name name = NULL;
+#define GETPROC(dll, name)\
+    name = (__PROC__##name *)dlsym (dll, #name);\
+    if (!name) {\
+        FATALERROR ("Cannot dlsym for " #name);\
+        return -1;\
+    }
+#define DECLVAR(name)\
+    __VAR__##name *name = NULL;
+#define GETVAR(dll, name)\
+    name = (__VAR__##name *)dlsym(dll, #name);\
+    if (!name) {\
+        FATALERROR ("Cannot dlsym for " #name);\
+        return -1;\
+    }
+
+#endif /* WIN32 */
 
 /*
  * #defines
