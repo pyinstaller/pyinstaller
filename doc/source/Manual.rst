@@ -718,13 +718,15 @@ EXE
         create your own. (The syntax of version resources is so arcane that I
         wouldn't attempt to write one from scratch.)
 
+    ``append_pkg``
+        If ``True``, then append the PKG archive to the EXE. If ``False``,
+	place the PKG archive in a separate file ``exename.pkg``.
+	The default is taken from a flag in ``config.dat`` and depends
+	on whether Make.py was given the ``-n`` argument
+	when building the loader. The default is ``True`` on Windows.
+	On non-ELF platforms where concatenating arbitrary data to
+	an executable does not work, ``append_pkg`` must be set to ``False``.
 
-There are actually two ``EXE`` classes - one for ELF platforms (where the
-bootloader, that is the ``run`` executable, and the ``PKG`` are concatenated),
-and one for non-ELF platforms (where the run executable is simply renamed, and
-expects a ``exename.pkg`` in the same directory). Which class becomes available
-as ``EXE`` is determined by a flag in ``config.dat``. This flag is set to
-non-ELF when using ``Make.py -n``.
 
 |GOBACK|
 

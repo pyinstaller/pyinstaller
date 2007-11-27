@@ -455,9 +455,10 @@ class PKG(Target):
             os.remove(item)
         return 1
 
-class ELFEXE(Target):
+class EXE(Target):
     typ = 'EXECUTABLE'
     exclude_binaries = 0
+    append_pkg = 1
     def __init__(self, *args, **kws):
         Target.__init__(self)
         self.console = kws.get('console',1)
@@ -468,10 +469,15 @@ class ELFEXE(Target):
         self.strip = kws.get('strip',None)
         self.upx = kws.get('upx',None)
         self.exclude_binaries = kws.get('exclude_binaries',0)
+        self.append_pkg = kws.get('append_pkg', self.append_pkg)
         if self.name is None:
             self.name = self.out[:-3] + 'exe'
         if not os.path.isabs(self.name):
             self.name = os.path.join(SPECPATH, self.name)
+        if iswin or cygwin:
+            self.pkgname = self.name[:-3] + 'pkg'
+        else:
+            self.pkgname = self.name + '.pkg'
         self.toc = TOC()
         for arg in args:
             if isinstance(arg, TOC):
@@ -490,6 +496,10 @@ class ELFEXE(Target):
         outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
             print "rebuilding %s because %s missing" % (outnm, os.path.basename(self.name))
+            return 1
+        if not self.append_pkg and not os.path.exists(self.pkgname):
+            print "rebuilding because %s missing" % (
+                os.path.basename(self.pkgname),)
             return 1
         try:
             name, console, debug, icon, versrsrc, strip, upx, mtm = eval(open(self.out, 'r').read())
@@ -542,7 +552,7 @@ class ELFEXE(Target):
                 exe = exe + '_d'
         return exe
     def assemble(self):
-        print "building ELFEXE", os.path.basename(self.out)
+        print "building EXE", os.path.basename(self.out)
         trash = []
         outf = open(self.name, 'wb')
         exe = self._bootloader_postfix('support/loader/run')
@@ -566,7 +576,12 @@ class ELFEXE(Target):
                 exe = tmpnm
         exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
         self.copy(exe, outf)
-        self.copy(self.pkg.name, outf)
+        if self.append_pkg:
+            print "Appending archive to EXE", self.name
+            self.copy(self.pkg.name, outf)
+        else:
+            print "Copying archive to", self.pkgname
+            shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
         os.chmod(self.name, 0755)
         f = open(self.out, 'w')
@@ -584,7 +599,7 @@ class ELFEXE(Target):
                 break
             outf.write(data)
 
-class DLL(ELFEXE):
+class DLL(EXE):
     def assemble(self):
         print "building DLL", os.path.basename(self.out)
         outf = open(self.name, 'wb')
@@ -600,32 +615,9 @@ class DLL(ELFEXE):
         f.close()
         return 1
 
-class NonELFEXE(ELFEXE):
-    def assemble(self):
-        print "building NonELFEXE", os.path.basename(self.out)
-        trash = []
-        exe = 'support/loader/run'
-        if not self.console:
-            exe = exe + 'w'
-        if self.debug:
-            exe = exe + '_d'
-        exe = os.path.join(HOMEPATH, exe)
-        exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
-        shutil.copy2(exe, self.name)
-        os.chmod(self.name, 0755)
-        shutil.copy2(self.pkg.name, self.name+'.pkg')
-        f = open(self.out, 'w')
-        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
-                       self.strip, self.upx, mtime(self.name)), f)
-        f.close()
-        for fnm in trash:
-            os.remove(fnm)
-        return 1
 
-if config['useELFEXE']:
-    EXE = ELFEXE
-else:
-    EXE = NonELFEXE
+if not config['useELFEXE']:
+    EXE.append_pkg = 0
 
 class COLLECT(Target):
     def __init__(self, *args, **kws):
@@ -643,8 +635,8 @@ class COLLECT(Target):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                if isinstance(arg, NonELFEXE):
-                    self.toc.append((os.path.basename(arg.name)+'.pkg', arg.name+'.pkg', 'PKG'))
+                if isinstance(arg, EXE) and not arg.append_pkg:
+                    self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
