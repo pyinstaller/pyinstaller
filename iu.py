@@ -379,6 +379,7 @@ class ImportManager:
                 #print "..parent not a package"
                 return None
         else:
+            parent = None
             # now we're dealing with an absolute import
             for director in self.metapath:
                 mod = director.getmod(nm)
@@ -408,6 +409,8 @@ class ImportManager:
                         # of failure?
                         if not reload:
                             del sys.modules[fqname]
+                            if hasattr(parent, nm):
+                                delattr(parent, nm)
                     raise
             if fqname == 'thread' and not self.threaded:
 ##                print "thread detected!"
