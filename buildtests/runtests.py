@@ -59,6 +59,7 @@ def runtests():
     print info
     print "*"*len(info)
     sources = glob.glob('test*[0-9].py')
+    sources.sort(key=lambda x: (len(x), x)) # test1 < test10
     path = os.environ["PATH"]
     for src in sources:
         print
