@@ -73,7 +73,7 @@ def build(spec):
             BUILDPATH = os.path.join(SPECPATH, bpath)
     if not os.path.exists(BUILDPATH):
         os.mkdir(BUILDPATH)
-    exec open(spec, 'r').read()+'\n'
+    execfile(spec, globals(), locals())
 
 def mtime(fnm):
     try:
