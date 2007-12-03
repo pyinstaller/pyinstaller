@@ -58,11 +58,16 @@ def runtests(sources=None):
     print "*"*len(info)
     print info
     print "*"*len(info)
+    alltests = glob.glob('test*[0-9].py')
     if not sources:
-        sources = glob.glob('test*[0-9].py')
-        sources.sort(key=lambda x: (len(x), x)) # test1 < test10
+        tests = alltests
+    else:
+        tests = []
+        for part in sources:
+            tests += [t for t in alltests if part in t and t not in tests]
+    tests.sort(key=lambda x: (len(x), x)) # test1 < test10
     path = os.environ["PATH"]
-    for src in sources:
+    for src in tests:
         print
         print "################## EXECUTING TEST %s ################################" % src
         print
