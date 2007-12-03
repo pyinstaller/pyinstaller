@@ -486,6 +486,7 @@ class Module:
     typ = 'UNKNOWN'
     def __init__(self, nm):
         self.__name__ = nm
+        self.__file__ = None
         self._all = []
         self.imports = []
         self.warnings = []
@@ -496,6 +497,8 @@ class Module:
         pass
     def xref(self, nm):
         self._xref[nm] = 1
+    def __str__(self):
+        return "<Module %s %s %s>" % (self.__name__, self.__file__, self.imports)
 
 class BuiltinModule(Module):
     typ = 'BUILTIN'
