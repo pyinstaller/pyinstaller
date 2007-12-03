@@ -415,7 +415,7 @@ class ImportTracker:
 
     def doimport(self, nm, ctx, fqname):
         # Not that nm is NEVER a dotted name at this point
-        assert("." not in nm), nm
+        assert ("." not in nm), nm
         if fqname in self.excludes:
             return None
         if ctx:
@@ -423,15 +423,23 @@ class ImportTracker:
             if parent.ispackage():
                 mod = parent.doimport(nm)
                 if mod:
+                    # insert the new module in the parent package
+                    # FIXME why?
                     setattr(parent, nm, mod)
             else:
+                # if parent is not a package, there is nothing more to do
                 return None
         else:
             # now we're dealing with an absolute import
+            # try to import nm using available directors
             for director in self.metapath:
                 mod = director.getmod(nm)
                 if mod:
                     break
+        # here we have `mod` from:
+        #   mod = parent.doimport(nm)
+        # or
+        #   mod = director.getmod(nm)
         if mod:
             mod.__name__ = fqname
             self.modules[fqname] = mod
@@ -459,7 +467,11 @@ class ImportTracker:
                     print "W: %s is changing it's name to %s" % (fqname, mod.__name__)
                     self.modules[mod.__name__] = mod
         else:
+            assert (mod == None), mod
             self.modules[fqname] = None
+        # should be equivalent using only one
+        # self.modules[fqname] = mod
+        # here
         return mod
     def getwarnings(self):
         warnings = self.warnings.keys()
