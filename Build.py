@@ -99,7 +99,7 @@ def absnormpath(apath):
 
 class Target:
     def __init__(self):
-        self.out = os.path.join(BUILDPATH, '%s.toc' % self.__class__.__name__)
+        self.out = os.path.join(BUILDPATH, 'out%s.toc' % self.__class__.__name__)
         self.dependencies = TOC()
     def __postinit__(self):
         print "checking %s" % (self.__class__.__name__,)
