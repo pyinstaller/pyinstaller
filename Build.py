@@ -94,6 +94,9 @@ def mtime(fnm):
     except:
         return 0
 
+def absnormpath(apath):
+    return os.path.abspath(os.path.normpath(apath))
+
 class Target:
     invcnum = 0
     def __init__(self):
@@ -116,7 +119,7 @@ class Analysis(Target):
         self.pathex = []
         if pathex:
             for path in pathex:
-                self.pathex.append(os.path.abspath(os.path.normpath(path)))
+                self.pathex.append(absnormpath(path))
         self.hookspath = hookspath
         self.excludes = excludes
         self.scripts = TOC()
@@ -172,7 +175,8 @@ class Analysis(Target):
         print "running Analysis", os.path.basename(self.out)
         paths = self.pathex
         for i in range(len(paths)):
-            paths[i] = os.path.abspath(os.path.normpath(paths[i]))
+            # FIXME: isn't self.pathex already norm-abs-pathed?
+            paths[i] = absnormpath(paths[i])
         dirs = {}
         pynms = []
         for script in self.inputs:
@@ -181,8 +185,7 @@ class Analysis(Target):
                 sys.exit(1)
             d, base = os.path.split(script)
             if not d:
-                d = os.getcwd()
-            d = os.path.abspath(os.path.normpath(d))
+                d = absnormpath(os.getcwd())
             pynm, ext = os.path.splitext(base)
             dirs[d] = 1
             pynms.append(pynm)
