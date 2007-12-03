@@ -98,11 +98,8 @@ def absnormpath(apath):
     return os.path.abspath(os.path.normpath(apath))
 
 class Target:
-    invcnum = 0
     def __init__(self):
-        self.invcnum = Target.invcnum
-        Target.invcnum = Target.invcnum + 1
-        self.out = os.path.join(BUILDPATH, 'out%d.toc' % self.invcnum)
+        self.out = os.path.join(BUILDPATH, '%s.toc' % self.__class__.__name__)
         self.dependencies = TOC()
     def __postinit__(self):
         print "checking %s" % (self.__class__.__name__,)
@@ -179,8 +176,8 @@ class Analysis(Target):
             paths[i] = absnormpath(paths[i])
         ###################################################
         # Scan inputs and prepare:
-        dirs = {}  # will contain input directories 
-        pynms = [] # will contain python filenames with no extension
+        dirs = {}  # input directories 
+        pynms = [] # python filenames with no extension
         for script in self.inputs:
             if not os.path.exists(script):
                 print "Analysis: script %s not found!" % script
@@ -204,9 +201,9 @@ class Analysis(Target):
             scripts.append((pynms[i], script, 'PYSOURCE'))
         ###################################################
         # Fills pure, binaries and rthookcs lists to TOC
-        pure = []     # will contain pure python modules
-        binaries = [] # will contain binaries to bundle
-        rthooks = []  # will contain rthooks if needed
+        pure = []     # pure python modules
+        binaries = [] # binaries to bundle
+        rthooks = []  # rthooks if needed
         for modnm, mod in analyzer.modules.items():
             # FIXME: why can we have a mod == None here?
             if mod is not None:
@@ -228,7 +225,7 @@ class Analysis(Target):
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
-        try:
+        try: # read .toc
             oldstuff = eval(open(self.out, 'r').read())
         except:
             oldstuff = None
