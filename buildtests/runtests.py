@@ -78,7 +78,7 @@ def runtests(sources=None):
         res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
         assert res == 0, "%s Test error!" % src
         os.environ["PATH"] = path
-        print "################## FINISHING TEST %s  ################################" % src
+        print "################## FINISHING TEST %s ################################" % src
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
