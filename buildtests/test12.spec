@@ -1,3 +1,5 @@
+import os
+
 a = Analysis(['../support/_mountzlib.py', 'test12.py'],
              pathex=[])
 pyz = PYZ(a.pure)
