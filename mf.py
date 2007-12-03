@@ -413,12 +413,13 @@ class ImportTracker:
     def ispackage(self, nm):
         return self.modules[nm].ispackage()
 
-    def doimport(self, nm, parentnm, fqname):
+    def doimport(self, nm, ctx, fqname):
         # Not that nm is NEVER a dotted name at this point
+        assert("." not in nm), nm
         if fqname in self.excludes:
             return None
-        if parentnm:
-            parent = self.modules[parentnm]
+        if ctx:
+            parent = self.modules[ctx]
             if parent.ispackage():
                 mod = parent.doimport(nm)
                 if mod:
