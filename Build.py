@@ -24,12 +24,12 @@ import time
 import py_compile
 import tempfile
 import md5
-import bindepend
 
 import mf
 import archive
 import iu
 import carchive
+import bindepend
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
