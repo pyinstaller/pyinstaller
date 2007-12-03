@@ -127,47 +127,47 @@ class Analysis(Target):
         outnm = os.path.basename(self.out)
         if last_build == 0:
             print "building %s because %s non existent" % (self.__class__.__name__, outnm)
-            return 1
+            return True
         for fnm in self.inputs:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
-                return 1
+                return True
         try:
             inputs, pathex, hookspath, excludes, scripts, pure, binaries = eval(open(self.out, 'r').read())
         except:
             print "building because %s disappeared" % outnm
-            return 1
+            return True
         if inputs != self.inputs:
             print "building %s because inputs changed" % outnm
-            return 1
+            return True
         if pathex != self.pathex:
             print "building %s because pathex changed" % outnm
-            return 1
+            return True
         if hookspath != self.hookspath:
             print "building %s because hookspath changed" % outnm
-            return 1
+            return True
         if excludes != self.excludes:
             print "building %s because excludes changed" % outnm
-            return 1
+            return True
         for (nm, fnm, typ) in scripts:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
-                return 1
+                return True
         for (nm, fnm, typ) in pure:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
-                return 1
+                return True
             elif mtime(fnm[:-1]) > last_build:
                 print "building because %s changed" % fnm[:-1]
-                return 1
+                return True
         for (nm, fnm, typ) in binaries:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
-                return 1
+                return True
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
-        return 0
+        return False
     def assemble(self):
         print "running Analysis", os.path.basename(self.out)
         paths = self.pathex
