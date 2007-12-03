@@ -38,5 +38,7 @@ def hook(mod):
         if txt[:-3] == ".py":
             txt = txt + 'c'
         co = marshal.loads(open(txt, 'rb').read()[8:])
+        old_pth = mod.__path__[:]
         mod.__init__('xml', txt, co)
+        mod.__path__.extend(old_pth)
     return mod
