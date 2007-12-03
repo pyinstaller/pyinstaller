@@ -83,4 +83,3 @@ if __name__ == '__main__':
         clean()
     if '--run' in sys.argv:
         runtests(sys.argv[2:])
-    raw_input("Press any key to exit")
