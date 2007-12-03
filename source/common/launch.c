@@ -612,12 +612,9 @@ int importModules()
 	PyObject *marshal;
 	PyObject *marshaldict;
 	PyObject *loadfunc;
-	PyObject *pyfile;
 	TOC *ptoc;
 	PyObject *co;
 	PyObject *mod;
-	PyObject *res;
-	char buf[32];
 
 	VS("importing modules from CArchive\n"); 
 
@@ -1003,7 +1000,9 @@ int launchembedded(char const * archivePath, char  const * archiveName)
  */
 int init(char const * archivePath, char  const * archiveName, char const * workpath)
 {
+#ifdef WIN32
 	char *p;
+#endif
 
 	if (workpath) {
 		f_workpath = (char *)workpath;
