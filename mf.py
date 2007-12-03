@@ -34,6 +34,14 @@ else:
     def caseOk(filename):
         return True
 
+def pyco():
+    """
+    Returns correct extension ending: 'c' or 'o'
+    """
+    if __debug__:
+        return 'c'
+    else:
+        return 'o'
 
 class Owner:
     def __init__(self, path):
@@ -82,11 +90,7 @@ class DirOwner(Owner):
                 try:
                     stuff = open(py[0], 'r').read()+'\n'
                     co = compile(string.replace(stuff, "\r\n", "\n"), py[0], 'exec')
-                    if __debug__:
-                        pth = py[0] + 'c'
-                    else:
-                        pth = py[0] + 'o'
-                    break
+                    pth = py[0] + pyco()
                 except SyntaxError, e:
                     print "Syntax error in", py[0]
                     print e.args
@@ -532,10 +536,7 @@ class PyModule(Module):
         self.co = co
         self.__file__ = pth
         if os.path.splitext(self.__file__)[1] == '.py':
-            if __debug__:
-                self.__file__ = self.__file__ + 'c'
-            else:
-                self.__file__ = self.__file__ + 'o'
+            self.__file__ = self.__file__ + pyco()
         self.scancode()
     def scancode(self):
         self.imports, self.warnings, allnms = scan_code(self.co)
