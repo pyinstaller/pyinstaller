@@ -27,25 +27,26 @@ try:
     here=os.path.dirname(__file__)
 except NameError:
     here=os.path.dirname(sys.argv[0])
+os.chdir(here)
 PYTHON = sys.executable
 if sys.platform[:3] == 'win':
     if string.find(PYTHON, ' ') > -1:
         PYTHON='"%s"' % PYTHON
 
 def clean():
-    distdirs = glob.glob(os.path.join(here, 'disttest*'))
+    distdirs = glob.glob('disttest*')
     for dir in distdirs:
         try:
             shutil.rmtree(dir)
         except OSError, e:
             print e
-    builddirs = glob.glob(os.path.join(here, 'buildtest*'))
+    builddirs = glob.glob('buildtest*')
     for dir in builddirs:
         try:
             shutil.rmtree(dir)
         except OSError, e:
             print e
-    wfiles = glob.glob(os.path.join(here, 'warn*.txt'))
+    wfiles = glob.glob('warn*.txt')
     for file in wfiles:
         try:
             os.remove(file)
@@ -53,8 +54,11 @@ def clean():
             print e
 
 def runtests():
-    global here
-    sources = glob.glob(os.path.join(here, 'test*[0-9].py'))
+    info = "Executing PyInstaller tests in: %s" % os.getcwd()
+    print "*"*len(info)
+    print info
+    print "*"*len(info)
+    sources = glob.glob('test*[0-9].py')
     path = os.environ["PATH"]
     for src in sources:
         print
@@ -64,7 +68,8 @@ def runtests():
         os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
         # Run the test in a clean environment to make sure they're really self-contained
         del os.environ["PATH"]
-        os.system('dist%s%s%s' % (test, os.sep, test))
+        res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
+        assert res == 0, "%s Test error!" % src
         os.environ["PATH"] = path
         print "################## FINISHING TEST %s  ################################" % src
 
