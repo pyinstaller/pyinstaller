@@ -185,7 +185,8 @@ class Analysis(Target):
                 sys.exit(1)
             d, base = os.path.split(script)
             if not d:
-                d = absnormpath(os.getcwd())
+                d = os.getcwd()
+            d = absnormpath(d)
             pynm, ext = os.path.splitext(base)
             dirs[d] = 1
             pynms.append(pynm)
