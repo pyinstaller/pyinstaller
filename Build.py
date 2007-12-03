@@ -177,8 +177,10 @@ class Analysis(Target):
         for i in range(len(paths)):
             # FIXME: isn't self.pathex already norm-abs-pathed?
             paths[i] = absnormpath(paths[i])
-        dirs = {}
-        pynms = []
+        ###################################################
+        # Scan inputs and prepare:
+        dirs = {}  # will contain input directories 
+        pynms = [] # will contain python filenames with no extension
         for script in self.inputs:
             if not os.path.exists(script):
                 print "Analysis: script %s not found!" % script
@@ -190,18 +192,23 @@ class Analysis(Target):
             pynm, ext = os.path.splitext(base)
             dirs[d] = 1
             pynms.append(pynm)
+        ###################################################
+        # Initialize analyzer and analyze scripts
         analyzer = mf.ImportTracker(dirs.keys()+paths, self.hookspath, self.excludes)
         #print analyzer.path
-        scripts = []
+        scripts = [] # will contain scripts to bundle
         for i in range(len(self.inputs)):
             script = self.inputs[i]
             print "Analyzing:", script
             analyzer.analyze_script(script)
             scripts.append((pynms[i], script, 'PYSOURCE'))
-        pure = []
-        binaries = []
-        rthooks = []
+        ###################################################
+        # Fills pure, binaries and rthookcs lists to TOC
+        pure = []     # will contain pure python modules
+        binaries = [] # will contain binaries to bundle
+        rthooks = []  # will contain rthooks if needed
         for modnm, mod in analyzer.modules.items():
+            # FIXME: why can we have a mod == None here?
             if mod is not None:
                 hooks = findRTHook(modnm)  #XXX
                 if hooks:
