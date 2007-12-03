@@ -267,11 +267,12 @@ imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
 import hooks
 
 if __debug__:
+    import sys
     import UserDict
     class LogDict(UserDict.UserDict):
         def __init__(self, *args):
             UserDict.UserDict.__init__(self, *args)
-            self.logfile = open("logdict.log", "w")
+            self.logfile = open("logdict%s.log" % ".".join(map(str, sys.version_info)), "w")
         def __setitem__(self, key, value):
             self.logfile.write("%s: %s -> %s\n" % (key, self.data.get(key), value))
             UserDict.UserDict.__setitem__(self, key, value)
