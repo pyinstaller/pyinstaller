@@ -266,6 +266,21 @@ UNTRIED = -1
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
 import hooks
 
+if __debug__:
+    import UserDict
+    class LogDict(UserDict.UserDict):
+        def __init__(self, *args):
+            UserDict.UserDict.__init__(self, *args)
+            self.logfile = open("logdict.log", "w")
+        def __setitem__(self, key, value):
+            self.logfile.write("%s: %s -> %s\n" % (key, self.data.get(key), value))
+            UserDict.UserDict.__setitem__(self, key, value)
+        def __delitem__(self, key):
+            self.logfile.write("  DEL %s\n" % key)
+            UserDict.UserDict.__delitem__(self, key)
+else:
+    LogDict = dict
+
 class ImportTracker:
     # really the equivalent of builtin import
     def __init__(self, xpath=None, hookspath=None, excludes=None):
@@ -274,7 +289,7 @@ class ImportTracker:
         if xpath:
             self.path = xpath
         self.path.extend(sys.path)
-        self.modules = {}
+        self.modules = LogDict()
         self.metapath = [
             BuiltinImportDirector(),
             FrozenImportDirector(),
