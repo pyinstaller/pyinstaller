@@ -14,6 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-print "test13 - _struct -> (hiddenimport = ['encodings'])"
-import _struct
-print "test13 - done"
+
+print "test13 - Used to fail if _xmlplus is installed"
+try:
+    import PyQt4
+except:
+    pass
+else:
+    from PyQt4 import uic
+print "test13 DONE"
