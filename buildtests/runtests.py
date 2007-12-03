@@ -53,13 +53,14 @@ def clean():
         except OSError, e:
             print e
 
-def runtests():
+def runtests(sources=None):
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
     print "*"*len(info)
     print info
     print "*"*len(info)
-    sources = glob.glob('test*[0-9].py')
-    sources.sort(key=lambda x: (len(x), x)) # test1 < test10
+    if not sources:
+        sources = glob.glob('test*[0-9].py')
+        sources.sort(key=lambda x: (len(x), x)) # test1 < test10
     path = os.environ["PATH"]
     for src in sources:
         print
@@ -81,5 +82,5 @@ if __name__ == '__main__':
     if '--clean' in sys.argv:
         clean()
     if '--run' in sys.argv:
-        runtests()
+        runtests(sys.argv[2:])
     raw_input("Press any key to exit")
