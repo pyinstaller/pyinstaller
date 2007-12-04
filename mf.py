@@ -91,6 +91,7 @@ class DirOwner(Owner):
                     stuff = open(py[0], 'r').read()+'\n'
                     co = compile(string.replace(stuff, "\r\n", "\n"), py[0], 'exec')
                     pth = py[0] + pyco()
+                    break
                 except SyntaxError, e:
                     print "Syntax error in", py[0]
                     print e.args
