@@ -16,10 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 print "test13 - Used to fail if _xmlplus is installed"
-try:
-    import PyQt4
-except:
-    pass
-else:
-    from PyQt4 import uic
+
+from xml.etree.cElementTree import parse, SubElement
+
 print "test13 DONE"
