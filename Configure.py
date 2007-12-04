@@ -241,4 +241,4 @@ outf = open(configfile, 'w')
 import pprint
 pprint.pprint(config, outf)
 outf.close()
-print "I: configure.dat generation done!"
+print "I: config.dat generation done!"
