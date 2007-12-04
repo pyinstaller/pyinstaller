@@ -224,6 +224,8 @@ class Analysis(Target):
                         pass
                     else:
                         pure.append((modnm, fnm, 'PYMODULE'))
+            else:
+                print "WARNING: mod == None for", modnm
         binaries.extend(bindepend.Dependencies(binaries))
         scripts[1:1] = rthooks
         self.scripts = TOC(scripts)
