@@ -98,8 +98,12 @@ def absnormpath(apath):
     return os.path.abspath(os.path.normpath(apath))
 
 class Target:
+    invcnum = 0
     def __init__(self):
-        self.out = os.path.join(BUILDPATH, 'out%s.toc' % self.__class__.__name__)
+        self.invcnum = Target.invcnum
+        Target.invcnum += 1
+        self.out = os.path.join(BUILDPATH, 'out%s%d.toc' % (self.__class__.__name__,
+                                                            self.invcnum))
         self.dependencies = TOC()
     def __postinit__(self):
         print "checking %s" % (self.__class__.__name__,)
