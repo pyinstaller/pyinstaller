@@ -275,9 +275,12 @@ if __debug__:
     import sys
     import UserDict
     class LogDict(UserDict.UserDict):
+        count = 0
         def __init__(self, *args):
             UserDict.UserDict.__init__(self, *args)
-            self.logfile = open("logdict%s.log" % ".".join(map(str, sys.version_info)), "w")
+            LogDict.count += 1
+            self.logfile = open("logdict%s-%d.log" % (".".join(map(str, sys.version_info)),
+                                                      LogDict.count), "w")
         def __setitem__(self, key, value):
             self.logfile.write("%s: %s -> %s\n" % (key, self.data.get(key), value))
             UserDict.UserDict.__setitem__(self, key, value)
