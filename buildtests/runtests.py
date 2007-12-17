@@ -69,15 +69,18 @@ def runtests(sources=None):
     path = os.environ["PATH"]
     for src in tests:
         print
-        print "################## EXECUTING TEST %s ################################" % src
+        print "################## BUILDING TEST %s #################################" % src
         print
         test = os.path.splitext(os.path.basename(src))[0]
         os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
         # Run the test in a clean environment to make sure they're really self-contained
         del os.environ["PATH"]
+        print
+        print "################## EXECUTING TEST %s ################################" % src
+        print
         res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
-        assert res == 0, "%s Test error!" % src
         os.environ["PATH"] = path
+        assert res == 0, "%s Test error!" % src
         print "################## FINISHING TEST %s ################################" % src
 
 if __name__ == '__main__':
