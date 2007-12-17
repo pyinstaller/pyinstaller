@@ -69,8 +69,8 @@ class DirOwner(Owner):
                 attempt = pth+ext
                 try:
                     st = _os_stat(attempt)
-                except Exception, msg:
-                    #print "!!!!!!! _os_stat Exception %s '%s'" % (msg, attempt)
+                except OSError, e:
+                    assert e.errno == 2 #[Errno 2] No such file or directory
                 else:
                     if typ == imp.C_EXTENSION:
                         fp = open(attempt, 'rb')
@@ -164,8 +164,8 @@ class RegistryImportDirector(ImportDirector):
                 try:
                     #hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_ALL_ACCESS)
                     hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_READ)
-                except Exception, msg:
-                    #print "!!!!!!! RegOpenKeyEx Exception", msg
+                except Exception, e:
+                    print "FIXME: RegOpenKeyEx Exception", e
                 else:
                     numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
                     for i in range(numsubkeys):
@@ -228,8 +228,8 @@ class PathImportDirector(ImportDirector):
                 # this may cause an import, which may cause recursion
                 # hence the protection
                 owner = klass(path)
-            except Exception, msg:
-                #print "!!!!!!! klass Exception %s, '%s'" % (msg, path)
+            except Exception, e:
+                print "FIXME: klass Exception %s, '%s'" % (e, path)
             else:
                 break
         del self.building[path]
@@ -318,8 +318,8 @@ class ImportManager:
                 if mod is UNTRIED:
                     try:
                         mod = _self_doimport(nm, ctx, fqname)
-                    except Exception, msg:
-                        #print "!!!!!!! _self_doimport Exception", msg
+                    except Exception, e:
+                        print "FIXME: _self_doimport Exception", e
                         if threaded:
                             self._release()
                         raise
@@ -363,9 +363,8 @@ class ImportManager:
                         self._acquire()
                     try:
                         mod = self.doimport(nm, ctx, ctx+'.'+nm)
-                    except Exception, msg:
-                        #print "!!!!!!! self.doimport doimport Exception", msg
-                        pass
+                    except Exception, e:
+                        print "FIXME: self.doimport Exception", e
                     if threaded:
                         self._release()
         #print "importHook done with %s %s %s (case 3)" % (name, globals['__name__'], fromlist)
