@@ -44,6 +44,12 @@ except AttributeError:
 
 STRINGTYPE = type('')
 
+class OwnerError(IOError):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return "<OwnerError %s>" % self.msg
+
 class Owner:
     def __init__(self, path):
         self.path = path
@@ -56,7 +62,7 @@ class DirOwner(Owner):
         if path == '':
             path = _os_getcwd()
         if not pathisdir(path):
-            raise ValueError, "%s is not a directory" % path
+            raise OwnerError("%s is not a directory" % path)
         Owner.__init__(self, path)
     def getmod(self, nm, getsuffixes=imp.get_suffixes, loadco=marshal.loads, newmod=imp.new_module):
         pth =  _os_path_join(self.path, nm)
@@ -228,8 +234,8 @@ class PathImportDirector(ImportDirector):
                 # this may cause an import, which may cause recursion
                 # hence the protection
                 owner = klass(path)
-            except Exception, e:
-                print "FIXME: klass Exception %s, '%s'" % (e, path)
+            except OwnerError, e:
+                pass
             else:
                 break
         del self.building[path]
