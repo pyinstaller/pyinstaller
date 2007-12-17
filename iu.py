@@ -69,8 +69,8 @@ class DirOwner(Owner):
                 attempt = pth+ext
                 try:
                     st = _os_stat(attempt)
-                except:
-                    pass
+                except Exception, msg:
+                    #print "!!!!!!! _os_stat Exception %s '%s'" % (msg, attempt)
                 else:
                     if typ == imp.C_EXTENSION:
                         fp = open(attempt, 'rb')
@@ -164,8 +164,8 @@ class RegistryImportDirector(ImportDirector):
                 try:
                     #hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_ALL_ACCESS)
                     hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_READ)
-                except:
-                    pass
+                except Exception, msg:
+                    #print "!!!!!!! RegOpenKeyEx Exception", msg
                 else:
                     numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
                     for i in range(numsubkeys):
@@ -228,8 +228,8 @@ class PathImportDirector(ImportDirector):
                 # this may cause an import, which may cause recursion
                 # hence the protection
                 owner = klass(path)
-            except:
-                pass
+            except Exception, msg:
+                #print "!!!!!!! klass Exception %s, '%s'" % (msg, path)
             else:
                 break
         del self.building[path]
@@ -246,6 +246,12 @@ def getDescr(fnm):
 # ie, the builtin import
 
 UNTRIED = -1
+
+class ImportManagerException(Exception):
+    def __init__(self, args):
+        self.args = args
+    def __repr__(self):
+        return "<%s: %s>" % (self.__name__, self.args)
 
 class ImportManager:
     # really the equivalent of builtin import
@@ -273,7 +279,7 @@ class ImportManager:
         __builtin__.reload = self.reloadHook
     def importHook(self, name, globals=None, locals=None, fromlist=None, level=-1):
         # first see if we could be importing a relative name
-        #print "importHook(%s, %s, locals, %s)" % (name, globals['__name__'], fromlist)
+        #print "importHook(%s, %s, locals, %s)" % (name, getattr(globals, '__name__', None), fromlist),
         _sys_modules_get = sys.modules.get
         contexts = [None]
         if globals and level == -1:
@@ -312,7 +318,8 @@ class ImportManager:
                 if mod is UNTRIED:
                     try:
                         mod = _self_doimport(nm, ctx, fqname)
-                    except:
+                    except Exception, msg:
+                        #print "!!!!!!! _self_doimport Exception", msg
                         if threaded:
                             self._release()
                         raise
@@ -356,7 +363,8 @@ class ImportManager:
                         self._acquire()
                     try:
                         mod = self.doimport(nm, ctx, ctx+'.'+nm)
-                    except:
+                    except Exception, msg:
+                        #print "!!!!!!! self.doimport doimport Exception", msg
                         pass
                     if threaded:
                         self._release()
