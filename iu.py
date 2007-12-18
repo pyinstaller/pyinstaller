@@ -325,7 +325,8 @@ class ImportManager:
                     try:
                         mod = _self_doimport(nm, ctx, fqname)
                     except Exception, e:
-                        print "FIXME: _self_doimport Exception", e
+                        print "FIXME: _self_doimport Exception(%s)" % e,
+                        print " nm='%s' ctx='%s' fqname='%s'" % (nm, ctx, fqname)
                         if threaded:
                             self._release()
                         raise
