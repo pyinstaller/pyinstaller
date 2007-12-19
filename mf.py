@@ -69,13 +69,15 @@ class DirOwner(Owner):
                 attempt = pth+ext
                 try:
                     st = os.stat(attempt)
-                except:
+                except Exception, e:
+                    #print "DirOwner", e
                     pass
                 else:
                     # Check case
                     if not caseOk(attempt):
                         continue
                     if typ == imp.C_EXTENSION:
+                        #print "DirOwner.getmod -> ExtensionModule(%s, %s)" % (nm, attempt)
                         return ExtensionModule(nm, attempt)
                     elif typ == imp.PY_SOURCE:
                         py = (attempt, st)
@@ -84,8 +86,10 @@ class DirOwner(Owner):
             if py or pyc:
                 break
         if py is None and pyc is None:
+            #print "DirOwner.getmod -> (py == pyc == None)"
             return None
         while 1:
+            # If we have no pyc or py is newer
             if pyc is None or py and pyc[1][8] < py[1][8]:
                 try:
                     stuff = open(py[0], 'r').read()+'\n'
@@ -103,9 +107,10 @@ class DirOwner(Owner):
                     pth = pyc[0]
                     break
                 except (ValueError, EOFError):
-                    print "W: bad .pyc found (%s)" % pyc[0]
+                    print "W: bad .pyc found (%s), will use .py" % pyc[0]
                     pyc = None
             else:
+                #print "DirOwner.getmod while 1 -> None"
                 return None
         if not os.path.isabs(pth):
             pth = os.path.abspath(pth)
@@ -113,6 +118,7 @@ class DirOwner(Owner):
             mod = PkgModule(nm, pth, co)
         else:
             mod = PyModule(nm, pth, co)
+        #print "DirOwner.getmod -> %s" % mod
         return mod
 
 class PYZOwner(Owner):
@@ -174,7 +180,8 @@ class RegistryImportDirector(ImportDirector):
                 try:
                     #hkey = win32api.RegOpenKeyEx(root, subkey, 0, win32con.KEY_ALL_ACCESS)
                     hkey = win32api.RegOpenKeyEx(root, subkey, 0, win32con.KEY_READ)
-                except:
+                except Exception, e:
+                    #print "RegistryImportDirector", e
                     pass
                 else:
                     numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
@@ -248,7 +255,8 @@ class PathImportDirector(ImportDirector):
                 # this may cause an import, which may cause recursion
                 # hence the protection
                 owner = klass(path)
-            except:
+            except Exception, e:
+                #print "PathImportDirector", e
                 pass
             else:
                 break
