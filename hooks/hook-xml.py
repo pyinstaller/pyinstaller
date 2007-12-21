@@ -29,7 +29,7 @@ def hook(mod):
     if os.name == "nt":
         cmd = '"echo on && "%s" -c "import xml;print xml.__file__" > "%s""' % (exe, fnm)
     else:
-        cmd = '""%s" -c "import xml;print xml.__file__" > "%s""' % (exe, fnm)
+        cmd = '"%s" -c "import xml;print xml.__file__" > "%s"' % (exe, fnm)
     os.system(cmd)
 
     txt = open(fnm, 'r').read()[:-1]
