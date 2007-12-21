@@ -16,7 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-import sys, os, shutil, mf, archive, iu, carchive, pprint, time, py_compile, bindepend, tempfile, md5
+import sys
+import os
+import shutil
+import pprint
+import time
+import py_compile
+import tempfile
+import md5
+
+import mf
+import archive
+import iu
+import carchive
+import bindepend
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
