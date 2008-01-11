@@ -28,7 +28,7 @@ import xml.etree.cElementTree as cET
 pyexe = open("python_exe.build").read()
 
 out = subprocess.Popen(pyexe + ' -c "import xml.etree.cElementTree as cET; print dir(cET)"',
-                       stdout=subprocess.PIPE).stdout.read().strip()
+                       stdout=subprocess.PIPE, shell=True).stdout.read().strip()
 assert str(dir(cET)) == out, (str(dir(cET)), out)
 
 print "test14 DONE"
