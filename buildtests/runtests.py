@@ -23,6 +23,7 @@
 
 import os, sys, glob, string
 import shutil
+
 try:
     here=os.path.dirname(__file__)
 except NameError:
@@ -58,6 +59,9 @@ def runtests(sources=None):
     print "*"*len(info)
     print info
     print "*"*len(info)
+    build_python = open("python_exe.build", "w")
+    build_python.write(sys.executable)
+    build_python.close()
     alltests = glob.glob('test*[0-9].py')
     if not sources:
         tests = alltests

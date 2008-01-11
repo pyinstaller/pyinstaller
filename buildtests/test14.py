@@ -17,7 +17,7 @@
 
 print "test14 - Used to fail if _xmlplus is installed"
 
-import os
+import subprocess
 
 import xml.etree.ElementTree as ET
 print "#"*50
@@ -25,7 +25,10 @@ print "xml.etree.ElementTree", dir(ET)
 print "#"*50
 import xml.etree.cElementTree as cET
 
-out = os.popen("python -c 'import xml.etree.cElementTree as cET; print dir(cET)'").read().strip()
+pyexe = open("python_exe.build").read()
+
+out = subprocess.Popen(pyexe + ' -c "import xml.etree.cElementTree as cET; print dir(cET)"',
+                       stdout=subprocess.PIPE).stdout.read().strip()
 assert str(dir(cET)) == out, (str(dir(cET)), out)
 
 print "test14 DONE"
