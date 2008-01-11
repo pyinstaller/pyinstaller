@@ -370,8 +370,9 @@ class PYZOwner(iu.Owner):
         try:
             self.pyz = ZlibArchive(path)
         except IOError, e:
-            assert e.errno == 21, e.errno # [Errno 21] Is a directory
-            raise iu.OwnerError("'%s' is a directory")
+            assert e.errno in (21, 13), e # [Errno 21] Is a directory
+                                          # [Errno 13] Permission denied (windows...)
+            raise iu.OwnerError(e)
         iu.Owner.__init__(self, path)
     def getmod(self, nm, newmod=imp.new_module):
         rslt = self.pyz.extract(nm)
