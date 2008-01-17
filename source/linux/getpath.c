@@ -42,6 +42,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <stdlib.h>     /* getenv */
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -154,7 +155,9 @@ calculate_path(void)
 	char *epath;
 	char *path = NULL;
 	char *ppath = NULL;
-        int  numchars;
+#if HAVE_READLINK
+	int  numchars;
+#endif
 
 	if (strchr(prog, SEP))
 		strcpy(progpath, prog);
