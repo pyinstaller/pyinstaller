@@ -64,7 +64,7 @@ def runtests():
         os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
         # Run the test in a clean environment to make sure they're really self-contained
         del os.environ["PATH"]
-        os.system('dist%s%s%s' % (test, os.sep, test))
+        os.system('dist%s%s%s.exe' % (test, os.sep, test))
         os.environ["PATH"] = path
         print "################## FINISHING TEST %s  ################################" % src
 
