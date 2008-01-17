@@ -70,36 +70,36 @@ int launch(char const * archivePath, char  const * archiveName)
 
 	if (loadedNew) {
 		/* Start Python with silly command line */
-		PyEval_InitThreads();
+		PI_PyEval_InitThreads();
 		if (startPython(1, (char**)&pathnm))
 			return -1;
 		VS("Started new Python");
-		thisthread = PyThreadState_Swap(NULL);
-		PyThreadState_Swap(thisthread);
+		thisthread = PI_PyThreadState_Swap(NULL);
+		PI_PyThreadState_Swap(thisthread);
 	}
 	else {
 		VS("Attached to existing Python");
 
 		/* start a mew interp */
-		thisthread = PyThreadState_Swap(NULL);
-		PyThreadState_Swap(thisthread);
+		thisthread = PI_PyThreadState_Swap(NULL);
+		PI_PyThreadState_Swap(thisthread);
 		if (thisthread == NULL) {
-			thisthread = Py_NewInterpreter();
+			thisthread = PI_Py_NewInterpreter();
 			VS("created thisthread");
 		}
 		else
 			VS("grabbed thisthread");
-		PyRun_SimpleString("import sys;sys.argv=[]");
+		PI_PyRun_SimpleString("import sys;sys.argv=[]");
 	}
 
 	/* a signal to scripts */
-	PyRun_SimpleString("import sys;sys.frozen='dll'\n");
+	PI_PyRun_SimpleString("import sys;sys.frozen='dll'\n");
 	VS("set sys.frozen");
 	/* Create a 'frozendllhandle' as a counterpart to
 	   sys.dllhandle (which is the Pythonxx.dll handle)
 	*/
-	obHandle = Py_BuildValue("i", gInstance);
-	PySys_SetObject("frozendllhandle", obHandle);
+	obHandle = PI_Py_BuildValue("i", gInstance);
+	PI_PySys_SetObject("frozendllhandle", obHandle);
 	Py_XDECREF(obHandle);
     /* Import modules from archive - this is to bootstrap */
     if (importModules())
@@ -113,14 +113,14 @@ int launch(char const * archivePath, char  const * archiveName)
     if (runScripts())
         return -1;
 	VS("All scripts run");
-    if (PyErr_Occurred()) {
-		// PyErr_Print();
-		//PyErr_Clear();
+    if (PI_PyErr_Occurred()) {
+		// PI_PyErr_Print();
+		//PI_PyErr_Clear();
 		VS("Some error occurred");
     }
 	VS("PGL released");
 	// Abandon our thread state.
-	PyEval_ReleaseThread(thisthread);
+	PI_PyEval_ReleaseThread(thisthread);
     VS("OK.");
     return 0;
 }
@@ -262,9 +262,9 @@ STDAPI DllRegisterServer()
 	int rc, pyrc;
 	if (gPythoncom == 0)
 		startUp();
-	PyEval_AcquireThread(thisthread);
+	PI_PyEval_AcquireThread(thisthread);
 	rc = callSimpleEntryPoint("DllRegisterServer", &pyrc);
-	PyEval_ReleaseThread(thisthread);
+	PI_PyEval_ReleaseThread(thisthread);
 	return rc==0 ? pyrc : SELFREG_E_CLASS;
 }
 
@@ -273,8 +273,8 @@ STDAPI DllUnregisterServer()
 	int rc, pyrc;
 	if (gPythoncom == 0)
 		startUp();
-	PyEval_AcquireThread(thisthread);
+	PI_PyEval_AcquireThread(thisthread);
 	rc = callSimpleEntryPoint("DllUnregisterServer", &pyrc);
-	PyEval_ReleaseThread(thisthread);
+	PI_PyEval_ReleaseThread(thisthread);
 	return rc==0 ? pyrc : SELFREG_E_CLASS;
 }
