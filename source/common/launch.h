@@ -59,7 +59,7 @@
 
 #define EXTDECLVAR(vartyp, name)\
     typedef vartyp __VAR__##name;\
-    extern __VAR__##name *name;
+    extern __VAR__##name *PI_##name;
 
 #else
 
@@ -69,7 +69,7 @@
 
 #define EXTDECLVAR(vartyp, name)\
     typedef vartyp __VAR__##name;\
-    extern __VAR__##name *name;
+    extern __VAR__##name *PI_##name;
 
 #endif /* WIN32 */
 
@@ -178,10 +178,10 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
         return -1;\
     }
 #define DECLVAR(name)\
-    __VAR__##name *name = NULL;
+    __VAR__##name *PI_##name = NULL;
 #define GETVAR(dll, name)\
-    name = (__VAR__##name *)GetProcAddress (dll, #name);\
-    if (!name) {\
+    PI_##name = (__VAR__##name *)GetProcAddress (dll, #name);\
+    if (!PI_##name) {\
         FATALERROR ("Cannot GetProcAddress for " #name);\
         return -1;\
     }
@@ -197,10 +197,10 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
         return -1;\
     }
 #define DECLVAR(name)\
-    __VAR__##name *name = NULL;
+    __VAR__##name *PI_##name = NULL;
 #define GETVAR(dll, name)\
-    name = (__VAR__##name *)dlsym(dll, #name);\
-    if (!name) {\
+    PI_##name = (__VAR__##name *)dlsym(dll, #name);\
+    if (!PI_##name) {\
         FATALERROR ("Cannot dlsym for " #name);\
         return -1;\
     }

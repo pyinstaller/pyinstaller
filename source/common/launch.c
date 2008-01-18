@@ -457,7 +457,7 @@ int setRuntimeOptions(void)
 			VS("%s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
-				*Py_VerboseFlag = 1;
+				*PI_Py_VerboseFlag = 1;
 			break;
 			case 'u':
 				unbuffered = 1;
@@ -470,10 +470,10 @@ int setRuntimeOptions(void)
 			break;
 #endif
 			case 's':
-				*Py_NoSiteFlag = 0;
+				*PI_Py_NoSiteFlag = 0;
 			break;
 			case 'O':
-				*Py_OptimizeFlag = 1;
+				*PI_Py_OptimizeFlag = 1;
 			break;
 			}
 		}
@@ -545,7 +545,7 @@ int startPython(int argc, char *argv[])
 
 	/* Start python. */
 	/* VS("Loading python\n"); */
-	*Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
+	*PI_Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
 	setRuntimeOptions();
 	PI_Py_SetProgramName(f_archivename); /*XXX*/
 	PI_Py_Initialize();
