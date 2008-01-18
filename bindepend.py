@@ -265,9 +265,21 @@ def Dependencies(lTOC):
       continue
     #print "I: analyzing", pth
     seen[string.upper(nm)] = 1
+    for lib, npth in selectImports(pth):
+        if seen.get(string.upper(lib),0):
+            continue
+        lTOC.append((lib, npth, 'BINARY'))
+
+  return lTOC
+
+def selectImports(pth):
+    """Return the dependencies of a binary that should be included.
+
+    Return a list of pairs (name, fullpath)
+    """
+    rv = []
     dlls = getImports(pth)
     for lib in dlls:
-        #print "I: found", lib
         if not iswin and not cygwin:
             npth = lib
             dir, lib = os.path.split(lib)
@@ -278,13 +290,12 @@ def Dependencies(lTOC):
         if excludesRe.search(npth):
             if 'libpython' not in npth and 'Python.framework' not in npth:
                 continue
-        if seen.get(string.upper(lib),0):
-            continue
         if npth:
-            lTOC.append((lib, npth, 'BINARY'))
+            rv.append((lib, npth))
         else:
             print "E: lib not found:", lib, "dependency of", pth
-  return lTOC
+
+    return rv
 
 def _getImports_ldd(pth):
     """Find the binary dependencies of PTH.
@@ -353,6 +364,12 @@ def getWindowsPath():
                 _bpath = [sysdir, sysdir2, windir]
         _bpath.extend(string.split(os.environ.get('PATH', ''), os.pathsep))
     return _bpath
+
+def fixOsxPaths(moduleName):
+    for name, lib in selectImports(moduleName):
+        dest = os.path.join("@executable_path", name)
+        cmd = "install_name_tool -change %s %s %s" % (lib, dest, moduleName)
+        os.system(cmd)
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:
