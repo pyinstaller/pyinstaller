@@ -1,4 +1,4 @@
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2007, Matteo Bertini
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -17,6 +17,10 @@
 
 print "test13 - Used to fail if _xmlplus is installed"
 
-import _elementtree
+import sys
+if sys.version_info[:2] >= (2, 5):
+    import _elementtree
+    print "test13 DONE"
+else:
+    print "Python 2.5 test13 skipped"
 
-print "test13 DONE"

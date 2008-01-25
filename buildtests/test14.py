@@ -1,4 +1,4 @@
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2007, Matteo Bertini
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -17,18 +17,22 @@
 
 print "test14 - Used to fail if _xmlplus is installed"
 
-import subprocess
+import sys
+if sys.version_info[:2] >= (2, 5):
+    import subprocess    
+    import xml.etree.ElementTree as ET
+    print "#"*50
+    print "xml.etree.ElementTree", dir(ET)
+    print "#"*50
+    import xml.etree.cElementTree as cET
 
-import xml.etree.ElementTree as ET
-print "#"*50
-print "xml.etree.ElementTree", dir(ET)
-print "#"*50
-import xml.etree.cElementTree as cET
+    pyexe = open("python_exe.build").read()
 
-pyexe = open("python_exe.build").read()
+    out = subprocess.Popen(pyexe + ' -c "import xml.etree.cElementTree as cET; print dir(cET)"',
+                           stdout=subprocess.PIPE, shell=True).stdout.read().strip()
+    assert str(dir(cET)) == out, (str(dir(cET)), out)
 
-out = subprocess.Popen(pyexe + ' -c "import xml.etree.cElementTree as cET; print dir(cET)"',
-                       stdout=subprocess.PIPE, shell=True).stdout.read().strip()
-assert str(dir(cET)) == out, (str(dir(cET)), out)
+    print "test14 DONE"
+else:
+    print "Python 2.5 test14 skipped"
 
-print "test14 DONE"

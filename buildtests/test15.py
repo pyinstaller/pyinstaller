@@ -1,4 +1,4 @@
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2007, Matteo Bertini
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -18,14 +18,18 @@
 print "test15 sys.getfilesystemencoding()"
 
 import sys
-import subprocess
-import email
+if sys.version_info[:2] >= (2, 5):
+    import subprocess
+    import email
 
-assert type(email.Header) == email.LazyImporter
+    assert type(email.Header) == email.LazyImporter
 
-pyexe = open("python_exe.build").read()
-out = subprocess.Popen(pyexe + ' -c "import sys; print sys.getfilesystemencoding()"',
-                       stdout=subprocess.PIPE, shell=True).stdout.read().strip()
-assert str(sys.getfilesystemencoding()) == out, (str(sys.getfilesystemencoding()), out)
+    pyexe = open("python_exe.build").read()
+    out = subprocess.Popen(pyexe + ' -c "import sys; print sys.getfilesystemencoding()"',
+                           stdout=subprocess.PIPE, shell=True).stdout.read().strip()
+    assert str(sys.getfilesystemencoding()) == out, (str(sys.getfilesystemencoding()), out)
 
-print "test15 DONE"
+    print "test15 DONE"
+else:
+    print "Python 2.5 test14 skipped"
+
