@@ -1067,8 +1067,11 @@ void removeOne(char *fnm, int pos, struct _finddata_t finfo)
 	strcat(fnm, finfo.name);
 	if ( finfo.attrib & _A_SUBDIR )
 		clear(fnm);
-	else 
-		remove(fnm);
+	else if (remove(fnm)) {
+        /* HACK: Possible concurrency issue... spin a little while */
+        Sleep(100);
+        remove(fnm);
+    }
 }
 void clear(const char *dir) 
 {
