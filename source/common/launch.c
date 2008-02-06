@@ -170,7 +170,6 @@ void mbvs(const char *fmt, ...)
 
 #endif /* _CONSOLE */
 
-
 int testTempPath(char *buff)
 {
 	char base[16];
@@ -193,11 +192,12 @@ int testTempPath(char *buff)
 	return 0;
 }
 
-void getTempPath(char *buff)
+int getTempPath(char *buff)
 {
 #ifdef WIN32
 	GetTempPath(MAX_PATH, buff);
-	testTempPath(buff);
+	if (testTempPath(buff))
+        return 1;
 #else
 	static const char *envname[] = {
 		"TMPDIR", "TEMP", "TMP", 0
@@ -212,16 +212,17 @@ void getTempPath(char *buff)
 		if (p) {
 			strcpy(buff, p);
 			if (testTempPath(buff))
-				return;
+				return 1;
 		}
 	}
 	for ( i=0; dirname[i]; i++ ) {
 		strcpy(buff, dirname[i]);
 		if (testTempPath(buff))
-			return;
+			return 1;
 	}
-	buff[0] = '\0';
 #endif
+	buff[0] = '\0';
+	return 0;
 }
 /*
  * Set up paths required by rest of this module
@@ -803,11 +804,10 @@ FILE *openTarget(char *path, char*name)
 	char fnm[_MAX_PATH+1];
 	strcpy(fnm, path);
 	strcat(fnm, name);
-	if (stat(fnm, &sbuf) == -1) {
-		VS("%s\n", fnm);
-		return fopen(fnm, "wb");
-	}
-	return NULL;
+	if (stat(fnm, &sbuf) == 0) {
+		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
+    }
+	return fopen(fnm, "wb");
 }
 /*
  * extract from the archive
@@ -823,7 +823,11 @@ int extract2fs(TOC *ptoc)
 	unsigned char *data = extract(ptoc);
 
 	if (!f_workpath) {
-		getTempPath(f_temppath);
+		if (!getTempPath(f_temppath))
+		{
+            FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
+            return -1;
+		}
 #ifdef WIN32
 		strcpy(f_temppathraw, f_temppath);
 		for ( p=f_temppath; *p; p++ )
@@ -832,10 +836,12 @@ int extract2fs(TOC *ptoc)
 #endif
 		f_workpath = f_temppath;
 	}
+	
 	out = openTarget(f_workpath, ptoc->name);
 
 	if (out == NULL)  {
 		FATALERROR("%s could not be extracted!\n", ptoc->name);
+		return -1;
 	}
 	else {
 		fwrite(data, ntohl(ptoc->ulen), 1, out);
