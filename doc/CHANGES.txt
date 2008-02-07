@@ -9,6 +9,7 @@ Changes since PyInstaller 1.3
  + Add import hooks for cElementTree (both native version and Python
    2.5 version)
  + Add import hooks per SQLAlchemy (thanks to Greg Copeland)
+ + Add import hook for gadfly.
  + Improve import hooks for PyGTK (thanks to Marco Bonifazi and foxx).
  + Add fix for the very annoying "MSVCRT71 could not be extracted" bug,
    which was caused by the DLL being packaged twice (thanks to Idris
@@ -28,7 +29,7 @@ Changes since PyInstaller 1.3
  + Under Python 2.4+, if an exception is raised while importing a module 
    inside a package, the module is now removed from the parent's
    namespace (to match the behaviour of Python itself).
-
+ 
 PyInstaller 1.3
 ---------------
  + Fix bug with user-provided icons disappearing from built executables
