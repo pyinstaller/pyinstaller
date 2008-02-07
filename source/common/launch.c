@@ -170,35 +170,49 @@ void mbvs(const char *fmt, ...)
 
 #endif /* _CONSOLE */
 
+
+#ifdef WIN32
+
+int getTempPath(char *buff)
+{
+    int i;
+    char *ret;
+    char prefix[16];
+
+    GetTempPath(MAX_PATH, buff);
+    sprintf(prefix, "_MEI%d", getpid());
+
+    // Windows does not have a race-free function to create a temporary
+    // directory. Thus, we rely on _tempnam, and simply try several times
+    // to avoid stupid race conditions.
+    for (i=0;i<5;i++) {
+        ret = _tempnam(buff, prefix);
+        if (mkdir(ret) == 0) {
+            strcpy(buff, ret);
+            strcat(buff, "\\");
+            free(ret);
+            return 1;
+        }
+        free(ret);
+    }
+    return 0;
+}
+
+#else
+
 int testTempPath(char *buff)
 {
-	char base[16];
-	int n;
-
-	n = strlen(buff);
-	if ( buff[n-1] == '/' || buff[n-1] == '\\' )
-		sprintf(base, "_MEI%d", getpid());
-	else
-		sprintf(base, "%s_MEI%d", SEP, getpid());
-	strcat(buff, base);
-#ifdef WIN32
-	if (mkdir(buff) == 0) {
-#else
-	if (mkdir(buff, 0700) == 0) {
-#endif
-		strcat(buff, SEP);
-		return 1;
-	}
-	return 0;
+	strcat(buff, "/_MEIXXXXXX");
+    if (mkdtemp(buff))
+    {
+        strcat(buff, "/");
+        return 1;
+    }
+    return 0;   
 }
 
 int getTempPath(char *buff)
 {
-#ifdef WIN32
-	GetTempPath(MAX_PATH, buff);
-	if (testTempPath(buff))
-        return 1;
-#else
 	static const char *envname[] = {
 		"TMPDIR", "TEMP", "TMP", 0
 	};
@@ -220,10 +234,11 @@ int getTempPath(char *buff)
 		if (testTempPath(buff))
 			return 1;
 	}
-#endif
-	buff[0] = '\0';
-	return 0;
+    return 0;
 }
+
+#endif
+
 /*
  * Set up paths required by rest of this module
  * Sets f_archivename, f_homepath
