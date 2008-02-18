@@ -25,8 +25,11 @@ cygwin = sys.platform == 'cygwin'
 configfile = os.path.join(HOME, 'config.dat')
 try:
     config = eval(open(configfile, 'r').read())
-except IOError:
+except IOError, SyntaxError:
+    # IOerror: file not present
+    # SyntaxError: invalid file (platform change?)
     config = {'useELFEXE':1}    # if not set by Make.py we can assume Windows
+    
 
 # Save Python version, to detect and avoid conflicts
 config["pythonVersion"] = sys.version
