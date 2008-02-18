@@ -275,9 +275,9 @@ class Archive:
 
 class DummyZlib:
     def decompress(self, data):
-        return data
+        raise RuntimeError, "zlib required but cannot be imported"
     def compress(self, data, lvl):
-        return data
+        raise RuntimeError, "zlib required but cannot be imported"
 
 import iu
 ##############################################################
