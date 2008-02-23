@@ -27,4 +27,4 @@ while 1:
     sys.stdout.write(data)
     if 'Q' in data:
         break
-print "test4 - done"
+print "test4i - done"

@@ -54,7 +54,7 @@ def clean():
         except OSError, e:
             print e
 
-def runtests(sources=None):
+def runtests(tests=None):
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
     print "*"*len(info)
     print info
@@ -62,13 +62,6 @@ def runtests(sources=None):
     build_python = open("python_exe.build", "w")
     build_python.write(sys.executable)
     build_python.close()
-    alltests = glob.glob('test*[0-9].py')
-    if not sources:
-        tests = alltests
-    else:
-        tests = []
-        for part in sources:
-            tests += [t for t in alltests if part in t and t not in tests]
     tests.sort(key=lambda x: (len(x), x)) # test1 < test10
     path = os.environ["PATH"]
     for src in tests:
@@ -88,10 +81,16 @@ def runtests(sources=None):
         print "################## FINISHING TEST %s ################################" % src
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        clean()
-        runtests()
-    if '--clean' in sys.argv:
-        clean()
-    if '--run' in sys.argv:
-        runtests(sys.argv[2:])
+    normal_tests = glob.glob('test*[0-9].py')
+    interactive_tests = glob.glob('test*[0-9]i.py')
+    args = sys.argv[1:]
+    
+    if "-i" in args:
+        print "Running interactive tests"
+        tests = interactive_tests
+    else:
+        print "Running normal tests"
+        tests = normal_tests
+
+    clean()
+    runtests(tests)
