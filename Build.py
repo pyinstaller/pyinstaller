@@ -323,8 +323,10 @@ def cacheDigest(fnm):
     digest = md5.new(data).digest()
     return digest
 
-def checkCache(fnm, strip, upx):
-    if not strip and not upx:
+def checkCache(fnm, strip, upx, fix_paths=1):
+    # On darwin a cache is required anyway to keep the libaries
+    # with relative install names
+    if not strip and not upx and sys.platform != 'darwin':
         return fnm
     if strip:
         strip = 1
@@ -349,6 +351,7 @@ def checkCache(fnm, strip, upx):
     basenm = os.path.normcase(os.path.basename(fnm))
     digest = cacheDigest(fnm)
     cachedfile = os.path.join(cachedir, basenm)
+    cmd = None
     if cache_index.has_key(basenm):
         if digest != cache_index[basenm]:
             os.remove(cachedfile)
@@ -356,13 +359,17 @@ def checkCache(fnm, strip, upx):
             return cachedfile
     if upx:
         if strip:
-            fnm = checkCache(fnm, 1, 0)
+            fnm = checkCache(fnm, 1, 0, fix_paths=0)
         cmd = "upx --best -q \"%s\"" % cachedfile
     else:
-        cmd = "strip \"%s\"" % cachedfile
+        if strip:
+            cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
-    os.system(cmd)
+    if cmd: os.system(cmd)
+
+    if sys.platform == 'darwin' and fix_paths:
+        bindepend.fixOsxPaths(cachedfile)
 
     # update cache index
     cache_index[basenm] = digest

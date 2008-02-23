@@ -41,13 +41,8 @@ print "I: computing EXE_dependencies"
 python = sys.executable
 if not iswin:
     while os.path.islink(python):
-        python = os.readlink(python)
-        if not os.path.isabs(python):
-            for dir in string.split(os.environ['PATH'], os.pathsep):
-                test = os.path.join(dir, python)
-                if os.path.exists(test):
-                    python = test
-                    break
+        python = os.path.join(os.path.split(python)[0], os.readlink(python))
+
 toc = bindepend.Dependencies([('', python, '')])
 if iswin and sys.version[:3] == '1.5':
     import exceptions
