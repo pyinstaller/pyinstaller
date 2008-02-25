@@ -64,6 +64,7 @@ def runtests(tests=None):
     build_python.close()
     tests.sort(key=lambda x: (len(x), x)) # test1 < test10
     path = os.environ["PATH"]
+    counter = dict(passed=[],failed=[])
     for src in tests:
         print
         print "################## BUILDING TEST %s #################################" % src
@@ -77,9 +78,13 @@ def runtests(tests=None):
         print
         res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
         os.environ["PATH"] = path
-        assert res == 0, "%s Test error!" % src
-        print "################## FINISHING TEST %s ################################" % src
-
+        if res == 0:
+            counter["passed"].append(src)
+            print "################## FINISHING TEST %s ################################" % src
+        else:
+            counter["failed"].append(src)
+            print "#################### TEST %s FAILED #################################" % src
+    print counter
 if __name__ == '__main__':
     normal_tests = glob.glob('test*[0-9].py')
     interactive_tests = glob.glob('test*[0-9]i.py')
