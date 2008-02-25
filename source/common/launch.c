@@ -371,10 +371,12 @@ int loadPython()
 
 	/* Determine the path */
 #ifdef __APPLE__
-	sprintf(dllpath, "%sPython", f_homepath);
+	sprintf(dllpath, "%sPython",
+		f_workpath ? f_workpath : f_homepath);
 #else
-	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0", f_homepath,
-	   ntohl(f_cookie.pyvers) / 10, ntohl(f_cookie.pyvers) % 10);
+	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0",
+		f_workpath ? f_workpath : f_homepath,
+		ntohl(f_cookie.pyvers) / 10, ntohl(f_cookie.pyvers) % 10);
 #endif
 
 	/* Load the DLL */
