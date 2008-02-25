@@ -281,15 +281,26 @@ def selectImports(pth):
     dlls = getImports(pth)
     for lib in dlls:
         if not iswin and not cygwin:
+            # plain win case
             npth = lib
             dir, lib = os.path.split(lib)
             if excludes.get(dir,0):
                 continue
         else:
+            # all other platforms
             npth = getfullnameof(lib, os.path.dirname(pth))
+        
+        # now npth is a candidate lib
+        # check again for excludes but with regex FIXME: split the list
         if excludesRe.search(npth):
             if 'libpython' not in npth and 'Python.framework' not in npth:
+                # skip libs not containing (libpython or Python.framework)
+                #print "I: skipping", npth
                 continue
+            else:
+                #print "I: inserting", npth
+                pass
+                
         if npth:
             rv.append((lib, npth))
         else:
