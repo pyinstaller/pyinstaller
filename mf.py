@@ -24,7 +24,10 @@ import sys, string, os, imp, marshal, dircache
 # Note that they replace the string in sys.path,
 # but str(sys.path[n]) should yield the original string.
 
-STRINGTYPE = type('')
+try:
+    STRINGTYPE = basestring
+except NameError:
+    STRINGTYPE = type("")
 
 if not os.environ.has_key('PYTHONCASEOK') and sys.version_info >= (2, 1):
     def caseOk(filename):
@@ -222,7 +225,7 @@ class PathImportDirector(ImportDirector):
     def getmod(self, nm):
         mod = None
         for thing in self.path:
-            if type(thing) is STRINGTYPE:
+            if isinstance(thing, STRINGTYPE):
                 owner = self.shadowpath.get(thing, -1)
                 if owner == -1:
                     owner = self.shadowpath[thing] = self.makeOwner(thing)
