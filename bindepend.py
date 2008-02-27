@@ -73,6 +73,7 @@ excludes = {'KERNEL32.DLL':1,
       'PSAPI.DLL':1,
       'MSVCP80.DLL':1,
       'MSVCR80.DLL':1,
+      # regex excludes
       '^/usr/lib':1,
       '^/lib':1,
       '^/lib/tls':1,
@@ -295,10 +296,10 @@ def selectImports(pth):
         if excludesRe.search(npth):
             if 'libpython' not in npth and 'Python.framework' not in npth:
                 # skip libs not containing (libpython or Python.framework)
-                #print "I: skipping", npth
+                #print "I: skipping %20s <- %s" % (npth, pth)
                 continue
             else:
-                #print "I: inserting", npth
+                #print "I: inserting %20s <- %s" % (npth, pth)
                 pass
                 
         if npth:
@@ -383,7 +384,8 @@ def fixOsxPaths(moduleName):
         os.system(cmd)
 
 if __name__ == "__main__":
-  if len(sys.argv) < 2:
-    print "Usage: python %s BINARYFILE" % sys.argv[0]
-    sys.exit(0)
-  print getImports(sys.argv[1])
+    if len(sys.argv) < 2:
+        print "Usage: python %s BINARYFILE" % sys.argv[0]
+        sys.exit(0)
+    print getImports(sys.argv[1])
+
