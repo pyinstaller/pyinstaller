@@ -34,6 +34,7 @@ import time
 import string
 import sys
 import re
+from glob import glob
 
 seen = {}
 _bpath = None
@@ -382,6 +383,55 @@ def fixOsxPaths(moduleName):
         dest = os.path.join("@executable_path", name)
         cmd = "install_name_tool -change %s %s %s" % (lib, dest, moduleName)
         os.system(cmd)
+
+def findLibrary(name):
+    """Look for a library in the system.
+
+    Emulate the algorithm used by dlopen.
+
+    `name`must include the prefix, e.g. ``libpython2.4.so``
+    """
+    assert sys.platform == 'linux2', "Current implementation for Linux only"
+
+    lib = None
+
+    # Look in the LD_LIBRARY_PATH
+    lp = os.environ.get('LD_LIBRARY_PATH')
+    if lp:
+        for path in string.split(lp, os.pathsep):
+            libs = glob(os.path.join(path, name + '*'))
+            if libs:
+                lib = libs[0]
+                break
+
+    # Look in /etc/ld.so.cache
+    if lib is None:
+        expr = r'/[^\(\)\s]*%s\.[^\(\)\s]*' % re.escape(name)
+        m = re.search(expr, os.popen('/sbin/ldconfig -p 2>/dev/null').read())
+        if m:
+            lib = m.group(0)
+
+    # Look in the known safe paths
+    if lib is None:
+        for path in ['/lib', '/usr/lib']:
+            libs = glob(os.path.join(path, name + '*'))
+            if libs:
+                lib = libs[0]
+                break
+
+    # give up :(
+    if lib is None:
+        return None
+
+    # Resolve the file name into the soname
+    dir, file = os.path.split(lib)
+    return os.path.join(dir, getSoname(lib))
+
+def getSoname(filename):
+    """Return the soname of a library."""
+    cmd = "objdump -p -j .dynamic 2>/dev/null " + filename
+    m = re.search(r'\s+SONAME\s+([^\s]+)', os.popen(cmd).read())
+    if m: return m.group(1)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

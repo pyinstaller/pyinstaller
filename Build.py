@@ -225,6 +225,7 @@ class Analysis(Target):
                     else:
                         pure.append((modnm, fnm, 'PYMODULE'))
         binaries.extend(bindepend.Dependencies(binaries))
+        self.fixMissingPythonLib(binaries)
         scripts[1:1] = rthooks
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
@@ -247,6 +248,28 @@ class Analysis(Target):
             return 1
         print self.out, "no change!"
         return 0
+
+    def fixMissingPythonLib(self, binaries):
+        """Add the Python library if missing from the binaries.
+
+        Some linux distributions (e.g. debian-based) statically build the
+        Python executable to the libpython, so bindepend doesn't include
+        it in its output.
+        """
+        if sys.platform != 'linux2': return
+
+        name = 'libpython%d.%d.so' % sys.version_info[:2]
+        for (nm, fnm, typ) in binaries:
+            if typ == 'BINARY' and name in fnm:
+                # lib found
+                return
+
+        lib = bindepend.findLibrary(name)
+        if lib is None:
+            raise IOError("Python library not found!")
+
+        binaries.append((os.path.split(lib)[1], lib, 'BINARY'))
+
 
 def findRTHook(modnm):
     hooklist = rthooks.get(modnm)
