@@ -54,7 +54,7 @@ def clean():
         except OSError, e:
             print e
 
-def runtests(tests=None):
+def runtests(sources=None):
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
     print "*"*len(info)
     print info
