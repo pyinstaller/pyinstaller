@@ -62,6 +62,13 @@ def runtests(tests=None):
     build_python = open("python_exe.build", "w")
     build_python.write(sys.executable)
     build_python.close()
+    alltests = glob.glob('test*[0-9].py')
+    if not sources:
+        tests = alltests
+    else:
+        tests = []
+        for part in sources:
+            tests += [t for t in alltests if part in t and t not in tests]
     tests.sort(key=lambda x: (len(x), x)) # test1 < test10
     path = os.environ["PATH"]
     counter = dict(passed=[],failed=[])
@@ -85,6 +92,7 @@ def runtests(tests=None):
             counter["failed"].append(src)
             print "#################### TEST %s FAILED #################################" % src
     print counter
+
 if __name__ == '__main__':
     normal_tests = glob.glob('test*[0-9].py')
     interactive_tests = glob.glob('test*[0-9]i.py')
