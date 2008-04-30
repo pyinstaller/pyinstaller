@@ -25,8 +25,11 @@ cygwin = sys.platform == 'cygwin'
 configfile = os.path.join(HOME, 'config.dat')
 try:
     config = eval(open(configfile, 'r').read())
-except IOError:
+except IOError, SyntaxError:
+    # IOerror: file not present
+    # SyntaxError: invalid file (platform change?)
     config = {'useELFEXE':1}    # if not set by Make.py we can assume Windows
+    
 
 # Save Python version, to detect and avoid conflicts
 config["pythonVersion"] = sys.version
@@ -38,13 +41,8 @@ print "I: computing EXE_dependencies"
 python = sys.executable
 if not iswin:
     while os.path.islink(python):
-        python = os.readlink(python)
-        if not os.path.isabs(python):
-            for dir in string.split(os.environ['PATH'], os.pathsep):
-                test = os.path.join(dir, python)
-                if os.path.exists(test):
-                    python = test
-                    break
+        python = os.path.join(os.path.split(python)[0], os.readlink(python))
+
 toc = bindepend.Dependencies([('', python, '')])
 if iswin and sys.version[:3] == '1.5':
     import exceptions
@@ -241,4 +239,4 @@ outf = open(configfile, 'w')
 import pprint
 pprint.pprint(config, outf)
 outf.close()
-
+print "I: config.dat generation done!"

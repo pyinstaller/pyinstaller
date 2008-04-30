@@ -42,29 +42,42 @@
 #include <netinet/in.h>
 #endif
 
-/* On Windows, we use dynamic loading so one binary 
+/* We use dynamic loading so one binary
    can be used with (nearly) any Python version.
-   This is the cruft necessary to do Windows dynamic loading
+   This is the cruft necessary to do dynamic loading
 */
 
-#ifdef WIN32
 /*
  * These macros used to define variables to hold dynamically accessed entry 
  * points. These are declared 'extern' in this header, and defined fully later.
  */
+#ifdef WIN32
+
 #define EXTDECLPROC(result, name, args)\
     typedef result (__cdecl *__PROC__##name) args;\
-    extern __PROC__##name name;
+    extern __PROC__##name PI_##name;
 
 #define EXTDECLVAR(vartyp, name)\
     typedef vartyp __VAR__##name;\
-    extern __VAR__##name *name;
+    extern __VAR__##name *PI_##name;
 
-/* 
+#else
+
+#define EXTDECLPROC(result, name, args)\
+    typedef result (*__PROC__##name) args;\
+    extern __PROC__##name PI_##name;
+
+#define EXTDECLVAR(vartyp, name)\
+    typedef vartyp __VAR__##name;\
+    extern __VAR__##name *PI_##name;
+
+#endif /* WIN32 */
+
+/*
  * These types and macros are included from the Python header file object.h
  * They are needed to do very basic Python functionality.
  */
-typedef _typeobject;
+/*typedef _typeobject;*/
 typedef struct _object {
     int ob_refcnt; 
     struct _typeobject *ob_type;
@@ -125,10 +138,8 @@ EXTDECLVAR(int, Py_OptimizeFlag);
 EXTDECLVAR(int, Py_VerboseFlag);
 EXTDECLPROC(int, Py_Initialize, (void));
 EXTDECLPROC(int, Py_Finalize, (void));
-EXTDECLPROC(PyObject *, Py_CompileString, (char *, char *, int));
 EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
 EXTDECLPROC(int, PyRun_SimpleString, (char *));
-EXTDECLPROC(int, PySys_SetArgv, (int, char **));
 EXTDECLPROC(void, Py_SetProgramName, (char *));
 EXTDECLPROC(PyObject *, PyImport_ImportModule, (char *));
 EXTDECLPROC(PyObject *, PyImport_AddModule, (char *));
@@ -136,55 +147,65 @@ EXTDECLPROC(int, PyObject_SetAttrString, (PyObject *, char *, PyObject *));
 EXTDECLPROC(PyObject *, PyList_New, (int));
 EXTDECLPROC(int, PyList_Append, (PyObject *, PyObject *));
 EXTDECLPROC(PyObject *, Py_BuildValue, (char *, ...));
-EXTDECLPROC(PyObject *, PyFile_FromString, (char *, char *));
 EXTDECLPROC(PyObject *, PyString_FromStringAndSize, (const char *, int));
 EXTDECLPROC(PyObject *, PyObject_CallFunction, (PyObject *, char *, ...));
 EXTDECLPROC(PyObject *, PyModule_GetDict, (PyObject *));
 EXTDECLPROC(PyObject *, PyDict_GetItemString, (PyObject *, char *));
-EXTDECLPROC(void, PyErr_Clear, () );
-EXTDECLPROC(PyObject *, PyErr_Occurred, () );
-EXTDECLPROC(void, PyErr_Print, () );
-EXTDECLPROC(PyObject *, PyObject_CallObject, (PyObject *, PyObject*) );
-EXTDECLPROC(PyObject *, PyObject_CallMethod, (PyObject *, char *, char *, ...) );
-EXTDECLPROC(void, PySys_AddWarnOption, (char *)); 
-EXTDECLPROC(void, PyEval_InitThreads, () );
+EXTDECLPROC(void, PyErr_Clear, (void) );
+EXTDECLPROC(PyObject *, PyErr_Occurred, (void) );
+EXTDECLPROC(void, PyErr_Print, (void) );
+EXTDECLPROC(void, PySys_AddWarnOption, (char *));
+EXTDECLPROC(void, PyEval_InitThreads, (void) );
 EXTDECLPROC(void, PyEval_AcquireThread, (PyThreadState *) );
 EXTDECLPROC(void, PyEval_ReleaseThread, (PyThreadState *) );
-EXTDECLPROC(void, PyEval_AcquireLock, (void) );
-EXTDECLPROC(void, PyEval_ReleaseLock, (void) );
 EXTDECLPROC(PyThreadState *, PyThreadState_Swap, (PyThreadState *) );
-EXTDECLPROC(PyThreadState *, PyThreadState_New, (PyInterpreterState *) );
-EXTDECLPROC(void, PyThreadState_Clear, (PyThreadState *) );
-EXTDECLPROC(void, PyThreadState_Delete, (PyThreadState *) );
-EXTDECLPROC(PyInterpreterState *, PyInterpreterState_New, () );
-EXTDECLPROC(PyThreadState *, Py_NewInterpreter, () );
+EXTDECLPROC(PyThreadState *, Py_NewInterpreter, (void) );
 EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
-EXTDECLPROC(void, PyErr_Print, () );
 EXTDECLPROC(long, PyInt_AsLong, (PyObject *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
 /* Macros to declare and get Python entry points in the C file.
  * Typedefs '__PROC__...' have been done above
  */
+#ifdef WIN32
+
 #define DECLPROC(name)\
-    __PROC__##name name = NULL;
+    __PROC__##name PI_##name = NULL;
 #define GETPROC(dll, name)\
-    name = (__PROC__##name)GetProcAddress (dll, #name);\
-    if (!name) {\
+    PI_##name = (__PROC__##name)GetProcAddress (dll, #name);\
+    if (!PI_##name) {\
         FATALERROR ("Cannot GetProcAddress for " #name);\
         return -1;\
     }
 #define DECLVAR(name)\
-    __VAR__##name *name = NULL;
+    __VAR__##name *PI_##name = NULL;
 #define GETVAR(dll, name)\
-    name = (__VAR__##name *)GetProcAddress (dll, #name);\
-    if (!name) {\
+    PI_##name = (__VAR__##name *)GetProcAddress (dll, #name);\
+    if (!PI_##name) {\
         FATALERROR ("Cannot GetProcAddress for " #name);\
         return -1;\
     }
+
 #else
-#include <Python.h>
-#endif /* WIN32 dynamic load cruft */
+
+#define DECLPROC(name)\
+    __PROC__##name PI_##name = NULL;
+#define GETPROC(dll, name)\
+    PI_##name = (__PROC__##name)dlsym (dll, #name);\
+    if (!PI_##name) {\
+        FATALERROR ("Cannot dlsym for " #name);\
+        return -1;\
+    }
+#define DECLVAR(name)\
+    __VAR__##name *PI_##name = NULL;
+#define GETVAR(dll, name)\
+    PI_##name = (__VAR__##name *)dlsym(dll, #name);\
+    if (!PI_##name) {\
+        FATALERROR ("Cannot dlsym for " #name);\
+        return -1;\
+    }
+
+#endif /* WIN32 */
 
 /*
  * #defines

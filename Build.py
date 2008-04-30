@@ -86,7 +86,7 @@ def build(spec):
             BUILDPATH = os.path.join(SPECPATH, bpath)
     if not os.path.exists(BUILDPATH):
         os.mkdir(BUILDPATH)
-    exec open(spec, 'r').read()+'\n'
+    execfile(spec)
 
 def mtime(fnm):
     try:
@@ -94,12 +94,16 @@ def mtime(fnm):
     except:
         return 0
 
+def absnormpath(apath):
+    return os.path.abspath(os.path.normpath(apath))
+
 class Target:
     invcnum = 0
     def __init__(self):
         self.invcnum = Target.invcnum
-        Target.invcnum = Target.invcnum + 1
-        self.out = os.path.join(BUILDPATH, 'out%d.toc' % self.invcnum)
+        Target.invcnum += 1
+        self.out = os.path.join(BUILDPATH, 'out%s%d.toc' % (self.__class__.__name__,
+                                                            self.invcnum))
         self.dependencies = TOC()
     def __postinit__(self):
         print "checking %s" % (self.__class__.__name__,)
@@ -116,7 +120,7 @@ class Analysis(Target):
         self.pathex = []
         if pathex:
             for path in pathex:
-                self.pathex.append(os.path.abspath(os.path.normpath(path)))
+                self.pathex.append(absnormpath(path))
         self.hookspath = hookspath
         self.excludes = excludes
         self.scripts = TOC()
@@ -127,54 +131,57 @@ class Analysis(Target):
         outnm = os.path.basename(self.out)
         if last_build == 0:
             print "building %s because %s non existent" % (self.__class__.__name__, outnm)
-            return 1
+            return True
         for fnm in self.inputs:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
-                return 1
+                return True
         try:
             inputs, pathex, hookspath, excludes, scripts, pure, binaries = eval(open(self.out, 'r').read())
         except:
             print "building because %s disappeared" % outnm
-            return 1
+            return True
         if inputs != self.inputs:
             print "building %s because inputs changed" % outnm
-            return 1
+            return True
         if pathex != self.pathex:
             print "building %s because pathex changed" % outnm
-            return 1
+            return True
         if hookspath != self.hookspath:
             print "building %s because hookspath changed" % outnm
-            return 1
+            return True
         if excludes != self.excludes:
             print "building %s because excludes changed" % outnm
-            return 1
+            return True
         for (nm, fnm, typ) in scripts:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
-                return 1
+                return True
         for (nm, fnm, typ) in pure:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
-                return 1
+                return True
             elif mtime(fnm[:-1]) > last_build:
                 print "building because %s changed" % fnm[:-1]
-                return 1
+                return True
         for (nm, fnm, typ) in binaries:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
-                return 1
+                return True
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
-        return 0
+        return False
     def assemble(self):
         print "running Analysis", os.path.basename(self.out)
         paths = self.pathex
         for i in range(len(paths)):
-            paths[i] = os.path.abspath(os.path.normpath(paths[i]))
-        dirs = {}
-        pynms = []
+            # FIXME: isn't self.pathex already norm-abs-pathed?
+            paths[i] = absnormpath(paths[i])
+        ###################################################
+        # Scan inputs and prepare:
+        dirs = {}  # input directories 
+        pynms = [] # python filenames with no extension
         for script in self.inputs:
             if not os.path.exists(script):
                 print "Analysis: script %s not found!" % script
@@ -182,22 +189,27 @@ class Analysis(Target):
             d, base = os.path.split(script)
             if not d:
                 d = os.getcwd()
-            d = os.path.abspath(os.path.normpath(d))
+            d = absnormpath(d)
             pynm, ext = os.path.splitext(base)
             dirs[d] = 1
             pynms.append(pynm)
+        ###################################################
+        # Initialize analyzer and analyze scripts
         analyzer = mf.ImportTracker(dirs.keys()+paths, self.hookspath, self.excludes)
         #print analyzer.path
-        scripts = []
+        scripts = [] # will contain scripts to bundle
         for i in range(len(self.inputs)):
             script = self.inputs[i]
             print "Analyzing:", script
             analyzer.analyze_script(script)
             scripts.append((pynms[i], script, 'PYSOURCE'))
-        pure = []
-        binaries = []
-        rthooks = []
+        ###################################################
+        # Fills pure, binaries and rthookcs lists to TOC
+        pure = []     # pure python modules
+        binaries = [] # binaries to bundle
+        rthooks = []  # rthooks if needed
         for modnm, mod in analyzer.modules.items():
+            # FIXME: why can we have a mod == None here?
             if mod is not None:
                 hooks = findRTHook(modnm)  #XXX
                 if hooks:
@@ -213,11 +225,12 @@ class Analysis(Target):
                     else:
                         pure.append((modnm, fnm, 'PYMODULE'))
         binaries.extend(bindepend.Dependencies(binaries))
+        self.fixMissingPythonLib(binaries)
         scripts[1:1] = rthooks
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
-        try:
+        try: # read .toc
             oldstuff = eval(open(self.out, 'r').read())
         except:
             oldstuff = None
@@ -235,6 +248,28 @@ class Analysis(Target):
             return 1
         print self.out, "no change!"
         return 0
+
+    def fixMissingPythonLib(self, binaries):
+        """Add the Python library if missing from the binaries.
+
+        Some linux distributions (e.g. debian-based) statically build the
+        Python executable to the libpython, so bindepend doesn't include
+        it in its output.
+        """
+        if sys.platform != 'linux2': return
+
+        name = 'libpython%d.%d.so' % sys.version_info[:2]
+        for (nm, fnm, typ) in binaries:
+            if typ == 'BINARY' and name in fnm:
+                # lib found
+                return
+
+        lib = bindepend.findLibrary(name)
+        if lib is None:
+            raise IOError("Python library not found!")
+
+        binaries.append((os.path.split(lib)[1], lib, 'BINARY'))
+
 
 def findRTHook(modnm):
     hooklist = rthooks.get(modnm)
@@ -311,8 +346,10 @@ def cacheDigest(fnm):
     digest = md5.new(data).digest()
     return digest
 
-def checkCache(fnm, strip, upx):
-    if not strip and not upx:
+def checkCache(fnm, strip, upx, fix_paths=1):
+    # On darwin a cache is required anyway to keep the libaries
+    # with relative install names
+    if not strip and not upx and sys.platform != 'darwin':
         return fnm
     if strip:
         strip = 1
@@ -337,6 +374,7 @@ def checkCache(fnm, strip, upx):
     basenm = os.path.normcase(os.path.basename(fnm))
     digest = cacheDigest(fnm)
     cachedfile = os.path.join(cachedir, basenm)
+    cmd = None
     if cache_index.has_key(basenm):
         if digest != cache_index[basenm]:
             os.remove(cachedfile)
@@ -344,13 +382,17 @@ def checkCache(fnm, strip, upx):
             return cachedfile
     if upx:
         if strip:
-            fnm = checkCache(fnm, 1, 0)
+            fnm = checkCache(fnm, 1, 0, fix_paths=0)
         cmd = "upx --best -q \"%s\"" % cachedfile
     else:
-        cmd = "strip \"%s\"" % cachedfile
+        if strip:
+            cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
-    os.system(cmd)
+    if cmd: os.system(cmd)
+
+    if sys.platform == 'darwin' and fix_paths:
+        bindepend.fixOsxPaths(cachedfile)
 
     # update cache index
     cache_index[basenm] = digest

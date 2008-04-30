@@ -1,13 +1,14 @@
-a = Analysis(['../support/_mountzlib.py', 'test4.py'],
+import os
+
+a = Analysis(['../support/_mountzlib.py', 'test12.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
-          [('u', '', 'OPTION')],
           exclude_binaries=1,
-          name='buildtest4/test4.exe',
+          name='test12.exe',
           debug=0,
           console=1)
 coll = COLLECT( exe,
                a.binaries,
-               name='disttest4')
+               name='disttest12')

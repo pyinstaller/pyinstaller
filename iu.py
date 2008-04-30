@@ -44,6 +44,12 @@ except AttributeError:
 
 STRINGTYPE = type('')
 
+class OwnerError(IOError):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return "<OwnerError %s>" % self.msg
+
 class Owner:
     def __init__(self, path):
         self.path = path
@@ -56,7 +62,7 @@ class DirOwner(Owner):
         if path == '':
             path = _os_getcwd()
         if not pathisdir(path):
-            raise ValueError, "%s is not a directory" % path
+            raise OwnerError("%s is not a directory" % path)
         Owner.__init__(self, path)
     def getmod(self, nm, getsuffixes=imp.get_suffixes, loadco=marshal.loads, newmod=imp.new_module):
         pth =  _os_path_join(self.path, nm)
@@ -69,8 +75,8 @@ class DirOwner(Owner):
                 attempt = pth+ext
                 try:
                     st = _os_stat(attempt)
-                except:
-                    pass
+                except OSError, e:
+                    assert e.errno == 2 #[Errno 2] No such file or directory
                 else:
                     if typ == imp.C_EXTENSION:
                         fp = open(attempt, 'rb')
@@ -164,8 +170,8 @@ class RegistryImportDirector(ImportDirector):
                 try:
                     #hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_ALL_ACCESS)
                     hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_READ)
-                except:
-                    pass
+                except Exception, e:
+                    print "FIXME: RegOpenKeyEx Exception", e
                 else:
                     numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
                     for i in range(numsubkeys):
@@ -228,7 +234,7 @@ class PathImportDirector(ImportDirector):
                 # this may cause an import, which may cause recursion
                 # hence the protection
                 owner = klass(path)
-            except:
+            except OwnerError, e:
                 pass
             else:
                 break
@@ -246,6 +252,12 @@ def getDescr(fnm):
 # ie, the builtin import
 
 UNTRIED = -1
+
+class ImportManagerException(Exception):
+    def __init__(self, args):
+        self.args = args
+    def __repr__(self):
+        return "<%s: %s>" % (self.__name__, self.args)
 
 class ImportManager:
     # really the equivalent of builtin import
@@ -273,7 +285,7 @@ class ImportManager:
         __builtin__.reload = self.reloadHook
     def importHook(self, name, globals=None, locals=None, fromlist=None, level=-1):
         # first see if we could be importing a relative name
-        #print "importHook(%s, %s, locals, %s)" % (name, globals['__name__'], fromlist)
+        #print "importHook(%s, %s, locals, %s)" % (name, getattr(globals, '__name__', None), fromlist)
         _sys_modules_get = sys.modules.get
         contexts = [None]
         if globals and level == -1:
@@ -312,7 +324,9 @@ class ImportManager:
                 if mod is UNTRIED:
                     try:
                         mod = _self_doimport(nm, ctx, fqname)
-                    except:
+                    except Exception, e:
+                        print "FIXME: _self_doimport %r" % e,
+                        print " nm='%s' ctx='%s' fqname='%s'" % (nm, ctx, fqname)
                         if threaded:
                             self._release()
                         raise
@@ -356,8 +370,8 @@ class ImportManager:
                         self._acquire()
                     try:
                         mod = self.doimport(nm, ctx, ctx+'.'+nm)
-                    except:
-                        pass
+                    except Exception, e:
+                        print "FIXME: self.doimport Exception", e
                     if threaded:
                         self._release()
         #print "importHook done with %s %s %s (case 3)" % (name, globals['__name__'], fromlist)

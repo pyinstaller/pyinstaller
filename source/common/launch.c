@@ -34,6 +34,7 @@
 #else
  #include <unistd.h>
  #include <fcntl.h>
+ #include <dlfcn.h>
  #include <dirent.h>
 #endif
 #include <sys/types.h>
@@ -42,7 +43,7 @@
 #ifndef NOZLIB
 #include "zlib.h"
 #endif
-#ifdef WIN32
+
 /*
  * Python Entry point declarations (see macros in launch.h).
  */
@@ -51,10 +52,8 @@ DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
 DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
-DECLPROC(Py_CompileString);
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
-DECLPROC(PySys_SetArgv);
 DECLPROC(Py_SetProgramName);
 DECLPROC(PyImport_ImportModule);
 DECLPROC(PyImport_AddModule);
@@ -62,7 +61,6 @@ DECLPROC(PyObject_SetAttrString);
 DECLPROC(PyList_New);
 DECLPROC(PyList_Append);
 DECLPROC(Py_BuildValue);
-DECLPROC(PyFile_FromString);
 DECLPROC(PyString_FromStringAndSize);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyModule_GetDict);
@@ -70,24 +68,15 @@ DECLPROC(PyDict_GetItemString);
 DECLPROC(PyErr_Clear);
 DECLPROC(PyErr_Occurred);
 DECLPROC(PyErr_Print);
-DECLPROC(PyObject_CallObject);
-DECLPROC(PyObject_CallMethod);
 DECLPROC(PySys_AddWarnOption);
 DECLPROC(PyEval_InitThreads);
 DECLPROC(PyEval_AcquireThread);
 DECLPROC(PyEval_ReleaseThread);
-DECLPROC(PyEval_AcquireLock);
-DECLPROC(PyEval_ReleaseLock);
 DECLPROC(PyThreadState_Swap);
-DECLPROC(PyThreadState_New);
-DECLPROC(PyThreadState_Clear);
-DECLPROC(PyThreadState_Delete);
-DECLPROC(PyInterpreterState_New);
 DECLPROC(Py_NewInterpreter);
 DECLPROC(Py_EndInterpreter);
 DECLPROC(PyInt_AsLong);
 DECLPROC(PySys_SetObject);
-#endif
 
 #ifdef WIN32
 #define PATHSEP ";"
@@ -319,7 +308,11 @@ int openArchive()
 	}
 	return 0;
 }
-#ifdef WIN32
+#ifndef WIN32
+#define HMODULE void *
+#define HINSTANCE void *
+#endif
+
 int mapNames(HMODULE dll)
 {
     /* Get all of the entry points that we are interested in */
@@ -328,10 +321,8 @@ int mapNames(HMODULE dll)
 	GETVAR(dll, Py_VerboseFlag);
 	GETPROC(dll, Py_Initialize);
 	GETPROC(dll, Py_Finalize);
-	GETPROC(dll, Py_CompileString);
 	GETPROC(dll, PyImport_ExecCodeModule);
 	GETPROC(dll, PyRun_SimpleString);
-	GETPROC(dll, PySys_SetArgv);
 	GETPROC(dll, Py_SetProgramName);
 	GETPROC(dll, PyImport_ImportModule);
 	GETPROC(dll, PyImport_AddModule);
@@ -339,7 +330,6 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyList_New);
 	GETPROC(dll, PyList_Append);
 	GETPROC(dll, Py_BuildValue);
-	GETPROC(dll, PyFile_FromString);
 	GETPROC(dll, PyString_FromStringAndSize);
 	GETPROC(dll, PyObject_CallFunction);
 	GETPROC(dll, PyModule_GetDict);
@@ -347,39 +337,30 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyErr_Clear);
 	GETPROC(dll, PyErr_Occurred);
 	GETPROC(dll, PyErr_Print);
-	GETPROC(dll, PyObject_CallObject);
-	GETPROC(dll, PyObject_CallMethod);
 	if (ntohl(f_cookie.pyvers) >= 21) {
 		GETPROC(dll, PySys_AddWarnOption);
 	}
 	GETPROC(dll, PyEval_InitThreads);
 	GETPROC(dll, PyEval_AcquireThread);
 	GETPROC(dll, PyEval_ReleaseThread);
-	GETPROC(dll, PyEval_AcquireLock);
-	GETPROC(dll, PyEval_ReleaseLock);
 	GETPROC(dll, PyThreadState_Swap);
-	GETPROC(dll, PyThreadState_New);
-	GETPROC(dll, PyThreadState_Clear);
-	GETPROC(dll, PyThreadState_Delete);
-	GETPROC(dll, PyInterpreterState_New);
 	GETPROC(dll, Py_NewInterpreter);
 	GETPROC(dll, Py_EndInterpreter);
-	GETPROC(dll, PyErr_Print);
 	GETPROC(dll, PyInt_AsLong);
 	GETPROC(dll, PySys_SetObject);
+
 	return 0;
 }
-#endif
+
 /*
  * Load the Python DLL, and get all of the necessary entry points
- * Windows only (dynamic load)
  */
 int loadPython()
 {
-#ifdef WIN32
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
 
+#ifdef WIN32
 	/* Determine the path */
 	sprintf(dllpath, "%spython%02d.dll", f_homepathraw, ntohl(f_cookie.pyvers));
 
@@ -402,11 +383,36 @@ int loadPython()
 	}
 
 	mapNames(dll);
+#else
+
+	/* Determine the path */
+#ifdef __APPLE__
+	sprintf(dllpath, "%sPython",
+		f_workpath ? f_workpath : f_homepath);
+#else
+	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0",
+		f_workpath ? f_workpath : f_homepath,
+		ntohl(f_cookie.pyvers) / 10, ntohl(f_cookie.pyvers) % 10);
+#endif
+
+	/* Load the DLL */
+	dll = dlopen(dllpath, RTLD_NOW|RTLD_GLOBAL);
+	if (dll) {
+		VS("%s\n", dllpath);
+	}
+	if (dll == 0) {
+		FATALERROR("Error loading Python lib '%s': %s\n",
+			dllpath, dlerror());
+		return -1;
+	}
+
+	mapNames(dll);
+
 #endif
 
 	return 0;
 }
-#ifdef WIN32
+
 /*
  * use this from a dll instead of loadPython()
  * it will attach to an existing pythonXX.dll,
@@ -414,6 +420,7 @@ int loadPython()
  */
 int attachPython(int *loadedNew)
 {
+#ifdef WIN32
 	HMODULE dll;
 	char nm[_MAX_PATH + 1];
 
@@ -428,9 +435,9 @@ int attachPython(int *loadedNew)
 	}
 	mapNames(dll);
 	*loadedNew = 0;
+#endif
 	return 0;
 }
-#endif
 
 /*
  * Return pointer to next toc entry.
@@ -472,11 +479,7 @@ int setRuntimeOptions(void)
 			VS("%s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
-#if defined  WIN32 
-				*Py_VerboseFlag = 1;
-#else
-				Py_VerboseFlag = 1;
-#endif
+				*PI_Py_VerboseFlag = 1;
 			break;
 			case 'u':
 				unbuffered = 1;
@@ -484,23 +487,15 @@ int setRuntimeOptions(void)
 #ifdef HAVE_WARNINGS
 			case 'W':
 				if (ntohl(f_cookie.pyvers) >= 21) {
-					PySys_AddWarnOption(&ptoc->name[2]);
+					PI_PySys_AddWarnOption(&ptoc->name[2]);
 				}
 			break;
 #endif
 			case 's':
-#if defined  WIN32 
-				*Py_NoSiteFlag = 0;
-#else
-				Py_NoSiteFlag = 0;
-#endif
+				*PI_Py_NoSiteFlag = 0;
 			break;
 			case 'O':
-#if defined  WIN32 
-				*Py_OptimizeFlag = 1;
-#else
-				Py_OptimizeFlag = 1;
-#endif
+				*PI_Py_OptimizeFlag = 1;
 			break;
 			}
 		}
@@ -572,46 +567,40 @@ int startPython(int argc, char *argv[])
 
 	/* Start python. */
 	/* VS("Loading python\n"); */
-#if defined  WIN32 
-	*Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
-#else
-	Py_NoSiteFlag = 1;
-#endif
+	*PI_Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
 	setRuntimeOptions();
-#ifdef WIN32
-	Py_SetProgramName(f_archivename); /*XXX*/
-#endif
-	Py_Initialize();
+	PI_Py_SetProgramName(f_archivename); /*XXX*/
+	PI_Py_Initialize();
 
 	/* Set sys.path */
 	/* VS("Manipulating Python's sys.path\n"); */
 	strcpy(tmp, f_homepath);
 	tmp[strlen(tmp)-1] = '\0';
-	PyRun_SimpleString("import sys\n");
-	PyRun_SimpleString("while sys.path:\n del sys.path[0]\n");
+	PI_PyRun_SimpleString("import sys\n");
+	PI_PyRun_SimpleString("while sys.path:\n del sys.path[0]\n");
 	sprintf(cmd, "sys.path.append('%s')", tmp);
-	PyRun_SimpleString (cmd);
+	PI_PyRun_SimpleString (cmd);
 	if (pathlen == 2) {
 		strcpy(tmp, f_workpath);
 		tmp[strlen(tmp)-1] = '\0';
 		sprintf(cmd, "sys.path.insert(0, '%s')", tmp);
-		PyRun_SimpleString(cmd);
+		PI_PyRun_SimpleString(cmd);
 	}
 
 	/* Set argv[0] to be the archiveName */
-	py_argv = PyList_New(0);
-	val = Py_BuildValue("s", f_archivename);
-	PyList_Append(py_argv, val);
+	py_argv = PI_PyList_New(0);
+	val = PI_Py_BuildValue("s", f_archivename);
+	PI_PyList_Append(py_argv, val);
 	for (i = 1; i < argc; ++i) {
-		val = Py_BuildValue ("s", argv[i]);
-		PyList_Append (py_argv, val);
+		val = PI_Py_BuildValue ("s", argv[i]);
+		PI_PyList_Append (py_argv, val);
 	}
-	sys = PyImport_ImportModule("sys");
+	sys = PI_PyImport_ImportModule("sys");
 	/* VS("Setting sys.argv\n"); */
-	PyObject_SetAttrString(sys, "argv", py_argv);
+	PI_PyObject_SetAttrString(sys, "argv", py_argv);
 
 	/* Check for a python error */
-	if (PyErr_Occurred())
+	if (PI_PyErr_Occurred())
 	{
 		FATALERROR("Error detected starting Python VM.");
 		return -1;
@@ -628,12 +617,9 @@ int importModules()
 	PyObject *marshal;
 	PyObject *marshaldict;
 	PyObject *loadfunc;
-	PyObject *pyfile;
 	TOC *ptoc;
 	PyObject *co;
 	PyObject *mod;
-	PyObject *res;
-	char buf[32];
 
 	VS("importing modules from CArchive\n"); 
 
@@ -641,9 +627,9 @@ int importModules()
 		* Here we collect some reference to PyObject that we don't dereference
 		* Doesn't matter because the objects won't be going away anyway.
 		*/
-	marshal = PyImport_ImportModule("marshal");
-	marshaldict = PyModule_GetDict(marshal);
-	loadfunc = PyDict_GetItemString(marshaldict, "loads");
+	marshal = PI_PyImport_ImportModule("marshal");
+	marshaldict = PI_PyModule_GetDict(marshal);
+	loadfunc = PI_PyDict_GetItemString(marshaldict, "loads");
 
 	/* Iterate through toc looking for module entries (type 'm')
 		* this is normally just bootstrap stuff (archive and iu)
@@ -657,22 +643,22 @@ int importModules()
 			/* .pyc/.pyo files have 8 bytes header. Skip it and get a Python
 			 * string directly pointing at the marshalled code.
 			 */
-			PyObject *mods = PyString_FromStringAndSize(modbuf + 8,
+			PyObject *mods = PI_PyString_FromStringAndSize(modbuf + 8,
 				ntohl(ptoc->ulen) - 8);
             
 			VS("%s\n", ptoc->name);
 			
-			co = PyObject_CallFunction(loadfunc, "O", mods);
-			mod = PyImport_ExecCodeModule(ptoc->name, co);
+			co = PI_PyObject_CallFunction(loadfunc, "O", mods);
+			mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
 
 			/* Check for errors in loading */
 			if (mod == NULL) {
 				FATALERROR("mod is NULL - %s", ptoc->name);
 			}
-			if (PyErr_Occurred())
+			if (PI_PyErr_Occurred())
 			{
-				PyErr_Print();
-				PyErr_Clear();
+				PI_PyErr_Print();
+				PI_PyErr_Clear();
 			}
 
 			Py_DECREF(mods);
@@ -696,7 +682,7 @@ int installZlib(TOC *ptoc)
 	char *cmd = (char *) malloc(strlen(tmpl) + strlen(f_archivename) + 32);
 	sprintf(cmd, tmpl, f_archivename, zlibpos);
 	/*VS(cmd);*/
-	rc = PyRun_SimpleString(cmd);
+	rc = PI_PyRun_SimpleString(cmd);
 	if (rc != 0)
 	{
 		FATALERROR("Error in command: %s\n", cmd);
@@ -902,7 +888,7 @@ int runScripts()
 			/* Get data out of the archive.  */
 			data = extract(ptoc);
 			/* Run it */
-			rc = PyRun_SimpleString(data);
+			rc = PI_PyRun_SimpleString(data);
 			/* log errors and abort */
 			if (rc != 0) {
 				VS("RC: %d from %s\n", rc, ptoc->name);
@@ -930,27 +916,27 @@ int callSimpleEntryPoint(char *name, int *presult)
 	/* Objects with refs to kill. */
 	PyObject *func = NULL, *pyresult = NULL;
 
-	mod = PyImport_AddModule("__main__"); /* NO ref added */
+	mod = PI_PyImport_AddModule("__main__"); /* NO ref added */
 	if (!mod) {
 		VS("No __main__\n");
 		goto done;
 	}
-	dict = PyModule_GetDict(mod); /* NO ref added */
+	dict = PI_PyModule_GetDict(mod); /* NO ref added */
 	if (!mod) {
 		VS("No __dict__\n");
 		goto done;
 	}
-	func = PyDict_GetItemString(dict, name);
+	func = PI_PyDict_GetItemString(dict, name);
 	if (func == NULL) { /* should explicitly check KeyError */
 		VS("CallSimpleEntryPoint can't find the function name\n");
 		rc = -2;
 		goto done;
 	}
-	pyresult = PyObject_CallFunction(func, "");
+	pyresult = PI_PyObject_CallFunction(func, "");
 	if (pyresult==NULL) goto done;
-	PyErr_Clear();
-	*presult = PyInt_AsLong(pyresult);
-	rc = PyErr_Occurred() ? -1 : 0;
+	PI_PyErr_Clear();
+	*presult = PI_PyInt_AsLong(pyresult);
+	rc = PI_PyErr_Occurred() ? -1 : 0;
 	VS( rc ? "Finished with failure\n" : "Finished OK\n");
 	/* all done! */
 done:
@@ -960,8 +946,8 @@ done:
 	   cause failures in later async code */
 	if (rc)
 		/* But we will print them 'cos they may be useful */
-		PyErr_Print();
-	PyErr_Clear();
+		PI_PyErr_Print();
+	PI_PyErr_Clear();
 	return rc;
 }
 
@@ -995,7 +981,7 @@ int launchembedded(char const * archivePath, char  const * archiveName)
 	VS("Started Python\n");
 
 	/* a signal to scripts */
-	PyRun_SimpleString("import sys;sys.frozen='dll'\n");
+	PI_PyRun_SimpleString("import sys;sys.frozen='dll'\n");
 	VS("set sys.frozen\n");
 	/* Import modules from archive - this is to bootstrap */
 	if (importModules())
@@ -1009,7 +995,7 @@ int launchembedded(char const * archivePath, char  const * archiveName)
 	if (runScripts())
 		return -1;
 	VS("All scripts run\n");
-	if (PyErr_Occurred()) {
+	if (PI_PyErr_Occurred()) {
 		/*PyErr_Clear();*/
 		VS("Some error occurred\n");
 	}
@@ -1024,7 +1010,9 @@ int launchembedded(char const * archivePath, char  const * archiveName)
  */
 int init(char const * archivePath, char  const * archiveName, char const * workpath)
 {
+#ifdef WIN32
 	char *p;
+#endif
 
 	if (workpath) {
 		f_workpath = (char *)workpath;
@@ -1173,6 +1161,6 @@ int getPyVersion(void)
 }
 void finalizePython(void)
 {
-	Py_Finalize();
+	PI_Py_Finalize();
 }
 
