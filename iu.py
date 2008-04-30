@@ -170,8 +170,9 @@ class RegistryImportDirector(ImportDirector):
                 try:
                     #hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_ALL_ACCESS)
                     hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_READ)
-                except Exception, e:
-                    print "FIXME: RegOpenKeyEx Exception", e
+                except Exception:
+                    # If the key does not exist, simply try the next one.
+                    pass
                 else:
                     numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
                     for i in range(numsubkeys):
