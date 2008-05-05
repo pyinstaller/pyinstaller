@@ -96,6 +96,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
 	char here[_MAX_PATH + 1];
 	char thisfile[_MAX_PATH + 1];
+	char pkgfile[_MAX_PATH + 1];
 	int rc = 0;
 	char *workpath = NULL;
 	char *p;
@@ -125,18 +126,30 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	*++p = '\0';
 	len = p - here;
 
+	strcpy(pkgfile, thisfile);
+	strcpy(pkgfile+strlen(pkgfile)-3, "pkg");
+
 	workpath = getenv( "_MEIPASS2" );
-	rc = init(here, &thisfile[len], workpath);
-	if (rc)
+	rc = init(here, &pkgfile[len], workpath);
+	if (rc) {
+		rc = init(here, &thisfile[len], workpath);
+	} else {
+		VS("Found separate PKG: %s\n", pkgfile);
+	}
+	if (rc) {
 		return rc;
+	}
 	if (workpath) {
 		// we're the "child" process
 		rc = doIt(argc, argv);
+		if (rc) {
+			return rc;
+		}
 		finalizePython();
 	}
 	else {
 		if (extractBinaries(&workpath)) {
-			VS("Error extracting binaries");
+			VS("Error extracting binaries\n");
 			return -1;
 		}
 		// if workpath got set to non-NULL, we've extracted stuff
@@ -147,6 +160,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		else {
 			// no "child" process necessary
 			rc = doIt(argc, argv);
+			if (rc) {
+				return rc;
+			}
 			finalizePython();
 		}
 		cleanUp();

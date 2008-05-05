@@ -60,29 +60,23 @@ int main(int argc, char* argv[])
 #endif
         Py_SetProgramName(argv[0]);
     strcpy(thisfile, Py_GetProgramFullPath());
-    VS(thisfile);
-    VS(" is thisfile\n");
+    VS("thisfile is %s\n", thisfile);
     
     workpath = getenv( "_MEIPASS2" );
-    VS(workpath);
-    VS(" is _MEIPASS2 (workpath)\n");
+    VS("_MEIPASS2 (workpath) is %s\n", (workpath ? workpath : "NULL"));
 
     /* fill in here (directory of thisfile) */
     strcpy(homepath, Py_GetPrefix());
     strcat(homepath, "/");
-    VS(homepath);
-    VS(" is homepath\n");
+    VS("homepath is %s\n", homepath);
 
     if (init(homepath, &thisfile[strlen(homepath)], workpath)) {
         /* no pkg there, so try the nonelf configuration */
         strcpy(archivefile, thisfile);
         strcat(archivefile, ".pkg");
         if (init(homepath, &archivefile[strlen(homepath)], workpath)) {
-            FATALERROR("Cannot open self ");
-            FATALERROR(thisfile);
-            FATALERROR(" or archive ");
-            FATALERROR(archivefile);
-            FATALERROR("\n");
+            FATALERROR("Cannot open self %s or archive %s\n",
+                    thisfile, archivefile);
             return -1;
         }
     }
@@ -124,8 +118,7 @@ int main(int argc, char* argv[])
                 strcat(ldlib_envvar, oldldlib);
             }
             putenv(ldlib_envvar);
-            VS(ldlib_envvar);
-            VS("\n");
+            VS("%s\n", ldlib_envvar);
             rc = execvp(thisfile, argv);
             VS("Back to parent...\n");
         }
