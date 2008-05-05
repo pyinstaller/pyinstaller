@@ -525,8 +525,12 @@ class PkgModule(PyModule):
         self._ispkg = 1
         pth = os.path.dirname(pth)
         self.__path__ = [ pth ]
-        self.subimporter = PathImportDirector(self.__path__)
+        self._update_director(force=True)
+    def _update_director(self, force=False):
+        if force or self.subimporter.path != self.__path__:
+            self.subimporter = PathImportDirector(self.__path__)
     def doimport(self, nm):
+        self._update_director()
         mod = self.subimporter.getmod(nm)
         if mod:
             mod.__name__ = self.__name__ + '.' + mod.__name__
