@@ -18,20 +18,21 @@ Changes since PyInstaller 1.3
    with the AIX compiler.
  + Fix support for .py files with DOS line endings under Linux (fixes
    PyOpenGL).
- + Fix support for PIL when imported without top-level package ("import 
+ + Fix support for PIL when imported without top-level package ("import
    Image").
  + Fix PyXML import hook under NT (thanks to Lorenzo Mancini)
  * Improve correctness of the binary cache of UPX'd/strip'd files. This
    fixes problems when switching between multiple versions of the
-   same third-party library (like e.g. wxPython allows to do). 
+   same third-party library (like e.g. wxPython allows to do).
  + Fix a stupid bug with modules importing optparse (under Linux) (thanks
    to Louai Al-Khanji).
- + Under Python 2.4+, if an exception is raised while importing a module 
+ + Under Python 2.4+, if an exception is raised while importing a module
    inside a package, the module is now removed from the parent's
    namespace (to match the behaviour of Python itself).
  + Fix random race-condition at startup of one-file packages, that was
    causing this exception to be generated: "PYZ entry 'encodings' (0j)
    is not a valid code object".
+ + Fix problem when having unicode strings among path elements.
 
 PyInstaller 1.3
 ---------------
