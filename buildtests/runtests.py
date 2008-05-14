@@ -25,9 +25,9 @@ import os, sys, glob, string
 import shutil
 
 try:
-    here=os.path.dirname(__file__)
+    here=os.path.dirname(os.path.abspath(__file__))
 except NameError:
-    here=os.path.dirname(sys.argv[0])
+    here=os.path.dirname(os.path.abspath(sys.argv[0]))
 os.chdir(here)
 PYTHON = sys.executable
 if sys.platform[:3] == 'win':

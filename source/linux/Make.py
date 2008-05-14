@@ -166,7 +166,6 @@ def main():
 
 #    libs = [os.path.join(sysconfig.get_config_vars('LIBDIR')[0], sysconfig.get_config_vars('INSTSONAME')[0])]
 
-
     somevars = {}
     if os.path.exists(makefile_in):
         makevars = sysconfig.parse_makefile(makefile_in)

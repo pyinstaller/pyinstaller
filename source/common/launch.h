@@ -138,7 +138,6 @@ EXTDECLVAR(int, Py_OptimizeFlag);
 EXTDECLVAR(int, Py_VerboseFlag);
 EXTDECLPROC(int, Py_Initialize, (void));
 EXTDECLPROC(int, Py_Finalize, (void));
-EXTDECLPROC(PyObject *, Py_CompileString, (char *, char *, int));
 EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
 EXTDECLPROC(int, PyRun_SimpleString, (char *));
 EXTDECLPROC(int, PySys_SetArgv, (int, char **));
