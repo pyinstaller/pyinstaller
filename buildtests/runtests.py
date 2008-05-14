@@ -23,6 +23,7 @@
 
 import os, sys, glob, string
 import shutil
+
 try:
     here=os.path.dirname(__file__)
 except NameError:
@@ -53,20 +54,23 @@ def clean():
         except OSError, e:
             print e
 
-def runtests(sources=None):
+def runtests(alltests, filters=None):
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
     print "*"*len(info)
     print info
     print "*"*len(info)
-    alltests = glob.glob('test*[0-9].py')
-    if not sources:
+    build_python = open("python_exe.build", "w")                                     
+    build_python.write(sys.executable)                                               
+    build_python.close()
+    if not filters:
         tests = alltests
     else:
         tests = []
-        for part in sources:
+        for part in filters:
             tests += [t for t in alltests if part in t and t not in tests]
     tests.sort(key=lambda x: (len(x), x)) # test1 < test10
     path = os.environ["PATH"]
+    counter = dict(passed=[],failed=[])
     for src in tests:
         print
         print "################## BUILDING TEST %s #################################" % src
@@ -80,14 +84,26 @@ def runtests(sources=None):
         print
         res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
         os.environ["PATH"] = path
-        assert res == 0, "%s Test error!" % src
-        print "################## FINISHING TEST %s ################################" % src
+        if res == 0:
+            counter["passed"].append(src)
+            print "################## FINISHING TEST %s ################################" % src
+        else:
+            counter["failed"].append(src)
+            print "#################### TEST %s FAILED #################################" % src
+    print counter
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        clean()
-        runtests()
-    if '--clean' in sys.argv:
-        clean()
-    if '--run' in sys.argv:
-        runtests(sys.argv[2:])
+    normal_tests = glob.glob('test*[0-9].py')
+    interactive_tests = glob.glob('test*[0-9]i.py')
+    args = sys.argv[1:]
+    
+    if "-i" in args:
+        print "Running interactive tests"
+        tests = interactive_tests
+    else:
+        print "Running normal tests (-i for interactive tests)"
+        tests = normal_tests
+
+    clean()
+    runtests(tests)
+

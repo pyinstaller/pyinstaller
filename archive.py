@@ -275,9 +275,11 @@ class Archive:
 
 class DummyZlib:
     def decompress(self, data):
-        raise RuntimeError, "zlib required but cannot be imported"
+        #raise RuntimeError, "zlib required but cannot be imported"
+        return data
     def compress(self, data, lvl):
-        raise RuntimeError, "zlib required but cannot be imported"
+        #raise RuntimeError, "zlib required but cannot be imported"
+        return data
 
 import iu
 ##############################################################
@@ -322,6 +324,7 @@ class ZlibArchive(Archive):
             except ImportError:
                 zlib = DummyZlib()
         else:
+            print "WARNING: compression level=0!!!"
             zlib = DummyZlib()
 
         global AES
@@ -408,7 +411,10 @@ class Keyfile:
 
 class PYZOwner(iu.Owner):
     def __init__(self, path):
-        self.pyz = ZlibArchive(path)
+        try:
+            self.pyz = ZlibArchive(path)
+        except IOError, e:
+            raise iu.OwnerError(e)
         if self.pyz.crypted:
             if not hasattr(sys, "keyfile"):
                 sys.keyfile = Keyfile()
