@@ -28,3 +28,18 @@ sys.importManager = iu.ImportManager()
 sys.importManager.install()
 if not hasattr(sys, 'frozen'):
     sys.frozen = 1
+# Implement workaround for prints in non-console mode. In non-console mode
+# (with "pythonw"), print randomically fails with "[errno 9] Bad file descriptor"
+# when the printed text is flushed (eg: buffer full); this is because the
+# sys.stdout object is bound to an invalid file descriptor.
+# Python 3000 has a fix for it (http://bugs.python.org/issue1415), but we
+# feel that a workaround in PyInstaller is a good thing since most people
+# found this problem for the first time with PyInstaller as they don't
+# usually run their code with "pythonw" (and it's hard to debug anyway).
+class NullWriter:
+    def write(*args): pass
+    def flush(*args): pass
+if sys.stdout.fileno() < 0:
+    sys.stdout = NullWriter()
+if sys.stderr.fileno() < 0:
+    sys.stderr = NullWriter()
