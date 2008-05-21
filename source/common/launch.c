@@ -650,12 +650,13 @@ int importModules()
 		if (ptoc->typcd == 'm' || ptoc->typcd == 'M') 
 		{
 			unsigned char *modbuf = extract(ptoc);
+			PyObject *mods;
 
 			VS("extracted ");
 			/* .pyc/.pyo files have 8 bytes header. Skip it and get a Python
 			 * string directly pointing at the marshalled code.
 			 */
-			PyObject *mods = PI_PyString_FromStringAndSize(modbuf + 8,
+			mods = PI_PyString_FromStringAndSize(modbuf + 8,
 				ntohl(ptoc->ulen) - 8);
 
 			VS("%s\n", ptoc->name);
