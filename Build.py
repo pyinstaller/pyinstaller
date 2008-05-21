@@ -226,7 +226,9 @@ class Analysis(Target):
                         pure.append((modnm, fnm, 'PYMODULE'))
         binaries.extend(bindepend.Dependencies(binaries))
         self.fixMissingPythonLib(binaries)
-        scripts[1:1] = rthooks
+        # Add realtime hooks just before the last script (which is
+        # the entrypoint of the application).
+        scripts[-1:-1] = rthooks
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
