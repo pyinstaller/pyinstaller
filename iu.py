@@ -321,18 +321,13 @@ class ImportManager:
                     fqname = nm
                 if threaded:
                     self._acquire()
-                mod = _sys_modules_get(fqname, UNTRIED)
-                if mod is UNTRIED:
-                    try:
+                try:
+                    mod = _sys_modules_get(fqname, UNTRIED)
+                    if mod is UNTRIED:
                         mod = _self_doimport(nm, ctx, fqname)
-                    except Exception, e:
-                        print "FIXME: _self_doimport %r" % e,
-                        print " nm='%s' ctx='%s' fqname='%s'" % (nm, ctx, fqname)
-                        if threaded:
-                            self._release()
-                        raise
-                if threaded:
-                    self._release()
+                finally:
+                    if threaded:
+                        self._release()
                 if mod:
                     ctx = fqname
                 else:
