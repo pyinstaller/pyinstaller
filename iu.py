@@ -366,10 +366,9 @@ class ImportManager:
                         self._acquire()
                     try:
                         mod = self.doimport(nm, ctx, ctx+'.'+nm)
-                    except Exception, e:
-                        print "FIXME: self.doimport Exception", e
-                    if threaded:
-                        self._release()
+                    finally:
+                        if threaded:
+                            self._release()
         #print "importHook done with %s %s %s (case 3)" % (name, globals['__name__'], fromlist)
         return bottommod
     def doimport(self, nm, parentnm, fqname, reload=0):
