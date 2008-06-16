@@ -1,0 +1,1 @@
+hiddenimports = [ "email.iterators" ]
