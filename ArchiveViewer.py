@@ -36,7 +36,12 @@ def main():
     show(name, arch)
 
     while 1:
-        toks = string.split(raw_input('? '), ' ', 1)
+        try:
+            toks = string.split(raw_input('? '), None, 1)
+        except EOFError:
+            # Ctrl-D
+            print # clear line
+            break
         if not toks:
             usage()
             continue
