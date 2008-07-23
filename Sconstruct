@@ -1,4 +1,7 @@
-# Sconstruct file to build the bootloader
+# -*- mode: python -*-
+#
+# SConstruct file to build the bootloader
+#
 # Copyright (C) 2005, Giovanni Bajo
 #
 # This program is free software; you can redistribute it and/or
