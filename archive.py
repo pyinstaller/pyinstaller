@@ -71,6 +71,8 @@ else:
 if "-vi" in sys.argv[1:]:
     _verbose = 1
 
+class ArchiveReadError(RuntimeError): pass
+
 class Archive:
     """ A base class for a repository of python code objects.
         The extract method is used by imputil.ArchiveImporter
@@ -106,10 +108,10 @@ class Archive:
         """
         self.lib.seek(self.start)	#default - magic is at start of file
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise RuntimeError, "%s is not a valid %s archive file" \
+            raise ArchiveReadError, "%s is not a valid %s archive file" \
               % (self.path, self.__class__.__name__)
         if self.lib.read(len(self.pymagic)) != self.pymagic:
-            raise RuntimeError, "%s has version mismatch to dll" % (self.path)
+            raise ArchiveReadError, "%s has version mismatch to dll" % (self.path)
         self.lib.read(4)
 
     def loadtoc(self):
@@ -372,7 +374,8 @@ class PYZOwner(iu.Owner):
     def __init__(self, path):
         try:
             self.pyz = ZlibArchive(path)
-        except IOError, e:
+            self.pyz.checkmagic()
+        except (IOError, ArchiveReadError), e:
             raise iu.OwnerError(e)
         iu.Owner.__init__(self, path)
     def getmod(self, nm, newmod=imp.new_module):

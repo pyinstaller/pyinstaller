@@ -32,6 +32,7 @@ pyz = PYZ(a.pure)
 exe = EXE(%(tkpkg)s pyz,
           a.scripts,
           a.binaries,
+          a.zipfiles,
           name='%(exename)s',
           debug=%(debug)s,
           strip=%(strip)s,
@@ -53,6 +54,7 @@ exe = EXE(pyz,
           console=%(console)s %(exe_options)s)
 coll = COLLECT(%(tktree)s exe,
                a.binaries,
+               a.zipfiles,
                strip=%(strip)s,
                upx=%(upx)s,
                name='%(distdir)s')
@@ -77,6 +79,7 @@ dll = DLL(pyz,
           debug=%(debug)s)
 coll = COLLECT(exe, dll,
                a.binaries,
+               a.zipfiles,
                strip=%(strip)s,
                upx=%(upx)s,
                name='%(distdir)s')

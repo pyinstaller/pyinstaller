@@ -126,6 +126,7 @@ class Analysis(Target):
         self.scripts = TOC()
         self.pure = TOC()
         self.binaries = TOC()
+        self.zipfiles = TOC()
         self.__postinit__()
     def check_guts(self, last_build):
         outnm = os.path.basename(self.out)
@@ -164,6 +165,7 @@ class Analysis(Target):
             elif mtime(fnm[:-1]) > last_build:
                 print "building because %s changed" % fnm[:-1]
                 return True
+        # todo: add zipfiles
         for (nm, fnm, typ) in binaries:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
@@ -207,6 +209,7 @@ class Analysis(Target):
         # Fills pure, binaries and rthookcs lists to TOC
         pure = []     # pure python modules
         binaries = [] # binaries to bundle
+        zipfiles = [] # zipfiles to bundle
         rthooks = []  # rthooks if needed
         for modnm, mod in analyzer.modules.items():
             # FIXME: why can we have a mod == None here?
@@ -220,6 +223,9 @@ class Analysis(Target):
                     fnm = mod.__file__
                     if isinstance(mod, mf.ExtensionModule):
                         binaries.append((mod.__name__, fnm, 'EXTENSION'))
+                    elif isinstance(mod, mf.PkgInZipModule):
+                        zipfiles.append((os.path.basename(str(mod.owner)),
+                                         str(mod.owner), 'ZIPFILE'))
                     elif modnm == '__main__':
                         pass
                     else:
@@ -230,10 +236,12 @@ class Analysis(Target):
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
+        self.zipfiles = TOC(zipfiles)
         try: # read .toc
             oldstuff = eval(open(self.out, 'r').read())
         except:
             oldstuff = None
+        # todo: add zipfiles
         if oldstuff != (self.inputs, self.pathex, self.hookspath, self.excludes, scripts, pure, binaries):
             outf = open(self.out, 'w')
             pprint.pprint(
@@ -412,6 +420,7 @@ class PKG(Target):
                  'PKG' : 'a',
                  'DATA': 'x',
                  'BINARY': 'b',
+                 'ZIPFILE': 'Z',
                  'EXECUTABLE': 'b'}
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=0, upx_binaries=0):
@@ -607,7 +616,7 @@ class EXE(Target):
                 exe = exe + '_d'
         return exe
     def assemble(self):
-        print "building EXE", os.path.basename(self.out)
+        print "building EXE from", os.path.basename(self.out)
         trash = []
         outf = open(self.name, 'wb')
         exe = self._bootloader_postfix('support/loader/run')

@@ -33,6 +33,12 @@ try:
 except AttributeError:
     py_version = (1,5)
 
+try:
+    # zipimport is supported starting with Python 2.3
+    import zipimport
+except ImportError:
+    zipimport = None
+
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
 # That is, there's an Owner for each thing on sys.path
@@ -118,10 +124,28 @@ class DirOwner(Owner):
         mod.__co__ = co
         return mod
 
-_globalownertypes = [
+ZipOwner = None
+if zipimport:
+    class ZipOwner(Owner):
+        def __init__(self, path):
+            try:
+                self.__zip = zipimport.zipimporter(path)
+            except zipimport.ZipImportError, e:
+                raise OwnerError('%s: %s' % (e.message, path))
+            Owner.__init__(self, path)
+
+        def getmod(self, nm, newmod=imp.new_module):
+            try:
+                return self.__zip.load_module(nm)
+            except zipimport.ZipImportError:
+                return None
+
+# _mountzlib.py will insert archive.PYZOwner in front later
+_globalownertypes = filter(None, [
+    ZipOwner,
     DirOwner,
     Owner,
-]
+])
 
 #===================Import Directors====================================#
 # ImportDirectors live on the metapath
@@ -428,7 +452,7 @@ class ImportManager:
                 self.setThreaded()
         else:
             sys.modules[fqname] = None
-        #print "..found %s" % mod
+        #print "..found %s" % mod, 'when looking for', fqname
         return mod
     def reloadHook(self, mod):
         fqnm = mod.__name__

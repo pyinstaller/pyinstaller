@@ -15,6 +15,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 import sys, string, os, imp, marshal, dircache
+try:
+    # zipimport is supported starting with Python 2.3
+    import zipimport
+except ImportError:
+    zipimport = None
 
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
@@ -137,11 +142,27 @@ class PYZOwner(Owner):
             return PkgInPYZModule(nm, co, self)
         return PyModule(nm, self.path, co)
 
-_globalownertypes = [
+ZipOwner = None
+if zipimport:
+    class ZipOwner(Owner):
+        def __init__(self, path):
+            print 'ZipOwner', path
+            self.__zip = zipimport.zipimporter(path)
+            Owner.__init__(self, path)
+
+        def getmod(self, nm):
+            try:
+                co = self.__zip.get_code(nm)
+                return PkgInZipModule(nm, co, self)
+            except zipimport.ZipImportError:
+                return None
+
+_globalownertypes = filter(None, [
     DirOwner,
+    ZipOwner,
     PYZOwner,
     Owner,
-]
+])
 
 #===================Import Directors====================================#
 # ImportDirectors live on the metapath
@@ -217,7 +238,8 @@ class RegistryImportDirector(ImportDirector):
                 stuff = open(fnm, 'rb').read()
                 co = loadco(stuff[8:])
             return PyModule(nm, fnm, co)
-        return None
+        return None            
+
 class PathImportDirector(ImportDirector):
     def __init__(self, pathlist=None, importers=None, ownertypes=None):
         if pathlist is None:
@@ -590,6 +612,17 @@ class PkgInPYZModule(PyModule):
     def __init__(self, nm, co, pyzowner):
         PyModule.__init__(self, nm, co.co_filename, co)
         self._ispkg = 1
+        self.__path__ = [ str(pyzowner) ]
+        self.owner = pyzowner
+    def doimport(self, nm):
+        mod = self.owner.getmod(self.__name__ + '.' + nm)
+        return mod
+
+class PkgInZipModule(PyModule):
+    typ = 'ZIPFILE'
+    def __init__(self, nm, co, pyzowner):
+        PyModule.__init__(self, nm, co.co_filename, co)
+        self._ispkg = 0
         self.__path__ = [ str(pyzowner) ]
         self.owner = pyzowner
     def doimport(self, nm):
