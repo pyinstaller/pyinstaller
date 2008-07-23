@@ -147,7 +147,7 @@ class Analysis(Target):
                 print "building because %s changed" % fnm
                 return True
         try:
-            inputs, pathex, hookspath, excludes, scripts, pure, binaries = _load_data(self.out)
+            inputs, pathex, hookspath, excludes, scripts, pure, binaries, zipfiles = _load_data(self.out)
         except:
             print "building because %s disappeared" % outnm
             return True
@@ -174,8 +174,7 @@ class Analysis(Target):
             elif mtime(fnm[:-1]) > last_build:
                 print "building because %s changed" % fnm[:-1]
                 return True
-        # todo: add zipfiles
-        for (nm, fnm, typ) in binaries:
+        for (nm, fnm, typ) in binaries + zipfiles:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
                 return True
@@ -250,9 +249,8 @@ class Analysis(Target):
             oldstuff = _load_data(self.out)
         except:
             oldstuff = None
-        # todo: add zipfiles
         newstuff = (self.inputs, self.pathex, self.hookspath, self.excludes,
-                    self.scripts, self.pure, self.binaries)
+                    self.scripts, self.pure, self.binaries, self.zipfiles)
         if oldstuff != newstuff:
             _save_data(self.out, newstuff)
             wf = open(WARNFILE, 'w')
