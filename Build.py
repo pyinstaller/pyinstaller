@@ -887,14 +887,14 @@ class Tree(Target, TOC):
                             stack.append((fullfnm, rfnm))
                         else:
                             rslt.append((rfnm, fullfnm, 'DATA'))
+        self.data = rslt
         try:
             oldstuff = _load_data(self.out)
         except:
             oldstuff = None
-        newstuff = (self.root, self.prefix, self.excludes, rslt)
+        newstuff = (self.root, self.prefix, self.excludes, self.data)
         if oldstuff != newstuff:
             _save_data(self.out, newstuff)
-            self.data = rslt
             return 1
         print self.out, "no change!"
         return 0
