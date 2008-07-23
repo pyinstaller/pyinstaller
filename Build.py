@@ -61,7 +61,6 @@ except IOError:
     sys.exit(1)
 
 target_platform = config.get('target_platform', sys.platform)
-mf.target_platform = target_platform
 target_iswin = target_platform[:3] == 'win'
 
 if target_platform == sys.platform:
@@ -215,7 +214,9 @@ class Analysis(Target):
             pynms.append(pynm)
         ###################################################
         # Initialize analyzer and analyze scripts
-        analyzer = mf.ImportTracker(dirs.keys()+paths, self.hookspath, self.excludes)
+        analyzer = mf.ImportTracker(dirs.keys()+paths, self.hookspath,
+                                    self.excludes,
+                                    target_platform=target_platform)
         #print analyzer.path
         scripts = [] # will contain scripts to bundle
         for i in range(len(self.inputs)):

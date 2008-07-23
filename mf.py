@@ -58,21 +58,28 @@ def pyco():
         return 'o'
 
 class Owner:
-    def __init__(self, path):
+    def __init__(self, path, target_platform=None):
         self.path = path
+        self.target_platform = target_platform
     def __str__(self):
         return self.path
     def getmod(self, nm):
         return None
 
 class DirOwner(Owner):
-    def __init__(self, path):
+    def __init__(self, path, target_platform=None):
         if path == '':
             path = os.getcwd()
         if not os.path.isdir(path):
             raise ValueError, "%s is not a directory" % path
-        Owner.__init__(self, path)
-    def getmod(self, nm, getsuffixes=suffixes.get_suffixes, loadco=marshal.loads):
+        Owner.__init__(self, path, target_platform)
+
+    def _getsuffixes(self):
+        return suffixes.get_suffixes(self.target_platform)
+        
+    def getmod(self, nm, getsuffixes=None, loadco=marshal.loads):
+        if getsuffixes is None:
+            getsuffixes = self._getsuffixes
         pth =  os.path.join(self.path, nm)
         possibles = [(pth, 0, None)]
         if os.path.isdir(pth):
@@ -136,10 +143,10 @@ class DirOwner(Owner):
         return mod
 
 class PYZOwner(Owner):
-    def __init__(self, path):
+    def __init__(self, path, target_platform=None):
         import archive
         self.pyz = archive.ZlibArchive(path)
-        Owner.__init__(self, path)
+        Owner.__init__(self, path, target_platform)
     def getmod(self, nm):
         rslt = self.pyz.extract(nm)
         if rslt:
@@ -151,9 +158,9 @@ class PYZOwner(Owner):
 ZipOwner = None
 if zipimport:
     class ZipOwner(Owner):
-        def __init__(self, path):
+        def __init__(self, path, target_platform=None):
             self.__zip = zipimport.zipimporter(path)
-            Owner.__init__(self, path)
+            Owner.__init__(self, path, target_platform)
 
         def getmod(self, nm):
             try:
@@ -246,7 +253,8 @@ class RegistryImportDirector(ImportDirector):
         return None
 
 class PathImportDirector(ImportDirector):
-    def __init__(self, pathlist=None, importers=None, ownertypes=None):
+    def __init__(self, pathlist=None, importers=None, ownertypes=None,
+                 target_platform=None):
         if pathlist is None:
             self.path = sys.path
         else:
@@ -261,8 +269,11 @@ class PathImportDirector(ImportDirector):
             self.shadowpath = {}
         self.inMakeOwner = 0
         self.building = {}
+        self.target_platform = target_platform
+
     def __str__(self):
         return str(self.path)
+
     def getmod(self, nm):
         mod = None
         for thing in self.path:
@@ -277,6 +288,7 @@ class PathImportDirector(ImportDirector):
             if mod:
                 break
         return mod
+
     def makeOwner(self, path):
         if self.building.get(path):
             return None
@@ -286,7 +298,7 @@ class PathImportDirector(ImportDirector):
             try:
                 # this may cause an import, which may cause recursion
                 # hence the protection
-                owner = klass(path)
+                owner = klass(path, self.target_platform)
             except Exception, e:
                 #print "PathImportDirector", e
                 pass
@@ -330,9 +342,11 @@ if __debug__:
 else:
     LogDict = dict
 
+
 class ImportTracker:
     # really the equivalent of builtin import
-    def __init__(self, xpath=None, hookspath=None, excludes=None):
+    def __init__(self, xpath=None, hookspath=None, excludes=None,
+                 target_platform=None):
         self.path = []
         self.warnings = {}
         if xpath:
@@ -343,13 +357,15 @@ class ImportTracker:
             BuiltinImportDirector(),
             FrozenImportDirector(),
             RegistryImportDirector(),
-            PathImportDirector(self.path)
+            PathImportDirector(self.path, target_platform=target_platform)
         ]
         if hookspath:
             hooks.__path__.extend(hookspath)
         self.excludes = excludes
         if excludes is None:
             self.excludes = []
+        self.target_platform = target_platform
+
     def analyze_r(self, nm, importernm=None):
         importer = importernm
         if importer is None:
@@ -379,6 +395,7 @@ class ImportTracker:
                         nms[j:j] = newnms
                         j = j + len(newnms)
         return map(lambda a: a[0], nms)
+
     def analyze_one(self, nm, importernm=None, imptyp=0):
         # first see if we could be importing a relative name
         contexts = [None]
