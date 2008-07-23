@@ -200,7 +200,7 @@ class Analysis(Target):
             paths[i] = absnormpath(paths[i])
         ###################################################
         # Scan inputs and prepare:
-        dirs = {}  # input directories 
+        dirs = {}  # input directories
         pynms = [] # python filenames with no extension
         for script in self.inputs:
             if not os.path.exists(script):

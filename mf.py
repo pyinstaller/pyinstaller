@@ -243,7 +243,7 @@ class RegistryImportDirector(ImportDirector):
                 stuff = open(fnm, 'rb').read()
                 co = loadco(stuff[8:])
             return PyModule(nm, fnm, co)
-        return None            
+        return None
 
 class PathImportDirector(ImportDirector):
     def __init__(self, pathlist=None, importers=None, ownertypes=None):

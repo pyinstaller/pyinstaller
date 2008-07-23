@@ -106,7 +106,7 @@ class Archive:
             Check to see if the file object self.lib actually has a file
             we understand.
         """
-        self.lib.seek(self.start)	#default - magic is at start of file
+        self.lib.seek(self.start)       #default - magic is at start of file
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
             raise ArchiveReadError, "%s is not a valid %s archive file" \
               % (self.path, self.__class__.__name__)
@@ -255,7 +255,7 @@ class Archive:
         assert ext in ('.pyc', '.pyo')
         self.toc[nm] = (ispkg, self.lib.tell())
         f = open(entry[1], 'rb')
-        f.seek(8)	#skip magic and timestamp
+        f.seek(8)       #skip magic and timestamp
         self.lib.write(f.read())
 
     def save_toc(self, tocpos):
@@ -345,7 +345,7 @@ class ZlibArchive(Archive):
         except (IOError, OSError):
             try:
                 f = open(pth, 'rb')
-                f.seek(8)	#skip magic and timestamp
+                f.seek(8)       #skip magic and timestamp
                 bytecode = f.read()
                 marshal.loads(bytecode).co_filename # to make sure it's valid
                 obj = zlib.compress(bytecode, self.LEVEL)

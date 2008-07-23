@@ -153,4 +153,3 @@ def CopyIcons (dstpath, srcpath):
         win32api.UpdateResource (hdst, RT_ICON, iconname, data)
     win32api.FreeLibrary (hsrc)
     win32api.EndUpdateResource (hdst, 0)
-

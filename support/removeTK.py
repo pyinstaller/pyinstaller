@@ -48,4 +48,3 @@ prvtdir = os.path.dirname(tcldir)
 if os.path.basename(prvtdir) == '_MEI':
     empty(prvtdir)
     os.rmdir(prvtdir)
-

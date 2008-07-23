@@ -48,4 +48,3 @@ for bldconfig in ('--onedir', '--onefile'):
                         else:
                             os.system("ln -s /u/temp/t%d/hanoi hanoi%d" % (i,i))
                     i += 1
-

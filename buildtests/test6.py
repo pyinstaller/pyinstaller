@@ -26,4 +26,3 @@ else:
     open(test6x.__file__, 'w').write(txt)
 reload(test6x)
 print "test6x.x is now", test6x.x
-

@@ -602,7 +602,7 @@ def _string_bootstrap():
         def join(sep, words):
             res = ''
             for w in words:
-                    res = res + (sep + w)
+                res = res + (sep + w)
             return res[len(sep):]
         _string_join = join
 
@@ -613,19 +613,19 @@ def _string_bootstrap():
             res = []
             nsep = len(sep)
             if nsep == 0:
-                    return [s]
+                return [s]
             ns = len(s)
             if maxsplit <= 0: maxsplit = ns
             i = j = 0
             count = 0
             while j+nsep <= ns:
-                    if s[j:j+nsep] == sep:
-                            count = count + 1
-                            res.append(s[i:j])
-                            i = j = j + nsep
-                            if count >= maxsplit: break
-                    else:
-                            j = j + 1
+                if s[j:j+nsep] == sep:
+                    count = count + 1
+                    res.append(s[i:j])
+                    i = j = j + nsep
+                    if count >= maxsplit: break
+                else:
+                    j = j + 1
             res.append(s[i:])
             return res
         _string_split = split

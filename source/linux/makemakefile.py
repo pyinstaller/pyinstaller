@@ -44,5 +44,3 @@ def writerules(outfp, files, suffix, dflag, target):
     outfp.write("\n%s: %s\n" % (target, string.join(deps)))
     outfp.write("\t$(CC) %s -o %s $(LDLAST)\n" %
                 (string.join(files), target))
-
-

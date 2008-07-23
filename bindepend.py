@@ -87,29 +87,29 @@ excludes = {'KERNEL32.DLL':1,
 excludesRe = re.compile('|'.join(excludes.keys()), re.I)
 
 def getfullnameof(mod, xtrapath = None):
-  """Return the full path name of MOD.
+    """Return the full path name of MOD.
 
-      MOD is the basename of a dll or pyd.
-      XTRAPATH is a path or list of paths to search first.
-      Return the full path name of MOD.
-      Will search the full Windows search path, as well as sys.path"""
-  # Search sys.path first!
-  epath = sys.path + getWindowsPath()
-  if xtrapath is not None:
-    if type(xtrapath) == type(''):
-      epath.insert(0, xtrapath)
-    else:
-      epath = xtrapath + epath
-  for p in epath:
-    npth = os.path.join(p, mod)
-    if os.path.exists(npth):
-      return npth
-    # second try: lower case filename
+        MOD is the basename of a dll or pyd.
+        XTRAPATH is a path or list of paths to search first.
+        Return the full path name of MOD.
+        Will search the full Windows search path, as well as sys.path"""
+    # Search sys.path first!
+    epath = sys.path + getWindowsPath()
+    if xtrapath is not None:
+        if type(xtrapath) == type(''):
+            epath.insert(0, xtrapath)
+        else:
+            epath = xtrapath + epath
     for p in epath:
-        npth = os.path.join(p, string.lower(mod))
+        npth = os.path.join(p, mod)
         if os.path.exists(npth):
             return npth
-  return ''
+        # second try: lower case filename
+        for p in epath:
+            npth = os.path.join(p, string.lower(mod))
+            if os.path.exists(npth):
+                return npth
+    return ''
 
 def _getImports_dumpbin(pth):
     """Find the binary dependencies of PTH.
@@ -137,58 +137,58 @@ def _getImports_pe_x(pth):
     import struct
     rslt = []
     try:
-      f = open(pth, 'rb').read()
-      pehdrd = struct.unpack('l', f[60:64])[0]  #after the MSDOS loader is the offset of the peheader
-      magic = struct.unpack('l', f[pehdrd:pehdrd+4])[0] # pehdr starts with magic 'PE\000\000' (or 17744)
-                                                        # then 20 bytes of COFF header
-      numsecs = struct.unpack('h', f[pehdrd+6:pehdrd+8])[0] # whence we get number of sections
-      opthdrmagic = struct.unpack('h', f[pehdrd+24:pehdrd+26])[0]
-      if opthdrmagic == 0x10b: # PE32 format
-          numdictoffset = 116
-          importoffset = 128
-      elif opthdrmagic == 0x20b: # PE32+ format
-          numdictoffset = 132
-          importoffset = 148
-      else:
-          print "E: bindepend cannot analyze %s - unknown header format! %x" % (pth, opthdrmagic)
-          return rslt
-      numdirs = struct.unpack('l', f[pehdrd+numdictoffset:pehdrd+numdictoffset+4])[0]
-      idata = ''
-      if magic == 17744:
-          importsec, sz = struct.unpack('2l', f[pehdrd+importoffset:pehdrd+importoffset+8])
-          if sz == 0:
-              return rslt
-          secttbl = pehdrd + numdictoffset + 4 + 8*numdirs
-          secttblfmt = '8s7l2h'
-          seclist = []
-          for i in range(numsecs):
-              seclist.append(struct.unpack(secttblfmt, f[secttbl+i*40:secttbl+(i+1)*40]))
-              #nm, vsz, va, rsz, praw, preloc, plnnums, qrelocs, qlnnums, flags \
-              # = seclist[-1]
-          for i in range(len(seclist)-1):
-              if seclist[i][2] <= importsec < seclist[i+1][2]:
-                  break
-          vbase = seclist[i][2]
-          raw = seclist[i][4]
-          idatastart = raw + importsec - vbase
-          idata = f[idatastart:idatastart+seclist[i][1]]
-          i = 0
-          while 1:
-              chunk = idata[i*20:(i+1)*20]
-              if len(chunk) != 20:
-                  print "E: premature end of import table (chunk is %d, not 20)" % len(chunk)
-                  break
-              vsa =  struct.unpack('5l', chunk)[3]
-              if vsa == 0:
-                  break
-              sa = raw + vsa - vbase
-              end = string.find(f, '\000', sa)
-              nm = f[sa:end]
-              if nm:
-                  rslt.append(nm)
-              i = i + 1
-      else:
-          print "E: bindepend cannot analyze %s - file is not in PE format!" % pth
+        f = open(pth, 'rb').read()
+        pehdrd = struct.unpack('l', f[60:64])[0]  #after the MSDOS loader is the offset of the peheader
+        magic = struct.unpack('l', f[pehdrd:pehdrd+4])[0] # pehdr starts with magic 'PE\000\000' (or 17744)
+                                                          # then 20 bytes of COFF header
+        numsecs = struct.unpack('h', f[pehdrd+6:pehdrd+8])[0] # whence we get number of sections
+        opthdrmagic = struct.unpack('h', f[pehdrd+24:pehdrd+26])[0]
+        if opthdrmagic == 0x10b: # PE32 format
+            numdictoffset = 116
+            importoffset = 128
+        elif opthdrmagic == 0x20b: # PE32+ format
+            numdictoffset = 132
+            importoffset = 148
+        else:
+            print "E: bindepend cannot analyze %s - unknown header format! %x" % (pth, opthdrmagic)
+            return rslt
+        numdirs = struct.unpack('l', f[pehdrd+numdictoffset:pehdrd+numdictoffset+4])[0]
+        idata = ''
+        if magic == 17744:
+            importsec, sz = struct.unpack('2l', f[pehdrd+importoffset:pehdrd+importoffset+8])
+            if sz == 0:
+                return rslt
+            secttbl = pehdrd + numdictoffset + 4 + 8*numdirs
+            secttblfmt = '8s7l2h'
+            seclist = []
+            for i in range(numsecs):
+                seclist.append(struct.unpack(secttblfmt, f[secttbl+i*40:secttbl+(i+1)*40]))
+                #nm, vsz, va, rsz, praw, preloc, plnnums, qrelocs, qlnnums, flags \
+                # = seclist[-1]
+            for i in range(len(seclist)-1):
+                if seclist[i][2] <= importsec < seclist[i+1][2]:
+                    break
+            vbase = seclist[i][2]
+            raw = seclist[i][4]
+            idatastart = raw + importsec - vbase
+            idata = f[idatastart:idatastart+seclist[i][1]]
+            i = 0
+            while 1:
+                chunk = idata[i*20:(i+1)*20]
+                if len(chunk) != 20:
+                    print "E: premature end of import table (chunk is %d, not 20)" % len(chunk)
+                    break
+                vsa =  struct.unpack('5l', chunk)[3]
+                if vsa == 0:
+                    break
+                sa = raw + vsa - vbase
+                end = string.find(f, '\000', sa)
+                nm = f[sa:end]
+                if nm:
+                    rslt.append(nm)
+                i = i + 1
+        else:
+            print "E: bindepend cannot analyze %s - file is not in PE format!" % pth
     except IOError:
         print "E: bindepend cannot analyze %s - file not found!" % pth
     #except struct.error:
@@ -264,23 +264,23 @@ def _getImports_pe(path):
     return dlls
 
 def Dependencies(lTOC, platform=sys.platform, xtrapath=None):
-  """Expand LTOC to include all the closure of binary dependencies.
+    """Expand LTOC to include all the closure of binary dependencies.
 
-     LTOC is a logical table of contents, ie, a seq of tuples (name, path).
-     Return LTOC expanded by all the binary dependencies of the entries
-     in LTOC, except those listed in the module global EXCLUDES"""
-  for nm, pth, typ in lTOC:
-    fullnm = string.upper(os.path.basename(pth))
-    if seen.get(string.upper(nm),0):
-      continue
-    #print "I: analyzing", pth
-    seen[string.upper(nm)] = 1
-    for lib, npth in selectImports(pth, platform, xtrapath):
-        if seen.get(string.upper(lib),0):
+       LTOC is a logical table of contents, ie, a seq of tuples (name, path).
+       Return LTOC expanded by all the binary dependencies of the entries
+       in LTOC, except those listed in the module global EXCLUDES"""
+    for nm, pth, typ in lTOC:
+        fullnm = string.upper(os.path.basename(pth))
+        if seen.get(string.upper(nm),0):
             continue
-        lTOC.append((lib, npth, 'BINARY'))
+        #print "I: analyzing", pth
+        seen[string.upper(nm)] = 1
+        for lib, npth in selectImports(pth, platform, xtrapath):
+            if seen.get(string.upper(lib),0):
+                continue
+            lTOC.append((lib, npth, 'BINARY'))
 
-  return lTOC
+    return lTOC
 
 def selectImports(pth, platform=sys.platform, xtrapath=None):
     """Return the dependencies of a binary that should be included.
@@ -297,7 +297,7 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
     iswin = platform[:3] == 'win'
     for lib in dlls:
         if not iswin and not cygwin:
-            # plain win case
+                # plain win case
             npth = lib
             dir, lib = os.path.split(lib)
             if excludes.get(dir,0):
@@ -305,7 +305,7 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
         else:
             # all other platforms
             npth = getfullnameof(lib, xtrapath)
-        
+
         # now npth is a candidate lib
         # check again for excludes but with regex FIXME: split the list
         if excludesRe.search(npth):
@@ -316,7 +316,7 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
             else:
                 #print "I: inserting %20s <- %s" % (npth, pth)
                 pass
-                
+
         if npth:
             rv.append((lib, npth))
         else:
@@ -453,7 +453,7 @@ if __name__ == "__main__":
     parser = OptionParser(usage="%prog [options] <executable_or_dynamic_library>")
     parser.add_option('--target-platform', default=sys.platform,
                       help='Target platform, required for cross-bundling (default: current platform)')
-                  
+
     opts, args = parser.parse_args()
     if len (args) != 1:
         parser.error('Requires exactly one filename')

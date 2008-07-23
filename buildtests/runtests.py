@@ -59,8 +59,8 @@ def runtests(alltests, filters=None):
     print "*"*len(info)
     print info
     print "*"*len(info)
-    build_python = open("python_exe.build", "w")                                     
-    build_python.write(sys.executable)                                               
+    build_python = open("python_exe.build", "w")
+    build_python.write(sys.executable)
     build_python.close()
     if not filters:
         tests = alltests
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     normal_tests = glob.glob('test*[0-9].py')
     interactive_tests = glob.glob('test*[0-9]i.py')
     args = sys.argv[1:]
-    
+
     if "-i" in args:
         print "Running interactive tests"
         tests = interactive_tests
@@ -106,4 +106,3 @@ if __name__ == '__main__':
 
     clean()
     runtests(tests)
-

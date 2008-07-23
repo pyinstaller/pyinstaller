@@ -36,4 +36,3 @@ def hook(mod):
         if nm in removes:
             del mod.imports[i]
     return mod
-

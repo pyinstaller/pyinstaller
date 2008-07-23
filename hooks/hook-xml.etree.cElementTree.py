@@ -17,4 +17,3 @@
 
 # cElementTree has a hidden import (Python >=2.5 stdlib version)
 hiddenimports = ['xml.etree.ElementTree']
-
