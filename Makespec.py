@@ -25,7 +25,7 @@ try:
 except:
     True,False = 1,0
 
-freezetmplt = """\
+freezetmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
 pyz = PYZ(a.pure)
@@ -40,7 +40,7 @@ exe = EXE(%(tkpkg)s pyz,
           console=%(console)s %(exe_options)s)
 """ # pathex scripts exename tkpkg debug console
 
-collecttmplt = """\
+collecttmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
 pyz = PYZ(a.pure)
@@ -60,7 +60,7 @@ coll = COLLECT(%(tktree)s exe,
                name='%(distdir)s')
 """ # scripts pathex, exename, debug, console tktree distdir
 
-comsrvrtmplt = """\
+comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
 pyz = PYZ(a.pure)
