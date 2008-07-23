@@ -694,28 +694,6 @@ int installZlib(TOC *ptoc)
 	return 0;
 }
 
-/* Add a zipfile to sys.path from a toc entry
- * Return non zero on failure
- */
-int installZipfile(TOC *ptoc)
-{
-	int rc;
-	char *tmpl = "sys.path.append(r\"%s" SEP "%s\")\n";
-	char *cmd = (char *) malloc(strlen(tmpl) + strlen(f_workpath)
-				    + strlen(ptoc->name)+ 10);
-	sprintf(cmd, tmpl, f_workpath, ptoc->name);
-	/*VS(cmd);*/
-	rc = PI_PyRun_SimpleString(cmd);
-	if (rc != 0)
-	{
-		FATALERROR("Error in command: %s\n", cmd);
-		free(cmd);
-		return -1;
-	}
-
-	free(cmd);
-	return 0;
-}
 
 /*
  * Install zlibs 
@@ -726,20 +704,13 @@ int installZlibs()
 	TOC * ptoc;
 	VS("Installing import hooks\n");
 
-	/* Iterate through toc looking for zlibs (type 'z') or 
-	 *  zipfiles (type 'Z') 
-	 */
+	/* Iterate through toc looking for zlibs (type 'z') */
 	ptoc = f_tocbuff;
 	while (ptoc < f_tocend) {
-		if (ptoc->typcd == 'z')
+		if (ptoc->typcd == 'z') 
 		{
 			VS("%s\n", ptoc->name);
 			installZlib(ptoc);
-		}
-		else if (ptoc->typcd == 'Z')
-		{
-			VS("zipfile: %s\n", ptoc->name);
-			installZipfile(ptoc);
 		}
 
 		ptoc = incrementTocPtr(ptoc); 
@@ -884,8 +855,7 @@ int extract2fs(TOC *ptoc)
 	return 0;
 }
 /*
- * extract all binaries (type 'b') and zipfiles (type 'Z') 
- * to the filesystem
+ * extract all binaries (type 'b') to the filesystem
  */
 int extractBinaries(char **workpath)
 {
@@ -893,7 +863,7 @@ int extractBinaries(char **workpath)
 	workpath[0] = '\0';
 	VS("Extracting binaries\n");
 	while (ptoc < f_tocend) {
-		if (ptoc->typcd == 'b' || ptoc->typcd == 'Z')
+		if (ptoc->typcd == 'b') 
 		if (extract2fs(ptoc))
 		return -1;
 		ptoc = incrementTocPtr(ptoc); 
