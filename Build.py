@@ -41,8 +41,17 @@ WARNFILE = None
 rthooks = {}
 iswin = sys.platform[:3] == 'win'
 cygwin = sys.platform == 'cygwin'
+
+def _save_data(filename, data):
+    outf = open(filename, 'w')
+    pprint.pprint(data, outf)
+    outf.close()
+
+def _load_data(filename):
+    return eval(open(filename, 'r').read())
+
 try:
-    config = eval(open(os.path.join(HOMEPATH, 'config.dat'), 'r').read())
+    config = _load_data(os.path.join(HOMEPATH, 'config.dat'))
 except IOError:
     print "You must run Configure.py before building!"
     sys.exit(1)
@@ -71,7 +80,7 @@ if config['hasUPX']:
 
 def build(spec):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks
-    rthooks = eval(open(os.path.join(HOMEPATH, 'rthooks.dat'), 'r').read())
+    rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]
     if SPECPATH == '':
@@ -138,7 +147,7 @@ class Analysis(Target):
                 print "building because %s changed" % fnm
                 return True
         try:
-            inputs, pathex, hookspath, excludes, scripts, pure, binaries = eval(open(self.out, 'r').read())
+            inputs, pathex, hookspath, excludes, scripts, pure, binaries = _load_data(self.out)
         except:
             print "building because %s disappeared" % outnm
             return True
@@ -238,16 +247,14 @@ class Analysis(Target):
         self.binaries = TOC(binaries)
         self.zipfiles = TOC(zipfiles)
         try: # read .toc
-            oldstuff = eval(open(self.out, 'r').read())
+            oldstuff = _load_data(self.out)
         except:
             oldstuff = None
         # todo: add zipfiles
-        if oldstuff != (self.inputs, self.pathex, self.hookspath, self.excludes, scripts, pure, binaries):
-            outf = open(self.out, 'w')
-            pprint.pprint(
-                (self.inputs, self.pathex, self.hookspath, self.excludes, self.scripts, self.pure, self.binaries),
-                outf)
-            outf.close()
+        newstuff = (self.inputs, self.pathex, self.hookspath, self.excludes,
+                    self.scripts, self.pure, self.binaries)
+        if oldstuff != newstuff:
+            _save_data(self.out, newstuff)
             wf = open(WARNFILE, 'w')
             for ln in analyzer.getwarnings():
                 wf.write(ln+'\n')
@@ -314,7 +321,7 @@ class PYZ(Target):
             print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
             return 1
         try:
-            name, level, toc = eval(open(self.out, 'r').read())
+            name, level, toc = _load_data(self.out)
         except:
             print "rebuilding %s because missing" % outnm
             return 1
@@ -344,9 +351,7 @@ class PYZ(Target):
             if mtime(fnm[:-1]) > mtime(fnm):
                 py_compile.compile(fnm[:-1])
         pyz.build(self.name, toc)
-        outf = open(self.out, 'w')
-        pprint.pprint((self.name, self.level, self.toc), outf)
-        outf.close()
+        _save_data(self.out, (self.name, self.level, self.toc))
         return 1
 
 def cacheDigest(fnm):
@@ -374,7 +379,7 @@ def checkCache(fnm, strip, upx, fix_paths=1):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
     if os.path.exists(cacheindexfn):
-        cache_index = eval(open(cacheindexfn, "r").read())
+        cache_index = _load_data(cacheindexfn)
     else:
         cache_index = {}
 
@@ -404,9 +409,7 @@ def checkCache(fnm, strip, upx, fix_paths=1):
 
     # update cache index
     cache_index[basenm] = digest
-    outf = open(cacheindexfn, 'w')
-    pprint.pprint(cache_index, outf)
-    outf.close()
+    _save_data(cacheindexfn, cache_index)
 
     return cachedfile
 
@@ -450,7 +453,7 @@ class PKG(Target):
             print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
             return 1
         try:
-            name, cdict, toc, exclude_binaries, strip_binaries, upx_binaries = eval(open(self.out, 'r').read())
+            name, cdict, toc, exclude_binaries, strip_binaries, upx_binaries = _load_data(self.out)
         except:
             print "rebuilding %s because %s is missing" % (outnm, outnm)
             return 1
@@ -512,9 +515,9 @@ class PKG(Target):
                 mytoc.append((inm, fnm, self.cdict.get(typ,0), self.xformdict.get(typ,'b')))
         archive = carchive.CArchive()
         archive.build(self.name, mytoc)
-        outf = open(self.out, 'w')
-        pprint.pprint((self.name, self.cdict, self.toc, self.exclude_binaries, self.strip_binaries, self.upx_binaries), outf)
-        outf.close()
+        _save_data(self.out,
+                   (self.name, self.cdict, self.toc, self.exclude_binaries,
+                    self.strip_binaries, self.upx_binaries))
         for item in trash:
             os.remove(item)
         return 1
@@ -566,7 +569,7 @@ class EXE(Target):
                 os.path.basename(self.pkgname),)
             return 1
         try:
-            name, console, debug, icon, versrsrc, strip, upx, mtm = eval(open(self.out, 'r').read())
+            name, console, debug, icon, versrsrc, strip, upx, mtm = _load_data(self.out)
         except:
             print "rebuilding %s because %s missing or bad" % (outnm, outnm)
             return 1
@@ -648,10 +651,9 @@ class EXE(Target):
             shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
         os.chmod(self.name, 0755)
-        f = open(self.out, 'w')
-        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
-                       self.strip, self.upx, mtime(self.name)), f)
-        f.close()
+        _save_data(self.out,
+                   (self.name, self.console, self.debug, self.icon,
+                    self.versrsrc, self.strip, self.upx, mtime(self.name)))
         for item in trash:
             os.remove(item)
         return 1
@@ -673,10 +675,9 @@ class DLL(EXE):
         self.copy(self.pkg.name, outf)
         outf.close()
         os.chmod(self.name, 0755)
-        f = open(self.out, 'w')
-        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
-                       self.strip, self.upx, mtime(self.name)), f)
-        f.close()
+        _save_data(self.out,
+                   (self.name, self.console, self.debug, self.icon,
+                    self.versrsrc, self.strip, self.upx, mtime(self.name)))
         return 1
 
 
@@ -708,7 +709,7 @@ class COLLECT(Target):
     def check_guts(self, last_build):
         outnm = os.path.basename(self.out)
         try:
-            name, strip_binaries, upx_binaries, toc = eval(open(self.out, 'r').read())
+            name, strip_binaries, upx_binaries, toc = _load_data(self.out)
         except:
             print "building %s because %s missing" % (outnm, outnm)
             return 1
@@ -760,9 +761,8 @@ class COLLECT(Target):
             shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0755)
-        f = open(self.out, 'w')
-        pprint.pprint((self.name, self.strip_binaries, self.upx_binaries, self.toc), f)
-        f.close()
+        _save_data(self.out,
+                 (self.name, self.strip_binaries, self.upx_binaries, self.toc))
         return 1
 
 import UserList
@@ -841,7 +841,7 @@ class Tree(Target, TOC):
     def check_guts(self, last_build):
         outnm = os.path.basename(self.out)
         try:
-            root, prefix, excludes, toc = eval(open(self.out, 'r').read())
+            root, prefix, excludes, toc = _load_data(self.out)
         except:
             print "building %s because %s is missing / bad" % (outnm, outnm)
             return 1
@@ -890,13 +890,12 @@ class Tree(Target, TOC):
                         else:
                             rslt.append((rfnm, fullfnm, 'DATA'))
         try:
-            oldstuff = eval(open(self.out, 'r').read())
+            oldstuff = _load_data(self.out)
         except:
             oldstuff = None
-        if oldstuff != (self.root, self.prefix, self.excludes, rslt):
-            outf = open(self.out, 'w')
-            pprint.pprint((self.root, self.prefix, self.excludes, rslt), outf)
-            outf.close()
+        newstuff = (self.root, self.prefix, self.excludes, rslt)
+        if oldstuff != newstuff:
+            _save_data(self.out, newstuff)
             self.data = rslt
             return 1
         print self.out, "no change!"
