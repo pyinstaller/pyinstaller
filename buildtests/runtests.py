@@ -97,7 +97,10 @@ if __name__ == '__main__':
     interactive_tests = glob.glob('test*[0-9]i.py')
     args = sys.argv[1:]
 
-    if "-i" in args:
+    if "-c" in args:
+        # only clean up
+        tests = []
+    elif "-i" in args:
         print "Running interactive tests"
         tests = interactive_tests
     else:
@@ -105,4 +108,5 @@ if __name__ == '__main__':
         tests = normal_tests
 
     clean()
-    runtests(tests)
+    if tests:
+        runtests(tests)
