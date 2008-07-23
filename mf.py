@@ -146,7 +146,6 @@ ZipOwner = None
 if zipimport:
     class ZipOwner(Owner):
         def __init__(self, path):
-            print 'ZipOwner', path
             self.__zip = zipimport.zipimporter(path)
             Owner.__init__(self, path)
 
