@@ -1,5 +1,7 @@
 #! /usr/bin/env python
+#
 # Build packages using spec files
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
 #
@@ -16,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 import sys
 import os
 import shutil
@@ -38,6 +41,7 @@ HOMEPATH = os.path.dirname(sys.argv[0])
 SPECPATH = None
 BUILDPATH = None
 WARNFILE = None
+
 rthooks = {}
 iswin = sys.platform[:3] == 'win'
 cygwin = sys.platform == 'cygwin'
@@ -56,10 +60,16 @@ except IOError:
     print "You must run Configure.py before building!"
     sys.exit(1)
 
-if config['pythonVersion'] != sys.version:
-    print "The current version of Python is not the same with which PyInstaller was configured."
-    print "Please re-run Configure.py with this version."
-    sys.exit(1)
+target_platform = config.get('target_platform', sys.platform)
+mf.target_platform = target_platform
+target_iswin = target_platform[:3] == 'win'
+
+if target_platform == sys.platform:
+    # _not_ cross compiling
+    if config['pythonVersion'] != sys.version:
+        print "The current version of Python is not the same with which PyInstaller was configured."
+        print "Please re-run Configure.py with this version."
+        sys.exit(1)
 
 if config['hasRsrcUpdate']:
     import icon, versionInfo
@@ -269,7 +279,7 @@ class Analysis(Target):
         Python executable to the libpython, so bindepend doesn't include
         it in its output.
         """
-        if sys.platform != 'linux2': return
+        if target_platform != 'linux2': return
 
         name = 'libpython%d.%d.so' % sys.version_info[:2]
         for (nm, fnm, typ) in binaries:
@@ -539,7 +549,7 @@ class EXE(Target):
             self.name = self.out[:-3] + 'exe'
         if not os.path.isabs(self.name):
             self.name = os.path.join(SPECPATH, self.name)
-        if iswin or cygwin:
+        if target_iswin or cygwin:
             self.pkgname = self.name[:-3] + 'pkg'
         else:
             self.pkgname = self.name + '.pkg'
@@ -604,7 +614,7 @@ class EXE(Target):
             return 1
         return 0
     def _bootloader_postfix(self, exe):
-        if iswin:
+        if target_iswin:
             exe = exe + "_"
             is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
             exe = exe + "67"[is24]
@@ -622,7 +632,7 @@ class EXE(Target):
         outf = open(self.name, 'wb')
         exe = self._bootloader_postfix('support/loader/run')
         exe = os.path.join(HOMEPATH, exe)
-        if iswin or cygwin:
+        if target_iswin or cygwin:
             exe = exe + '.exe'
         if config['hasRsrcUpdate']:
             if self.icon:
@@ -922,7 +932,3 @@ if __name__ == '__main__':
         print usage % sys.argv[0]
     else:
         build(sys.argv[1])
-
-
-
-

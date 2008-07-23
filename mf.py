@@ -1,4 +1,6 @@
+#
 # Copyright (C) 2005, Giovanni Bajo
+#
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -14,12 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+
 import sys, string, os, imp, marshal, dircache
 try:
     # zipimport is supported starting with Python 2.3
     import zipimport
 except ImportError:
     zipimport = None
+
+import suffixes
 
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
@@ -66,7 +72,7 @@ class DirOwner(Owner):
         if not os.path.isdir(path):
             raise ValueError, "%s is not a directory" % path
         Owner.__init__(self, path)
-    def getmod(self, nm, getsuffixes=imp.get_suffixes, loadco=marshal.loads):
+    def getmod(self, nm, getsuffixes=suffixes.get_suffixes, loadco=marshal.loads):
         pth =  os.path.join(self.path, nm)
         possibles = [(pth, 0, None)]
         if os.path.isdir(pth):

@@ -1,5 +1,7 @@
 #! /usr/bin/env python
+#
 # Configure PyInstaller for the current Python installation.
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -17,11 +19,30 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os, sys, string, shutil
+import os
+import sys
+import string
+import shutil
+import pprint
+import re
+import glob
+
+import mf
+import bindepend
+
 HOME = os.path.dirname(sys.argv[0])
-iswin = sys.platform[:3] == 'win'
-is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
-cygwin = sys.platform == 'cygwin'
+
+from optparse import OptionParser
+parser = OptionParser(usage="%prog [options] <executable_or_dynamic_library>")
+parser.add_option('--target-platform', default=None,
+                  help='Target platform, required for cross-bundling (default: current platform).')
+parser.add_option('--executable', default=None,
+                  help='Python executable to use. Required for cross-bundling.')
+
+opts, args = parser.parse_args()
+if args:
+    parser.error('Does not expect any arguments')
+
 configfile = os.path.join(HOME, 'config.dat')
 try:
     config = eval(open(configfile, 'r').read())
@@ -29,21 +50,39 @@ except IOError, SyntaxError:
     # IOerror: file not present
     # SyntaxError: invalid file (platform change?)
     config = {'useELFEXE':1}    # if not set by Make.py we can assume Windows
-    
 
 # Save Python version, to detect and avoid conflicts
 config["pythonVersion"] = sys.version
 
-import mf, bindepend
+iswin = sys.platform[:3] == 'win'
+is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
+cygwin = sys.platform == 'cygwin'
 
 # EXE_dependencies
 print "I: computing EXE_dependencies"
-python = sys.executable
+python = opts.executable or config.get('python') or sys.executable
+target_platform = opts.target_platform or config.get('target_platform') or sys.platform
+config['python'] = python
+config['target_platform'] = target_platform
+target_iswin = target_platform[:3] == 'win'
+
 if not iswin:
     while os.path.islink(python):
         python = os.path.join(os.path.split(python)[0], os.readlink(python))
 
-toc = bindepend.Dependencies([('', python, '')])
+xtrapath = []
+if target_iswin and not iswin:
+    # try to find a mounted Windows system
+    xtrapath = glob.glob('/mnt/*/WINDOWS/system32/')
+    if not xtrapath:
+        print "E: Can not find a mounted Windows system"
+        print "W: Please set 'xtrpath' in the config file yourself"
+
+xtrapath = config.get('xtrapath') or xtrapath
+config['xtrapath'] = xtrapath
+
+toc = bindepend.Dependencies([('', python, '')], target_platform, xtrapath)
+
 if iswin and sys.version[:3] == '1.5':
     import exceptions
     toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
@@ -67,11 +106,10 @@ os.putenv("TK_LIBRARY", tkdir)
 
 # TCL_root, TK_root and support/useTK.py
 print "I: Finding TCL/TK..."
-if not iswin:
+if not (target_iswin):
     saveexcludes = bindepend.excludes
     bindepend.excludes = {}
-import re
-pattern = [r'libtcl(\d\.\d)?\.so', r'(?i)tcl(\d\d)\.dll'][iswin]
+pattern = [r'libtcl(\d\.\d)?\.so', r'(?i)tcl(\d\d)\.dll'][target_iswin]
 a = mf.ImportTracker()
 a.analyze_r('Tkinter')
 binaries = []
@@ -85,7 +123,7 @@ for nm, fnm, typ in binaries:
     if mo:
         ver = mo.group(1)
         tclbindir = os.path.dirname(fnm)
-        if iswin:
+        if target_iswin:
             ver = ver[0] + '.' + ver[1:]
         elif ver is None:
             # we found "libtcl.so.0" so we need to get the version from the lib directory
@@ -94,13 +132,13 @@ for nm, fnm, typ in binaries:
                 if mo:
                     ver = mo.group(1)
         print "I: found TCL/TK version %s" % ver
-        open(os.path.join(HOME, 'support/useTK.py'), 'w').write(_useTK % (ver, ver))
+        open(os.path.join(HOME, 'support', 'useTK.py'), 'w').write(_useTK % (ver, ver))
         tclnm = 'tcl%s' % ver
         tknm = 'tk%s' % ver
         # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3 and /usr/lib/tk8.3
         # Windows: Python21/DLLs with the .tcl files in Python21/tcl/tcl8.3 and Python21/tcl/tk8.3
         #      or  D:/Programs/Tcl/bin with the .tcl files in D:/Programs/Tcl/lib/tcl8.0 and D:/Programs/Tcl/lib/tk8.0
-        if iswin:
+        if target_iswin:
             for attempt in ['../tcl', '../lib']:
                 if os.path.exists(os.path.join(tclbindir, attempt, tclnm)):
                     config['TCL_root'] = os.path.join(tclbindir, attempt, tclnm)
@@ -112,7 +150,7 @@ for nm, fnm, typ in binaries:
         break
 else:
     print "I: could not find TCL/TK"
-if not iswin:
+if not target_iswin:
     bindepend.excludes = saveexcludes
 
 #useZLIB
@@ -136,7 +174,7 @@ if iswin:
         config['hasRsrcUpdate'] = 0
         print 'I: ... resource update unavailable -', detail
     else:
-        test_exe = os.path.join(HOME, r'support\loader\run_7rw.exe')
+        test_exe = os.path.join(HOME, 'support', 'loader', 'run_7rw.exe')
         if not os.path.exists( test_exe ):
             config['hasRsrcUpdate'] = 0
             print 'E: ... resource update unavailable - %s not found' % test_exe
@@ -208,7 +246,6 @@ config['hasUPX'] = hasUPX
 
 # now write out config, so Build can load
 outf = open(configfile, 'w')
-import pprint
 pprint.pprint(config, outf)
 outf.close()
 
@@ -236,7 +273,6 @@ toc.reverse()
 config['PYZ_dependencies'] = toc.data
 
 outf = open(configfile, 'w')
-import pprint
 pprint.pprint(config, outf)
 outf.close()
 print "I: config.dat generation done!"

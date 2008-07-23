@@ -1,5 +1,7 @@
 #! /usr/bin/env python
+#
 # Find external dependencies of binary libraries.
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -40,6 +42,7 @@ seen = {}
 _bpath = None
 iswin = sys.platform[:3] == 'win'
 cygwin = sys.platform == 'cygwin'
+
 excludes = {'KERNEL32.DLL':1,
       'ADVAPI.DLL':1,
       'MSVCRT.DLL':1,
@@ -101,6 +104,11 @@ def getfullnameof(mod, xtrapath = None):
     npth = os.path.join(p, mod)
     if os.path.exists(npth):
       return npth
+    # second try: lower case filename
+    for p in epath:
+        npth = os.path.join(p, string.lower(mod))
+        if os.path.exists(npth):
+            return npth
   return ''
 
 def _getImports_dumpbin(pth):
@@ -255,7 +263,7 @@ def _getImports_pe(path):
         data = data[iidescrsz:]
     return dlls
 
-def Dependencies(lTOC):
+def Dependencies(lTOC, platform=sys.platform, xtrapath=None):
   """Expand LTOC to include all the closure of binary dependencies.
 
      LTOC is a logical table of contents, ie, a seq of tuples (name, path).
@@ -267,20 +275,26 @@ def Dependencies(lTOC):
       continue
     #print "I: analyzing", pth
     seen[string.upper(nm)] = 1
-    for lib, npth in selectImports(pth):
+    for lib, npth in selectImports(pth, platform, xtrapath):
         if seen.get(string.upper(lib),0):
             continue
         lTOC.append((lib, npth, 'BINARY'))
 
   return lTOC
 
-def selectImports(pth):
+def selectImports(pth, platform=sys.platform, xtrapath=None):
     """Return the dependencies of a binary that should be included.
 
     Return a list of pairs (name, fullpath)
     """
     rv = []
-    dlls = getImports(pth)
+    if xtrapath is None:
+        xtrapath = [os.path.dirname(pth)]
+    else:
+        assert isinstance(xtrapath, list)
+        xtrapath = [os.path.dirname(pth)] + xtrapath # make a copy
+    dlls = getImports(pth, platform=platform)
+    iswin = platform[:3] == 'win'
     for lib in dlls:
         if not iswin and not cygwin:
             # plain win case
@@ -290,7 +304,7 @@ def selectImports(pth):
                 continue
         else:
             # all other platforms
-            npth = getfullnameof(lib, os.path.dirname(pth))
+            npth = getfullnameof(lib, xtrapath)
         
         # now npth is a candidate lib
         # check again for excludes but with regex FIXME: split the list
@@ -348,12 +362,12 @@ def _getImports_otool(pth):
 
     return rslt
 
-def getImports(pth):
+def getImports(pth, platform=sys.platform):
     """Forwards to the correct getImports implementation for the platform.
     """
-    if sys.platform[:3] == 'win' or sys.platform == 'cygwin':
+    if platform[:3] == 'win' or platform == 'cygwin':
         return _getImports_pe(pth)
-    elif sys.platform == 'darwin':
+    elif platform == 'darwin':
         return _getImports_otool(pth)
     else:
         return _getImports_ldd(pth)
@@ -433,9 +447,14 @@ def getSoname(filename):
     m = re.search(r'\s+SONAME\s+([^\s]+)', os.popen(cmd).read())
     if m: return m.group(1)
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print "Usage: python %s BINARYFILE" % sys.argv[0]
-        sys.exit(0)
-    print getImports(sys.argv[1])
 
+if __name__ == "__main__":
+    from optparse import OptionParser
+    parser = OptionParser(usage="%prog [options] <executable_or_dynamic_library>")
+    parser.add_option('--target-platform', default=sys.platform,
+                      help='Target platform, required for cross-bundling (default: current platform)')
+                  
+    opts, args = parser.parse_args()
+    if len (args) != 1:
+        parser.error('Requires exactly one filename')
+    print getImports(args[0], opts.target_platform)
