@@ -34,31 +34,45 @@ if sys.platform[:3] == 'win':
     if string.find(PYTHON, ' ') > -1:
         PYTHON='"%s"' % PYTHON
 
-def clean():
-    distdirs = glob.glob('disttest*')
-    for dir in distdirs:
-        try:
-            shutil.rmtree(dir)
-        except OSError, e:
-            print e
-    builddirs = glob.glob('buildtest*')
-    for dir in builddirs:
-        try:
-            shutil.rmtree(dir)
-        except OSError, e:
-            print e
-    wfiles = glob.glob('warn*.txt')
-    for file in wfiles:
-        try:
-            os.remove(file)
-        except OSError, e:
-            print e
+# files/globs to clean up
+CLEANUP = """python_exe.build
+logdict*.log
+disttest*
+buildtest*
+warn*.txt
+*.py[co]
+*/*.py[co]
+*/*/*.py[co]
+""".split()
 
-def runtests(alltests, filters=None):
+def clean():
+    for clean in CLEANUP:
+        clean = glob.glob(clean)
+        for path in clean:
+            try:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+            except OSError, e:
+                print e
+
+
+def _msg(*args, **kw):
+    short = kw.get('short', 0)
+    if not short: print
+    print "##################",
+    for a in args: print a,
+    print "#######################"
+    if not short: print
+
+
+def runtests(alltests, filters=None, run_executable=1):
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
     print "*"*len(info)
     print info
     print "*"*len(info)
+
     build_python = open("python_exe.build", "w")
     build_python.write(sys.executable)
     build_python.close()
@@ -72,31 +86,35 @@ def runtests(alltests, filters=None):
     path = os.environ["PATH"]
     counter = dict(passed=[],failed=[])
     for src in tests:
-        print
-        print "################## BUILDING TEST %s #################################" % src
-        print
+        _msg("BUILDING TEST", src)
         test = os.path.splitext(os.path.basename(src))[0]
-        os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
+        res = os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
         # Run the test in a clean environment to make sure they're really self-contained
-        del os.environ["PATH"]
-        print
-        print "################## EXECUTING TEST %s ################################" % src
-        print
-        res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
-        os.environ["PATH"] = path
+
+        if run_executable:
+            _msg("EXECUTING TEST", src)
+            del os.environ["PATH"]
+            res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
+            os.environ["PATH"] = path
+
         if res == 0:
+            _msg("FINISHING TEST", src, short=1)
             counter["passed"].append(src)
-            print "################## FINISHING TEST %s ################################" % src
         else:
+            _msg("TEST", src, "FAILED", short=1)
             counter["failed"].append(src)
-            print "#################### TEST %s FAILED #################################" % src
     print counter
+
 
 if __name__ == '__main__':
     normal_tests = glob.glob('test*[0-9].py')
     interactive_tests = glob.glob('test*[0-9]i.py')
     args = sys.argv[1:]
 
+    run_executable = 1
+    if "-n" in args:
+        # Do not run the built executables. Useful for cross builds.
+        run_executable = 0
     if "-c" in args:
         # only clean up
         tests = []
@@ -109,4 +127,4 @@ if __name__ == '__main__':
 
     clean()
     if tests:
-        runtests(tests)
+        runtests(tests, run_executable=run_executable)
