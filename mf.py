@@ -234,6 +234,8 @@ class PathImportDirector(ImportDirector):
             self.shadowpath = {}
         self.inMakeOwner = 0
         self.building = {}
+    def __str__(self):
+        return str(self.path)
     def getmod(self, nm):
         mod = None
         for thing in self.path:
