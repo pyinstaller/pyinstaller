@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+#
 # Automatically build spec files containing a description of the project
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -21,9 +23,10 @@ import sys, os, string
 
 # For Python 1.5 compatibility
 try:
-    True
+    True, False
 except:
-    True,False = 1,0
+    True  = 1 == 1
+    False = not True
 
 freezetmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
@@ -84,23 +87,12 @@ coll = COLLECT(exe, dll,
                upx=%(upx)s,
                name='%(distdir)s')
 """ # scripts pathex, exename, debug, console tktree distdir
+
 HOME = os.path.dirname(sys.argv[0])
-if HOME == '':
-    HOME = os.getcwd()
-if not os.path.isabs(HOME):
-    HOME = os.path.abspath(HOME)
+HOME = os.path.abspath(HOME)
+
 iswin = sys.platform[:3] == "win"
 cygwin = sys.platform == "cygwin"
-try:
-    config = eval(open(os.path.join(HOME, 'config.dat'), 'r').read())
-except IOError:
-    print "You must run Configure.py before building!"
-    sys.exit(1)
-
-if config['pythonVersion'] != sys.version:
-    print "The current version of Python is not the same with which PyInstaller was configured."
-    print "Please re-run Configure.py with this version."
-    sys.exit(1)
 
 def quote_win_filepath( path ):
     # quote all \ with another \ after using normpath to clean up the path
@@ -140,12 +132,28 @@ class Path:
             return repr(self.path)
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
-def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
-         comserver=0, ascii=0, workdir=None, pathex=[], version_file=None, icon_file=None):
-    if name is None:
+
+def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0,
+         strip=0, upx=0, comserver=0, ascii=0, workdir=None,
+         pathex=[], version_file=None, icon_file=None):
+
+    try:
+        config = eval(open(os.path.join(HOME, 'config.dat'), 'r').read())
+    except IOError:
+        print "You must run Configure.py before building!"
+        sys.exit(1)
+
+    if config['pythonVersion'] != sys.version:
+        print "The current version of Python is not the same with which PyInstaller was configured."
+        print "Please re-run Configure.py with this version."
+        raise SystemExit(1)
+
+    if not name:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
+
     distdir = "dist%s" % name
     builddir = "build%s" % name
+    
     pathex = pathex[:]
     if workdir is None:
         workdir = os.getcwd()
@@ -204,6 +212,7 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
         specfile.write(collecttmplt % d)
     specfile.close()
     return specfnm
+
 
 if __name__ == '__main__':
     import optparse
