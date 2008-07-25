@@ -29,6 +29,7 @@ import glob
 
 import mf
 import bindepend
+import Build
 
 HOME = os.path.dirname(sys.argv[0])
 
@@ -244,13 +245,6 @@ except Exception, e:
     print e, e.args
 config['hasUPX'] = hasUPX
 
-# now write out config, so Build can load
-outf = open(configfile, 'w')
-pprint.pprint(config, outf)
-outf.close()
-
-import Build
-
 # PYZ_dependencies
 print "I: computing PYZ dependencies..."
 a = mf.ImportTracker([os.path.join(HOME, 'support')])
@@ -272,7 +266,5 @@ for i in range(len(toc)):
 toc.reverse()
 config['PYZ_dependencies'] = toc.data
 
-outf = open(configfile, 'w')
-pprint.pprint(config, outf)
-outf.close()
+Build._save_data(configfile, config)
 print "I: config.dat generation done!"
