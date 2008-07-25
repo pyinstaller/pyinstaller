@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 #
 # Build packages using spec files
 #
@@ -926,33 +926,42 @@ Usage: python %s <specfile>
 See doc/Tutorial.html for details.
 """
 
-try:
-    config = _load_data(os.path.join(HOMEPATH, 'config.dat'))
-except IOError:
-    print "You must run Configure.py before building!"
-    sys.exit(1)
+def main(specfile):
+    global target_platform, target_iswin, config
+    global icon, versionInfo
 
-target_platform = config.get('target_platform', sys.platform)
-target_iswin = target_platform[:3] == 'win'
-
-if target_platform == sys.platform:
-    # _not_ cross compiling
-    if config['pythonVersion'] != sys.version:
-        print "The current version of Python is not the same with which PyInstaller was configured."
-        print "Please re-run Configure.py with this version."
+    try:
+        config = _load_data(os.path.join(HOMEPATH, 'config.dat'))
+    except IOError:
+        print "You must run Configure.py before building!"
         sys.exit(1)
 
-if config['hasRsrcUpdate']:
-    import icon, versionInfo
+    target_platform = config.get('target_platform', sys.platform)
+    target_iswin = target_platform[:3] == 'win'
 
-if config['hasUPX']:
-    setupUPXFlags()
+    if target_platform == sys.platform:
+        # _not_ cross compiling
+        if config['pythonVersion'] != sys.version:
+            print "The current version of Python is not the same with which PyInstaller was configured."
+            print "Please re-run Configure.py with this version."
+            sys.exit(1)
 
-if not config['useELFEXE']:
-    EXE.append_pkg = 0
+    if config['hasRsrcUpdate']:
+        import icon, versionInfo
+
+    if config['hasUPX']:
+        setupUPXFlags()
+
+    if not config['useELFEXE']:
+        EXE.append_pkg = 0
+
+    build(specfile)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print usage % sys.argv[0]
-    else:
-        build(sys.argv[1])
+    from optparse import OptionParser
+    parser = OptionParser('%program [options] specfile')
+    opts, args = parser.parse_args()
+    if len(args) != 1:
+        parser.error('Requires exactly one .spec-file')
+
+    main(args[0])
