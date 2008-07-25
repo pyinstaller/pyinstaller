@@ -37,6 +37,7 @@ import bindepend
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
 
+# todo: use pkg_resources here
 HOMEPATH = os.path.dirname(sys.argv[0])
 SPECPATH = None
 BUILDPATH = None
@@ -115,6 +116,45 @@ def mtime(fnm):
 def absnormpath(apath):
     return os.path.abspath(os.path.normpath(apath))
 
+#--- functons for checking guts ---
+
+def _check_guts_eq(attr, old, new, last_build):
+    """
+    rebuild is required if values differ
+    """
+    if old != new:
+        print "building because %s changed" % attr
+        return True
+    return False
+
+def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
+    """
+    rebuild is required if mtimes of files listed in old toc are newer
+    than ast_build
+
+    if pyc=1, check for .py files, too
+    """
+    for (nm, fnm, typ) in old:
+        if mtime(fnm) > last_build:
+            print "building because %s changed" % fnm
+            return True
+        elif pyc and mtime(fnm[:-1]) > last_build:
+            print "building because %s changed" % fnm[:-1]
+            return True
+    return False
+
+def _check_guts_toc(attr, old, toc, last_build, pyc=0):
+    """
+    rebuild is required if either toc content changed if mtimes of
+    files listed in old toc are newer than ast_build
+
+    if pyc=1, check for .py files, too
+    """
+    return    _check_guts_eq       (attr, old, toc, last_build) \
+           or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc)
+
+#--
+
 class Target:
     invcnum = 0
     def __init__(self):
@@ -127,6 +167,34 @@ class Target:
         print "checking %s" % (self.__class__.__name__,)
         if self.check_guts(mtime(self.out)):
             self.assemble()
+
+    GUTS = []
+
+    def check_guts(self, last_build):
+        pass
+
+    def get_guts(self, last_build, missing ='missing or bad'):
+        """
+        returns None if guts have changed
+        """
+        try:
+            data = _load_data(self.out)
+        except:
+            print "building because", os.path.basename(self.out), missing
+            return None
+
+        if len(data) != len(self.GUTS):
+            print "building because %s is bad" % outnm
+            return None
+        for i in range(len(self.GUTS)):
+            attr, func = self.GUTS[i]
+            if func is None:
+                # no check for this value
+                continue
+            if func(attr, data[i], getattr(self, attr), last_build):
+                return None
+        return data
+
 
 class Analysis(Target):
     def __init__(self, scripts=None, pathex=None, hookspath=None, excludes=None):
@@ -146,6 +214,18 @@ class Analysis(Target):
         self.binaries = TOC()
         self.zipfiles = TOC()
         self.__postinit__()
+ 
+    GUTS = (('inputs',    _check_guts_eq),
+            ('pathex',    _check_guts_eq),
+            ('hookspath', _check_guts_eq),
+            ('excludes',  _check_guts_eq),
+            ('scripts',   _check_guts_toc_mtime),
+            ('pure',      lambda *args: apply(_check_guts_toc_mtime,
+                                              args, {'pyc': 1 }   )),
+            ('binaries',  _check_guts_toc_mtime),
+            ('zipfiles',  _check_guts_toc_mtime),
+            )
+ 
     def check_guts(self, last_build):
         outnm = os.path.basename(self.out)
         if last_build == 0:
@@ -155,42 +235,17 @@ class Analysis(Target):
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
                 return True
-        try:
-            inputs, pathex, hookspath, excludes, scripts, pure, binaries, zipfiles = _load_data(self.out)
-        except:
-            print "building because %s disappeared" % outnm
+
+        data = Target.get_guts(self, last_build)
+        if not data:
             return True
-        if inputs != self.inputs:
-            print "building %s because inputs changed" % outnm
-            return True
-        if pathex != self.pathex:
-            print "building %s because pathex changed" % outnm
-            return True
-        if hookspath != self.hookspath:
-            print "building %s because hookspath changed" % outnm
-            return True
-        if excludes != self.excludes:
-            print "building %s because excludes changed" % outnm
-            return True
-        for (nm, fnm, typ) in scripts:
-            if mtime(fnm) > last_build:
-                print "building because %s changed" % fnm
-                return True
-        for (nm, fnm, typ) in pure:
-            if mtime(fnm) > last_build:
-                print "building because %s changed" % fnm
-                return True
-            elif mtime(fnm[:-1]) > last_build:
-                print "building because %s changed" % fnm[:-1]
-                return True
-        for (nm, fnm, typ) in binaries + zipfiles:
-            if mtime(fnm) > last_build:
-                print "building because %s changed" % fnm
-                return True
+        scripts, pure, binaries, zipfiles = data[-4:]
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
+        self.zipfiles = TOC(zipfiles)
         return False
+
     def assemble(self):
         print "running Analysis", os.path.basename(self.out)
         paths = self.pathex
@@ -324,34 +379,23 @@ class PYZ(Target):
             self.level = 0
         self.dependencies = config['PYZ_dependencies']
         self.__postinit__()
+
+    GUTS = (('name',   _check_guts_eq),
+            ('level',  _check_guts_eq),
+            ('toc',    _check_guts_toc), # todo: pyc=1
+            )
+
     def check_guts(self, last_build):
         outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
             print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
-            return 1
-        try:
-            name, level, toc = _load_data(self.out)
-        except:
-            print "rebuilding %s because missing" % outnm
-            return 1
-        if name != self.name:
-            print "rebuilding %s because name changed" % outnm
-            return 1
-        if level != self.level:
-            print "rebuilding %s because level changed" % outnm
-            return 1
-        if toc != self.toc:
-            print "rebuilding %s because toc changed" % outnm
-            return 1
-        for (nm, fnm, typ) in toc:
-            if mtime(fnm) > last_build:
-                print "rebuilding %s because %s changed" % (outnm, fnm)
-                return 1
-            if fnm[-1] in ('c', 'o'):
-                if mtime(fnm[:-1]) > last_build:
-                    print "rebuilding %s because %s changed" % (outnm, fnm[:-1])
-                    return 1
-        return 0
+            return True
+
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        return False
+    
     def assemble(self):
         print "building PYZ", os.path.basename(self.out)
         pyz = archive.ZlibArchive(level=self.level)
@@ -456,39 +500,28 @@ class PKG(Target):
             else:
                 self.cdict = { 'PYSOURCE':UNCOMPRESSED }
         self.__postinit__()
+
+    GUTS = (('name',   _check_guts_eq),
+            ('cdict',  _check_guts_eq),
+            ('toc',    _check_guts_toc_mtime),
+            ('exclude_binaries',  _check_guts_eq),
+            ('strip_binaries',  _check_guts_eq),
+            ('upx_binaries',  _check_guts_eq),
+            )
+
     def check_guts(self, last_build):
         outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
             print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
             return 1
-        try:
-            name, cdict, toc, exclude_binaries, strip_binaries, upx_binaries = _load_data(self.out)
-        except:
-            print "rebuilding %s because %s is missing" % (outnm, outnm)
-            return 1
-        if name != self.name:
-            print "rebuilding %s because name changed" % outnm
-            return 1
-        if cdict != self.cdict:
-            print "rebuilding %s because cdict changed" % outnm
-            return 1
-        if toc != self.toc:
-            print "rebuilding %s because toc changed" % outnm
-            return 1
-        if exclude_binaries != self.exclude_binaries:
-            print "rebuilding %s because exclude_binaries changed" % outnm
-            return 1
-        if strip_binaries != self.strip_binaries:
-            print "rebuilding %s because strip_binaries changed" % outnm
-            return 1
-        if upx_binaries != self.upx_binaries:
-            print "rebuilding %s because upx_binaries changed" % outnm
-            return 1
-        for (nm, fnm, typ) in toc:
-            if mtime(fnm) > last_build:
-                print "rebuilding %s because %s changed" % (outnm, fnm)
-                return 1
-        return 0
+        
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        # todo: toc equal
+        return False
+
+
     def assemble(self):
         print "building PKG", os.path.basename(self.name)
         trash = []
@@ -568,6 +601,17 @@ class EXE(Target):
                        strip_binaries=self.strip, upx_binaries=self.upx)
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
+
+    GUTS = (('name',     _check_guts_eq),
+            ('console',  _check_guts_eq),
+            ('debug',    _check_guts_eq),
+            ('icon',     _check_guts_eq),
+            ('versrsrc', _check_guts_eq),
+            ('strip',    _check_guts_eq),
+            ('upx',      _check_guts_eq),
+            ('mtm',      None,), # checked bellow
+            )
+
     def check_guts(self, last_build):
         outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
@@ -577,43 +621,26 @@ class EXE(Target):
             print "rebuilding because %s missing" % (
                 os.path.basename(self.pkgname),)
             return 1
-        try:
-            name, console, debug, icon, versrsrc, strip, upx, mtm = _load_data(self.out)
-        except:
-            print "rebuilding %s because %s missing or bad" % (outnm, outnm)
-            return 1
-        if name != self.name:
-            print "rebuilding %s because name changed" % outnm
-            return 1
-        if console != self.console:
-            print "rebuilding %s because console option changed" % outnm
-            return 1
-        if debug != self.debug:
-            print "rebuilding %s because debug option changed" % outnm
-            return 1
-        if config['hasRsrcUpdate']:
-            if icon != self.icon:
-                print "rebuilding %s because icon option changed" % outnm
-                return 1
-            if versrsrc != self.versrsrc:
-                print "rebuilding %s because versrsrc option changed" % outnm
-                return 1
-        else:
-            if icon or versrsrc:
-                print "ignoring icon and version resources = platform not capable"
-        if strip != self.strip:
-            print "rebuilding %s because strip option changed" % outnm
-            return 1
-        if upx != self.upx:
-            print "rebuilding %s because upx option changed" % outnm
-            return 1
+
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+
+        icon, versrsrc = data[3:5]
+        if (icon or versrsrc) and not config['hasRsrcUpdate']:
+            # todo: really ignore :-)
+            print "ignoring icon and version resources = platform not capable"
+
+        mtm = data[-1]
         if mtm != mtime(self.name):
-            print "rebuilding %s because mtimes don't match" % outnm
-            return 1
+            print "rebuilding", outnm, "because mtimes don't match"
+            return True
         if mtm < mtime(self.pkg.out):
-            print "rebuilding %s because pkg is more recent" % outnm
-            return 1
-        return 0
+            print "rebuilding", outnm, "because pkg is more recent"
+            return True
+
+        return False
+
     def _bootloader_postfix(self, exe):
         if target_iswin:
             exe = exe + "_"
@@ -627,6 +654,7 @@ class EXE(Target):
             if self.debug:
                 exe = exe + '_d'
         return exe
+    
     def assemble(self):
         print "building EXE from", os.path.basename(self.out)
         trash = []
@@ -715,25 +743,18 @@ class COLLECT(Target):
             else:
                 self.toc.extend(arg)
         self.__postinit__()
+
+    GUTS = (('name',            _check_guts_eq),
+            ('strip_binaries',  _check_guts_eq),
+            ('upx_binaries',    _check_guts_eq),
+            ('toc',             _check_guts_eq), # additional check below
+            )
+        
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
-        try:
-            name, strip_binaries, upx_binaries, toc = _load_data(self.out)
-        except:
-            print "building %s because %s missing" % (outnm, outnm)
-            return 1
-        if name != self.name:
-            print "building %s because name changed" % outnm
-            return 1
-        if strip_binaries != self.strip_binaries:
-            print "building %s because strip_binaries option changed" % outnm
-            return 1
-        if upx_binaries != self.upx_binaries:
-            print "building %s because upx_binaries option changed" % outnm
-            return 1
-        if toc != self.toc:
-            print "building %s because toc changed" % outnm
-            return 1
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        toc = data[-1]
         for inm, fnm, typ in self.toc:
             if typ == 'EXTENSION':
                 ext = os.path.splitext(fnm)[1]
@@ -747,6 +768,7 @@ class COLLECT(Target):
                 print "building %s because %s is more recent" % (outnm, fnm)
                 return 1
         return 0
+
     def assemble(self):
         print "building COLLECT", os.path.basename(self.out)
         if not os.path.exists(self.name):
@@ -847,34 +869,31 @@ class Tree(Target, TOC):
         if excludes is None:
             self.excludes = []
         self.__postinit__()
+
+    GUTS = (('root',     _check_guts_eq),
+            ('prefix',   _check_guts_eq),
+            ('excludes', _check_guts_eq),
+            ('toc',      None),
+            )
+
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
-        try:
-            root, prefix, excludes, toc = _load_data(self.out)
-        except:
-            print "building %s because %s is missing / bad" % (outnm, outnm)
-            return 1
-        if root != self.root:
-            print "building %s because root changed" % outnm
-            return 1
-        if prefix != self.prefix:
-            print "building %s because prefix changed" % outnm
-            return 1
-        if excludes != self.excludes:
-            print "building %s because excludes changed" % outnm
-            return 1
-        stack = [root]
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        stack = [ data[0] ] # root
+        toc = data[3] # toc
         while stack:
             d = stack.pop()
             if mtime(d) > last_build:
                 print "building %s because directory %s changed" % (outnm, d)
-                return 1
+                return True
             for nm in os.listdir(d):
                 path = os.path.join(d, nm)
                 if os.path.isdir(path):
                     stack.append(path)
         self.data = toc
-        return 0
+        return False
+
     def assemble(self):
         print "building Tree", os.path.basename(self.out)
         stack = [(self.root, self.prefix)]
