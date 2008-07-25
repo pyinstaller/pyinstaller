@@ -250,36 +250,42 @@ def find_PYZ_dependencies(config):
     config['PYZ_dependencies'] = toc.data
 
 
+def main():
+    configfile = os.path.join(HOME, 'config.dat')
+    try:
+        config = eval(open(configfile, 'r').read())
+    except IOError, SyntaxError:
+        # IOerror: file not present
+        # SyntaxError: invalid file (platform change?)
+        config = {'useELFEXE':1}    # if not set by Make.py we can assume Windows
 
-from optparse import OptionParser
-parser = OptionParser(usage="%prog [options] <executable_or_dynamic_library>")
-parser.add_option('--target-platform', default=None,
-                  help='Target platform, required for cross-bundling (default: current platform).')
-parser.add_option('--executable', default=None,
-                  help='Python executable to use. Required for cross-bundling.')
+    # Save Python version, to detect and avoid conflicts
+    config["pythonVersion"] = sys.version
 
-opts, args = parser.parse_args()
-if args:
-    parser.error('Does not expect any arguments')
+    find_EXE_dependencies(config)
+    test_TCL_TK(config)
+    test_Zlib(config)
+    test_RsrcUpdate(config)
+    test_unicode(config)
+    test_UPX(config)
+    find_PYZ_dependencies(config)
 
-configfile = os.path.join(HOME, 'config.dat')
-try:
-    config = eval(open(configfile, 'r').read())
-except IOError, SyntaxError:
-    # IOerror: file not present
-    # SyntaxError: invalid file (platform change?)
-    config = {'useELFEXE':1}    # if not set by Make.py we can assume Windows
+    Build._save_data(configfile, config)
+    print "I: config.dat generation done!"
 
-# Save Python version, to detect and avoid conflicts
-config["pythonVersion"] = sys.version
 
-find_EXE_dependencies(config)
-test_TCL_TK(config)
-test_Zlib(config)
-test_RsrcUpdate(config)
-test_unicode(config)
-test_UPX(config)
-find_PYZ_dependencies(config)
+if __name__ == '__main__':
+    from optparse import OptionParser
+    parser = OptionParser(usage="%prog [options]")
+    parser.add_option('--target-platform', default=None,
+                      help='Target platform, required for cross-bundling '
+                           '(default: current platform).')
+    parser.add_option('--executable', default=None,
+                      help='Python executable to use. Required for '
+                           'cross-bundling.')
 
-Build._save_data(configfile, config)
-print "I: config.dat generation done!"
+    opts, args = parser.parse_args()
+    if args:
+        parser.error('Does not expect any arguments')
+
+    main()
