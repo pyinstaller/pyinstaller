@@ -27,6 +27,7 @@ import time
 import py_compile
 import tempfile
 import md5
+import UserList
 
 import mf
 import archive
@@ -36,6 +37,7 @@ import bindepend
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
+UNCOMPRESSED, COMPRESSED = range(2)
 
 # todo: use pkg_resources here
 HOMEPATH = os.path.dirname(sys.argv[0])
@@ -55,25 +57,6 @@ def _save_data(filename, data):
 def _load_data(filename):
     return eval(open(filename, 'r').read())
 
-try:
-    config = _load_data(os.path.join(HOMEPATH, 'config.dat'))
-except IOError:
-    print "You must run Configure.py before building!"
-    sys.exit(1)
-
-target_platform = config.get('target_platform', sys.platform)
-target_iswin = target_platform[:3] == 'win'
-
-if target_platform == sys.platform:
-    # _not_ cross compiling
-    if config['pythonVersion'] != sys.version:
-        print "The current version of Python is not the same with which PyInstaller was configured."
-        print "Please re-run Configure.py with this version."
-        sys.exit(1)
-
-if config['hasRsrcUpdate']:
-    import icon, versionInfo
-
 def setupUPXFlags():
     f = os.environ.get("UPX", "")
     is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
@@ -84,28 +67,6 @@ def setupUPXFlags():
         f = "--strip-loadconf " + f
     f = "--best " + f
     os.environ["UPX"] = f
-
-if config['hasUPX']:
-    setupUPXFlags()
-
-def build(spec):
-    global SPECPATH, BUILDPATH, WARNFILE, rthooks
-    rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
-    SPECPATH, specnm = os.path.split(spec)
-    specnm = os.path.splitext(specnm)[0]
-    if SPECPATH == '':
-        SPECPATH = os.getcwd()
-    WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
-    BUILDPATH = os.path.join(SPECPATH, 'build%s' % specnm)
-    if '-o' in sys.argv:
-        bpath = sys.argv[sys.argv.index('-o')+1]
-        if os.path.isabs(bpath):
-            BUILDPATH = bpath
-        else:
-            BUILDPATH = os.path.join(SPECPATH, bpath)
-    if not os.path.exists(BUILDPATH):
-        os.mkdir(BUILDPATH)
-    execfile(spec)
 
 def mtime(fnm):
     try:
@@ -466,7 +427,6 @@ def checkCache(fnm, strip, upx, fix_paths=1):
 
     return cachedfile
 
-UNCOMPRESSED, COMPRESSED = range(2)
 class PKG(Target):
     typ = 'PKG'
     xformdict = {'PYMODULE' : 'm',
@@ -718,9 +678,6 @@ class DLL(EXE):
         return 1
 
 
-if not config['useELFEXE']:
-    EXE.append_pkg = 0
-
 class COLLECT(Target):
     def __init__(self, *args, **kws):
         Target.__init__(self)
@@ -796,7 +753,7 @@ class COLLECT(Target):
                  (self.name, self.strip_binaries, self.upx_binaries, self.toc))
         return 1
 
-import UserList
+
 class TOC(UserList.UserList):
     def __init__(self, initlist=None):
         UserList.UserList.__init__(self)
@@ -941,11 +898,58 @@ def TkTree():
 def TkPKG():
     return PKG(TkTree(), name='tk.pkg')
 
+#---
+
+def build(spec):
+    global SPECPATH, BUILDPATH, WARNFILE, rthooks
+    rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
+    SPECPATH, specnm = os.path.split(spec)
+    specnm = os.path.splitext(specnm)[0]
+    if SPECPATH == '':
+        SPECPATH = os.getcwd()
+    WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
+    BUILDPATH = os.path.join(SPECPATH, 'build%s' % specnm)
+    if '-o' in sys.argv:
+        bpath = sys.argv[sys.argv.index('-o')+1]
+        if os.path.isabs(bpath):
+            BUILDPATH = bpath
+        else:
+            BUILDPATH = os.path.join(SPECPATH, bpath)
+    if not os.path.exists(BUILDPATH):
+        os.mkdir(BUILDPATH)
+    execfile(spec)
+
+
 usage = """\
 Usage: python %s <specfile>
 
 See doc/Tutorial.html for details.
 """
+
+try:
+    config = _load_data(os.path.join(HOMEPATH, 'config.dat'))
+except IOError:
+    print "You must run Configure.py before building!"
+    sys.exit(1)
+
+target_platform = config.get('target_platform', sys.platform)
+target_iswin = target_platform[:3] == 'win'
+
+if target_platform == sys.platform:
+    # _not_ cross compiling
+    if config['pythonVersion'] != sys.version:
+        print "The current version of Python is not the same with which PyInstaller was configured."
+        print "Please re-run Configure.py with this version."
+        sys.exit(1)
+
+if config['hasRsrcUpdate']:
+    import icon, versionInfo
+
+if config['hasUPX']:
+    setupUPXFlags()
+
+if not config['useELFEXE']:
+    EXE.append_pkg = 0
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
