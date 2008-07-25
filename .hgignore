@@ -1,0 +1,17 @@
+# use glob syntax.
+syntax: glob
+*.pyc
+*~
+*.egg-info
+.svn
+logdict*.log
+
+syntax: regexp
+^\.hg\.off/
+^dist/
+^build/
+^support/loader/run
+^support/loader/run_d
+^source/linux/Makefile
+^buildtests/test[0-9]+.exe
+^patches
