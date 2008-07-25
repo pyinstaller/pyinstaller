@@ -219,49 +219,52 @@ if __name__ == '__main__':
     p = optparse.OptionParser(
         usage="python %prog [opts] <scriptname> [<scriptname> ...]"
     )
-    p.add_option("-F", "--onefile", dest="freeze",
+    g = p.add_option_group('What to generate')
+    g.add_option("-F", "--onefile", dest="freeze",
                  action="store_true", default=False,
                  help="create a single file deployment")
-    p.add_option("-D", "--onedir", dest="freeze", action="store_false",
+    g.add_option("-D", "--onedir", dest="freeze", action="store_false",
                  help="create a single directory deployment (default)")
-    p.add_option("-w", "--windowed", "--noconsole", dest="console",
-                 action="store_false", default=True,
-                 help="use a Windows subsystem executable (Windows only)")
-    p.add_option("-c", "--nowindowed", "--console", dest="console",
-                 action="store_true",
-                 help="use a console subsystem executable (Windows only) "
-                      "(default)")
-    p.add_option("-a", "--ascii", action="store_true", default=False,
-                 help="do NOT include unicode encodings "
-                      "(default: included if available)")
-    p.add_option("-d", "--debug", action="store_true", default=False,
-                 help="use the debug (verbose) build of the executable")
-    p.add_option("-s", "--strip", action="store_true", default=False,
-                 help="strip the exe and shared libs "
-                      "(don't try this on Windows)")
-    p.add_option("-X", "--upx", action="store_true", default=False,
-                 help="use UPX if available (works differently between "
-                      "Windows and *nix)")
-    p.add_option("-K", "--tk", default=False, action="store_true",
-                 help="include TCL/TK in the deployment")
-    p.add_option("-o", "--out", type="string", default=None,
+    g.add_option("-o", "--out", type="string", default=None,
                  dest="workdir", metavar="DIR",
                  help="generate the spec file in the specified directory")
-    p.add_option("-n", "--name", type="string", default=None,
-                 help="name to assign to the project, from which the spec file "
-                      "name is generated. (default: use the basename of the "
-                      "(first) script)")
-    p.add_option("-p", "--paths", type="string", default=[], dest="pathex",
+
+    g = p.add_option_group('What to bundle, where to seach')
+    g.add_option("-p", "--paths", type="string", default=[], dest="pathex",
                  metavar="DIR", action="append",
                  help="set base path for import (like using PYTHONPATH). "
                       "Multiple directories are allowed, separating them "
                       "with %s, or using this option multiple times"
                       % repr(os.pathsep))
-    p.add_option("-v", "--version", type="string",
+    g.add_option("-K", "--tk", default=False, action="store_true",
+                 help="include TCL/TK in the deployment")
+    g.add_option("-a", "--ascii", action="store_true", default=False,
+                 help="do NOT include unicode encodings "
+                      "(default: included if available)")
+
+    g = p.add_option_group('How to generate')
+    g.add_option("-d", "--debug", action="store_true", default=False,
+                 help="use the debug (verbose) build of the executable")
+    g.add_option("-s", "--strip", action="store_true", default=False,
+                 help="strip the exe and shared libs "
+                      "(don't try this on Windows)")
+    g.add_option("-X", "--upx", action="store_true", default=False,
+                 help="use UPX if available (works differently between "
+                      "Windows and *nix)")
+
+    g = p.add_option_group('Windows specific options')
+    g.add_option("-c", "--console", "--nowindowed", dest="console",
+                 action="store_true",
+                 help="use a console subsystem executable (Windows only) "
+                      "(default)")
+    g.add_option("-w", "--windowed", "--noconsole", dest="console",
+                 action="store_false", default=True,
+                 help="use a Windows subsystem executable (Windows only)")
+    g.add_option("-v", "--version", type="string",
                  dest="version_file", metavar="FILE",
                  help="add a version resource from FILE to the exe "
                       "(Windows only)")
-    p.add_option("--icon", type="string", dest="icon_file",
+    g.add_option("--icon", type="string", dest="icon_file",
                  metavar="FILE.ICO or FILE.EXE,ID",
                  help="If FILE is an .ico file, add the icon to the final "
                       "executable. Otherwise, the syntax 'file.exe,id' to "
