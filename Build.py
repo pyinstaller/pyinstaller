@@ -959,7 +959,7 @@ def main(specfile):
 
 if __name__ == '__main__':
     from optparse import OptionParser
-    parser = OptionParser('%program [options] specfile')
+    parser = OptionParser('%prog [options] specfile')
     opts, args = parser.parse_args()
     if len(args) != 1:
         parser.error('Requires exactly one .spec-file')
