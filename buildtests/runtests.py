@@ -24,8 +24,6 @@
 import os, sys, glob, string
 import shutil
 
-HOME = '..'
-
 try:
     here=os.path.dirname(os.path.abspath(__file__))
 except NameError:
@@ -69,16 +67,11 @@ def _msg(*args, **kw):
     if not short: print
 
 
-def runtests(alltests, filters=None, configfile=None, run_executable=1):
+def runtests(alltests, filters=None, run_executable=1):
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
-    print "*" * min(80, len(info))
+    print "*"*len(info)
     print info
-    print "*" * min(80, len(info))
-
-    OPTS = ''
-    if configfile:
-        # todo: quote correctly
-        OTPS = ' -c "%s"' %  configfile
+    print "*"*len(info)
 
     build_python = open("python_exe.build", "w")
     build_python.write(sys.executable)
@@ -95,13 +88,11 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
     for src in tests:
         _msg("BUILDING TEST", src)
         test = os.path.splitext(os.path.basename(src))[0]
-        res = os.system(string.join([PYTHON, os.path.join(HOME, 'Build.py'),
-                                     OPTS, test+".spec"],
-                                    ' '))
+        res = os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
+        # Run the test in a clean environment to make sure they're really self-contained
+
         if run_executable:
             _msg("EXECUTING TEST", src)
-            # Run the test in a clean environment to make sure they're
-            # really self-contained
             del os.environ["PATH"]
             res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
             os.environ["PATH"] = path
@@ -118,35 +109,22 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
 if __name__ == '__main__':
     normal_tests = glob.glob('test*[0-9].py')
     interactive_tests = glob.glob('test*[0-9]i.py')
+    args = sys.argv[1:]
 
-    from optparse import OptionParser
-    parser = OptionParser(usage="%prog [options]")
-    parser.add_option('-c', '--clean', action='store_true',
-                      help='Clean up generated files')
-    parser.add_option('-i', '--interactive-tests', action='store_true',
-                      help='Run interactive tests (default: run normal tests)')
-    parser.add_option('-n', '--no-run', action='store_true',
-                      help='Do not run the built executables. '
-                           'Useful for cross builds.')
-    parser.add_option('-C', '--configfile',
-                      default=os.path.join(HOME, 'config.dat'),
-                      help='Name of generated configfile (default: %default)')
-
-    opts, args = parser.parse_args()
-    if args:
-        parser.error('Does not expect any arguments')
-
-    if opts.clean:
+    run_executable = 1
+    if "-n" in args:
+        # Do not run the built executables. Useful for cross builds.
+        run_executable = 0
+    if "-c" in args:
         # only clean up
-        clean()
-        raise SystemExit()
-
-    if opts.interactive_tests:
+        tests = []
+    elif "-i" in args:
         print "Running interactive tests"
         tests = interactive_tests
     else:
-        tests = normal_tests
         print "Running normal tests (-i for interactive tests)"
+        tests = normal_tests
 
     clean()
-    runtests(tests, configfile=opts.configfile, run_executable=not opts.no_run)
+    if tests:
+        runtests(tests, run_executable=run_executable)

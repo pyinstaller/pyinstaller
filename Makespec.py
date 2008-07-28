@@ -140,7 +140,8 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0,
     try:
         config = eval(open(os.path.join(HOME, 'config.dat'), 'r').read())
     except IOError:
-        raise SystemExit("Configfile is missing or unreadable. Please run Configure.py before building!")
+        print "You must run Configure.py before building!"
+        sys.exit(1)
 
     if config['pythonVersion'] != sys.version:
         print "The current version of Python is not the same with which PyInstaller was configured."
@@ -226,8 +227,7 @@ if __name__ == '__main__':
                  help="create a single directory deployment (default)")
     g.add_option("-o", "--out", type="string", default=None,
                  dest="workdir", metavar="DIR",
-                 help="generate the spec file in the specified directory "
-                      "(default: current directory")
+                 help="generate the spec file in the specified directory")
 
     g = p.add_option_group('What to bundle, where to seach')
     g.add_option("-p", "--paths", type="string", default=[], dest="pathex",
@@ -280,8 +280,9 @@ if __name__ == '__main__':
         opts.pathex.extend(string.split(p, os.pathsep))
 
     if not args:
-        p.error('Requires at least one scriptname file')
+        p.print_help()
+        sys.exit(1)
 
-    name = apply(main, (args,), opts.__dict__)
-    print "wrote %s" % name
+    nm = apply(main, (args,), opts.__dict__)
+    print "wrote %s" % nm
     print "now run Build.py to build the executable"
