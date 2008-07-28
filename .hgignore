@@ -13,5 +13,4 @@ syntax: regexp
 ^support/loader/run
 ^support/loader/run_d
 ^source/linux/Makefile
-^buildtests/test[0-9]+.exe
 ^patches
