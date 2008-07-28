@@ -109,22 +109,32 @@ def runtests(alltests, filters=None, run_executable=1):
 if __name__ == '__main__':
     normal_tests = glob.glob('test*[0-9].py')
     interactive_tests = glob.glob('test*[0-9]i.py')
-    args = sys.argv[1:]
 
-    run_executable = 1
-    if "-n" in args:
-        # Do not run the built executables. Useful for cross builds.
-        run_executable = 0
-    if "-c" in args:
+    from optparse import OptionParser
+    parser = OptionParser(usage="%prog [options]")
+    parser.add_option('-c', '--clean', action='store_true',
+                      help='Clean up generated files')
+    parser.add_option('-i', '--interactive-tests', action='store_true',
+                      help='Run interactive tests (default: run normal tests)')
+    parser.add_option('-n', '--no-run', action='store_true',
+                      help='Do not run the built executables. '
+                           'Useful for cross builds.')
+
+    opts, args = parser.parse_args()
+    if args:
+        parser.error('Does not expect any arguments')
+
+    if opts.clean:
         # only clean up
-        tests = []
-    elif "-i" in args:
+        clean()
+        raise SystemExit()
+
+    if opts.interactive_tests:
         print "Running interactive tests"
         tests = interactive_tests
     else:
-        print "Running normal tests (-i for interactive tests)"
         tests = normal_tests
+        print "Running normal tests (-i for interactive tests)"
 
     clean()
-    if tests:
-        runtests(tests, run_executable=run_executable)
+    runtests(tests, run_executable=not opts.no_run)
