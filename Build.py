@@ -908,7 +908,8 @@ def build(spec):
     if SPECPATH == '':
         SPECPATH = os.getcwd()
     WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
-    BUILDPATH = os.path.join(SPECPATH, 'build%s' % specnm)
+    BUILDPATH = os.path.join(SPECPATH, 
+                      "build/pyi.%s/%s" % (config['target_platform'], specnm))
     if '-o' in sys.argv:
         bpath = sys.argv[sys.argv.index('-o')+1]
         if os.path.isabs(bpath):
