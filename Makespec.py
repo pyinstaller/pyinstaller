@@ -36,12 +36,12 @@ exe = EXE(%(tkpkg)s pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
-          name='%(exename)s',
+          name='%(distdir)s/%(exename)s',
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
           console=%(console)s %(exe_options)s)
-""" # pathex scripts exename tkpkg debug console
+""" # pathex scripts exename tkpkg debug console distdir
 
 collecttmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
@@ -60,8 +60,8 @@ coll = COLLECT(%(tktree)s exe,
                a.zipfiles,
                strip=%(strip)s,
                upx=%(upx)s,
-               name='%(distdir)s')
-""" # scripts pathex, exename, debug, console tktree distdir
+               name='%(distdir)s/%(name)s')
+""" # scripts pathex, exename, debug, console tktree distdir name
 
 comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
@@ -85,14 +85,11 @@ coll = COLLECT(exe, dll,
                a.zipfiles,
                strip=%(strip)s,
                upx=%(upx)s,
-               name='%(distdir)s')
-""" # scripts pathex, exename, debug, console tktree distdir
+               name='%(distdir)s/%(name)s')
+""" # scripts pathex, exename, debug, console tktree distdir name
 
 HOME = os.path.dirname(sys.argv[0])
 HOME = os.path.abspath(HOME)
-
-iswin = sys.platform[:3] == "win"
-cygwin = sys.platform == "cygwin"
 
 def quote_win_filepath( path ):
     # quote all \ with another \ after using normpath to clean up the path
@@ -150,8 +147,8 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
     if not name:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
 
-    distdir = "dist%s" % name
-    builddir = "build%s" % name
+    distdir = "dist"
+    builddir = "build/pyi.%s/%s" % (config['target_platform'], name)
     
     pathex = pathex[:]
     if workdir is None:
@@ -177,7 +174,8 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
          'tkpkg' :'',
          'scripts':scripts,
          'pathex' :pathex,
-         'exename': '',
+         #'exename': '',
+         'name': name,
          'distdir': distdir,
          'builddir': builddir,
          'debug': debug,
@@ -195,7 +193,8 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
         else:
             scripts.insert(0, Path(HOME, 'support', 'useTK.py'))
     scripts.insert(0, Path(HOME, 'support', '_mountzlib.py'))
-    if iswin or cygwin:
+    if config['target_platform'][:3] == "win" or \
+       config['target_platform'] == 'cygwin':
         d['exename'] = name+'.exe'
         d['dllname'] = name+'.dll'
     else:
