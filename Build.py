@@ -920,12 +920,6 @@ def build(spec):
     execfile(spec)
 
 
-usage = """\
-Usage: python %s <specfile>
-
-See doc/Tutorial.html for details.
-"""
-
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
     global icon, versionInfo
