@@ -333,7 +333,7 @@ def _getImports_ldd(pth):
         m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
         if m:
             name, lib = m.group(1), m.group(2)
-            if name[:10] == 'linux-gate':
+            if name[:10] in ('linux-gate', 'linux-vdso'):
                 # linux-gate is a fake library which does not exist and
                 # should be ignored. See also:
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
