@@ -926,12 +926,12 @@ Usage: python %s <specfile>
 See doc/Tutorial.html for details.
 """
 
-def main(specfile):
+def main(specfile, configfilename):
     global target_platform, target_iswin, config
     global icon, versionInfo
 
     try:
-        config = _load_data(os.path.join(HOMEPATH, 'config.dat'))
+        config = _load_data(configfilename)
     except IOError:
         print "You must run Configure.py before building!"
         sys.exit(1)
@@ -960,8 +960,11 @@ def main(specfile):
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser('%prog [options] specfile')
+    parser.add_option('-C', '--configfile',
+                      default=os.path.join(HOMEPATH, 'config.dat'),
+                      help='Name of generated configfile (default: %default)')
     opts, args = parser.parse_args()
     if len(args) != 1:
         parser.error('Requires exactly one .spec-file')
 
-    main(args[0])
+    main(args[0], configfilename=opts.configfile)

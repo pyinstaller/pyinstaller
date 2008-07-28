@@ -133,12 +133,12 @@ class Path:
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
 
-def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0,
+def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0,
          strip=0, upx=0, comserver=0, ascii=0, workdir=None,
          pathex=[], version_file=None, icon_file=None):
 
     try:
-        config = eval(open(os.path.join(HOME, 'config.dat'), 'r').read())
+        config = eval(open(configfile, 'r').read())
     except IOError:
         raise SystemExit("Configfile is missing or unreadable. Please run Configure.py before building!")
 
@@ -218,6 +218,10 @@ if __name__ == '__main__':
     p = optparse.OptionParser(
         usage="python %prog [opts] <scriptname> [<scriptname> ...]"
     )
+    p.add_option('-C', '--configfile',
+                 default=os.path.join(HOME, 'config.dat'),
+                 help='Name of configfile (default: %default)')
+
     g = p.add_option_group('What to generate')
     g.add_option("-F", "--onefile", dest="freeze",
                  action="store_true", default=False,

@@ -24,6 +24,8 @@
 import os, sys, glob, string
 import shutil
 
+HOME = '..'
+
 try:
     here=os.path.dirname(os.path.abspath(__file__))
 except NameError:
@@ -67,11 +69,16 @@ def _msg(*args, **kw):
     if not short: print
 
 
-def runtests(alltests, filters=None, run_executable=1):
+def runtests(alltests, filters=None, configfile=None, run_executable=1):
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
-    print "*"*len(info)
+    print "*" * min(80, len(info))
     print info
-    print "*"*len(info)
+    print "*" * min(80, len(info))
+
+    OPTS = ''
+    if configfile:
+        # todo: quote correctly
+        OTPS = ' -c "%s"' %  configfile
 
     build_python = open("python_exe.build", "w")
     build_python.write(sys.executable)
@@ -88,11 +95,13 @@ def runtests(alltests, filters=None, run_executable=1):
     for src in tests:
         _msg("BUILDING TEST", src)
         test = os.path.splitext(os.path.basename(src))[0]
-        res = os.system('%s ../Build.py %s' % (PYTHON, test+".spec"))
-        # Run the test in a clean environment to make sure they're really self-contained
-
+        res = os.system(string.join([PYTHON, os.path.join(HOME, 'Build.py'),
+                                     OPTS, test+".spec"],
+                                    ' '))
         if run_executable:
             _msg("EXECUTING TEST", src)
+            # Run the test in a clean environment to make sure they're
+            # really self-contained
             del os.environ["PATH"]
             res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
             os.environ["PATH"] = path
@@ -119,6 +128,9 @@ if __name__ == '__main__':
     parser.add_option('-n', '--no-run', action='store_true',
                       help='Do not run the built executables. '
                            'Useful for cross builds.')
+    parser.add_option('-C', '--configfile',
+                      default=os.path.join(HOME, 'config.dat'),
+                      help='Name of generated configfile (default: %default)')
 
     opts, args = parser.parse_args()
     if args:
@@ -137,4 +149,4 @@ if __name__ == '__main__':
         print "Running normal tests (-i for interactive tests)"
 
     clean()
-    runtests(tests, run_executable=not opts.no_run)
+    runtests(tests, configfile=opts.configfile, run_executable=not opts.no_run)

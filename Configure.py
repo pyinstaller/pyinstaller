@@ -250,14 +250,15 @@ def find_PYZ_dependencies(config):
     config['PYZ_dependencies'] = toc.data
 
 
-def main():
-    configfile = os.path.join(HOME, 'config.dat')
+def main(configfilename):
     try:
-        config = eval(open(configfile, 'r').read())
+        config = Build._load_data(configfilename)
+        print 'I: read old config from', configfilename
     except IOError, SyntaxError:
-        # IOerror: file not present
+        # IOerror: file not present/readable
         # SyntaxError: invalid file (platform change?)
-        config = {'useELFEXE':1}    # if not set by Make.py we can assume Windows
+        # if not set by Make.py we can assume Windows
+        config = {'useELFEXE': 1}
 
     # Save Python version, to detect and avoid conflicts
     config["pythonVersion"] = sys.version
@@ -270,8 +271,8 @@ def main():
     test_UPX(config)
     find_PYZ_dependencies(config)
 
-    Build._save_data(configfile, config)
-    print "I: config.dat generation done!"
+    Build._save_data(configfilename, config)
+    print "I: done generating", configfilename
 
 
 if __name__ == '__main__':
@@ -283,9 +284,12 @@ if __name__ == '__main__':
     parser.add_option('--executable', default=None,
                       help='Python executable to use. Required for '
                            'cross-bundling.')
+    parser.add_option('-C', '--configfile',
+                      default=os.path.join(HOME, 'config.dat'),
+                      help='Name of generated configfile (default: %default)')
 
     opts, args = parser.parse_args()
     if args:
         parser.error('Does not expect any arguments')
 
-    main()
+    main(opts.configfile)
