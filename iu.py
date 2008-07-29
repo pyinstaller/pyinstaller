@@ -1,4 +1,6 @@
+#
 # Copyright (C) 2005, Giovanni Bajo
+#
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -22,8 +24,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-
+#
+#
 # **NOTE** This module is used during bootstrap. Import *ONLY* builtin modules.
+#
+
 import sys
 import imp
 import marshal
@@ -39,6 +44,11 @@ try:
 except ImportError:
     zipimport = None
 
+try:
+    STRINGTYPE = basestring
+except NameError:
+    STRINGTYPE = type("")
+
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
 # That is, there's an Owner for each thing on sys.path
@@ -48,21 +58,22 @@ except ImportError:
 # sys.path to their owners) is used so that sys.path
 # (or a package's __path__) is still a bunch of strings,
 
-STRINGTYPE = type('')
-
 class OwnerError(IOError):
-    def __init__(self, msg):
-        self.msg = msg
     def __str__(self):
-        return "<OwnerError %s>" % self.msg
+        return "<OwnerError %s>" % self.message
+
 
 class Owner:
     def __init__(self, path):
         self.path = path
+
     def __str__(self):
         return self.path
+
     def getmod(self, nm):
         return None
+
+
 class DirOwner(Owner):
     def __init__(self, path):
         if path == '':
@@ -70,7 +81,9 @@ class DirOwner(Owner):
         if not pathisdir(path):
             raise OwnerError("%s is not a directory" % path)
         Owner.__init__(self, path)
-    def getmod(self, nm, getsuffixes=imp.get_suffixes, loadco=marshal.loads, newmod=imp.new_module):
+
+    def getmod(self, nm, getsuffixes=imp.get_suffixes,
+               loadco=marshal.loads, newmod=imp.new_module):
         pth =  _os_path_join(self.path, nm)
         possibles = [(pth, 0, None)]
         if pathisdir(pth):
@@ -124,6 +137,7 @@ class DirOwner(Owner):
         mod.__co__ = co
         return mod
 
+
 ZipOwner = None
 if zipimport:
     class ZipOwner(Owner):
@@ -156,17 +170,21 @@ _globalownertypes = filter(None, [
 
 class ImportDirector(Owner):
     pass
+
 class BuiltinImportDirector(ImportDirector):
     def __init__(self):
         self.path = 'Builtins'
+
     def getmod(self, nm, isbuiltin=imp.is_builtin):
         if isbuiltin(nm):
             mod = imp.load_module(nm, None, nm, ('','',imp.C_BUILTIN))
             return mod
         return None
+
 class FrozenImportDirector(ImportDirector):
     def __init__(self):
         self.path = 'FrozenModules'
+
     def getmod(self, nm, isfrozen=imp.is_frozen):
         if isfrozen(nm):
             mod = imp.load_module(nm, None, nm, ('','',imp.PY_FROZEN))
@@ -174,6 +192,7 @@ class FrozenImportDirector(ImportDirector):
                 mod.__importsub__ = lambda name, pname=nm, owner=self: owner.getmod(pname+'.'+name)
             return mod
         return None
+
 class RegistryImportDirector(ImportDirector):
     # for Windows only
     def __init__(self):
@@ -209,6 +228,7 @@ class RegistryImportDirector(ImportDirector):
                         hskey.Close()
                     hkey.Close()
                     break
+
     def getmod(self, nm):
         stuff = self.map.get(nm)
         if stuff:
@@ -235,8 +255,10 @@ class PathImportDirector(ImportDirector):
             self.shadowpath = {}
         self.inMakeOwner = 0
         self.building = {}
+
     def __str__(self):
         return str(self.path)
+
     def getmod(self, nm):
         mod = None
         for thing in self.path:
@@ -251,6 +273,7 @@ class PathImportDirector(ImportDirector):
             if mod:
                 break
         return mod
+
     def makeOwner(self, path):
         if self.building.get(path):
             return None
@@ -283,8 +306,10 @@ UNTRIED = -1
 class ImportManagerException(Exception):
     def __init__(self, args):
         self.args = args
+
     def __repr__(self):
         return "<%s: %s>" % (self.__name__, self.args)
+
 
 class ImportManager:
     # really the equivalent of builtin import
@@ -299,6 +324,7 @@ class ImportManager:
         self.rlock = None
         self.locker = None
         self.setThreaded()
+
     def setThreaded(self):
         thread = sys.modules.get('thread', None)
         if thread and not self.threaded:
@@ -306,10 +332,12 @@ class ImportManager:
             self.threaded = 1
             self.rlock = thread.allocate_lock()
             self._get_ident = thread.get_ident
+
     def install(self):
         import __builtin__
         __builtin__.__import__ = self.importHook
         __builtin__.reload = self.reloadHook
+
     def importHook(self, name, globals=None, locals=None, fromlist=None, level=-1):
         # first see if we could be importing a relative name
         #print "importHook(%s, %s, locals, %s)" % (name, getattr(globals, '__name__', None), fromlist)
@@ -397,6 +425,7 @@ class ImportManager:
                             self._release()
         #print "importHook done with %s %s %s (case 3)" % (name, globals['__name__'], fromlist)
         return bottommod
+
     def doimport(self, nm, parentnm, fqname, reload=0):
         # Not that nm is NEVER a dotted name at this point
         #print "doimport(%s, %s, %s)" % (nm, parentnm, fqname)
@@ -448,12 +477,13 @@ class ImportManager:
                                 delattr(parent, nm)
                     raise
             if fqname == 'thread' and not self.threaded:
-##                print "thread detected!"
+                #print "thread detected!"
                 self.setThreaded()
         else:
             sys.modules[fqname] = None
         #print "..found %s" % mod, 'when looking for', fqname
         return mod
+
     def reloadHook(self, mod):
         fqnm = mod.__name__
         nm = namesplit(fqnm)[-1]
@@ -461,26 +491,28 @@ class ImportManager:
         newmod = self.doimport(nm, parentnm, fqnm, reload=1)
         #mod.__dict__.update(newmod.__dict__)
         return newmod
+
     def _acquire(self):
         if self.rlock.locked():
             if self.locker == self._get_ident():
                 self.lockcount = self.lockcount + 1
-##                print "_acquire incrementing lockcount to", self.lockcount
+                #print "_acquire incrementing lockcount to", self.lockcount
                 return
         self.rlock.acquire()
         self.locker = self._get_ident()
         self.lockcount = 0
-##        print "_acquire first time!"
+        #print "_acquire first time!"
+
     def _release(self):
         if self.lockcount:
             self.lockcount = self.lockcount - 1
-##            print "_release decrementing lockcount to", self.lockcount
+            #print "_release decrementing lockcount to", self.lockcount
         else:
             self.locker = None
             self.rlock.release()
-##            print "_release releasing lock!"
+            #print "_release releasing lock!"
 
-#=========some helper functions=============================#
+#========= some helper functions =============================#
 
 def packagename(s):
     for i in range(len(s)-1, -1, -1):
@@ -515,31 +547,53 @@ def pathisdir(pathname):
         return None
     return (s[0] & 0170000) == 0040000
 
+
 _os_stat = _os_path_join = _os_getcwd = _os_path_dirname = None
+
 def _os_bootstrap():
     "Set up 'os' module replacement functions for use during import bootstrap."
+
+    global _os_stat, _os_path_join, _os_path_dirname, _os_getcwd
+
+    def join(a, b, sep=sep):
+        if a == '':
+            return b
+        lastchar = a[-1:]
+        if lastchar == '/' or lastchar == sep:
+            return a + b
+        return a + sep + b
+
+    def dirname(a, sep=sep, mindirlen=mindirlen):
+        for i in range(len(a)-1, -1, -1):
+            c = a[i]
+            if c == '/' or c == sep:
+                if i < mindirlen:
+                    return a[:i+1]
+                return a[:i]
+        return ''
 
     names = sys.builtin_module_names
 
     join = dirname = None
     mindirlen = 0
     if 'posix' in names:
+        from posix import stat, getcwd
         sep = '/'
         mindirlen = 1
-        from posix import stat, getcwd
     elif 'nt' in names:
-        sep = '\\'
-        mindirlen = 3
         from nt import stat, getcwd
-    elif 'dos' in names:
         sep = '\\'
         mindirlen = 3
+    elif 'dos' in names:
         from dos import stat, getcwd
-    elif 'os2' in names:
         sep = '\\'
+        mindirlen = 3
+    elif 'os2' in names:
         from os2 import stat, getcwd
+        sep = '\\'
     elif 'mac' in names:
         from mac import stat, getcwd
+        # overwrite join():
         def join(a, b):
             if a == '':
                 return b
@@ -552,38 +606,14 @@ def _os_bootstrap():
     else:
         raise ImportError, 'no os specific module found'
 
-    if join is None:
-        def join(a, b, sep=sep):
-            if a == '':
-                return b
-            lastchar = a[-1:]
-            if lastchar == '/' or lastchar == sep:
-                return a + b
-            return a + sep + b
-
-    if dirname is None:
-        def dirname(a, sep=sep, mindirlen=mindirlen):
-            for i in range(len(a)-1, -1, -1):
-                c = a[i]
-                if c == '/' or c == sep:
-                    if i < mindirlen:
-                        return a[:i+1]
-                    return a[:i]
-            return ''
-
-    global _os_stat
     _os_stat = stat
-
-    global _os_path_join
+    _os_getcwd = getcwd
     _os_path_join = join
-
-    global _os_path_dirname
     _os_path_dirname = dirname
 
-    global _os_getcwd
-    _os_getcwd = getcwd
 
 _string_replace = _string_join = _string_split = None
+
 def _string_bootstrap():
     """
     Set up 'string' module replacement functions for use during import bootstrap.
@@ -592,51 +622,40 @@ def _string_bootstrap():
     yet. For Python 2.0+, we can use string methods so this is not a problem.
     For Python 1.5, we would need the string module, so we need replacements.
     """
-    s = type('')
-
     global _string_replace, _string_join, _string_split
 
-    if hasattr(s, "join"):
-        _string_join = s.join
-    else:
-        def join(sep, words):
-            res = ''
-            for w in words:
-                res = res + (sep + w)
-            return res[len(sep):]
-        _string_join = join
+    def join(sep, words):
+        res = ''
+        for w in words:
+            res = res + (sep + w)
+        return res[len(sep):]
 
-    if hasattr(s, "split"):
-        _string_split = s.split
-    else:
-        def split(s, sep, maxsplit=0):
-            res = []
-            nsep = len(sep)
-            if nsep == 0:
-                return [s]
-            ns = len(s)
-            if maxsplit <= 0: maxsplit = ns
-            i = j = 0
-            count = 0
-            while j+nsep <= ns:
-                if s[j:j+nsep] == sep:
-                    count = count + 1
-                    res.append(s[i:j])
-                    i = j = j + nsep
-                    if count >= maxsplit: break
-                else:
-                    j = j + 1
-            res.append(s[i:])
-            return res
-        _string_split = split
+    def split(s, sep, maxsplit=0):
+        res = []
+        nsep = len(sep)
+        if nsep == 0:
+            return [s]
+        ns = len(s)
+        if maxsplit <= 0: maxsplit = ns
+        i = j = 0
+        count = 0
+        while j+nsep <= ns:
+            if s[j:j+nsep] == sep:
+                count = count + 1
+                res.append(s[i:j])
+                i = j = j + nsep
+                if count >= maxsplit: break
+            else:
+                j = j + 1
+        res.append(s[i:])
+        return res
 
-    if hasattr(s, "replace"):
-        _string_replace = s.replace
-    else:
-        def replace(str, old, new):
-            return _string_join(new, _string_split(str, old))
-        _string_replace = replace
+    def replace(str, old, new):
+        return _string_join(new, _string_split(str, old))
 
+    _string_join    = getattr(STRINGTYPE, "join",    join)
+    _string_split   = getattr(STRINGTYPE, "split",   split)
+    _string_replace = getattr(STRINGTYPE, "replace", replace)
 
 
 _os_bootstrap()

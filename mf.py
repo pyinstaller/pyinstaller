@@ -27,18 +27,6 @@ except ImportError:
 
 import suffixes
 
-#=======================Owners==========================#
-# An Owner does imports from a particular piece of turf
-# That is, there's an Owner for each thing on sys.path
-# There are owners for directories and .pyz files.
-# There could be owners for zip files, or even URLs.
-# Note that they replace the string in sys.path,
-# but str(sys.path[n]) should yield the original string.
-
-try:
-    STRINGTYPE = basestring
-except NameError:
-    STRINGTYPE = type("")
 
 if not os.environ.has_key('PYTHONCASEOK') and sys.version_info >= (2, 1):
     def caseOk(filename):
@@ -57,12 +45,22 @@ def pyco():
     else:
         return 'o'
 
+#=======================Owners==========================#
+# An Owner does imports from a particular piece of turf
+# That is, there's an Owner for each thing on sys.path
+# There are owners for directories and .pyz files.
+# There could be owners for zip files, or even URLs.
+# Note that they replace the string in sys.path,
+# but str(sys.path[n]) should yield the original string.
+
 class Owner:
     def __init__(self, path, target_platform=None):
         self.path = path
         self.target_platform = target_platform
+
     def __str__(self):
         return self.path
+
     def getmod(self, nm):
         return None
 
@@ -142,6 +140,7 @@ class DirOwner(Owner):
         #print "DirOwner.getmod -> %s" % mod
         return mod
 
+
 class PYZOwner(Owner):
     def __init__(self, path, target_platform=None):
         import archive
@@ -154,6 +153,7 @@ class PYZOwner(Owner):
         if ispkg:
             return PkgInPYZModule(nm, co, self)
         return PyModule(nm, self.path, co)
+
 
 ZipOwner = None
 if zipimport:
@@ -186,20 +186,25 @@ _globalownertypes = filter(None, [
 
 class ImportDirector(Owner):
     pass
+
 class BuiltinImportDirector(ImportDirector):
     def __init__(self):
         self.path = 'Builtins'
+
     def getmod(self, nm, isbuiltin=imp.is_builtin):
         if isbuiltin(nm):
             return BuiltinModule(nm)
         return None
+
 class FrozenImportDirector(ImportDirector):
     def __init__(self):
         self.path = 'FrozenModules'
+
     def getmod(self, nm, isfrozen=imp.is_frozen):
         if isfrozen(nm):
             return FrozenModule(nm)
         return None
+
 class RegistryImportDirector(ImportDirector):
     # for Windows only
     def __init__(self):
@@ -232,6 +237,7 @@ class RegistryImportDirector(ImportDirector):
                         hskey.Close()
                     hkey.Close()
                     break
+
     def getmod(self, nm):
         stuff = self.map.get(nm)
         if stuff:
@@ -318,6 +324,7 @@ def getDescr(fnm):
 # This one doesn't really import, just analyzes
 # If it *were* importing, it would be the one-and-only ImportManager
 # ie, the builtin import
+
 UNTRIED = -1
 
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
@@ -538,6 +545,7 @@ class ImportTracker:
         # self.modules[fqname] = mod
         # here
         return mod
+
     def getwarnings(self):
         warnings = self.warnings.keys()
         for nm,mod in self.modules.items():
@@ -545,6 +553,7 @@ class ImportTracker:
                 for w in mod.warnings:
                     warnings.append(w+' - %s (%s)' % (mod.__name__, mod.__file__))
         return warnings
+
     def getxref(self):
         mods = self.modules.items() # (nm, mod)
         mods.sort()
@@ -563,6 +572,7 @@ class ImportTracker:
 class Module:
     _ispkg = 0
     typ = 'UNKNOWN'
+
     def __init__(self, nm):
         self.__name__ = nm
         self.__file__ = None
@@ -570,28 +580,35 @@ class Module:
         self.imports = []
         self.warnings = []
         self._xref = {}
+
     def ispackage(self):
         return self._ispkg
+
     def doimport(self, nm):
         pass
+
     def xref(self, nm):
         self._xref[nm] = 1
+
     def __str__(self):
         return "<Module %s %s %s>" % (self.__name__, self.__file__, self.imports)
 
 class BuiltinModule(Module):
     typ = 'BUILTIN'
+
     def __init__(self, nm):
         Module.__init__(self, nm)
 
 class ExtensionModule(Module):
     typ = 'EXTENSION'
+
     def __init__(self, nm, pth):
         Module.__init__(self, nm)
         self.__file__ = pth
 
 class PyModule(Module):
     typ = 'PYMODULE'
+
     def __init__(self, nm, pth, co):
         Module.__init__(self, nm)
         self.co = co
@@ -599,6 +616,7 @@ class PyModule(Module):
         if os.path.splitext(self.__file__)[1] == '.py':
             self.__file__ = self.__file__ + pyco()
         self.scancode()
+
     def scancode(self):
         self.imports, self.warnings, allnms = scan_code(self.co)
         if allnms:
@@ -606,23 +624,28 @@ class PyModule(Module):
 
 class PyScript(PyModule):
     typ = 'PYSOURCE'
+
     def __init__(self, pth, co):
         Module.__init__(self, '__main__')
         self.co = co
         self.__file__ = pth
         self.scancode()
 
+
 class PkgModule(PyModule):
     typ = 'PYMODULE'
+
     def __init__(self, nm, pth, co):
         PyModule.__init__(self, nm, pth, co)
         self._ispkg = 1
         pth = os.path.dirname(pth)
         self.__path__ = [ pth ]
         self._update_director(force=True)
+
     def _update_director(self, force=False):
         if force or self.subimporter.path != self.__path__:
             self.subimporter = PathImportDirector(self.__path__)
+
     def doimport(self, nm):
         self._update_director()
         mod = self.subimporter.getmod(nm)
@@ -636,9 +659,11 @@ class PkgInPYZModule(PyModule):
         self._ispkg = 1
         self.__path__ = [ str(pyzowner) ]
         self.owner = pyzowner
+
     def doimport(self, nm):
         mod = self.owner.getmod(self.__name__ + '.' + nm)
         return mod
+
 
 class PkgInZipModule(PyModule):
     typ = 'ZIPFILE'
@@ -647,9 +672,11 @@ class PkgInZipModule(PyModule):
         self._ispkg = 0
         self.__path__ = [ str(pyzowner) ]
         self.owner = pyzowner
+
     def doimport(self, nm):
         mod = self.owner.getmod(self.__name__ + '.' + nm)
         return mod
+
 
 #======================== Utility ================================#
 # Scan the code object for imports, __all__ and wierd stuff
