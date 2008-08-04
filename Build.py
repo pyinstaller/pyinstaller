@@ -618,6 +618,8 @@ class EXE(Target):
     def assemble(self):
         print "building EXE from", os.path.basename(self.out)
         trash = []
+        if not os.path.exists(os.path.dirname(self.name)):
+            os.makedirs(os.path.dirname(self.name))
         outf = open(self.name, 'wb')
         exe = self._bootloader_postfix('support/loader/run')
         exe = os.path.join(HOMEPATH, exe)
@@ -729,7 +731,7 @@ class COLLECT(Target):
     def assemble(self):
         print "building COLLECT", os.path.basename(self.out)
         if not os.path.exists(self.name):
-            os.mkdir(self.name)
+            os.makedirs(self.name)
         toc = TOC()
         for inm, fnm, typ in self.toc:
             if typ == 'EXTENSION':
@@ -908,8 +910,8 @@ def build(spec):
     if SPECPATH == '':
         SPECPATH = os.getcwd()
     WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
-    BUILDPATH = os.path.join(SPECPATH, 
-                      "build/pyi.%s/%s" % (config['target_platform'], specnm))
+    BUILDPATH = os.path.join(SPECPATH, 'build',
+                             "pyi." + config['target_platform'], specnm)
     if '-o' in sys.argv:
         bpath = sys.argv[sys.argv.index('-o')+1]
         if os.path.isabs(bpath):
@@ -917,7 +919,7 @@ def build(spec):
         else:
             BUILDPATH = os.path.join(SPECPATH, bpath)
     if not os.path.exists(BUILDPATH):
-        os.mkdir(BUILDPATH)
+        os.makedirs(BUILDPATH)
     execfile(spec)
 
 
