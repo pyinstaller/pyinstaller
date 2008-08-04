@@ -266,7 +266,8 @@ class Analysis(Target):
                         pass
                     else:
                         pure.append((modnm, fnm, 'PYMODULE'))
-        binaries.extend(bindepend.Dependencies(binaries))
+        binaries.extend(bindepend.Dependencies(binaries,
+                                               platform=target_platform))
         self.fixMissingPythonLib(binaries)
         scripts[1:1] = rthooks
         self.scripts = TOC(scripts)
