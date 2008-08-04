@@ -92,14 +92,14 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
     tests.sort(key=lambda x: (len(x), x)) # test1 < test10
     path = os.environ["PATH"]
     counter = dict(passed=[],failed=[])
-    for src in tests:
-        _msg("BUILDING TEST", src)
-        test = os.path.splitext(os.path.basename(src))[0]
+    for test in tests:
+        test = os.path.splitext(os.path.basename(test))[0]
+        _msg("BUILDING TEST", test)
         res = os.system(string.join([PYTHON, os.path.join(HOME, 'Build.py'),
                                      OPTS, test+".spec"],
                                     ' '))
         if run_executable:
-            _msg("EXECUTING TEST", src)
+            _msg("EXECUTING TEST", test)
             # Run the test in a clean environment to make sure they're
             # really self-contained
             del os.environ["PATH"]
@@ -107,11 +107,11 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
             os.environ["PATH"] = path
 
         if res == 0:
-            _msg("FINISHING TEST", src, short=1)
-            counter["passed"].append(src)
+            _msg("FINISHING TEST", test, short=1)
+            counter["passed"].append(test)
         else:
-            _msg("TEST", src, "FAILED", short=1)
-            counter["failed"].append(src)
+            _msg("TEST", test, "FAILED", short=1)
+            counter["failed"].append(test)
     print counter
 
 
@@ -120,7 +120,8 @@ if __name__ == '__main__':
     interactive_tests = glob.glob('test*[0-9]i.py')
 
     from optparse import OptionParser
-    parser = OptionParser(usage="%prog [options]")
+    parser = OptionParser(usage="%prog [options] [TEST-NAME ...]",
+                          epilog="TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.")
     parser.add_option('-c', '--clean', action='store_true',
                       help='Clean up generated files')
     parser.add_option('-i', '--interactive-tests', action='store_true',
@@ -133,15 +134,17 @@ if __name__ == '__main__':
                       help='Name of generated configfile (default: %default)')
 
     opts, args = parser.parse_args()
-    if args:
-        parser.error('Does not expect any arguments')
 
     if opts.clean:
         # only clean up
         clean()
         raise SystemExit()
 
-    if opts.interactive_tests:
+    if args:
+        if opts.interactive_tests:
+            parser.error('Must not specify -i/--interactive-tests when passing test names.')
+        tests = args
+    elif opts.interactive_tests:
         print "Running interactive tests"
         tests = interactive_tests
     else:
