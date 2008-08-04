@@ -27,6 +27,10 @@ except ImportError:
 
 import suffixes
 
+try:
+    STRINGTYPE = basestring
+except NameError:
+    STRINGTYPE = type("")
 
 if not os.environ.has_key('PYTHONCASEOK') and sys.version_info >= (2, 1):
     def caseOk(filename):

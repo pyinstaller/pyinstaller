@@ -262,7 +262,7 @@ class PathImportDirector(ImportDirector):
     def getmod(self, nm):
         mod = None
         for thing in self.path:
-            if type(thing) is STRINGTYPE:
+            if isinstance(thing, STRINGTYPE):
                 owner = self.shadowpath.get(thing, -1)
                 if owner == -1:
                     owner = self.shadowpath[thing] = self.makeOwner(thing)
@@ -555,23 +555,6 @@ def _os_bootstrap():
 
     global _os_stat, _os_path_join, _os_path_dirname, _os_getcwd
 
-    def join(a, b, sep=sep):
-        if a == '':
-            return b
-        lastchar = a[-1:]
-        if lastchar == '/' or lastchar == sep:
-            return a + b
-        return a + sep + b
-
-    def dirname(a, sep=sep, mindirlen=mindirlen):
-        for i in range(len(a)-1, -1, -1):
-            c = a[i]
-            if c == '/' or c == sep:
-                if i < mindirlen:
-                    return a[:i+1]
-                return a[:i]
-        return ''
-
     names = sys.builtin_module_names
 
     join = dirname = None
@@ -593,7 +576,6 @@ def _os_bootstrap():
         sep = '\\'
     elif 'mac' in names:
         from mac import stat, getcwd
-        # overwrite join():
         def join(a, b):
             if a == '':
                 return b
@@ -605,6 +587,25 @@ def _os_bootstrap():
             return a + b
     else:
         raise ImportError, 'no os specific module found'
+
+    if join is None:
+        def join(a, b, sep=sep):
+            if a == '':
+                return b
+            lastchar = a[-1:]
+            if lastchar == '/' or lastchar == sep:
+                return a + b
+            return a + sep + b
+
+    if dirname is None:
+        def dirname(a, sep=sep, mindirlen=mindirlen):
+            for i in range(len(a)-1, -1, -1):
+                c = a[i]
+                if c == '/' or c == sep:
+                    if i < mindirlen:
+                        return a[:i+1]
+                    return a[:i]
+            return ''
 
     _os_stat = stat
     _os_getcwd = getcwd
