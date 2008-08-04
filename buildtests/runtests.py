@@ -103,7 +103,10 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
             # Run the test in a clean environment to make sure they're
             # really self-contained
             del os.environ["PATH"]
-            res = os.system('dist%s%s%s.exe' % (test, os.sep, test))
+            prog = os.path.join('dist', test + '.exe')
+            if not os.path.exists(prog):
+                prog = os.path.join('dist', test, test + '.exe')
+            res = os.system(prog)
             os.environ["PATH"] = path
 
         if res == 0:
