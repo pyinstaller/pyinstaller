@@ -45,6 +45,8 @@ warn*.txt
 *.py[co]
 */*.py[co]
 */*/*.py[co]
+build/
+dist/
 """.split()
 
 def clean():
