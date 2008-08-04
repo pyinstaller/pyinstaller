@@ -123,7 +123,9 @@ class Target:
         Target.invcnum += 1
         self.out = os.path.join(BUILDPATH, 'out%s%d.toc' % (self.__class__.__name__,
                                                             self.invcnum))
+        self.outnm = os.path.basename(self.out)
         self.dependencies = TOC()
+
     def __postinit__(self):
         print "checking %s" % (self.__class__.__name__,)
         if self.check_guts(mtime(self.out)):
@@ -145,7 +147,7 @@ class Target:
             return None
 
         if len(data) != len(self.GUTS):
-            print "building because %s is bad" % outnm
+            print "building because %s is bad" % self.outnm
             return None
         for i in range(len(self.GUTS)):
             attr, func = self.GUTS[i]
@@ -188,9 +190,8 @@ class Analysis(Target):
             )
  
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
         if last_build == 0:
-            print "building %s because %s non existent" % (self.__class__.__name__, outnm)
+            print "building %s because %s non existent" % (self.__class__.__name__, self.outnm)
             return True
         for fnm in self.inputs:
             if mtime(fnm) > last_build:
@@ -347,9 +348,8 @@ class PYZ(Target):
             )
 
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
-            print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
+            print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
             return True
 
         data = Target.get_guts(self, last_build)
@@ -470,9 +470,8 @@ class PKG(Target):
             )
 
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
-            print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
+            print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
             return 1
         
         data = Target.get_guts(self, last_build)
@@ -573,9 +572,8 @@ class EXE(Target):
             )
 
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
-            print "rebuilding %s because %s missing" % (outnm, os.path.basename(self.name))
+            print "rebuilding %s because %s missing" % (self.outnm, os.path.basename(self.name))
             return 1
         if not self.append_pkg and not os.path.exists(self.pkgname):
             print "rebuilding because %s missing" % (
@@ -593,10 +591,10 @@ class EXE(Target):
 
         mtm = data[-1]
         if mtm != mtime(self.name):
-            print "rebuilding", outnm, "because mtimes don't match"
+            print "rebuilding", self.outnm, "because mtimes don't match"
             return True
         if mtm < mtime(self.pkg.out):
-            print "rebuilding", outnm, "because pkg is more recent"
+            print "rebuilding", self.outnm, "because pkg is more recent"
             return True
 
         return False
@@ -721,10 +719,10 @@ class COLLECT(Target):
             else:
                 test = os.path.join(self.name, os.path.basename(fnm))
             if not os.path.exists(test):
-                print "building %s because %s is missing" % (outnm, test)
+                print "building %s because %s is missing" % (self.outnm, test)
                 return 1
             if mtime(fnm) > mtime(test):
-                print "building %s because %s is more recent" % (outnm, fnm)
+                print "building %s because %s is more recent" % (self.outnm, fnm)
                 return 1
         return 0
 
@@ -844,7 +842,7 @@ class Tree(Target, TOC):
         while stack:
             d = stack.pop()
             if mtime(d) > last_build:
-                print "building %s because directory %s changed" % (outnm, d)
+                print "building %s because directory %s changed" % (self.outnm, d)
                 return True
             for nm in os.listdir(d):
                 path = os.path.join(d, nm)
