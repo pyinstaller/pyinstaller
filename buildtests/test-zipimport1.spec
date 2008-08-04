@@ -1,11 +1,6 @@
 # -*- mode: python -*-
 
-__basename__ = 'zipimport1'
-__testname__ = 'test-' + __basename__
-__distdir__ = 'dist' + __testname__
-import os
-if not os.path.isdir(__distdir__):
-    os.mkdir(__distdir__)
+__testname__ = 'test-zipimport1'
 
 a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
               os.path.join(HOMEPATH,'support/useUnicode.py'),
@@ -17,8 +12,7 @@ exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
-          # funny name to meet runtests.py's schema
-          name = '%s%s%s.exe' % (__distdir__, os.sep, __testname__),
+          name = os.path.join('dist', __testname__ +'.exe'),
           debug=False,
           strip=False,
           upx=False,
