@@ -342,11 +342,33 @@ class ImportManager:
         # first see if we could be importing a relative name
         #print "importHook(%s, %s, locals, %s)" % (name, getattr(globals, '__name__', None), fromlist)
         _sys_modules_get = sys.modules.get
-        contexts = [None]
-        if globals and level == -1:
-            # The level indicates we should attempt relative imports, add the
-            # package to searched contexts
+        _self_doimport = self.doimport
+        threaded = self.threaded
+
+        # break the name being imported up so we get:
+        # a.b.c -> [a, b, c]
+        nmparts = namesplit(name)
+
+        if not globals:
+            contexts = [None]
+            if level >= 0:
+                raise ImportError("Relative import requires 'globals'")
+        elif level == 0:
+            # absolute import, do not try relative
+            contexts = [None]
+        else: # level != 0
             importernm = globals.get('__name__', '')
+            if level < 0:
+                # behaviour up to Python 2.4 (and default in Python 2.5)
+                # add the package to searched contexts
+                contexts = [None]
+            else:
+                # relative import, do not try absolute
+                if not importernm:
+                    raise ImportError("Relative import requires package")
+                importernm = _string_split(importernm, '.')[:-level]
+                importernm = _string_join('.', importernm)
+                contexts = []
             if importernm:
                 if hasattr(_sys_modules_get(importernm), '__path__'):
                     # If you use the "from __init__ import" syntax, the package
@@ -357,15 +379,12 @@ class ImportManager:
                 else:
                     pkgnm = packagename(importernm)
                     if pkgnm:
-                        contexts.insert(0,pkgnm)
-        # so contexts is [pkgnm, None] or just [None]
-        # now break the name being imported up so we get:
-        # a.b.c -> [a, b, c]
-        nmparts = namesplit(name)
-        _self_doimport = self.doimport
-        threaded = self.threaded
+                        contexts.insert(0, pkgnm)
+            
+        # so contexts is [pkgnm, None], [pkgnm] or just [None]
         for context in contexts:
             ctx = context
+            i = 0
             for i in range(len(nmparts)):
                 nm = nmparts[i]
                 #print " importHook trying %s in %s" % (nm, ctx)

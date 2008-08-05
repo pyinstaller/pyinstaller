@@ -399,29 +399,48 @@ class ImportTracker:
                 mod = self.modules[nm]
                 if mod:
                     mod.xref(importer)
-                    for name, isdelayed, isconditional in mod.imports:
+                    for name, isdelayed, isconditional, level in mod.imports:
                         imptyp = isdelayed * 2 + isconditional
-                        newnms = self.analyze_one(name, nm, imptyp)
+                        newnms = self.analyze_one(name, nm, imptyp, level)
                         newnms = map(None, newnms, [nm]*len(newnms))
                         nms[j:j] = newnms
                         j = j + len(newnms)
         return map(lambda a: a[0], nms)
 
-    def analyze_one(self, nm, importernm=None, imptyp=0):
-        # first see if we could be importing a relative name
-        contexts = [None]
-        _all = None
-        if importernm:
-            if self.ispackage(importernm):
-                contexts.insert(0,importernm)
-            else:
-                pkgnm = string.join(string.split(importernm, '.')[:-1], '.')
-                if pkgnm:
-                    contexts.insert(0,pkgnm)
-        # so contexts is [pkgnm, None] or just [None]
-        # now break the name being imported up so we get:
-        # a.b.c -> [a, b, c]
+    def analyze_one(self, nm, importernm=None, imptyp=0, level=-1):
+        #print '## analyze_one', nm, importernm, imptyp, level
+        # break the name being imported up so we get:
+        # a.b.c -> [a, b, c] ; ..z -> ['', '', z]
+        if not nm:
+            nm = importernm
+            importernm = None
+            level = 0
         nmparts = string.split(nm, '.')
+
+        if level < 0:
+            # behaviour up to Python 2.4 (and default in Python 2.5)
+            # first see if we could be importing a relative name
+            contexts = [None]
+            if importernm:
+                if self.ispackage(importernm):
+                    contexts.insert(0, importernm)
+                else:
+                    pkgnm = string.join(string.split(importernm, '.')[:-1], '.')
+                    if pkgnm:
+                        contexts.insert(0, pkgnm)
+        elif level == 0:
+            # absolute import, do not try relative
+            importernm = None
+            contexts = [None]
+        elif level > 0:
+            # relative import, do not try absolute
+            contexts = [string.join(string.split(importernm, '.')[:-level], '.')]
+            importernm = None
+
+        _all = None
+
+        assert contexts
+        # so contexts is [pkgnm, None] or just [None]
         if nmparts[-1] == '*':
             del nmparts[-1]
             _all = []
@@ -534,7 +553,7 @@ class ImportTracker:
                     mod = hook.hook(mod)
                 if hasattr(hook, 'hiddenimports'):
                     for impnm in hook.hiddenimports:
-                        mod.imports.append((impnm, 0, 0))
+                        mod.imports.append((impnm, 0, 0, -1))
                 if hasattr(hook, 'attrs'):
                     for attr, val in hook.attrs:
                         setattr(mod, attr, val)
@@ -703,6 +722,10 @@ except ValueError:
     SET_LINENO = 999
 BUILD_LIST = dis.opname.index('BUILD_LIST')
 LOAD_CONST = dis.opname.index('LOAD_CONST')
+if getattr(sys, 'version_info', (0,0,0)) > (2,5,0):
+    LOAD_CONST_level = LOAD_CONST
+else:
+    LOAD_CONST_level = 999
 JUMP_IF_FALSE = dis.opname.index('JUMP_IF_FALSE')
 JUMP_IF_TRUE = dis.opname.index('JUMP_IF_TRUE')
 JUMP_FORWARD = dis.opname.index('JUMP_FORWARD')
@@ -752,17 +775,28 @@ def scan_code(co, m=None, w=None, nested=0):
         w = []
     all = None
     lastname = None
+    level = -1 # import-level, same behaviour as up to Python 2.4
     for i in range(len(instrs)):
         op, oparg, conditional, curline = instrs[i]
         if op == IMPORT_NAME:
-            name = lastname = co.co_names[oparg]
-            m.append((name, nested, conditional))
+            if level <= 0:
+                name = lastname = co.co_names[oparg]
+            else:
+                name = lastname = co.co_names[oparg]
+            #print 'import_name', name, `lastname`, level
+            m.append((name, nested, conditional, level))
         elif op == IMPORT_FROM:
             name = co.co_names[oparg]
-            m.append((lastname+'.'+name, nested, conditional))
+            #print 'import_from', name, `lastname`, level,
+            if level > 0 and (not lastname or lastname[-1:] == '.'):
+                name = lastname + name
+            else:
+                name = lastname + '.' + name
+            #print name
+            m.append((name, nested, conditional, level))
             assert lastname is not None
         elif op == IMPORT_STAR:
-            m.append((lastname+'.*', nested, conditional))
+            m.append((lastname+'.*', nested, conditional, level))
         elif op == STORE_NAME:
             if co.co_names[oparg] == "__all__":
                 j = i - 1
@@ -780,6 +814,11 @@ def scan_code(co, m=None, w=None, nested=0):
                             break
         elif op in STORE_OPS:
             pass
+        elif op == LOAD_CONST_level:
+            # starting with Python 2.5, _each_ import is preceeded with a
+            # LOAD_CONST to indicate the relative level.
+            if isinstance(co.co_consts[oparg], (int, long)):
+                level = co.co_consts[oparg]
         elif op == LOAD_GLOBAL:
             name = co.co_names[oparg]
             cndtl = ['', 'conditional'][conditional]
