@@ -371,7 +371,7 @@ class ZlibArchive(Archive):
         self.LEVEL = struct.unpack('!i', self.lib.read(4))[0]
 
 class PYZOwner(iu.Owner):
-    def __init__(self, path):
+    def __init__(self, path, target_platform=None):
         try:
             self.pyz = ZlibArchive(path)
             self.pyz.checkmagic()
