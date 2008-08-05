@@ -12,6 +12,11 @@ assert relimp.name == 'relimp.relimp'
 import relimp
 assert relimp.name == 'relimp'
 
-from .relimp import relimp2
-assert relimp2.name == 'relimp.relimp2'
+import relimp.relimp2
+assert relimp.relimp2.name == 'relimp.relimp2'
+
+# While this seams to work when running Python, it is wrong:
+#  .relimp should be a sibling of this package
+#from .relimp import relimp2
+#assert relimp2.name == 'relimp.relimp2'
 
