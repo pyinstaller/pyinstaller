@@ -238,7 +238,7 @@ def find_PYZ_dependencies(config):
         nm, fnm, typ = toc[i]
         mod = a.modules[nm]
         tmp = []
-        for importednm, isdelayed, isconditional in mod.imports:
+        for importednm, isdelayed, isconditional, level in mod.imports:
             if not isconditional:
                 realnms = a.analyze_one(importednm, nm)
                 for realnm in realnms:

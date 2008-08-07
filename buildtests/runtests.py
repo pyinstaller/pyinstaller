@@ -141,7 +141,6 @@ if __name__ == '__main__':
     opts, args = parser.parse_args()
 
     if opts.clean:
-        # only clean up
         clean()
         raise SystemExit()
 
@@ -156,5 +155,5 @@ if __name__ == '__main__':
         tests = normal_tests
         print "Running normal tests (-i for interactive tests)"
 
-    clean()
+    #clean()
     runtests(tests, configfile=opts.configfile, run_executable=not opts.no_run)

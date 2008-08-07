@@ -149,8 +149,14 @@ if zipimport:
             Owner.__init__(self, path)
 
         def getmod(self, nm, newmod=imp.new_module):
+            print 'zipimport', nm
+            #nm = _string_replace(nm, '.', '/')
             try:
-                return self.__zip.load_module(nm)
+                mod = self.__zip.find_module(nm)
+                if mod:
+                    print 'zipimport found', mod
+                mod = imp.load_module(*mod)
+                return mod
             except zipimport.ZipImportError:
                 return None
 
@@ -358,6 +364,7 @@ class ImportManager:
             contexts = [None]
         else: # level != 0
             importernm = globals.get('__name__', '')
+            print 'importernm', importernm
             if level < 0:
                 # behaviour up to Python 2.4 (and default in Python 2.5)
                 # add the package to searched contexts
@@ -397,6 +404,7 @@ class ImportManager:
                 try:
                     mod = _sys_modules_get(fqname, UNTRIED)
                     if mod is UNTRIED:
+                        #print 'trying', nm, ctx, fqname
                         mod = _self_doimport(nm, ctx, fqname)
                 finally:
                     if threaded:
@@ -455,6 +463,7 @@ class ImportManager:
                 if not importfunc:
                     subimporter = PathImportDirector(parent.__path__)
                     importfunc = parent.__importsub__ = subimporter.getmod
+                print importfunc
                 mod = importfunc(nm)
                 if mod and not reload:
                     setattr(parent, nm, mod)
