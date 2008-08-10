@@ -36,7 +36,7 @@ exe = EXE(%(tkpkg)s pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
-          name='%(distdir)s/%(exename)s',
+          name=os.path.join('%(distdir)s', '%(exename)s'),
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -50,7 +50,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name='%(builddir)s/%(exename)s',
+          name=os.path.join('%(builddir)s', '%(exename)s'),
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -60,7 +60,7 @@ coll = COLLECT(%(tktree)s exe,
                a.zipfiles,
                strip=%(strip)s,
                upx=%(upx)s,
-               name='%(distdir)s/%(name)s')
+               name=os.path.join('%(distdir)s', '%(name)s'))
 """ # scripts pathex, exename, debug, console tktree distdir name
 
 comsrvrtmplt = """# -*- mode: python -*-
@@ -70,7 +70,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name='%(builddir)s/%(exename)s',
+          name=os.path.join('%(builddir)s', '%(exename)s'),
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -78,14 +78,14 @@ exe = EXE(pyz,
 dll = DLL(pyz,
           a.scripts,
           exclude_binaries=1,
-          name='%(builddir)s/%(dllname)s',
+          name=os.path.join('%(builddir)s', '%(dllname)s'),
           debug=%(debug)s)
 coll = COLLECT(exe, dll,
                a.binaries,
                a.zipfiles,
                strip=%(strip)s,
                upx=%(upx)s,
-               name='%(distdir)s/%(name)s')
+               name=os.path.join('%(distdir)s', '%(name)s'))
 """ # scripts pathex, exename, debug, console tktree distdir name
 
 HOME = os.path.dirname(sys.argv[0])
@@ -148,7 +148,7 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
 
     distdir = "dist"
-    builddir = "build/pyi.%s/%s" % (config['target_platform'], name)
+    builddir = os.path.join('build', 'pyi.' + config['target_platform'], name)
     
     pathex = pathex[:]
     if workdir is None:
