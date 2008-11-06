@@ -2,5 +2,3 @@
 
 print " %s" % __doc__
 print " %s %s" % (__name__, __file__)
-
-   

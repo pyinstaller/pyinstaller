@@ -71,6 +71,8 @@ else:
 if "-vi" in sys.argv[1:]:
     _verbose = 1
 
+class ArchiveReadError(RuntimeError): pass
+
 class Archive:
     """ A base class for a repository of python code objects.
         The extract method is used by imputil.ArchiveImporter
@@ -104,12 +106,12 @@ class Archive:
             Check to see if the file object self.lib actually has a file
             we understand.
         """
-        self.lib.seek(self.start)	#default - magic is at start of file
+        self.lib.seek(self.start)       #default - magic is at start of file
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise RuntimeError, "%s is not a valid %s archive file" \
+            raise ArchiveReadError, "%s is not a valid %s archive file" \
               % (self.path, self.__class__.__name__)
         if self.lib.read(len(self.pymagic)) != self.pymagic:
-            raise RuntimeError, "%s has version mismatch to dll" % (self.path)
+            raise ArchiveReadError, "%s has version mismatch to dll" % (self.path)
         self.lib.read(4)
 
     def loadtoc(self):
@@ -253,7 +255,7 @@ class Archive:
         assert ext in ('.pyc', '.pyo')
         self.toc[nm] = (ispkg, self.lib.tell())
         f = open(entry[1], 'rb')
-        f.seek(8)	#skip magic and timestamp
+        f.seek(8)       #skip magic and timestamp
         self.lib.write(f.read())
 
     def save_toc(self, tocpos):
@@ -370,7 +372,7 @@ class ZlibArchive(Archive):
         except (IOError, OSError):
             try:
                 f = open(pth, 'rb')
-                f.seek(8)	#skip magic and timestamp
+                f.seek(8)       #skip magic and timestamp
                 bytecode = f.read()
                 marshal.loads(bytecode).co_filename # to make sure it's valid
                 obj = zlib.compress(bytecode, self.LEVEL)
@@ -410,10 +412,11 @@ class Keyfile:
             self.key = None
 
 class PYZOwner(iu.Owner):
-    def __init__(self, path):
+    def __init__(self, path, target_platform=None):
         try:
             self.pyz = ZlibArchive(path)
-        except IOError, e:
+            self.pyz.checkmagic()
+        except (IOError, ArchiveReadError), e:
             raise iu.OwnerError(e)
         if self.pyz.crypted:
             if not hasattr(sys, "keyfile"):

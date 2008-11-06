@@ -19,7 +19,7 @@ print "test14 - Used to fail if _xmlplus is installed"
 
 import sys
 if sys.version_info[:2] >= (2, 5):
-    import subprocess    
+    import subprocess
     import xml.etree.ElementTree as ET
     print "#"*50
     print "xml.etree.ElementTree", dir(ET)
@@ -35,4 +35,3 @@ if sys.version_info[:2] >= (2, 5):
     print "test14 DONE"
 else:
     print "Python 2.5 test14 skipped"
-

@@ -528,4 +528,3 @@ if __name__ == '__main__':
     else:
         print "Examining", sys.argv[1]
         decode(sys.argv[1])
-

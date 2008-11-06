@@ -1,3 +1,7 @@
+# -*- mode: python -*-
+
+__testname__ = 'test9'
+
 a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
               os.path.join(HOMEPATH,'support', 'useUnicode.py'),
               'test9.py'],
@@ -6,7 +10,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name='buildtest9/test9.exe',
+          name=os.path.join('build', 'pyi.' + config['target_platform'], __testname__ + '.exe'),
           debug=False,
           strip=False,
           upx=False,
@@ -15,4 +19,4 @@ coll = COLLECT( exe,
                a.binaries,
                strip=False,
                upx=False,
-               name='disttest9')
+               name=os.path.join('dist', __testname__),)

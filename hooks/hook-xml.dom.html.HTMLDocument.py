@@ -70,5 +70,3 @@ hiddenimports = ['xml.dom.html.HTMLAnchorElement',
                  'xml.dom.html.HTMLTitleElement',
                  'xml.dom.html.HTMLUListElement',
         ]
-
-

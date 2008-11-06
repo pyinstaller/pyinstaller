@@ -22,4 +22,3 @@ def hook(mod):
             if mod.imports[i][0] == 'strop':
                 del mod.imports[i]
     return mod
-

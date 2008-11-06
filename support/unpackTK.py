@@ -37,4 +37,3 @@ for fnm in tk.contents():
         os.makedirs(dirnm)
     open(outnm, 'wb').write(stuff)
 tk = None
-

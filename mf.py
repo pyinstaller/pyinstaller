@@ -1,4 +1,6 @@
+#
 # Copyright (C) 2005, Giovanni Bajo
+#
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -14,15 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-import sys, string, os, imp, marshal, dircache
+#
 
-#=======================Owners==========================#
-# An Owner does imports from a particular piece of turf
-# That is, there's an Owner for each thing on sys.path
-# There are owners for directories and .pyz files.
-# There could be owners for zip files, or even URLs.
-# Note that they replace the string in sys.path,
-# but str(sys.path[n]) should yield the original string.
+import sys, string, os, imp, marshal, dircache
+try:
+    # zipimport is supported starting with Python 2.3
+    import zipimport
+except ImportError:
+    zipimport = None
+
+import suffixes
 
 try:
     STRINGTYPE = basestring
@@ -46,22 +49,39 @@ def pyco():
     else:
         return 'o'
 
+#=======================Owners==========================#
+# An Owner does imports from a particular piece of turf
+# That is, there's an Owner for each thing on sys.path
+# There are owners for directories and .pyz files.
+# There could be owners for zip files, or even URLs.
+# Note that they replace the string in sys.path,
+# but str(sys.path[n]) should yield the original string.
+
 class Owner:
-    def __init__(self, path):
+    def __init__(self, path, target_platform=None):
         self.path = path
+        self.target_platform = target_platform
+
     def __str__(self):
         return self.path
+
     def getmod(self, nm):
         return None
 
 class DirOwner(Owner):
-    def __init__(self, path):
+    def __init__(self, path, target_platform=None):
         if path == '':
             path = os.getcwd()
         if not os.path.isdir(path):
             raise ValueError, "%s is not a directory" % path
-        Owner.__init__(self, path)
-    def getmod(self, nm, getsuffixes=imp.get_suffixes, loadco=marshal.loads):
+        Owner.__init__(self, path, target_platform)
+
+    def _getsuffixes(self):
+        return suffixes.get_suffixes(self.target_platform)
+        
+    def getmod(self, nm, getsuffixes=None, loadco=marshal.loads):
+        if getsuffixes is None:
+            getsuffixes = self._getsuffixes
         pth =  os.path.join(self.path, nm)
         possibles = [(pth, 0, None)]
         if os.path.isdir(pth):
@@ -124,11 +144,12 @@ class DirOwner(Owner):
         #print "DirOwner.getmod -> %s" % mod
         return mod
 
+
 class PYZOwner(Owner):
-    def __init__(self, path):
+    def __init__(self, path, target_platform=None):
         import archive
         self.pyz = archive.ZlibArchive(path)
-        Owner.__init__(self, path)
+        Owner.__init__(self, path, target_platform)
     def getmod(self, nm):
         rslt = self.pyz.extract(nm)
         if rslt:
@@ -137,11 +158,27 @@ class PYZOwner(Owner):
             return PkgInPYZModule(nm, co, self)
         return PyModule(nm, self.path, co)
 
-_globalownertypes = [
+
+ZipOwner = None
+if zipimport:
+    class ZipOwner(Owner):
+        def __init__(self, path, target_platform=None):
+            self.__zip = zipimport.zipimporter(path)
+            Owner.__init__(self, path, target_platform)
+
+        def getmod(self, nm):
+            try:
+                co = self.__zip.get_code(nm)
+                return PkgInZipModule(nm, co, self)
+            except zipimport.ZipImportError:
+                return None
+
+_globalownertypes = filter(None, [
     DirOwner,
+    ZipOwner,
     PYZOwner,
     Owner,
-]
+])
 
 #===================Import Directors====================================#
 # ImportDirectors live on the metapath
@@ -153,20 +190,25 @@ _globalownertypes = [
 
 class ImportDirector(Owner):
     pass
+
 class BuiltinImportDirector(ImportDirector):
     def __init__(self):
         self.path = 'Builtins'
+
     def getmod(self, nm, isbuiltin=imp.is_builtin):
         if isbuiltin(nm):
             return BuiltinModule(nm)
         return None
+
 class FrozenImportDirector(ImportDirector):
     def __init__(self):
         self.path = 'FrozenModules'
+
     def getmod(self, nm, isfrozen=imp.is_frozen):
         if isfrozen(nm):
             return FrozenModule(nm)
         return None
+
 class RegistryImportDirector(ImportDirector):
     # for Windows only
     def __init__(self):
@@ -199,6 +241,7 @@ class RegistryImportDirector(ImportDirector):
                         hskey.Close()
                     hkey.Close()
                     break
+
     def getmod(self, nm):
         stuff = self.map.get(nm)
         if stuff:
@@ -218,8 +261,10 @@ class RegistryImportDirector(ImportDirector):
                 co = loadco(stuff[8:])
             return PyModule(nm, fnm, co)
         return None
+
 class PathImportDirector(ImportDirector):
-    def __init__(self, pathlist=None, importers=None, ownertypes=None):
+    def __init__(self, pathlist=None, importers=None, ownertypes=None,
+                 target_platform=None):
         if pathlist is None:
             self.path = sys.path
         else:
@@ -234,6 +279,11 @@ class PathImportDirector(ImportDirector):
             self.shadowpath = {}
         self.inMakeOwner = 0
         self.building = {}
+        self.target_platform = target_platform
+
+    def __str__(self):
+        return str(self.path)
+
     def getmod(self, nm):
         mod = None
         for thing in self.path:
@@ -248,6 +298,7 @@ class PathImportDirector(ImportDirector):
             if mod:
                 break
         return mod
+
     def makeOwner(self, path):
         if self.building.get(path):
             return None
@@ -257,7 +308,7 @@ class PathImportDirector(ImportDirector):
             try:
                 # this may cause an import, which may cause recursion
                 # hence the protection
-                owner = klass(path)
+                owner = klass(path, self.target_platform)
             except Exception, e:
                 #print "PathImportDirector", e
                 pass
@@ -277,6 +328,7 @@ def getDescr(fnm):
 # This one doesn't really import, just analyzes
 # If it *were* importing, it would be the one-and-only ImportManager
 # ie, the builtin import
+
 UNTRIED = -1
 
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
@@ -301,9 +353,11 @@ if __debug__:
 else:
     LogDict = dict
 
+
 class ImportTracker:
     # really the equivalent of builtin import
-    def __init__(self, xpath=None, hookspath=None, excludes=None):
+    def __init__(self, xpath=None, hookspath=None, excludes=None,
+                 target_platform=None):
         self.path = []
         self.warnings = {}
         if xpath:
@@ -314,13 +368,15 @@ class ImportTracker:
             BuiltinImportDirector(),
             FrozenImportDirector(),
             RegistryImportDirector(),
-            PathImportDirector(self.path)
+            PathImportDirector(self.path, target_platform=target_platform)
         ]
         if hookspath:
             hooks.__path__.extend(hookspath)
         self.excludes = excludes
         if excludes is None:
             self.excludes = []
+        self.target_platform = target_platform
+
     def analyze_r(self, nm, importernm=None):
         importer = importernm
         if importer is None:
@@ -343,28 +399,48 @@ class ImportTracker:
                 mod = self.modules[nm]
                 if mod:
                     mod.xref(importer)
-                    for name, isdelayed, isconditional in mod.imports:
+                    for name, isdelayed, isconditional, level in mod.imports:
                         imptyp = isdelayed * 2 + isconditional
-                        newnms = self.analyze_one(name, nm, imptyp)
+                        newnms = self.analyze_one(name, nm, imptyp, level)
                         newnms = map(None, newnms, [nm]*len(newnms))
                         nms[j:j] = newnms
                         j = j + len(newnms)
         return map(lambda a: a[0], nms)
-    def analyze_one(self, nm, importernm=None, imptyp=0):
-        # first see if we could be importing a relative name
-        contexts = [None]
-        _all = None
-        if importernm:
-            if self.ispackage(importernm):
-                contexts.insert(0,importernm)
-            else:
-                pkgnm = string.join(string.split(importernm, '.')[:-1], '.')
-                if pkgnm:
-                    contexts.insert(0,pkgnm)
-        # so contexts is [pkgnm, None] or just [None]
-        # now break the name being imported up so we get:
-        # a.b.c -> [a, b, c]
+
+    def analyze_one(self, nm, importernm=None, imptyp=0, level=-1):
+        #print '## analyze_one', nm, importernm, imptyp, level
+        # break the name being imported up so we get:
+        # a.b.c -> [a, b, c] ; ..z -> ['', '', z]
+        if not nm:
+            nm = importernm
+            importernm = None
+            level = 0
         nmparts = string.split(nm, '.')
+
+        if level < 0:
+            # behaviour up to Python 2.4 (and default in Python 2.5)
+            # first see if we could be importing a relative name
+            contexts = [None]
+            if importernm:
+                if self.ispackage(importernm):
+                    contexts.insert(0, importernm)
+                else:
+                    pkgnm = string.join(string.split(importernm, '.')[:-1], '.')
+                    if pkgnm:
+                        contexts.insert(0, pkgnm)
+        elif level == 0:
+            # absolute import, do not try relative
+            importernm = None
+            contexts = [None]
+        elif level > 0:
+            # relative import, do not try absolute
+            contexts = [string.join(string.split(importernm, '.')[:-level], '.')]
+            importernm = None
+
+        _all = None
+
+        assert contexts
+        # so contexts is [pkgnm, None] or just [None]
         if nmparts[-1] == '*':
             del nmparts[-1]
             _all = []
@@ -477,7 +553,7 @@ class ImportTracker:
                     mod = hook.hook(mod)
                 if hasattr(hook, 'hiddenimports'):
                     for impnm in hook.hiddenimports:
-                        mod.imports.append((impnm, 0, 0))
+                        mod.imports.append((impnm, 0, 0, -1))
                 if hasattr(hook, 'attrs'):
                     for attr, val in hook.attrs:
                         setattr(mod, attr, val)
@@ -492,6 +568,7 @@ class ImportTracker:
         # self.modules[fqname] = mod
         # here
         return mod
+
     def getwarnings(self):
         warnings = self.warnings.keys()
         for nm,mod in self.modules.items():
@@ -499,6 +576,7 @@ class ImportTracker:
                 for w in mod.warnings:
                     warnings.append(w+' - %s (%s)' % (mod.__name__, mod.__file__))
         return warnings
+
     def getxref(self):
         mods = self.modules.items() # (nm, mod)
         mods.sort()
@@ -517,6 +595,7 @@ class ImportTracker:
 class Module:
     _ispkg = 0
     typ = 'UNKNOWN'
+
     def __init__(self, nm):
         self.__name__ = nm
         self.__file__ = None
@@ -524,28 +603,35 @@ class Module:
         self.imports = []
         self.warnings = []
         self._xref = {}
+
     def ispackage(self):
         return self._ispkg
+
     def doimport(self, nm):
         pass
+
     def xref(self, nm):
         self._xref[nm] = 1
+
     def __str__(self):
         return "<Module %s %s %s>" % (self.__name__, self.__file__, self.imports)
 
 class BuiltinModule(Module):
     typ = 'BUILTIN'
+
     def __init__(self, nm):
         Module.__init__(self, nm)
 
 class ExtensionModule(Module):
     typ = 'EXTENSION'
+
     def __init__(self, nm, pth):
         Module.__init__(self, nm)
         self.__file__ = pth
 
 class PyModule(Module):
     typ = 'PYMODULE'
+
     def __init__(self, nm, pth, co):
         Module.__init__(self, nm)
         self.co = co
@@ -553,6 +639,7 @@ class PyModule(Module):
         if os.path.splitext(self.__file__)[1] == '.py':
             self.__file__ = self.__file__ + pyco()
         self.scancode()
+
     def scancode(self):
         self.imports, self.warnings, allnms = scan_code(self.co)
         if allnms:
@@ -560,23 +647,28 @@ class PyModule(Module):
 
 class PyScript(PyModule):
     typ = 'PYSOURCE'
+
     def __init__(self, pth, co):
         Module.__init__(self, '__main__')
         self.co = co
         self.__file__ = pth
         self.scancode()
 
+
 class PkgModule(PyModule):
     typ = 'PYMODULE'
+
     def __init__(self, nm, pth, co):
         PyModule.__init__(self, nm, pth, co)
         self._ispkg = 1
         pth = os.path.dirname(pth)
         self.__path__ = [ pth ]
         self._update_director(force=True)
+
     def _update_director(self, force=False):
         if force or self.subimporter.path != self.__path__:
             self.subimporter = PathImportDirector(self.__path__)
+
     def doimport(self, nm):
         self._update_director()
         mod = self.subimporter.getmod(nm)
@@ -590,9 +682,24 @@ class PkgInPYZModule(PyModule):
         self._ispkg = 1
         self.__path__ = [ str(pyzowner) ]
         self.owner = pyzowner
+
     def doimport(self, nm):
         mod = self.owner.getmod(self.__name__ + '.' + nm)
         return mod
+
+
+class PkgInZipModule(PyModule):
+    typ = 'ZIPFILE'
+    def __init__(self, nm, co, pyzowner):
+        PyModule.__init__(self, nm, co.co_filename, co)
+        self._ispkg = 0
+        self.__path__ = [ str(pyzowner) ]
+        self.owner = pyzowner
+
+    def doimport(self, nm):
+        mod = self.owner.getmod(self.__name__ + '.' + nm)
+        return mod
+
 
 #======================== Utility ================================#
 # Scan the code object for imports, __all__ and wierd stuff
@@ -615,6 +722,10 @@ except ValueError:
     SET_LINENO = 999
 BUILD_LIST = dis.opname.index('BUILD_LIST')
 LOAD_CONST = dis.opname.index('LOAD_CONST')
+if getattr(sys, 'version_info', (0,0,0)) > (2,5,0):
+    LOAD_CONST_level = LOAD_CONST
+else:
+    LOAD_CONST_level = 999
 JUMP_IF_FALSE = dis.opname.index('JUMP_IF_FALSE')
 JUMP_IF_TRUE = dis.opname.index('JUMP_IF_TRUE')
 JUMP_FORWARD = dis.opname.index('JUMP_FORWARD')
@@ -664,17 +775,28 @@ def scan_code(co, m=None, w=None, nested=0):
         w = []
     all = None
     lastname = None
+    level = -1 # import-level, same behaviour as up to Python 2.4
     for i in range(len(instrs)):
         op, oparg, conditional, curline = instrs[i]
         if op == IMPORT_NAME:
-            name = lastname = co.co_names[oparg]
-            m.append((name, nested, conditional))
+            if level <= 0:
+                name = lastname = co.co_names[oparg]
+            else:
+                name = lastname = co.co_names[oparg]
+            #print 'import_name', name, `lastname`, level
+            m.append((name, nested, conditional, level))
         elif op == IMPORT_FROM:
             name = co.co_names[oparg]
-            m.append((lastname+'.'+name, nested, conditional))
+            #print 'import_from', name, `lastname`, level,
+            if level > 0 and (not lastname or lastname[-1:] == '.'):
+                name = lastname + name
+            else:
+                name = lastname + '.' + name
+            #print name
+            m.append((name, nested, conditional, level))
             assert lastname is not None
         elif op == IMPORT_STAR:
-            m.append((lastname+'.*', nested, conditional))
+            m.append((lastname+'.*', nested, conditional, level))
         elif op == STORE_NAME:
             if co.co_names[oparg] == "__all__":
                 j = i - 1
@@ -692,6 +814,11 @@ def scan_code(co, m=None, w=None, nested=0):
                             break
         elif op in STORE_OPS:
             pass
+        elif op == LOAD_CONST_level:
+            # starting with Python 2.5, _each_ import is preceeded with a
+            # LOAD_CONST to indicate the relative level.
+            if isinstance(co.co_consts[oparg], (int, long)):
+                level = co.co_consts[oparg]
         elif op == LOAD_GLOBAL:
             name = co.co_names[oparg]
             cndtl = ['', 'conditional'][conditional]

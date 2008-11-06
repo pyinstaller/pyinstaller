@@ -23,4 +23,3 @@ if sys.version_info[:2] >= (2, 5):
     print "test13 DONE"
 else:
     print "Python 2.5 test13 skipped"
-

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+#
 # Automatically build spec files containing a description of the project
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -21,33 +23,35 @@ import sys, os, string
 
 # For Python 1.5 compatibility
 try:
-    True
+    True, False
 except:
-    True,False = 1,0
+    True  = 1 == 1
+    False = not True
 
-freezetmplt = """\
+freezetmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
 pyz = PYZ(a.pure, crypt=%(crypt)s)
 exe = EXE(%(tkpkg)s pyz,
           a.scripts,
           a.binaries,
-          name='%(exename)s',
+          a.zipfiles,
+          name=os.path.join('%(distdir)s', '%(exename)s'),
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
           crypt=%(crypted)s,
           console=%(console)s %(exe_options)s)
-""" # pathex scripts exename tkpkg debug console
+""" # pathex scripts exename tkpkg debug console distdir
 
-collecttmplt = """\
+collecttmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
 pyz = PYZ(a.pure, crypt=%(crypt)s)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name='%(builddir)s/%(exename)s',
+          name=os.path.join('%(builddir)s', '%(exename)s'),
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -55,19 +59,20 @@ exe = EXE(pyz,
           console=%(console)s %(exe_options)s)
 coll = COLLECT(%(tktree)s exe,
                a.binaries,
+               a.zipfiles,
                strip=%(strip)s,
                upx=%(upx)s,
-               name='%(distdir)s')
-""" # scripts pathex, exename, debug, console tktree distdir
+               name=os.path.join('%(distdir)s', '%(name)s'))
+""" # scripts pathex, exename, debug, console tktree distdir name
 
-comsrvrtmplt = """\
+comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
 pyz = PYZ(a.pure, crypt=%(crypt)s)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name='%(builddir)s/%(exename)s',
+          name=os.path.join('%(builddir)s', '%(exename)s'),
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -76,31 +81,18 @@ exe = EXE(pyz,
 dll = DLL(pyz,
           a.scripts,
           exclude_binaries=1,
-          name='%(builddir)s/%(dllname)s',
+          name=os.path.join('%(builddir)s', '%(dllname)s'),
           debug=%(debug)s)
 coll = COLLECT(exe, dll,
                a.binaries,
+               a.zipfiles,
                strip=%(strip)s,
                upx=%(upx)s,
-               name='%(distdir)s')
-""" # scripts pathex, exename, debug, console tktree distdir
-HOME = os.path.dirname(sys.argv[0])
-if HOME == '':
-    HOME = os.getcwd()
-if not os.path.isabs(HOME):
-    HOME = os.path.abspath(HOME)
-iswin = sys.platform[:3] == "win"
-cygwin = sys.platform == "cygwin"
-try:
-    config = eval(open(os.path.join(HOME, 'config.dat'), 'r').read())
-except IOError:
-    print "You must run Configure.py before building!"
-    sys.exit(1)
+               name=os.path.join('%(distdir)s', '%(name)s'))
+""" # scripts pathex, exename, debug, console tktree distdir name
 
-if config['pythonVersion'] != sys.version:
-    print "The current version of Python is not the same with which PyInstaller was configured."
-    print "Please re-run Configure.py with this version."
-    sys.exit(1)
+HOME = os.path.dirname(sys.argv[0])
+HOME = os.path.abspath(HOME)
 
 def quote_win_filepath( path ):
     # quote all \ with another \ after using normpath to clean up the path
@@ -140,13 +132,27 @@ class Path:
             return repr(self.path)
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
-def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
-         comserver=0, ascii=0, workdir=None, pathex=[], version_file=None, icon_file=None,
-         crypt=None):
-    if name is None:
+
+def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0,
+         strip=0, upx=0, comserver=0, ascii=0, workdir=None,
+         pathex=[], version_file=None, icon_file=None, crypt=None):
+
+    try:
+        config = eval(open(configfile, 'r').read())
+    except IOError:
+        raise SystemExit("Configfile is missing or unreadable. Please run Configure.py before building!")
+
+    if config['pythonVersion'] != sys.version:
+        print "The current version of Python is not the same with which PyInstaller was configured."
+        print "Please re-run Configure.py with this version."
+        raise SystemExit(1)
+
+    if not name:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
-    distdir = "dist%s" % name
-    builddir = "build%s" % name
+
+    distdir = "dist"
+    builddir = os.path.join('build', 'pyi.' + config['target_platform'], name)
+    
     pathex = pathex[:]
     if workdir is None:
         workdir = os.getcwd()
@@ -171,7 +177,8 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
          'tkpkg' :'',
          'scripts':scripts,
          'pathex' :pathex,
-         'exename': '',
+         #'exename': '',
+         'name': name,
          'distdir': distdir,
          'builddir': builddir,
          'debug': debug,
@@ -191,7 +198,8 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
         else:
             scripts.insert(0, Path(HOME, 'support', 'useTK.py'))
     scripts.insert(0, Path(HOME, 'support', '_mountzlib.py'))
-    if iswin or cygwin:
+    if config['target_platform'][:3] == "win" or \
+       config['target_platform'] == 'cygwin':
         d['exename'] = name+'.exe'
         d['dllname'] = name+'.dll'
     else:
@@ -208,56 +216,65 @@ def main(scripts, name=None, tk=0, freeze=0, console=1, debug=0, strip=0, upx=0,
     specfile.close()
     return specfnm
 
+
 if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser(
         usage="python %prog [opts] <scriptname> [<scriptname> ...]"
     )
-    p.add_option("-F", "--onefile", dest="freeze",
+    p.add_option('-C', '--configfile',
+                 default=os.path.join(HOME, 'config.dat'),
+                 help='Name of configfile (default: %default)')
+
+    g = p.add_option_group('What to generate')
+    g.add_option("-F", "--onefile", dest="freeze",
                  action="store_true", default=False,
                  help="create a single file deployment")
-    p.add_option("-D", "--onedir", dest="freeze", action="store_false",
+    g.add_option("-D", "--onedir", dest="freeze", action="store_false",
                  help="create a single directory deployment (default)")
-    p.add_option("-w", "--windowed", "--noconsole", dest="console",
-                 action="store_false", default=True,
-                 help="use a Windows subsystem executable (Windows only)")
-    p.add_option("-c", "--nowindowed", "--console", dest="console",
-                 action="store_true",
-                 help="use a console subsystem executable (Windows only) "
-                      "(default)")
-    p.add_option("-a", "--ascii", action="store_true", default=False,
-                 help="do NOT include unicode encodings "
-                      "(default: included if available)")
-    p.add_option("-d", "--debug", action="store_true", default=False,
-                 help="use the debug (verbose) build of the executable")
-    p.add_option("-s", "--strip", action="store_true", default=False,
-                 help="strip the exe and shared libs "
-                      "(don't try this on Windows)")
-    p.add_option("-X", "--upx", action="store_true", default=False,
-                 help="use UPX if available (works differently between "
-                      "Windows and *nix)")
-    p.add_option("-Y", "--crypt", type="string", default=None, metavar="FILE",
-                 help="encrypt pyc/pyo files")
-    p.add_option("-K", "--tk", default=False, action="store_true",
-                 help="include TCL/TK in the deployment")
-    p.add_option("-o", "--out", type="string", default=None,
+    g.add_option("-o", "--out", type="string", default=None,
                  dest="workdir", metavar="DIR",
-                 help="generate the spec file in the specified directory")
-    p.add_option("-n", "--name", type="string", default=None,
-                 help="name to assign to the project, from which the spec file "
-                      "name is generated. (default: use the basename of the "
-                      "(first) script)")
-    p.add_option("-p", "--paths", type="string", default=[], dest="pathex",
+                 help="generate the spec file in the specified directory "
+                      "(default: current directory")
+
+    g = p.add_option_group('What to bundle, where to seach')
+    g.add_option("-p", "--paths", type="string", default=[], dest="pathex",
                  metavar="DIR", action="append",
                  help="set base path for import (like using PYTHONPATH). "
                       "Multiple directories are allowed, separating them "
                       "with %s, or using this option multiple times"
                       % repr(os.pathsep))
-    p.add_option("-v", "--version", type="string",
+    g.add_option("-K", "--tk", default=False, action="store_true",
+                 help="include TCL/TK in the deployment")
+    g.add_option("-a", "--ascii", action="store_true", default=False,
+                 help="do NOT include unicode encodings "
+                      "(default: included if available)")
+
+    g = p.add_option_group('How to generate')
+    g.add_option("-d", "--debug", action="store_true", default=False,
+                 help="use the debug (verbose) build of the executable")
+    g.add_option("-s", "--strip", action="store_true", default=False,
+                 help="strip the exe and shared libs "
+                      "(don't try this on Windows)")
+    g.add_option("-X", "--upx", action="store_true", default=False,
+                 help="use UPX if available (works differently between "
+                      "Windows and *nix)")
+    p.add_option("-Y", "--crypt", type="string", default=None, metavar="FILE",
+                 help="encrypt pyc/pyo files")
+
+    g = p.add_option_group('Windows specific options')
+    g.add_option("-c", "--console", "--nowindowed", dest="console",
+                 action="store_true",
+                 help="use a console subsystem executable (Windows only) "
+                      "(default)")
+    g.add_option("-w", "--windowed", "--noconsole", dest="console",
+                 action="store_false", default=True,
+                 help="use a Windows subsystem executable (Windows only)")
+    g.add_option("-v", "--version", type="string",
                  dest="version_file", metavar="FILE",
                  help="add a version resource from FILE to the exe "
                       "(Windows only)")
-    p.add_option("--icon", type="string", dest="icon_file",
+    g.add_option("--icon", type="string", dest="icon_file",
                  metavar="FILE.ICO or FILE.EXE,ID",
                  help="If FILE is an .ico file, add the icon to the final "
                       "executable. Otherwise, the syntax 'file.exe,id' to "
@@ -273,9 +290,8 @@ if __name__ == '__main__':
         opts.pathex.extend(string.split(p, os.pathsep))
 
     if not args:
-        p.print_help()
-        sys.exit(1)
+        p.error('Requires at least one scriptname file')
 
-    nm = apply(main, (args,), opts.__dict__)
-    print "wrote %s" % nm
+    name = apply(main, (args,), opts.__dict__)
+    print "wrote %s" % name
     print "now run Build.py to build the executable"

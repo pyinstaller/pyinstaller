@@ -32,4 +32,3 @@ else:
     # as in setuptools/site.py
 
 print "test16 DONE"
-

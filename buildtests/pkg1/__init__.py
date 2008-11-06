@@ -5,6 +5,3 @@ import pkg2
 import sys
 sys.modules[__name__] = pkg2
 from pkg2 import *
-
-
-

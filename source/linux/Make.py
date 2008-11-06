@@ -34,10 +34,10 @@ import makemakefile
 import pprint
 
 try:
-	from distutils import sysconfig
+    from distutils import sysconfig
 except:
-	print "ERROR: distutils with sysconfig required"
-	sys.exit(1)
+    print "ERROR: distutils with sysconfig required"
+    sys.exit(1)
 
 try:
     True
@@ -98,15 +98,15 @@ def main():
         config_h_dir = exec_prefix
         makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
     else:
-#	binlib = os.path.join (sysconfig.get_python_lib(True, True, exec_prefix), 'config')
-	binlib = sysconfig.get_config_vars('LIBDIR')[0]
-	# TODO: Is it possible to have more than one path returned? if so fix "includes" list
-	incldir_list =  sysconfig.get_config_vars('INCLUDEDIR')
-	includes = []
-	for dir in incldir_list:
-		if dir != None:
-			includes.append('-I' + dir)
-	config_h_dir =  os.path.join (sysconfig.get_python_inc(True,exec_prefix))
+#       binlib = os.path.join (sysconfig.get_python_lib(True, True, exec_prefix), 'config')
+        binlib = sysconfig.get_config_vars('LIBDIR')[0]
+        # TODO: Is it possible to have more than one path returned? if so fix "includes" list
+        incldir_list =  sysconfig.get_config_vars('INCLUDEDIR')
+        includes = []
+        for dir in incldir_list:
+            if dir != None:
+                includes.append('-I' + dir)
+        config_h_dir =  os.path.join (sysconfig.get_python_inc(True,exec_prefix))
         includes.append('-I' + config_h_dir)
         makefile_in = sysconfig.get_makefile_filename()
 
