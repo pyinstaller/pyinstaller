@@ -49,6 +49,10 @@ try:
 except NameError:
     STRINGTYPE = type("")
 
+def debug(msg):
+    if __debug__:
+        sys.stderr.write(msg+"\n")
+
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
 # That is, there's an Owner for each thing on sys.path
@@ -149,12 +153,12 @@ if zipimport:
             Owner.__init__(self, path)
 
         def getmod(self, nm, newmod=imp.new_module):
-            print 'zipimport', nm
+            debug('zipimport %s' % nm)
             #nm = _string_replace(nm, '.', '/')
             try:
                 mod = self.__zip.find_module(nm)
                 if mod:
-                    print 'zipimport found', mod
+                    debug('zipimport found %s' % mod)
                 mod = imp.load_module(*mod)
                 return mod
             except zipimport.ZipImportError:
@@ -334,7 +338,7 @@ class ImportManager:
     def setThreaded(self):
         thread = sys.modules.get('thread', None)
         if thread and not self.threaded:
-##            print "iu setting threaded"
+##            debug("iu setting threaded")
             self.threaded = 1
             self.rlock = thread.allocate_lock()
             self._get_ident = thread.get_ident
@@ -346,7 +350,7 @@ class ImportManager:
 
     def importHook(self, name, globals=None, locals=None, fromlist=None, level=-1):
         # first see if we could be importing a relative name
-        #print "importHook(%s, %s, locals, %s)" % (name, getattr(globals, '__name__', None), fromlist)
+        #debug("importHook(%s, %s, locals, %s)" % (name, getattr(globals, '__name__', None), fromlist))
         _sys_modules_get = sys.modules.get
         _self_doimport = self.doimport
         threaded = self.threaded
@@ -364,7 +368,7 @@ class ImportManager:
             contexts = [None]
         else: # level != 0
             importernm = globals.get('__name__', '')
-            print 'importernm', importernm
+            debug('importernm %s' % importernm)
             if level < 0:
                 # behaviour up to Python 2.4 (and default in Python 2.5)
                 # add the package to searched contexts
@@ -394,7 +398,7 @@ class ImportManager:
             i = 0
             for i in range(len(nmparts)):
                 nm = nmparts[i]
-                #print " importHook trying %s in %s" % (nm, ctx)
+                #debug(" importHook trying %s in %s" % (nm, ctx))
                 if ctx:
                     fqname = ctx + '.' + nm
                 else:
@@ -404,7 +408,7 @@ class ImportManager:
                 try:
                     mod = _sys_modules_get(fqname, UNTRIED)
                     if mod is UNTRIED:
-                        #print 'trying', nm, ctx, fqname
+                        #debug('trying %s %s %s' % (nm, ctx, fqname))
                         mod = _self_doimport(nm, ctx, fqname)
                 finally:
                     if threaded:
@@ -421,12 +425,12 @@ class ImportManager:
 
         if i<len(nmparts):
             if ctx and hasattr(sys.modules[ctx], nmparts[i]):
-                #print "importHook done with %s %s %s (case 1)" % (name, globals['__name__'], fromlist)
+                #debug("importHook done with %s %s %s (case 1)" % (name, globals['__name__'], fromlist))
                 return sys.modules[nmparts[0]]
             del sys.modules[fqname]
             raise ImportError, "No module named %s" % fqname
         if fromlist is None:
-            #print "importHook done with %s %s %s (case 2)" % (name, globals['__name__'], fromlist)
+            #debug("importHook done with %s %s %s (case 2)" % (name, globals['__name__'], fromlist))
             if context:
                 return sys.modules[context+'.'+nmparts[0]]
             return sys.modules[nmparts[0]]
@@ -450,12 +454,12 @@ class ImportManager:
                     finally:
                         if threaded:
                             self._release()
-        #print "importHook done with %s %s %s (case 3)" % (name, globals['__name__'], fromlist)
+        #debug("importHook done with %s %s %s (case 3)" % (name, globals['__name__'], fromlist))
         return bottommod
 
     def doimport(self, nm, parentnm, fqname, reload=0):
         # Not that nm is NEVER a dotted name at this point
-        #print "doimport(%s, %s, %s)" % (nm, parentnm, fqname)
+        #debug("doimport(%s, %s, %s)" % (nm, parentnm, fqname))
         if parentnm:
             parent = sys.modules[parentnm]
             if hasattr(parent, '__path__'):
@@ -463,12 +467,12 @@ class ImportManager:
                 if not importfunc:
                     subimporter = PathImportDirector(parent.__path__)
                     importfunc = parent.__importsub__ = subimporter.getmod
-                print importfunc
+                debug(str(importfunc))
                 mod = importfunc(nm)
                 if mod and not reload:
                     setattr(parent, nm, mod)
             else:
-                #print "..parent not a package"
+                #debug("..parent not a package")
                 return None
         else:
             parent = None
@@ -505,11 +509,11 @@ class ImportManager:
                                 delattr(parent, nm)
                     raise
             if fqname == 'thread' and not self.threaded:
-                #print "thread detected!"
+                #debug("thread detected!")
                 self.setThreaded()
         else:
             sys.modules[fqname] = None
-        #print "..found %s" % mod, 'when looking for', fqname
+        #debug("..found %s" % mod, 'when looking for', fqname)
         return mod
 
     def reloadHook(self, mod):
@@ -524,21 +528,21 @@ class ImportManager:
         if self.rlock.locked():
             if self.locker == self._get_ident():
                 self.lockcount = self.lockcount + 1
-                #print "_acquire incrementing lockcount to", self.lockcount
+                #debug("_acquire incrementing lockcount to", self.lockcount)
                 return
         self.rlock.acquire()
         self.locker = self._get_ident()
         self.lockcount = 0
-        #print "_acquire first time!"
+        #debug("_acquire first time!")
 
     def _release(self):
         if self.lockcount:
             self.lockcount = self.lockcount - 1
-            #print "_release decrementing lockcount to", self.lockcount
+            #debug("_release decrementing lockcount to %s" % self.lockcount)
         else:
             self.locker = None
             self.rlock.release()
-            #print "_release releasing lock!"
+            #debug("_release releasing lock!")
 
 #========= some helper functions =============================#
 
