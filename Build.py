@@ -41,6 +41,7 @@ UNCOMPRESSED, COMPRESSED = range(2)
 
 # todo: use pkg_resources here
 HOMEPATH = os.path.dirname(sys.argv[0])
+print sys.argv[0]
 SPECPATH = None
 BUILDPATH = None
 WARNFILE = None
@@ -65,6 +66,9 @@ def setupUPXFlags():
         # or they won't compress. Configure.py makes sure that UPX is new
         # enough to support --strip-loadconf.
         f = "--strip-loadconf " + f
+    # Do not compress any icon, so that additional icons in the executable
+    # can still be externally bound
+    f = "--compress-icons=0 " + f
     f = "--best " + f
     os.environ["UPX"] = f
 
