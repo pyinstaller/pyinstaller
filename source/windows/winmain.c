@@ -30,11 +30,11 @@
 #include <commctrl.h> // InitCommonControls
 #include <signal.h>
 
-int relaunch(char *thisfile, char *workpath)
+int relaunch(LPWSTR thisfile, char *workpath)
 {
 	char envvar[_MAX_PATH + 12];
 	SECURITY_ATTRIBUTES sa;
-	STARTUPINFO si;
+	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	int rc = 0;
 
@@ -48,7 +48,7 @@ int relaunch(char *thisfile, char *workpath)
 	sa.nLength = sizeof(sa);
 	sa.lpSecurityDescriptor = NULL;
 	sa.bInheritHandle = TRUE;
-	GetStartupInfo(&si);
+	GetStartupInfoW(&si);
 	si.lpReserved = NULL;
 	si.lpDesktop = NULL;
 	si.lpTitle = NULL;
@@ -63,9 +63,16 @@ int relaunch(char *thisfile, char *workpath)
 	strcat(envvar, workpath);
 	_putenv(envvar);
 	VS("Creating child process\n");
-	if (CreateProcess( 
+    // Use wide-string version to make sure that the command line is
+    // passed properly: in fact, the locale-specific version (GetCommandLineA())
+    // might not be able to decode it fully and thus contain replacement
+    // characters ("?").
+    // This is actually immaterial right now because Python itself has a bug
+    // and uses only the locale-specific version which is corrupted; but at
+    // least it's not here that we lose information.
+	if (CreateProcessW( 
 			thisfile, // pointer to name of executable module 
-			GetCommandLine(),  // pointer to command line string 
+			GetCommandLineW(),  // pointer to command line string 
 			&sa,  // pointer to process security attributes 
 			NULL,  // pointer to thread security attributes 
 			TRUE,  // handle inheritance flag 
@@ -96,6 +103,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
 	char here[_MAX_PATH + 1];
 	char thisfile[_MAX_PATH + 1];
+    WCHAR thisfilew[_MAX_PATH + 1];
 	char pkgfile[_MAX_PATH + 1];
 	int rc = 0;
 	char *workpath = NULL;
@@ -115,7 +123,12 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		FATALERROR("System error - unable to load!");
 		return -1;
 	}
-	p = thisfile+strlen(thisfile) - 4;
+    if (!GetModuleFileNameW(NULL, thisfilew, _MAX_PATH)) {
+        FATALERROR("System error - unable to load!");
+        return -1;
+    }
+
+    p = thisfile+strlen(thisfile) - 4;
 	if (strnicmp(p, ".exe", 4) != 0)
 		strcat(thisfile, ".exe");
 
@@ -155,7 +168,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// if workpath got set to non-NULL, we've extracted stuff
 		if (workpath) {
 			// run the "child" process, then clean up
-			rc = relaunch(thisfile, workpath);
+			rc = relaunch(thisfilew, workpath);
 		}
 		else {
 			// no "child" process necessary

@@ -376,13 +376,13 @@ int loadPython()
 	sprintf(dllpath, "%spython%02d.dll", f_homepathraw, ntohl(f_cookie.pyvers));
 
 	/* Load the DLL */
-	dll = LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);  
+	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);  
 	if (dll) {
 		VS("%s\n", dllpath);
 	}
 	else {
 		sprintf(dllpath, "%spython%02d.dll", f_temppathraw, ntohl(f_cookie.pyvers));
-		dll = LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
+		dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
 		if (dll) {
 			VS("%s\n", dllpath);
 		}
@@ -439,7 +439,7 @@ int attachPython(int *loadedNew)
 	sprintf(nm, "python%02d.dll", ntohl(f_cookie.pyvers));
 
 	/* See if it's loaded */
-	dll = GetModuleHandle(nm);  
+	dll = GetModuleHandleA(nm);  
 	if (dll == 0) {
 		*loadedNew = 1;
 		return loadPython();
