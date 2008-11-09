@@ -166,6 +166,7 @@ def main():
 
     somevars = {}
     if os.path.exists(makefile_in):
+        print "Using '%s' as Makefile template" % makefile_in
         makevars = sysconfig.parse_makefile(makefile_in)
     else:
         raise ValueError, "Makefile '%s' not found" % makefile_in
@@ -173,6 +174,10 @@ def main():
         somevars[key] = makevars[key]
 
     somevars['CFLAGS'] = string.join(cflags) # override
+    if sys.platform.startswith("darwin"):
+        somevars['LDFLAGS'] += " -F$(PYTHONFRAMEWORKPREFIX)"
+        somevars['LDFLAGS'] += " -mmacosx-version-min=%s" % somevars["MACOSX_DEPLOYMENT_TARGET"]
+        somevars['LINKFORSHARED'] = "-u _PyMac_Error -framework Python" #override
     files = ['$(OPT)', '$(LDFLAGS)', '$(LINKFORSHARED)', 'getpath.c'] + \
             files + \
             ['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)', '-lz']  # XXX zlib not always -lz

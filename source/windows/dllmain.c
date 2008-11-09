@@ -169,11 +169,11 @@ int LoadPythonCom()
 	VS("Loading Pythoncom");
 	// see if pythoncom is already loaded
 	sprintf(dllpath, "pythoncom%02d.dll", getPyVersion());
-	gPythoncom = GetModuleHandle(dllpath);
+	gPythoncom = GetModuleHandleA(dllpath);
 	if (gPythoncom == NULL) {
 		sprintf(dllpath, "%spythoncom%02d.dll", here, getPyVersion());
 		//VS(dllpath);
-		gPythoncom = LoadLibraryEx( dllpath, // points to name of executable module 
+		gPythoncom = LoadLibraryExA( dllpath, // points to name of executable module 
 					   NULL, // HANDLE hFile, // reserved, must be NULL 
 					   LOAD_WITH_ALTERED_SEARCH_PATH // DWORD dwFlags // entry-point execution flag 
 					  ); 
