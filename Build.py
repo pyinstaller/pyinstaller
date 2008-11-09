@@ -41,7 +41,6 @@ UNCOMPRESSED, COMPRESSED = range(2)
 
 # todo: use pkg_resources here
 HOMEPATH = os.path.dirname(sys.argv[0])
-print sys.argv[0]
 SPECPATH = None
 BUILDPATH = None
 WARNFILE = None
