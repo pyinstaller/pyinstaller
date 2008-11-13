@@ -455,6 +455,7 @@ if __name__ == "__main__":
                       help='Target platform, required for cross-bundling (default: current platform)')
 
     opts, args = parser.parse_args()
-    if len (args) != 1:
-        parser.error('Requires exactly one filename')
-    print getImports(args[0], opts.target_platform)
+    import glob
+    for a in args:
+        for fn in glob.glob(a):
+            print fn, getImports(fn, opts.target_platform)
