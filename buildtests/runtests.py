@@ -35,6 +35,10 @@ PYTHON = sys.executable
 if sys.platform[:3] == 'win':
     if string.find(PYTHON, ' ') > -1:
         PYTHON='"%s"' % PYTHON
+if __debug__:
+    PYOPTS = ""
+else:
+    PYOPTS = "-O"
 
 # files/globs to clean up
 CLEANUP = """python_exe.build
@@ -84,6 +88,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
 
     build_python = open("python_exe.build", "w")
     build_python.write(sys.executable)
+    build_python.write("debug=%s" % __debug__)
     build_python.close()
     if not filters:
         tests = alltests
@@ -97,7 +102,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
     for test in tests:
         test = os.path.splitext(os.path.basename(test))[0]
         _msg("BUILDING TEST", test)
-        res = os.system(string.join([PYTHON, os.path.join(HOME, 'Build.py'),
+        res = os.system(string.join([PYTHON, PYOPTS, os.path.join(HOME, 'Build.py'),
                                      OPTS, test+".spec"],
                                     ' '))
         if run_executable:
