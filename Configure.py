@@ -262,6 +262,7 @@ def main(configfilename):
 
     # Save Python version, to detect and avoid conflicts
     config["pythonVersion"] = sys.version
+    config["pythonDebug"] = __debug__
 
     find_EXE_dependencies(config)
     test_TCL_TK(config)

@@ -945,6 +945,11 @@ def main(specfile, configfilename):
             print "Please re-run Configure.py with this version."
             sys.exit(1)
 
+    if config['pythonDebug'] != __debug__:
+        print "python optimization changed, run Build.py or rerun Configure.py with the same [-O] option"
+        print "Configure.py debug=%s, Build.py debug=%s" % (config['pythonDebug'], __debug__)
+        sys.exit(1)
+
     if config['hasRsrcUpdate']:
         import icon, versionInfo
 
