@@ -52,6 +52,9 @@ except NameError:
 def debug(msg):
     if __debug__:
         sys.stderr.write(msg+"\n")
+    else:
+        sys.stderr.write("WARNING: Debug print should be commented out in iu.py in optimized mode!!\n")
+        sys.stderr.write(msg+"\n")
 
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
@@ -153,12 +156,11 @@ if zipimport:
             Owner.__init__(self, path)
 
         def getmod(self, nm, newmod=imp.new_module):
-            debug('zipimport %s' % nm)
+            #debug('zipimport %s' % nm)
             #nm = _string_replace(nm, '.', '/')
             try:
                 mod = self.__zip.find_module(nm)
-                if mod:
-                    debug('zipimport found %s' % mod)
+                #debug('zipimport found %s' % mod)
                 mod = imp.load_module(*mod)
                 return mod
             except zipimport.ZipImportError:
@@ -338,7 +340,7 @@ class ImportManager:
     def setThreaded(self):
         thread = sys.modules.get('thread', None)
         if thread and not self.threaded:
-##            debug("iu setting threaded")
+            #debug("iu setting threaded")
             self.threaded = 1
             self.rlock = thread.allocate_lock()
             self._get_ident = thread.get_ident
@@ -368,7 +370,7 @@ class ImportManager:
             contexts = [None]
         else: # level != 0
             importernm = globals.get('__name__', '')
-            debug('importernm %s' % importernm)
+            #debug('importernm %s' % importernm)
             if level < 0:
                 # behaviour up to Python 2.4 (and default in Python 2.5)
                 # add the package to searched contexts
@@ -467,7 +469,7 @@ class ImportManager:
                 if not importfunc:
                     subimporter = PathImportDirector(parent.__path__)
                     importfunc = parent.__importsub__ = subimporter.getmod
-                debug(str(importfunc))
+                #debug(str(importfunc))
                 mod = importfunc(nm)
                 if mod and not reload:
                     setattr(parent, nm, mod)
@@ -513,7 +515,7 @@ class ImportManager:
                 self.setThreaded()
         else:
             sys.modules[fqname] = None
-        #debug("..found %s" % mod, 'when looking for', fqname)
+        #debug("..found %s when looking for %s" % (mod, fqname))
         return mod
 
     def reloadHook(self, mod):
@@ -528,7 +530,7 @@ class ImportManager:
         if self.rlock.locked():
             if self.locker == self._get_ident():
                 self.lockcount = self.lockcount + 1
-                #debug("_acquire incrementing lockcount to", self.lockcount)
+                #debug("_acquire incrementing lockcount to %s" % self.lockcount)
                 return
         self.rlock.acquire()
         self.locker = self._get_ident()
