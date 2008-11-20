@@ -27,6 +27,7 @@
  */
 #include "launch.h"
 #include "getpath.h"
+#include <sys/wait.h>
 
 #ifdef FREEZE_EXCEPTIONS
 extern unsigned char M_exceptions[];
@@ -45,6 +46,7 @@ int main(int argc, char* argv[])
     char *oldldlib;
     TOC *ptoc = NULL;
     int rc = 0;
+    int pid;
     char *workpath = NULL;
     /* atexit(cleanUp); */
 #ifdef FREEZE_EXCEPTIONS
@@ -86,8 +88,6 @@ int main(int argc, char* argv[])
         /* we're the "child" process */
         VS("Already have a workpath - running!\n");
         rc = doIt(argc, argv);
-        if (strcmp(workpath, homepath)!=0)
-            clear(workpath);
     }
     else {
         if (extractBinaries(&workpath)) {
@@ -120,8 +120,12 @@ int main(int argc, char* argv[])
             }
             putenv(ldlib_envvar);
             VS("%s\n", ldlib_envvar);
-            rc = execvp(thisfile, argv);
+            pid = fork();
+            if (pid == 0)
+                execvp(thisfile, argv);
+            wait(NULL);
             VS("Back to parent...\n");
+            clear(workpath);
         }
         else
             /* no "child" process necessary */
