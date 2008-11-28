@@ -149,7 +149,7 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
 
     distdir = "dist"
     builddir = os.path.join('build', 'pyi.' + config['target_platform'], name)
-    
+
     pathex = pathex[:]
     if workdir is None:
         workdir = os.getcwd()
@@ -232,7 +232,7 @@ if __name__ == '__main__':
                  help="generate the spec file in the specified directory "
                       "(default: current directory")
 
-    g = p.add_option_group('What to bundle, where to seach')
+    g = p.add_option_group('What to bundle, where to search')
     g.add_option("-p", "--paths", type="string", default=[], dest="pathex",
                  metavar="DIR", action="append",
                  help="set base path for import (like using PYTHONPATH). "
