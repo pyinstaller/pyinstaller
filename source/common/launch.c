@@ -636,7 +636,7 @@ int importModules()
 		*/
 	ptoc = f_tocbuff;
 	while (ptoc < f_tocend) {
-		if (ptoc->typcd == 'm' || ptoc->typcd == 'M') 
+		if (ptoc->typcd == 'm' || ptoc->typcd == 'M')
 		{
 			unsigned char *modbuf = extract(ptoc);
 
@@ -645,9 +645,9 @@ int importModules()
 			 */
 			PyObject *mods = PI_PyString_FromStringAndSize(modbuf + 8,
 				ntohl(ptoc->ulen) - 8);
-            
+
 			VS("%s\n", ptoc->name);
-			
+
 			co = PI_PyObject_CallFunction(loadfunc, "O", mods);
 			mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
 
@@ -664,7 +664,7 @@ int importModules()
 			Py_DECREF(mods);
 			free(modbuf);
 		}
-		ptoc = incrementTocPtr(ptoc); 
+		ptoc = incrementTocPtr(ptoc);
 	}
 
 	return 0;
