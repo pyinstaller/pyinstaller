@@ -1,5 +1,5 @@
 /*
- * Launch a python module from an archive.   
+ * Launch a python module from an archive.
  * Copyright (C) 2005, Giovanni Bajo
  * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
  *
@@ -104,7 +104,7 @@ static COOKIE f_cookie;
 unsigned char *extract(TOC *ptoc);
 
 /*
- * The functions in this file defined in reverse order so that forward 
+ * The functions in this file defined in reverse order so that forward
  * declarations are not necessary.
  */
 
@@ -197,7 +197,7 @@ int testTempPath(char *buff)
         strcat(buff, "/");
         return 1;
     }
-    return 0;   
+    return 0;
 }
 
 int getTempPath(char *buff)
@@ -254,7 +254,7 @@ int setPaths(char const * archivePath, char const * archiveName)
 }
 
 
-/* 
+/*
  * Open the archive
  * Sets f_archiveFile, f_pkgstart, f_tocbuff and f_cookie.
  */
@@ -272,7 +272,7 @@ int openArchive()
 	/* Seek to the Cookie at the end of the file. */
 	fseek(f_fp, 0, SEEK_END);
 	filelen = ftell(f_fp);
-	if (fseek(f_fp, -(int)sizeof(COOKIE), SEEK_END)) 
+	if (fseek(f_fp, -(int)sizeof(COOKIE), SEEK_END))
 	{
 		VS("%s appears to be an invalid archive\n", f_archivename);
 		return -1;
@@ -280,7 +280,7 @@ int openArchive()
 
 	/* Read the Cookie, and check its MAGIC bytes */
 	fread(&f_cookie, sizeof(COOKIE), 1, f_fp);
-	if (strncmp(f_cookie.magic, MAGIC, strlen(MAGIC))) 
+	if (strncmp(f_cookie.magic, MAGIC, strlen(MAGIC)))
 	{
 		VS("%s has bad magic!\n", f_archivename);
 		return -1;
@@ -292,7 +292,7 @@ int openArchive()
 	/* Read in in the table of contents */
 	fseek(f_fp, f_pkgstart + ntohl(f_cookie.TOC), SEEK_SET);
 	f_tocbuff = (TOC *) malloc(ntohl(f_cookie.TOClen));
-	if (f_tocbuff == NULL) 
+	if (f_tocbuff == NULL)
 	{
 		FATALERROR("Could not allocate buffer for TOC.");
 		return -1;
@@ -365,7 +365,7 @@ int loadPython()
 	sprintf(dllpath, "%spython%02d.dll", f_homepathraw, ntohl(f_cookie.pyvers));
 
 	/* Load the DLL */
-	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);  
+	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 	if (dll) {
 		VS("%s\n", dllpath);
 	}
@@ -428,7 +428,7 @@ int attachPython(int *loadedNew)
 	sprintf(nm, "python%02d.dll", ntohl(f_cookie.pyvers));
 
 	/* See if it's loaded */
-	dll = GetModuleHandleA(nm);  
+	dll = GetModuleHandleA(nm);
 	if (dll == 0) {
 		*loadedNew = 1;
 		return loadPython();
@@ -621,7 +621,7 @@ int importModules()
 	PyObject *co;
 	PyObject *mod;
 
-	VS("importing modules from CArchive\n"); 
+	VS("importing modules from CArchive\n");
 
 	/* Get the Python function marshall.load
 		* Here we collect some reference to PyObject that we don't dereference
@@ -696,7 +696,7 @@ int installZlib(TOC *ptoc)
 
 
 /*
- * Install zlibs 
+ * Install zlibs
  * Return non zero on failure
  */
 int installZlibs()
@@ -707,13 +707,13 @@ int installZlibs()
 	/* Iterate through toc looking for zlibs (type 'z') */
 	ptoc = f_tocbuff;
 	while (ptoc < f_tocend) {
-		if (ptoc->typcd == 'z') 
+		if (ptoc->typcd == 'z')
 		{
 			VS("%s\n", ptoc->name);
 			installZlib(ptoc);
 		}
 
-		ptoc = incrementTocPtr(ptoc); 
+		ptoc = incrementTocPtr(ptoc);
 	}
 	return 0;
 }
@@ -750,20 +750,19 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 			rc = (inflateEnd)(&zstream);
 		}
 		else {
-			OTHERERROR("Error %d from inflate: %s\n", rc,
-					zstream.msg);
+			OTHERERROR("Error %d from inflate: %s\n", rc, zstream.msg);
 			return NULL;
 		}
 	}
 	else {
 		OTHERERROR("Error %d from inflateInit: %s\n", rc, zstream.msg);
 		return NULL;
-	}	
+	}
 
 	return out;
 }
 #endif
-/* 
+/*
  * extract an archive entry
  * returns pointer to the data (must be freed)
  */
@@ -812,7 +811,7 @@ FILE *openTarget(char *path, char*name)
 }
 /*
  * extract from the archive
- * and copy to the filesystem 
+ * and copy to the filesystem
  * relative to the directory the archive's in
  */
 int extract2fs(TOC *ptoc)
@@ -837,7 +836,7 @@ int extract2fs(TOC *ptoc)
 #endif
 		f_workpath = f_temppath;
 	}
-	
+
 	out = openTarget(f_workpath, ptoc->name);
 
 	if (out == NULL)  {
@@ -863,15 +862,15 @@ int extractBinaries(char **workpath)
 	workpath[0] = '\0';
 	VS("Extracting binaries\n");
 	while (ptoc < f_tocend) {
-		if (ptoc->typcd == 'b') 
+		if (ptoc->typcd == 'b')
 		if (extract2fs(ptoc))
 		return -1;
-		ptoc = incrementTocPtr(ptoc); 
+		ptoc = incrementTocPtr(ptoc);
 	}
 	*workpath = f_workpath;
 	return 0;
 }
-/* 
+/*
  * Run scripts
  * Return non zero on failure
  */
@@ -897,12 +896,12 @@ int runScripts()
 			free(data);
 		}
 
-		ptoc = incrementTocPtr(ptoc); 
+		ptoc = incrementTocPtr(ptoc);
 	}
 	return 0;
 }
 
-/* 
+/*
  * call a simple "int func(void)" entry point.  Assumes such a function
  * exists in the main namespace.
  * Return non zero on failure, with -2 if the specific error is
@@ -1040,7 +1039,7 @@ int init(char const * archivePath, char  const * archiveName, char const * workp
  * or if there are no binaries to extract, you go on
  * to doIt(), which is the important part
  */
-int doIt(int argc, char *argv[]) 
+int doIt(int argc, char *argv[])
 {
 	int rc = 0;
 	/* Load Python DLL */
@@ -1082,7 +1081,7 @@ void removeOne(char *fnm, int pos, struct _finddata_t finfo)
         remove(fnm);
     }
 }
-void clear(const char *dir) 
+void clear(const char *dir)
 {
 	char fnm[_MAX_PATH+1];
 	struct _finddata_t finfo;
@@ -1098,7 +1097,7 @@ void clear(const char *dir)
 	h = _findfirst(fnm, &finfo);
 	if (h != -1) {
 		removeOne(fnm, dirnmlen, finfo);
-		while ( _findnext(h, &finfo) == 0 ) 
+		while ( _findnext(h, &finfo) == 0 )
 			removeOne(fnm, dirnmlen, finfo);
 		_findclose(h);
 	}
@@ -1115,11 +1114,11 @@ void removeOne(char *pnm, int pos, const char *fnm)
 	if ( stat(pnm, &sbuf) == 0 ) {
 		if ( S_ISDIR(sbuf.st_mode) )
 			clear(pnm);
-		else 
+		else
 			unlink(pnm);
 	}
 }
-void clear(const char *dir) 
+void clear(const char *dir)
 {
 	char fnm[_MAX_PATH+1];
 	DIR *ds;
