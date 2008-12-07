@@ -15,12 +15,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-print "test16 imp.find_module"
+print "test imp.find_module"
 
 import sys
 import imp
 
-modname = "test15"
+modname = "test_getfilesystemencoding"
 
 for p in sys.path:
     try:
@@ -31,4 +31,4 @@ else:
     raise ImportError("Couldn't find the real '%s' module" % modname)
     # as in setuptools/site.py
 
-print "test16 DONE"
+print "test_imp_find_module DONE"

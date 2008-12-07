@@ -1,10 +1,10 @@
 # -*- mode: python -*-
 
-__testname__ = 'test15'
+__testname__ = 'test_getfilesystemencoding'
 
 a = Analysis(['../support/_mountzlib.py',
               '../support/useUnicode.py',
-              'test15.py'],
+              'test_getfilesystemencoding.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
