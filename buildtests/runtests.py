@@ -126,8 +126,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
 
 
 if __name__ == '__main__':
-    normal_tests = glob.glob('test*[0-9].py')
-    interactive_tests = glob.glob('test*[0-9]i.py')
+    normal_tests = glob.glob('test*.py')
+    interactive_tests = glob.glob('test*i.py')
 
     from optparse import OptionParser
     parser = OptionParser(usage="%prog [options] [TEST-NAME ...]",
@@ -157,7 +157,7 @@ if __name__ == '__main__':
         print "Running interactive tests"
         tests = interactive_tests
     else:
-        tests = normal_tests
+        tests = [t for t in normal_tests if t not in interactive_tests]
         print "Running normal tests (-i for interactive tests)"
 
     #clean()
