@@ -92,7 +92,7 @@ def test_TCL_TK(config):
     if not (target_iswin):
         saveexcludes = bindepend.excludes
         bindepend.excludes = {}
-    pattern = [r'libtcl(\d\.\d)?\.so', r'(?i)tcl(\d\d)\.dll'][target_iswin]
+    pattern = [r'libtcl(\d\.\d)?\.(so|dylib)', r'(?i)tcl(\d\d)\.dll'][target_iswin]
     a = mf.ImportTracker()
     a.analyze_r('Tkinter')
     binaries = []
