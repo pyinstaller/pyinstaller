@@ -26,7 +26,7 @@ if sys.version_info[:2] >= (2, 5):
     print "#"*50
     import xml.etree.cElementTree as cET
 
-    pyexe = open("python_exe.build").read()
+    pyexe = open("python_exe.build").readline().strip()
 
     out = subprocess.Popen(pyexe + ' -c "import xml.etree.cElementTree as cET; print dir(cET)"',
                            stdout=subprocess.PIPE, shell=True).stdout.read().strip()

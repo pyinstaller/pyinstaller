@@ -22,6 +22,7 @@
 # particual test.
 
 import os, sys, glob, string
+import pprint
 import shutil
 
 HOME = '..'
@@ -87,8 +88,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
         OTPS = ' -c "%s"' %  configfile
 
     build_python = open("python_exe.build", "w")
-    build_python.write(sys.executable)
-    build_python.write("debug=%s" % __debug__)
+    build_python.write(sys.executable+"\n")
+    build_python.write("debug=%s" % __debug__+"\n")
     build_python.close()
     if not filters:
         tests = alltests
@@ -102,9 +103,11 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
     for test in tests:
         test = os.path.splitext(os.path.basename(test))[0]
         _msg("BUILDING TEST", test)
-        res = os.system(string.join([PYTHON, PYOPTS, os.path.join(HOME, 'Build.py'),
-                                     OPTS, test+".spec"],
-                                    ' '))
+        prog = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'Build.py'),
+                            OPTS, test+".spec"],
+                           ' ')
+        print "BUILDING:", prog
+        res = os.system(prog)
         if run_executable:
             _msg("EXECUTING TEST", test)
             # Run the test in a clean environment to make sure they're
@@ -113,6 +116,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
             prog = os.path.join('dist', test + '.exe')
             if not os.path.exists(prog):
                 prog = os.path.join('dist', test, test + '.exe')
+            print "RUNNING:", prog
             res = os.system(prog)
             os.environ["PATH"] = path
 
@@ -122,7 +126,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
         else:
             _msg("TEST", test, "FAILED", short=1)
             counter["failed"].append(test)
-    print counter
+    pprint.pprint(counter)
 
 
 if __name__ == '__main__':

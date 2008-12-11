@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-print "test_getfilesystemencoding sys.getfilesystemencoding()"
+print "test_getfilesystemencoding"
 
 import sys
 if sys.version_info[:2] >= (2, 5):
@@ -24,11 +24,11 @@ if sys.version_info[:2] >= (2, 5):
 
     assert type(email.Header) == email.LazyImporter
 
-    pyexe = open("python_exe.build").read()
+    pyexe = open("python_exe.build").readline().strip()
     out = subprocess.Popen(pyexe + ' -c "import sys; print sys.getfilesystemencoding()"',
                            stdout=subprocess.PIPE, shell=True).stdout.read().strip()
     assert str(sys.getfilesystemencoding()) == out, (str(sys.getfilesystemencoding()), out)
 
     print "test_getfilesystemencoding DONE"
 else:
-    print "Python 2.5 test14 skipped"
+    print "Python < 2.5 test14 skipped"
