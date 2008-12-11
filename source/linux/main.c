@@ -59,12 +59,12 @@ int main(int argc, char* argv[])
         strcat(thisfile, ".exe");
         PI_SetProgramName(thisfile);
     }
-    else 
+    else
 #endif
-        PI_SetProgramName(argv[0]);
+    PI_SetProgramName(argv[0]);
     strcpy(thisfile, PI_GetProgramFullPath());
     VS("thisfile is %s\n", thisfile);
-    
+
     workpath = getenv( "_MEIPASS2" );
     VS("_MEIPASS2 (workpath) is %s\n", (workpath ? workpath : "NULL"));
 
