@@ -15,7 +15,7 @@ exe = EXE(pyz,
           strip=False,
           upx=False,
           console=1 )
-coll = COLLECT( exe,
+coll = COLLECT(exe,
                a.binaries,
                strip=False,
                upx=False,
