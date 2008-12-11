@@ -87,6 +87,8 @@ int main(int argc, char* argv[])
     if (workpath) {
         /* we're the "child" process */
         VS("Already have a workpath - running!\n");
+        /* Reset _MEIPASS2 to avoid clashes with child precesses */
+        unsetenv("_MEIPASS2");
         rc = doIt(argc, argv);
     }
     else {
