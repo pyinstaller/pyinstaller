@@ -9,7 +9,7 @@ exe = EXE( pyz,
           a.binaries,
           a.zipfiles,
           name=os.path.join('dist', 'test-nestedlaunch1', 'test-nestedlaunch1'),
-          debug=1,
+          debug=False,
           strip=False,
           upx=False,
           console=1 )
