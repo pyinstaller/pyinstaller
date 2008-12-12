@@ -69,10 +69,11 @@ def clean():
 
 def _msg(*args, **kw):
     short = kw.get('short', 0)
+    sep = kw.get('sep', '#')
     if not short: print
-    print "##################",
+    print sep*20,
     for a in args: print a,
-    print "#######################"
+    print sep*20
     if not short: print
 
 
@@ -124,7 +125,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
             _msg("FINISHING TEST", test, short=1)
             counter["passed"].append(test)
         else:
-            _msg("TEST", test, "FAILED", short=1)
+            _msg("TEST", test, "FAILED", short=1, sep="!!")
             counter["failed"].append(test)
     pprint.pprint(counter)
 
