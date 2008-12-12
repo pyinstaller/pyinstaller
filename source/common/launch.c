@@ -881,6 +881,12 @@ int runScripts()
 	TOC * ptoc = f_tocbuff;
 	VS("Running scripts\n");
 
+	/*
+	 * Now that the startup is complete we can reset the _MEIPASS2 env to
+	 * allow a correct child startup
+	 * */
+	unsetenv("_MEIPASS2");
+
 	/* Iterate through toc looking for scripts (type 's') */
 	while (ptoc < f_tocend) {
 		if (ptoc->typcd == 's') {
