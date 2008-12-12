@@ -882,9 +882,11 @@ int runScripts()
 	VS("Running scripts\n");
 
 	/*
-	 * Now that the startup is complete we can reset the _MEIPASS2 env to
-	 * allow a correct child startup
-	 * */
+	 * Now that the startup is complete, we can reset the _MEIPASS2 env
+	 * so that if the program invokes another PyInstaller one-file program
+	 * as subprocess, this subprocess will not fooled into thinking that it
+	 * is already unpacked.
+	 */
 	unsetenv("_MEIPASS2");
 
 	/* Iterate through toc looking for scripts (type 's') */
