@@ -19,8 +19,8 @@ import threading
 
 def doit(nm):
     print nm, 'started'
-    import test7x
-    print nm, test7x.x
+    import data7
+    print nm, data7.x
 
 t1 = threading.Thread(target=doit, args=('t1',))
 t2 = threading.Thread(target=doit, args=('t2',))
