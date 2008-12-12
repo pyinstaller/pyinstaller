@@ -177,7 +177,7 @@ def main():
     if sys.platform.startswith("darwin"):
         somevars['LDFLAGS'] += " -F$(PYTHONFRAMEWORKPREFIX)"
         somevars['LDFLAGS'] += " -mmacosx-version-min=%s" % somevars["MACOSX_DEPLOYMENT_TARGET"]
-        somevars['LINKFORSHARED'] = "-u _PyMac_Error -framework Python" #override
+        somevars['LINKFORSHARED'] = "" #override
     files = ['$(OPT)', '$(LDFLAGS)', '$(LINKFORSHARED)', 'getpath.c'] + \
             files + \
             ['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)', '-lz']  # XXX zlib not always -lz
