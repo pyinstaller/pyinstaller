@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
         /* we're the "child" process */
         VS("Already have a workpath - running!\n");
         /* Reset _MEIPASS2 to avoid clashes with child precesses */
-        unsetenv("_MEIPASS2");
+        //FIXME unsetenv("_MEIPASS2");
         rc = doIt(argc, argv);
     }
     else {
