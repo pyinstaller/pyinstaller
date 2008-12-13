@@ -18,17 +18,10 @@
 print "test imp.find_module"
 
 import sys
-import imp
 
-modname = "test_getfilesystemencoding"
+print len(sys.path)
+import site
+print dir(site)
+print len(sys.path)
 
-for p in sys.path:
-    try:
-        i = imp.find_module(modname, [p])
-    except ImportError:
-        continue
-else:
-    raise ImportError("Couldn't find the real '%s' module" % modname)
-    # as in setuptools/site.py
-
-print "test_imp_find_module DONE"
+print "test_site_module DONE"

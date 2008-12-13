@@ -1,10 +1,10 @@
 # -*- mode: python -*-
 
-__testname__ = 'test_imp_find_module'
+__testname__ = 'test_site_module'
 
 a = Analysis(['../support/_mountzlib.py',
               '../support/useUnicode.py',
-              'test_imp_find_module.py'],
+              'test_site_module.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
