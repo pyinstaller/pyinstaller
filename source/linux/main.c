@@ -123,7 +123,8 @@ int main(int argc, char* argv[])
             pid = fork();
             if (pid == 0)
                 execvp(thisfile, argv);
-            wait(NULL);
+            wait(&rc);
+            rc = WEXITSTATUS(rc);
             VS("Back to parent...\n");
             clear(workpath);
         }
