@@ -31,6 +31,7 @@
  #include <direct.h>
  #include <process.h>
  #include <io.h>
+ #define unsetenv(x) _putenv(x "=")
 #else
  #include <unistd.h>
  #include <fcntl.h>
