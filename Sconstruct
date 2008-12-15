@@ -34,7 +34,7 @@ if platform.name == "win32":
 
         for flavour in "debug", "release":
             for mode in "cons", "win":
-                env = base_env.Copy()
+                env = base_env.Clone()
 
                 # The bootloader is built as a static executable. We want it
                 # to be self-contained. Extra care was put in writing it so
