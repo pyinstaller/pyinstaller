@@ -16,8 +16,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 # Contributed by Greg Copeland
-import sqlalchemy.databases
-hiddenimports = []
 
-for n in sqlalchemy.databases.__all__:
+from hookutils import exec_statement
+databases = exec_statement("import sqlalchemy.databases;print sqlalchemy.databases.__all__")
+databases = eval(databases)
+
+hiddenimports = []
+for n in databases:
     hiddenimports.append("sqlalchemy.databases." + n)
