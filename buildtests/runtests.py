@@ -109,7 +109,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
                            ' ')
         print "BUILDING:", prog
         res = os.system(prog)
-        if run_executable:
+        if res == 0 and run_executable:
             _msg("EXECUTING TEST", test)
             # Run the test in a clean environment to make sure they're
             # really self-contained
