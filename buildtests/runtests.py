@@ -22,6 +22,7 @@
 # particual test.
 
 import os, sys, glob, string
+import pprint
 import shutil
 
 HOME = '..'
@@ -35,6 +36,10 @@ PYTHON = sys.executable
 if sys.platform[:3] == 'win':
     if string.find(PYTHON, ' ') > -1:
         PYTHON='"%s"' % PYTHON
+if __debug__:
+    PYOPTS = ""
+else:
+    PYOPTS = "-O"
 
 # files/globs to clean up
 CLEANUP = """python_exe.build
@@ -64,10 +69,11 @@ def clean():
 
 def _msg(*args, **kw):
     short = kw.get('short', 0)
+    sep = kw.get('sep', '#')
     if not short: print
-    print "##################",
+    print sep*20,
     for a in args: print a,
-    print "#######################"
+    print sep*20
     if not short: print
 
 
@@ -83,7 +89,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
         OTPS = ' -c "%s"' %  configfile
 
     build_python = open("python_exe.build", "w")
-    build_python.write(sys.executable)
+    build_python.write(sys.executable+"\n")
+    build_python.write("debug=%s" % __debug__+"\n")
     build_python.close()
     if not filters:
         tests = alltests
@@ -97,17 +104,20 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
     for test in tests:
         test = os.path.splitext(os.path.basename(test))[0]
         _msg("BUILDING TEST", test)
-        res = os.system(string.join([PYTHON, os.path.join(HOME, 'Build.py'),
-                                     OPTS, test+".spec"],
-                                    ' '))
-        if run_executable:
+        prog = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'Build.py'),
+                            OPTS, test+".spec"],
+                           ' ')
+        print "BUILDING:", prog
+        res = os.system(prog)
+        if res == 0 and run_executable:
             _msg("EXECUTING TEST", test)
             # Run the test in a clean environment to make sure they're
             # really self-contained
             del os.environ["PATH"]
-            prog = os.path.join('dist', test + '.exe')
+            prog = os.path.join('dist', test, test)
             if not os.path.exists(prog):
-                prog = os.path.join('dist', test, test + '.exe')
+                prog = os.path.join(prog + '.exe')
+            print "RUNNING:", prog
             res = os.system(prog)
             os.environ["PATH"] = path
 
@@ -115,14 +125,14 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
             _msg("FINISHING TEST", test, short=1)
             counter["passed"].append(test)
         else:
-            _msg("TEST", test, "FAILED", short=1)
+            _msg("TEST", test, "FAILED", short=1, sep="!!")
             counter["failed"].append(test)
-    print counter
+    pprint.pprint(counter)
 
 
 if __name__ == '__main__':
-    normal_tests = glob.glob('test*[0-9].py')
-    interactive_tests = glob.glob('test*[0-9]i.py')
+    normal_tests = glob.glob('test*.py')
+    interactive_tests = glob.glob('test*i.py')
 
     from optparse import OptionParser
     parser = OptionParser(usage="%prog [options] [TEST-NAME ...]",
@@ -152,7 +162,7 @@ if __name__ == '__main__':
         print "Running interactive tests"
         tests = interactive_tests
     else:
-        tests = normal_tests
+        tests = [t for t in normal_tests if t not in interactive_tests]
         print "Running normal tests (-i for interactive tests)"
 
     #clean()

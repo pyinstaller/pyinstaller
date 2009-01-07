@@ -35,3 +35,4 @@ print 'dir contents _MEIPASS2:', os.listdir(os.environ['_MEIPASS2'])
 print '-----------'
 print 'now importing pkg_resources' 
 import pkg_resources
+print "dir(pkg_resources)", dir(pkg_resources)

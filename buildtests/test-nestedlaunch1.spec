@@ -1,16 +1,14 @@
 # -*- mode: python -*-
-
-__testname__ = 'test-relative-import'
-
 a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
-              __testname__ + '.py'],
-             )
+              os.path.join(HOMEPATH,'support/useUnicode.py'), 
+              'test-nestedlaunch1.py'],
+             pathex=[''])
 pyz = PYZ(a.pure)
-exe = EXE(pyz,
+exe = EXE( pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
-          name = os.path.join('dist', __testname__, __testname__ +'.exe'),
+          name=os.path.join('dist', 'test-nestedlaunch1', 'test-nestedlaunch1'),
           debug=False,
           strip=False,
           upx=False,

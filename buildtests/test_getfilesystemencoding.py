@@ -15,20 +15,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-print "test16 imp.find_module"
+print "test_getfilesystemencoding"
 
 import sys
-import imp
+if sys.version_info[:2] >= (2, 5):
+    import subprocess
+    import email
 
-modname = "test15"
+    assert type(email.Header) == email.LazyImporter
 
-for p in sys.path:
-    try:
-        i = imp.find_module(modname, [p])
-    except ImportError:
-        continue
+    pyexe = open("python_exe.build").readline().strip()
+    out = subprocess.Popen(pyexe + ' -c "import sys; print sys.getfilesystemencoding()"',
+                           stdout=subprocess.PIPE, shell=True).stdout.read().strip()
+    assert str(sys.getfilesystemencoding()) == out, (str(sys.getfilesystemencoding()), out)
+
+    print "test_getfilesystemencoding DONE"
 else:
-    raise ImportError("Couldn't find the real '%s' module" % modname)
-    # as in setuptools/site.py
-
-print "test16 DONE"
+    print "Python < 2.5 test14 skipped"

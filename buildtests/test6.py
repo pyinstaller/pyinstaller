@@ -15,14 +15,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 import sys, os
-import test6x
-print "test6x.x is", test6x.x
+import data6
+print "data6.x is", data6.x
 txt = """\
 x = %d
-""" % (test6x.x + 1)
+""" % (data6.x + 1)
 if hasattr(sys, 'frozen'):
-    open(os.path.join(os.path.dirname(sys.executable), 'test6x.py'), 'w').write(txt)
+    open(os.path.join(os.path.dirname(sys.executable), 'data6.py'), 'w').write(txt)
 else:
-    open(test6x.__file__, 'w').write(txt)
-reload(test6x)
-print "test6x.x is now", test6x.x
+    open(data6.__file__, 'w').write(txt)
+reload(data6)
+print "data6.x is now", data6.x

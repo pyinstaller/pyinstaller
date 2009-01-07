@@ -1,8 +1,8 @@
 # -*- mode: python -*-
 
-__testname__ = 'test3'
+__testname__ = 'test_f_option'
 
-a = Analysis(['../support/_mountzlib.py', 'test3.py'],
+a = Analysis(['../support/_mountzlib.py', 'test_f_option.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

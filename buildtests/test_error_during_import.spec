@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-__testname__ = 'test-zipimport1'
+__testname__ = 'test_error_during_import'
 
 a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
               os.path.join(HOMEPATH,'support/useUnicode.py'),

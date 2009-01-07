@@ -15,20 +15,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-print "test15 sys.getfilesystemencoding()"
+print "test imp.find_module"
 
 import sys
-if sys.version_info[:2] >= (2, 5):
-    import subprocess
-    import email
 
-    assert type(email.Header) == email.LazyImporter
+print len(sys.path)
+import site
+print dir(site)
+print len(sys.path)
 
-    pyexe = open("python_exe.build").read()
-    out = subprocess.Popen(pyexe + ' -c "import sys; print sys.getfilesystemencoding()"',
-                           stdout=subprocess.PIPE, shell=True).stdout.read().strip()
-    assert str(sys.getfilesystemencoding()) == out, (str(sys.getfilesystemencoding()), out)
-
-    print "test15 DONE"
-else:
-    print "Python 2.5 test14 skipped"
+print "test_site_module DONE"
