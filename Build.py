@@ -80,6 +80,57 @@ def mtime(fnm):
 def absnormpath(apath):
     return os.path.abspath(os.path.normpath(apath))
 
+def compile_pycos(toc):
+    """Given a TOC or equivalent list of tuples, generates all the required
+    pyc/pyo files, writing in a local directory if required, and returns the
+    list of tuples with the updated pathnames.
+    """
+    global BUILDPATH
+
+    # For those modules that need to be rebuilt, use the build directory
+    # PyInstaller creates during the build process.
+    basepath = "/".join([BUILDPATH, "localpycos"])
+
+    new_toc = []
+    for (nm, fnm, typ) in toc:
+
+        # Trim the terminal "c" or "o"
+        source_fnm = fnm[:-1]
+
+        # If the source is newer than the compiled, or the compiled doesn't
+        # exist, we need to perform a build ourselves.
+        if mtime(source_fnm) > mtime(fnm):
+            try:
+                py_compile.compile(source_fnm)
+            except IOError:
+                # If we're compiling on a system directory, probably we don't
+                # have write permissions; thus we compile to a local directory
+                # and change the TOC entry accordingly.
+                ext = os.path.splitext(fnm)[1]
+
+                if "__init__" not in fnm:
+                    # If it's a normal module, use last part of the qualified
+                    # name as module name and the first as leading path
+                    leading, mod_name = nm.split(".")[:-1], nm.split(".")[-1]
+                else:
+                    # In case of a __init__ module, use all the qualified name
+                    # as leading path and use "__init__" as the module name
+                    leading, mod_name = nm.split("."), "__init__"
+
+                leading.insert(0, basepath)
+                leading = "/".join(leading)
+
+                if not os.path.exists(leading):
+                    os.makedirs(leading)
+
+                fnm = "/".join([leading, mod_name + ext])
+                py_compile.compile(source_fnm, fnm)
+
+        new_toc.append((nm, fnm, typ))
+
+    return new_toc
+
+
 #--- functons for checking guts ---
 
 def _check_guts_eq(attr, old, new, last_build):
@@ -180,7 +231,7 @@ class Analysis(Target):
         self.binaries = TOC()
         self.zipfiles = TOC()
         self.__postinit__()
- 
+
     GUTS = (('inputs',    _check_guts_eq),
             ('pathex',    _check_guts_eq),
             ('hookspath', _check_guts_eq),
@@ -191,7 +242,7 @@ class Analysis(Target):
             ('binaries',  _check_guts_toc_mtime),
             ('zipfiles',  _check_guts_toc_mtime),
             )
- 
+
     def check_guts(self, last_build):
         if last_build == 0:
             print "building %s because %s non existent" % (self.__class__.__name__, self.outnm)
@@ -281,6 +332,9 @@ class Analysis(Target):
             oldstuff = _load_data(self.out)
         except:
             oldstuff = None
+
+        self.pure = TOC(compile_pycos(self.pure))
+
         newstuff = (self.inputs, self.pathex, self.hookspath, self.excludes,
                     self.scripts, self.pure, self.binaries, self.zipfiles)
         if oldstuff != newstuff:
@@ -343,7 +397,7 @@ class PYZ(Target):
             self.level = level
         else:
             self.level = 0
-        self.dependencies = config['PYZ_dependencies']
+        self.dependencies = compile_pycos(config['PYZ_dependencies'])
         self.__postinit__()
 
     GUTS = (('name',   _check_guts_eq),
@@ -360,14 +414,11 @@ class PYZ(Target):
         if not data:
             return True
         return False
-    
+
     def assemble(self):
         print "building PYZ", os.path.basename(self.out)
         pyz = archive.ZlibArchive(level=self.level)
         toc = self.toc - config['PYZ_dependencies']
-        for (nm, fnm, typ) in toc:
-            if mtime(fnm[:-1]) > mtime(fnm):
-                py_compile.compile(fnm[:-1])
         pyz.build(self.name, toc)
         _save_data(self.out, (self.name, self.level, self.toc))
         return 1
@@ -477,7 +528,7 @@ class PKG(Target):
         if not os.path.exists(self.name):
             print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
             return 1
-        
+
         data = Target.get_guts(self, last_build)
         if not data:
             return True
@@ -616,7 +667,7 @@ class EXE(Target):
             if self.debug:
                 exe = exe + '_d'
         return exe
-    
+
     def assemble(self):
         print "building EXE from", os.path.basename(self.out)
         trash = []
@@ -710,7 +761,7 @@ class COLLECT(Target):
             ('upx_binaries',    _check_guts_eq),
             ('toc',             _check_guts_eq), # additional check below
             )
-        
+
     def check_guts(self, last_build):
         data = Target.get_guts(self, last_build)
         if not data:
