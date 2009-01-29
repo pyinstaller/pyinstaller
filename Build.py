@@ -428,7 +428,7 @@ def cacheDigest(fnm):
     digest = md5.new(data).digest()
     return digest
 
-def checkCache(fnm, strip, upx, fix_paths=1):
+def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names
     if not strip and not upx and sys.platform != 'darwin':
@@ -464,7 +464,7 @@ def checkCache(fnm, strip, upx, fix_paths=1):
             return cachedfile
     if upx:
         if strip:
-            fnm = checkCache(fnm, 1, 0, fix_paths=0)
+            fnm = checkCache(fnm, 1, 0)
         cmd = "upx --best -q \"%s\"" % cachedfile
     else:
         if strip:
@@ -472,9 +472,6 @@ def checkCache(fnm, strip, upx, fix_paths=1):
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
     if cmd: os.system(cmd)
-
-    if sys.platform == 'darwin' and fix_paths:
-        bindepend.fixOsxPaths(cachedfile)
 
     # update cache index
     cache_index[basenm] = digest

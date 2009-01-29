@@ -392,12 +392,6 @@ def getWindowsPath():
         _bpath.extend(string.split(os.environ.get('PATH', ''), os.pathsep))
     return _bpath
 
-def fixOsxPaths(moduleName):
-    for name, lib in selectImports(moduleName):
-        dest = os.path.join("@executable_path", name)
-        cmd = "install_name_tool -change %s %s %s" % (lib, dest, moduleName)
-        os.system(cmd)
-
 def findLibrary(name):
     """Look for a library in the system.
 

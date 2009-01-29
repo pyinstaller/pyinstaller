@@ -36,14 +36,31 @@ static struct _frozen _PyImport_FrozenModules[] = {
     {0, 0, 0}
 };
 #endif
+
+void exportWorkpath(char *workpath, char *envvar_name)
+{
+    char envvar[_MAX_PATH * 4 + 12];
+    char *old_envvar;
+
+    strcpy(envvar, envvar_name);
+    strcat(envvar, "=");
+    strcat(envvar, workpath);
+    envvar[strlen(envvar)-1] = '\0';
+    old_envvar = getenv(envvar_name);
+    if (old_envvar) {
+        strcat(envvar, ":");
+        strcat(envvar, old_envvar);
+    }
+    putenv(envvar);
+    VS("%s\n", envvar);
+}
+
 int main(int argc, char* argv[])
 {
     char thisfile[_MAX_PATH];
     char homepath[_MAX_PATH];
     char magic_envvar[_MAX_PATH + 12];
-    char ldlib_envvar[_MAX_PATH * 4 + 12];
     char archivefile[_MAX_PATH + 5];
-    char *oldldlib;
     TOC *ptoc = NULL;
     int rc = 0;
     int pid;
@@ -109,17 +126,14 @@ int main(int argc, char* argv[])
             strcpy(magic_envvar, "_MEIPASS2=");
             strcat(magic_envvar, workpath);
             putenv(magic_envvar);
-            /* now LD_LIBRARY_PATH */
-            strcpy(ldlib_envvar, "LD_LIBRARY_PATH=");
-            strcat(ldlib_envvar, workpath);
-            ldlib_envvar[strlen(ldlib_envvar)-1] = '\0';
-            oldldlib = getenv("LD_LIBRARY_PATH");
-            if (oldldlib) {
-                strcat(ldlib_envvar, ":");
-                strcat(ldlib_envvar, oldldlib);
-            }
-            putenv(ldlib_envvar);
-            VS("%s\n", ldlib_envvar);
+
+            /* add workpath to LD_LIBRARY_PATH */
+            exportWorkpath(workpath, "LD_LIBRARY_PATH");
+#ifdef __APPLE__
+            /* add workpath to DYLD_LIBRARY_PATH */
+            exportWorkpath(workpath, "DYLD_LIBRARY_PATH");
+#endif
+
             pid = fork();
             if (pid == 0)
                 execvp(thisfile, argv);
