@@ -25,6 +25,13 @@ try:
 except ImportError:
     zipimport = None
 
+try:
+    # if ctypes is present, we can enable specific dependency discovery
+    import ctypes
+    from ctypes.util import find_library
+except ImportError:
+    ctypes = None
+
 import suffixes
 
 try:
@@ -78,7 +85,7 @@ class DirOwner(Owner):
 
     def _getsuffixes(self):
         return suffixes.get_suffixes(self.target_platform)
-        
+
     def getmod(self, nm, getsuffixes=None, loadco=marshal.loads):
         if getsuffixes is None:
             getsuffixes = self._getsuffixes
@@ -508,6 +515,41 @@ class ImportTracker:
     def ispackage(self, nm):
         return self.modules[nm].ispackage()
 
+    def _resolveCtypesImports(self, mod):
+        """Completes ctypes BINARY entries for modules with their full path.
+        """
+        if sys.platform.startswith("linux"):
+            envvar = "LD_LIBRARY_PATH"
+        elif sys.platform.startswith("darwin"):
+            envvar = "DYLD_LIBRARY_PATH"
+        else:
+            envvar = "PATH"
+
+        def _savePaths():
+            old = os.environ.get(envvar, None)
+            os.environ[envvar] = os.pathsep.join(self.path)
+            if old is not None:
+                os.environ[envvar] = os.pathsep.join([os.environ[envvar], old])
+            return old
+
+        def _restorePaths(old):
+            del os.environ[envvar]
+            if old is not None:
+                os.environ[envvar] = old
+
+        cbinaries = list(mod.binaries)
+        mod.binaries = []
+        # Executes find_library prepending ImportTracker's local paths to
+        # library search paths, then replaces original values.
+        old = _savePaths()
+        for cbin in cbinaries:
+            cpath = find_library(os.path.splitext(cbin)[0])
+            if cpath is None:
+                print "W: library %s required via ctypes not found" % (cbin,)
+            else:
+                mod.binaries.append((cbin, cpath, "BINARY"))
+        _restorePaths(old)
+
     def doimport(self, nm, ctx, fqname):
         # Not that nm is NEVER a dotted name at this point
         assert ("." not in nm), nm
@@ -536,6 +578,8 @@ class ImportTracker:
         # or
         #   mod = director.getmod(nm)
         if mod:
+            if ctypes and isinstance(mod, PyModule):
+                self._resolveCtypesImports(mod)
             mod.__name__ = fqname
             self.modules[fqname] = mod
             # now look for hooks
@@ -602,6 +646,7 @@ class Module:
         self._all = []
         self.imports = []
         self.warnings = []
+        self.binaries = []
         self._xref = {}
 
     def ispackage(self):
@@ -614,7 +659,7 @@ class Module:
         self._xref[nm] = 1
 
     def __str__(self):
-        return "<Module %s %s %s>" % (self.__name__, self.__file__, self.imports)
+        return "<Module %s %s %s %s>" % (self.__name__, self.__file__, self.imports, self.binaries)
 
 class BuiltinModule(Module):
     typ = 'BUILTIN'
@@ -641,7 +686,7 @@ class PyModule(Module):
         self.scancode()
 
     def scancode(self):
-        self.imports, self.warnings, allnms = scan_code(self.co)
+        self.imports, self.warnings, self.binaries, allnms = scan_code(self.co)
         if allnms:
             self._all = allnms
 
@@ -715,6 +760,8 @@ STORE_NAME = dis.opname.index('STORE_NAME')
 STORE_FAST = dis.opname.index('STORE_FAST')
 STORE_GLOBAL = dis.opname.index('STORE_GLOBAL')
 LOAD_GLOBAL = dis.opname.index('LOAD_GLOBAL')
+LOAD_ATTR = dis.opname.index('LOAD_ATTR')
+LOAD_NAME = dis.opname.index('LOAD_NAME')
 EXEC_STMT = dis.opname.index('EXEC_STMT')
 try:
     SET_LINENO = dis.opname.index('SET_LINENO')
@@ -767,12 +814,14 @@ def pass1(code):
             instrs.append((op, oparg, incondition, curline))
     return instrs
 
-def scan_code(co, m=None, w=None, nested=0):
+def scan_code(co, m=None, w=None, b=None, nested=0):
     instrs = pass1(co.co_code)
     if m is None:
         m = []
     if w is None:
         w = []
+    if b is None:
+        b = []
     all = None
     lastname = None
     level = -1 # import-level, same behaviour as up to Python 2.4
@@ -833,7 +882,99 @@ def scan_code(co, m=None, w=None, nested=0):
             w.append("W: %s %s exec statement detected at line %s"  % (lvl, cndtl, curline))
         else:
             lastname = None
+
+        if ctypes:
+            # ctypes scanning requires a scope wider than one bytecode instruction,
+            # so the code resides in a separate function for clarity.
+            ctypesb, ctypesw = scan_code_for_ctypes(co, instrs, i)
+            b.extend(ctypesb)
+            w.extend(ctypesw)
+
     for c in co.co_consts:
         if isinstance(c, type(co)):
-            scan_code(c, m, w, 1)
-    return m, w, all
+            # FIXME: "all" was not updated here nor returned. Was it the desired
+            # behaviour?
+            _, _, _, all_nested = scan_code(c, m, w, b, 1)
+            if all_nested:
+                all.extend(all_nested)
+    return m, w, b, all
+
+def scan_code_for_ctypes(co, instrs, i):
+    """Detects ctypes dependencies, using reasonable heuristics that should
+    cover most common ctypes usages; returns a tuple of two lists, one
+    containing names of binaries detected as dependencies, the other containing
+    warnings.
+    """
+
+    def _libFromConst(i):
+        """Extracts library name from an expected LOAD_CONST instruction and
+        appends it to local binaries list.
+        """
+        op, oparg, conditional, curline = instrs[i]
+        if op == LOAD_CONST:
+            soname = co.co_consts[oparg]
+            b.append(soname)
+
+    b = []
+
+    op, oparg, conditional, curline = instrs[i]
+
+    if op in (LOAD_GLOBAL, LOAD_NAME):
+        name = co.co_names[oparg]
+
+        if name in ("CDLL", "WinDLL"):
+            # Guesses ctypes imports of this type: CDLL("library.so")
+
+            # LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
+            # LOAD_CONST 1 ('library.so')
+
+            _libFromConst(i+1)
+
+        elif name == "ctypes":
+            # Guesses ctypes imports of this type: ctypes.DLL("library.so")
+
+            # LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
+            # LOAD_ATTR 1 (CDLL)
+            # LOAD_CONST 1 ('library.so')
+
+            op2, oparg2, conditional2, curline2 = instrs[i+1]
+            if op2 == LOAD_ATTR:
+                if co.co_names[oparg2] in ("CDLL", "WinDLL"):
+                    # Fetch next, and finally get the library name
+                    _libFromConst(i+2)
+
+        elif name == ("cdll", "windll"):
+            # Guesses ctypes imports of these types:
+
+            #  * cdll.library (only valid on Windows)
+
+            #     LOAD_GLOBAL 0 (cdll) <--- we "are" here right now
+            #     LOAD_ATTR 1 (library)
+
+            #  * cdll.LoadLibrary("library.so")
+
+            #     LOAD_GLOBAL              0 (cdll) <--- we "are" here right now
+            #     LOAD_ATTR                1 (LoadLibrary)
+            #     LOAD_CONST               1 ('library.so')
+
+            op2, oparg2, conditional2, curline2 = instrs[i+1]
+            if op2 == LOAD_ATTR:
+                if co.co_names[oparg2] != "LoadLibrary":
+                    # First type
+                    soname = co.co_names[oparg2] + ".dll"
+                    b.append(soname)
+                else:
+                    # Second type, needs to fetch one more instruction
+                    _libFromConst(i+2)
+
+    # If any of the libraries has been requested with anything different from
+    # the bare filename, drop that entry and warn the user - pyinstaller would
+    # need to patch the compiled pyc file to make it work correctly!
+
+    w = []
+    for bin in list(b):
+        if bin != os.path.basename(bin):
+            b.remove(bin)
+            w.append("W: ignoring %s - ctypes imports only supported using bare filenames" % (bin,))
+
+    return b, w
