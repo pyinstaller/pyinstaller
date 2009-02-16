@@ -316,10 +316,13 @@ class Analysis(Target):
                     elif isinstance(mod, mf.PkgInZipModule):
                         zipfiles.append((os.path.basename(str(mod.owner)),
                                          str(mod.owner), 'ZIPFILE'))
-                    elif modnm == '__main__':
-                        pass
                     else:
-                        pure.append((modnm, fnm, 'PYMODULE'))
+                        # mf.PyModule instances expose a list of binary
+                        # dependencies, most probably shared libraries accessed
+                        # via ctypes. Add them to the overall required binaries.
+                        binaries.extend(mod.binaries)
+                        if modnm != '__main__':
+                            pure.append((modnm, fnm, 'PYMODULE'))
         binaries.extend(bindepend.Dependencies(binaries,
                                                platform=target_platform))
         self.fixMissingPythonLib(binaries)
