@@ -41,8 +41,8 @@ cygwin = sys.platform == 'cygwin'
 def find_EXE_dependencies(config):
     global target_platform, target_iswin
     print "I: computing EXE_dependencies"
-    python = opts.executable or config.get('python') or sys.executable
-    target_platform = opts.target_platform or config.get('target_platform') or sys.platform
+    python = opts.executable or sys.executable
+    target_platform = opts.target_platform or sys.platform
     config['python'] = python
     config['target_platform'] = target_platform
     target_iswin = target_platform[:3] == 'win'
