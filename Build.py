@@ -997,8 +997,8 @@ def main(specfile, configfilename):
             sys.exit(1)
 
     if config.setdefault('pythonDebug', None) != __debug__:
-        print "python optimization changed, run Build.py or rerun Configure.py with the same [-O] option"
-        print "Configure.py debug=%s, Build.py debug=%s" % (config['pythonDebug'], __debug__)
+        print "python optimization flags changed: rerun Configure.py with the same [-O] option"
+        print "Configure.py optimize=%s, Build.py optimize=%s" % (not config['pythonDebug'], not __debug__)
         sys.exit(1)
 
     if config['hasRsrcUpdate']:
