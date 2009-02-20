@@ -1,8 +1,8 @@
 ==================
 PyInstaller Manual
 ==================
-:Author: William Caban (based on Gordon McMillan's manual)
-:Contact: william@hpcf.upr.edu
+:Author: Giovanni Bajo & William Caban (based on Gordon McMillan's manual)
+:Contact: rasky@develer.com
 :Revision: $Rev$
 :Source URL: $HeadURL$
 :Copyright: This document has been placed in the public domain.
