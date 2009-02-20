@@ -37,11 +37,21 @@ Building the runtime executables
 *Note:* Windows users can skip this step, because all of Python is contained in
 pythonXX.dll, and |PyInstaller| will use your pythonXX.dll.
 
-On Linux the first thing to do is build the runtime executables.
+On Linux the first thing to do is build the runtime executables. To do that,
+you need to have some basic C/C++ development tools and the Python development
+libraries. On Debian/Ubuntu systems, you can run the following lines
+to install everything required::
 
-Change to the |install_path| ``source/linux`` subdirectory. Run ``Make.py
-[-n|-e]`` and then make. This will produce ``support/loader/run`` and
-``support/loader/run_d``, which are the bootloaders.
+        sudo apt-get install build-essential python-dev
+
+Change to the |install_path| ``source/linux`` subdirectory. Run::
+        
+        pyinstaller$ cd source/linux
+        pyinstaller/source/linux$ python Make.py  #[-n|-e]
+        pyinstaller/source/linux$ make
+
+This will produce ``support/loader/run`` and ``support/loader/run_d``,
+which are the bootloaders.
 
 .. sidebar:: Bootloader
 
