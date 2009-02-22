@@ -1,5 +1,5 @@
 /*
- * Launch a python module from an archive.   
+ * Launch a python module from an archive.
  * Copyright (C) 2005, Giovanni Bajo
  * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
  *
@@ -35,7 +35,7 @@
 #else
 #include <unistd.h>
 #endif
-#include <fcntl.h> 
+#include <fcntl.h>
 #ifdef WIN32
 #include <winsock.h> /* for ntohl */
 #else
@@ -48,7 +48,7 @@
 */
 
 /*
- * These macros used to define variables to hold dynamically accessed entry 
+ * These macros used to define variables to hold dynamically accessed entry
  * points. These are declared 'extern' in this header, and defined fully later.
  */
 #ifdef WIN32
@@ -79,14 +79,14 @@
  */
 /*typedef _typeobject;*/
 typedef struct _object {
-    int ob_refcnt; 
+    int ob_refcnt;
     struct _typeobject *ob_type;
 } PyObject;
 typedef void (*destructor)(PyObject *);
 typedef struct _typeobject {
-    int ob_refcnt; 
+    int ob_refcnt;
     struct _typeobject *ob_type;
-    int ob_size; 
+    int ob_size;
     char *tp_name; /* For printing */
     int tp_basicsize, tp_itemsize; /* For allocation */
     destructor tp_dealloc;
@@ -210,7 +210,7 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 /*
  * #defines
  */
-#define MAGIC "MEI\014\013\012\013\016"    
+#define MAGIC "MEI\014\013\012\013\016"
 
 #if !defined WIN32 && !defined _CONSOLE
 #define _CONSOLE
@@ -245,7 +245,7 @@ typedef struct _toc {
     int len;          /* len of the data (compressed) */
     int ulen;         /* len of data (uncompressed) */
     char cflag;       /* is it compressed (really a byte) */
-    char typcd;       /* 'b' binary, 'z' zlib, 'm' module, 's' script (v3), 
+    char typcd;       /* 'b' binary, 'z' zlib, 'm' module, 's' script (v3),
 					     'x' data, 'o' runtime option  */
     char name[1];    /* the name to save it as */
 	/* starting in v5, we stretch this out to a mult of 16 */
@@ -269,8 +269,8 @@ typedef struct _cookie {
  * Load Python using code stored in the following archive.
  * Intended for use by embedding applications.
  *
- * @param archivePath  The path to the archive directory, with trailing 
- *                     backslash. This directory will also contain the binary 
+ * @param archivePath  The path to the archive directory, with trailing
+ *                     backslash. This directory will also contain the binary
  *                     dependencies of the application. There can be no
  *                     binaries inside the archive.
  *
@@ -282,12 +282,12 @@ typedef struct _cookie {
 int launchembedded(char const * archivePath, char  const * archiveName);
 
 /*****************************************************************
- * The following 4 entries are for applications which may need to 
+ * The following 4 entries are for applications which may need to
  * use to 2 steps to execute
  *****************************************************************/
 
 /**
- * Initialize the paths and open the archive 
+ * Initialize the paths and open the archive
  *
  * @param archivePath  The path (with trailing backslash) to the archive.
  *
@@ -315,9 +315,9 @@ int extractBinaries(char **workpath);
 
 /**
  * Load Python and execute all scripts in the archive
- * 
+ *
  * @param argc			Count of "commandline" args
- * 
+ *
  * @param argv			The "commandline".
  *
  * @return -1 for internal failures, or the rc of the last script.
