@@ -2,13 +2,33 @@
 
 Changes since PyInstaller 1.3
 -----------------------------
- + Preliminar Mac support: both one-file and one-dir is supported;
+ + Preliminar Mac OSX support: both one-file and one-dir is supported;
    for non-console applications, a bundle will be created. Thanks
    to many people that worked on this across several months (Daniele
    Zannotti, Matteo Bertini, Lorenzo Mancini).
+ * Add support for specifying data files in import hooks. PyInstaller
+   can now automatically bundle all data files or plugins required
+   for a certain 3rd-party package.
+ + Add intelligent support for ctypes: PyInstaller is now able to
+   track all places in the source code where ctypes is used and
+   automatically bundle dynamic libraries accessed through ctypes.
+   (Thanks to Lorenzo Mancini for submitting this). This is very
+   useful when using ctypes with custom-made dynamic libraries.
  + Add support for new absolute imports in Python 2.5 (thanks to Arve
    Knudsen).
- + Add import hooks for PyQt4 (thanks to Pascal Veret)
+ + Add support for cross-compilation: PyInstaller is now able to
+   build Windows executables when running under Linux. See documentation
+   for more details.
+ + Add support for .egg files: PyInstaller is now able to bundle
+   .egg files as-is, and make them available at runtime through the
+   normal zipimport machinery.
+ + Under Linux/Mac, it is now possible to build an executable even when
+   a system packages does not have .pyc or .pyo files available and the
+   system-directory can be written only by root. PyInstaller will in
+   fact generate the required .pyc/.pyo files on-the-fly within a
+   build-temporary directory.
+ + Add import hooks for PyQt4 (thanks to Pascal Veret), with complete
+   plugin support.
  + Add import hooks for pyodbc (thanks to Don Dwiggins)
  + Add import hooks for cElementTree (both native version and Python
    2.5 version)
@@ -43,11 +63,6 @@ Changes since PyInstaller 1.3
    mode (actually a pythonw "bug" that's fixed in Python 3.0).
  * Sometimes the temporary directory did not get removed upon program
    exit, when running on Linux.
- + Under Linux/Mac, it is now possible to build an executable even when
-   a system packages does not have .pyc or .pyo files available and the
-   system-directory can be written only by root. PyInstaller will in
-   fact generate the required .pyc/.pyo files on-the-fly within a
-   build-temporary directory.
  * Fixed random segfaults at startup on 64-bit platforms (like x86-64).
 
 PyInstaller 1.3
