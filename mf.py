@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 
-import sys, string, os, imp, marshal, dircache
+import sys, string, os, imp, marshal, dircache, glob
 try:
     # zipimport is supported starting with Python 2.3
     import zipimport
@@ -588,8 +588,7 @@ class ImportTracker:
                 hookmodnm = 'hook-'+fqname
                 hooks = __import__('hooks', globals(), locals(), [hookmodnm])
                 hook = getattr(hooks, hookmodnm)
-                #print `hook`
-            except (ImportError, AttributeError):
+            except AttributeError:
                 pass
             else:
                 # rearranged so that hook() has a chance to mess with hiddenimports & attrs
@@ -601,7 +600,19 @@ class ImportTracker:
                 if hasattr(hook, 'attrs'):
                     for attr, val in hook.attrs:
                         setattr(mod, attr, val)
-
+                if hasattr(hook, 'datas'):
+                    # hook.datas is a list of globs of files or directories to bundle
+                    # as datafiles. For each glob, a destination directory is specified.
+                    for g,dest_dir in hook.datas:
+                        for fn in glob.glob(g):
+                            if os.path.isfile(fn):
+                                mod.datas.append((dest_dir + "/" + os.path.basename(fn), fn, 'DATA'))
+                            else:
+                                def visit((base,dest_dir,datas), dirname, names):
+                                    for fn in names:
+                                        fn = os.path.join(dirname, fn)
+                                        datas.append(dest_dir + "/" + (fn[len(base)+1:], fn, 'DATA'))
+                                os.path.walk(fn, visit, (os.path.dirname(fn),dest_dir,mod.datas))
                 if fqname != mod.__name__:
                     print "W: %s is changing it's name to %s" % (fqname, mod.__name__)
                     self.modules[mod.__name__] = mod
@@ -647,6 +658,7 @@ class Module:
         self.imports = []
         self.warnings = []
         self.binaries = []
+        self.datas = []
         self._xref = {}
 
     def ispackage(self):
@@ -659,7 +671,8 @@ class Module:
         self._xref[nm] = 1
 
     def __str__(self):
-        return "<Module %s %s %s %s>" % (self.__name__, self.__file__, self.imports, self.binaries)
+        return "<Module %s %s imports=%s binaries=%s datas=%s>" % \
+            (self.__name__, self.__file__, self.imports, self.binaries, self.datas)
 
 class BuiltinModule(Module):
     typ = 'BUILTIN'

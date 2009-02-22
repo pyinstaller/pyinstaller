@@ -230,6 +230,7 @@ class Analysis(Target):
         self.pure = TOC()
         self.binaries = TOC()
         self.zipfiles = TOC()
+        self.datas = TOC()
         self.__postinit__()
 
     GUTS = (('inputs',    _check_guts_eq),
@@ -241,6 +242,7 @@ class Analysis(Target):
                                               args, {'pyc': 1 }   )),
             ('binaries',  _check_guts_toc_mtime),
             ('zipfiles',  _check_guts_toc_mtime),
+            ('datas',     _check_guts_toc_mtime),
             )
 
     def check_guts(self, last_build):
@@ -255,11 +257,12 @@ class Analysis(Target):
         data = Target.get_guts(self, last_build)
         if not data:
             return True
-        scripts, pure, binaries, zipfiles = data[-4:]
+        scripts, pure, binaries, zipfiles, datas = data[-5:]
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
         self.zipfiles = TOC(zipfiles)
+        self.datas = TOC(datas)
         return False
 
     def assemble(self):
@@ -300,6 +303,7 @@ class Analysis(Target):
         pure = []     # pure python modules
         binaries = [] # binaries to bundle
         zipfiles = [] # zipfiles to bundle
+        datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
         for modnm, mod in analyzer.modules.items():
             # FIXME: why can we have a mod == None here?
@@ -307,6 +311,7 @@ class Analysis(Target):
                 hooks = findRTHook(modnm)  #XXX
                 if hooks:
                     rthooks.extend(hooks)
+                datas.extend(mod.datas)
                 if isinstance(mod, mf.BuiltinModule):
                     pass
                 else:
@@ -331,6 +336,7 @@ class Analysis(Target):
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
         self.zipfiles = TOC(zipfiles)
+        self.datas = TOC(datas)
         try: # read .toc
             oldstuff = _load_data(self.out)
         except:
@@ -339,7 +345,7 @@ class Analysis(Target):
         self.pure = TOC(compile_pycos(self.pure))
 
         newstuff = (self.inputs, self.pathex, self.hookspath, self.excludes,
-                    self.scripts, self.pure, self.binaries, self.zipfiles)
+                    self.scripts, self.pure, self.binaries, self.zipfiles, self.datas)
         if oldstuff != newstuff:
             _save_data(self.out, newstuff)
             wf = open(WARNFILE, 'w')
