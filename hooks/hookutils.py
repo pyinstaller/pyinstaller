@@ -20,3 +20,7 @@ def exec_statement(stat):
     txt = open(fnm, 'r').read()[:-1]
     os.remove(fnm)
     return txt
+
+def qt4_plugins_dir():
+    return exec_statement("from PyQt4.QtCore import QLibraryInfo; print QLibraryInfo.location(QLibraryInfo.PluginsPath)")
+
