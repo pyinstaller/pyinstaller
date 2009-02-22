@@ -799,12 +799,33 @@ unsigned char *extract(TOC *ptoc)
  * helper for extract2fs
  * which may try multiple places
  */
-FILE *openTarget(char *path, char*name)
+FILE *openTarget(char *path, char* name_)
 {
 	struct stat sbuf;
 	char fnm[_MAX_PATH+1];
+	char name[_MAX_PATH+1];
+	char *dir;
+
 	strcpy(fnm, path);
-	strcat(fnm, name);
+	strcpy(name, name_);
+	fnm[strlen(fnm)-1] = '\0';
+
+	dir = strtok(name, "/\\");
+	while (dir != NULL)
+	{
+#ifdef WIN32
+		strcat(fnm, "\\");
+#else
+		strcat(fnm, "/");
+#endif
+		strcat(fnm, dir);
+		dir = strtok(NULL, "/\\");
+		if (!dir)
+			break;
+		if (stat(fnm, &sbuf) < 0)
+			mkdir(fnm, 0700);
+	}
+
 	if (stat(fnm, &sbuf) == 0) {
 		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
     }
@@ -855,7 +876,7 @@ int extract2fs(TOC *ptoc)
 	return 0;
 }
 /*
- * extract all binaries (type 'b') to the filesystem
+ * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  */
 int extractBinaries(char **workpath)
 {
@@ -863,9 +884,9 @@ int extractBinaries(char **workpath)
 	workpath[0] = '\0';
 	VS("Extracting binaries\n");
 	while (ptoc < f_tocend) {
-		if (ptoc->typcd == 'b')
-		if (extract2fs(ptoc))
-		return -1;
+		if (ptoc->typcd == 'b' || ptoc->typcd == 'x')
+			if (extract2fs(ptoc))
+				return -1;
 		ptoc = incrementTocPtr(ptoc);
 	}
 	*workpath = f_workpath;

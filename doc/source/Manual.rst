@@ -45,7 +45,7 @@ to install everything required::
         sudo apt-get install build-essential python-dev
 
 Change to the |install_path| ``source/linux`` subdirectory. Run::
-        
+
         pyinstaller$ cd source/linux
         pyinstaller/source/linux$ python Make.py  #[-n|-e]
         pyinstaller/source/linux$ make
@@ -1027,26 +1027,12 @@ path name. Then, at runtime, you can use code like this to find the file::
 
        os.path.join(os.path.dirname(sys.executable), relativename))
 
+In a ``--onefile`` distribution, data files are bundled within the executable
+and then extracted at runtime into the work directory by the C code (which is
+also able to reconstruct directory trees). The work directory is best found by
+``os.environ['_MEIPASS2']``. So, you can access those files through::
 
-In a ``--onefile``, it's a bit trickier. You can cheat, and add the files to the
-``EXE`` as ``BINARY``. They will then be extracted at runtime into the work directory
-by the C code (which does not create directories, so the name must be a plain
-name), and cleaned up on exit. The work directory is best found by
-``os.environ['_MEIPASS2']``. Be awawre, though, that if you use ``--strip`` or ``--upx``,
-strange things may happen to your data - ``BINARY`` is really for shared
-libs / dlls.
-
-If you add them as ``'DATA'`` to the ``EXE``, then it's up to you to extract them. Use
-code like this::
-
-       import sys, carchive
-       this = carchive.CArchive(sys.executable)
-       data = this.extract('mystuff')[1]
-
-
-to get the contents as a binary string. See `support\/unpackTK.py`_ for an advanced
-example (the TCL and TK lib files are in a PKG which is opened in place, and
-then extracted to the filesystem).
+       os.path.join(os.environ["_MEIPASS2], relativename))
 
 |GOBACK|
 
