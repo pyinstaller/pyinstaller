@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <Python.h>
 #ifdef WIN32
 #include <io.h>
 #else
@@ -72,65 +73,6 @@
     extern __VAR__##name *PI_##name;
 
 #endif /* WIN32 */
-
-/*
- * These types and macros are included from the Python header file object.h
- * They are needed to do very basic Python functionality.
- */
-/*typedef _typeobject;*/
-typedef struct _object {
-    int ob_refcnt;
-    struct _typeobject *ob_type;
-} PyObject;
-typedef void (*destructor)(PyObject *);
-typedef struct _typeobject {
-    int ob_refcnt;
-    struct _typeobject *ob_type;
-    int ob_size;
-    char *tp_name; /* For printing */
-    int tp_basicsize, tp_itemsize; /* For allocation */
-    destructor tp_dealloc;
-    /* ignore the rest.... */
-} PyTypeObject;
-struct _ts; /* forward */
-typedef struct _is {
-    struct _is *next;
-    struct _ts *tstate_head;
-    PyObject *modules;
-    PyObject *sysdict;
-    PyObject *builtins;
-    int checkinterval;
-} PyInterpreterState;
-typedef struct _ts {
-    struct _ts *next;
-    PyInterpreterState *interp;
-    void *frame; /* struct _frame *frame; */
-    int recursion_depth;
-    int ticker;
-    int tracing;
-    PyObject *sys_profilefunc;
-    PyObject *sys_tracefunc;
-    PyObject *curexc_type;
-    PyObject *curexc_value;
-    PyObject *curexc_traceback;
-    PyObject *exc_type;
-    PyObject *exc_value;
-    PyObject *exc_traceback;
-    PyObject *dict;
-    /* XXX signal handlers should also be here */
-} PyThreadState;
-
-
-/* These are the non reference debugging version of Py_INCREF and DECREF */
-#define _Py_Dealloc(op) (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
-#define Py_INCREF(op) ((op)->ob_refcnt++)
-#define Py_DECREF(op) \
-    if (--(op)->ob_refcnt != 0) \
-        ; \
-    else \
-        _Py_Dealloc((PyObject *)(op))
-#define Py_XINCREF(op) if ((op) == NULL) ; else Py_INCREF(op)
-#define Py_XDECREF(op) if ((op) == NULL) ; else Py_DECREF(op)
 
 /* The actual declarations of var & function entry points used. */
 EXTDECLVAR(int, Py_NoSiteFlag);
