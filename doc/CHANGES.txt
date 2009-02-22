@@ -48,6 +48,7 @@ Changes since PyInstaller 1.3
    system-directory can be written only by root. PyInstaller will in
    fact generate the required .pyc/.pyo files on-the-fly within a
    build-temporary directory.
+ * Fixed random segfaults at startup on 64-bit platforms (like x86-64).
 
 PyInstaller 1.3
 ---------------
