@@ -604,14 +604,16 @@ class ImportTracker:
                     # hook.datas is a list of globs of files or directories to bundle
                     # as datafiles. For each glob, a destination directory is specified.
                     for g,dest_dir in hook.datas:
+                        if dest_dir: dest_dir += "/"
                         for fn in glob.glob(g):
                             if os.path.isfile(fn):
-                                mod.datas.append((dest_dir + "/" + os.path.basename(fn), fn, 'DATA'))
+                                mod.datas.append((dest_dir + os.path.basename(fn), fn, 'DATA'))
                             else:
                                 def visit((base,dest_dir,datas), dirname, names):
                                     for fn in names:
                                         fn = os.path.join(dirname, fn)
-                                        datas.append(dest_dir + "/" + (fn[len(base)+1:], fn, 'DATA'))
+                                        if os.path.isfile(fn):
+                                            datas.append((dest_dir + fn[len(base)+1:], fn, 'DATA'))
                                 os.path.walk(fn, visit, (os.path.dirname(fn),dest_dir,mod.datas))
                 if fqname != mod.__name__:
                     print "W: %s is changing it's name to %s" % (fqname, mod.__name__)
