@@ -23,4 +23,6 @@ def exec_statement(stat):
 
 def qt4_plugins_dir():
     return exec_statement("from PyQt4.QtCore import QLibraryInfo; print QLibraryInfo.location(QLibraryInfo.PluginsPath)")
+def mpl_data_dir():
+    return exec_statement("import matplotlib; print matplotlib._get_data_path()")
 
