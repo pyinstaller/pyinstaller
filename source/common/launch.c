@@ -324,6 +324,8 @@ int mapNames(HMODULE dll)
 	GETVAR(dll, Py_VerboseFlag);
 	GETPROC(dll, Py_Initialize);
 	GETPROC(dll, Py_Finalize);
+	GETPROC(dll, Py_IncRef);
+	GETPROC(dll, Py_DecRef);
 	GETPROC(dll, PyImport_ExecCodeModule);
 	GETPROC(dll, PyRun_SimpleString);
 	GETPROC(dll, Py_SetProgramName);
