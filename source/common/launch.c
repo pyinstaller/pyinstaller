@@ -53,6 +53,8 @@ DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
 DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
+DECLPROC(Py_IncRef);
+DECLPROC(Py_DecRef);
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
 DECLPROC(Py_SetProgramName);

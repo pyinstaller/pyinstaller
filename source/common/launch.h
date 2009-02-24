@@ -30,7 +30,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <Python.h>
 #ifdef WIN32
 #include <io.h>
 #else
@@ -74,12 +73,39 @@
 
 #endif /* WIN32 */
 
+/*
+ * Python.h replacements.
+ *
+ * We do not want to include Python.h because we do no want to bind
+ * to a specific version of Python. If we were to, eg., use the 
+ * Py_INCREF macro from Python.h, the compiled code would depend
+ * on the specific layout in memory of PyObject, and thus change
+ * when Python changes (or if your platform changes between 32bit
+ * and 64bit). In other words, you wouldn't be able to build a single
+ * bootloader working across all Python versions (which is specifically
+ * important on Windows).
+ *
+ * Instead, the bootloader does not depend on the Python ABI at all.
+ * It dynamically-load the Python library (after having unpacked it)
+ * and bind the exported functions. All Python objects are used as
+ * opaque data structures (through pointers only), so the code is
+ * fully compatible if the Python data structure layouts change.
+ */
+
+/* Forward declarations of opaque Python types. */
+struct _PyObject;
+typedef struct _PyObject PyObject;
+struct _PyThreadState;
+typedef struct _PyThreadState PyThreadState;
+
 /* The actual declarations of var & function entry points used. */
 EXTDECLVAR(int, Py_NoSiteFlag);
 EXTDECLVAR(int, Py_OptimizeFlag);
 EXTDECLVAR(int, Py_VerboseFlag);
 EXTDECLPROC(int, Py_Initialize, (void));
 EXTDECLPROC(int, Py_Finalize, (void));
+EXTDECLPROC(void, Py_IncRef, (PyObject *));
+EXTDECLPROC(void, Py_DecRef, (PyObject *));
 EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
 EXTDECLPROC(int, PyRun_SimpleString, (char *));
 EXTDECLPROC(void, Py_SetProgramName, (char *));
@@ -105,6 +131,15 @@ EXTDECLPROC(PyThreadState *, Py_NewInterpreter, (void) );
 EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(long, PyInt_AsLong, (PyObject *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
+
+/* Macros for reference counting through exported functions
+ * (that is: without binding to the binary structure of a PyObject.
+ * These rely on the Py_IncRef/Py_DecRef API functions.
+ */
+#define Py_XINCREF(o)    PI_Py_IncRef(o)
+#define Py_XDECREF(o)    PI_Py_DecRef(o)
+#define Py_DECREF(o)     Py_XDECREF(o)
+#define Py_INCREF(o)     Py_XINCREF(o)
 
 /* Macros to declare and get Python entry points in the C file.
  * Typedefs '__PROC__...' have been done above
