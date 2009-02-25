@@ -136,6 +136,24 @@ def test_TCL_TK(config):
     if not target_iswin:
         bindepend.excludes = saveexcludes
 
+def test_Crypt(config):
+    #Crypt support. We need to build the AES module and we'll use distutils
+    # for that. FIXME: the day we'll use distutils for everything this will be
+    # a solved problem.
+    print "I: trying to build crypt support..."
+    from distutils.core import run_setup
+    cwd = os.getcwd()
+    try:
+        os.chdir(os.path.join(HOME, "source", "crypto"))
+        dist = run_setup("setup.py", ["install"])
+        if dist.have_run.get("install", 0):
+            config["useCrypt"] = 1
+            print "I: ... crypto support available"
+        else:
+            config["useCrypt"] = 0
+            print "I: ... error building crypto support"
+    finally:
+        os.chdir(cwd)
 
 def test_Zlib(config):
     #useZLIB
@@ -267,6 +285,7 @@ def main(configfilename):
     find_EXE_dependencies(config)
     test_TCL_TK(config)
     test_Zlib(config)
+    test_Crypt(config)
     test_RsrcUpdate(config)
     test_unicode(config)
     test_UPX(config)

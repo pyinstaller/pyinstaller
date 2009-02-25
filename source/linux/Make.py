@@ -164,6 +164,8 @@ def main():
     if non_elf:
         cflags.append('-DNONELF')
 
+#    libs = [os.path.join(sysconfig.get_config_vars('LIBDIR')[0], sysconfig.get_config_vars('INSTSONAME')[0])]
+
     somevars = {}
     if os.path.exists(makefile_in):
         print "Using '%s' as Makefile template" % makefile_in

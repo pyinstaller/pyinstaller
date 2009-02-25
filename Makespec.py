@@ -31,7 +31,7 @@ except:
 freezetmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, crypt=%(crypt)s)
 exe = EXE(%(tkpkg)s pyz,
           a.scripts,
           a.binaries,
@@ -41,13 +41,14 @@ exe = EXE(%(tkpkg)s pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          crypt=%(crypted)s,
           console=%(console)s %(exe_options)s)
 """ # pathex scripts exename tkpkg debug console distdir
 
 collecttmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, crypt=%(crypt)s)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
@@ -55,6 +56,7 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          crypt=%(crypted)s,
           console=%(console)s %(exe_options)s)
 coll = COLLECT(%(tktree)s exe,
                a.binaries,
@@ -68,7 +70,7 @@ coll = COLLECT(%(tktree)s exe,
 comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, crypt=%(crypt)s)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
@@ -76,6 +78,7 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          crypt=%(crypted)s,
           console=%(console)s %(exe_options)s)
 dll = DLL(pyz,
           a.scripts,
@@ -135,7 +138,7 @@ class Path:
 
 def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0,
          strip=0, upx=0, comserver=0, ascii=0, workdir=None,
-         pathex=[], version_file=None, icon_file=None):
+         pathex=[], version_file=None, icon_file=None, crypt=None):
 
     try:
         config = eval(open(configfile, 'r').read())
@@ -184,6 +187,8 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
          'debug': debug,
          'strip': strip,
          'upx' : upx,
+         'crypt' : repr(crypt),
+         'crypted': crypt is not None,
          'console': console or debug,
          'exe_options': exe_options}
     if tk:
@@ -257,6 +262,8 @@ if __name__ == '__main__':
     g.add_option("-X", "--upx", action="store_true", default=False,
                  help="use UPX if available (works differently between "
                       "Windows and *nix)")
+    p.add_option("-Y", "--crypt", type="string", default=None, metavar="FILE",
+                 help="encrypt pyc/pyo files")
 
     g = p.add_option_group('Windows specific options')
     g.add_option("-c", "--console", "--nowindowed", dest="console",

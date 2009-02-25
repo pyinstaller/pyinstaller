@@ -331,7 +331,9 @@ class Analysis(Target):
         binaries.extend(bindepend.Dependencies(binaries,
                                                platform=target_platform))
         self.fixMissingPythonLib(binaries)
-        scripts[1:1] = rthooks
+        # Add realtime hooks just before the last script (which is
+        # the entrypoint of the application).
+        scripts[-1:-1] = rthooks
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
@@ -396,7 +398,7 @@ def findRTHook(modnm):
 
 class PYZ(Target):
     typ = 'PYZ'
-    def __init__(self, toc, name=None, level=9):
+    def __init__(self, toc, name=None, level=9, crypt=None):
         Target.__init__(self)
         self.toc = toc
         self.name = name
@@ -406,6 +408,10 @@ class PYZ(Target):
             self.level = level
         else:
             self.level = 0
+        if config['useCrypt'] and crypt is not None:
+            self.crypt = archive.Keyfile(crypt).key
+        else:
+            self.crypt = None
         self.dependencies = compile_pycos(config['PYZ_dependencies'])
         self.__postinit__()
 
@@ -426,10 +432,10 @@ class PYZ(Target):
 
     def assemble(self):
         print "building PYZ", os.path.basename(self.out)
-        pyz = archive.ZlibArchive(level=self.level)
+        pyz = archive.ZlibArchive(level=self.level, crypt=self.crypt)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
-        _save_data(self.out, (self.name, self.level, self.toc))
+        _save_data(self.out, (self.name, self.level, self.crypt, self.toc))
         return 1
 
 def cacheDigest(fnm):
@@ -488,6 +494,7 @@ def checkCache(fnm, strip, upx):
 
     return cachedfile
 
+UNCOMPRESSED, COMPRESSED, ENCRYPTED = range(3)
 class PKG(Target):
     typ = 'PKG'
     xformdict = {'PYMODULE' : 'm',
@@ -500,7 +507,7 @@ class PKG(Target):
                  'ZIPFILE': 'Z',
                  'EXECUTABLE': 'b'}
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0):
+                 strip_binaries=0, upx_binaries=0, crypt=0):
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -508,6 +515,7 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
+        self.crypt = crypt
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -518,6 +526,9 @@ class PKG(Target):
                               'EXECUTABLE':COMPRESSED,
                               'PYSOURCE':COMPRESSED,
                               'PYMODULE':COMPRESSED }
+                if self.crypt:
+                    self.cdict['PYSOURCE'] = ENCRYPTED
+                    self.cdict['PYMODULE'] = ENCRYPTED
             else:
                 self.cdict = { 'PYSOURCE':UNCOMPRESSED }
         self.__postinit__()
@@ -528,6 +539,7 @@ class PKG(Target):
             ('exclude_binaries',  _check_guts_eq),
             ('strip_binaries',  _check_guts_eq),
             ('upx_binaries',  _check_guts_eq),
+            ('crypt', _check_guts_eq),
             )
 
     def check_guts(self, last_build):
@@ -579,7 +591,7 @@ class PKG(Target):
         archive.build(self.name, mytoc)
         _save_data(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
-                    self.strip_binaries, self.upx_binaries))
+                    self.strip_binaries, self.upx_binaries, self.crypt))
         for item in trash:
             os.remove(item)
         return 1
@@ -597,6 +609,7 @@ class EXE(Target):
         self.versrsrc = kws.get('version',None)
         self.strip = kws.get('strip',None)
         self.upx = kws.get('upx',None)
+        self.crypt = kws.get('crypt', 0)
         self.exclude_binaries = kws.get('exclude_binaries',0)
         self.append_pkg = kws.get('append_pkg', self.append_pkg)
         if self.name is None:
@@ -618,7 +631,7 @@ class EXE(Target):
                 self.toc.extend(arg)
         self.toc.extend(config['EXE_dependencies'])
         self.pkg = PKG(self.toc, cdict=kws.get('cdict',None), exclude_binaries=self.exclude_binaries,
-                       strip_binaries=self.strip, upx_binaries=self.upx)
+                       strip_binaries=self.strip, upx_binaries=self.upx, crypt=self.crypt)
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
@@ -629,6 +642,7 @@ class EXE(Target):
             ('versrsrc', _check_guts_eq),
             ('strip',    _check_guts_eq),
             ('upx',      _check_guts_eq),
+            ('crypt',    _check_guts_eq),
             ('mtm',      None,), # checked bellow
             )
 
@@ -651,6 +665,10 @@ class EXE(Target):
             print "ignoring icon and version resources = platform not capable"
 
         mtm = data[-1]
+        crypt = data[-2]
+        if crypt != self.crypt:
+            print "rebuilding %s because crypt option changed" % outnm
+            return 1
         if mtm != mtime(self.name):
             print "rebuilding", self.outnm, "because mtimes don't match"
             return True
@@ -711,7 +729,7 @@ class EXE(Target):
         os.chmod(self.name, 0755)
         _save_data(self.out,
                    (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.strip, self.upx, mtime(self.name)))
+                    self.versrsrc, self.strip, self.upx, self.crypt, mtime(self.name)))
         for item in trash:
             os.remove(item)
         return 1

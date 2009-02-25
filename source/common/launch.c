@@ -57,6 +57,7 @@ DECLPROC(Py_IncRef);
 DECLPROC(Py_DecRef);
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
+DECLPROC(PySys_SetArgv);
 DECLPROC(Py_SetProgramName);
 DECLPROC(PyImport_ImportModule);
 DECLPROC(PyImport_AddModule);
@@ -65,12 +66,16 @@ DECLPROC(PyList_New);
 DECLPROC(PyList_Append);
 DECLPROC(Py_BuildValue);
 DECLPROC(PyString_FromStringAndSize);
+DECLPROC(PyFile_FromString);
+DECLPROC(PyString_AsString);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyModule_GetDict);
 DECLPROC(PyDict_GetItemString);
 DECLPROC(PyErr_Clear);
 DECLPROC(PyErr_Occurred);
 DECLPROC(PyErr_Print);
+DECLPROC(PyObject_CallObject);
+DECLPROC(PyObject_CallMethod);
 DECLPROC(PySys_AddWarnOption);
 DECLPROC(PyEval_InitThreads);
 DECLPROC(PyEval_AcquireThread);
@@ -103,6 +108,7 @@ static int f_pkgstart;
 static TOC *f_tocbuff = NULL;
 static TOC *f_tocend = NULL;
 static COOKIE f_cookie;
+static PyObject *AES = NULL;
 
 unsigned char *extract(TOC *ptoc);
 
@@ -328,6 +334,8 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, Py_DecRef);
 	GETPROC(dll, PyImport_ExecCodeModule);
 	GETPROC(dll, PyRun_SimpleString);
+	GETPROC(dll, PyString_FromStringAndSize);
+	GETPROC(dll, PySys_SetArgv);
 	GETPROC(dll, Py_SetProgramName);
 	GETPROC(dll, PyImport_ImportModule);
 	GETPROC(dll, PyImport_AddModule);
@@ -335,13 +343,16 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyList_New);
 	GETPROC(dll, PyList_Append);
 	GETPROC(dll, Py_BuildValue);
-	GETPROC(dll, PyString_FromStringAndSize);
+	GETPROC(dll, PyFile_FromString);
+	GETPROC(dll, PyString_AsString);
 	GETPROC(dll, PyObject_CallFunction);
 	GETPROC(dll, PyModule_GetDict);
 	GETPROC(dll, PyDict_GetItemString);
 	GETPROC(dll, PyErr_Clear);
 	GETPROC(dll, PyErr_Occurred);
 	GETPROC(dll, PyErr_Print);
+	GETPROC(dll, PyObject_CallObject);
+	GETPROC(dll, PyObject_CallMethod);
 	if (ntohl(f_cookie.pyvers) >= 21) {
 		GETPROC(dll, PySys_AddWarnOption);
 	}
@@ -645,15 +656,12 @@ int importModules()
 		{
 			unsigned char *modbuf = extract(ptoc);
 
-			/* .pyc/.pyo files have 8 bytes header. Skip it and get a Python
-			 * string directly pointing at the marshalled code.
+			VS("extracted %s\n", ptoc->name);
+
+			/* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
+			 * data form the right point.
 			 */
-			PyObject *mods = PI_PyString_FromStringAndSize(modbuf + 8,
-				ntohl(ptoc->ulen) - 8);
-
-			VS("%s\n", ptoc->name);
-
-			co = PI_PyObject_CallFunction(loadfunc, "O", mods);
+			co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf+8, ntohl(ptoc->ulen)-8);
 			mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
 
 			/* Check for errors in loading */
@@ -666,7 +674,6 @@ int importModules()
 				PI_PyErr_Clear();
 			}
 
-			Py_DECREF(mods);
 			free(modbuf);
 		}
 		ptoc = incrementTocPtr(ptoc);
@@ -783,7 +790,36 @@ unsigned char *extract(TOC *ptoc)
 		return NULL;
 	}
 	fread(data, ntohl(ptoc->len), 1, f_fp);
-	if (ptoc->cflag == '\1') {
+	if (ptoc->cflag == '\2') {
+		PyObject *func_new;
+		PyObject *aes_dict;
+		PyObject *aes_obj;
+		PyObject *ddata;
+		long block_size;
+		char *iv;
+
+		if (!AES)
+			AES = PI_PyImport_ImportModule("AES");
+		aes_dict = PI_PyModule_GetDict(AES);
+		func_new = PI_PyDict_GetItemString(aes_dict, "new");
+		block_size = PI_PyInt_AsLong(PI_PyDict_GetItemString(aes_dict, "block_size"));
+		iv = malloc(block_size);
+		memset(iv, 0, block_size);
+        
+		aes_obj = PI_PyObject_CallFunction(func_new, "s#Os#",
+			data, 32,
+			PI_PyDict_GetItemString(aes_dict, "MODE_CFB"),
+			iv, block_size);
+
+		ddata = PI_PyObject_CallMethod(aes_obj, "decrypt", "s#", data+32, ntohl(ptoc->len)-32);
+		memcpy(data, PI_PyString_AsString(ddata), ntohl(ptoc->len)-32);
+		Py_DECREF(aes_obj);
+		Py_DECREF(ddata);
+		VS("decrypted ");
+		VS(ptoc->name);
+		VS("\n");
+	}
+	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
 #ifndef NOZLIB
 		tmp = decompress(data, ptoc);
 		free(data);
