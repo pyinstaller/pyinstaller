@@ -827,7 +827,13 @@ FILE *openTarget(char *path, char* name_)
 		if (!dir)
 			break;
 		if (stat(fnm, &sbuf) < 0)
+    {
+#ifdef WIN32
+			mkdir(fnm);
+#else
 			mkdir(fnm, 0700);
+#endif
+    }
 	}
 
 	if (stat(fnm, &sbuf) == 0) {
