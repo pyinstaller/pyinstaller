@@ -152,7 +152,7 @@ if zipimport:
             try:
                 self.__zip = zipimport.zipimporter(path)
             except zipimport.ZipImportError, e:
-                raise OwnerError('%s: %s' % (e.message, path))
+                raise OwnerError('%s: %s' % (str(e), path))
             Owner.__init__(self, path)
 
         def getmod(self, nm, newmod=imp.new_module):
