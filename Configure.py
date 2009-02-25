@@ -137,6 +137,10 @@ def test_TCL_TK(config):
         bindepend.excludes = saveexcludes
 
 def test_Crypt(config):
+    # TODO: disabled for now
+    config["useCrypt"] = 0
+    return 
+
     #Crypt support. We need to build the AES module and we'll use distutils
     # for that. FIXME: the day we'll use distutils for everything this will be
     # a solved problem.
