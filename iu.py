@@ -50,10 +50,7 @@ except NameError:
     STRINGTYPE = type("")
 
 def debug(msg):
-    if __debug__:
-        sys.stderr.write(msg+"\n")
-    else:
-        sys.stderr.write("WARNING: Debug print should be commented out in iu.py in optimized mode!!\n")
+    if 0:
         sys.stderr.write(msg+"\n")
 
 #=======================Owners==========================#
@@ -156,7 +153,7 @@ if zipimport:
             Owner.__init__(self, path)
 
         def getmod(self, nm, newmod=imp.new_module):
-            #debug('zipimport %s' % nm)
+            debug('zipimport %s' % nm)
             #nm = _string_replace(nm, '.', '/')
             try:
                 mod = self.__zip.find_module(nm)
@@ -351,8 +348,11 @@ class ImportManager:
         __builtin__.reload = self.reloadHook
 
     def importHook(self, name, globals=None, locals=None, fromlist=None, level=-1):
+        __globals_name = None
+        if globals:
+            __globals_name = globals.get('__name__')
         # first see if we could be importing a relative name
-        #debug("importHook(%s, %s, locals, %s)" % (name, getattr(globals, '__name__', None), fromlist))
+        debug("importHook(%s, %s, locals, %s)" % (name, __globals_name, fromlist))
         _sys_modules_get = sys.modules.get
         _self_doimport = self.doimport
         threaded = self.threaded
@@ -370,7 +370,7 @@ class ImportManager:
             contexts = [None]
         else: # level != 0
             importernm = globals.get('__name__', '')
-            #debug('importernm %s' % importernm)
+            debug('importernm %s' % importernm)
             if level < 0:
                 # behaviour up to Python 2.4 (and default in Python 2.5)
                 # add the package to searched contexts
@@ -400,7 +400,7 @@ class ImportManager:
             i = 0
             for i in range(len(nmparts)):
                 nm = nmparts[i]
-                #debug(" importHook trying %s in %s" % (nm, ctx))
+                debug(" importHook trying %s in %s" % (nm, ctx))
                 if ctx:
                     fqname = ctx + '.' + nm
                 else:
@@ -410,7 +410,7 @@ class ImportManager:
                 try:
                     mod = _sys_modules_get(fqname, UNTRIED)
                     if mod is UNTRIED:
-                        #debug('trying %s %s %s' % (nm, ctx, fqname))
+                        debug('trying %s %s %s' % (nm, ctx, fqname))
                         mod = _self_doimport(nm, ctx, fqname)
                 finally:
                     if threaded:
@@ -427,12 +427,12 @@ class ImportManager:
 
         if i<len(nmparts):
             if ctx and hasattr(sys.modules[ctx], nmparts[i]):
-                #debug("importHook done with %s %s %s (case 1)" % (name, globals['__name__'], fromlist))
+                debug("importHook done with %s %s %s (case 1)" % (name, __globals_name, fromlist))
                 return sys.modules[nmparts[0]]
             del sys.modules[fqname]
             raise ImportError, "No module named %s" % fqname
         if fromlist is None:
-            #debug("importHook done with %s %s %s (case 2)" % (name, globals['__name__'], fromlist))
+            debug("importHook done with %s %s %s (case 2)" % (name, __globals_name, fromlist))
             if context:
                 return sys.modules[context+'.'+nmparts[0]]
             return sys.modules[nmparts[0]]
@@ -456,12 +456,12 @@ class ImportManager:
                     finally:
                         if threaded:
                             self._release()
-        #debug("importHook done with %s %s %s (case 3)" % (name, globals['__name__'], fromlist))
+        debug("importHook done with %s %s %s (case 3)" % (name, __globals_name, fromlist))
         return bottommod
 
     def doimport(self, nm, parentnm, fqname, reload=0):
         # Not that nm is NEVER a dotted name at this point
-        #debug("doimport(%s, %s, %s)" % (nm, parentnm, fqname))
+        debug("doimport(%s, %s, %s)" % (nm, parentnm, fqname))
         if parentnm:
             parent = sys.modules[parentnm]
             if hasattr(parent, '__path__'):
@@ -474,7 +474,7 @@ class ImportManager:
                 if mod and not reload:
                     setattr(parent, nm, mod)
             else:
-                #debug("..parent not a package")
+                debug("..parent not a package")
                 return None
         else:
             parent = None
@@ -515,7 +515,7 @@ class ImportManager:
                 self.setThreaded()
         else:
             sys.modules[fqname] = None
-        #debug("..found %s when looking for %s" % (mod, fqname))
+        debug("..found %s when looking for %s" % (mod, fqname))
         return mod
 
     def reloadHook(self, mod):
