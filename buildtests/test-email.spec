@@ -5,7 +5,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('build/pyi.linux2/test-email', 'test-email'),
+          name=os.path.join('build/pyi.linux2/test-email', 'test-email.exe'),
           debug=False,
           strip=False,
           upx=False,

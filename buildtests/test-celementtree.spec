@@ -5,7 +5,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('build/pyi.linux2/test-celementtree', 'test-celementtree'),
+          name=os.path.join('build/pyi.linux2/test-celementtree', 'test-celementtree.exe'),
           debug=True,
           strip=False,
           upx=False,
