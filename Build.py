@@ -318,7 +318,7 @@ class Analysis(Target):
                     fnm = mod.__file__
                     if isinstance(mod, mf.ExtensionModule):
                         binaries.append((mod.__name__, fnm, 'EXTENSION'))
-                    elif isinstance(mod, mf.PkgInZipModule):
+                    elif isinstance(mod, (mf.PkgInZipModule, mf.PyInZipModule)):
                         zipfiles.append((os.path.basename(str(mod.owner)),
                                          str(mod.owner), 'ZIPFILE'))
                     else:

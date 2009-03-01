@@ -153,14 +153,24 @@ if zipimport:
             Owner.__init__(self, path)
 
         def getmod(self, nm, newmod=imp.new_module):
-            debug('zipimport %s' % nm)
-            #nm = _string_replace(nm, '.', '/')
+            # We cannot simply use zipimport.load_module here
+            # because it both loads (= create module object)
+            # and imports (= execute bytecode). Instead, our
+            # getmod() functions are supposed to only load the modules.
+            # Note that imp.load_module() does the right thing, instead.
+            debug('zipimport try: %s within %s' % (nm, self.__zip))
             try:
-                mod = self.__zip.find_module(nm)
-                #debug('zipimport found %s' % mod)
-                mod = imp.load_module(*mod)
+                co = self.__zip.get_code(nm)
+                mod = newmod(nm)
+                mod.__file__ = co.co_filename
+                if self.__zip.is_package(nm):
+                    mod.__path__ = [_os_path_join(self.path, nm)]
+                    subimporter = PathImportDirector(mod.__path__)
+                    mod.__importsub__ = subimporter.getmod
+                mod.__co__ = co
                 return mod
             except zipimport.ZipImportError:
+                debug('zipimport not found %s' % nm)
                 return None
 
 # _mountzlib.py will insert archive.PYZOwner in front later
@@ -469,7 +479,7 @@ class ImportManager:
                 if not importfunc:
                     subimporter = PathImportDirector(parent.__path__)
                     importfunc = parent.__importsub__ = subimporter.getmod
-                #debug(str(importfunc))
+                debug("using parent's importfunc: %s" % importfunc)
                 mod = importfunc(nm)
                 if mod and not reload:
                     setattr(parent, nm, mod)

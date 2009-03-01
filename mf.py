@@ -64,6 +64,9 @@ def pyco():
 # Note that they replace the string in sys.path,
 # but str(sys.path[n]) should yield the original string.
 
+class OwnerError(Exception):
+    pass
+
 class Owner:
     def __init__(self, path, target_platform=None):
         self.path = path
@@ -75,44 +78,32 @@ class Owner:
     def getmod(self, nm):
         return None
 
-class DirOwner(Owner):
-    def __init__(self, path, target_platform=None):
-        if path == '':
-            path = os.getcwd()
-        if not os.path.isdir(path):
-            raise ValueError, "%s is not a directory" % path
-        Owner.__init__(self, path, target_platform)
-
+class BaseDirOwner(Owner):
     def _getsuffixes(self):
         return suffixes.get_suffixes(self.target_platform)
 
     def getmod(self, nm, getsuffixes=None, loadco=marshal.loads):
         if getsuffixes is None:
             getsuffixes = self._getsuffixes
-        pth =  os.path.join(self.path, nm)
-        possibles = [(pth, 0, None)]
-        if os.path.isdir(pth):
-            possibles.insert(0, (os.path.join(pth, '__init__'), 1, pth))
+        possibles = [(nm, 0, None)]
+        if self._isdir(nm):
+            possibles.insert(0, (os.path.join(nm, '__init__'), 1, nm))
         py = pyc = None
         for pth, ispkg, pkgpth in possibles:
             for ext, mode, typ in getsuffixes():
                 attempt = pth+ext
-                try:
-                    st = os.stat(attempt)
-                except Exception, e:
-                    #print "DirOwner", e
-                    pass
-                else:
+                modtime = self._modtime(attempt)
+                if modtime is not None:
                     # Check case
-                    if not caseOk(attempt):
+                    if not self._caseok(attempt):
                         continue
                     if typ == imp.C_EXTENSION:
                         #print "DirOwner.getmod -> ExtensionModule(%s, %s)" % (nm, attempt)
-                        return ExtensionModule(nm, attempt)
+                        return ExtensionModule(nm, os.path.join(self.path,attempt))
                     elif typ == imp.PY_SOURCE:
-                        py = (attempt, st)
+                        py = (attempt, modtime)
                     else:
-                        pyc = (attempt, st)
+                        pyc = (attempt, modtime)
             if py or pyc:
                 break
         if py is None and pyc is None:
@@ -120,9 +111,9 @@ class DirOwner(Owner):
             return None
         while 1:
             # If we have no pyc or py is newer
-            if pyc is None or py and pyc[1][8] < py[1][8]:
+            if pyc is None or py and pyc[1] < py[1]:
                 try:
-                    stuff = open(py[0], 'r').read()+'\n'
+                    stuff = self._read(py[0])+'\n'
                     co = compile(string.replace(stuff, "\r\n", "\n"), py[0], 'exec')
                     pth = py[0] + pyco()
                     break
@@ -131,7 +122,7 @@ class DirOwner(Owner):
                     print e.args
                     raise
             elif pyc:
-                stuff = open(pyc[0], 'rb').read()
+                stuff = self._read(pyc[0])
                 try:
                     co = loadco(stuff[8:])
                     pth = pyc[0]
@@ -142,15 +133,39 @@ class DirOwner(Owner):
             else:
                 #print "DirOwner.getmod while 1 -> None"
                 return None
+        pth = os.path.join(self.path, pth)
         if not os.path.isabs(pth):
             pth = os.path.abspath(pth)
         if ispkg:
-            mod = PkgModule(nm, pth, co)
+            mod = self._pkgclass()(nm, pth, co)
         else:
-            mod = PyModule(nm, pth, co)
+            mod = self._modclass()(nm, pth, co)
         #print "DirOwner.getmod -> %s" % mod
         return mod
 
+class DirOwner(BaseDirOwner):
+    def __init__(self, path, target_platform=None):
+        if path == '':
+            path = os.getcwd()
+        if not os.path.isdir(path):
+            raise OwnerError("%s is not a directory" % repr(path))
+        Owner.__init__(self, path, target_platform)
+
+    def _isdir(self, fn):
+        return os.path.isdir(os.path.join(self.path, fn))
+    def _modtime(self, fn):
+        try:
+            return os.stat(os.path.join(self.path, fn))[8]
+        except OSError:
+            return None
+    def _read(self, fn):
+        return open(os.path.join(self.path, fn), 'rb').read()
+    def _pkgclass(self):
+        return PkgModule
+    def _modclass(self):
+        return PyModule
+    def _caseok(self, fn):
+	return caseOk(os.path.join(self.path, fn))
 
 class PYZOwner(Owner):
     def __init__(self, path, target_platform=None):
@@ -168,17 +183,48 @@ class PYZOwner(Owner):
 
 ZipOwner = None
 if zipimport:
-    class ZipOwner(Owner):
+    # We cannot use zipimporter here because it has a stupid bug:
+    #
+    # >>> z.find_module("setuptools.setuptools.setuptools.setuptools.setuptools") is not None
+    # True
+    #
+    # So mf will go into infinite recursion.
+    # Instead, we'll reuse the BaseDirOwner logic, simply changing
+    # the template methods. 
+    class ZipOwner(BaseDirOwner):
         def __init__(self, path, target_platform=None):
-            self.__zip = zipimport.zipimporter(path)
-            Owner.__init__(self, path, target_platform)
-
-        def getmod(self, nm):
+            import zipfile
             try:
-                co = self.__zip.get_code(nm)
-                return PkgInZipModule(nm, co, self)
-            except zipimport.ZipImportError:
+                self.zf = zipfile.ZipFile(path, "r")
+            except IOError:
+                raise OwnerError("%s is not a zipfile" % path)
+            Owner.__init__(self, path, target_platform)
+        def getmod(self, fn):
+            fn = fn.replace(".", "/")
+            return BaseDirOwner.getmod(self, fn)
+        def _modtime(self, fn):
+            fn = fn.replace("\\","/")
+            try:
+                dt = self.zf.getinfo(fn).date_time
+                return dt
+            except KeyError:
                 return None
+        def _isdir(self, fn):
+            # No way to find out if "fn" is a directory
+            # so just always look into it in case it is.
+            return True
+        def _caseok(self, fn):
+            # zipfile is always case-sensitive, so surely
+            # there is no case mismatch.
+            return True
+        def _read(self, fn):
+            # zipfiles always use forward slashes
+            fn = fn.replace("\\","/")
+            return self.zf.read(fn)
+        def _pkgclass(self):
+            return lambda *args: PkgInZipModule(self, *args)
+        def _modclass(self):
+            return lambda *args: PyInZipModule(self, *args)
 
 _globalownertypes = filter(None, [
     DirOwner,
@@ -316,8 +362,10 @@ class PathImportDirector(ImportDirector):
                 # this may cause an import, which may cause recursion
                 # hence the protection
                 owner = klass(path, self.target_platform)
+            except OwnerError:
+                pass
             except Exception, e:
-                #print "PathImportDirector", e
+                #print "FIXME: Wrong exception", e
                 pass
             else:
                 break
@@ -575,6 +623,7 @@ class ImportTracker:
         _restorePaths(old)
 
     def doimport(self, nm, ctx, fqname):
+        #print "doimport", nm, ctx, fqname
         # Not that nm is NEVER a dotted name at this point
         assert ("." not in nm), nm
         if fqname in self.excludes:
@@ -771,14 +820,19 @@ class PkgInPYZModule(PyModule):
         mod = self.owner.getmod(self.__name__ + '.' + nm)
         return mod
 
+class PyInZipModule(PyModule):
+    typ = 'ZIPFILE'
+    def __init__(self, zipowner, nm, pth, co):
+        PyModule.__init__(self, nm, co.co_filename, co)
+        self.owner = zipowner
 
 class PkgInZipModule(PyModule):
     typ = 'ZIPFILE'
-    def __init__(self, nm, co, pyzowner):
+    def __init__(self, zipowner, nm, pth, co):
         PyModule.__init__(self, nm, co.co_filename, co)
-        self._ispkg = 0
-        self.__path__ = [ str(pyzowner) ]
-        self.owner = pyzowner
+        self._ispkg = 1
+        self.__path__ = [ str(zipowner) ]
+        self.owner = zipowner
 
     def doimport(self, nm):
         mod = self.owner.getmod(self.__name__ + '.' + nm)
