@@ -140,8 +140,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
 
 
 if __name__ == '__main__':
-    normal_tests = glob.glob('test*.py')
-    interactive_tests = glob.glob('test*i.py')
+    normal_tests = glob.glob('test*.spec')
+    interactive_tests = glob.glob('test*i.spec')
 
     from optparse import OptionParser
     parser = OptionParser(usage="%prog [options] [TEST-NAME ...]",
