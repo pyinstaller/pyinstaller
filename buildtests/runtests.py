@@ -174,5 +174,5 @@ if __name__ == '__main__':
         tests = [t for t in normal_tests if t not in interactive_tests]
         print "Running normal tests (-i for interactive tests)"
 
-    #clean()
+    clean()
     runtests(tests, configfile=opts.configfile, run_executable=not opts.no_run)
