@@ -26,4 +26,4 @@ __name__ = "hook-image"
 # Forward to shared code for PIL. PIL can be imported either as a top-level package
 # (from PIL import Image), or not (import Image), because it installs a
 # PIL.pth.
-from shared_PIL_Image import *
+from hooks.shared_PIL_Image import *
