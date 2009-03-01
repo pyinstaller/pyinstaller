@@ -539,11 +539,35 @@ class ImportTracker:
 
         cbinaries = list(mod.binaries)
         mod.binaries = []
-        # Executes find_library prepending ImportTracker's local paths to
-        # library search paths, then replaces original values.
+
+        # Try to locate the shared library on disk. This is done by
+        # executing ctypes.utile.find_library prepending ImportTracker's
+        # local paths to library search paths, then replaces original values.
         old = _savePaths()
         for cbin in cbinaries:
             cpath = find_library(os.path.splitext(cbin)[0])
+            if sys.platform == "linux2":
+                # CAVEAT: find_library() is not the correct function. Ctype's
+                # documentation says that it is meant to resolve only the filename
+                # (as a *compiler* does) not the full path. Anyway, it works well
+                # enough on Windows and Mac. On Linux, we need to implement
+                # more code to find out the full path.
+                if cpath is None:
+                    cpath = cbin
+                # "man ld.so" says that we should first search LD_LIBRARY_PATH
+                # and then the ldcache
+                for d in os.environ["LD_LIBRARY_PATH"].split(":"):
+                    if os.path.isfile(d + "/" + cpath):
+                        cpath = d + "/" + cpath
+                        break
+                else:
+                    for L in os.popen("ldconfig -p").read().splitlines():
+                        if cpath in L:
+                            cpath = L.split("=>", 1)[1].strip()
+                            assert os.path.isfile(cpath)
+                            break
+                    else:
+                        cpath = None
             if cpath is None:
                 print "W: library %s required via ctypes not found" % (cbin,)
             else:
