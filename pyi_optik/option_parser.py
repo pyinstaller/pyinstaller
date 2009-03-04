@@ -8,10 +8,10 @@ Provides the OptionParser and Values classes.
 
 import sys, os
 import types, string
-from optik.option import Option, NO_DEFAULT, _repr
-from optik.help import IndentedHelpFormatter
-from optik import errors
-from optik.errors import gettext
+from pyi_optik.option import Option, NO_DEFAULT, _repr
+from pyi_optik.help import IndentedHelpFormatter
+from pyi_optik import errors
+from pyi_optik.errors import gettext
 _ = gettext
 
 __revision__ = "$Id: option_parser.py 470 2004-12-07 01:39:56Z gward $"

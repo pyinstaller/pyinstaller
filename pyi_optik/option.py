@@ -8,7 +8,7 @@ Defines the Option class and some standard value-checking functions.
 
 import sys
 import types, string
-from optik.errors import OptionError, OptionValueError, gettext
+from pyi_optik.errors import OptionError, OptionValueError, gettext
 _ = gettext
 
 __revision__ = "$Id: option.py 470 2004-12-07 01:39:56Z gward $"

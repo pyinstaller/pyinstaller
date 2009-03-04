@@ -443,7 +443,7 @@ def getSoname(filename):
 
 
 if __name__ == "__main__":
-    from optparse import OptionParser
+    from pyi_optparse import OptionParser
     parser = OptionParser(usage="%prog [options] <executable_or_dynamic_library>")
     parser.add_option('--target-platform', default=sys.platform,
                       help='Target platform, required for cross-bundling (default: current platform)')

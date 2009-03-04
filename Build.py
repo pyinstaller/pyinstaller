@@ -1037,7 +1037,7 @@ def main(specfile, configfilename):
     build(specfile)
 
 if __name__ == '__main__':
-    from optparse import OptionParser
+    from pyi_optparse import OptionParser
     parser = OptionParser('%prog [options] specfile')
     parser.add_option('-C', '--configfile',
                       default=os.path.join(HOMEPATH, 'config.dat'),

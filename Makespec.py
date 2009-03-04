@@ -218,7 +218,7 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
 
 
 if __name__ == '__main__':
-    import optparse
+    import pyi_optparse as optparse
     p = optparse.OptionParser(
         usage="python %prog [opts] <scriptname> [<scriptname> ...]"
     )

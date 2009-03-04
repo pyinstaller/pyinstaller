@@ -5,5 +5,5 @@ will work on base Python 2.3 (and later), or on earlier Pythons with
 Optik 1.4.1 or later installed.
 """
 
-from optik import __version__, __all__
-from optik import *
+from pyi_optik import __version__, __all__
+from pyi_optik import *
