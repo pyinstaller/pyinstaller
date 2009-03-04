@@ -101,6 +101,9 @@ class DirOwner(Owner):
                 except OSError, e:
                     assert e.errno == 2 #[Errno 2] No such file or directory
                 else:
+                    # Check case
+                    if not caseOk(attempt):
+                        continue
                     if typ == imp.C_EXTENSION:
                         fp = open(attempt, 'rb')
                         mod = imp.load_module(nm, fp, attempt, (ext, mode, typ))
@@ -403,7 +406,7 @@ class ImportManager:
                     pkgnm = packagename(importernm)
                     if pkgnm:
                         contexts.insert(0, pkgnm)
-            
+
         # so contexts is [pkgnm, None], [pkgnm] or just [None]
         for context in contexts:
             ctx = context
@@ -592,34 +595,34 @@ def pathisdir(pathname):
     return (s[0] & 0170000) == 0040000
 
 
-_os_stat = _os_path_join = _os_getcwd = _os_path_dirname = None
+_os_stat = _os_path_join = _os_getcwd = _os_path_dirname = _os_environ = _os_listdir = _os_path_basename = None
 
 def _os_bootstrap():
     "Set up 'os' module replacement functions for use during import bootstrap."
 
-    global _os_stat, _os_path_join, _os_path_dirname, _os_getcwd
+    global _os_stat, _os_path_join, _os_path_dirname, _os_getcwd, _os_environ, _os_listdir, _os_path_basename
 
     names = sys.builtin_module_names
 
-    join = dirname = None
+    join = dirname = environ = listdir = basename = None
     mindirlen = 0
     if 'posix' in names:
-        from posix import stat, getcwd
+        from posix import stat, getcwd, environ, listdir
         sep = '/'
         mindirlen = 1
     elif 'nt' in names:
-        from nt import stat, getcwd
+        from nt import stat, getcwd, environ, listdir
         sep = '\\'
         mindirlen = 3
     elif 'dos' in names:
-        from dos import stat, getcwd
+        from dos import stat, getcwd, environ, listdir
         sep = '\\'
         mindirlen = 3
     elif 'os2' in names:
-        from os2 import stat, getcwd
+        from os2 import stat, getcwd, environ, listdir
         sep = '\\'
     elif 'mac' in names:
-        from mac import stat, getcwd
+        from mac import stat, getcwd, environ, listdir
         def join(a, b):
             if a == '':
                 return b
@@ -651,11 +654,29 @@ def _os_bootstrap():
                     return a[:i]
             return ''
 
+    if basename is None:
+        def basename(p):
+            i = p.rfind(sep)
+            if i == -1:
+                return p
+            else:
+                return p[i + len(sep):]
+
+    def _listdir(dir, cache={}):
+        # since this function is only used by caseOk, it's fine to cache the
+        # results and avoid reading the whole contents of a directory each time
+        # we just want to check the case of a filename.
+        if not dir in cache:
+            cache[dir] = listdir(dir)
+        return cache[dir]
+
     _os_stat = stat
     _os_getcwd = getcwd
     _os_path_join = join
     _os_path_dirname = dirname
-
+    _os_environ = environ
+    _os_listdir = _listdir
+    _os_path_basename = basename
 
 _string_replace = _string_join = _string_split = None
 
@@ -702,6 +723,14 @@ def _string_bootstrap():
     _string_split   = getattr(STRINGTYPE, "split",   split)
     _string_replace = getattr(STRINGTYPE, "replace", replace)
 
-
 _os_bootstrap()
+
+if not _os_environ.has_key('PYTHONCASEOK') and sys.version_info >= (2, 1):
+    def caseOk(filename):
+        files = _os_listdir(_os_path_dirname(filename))
+        return _os_path_basename(filename) in files
+else:
+    def caseOk(filename):
+        return True
+
 _string_bootstrap()
