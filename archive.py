@@ -387,8 +387,8 @@ class ZlibArchive(Archive):
                 print e.args
                 raise
             obj = zlib.compress(marshal.dumps(co), self.LEVEL)
-            if self.crypted:
-                obj = AES.new(self.key, AES.MODE_CFB, self._iv(nm)).encrypt(obj)
+        if self.crypted:
+            obj = AES.new(self.key, AES.MODE_CFB, self._iv(nm)).encrypt(obj)
         self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
     def update_headers(self, tocpos):
