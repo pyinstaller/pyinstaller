@@ -229,6 +229,7 @@ class CArchive(archive.Archive):
                 # If it's a source code file, add \0 terminator as it will be
                 # executed as-is by the bootloader.
                 s = open(pathnm, 'r').read()
+                s = s.replace("\r\n", "\n")
                 s = s + '\n\0'
             else:
                 s = open(pathnm, 'rb').read()
