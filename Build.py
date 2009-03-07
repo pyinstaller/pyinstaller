@@ -55,7 +55,7 @@ def _save_data(filename, data):
     outf.close()
 
 def _load_data(filename):
-    return eval(open(filename, 'r').read())
+    return eval(open(filename, 'r').read().replace("\r\n","\n"))
 
 def setupUPXFlags():
     f = os.environ.get("UPX", "")
