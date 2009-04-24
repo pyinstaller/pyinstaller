@@ -65,6 +65,8 @@ Changes since PyInstaller 1.3
  * Sometimes the temporary directory did not get removed upon program
    exit, when running on Linux.
  * Fixed random segfaults at startup on 64-bit platforms (like x86-64).
+ + Executables built with PyInstaller under Windows can now be digitally
+   signed.
 
 PyInstaller 1.3
 ---------------

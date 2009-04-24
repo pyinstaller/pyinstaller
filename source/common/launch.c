@@ -262,6 +262,44 @@ int setPaths(char const * archivePath, char const * archiveName)
 	return 0;
 }
 
+int checkCookie(int filelen)
+{
+	if (fseek(f_fp, filelen-(int)sizeof(COOKIE), SEEK_SET))
+		return -1;
+
+	/* Read the Cookie, and check its MAGIC bytes */
+	fread(&f_cookie, sizeof(COOKIE), 1, f_fp);
+	if (strncmp(f_cookie.magic, MAGIC, strlen(MAGIC)))
+		return -1;
+
+  return 0;
+}
+
+int findDigitalSignature()
+{
+#ifdef WIN32
+	/* There might be a digital signature attached. Let's see. */
+	char buf[2];
+	int offset = 0;
+	fseek(f_fp, 0, SEEK_SET);
+	fread(buf, 1, 2, f_fp);
+	if (!(buf[0] == 'M' && buf[1] == 'Z'))
+		return -1;
+	/* Skip MSDOS header */
+	fseek(f_fp, 60, SEEK_SET);
+	/* Read offset to PE header */
+	fread(&offset, 4, 1, f_fp);
+	/* Jump to the fields that contain digital signature info */
+	fseek(f_fp, offset+152, SEEK_SET);
+	fread(&offset, 4, 1, f_fp);
+	if (offset == 0)
+		return -1;
+  VS("%s contains a digital signature\n", f_archivename);
+	return offset;
+#else
+	return -1;
+#endif
+}
 
 /*
  * Open the archive
@@ -269,6 +307,9 @@ int setPaths(char const * archivePath, char const * archiveName)
  */
 int openArchive()
 {
+#ifdef WIN32
+	int i;
+#endif
 	int filelen;
 
 	/* Physically open the file */
@@ -281,18 +322,32 @@ int openArchive()
 	/* Seek to the Cookie at the end of the file. */
 	fseek(f_fp, 0, SEEK_END);
 	filelen = ftell(f_fp);
-	if (fseek(f_fp, -(int)sizeof(COOKIE), SEEK_END))
-	{
-		VS("%s appears to be an invalid archive\n", f_archivename);
-		return -1;
-	}
 
-	/* Read the Cookie, and check its MAGIC bytes */
-	fread(&f_cookie, sizeof(COOKIE), 1, f_fp);
-	if (strncmp(f_cookie.magic, MAGIC, strlen(MAGIC)))
+	if (checkCookie(filelen) < 0)
 	{
-		VS("%s has bad magic!\n", f_archivename);
-		return -1;
+		VS("%s does not contain an embedded package\n", f_archivename);
+#ifndef WIN32
+    return -1;
+#else
+		filelen = findDigitalSignature();
+		if (filelen < 1)
+			return -1;
+		/* The digital signature has been aligned to 8-bytes boundary. 
+		   We need to look for our cookie taking into account some
+		   padding. */
+		for (i = 0; i < 8; ++i)
+		{
+			if (checkCookie(filelen) >= 0)
+				break;
+			--filelen;
+		}
+		if (i == 8)
+		{
+			VS("%s does not contain an embedded package, even skipping the signature\n", f_archivename);
+			return -1;
+		}
+		VS("package found skipping digital signature in %s\n", f_archivename);
+#endif
 	}
 
 	/* From the cookie, calculate the archive start */
