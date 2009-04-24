@@ -143,14 +143,14 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	strcpy(pkgfile+strlen(pkgfile)-3, "pkg");
 
 	workpath = getenv( "_MEIPASS2" );
-	rc = init(here, &pkgfile[len], workpath);
+	rc = init(here, &thisfile[len], workpath);
 	if (rc) {
-		rc = init(here, &thisfile[len], workpath);
-	} else {
+		rc = init(here, &pkgfile[len], workpath);
+		if (rc)
+			return rc;
 		VS("Found separate PKG: %s\n", pkgfile);
-	}
-	if (rc) {
-		return rc;
+	} else {
+		VS("Found embedded PKG: %s\n", thisfile);
 	}
 	if (workpath) {
 		// we're the "child" process
