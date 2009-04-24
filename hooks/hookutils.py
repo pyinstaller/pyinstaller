@@ -25,4 +25,9 @@ def qt4_plugins_dir():
     return exec_statement("from PyQt4.QtCore import QLibraryInfo; print QLibraryInfo.location(QLibraryInfo.PluginsPath)")
 def mpl_data_dir():
     return exec_statement("import matplotlib; print matplotlib._get_data_path()")
-
+def qwt_numpy_support():
+    return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumpy')"))
+def qwt_numeric_support():
+    return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumeric')"))
+def qwt_numarray_support():
+    return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumarray')"))

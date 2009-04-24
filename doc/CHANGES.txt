@@ -36,6 +36,7 @@ Changes since PyInstaller 1.3
  + Add import hooks for email in Python 2.5 (though it does not support
    the old-style Python 2.4 syntax with Python 2.5).
  + Add import hook for gadfly.
+ + Add import hook for PyQWt5.
  + Improve import hooks for PyGTK (thanks to Marco Bonifazi and foxx).
  + Add fix for the very annoying "MSVCRT71 could not be extracted" bug,
    which was caused by the DLL being packaged twice (thanks to Idris
