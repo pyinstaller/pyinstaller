@@ -236,6 +236,10 @@ if __name__ == '__main__':
                  dest="workdir", metavar="DIR",
                  help="generate the spec file in the specified directory "
                       "(default: current directory")
+    g.add_option("-n", "--name", type="string", default=None,
+                 metavar="NAME",
+                 help="name to assign to the project "
+                      "(default: first script's basename)")
 
     g = p.add_option_group('What to bundle, where to search')
     g.add_option("-p", "--paths", type="string", default=[], dest="pathex",
