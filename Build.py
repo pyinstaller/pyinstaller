@@ -484,7 +484,9 @@ def checkCache(fnm, strip, upx):
         if strip:
             fnm = checkCache(fnm, 1, 0)
         bestopt = "--best"
-        if config["hasUPX"] >= (3,):
+        # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
+        # A better configure-time check is due.
+        if config["hasUPX"] >= (3,) and os.name == "nt":
             bestopt = "--lzma"
         cmd = "upx " + bestopt + " -q \"%s\"" % cachedfile
     else:
