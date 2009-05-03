@@ -26,9 +26,11 @@ import pprint
 import time
 import py_compile
 import tempfile
-import md5
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import new as md5
 import UserList
-
 import mf
 import archive
 import iu
@@ -441,7 +443,7 @@ class PYZ(Target):
 
 def cacheDigest(fnm):
     data = open(fnm, "rb").read()
-    digest = md5.new(data).digest()
+    digest = md5(data).digest()
     return digest
 
 def checkCache(fnm, strip, upx):
