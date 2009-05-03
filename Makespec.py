@@ -260,7 +260,7 @@ if __name__ == '__main__':
     g.add_option("-s", "--strip", action="store_true", default=False,
                  help="strip the exe and shared libs "
                       "(don't try this on Windows)")
-    g.add_option("-X", "--upx", action="store_true", default=False,
+    g.add_option("-X", "--upx", action="store_true", default=True,
                  help="use UPX if available (works differently between "
                       "Windows and *nix)")
     #p.add_option("-Y", "--crypt", type="string", default=None, metavar="FILE",

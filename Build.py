@@ -480,7 +480,10 @@ def checkCache(fnm, strip, upx):
     if upx:
         if strip:
             fnm = checkCache(fnm, 1, 0)
-        cmd = "upx --best -q \"%s\"" % cachedfile
+        bestopt = "--best"
+        if config["hasUPX"] >= (3,):
+            bestopt = "--lzma"
+        cmd = "upx " + bestopt + " -q \"%s\"" % cachedfile
     else:
         if strip:
             cmd = "strip \"%s\"" % cachedfile
