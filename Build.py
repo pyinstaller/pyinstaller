@@ -417,6 +417,7 @@ class PYZ(Target):
 
     GUTS = (('name',   _check_guts_eq),
             ('level',  _check_guts_eq),
+            ('crypt',  _check_guts_eq),
             ('toc',    _check_guts_toc), # todo: pyc=1
             )
 
