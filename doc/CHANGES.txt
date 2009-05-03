@@ -6,6 +6,9 @@ Changes since PyInstaller 1.3
    for non-console applications, a bundle will be created. Thanks
    to many people that worked on this across several months (Daniele
    Zannotti, Matteo Bertini, Lorenzo Mancini).
+ + Improved Linux support: generated executables are fatter but now
+   should now run on many different Linux distributions (thanks to David
+   Mugnai).
  * Add support for specifying data files in import hooks. PyInstaller
    can now automatically bundle all data files or plugins required
    for a certain 3rd-party package.
