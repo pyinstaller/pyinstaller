@@ -37,7 +37,7 @@ exe = EXE(%(tkpkg)s pyz,
           a.binaries,
           a.zipfiles,
           a.datas,
-          name=os.path.join('%(distdir)s', '%(exename)s'),
+          name=os.path.join(%(distdir)s, '%(exename)s'),
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -51,7 +51,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('%(builddir)s', '%(exename)s'),
+          name=os.path.join(%(builddir)s, '%(exename)s'),
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -62,7 +62,7 @@ coll = COLLECT(%(tktree)s exe,
                a.datas,
                strip=%(strip)s,
                upx=%(upx)s,
-               name=os.path.join('%(distdir)s', '%(name)s'))
+               name=os.path.join(%(distdir)s, '%(name)s'))
 """ # scripts pathex, exename, debug, console tktree distdir name
 
 comsrvrtmplt = """# -*- mode: python -*-
@@ -72,7 +72,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('%(builddir)s', '%(exename)s'),
+          name=os.path.join(%(builddir)s, '%(exename)s'),
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -80,7 +80,7 @@ exe = EXE(pyz,
 dll = DLL(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('%(builddir)s', '%(dllname)s'),
+          name=os.path.join(%(builddir)s, '%(dllname)s'),
           debug=%(debug)s)
 coll = COLLECT(exe, dll,
                a.binaries,
@@ -88,7 +88,7 @@ coll = COLLECT(exe, dll,
                a.datas,
                strip=%(strip)s,
                upx=%(upx)s,
-               name=os.path.join('%(distdir)s', '%(name)s'))
+               name=os.path.join(%(distdir)s, '%(name)s'))
 """ # scripts pathex, exename, debug, console tktree distdir name
 
 HOME = os.path.dirname(sys.argv[0])
@@ -179,8 +179,8 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
          'pathex' :pathex,
          #'exename': '',
          'name': name,
-         'distdir': distdir,
-         'builddir': builddir,
+         'distdir': repr(distdir),
+         'builddir': repr(builddir),
          'debug': debug,
          'strip': strip,
          'upx' : upx,
