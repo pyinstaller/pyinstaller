@@ -19,4 +19,4 @@
 # Refined by Marco Bonifazi (via e-mail)
 hiddenimports = ['gtkglext', 'gdkgl', 'gdkglext', 'gdk', 'gtk.gdk', 'gtk.gtkgl',
                  'gtk.gtkgl._gtkgl', 'gtkgl', 'pangocairo', 'pango', 'atk',
-                 'gobject', 'gtk.glade', 'cairo']
+                 'gobject', 'gtk.glade', 'cairo', 'gio']
