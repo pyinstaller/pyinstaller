@@ -99,6 +99,7 @@ struct _PyThreadState;
 typedef struct _PyThreadState PyThreadState;
 
 /* The actual declarations of var & function entry points used. */
+EXTDECLVAR(int, Py_FrozenFlag);
 EXTDECLVAR(int, Py_NoSiteFlag);
 EXTDECLVAR(int, Py_OptimizeFlag);
 EXTDECLVAR(int, Py_VerboseFlag);

@@ -48,6 +48,7 @@
 /*
  * Python Entry point declarations (see macros in launch.h).
  */
+DECLVAR(Py_FrozenFlag);
 DECLVAR(Py_NoSiteFlag);
 DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
@@ -380,6 +381,7 @@ int openArchive()
 int mapNames(HMODULE dll)
 {
     /* Get all of the entry points that we are interested in */
+        GETVAR(dll, Py_FrozenFlag);
 	GETVAR(dll, Py_NoSiteFlag);
 	GETVAR(dll, Py_OptimizeFlag);
 	GETVAR(dll, Py_VerboseFlag);
@@ -639,6 +641,7 @@ int startPython(int argc, char *argv[])
 	/* Start python. */
 	/* VS("Loading python\n"); */
 	*PI_Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
+        *PI_Py_FrozenFlag = 1;
 	setRuntimeOptions();
 	PI_Py_SetProgramName(f_archivename); /*XXX*/
 	PI_Py_Initialize();
