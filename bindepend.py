@@ -85,7 +85,7 @@ excludes = {
     r'^/lib/tls':1,
     # libGL can reference some hw specific libraries (like nvidia libs)
     r'/usr/lib/libGL.*':1,
-    # 
+    #
     '^/System/Library/Frameworks':1,
 }
 
@@ -359,6 +359,10 @@ def _getImports_otool(pth):
         m = re.search(r"\s+(.*?)\s+\(.*\)", line)
         if m:
             lib = m.group(1)
+            if lib.startswith("@executable_path"):
+                rel_path = lib.replace("@executable_path",".")
+                rel_path = os.path.join(os.path.dirname(pth), rel_path)
+                lib = os.path.abspath(rel_path)
             if os.path.exists(lib):
                 rslt.append(lib)
             else:
