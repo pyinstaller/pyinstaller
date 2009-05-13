@@ -488,7 +488,11 @@ def checkCache(fnm, strip, upx):
         # A better configure-time check is due.
         if config["hasUPX"] >= (3,) and os.name == "nt":
             bestopt = "--lzma"
-        cmd = "upx " + bestopt + " -q \"%s\"" % cachedfile
+
+        upx_executable = "upx"
+        if config.get('upx_dir'):
+            upx_executable = os.path.join(config['upx_dir'], upx_executable)
+        cmd = upx_executable + " " + bestopt + " -q \"%s\"" % cachedfile
     else:
         if strip:
             cmd = "strip \"%s\"" % cachedfile

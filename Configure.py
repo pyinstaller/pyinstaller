@@ -234,9 +234,13 @@ def test_unicode(config):
 
 def test_UPX(config):
     print 'I: testing for UPX...'
+    cmd = "upx -V"
+    if opts.upx_dir:
+        cmd = os.path.join(opts.upx_dir, cmd)
+
     hasUPX = 0
     try:
-        vers = os.popen("upx -V").readlines()
+        vers = os.popen(cmd).readlines()
         if vers:
             v = string.split(vers[0])[1]
             hasUPX = tuple(map(int, string.split(v, ".")))
@@ -248,6 +252,7 @@ def test_UPX(config):
         print 'I: ...exception result in testing for UPX'
         print e, e.args
     config['hasUPX'] = hasUPX
+    config['upx_dir'] = opts.upx_dir
 
 
 def find_PYZ_dependencies(config):
@@ -305,6 +310,8 @@ if __name__ == '__main__':
     parser.add_option('--target-platform', default=None,
                       help='Target platform, required for cross-bundling '
                            '(default: current platform).')
+    parser.add_option('--upx-dir', default=None,
+                      help='Directory containing UPX.')
     parser.add_option('--executable', default=None,
                       help='Python executable to use. Required for '
                            'cross-bundling.')
