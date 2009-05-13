@@ -460,8 +460,16 @@ int loadPython()
 
 	/* Determine the path */
 #ifdef __APPLE__
+	struct stat sbuf;
+
 	sprintf(dllpath, "%sPython",
 		f_workpath ? f_workpath : f_homepath);
+	/* Workaround for virtualenv: it renames the Python framework. */
+	/* A proper solution would be to let Build.py found out the correct
+	 * name and embed it in the PKG as metadata. */
+	if (stat(dllpath, &sbuf) < 0)
+		sprintf(dllpath, "%s.Python",
+			f_workpath ? f_workpath : f_homepath);
 #else
 	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0",
 		f_workpath ? f_workpath : f_homepath,
