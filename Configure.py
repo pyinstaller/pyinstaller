@@ -234,13 +234,13 @@ def test_unicode(config):
 
 def test_UPX(config):
     print 'I: testing for UPX...'
-    cmd = "upx -V"
+    cmd = "upx"
     if opts.upx_dir:
-        cmd = os.path.join(opts.upx_dir, cmd)
+        cmd = '"' + os.path.normpath(os.path.join(opts.upx_dir, cmd)) + '"'
 
     hasUPX = 0
     try:
-        vers = os.popen(cmd).readlines()
+        vers = os.popen(cmd + ' -V').readlines()
         if vers:
             v = string.split(vers[0])[1]
             hasUPX = tuple(map(int, string.split(v, ".")))

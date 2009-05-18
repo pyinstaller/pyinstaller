@@ -51,6 +51,14 @@ rthooks = {}
 iswin = sys.platform[:3] == 'win'
 cygwin = sys.platform == 'cygwin'
 
+def system(cmd):
+    # This workaround is required because NT shell doesn't work with commands
+    # that start with double quotes (required if there are spaces inside the
+    # command path)
+    if iswin:
+        cmd = 'echo on && ' + cmd
+    os.system(cmd)
+
 def _save_data(filename, data):
     outf = open(filename, 'w')
     pprint.pprint(data, outf)
@@ -492,13 +500,13 @@ def checkCache(fnm, strip, upx):
         upx_executable = "upx"
         if config.get('upx_dir'):
             upx_executable = os.path.join(config['upx_dir'], upx_executable)
-        cmd = upx_executable + " " + bestopt + " -q \"%s\"" % cachedfile
+        cmd = '"' + upx_executable + '" ' + bestopt + " -q \"%s\"" % cachedfile
     else:
         if strip:
             cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
-    if cmd: os.system(cmd)
+    if cmd: system(cmd)
 
     # update cache index
     cache_index[basenm] = digest
