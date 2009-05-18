@@ -17,7 +17,7 @@ Changes since PyInstaller 1.3
    automatically bundle dynamic libraries accessed through ctypes.
    (Thanks to Lorenzo Mancini for submitting this). This is very
    useful when using ctypes with custom-made dynamic libraries.
- + Add support for new absolute imports in Python 2.5 (thanks to Arve
+ + Add support for absolute imports in Python 2.5 (thanks to Arve
    Knudsen).
  + Add support for cross-compilation: PyInstaller is now able to
    build Windows executables when running under Linux. See documentation
@@ -30,19 +30,18 @@ Changes since PyInstaller 1.3
    system-directory can be written only by root. PyInstaller will in
    fact generate the required .pyc/.pyo files on-the-fly within a
    build-temporary directory.
- + Add import hooks for PyQt4 (thanks to Pascal Veret), with complete
-   plugin support.
- + Add import hooks for pyodbc (thanks to Don Dwiggins)
- + Add import hooks for cElementTree (both native version and Python
-   2.5 version)
- + Add import hooks for lxml
- + Add import hooks per SQLAlchemy (thanks to Greg Copeland)
- + Add import hooks for email in Python 2.5 (though it does not support
-   the old-style Python 2.4 syntax with Python 2.5).
- + Add import hook for gadfly.
- + Add import hook for PyQWt5.
- + Add import hook for mako.
- + Improve import hooks for PyGTK (thanks to Marco Bonifazi and foxx).
+ + Add automatic import hooks for the following libraries:
+   + PyQt4 (thanks to Pascal Veret), with complete plugin support.
+   + pyodbc (thanks to Don Dwiggins)
+   + cElementTree (both native version and Python 2.5 version)
+   + lxml
+   + SQLAlchemy (thanks to Greg Copeland)
+   + email in Python 2.5 (though it does not support the old-style
+     Python 2.4 syntax with Python 2.5)
+   + gadfly
+   + PyQWt5
+   + mako
+   + Improved PyGTK (thanks to Marco Bonifazi and foxx).
  + Add fix for the very annoying "MSVCRT71 could not be extracted" bug,
    which was caused by the DLL being packaged twice (thanks to Idris
    Aykun).
