@@ -170,6 +170,14 @@ if zipimport:
                     mod.__path__ = [_os_path_join(self.path, nm)]
                     subimporter = PathImportDirector(mod.__path__)
                     mod.__importsub__ = subimporter.getmod
+                if self.path.endswith(".egg"):
+                    # Fixup some additional special attribute so that
+                    # pkg_resources works correctly.
+                    # TODO: couldn't we fix these attributes always,
+                    # for all zip files?
+                    mod.__file__ = _os_path_join(
+                        _os_path_join(self.path, nm), "__init__.py")
+                    mod.__loader__ = self.__zip
                 mod.__co__ = co
                 return mod
             except zipimport.ZipImportError:
