@@ -86,7 +86,7 @@ class BaseDirOwner(Owner):
         if getsuffixes is None:
             getsuffixes = self._getsuffixes
         possibles = [(nm, 0, None)]
-        if self._isdir(nm):
+        if self._isdir(nm) and self._caseok(nm):
             possibles.insert(0, (os.path.join(nm, '__init__'), 1, nm))
         py = pyc = None
         for pth, ispkg, pkgpth in possibles:

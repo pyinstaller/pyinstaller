@@ -90,7 +90,7 @@ class DirOwner(Owner):
                loadco=marshal.loads, newmod=imp.new_module):
         pth =  _os_path_join(self.path, nm)
         possibles = [(pth, 0, None)]
-        if pathisdir(pth):
+        if pathisdir(pth) and caseOk(pth):
             possibles.insert(0, (_os_path_join(pth, '__init__'), 1, pth))
         py = pyc = None
         for pth, ispkg, pkgpth in possibles:
