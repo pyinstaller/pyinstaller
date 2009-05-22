@@ -373,7 +373,7 @@ class ImportManager:
         if globals:
             __globals_name = globals.get('__name__')
         # first see if we could be importing a relative name
-        debug("importHook(%s, %s, locals, %s)" % (name, __globals_name, fromlist))
+        debug("importHook(%s, %s, locals, %s, %s)" % (name, __globals_name, fromlist, level))
         _sys_modules_get = sys.modules.get
         _self_doimport = self.doimport
         threaded = self.threaded
@@ -385,7 +385,7 @@ class ImportManager:
         if not globals:
             contexts = [None]
             if level >= 0:
-                raise ImportError("Relative import requires 'globals'")
+                raise RuntimeError("Relative import requires 'globals'")
         elif level == 0:
             # absolute import, do not try relative
             contexts = [None]
@@ -399,7 +399,7 @@ class ImportManager:
             else:
                 # relative import, do not try absolute
                 if not importernm:
-                    raise ImportError("Relative import requires package")
+                    raise RuntimeError("Relative import requires package")
                 importernm = _string_split(importernm, '.')[:-level]
                 importernm = _string_join('.', importernm)
                 contexts = []
