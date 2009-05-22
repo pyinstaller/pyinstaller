@@ -384,7 +384,7 @@ class ImportManager:
 
         if not globals:
             contexts = [None]
-            if level >= 0:
+            if level > 0:
                 raise RuntimeError("Relative import requires 'globals'")
         elif level == 0:
             # absolute import, do not try relative
