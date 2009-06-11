@@ -392,7 +392,7 @@ def getWindowsPath():
             except ImportError:
                 print "W: Cannot determine your Windows or System directories"
                 print "W: Please add them to your PATH if .dlls are not found"
-                print "W: or install starship.python.net/skippy/win32/Downloads.html"
+                print "W: or install http://sourceforge.net/projects/pywin32/"
             else:
                 sysdir = win32api.GetSystemDirectory()
                 sysdir2 = os.path.normpath(os.path.join(sysdir, '..', 'SYSTEM'))
