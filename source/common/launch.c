@@ -1011,8 +1011,11 @@ int extractBinaries(char **workpath)
 int runScripts()
 {
 	unsigned char *data;
+	char buf[_MAX_PATH];
 	int rc = 0;
 	TOC * ptoc = f_tocbuff;
+	PyObject *__main__ = PI_PyImport_AddModule("__main__");
+	PyObject *__file__;
 	VS("Running scripts\n");
 
 	/*
@@ -1028,6 +1031,13 @@ int runScripts()
 		if (ptoc->typcd == 's') {
 			/* Get data out of the archive.  */
 			data = extract(ptoc);
+			/* Set the __file__ attribute within the __main__ module,
+			   for full compatibility with normal execution. */
+			strcpy(buf, ptoc->name);
+			strcat(buf, ".py");
+            __file__ = PI_PyString_FromStringAndSize(buf, strlen(buf));
+            PI_PyObject_SetAttrString(__main__, "__file__", __file__);
+            Py_DECREF(__file__);
 			/* Run it */
 			rc = PI_PyRun_SimpleString(data);
 			/* log errors and abort */
