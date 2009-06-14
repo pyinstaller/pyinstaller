@@ -490,12 +490,17 @@ class ImportTracker:
             contexts = [None]
         elif level > 0:
             # relative import, do not try absolute
-            contexts = [string.join(string.split(importernm, '.')[:-level], '.')]
+            if self.ispackage(importernm):
+                level -= 1
+            if level > 0:
+                importernm = string.join(string.split(importernm, '.')[:-level], ".")
+            contexts = [importernm]
             importernm = None
 
         _all = None
 
         assert contexts
+
         # so contexts is [pkgnm, None] or just [None]
         if nmparts[-1] == '*':
             del nmparts[-1]

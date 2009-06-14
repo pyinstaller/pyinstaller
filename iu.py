@@ -391,6 +391,7 @@ class ImportManager:
             contexts = [None]
         else: # level != 0
             importernm = globals.get('__name__', '')
+            ispkg = hasattr(_sys_modules_get(importernm), '__path__')
             debug('importernm %s' % importernm)
             if level < 0:
                 # behaviour up to Python 2.4 (and default in Python 2.5)
@@ -400,11 +401,14 @@ class ImportManager:
                 # relative import, do not try absolute
                 if not importernm:
                     raise RuntimeError("Relative import requires package")
-                importernm = _string_split(importernm, '.')[:-level]
-                importernm = _string_join('.', importernm)
+                # level=1 => current package
+                # level=2 => previous package => drop 1 level
+                if level > 1:
+                    importernm = _string_split(importernm, '.')[:-level+1]
+                    importernm = _string_join('.', importernm)
                 contexts = []
             if importernm:
-                if hasattr(_sys_modules_get(importernm), '__path__'):
+                if ispkg:
                     # If you use the "from __init__ import" syntax, the package
                     # name will have a __init__ in it. We want to strip it.
                     if importernm[-len(".__init__"):] == ".__init__":
