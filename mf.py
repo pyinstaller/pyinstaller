@@ -165,7 +165,7 @@ class DirOwner(BaseDirOwner):
     def _modclass(self):
         return PyModule
     def _caseok(self, fn):
-	return caseOk(os.path.join(self.path, fn))
+        return caseOk(os.path.join(self.path, fn))
 
 class PYZOwner(Owner):
     def __init__(self, path, target_platform=None):
@@ -190,7 +190,7 @@ if zipimport:
     #
     # So mf will go into infinite recursion.
     # Instead, we'll reuse the BaseDirOwner logic, simply changing
-    # the template methods. 
+    # the template methods.
     class ZipOwner(BaseDirOwner):
         def __init__(self, path, target_platform=None):
             import zipfile
