@@ -174,8 +174,9 @@ class PYZOwner(Owner):
         Owner.__init__(self, path, target_platform)
     def getmod(self, nm):
         rslt = self.pyz.extract(nm)
-        if rslt:
-            ispkg, co = rslt
+        if not rslt:
+            return None
+        ispkg, co = rslt
         if ispkg:
             return PkgInPYZModule(nm, co, self)
         return PyModule(nm, self.path, co)
