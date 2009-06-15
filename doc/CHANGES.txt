@@ -21,6 +21,7 @@ Changes since PyInstaller 1.3
    useful when using ctypes with custom-made dynamic libraries.
  + Add support for absolute imports in Python 2.5+ (thanks to Arve
    Knudsen).
+ + Add support for relative imports in Python 2.5+.
  + Add support for cross-compilation: PyInstaller is now able to
    build Windows executables when running under Linux. See documentation
    for more details.
