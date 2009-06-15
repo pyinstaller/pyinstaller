@@ -406,7 +406,7 @@ class ImportManager:
                 if level > 1:
                     importernm = _string_split(importernm, '.')[:-level+1]
                     importernm = _string_join('.', importernm)
-                contexts = []
+                contexts = [None]
             if importernm:
                 if ispkg:
                     # If you use the "from __init__ import" syntax, the package

@@ -494,7 +494,7 @@ class ImportTracker:
                 level -= 1
             if level > 0:
                 importernm = string.join(string.split(importernm, '.')[:-level], ".")
-            contexts = [importernm]
+            contexts = [importernm, None]
             importernm = None
 
         _all = None
