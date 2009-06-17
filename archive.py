@@ -302,7 +302,12 @@ class ZlibArchive(Archive):
         elif offset is None:
             for i in range(len(path)-1, -1, -1):
                 if path[i] == '?':
-                    offset = int(path[i+1:])
+                    try:
+                        offset = int(path[i+1:])
+                    except ValueError:
+                        # Just ignore any spurious "?" in the path
+                        # (like in Windows UNC \\?\<path>).
+                        continue
                     path = path[:i]
                     break
             else:
