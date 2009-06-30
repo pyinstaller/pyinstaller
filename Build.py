@@ -853,6 +853,90 @@ class COLLECT(Target):
         return 1
 
 
+class BUNDLE(Target):
+    def __init__(self, *args, **kws):
+        Target.__init__(self)
+        self.appname = kws.get("appname", None)
+        self.version = kws.get("version", "0.0.0")
+        self.toc = TOC()
+        for arg in args:
+            if isinstance(arg, EXE):
+                if self.appname is None:
+                    self.appname = "Mac%s" % (arg.name,)
+                self.name = os.path.join(os.path.dirname(SPECPATH), self.appname + ".app")
+                self.exename = arg.name
+                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
+                self.toc.extend(arg.dependencies)
+            else:
+                print "unsupported entry %s", arg.__class__.__name__
+        self.__postinit__()
+
+    GUTS = (('toc',             _check_guts_eq), # additional check below
+            )
+
+    def check_guts(self, last_build):
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        toc = data[-1]
+        for inm, fnm, typ in self.toc:
+            test = os.path.join(self.name, os.path.basename(fnm))
+            if not os.path.exists(test):
+                print "building %s because %s is missing" % (self.outnm, test)
+                return 1
+            if mtime(fnm) > mtime(test):
+                print "building %s because %s is more recent" % (self.outnm, fnm)
+                return 1
+        return 0
+
+    def assemble(self):
+        print "building BUNDLE", os.path.basename(self.out)
+
+        if os.path.exists(self.name):
+            shutil.rmtree(self.name)
+        # Create a minimal Mac bundle structure
+        os.makedirs(self.name)
+        os.makedirs(os.path.join(self.name, "Contents"))
+        os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
+        os.makedirs(os.path.join(self.name, "Contents", "Resources"))
+        os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
+        # Key/values for a minimal Info.plist file
+        info_plist_dict = {"CFBundleDisplayName": self.appname,
+                           "CFBundleName": self.appname,
+                           "CFBundleExecutable": os.path.basename(self.exename),
+                           "CFBundleIconFile": "App.icns",
+                           "CFBundleInfoDictionaryVersion": "6.0",
+                           "CFBundlePackageType": "APPL",
+                           "CFBundleShortVersionString": self.version,
+
+                           # Setting this to 1 will cause Mac OS X *not* to show
+                           # a dock icon for the PyInstaller process which
+                           # decompresses the real executable's contents -
+                           # actually, it's not clear why the real executable
+                           # gets instead an icon doing so.
+                           "LSBackgroundOnly": "1",
+
+                           }
+        info_plist = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>"""
+        for k, v in info_plist_dict.items():
+            info_plist += "<key>%s</key>\n<string>%s</string>\n" % (k, v)
+        info_plist += """</dict>
+</plist>"""
+        f = open(os.path.join(self.name, "Contents", "Info.plist"), "w")
+        f.write(info_plist)
+        f.close()
+        for inm, fnm, typ in self.toc:
+            tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
+            todir = os.path.dirname(tofnm)
+            if not os.path.exists(todir):
+                os.makedirs(todir)
+            shutil.copy2(fnm, tofnm)
+        return 1
+
+
 class TOC(UserList.UserList):
     def __init__(self, initlist=None):
         UserList.UserList.__init__(self)
