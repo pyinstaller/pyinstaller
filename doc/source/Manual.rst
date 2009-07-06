@@ -591,8 +591,6 @@ the run executables understand are:
 +---------------+-----------------------+-------------------------------+-------------------------------------------------------------------------------------------------------+
 | s		| Use site.py		| ('s', '', 'OPTION')		| The opposite of Python's -S flag. Note that site.py must be in the executable's directory to be used. |
 +---------------+-----------------------+-------------------------------+-------------------------------------------------------------------------------------------------------+
-| f		| Force execvp		| ('f', '', 'OPTION')		| Linux/unix only. Ensures that LD_LIBRARY_PATH is set properly.					|
-+---------------+-----------------------+-------------------------------+-------------------------------------------------------------------------------------------------------+
 
 Advanced users should note that by using set differences and intersections, it
 becomes possible to factor out common modules, and deploy a project containing

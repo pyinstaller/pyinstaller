@@ -111,40 +111,32 @@ int main(int argc, char* argv[])
             VS("Error extracting binaries\n");
             return -1;
         }
-        if (workpath == NULL) {
-            /* now look for the "force LD_LIBRARY" flag */
-            ptoc = getFirstTocEntry();
-            while (ptoc) {
-                if ((ptoc->typcd == 'o') && (ptoc->name[0] == 'f'))
-                    workpath = homepath;
-                    ptoc = getNextTocEntry(ptoc);
-                }
-        }
-        if (workpath) {
-            VS("Executing self as child with ");
-            /* run the "child" process, then clean up */
-            strcpy(magic_envvar, "_MEIPASS2=");
-            strcat(magic_envvar, workpath);
-            putenv(magic_envvar);
 
-            /* add workpath to LD_LIBRARY_PATH */
-            exportWorkpath(workpath, "LD_LIBRARY_PATH");
+        if (workpath == NULL)
+            workpath = homepath;
+
+        VS("Executing self as child with ");
+        /* run the "child" process, then clean up */
+        strcpy(magic_envvar, "_MEIPASS2=");
+        strcat(magic_envvar, workpath);
+        putenv(magic_envvar);
+
+        /* add workpath to LD_LIBRARY_PATH */
+        exportWorkpath(workpath, "LD_LIBRARY_PATH");
 #ifdef __APPLE__
-            /* add workpath to DYLD_LIBRARY_PATH */
-            exportWorkpath(workpath, "DYLD_LIBRARY_PATH");
+        /* add workpath to DYLD_LIBRARY_PATH */
+        exportWorkpath(workpath, "DYLD_LIBRARY_PATH");
 #endif
+        pid = fork();
+        if (pid == 0)
+            execvp(thisfile, argv);
+        wait(&rc);
+        rc = WEXITSTATUS(rc);
 
-            pid = fork();
-            if (pid == 0)
-                execvp(thisfile, argv);
-            wait(&rc);
-            rc = WEXITSTATUS(rc);
-            VS("Back to parent...\n");
+        VS("Back to parent...\n");
+        if (strcmp(workpath, homepath) != 0)
             clear(workpath);
-        }
-        else
-            /* no "child" process necessary */
-            rc = doIt(argc, argv);
     }
     return rc;
 }
+
