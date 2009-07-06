@@ -354,6 +354,12 @@ def _getImports_otool(pth):
     """Find the binary dependencies of PTH.
 
         This implementation is for otool platforms"""
+    # dyld searches these paths for framework libs
+    # we ignore DYLD_FALLBACK_LIBRARY_PATH for now (man dyld)
+    fwpaths = ['/Library/Frameworks', '/Network/Library/Frameworks', '/System/Library/Frameworks']
+    for p in reversed(os.environ.get('DYLD_FRAMEWORK_PATH', '').split(':')):
+        if p:
+            fwpaths.insert(0, p)
     rslt = []
     for line in os.popen('otool -L "%s"' % pth).readlines():
         m = re.search(r"\s+(.*?)\s+\(.*\)", line)
@@ -363,6 +369,13 @@ def _getImports_otool(pth):
                 rel_path = lib.replace("@executable_path",".")
                 rel_path = os.path.join(os.path.dirname(pth), rel_path)
                 lib = os.path.abspath(rel_path)
+            elif not os.path.isabs(lib):
+                # lookup matching framework path, if relative pathname
+                for p in fwpaths:
+                    fwlib = os.path.join(p, lib)
+                    if os.path.exists(fwlib):
+                        lib = fwlib
+                        break
             if os.path.exists(lib):
                 rslt.append(lib)
             else:
