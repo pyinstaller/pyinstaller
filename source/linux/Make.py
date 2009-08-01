@@ -95,8 +95,8 @@ def main():
         print "(Using Python source directory)"
         binlib = exec_prefix
         incldir = os.path.join(prefix, 'Include')
-        config_h_dir = exec_prefix
-        makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
+        includes = ['-I' + incldir]
+        makefile_in = os.path.join(exec_prefix, 'Makefile')
     else:
 #       binlib = os.path.join (sysconfig.get_python_lib(True, True, exec_prefix), 'config')
         binlib = sysconfig.get_config_vars('LIBDIR')[0]
