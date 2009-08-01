@@ -42,6 +42,7 @@ seen = {}
 _bpath = None
 iswin = sys.platform[:3] == 'win'
 cygwin = sys.platform == 'cygwin'
+darwin = sys.platform[:7] == 'darwin'
 
 excludes = {
     'KERNEL32.DLL':1,
@@ -85,9 +86,13 @@ excludes = {
     r'^/lib/tls':1,
     # libGL can reference some hw specific libraries (like nvidia libs)
     r'/usr/lib/libGL.*':1,
-    #
-    '^/System/Library/Frameworks':1,
 }
+
+# Darwin has a stable ABI for applications, so there is no need
+# to include either /usr/lib nor system frameworks.
+if darwin:
+    excludes['^/usr/lib/'] = 1
+    excludes['^/System/Library/Frameworks'] = 1
 
 excludesRe = re.compile('|'.join(excludes.keys()), re.I)
 
