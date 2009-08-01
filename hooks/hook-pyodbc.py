@@ -16,4 +16,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 # Contributed by Don Dwiggins
-hiddenimports = ['datetime', 'decimal']
+hiddenimports = ['datetime', 'decimal', 'locale']
+
+try:
+    import hashlib
+    hiddenimports.append('hashlib')
+    del hashlib
+except ImportError:
+    hiddenimports.append('sha')
+
