@@ -121,7 +121,7 @@ class Archive:
             Default: The TOC is a marshal-able string.
         """
         self.lib.seek(self.start + self.TOCPOS)
-        (offset,) = struct.unpack('=i', self.lib.read(4))
+        (offset,) = struct.unpack('!i', self.lib.read(4))
         self.lib.seek(self.start + offset)
         self.toc = marshal.load(self.lib)
 
@@ -273,7 +273,7 @@ class Archive:
         self.lib.seek(self.start)
         self.lib.write(self.MAGIC)
         self.lib.write(self.pymagic)
-        self.lib.write(struct.pack('=i', tocpos))
+        self.lib.write(struct.pack('!i', tocpos))
 
 class DummyZlib:
     def decompress(self, data):
