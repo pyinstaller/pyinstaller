@@ -22,7 +22,16 @@ def exec_statement(stat):
     return txt
 
 def qt4_plugins_dir():
-    return exec_statement("from PyQt4.QtCore import QLibraryInfo; print QLibraryInfo.location(QLibraryInfo.PluginsPath)")
+    import os
+    qt4_plugin_dirs = eval(exec_statement("from PyQt4.QtCore import QCoreApplication,QLibraryInfo; app=QCoreApplication([]); print map(unicode,app.libraryPaths())"))
+    if not qt4_plugin_dirs:
+        print "E: Cannot find PyQt4 plugin directories"
+        return ""
+    for d in qt4_plugin_dirs:
+        if os.path.isdir(d):
+            return str(d)  # must be 8-bit chars for one-file builds
+    print "E: Cannot find existing PyQt4 plugin directory"
+    return ""
 def mpl_data_dir():
     return exec_statement("import matplotlib; print matplotlib._get_data_path()")
 def qwt_numpy_support():
