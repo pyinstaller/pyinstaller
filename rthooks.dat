@@ -5,4 +5,5 @@
     'OpenGL':     ['support/rthooks/opengl.py'],
     'PyQt4':      ['support/rthooks/qt4plugins.py'],
     'matplotlib': ['support/rthooks/mpldata.py'],
+    'babel':      ['support/rthooks/pyi_rth_babel.py'],
 }

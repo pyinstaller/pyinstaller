@@ -43,6 +43,8 @@ def qt4_phonon_plugins_dir():
             return str(d)  # must be 8-bit chars for one-file builds
     print "E: Cannot find existing PyQt4 phonon plugin directory"
     return ""
+def babel_localedata_dir():
+    return exec_statement("import babel.localedata; print babel.localedata._dirname")
 def mpl_data_dir():
     return exec_statement("import matplotlib; print matplotlib._get_data_path()")
 def qwt_numpy_support():
