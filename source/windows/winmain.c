@@ -128,10 +128,6 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
         return -1;
     }
 
-    p = thisfile+strlen(thisfile) - 4;
-	if (strnicmp(p, ".exe", 4) != 0)
-		strcat(thisfile, ".exe");
-
 	// fill in here (directory of thisfile)
 	//GetModuleFileName returns an absolute path
 	strcpy(here, thisfile);
