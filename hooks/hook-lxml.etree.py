@@ -1,2 +1,2 @@
 # Contributed by pyplant@googlemail.com
-hiddenimports = ['_elementpath']
+hiddenimports = ['_elementpath', 'gzip']
