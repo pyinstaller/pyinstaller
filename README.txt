@@ -32,4 +32,3 @@ users can run:
 Major changes in this release
 =============================
  See doc/CHANGES.txt
-
