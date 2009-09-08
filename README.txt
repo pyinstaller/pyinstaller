@@ -25,7 +25,7 @@ You will need some basic C/C++ compilation packages installed
 on your computer to be able to build the bootloader. Debian/Ubuntu
 users can run:
 
-    sudo apt-get install build-essential python-dev
+    sudo apt-get install build-essential python-dev zlib1g-dev
 
 
 
