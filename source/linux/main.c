@@ -39,11 +39,25 @@ static struct _frozen _PyImport_FrozenModules[] = {
 
 void exportWorkpath(char *workpath, char *envvar_name)
 {
-    char envvar[_MAX_PATH * 4 + 12];
+    char *envvar;
     char *old_envvar;
+    int nchars;
 
-    strcpy(envvar, workpath);
     old_envvar = getenv(envvar_name);
+
+    nchars = strlen(workpath);
+    if (old_envvar)
+        nchars += strlen(old_envvar) + 1;
+
+    /* at process exit: no need to free */
+    envvar = (char*)malloc((nchars+1)*sizeof(char));
+    if (envvar==NULL) {
+            fprintf(stderr,"Cannot allocate memory for %s "
+                           "environment variable\n",envvar_name);
+            exit(2);
+    }
+
+    strcpy(envvar,workpath);
     if (old_envvar) {
         strcat(envvar, ":");
         strcat(envvar, old_envvar);
