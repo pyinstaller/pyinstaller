@@ -374,6 +374,10 @@ def _getImports_otool(pth):
                 rel_path = lib.replace("@executable_path",".")
                 rel_path = os.path.join(os.path.dirname(pth), rel_path)
                 lib = os.path.abspath(rel_path)
+            elif lib.startswith("@loader_path"):
+                rel_path = lib.replace("@loader_path",".")
+                rel_path = os.path.join(os.path.dirname(pth), rel_path)
+                lib = os.path.abspath(rel_path)
             elif not os.path.isabs(lib):
                 # lookup matching framework path, if relative pathname
                 for p in fwpaths:
