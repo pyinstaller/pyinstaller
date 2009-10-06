@@ -119,6 +119,11 @@ int main(int argc, char* argv[])
         rc = doIt(&status, argc, argv);
     }
     else {
+        if (setWorkPath(&status)){
+            VS("Error setting the working path\n");
+            return -1;
+        }
+
         if (extractBinaries(&status, &workpath)) {
             VS("Error extracting binaries\n");
             return -1;

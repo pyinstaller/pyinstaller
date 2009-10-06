@@ -222,6 +222,25 @@ int getTempPath(char *buff)
 
 #endif
 
+int setWorkPath(ARCHIVE_STATUS *status)
+{
+
+		if (!getTempPath(status->temppath))
+		{
+            FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
+            return -1;
+		}
+#ifdef WIN32
+		strcpy(status->temppathraw, status->temppath);
+		for ( p=status->temppath; *p; p++ )
+			if (*p == '\\')
+				*p = '/';
+#endif
+		status->workpath = status->temppath;
+
+    return 0;
+}
+
 /*
  * Set up paths required by rest of this module
  * Sets f_archivename, f_homepath
@@ -940,21 +959,6 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 #endif
 	FILE *out;
 	unsigned char *data = extract(status, ptoc);
-
-	if (!status->workpath) {
-		if (!getTempPath(status->temppath))
-		{
-            FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
-            return -1;
-		}
-#ifdef WIN32
-		strcpy(status->temppathraw, status->temppath);
-		for ( p=status->temppath; *p; p++ )
-			if (*p == '\\')
-				*p = '/';
-#endif
-		status->workpath = status->temppath;
-	}
 
 	out = openTarget(status->workpath, ptoc->name);
 

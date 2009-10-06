@@ -332,6 +332,7 @@ void finalizePython(void);
 /**
  * The gory detail level
  */
+int setWorkPath(ARCHIVE_STATUS *status);
 int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
 int openArchive(ARCHIVE_STATUS *status);
 int attachPython(ARCHIVE_STATUS *status, int *loadedNew);
