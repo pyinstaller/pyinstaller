@@ -68,6 +68,8 @@ void exportWorkpath(char *workpath, char *envvar_name)
 
 int main(int argc, char* argv[])
 {
+    ARCHIVE_STATUS status;
+    memset(&status, 0, sizeof(ARCHIVE_STATUS));
     char thisfile[_MAX_PATH];
     char homepath[_MAX_PATH];
     char archivefile[_MAX_PATH + 5];
@@ -100,11 +102,11 @@ int main(int argc, char* argv[])
     strcat(homepath, "/");
     VS("homepath is %s\n", homepath);
 
-    if (init(homepath, &thisfile[strlen(homepath)], workpath)) {
+    if (init(&status, homepath, &thisfile[strlen(homepath)], workpath)) {
         /* no pkg there, so try the nonelf configuration */
         strcpy(archivefile, thisfile);
         strcat(archivefile, ".pkg");
-        if (init(homepath, &archivefile[strlen(homepath)], workpath)) {
+        if (init(&status, homepath, &archivefile[strlen(homepath)], workpath)) {
             FATALERROR("Cannot open self %s or archive %s\n",
                     thisfile, archivefile);
             return -1;
@@ -114,10 +116,10 @@ int main(int argc, char* argv[])
     if (workpath) {
         /* we're the "child" process */
         VS("Already have a workpath - running!\n");
-        rc = doIt(argc, argv);
+        rc = doIt(&status, argc, argv);
     }
     else {
-        if (extractBinaries(&workpath)) {
+        if (extractBinaries(&status, &workpath)) {
             VS("Error extracting binaries\n");
             return -1;
         }

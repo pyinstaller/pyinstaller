@@ -95,23 +95,7 @@ DECLPROC(PySys_SetObject);
 #define SEP "/"
 #endif
 
-/* File Local Variables (all start with f_) */
-static char f_archivename[_MAX_PATH+1];
-static char f_homepath[_MAX_PATH+1];
-static char f_temppath[_MAX_PATH+1] = { '\0' };
-#ifdef WIN32
-static char f_temppathraw[MAX_PATH+1];
-static char f_homepathraw[_MAX_PATH+1];
-#endif
-static char *f_workpath = NULL;
-static FILE *f_fp;
-static int f_pkgstart;
-static TOC *f_tocbuff = NULL;
-static TOC *f_tocend = NULL;
-static COOKIE f_cookie;
-static PyObject *AES = NULL;
-
-unsigned char *extract(TOC *ptoc);
+unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
 
 /*
  * The functions in this file defined in reverse order so that forward
@@ -242,20 +226,20 @@ int getTempPath(char *buff)
  * Set up paths required by rest of this module
  * Sets f_archivename, f_homepath
  */
-int setPaths(char const * archivePath, char const * archiveName)
+int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
 {
 #ifdef WIN32
 	char *p;
 #endif
 	/* Get the archive Path */
-	strcpy(f_archivename, archivePath);
-	strcat(f_archivename, archiveName);
+	strcpy(status->archivename, archivePath);
+	strcat(status->archivename, archiveName);
 
 	/* Set homepath to where the archive is */
-	strcpy(f_homepath, archivePath);
+	strcpy(status->homepath, archivePath);
 #ifdef WIN32
-	strcpy(f_homepathraw, archivePath);
-	for ( p = f_homepath; *p; p++ )
+	strcpy(status->homepathraw, archivePath);
+	for ( p = status->homepath; *p; p++ )
 		if (*p == '\\')
 			*p = '/';
 #endif
@@ -263,39 +247,39 @@ int setPaths(char const * archivePath, char const * archiveName)
 	return 0;
 }
 
-int checkCookie(int filelen)
+int checkCookie(ARCHIVE_STATUS *status, int filelen)
 {
-	if (fseek(f_fp, filelen-(int)sizeof(COOKIE), SEEK_SET))
+	if (fseek(status->fp, filelen-(int)sizeof(COOKIE), SEEK_SET))
 		return -1;
 
 	/* Read the Cookie, and check its MAGIC bytes */
-	fread(&f_cookie, sizeof(COOKIE), 1, f_fp);
-	if (strncmp(f_cookie.magic, MAGIC, strlen(MAGIC)))
+	fread(&(status->cookie), sizeof(COOKIE), 1, status->fp);
+	if (strncmp(status->cookie.magic, MAGIC, strlen(MAGIC)))
 		return -1;
 
   return 0;
 }
 
-int findDigitalSignature()
+int findDigitalSignature(ARCHIVE_STATUS * const status)
 {
 #ifdef WIN32
 	/* There might be a digital signature attached. Let's see. */
 	char buf[2];
 	int offset = 0;
-	fseek(f_fp, 0, SEEK_SET);
-	fread(buf, 1, 2, f_fp);
+	fseek(status->fp, 0, SEEK_SET);
+	fread(buf, 1, 2, status->fp);
 	if (!(buf[0] == 'M' && buf[1] == 'Z'))
 		return -1;
 	/* Skip MSDOS header */
-	fseek(f_fp, 60, SEEK_SET);
+	fseek(status->fp, 60, SEEK_SET);
 	/* Read offset to PE header */
-	fread(&offset, 4, 1, f_fp);
+	fread(&offset, 4, 1, status->fp);
 	/* Jump to the fields that contain digital signature info */
-	fseek(f_fp, offset+152, SEEK_SET);
-	fread(&offset, 4, 1, f_fp);
+	fseek(status->fp, offset+152, SEEK_SET);
+	fread(&offset, 4, 1, status->fp);
 	if (offset == 0)
 		return -1;
-  VS("%s contains a digital signature\n", f_archivename);
+  VS("%s contains a digital signature\n", status->archivename);
 	return offset;
 #else
 	return -1;
@@ -306,7 +290,7 @@ int findDigitalSignature()
  * Open the archive
  * Sets f_archiveFile, f_pkgstart, f_tocbuff and f_cookie.
  */
-int openArchive()
+int openArchive(ARCHIVE_STATUS *status)
 {
 #ifdef WIN32
 	int i;
@@ -314,23 +298,23 @@ int openArchive()
 	int filelen;
 
 	/* Physically open the file */
-	f_fp = fopen(f_archivename, "rb");
-	if (f_fp == NULL) {
-		VS("Cannot open archive: %s\n", f_archivename);
+	status->fp = fopen(status->archivename, "rb");
+	if (status->fp == NULL) {
+		VS("Cannot open archive: %s\n", status->archivename);
 		return -1;
 	}
 
 	/* Seek to the Cookie at the end of the file. */
-	fseek(f_fp, 0, SEEK_END);
-	filelen = ftell(f_fp);
+	fseek(status->fp, 0, SEEK_END);
+	filelen = ftell(status->fp);
 
-	if (checkCookie(filelen) < 0)
+	if (checkCookie(status, filelen) < 0)
 	{
-		VS("%s does not contain an embedded package\n", f_archivename);
+		VS("%s does not contain an embedded package\n", status->archivename);
 #ifndef WIN32
     return -1;
 #else
-		filelen = findDigitalSignature();
+		filelen = findDigitalSignature(status);
 		if (filelen < 1)
 			return -1;
 		/* The digital signature has been aligned to 8-bytes boundary. 
@@ -338,35 +322,35 @@ int openArchive()
 		   padding. */
 		for (i = 0; i < 8; ++i)
 		{
-			if (checkCookie(filelen) >= 0)
+			if (checkCookie(status, filelen) >= 0)
 				break;
 			--filelen;
 		}
 		if (i == 8)
 		{
-			VS("%s does not contain an embedded package, even skipping the signature\n", f_archivename);
+			VS("%s does not contain an embedded package, even skipping the signature\n", status->archivename);
 			return -1;
 		}
-		VS("package found skipping digital signature in %s\n", f_archivename);
+		VS("package found skipping digital signature in %s\n", status->archivename);
 #endif
 	}
 
 	/* From the cookie, calculate the archive start */
-	f_pkgstart = filelen - ntohl(f_cookie.len);
+	status->pkgstart = filelen - ntohl(status->cookie.len);
 
 	/* Read in in the table of contents */
-	fseek(f_fp, f_pkgstart + ntohl(f_cookie.TOC), SEEK_SET);
-	f_tocbuff = (TOC *) malloc(ntohl(f_cookie.TOClen));
-	if (f_tocbuff == NULL)
+	fseek(status->fp, status->pkgstart + ntohl(status->cookie.TOC), SEEK_SET);
+	status->tocbuff = (TOC *) malloc(ntohl(status->cookie.TOClen));
+	if (status->tocbuff == NULL)
 	{
 		FATALERROR("Could not allocate buffer for TOC.");
 		return -1;
 	}
-	fread(f_tocbuff, ntohl(f_cookie.TOClen), 1, f_fp);
-	f_tocend = (TOC *) (((char *)f_tocbuff) + ntohl(f_cookie.TOClen));
+	fread(status->tocbuff, ntohl(status->cookie.TOClen), 1, status->fp);
+	status->tocend = (TOC *) (((char *)status->tocbuff) + ntohl(status->cookie.TOClen));
 
 	/* Check input file is still ok (should be). */
-	if (ferror(f_fp))
+	if (ferror(status->fp))
 	{
 		FATALERROR("Error on file");
 		return -1;
@@ -378,7 +362,7 @@ int openArchive()
 #define HINSTANCE void *
 #endif
 
-int mapNames(HMODULE dll)
+int mapNames(HMODULE dll, int pyvers)
 {
     /* Get all of the entry points that we are interested in */
         GETVAR(dll, Py_FrozenFlag);
@@ -410,7 +394,7 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyErr_Print);
 	GETPROC(dll, PyObject_CallObject);
 	GETPROC(dll, PyObject_CallMethod);
-	if (ntohl(f_cookie.pyvers) >= 21) {
+	if (pyvers >= 21) {
 		GETPROC(dll, PySys_AddWarnOption);
 	}
 	GETPROC(dll, PyEval_InitThreads);
@@ -428,14 +412,15 @@ int mapNames(HMODULE dll)
 /*
  * Load the Python DLL, and get all of the necessary entry points
  */
-int loadPython()
+int loadPython(ARCHIVE_STATUS *status)
 {
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
+    int pyvers = ntohl(status->cookie.pyvers);   
 
 #ifdef WIN32
 	/* Determine the path */
-	sprintf(dllpath, "%spython%02d.dll", f_homepathraw, ntohl(f_cookie.pyvers));
+	sprintf(dllpath, "%spython%02d.dll", status->homepathraw, pyvers);
 
 	/* Load the DLL */
 	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
@@ -443,7 +428,7 @@ int loadPython()
 		VS("%s\n", dllpath);
 	}
 	else {
-		sprintf(dllpath, "%spython%02d.dll", f_temppathraw, ntohl(f_cookie.pyvers));
+		sprintf(dllpath, "%spython%02d.dll", status->temppathraw, pyvers);
 		dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
 		if (dll) {
 			VS("%s\n", dllpath);
@@ -455,7 +440,7 @@ int loadPython()
 		return -1;
 	}
 
-	mapNames(dll);
+	mapNames(dll, pyvers);
 #else
 
 	/* Determine the path */
@@ -463,17 +448,17 @@ int loadPython()
 	struct stat sbuf;
 
 	sprintf(dllpath, "%sPython",
-		f_workpath ? f_workpath : f_homepath);
+		status->workpath ? status->workpath : status->homepath);
 	/* Workaround for virtualenv: it renames the Python framework. */
 	/* A proper solution would be to let Build.py found out the correct
 	 * name and embed it in the PKG as metadata. */
 	if (stat(dllpath, &sbuf) < 0)
 		sprintf(dllpath, "%s.Python",
-			f_workpath ? f_workpath : f_homepath);
+			status->workpath ? status->workpath : status->homepath);
 #else
 	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0",
-		f_workpath ? f_workpath : f_homepath,
-		ntohl(f_cookie.pyvers) / 10, ntohl(f_cookie.pyvers) % 10);
+		status->workpath ? status->workpath : status->homepath,
+		pyvers / 10, pyvers % 10);
 #endif
 
 	/* Load the DLL */
@@ -487,7 +472,7 @@ int loadPython()
 		return -1;
 	}
 
-	mapNames(dll);
+	mapNames(dll, pyvers);
 
 #endif
 
@@ -499,22 +484,23 @@ int loadPython()
  * it will attach to an existing pythonXX.dll,
  * or load one if needed.
  */
-int attachPython(int *loadedNew)
+int attachPython(ARCHIVE_STATUS *status, int *loadedNew)
 {
 #ifdef WIN32
 	HMODULE dll;
 	char nm[_MAX_PATH + 1];
+    int pyvers = ntohl(status->cookie.pyvers);    
 
 	/* Get python's name */
-	sprintf(nm, "python%02d.dll", ntohl(f_cookie.pyvers));
+	sprintf(nm, "python%02d.dll", pyvers);
 
 	/* See if it's loaded */
 	dll = GetModuleHandleA(nm);
 	if (dll == 0) {
 		*loadedNew = 1;
-		return loadPython();
+		return loadPython(status);
 	}
-	mapNames(dll);
+	mapNames(dll, pyvers);
 	*loadedNew = 0;
 #endif
 	return 0;
@@ -523,26 +509,26 @@ int attachPython(int *loadedNew)
 /*
  * Return pointer to next toc entry.
  */
-TOC *incrementTocPtr(TOC* ptoc)
+TOC *incrementTocPtr(ARCHIVE_STATUS *status, TOC* ptoc)
 {
 	TOC *result = (TOC*)((char *)ptoc + ntohl(ptoc->structlen));
-	if (result < f_tocbuff) {
+	if (result < status->tocbuff) {
 		FATALERROR("Cannot read Table of Contents.\n");
-		return f_tocend;
+		return status->tocend;
 	}
 	return result;
 }
 /*
  * external API for iterating TOCs
  */
-TOC *getFirstTocEntry(void)
+TOC *getFirstTocEntry(ARCHIVE_STATUS *status)
 {
-	return f_tocbuff;
+	return status->tocbuff;
 }
-TOC *getNextTocEntry(TOC *entry)
+TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry)
 {
 	TOC *rslt = (TOC*)((char *)entry + ntohl(entry->structlen));
-	if (rslt >= f_tocend)
+	if (rslt >= status->tocend)
 		return NULL;
 	return rslt;
 }
@@ -551,11 +537,11 @@ TOC *getNextTocEntry(TOC *entry)
  * toc->name is the arg
  * this is so you can freeze in command line args to Python
  */
-int setRuntimeOptions(void)
+int setRuntimeOptions(ARCHIVE_STATUS *status)
 {
 	int unbuffered = 0;
-	TOC *ptoc = f_tocbuff;
-	while (ptoc < f_tocend) {
+	TOC *ptoc = status->tocbuff;
+	while (ptoc < status->tocend) {
 		if (ptoc->typcd == 'o') {
 			VS("%s\n", ptoc->name);
 			switch (ptoc->name[0]) {
@@ -567,7 +553,7 @@ int setRuntimeOptions(void)
 			break;
 #ifdef HAVE_WARNINGS
 			case 'W':
-				if (ntohl(f_cookie.pyvers) >= 21) {
+				if (ntohl(status->cookie.pyvers) >= 21) {
 					PI_PySys_AddWarnOption(&ptoc->name[2]);
 				}
 			break;
@@ -580,7 +566,7 @@ int setRuntimeOptions(void)
 			break;
 			}
 		}
-		ptoc = incrementTocPtr(ptoc);
+		ptoc = incrementTocPtr(status, ptoc);
 	}
 	if (unbuffered) {
 #ifdef WIN32
@@ -605,7 +591,7 @@ int setRuntimeOptions(void)
 /*
  * Start python - return 0 on success
  */
-int startPython(int argc, char *argv[])
+int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
     /* Set PYTHONPATH so dynamic libs will load */
 	static char pypath[2*_MAX_PATH + 14];
@@ -618,18 +604,18 @@ int startPython(int argc, char *argv[])
 	PyObject *sys;
 
 	VS("Manipulating evironment\n");
-	if (f_workpath && (strcmp(f_workpath, f_homepath) != 0)) {
+	if (status->workpath && (strcmp(status->workpath, status->homepath) != 0)) {
 		strcpy(pypath, "PYTHONPATH=");
-		strcat(pypath, f_workpath);
+		strcat(pypath, status->workpath);
 		pypath[strlen(pypath)-1] = '\0';
 		strcat(pypath, PATHSEP);
-		strcat(pypath, f_homepath);
+		strcat(pypath, status->homepath);
 		pathlen = 2;
 	}
 	else {
 		/* never extracted anything, or extracted to homepath - homepath will do */
 		strcpy(pypath, "PYTHONPATH=");
-		strcat(pypath, f_homepath);
+		strcat(pypath, status->homepath);
 	}
 	/* don't chop off SEP if root directory */
 #ifdef WIN32
@@ -650,20 +636,20 @@ int startPython(int argc, char *argv[])
 	/* VS("Loading python\n"); */
 	*PI_Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
         *PI_Py_FrozenFlag = 1;
-	setRuntimeOptions();
-	PI_Py_SetProgramName(f_archivename); /*XXX*/
+	setRuntimeOptions(status);
+	PI_Py_SetProgramName(status->archivename); /*XXX*/
 	PI_Py_Initialize();
 
 	/* Set sys.path */
 	/* VS("Manipulating Python's sys.path\n"); */
-	strcpy(tmp, f_homepath);
+	strcpy(tmp, status->homepath);
 	tmp[strlen(tmp)-1] = '\0';
 	PI_PyRun_SimpleString("import sys\n");
 	PI_PyRun_SimpleString("while sys.path:\n del sys.path[0]\n");
 	sprintf(cmd, "sys.path.append('%s')", tmp);
 	PI_PyRun_SimpleString (cmd);
 	if (pathlen == 2) {
-		strcpy(tmp, f_workpath);
+		strcpy(tmp, status->workpath);
 		tmp[strlen(tmp)-1] = '\0';
 		sprintf(cmd, "sys.path.insert(0, '%s')", tmp);
 		PI_PyRun_SimpleString(cmd);
@@ -671,7 +657,7 @@ int startPython(int argc, char *argv[])
 
 	/* Set argv[0] to be the archiveName */
 	py_argv = PI_PyList_New(0);
-	val = PI_Py_BuildValue("s", f_archivename);
+	val = PI_Py_BuildValue("s", status->archivename);
 	PI_PyList_Append(py_argv, val);
 	for (i = 1; i < argc; ++i) {
 		val = PI_Py_BuildValue ("s", argv[i]);
@@ -694,7 +680,7 @@ int startPython(int argc, char *argv[])
 /*
  * Import modules embedded in the archive - return 0 on success
  */
-int importModules()
+int importModules(ARCHIVE_STATUS *status)
 {
 	PyObject *marshal;
 	PyObject *marshaldict;
@@ -716,11 +702,11 @@ int importModules()
 	/* Iterate through toc looking for module entries (type 'm')
 		* this is normally just bootstrap stuff (archive and iu)
 		*/
-	ptoc = f_tocbuff;
-	while (ptoc < f_tocend) {
+	ptoc = status->tocbuff;
+	while (ptoc < status->tocend) {
 		if (ptoc->typcd == 'm' || ptoc->typcd == 'M')
 		{
-			unsigned char *modbuf = extract(ptoc);
+			unsigned char *modbuf = extract(status, ptoc);
 
 			VS("extracted %s\n", ptoc->name);
 
@@ -742,7 +728,7 @@ int importModules()
 
 			free(modbuf);
 		}
-		ptoc = incrementTocPtr(ptoc);
+		ptoc = incrementTocPtr(status, ptoc);
 	}
 
 	return 0;
@@ -752,13 +738,13 @@ int importModules()
 /* Install a zlib from a toc entry
  * Return non zero on failure
  */
-int installZlib(TOC *ptoc)
+int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	int rc;
-	int zlibpos = f_pkgstart + ntohl(ptoc->pos);
+	int zlibpos = status->pkgstart + ntohl(ptoc->pos);
 	char *tmpl = "sys.path.append(r\"%s?%d\")\n";
-	char *cmd = (char *) malloc(strlen(tmpl) + strlen(f_archivename) + 32);
-	sprintf(cmd, tmpl, f_archivename, zlibpos);
+	char *cmd = (char *) malloc(strlen(tmpl) + strlen(status->archivename) + 32);
+	sprintf(cmd, tmpl, status->archivename, zlibpos);
 	/*VS(cmd);*/
 	rc = PI_PyRun_SimpleString(cmd);
 	if (rc != 0)
@@ -777,21 +763,21 @@ int installZlib(TOC *ptoc)
  * Install zlibs
  * Return non zero on failure
  */
-int installZlibs()
+int installZlibs(ARCHIVE_STATUS *status)
 {
 	TOC * ptoc;
 	VS("Installing import hooks\n");
 
 	/* Iterate through toc looking for zlibs (type 'z') */
-	ptoc = f_tocbuff;
-	while (ptoc < f_tocend) {
+	ptoc = status->tocbuff;
+	while (ptoc < status->tocend) {
 		if (ptoc->typcd == 'z')
 		{
 			VS("%s\n", ptoc->name);
-			installZlib(ptoc);
+			installZlib(status, ptoc);
 		}
 
-		ptoc = incrementTocPtr(ptoc);
+		ptoc = incrementTocPtr(status, ptoc);
 	}
 	return 0;
 }
@@ -844,19 +830,20 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
  * extract an archive entry
  * returns pointer to the data (must be freed)
  */
-unsigned char *extract(TOC *ptoc)
+unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	unsigned char *data;
 	unsigned char *tmp;
 
-	fseek(f_fp, f_pkgstart + ntohl(ptoc->pos), SEEK_SET);
+	fseek(status->fp, status->pkgstart + ntohl(ptoc->pos), SEEK_SET);
 	data = (unsigned char *)malloc(ntohl(ptoc->len));
 	if (data == NULL) {
 		OTHERERROR("Could not allocate read buffer\n");
 		return NULL;
 	}
-	fread(data, ntohl(ptoc->len), 1, f_fp);
+	fread(data, ntohl(ptoc->len), 1, status->fp);
 	if (ptoc->cflag == '\2') {
+        static PyObject *AES = NULL;
 		PyObject *func_new;
 		PyObject *aes_dict;
 		PyObject *aes_obj;
@@ -881,9 +868,7 @@ unsigned char *extract(TOC *ptoc)
 		memcpy(data, PI_PyString_AsString(ddata), ntohl(ptoc->len)-32);
 		Py_DECREF(aes_obj);
 		Py_DECREF(ddata);
-		VS("decrypted ");
-		VS(ptoc->name);
-		VS("\n");
+		VS("decrypted %s\n", ptoc->name);
 	}
 	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
 #ifndef NOZLIB
@@ -948,30 +933,30 @@ FILE *openTarget(char *path, char* name_)
  * and copy to the filesystem
  * relative to the directory the archive's in
  */
-int extract2fs(TOC *ptoc)
+int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 #ifdef WIN32
 	char *p;
 #endif
 	FILE *out;
-	unsigned char *data = extract(ptoc);
+	unsigned char *data = extract(status, ptoc);
 
-	if (!f_workpath) {
-		if (!getTempPath(f_temppath))
+	if (!status->workpath) {
+		if (!getTempPath(status->temppath))
 		{
             FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
             return -1;
 		}
 #ifdef WIN32
-		strcpy(f_temppathraw, f_temppath);
-		for ( p=f_temppath; *p; p++ )
+		strcpy(status->temppathraw, status->temppath);
+		for ( p=status->temppath; *p; p++ )
 			if (*p == '\\')
 				*p = '/';
 #endif
-		f_workpath = f_temppath;
+		status->workpath = status->temppath;
 	}
 
-	out = openTarget(f_workpath, ptoc->name);
+	out = openTarget(status->workpath, ptoc->name);
 
 	if (out == NULL)  {
 		FATALERROR("%s could not be extracted!\n", ptoc->name);
@@ -990,30 +975,30 @@ int extract2fs(TOC *ptoc)
 /*
  * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  */
-int extractBinaries(char **workpath)
+int extractBinaries(ARCHIVE_STATUS *status, char **workpath)
 {
-	TOC * ptoc = f_tocbuff;
+	TOC * ptoc = status->tocbuff;
 	workpath[0] = '\0';
 	VS("Extracting binaries\n");
-	while (ptoc < f_tocend) {
+	while (ptoc < status->tocend) {
 		if (ptoc->typcd == 'b' || ptoc->typcd == 'x')
-			if (extract2fs(ptoc))
+			if (extract2fs(status, ptoc))
 				return -1;
-		ptoc = incrementTocPtr(ptoc);
+		ptoc = incrementTocPtr(status, ptoc);
 	}
-	*workpath = f_workpath;
+	*workpath = status->workpath;
 	return 0;
 }
 /*
  * Run scripts
  * Return non zero on failure
  */
-int runScripts()
+int runScripts(ARCHIVE_STATUS *status)
 {
 	unsigned char *data;
 	char buf[_MAX_PATH];
 	int rc = 0;
-	TOC * ptoc = f_tocbuff;
+	TOC * ptoc = status->tocbuff;
 	PyObject *__main__ = PI_PyImport_AddModule("__main__");
 	PyObject *__file__;
 	VS("Running scripts\n");
@@ -1027,10 +1012,10 @@ int runScripts()
 	unsetenv("_MEIPASS2");
 
 	/* Iterate through toc looking for scripts (type 's') */
-	while (ptoc < f_tocend) {
+	while (ptoc < status->tocend) {
 		if (ptoc->typcd == 's') {
 			/* Get data out of the archive.  */
-			data = extract(ptoc);
+			data = extract(status, ptoc);
 			/* Set the __file__ attribute within the __main__ module,
 			   for full compatibility with normal execution. */
 			strcpy(buf, ptoc->name);
@@ -1048,7 +1033,7 @@ int runScripts()
 			free(data);
 		}
 
-		ptoc = incrementTocPtr(ptoc);
+		ptoc = incrementTocPtr(status, ptoc);
 	}
 	return 0;
 }
@@ -1107,7 +1092,7 @@ done:
  * No command line, no extracting of binaries
  * Designed for embedding situations.
  */
-int launchembedded(char const * archivePath, char  const * archiveName)
+int launchembedded(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
 {
 	char pathnm[_MAX_PATH];
 
@@ -1115,19 +1100,19 @@ int launchembedded(char const * archivePath, char  const * archiveName)
 	strcpy(pathnm, archivePath);
 	strcat(pathnm, archiveName);
 	/* Set up paths */
-	if (setPaths(archivePath, archiveName))
+	if (setPaths(status, archivePath, archiveName))
 		return -1;
 	VS("Got Paths\n");
 	/* Open the archive */
-	if (openArchive())
+	if (openArchive(status))
 		return -1;
 	VS("Opened Archive\n");
 	/* Load Python DLL */
-	if (loadPython())
+	if (loadPython(status))
 		return -1;
 
 	/* Start Python with silly command line */
-	if (startPython(1, (char**)&pathnm))
+	if (startPython(status, 1, (char**)&pathnm))
 		return -1;
 	VS("Started Python\n");
 
@@ -1135,15 +1120,15 @@ int launchembedded(char const * archivePath, char  const * archiveName)
 	PI_PyRun_SimpleString("import sys;sys.frozen='dll'\n");
 	VS("set sys.frozen\n");
 	/* Import modules from archive - this is to bootstrap */
-	if (importModules())
+	if (importModules(status))
 		return -1;
 	VS("Imported Modules\n");
 	/* Install zlibs - now import hooks are in place */
-	if (installZlibs())
+	if (installZlibs(status))
 		return -1;
 	VS("Installed Zlibs\n");
 	/* Run scripts */
-	if (runScripts())
+	if (runScripts(status))
 		return -1;
 	VS("All scripts run\n");
 	if (PI_PyErr_Occurred()) {
@@ -1159,28 +1144,28 @@ int launchembedded(char const * archivePath, char  const * archiveName)
 /*
  * initialize (this always needs to be done)
  */
-int init(char const * archivePath, char  const * archiveName, char const * workpath)
+int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName, char const * workpath)
 {
 #ifdef WIN32
 	char *p;
 #endif
 
 	if (workpath) {
-		f_workpath = (char *)workpath;
+		status->workpath = (char *)workpath;
 #ifdef WIN32
-		strcpy(f_temppathraw, f_workpath);
-		for ( p = f_temppathraw; *p; p++ )
+		strcpy(status->temppathraw, status->workpath);
+		for ( p = status->temppathraw; *p; p++ )
 			if (*p == '/')
 				*p = '\\';
 #endif
 	}
 
 	/* Set up paths */
-	if (setPaths(archivePath, archiveName))
+	if (setPaths(status, archivePath, archiveName))
 		return -1;
 
 	/* Open the archive */
-	if (openArchive())
+	if (openArchive(status))
 		return -1;
 
 	return 0;
@@ -1191,27 +1176,27 @@ int init(char const * archivePath, char  const * archiveName, char const * workp
  * or if there are no binaries to extract, you go on
  * to doIt(), which is the important part
  */
-int doIt(int argc, char *argv[])
+int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
 	int rc = 0;
 	/* Load Python DLL */
-	if (loadPython())
+	if (loadPython(status))
 		return -1;
 
 	/* Start Python. */
-	if (startPython(argc, argv))
+	if (startPython(status, argc, argv))
 		return -1;
 
 	/* Import modules from archive - bootstrap */
-	if (importModules())
+	if (importModules(status))
 		return -1;
 
 	/* Install zlibs  - now all hooks in place */
-	if (installZlibs())
+	if (installZlibs(status))
 		return -1;
 
 	/* Run scripts */
-	rc = runScripts();
+	rc = runScripts(status);
 
 	VS("OK.\n");
 
@@ -1298,17 +1283,17 @@ void clear(const char *dir)
  * If binaries were extracted, this should be called
  * to remove them
  */
-void cleanUp()
+void cleanUp(ARCHIVE_STATUS *status)
 {
-	if (f_temppath[0])
-		clear(f_temppath);
+	if (status->temppath[0])
+		clear(status->temppath);
 }
 /*
  * Helpers for embedders
  */
-int getPyVersion(void)
+int getPyVersion(ARCHIVE_STATUS *status)
 {
-	return ntohl(f_cookie.pyvers);
+	return ntohl(status->cookie.pyvers);
 }
 void finalizePython(void)
 {
