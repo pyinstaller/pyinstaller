@@ -264,23 +264,6 @@ typedef struct _archive_status {
 #endif
 } ARCHIVE_STATUS;
 
-
-/**
- * Load Python using code stored in the following archive.
- * Intended for use by embedding applications.
- *
- * @param archivePath  The path to the archive directory, with trailing
- *                     backslash. This directory will also contain the binary
- *                     dependencies of the application. There can be no
- *                     binaries inside the archive.
- *
- * @param archiveName  The file name of the archive, without a path.
- *
- * @return 0 on success, non-zero otherwise.
- *
- */
-int launchembedded(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName);
-
 /*****************************************************************
  * The following 4 entries are for applications which may need to
  * use to 2 steps to execute
@@ -353,8 +336,6 @@ int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * arch
 int openArchive(ARCHIVE_STATUS *status);
 int attachPython(ARCHIVE_STATUS *status, int *loadedNew);
 int loadPython(ARCHIVE_STATUS *status); /* note - attachPython will call this if not already loaded */
-//void acquirePythonThread(void);
-//void releasePythonThread(void);
 int startPython(ARCHIVE_STATUS *status, int argc, char *argv[]);
 int importModules(ARCHIVE_STATUS *status);
 int installZlibs(ARCHIVE_STATUS *status);

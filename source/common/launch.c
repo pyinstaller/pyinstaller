@@ -1087,59 +1087,6 @@ done:
 	return rc;
 }
 
-/*
- * Launch an archive with the given fully-qualified path name
- * No command line, no extracting of binaries
- * Designed for embedding situations.
- */
-int launchembedded(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
-{
-	char pathnm[_MAX_PATH];
-
-	VS("START\n");
-	strcpy(pathnm, archivePath);
-	strcat(pathnm, archiveName);
-	/* Set up paths */
-	if (setPaths(status, archivePath, archiveName))
-		return -1;
-	VS("Got Paths\n");
-	/* Open the archive */
-	if (openArchive(status))
-		return -1;
-	VS("Opened Archive\n");
-	/* Load Python DLL */
-	if (loadPython(status))
-		return -1;
-
-	/* Start Python with silly command line */
-	if (startPython(status, 1, (char**)&pathnm))
-		return -1;
-	VS("Started Python\n");
-
-	/* a signal to scripts */
-	PI_PyRun_SimpleString("import sys;sys.frozen='dll'\n");
-	VS("set sys.frozen\n");
-	/* Import modules from archive - this is to bootstrap */
-	if (importModules(status))
-		return -1;
-	VS("Imported Modules\n");
-	/* Install zlibs - now import hooks are in place */
-	if (installZlibs(status))
-		return -1;
-	VS("Installed Zlibs\n");
-	/* Run scripts */
-	if (runScripts(status))
-		return -1;
-	VS("All scripts run\n");
-	if (PI_PyErr_Occurred()) {
-		/*PyErr_Clear();*/
-		VS("Some error occurred\n");
-	}
-	VS("OK.\n");
-
-	return 0;
-}
-
 /* for finer grained control */
 /*
  * initialize (this always needs to be done)
@@ -1202,6 +1149,7 @@ int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 
 	return rc;
 }
+
 void clear(const char *dir);
 #ifdef WIN32
 void removeOne(char *fnm, int pos, struct _finddata_t finfo)
