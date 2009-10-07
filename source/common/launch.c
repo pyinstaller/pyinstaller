@@ -96,7 +96,6 @@ DECLPROC(PySys_SetObject);
 #endif
 
 unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
-TOC *incrementTocPtr(const ARCHIVE_STATUS *status, const TOC* ptoc);
 
 /*
  * The functions in this file defined in reverse order so that forward
@@ -222,41 +221,6 @@ int getTempPath(char *buff)
 }
 
 #endif
-
-static int isOneFileMode(const ARCHIVE_STATUS *status)
-{
-    TOC *ptoc = status->tocbuff;
-    while (ptoc < status->tocend) {
-        if (ptoc->typcd == 'b' || ptoc->typcd == 'x')
-            return 1;
-        ptoc = incrementTocPtr(status, ptoc);
-    }
-    return 0;
-}
-
-int setWorkPath(ARCHIVE_STATUS *status)
-{
-#ifdef WIN32
-    char *p = NULL;    
-#endif
-	if (!getTempPath(status->temppath))
-	{
-        FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
-        return -1;
-    }
-#ifdef WIN32
-	strcpy(status->temppathraw, status->temppath);
-	for ( p=status->temppath; *p; p++ )
-	    if (*p == '\\')
-		    *p = '/';
-#endif
-    if (isOneFileMode(status))
-        status->workpath = status->temppath;
-    else
-	    status->workpath = status->homepath;            
-
-    return 0;
-}
 
 /*
  * Set up paths required by rest of this module
@@ -391,7 +355,6 @@ int openArchive(ARCHIVE_STATUS *status)
 		FATALERROR("Error on file");
 		return -1;
 	}
-
 	return 0;
 }
 #ifndef WIN32
@@ -546,7 +509,7 @@ int attachPython(ARCHIVE_STATUS *status, int *loadedNew)
 /*
  * Return pointer to next toc entry.
  */
-TOC *incrementTocPtr(const ARCHIVE_STATUS *status, const TOC* ptoc)
+TOC *incrementTocPtr(ARCHIVE_STATUS *status, TOC* ptoc)
 {
 	TOC *result = (TOC*)((char *)ptoc + ntohl(ptoc->structlen));
 	if (result < status->tocbuff) {
@@ -978,6 +941,21 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 	FILE *out;
 	unsigned char *data = extract(status, ptoc);
 
+	if (!status->workpath) {
+		if (!getTempPath(status->temppath))
+		{
+            FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
+            return -1;
+		}
+#ifdef WIN32
+		strcpy(status->temppathraw, status->temppath);
+		for ( p=status->temppath; *p; p++ )
+			if (*p == '\\')
+				*p = '/';
+#endif
+		status->workpath = status->temppath;
+	}
+
 	out = openTarget(status->workpath, ptoc->name);
 
 	if (out == NULL)  {
@@ -997,9 +975,10 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 /*
  * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  */
-int extractBinaries(ARCHIVE_STATUS *status)
+int extractBinaries(ARCHIVE_STATUS *status, char **workpath)
 {
 	TOC * ptoc = status->tocbuff;
+	workpath[0] = '\0';
 	VS("Extracting binaries\n");
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == 'b' || ptoc->typcd == 'x')
@@ -1007,9 +986,9 @@ int extractBinaries(ARCHIVE_STATUS *status)
 				return -1;
 		ptoc = incrementTocPtr(status, ptoc);
 	}
+	*workpath = status->workpath;
 	return 0;
 }
-
 /*
  * Run scripts
  * Return non zero on failure
@@ -1112,8 +1091,22 @@ done:
 /*
  * initialize (this always needs to be done)
  */
-int init(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
+int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName, char const * workpath)
 {
+#ifdef WIN32
+	char *p;
+#endif
+
+	if (workpath) {
+		status->workpath = (char *)workpath;
+#ifdef WIN32
+		strcpy(status->temppathraw, status->workpath);
+		for ( p = status->temppathraw; *p; p++ )
+			if (*p == '/')
+				*p = '\\';
+#endif
+	}
+
 	/* Set up paths */
 	if (setPaths(status, archivePath, archiveName))
 		return -1;

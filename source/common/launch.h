@@ -284,7 +284,7 @@ typedef struct _archive_status {
  *
  * @return 0 on success, non-zero otherwise.
  */
-int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName);
+int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName, char const * workpath);
 
 /**
  * Extract binaries in the archive
@@ -294,7 +294,7 @@ int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archive
  *
  * @return 0 on success, non-zero otherwise.
  */
-int extractBinaries(ARCHIVE_STATUS *status);
+int extractBinaries(ARCHIVE_STATUS *status, char **workpath);
 
 /**
  * Load Python and execute all scripts in the archive
@@ -332,7 +332,6 @@ void finalizePython(void);
 /**
  * The gory detail level
  */
-int setWorkPath(ARCHIVE_STATUS *status);
 int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
 int openArchive(ARCHIVE_STATUS *status);
 int attachPython(ARCHIVE_STATUS *status, int *loadedNew);

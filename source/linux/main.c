@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     TOC *ptoc = NULL;
     int rc = 0;
     int pid;
-
+    char *workpath = NULL;
     /* atexit(cleanUp); */
 #ifdef FREEZE_EXCEPTIONS
     PyImport_FrozenModules = _PyImport_FrozenModules;
@@ -94,52 +94,48 @@ int main(int argc, char* argv[])
     strcpy(thisfile, PI_GetProgramFullPath());
     VS("thisfile is %s\n", thisfile);
 
-    // Null for the first pass
-    status.workpath = getenv( "_MEIPASS2" );
-    VS("_MEIPASS2 (workpath) is %s\n", (status.workpath ? status.workpath : "NULL"));
+    workpath = getenv( "_MEIPASS2" );
+    VS("_MEIPASS2 (workpath) is %s\n", (workpath ? workpath : "NULL"));
 
     /* fill in here (directory of thisfile) */
     strcpy(homepath, PI_GetPrefix());
     strcat(homepath, "/");
     VS("homepath is %s\n", homepath);
 
-    if (init(&status, homepath, &thisfile[strlen(homepath)])) {
+    if (init(&status, homepath, &thisfile[strlen(homepath)], workpath)) {
         /* no pkg there, so try the nonelf configuration */
         strcpy(archivefile, thisfile);
         strcat(archivefile, ".pkg");
-        if (init(&status, homepath, &archivefile[strlen(homepath)])) {
+        if (init(&status, homepath, &archivefile[strlen(homepath)], workpath)) {
             FATALERROR("Cannot open self %s or archive %s\n",
                     thisfile, archivefile);
             return -1;
         }
     }
 
-    if (status.workpath) {
+    if (workpath) {
         /* we're the "child" process */
         VS("Already have a workpath - running!\n");
         rc = doIt(&status, argc, argv);
     }
     else {
-        /* Set the correct working path */
-        if (setWorkPath(&status)) {
-            FATALERROR("Error reading file");
-            return -1;
-        }
-
-        if (extractBinaries(&status)) {
+        if (extractBinaries(&status, &workpath)) {
             VS("Error extracting binaries\n");
             return -1;
         }
 
+        if (workpath == NULL)
+            workpath = homepath;
+
         VS("Executing self as child with ");
         /* run the "child" process, then clean up */
-        setenv("_MEIPASS2", status.workpath, 1);
+        setenv("_MEIPASS2", workpath, 1);
 
         /* add workpath to LD_LIBRARY_PATH */
-        exportWorkpath(status.workpath, "LD_LIBRARY_PATH");
+        exportWorkpath(workpath, "LD_LIBRARY_PATH");
 #ifdef __APPLE__
         /* add workpath to DYLD_LIBRARY_PATH */
-        exportWorkpath(status.workpath, "DYLD_LIBRARY_PATH");
+        exportWorkpath(workpath, "DYLD_LIBRARY_PATH");
 #endif
         pid = fork();
         if (pid == 0)
@@ -148,8 +144,8 @@ int main(int argc, char* argv[])
         rc = WEXITSTATUS(rc);
 
         VS("Back to parent...\n");
-        if (strcmp(status.workpath, homepath) != 0)
-            clear(status.workpath);
+        if (strcmp(workpath, homepath) != 0)
+            clear(workpath);
     }
     return rc;
 }
