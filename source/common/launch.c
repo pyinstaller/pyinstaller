@@ -447,18 +447,32 @@ int loadPython(ARCHIVE_STATUS *status)
 #ifdef __APPLE__
 	struct stat sbuf;
 
-	sprintf(dllpath, "%sPython",
-		status->workpath ? status->workpath : status->homepath);
-	/* Workaround for virtualenv: it renames the Python framework. */
-	/* A proper solution would be to let Build.py found out the correct
-	 * name and embed it in the PKG as metadata. */
-	if (stat(dllpath, &sbuf) < 0)
-		sprintf(dllpath, "%s.Python",
-			status->workpath ? status->workpath : status->homepath);
+    /* Try to load python library both from temppath and homepath */
+	sprintf(dllpath, "%sPython", status->temppath);
+	if (stat(dllpath, &sbuf) < 0) {
+        sprintf(dllpath, "%sPython", status->homepath);
+        if (stat(dllpath, &sbuf) < 0) {
+            sprintf(dllpath, "%s.Python", status->temppath);
+            if (stat(dllpath, &sbuf) < 0){
+                sprintf(dllpath, "%s.Python", status->homepath);
+                if (stat(dllpath, &sbuf) < 0){
+                    FATALERROR("Python library not found.");
+                    return -1;
+                }
+            }
+        }
+    }
 #else
-	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0",
-		status->workpath ? status->workpath : status->homepath,
-		pyvers / 10, pyvers % 10);
+    struct stat sbuf;
+
+    sprintf(dllpath, "%slibpython%01d.%01d.so.1.0", status->temppath, pyvers / 10, pyvers % 10);
+    if (stat(dllpath, &sbuf) < 0) {
+        sprintf(dllpath, "%slibpython%01d.%01d.so.1.0", status->homepath, pyvers / 10, pyvers % 10);
+        if (stat(dllpath, &sbuf) < 0) {
+            FATALERROR("Python library not found.");
+            return -1;
+        }
+    }
 #endif
 
 	/* Load the DLL */
@@ -603,20 +617,16 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	PyObject *val;
 	PyObject *sys;
 
+    /* Set the PYTHONPATH */
 	VS("Manipulating evironment\n");
-	if (status->workpath && (strcmp(status->workpath, status->homepath) != 0)) {
-		strcpy(pypath, "PYTHONPATH=");
-		strcat(pypath, status->workpath);
-		pypath[strlen(pypath)-1] = '\0';
-		strcat(pypath, PATHSEP);
-		strcat(pypath, status->homepath);
-		pathlen = 2;
-	}
-	else {
-		/* never extracted anything, or extracted to homepath - homepath will do */
-		strcpy(pypath, "PYTHONPATH=");
-		strcat(pypath, status->homepath);
-	}
+	strcpy(pypath, "PYTHONPATH=");
+    if (status->temppath[0] != NULL) { /* Temppath is setted */
+	    strcat(pypath, status->temppath);
+	    pypath[strlen(pypath)-1] = '\0';
+	    strcat(pypath, PATHSEP);
+    } 
+	strcat(pypath, status->homepath);
+
 	/* don't chop off SEP if root directory */
 #ifdef WIN32
 	if (strlen(pypath) > 14)
@@ -635,25 +645,23 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	/* Start python. */
 	/* VS("Loading python\n"); */
 	*PI_Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
-        *PI_Py_FrozenFlag = 1;
+    *PI_Py_FrozenFlag = 1;
 	setRuntimeOptions(status);
 	PI_Py_SetProgramName(status->archivename); /*XXX*/
 	PI_Py_Initialize();
 
 	/* Set sys.path */
 	/* VS("Manipulating Python's sys.path\n"); */
-	strcpy(tmp, status->homepath);
-	tmp[strlen(tmp)-1] = '\0';
 	PI_PyRun_SimpleString("import sys\n");
 	PI_PyRun_SimpleString("while sys.path:\n del sys.path[0]\n");
+	strcpy(tmp, status->temppath);
+	tmp[strlen(tmp)-1] = '\0';
+	sprintf(cmd, "sys.path.insert(0, '%s')", tmp);
+	PI_PyRun_SimpleString(cmd);
+	strcpy(tmp, status->homepath);
+	tmp[strlen(tmp)-1] = '\0';
 	sprintf(cmd, "sys.path.append('%s')", tmp);
 	PI_PyRun_SimpleString (cmd);
-	if (pathlen == 2) {
-		strcpy(tmp, status->workpath);
-		tmp[strlen(tmp)-1] = '\0';
-		sprintf(cmd, "sys.path.insert(0, '%s')", tmp);
-		PI_PyRun_SimpleString(cmd);
-	}
 
 	/* Set argv[0] to be the archiveName */
 	py_argv = PI_PyList_New(0);
@@ -941,7 +949,7 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 	FILE *out;
 	unsigned char *data = extract(status, ptoc);
 
-	if (!status->workpath) {
+	if (status->temppath[0] == NULL) {
 		if (!getTempPath(status->temppath))
 		{
             FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
@@ -953,10 +961,9 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 			if (*p == '\\')
 				*p = '/';
 #endif
-		status->workpath = status->temppath;
 	}
 
-	out = openTarget(status->workpath, ptoc->name);
+	out = openTarget(status->temppath, ptoc->name);
 
 	if (out == NULL)  {
 		FATALERROR("%s could not be extracted!\n", ptoc->name);
@@ -975,10 +982,9 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 /*
  * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  */
-int extractBinaries(ARCHIVE_STATUS *status, char **workpath)
+int extractBinaries(ARCHIVE_STATUS *status)
 {
 	TOC * ptoc = status->tocbuff;
-	workpath[0] = '\0';
 	VS("Extracting binaries\n");
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == 'b' || ptoc->typcd == 'x')
@@ -986,7 +992,6 @@ int extractBinaries(ARCHIVE_STATUS *status, char **workpath)
 				return -1;
 		ptoc = incrementTocPtr(status, ptoc);
 	}
-	*workpath = status->workpath;
 	return 0;
 }
 /*
@@ -1091,22 +1096,8 @@ done:
 /*
  * initialize (this always needs to be done)
  */
-int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName, char const * workpath)
+int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
 {
-#ifdef WIN32
-	char *p;
-#endif
-
-	if (workpath) {
-		status->workpath = (char *)workpath;
-#ifdef WIN32
-		strcpy(status->temppathraw, status->workpath);
-		for ( p = status->temppathraw; *p; p++ )
-			if (*p == '/')
-				*p = '\\';
-#endif
-	}
-
 	/* Set up paths */
 	if (setPaths(status, archivePath, archiveName))
 		return -1;

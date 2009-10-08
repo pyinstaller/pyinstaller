@@ -95,18 +95,18 @@ int main(int argc, char* argv[])
     VS("thisfile is %s\n", thisfile);
 
     workpath = getenv( "_MEIPASS2" );
-    VS("_MEIPASS2 (workpath) is %s\n", (workpath ? workpath : "NULL"));
+    VS("_MEIPASS2 is %s\n", (workpath ? workpath : "NULL"));
 
     /* fill in here (directory of thisfile) */
     strcpy(homepath, PI_GetPrefix());
     strcat(homepath, "/");
     VS("homepath is %s\n", homepath);
 
-    if (init(&status, homepath, &thisfile[strlen(homepath)], workpath)) {
+    if (init(&status, homepath, &thisfile[strlen(homepath)])) {
         /* no pkg there, so try the nonelf configuration */
         strcpy(archivefile, thisfile);
         strcat(archivefile, ".pkg");
-        if (init(&status, homepath, &archivefile[strlen(homepath)], workpath)) {
+        if (init(&status, homepath, &archivefile[strlen(homepath)])) {
             FATALERROR("Cannot open self %s or archive %s\n",
                     thisfile, archivefile);
             return -1;
@@ -114,28 +114,36 @@ int main(int argc, char* argv[])
     }
 
     if (workpath) {
-        /* we're the "child" process */
-        VS("Already have a workpath - running!\n");
+        VS("Already in the child - running!\n");
+        /*  If binaries where extracted to temppath, 
+         *  we pass it through status variable 
+         */
+        if (strcmp(homepath, workpath) != 0) 
+            strcpy(status.temppath, workpath);
         rc = doIt(&status, argc, argv);
     }
     else {
-        if (extractBinaries(&status, &workpath)) {
+        if (extractBinaries(&status)) {
             VS("Error extracting binaries\n");
             return -1;
         }
 
-        if (workpath == NULL)
-            workpath = homepath;
-
         VS("Executing self as child with ");
         /* run the "child" process, then clean up */
-        setenv("_MEIPASS2", workpath, 1);
+        setenv("_MEIPASS2", status.temppath[0] != NULL ? status.temppath : homepath, 1);
 
-        /* add workpath to LD_LIBRARY_PATH */
-        exportWorkpath(workpath, "LD_LIBRARY_PATH");
+        /* add temppath to LD_LIBRARY_PATH */
+        if (status.temppath[0] != NULL){
+            exportWorkpath(status.temppath, "LD_LIBRARY_PATH");
 #ifdef __APPLE__
-        /* add workpath to DYLD_LIBRARY_PATH */
-        exportWorkpath(workpath, "DYLD_LIBRARY_PATH");
+        /* add temppath to DYLD_LIBRARY_PATH */
+            exportWorkpath(status.temppath, "DYLD_LIBRARY_PATH");
+#endif
+        }
+        exportWorkpath(homepath, "LD_LIBRARY_PATH");
+#ifdef __APPLE__
+        /* add homepath to DYLD_LIBRARY_PATH */
+        exportWorkpath(homepath, "DYLD_LIBRARY_PATH");
 #endif
         pid = fork();
         if (pid == 0)
@@ -144,8 +152,8 @@ int main(int argc, char* argv[])
         rc = WEXITSTATUS(rc);
 
         VS("Back to parent...\n");
-        if (strcmp(workpath, homepath) != 0)
-            clear(workpath);
+        if (status.temppath[0] != NULL)        
+            clear(status.temppath);
     }
     return rc;
 }
