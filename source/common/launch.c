@@ -653,11 +653,13 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	/* Set sys.path */
 	/* VS("Manipulating Python's sys.path\n"); */
 	PI_PyRun_SimpleString("import sys\n");
-	PI_PyRun_SimpleString("while sys.path:\n del sys.path[0]\n");
-	strcpy(tmp, status->temppath);
-	tmp[strlen(tmp)-1] = '\0';
-	sprintf(cmd, "sys.path.insert(0, '%s')", tmp);
-	PI_PyRun_SimpleString(cmd);
+	PI_PyRun_SimpleString("del sys.path[:]\n");
+    if (status->temppath[0] != NULL) {	
+        strcpy(tmp, status->temppath);
+	    tmp[strlen(tmp)-1] = '\0';
+	    sprintf(cmd, "sys.path.append('%s')", tmp);
+    }	
+    PI_PyRun_SimpleString(cmd);
 	strcpy(tmp, status->homepath);
 	tmp[strlen(tmp)-1] = '\0';
 	sprintf(cmd, "sys.path.append('%s')", tmp);
