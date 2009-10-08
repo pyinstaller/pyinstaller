@@ -234,6 +234,7 @@ class Analysis(Target):
         if pathex:
             for path in pathex:
                 self.pathex.append(absnormpath(path))
+        sys.pathex = pathex[:]
         self.hookspath = hookspath
         self.excludes = excludes
         self.scripts = TOC()
