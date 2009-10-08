@@ -37,6 +37,7 @@
  #include <fcntl.h>
  #include <dlfcn.h>
  #include <dirent.h>
+ #include <stdarg.h>
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -182,6 +183,19 @@ int getTempPath(char *buff)
 }
 
 #else
+
+int checkFile(char *buf, const char *fmt, ...)
+{
+    va_list args;
+    struct stat tmp;
+
+    va_start(args, fmt);    
+    vsnprintf(buf, _MAX_PATH, fmt, args);
+    buf[_MAX_PATH] = '\0';
+    va_end(args);
+    
+    return stat(buf, &tmp);    
+}
 
 int testTempPath(char *buff)
 {
@@ -445,17 +459,12 @@ int loadPython(ARCHIVE_STATUS *status)
 
 	/* Determine the path */
 #ifdef __APPLE__
-	struct stat sbuf;
 
     /* Try to load python library both from temppath and homepath */
-	sprintf(dllpath, "%sPython", status->temppath);
-	if (stat(dllpath, &sbuf) < 0) {
-        sprintf(dllpath, "%sPython", status->homepath);
-        if (stat(dllpath, &sbuf) < 0) {
-            sprintf(dllpath, "%s.Python", status->temppath);
-            if (stat(dllpath, &sbuf) < 0){
-                sprintf(dllpath, "%s.Python", status->homepath);
-                if (stat(dllpath, &sbuf) < 0){
+	if (checkFile(dllpath, "%sPython", status->temppath) != 0) {
+        if (checkFile(dllpath, "%sPython", status->homepath) != 0) {
+            if (checkFile(dllpath, "%s.Python", status->temppath) != 0){
+                if (checkFile(dllpath, "%s.Python", status->homepath) != 0){
                     FATALERROR("Python library not found.");
                     return -1;
                 }
@@ -463,12 +472,8 @@ int loadPython(ARCHIVE_STATUS *status)
         }
     }
 #else
-    struct stat sbuf;
-
-    sprintf(dllpath, "%slibpython%01d.%01d.so.1.0", status->temppath, pyvers / 10, pyvers % 10);
-    if (stat(dllpath, &sbuf) < 0) {
-        sprintf(dllpath, "%slibpython%01d.%01d.so.1.0", status->homepath, pyvers / 10, pyvers % 10);
-        if (stat(dllpath, &sbuf) < 0) {
+    if (checkFile(dllpath, "%slibpython%01d.%01d.so.1.0", status->temppath, pyvers / 10, pyvers % 10) != 0) {
+        if (checkFile(dllpath, "%slibpython%01d.%01d.so.1.0", status->homepath, pyvers / 10, pyvers % 10) != 0) {
             FATALERROR("Python library not found.");
             return -1;
         }
