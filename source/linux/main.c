@@ -37,7 +37,7 @@ static struct _frozen _PyImport_FrozenModules[] = {
 };
 #endif
 
-void exportWorkpath(char *workpath, char *envvar_name)
+void exportExtractionPath(char *extractionpath, char *envvar_name)
 {
     char *envvar;
     char *old_envvar;
@@ -45,7 +45,7 @@ void exportWorkpath(char *workpath, char *envvar_name)
 
     old_envvar = getenv(envvar_name);
 
-    nchars = strlen(workpath);
+    nchars = strlen(extractionpath);
     if (old_envvar)
         nchars += strlen(old_envvar) + 1;
 
@@ -57,7 +57,7 @@ void exportWorkpath(char *workpath, char *envvar_name)
             exit(2);
     }
 
-    strcpy(envvar,workpath);
+    strcpy(envvar, extractionpath);
     if (old_envvar) {
         strcat(envvar, ":");
         strcat(envvar, old_envvar);
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     TOC *ptoc = NULL;
     int rc = 0;
     int pid;
-    char *workpath = NULL;
+    char *extractionpath = NULL;
     /* atexit(cleanUp); */
 #ifdef FREEZE_EXCEPTIONS
     PyImport_FrozenModules = _PyImport_FrozenModules;
@@ -94,8 +94,8 @@ int main(int argc, char* argv[])
     strcpy(thisfile, PI_GetProgramFullPath());
     VS("thisfile is %s\n", thisfile);
 
-    workpath = getenv( "_MEIPASS2" );
-    VS("_MEIPASS2 is %s\n", (workpath ? workpath : "NULL"));
+    extractionpath = getenv( "_MEIPASS2" );
+    VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
     /* fill in here (directory of thisfile) */
     strcpy(homepath, PI_GetPrefix());
@@ -113,13 +113,13 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (workpath) {
+    if (extractionpath) {
         VS("Already in the child - running!\n");
         /*  If binaries where extracted to temppath, 
          *  we pass it through status variable 
          */
-        if (strcmp(homepath, workpath) != 0) 
-            strcpy(status.temppath, workpath);
+        if (strcmp(homepath, extractionpath) != 0) 
+            strcpy(status.temppath, extractionpath);
         rc = doIt(&status, argc, argv);
     }
     else {
@@ -134,16 +134,16 @@ int main(int argc, char* argv[])
 
         /* add temppath to LD_LIBRARY_PATH */
         if (status.temppath[0] != NULL){
-            exportWorkpath(status.temppath, "LD_LIBRARY_PATH");
+            exportExtractionPath(status.temppath, "LD_LIBRARY_PATH");
 #ifdef __APPLE__
         /* add temppath to DYLD_LIBRARY_PATH */
-            exportWorkpath(status.temppath, "DYLD_LIBRARY_PATH");
+            exportExtractionPath(status.temppath, "DYLD_LIBRARY_PATH");
 #endif
         }
-        exportWorkpath(homepath, "LD_LIBRARY_PATH");
+        exportExtractionPath(homepath, "LD_LIBRARY_PATH");
 #ifdef __APPLE__
         /* add homepath to DYLD_LIBRARY_PATH */
-        exportWorkpath(homepath, "DYLD_LIBRARY_PATH");
+        exportExtractionPath(homepath, "DYLD_LIBRARY_PATH");
 #endif
         pid = fork();
         if (pid == 0)
