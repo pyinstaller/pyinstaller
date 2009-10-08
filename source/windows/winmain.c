@@ -29,8 +29,10 @@
 #include <windows.h>
 #include <commctrl.h> // InitCommonControls
 #include <signal.h>
+#include <memory.h>
+#include <string.h>
 
-int relaunch(LPWSTR thisfile, char *workpath)
+int relaunch(LPWSTR thisfile, char *extractionpath)
 {
 	char envvar[_MAX_PATH + 12];
 	SECURITY_ATTRIBUTES sa;
@@ -60,7 +62,7 @@ int relaunch(LPWSTR thisfile, char *workpath)
 	/* tell pass 2 where we extracted to */
 	VS("Setting magic environment var\n");
 	strcpy(envvar, "_MEIPASS2=");
-	strcat(envvar, workpath);
+	strcat(envvar, extractionpath);
 	_putenv(envvar);
 	VS("Creating child process\n");
     // Use wide-string version to make sure that the command line is
@@ -101,19 +103,20 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						LPSTR lpCmdLine, int nCmdShow )
 #endif
 {
+	ARCHIVE_STATUS status;
 	char here[_MAX_PATH + 1];
 	char thisfile[_MAX_PATH + 1];
     WCHAR thisfilew[_MAX_PATH + 1];
 	char pkgfile[_MAX_PATH + 1];
 	int rc = 0;
-	char *workpath = NULL;
+	char *extractionpath = NULL;
 	char *p;
 	int len;
 #ifndef _CONSOLE
 	int argc = __argc;
 	char **argv = __argv;
 #endif
-
+	memset(&status, 0, sizeof(status));
 	// Initialize common controls (needed to link with commctrl32.dll and
 	// obtain native XP look & feel).
 	InitCommonControls();
@@ -138,43 +141,35 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	strcpy(pkgfile, thisfile);
 	strcpy(pkgfile+strlen(pkgfile)-3, "pkg");
 
-	workpath = getenv( "_MEIPASS2" );
-	rc = init(here, &thisfile[len], workpath);
+	extractionpath = getenv( "_MEIPASS2" );
+
+	rc = init(&status, here, &thisfile[len]);
 	if (rc) {
-		rc = init(here, &pkgfile[len], workpath);
+		rc = init(&status, here, &pkgfile[len]);
 		if (rc)
 			return rc;
 		VS("Found separate PKG: %s\n", pkgfile);
 	} else {
 		VS("Found embedded PKG: %s\n", thisfile);
 	}
-	if (workpath) {
+	if (extractionpath) {
 		// we're the "child" process
-		rc = doIt(argc, argv);
+		if (strcmp(here, extractionpath) != 0) 
+            strcpy(status.temppath, extractionpath);
+        rc = doIt(&status, argc, argv);
 		if (rc) {
 			return rc;
 		}
 		finalizePython();
-	}
-	else {
-		if (extractBinaries(&workpath)) {
+	} else {
+		if (extractBinaries(&status)) {
 			VS("Error extracting binaries\n");
 			return -1;
 		}
-		// if workpath got set to non-NULL, we've extracted stuff
-		if (workpath) {
-			// run the "child" process, then clean up
-			rc = relaunch(thisfilew, workpath);
-		}
-		else {
-			// no "child" process necessary
-			rc = doIt(argc, argv);
-			if (rc) {
-				return rc;
-			}
-			finalizePython();
-		}
-		cleanUp();
+
+		rc = relaunch(thisfilew, status.temppath[0] != NULL ? status.temppath : status.homepath);
+
+		cleanUp(&status);
 	}
 	return rc;
 }
