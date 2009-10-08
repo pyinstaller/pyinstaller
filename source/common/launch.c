@@ -663,8 +663,9 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
         strcpy(tmp, status->temppath);
 	    tmp[strlen(tmp)-1] = '\0';
 	    sprintf(cmd, "sys.path.append('%s')", tmp);
+        PI_PyRun_SimpleString(cmd);
     }	
-    PI_PyRun_SimpleString(cmd);
+
 	strcpy(tmp, status->homepath);
 	tmp[strlen(tmp)-1] = '\0';
 	sprintf(cmd, "sys.path.append('%s')", tmp);
