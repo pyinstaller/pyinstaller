@@ -225,6 +225,9 @@ class CArchive(archive.Archive):
             if typcd == 'o':
                 s = ''
                 flag = 0
+            if typcd == 'd':
+                s = ''
+                flag = 0
             elif typcd == 's':
                 # If it's a source code file, add \0 terminator as it will be
                 # executed as-is by the bootloader.

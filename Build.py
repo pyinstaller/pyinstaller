@@ -525,7 +525,8 @@ class PKG(Target):
                  'DATA': 'x',
                  'BINARY': 'b',
                  'ZIPFILE': 'Z',
-                 'EXECUTABLE': 'b'}
+                 'EXECUTABLE': 'b',
+                 'DEPENDENCY':  'd'}
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=0, upx_binaries=0, crypt=0):
         Target.__init__(self)
