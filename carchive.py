@@ -222,10 +222,7 @@ class CArchive(archive.Archive):
         (nm, pathnm, flag, typcd) = entry[:4]
         # version 5 - allow type 'o' = runtime option
         try:
-            if typcd == 'o':
-                s = ''
-                flag = 0
-            if typcd == 'd':
+            if typcd in ('o', 'd'):
                 s = ''
                 flag = 0
             elif typcd == 's':
