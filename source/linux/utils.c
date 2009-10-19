@@ -39,6 +39,10 @@ static struct _frozen _PyImport_FrozenModules[] = {
 
 int append2enviroment(const char *name, const char *value);
 
+void init_launcher(void)
+{
+}
+
 int get_thisfile(char *thisfile, const char *programname)
 {
     #ifdef FREEZE_EXCEPTIONS
