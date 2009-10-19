@@ -45,22 +45,22 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #endif
     char homepath[_MAX_PATH];
     char archivefile[_MAX_PATH + 5];
-	char MEIPASS2[_MAX_PATH + 11] = "_MEIPASS2=";
+    char MEIPASS2[_MAX_PATH + 11] = "_MEIPASS2=";
     int rc = 0;
     char *extractionpath = NULL;
 #ifndef _CONSOLE
-	int argc = __argc;
-	char **argv = __argv;
+    int argc = __argc;
+    char **argv = __argv;
 #endif
     memset(&status, 0, sizeof(ARCHIVE_STATUS));
 
     get_thisfile(thisfile, argv[0]);
 #ifdef WIN32
-	get_thisfilew(thisfilew);
+    get_thisfilew(thisfilew);
 #endif
     get_archivefile(archivefile, thisfile);
-	get_homepath(homepath, thisfile);
-	
+    get_homepath(homepath, thisfile);
+
     extractionpath = getenv( "_MEIPASS2" );
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
@@ -98,7 +98,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #ifndef WIN32
         rc = spawn(thisfile, argv);
 #else
-		rc = spawn(thisfilew);
+	rc = spawn(thisfilew);
 #endif
 
         VS("Back to parent...\n");
