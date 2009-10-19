@@ -846,7 +846,8 @@ class COLLECT(Target):
                 fnm = checkCache(fnm, self.strip_binaries,
                                  self.upx_binaries and ( iswin or cygwin )
                                   and config['hasUPX'])
-            shutil.copy2(fnm, tofnm)
+            if typ != 'DEPENDENCY':            
+                shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0755)
         _save_data(self.out,
