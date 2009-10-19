@@ -26,23 +26,41 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #include "utils.h"
+#ifndef WIN32
 #include <sys/wait.h>
+#endif
 
+
+#ifdef _CONSOLE
 int main(int argc, char* argv[])
+#else
+int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
+						LPSTR lpCmdLine, int nCmdShow )
+#endif
 {
     ARCHIVE_STATUS status;
-    memset(&status, 0, sizeof(ARCHIVE_STATUS));
     char thisfile[_MAX_PATH];
+#ifdef WIN32
+    WCHAR thisfilew[_MAX_PATH + 1];
+#endif
     char homepath[_MAX_PATH];
     char archivefile[_MAX_PATH + 5];
+	char MEIPASS2[_MAX_PATH + 11] = "_MEIPASS2=";
     int rc = 0;
     char *extractionpath = NULL;
-    /* atexit(cleanUp); */
+#ifndef _CONSOLE
+	int argc = __argc;
+	char **argv = __argv;
+#endif
+    memset(&status, 0, sizeof(ARCHIVE_STATUS));
 
     get_thisfile(thisfile, argv[0]);
+#ifdef WIN32
+	get_thisfilew(thisfilew);
+#endif
     get_archivefile(archivefile, thisfile);
-    get_homepath(homepath, NULL);
-
+	get_homepath(homepath, thisfile);
+	
     extractionpath = getenv( "_MEIPASS2" );
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
@@ -71,12 +89,17 @@ int main(int argc, char* argv[])
 
         VS("Executing self as child with ");
         /* run the "child" process, then clean up */
-        setenv("_MEIPASS2", status.temppath[0] != 0 ? status.temppath : homepath, 1);
-
+		strcat(MEIPASS2, status.temppath[0] != 0 ? status.temppath : homepath);
+		putenv(MEIPASS2);
+		
         if (set_enviroment(&status) == -1)
             return -1;
 
+#ifndef WIN32
         rc = spawn(thisfile, argv);
+#else
+		rc = spawn(thisfilew);
+#endif
 
         VS("Back to parent...\n");
         if (status.temppath[0] != 0)        

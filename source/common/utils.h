@@ -27,8 +27,16 @@
  */
 #include "launch.h"
 
+void init_launcher(void);
 int get_thisfile(char *thisfile, const char *programname);
+#ifdef WIN32
+int get_thisfilew(LPWSTR thisfilew);
+#endif
 void get_homepath(char *homepath, const char *thisfile);
 void get_archivefile(char *archivefile, const char *thisfile);
 int set_enviroment(const ARCHIVE_STATUS *status);
+#ifndef WIN32
 int spawn(const char *thisfile, char *const argv[]);
+#else
+int spawn(LPWSTR thisfile);
+#endif

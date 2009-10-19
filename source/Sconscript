@@ -37,7 +37,7 @@ zlib = env.Library("zlib",
                      "zlib/inffast.c",
                      "zlib/inftrees.c"])
 run = env.Program("run",
-                 ["common/launch.c", "windows/winmain.c", zlib, resfile])
+                 ["common/launch.c", "common/main.c", "windows/utils.c", zlib, resfile])
 dll = env.SharedLibrary("inprocsrvr",
                         ["common/launch.c", "windows/dllmain.c", zlib])
 
