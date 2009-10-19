@@ -1,9 +1,6 @@
 /*
- * A special version for minimal installs, where
- * the bootstrap path is the directory in which
- * the executable lives.
- *
- * Copyright (C) 2007, Daniele Varrazzo
+ * Bootloader for a packed executable.
+ * Copyright (C) 2009, Lorenzo Masini
  * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
  *
  * This program is free software; you can redistribute it and/or
@@ -28,15 +25,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+#include "launch.h"
 
-#ifndef PI_GETPATH_H
-#define PI_GETPATH_H
-
-void PI_SetProgramName(const char *pn);
-char *PI_GetProgramName(void);
-char *PI_GetPath(void);
-char *PI_GetPrefix(void);
-char *PI_GetExecPrefix(void);
-char *PI_GetProgramFullPath(void);
-
-#endif /* PI_GETPATH_H */
+int get_thisfile(char *thisfile, const char *programname);
+void get_homepath(char *homepath, const char *thisfile);
+void get_archivefile(char *archivefile, const char *thisfile);
+int set_enviroment(const ARCHIVE_STATUS *status);
+int spawn(const char *thisfile, char *const argv[]);

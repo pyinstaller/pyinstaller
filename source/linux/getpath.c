@@ -242,7 +242,7 @@ calculate_path(void)
 static char *progname = "python";
 
 void
-PI_SetProgramName(char *pn)
+PI_SetProgramName(const char *pn)
 {
 	if (pn && *pn)
 		progname = pn;

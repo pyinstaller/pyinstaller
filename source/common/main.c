@@ -25,46 +25,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#include "launch.h"
-#include "getpath.h"
+#include "utils.h"
 #include <sys/wait.h>
-
-#ifdef FREEZE_EXCEPTIONS
-extern unsigned char M_exceptions[];
-static struct _frozen _PyImport_FrozenModules[] = {
-    {"exceptions", M_exceptions, EXCEPTIONS_LEN},
-    {0, 0, 0}
-};
-#endif
-
-void exportExtractionPath(char *extractionpath, char *envvar_name)
-{
-    char *envvar;
-    char *old_envvar;
-    int nchars;
-
-    old_envvar = getenv(envvar_name);
-
-    nchars = strlen(extractionpath);
-    if (old_envvar)
-        nchars += strlen(old_envvar) + 1;
-
-    /* at process exit: no need to free */
-    envvar = (char*)malloc((nchars+1)*sizeof(char));
-    if (envvar==NULL) {
-            fprintf(stderr,"Cannot allocate memory for %s "
-                           "environment variable\n",envvar_name);
-            exit(2);
-    }
-
-    strcpy(envvar, extractionpath);
-    if (old_envvar) {
-        strcat(envvar, ":");
-        strcat(envvar, old_envvar);
-    }
-    setenv(envvar_name, envvar, 1);
-    VS("%s\n", envvar);
-}
 
 int main(int argc, char* argv[])
 {
@@ -73,39 +35,18 @@ int main(int argc, char* argv[])
     char thisfile[_MAX_PATH];
     char homepath[_MAX_PATH];
     char archivefile[_MAX_PATH + 5];
-    TOC *ptoc = NULL;
     int rc = 0;
-    int pid;
     char *extractionpath = NULL;
     /* atexit(cleanUp); */
-#ifdef FREEZE_EXCEPTIONS
-    PyImport_FrozenModules = _PyImport_FrozenModules;
-#endif
-    /* fill in thisfile */
-#ifdef __CYGWIN__
-    if (strncasecmp(&argv[0][strlen(argv[0])-4], ".exe", 4)) {
-        strcpy(thisfile, argv[0]);
-        strcat(thisfile, ".exe");
-        PI_SetProgramName(thisfile);
-    }
-    else
-#endif
-    PI_SetProgramName(argv[0]);
-    strcpy(thisfile, PI_GetProgramFullPath());
-    VS("thisfile is %s\n", thisfile);
+
+    get_thisfile(thisfile, argv[0]);
+    get_archivefile(archivefile, thisfile);
+    get_homepath(homepath, NULL);
 
     extractionpath = getenv( "_MEIPASS2" );
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
-    /* fill in here (directory of thisfile) */
-    strcpy(homepath, PI_GetPrefix());
-    strcat(homepath, "/");
-    VS("homepath is %s\n", homepath);
-
     if (init(&status, homepath, &thisfile[strlen(homepath)])) {
-        /* no pkg there, so try the nonelf configuration */
-        strcpy(archivefile, thisfile);
-        strcat(archivefile, ".pkg");
         if (init(&status, homepath, &archivefile[strlen(homepath)])) {
             FATALERROR("Cannot open self %s or archive %s\n",
                     thisfile, archivefile);
@@ -130,29 +71,15 @@ int main(int argc, char* argv[])
 
         VS("Executing self as child with ");
         /* run the "child" process, then clean up */
-        setenv("_MEIPASS2", status.temppath[0] != NULL ? status.temppath : homepath, 1);
+        setenv("_MEIPASS2", status.temppath[0] != 0 ? status.temppath : homepath, 1);
 
-        /* add temppath to LD_LIBRARY_PATH */
-        if (status.temppath[0] != NULL){
-            exportExtractionPath(status.temppath, "LD_LIBRARY_PATH");
-#ifdef __APPLE__
-        /* add temppath to DYLD_LIBRARY_PATH */
-            exportExtractionPath(status.temppath, "DYLD_LIBRARY_PATH");
-#endif
-        }
-        exportExtractionPath(homepath, "LD_LIBRARY_PATH");
-#ifdef __APPLE__
-        /* add homepath to DYLD_LIBRARY_PATH */
-        exportExtractionPath(homepath, "DYLD_LIBRARY_PATH");
-#endif
-        pid = fork();
-        if (pid == 0)
-            execvp(thisfile, argv);
-        wait(&rc);
-        rc = WEXITSTATUS(rc);
+        if (set_enviroment(&status) == -1)
+            return -1;
+
+        rc = spawn(thisfile, argv);
 
         VS("Back to parent...\n");
-        if (status.temppath[0] != NULL)        
+        if (status.temppath[0] != 0)        
             clear(status.temppath);
     }
     return rc;

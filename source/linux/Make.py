@@ -131,7 +131,7 @@ def main():
     import exceptions
     if not hasattr(exceptions, '__file__'):
         freeze_exceptions = 0
-        files = ['main.c', '../common/launch.c']
+        files = ['../common/main.c', '../common/launch.c', 'utils.c']
         if hasattr(exceptions, 'Warning'):
             have_warnings = 1
     else:
@@ -143,7 +143,7 @@ def main():
         code = inf.read()
         codelen = len(code)
         outfp = bkfile.open('M_exceptions.c', 'w')
-        files = ['M_exceptions.c', 'main.c', '../common/launch.c']
+        files = ['M_exceptions.c', '../common/main.c', '../common/launch.c', 'utils.c']
         outfp.write('unsigned char M_exceptions[] = {')
         for i in range(0, len(code), 16):
             outfp.write('\n\t')
