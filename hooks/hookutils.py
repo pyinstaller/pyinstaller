@@ -64,7 +64,7 @@ def django_dottedstring_imports(django_root_dir):
 def find_django_root(dir):
     entities = os.listdir(dir)
     if "manage.py" in entities and "settings.py" in entities and "urls.py" in entities:
-        return dir
+        return [dir]
     else:
         django_root_directories = []
         for entity in entities:
