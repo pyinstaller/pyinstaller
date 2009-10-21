@@ -582,7 +582,7 @@ class PKG(Target):
         toc = TOC()
         for item in self.toc:
             inm, fnm, typ = item
-            if typ == 'EXTENSION':
+            if typ in ('EXTENSION', 'DEPENDENCY'):
                 binext = os.path.splitext(fnm)[1]
                 if not os.path.splitext(inm)[1] == binext:
                     inm = inm + binext
