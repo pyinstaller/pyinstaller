@@ -1187,11 +1187,11 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
         }
     } else {
         if ((status = get_archive(status_list, path)) == NULL) {
-            printf("Archive not found: %s\n", path);
+            FATALERROR("Archive not found: %s\n", path);
             return -1;
         }
         if (extractDependencyFromArchive(status, filename) == -1) {
-            printf("Error extracting %s\n", filename);
+            FATALERROR("Error extracting %s\n", filename);
             free(status);
             return -1;
         }
