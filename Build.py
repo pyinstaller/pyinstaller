@@ -1115,7 +1115,8 @@ def MERGE(*args):
                 analisys.binaries = analisys.binaries - [analisys.binaries[index]]
                 analisys.binaries.insert(index, (":".join([dep_path, tpl[0]]), tpl[1], "DEPENDENCY"))
             else:
-                dependencies[tpl[0]] = path            
+                if not "libpython" in tpl[0]:                
+                    dependencies[tpl[0]] = path         
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
