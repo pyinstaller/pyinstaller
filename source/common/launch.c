@@ -42,9 +42,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "launch.h"
+#include <stdio.h>
 #ifndef NOZLIB
 #include "zlib.h"
 #endif
+
+#ifdef WIN32
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+#endif 
 
 /*
  * Python Entry point declarations (see macros in launch.h).
@@ -184,20 +190,6 @@ int getTempPath(char *buff)
 
 #else
 
-int checkFile(char *buf, const char *fmt, ...)
-{
-    va_list args;
-    struct stat tmp;
-    memset(buf, 0, _MAX_PATH + 1);    
-
-    va_start(args, fmt);    
-    vsnprintf(buf, _MAX_PATH, fmt, args);
-    buf[_MAX_PATH + 1] = '\0';
-    va_end(args);
-    
-    return stat(buf, &tmp);    
-}
-
 int testTempPath(char *buff)
 {
 	strcat(buff, "/_MEIXXXXXX");
@@ -237,8 +229,19 @@ int getTempPath(char *buff)
 
 #endif
 
+static int checkFile(char *buf, const char *fmt, ...)
+{
+    va_list args;
+    struct stat tmp;
+    memset(buf, 0, _MAX_PATH + 1);    
 
-
+    va_start(args, fmt);    
+    vsnprintf(buf, _MAX_PATH, fmt, args);
+    buf[_MAX_PATH + 1] = '\0';
+    va_end(args);
+    
+    return stat(buf, &tmp);    
+}
 
 /*
  * Set up paths required by rest of this module
@@ -1103,7 +1106,7 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
     int i = 0;
     
     if (createTempPath(status_list[SELF]) == -1){
-        return -1;
+        return NULL;
     }
 
     if (checkFile(archive_path, "%s", path) != 0) {
