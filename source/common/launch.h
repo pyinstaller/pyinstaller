@@ -226,6 +226,8 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 #define _MAX_PATH 256
 #endif
 
+#define SELF 0
+
 /* TOC entry for a CArchive */
 typedef struct _toc {
     int structlen;    /*len of this one - including full len of name */
@@ -293,7 +295,7 @@ int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archive
  *
  * @return 0 on success, non-zero otherwise.
  */
-int extractBinaries(ARCHIVE_STATUS *status);
+int extractBinaries(ARCHIVE_STATUS *status_list[]);
 
 /**
  * Load Python and execute all scripts in the archive

@@ -188,10 +188,11 @@ int checkFile(char *buf, const char *fmt, ...)
 {
     va_list args;
     struct stat tmp;
+    memset(buf, 0, _MAX_PATH + 1);    
 
     va_start(args, fmt);    
     vsnprintf(buf, _MAX_PATH, fmt, args);
-    buf[_MAX_PATH] = '\0';
+    buf[_MAX_PATH + 1] = '\0';
     va_end(args);
     
     return stat(buf, &tmp);    
@@ -235,6 +236,9 @@ int getTempPath(char *buff)
 }
 
 #endif
+
+
+
 
 /*
  * Set up paths required by rest of this module
@@ -944,18 +948,15 @@ FILE *openTarget(char *path, char* name_)
     }
 	return fopen(fnm, "wb");
 }
-/*
- * extract from the archive
- * and copy to the filesystem
- * relative to the directory the archive's in
+
+/* Function that creates a temporany directory if it doesn't exists
+ *  and properly sets the ARCHIVE_STATUS members.
  */
-int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
+static int createTempPath(ARCHIVE_STATUS *status)
 {
 #ifdef WIN32
 	char *p;
 #endif
-	FILE *out;
-	unsigned char *data = extract(status, ptoc);
 
 	if (status->temppath[0] == NULL) {
 		if (!getTempPath(status->temppath))
@@ -970,6 +971,22 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 				*p = '/';
 #endif
 	}
+    return 0;
+}
+
+/*
+ * extract from the archive
+ * and copy to the filesystem
+ * relative to the directory the archive's in
+ */
+int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
+{
+	FILE *out;
+	unsigned char *data = extract(status, ptoc);
+
+    if (createTempPath(status) == -1){
+        return -1;
+    }
 
 	out = openTarget(status->temppath, ptoc->name);
 
@@ -987,21 +1004,223 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 	free(data);
 	return 0;
 }
-/*
- * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
+
+/* Splits the item in the form path:filename */
+static int splitName(char *path, char *filename, const char *item)
+{
+    char name[_MAX_PATH + 1];
+
+    strcpy(name, item);
+    strcpy(path, strtok(name, ":"));
+    strcpy(filename, strtok(NULL, ":")) ;
+
+    if (path[0] == 0 || filename[0] == 0)
+        return -1;
+    return 0;
+}
+
+/* Copy the file src to dst 4KB per time */
+static int copyFile(const char *src, const char *dst)
+{
+    FILE *in = fopen(src, "rb");
+    FILE *out = fopen(dst, "wb");
+    char buf[4096];
+    int error = 0;
+
+    if (in == NULL || out == NULL)
+        return -1;
+
+    while (!feof(in)) {
+        fread(buf, 4096, 1, in);        
+        if (ferror(in)) {
+            clearerr(in);
+            error = -1;
+            break;
+        } else {
+            fwrite(buf, 4096, 1, out);
+            if (ferror(out)) {
+                clearerr(out);
+                error = -1;
+                break;
+            }
+        }
+    }
+#ifndef WIN32
+    fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
+#endif
+    fclose(in);
+    fclose(out);
+
+    return error;
+}
+
+/* Giving a fullpath, returns a newly allocated string 
+ * which contains the directory name.
+ * The returned string must be freed after use.
+ */ 
+static char *dirName(const char *fullpath)
+{
+    int i = 0;
+    char *pathname = (char *) calloc(_MAX_PATH, sizeof(char));
+
+    for (i = strlen(fullpath); i >= 0; i--) {
+        if (fullpath[i] == '/') {
+            strncpy(pathname, fullpath, i + 1);
+            pathname[i + 1] = 0;
+            break;
+        }
+    }
+
+    return pathname;    
+}
+
+/* Copy the dependencies file from a directory to the tempdir */
+static int copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, const char *filename)
+{
+    char dstpath[_MAX_PATH + 1];
+
+    if (createTempPath(status) == -1){
+        return -1;
+    }
+
+    snprintf(dstpath, _MAX_PATH, "%s%s", status->temppath, filename);          
+    VS("Coping file %s to %s\n", srcpath, dstpath);
+    if (copyFile(srcpath, dstpath) == -1) {
+        return -1;
+    }
+    return 0;
+}
+
+/* Look for the archive identified by path into the ARCHIVE_STATUS pool status_list.
+ * If the archive is found, a pointer to the associated ARCHIVE_STATUS is returned 
+ * otherwise the needed archive is opened and added to the pool and then returned.
+ * If an error occurs, returns NULL.
  */
-int extractBinaries(ARCHIVE_STATUS *status)
+static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *path)
+{
+    char archive_path[_MAX_PATH + 1];
+    ARCHIVE_STATUS *status = NULL;
+    int i = 0;
+    
+    if (createTempPath(status_list[SELF]) == -1){
+        return -1;
+    }
+
+    if (checkFile(archive_path, "%s", path) != 0) {
+        return NULL;
+    }
+
+    for (i = 1; status_list[i] != NULL; i++){
+        if (strcmp(status_list[i]->archivename, archive_path) == 0) {
+            VS("Archive found: %s\n", archive_path);
+            return status_list[i];
+        }
+        printf("Checking next archive in the list...\n");
+    }
+
+    if ((status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL) {
+        FATALERROR("Error allocating memory for status\n");
+        return NULL;
+    }
+
+    strcpy(status->archivename, archive_path);
+    strcpy(status->homepath, status_list[SELF]->homepath);
+    strcpy(status->temppath, status_list[SELF]->temppath);
+#ifdef WIN32
+    strcpy(status->homepathraw, status_list[SELF]->homepathraw);
+    strcpy(status->temppathraw, status_list[SELF]->temppathraw);
+#endif
+
+    if (openArchive(status)) {
+        FATALERROR("Error openning archive %s\n", archive_path);
+        free(status);
+        return NULL;   
+    }
+ 
+    status_list[i] = status;
+    return status;
+}
+
+/* Extract a file identifed by filename from the archive associated to status. */
+static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
 {
 	TOC * ptoc = status->tocbuff;
-	VS("Extracting binaries\n");
+	VS("Extracting dependencies\n");
 	while (ptoc < status->tocend) {
-		if (ptoc->typcd == 'b' || ptoc->typcd == 'x')
+		if (strcmp(ptoc->name, filename) == 0)
 			if (extract2fs(status, ptoc))
 				return -1;
 		ptoc = incrementTocPtr(status, ptoc);
 	}
 	return 0;
 }
+
+/* Decide if the dependency identified by item is in a onedir or onfile archive
+ * then call the appropriate function.
+ */
+static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
+{
+    ARCHIVE_STATUS *status = NULL;
+    char name[_MAX_PATH + 1];
+    char path[_MAX_PATH + 1];
+    char filename[_MAX_PATH + 1];
+    char srcpath[_MAX_PATH + 1];
+
+    char *dirname = NULL;
+    
+    if (splitName(path, filename, item) == -1)
+        return -1;
+            
+    dirname = dirName(path);
+    if (dirname[0] == 0) {
+        free(dirname);
+        return -1;
+    }
+
+    if (checkFile(srcpath, "%s%s", dirname, filename) == 0) {                
+        if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
+            FATALERROR("Error coping %s\n", filename);
+            free(dirname);
+            return -1;
+        }
+    } else {
+        if ((status = get_archive(status_list, path)) == NULL) {
+            printf("Archive not found: %s\n", path);
+            return -1;
+        }
+        if (extractDependencyFromArchive(status, filename) == -1) {
+            printf("Error extracting %s\n", filename);
+            free(status);
+            return -1;
+        }
+    }
+    free(dirname);
+    
+    return 0;
+}
+
+/*
+ * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
+ * and checks for dependencies (type 'd'). If dependencies are found, extract them.
+ */
+int extractBinaries(ARCHIVE_STATUS *status_list[])
+{
+	TOC * ptoc = status_list[SELF]->tocbuff;
+	VS("Extracting binaries\n");
+	while (ptoc < status_list[SELF]->tocend) {
+		if (ptoc->typcd == 'b' || ptoc->typcd == 'x')
+			if (extract2fs(status_list[SELF], ptoc))
+				return -1;
+        
+        if (ptoc->typcd == 'd') {
+            if (extractDependency(status_list, ptoc->name) == -1)
+                return -1;
+        }
+		ptoc = incrementTocPtr(status_list[SELF], ptoc);
+	}
+	return 0;
+}
+
 /*
  * Run scripts
  * Return non zero on failure

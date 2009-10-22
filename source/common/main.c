@@ -30,6 +30,7 @@
 #include <sys/wait.h>
 #endif
 
+#define MAX_STATUS_LIST 20
 
 #ifdef _CONSOLE
 int main(int argc, char* argv[])
@@ -38,7 +39,8 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						LPSTR lpCmdLine, int nCmdShow )
 #endif
 {
-    ARCHIVE_STATUS status;
+    /*  status_list[0] is reserved for the main process, the others for dependencies. */
+    ARCHIVE_STATUS *status_list[MAX_STATUS_LIST];
     char thisfile[_MAX_PATH];
 #ifdef WIN32
     WCHAR thisfilew[_MAX_PATH + 1];
@@ -52,7 +54,13 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
     int argc = __argc;
     char **argv = __argv;
 #endif
-    memset(&status, 0, sizeof(ARCHIVE_STATUS));
+    int i = 0;
+
+    memset(&status_list, 0, MAX_STATUS_LIST * sizeof(ARCHIVE_STATUS *));
+    if ((status_list[SELF] = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL){
+        FATALERROR("Cannot allocate memory for ARCHIVE_STATUS\n");
+        return -1;
+    }
 
     get_thisfile(thisfile, argv[0]);
 #ifdef WIN32
@@ -63,9 +71,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     extractionpath = getenv( "_MEIPASS2" );
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
-
-    if (init(&status, homepath, &thisfile[strlen(homepath)])) {
-        if (init(&status, homepath, &archivefile[strlen(homepath)])) {
+    
+    if (init(status_list[SELF], homepath, &thisfile[strlen(homepath)])) {
+        if (init(status_list[SELF], homepath, &archivefile[strlen(homepath)])) {
             FATALERROR("Cannot open self %s or archive %s\n",
                     thisfile, archivefile);
             return -1;
@@ -78,32 +86,36 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
          *  we pass it through status variable 
          */
         if (strcmp(homepath, extractionpath) != 0) 
-            strcpy(status.temppath, extractionpath);
-        rc = doIt(&status, argc, argv);
-    }
-    else {
-        if (extractBinaries(&status)) {
+            strcpy(status_list[SELF]->temppath, extractionpath);
+        rc = doIt(status_list[SELF], argc, argv);
+    } else {
+        if (extractBinaries(status_list)) {
             VS("Error extracting binaries\n");
             return -1;
         }
 
         VS("Executing self as child with ");
         /* run the "child" process, then clean up */
-		strcat(MEIPASS2, status.temppath[0] != 0 ? status.temppath : homepath);
+		strcat(MEIPASS2, status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
 		putenv(MEIPASS2);
 		
-        if (set_enviroment(&status) == -1)
+        if (set_enviroment(status_list[SELF]) == -1)
             return -1;
 
 #ifndef WIN32
         rc = spawn(thisfile, argv);
 #else
-	rc = spawn(thisfilew);
+	    rc = spawn(thisfilew);
 #endif
 
         VS("Back to parent...\n");
-        if (status.temppath[0] != 0)        
-            clear(status.temppath);
+        if (status_list[SELF]->temppath[0] != 0)        
+            clear(status_list[SELF]->temppath);
+        
+        for (i = SELF; status_list[i] != NULL; i++) {
+            VS("Freeing status for %s\n", status_list[i]->archivename);
+            free(status_list[i]);
+        }
     }
     return rc;
 }
