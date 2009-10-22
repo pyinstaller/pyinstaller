@@ -1164,7 +1164,6 @@ static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *file
 static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
 {
     ARCHIVE_STATUS *status = NULL;
-    char name[_MAX_PATH + 1];
     char path[_MAX_PATH + 1];
     char filename[_MAX_PATH + 1];
     char srcpath[_MAX_PATH + 1];
