@@ -1063,16 +1063,10 @@ static int copyFile(const char *src, const char *dst)
  */ 
 static char *dirName(const char *fullpath)
 {
-    int i = 0;
+    char *match = rindex(fullpath, '/');
     char *pathname = (char *) calloc(_MAX_PATH, sizeof(char));
 
-    for (i = strlen(fullpath); i >= 0; i--) {
-        if (fullpath[i] == '/') {
-            strncpy(pathname, fullpath, i + 1);
-            pathname[i + 1] = 0;
-            break;
-        }
-    }
+    strncpy(pathname, fullpath, match - fullpath + 1);
 
     return pathname;    
 }
