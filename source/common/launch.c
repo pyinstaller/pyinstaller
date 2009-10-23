@@ -43,6 +43,7 @@
 #include <sys/stat.h>
 #include "launch.h"
 #include <stdio.h>
+#include <string.h>
 #ifndef NOZLIB
 #include "zlib.h"
 #endif
@@ -1063,7 +1064,7 @@ static int copyFile(const char *src, const char *dst)
  */ 
 static char *dirName(const char *fullpath)
 {
-    char *match = rindex(fullpath, '/');
+    char *match = strrchr(fullpath, '/');
     char *pathname = (char *) calloc(_MAX_PATH, sizeof(char));
 
     strncpy(pathname, fullpath, match - fullpath + 1);
