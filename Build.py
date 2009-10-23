@@ -1112,14 +1112,13 @@ def build(spec):
 def MERGE(*args):
     dependencies = {}
     for analisys, path in args:
-        for tpl in analisys.binaries:
-            if dependencies.has_key(tpl[0]):
-                dep_path = dependencies[tpl[0]]
-                index = analisys.binaries.index(tpl)
-                analisys.binaries = analisys.binaries - [analisys.binaries[index]]
-                analisys.binaries.insert(index, (":".join([dep_path, tpl[0]]), tpl[1], "DEPENDENCY"))
-            else:
-                dependencies[tpl[0]] = path         
+		for i in range(len(analisys.binaries)):
+			tpl = analisys.binaries[i]
+			if not tpl in dependencies:
+				dependencies[tpl[1]] = path
+			else:
+				dep_path = dependencies[tpl[1]]
+				analisys.binaries[i] = (":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY")				
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
