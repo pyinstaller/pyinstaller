@@ -125,7 +125,7 @@ void mbfatalerror(const char *fmt, ...)
 	va_list args;
 
 	va_start(args, fmt);
-	_vsnprintf(msg, MBTXTLEN, fmt, args);
+	vsnprintf(msg, MBTXTLEN, fmt, args);
 	msg[MBTXTLEN-1] = '\0';
 	va_end(args);
 
@@ -138,7 +138,7 @@ void mbothererror(const char *fmt, ...)
 	va_list args;
 
 	va_start(args, fmt);
-	_vsnprintf(msg, MBTXTLEN, fmt, args);
+	vsnprintf(msg, MBTXTLEN, fmt, args);
 	msg[MBTXTLEN-1] = '\0';
 	va_end(args);
 
@@ -151,7 +151,7 @@ void mbvs(const char *fmt, ...)
 	va_list args;
 
 	va_start(args, fmt);
-	_vsnprintf(msg, MBTXTLEN, fmt, args);
+	vsnprintf(msg, MBTXTLEN, fmt, args);
 	msg[MBTXTLEN-1] = '\0';
 	va_end(args);
 
