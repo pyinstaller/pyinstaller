@@ -235,7 +235,7 @@ static int checkFile(char *buf, const char *fmt, ...)
     va_list args;
     struct stat tmp;
     memset(buf, 0, _MAX_PATH + 1);    
-
+    
     va_start(args, fmt);    
     vsnprintf(buf, _MAX_PATH, fmt, args);
     buf[_MAX_PATH + 1] = '\0';
@@ -1014,6 +1014,7 @@ static int splitName(char *path, char *filename, const char *item)
 {
     char name[_MAX_PATH + 1];
 
+    VS("Splitting item into path and filename\n");
     strcpy(name, item);
     strcpy(path, strtok(name, ":"));
     strcpy(filename, strtok(NULL, ":")) ;
@@ -1066,9 +1067,13 @@ static char *dirName(const char *fullpath)
 {
     char *match = strrchr(fullpath, '/');
     char *pathname = (char *) calloc(_MAX_PATH, sizeof(char));
-
-    strncpy(pathname, fullpath, match - fullpath + 1);
-
+    VS("Calculating dirname from fullpath\n");
+    if (match != NULL)
+        strncpy(pathname, fullpath, match - fullpath + 1);
+    else
+        strcpy(pathname, fullpath);
+    
+    VS("Pathname: %s\n", pathname);
     return pathname;    
 }
 
@@ -1100,6 +1105,7 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
     ARCHIVE_STATUS *status = NULL;
     int i = 0;
     
+    VS("Getting file from archive.");
     if (createTempPath(status_list[SELF]) == -1){
         return NULL;
     }
@@ -1143,7 +1149,7 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
 static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
 {
 	TOC * ptoc = status->tocbuff;
-	VS("Extracting dependencies\n");
+	VS("Extracting dependencies from archive\n");
 	while (ptoc < status->tocend) {
 		if (strcmp(ptoc->name, filename) == 0)
 			if (extract2fs(status, ptoc))
@@ -1165,6 +1171,7 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
 
     char *dirname = NULL;
     
+    VS("Extracting dependencies\n");
     if (splitName(path, filename, item) == -1)
         return -1;
             
@@ -1174,7 +1181,9 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
         return -1;
     }
 
-    if (checkFile(srcpath, "%s%s", dirname, filename) == 0) {                
+    VS("Checking if file exists\n");
+    if (checkFile(srcpath, "%s%s", dirname, filename) == 0) {
+        VS("No archive found, assuming is onedir\n");        
         if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
             free(dirname);
