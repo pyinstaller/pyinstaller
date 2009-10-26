@@ -1101,25 +1101,20 @@ static int copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, co
  */
 static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *path)
 {
-    char archive_path[_MAX_PATH + 1];
     ARCHIVE_STATUS *status = NULL;
     int i = 0;
     
-    VS("Getting file from archive.");
+    VS("Getting file from archive.\n");
     if (createTempPath(status_list[SELF]) == -1){
         return NULL;
     }
 
-    if (checkFile(archive_path, "%s", path) != 0) {
-        return NULL;
-    }
-
     for (i = 1; status_list[i] != NULL; i++){
-        if (strcmp(status_list[i]->archivename, archive_path) == 0) {
-            VS("Archive found: %s\n", archive_path);
+        if (strcmp(status_list[i]->archivename, path) == 0) {
+            VS("Archive found: %s\n", path);
             return status_list[i];
         }
-        printf("Checking next archive in the list...\n");
+        VS("Checking next archive in the list...\n");
     }
 
     if ((status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL) {
@@ -1127,7 +1122,7 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
         return NULL;
     }
 
-    strcpy(status->archivename, archive_path);
+    strcpy(status->archivename, path);
     strcpy(status->homepath, status_list[SELF]->homepath);
     strcpy(status->temppath, status_list[SELF]->temppath);
 #ifdef WIN32
@@ -1136,7 +1131,7 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
 #endif
 
     if (openArchive(status)) {
-        FATALERROR("Error openning archive %s\n", archive_path);
+        FATALERROR("Error openning archive %s\n", path);
         free(status);
         return NULL;   
     }
@@ -1168,6 +1163,7 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
     char path[_MAX_PATH + 1];
     char filename[_MAX_PATH + 1];
     char srcpath[_MAX_PATH + 1];
+    char archive_path[_MAX_PATH + 1];
 
     char *dirname = NULL;
     
@@ -1190,8 +1186,13 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
             return -1;
         }
     } else {
-        if ((status = get_archive(status_list, path)) == NULL) {
-            FATALERROR("Archive not found: %s\n", path);
+        if ((checkFile(archive_path, "%s.pkg", path) != 0) && (checkFile(archive_path, "%s", path) != 0)) {
+            FATALERROR("Archive not found: %s\n", archive_path);            
+            return -1;
+        }
+
+        if ((status = get_archive(status_list, archive_path)) == NULL) {
+            FATALERROR("Archive not found: %s\n", archive_path);
             return -1;
         }
         if (extractDependencyFromArchive(status, filename) == -1) {
