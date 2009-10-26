@@ -68,7 +68,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #endif
     get_archivefile(archivefile, thisfile);
     get_homepath(homepath, thisfile);
-
+    chdir(homepath);
     extractionpath = getenv( "_MEIPASS2" );
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
     
