@@ -1109,17 +1109,34 @@ def build(spec):
         os.makedirs(BUILDPATH)
     execfile(spec)
 
+def get_relative_path(startpath, topath):
+    start = startpath.split(os.sep)[:-1]
+    for i in range(len(start)):
+        start[i] = ".."
+    result = os.sep.join(start)
+    if len(result) > 0:
+        return result + os.sep + topath
+    else:
+        return topath
+    
+
 def MERGE(*args):
+    common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a in args]))
+    if common_prefix[-1] != os.sep:
+        common_prefix += os.sep
+    print "Common prefix: %s" % common_prefix
     dependencies = {}
-    for analisys, path in args:
+    for analisys in args:
+        path = os.path.abspath(analisys.scripts[-1][1]).replace(common_prefix, "", 1)
+        path = os.path.splitext(path)[0]
         for i in range(len(analisys.binaries)):
             tpl = analisys.binaries[i]
             if not tpl[1] in dependencies.keys():
                 print "Adding dependency %s located in %s" % (tpl[1], path)
                 dependencies[tpl[1]] = path
             else:
-                print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dependencies[tpl[1]])
-                dep_path = dependencies[tpl[1]]
+                dep_path = get_relative_path(path, dependencies[tpl[1]])
+                print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
                 analisys.binaries[i] = (":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY")
 
 def main(specfile, configfilename):
