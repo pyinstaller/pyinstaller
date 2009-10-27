@@ -1186,7 +1186,8 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
             return -1;
         }
     } else {
-        if ((checkFile(archive_path, "%s.pkg", path) != 0) && (checkFile(archive_path, "%s", path) != 0)) {
+        if ((checkFile(archive_path, "%s%s.pkg", status_list[SELF]->homepath, path) != 0) && 
+            (checkFile(archive_path, "%s%s", status_list[SELF]->homepath, path) != 0)) {
             FATALERROR("Archive not found: %s\n", archive_path);            
             return -1;
         }
