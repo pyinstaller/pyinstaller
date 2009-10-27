@@ -593,7 +593,7 @@ class PKG(Target):
             toc.append((inm, fnm, typ))
         seen = {}
         for inm, fnm, typ in toc:
-            if typ in ('BINARY', 'EXTENSION'):
+            if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
                 if self.exclude_binaries:
                     self.dependencies.append((inm, fnm, typ))
                 else:
