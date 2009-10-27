@@ -1119,6 +1119,16 @@ def get_relative_path(startpath, topath):
     else:
         return topath
     
+def mark_dependencies(toc, dependencies, path):
+    for i in range(len(toc)):
+        tpl = toc[i]
+        if not tpl[1] in dependencies.keys():
+            print "Adding dependency %s located in %s" % (tpl[1], path)
+            dependencies[tpl[1]] = path
+        else:
+            dep_path = get_relative_path(path, dependencies[tpl[1]])
+            print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
+            toc[i] = (":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY")
 
 def MERGE(*args):
     common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a in args]))
@@ -1129,15 +1139,8 @@ def MERGE(*args):
     for analisys in args:
         path = os.path.abspath(analisys.scripts[-1][1]).replace(common_prefix, "", 1)
         path = os.path.splitext(path)[0]
-        for i in range(len(analisys.binaries)):
-            tpl = analisys.binaries[i]
-            if not tpl[1] in dependencies.keys():
-                print "Adding dependency %s located in %s" % (tpl[1], path)
-                dependencies[tpl[1]] = path
-            else:
-                dep_path = get_relative_path(path, dependencies[tpl[1]])
-                print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
-                analisys.binaries[i] = (":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY")
+        mark_dependencies(analisys.binaries, dependencies, path)
+        mark_dependencies(analisys.datas, dependencies, path)
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
