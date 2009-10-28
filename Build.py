@@ -594,7 +594,7 @@ class PKG(Target):
         seen = {}
         for inm, fnm, typ in toc:
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
-                if self.exclude_binaries:
+                if self.exclude_binaries and typ != 'DEPENDENCY':
                     self.dependencies.append((inm, fnm, typ))
                 else:
                     fnm = checkCache(fnm, self.strip_binaries,
