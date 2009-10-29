@@ -665,7 +665,7 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 
 	/* Set sys.path */
 	/* VS("Manipulating Python's sys.path\n"); */
-	PI_PyRun_SimpleString("import sys\n");
+	PI_PyRun_SimpleString("import sys,os\n");
 	PI_PyRun_SimpleString("del sys.path[:]\n");
     if (status->temppath[0] != NULL) {	
         strcpy(tmp, status->temppath);
@@ -676,7 +676,7 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 
 	strcpy(tmp, status->homepath);
 	tmp[strlen(tmp)-1] = '\0';
-	sprintf(cmd, "sys.path.append('%s')", tmp);
+	sprintf(cmd, "sys.path.append(os.path.abspath('%s'))", tmp);
 	PI_PyRun_SimpleString (cmd);
 
 	/* Set argv[0] to be the archiveName */
