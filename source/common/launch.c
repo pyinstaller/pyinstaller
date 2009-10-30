@@ -1025,10 +1025,10 @@ static int splitName(char *path, char *filename, const char *item)
 }
 
 /* Copy the file src to dst 4KB per time */
-static int copyFile(const char *src, const char *dst)
+static int copyFile(const char *src, const char *dst, const char *filename)
 {
     FILE *in = fopen(src, "rb");
-    FILE *out = fopen(dst, "wb");
+    FILE *out = openTarget(dst, filename);
     char buf[4096];
     int error = 0;
 
@@ -1080,15 +1080,12 @@ static char *dirName(const char *fullpath)
 /* Copy the dependencies file from a directory to the tempdir */
 static int copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, const char *filename)
 {
-    char dstpath[_MAX_PATH + 1];
-
     if (createTempPath(status) == -1){
         return -1;
     }
 
-    snprintf(dstpath, _MAX_PATH, "%s%s", status->temppath, filename);          
-    VS("Coping file %s to %s\n", srcpath, dstpath);
-    if (copyFile(srcpath, dstpath) == -1) {
+    VS("Coping file %s to %s\n", srcpath, status->temppath);
+    if (copyFile(srcpath, status->temppath, filename) == -1) {
         return -1;
     }
     return 0;
