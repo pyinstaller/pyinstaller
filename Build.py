@@ -241,6 +241,7 @@ class Analysis(Target):
         self.binaries = TOC()
         self.zipfiles = TOC()
         self.datas = TOC()
+        self.dependencies = TOC()
         self.__postinit__()
 
     GUTS = (('inputs',    _check_guts_eq),
@@ -1119,16 +1120,20 @@ def get_relative_path(startpath, topath):
     else:
         return topath
     
-def mark_dependencies(toc, dependencies, path):
-    for i in range(len(toc)):
-        tpl = toc[i]
-        if not tpl[1] in dependencies.keys():
-            print "Adding dependency %s located in %s" % (tpl[1], path)
-            dependencies[tpl[1]] = path
-        else:
-            dep_path = get_relative_path(path, dependencies[tpl[1]])
-            print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
-            toc[i] = (":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY")
+def set_dependencies(analisys, dependencies, path):
+    for toc in (analisys.binaries, analisys.datas):
+        for i in range(len(toc)):
+            tpl = toc[i]
+            if not tpl[1] in dependencies.keys():
+                print "Adding dependency %s located in %s" % (tpl[1], path)
+                dependencies[tpl[1]] = path
+            else:
+                dep_path = get_relative_path(path, dependencies[tpl[1]])
+                print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
+                analisys.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
+                toc[i] = (None, None, None)
+        # Clean the list 
+        toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
 
 def MERGE(*args):
     common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a in args]))
@@ -1139,8 +1144,7 @@ def MERGE(*args):
     for analisys in args:
         path = os.path.abspath(analisys.scripts[-1][1]).replace(common_prefix, "", 1)
         path = os.path.splitext(path)[0]
-        mark_dependencies(analisys.binaries, dependencies, path)
-        mark_dependencies(analisys.datas, dependencies, path)
+        set_dependencies(analisys, dependencies, path)
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
