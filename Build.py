@@ -1120,8 +1120,8 @@ def get_relative_path(startpath, topath):
     else:
         return topath
     
-def set_dependencies(analisys, dependencies, path):
-    for toc in (analisys.binaries, analisys.datas):
+def set_dependencies(analysis, dependencies, path):
+    for toc in (analysis.binaries, analysis.datas):
         for i in range(len(toc)):
             tpl = toc[i]
             if not tpl[1] in dependencies.keys():
@@ -1130,7 +1130,7 @@ def set_dependencies(analisys, dependencies, path):
             else:
                 dep_path = get_relative_path(path, dependencies[tpl[1]])
                 print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
-                analisys.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
+                analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
                 toc[i] = (None, None, None)
         # Clean the list 
         toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
@@ -1141,10 +1141,10 @@ def MERGE(*args):
         common_prefix += os.sep
     print "Common prefix: %s" % common_prefix
     dependencies = {}
-    for analisys in args:
-        path = os.path.abspath(analisys.scripts[-1][1]).replace(common_prefix, "", 1)
+    for analysis in args:
+        path = os.path.abspath(analysis.scripts[-1][1]).replace(common_prefix, "", 1)
         path = os.path.splitext(path)[0]
-        set_dependencies(analisys, dependencies, path)
+        set_dependencies(analysis, dependencies, path)
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
