@@ -271,10 +271,7 @@ class RegistryImportDirector(ImportDirector):
 
 class PathImportDirector(ImportDirector):
     def __init__(self, pathlist=None, importers=None, ownertypes=None):
-        if pathlist is None:
-            self.path = sys.path
-        else:
-            self.path = pathlist
+        self.path = pathlist
         if ownertypes == None:
             self.ownertypes = _globalownertypes
         else:
@@ -287,11 +284,11 @@ class PathImportDirector(ImportDirector):
         self.building = {}
 
     def __str__(self):
-        return str(self.path)
+        return str(self.path or sys.path)
 
     def getmod(self, nm):
         mod = None
-        for thing in self.path:
+        for thing in (self.path or sys.path):
             if isinstance(thing, STRINGTYPE):
                 owner = self.shadowpath.get(thing, -1)
                 if owner == -1:
