@@ -5,5 +5,6 @@ hiddenimports = [
     'linear_algebra',
     'random_array',
     'ma',
+    'mlab',
 ]
 
