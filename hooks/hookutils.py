@@ -14,7 +14,7 @@ def exec_statement(stat):
 
     # Using "echo on" as a workaround for a bug in NT4 shell
     if os.name == "nt":
-        cmd = '"echo on && "%s" -c "%s" > "%s""' % (exe, stat, fnm)
+        cmd = 'echo on && "%s" -c "%s" > "%s"' % (exe, stat, fnm)
     else:
         cmd = '"%s" -c "%s" > "%s"' % (exe, stat, fnm)
     os.system(cmd)
