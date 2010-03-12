@@ -4,7 +4,6 @@ __testname__ = 'test-zipimport2'
 
 a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
               os.path.join(HOMEPATH,'support/useUnicode.py'),
-              os.path.join(HOMEPATH,'support/_pyi_egg_extract.py'),
               __testname__ + '.py'],
              )
 pyz = PYZ(a.pure)
