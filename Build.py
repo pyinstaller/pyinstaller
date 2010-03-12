@@ -279,9 +279,9 @@ class Analysis(Target):
     def assemble(self):
         print "running Analysis", os.path.basename(self.out)
         # Reset seen variable to correctly discover dependencies
-        # if there are multiple Analysis in a single specfile.         
+        # if there are multiple Analysis in a single specfile.
         bindepend.seen = {}
-        
+
         paths = self.pathex
         for i in range(len(paths)):
             # FIXME: isn't self.pathex already norm-abs-pathed?
@@ -334,7 +334,7 @@ class Analysis(Target):
                     if isinstance(mod, mf.ExtensionModule):
                         binaries.append((mod.__name__, fnm, 'EXTENSION'))
                     elif isinstance(mod, (mf.PkgInZipModule, mf.PyInZipModule)):
-                        zipfiles.append((os.path.basename(str(mod.owner)),
+                        zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
                                          str(mod.owner), 'ZIPFILE'))
                     else:
                         # mf.PyModule instances expose a list of binary
@@ -346,6 +346,8 @@ class Analysis(Target):
         binaries.extend(bindepend.Dependencies(binaries,
                                                platform=target_platform))
         self.fixMissingPythonLib(binaries)
+        if zipfiles:
+            scripts[-1:-1] = [("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE')]
         # Add realtime hooks just before the last script (which is
         # the entrypoint of the application).
         scripts[-1:-1] = rthooks
