@@ -34,12 +34,9 @@ h4 {
 	font-size: 11pt;
 }
 
-ul {background: #FFD596;}
-
-ul, a:link, a:visited { color: #006699; }
+a:link, a:visited { color: #006699; }
 
 a:hover {background-color:#006699; color:white;}
-li { color: #006699; margin-left: 2 em; }
 
 table { font-size: 12pt; }
 table.option-list kbd {padding: 3px; background: #FFD596; white-space: nowrap }
