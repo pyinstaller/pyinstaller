@@ -32,16 +32,16 @@ time you switch the Python version).
 |GOBACK|_
 
 
-Building the runtime executables
---------------------------------
+Building the bootloaders
+------------------------
 
-*Note:* Windows users can skip this step, because all of Python is contained in
-pythonXX.dll, and |PyInstaller| will use your pythonXX.dll.
+*Note:* Windows users can skip this step, because |PyInstaller| already ships
+with binary bootloaders.
 
-On Linux the first thing to do is build the runtime executables. To do that,
-you need to have some basic C/C++ development tools and the Python development
-libraries. On Debian/Ubuntu systems, you can run the following lines
-to install everything required::
+On Linux the first thing to do is build the bootloaders (that is, the
+runtime executables). To do that, you need to have some basic C/C++
+development tools and the Python development libraries. On Debian/Ubuntu
+systems, you can run the following lines to install everything required::
 
         sudo apt-get install build-essential python-dev
 
@@ -73,7 +73,7 @@ Note that the executable chases down symbolic links before determining it's name
 and directory, so putting the archive in the same directory as the symbolic link
 will not work.
 
-Windows distributions come with several executables in the ``support/loader``
+Windows distributions of |PyInstaller| come with several executables in the ``support/loader``
 directory: ``run_*.exe`` (bootloader for regular programs), and
 ``inprocsrvr_*.dll`` (bootloader for in-process COM servers). To rebuild this,
 you need to install Scons_, and then just run ``scons`` from the |install_path|
@@ -97,7 +97,18 @@ Create a spec file for your project
 
 [For Windows COM server support, see section `Windows COM Server Support`_]
 
-The root directory has a script Makespec.py for this purpose::
+This is the first step to do. The spec file is the description of what you
+want |PyInstaller| to do with your program. In the root directory of |PyInstaller|,
+there is a simple wizard to create simple spec files that cover all basic usages::
+
+       python Makespec.py [--onefile] yourprogram.py
+
+By deafult, ``Makespec.py`` generates a spec file that tells |PyInstaller| to
+create a distribution directory contains the main executable and the dynamic
+libraries. The option ``--onefile`` specifies that you want PyInstaller to build
+a single file with everything inside.
+
+Elaborating on Makespec.py, this is the supported command line::
 
        python Makespec.py [opts] <scriptname> [<scriptname> ...]
 
@@ -179,10 +190,10 @@ Build your project
 
 A ``buildproject`` subdirectory will be created in the specfile's directory. This
 is a private workspace so that ``Build.py`` can act like a makefile. Any named
-targets will appear in the specfile's directory. For ``--onedir``
-configurations, it will create also ``distproject``, which is the directory you're
-interested in. For a ``--onefile``, the executable will be in the specfile's
-directory.
+targets will appear in the specfile's directory.
+
+The generated files will be placed within the ``dist`` subdirectory; that's where
+the files you are interested in will be placed.
 
 In most cases, this will be all you have to do. If not, see `When things go
 wrong`_ and be sure to read the introduction to `Spec Files`_.
@@ -298,7 +309,7 @@ temporary upx-created executable.
 
 |GOBACK|_
 
-A Note on ``--onefile``
+How one-file mode works
 -----------------------
 
 A ``--onefile`` works by packing all the shared libs / dlls into the archive
@@ -306,10 +317,16 @@ attached to the bootloader executable (or next to the executable in a non-elf
 configuration). When first started, it finds that it needs to extract these
 files before it can run "for real". That's because locating and loading a
 shared lib or linked-in dll is a system level action, not user-level. With
-|PyInstallerVersion| it always uses a temporary directory (``_MEIpid``) in the
+|PyInstallerVersion| it always uses a temporary directory (``_MEIXXXXX``,
+where ``XXXXX`` is a random number to avoid conflicts) in the
 user's temp directory. It then executes itself again, setting things up so
-the system will be able to load the shared libs / dlls. When executing is
+the system will be able to load the shared libs / dlls. When execution is
 complete, it recursively removes the entire directory it created.
+
+The temporary directory is exported to the program's environment as
+``os.environ['_MEIPASS2']``. This can be used in case you manually modified
+the spec file to tell PyInstaller to add additional files (eg: data files)
+within the executable (see also `Accessing Data Files`_).
 
 This has a number of implications:
 
@@ -317,9 +334,6 @@ This has a number of implications:
 
 * Running multiple copies will be rather expensive to the system (nothing is
   shared).
-
-* If you're using the cheat of adding user data as ``'BINARY'``, it will be in
-  ``os.environ['_MEIPASS2']``, not in the executable's directory.
 
 * On Windows, using Task Manager to kill the parent process will leave the
   directory behind.
@@ -332,43 +346,48 @@ This has a number of implications:
 
 * The executable can be in a protected or read-only directory.
 
-* If for some reason, the ``_MEIpid`` directory already exists, the executable
-  will fail. It is created mode 0700, so only the one user can modify it
-  (on \*nix, of course).
-
-While we are not a security expert, we believe the scheme is good enough for
-most of the users.
-
 **Notes for \*nix users**: Take notice that if the executable does a setuid root,
 a determined hacker could possibly (given enough tries) introduce a malicious
 lookalike of one of the shared libraries during the hole between when the
-library is extracted and when it gets loaded by the execvp'd process. So maybe
-you shouldn't do setuid root programs using ``--onefile``. **In fact, we do not
-recomend the use of --onefile on setuid programs.**
+library is extracted into the temporary directory and when it gets loaded
+by the execvp'd process. So maybe you shouldn't do setuid root programs
+using ``--onefile``. **In fact, we do not recomend the use of --onefile
+on setuid programs.**
 
 |GOBACK|_
 
-A Note on .egg files and setuptools
------------------------------------
+.egg files and setuptools
+-------------------------
 `setuptools`_ is a distutils extensions which provide many benefits, including
-the ability to distribute the extension as ``egg`` files. Together with the
+the ability to distribute the extension as ``eggs``. Together with the
 nifty `easy_install`_ (a tool which automatically locates, downloads and
-installs Python extensions), ``egg`` files are becoming more and more
+installs Python extensions), ``eggs`` are becoming more and more
 widespread as a way for distributing Python extensions.
 
-``egg`` files are actually ZIP files under the hood, and they rely on the fact
-that Python 2.4 is able to transparently import modules stored within ZIP
-files. PyInstaller is currently *not* able to import and extract modules
-within ZIP files, so code which uses extensions packaged as ``egg`` files
-cannot be packaged with PyInstaller.
+``eggs`` can be either files or directories. An ``egg`` directory is basically
+a standard Python package, with some additional metadata that can be used for
+advanced `setuptools`_ features like entry-points. An ``egg`` file is simply a
+ZIP file, and it works as a package as well because Python 2.3+ is able to
+transparently import modules stored within ZIP files.
 
-The workaround is pretty easy: you can use ``easy_install -Z`` at installation
-time to ask ``easy_install`` to always decompress egg files. This will allow
-PyInstaller to see the files and make the package correctly. If you have already
-installed the modules, you can simply decompress them within a directory with
-the same name of the ``egg`` file (including also the extension).
+|PyInstaller| supports ``eggs`` at a good level. In fact:
 
-Support for ``egg`` files is planned for a future release of PyInstaller.
+* It is able to follow dependencies within ``eggs`` (both files and directories).
+  So if your program imports a package shipped in ``egg`` format, and this package
+  requires additional libraries, |PyInstaller| will correctly include everything
+  within the generated executable.
+
+* ``egg-files`` are fully supported. To let everything works (entry-points,
+  ``pkg_resource`` library, etc.), |PyInstaller| either copy the ``egg-files``
+  into the distribution directory (in one-dir mode) or packs them as-is within
+  the generated executable and unpack them at startup into the temporary directory
+  (see `How one-file mode works`_).
+
+* ``egg-directories`` are partially supported. In fact, |PyInstaller| at build
+  time treat them as regular package. This means that all advanced features requiring
+  ``egg`` metadatas will not work.
+
+Improved support for ``eggs`` is planned for a future release of |PyInstaller|.
 
 .. _`setuptools`: http://peak.telecommunity.com/DevCenter/setuptools
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
@@ -624,7 +643,7 @@ Analysis
     an optional list of module or package names (their Python names, not path
     names) that will be ignored (as though they were not found).
 
-An Analysis has three outputs, all ``TOCs`` accessed as attributes of the ``Analysis``.
+An Analysis has five outputs, all ``TOCs`` accessed as attributes of the ``Analysis``.
 
 ``scripts``
     The scripts you gave Analysis as input, with any runtime hook scripts
@@ -637,6 +656,13 @@ An Analysis has three outputs, all ``TOCs`` accessed as attributes of the ``Anal
     The extension modules and their dependencies. The secondary dependencies are
     filtered. On Windows, a long list of MS dlls are excluded. On Linux/Unix,
     any shared lib in ``/lib`` or ``/usr/lib`` is excluded.
+
+``datas``
+    Data-file dependencies. These are data-file that are found to be needed by
+    modules. They can be anything: plugins, font files, etc.
+
+``zipfiles``
+    The zipfiles dependencies (usually ``egg-files``).
 
 |GOBACK|_
 
