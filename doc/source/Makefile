@@ -23,12 +23,8 @@ pdf: ../Manual.pdf
 Manual.tex: Manual.rst
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
 
-../Manual.pdf: Manual.tex
-	cd .. ; pdflatex source/Manual.tex
-	@echo "#############################################################################"
-	@echo "# Executing again to fix Table of Content...                                #"
-	@echo "#############################################################################"
-	cd .. ; pdflatex source/Manual.tex
+../Manual.pdf: ../Manual.html
+	wkhtmltopdf ../Manual.html ../Manual.pdf
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
