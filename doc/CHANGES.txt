@@ -5,7 +5,7 @@ Changes since PyInstaller 1.3
  + Fully support up to Python 2.6 on Linux/Mac and Python 2.5
    on Windows.
  + Preliminar Mac OSX support: both one-file and one-dir is supported;
-   for non-console applications, a bundle will be created. Thanks
+   for non-console applications, a bundle can be created. Thanks
    to many people that worked on this across several months (Daniele
    Zannotti, Matteo Bertini, Lorenzo Mancini).
  + Improved Linux support: generated executables are fatter but now
@@ -19,21 +19,25 @@ Changes since PyInstaller 1.3
    automatically bundle dynamic libraries accessed through ctypes.
    (Thanks to Lorenzo Mancini for submitting this). This is very
    useful when using ctypes with custom-made dynamic libraries.
+ + Executables built with PyInstaller under Windows can now be digitally
+   signed.
  + Add support for absolute imports in Python 2.5+ (thanks to Arve
    Knudsen).
  + Add support for relative imports in Python 2.5+.
  + Add support for cross-compilation: PyInstaller is now able to
    build Windows executables when running under Linux. See documentation
    for more details.
- + Add support for .egg files: PyInstaller is now able to bundle
-   .egg files as-is, and make them available at runtime through the
-   normal zipimport machinery.
+ + Add support for .egg files: PyInstaller is now able to look for
+   dependencies within .egg files, bundle them and make them available
+   at runtime with all the standard features (entry-points, etc.).
+ + Add partial support for .egg directories: PyInstaller will treat them
+   as normal packages and thus it will not bundle metadata.
  + Under Linux/Mac, it is now possible to build an executable even when
    a system packages does not have .pyc or .pyo files available and the
    system-directory can be written only by root. PyInstaller will in
    fact generate the required .pyc/.pyo files on-the-fly within a
    build-temporary directory.
- + Add automatic import hooks for the following libraries:
+ + Add automatic import hooks for many third-party packages, including:
    + PyQt4 (thanks to Pascal Veret), with complete plugin support.
    + pyodbc (thanks to Don Dwiggins)
    + cElementTree (both native version and Python 2.5 version)
@@ -46,6 +50,7 @@ Changes since PyInstaller 1.3
    + mako
    + Improved PyGTK (thanks to Marco Bonifazi and foxx).
    + paste (thanks to Jamie Kirkpatrick)
+   + matplotlib
  + Add fix for the very annoying "MSVCRT71 could not be extracted" bug,
    which was caused by the DLL being packaged twice (thanks to Idris
    Aykun).
@@ -74,8 +79,6 @@ Changes since PyInstaller 1.3
  * Sometimes the temporary directory did not get removed upon program
    exit, when running on Linux.
  * Fixed random segfaults at startup on 64-bit platforms (like x86-64).
- + Executables built with PyInstaller under Windows can now be digitally
-   signed.
 
 PyInstaller 1.3
 ---------------
