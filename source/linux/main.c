@@ -26,6 +26,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #include "launch.h"
+#include "getpath.h"
+#include <sys/wait.h>
 
 #ifdef FREEZE_EXCEPTIONS
 extern unsigned char M_exceptions[];
@@ -34,104 +36,115 @@ static struct _frozen _PyImport_FrozenModules[] = {
     {0, 0, 0}
 };
 #endif
+
+void exportWorkpath(char *workpath, char *envvar_name)
+{
+    char *envvar;
+    char *old_envvar;
+    int nchars;
+
+    old_envvar = getenv(envvar_name);
+
+    nchars = strlen(workpath);
+    if (old_envvar)
+        nchars += strlen(old_envvar) + 1;
+
+    /* at process exit: no need to free */
+    envvar = (char*)malloc((nchars+1)*sizeof(char));
+    if (envvar==NULL) {
+            fprintf(stderr,"Cannot allocate memory for %s "
+                           "environment variable\n",envvar_name);
+            exit(2);
+    }
+
+    strcpy(envvar,workpath);
+    if (old_envvar) {
+        strcat(envvar, ":");
+        strcat(envvar, old_envvar);
+    }
+    setenv(envvar_name, envvar, 1);
+    VS("%s\n", envvar);
+}
+
 int main(int argc, char* argv[])
 {
     char thisfile[_MAX_PATH];
     char homepath[_MAX_PATH];
-    char magic_envvar[_MAX_PATH + 12];
-    char ldlib_envvar[_MAX_PATH * 4 + 12];
     char archivefile[_MAX_PATH + 5];
-    char *oldldlib;
     TOC *ptoc = NULL;
     int rc = 0;
+    int pid;
     char *workpath = NULL;
     /* atexit(cleanUp); */
 #ifdef FREEZE_EXCEPTIONS
     PyImport_FrozenModules = _PyImport_FrozenModules;
 #endif
-    // fill in thisfile
+    /* fill in thisfile */
 #ifdef __CYGWIN__
     if (strncasecmp(&argv[0][strlen(argv[0])-4], ".exe", 4)) {
         strcpy(thisfile, argv[0]);
         strcat(thisfile, ".exe");
-        Py_SetProgramName(thisfile);
+        PI_SetProgramName(thisfile);
     }
-    else 
+    else
 #endif
-        Py_SetProgramName(argv[0]);
-    strcpy(thisfile, Py_GetProgramFullPath());
-    VS(thisfile);
-    VS(" is thisfile\n");
-    
-    workpath = getenv( "_MEIPASS2" );
-    VS(workpath);
-    VS(" is _MEIPASS2 (workpath)\n");
+    PI_SetProgramName(argv[0]);
+    strcpy(thisfile, PI_GetProgramFullPath());
+    VS("thisfile is %s\n", thisfile);
 
-    // fill in here (directory of thisfile)
-    strcpy(homepath, Py_GetPrefix());
+    workpath = getenv( "_MEIPASS2" );
+    VS("_MEIPASS2 (workpath) is %s\n", (workpath ? workpath : "NULL"));
+
+    /* fill in here (directory of thisfile) */
+    strcpy(homepath, PI_GetPrefix());
     strcat(homepath, "/");
-    VS(homepath);
-    VS(" is homepath\n");
+    VS("homepath is %s\n", homepath);
 
     if (init(homepath, &thisfile[strlen(homepath)], workpath)) {
         /* no pkg there, so try the nonelf configuration */
         strcpy(archivefile, thisfile);
         strcat(archivefile, ".pkg");
         if (init(homepath, &archivefile[strlen(homepath)], workpath)) {
-            FATALERROR("Cannot open self ");
-            FATALERROR(thisfile);
-            FATALERROR(" or archive ");
-            FATALERROR(archivefile);
-            FATALERROR("\n");
+            FATALERROR("Cannot open self %s or archive %s\n",
+                    thisfile, archivefile);
             return -1;
         }
     }
 
     if (workpath) {
-        // we're the "child" process
+        /* we're the "child" process */
         VS("Already have a workpath - running!\n");
         rc = doIt(argc, argv);
-        if (strcmp(workpath, homepath)!=0)
-            clear(workpath);
     }
     else {
         if (extractBinaries(&workpath)) {
             VS("Error extracting binaries\n");
             return -1;
         }
-        if (workpath == NULL) {
-            /* now look for the "force LD_LIBRARY" flag */
-            ptoc = getFirstTocEntry();
-            while (ptoc) {
-                if ((ptoc->typcd == 'o') && (ptoc->name[0] == 'f'))
-                    workpath = homepath;
-                    ptoc = getNextTocEntry(ptoc);
-                }
-        }
-        if (workpath) {
-            VS("Executing self as child with ");
-            // run the "child" process, then clean up
-            strcpy(magic_envvar, "_MEIPASS2=");
-            strcat(magic_envvar, workpath);
-            putenv(magic_envvar);
-            // now LD_LIBRARY_PATH
-            strcpy(ldlib_envvar, "LD_LIBRARY_PATH=");
-            strcat(ldlib_envvar, workpath);
-            ldlib_envvar[strlen(ldlib_envvar)-1] = '\0';
-            oldldlib = getenv("LD_LIBRARY_PATH");
-            if (oldldlib) {
-                strcat(ldlib_envvar, ":");
-                strcat(ldlib_envvar, oldldlib);
-            }
-            putenv(ldlib_envvar);
-            VS(ldlib_envvar);
-            VS("\n");
-            rc = execvp(thisfile, argv);
-            VS("Back to parent...\n");
-        }
-        else
-            // no "child" process necessary
-            rc = doIt(argc, argv);
+
+        if (workpath == NULL)
+            workpath = homepath;
+
+        VS("Executing self as child with ");
+        /* run the "child" process, then clean up */
+        setenv("_MEIPASS2", workpath, 1);
+
+        /* add workpath to LD_LIBRARY_PATH */
+        exportWorkpath(workpath, "LD_LIBRARY_PATH");
+#ifdef __APPLE__
+        /* add workpath to DYLD_LIBRARY_PATH */
+        exportWorkpath(workpath, "DYLD_LIBRARY_PATH");
+#endif
+        pid = fork();
+        if (pid == 0)
+            execvp(thisfile, argv);
+        wait(&rc);
+        rc = WEXITSTATUS(rc);
+
+        VS("Back to parent...\n");
+        if (strcmp(workpath, homepath) != 0)
+            clear(workpath);
     }
     return rc;
 }
+

@@ -31,5 +31,3 @@ attrs = [('HTML_4_STRICT_INLINE',0),
           ('TranslateHtmlCdata',0),
           ('SECURE_HTML_ELEMS',0),
         ]
-
-

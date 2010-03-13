@@ -1,5 +1,5 @@
 /*
- * Launch a python module from an archive.   
+ * Launch a python module from an archive.
  * Copyright (C) 2005, Giovanni Bajo
  * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
  *
@@ -31,28 +31,31 @@
  #include <direct.h>
  #include <process.h>
  #include <io.h>
+ #define unsetenv(x) _putenv(x "=")
 #else
  #include <unistd.h>
  #include <fcntl.h>
+ #include <dlfcn.h>
  #include <dirent.h>
 #endif
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "launch.h"
 #ifndef NOZLIB
 #include "zlib.h"
 #endif
-#ifdef WIN32
+
 /*
  * Python Entry point declarations (see macros in launch.h).
  */
+DECLVAR(Py_FrozenFlag);
 DECLVAR(Py_NoSiteFlag);
 DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
 DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
-DECLPROC(Py_CompileString);
+DECLPROC(Py_IncRef);
+DECLPROC(Py_DecRef);
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
 DECLPROC(PySys_SetArgv);
@@ -63,8 +66,9 @@ DECLPROC(PyObject_SetAttrString);
 DECLPROC(PyList_New);
 DECLPROC(PyList_Append);
 DECLPROC(Py_BuildValue);
-DECLPROC(PyFile_FromString);
 DECLPROC(PyString_FromStringAndSize);
+DECLPROC(PyFile_FromString);
+DECLPROC(PyString_AsString);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyModule_GetDict);
 DECLPROC(PyDict_GetItemString);
@@ -77,18 +81,11 @@ DECLPROC(PySys_AddWarnOption);
 DECLPROC(PyEval_InitThreads);
 DECLPROC(PyEval_AcquireThread);
 DECLPROC(PyEval_ReleaseThread);
-DECLPROC(PyEval_AcquireLock);
-DECLPROC(PyEval_ReleaseLock);
 DECLPROC(PyThreadState_Swap);
-DECLPROC(PyThreadState_New);
-DECLPROC(PyThreadState_Clear);
-DECLPROC(PyThreadState_Delete);
-DECLPROC(PyInterpreterState_New);
 DECLPROC(Py_NewInterpreter);
 DECLPROC(Py_EndInterpreter);
 DECLPROC(PyInt_AsLong);
 DECLPROC(PySys_SetObject);
-#endif
 
 #ifdef WIN32
 #define PATHSEP ";"
@@ -112,42 +109,109 @@ static int f_pkgstart;
 static TOC *f_tocbuff = NULL;
 static TOC *f_tocend = NULL;
 static COOKIE f_cookie;
+static PyObject *AES = NULL;
 
 unsigned char *extract(TOC *ptoc);
 
 /*
- * The functions in this file defined in reverse order so that forward 
+ * The functions in this file defined in reverse order so that forward
  * declarations are not necessary.
  */
 
-int testTempPath(char *buff)
-{
-	char base[16];
-	int n;
 
-	n = strlen(buff);
-	if ( buff[n-1] == '/' || buff[n-1] == '\\' )
-		sprintf(base, "_MEI%d", getpid());
-	else
-		sprintf(base, "%s_MEI%d", SEP, getpid());
-	strcat(buff, base);
-#ifdef WIN32
-	if (mkdir(buff) == 0) {
-#else
-	if (mkdir(buff, 0700) == 0) {
-#endif
-		strcat(buff, SEP);
-		return 1;
-	}
-	return 0;
+#ifndef _CONSOLE
+/* This code will be used only on windows as for other platforms _CONSOLE
+ * will be true. The code duplication in the functions below are because
+ * standard macros with variable numer of arguments (variadic macros) are
+ * supported by Microsoft only starting from Visual C++ 2005.
+ */
+
+#define MBTXTLEN 200
+
+void mbfatalerror(const char *fmt, ...)
+{
+	char msg[MBTXTLEN];
+	va_list args;
+
+	va_start(args, fmt);
+	_vsnprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = '\0';
+	va_end(args);
+
+	MessageBox(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
 }
 
-void getTempPath(char *buff)
+void mbothererror(const char *fmt, ...)
 {
+	char msg[MBTXTLEN];
+	va_list args;
+
+	va_start(args, fmt);
+	_vsnprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = '\0';
+	va_end(args);
+
+	MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
+}
+
+void mbvs(const char *fmt, ...)
+{
+	char msg[MBTXTLEN];
+	va_list args;
+
+	va_start(args, fmt);
+	_vsnprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = '\0';
+	va_end(args);
+
+	MessageBox(NULL, msg, "Tracing", MB_OK);
+}
+
+#endif /* _CONSOLE */
+
+
 #ifdef WIN32
-	GetTempPath(MAX_PATH, buff);
-	testTempPath(buff);
+
+int getTempPath(char *buff)
+{
+    int i;
+    char *ret;
+    char prefix[16];
+
+    GetTempPath(MAX_PATH, buff);
+    sprintf(prefix, "_MEI%d", getpid());
+
+    // Windows does not have a race-free function to create a temporary
+    // directory. Thus, we rely on _tempnam, and simply try several times
+    // to avoid stupid race conditions.
+    for (i=0;i<5;i++) {
+        ret = _tempnam(buff, prefix);
+        if (mkdir(ret) == 0) {
+            strcpy(buff, ret);
+            strcat(buff, "\\");
+            free(ret);
+            return 1;
+        }
+        free(ret);
+    }
+    return 0;
+}
+
 #else
+
+int testTempPath(char *buff)
+{
+	strcat(buff, "/_MEIXXXXXX");
+    if (mkdtemp(buff))
+    {
+        strcat(buff, "/");
+        return 1;
+    }
+    return 0;
+}
+
+int getTempPath(char *buff)
+{
 	static const char *envname[] = {
 		"TMPDIR", "TEMP", "TMP", 0
 	};
@@ -161,17 +225,19 @@ void getTempPath(char *buff)
 		if (p) {
 			strcpy(buff, p);
 			if (testTempPath(buff))
-				return;
+				return 1;
 		}
 	}
 	for ( i=0; dirname[i]; i++ ) {
 		strcpy(buff, dirname[i]);
 		if (testTempPath(buff))
-			return;
+			return 1;
 	}
-	buff[0] = '\0';
-#endif
+    return 0;
 }
+
+#endif
+
 /*
  * Set up paths required by rest of this module
  * Sets f_archivename, f_homepath
@@ -197,41 +263,92 @@ int setPaths(char const * archivePath, char const * archiveName)
 	return 0;
 }
 
+int checkCookie(int filelen)
+{
+	if (fseek(f_fp, filelen-(int)sizeof(COOKIE), SEEK_SET))
+		return -1;
 
-/* 
+	/* Read the Cookie, and check its MAGIC bytes */
+	fread(&f_cookie, sizeof(COOKIE), 1, f_fp);
+	if (strncmp(f_cookie.magic, MAGIC, strlen(MAGIC)))
+		return -1;
+
+  return 0;
+}
+
+int findDigitalSignature()
+{
+#ifdef WIN32
+	/* There might be a digital signature attached. Let's see. */
+	char buf[2];
+	int offset = 0;
+	fseek(f_fp, 0, SEEK_SET);
+	fread(buf, 1, 2, f_fp);
+	if (!(buf[0] == 'M' && buf[1] == 'Z'))
+		return -1;
+	/* Skip MSDOS header */
+	fseek(f_fp, 60, SEEK_SET);
+	/* Read offset to PE header */
+	fread(&offset, 4, 1, f_fp);
+	/* Jump to the fields that contain digital signature info */
+	fseek(f_fp, offset+152, SEEK_SET);
+	fread(&offset, 4, 1, f_fp);
+	if (offset == 0)
+		return -1;
+  VS("%s contains a digital signature\n", f_archivename);
+	return offset;
+#else
+	return -1;
+#endif
+}
+
+/*
  * Open the archive
  * Sets f_archiveFile, f_pkgstart, f_tocbuff and f_cookie.
  */
 int openArchive()
 {
+#ifdef WIN32
+	int i;
+#endif
 	int filelen;
 
 	/* Physically open the file */
 	f_fp = fopen(f_archivename, "rb");
 	if (f_fp == NULL) {
-		VS("Cannot open archive: ");
-		VS(f_archivename);
-		VS("\n");
+		VS("Cannot open archive: %s\n", f_archivename);
 		return -1;
 	}
 
 	/* Seek to the Cookie at the end of the file. */
 	fseek(f_fp, 0, SEEK_END);
 	filelen = ftell(f_fp);
-	if (fseek(f_fp, -(int)sizeof(COOKIE), SEEK_END)) 
-	{
-		VS(f_archivename);
-		VS(" appears to be an invalid archive\n");
-		return -1;
-	}
 
-	/* Read the Cookie, and check its MAGIC bytes */
-	fread(&f_cookie, sizeof(COOKIE), 1, f_fp);
-	if (strncmp(f_cookie.magic, MAGIC, strlen(MAGIC))) 
+	if (checkCookie(filelen) < 0)
 	{
-		VS(f_archivename);
-		VS(" has bad magic!\n");
-		return -1;
+		VS("%s does not contain an embedded package\n", f_archivename);
+#ifndef WIN32
+    return -1;
+#else
+		filelen = findDigitalSignature();
+		if (filelen < 1)
+			return -1;
+		/* The digital signature has been aligned to 8-bytes boundary.
+		   We need to look for our cookie taking into account some
+		   padding. */
+		for (i = 0; i < 8; ++i)
+		{
+			if (checkCookie(filelen) >= 0)
+				break;
+			--filelen;
+		}
+		if (i == 8)
+		{
+			VS("%s does not contain an embedded package, even skipping the signature\n", f_archivename);
+			return -1;
+		}
+		VS("package found skipping digital signature in %s\n", f_archivename);
+#endif
 	}
 
 	/* From the cookie, calculate the archive start */
@@ -240,7 +357,7 @@ int openArchive()
 	/* Read in in the table of contents */
 	fseek(f_fp, f_pkgstart + ntohl(f_cookie.TOC), SEEK_SET);
 	f_tocbuff = (TOC *) malloc(ntohl(f_cookie.TOClen));
-	if (f_tocbuff == NULL) 
+	if (f_tocbuff == NULL)
 	{
 		FATALERROR("Could not allocate buffer for TOC.");
 		return -1;
@@ -256,18 +373,25 @@ int openArchive()
 	}
 	return 0;
 }
-#ifdef WIN32
+#ifndef WIN32
+#define HMODULE void *
+#define HINSTANCE void *
+#endif
+
 int mapNames(HMODULE dll)
 {
     /* Get all of the entry points that we are interested in */
+        GETVAR(dll, Py_FrozenFlag);
 	GETVAR(dll, Py_NoSiteFlag);
 	GETVAR(dll, Py_OptimizeFlag);
 	GETVAR(dll, Py_VerboseFlag);
 	GETPROC(dll, Py_Initialize);
 	GETPROC(dll, Py_Finalize);
-	GETPROC(dll, Py_CompileString);
+	GETPROC(dll, Py_IncRef);
+	GETPROC(dll, Py_DecRef);
 	GETPROC(dll, PyImport_ExecCodeModule);
 	GETPROC(dll, PyRun_SimpleString);
+	GETPROC(dll, PyString_FromStringAndSize);
 	GETPROC(dll, PySys_SetArgv);
 	GETPROC(dll, Py_SetProgramName);
 	GETPROC(dll, PyImport_ImportModule);
@@ -277,7 +401,7 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyList_Append);
 	GETPROC(dll, Py_BuildValue);
 	GETPROC(dll, PyFile_FromString);
-	GETPROC(dll, PyString_FromStringAndSize);
+	GETPROC(dll, PyString_AsString);
 	GETPROC(dll, PyObject_CallFunction);
 	GETPROC(dll, PyModule_GetDict);
 	GETPROC(dll, PyDict_GetItemString);
@@ -292,61 +416,84 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyEval_InitThreads);
 	GETPROC(dll, PyEval_AcquireThread);
 	GETPROC(dll, PyEval_ReleaseThread);
-	GETPROC(dll, PyEval_AcquireLock);
-	GETPROC(dll, PyEval_ReleaseLock);
 	GETPROC(dll, PyThreadState_Swap);
-	GETPROC(dll, PyThreadState_New);
-	GETPROC(dll, PyThreadState_Clear);
-	GETPROC(dll, PyThreadState_Delete);
-	GETPROC(dll, PyInterpreterState_New);
 	GETPROC(dll, Py_NewInterpreter);
 	GETPROC(dll, Py_EndInterpreter);
-	GETPROC(dll, PyErr_Print);
 	GETPROC(dll, PyInt_AsLong);
 	GETPROC(dll, PySys_SetObject);
+
 	return 0;
 }
-#endif
+
 /*
  * Load the Python DLL, and get all of the necessary entry points
- * Windows only (dynamic load)
  */
 int loadPython()
 {
-#ifdef WIN32
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
 
+#ifdef WIN32
 	/* Determine the path */
 	sprintf(dllpath, "%spython%02d.dll", f_homepathraw, ntohl(f_cookie.pyvers));
 
 	/* Load the DLL */
-	dll = LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);  
+	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 	if (dll) {
-		VS(dllpath);
-		VS("\n");
+		VS("%s\n", dllpath);
 	}
 	else {
 		sprintf(dllpath, "%spython%02d.dll", f_temppathraw, ntohl(f_cookie.pyvers));
-		dll = LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
+		dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
 		if (dll) {
-			VS(dllpath); 
-			VS("\n");
+			VS("%s\n", dllpath);
 		}
 	}
 	if (dll == 0) {
-		FATALERROR("Error loading Python DLL: ");
-		FATALERROR(dllpath);
-		FATALERROR("\n");
+		FATALERROR("Error loading Python DLL: %s (error code %d)\n",
+			dllpath, GetLastError());
 		return -1;
 	}
 
 	mapNames(dll);
+#else
+
+	/* Determine the path */
+#ifdef __APPLE__
+	struct stat sbuf;
+
+	sprintf(dllpath, "%sPython",
+		f_workpath ? f_workpath : f_homepath);
+	/* Workaround for virtualenv: it renames the Python framework. */
+	/* A proper solution would be to let Build.py found out the correct
+	 * name and embed it in the PKG as metadata. */
+	if (stat(dllpath, &sbuf) < 0)
+		sprintf(dllpath, "%s.Python",
+			f_workpath ? f_workpath : f_homepath);
+#else
+	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0",
+		f_workpath ? f_workpath : f_homepath,
+		ntohl(f_cookie.pyvers) / 10, ntohl(f_cookie.pyvers) % 10);
+#endif
+
+	/* Load the DLL */
+	dll = dlopen(dllpath, RTLD_NOW|RTLD_GLOBAL);
+	if (dll) {
+		VS("%s\n", dllpath);
+	}
+	if (dll == 0) {
+		FATALERROR("Error loading Python lib '%s': %s\n",
+			dllpath, dlerror());
+		return -1;
+	}
+
+	mapNames(dll);
+
 #endif
 
 	return 0;
 }
-#ifdef WIN32
+
 /*
  * use this from a dll instead of loadPython()
  * it will attach to an existing pythonXX.dll,
@@ -354,6 +501,7 @@ int loadPython()
  */
 int attachPython(int *loadedNew)
 {
+#ifdef WIN32
 	HMODULE dll;
 	char nm[_MAX_PATH + 1];
 
@@ -361,16 +509,16 @@ int attachPython(int *loadedNew)
 	sprintf(nm, "python%02d.dll", ntohl(f_cookie.pyvers));
 
 	/* See if it's loaded */
-	dll = GetModuleHandle(nm);  
+	dll = GetModuleHandleA(nm);
 	if (dll == 0) {
 		*loadedNew = 1;
 		return loadPython();
 	}
 	mapNames(dll);
 	*loadedNew = 0;
+#endif
 	return 0;
 }
-#endif
 
 /*
  * Return pointer to next toc entry.
@@ -409,15 +557,10 @@ int setRuntimeOptions(void)
 	TOC *ptoc = f_tocbuff;
 	while (ptoc < f_tocend) {
 		if (ptoc->typcd == 'o') {
-			VS(ptoc->name);
-			VS("\n");
+			VS("%s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
-#if defined  WIN32 
-				*Py_VerboseFlag = 1;
-#else
-				Py_VerboseFlag = 1;
-#endif
+				*PI_Py_VerboseFlag = 1;
 			break;
 			case 'u':
 				unbuffered = 1;
@@ -425,23 +568,15 @@ int setRuntimeOptions(void)
 #ifdef HAVE_WARNINGS
 			case 'W':
 				if (ntohl(f_cookie.pyvers) >= 21) {
-					PySys_AddWarnOption(&ptoc->name[2]);
+					PI_PySys_AddWarnOption(&ptoc->name[2]);
 				}
 			break;
 #endif
 			case 's':
-#if defined  WIN32 
-				*Py_NoSiteFlag = 0;
-#else
-				Py_NoSiteFlag = 0;
-#endif
+				*PI_Py_NoSiteFlag = 0;
 			break;
 			case 'O':
-#if defined  WIN32 
-				*Py_OptimizeFlag = 1;
-#else
-				Py_OptimizeFlag = 1;
-#endif
+				*PI_Py_OptimizeFlag = 1;
 			break;
 			}
 		}
@@ -505,8 +640,7 @@ int startPython(int argc, char *argv[])
 		pypath[strlen(pypath)-1] = '\0';
 
 	putenv(pypath);
-	VS(pypath); 
-	VS("\n");
+	VS("%s\n", pypath);
 	/* Clear out PYTHONHOME to avoid clashing with any installation */
 #ifdef WIN32
 	putenv("PYTHONHOME=");
@@ -514,46 +648,41 @@ int startPython(int argc, char *argv[])
 
 	/* Start python. */
 	/* VS("Loading python\n"); */
-#if defined  WIN32 
-	*Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
-#else
-	Py_NoSiteFlag = 1;
-#endif
+	*PI_Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
+        *PI_Py_FrozenFlag = 1;
 	setRuntimeOptions();
-#ifdef WIN32
-	Py_SetProgramName(f_archivename); /*XXX*/
-#endif
-	Py_Initialize();
+	PI_Py_SetProgramName(f_archivename); /*XXX*/
+	PI_Py_Initialize();
 
 	/* Set sys.path */
 	/* VS("Manipulating Python's sys.path\n"); */
 	strcpy(tmp, f_homepath);
 	tmp[strlen(tmp)-1] = '\0';
-	PyRun_SimpleString("import sys\n");
-	PyRun_SimpleString("while sys.path:\n del sys.path[0]\n");
+	PI_PyRun_SimpleString("import sys\n");
+	PI_PyRun_SimpleString("while sys.path:\n del sys.path[0]\n");
 	sprintf(cmd, "sys.path.append('%s')", tmp);
-	PyRun_SimpleString (cmd);
+	PI_PyRun_SimpleString (cmd);
 	if (pathlen == 2) {
 		strcpy(tmp, f_workpath);
 		tmp[strlen(tmp)-1] = '\0';
 		sprintf(cmd, "sys.path.insert(0, '%s')", tmp);
-		PyRun_SimpleString(cmd);
+		PI_PyRun_SimpleString(cmd);
 	}
 
 	/* Set argv[0] to be the archiveName */
-	py_argv = PyList_New(0);
-	val = Py_BuildValue("s", f_archivename);
-	PyList_Append(py_argv, val);
+	py_argv = PI_PyList_New(0);
+	val = PI_Py_BuildValue("s", f_archivename);
+	PI_PyList_Append(py_argv, val);
 	for (i = 1; i < argc; ++i) {
-		val = Py_BuildValue ("s", argv[i]);
-		PyList_Append (py_argv, val);
+		val = PI_Py_BuildValue ("s", argv[i]);
+		PI_PyList_Append (py_argv, val);
 	}
-	sys = PyImport_ImportModule("sys");
+	sys = PI_PyImport_ImportModule("sys");
 	/* VS("Setting sys.argv\n"); */
-	PyObject_SetAttrString(sys, "argv", py_argv);
+	PI_PyObject_SetAttrString(sys, "argv", py_argv);
 
 	/* Check for a python error */
-	if (PyErr_Occurred())
+	if (PI_PyErr_Occurred())
 	{
 		FATALERROR("Error detected starting Python VM.");
 		return -1;
@@ -570,59 +699,50 @@ int importModules()
 	PyObject *marshal;
 	PyObject *marshaldict;
 	PyObject *loadfunc;
-	PyObject *pyfile;
 	TOC *ptoc;
 	PyObject *co;
 	PyObject *mod;
-	PyObject *res;
-	char buf[32];
 
-	VS("importing modules from CArchive\n"); 
+	VS("importing modules from CArchive\n");
 
 	/* Get the Python function marshall.load
 		* Here we collect some reference to PyObject that we don't dereference
 		* Doesn't matter because the objects won't be going away anyway.
 		*/
-	marshal = PyImport_ImportModule("marshal");
-	marshaldict = PyModule_GetDict(marshal);
-	loadfunc = PyDict_GetItemString(marshaldict, "loads");
+	marshal = PI_PyImport_ImportModule("marshal");
+	marshaldict = PI_PyModule_GetDict(marshal);
+	loadfunc = PI_PyDict_GetItemString(marshaldict, "loads");
 
 	/* Iterate through toc looking for module entries (type 'm')
 		* this is normally just bootstrap stuff (archive and iu)
 		*/
 	ptoc = f_tocbuff;
 	while (ptoc < f_tocend) {
-		if (ptoc->typcd == 'm' || ptoc->typcd == 'M') 
+		if (ptoc->typcd == 'm' || ptoc->typcd == 'M')
 		{
 			unsigned char *modbuf = extract(ptoc);
 
-			/* .pyc/.pyo files have 8 bytes header. Skip it and get a Python
-			 * string directly pointing at the marshalled code.
+			VS("extracted %s\n", ptoc->name);
+
+			/* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
+			 * data form the right point.
 			 */
-			PyObject *mods = PyString_FromStringAndSize(modbuf + 8,
-				ntohl(ptoc->ulen) - 8);
-            
-			VS(ptoc->name);
-			VS("\n");
-			
-			co = PyObject_CallFunction(loadfunc, "O", mods);
-			mod = PyImport_ExecCodeModule(ptoc->name, co);
+			co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf+8, ntohl(ptoc->ulen)-8);
+			mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
 
 			/* Check for errors in loading */
 			if (mod == NULL) {
-				FATALERROR("mod is NULL - ");
-				FATALERROR(ptoc->name);
+				FATALERROR("mod is NULL - %s", ptoc->name);
 			}
-			if (PyErr_Occurred())
+			if (PI_PyErr_Occurred())
 			{
-				PyErr_Print();
-				PyErr_Clear();
+				PI_PyErr_Print();
+				PI_PyErr_Clear();
 			}
 
-			Py_DECREF(mods);
 			free(modbuf);
 		}
-		ptoc = incrementTocPtr(ptoc); 
+		ptoc = incrementTocPtr(ptoc);
 	}
 
 	return 0;
@@ -639,12 +759,11 @@ int installZlib(TOC *ptoc)
 	char *tmpl = "sys.path.append(r\"%s?%d\")\n";
 	char *cmd = (char *) malloc(strlen(tmpl) + strlen(f_archivename) + 32);
 	sprintf(cmd, tmpl, f_archivename, zlibpos);
-	//VS(cmd);
-	rc = PyRun_SimpleString(cmd);
+	/*VS(cmd);*/
+	rc = PI_PyRun_SimpleString(cmd);
 	if (rc != 0)
 	{
-		FATALERROR("Error in command.");
-		FATALERROR(cmd);
+		FATALERROR("Error in command: %s\n", cmd);
 		free(cmd);
 		return -1;
 	}
@@ -655,7 +774,7 @@ int installZlib(TOC *ptoc)
 
 
 /*
- * Install zlibs 
+ * Install zlibs
  * Return non zero on failure
  */
 int installZlibs()
@@ -666,14 +785,13 @@ int installZlibs()
 	/* Iterate through toc looking for zlibs (type 'z') */
 	ptoc = f_tocbuff;
 	while (ptoc < f_tocend) {
-		if (ptoc->typcd == 'z') 
+		if (ptoc->typcd == 'z')
 		{
-			VS(ptoc->name);
-			VS("\n");
+			VS("%s\n", ptoc->name);
 			installZlib(ptoc);
 		}
 
-		ptoc = incrementTocPtr(ptoc); 
+		ptoc = incrementTocPtr(ptoc);
 	}
 	return 0;
 }
@@ -688,7 +806,6 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 	unsigned char *out;
 	z_stream zstream;
 	int rc;
-	char msg[400];
 
 	ver = (zlibVersion)();
 	out = (unsigned char *)malloc(ntohl(ptoc->ulen));
@@ -711,20 +828,19 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 			rc = (inflateEnd)(&zstream);
 		}
 		else {
-			sprintf(msg, "Error %d from inflate: %s\n", rc, zstream.msg);
-			OTHERERROR(msg);
+			OTHERERROR("Error %d from inflate: %s\n", rc, zstream.msg);
 			return NULL;
 		}
 	}
 	else {
-		sprintf(msg, "Error %d from inflateInit: %s\n", rc, zstream.msg);
-		OTHERERROR(msg);
+		OTHERERROR("Error %d from inflateInit: %s\n", rc, zstream.msg);
 		return NULL;
-	}	
+	}
+
 	return out;
 }
 #endif
-/* 
+/*
  * extract an archive entry
  * returns pointer to the data (must be freed)
  */
@@ -732,10 +848,7 @@ unsigned char *extract(TOC *ptoc)
 {
 	unsigned char *data;
 	unsigned char *tmp;
-	char msg[400];
 
-	sprintf( msg, " extracting %1.20s (%d, %c)\n", ptoc->name, ptoc->cflag, ptoc->typcd);
-	//VS(msg);
 	fseek(f_fp, f_pkgstart + ntohl(ptoc->pos), SEEK_SET);
 	data = (unsigned char *)malloc(ntohl(ptoc->len));
 	if (data == NULL) {
@@ -743,14 +856,42 @@ unsigned char *extract(TOC *ptoc)
 		return NULL;
 	}
 	fread(data, ntohl(ptoc->len), 1, f_fp);
-	if (ptoc->cflag == '\1') {
+	if (ptoc->cflag == '\2') {
+		PyObject *func_new;
+		PyObject *aes_dict;
+		PyObject *aes_obj;
+		PyObject *ddata;
+		long block_size;
+		char *iv;
+
+		if (!AES)
+			AES = PI_PyImport_ImportModule("AES");
+		aes_dict = PI_PyModule_GetDict(AES);
+		func_new = PI_PyDict_GetItemString(aes_dict, "new");
+		block_size = PI_PyInt_AsLong(PI_PyDict_GetItemString(aes_dict, "block_size"));
+		iv = malloc(block_size);
+		memset(iv, 0, block_size);
+
+		aes_obj = PI_PyObject_CallFunction(func_new, "s#Os#",
+			data, 32,
+			PI_PyDict_GetItemString(aes_dict, "MODE_CFB"),
+			iv, block_size);
+
+		ddata = PI_PyObject_CallMethod(aes_obj, "decrypt", "s#", data+32, ntohl(ptoc->len)-32);
+		memcpy(data, PI_PyString_AsString(ddata), ntohl(ptoc->len)-32);
+		Py_DECREF(aes_obj);
+		Py_DECREF(ddata);
+		VS("decrypted ");
+		VS(ptoc->name);
+		VS("\n");
+	}
+	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
 #ifndef NOZLIB
 		tmp = decompress(data, ptoc);
 		free(data);
 		data = tmp;
 		if (data == NULL) {
-			sprintf(msg, "Error decompressing %s\n", ptoc->name);
-			OTHERERROR(msg);
+			OTHERERROR("Error decompressing %s\n", ptoc->name);
 			return NULL;
 		}
 #else
@@ -764,22 +905,47 @@ unsigned char *extract(TOC *ptoc)
  * helper for extract2fs
  * which may try multiple places
  */
-FILE *openTarget(char *path, char*name)
+FILE *openTarget(char *path, char* name_)
 {
 	struct stat sbuf;
 	char fnm[_MAX_PATH+1];
+	char name[_MAX_PATH+1];
+	char *dir;
+
 	strcpy(fnm, path);
-	strcat(fnm, name);
-	if (stat(fnm, &sbuf) == -1) {
-		VS(fnm);
-		VS("\n");
-		return fopen(fnm, "wb");
+	strcpy(name, name_);
+	fnm[strlen(fnm)-1] = '\0';
+
+	dir = strtok(name, "/\\");
+	while (dir != NULL)
+	{
+#ifdef WIN32
+		strcat(fnm, "\\");
+#else
+		strcat(fnm, "/");
+#endif
+		strcat(fnm, dir);
+		dir = strtok(NULL, "/\\");
+		if (!dir)
+			break;
+		if (stat(fnm, &sbuf) < 0)
+    {
+#ifdef WIN32
+			mkdir(fnm);
+#else
+			mkdir(fnm, 0700);
+#endif
+    }
 	}
-	return NULL;
+
+	if (stat(fnm, &sbuf) == 0) {
+		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
+    }
+	return fopen(fnm, "wb");
 }
 /*
  * extract from the archive
- * and copy to the filesystem 
+ * and copy to the filesystem
  * relative to the directory the archive's in
  */
 int extract2fs(TOC *ptoc)
@@ -791,7 +957,11 @@ int extract2fs(TOC *ptoc)
 	unsigned char *data = extract(ptoc);
 
 	if (!f_workpath) {
-		getTempPath(f_temppath);
+		if (!getTempPath(f_temppath))
+		{
+            FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
+            return -1;
+		}
 #ifdef WIN32
 		strcpy(f_temppathraw, f_temppath);
 		for ( p=f_temppath; *p; p++ )
@@ -800,11 +970,12 @@ int extract2fs(TOC *ptoc)
 #endif
 		f_workpath = f_temppath;
 	}
+
 	out = openTarget(f_workpath, ptoc->name);
 
 	if (out == NULL)  {
-		FATALERROR(ptoc->name);
-		FATALERROR(" could not be extracted!\n");
+		FATALERROR("%s could not be extracted!\n", ptoc->name);
+		return -1;
 	}
 	else {
 		fwrite(data, ntohl(ptoc->ulen), 1, out);
@@ -817,7 +988,7 @@ int extract2fs(TOC *ptoc)
 	return 0;
 }
 /*
- * extract all binaries (type 'b') to the filesystem
+ * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  */
 int extractBinaries(char **workpath)
 {
@@ -825,48 +996,64 @@ int extractBinaries(char **workpath)
 	workpath[0] = '\0';
 	VS("Extracting binaries\n");
 	while (ptoc < f_tocend) {
-		if (ptoc->typcd == 'b') 
-		if (extract2fs(ptoc))
-		return -1;
-		ptoc = incrementTocPtr(ptoc); 
+		if (ptoc->typcd == 'b' || ptoc->typcd == 'x' || ptoc->typcd == 'Z')
+			if (extract2fs(ptoc))
+				return -1;
+		ptoc = incrementTocPtr(ptoc);
 	}
 	*workpath = f_workpath;
 	return 0;
 }
-/* 
+/*
  * Run scripts
  * Return non zero on failure
  */
 int runScripts()
 {
 	unsigned char *data;
+	char buf[_MAX_PATH];
 	int rc = 0;
 	TOC * ptoc = f_tocbuff;
-	char msg[400];
+	PyObject *__main__ = PI_PyImport_AddModule("__main__");
+	PyObject *__file__;
 	VS("Running scripts\n");
+
+	/*
+	 * Now that the startup is complete, we can reset the _MEIPASS2 env
+	 * so that if the program invokes another PyInstaller one-file program
+	 * as subprocess, this subprocess will not fooled into thinking that it
+	 * is already unpacked.
+	 */
+	unsetenv("_MEIPASS2");
 
 	/* Iterate through toc looking for scripts (type 's') */
 	while (ptoc < f_tocend) {
 		if (ptoc->typcd == 's') {
 			/* Get data out of the archive.  */
 			data = extract(ptoc);
+			/* Set the __file__ attribute within the __main__ module,
+			   for full compatibility with normal execution. */
+			strcpy(buf, ptoc->name);
+			strcat(buf, ".py");
+            __file__ = PI_PyString_FromStringAndSize(buf, strlen(buf));
+            PI_PyObject_SetAttrString(__main__, "__file__", __file__);
+            Py_DECREF(__file__);
 			/* Run it */
-			rc = PyRun_SimpleString(data);
+			rc = PI_PyRun_SimpleString(data);
 			/* log errors and abort */
 			if (rc != 0) {
-				sprintf(msg, " RC: %d from %s\n", rc, ptoc->name);
-				VS(msg);
+				VS("RC: %d from %s\n", rc, ptoc->name);
 				return rc;
 			}
 			free(data);
 		}
 
-		ptoc = incrementTocPtr(ptoc); 
+		ptoc = incrementTocPtr(ptoc);
 	}
 	return 0;
 }
 
-/* 
+/*
  * call a simple "int func(void)" entry point.  Assumes such a function
  * exists in the main namespace.
  * Return non zero on failure, with -2 if the specific error is
@@ -880,29 +1067,29 @@ int callSimpleEntryPoint(char *name, int *presult)
 	/* Objects with refs to kill. */
 	PyObject *func = NULL, *pyresult = NULL;
 
-	mod = PyImport_AddModule("__main__"); /* NO ref added */
+	mod = PI_PyImport_AddModule("__main__"); /* NO ref added */
 	if (!mod) {
 		VS("No __main__\n");
 		goto done;
 	}
-	dict = PyModule_GetDict(mod); /* NO ref added */
+	dict = PI_PyModule_GetDict(mod); /* NO ref added */
 	if (!mod) {
 		VS("No __dict__\n");
 		goto done;
 	}
-	func = PyDict_GetItemString(dict, name);
+	func = PI_PyDict_GetItemString(dict, name);
 	if (func == NULL) { /* should explicitly check KeyError */
 		VS("CallSimpleEntryPoint can't find the function name\n");
 		rc = -2;
 		goto done;
 	}
-	pyresult = PyObject_CallFunction(func, "");
+	pyresult = PI_PyObject_CallFunction(func, "");
 	if (pyresult==NULL) goto done;
-	PyErr_Clear();
-	*presult = PyInt_AsLong(pyresult);
-	rc = PyErr_Occurred() ? -1 : 0;
+	PI_PyErr_Clear();
+	*presult = PI_PyInt_AsLong(pyresult);
+	rc = PI_PyErr_Occurred() ? -1 : 0;
 	VS( rc ? "Finished with failure\n" : "Finished OK\n");
-	// all done!
+	/* all done! */
 done:
 	Py_XDECREF(func);
 	Py_XDECREF(pyresult);
@@ -910,8 +1097,8 @@ done:
 	   cause failures in later async code */
 	if (rc)
 		/* But we will print them 'cos they may be useful */
-		PyErr_Print();
-	PyErr_Clear();
+		PI_PyErr_Print();
+	PI_PyErr_Clear();
 	return rc;
 }
 
@@ -945,7 +1132,7 @@ int launchembedded(char const * archivePath, char  const * archiveName)
 	VS("Started Python\n");
 
 	/* a signal to scripts */
-	PyRun_SimpleString("import sys;sys.frozen='dll'\n");
+	PI_PyRun_SimpleString("import sys;sys.frozen='dll'\n");
 	VS("set sys.frozen\n");
 	/* Import modules from archive - this is to bootstrap */
 	if (importModules())
@@ -959,9 +1146,8 @@ int launchembedded(char const * archivePath, char  const * archiveName)
 	if (runScripts())
 		return -1;
 	VS("All scripts run\n");
-	if (PyErr_Occurred()) {
-		// PyErr_Print();
-		//PyErr_Clear();
+	if (PI_PyErr_Occurred()) {
+		/*PyErr_Clear();*/
 		VS("Some error occurred\n");
 	}
 	VS("OK.\n");
@@ -975,7 +1161,9 @@ int launchembedded(char const * archivePath, char  const * archiveName)
  */
 int init(char const * archivePath, char  const * archiveName, char const * workpath)
 {
+#ifdef WIN32
 	char *p;
+#endif
 
 	if (workpath) {
 		f_workpath = (char *)workpath;
@@ -1003,7 +1191,7 @@ int init(char const * archivePath, char  const * archiveName, char const * workp
  * or if there are no binaries to extract, you go on
  * to doIt(), which is the important part
  */
-int doIt(int argc, char *argv[]) 
+int doIt(int argc, char *argv[])
 {
 	int rc = 0;
 	/* Load Python DLL */
@@ -1039,10 +1227,13 @@ void removeOne(char *fnm, int pos, struct _finddata_t finfo)
 	strcat(fnm, finfo.name);
 	if ( finfo.attrib & _A_SUBDIR )
 		clear(fnm);
-	else 
-		remove(fnm);
+	else if (remove(fnm)) {
+        /* HACK: Possible concurrency issue... spin a little while */
+        Sleep(100);
+        remove(fnm);
+    }
 }
-void clear(const char *dir) 
+void clear(const char *dir)
 {
 	char fnm[_MAX_PATH+1];
 	struct _finddata_t finfo;
@@ -1058,7 +1249,7 @@ void clear(const char *dir)
 	h = _findfirst(fnm, &finfo);
 	if (h != -1) {
 		removeOne(fnm, dirnmlen, finfo);
-		while ( _findnext(h, &finfo) == 0 ) 
+		while ( _findnext(h, &finfo) == 0 )
 			removeOne(fnm, dirnmlen, finfo);
 		_findclose(h);
 	}
@@ -1075,11 +1266,11 @@ void removeOne(char *pnm, int pos, const char *fnm)
 	if ( stat(pnm, &sbuf) == 0 ) {
 		if ( S_ISDIR(sbuf.st_mode) )
 			clear(pnm);
-		else 
+		else
 			unlink(pnm);
 	}
 }
-void clear(const char *dir) 
+void clear(const char *dir)
 {
 	char fnm[_MAX_PATH+1];
 	DIR *ds;
@@ -1121,6 +1312,6 @@ int getPyVersion(void)
 }
 void finalizePython(void)
 {
-	Py_Finalize();
+	PI_Py_Finalize();
 }
 

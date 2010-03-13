@@ -1,5 +1,7 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+#
 # Build packages using spec files
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
 #
@@ -16,31 +18,54 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-import sys, os, shutil, mf, archive, iu, carchive, pprint, time, py_compile, bindepend, tempfile
+
+import sys
+import os
+import shutil
+import pprint
+import time
+import py_compile
+import tempfile
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import new as md5
+import UserList
+import mf
+import archive
+import iu
+import carchive
+import bindepend
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
+UNCOMPRESSED, COMPRESSED = range(2)
 
+# todo: use pkg_resources here
 HOMEPATH = os.path.dirname(sys.argv[0])
 SPECPATH = None
 BUILDPATH = None
 WARNFILE = None
+
 rthooks = {}
 iswin = sys.platform[:3] == 'win'
 cygwin = sys.platform == 'cygwin'
-try:
-    config = eval(open(os.path.join(HOMEPATH, 'config.dat'), 'r').read())
-except IOError:
-    print "You must run Configure.py before building!"
-    sys.exit(1)
 
-if config['pythonVersion'] != sys.version:
-    print "The current version of Python is not the same with which PyInstaller was configured."
-    print "Please re-run Configure.py with this version."
-    sys.exit(1)
+def system(cmd):
+    # This workaround is required because NT shell doesn't work with commands
+    # that start with double quotes (required if there are spaces inside the
+    # command path)
+    if iswin:
+        cmd = 'echo on && ' + cmd
+    os.system(cmd)
 
-if config['hasRsrcUpdate']:
-    import icon, versionInfo
+def _save_data(filename, data):
+    outf = open(filename, 'w')
+    pprint.pprint(data, outf)
+    outf.close()
+
+def _load_data(filename):
+    return eval(open(filename, 'r').read().replace("\r\n","\n"))
 
 def setupUPXFlags():
     f = os.environ.get("UPX", "")
@@ -50,30 +75,11 @@ def setupUPXFlags():
         # or they won't compress. Configure.py makes sure that UPX is new
         # enough to support --strip-loadconf.
         f = "--strip-loadconf " + f
+    # Do not compress any icon, so that additional icons in the executable
+    # can still be externally bound
+    f = "--compress-icons=0 " + f
     f = "--best " + f
     os.environ["UPX"] = f
-
-if config['hasUPX']:
-    setupUPXFlags()
-
-def build(spec):
-    global SPECPATH, BUILDPATH, WARNFILE, rthooks
-    rthooks = eval(open(os.path.join(HOMEPATH, 'rthooks.dat'), 'r').read())
-    SPECPATH, specnm = os.path.split(spec)
-    specnm = os.path.splitext(specnm)[0]
-    if SPECPATH == '':
-        SPECPATH = os.getcwd()
-    WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
-    BUILDPATH = os.path.join(SPECPATH, 'build%s' % specnm)
-    if '-o' in sys.argv:
-        bpath = sys.argv[sys.argv.index('-o')+1]
-        if os.path.isabs(bpath):
-            BUILDPATH = bpath
-        else:
-            BUILDPATH = os.path.join(SPECPATH, bpath)
-    if not os.path.exists(BUILDPATH):
-        os.mkdir(BUILDPATH)
-    exec open(spec, 'r').read()+'\n'
 
 def mtime(fnm):
     try:
@@ -81,17 +87,141 @@ def mtime(fnm):
     except:
         return 0
 
+def absnormpath(apath):
+    return os.path.abspath(os.path.normpath(apath))
+
+def compile_pycos(toc):
+    """Given a TOC or equivalent list of tuples, generates all the required
+    pyc/pyo files, writing in a local directory if required, and returns the
+    list of tuples with the updated pathnames.
+    """
+    global BUILDPATH
+
+    # For those modules that need to be rebuilt, use the build directory
+    # PyInstaller creates during the build process.
+    basepath = "/".join([BUILDPATH, "localpycos"])
+
+    new_toc = []
+    for (nm, fnm, typ) in toc:
+
+        # Trim the terminal "c" or "o"
+        source_fnm = fnm[:-1]
+
+        # If the source is newer than the compiled, or the compiled doesn't
+        # exist, we need to perform a build ourselves.
+        if mtime(source_fnm) > mtime(fnm):
+            try:
+                py_compile.compile(source_fnm)
+            except IOError:
+                # If we're compiling on a system directory, probably we don't
+                # have write permissions; thus we compile to a local directory
+                # and change the TOC entry accordingly.
+                ext = os.path.splitext(fnm)[1]
+
+                if "__init__" not in fnm:
+                    # If it's a normal module, use last part of the qualified
+                    # name as module name and the first as leading path
+                    leading, mod_name = nm.split(".")[:-1], nm.split(".")[-1]
+                else:
+                    # In case of a __init__ module, use all the qualified name
+                    # as leading path and use "__init__" as the module name
+                    leading, mod_name = nm.split("."), "__init__"
+
+                leading.insert(0, basepath)
+                leading = "/".join(leading)
+
+                if not os.path.exists(leading):
+                    os.makedirs(leading)
+
+                fnm = "/".join([leading, mod_name + ext])
+                py_compile.compile(source_fnm, fnm)
+
+        new_toc.append((nm, fnm, typ))
+
+    return new_toc
+
+
+#--- functons for checking guts ---
+
+def _check_guts_eq(attr, old, new, last_build):
+    """
+    rebuild is required if values differ
+    """
+    if old != new:
+        print "building because %s changed" % attr
+        return True
+    return False
+
+def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
+    """
+    rebuild is required if mtimes of files listed in old toc are newer
+    than ast_build
+
+    if pyc=1, check for .py files, too
+    """
+    for (nm, fnm, typ) in old:
+        if mtime(fnm) > last_build:
+            print "building because %s changed" % fnm
+            return True
+        elif pyc and mtime(fnm[:-1]) > last_build:
+            print "building because %s changed" % fnm[:-1]
+            return True
+    return False
+
+def _check_guts_toc(attr, old, toc, last_build, pyc=0):
+    """
+    rebuild is required if either toc content changed if mtimes of
+    files listed in old toc are newer than ast_build
+
+    if pyc=1, check for .py files, too
+    """
+    return    _check_guts_eq       (attr, old, toc, last_build) \
+           or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc)
+
+#--
+
 class Target:
     invcnum = 0
     def __init__(self):
         self.invcnum = Target.invcnum
-        Target.invcnum = Target.invcnum + 1
-        self.out = os.path.join(BUILDPATH, 'out%d.toc' % self.invcnum)
+        Target.invcnum += 1
+        self.out = os.path.join(BUILDPATH, 'out%s%d.toc' % (self.__class__.__name__,
+                                                            self.invcnum))
+        self.outnm = os.path.basename(self.out)
         self.dependencies = TOC()
+
     def __postinit__(self):
         print "checking %s" % (self.__class__.__name__,)
         if self.check_guts(mtime(self.out)):
             self.assemble()
+
+    GUTS = []
+
+    def check_guts(self, last_build):
+        pass
+
+    def get_guts(self, last_build, missing ='missing or bad'):
+        """
+        returns None if guts have changed
+        """
+        try:
+            data = _load_data(self.out)
+        except:
+            print "building because", os.path.basename(self.out), missing
+            return None
+
+        if len(data) != len(self.GUTS):
+            print "building because %s is bad" % self.outnm
+            return None
+        for i in range(len(self.GUTS)):
+            attr, func = self.GUTS[i]
+            if func is None:
+                # no check for this value
+                continue
+            if func(attr, data[i], getattr(self, attr), last_build):
+                return None
+        return data
+
 
 class Analysis(Target):
     def __init__(self, scripts=None, pathex=None, hookspath=None, excludes=None):
@@ -103,65 +233,63 @@ class Analysis(Target):
         self.pathex = []
         if pathex:
             for path in pathex:
-                self.pathex.append(os.path.abspath(os.path.normpath(path)))
+                self.pathex.append(absnormpath(path))
+        sys.pathex = self.pathex[:]
         self.hookspath = hookspath
         self.excludes = excludes
         self.scripts = TOC()
         self.pure = TOC()
         self.binaries = TOC()
+        self.zipfiles = TOC()
+        self.datas = TOC()
         self.__postinit__()
+
+    GUTS = (('inputs',    _check_guts_eq),
+            ('pathex',    _check_guts_eq),
+            ('hookspath', _check_guts_eq),
+            ('excludes',  _check_guts_eq),
+            ('scripts',   _check_guts_toc_mtime),
+            ('pure',      lambda *args: apply(_check_guts_toc_mtime,
+                                              args, {'pyc': 1 }   )),
+            ('binaries',  _check_guts_toc_mtime),
+            ('zipfiles',  _check_guts_toc_mtime),
+            ('datas',     _check_guts_toc_mtime),
+            )
+
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
         if last_build == 0:
-            print "building %s because %s non existent" % (self.__class__.__name__, outnm)
-            return 1
+            print "building %s because %s non existent" % (self.__class__.__name__, self.outnm)
+            return True
         for fnm in self.inputs:
             if mtime(fnm) > last_build:
                 print "building because %s changed" % fnm
-                return 1
-        try:
-            inputs, pathex, hookspath, excludes, scripts, pure, binaries = eval(open(self.out, 'r').read())
-        except:
-            print "building because %s disappeared" % outnm
-            return 1
-        if inputs != self.inputs:
-            print "building %s because inputs changed" % outnm
-            return 1
-        if pathex != self.pathex:
-            print "building %s because pathex changed" % outnm
-            return 1
-        if hookspath != self.hookspath:
-            print "building %s because hookspath changed" % outnm
-            return 1
-        if excludes != self.excludes:
-            print "building %s because excludes changed" % outnm
-            return 1
-        for (nm, fnm, typ) in scripts:
-            if mtime(fnm) > last_build:
-                print "building because %s changed" % fnm
-                return 1
-        for (nm, fnm, typ) in pure:
-            if mtime(fnm) > last_build:
-                print "building because %s changed" % fnm
-                return 1
-            elif mtime(fnm[:-1]) > last_build:
-                print "building because %s changed" % fnm[:-1]
-                return 1
-        for (nm, fnm, typ) in binaries:
-            if mtime(fnm) > last_build:
-                print "building because %s changed" % fnm
-                return 1
+                return True
+
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        scripts, pure, binaries, zipfiles, datas = data[-5:]
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
-        return 0
+        self.zipfiles = TOC(zipfiles)
+        self.datas = TOC(datas)
+        return False
+
     def assemble(self):
         print "running Analysis", os.path.basename(self.out)
+        # Reset seen variable to correctly discover dependencies
+        # if there are multiple Analysis in a single specfile.
+        bindepend.seen = {}
+
         paths = self.pathex
         for i in range(len(paths)):
-            paths[i] = os.path.abspath(os.path.normpath(paths[i]))
-        dirs = {}
-        pynms = []
+            # FIXME: isn't self.pathex already norm-abs-pathed?
+            paths[i] = absnormpath(paths[i])
+        ###################################################
+        # Scan inputs and prepare:
+        dirs = {}  # input directories
+        pynms = [] # python filenames with no extension
         for script in self.inputs:
             if not os.path.exists(script):
                 print "Analysis: script %s not found!" % script
@@ -169,51 +297,76 @@ class Analysis(Target):
             d, base = os.path.split(script)
             if not d:
                 d = os.getcwd()
-            d = os.path.abspath(os.path.normpath(d))
+            d = absnormpath(d)
             pynm, ext = os.path.splitext(base)
             dirs[d] = 1
             pynms.append(pynm)
-        analyzer = mf.ImportTracker(dirs.keys()+paths, self.hookspath, self.excludes)
+        ###################################################
+        # Initialize analyzer and analyze scripts
+        analyzer = mf.ImportTracker(dirs.keys()+paths, self.hookspath,
+                                    self.excludes,
+                                    target_platform=target_platform)
         #print analyzer.path
-        scripts = []
+        scripts = [] # will contain scripts to bundle
         for i in range(len(self.inputs)):
             script = self.inputs[i]
             print "Analyzing:", script
             analyzer.analyze_script(script)
             scripts.append((pynms[i], script, 'PYSOURCE'))
-        pure = []
-        binaries = []
-        rthooks = []
+        ###################################################
+        # Fills pure, binaries and rthookcs lists to TOC
+        pure = []     # pure python modules
+        binaries = [] # binaries to bundle
+        zipfiles = [] # zipfiles to bundle
+        datas = []    # datafiles to bundle
+        rthooks = []  # rthooks if needed
         for modnm, mod in analyzer.modules.items():
+            # FIXME: why can we have a mod == None here?
             if mod is not None:
                 hooks = findRTHook(modnm)  #XXX
                 if hooks:
                     rthooks.extend(hooks)
+                datas.extend(mod.datas)
                 if isinstance(mod, mf.BuiltinModule):
                     pass
                 else:
                     fnm = mod.__file__
                     if isinstance(mod, mf.ExtensionModule):
                         binaries.append((mod.__name__, fnm, 'EXTENSION'))
-                    elif modnm == '__main__':
-                        pass
+                    elif isinstance(mod, (mf.PkgInZipModule, mf.PyInZipModule)):
+                        zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
+                                         str(mod.owner), 'ZIPFILE'))
                     else:
-                        pure.append((modnm, fnm, 'PYMODULE'))
-        binaries.extend(bindepend.Dependencies(binaries))
-        scripts[1:1] = rthooks
+                        # mf.PyModule instances expose a list of binary
+                        # dependencies, most probably shared libraries accessed
+                        # via ctypes. Add them to the overall required binaries.
+                        binaries.extend(mod.binaries)
+                        if modnm != '__main__':
+                            pure.append((modnm, fnm, 'PYMODULE'))
+        binaries.extend(bindepend.Dependencies(binaries,
+                                               platform=target_platform))
+        self.fixMissingPythonLib(binaries)
+        if zipfiles:
+            scripts[-1:-1] = [("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE')]
+        # Add realtime hooks just before the last script (which is
+        # the entrypoint of the application).
+        scripts[-1:-1] = rthooks
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
-        try:
-            oldstuff = eval(open(self.out, 'r').read())
+        self.zipfiles = TOC(zipfiles)
+        self.datas = TOC(datas)
+        try: # read .toc
+            oldstuff = _load_data(self.out)
         except:
             oldstuff = None
-        if oldstuff != (self.inputs, self.pathex, self.hookspath, self.excludes, scripts, pure, binaries):
-            outf = open(self.out, 'w')
-            pprint.pprint(
-                (self.inputs, self.pathex, self.hookspath, self.excludes, self.scripts, self.pure, self.binaries),
-                outf)
-            outf.close()
+
+        self.pure = TOC(compile_pycos(self.pure))
+
+        newstuff = (self.inputs, self.pathex, self.hookspath, self.excludes,
+                    self.scripts, self.pure, self.binaries, self.zipfiles, self.datas)
+        if oldstuff != newstuff:
+            _save_data(self.out, newstuff)
             wf = open(WARNFILE, 'w')
             for ln in analyzer.getwarnings():
                 wf.write(ln+'\n')
@@ -222,6 +375,28 @@ class Analysis(Target):
             return 1
         print self.out, "no change!"
         return 0
+
+    def fixMissingPythonLib(self, binaries):
+        """Add the Python library if missing from the binaries.
+
+        Some linux distributions (e.g. debian-based) statically build the
+        Python executable to the libpython, so bindepend doesn't include
+        it in its output.
+        """
+        if target_platform != 'linux2': return
+
+        name = 'libpython%d.%d.so' % sys.version_info[:2]
+        for (nm, fnm, typ) in binaries:
+            if typ == 'BINARY' and name in fnm:
+                # lib found
+                return
+
+        lib = bindepend.findLibrary(name)
+        if lib is None:
+            raise IOError("Python library not found!")
+
+        binaries.append((os.path.split(lib)[1], lib, 'BINARY'))
+
 
 def findRTHook(modnm):
     hooklist = rthooks.get(modnm)
@@ -240,7 +415,7 @@ def findRTHook(modnm):
 
 class PYZ(Target):
     typ = 'PYZ'
-    def __init__(self, toc, name=None, level=9):
+    def __init__(self, toc, name=None, level=9, crypt=None):
         Target.__init__(self)
         self.toc = toc
         self.name = name
@@ -250,51 +425,46 @@ class PYZ(Target):
             self.level = level
         else:
             self.level = 0
-        self.dependencies = config['PYZ_dependencies']
+        if config['useCrypt'] and crypt is not None:
+            self.crypt = archive.Keyfile(crypt).key
+        else:
+            self.crypt = None
+        self.dependencies = compile_pycos(config['PYZ_dependencies'])
         self.__postinit__()
+
+    GUTS = (('name',   _check_guts_eq),
+            ('level',  _check_guts_eq),
+            ('crypt',  _check_guts_eq),
+            ('toc',    _check_guts_toc), # todo: pyc=1
+            )
+
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
-            print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
-            return 1
-        try:
-            name, level, toc = eval(open(self.out, 'r').read())
-        except:
-            print "rebuilding %s because missing" % outnm
-            return 1
-        if name != self.name:
-            print "rebuilding %s because name changed" % outnm
-            return 1
-        if level != self.level:
-            print "rebuilding %s because level changed" % outnm
-            return 1
-        if toc != self.toc:
-            print "rebuilding %s because toc changed" % outnm
-            return 1
-        for (nm, fnm, typ) in toc:
-            if mtime(fnm) > last_build:
-                print "rebuilding %s because %s changed" % (outnm, fnm)
-                return 1
-            if fnm[-1] in ('c', 'o'):
-                if mtime(fnm[:-1]) > last_build:
-                    print "rebuilding %s because %s changed" % (outnm, fnm[:-1])
-                    return 1
-        return 0
+            print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
+            return True
+
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        return False
+
     def assemble(self):
         print "building PYZ", os.path.basename(self.out)
-        pyz = archive.ZlibArchive(level=self.level)
+        pyz = archive.ZlibArchive(level=self.level, crypt=self.crypt)
         toc = self.toc - config['PYZ_dependencies']
-        for (nm, fnm, typ) in toc:
-            if mtime(fnm[:-1]) > mtime(fnm):
-                py_compile.compile(fnm[:-1])
         pyz.build(self.name, toc)
-        outf = open(self.out, 'w')
-        pprint.pprint((self.name, self.level, self.toc), outf)
-        outf.close()
+        _save_data(self.out, (self.name, self.level, self.crypt, self.toc))
         return 1
 
+def cacheDigest(fnm):
+    data = open(fnm, "rb").read()
+    digest = md5(data).digest()
+    return digest
+
 def checkCache(fnm, strip, upx):
-    if not strip and not upx:
+    # On darwin a cache is required anyway to keep the libaries
+    # with relative install names
+    if not strip and not upx and sys.platform != 'darwin':
         return fnm
     if strip:
         strip = 1
@@ -304,28 +474,54 @@ def checkCache(fnm, strip, upx):
         upx = 1
     else:
         upx = 0
+
+    # Load cache index
     cachedir = os.path.join(HOMEPATH, 'bincache%d%d' %  (strip, upx))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
-    basenm = os.path.basename(fnm)
-    cachedfile = os.path.join(cachedir, basenm )
-    if os.path.exists(cachedfile):
-        if mtime(fnm) > mtime(cachedfile):
+    cacheindexfn = os.path.join(cachedir, "index.dat")
+    if os.path.exists(cacheindexfn):
+        cache_index = _load_data(cacheindexfn)
+    else:
+        cache_index = {}
+
+    # Verify if the file we're looking for is present in the cache.
+    basenm = os.path.normcase(os.path.basename(fnm))
+    digest = cacheDigest(fnm)
+    cachedfile = os.path.join(cachedir, basenm)
+    cmd = None
+    if cache_index.has_key(basenm):
+        if digest != cache_index[basenm]:
             os.remove(cachedfile)
         else:
             return cachedfile
     if upx:
         if strip:
             fnm = checkCache(fnm, 1, 0)
-        cmd = "upx --best -q \"%s\"" % cachedfile
+        bestopt = "--best"
+        # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
+        # A better configure-time check is due.
+        if config["hasUPX"] >= (3,) and os.name == "nt":
+            bestopt = "--lzma"
+
+        upx_executable = "upx"
+        if config.get('upx_dir'):
+            upx_executable = os.path.join(config['upx_dir'], upx_executable)
+        cmd = '"' + upx_executable + '" ' + bestopt + " -q \"%s\"" % cachedfile
     else:
-        cmd = "strip \"%s\"" % cachedfile
+        if strip:
+            cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
-    os.system(cmd)
+    if cmd: system(cmd)
+
+    # update cache index
+    cache_index[basenm] = digest
+    _save_data(cacheindexfn, cache_index)
+
     return cachedfile
 
-UNCOMPRESSED, COMPRESSED = range(2)
+UNCOMPRESSED, COMPRESSED, ENCRYPTED = range(3)
 class PKG(Target):
     typ = 'PKG'
     xformdict = {'PYMODULE' : 'm',
@@ -335,9 +531,10 @@ class PKG(Target):
                  'PKG' : 'a',
                  'DATA': 'x',
                  'BINARY': 'b',
+                 'ZIPFILE': 'Z',
                  'EXECUTABLE': 'b'}
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0):
+                 strip_binaries=0, upx_binaries=0, crypt=0):
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -345,6 +542,7 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
+        self.crypt = crypt
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -355,42 +553,34 @@ class PKG(Target):
                               'EXECUTABLE':COMPRESSED,
                               'PYSOURCE':COMPRESSED,
                               'PYMODULE':COMPRESSED }
+                if self.crypt:
+                    self.cdict['PYSOURCE'] = ENCRYPTED
+                    self.cdict['PYMODULE'] = ENCRYPTED
             else:
                 self.cdict = { 'PYSOURCE':UNCOMPRESSED }
         self.__postinit__()
+
+    GUTS = (('name',   _check_guts_eq),
+            ('cdict',  _check_guts_eq),
+            ('toc',    _check_guts_toc_mtime),
+            ('exclude_binaries',  _check_guts_eq),
+            ('strip_binaries',  _check_guts_eq),
+            ('upx_binaries',  _check_guts_eq),
+            ('crypt', _check_guts_eq),
+            )
+
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
-            print "rebuilding %s because %s is missing" % (outnm, os.path.basename(self.name))
+            print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
             return 1
-        try:
-            name, cdict, toc, exclude_binaries, strip_binaries, upx_binaries = eval(open(self.out, 'r').read())
-        except:
-            print "rebuilding %s because %s is missing" % (outnm, outnm)
-            return 1
-        if name != self.name:
-            print "rebuilding %s because name changed" % outnm
-            return 1
-        if cdict != self.cdict:
-            print "rebuilding %s because cdict changed" % outnm
-            return 1
-        if toc != self.toc:
-            print "rebuilding %s because toc changed" % outnm
-            return 1
-        if exclude_binaries != self.exclude_binaries:
-            print "rebuilding %s because exclude_binaries changed" % outnm
-            return 1
-        if strip_binaries != self.strip_binaries:
-            print "rebuilding %s because strip_binaries changed" % outnm
-            return 1
-        if upx_binaries != self.upx_binaries:
-            print "rebuilding %s because upx_binaries changed" % outnm
-            return 1
-        for (nm, fnm, typ) in toc:
-            if mtime(fnm) > last_build:
-                print "rebuilding %s because %s changed" % (outnm, fnm)
-                return 1
-        return 0
+
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        # todo: toc equal
+        return False
+
+
     def assemble(self):
         print "building PKG", os.path.basename(self.name)
         trash = []
@@ -426,16 +616,17 @@ class PKG(Target):
                 mytoc.append((inm, fnm, self.cdict.get(typ,0), self.xformdict.get(typ,'b')))
         archive = carchive.CArchive()
         archive.build(self.name, mytoc)
-        outf = open(self.out, 'w')
-        pprint.pprint((self.name, self.cdict, self.toc, self.exclude_binaries, self.strip_binaries, self.upx_binaries), outf)
-        outf.close()
+        _save_data(self.out,
+                   (self.name, self.cdict, self.toc, self.exclude_binaries,
+                    self.strip_binaries, self.upx_binaries, self.crypt))
         for item in trash:
             os.remove(item)
         return 1
 
-class ELFEXE(Target):
+class EXE(Target):
     typ = 'EXECUTABLE'
     exclude_binaries = 0
+    append_pkg = 1
     def __init__(self, *args, **kws):
         Target.__init__(self)
         self.console = kws.get('console',1)
@@ -445,11 +636,17 @@ class ELFEXE(Target):
         self.versrsrc = kws.get('version',None)
         self.strip = kws.get('strip',None)
         self.upx = kws.get('upx',None)
+        self.crypt = kws.get('crypt', 0)
         self.exclude_binaries = kws.get('exclude_binaries',0)
+        self.append_pkg = kws.get('append_pkg', self.append_pkg)
         if self.name is None:
             self.name = self.out[:-3] + 'exe'
         if not os.path.isabs(self.name):
             self.name = os.path.join(SPECPATH, self.name)
+        if target_iswin or cygwin:
+            self.pkgname = self.name[:-3] + 'pkg'
+        else:
+            self.pkgname = self.name + '.pkg'
         self.toc = TOC()
         for arg in args:
             if isinstance(arg, TOC):
@@ -461,53 +658,55 @@ class ELFEXE(Target):
                 self.toc.extend(arg)
         self.toc.extend(config['EXE_dependencies'])
         self.pkg = PKG(self.toc, cdict=kws.get('cdict',None), exclude_binaries=self.exclude_binaries,
-                       strip_binaries=self.strip, upx_binaries=self.upx)
+                       strip_binaries=self.strip, upx_binaries=self.upx, crypt=self.crypt)
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
+
+    GUTS = (('name',     _check_guts_eq),
+            ('console',  _check_guts_eq),
+            ('debug',    _check_guts_eq),
+            ('icon',     _check_guts_eq),
+            ('versrsrc', _check_guts_eq),
+            ('strip',    _check_guts_eq),
+            ('upx',      _check_guts_eq),
+            ('crypt',    _check_guts_eq),
+            ('mtm',      None,), # checked bellow
+            )
+
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
         if not os.path.exists(self.name):
-            print "rebuilding %s because %s missing" % (outnm, os.path.basename(self.name))
+            print "rebuilding %s because %s missing" % (self.outnm, os.path.basename(self.name))
             return 1
-        try:
-            name, console, debug, icon, versrsrc, strip, upx, mtm = eval(open(self.out, 'r').read())
-        except:
-            print "rebuilding %s because %s missing or bad" % (outnm, outnm)
+        if not self.append_pkg and not os.path.exists(self.pkgname):
+            print "rebuilding because %s missing" % (
+                os.path.basename(self.pkgname),)
             return 1
-        if name != self.name:
-            print "rebuilding %s because name changed" % outnm
-            return 1
-        if console != self.console:
-            print "rebuilding %s because console option changed" % outnm
-            return 1
-        if debug != self.debug:
-            print "rebuilding %s because debug option changed" % outnm
-            return 1
-        if config['hasRsrcUpdate']:
-            if icon != self.icon:
-                print "rebuilding %s because icon option changed" % outnm
-                return 1
-            if versrsrc != self.versrsrc:
-                print "rebuilding %s because versrsrc option changed" % outnm
-                return 1
-        else:
-            if icon or versrsrc:
-                print "ignoring icon and version resources = platform not capable"
-        if strip != self.strip:
-            print "rebuilding %s because strip option changed" % outnm
-            return 1
-        if upx != self.upx:
-            print "rebuilding %s because upx option changed" % outnm
+
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+
+        icon, versrsrc = data[3:5]
+        if (icon or versrsrc) and not config['hasRsrcUpdate']:
+            # todo: really ignore :-)
+            print "ignoring icon and version resources = platform not capable"
+
+        mtm = data[-1]
+        crypt = data[-2]
+        if crypt != self.crypt:
+            print "rebuilding %s because crypt option changed" % outnm
             return 1
         if mtm != mtime(self.name):
-            print "rebuilding %s because mtimes don't match" % outnm
-            return 1
+            print "rebuilding", self.outnm, "because mtimes don't match"
+            return True
         if mtm < mtime(self.pkg.out):
-            print "rebuilding %s because pkg is more recent" % outnm
-            return 1
-        return 0
+            print "rebuilding", self.outnm, "because pkg is more recent"
+            return True
+
+        return False
+
     def _bootloader_postfix(self, exe):
-        if iswin:
+        if target_iswin:
             exe = exe + "_"
             is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
             exe = exe + "67"[is24]
@@ -519,13 +718,16 @@ class ELFEXE(Target):
             if self.debug:
                 exe = exe + '_d'
         return exe
+
     def assemble(self):
-        print "building ELFEXE", os.path.basename(self.out)
+        print "building EXE from", os.path.basename(self.out)
         trash = []
+        if not os.path.exists(os.path.dirname(self.name)):
+            os.makedirs(os.path.dirname(self.name))
         outf = open(self.name, 'wb')
         exe = self._bootloader_postfix('support/loader/run')
         exe = os.path.join(HOMEPATH, exe)
-        if iswin or cygwin:
+        if target_iswin or cygwin:
             exe = exe + '.exe'
         if config['hasRsrcUpdate']:
             if self.icon:
@@ -544,13 +746,17 @@ class ELFEXE(Target):
                 exe = tmpnm
         exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
         self.copy(exe, outf)
-        self.copy(self.pkg.name, outf)
+        if self.append_pkg:
+            print "Appending archive to EXE", self.name
+            self.copy(self.pkg.name, outf)
+        else:
+            print "Copying archive to", self.pkgname
+            shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
         os.chmod(self.name, 0755)
-        f = open(self.out, 'w')
-        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
-                       self.strip, self.upx, mtime(self.name)), f)
-        f.close()
+        _save_data(self.out,
+                   (self.name, self.console, self.debug, self.icon,
+                    self.versrsrc, self.strip, self.upx, self.crypt, mtime(self.name)))
         for item in trash:
             os.remove(item)
         return 1
@@ -562,7 +768,7 @@ class ELFEXE(Target):
                 break
             outf.write(data)
 
-class DLL(ELFEXE):
+class DLL(EXE):
     def assemble(self):
         print "building DLL", os.path.basename(self.out)
         outf = open(self.name, 'wb')
@@ -572,38 +778,11 @@ class DLL(ELFEXE):
         self.copy(self.pkg.name, outf)
         outf.close()
         os.chmod(self.name, 0755)
-        f = open(self.out, 'w')
-        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
-                       self.strip, self.upx, mtime(self.name)), f)
-        f.close()
+        _save_data(self.out,
+                   (self.name, self.console, self.debug, self.icon,
+                    self.versrsrc, self.strip, self.upx, mtime(self.name)))
         return 1
 
-class NonELFEXE(ELFEXE):
-    def assemble(self):
-        print "building NonELFEXE", os.path.basename(self.out)
-        trash = []
-        exe = 'support/loader/run'
-        if not self.console:
-            exe = exe + 'w'
-        if self.debug:
-            exe = exe + '_d'
-        exe = os.path.join(HOMEPATH, exe)
-        exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
-        shutil.copy2(exe, self.name)
-        os.chmod(self.name, 0755)
-        shutil.copy2(self.pkg.name, self.name+'.pkg')
-        f = open(self.out, 'w')
-        pprint.pprint((self.name, self.console, self.debug, self.icon, self.versrsrc,
-                       self.strip, self.upx, mtime(self.name)), f)
-        f.close()
-        for fnm in trash:
-            os.remove(fnm)
-        return 1
-
-if config['useELFEXE']:
-    EXE = ELFEXE
-else:
-    EXE = NonELFEXE
 
 class COLLECT(Target):
     def __init__(self, *args, **kws):
@@ -621,31 +800,24 @@ class COLLECT(Target):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                if isinstance(arg, NonELFEXE):
-                    self.toc.append((os.path.basename(arg.name)+'.pkg', arg.name+'.pkg', 'PKG'))
+                if isinstance(arg, EXE) and not arg.append_pkg:
+                    self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
         self.__postinit__()
+
+    GUTS = (('name',            _check_guts_eq),
+            ('strip_binaries',  _check_guts_eq),
+            ('upx_binaries',    _check_guts_eq),
+            ('toc',             _check_guts_eq), # additional check below
+            )
+
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
-        try:
-            name, strip_binaries, upx_binaries, toc = eval(open(self.out, 'r').read())
-        except:
-            print "building %s because %s missing" % (outnm, outnm)
-            return 1
-        if name != self.name:
-            print "building %s because name changed" % outnm
-            return 1
-        if strip_binaries != self.strip_binaries:
-            print "building %s because strip_binaries option changed" % outnm
-            return 1
-        if upx_binaries != self.upx_binaries:
-            print "building %s because upx_binaries option changed" % outnm
-            return 1
-        if toc != self.toc:
-            print "building %s because toc changed" % outnm
-            return 1
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        toc = data[-1]
         for inm, fnm, typ in self.toc:
             if typ == 'EXTENSION':
                 ext = os.path.splitext(fnm)[1]
@@ -653,16 +825,17 @@ class COLLECT(Target):
             else:
                 test = os.path.join(self.name, os.path.basename(fnm))
             if not os.path.exists(test):
-                print "building %s because %s is missing" % (outnm, test)
+                print "building %s because %s is missing" % (self.outnm, test)
                 return 1
             if mtime(fnm) > mtime(test):
-                print "building %s because %s is more recent" % (outnm, fnm)
+                print "building %s because %s is more recent" % (self.outnm, fnm)
                 return 1
         return 0
+
     def assemble(self):
         print "building COLLECT", os.path.basename(self.out)
         if not os.path.exists(self.name):
-            os.mkdir(self.name)
+            os.makedirs(self.name)
         toc = TOC()
         for inm, fnm, typ in self.toc:
             if typ == 'EXTENSION':
@@ -682,12 +855,95 @@ class COLLECT(Target):
             shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0755)
-        f = open(self.out, 'w')
-        pprint.pprint((self.name, self.strip_binaries, self.upx_binaries, self.toc), f)
-        f.close()
+        _save_data(self.out,
+                 (self.name, self.strip_binaries, self.upx_binaries, self.toc))
         return 1
 
-import UserList
+
+class BUNDLE(Target):
+    def __init__(self, *args, **kws):
+        Target.__init__(self)
+        self.appname = kws.get("appname", None)
+        self.version = kws.get("version", "0.0.0")
+        self.toc = TOC()
+        for arg in args:
+            if isinstance(arg, EXE):
+                if self.appname is None:
+                    self.appname = "Mac%s" % (arg.name,)
+                self.name = os.path.join(os.path.dirname(SPECPATH), self.appname + ".app")
+                self.exename = arg.name
+                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
+                self.toc.extend(arg.dependencies)
+            else:
+                print "unsupported entry %s", arg.__class__.__name__
+        self.__postinit__()
+
+    GUTS = (('toc',             _check_guts_eq), # additional check below
+            )
+
+    def check_guts(self, last_build):
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        toc = data[-1]
+        for inm, fnm, typ in self.toc:
+            test = os.path.join(self.name, os.path.basename(fnm))
+            if not os.path.exists(test):
+                print "building %s because %s is missing" % (self.outnm, test)
+                return 1
+            if mtime(fnm) > mtime(test):
+                print "building %s because %s is more recent" % (self.outnm, fnm)
+                return 1
+        return 0
+
+    def assemble(self):
+        print "building BUNDLE", os.path.basename(self.out)
+
+        if os.path.exists(self.name):
+            shutil.rmtree(self.name)
+        # Create a minimal Mac bundle structure
+        os.makedirs(self.name)
+        os.makedirs(os.path.join(self.name, "Contents"))
+        os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
+        os.makedirs(os.path.join(self.name, "Contents", "Resources"))
+        os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
+        # Key/values for a minimal Info.plist file
+        info_plist_dict = {"CFBundleDisplayName": self.appname,
+                           "CFBundleName": self.appname,
+                           "CFBundleExecutable": os.path.basename(self.exename),
+                           "CFBundleIconFile": "App.icns",
+                           "CFBundleInfoDictionaryVersion": "6.0",
+                           "CFBundlePackageType": "APPL",
+                           "CFBundleShortVersionString": self.version,
+
+                           # Setting this to 1 will cause Mac OS X *not* to show
+                           # a dock icon for the PyInstaller process which
+                           # decompresses the real executable's contents -
+                           # actually, it's not clear why the real executable
+                           # gets instead an icon doing so.
+                           "LSBackgroundOnly": "1",
+
+                           }
+        info_plist = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>"""
+        for k, v in info_plist_dict.items():
+            info_plist += "<key>%s</key>\n<string>%s</string>\n" % (k, v)
+        info_plist += """</dict>
+</plist>"""
+        f = open(os.path.join(self.name, "Contents", "Info.plist"), "w")
+        f.write(info_plist)
+        f.close()
+        for inm, fnm, typ in self.toc:
+            tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
+            todir = os.path.dirname(tofnm)
+            if not os.path.exists(todir):
+                os.makedirs(todir)
+            shutil.copy2(fnm, tofnm)
+        return 1
+
+
 class TOC(UserList.UserList):
     def __init__(self, initlist=None):
         UserList.UserList.__init__(self)
@@ -697,16 +953,26 @@ class TOC(UserList.UserList):
                 self.append(tpl)
     def append(self, tpl):
         try:
-            if not self.fltr.get(tpl[0]):
+            fn = tpl[0]
+            if tpl[2] == "BINARY":
+                # Normalize the case for binary files only (to avoid duplicates
+                # for different cases under Windows). We can't do that for
+                # Python files because the import semantic (even at runtime)
+                # depends on the case.
+                fn = os.path.normcase(fn)
+            if not self.fltr.get(fn):
                 self.data.append(tpl)
-                self.fltr[tpl[0]] = 1
+                self.fltr[fn] = 1
         except TypeError:
             print "TOC found a %s, not a tuple" % tpl
             raise
     def insert(self, pos, tpl):
-        if not self.fltr.get(tpl[0]):
+        fn = tpl[0]
+        if tpl[2] == "BINARY":
+            fn = os.path.normcase(fn)
+        if not self.fltr.get(fn):
             self.data.insert(pos, tpl)
-            self.fltr[tpl[0]] = 1
+            self.fltr[fn] = 1
     def __add__(self, other):
         rslt = TOC(self.data)
         rslt.extend(other)
@@ -750,34 +1016,31 @@ class Tree(Target, TOC):
         if excludes is None:
             self.excludes = []
         self.__postinit__()
+
+    GUTS = (('root',     _check_guts_eq),
+            ('prefix',   _check_guts_eq),
+            ('excludes', _check_guts_eq),
+            ('toc',      None),
+            )
+
     def check_guts(self, last_build):
-        outnm = os.path.basename(self.out)
-        try:
-            root, prefix, excludes, toc = eval(open(self.out, 'r').read())
-        except:
-            print "building %s because %s is missing / bad" % (outnm, outnm)
-            return 1
-        if root != self.root:
-            print "building %s because root changed" % outnm
-            return 1
-        if prefix != self.prefix:
-            print "building %s because prefix changed" % outnm
-            return 1
-        if excludes != self.excludes:
-            print "building %s because excludes changed" % outnm
-            return 1
-        stack = [root]
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        stack = [ data[0] ] # root
+        toc = data[3] # toc
         while stack:
             d = stack.pop()
             if mtime(d) > last_build:
-                print "building %s because directory %s changed" % (outnm, d)
-                return 1
+                print "building %s because directory %s changed" % (self.outnm, d)
+                return True
             for nm in os.listdir(d):
                 path = os.path.join(d, nm)
                 if os.path.isdir(path):
                     stack.append(path)
         self.data = toc
-        return 0
+        return False
+
     def assemble(self):
         print "building Tree", os.path.basename(self.out)
         stack = [(self.root, self.prefix)]
@@ -801,15 +1064,14 @@ class Tree(Target, TOC):
                             stack.append((fullfnm, rfnm))
                         else:
                             rslt.append((rfnm, fullfnm, 'DATA'))
+        self.data = rslt
         try:
-            oldstuff = eval(open(self.out, 'r').read())
+            oldstuff = _load_data(self.out)
         except:
             oldstuff = None
-        if oldstuff != (self.root, self.prefix, self.excludes, rslt):
-            outf = open(self.out, 'w')
-            pprint.pprint((self.root, self.prefix, self.excludes, rslt), outf)
-            outf.close()
-            self.data = rslt
+        newstuff = (self.root, self.prefix, self.excludes, self.data)
+        if oldstuff != newstuff:
+            _save_data(self.out, newstuff)
             return 1
         print self.out, "no change!"
         return 0
@@ -826,18 +1088,73 @@ def TkTree():
 def TkPKG():
     return PKG(TkTree(), name='tk.pkg')
 
-usage = """\
-Usage: python %s <specfile>
+#---
 
-See doc/Tutorial.html for details.
-"""
+def build(spec):
+    global SPECPATH, BUILDPATH, WARNFILE, rthooks
+    rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
+    SPECPATH, specnm = os.path.split(spec)
+    specnm = os.path.splitext(specnm)[0]
+    if SPECPATH == '':
+        SPECPATH = os.getcwd()
+    WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
+    BUILDPATH = os.path.join(SPECPATH, 'build',
+                             "pyi." + config['target_platform'], specnm)
+    if '-o' in sys.argv:
+        bpath = sys.argv[sys.argv.index('-o')+1]
+        if os.path.isabs(bpath):
+            BUILDPATH = bpath
+        else:
+            BUILDPATH = os.path.join(SPECPATH, bpath)
+    if not os.path.exists(BUILDPATH):
+        os.makedirs(BUILDPATH)
+    execfile(spec)
+
+
+def main(specfile, configfilename):
+    global target_platform, target_iswin, config
+    global icon, versionInfo
+
+    try:
+        config = _load_data(configfilename)
+    except IOError:
+        print "You must run Configure.py before building!"
+        sys.exit(1)
+
+    target_platform = config.get('target_platform', sys.platform)
+    target_iswin = target_platform[:3] == 'win'
+
+    if target_platform == sys.platform:
+        # _not_ cross compiling
+        if config['pythonVersion'] != sys.version:
+            print "The current version of Python is not the same with which PyInstaller was configured."
+            print "Please re-run Configure.py with this version."
+            sys.exit(1)
+
+    if config.setdefault('pythonDebug', None) != __debug__:
+        print "python optimization flags changed: rerun Configure.py with the same [-O] option"
+        print "Configure.py optimize=%s, Build.py optimize=%s" % (not config['pythonDebug'], not __debug__)
+        sys.exit(1)
+
+    if config['hasRsrcUpdate']:
+        import icon, versionInfo
+
+    if config['hasUPX']:
+        setupUPXFlags()
+
+    if not config['useELFEXE']:
+        EXE.append_pkg = 0
+
+    build(specfile)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print usage % sys.argv[0]
-    else:
-        build(sys.argv[1])
+    from pyi_optparse import OptionParser
+    parser = OptionParser('%prog [options] specfile')
+    parser.add_option('-C', '--configfile',
+                      default=os.path.join(HOMEPATH, 'config.dat'),
+                      help='Name of generated configfile (default: %default)')
+    opts, args = parser.parse_args()
+    if len(args) != 1:
+        parser.error('Requires exactly one .spec-file')
 
-
-
-
+    main(args[0], configfilename=opts.configfile)

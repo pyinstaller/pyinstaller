@@ -15,19 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-hiddenimports = []
-
-def install_Image(lis):
-    import Image
-    # PIL uses lazy initialization.
-    # you candecide if you want only the
-    # default stuff:
-    Image.preinit()
-    # or just everything:
-    Image.init()
-    import sys
-    for name in sys.modules:
-        if name[-11:] == "ImagePlugin":
-            lis.append(name)
-
-install_Image(hiddenimports)
+# Forward to shared code for PIL. PIL can be imported either as a top-level package
+# (from PIL import Image), or not (import Image), because it installs a
+# PIL.pth.
+from hooks.shared_PIL_Image import *

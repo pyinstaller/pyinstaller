@@ -71,6 +71,8 @@ else:
 if "-vi" in sys.argv[1:]:
     _verbose = 1
 
+class ArchiveReadError(RuntimeError): pass
+
 class Archive:
     """ A base class for a repository of python code objects.
         The extract method is used by imputil.ArchiveImporter
@@ -104,12 +106,12 @@ class Archive:
             Check to see if the file object self.lib actually has a file
             we understand.
         """
-        self.lib.seek(self.start)	#default - magic is at start of file
+        self.lib.seek(self.start)       #default - magic is at start of file
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise RuntimeError, "%s is not a valid %s archive file" \
+            raise ArchiveReadError, "%s is not a valid %s archive file" \
               % (self.path, self.__class__.__name__)
         if self.lib.read(len(self.pymagic)) != self.pymagic:
-            raise RuntimeError, "%s has version mismatch to dll" % (self.path)
+            raise ArchiveReadError, "%s has version mismatch to dll" % (self.path)
         self.lib.read(4)
 
     def loadtoc(self):
@@ -119,7 +121,7 @@ class Archive:
             Default: The TOC is a marshal-able string.
         """
         self.lib.seek(self.start + self.TOCPOS)
-        (offset,) = struct.unpack('=i', self.lib.read(4))
+        (offset,) = struct.unpack('!i', self.lib.read(4))
         self.lib.seek(self.start + offset)
         self.toc = marshal.load(self.lib)
 
@@ -253,7 +255,7 @@ class Archive:
         assert ext in ('.pyc', '.pyo')
         self.toc[nm] = (ispkg, self.lib.tell())
         f = open(entry[1], 'rb')
-        f.seek(8)	#skip magic and timestamp
+        f.seek(8)       #skip magic and timestamp
         self.lib.write(f.read())
 
     def save_toc(self, tocpos):
@@ -271,12 +273,14 @@ class Archive:
         self.lib.seek(self.start)
         self.lib.write(self.MAGIC)
         self.lib.write(self.pymagic)
-        self.lib.write(struct.pack('=i', tocpos))
+        self.lib.write(struct.pack('!i', tocpos))
 
 class DummyZlib:
     def decompress(self, data):
+        #raise RuntimeError, "zlib required but cannot be imported"
         return data
     def compress(self, data, lvl):
+        #raise RuntimeError, "zlib required but cannot be imported"
         return data
 
 import iu
@@ -287,24 +291,38 @@ import iu
 class ZlibArchive(Archive):
     MAGIC = 'PYZ\0'
     TOCPOS = 8
-    HDRLEN = 16
+    HDRLEN = Archive.HDRLEN + 5
     TRLLEN = 0
     TOCTMPLT = {}
     LEVEL = 9
 
-    def __init__(self, path=None, offset=None, level=9):
+    def __init__(self, path=None, offset=None, level=9, crypt=None):
         if path is None:
             offset = 0
         elif offset is None:
             for i in range(len(path)-1, -1, -1):
                 if path[i] == '?':
-                    offset = int(path[i+1:])
+                    try:
+                        offset = int(path[i+1:])
+                    except ValueError:
+                        # Just ignore any spurious "?" in the path
+                        # (like in Windows UNC \\?\<path>).
+                        continue
                     path = path[:i]
                     break
             else:
                 offset = 0
+
         self.LEVEL = level
+        if crypt is not None:
+            self.crypted = 1
+            self.key = (crypt + "*"*32)[:32]
+        else:
+            self.crypted = 0
+            self.key = None
+
         Archive.__init__(self, path, offset)
+
         # dynamic import so not imported if not needed
         global zlib
         if self.LEVEL:
@@ -313,16 +331,35 @@ class ZlibArchive(Archive):
             except ImportError:
                 zlib = DummyZlib()
         else:
+            print "WARNING: compression level=0!!!"
             zlib = DummyZlib()
 
+        global AES
+        if self.crypted:
+            import AES
+
+    def _iv(self, nm):
+        IV = nm * ((AES.block_size + len(nm) - 1) // len(nm))
+        return IV[:AES.block_size]
 
     def extract(self, name):
         (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
         if pos is None:
             return None
         self.lib.seek(self.start + pos)
+        obj = self.lib.read(lngth)
+        if self.crypted:
+            if self.key is None:
+                raise ImportError, "decryption key not found"
+            obj = AES.new(self.key, AES.MODE_CFB, self._iv(name)).decrypt(obj)
         try:
-            co = marshal.loads(zlib.decompress(self.lib.read(lngth)))
+            obj = zlib.decompress(obj)
+        except zlib.error:
+            if not self.crypted:
+                raise
+            raise ImportError, "invalid decryption key"
+        try:
+            co = marshal.loads(obj)
         except EOFError:
             raise ImportError, "PYZ entry '%s' failed to unmarshal" % name
         return ispkg, co
@@ -340,7 +377,7 @@ class ZlibArchive(Archive):
         except (IOError, OSError):
             try:
                 f = open(pth, 'rb')
-                f.seek(8)	#skip magic and timestamp
+                f.seek(8)       #skip magic and timestamp
                 bytecode = f.read()
                 marshal.loads(bytecode).co_filename # to make sure it's valid
                 obj = zlib.compress(bytecode, self.LEVEL)
@@ -355,19 +392,41 @@ class ZlibArchive(Archive):
                 print e.args
                 raise
             obj = zlib.compress(marshal.dumps(co), self.LEVEL)
+        if self.crypted:
+            obj = AES.new(self.key, AES.MODE_CFB, self._iv(nm)).encrypt(obj)
         self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
     def update_headers(self, tocpos):
         """add level"""
         Archive.update_headers(self, tocpos)
-        self.lib.write(struct.pack('!i', self.LEVEL))
+        self.lib.write(struct.pack('!iB', self.LEVEL, self.crypted))
     def checkmagic(self):
         Archive.checkmagic(self)
-        self.LEVEL = struct.unpack('!i', self.lib.read(4))[0]
+        self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
+
+class Keyfile:
+    def __init__(self, fn=None):
+        if fn is None:
+            fn = sys.argv[0]
+            if fn[-4] == '.':
+                fn = fn[:-4]
+            fn += ".key"
+
+        execfile(fn, {"__builtins__": None}, self.__dict__)
+        if not hasattr(self, "key"):
+            self.key = None
 
 class PYZOwner(iu.Owner):
-    def __init__(self, path):
-        self.pyz = ZlibArchive(path)
+    def __init__(self, path, target_platform=None):
+        try:
+            self.pyz = ZlibArchive(path)
+            self.pyz.checkmagic()
+        except (IOError, ArchiveReadError), e:
+            raise iu.OwnerError(e)
+        if self.pyz.crypted:
+            if not hasattr(sys, "keyfile"):
+                sys.keyfile = Keyfile()
+            self.pyz = ZlibArchive(path, crypt=sys.keyfile.key)
         iu.Owner.__init__(self, path)
     def getmod(self, nm, newmod=imp.new_module):
         rslt = self.pyz.extract(nm)

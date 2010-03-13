@@ -36,4 +36,3 @@ def hook(mod):
         import mf
         mod = mf.ExtensionModule(newname, pth)
     return mod
-

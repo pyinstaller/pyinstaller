@@ -31,18 +31,18 @@ import os
 import os.path
 import copy
 try:
-	import docutils
-	from docutils import ApplicationError
-	from docutils import core, frontend
-	from docutils.parsers import rst
-	from docutils.readers import standalone, pep
-	from docutils.writers import html4css1, pep_html
+    import docutils
+    from docutils import ApplicationError
+    from docutils import core, frontend
+    from docutils.parsers import rst
+    from docutils.readers import standalone, pep
+    from docutils.writers import html4css1, pep_html
 except:
-	print "################################################################"
-	print "# You need 'docutils' installed to execute this program.       #"
-	print "# 'docutils' is available from http://docutils.sourceforge.net #"
-	print "################################################################"
-	sys.exit(1)
+    print "################################################################"
+    print "# You need 'docutils' installed to execute this program.       #"
+    print "# 'docutils' is available from http://docutils.sourceforge.net #"
+    print "################################################################"
+    sys.exit(1)
 
 
 usage = '%prog [options] [<directory> ...]'

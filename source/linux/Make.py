@@ -34,12 +34,15 @@ import makemakefile
 import pprint
 
 try:
-	from distutils import sysconfig
+    from distutils import sysconfig
 except:
-	print "ERROR: distutils with sysconfig required"
-	sys.exit(1)
+    print "ERROR: distutils with sysconfig required"
+    sys.exit(1)
 
-
+try:
+    True
+except NameError:
+    True, False = 1, 0
 
 def main():
     dirnm = os.path.dirname(sys.argv[0])
@@ -92,18 +95,18 @@ def main():
         print "(Using Python source directory)"
         binlib = exec_prefix
         incldir = os.path.join(prefix, 'Include')
-        config_h_dir = exec_prefix
-        makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
+        includes = ['-I' + incldir]
+        makefile_in = os.path.join(exec_prefix, 'Makefile')
     else:
-#	binlib = os.path.join (sysconfig.get_python_lib(True, True, exec_prefix), 'config')
-	binlib = sysconfig.get_config_vars('LIBDIR')[0]
-	# TODO: Is it possible to have more than one path returned? if so fix "includes" list
-	incldir_list =  sysconfig.get_config_vars('INCLUDEDIR')
-	includes = []
-	for dir in incldir_list:
-		if dir != None:
-			includes.append('-I' + dir)
-	config_h_dir =  os.path.join (sysconfig.get_python_inc(True,exec_prefix))
+#       binlib = os.path.join (sysconfig.get_python_lib(True, True, exec_prefix), 'config')
+        binlib = sysconfig.get_config_vars('LIBDIR')[0]
+        # TODO: Is it possible to have more than one path returned? if so fix "includes" list
+        incldir_list =  sysconfig.get_config_vars('INCLUDEDIR')
+        includes = []
+        for dir in incldir_list:
+            if dir != None:
+                includes.append('-I' + dir)
+        config_h_dir =  os.path.join (sysconfig.get_python_inc(True,exec_prefix))
         includes.append('-I' + config_h_dir)
         makefile_in = sysconfig.get_makefile_filename()
 
@@ -161,12 +164,11 @@ def main():
     if non_elf:
         cflags.append('-DNONELF')
 
-    libs = [os.path.join(sysconfig.get_config_vars('LIBPL')[0], sysconfig.get_config_vars('LIBRARY')[0])]
-    if not os.path.isfile(libs[0]):
-        print "WARNING: could not find Python static library at:", libs[0]
+#    libs = [os.path.join(sysconfig.get_config_vars('LIBDIR')[0], sysconfig.get_config_vars('INSTSONAME')[0])]
 
     somevars = {}
     if os.path.exists(makefile_in):
+        print "Using '%s' as Makefile template" % makefile_in
         makevars = sysconfig.parse_makefile(makefile_in)
     else:
         raise ValueError, "Makefile '%s' not found" % makefile_in
@@ -174,8 +176,12 @@ def main():
         somevars[key] = makevars[key]
 
     somevars['CFLAGS'] = string.join(cflags) # override
+    if sys.platform.startswith("darwin"):
+        somevars['LDFLAGS'] += " -F$(PYTHONFRAMEWORKPREFIX)"
+        somevars['LDFLAGS'] += " -mmacosx-version-min=%s" % somevars["MACOSX_DEPLOYMENT_TARGET"]
+        somevars['LINKFORSHARED'] = "" #override
     files = ['$(OPT)', '$(LDFLAGS)', '$(LINKFORSHARED)', 'getpath.c'] + \
-            files + libs + \
+            files + \
             ['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)', '-lz']  # XXX zlib not always -lz
 
     outfp = bkfile.open('Makefile', 'w')

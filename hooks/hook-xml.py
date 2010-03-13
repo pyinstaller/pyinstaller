@@ -18,18 +18,19 @@
 hiddenimports = ['xml.sax.xmlreader','xml.sax.expatreader']
 
 def hook(mod):
-    import os, tempfile, sys, string, marshal
-    fnm = tempfile.mktemp()
-    if string.find(sys.executable, ' ') > -1:
-        exe = '"%s"' % sys.executable
-    else:
-        exe = sys.executable
-    os.system('%s -c "import xml;print xml.__file__" >"%s"' % (exe, fnm))
-    txt = open(fnm, 'r').read()[:-1]
-    os.remove(fnm)
+    # This hook checks for the infamous _xmlcore hack
+    # http://www.amk.ca/diary/2003/03/pythons__xmlplus_hack.html
+
+    from hookutils import exec_statement
+    import string, marshal
+
+    txt = exec_statement("import xml;print xml.__file__")
+
     if string.find(txt, '_xmlplus') > -1:
         if txt[:-3] == ".py":
             txt = txt + 'c'
         co = marshal.loads(open(txt, 'rb').read()[8:])
+        old_pth = mod.__path__[:]
         mod.__init__('xml', txt, co)
+        mod.__path__.extend(old_pth)
     return mod

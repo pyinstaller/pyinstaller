@@ -36,7 +36,12 @@ def main():
     show(name, arch)
 
     while 1:
-        toks = string.split(raw_input('? '), ' ', 1)
+        try:
+            toks = string.split(raw_input('? '), None, 1)
+        except EOFError:
+            # Ctrl-D
+            print # clear line
+            break
         if not toks:
             usage()
             continue
@@ -142,7 +147,7 @@ class ZlibArchive(archive.ZlibArchive):
             Check to see if the file object self.lib actually has a file
             we understand.
         """
-        self.lib.seek(self.start)	#default - magic is at start of file
+        self.lib.seek(self.start)       #default - magic is at start of file
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
             raise RuntimeError, "%s is not a valid %s archive file" \
               % (self.path, self.__class__.__name__)
@@ -152,4 +157,3 @@ class ZlibArchive(archive.ZlibArchive):
 
 if __name__ == '__main__':
     main()
-
