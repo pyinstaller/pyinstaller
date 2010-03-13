@@ -3,6 +3,7 @@ PyInstaller Manual
 ==================
 :Author: Giovanni Bajo & William Caban (based on Gordon McMillan's manual)
 :Contact: rasky@develer.com
+:Version: |PyInstallerVersion|
 :Revision: $Rev$
 :Source URL: $HeadURL$
 :Copyright: This document has been placed in the public domain.
@@ -28,7 +29,7 @@ other words, you will need a separate copy of |PyInstaller| for each Python
 version you wish to work with *or* you'll need to rerun ``Configure.py`` every
 time you switch the Python version).
 
-|GOBACK|
+|GOBACK|_
 
 
 Building the runtime executables
@@ -78,7 +79,7 @@ directory: ``run_*.exe`` (bootloader for regular programs), and
 you need to install Scons_, and then just run ``scons`` from the |install_path|
 directory.
 
-|GOBACK|
+|GOBACK|_
 
 Configuring your PyInstaller setup
 ----------------------------------
@@ -88,7 +89,7 @@ information into ``config.dat`` that would otherwise be recomputed every time.
 It can be rerun at any time if your configuration changes. It must be run before
 trying to build anything.
 
-|GOBACK|
+|GOBACK|_
 
 
 Create a spec file for your project
@@ -166,7 +167,7 @@ actually Python code, and modifying it should be ease. See `Spec Files`_ for
 details.
 
 
-|GOBACK|
+|GOBACK|_
 
 Build your project
 ------------------
@@ -186,7 +187,7 @@ directory.
 In most cases, this will be all you have to do. If not, see `When things go
 wrong`_ and be sure to read the introduction to `Spec Files`_.
 
-|GOBACK|
+|GOBACK|_
 
 Windows COM Server support
 --------------------------
@@ -233,7 +234,7 @@ exe::
 MakeCOMServer also assumes that your top level code (registration etc.) is
 "normal". If it's not, you will have to edit the generated script.
 
-|GOBACK|
+|GOBACK|_
 
 
 Building Optimized
@@ -254,7 +255,7 @@ the ``TOCs`` building the ``EXE``::
 
 See `Spec Files`_ for details.
 
-|GOBACK|
+|GOBACK|_
 
 
 A Note on using UPX
@@ -295,7 +296,7 @@ for CGI's executed by Apache. Otherwise, you can ignore the warnings in the UPX
 docs, since what PyInstaller opens is the executable Installer created, not the
 temporary upx-created executable.
 
-|GOBACK|
+|GOBACK|_
 
 A Note on ``--onefile``
 -----------------------
@@ -345,7 +346,7 @@ library is extracted and when it gets loaded by the execvp'd process. So maybe
 you shouldn't do setuid root programs using ``--onefile``. **In fact, we do not
 recomend the use of --onefile on setuid programs.**
 
-|GOBACK|
+|GOBACK|_
 
 A Note on .egg files and setuptools
 -----------------------------------
@@ -373,7 +374,7 @@ Support for ``egg`` files is planned for a future release of PyInstaller.
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
 
 
-|GOBACK|
+|GOBACK|_
 
 
 PyInstaller Utilities
@@ -406,7 +407,7 @@ Q
     Quit.
 
 
-|GOBACK|
+|GOBACK|_
 
 
 bindepend
@@ -448,7 +449,7 @@ easiest thing to do is find an executable that displays the kind of
 information you want, grab it's resource and edit it. Certainly easier than
 the Version resource wizard in VC++.
 
-|GOBACK|
+|GOBACK|_
 
 
 Analyzing Dependencies
@@ -458,7 +459,7 @@ You can interactively track down dependencies, including getting
 cross-references by using ``mf.py``, documented in section `mf.py: A modulefinder
 Replacement`_
 
-|GOBACK|
+|GOBACK|_
 
 
 Spec Files
@@ -504,7 +505,7 @@ pure. The ``EXE`` is built from the ``PYZ``, the scripts and, in the case of a
 single-file deployment, the binaries. In a single-directory deployment, a
 directory is built containing a slim executable and the binaries.
 
-|GOBACK|
+|GOBACK|_
 
 TOC Class (Table of Contents)
 -----------------------------
@@ -597,7 +598,7 @@ becomes possible to factor out common modules, and deploy a project containing
 multiple executables with minimal redundancy. You'll need some top level code
 in each executable to mount the common ``PYZ``.
 
-|GOBACK|
+|GOBACK|_
 
 Target Subclasses
 -----------------
@@ -637,7 +638,7 @@ An Analysis has three outputs, all ``TOCs`` accessed as attributes of the ``Anal
     filtered. On Windows, a long list of MS dlls are excluded. On Linux/Unix,
     any shared lib in ``/lib`` or ``/usr/lib`` is excluded.
 
-|GOBACK|
+|GOBACK|_
 
 PYZ
 ***
@@ -657,7 +658,7 @@ PYZ
     The Zlib compression level to use. If 0, the zlib module is not required.
 
 
-|GOBACK|
+|GOBACK|_
 
 PKG
 ***
@@ -686,7 +687,7 @@ however. A single-file deployment including TK support will use this technique.
     If 1, ``EXTENSIONs`` and ``BINARYs`` will be left out of the ``PKG``, and
     forwarded to its container (usually a ``COLLECT``).
 
-|GOBACK|
+|GOBACK|_
 
 EXE
 ***
@@ -736,7 +737,7 @@ EXE
 	an executable does not work, ``append_pkg`` must be set to ``False``.
 
 
-|GOBACK|
+|GOBACK|_
 
 DLL
 ***
@@ -747,7 +748,7 @@ purpose DLL so the Python support in their app is hidden. You will need to
 write your own dll, but thanks to Allan Green for refactoring the C code and
 making that a managable task.
 
-|GOBACK|
+|GOBACK|_
 
 COLLECT
 *******
@@ -766,7 +767,7 @@ COLLECT
     ``name``
         The name of the directory to be built.
 
-|GOBACK|
+|GOBACK|_
 
 Tree
 ****
@@ -795,7 +796,7 @@ Since a ``Tree`` is a ``TOC``, you can also use the exclude technique described 
 in the section on ``TOCs``.
 
 
-|GOBACK|
+|GOBACK|_
 
 When Things Go Wrong
 ++++++++++++++++++++
@@ -837,7 +838,7 @@ is more benign.
 Any problem detected here can be handled by hooking the analysis of the module.
 See `Listing Hidden Imports`_ below for how to do it.
 
-|GOBACK|
+|GOBACK|_
 
 Getting Debug Messages
 **********************
@@ -847,7 +848,7 @@ messages (for console apps, these go to stdout; for Windows apps, these show as
 MessageBoxes). This can be useful if you are doing complex packaging, or your
 app doesn't seem to be starting, or just to learn how the runtime works.
 
-|GOBACK|
+|GOBACK|_
 
 Getting Python's Verbose Imports
 ********************************
@@ -869,7 +870,7 @@ to::
 These messages will always go to ``stdout``, so you won't see them on Windows if
 ``console=0``.
 
-|GOBACK|
+|GOBACK|_
 
 Helping Installer Find Modules
 ------------------------------
@@ -897,7 +898,7 @@ You can do the same when running ``Makespec.py``::
 
 (on \*nix, use ``:`` as the path separator).
 
-|GOBACK|
+|GOBACK|_
 
 Listing Hidden Imports
 **********************
@@ -936,7 +937,7 @@ hook mechanism is in the `Hooks`_ section).
 If you successfully hook a publicly distributed module in this way, please send
 us the hook so we can make it available to others.
 
-|GOBACK|
+|GOBACK|_
 
 Extending a Package's ``__path__``
 **********************************
@@ -965,7 +966,7 @@ way as ``win32com.anythingelse``, and ``win32com.__path__`` knows nothing of ``.
 
 Once in awhile, that's not enough.
 
-|GOBACK|
+|GOBACK|_
 
 Changing Runtime Behavior
 *************************
@@ -996,7 +997,7 @@ free to do almost anything. One provided hook sets things up so that win32com
 can generate modules at runtime (to disk), and the generated modules can be
 found in the win32com package.
 
-|GOBACK|
+|GOBACK|_
 
 Adapting to being "frozen"
 **************************
@@ -1013,7 +1014,7 @@ embedding DLL sets ``sys.frozen='dll'``).
 For really advanced users, you can access the ``iu.ImportManager`` as
 ``sys.importManager``. See `iu.py`_ for how you might make use of this fact.
 
-|GOBACK|
+|GOBACK|_
 
 Accessing Data Files
 ********************
@@ -1032,7 +1033,7 @@ also able to reconstruct directory trees). The work directory is best found by
 
        os.path.join(os.environ["_MEIPASS2], relativename))
 
-|GOBACK|
+|GOBACK|_
 
 Miscellaneous
 +++++++++++++
@@ -1044,7 +1045,7 @@ Pmw -- Python Mega Widgets
 instructions in that script, you'll end up with a module named ``Pmw.py``. Ensure
 that Builder finds that module and not the development package.
 
-|GOBACK|
+|GOBACK|_
 
 Win9xpopen
 ----------
@@ -1054,7 +1055,7 @@ need to distribute ``win9xpopen.exe`` with your app. On older Pythons with
 Win32all, this would apply to Win32pipe and ``win32popenWin9x.exe``. (On yet older
 Pythons, no form of popen worked on Win9x).
 
-|GOBACK|
+|GOBACK|_
 
 Self-extracting executables
 ---------------------------
@@ -1069,7 +1070,7 @@ On other platforms, the archive and the executable are separate, but the
 archive is named ``executable.pkg``, and expected to be in the same directory.
 Other than that, the process is the same.
 
-|GOBACK|
+|GOBACK|_
 
 One Pass Execution
 ******************
@@ -1091,7 +1092,7 @@ binaries are already in the file system. In that case, the embedding app:
 
 * finalizes Python
 
-|GOBACK|
+|GOBACK|_
 
 Two Pass Execution
 ******************
@@ -1143,7 +1144,7 @@ installed from RPM, you need the Python-development RPM). It also overrides
 In both cases, while one |PyInstaller| download can be used with any Python
 version, you need to have separate installations for each Python version.
 
-|GOBACK|
+|GOBACK|_
 
 PyInstaller Archives
 ++++++++++++++++++++
@@ -1159,7 +1160,7 @@ blobs of data. It gets its name from the fact that it can be manipulated easily
 from C, as well as from Python. Both of these derive from a common base class,
 making it fairly easy to create new kinds of archives.
 
-|GOBACK|
+|GOBACK|_
 
 ``ZlibArchive``
 ---------------
@@ -1180,7 +1181,7 @@ useful, but if they send you the traceback, at least you can make sense of it.
 
 |ZlibArchiveImage|
 
-|GOBACK|
+|GOBACK|_
 
 ``CArchive``
 ------------
@@ -1204,7 +1205,7 @@ are used by the self-extracting executables.
 
 |CArchiveImage|
 
-|GOBACK|
+|GOBACK|_
 
 
 License
@@ -1231,7 +1232,7 @@ home page: http://pyinstaller.hpcf.upr.edu
 
 
 
-|GOBACK|
+|GOBACK|_
 
 Appendix
 ++++++++
@@ -1254,7 +1255,7 @@ objects, they are identical.
 
 Instead of an ``ImportManager``, ``mf`` has an ``ImportTracker`` managing things.
 
-|GOBACK|
+|GOBACK|_
 
 ImportTracker
 *************
@@ -1267,7 +1268,7 @@ useful, because it is the only way of answering the question "Who imports
 name?" But since it is somewhat unrealistic (very few real imports do not
 involve recursion), it deserves some explanation.
 
-|GOBACK|
+|GOBACK|_
 
 ``analyze_one()``
 *****************
@@ -1285,7 +1286,7 @@ or ``["A.B", "A.B.C"]`` depending on whether the import turns out to be relative
 absolute. In addition, ImportTracker's modules dict will have Module instances
 for them.
 
-|GOBACK|
+|GOBACK|_
 
 Module Classes
 **************
@@ -1303,7 +1304,7 @@ when the import of ``B.C`` finally occurs, something completely different happen
 (from what a structural analysis would predict). But mf can handle this through
 it's hooks mechanism.
 
-|GOBACK|
+|GOBACK|_
 
 code scanning
 *************
@@ -1320,7 +1321,7 @@ import. It recognizes when imports are found at the top-level, and when they
 are found inside definitions (deferred imports). Within that, it also tracks
 whether the import is inside a condition (conditional imports).
 
-|GOBACK|
+|GOBACK|_
 
 Hooks
 *****
@@ -1357,7 +1358,7 @@ the poor programmer using that package). The ``hook(mod)`` (if it exists) is
 called before looking at the others - that way it can, for example, test
 ``sys.version`` and adjust what's in ``hiddenimports``.
 
-|GOBACK|
+|GOBACK|_
 
 Warnings
 ********
@@ -1371,7 +1372,7 @@ during the code scan.
 Note that by using a hook module, you can silence some particularly tiresome
 warnings, but not all of them.
 
-|GOBACK|
+|GOBACK|_
 
 Cross Reference
 ***************
@@ -1382,7 +1383,7 @@ is ``(modulename, importers)``, where importers is a list of the (fully qualifie
 names of the modules importing ``modulename``. Both the returned list and the
 importers list are sorted.
 
-|GOBACK|
+|GOBACK|_
 
 Usage
 *****
@@ -1429,7 +1430,7 @@ The tuples in the imports list are (name, delayed, conditional).
       >>>
 
 
-|GOBACK|
+|GOBACK|_
 
 
 .. _iu.py:
@@ -1451,7 +1452,7 @@ There is an ``ImportManager`` which provides the replacement for builtin import
 and hides all the semantic complexities of a Python import request from it's
 delegates.
 
-|GOBACK|
+|GOBACK|_
 
 ``ImportManager``
 *****************
@@ -1471,7 +1472,7 @@ It's up to the ``ImportManager`` to decide if an import is relative or absolute;
 to see if the module has already been imported; to keep ``sys.modules`` up to
 date; to handle the fromlist and return the correct module object.
 
-|GOBACK|
+|GOBACK|_
 
 ``ImportDirector``
 ******************
@@ -1482,7 +1483,7 @@ atomic - it has no need to examine name to see if it is dotted.
 
 To see how this works, we need to examine the ``PathImportDirector``.
 
-|GOBACK|
+|GOBACK|_
 
 ``PathImportDirector``
 **********************
@@ -1495,7 +1496,7 @@ ineradicable.) ``Owners`` of the appropriate kind are created as needed (if all
 your imports are satisfied by the first two elements of ``sys.path``, the
 ``PathImportDirector``'s shadowpath will only have two entries).
 
-|GOBACK|
+|GOBACK|_
 
 ``Owner``
 *********
@@ -1518,7 +1519,7 @@ namespace.
 The rest of the import namespace is covered by treelets, each rooted in a
 package module (an ``__init__.py``).
 
-|GOBACK|
+|GOBACK|_
 
 Packages
 ********
@@ -1539,7 +1540,7 @@ exactly what it gets. (In a flat namespace - like most archives - it is
 perfectly easy to route the request back up the package tree to the archive
 ``Owner``, qualifying the name at each step.)
 
-|GOBACK|
+|GOBACK|_
 
 Possibilities
 *************
@@ -1557,7 +1558,7 @@ age with it's ``__subimporter__``).
 Once the new ``Owner`` class is registered with ``iu``, you can put a zip file on
 ``sys.path``. A package could even put a zip file on its ``__path__``.
 
-|GOBACK|
+|GOBACK|_
 
 Compatibility
 *************
@@ -1568,7 +1569,7 @@ in ``sys.modules`` with a different one. Emulation of Python's native import is
 nearly exact, including the names recorded in ``sys.modules`` and module attributes
 (packages imported through ``iu`` have an extra attribute - ``__importsub__``).
 
-|GOBACK|
+|GOBACK|_
 
 Performance
 ***********
@@ -1579,7 +1580,7 @@ containing the standard lib and the package being tested, this can be reduced
 to 5 to 10% slower (or, on my 1.52 box, 10% faster!) than builtin import. A bit
 more can be shaved off by manipulating the ``ImportManager``'s metapath.
 
-|GOBACK|
+|GOBACK|_
 
 Limitations
 ***********
@@ -1601,6 +1602,7 @@ import, relative import and recursive-relative import. No idea what the Python
 syntax for those should be, but ``__aimport__``, ``__rimport__`` and ``__rrimport__`` were
 easy to implement.
 
+|GOBACK|_
 
 Usage
 *****
@@ -1616,7 +1618,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
         of PathImportDirector instance at 825900>
       >>>
 
-|GOBACK|
+|GOBACK|_
 
 .. _PyInstaller: http://www.pyinstaller.org
 .. _Roadmap: http://www.pyinstaller.org/roadmap
@@ -1636,5 +1638,6 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. |PyInstallerVersion| replace:: PyInstaller v1.4
 .. |InitialVersion| replace:: v1.0
 .. |install_path| replace:: /your/path/to/pyinstaller/
-.. |GOBACK| replace:: `Back to Top`_
-.. _`Back to Top`: `PyInstaller Manual`_
+.. |GOBACK| replace:: `Back to Top`
+.. _GOBACK: `PyInstaller Manual`_
+
