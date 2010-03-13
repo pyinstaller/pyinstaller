@@ -1618,13 +1618,13 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 
 |GOBACK|
 
-.. _PyInstaller: http://pyinstaller.hpcf.upr.edu/pyinstaller
-.. _Roadmap: http://pyinstaller.hpcf.upr.edu/pyinstaller/roadmap
-.. _`Submit a Bug`: http://pyinstaller.hpcf.upr.edu/pyinstaller/newticket
+.. _PyInstaller: http://www.pyinstaller.org
+.. _Roadmap: http://www.pyinstaller.org/roadmap
+.. _`Submit a Bug`: http://www.pyinstaller.org/newticket
 .. _Scons: http://www.scons.org
-.. _hooks\/hook-win32com.py: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/hooks/hook-win32com.py?rev=latest
-.. _support\/unpackTK.py: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/support/unpackTK.py?rev=latest
-.. _source/common/launch.c: http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/source/common/launch.c?rev=latest
+.. _hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/hooks/hook-win32com.py?rev=latest
+.. _support\/unpackTK.py: http://www.pyinstaller.org/browser/trunk/support/unpackTK.py?rev=latest
+.. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
 .. _Pmw: http://pmw.sourceforge.net/
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _PyQt: http://www.riverbankcomputing.co.uk/pyqt/index.php
@@ -1633,7 +1633,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. |CArchiveImage| image:: images/CArchive.png
 .. |SE_exeImage| image:: images/SE_exe.png
 .. |PyInstaller| replace:: PyInstaller
-.. |PyInstallerVersion| replace:: PyInstaller v1.0
+.. |PyInstallerVersion| replace:: PyInstaller v1.4
 .. |InitialVersion| replace:: v1.0
 .. |install_path| replace:: /your/path/to/pyinstaller/
 .. |GOBACK| replace:: `Back to Top`_
