@@ -187,7 +187,8 @@ def _rmdir(path):
     2. It is a directory and not empty (otherwise continue without removing 
        the directory)
     3. BUILDPATH and SPECPATH don't start with it
-    4. sys.stdout is a tty and the user confirms directory removal
+    4. The --noconfirm option is set, or sys.stdout is a tty and the user 
+       confirms directory removal
     
     Otherwise, error out.
     """
@@ -208,18 +209,21 @@ def _rmdir(path):
             print ('Please edit/recreate the specfile (%s), set a different '
                    'output name (e.g. "dist") and run Build.py again.') % SPEC
             sys.exit(1)
-        if sys.stdout.isatty():
+        if opts.noconfirm:
+            choice = 'y'
+        elif sys.stdout.isatty():
             choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
                                'CONTENTS will be REMOVED! Continue? (y/n)' % path)
-            if choice.strip().lower() == 'y':
-                print 'I: Removing', path
-                shutil.rmtree(path)
-            else:
-                print 'I: User aborted'
-                sys.exit(1)
         else:
             print ('E: The output directory "%s" is not empty. Please remove '
-                   'all its contents and run Build.py again.') % path
+                   'all its contents and run Build.py again, or use Build.py '
+                   '-y (remove output directory without confirmation).') % path
+            sys.exit(1)
+        if choice.strip().lower() == 'y':
+            print 'I: Removing', path
+            shutil.rmtree(path)
+        else:
+            print 'I: User aborted'
             sys.exit(1)
 
 #--
@@ -1218,8 +1222,8 @@ def build(spec):
     WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
     BUILDPATH = os.path.join(SPECPATH, 'build',
                              "pyi." + config['target_platform'], specnm)
-    if '-o' in sys.argv:
-        bpath = sys.argv[sys.argv.index('-o')+1]
+    if opts.buildpath != parser.get_option('--buildpath').default:
+        bpath = opts.buildpath
         if os.path.isabs(bpath):
             BUILDPATH = bpath
         else:
@@ -1265,17 +1269,26 @@ def main(specfile, configfilename):
 
     build(specfile)
 
+
+from pyi_optparse import OptionParser
+parser = OptionParser('%prog [options] specfile')
+parser.add_option('-C', '--configfile',
+                  default=os.path.join(HOMEPATH, 'config.dat'),
+                  help='Name of generated configfile (default: %default)')
+parser.add_option('-o', '--buildpath',
+                  default=os.path.join('SPECPATH', 'build',
+                                       'pyi.TARGET_PLATFORM', 'SPECNAME'),
+                  help='Buildpath (default: %default)')
+parser.add_option('-y', '--noconfirm',
+                  action="store_true", default=False,
+                  help='Remove output directory (default: %s) without '
+                       'confirmation' % os.path.join('SPECPATH', 'dist'))
+
 if __name__ == '__main__':
-    from pyi_optparse import OptionParser
-    parser = OptionParser('%prog [options] specfile')
-    parser.add_option('-C', '--configfile',
-                      default=os.path.join(HOMEPATH, 'config.dat'),
-                      help='Name of generated configfile (default: %default)')
-    parser.add_option('-o', '--buildpath',
-                      default=None,
-                      help='Buildpath')
     opts, args = parser.parse_args()
     if len(args) != 1:
         parser.error('Requires exactly one .spec-file')
 
     main(args[0], configfilename=opts.configfile)
+else:
+    opts = parser.get_default_values()
