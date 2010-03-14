@@ -135,7 +135,7 @@ class Path:
 
 def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0,
          strip=0, upx=0, comserver=0, ascii=0, workdir=None,
-         pathex=[], version_file=None, icon_file=None, crypt=None):
+         pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None):
 
     try:
         config = eval(open(configfile, 'r').read())
@@ -168,6 +168,17 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
         exe_options = "%s, version='%s'" % (exe_options, quote_win_filepath(version_file))
     if icon_file:
         exe_options = "%s, icon='%s'" % (exe_options, quote_win_filepath(icon_file))
+    if manifest:
+		if "<" in manifest:
+			# Assume XML string
+			exe_options = "%s, manifest='%s'" % (exe_options, manifest.replace("'", "\\'"))
+		else:
+			# Assume filename
+			exe_options = "%s, manifest='%s'" % (exe_options, quote_win_filepath(manifest))
+    if resources:
+        for i in range(len(resources)):
+            resources[i] = quote_win_filepath(resources[i])
+        exe_options = "%s, resources=%s" % (exe_options, repr(resources))
     if not ascii and config['hasUnicode']:
         scripts.insert(0, os.path.join(HOME, 'support', 'useUnicode.py'))
     for i in range(len(scripts)):
@@ -278,12 +289,29 @@ if __name__ == '__main__':
                  dest="version_file", metavar="FILE",
                  help="add a version resource from FILE to the exe "
                       "(Windows only)")
-    g.add_option("--icon", type="string", dest="icon_file",
+    g.add_option("-i", "--icon", type="string", dest="icon_file",
                  metavar="FILE.ICO or FILE.EXE,ID",
                  help="If FILE is an .ico file, add the icon to the final "
                       "executable. Otherwise, the syntax 'file.exe,id' to "
                       "extract the icon with the specified id "
                       "from file.exe and add it to the final executable")
+    g.add_option("-m", "--manifest", type="string",
+                 dest="manifest", metavar="FILE or XML",
+                 help="add manifest FILE or XML to the exe "
+                      "(Windows only)")
+    g.add_option("-r", "--resource", type="string", default=[], dest="resources",
+                 metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
+                 help="add/update resource of the given type, name and language "
+                      "from FILE to the final executable. FILE can be a "
+                      "data file or an exe/dll. For data files, atleast "
+                      "TYPE and NAME need to be specified, LANGUAGE defaults "
+                      "to 0 or may be specified as wildcard * to update all "
+                      "resources of the given TYPE and NAME. For exe/dll "
+                      "files, all resources from FILE will be added/updated "
+                      "to the final executable if TYPE, NAME and LANGUAGE "
+                      "are omitted or specified as wildcard *."
+                      "Multiple resources are allowed, using this option "
+                      "multiple times.")
 
     opts,args = p.parse_args()
 

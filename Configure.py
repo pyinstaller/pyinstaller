@@ -47,10 +47,6 @@ def find_EXE_dependencies(config):
     config['target_platform'] = target_platform
     target_iswin = target_platform[:3] == 'win'
 
-    if not iswin:
-        while os.path.islink(python):
-            python = os.path.join(os.path.split(python)[0], os.readlink(python))
-
     xtrapath = []
     if target_iswin and not iswin:
         # try to find a mounted Windows system
@@ -61,13 +57,6 @@ def find_EXE_dependencies(config):
 
     xtrapath = config.get('xtrapath') or xtrapath
     config['xtrapath'] = xtrapath
-
-    toc = bindepend.Dependencies([('', python, '')], target_platform, xtrapath)
-
-    if iswin and sys.version[:3] == '1.5':
-        import exceptions
-        toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
-    config['EXE_dependencies'] = toc[1:]
 
 
 _useTK = """\

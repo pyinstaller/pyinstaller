@@ -44,6 +44,17 @@ iswin = sys.platform[:3] == 'win'
 cygwin = sys.platform == 'cygwin'
 darwin = sys.platform[:7] == 'darwin'
 
+silent = False  # True suppresses all informative messages from the dependency code
+
+if iswin:
+    import traceback
+    
+    from winmanifest import RT_MANIFEST, GetManifestResources, Manifest
+    try:
+        from winmanifest import winresource
+    except ImportError, detail:
+        winresource = None
+
 excludes = {
     'KERNEL32.DLL':1,
     'ADVAPI.DLL':1,
@@ -76,9 +87,16 @@ excludes = {
     'GLU32.DLL':1,
     'GLUB32.DLL':1,
     'NETAPI32.DLL':1,
+    'MSCOREE.DLL':1,
     'PSAPI.DLL':1,
     'MSVCP80.DLL':1,
     'MSVCR80.DLL':1,
+    'MSVCP90.DLL':1,
+    'MSVCR90.DLL':1,
+    'IERTUTIL.DLL':1,
+    'POWRPROF.DLL':1,
+    'SHLWAPI.DLL':1,
+    'URLMON.DLL':1,
     # regex excludes
     # don't include in the bundle the libc and the tls stuff
     r'^/usr/lib/tls':1,
@@ -86,6 +104,8 @@ excludes = {
     r'^/lib/tls':1,
     # libGL can reference some hw specific libraries (like nvidia libs)
     r'/usr/lib/libGL.*':1,
+    # MS assembly excludes
+    'Microsoft.Windows.Common-Controls':1,
 }
 
 # Darwin has a stable ABI for applications, so there is no need
@@ -280,17 +300,125 @@ def Dependencies(lTOC, platform=sys.platform, xtrapath=None):
        Return LTOC expanded by all the binary dependencies of the entries
        in LTOC, except those listed in the module global EXCLUDES"""
     for nm, pth, typ in lTOC:
-        fullnm = string.upper(os.path.basename(pth))
         if seen.get(string.upper(nm),0):
             continue
-        #print "I: analyzing", pth
+        if not silent:
+            print "I: Analyzing", pth
         seen[string.upper(nm)] = 1
+        if iswin:
+            for ftocnm, fn in selectAssemblies(pth):
+                lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, platform, xtrapath):
-            if seen.get(string.upper(lib),0):
+            if seen.get(string.upper(lib),0) or seen.get(string.upper(npth),0):
                 continue
+            seen[string.upper(npth)] = 1
             lTOC.append((lib, npth, 'BINARY'))
 
     return lTOC
+
+def getAssemblies(pth):
+    """Return the dependent assemblies of a binary."""
+    if pth.lower().endswith(".manifest"):
+        return []
+    # check for manifest file
+    manifestnm = pth + ".manifest"
+    if os.path.isfile(manifestnm):
+        fd = open(manifestnm, "rb")
+        res = {RT_MANIFEST: {1: {0: fd.read()}}}
+        fd.close()
+    elif not winresource:
+        # resource access unavailable (needs pywin32)
+        return []
+    else:
+        # check the binary for embedded manifest
+        try:
+            res = GetManifestResources(pth)
+        except winresource.pywintypes.error, exc:
+            if exc.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
+                if not silent:
+                    print 'I: Cannot get manifest resource from non-PE file:'
+                    print 'I:', pth
+                return []
+    rv = []
+    if RT_MANIFEST in res and len(res[RT_MANIFEST]):
+        for name in res[RT_MANIFEST]:
+            for language in res[RT_MANIFEST][name]:
+                # check the manifest for dependent assemblies
+                try:
+                    manifest = Manifest()
+                    manifest.filename = ":".join([pth, str(RT_MANIFEST), 
+                                                  str(name), str(language)])
+                    manifest.parse_string(res[RT_MANIFEST][name][language],
+                                          False)
+                except Exception, exc:
+                    if not silent:
+                        print ("E: Cannot parse manifest resource %s, %s "
+                               "from") % (name, language)
+                        print "E:", pth
+                        print "E:", traceback.format_exc()
+                    pass
+                else:
+                    if manifest.dependentAssemblies and not silent:
+                        print "I: Dependent assemblies of %s:" % pth
+                        print "I:", ", ".join([assembly.getid() 
+                                               for assembly in 
+                                               manifest.dependentAssemblies])
+                    rv.extend(manifest.dependentAssemblies)
+    return rv
+    
+def selectAssemblies(pth):
+    """Return a binary's dependent assemblies files that should be included.
+
+    Return a list of pairs (name, fullpath)
+    """
+    rv = []
+    for assembly in getAssemblies(pth):
+        if excludesRe.search(assembly.name):
+            if not silent:
+                print "I: Skipping assembly", assembly.getid()
+            continue
+        if seen.get(assembly.getid().upper(),0):
+            continue
+        elif assembly.optional:
+            if not silent:
+                print "I: Skipping optional assembly", assembly.getid()
+            continue
+        files = assembly.find_files()
+        if files:
+            seen[assembly.getid().upper()] = 1
+            for fn in files:
+                fname, fext = os.path.splitext(fn)
+                if fext.lower() == ".manifest":
+                    nm = assembly.name + fext
+                else:
+                    nm = os.path.basename(fn)
+                if nm.lower() == (assembly.name + ".dll").lower():
+                    # If single DLL assembly with embedded manifest, do not 
+                    # create a subfolder
+                    ftocnm = nm
+                else:
+                    ftocnm = os.path.join(assembly.name, nm)
+                if assembly.language not in (None, "", "*", "neutral"):
+                    ftocnm = os.path.join(assembly.getlanguage(), 
+                                          ftocnm)
+                nm, ftocnm, fn = [item.encode(sys.getfilesystemencoding()) 
+                                  for item in 
+                                  (nm,
+                                   ftocnm, 
+                                   fn)]
+                if not seen.get(fn.upper(),0):
+                    if not silent:
+                        print "I: Adding", ftocnm
+                    seen[nm.upper()] = 1
+                    seen[fn.upper()] = 1
+                    rv.append((ftocnm, fn))
+                else:
+                    #print "I: skipping", ftocnm, "part of assembly", \
+                    #      assembly.name, "dependency of", pth
+                    pass
+        elif not silent:
+            print "E: Assembly", assembly.getid(), "not found"
+    return rv
 
 def selectImports(pth, platform=sys.platform, xtrapath=None):
     """Return the dependencies of a binary that should be included.
@@ -304,31 +432,43 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
         assert isinstance(xtrapath, list)
         xtrapath = [os.path.dirname(pth)] + xtrapath # make a copy
     dlls = getImports(pth, platform=platform)
-    iswin = platform[:3] == 'win'
     for lib in dlls:
+        if seen.get(string.upper(lib),0):
+            continue
         if not iswin and not cygwin:
-                # plain win case
+            # all other platforms
             npth = lib
             dir, lib = os.path.split(lib)
             if excludes.get(dir,0):
                 continue
         else:
-            # all other platforms
+            # plain win case
             npth = getfullnameof(lib, xtrapath)
 
-        # now npth is a candidate lib
+        # now npth is a candidate lib if found
         # check again for excludes but with regex FIXME: split the list
-        if excludesRe.search(npth):
-            if 'libpython' not in npth and 'Python.framework' not in npth:
+        if npth:
+            candidatelib = npth
+        else:
+            candidatelib = lib
+        if excludesRe.search(candidatelib):
+            if 'libpython' not in candidatelib and \
+               'Python.framework' not in candidatelib:
                 # skip libs not containing (libpython or Python.framework)
-                #print "I: skipping %20s <- %s" % (npth, pth)
+                if not silent and \
+                   not seen.get(string.upper(npth),0):
+                    print "I: Skipping", lib, "dependency of", \
+                          os.path.basename(pth)
                 continue
             else:
-                #print "I: inserting %20s <- %s" % (npth, pth)
                 pass
-
+        
         if npth:
-            rv.append((lib, npth))
+            if not seen.get(string.upper(npth),0):
+                if not silent:
+                    print "I: Adding", lib, "dependency of", \
+                          os.path.basename(pth)
+                rv.append((lib, npth))
         else:
             print "E: lib not found:", lib, "dependency of", pth
 
@@ -397,7 +537,21 @@ def getImports(pth, platform=sys.platform):
     """Forwards to the correct getImports implementation for the platform.
     """
     if platform[:3] == 'win' or platform == 'cygwin':
-        return _getImports_pe(pth)
+        if pth.lower().endswith(".manifest"):
+            return []
+        try:
+            return _getImports_pe(pth)
+        except Exception, exception:
+            # Assemblies can pull in files which aren't necessarily PE, 
+            # but are still needed by the assembly. Any additional binary 
+            # dependencies should already have been handled by 
+            # selectAssemblies in that case, so just warn, return an empty 
+            # list and continue.
+            if not silent:
+                print 'W: Cannot get binary dependencies for file:'
+                print 'W:', pth
+                print 'W:', traceback.format_exc()
+            return []
     elif platform == 'darwin':
         return _getImports_otool(pth)
     else:
@@ -480,7 +634,11 @@ if __name__ == "__main__":
                       help='Target platform, required for cross-bundling (default: current platform)')
 
     opts, args = parser.parse_args()
+    silent = True  # Suppress all informative messages from the dependency code
     import glob
     for a in args:
         for fn in glob.glob(a):
-            print fn, getImports(fn, opts.target_platform)
+            imports = getImports(fn, opts.target_platform)
+            if opts.target_platform == "win32":
+                imports.extend([a.getid() for a in getAssemblies(fn)])
+            print fn, imports

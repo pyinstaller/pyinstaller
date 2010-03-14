@@ -43,6 +43,7 @@ UNCOMPRESSED, COMPRESSED = range(2)
 
 # todo: use pkg_resources here
 HOMEPATH = os.path.dirname(sys.argv[0])
+SPEC = None
 SPECPATH = None
 BUILDPATH = None
 WARNFILE = None
@@ -177,6 +178,49 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
     """
     return    _check_guts_eq       (attr, old, toc, last_build) \
            or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc)
+
+def _rmdir(path):
+    """
+    Remove dirname(os.path.abspath(path)) and all its contents, but only if:
+    
+    1. It doesn't start with BUILDPATH
+    2. It is a directory and not empty (otherwise continue without removing 
+       the directory)
+    3. BUILDPATH and SPECPATH don't start with it
+    4. sys.stdout is a tty and the user confirms directory removal
+    
+    Otherwise, error out.
+    """
+    if not os.path.abspath(path):
+        path = os.path.abspath(path)
+    path, name = os.path.split(path)
+    if not path.startswith(BUILDPATH) and os.path.isdir(path) and os.listdir(path):
+        specerr = 0
+        if BUILDPATH.startswith(path):
+            print ('E: specfile error: The output path "%s" contains '
+                   'BUILDPATH (%s)') % (path, BUILDPATH)
+            specerr += 1
+        if SPECPATH.startswith(path):
+            print ('E: Specfile error: The output path "%s" contains '
+                   'SPECPATH (%s)') % (path, SPECPATH)
+            specerr += 1
+        if specerr:
+            print ('Please edit/recreate the specfile (%s), set a different '
+                   'output name (e.g. "dist") and run Build.py again.') % SPEC
+            sys.exit(1)
+        if sys.stdout.isatty():
+            choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
+                               'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+            if choice.strip().lower() == 'y':
+                print 'I: Removing', path
+                shutil.rmtree(path)
+            else:
+                print 'I: User aborted'
+                sys.exit(1)
+        else:
+            print ('E: The output directory "%s" is not empty. Please remove '
+                   'all its contents and run Build.py again.') % path
+            sys.exit(1)
 
 #--
 
@@ -343,6 +387,17 @@ class Analysis(Target):
                         binaries.extend(mod.binaries)
                         if modnm != '__main__':
                             pure.append((modnm, fnm, 'PYMODULE'))
+        # Always add python's dependencies first
+        # This ensures that assembly depencies under Windows get pulled in 
+        # first and we do not need to add assembly DLLs to the exclude list 
+        # explicitly
+        python = config['python']
+        if not iswin:
+            while os.path.islink(python):
+                python = os.path.join(os.path.split(python)[0], os.readlink(python))
+        binaries.extend(bindepend.Dependencies([('', python, '')],
+                                               target_platform,
+                                               config['xtrapath'])[1:])
         binaries.extend(bindepend.Dependencies(binaries,
                                                platform=target_platform))
         self.fixMissingPythonLib(binaries)
@@ -439,6 +494,7 @@ class PYZ(Target):
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         if not os.path.exists(self.name):
             print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
             return True
@@ -570,6 +626,7 @@ class PKG(Target):
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         if not os.path.exists(self.name):
             print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
             return 1
@@ -634,6 +691,8 @@ class EXE(Target):
         self.name = kws.get('name',None)
         self.icon = kws.get('icon',None)
         self.versrsrc = kws.get('version',None)
+        self.manifest = kws.get('manifest',None)
+        self.resources = kws.get('resources',[])
         self.strip = kws.get('strip',None)
         self.upx = kws.get('upx',None)
         self.crypt = kws.get('crypt', 0)
@@ -656,7 +715,9 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
-        self.toc.extend(config['EXE_dependencies'])
+        if iswin and sys.version[:3] == '1.5':
+            import exceptions
+            toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
         self.pkg = PKG(self.toc, cdict=kws.get('cdict',None), exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx, crypt=self.crypt)
         self.dependencies = self.pkg.dependencies
@@ -667,6 +728,8 @@ class EXE(Target):
             ('debug',    _check_guts_eq),
             ('icon',     _check_guts_eq),
             ('versrsrc', _check_guts_eq),
+            ('manifest', _check_guts_eq),
+            ('resources', _check_guts_eq),
             ('strip',    _check_guts_eq),
             ('upx',      _check_guts_eq),
             ('crypt',    _check_guts_eq),
@@ -674,6 +737,7 @@ class EXE(Target):
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         if not os.path.exists(self.name):
             print "rebuilding %s because %s missing" % (self.outnm, os.path.basename(self.name))
             return 1
@@ -686,10 +750,10 @@ class EXE(Target):
         if not data:
             return True
 
-        icon, versrsrc = data[3:5]
-        if (icon or versrsrc) and not config['hasRsrcUpdate']:
+        icon, versrsrc, manifest, resources = data[3:7]
+        if (icon or versrsrc or manifest or resources) and not config['hasRsrcUpdate']:
             # todo: really ignore :-)
-            print "ignoring icon and version resources = platform not capable"
+            print "ignoring icon, version, manifest and resources = platform not capable"
 
         mtm = data[-1]
         crypt = data[-2]
@@ -729,21 +793,72 @@ class EXE(Target):
         exe = os.path.join(HOMEPATH, exe)
         if target_iswin or cygwin:
             exe = exe + '.exe'
-        if config['hasRsrcUpdate']:
+        if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or 
+                                        self.manifest or self.resources):
+            tmpnm = tempfile.mktemp()
+            shutil.copy2(exe, tmpnm)
+            os.chmod(tmpnm, 0755)
             if self.icon:
-                tmpnm = tempfile.mktemp()
-                shutil.copy2(exe, tmpnm)
-                os.chmod(tmpnm, 0755)
                 icon.CopyIcons(tmpnm, self.icon)
-                trash.append(tmpnm)
-                exe = tmpnm
             if self.versrsrc:
-                tmpnm = tempfile.mktemp()
-                shutil.copy2(exe, tmpnm)
-                os.chmod(tmpnm, 0755)
                 versionInfo.SetVersion(tmpnm, self.versrsrc)
-                trash.append(tmpnm)
-                exe = tmpnm
+            if self.manifest:
+                if isinstance(self.manifest, manifest.Manifest):
+                    # Manifest instance
+                    winmanifest.UpdateManifestResourcesFromXML(tmpnm, self.manifest.toprettyxml(), [1])
+                elif "<" in self.manifest:
+                    # Assume XML string
+                    winmanifest.UpdateManifestResourcesFromXML(tmpnm, self.manifest, [1])
+                else:
+                    # Assume filename
+                    winmanifest.UpdateManifestResourcesFromXMLFile(tmpnm, self.manifest, [1])
+            for res in self.resources:
+                res = res.split(",")
+                for i in range(len(res[1:])):
+                    try:
+                        res[i + 1] = int(res[i + 1])
+                    except ValueError:
+                        pass
+                resfile = res[0]
+                if len(res) > 1:
+                    restype = res[1]
+                else:
+                    restype = None
+                if len(res) > 2:
+                    resname = res[2]
+                else:
+                    restype = None
+                if len(res) > 3:
+                    reslang = res[3]
+                else:
+                    restype = None
+                try:
+                    winresource.UpdateResourcesFromResFile(tmpnm, resfile, 
+                                                        [restype or "*"], 
+                                                        [resname or "*"], 
+                                                        [reslang or "*"])
+                except winresource.pywintypes.error, exc:
+                    if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
+                        print "E:", str(exc)
+                        continue
+                    if not restype or not resname:
+                        print "E: resource type and/or name not specified"
+                        continue
+                    if "*" in (restype, resname):
+                        print ("E: no wildcards allowed for resource type "
+                               "and name when source file does not contain "
+                               "resources")
+                        continue
+                    try:
+                        winresource.UpdateResourcesFromDataFile(tmpnm, 
+                                                             resfile, 
+                                                             restype, 
+                                                             [resname], 
+                                                             [reslang or 0])
+                    except winresource.pywintypes.error, exc:
+                        print "E:", str(exc)
+            trash.append(tmpnm)
+            exe = tmpnm
         exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
         self.copy(exe, outf)
         if self.append_pkg:
@@ -756,7 +871,7 @@ class EXE(Target):
         os.chmod(self.name, 0755)
         _save_data(self.out,
                    (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.strip, self.upx, self.crypt, mtime(self.name)))
+                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, self.crypt, mtime(self.name)))
         for item in trash:
             os.remove(item)
         return 1
@@ -780,7 +895,7 @@ class DLL(EXE):
         os.chmod(self.name, 0755)
         _save_data(self.out,
                    (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.strip, self.upx, mtime(self.name)))
+                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, mtime(self.name)))
         return 1
 
 
@@ -814,6 +929,7 @@ class COLLECT(Target):
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         data = Target.get_guts(self, last_build)
         if not data:
             return True
@@ -882,6 +998,7 @@ class BUNDLE(Target):
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         data = Target.get_guts(self, last_build)
         if not data:
             return True
@@ -1091,8 +1208,9 @@ def TkPKG():
 #---
 
 def build(spec):
-    global SPECPATH, BUILDPATH, WARNFILE, rthooks
+    global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC
     rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
+    SPEC = spec
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]
     if SPECPATH == '':
@@ -1113,7 +1231,7 @@ def build(spec):
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
-    global icon, versionInfo
+    global icon, versionInfo, winresource, winmanifest
 
     try:
         config = _load_data(configfilename)
@@ -1137,7 +1255,7 @@ def main(specfile, configfilename):
         sys.exit(1)
 
     if config['hasRsrcUpdate']:
-        import icon, versionInfo
+        import icon, versionInfo, winresource, winmanifest
 
     if config['hasUPX']:
         setupUPXFlags()
@@ -1153,6 +1271,9 @@ if __name__ == '__main__':
     parser.add_option('-C', '--configfile',
                       default=os.path.join(HOMEPATH, 'config.dat'),
                       help='Name of generated configfile (default: %default)')
+    parser.add_option('-o', '--buildpath',
+                      default=None,
+                      help='Buildpath')
     opts, args = parser.parse_args()
     if len(args) != 1:
         parser.error('Requires exactly one .spec-file')
