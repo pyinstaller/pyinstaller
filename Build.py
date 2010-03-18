@@ -807,7 +807,7 @@ class EXE(Target):
             if self.versrsrc:
                 versionInfo.SetVersion(tmpnm, self.versrsrc)
             if self.manifest:
-                if isinstance(self.manifest, manifest.Manifest):
+                if isinstance(self.manifest, winmanifest.Manifest):
                     # Manifest instance
                     winmanifest.UpdateManifestResourcesFromXML(tmpnm, self.manifest.toprettyxml(), [1])
                 elif "<" in self.manifest:
