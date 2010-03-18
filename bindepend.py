@@ -97,6 +97,7 @@ excludes = {
     'POWRPROF.DLL':1,
     'SHLWAPI.DLL':1,
     'URLMON.DLL':1,
+    'MSIMG32.DLL':1,
     # regex excludes
     # don't include in the bundle the libc and the tls stuff
     r'^/usr/lib/tls':1,
