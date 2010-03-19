@@ -569,65 +569,6 @@ class ImportTracker:
     def ispackage(self, nm):
         return self.modules[nm].ispackage()
 
-    def _resolveCtypesImports(self, mod):
-        """Completes ctypes BINARY entries for modules with their full path.
-        """
-        if sys.platform.startswith("linux"):
-            envvar = "LD_LIBRARY_PATH"
-        elif sys.platform.startswith("darwin"):
-            envvar = "DYLD_LIBRARY_PATH"
-        else:
-            envvar = "PATH"
-
-        def _savePaths():
-            old = os.environ.get(envvar, None)
-            os.environ[envvar] = os.pathsep.join(self.path)
-            if old is not None:
-                os.environ[envvar] = os.pathsep.join([os.environ[envvar], old])
-            return old
-
-        def _restorePaths(old):
-            del os.environ[envvar]
-            if old is not None:
-                os.environ[envvar] = old
-
-        cbinaries = list(mod.binaries)
-        mod.binaries = []
-
-        # Try to locate the shared library on disk. This is done by
-        # executing ctypes.utile.find_library prepending ImportTracker's
-        # local paths to library search paths, then replaces original values.
-        old = _savePaths()
-        for cbin in cbinaries:
-            cpath = find_library(os.path.splitext(cbin)[0])
-            if sys.platform == "linux2":
-                # CAVEAT: find_library() is not the correct function. Ctype's
-                # documentation says that it is meant to resolve only the filename
-                # (as a *compiler* does) not the full path. Anyway, it works well
-                # enough on Windows and Mac. On Linux, we need to implement
-                # more code to find out the full path.
-                if cpath is None:
-                    cpath = cbin
-                # "man ld.so" says that we should first search LD_LIBRARY_PATH
-                # and then the ldcache
-                for d in os.environ["LD_LIBRARY_PATH"].split(":"):
-                    if os.path.isfile(d + "/" + cpath):
-                        cpath = d + "/" + cpath
-                        break
-                else:
-                    for L in os.popen("ldconfig -p").read().splitlines():
-                        if cpath in L:
-                            cpath = L.split("=>", 1)[1].strip()
-                            assert os.path.isfile(cpath)
-                            break
-                    else:
-                        cpath = None
-            if cpath is None:
-                print "W: library %s required via ctypes not found" % (cbin,)
-            else:
-                mod.binaries.append((cbin, cpath, "BINARY"))
-        _restorePaths(old)
-
     def doimport(self, nm, ctx, fqname):
         #print "doimport", nm, ctx, fqname
         # Not that nm is NEVER a dotted name at this point
@@ -657,8 +598,6 @@ class ImportTracker:
         # or
         #   mod = director.getmod(nm)
         if mod:
-            if ctypes and isinstance(mod, PyModule):
-                self._resolveCtypesImports(mod)
             mod.__name__ = fqname
             self.modules[fqname] = mod
             # now look for hooks
@@ -783,6 +722,9 @@ class PyModule(Module):
         self.imports, self.warnings, self.binaries, allnms = scan_code(self.co)
         if allnms:
             self._all = allnms
+        if ctypes:
+            self.binaries = _resolveCtypesImports(self.binaries)
+
 
 class PyScript(PyModule):
     typ = 'PYSOURCE'
@@ -1077,3 +1019,65 @@ def scan_code_for_ctypes(co, instrs, i):
             w.append("W: ignoring %s - ctypes imports only supported using bare filenames" % (bin,))
 
     return b, w
+
+
+def _resolveCtypesImports(cbinaries):
+    """Completes ctypes BINARY entries for modules with their full path.
+    """
+    if sys.platform.startswith("linux"):
+        envvar = "LD_LIBRARY_PATH"
+    elif sys.platform.startswith("darwin"):
+        envvar = "DYLD_LIBRARY_PATH"
+    else:
+        envvar = "PATH"
+
+    def _savePaths():
+        old = os.environ.get(envvar, None)
+        os.environ[envvar] = os.pathsep.join(sys.pathex)
+        if old is not None:
+            os.environ[envvar] = os.pathsep.join([os.environ[envvar], old])
+        return old
+
+    def _restorePaths(old):
+        del os.environ[envvar]
+        if old is not None:
+            os.environ[envvar] = old
+
+    ret = []
+
+    # Try to locate the shared library on disk. This is done by
+    # executing ctypes.utile.find_library prepending ImportTracker's
+    # local paths to library search paths, then replaces original values.
+    old = _savePaths()
+    for cbin in cbinaries:
+        cpath = find_library(os.path.splitext(cbin)[0])
+        if sys.platform == "linux2":
+            # CAVEAT: find_library() is not the correct function. Ctype's
+            # documentation says that it is meant to resolve only the filename
+            # (as a *compiler* does) not the full path. Anyway, it works well
+            # enough on Windows and Mac. On Linux, we need to implement
+            # more code to find out the full path.
+            if cpath is None:
+                cpath = cbin
+            # "man ld.so" says that we should first search LD_LIBRARY_PATH
+            # and then the ldcache
+            for d in os.environ["LD_LIBRARY_PATH"].split(":"):
+                if os.path.isfile(d + "/" + cpath):
+                    cpath = d + "/" + cpath
+                    break
+            else:
+                for L in os.popen("ldconfig -p").read().splitlines():
+                    if cpath in L:
+                        cpath = L.split("=>", 1)[1].strip()
+                        assert os.path.isfile(cpath)
+                        break
+                else:
+                    cpath = None
+        if cpath is None:
+            print "W: library %s required via ctypes not found" % (cbin,)
+        else:
+            ret.append((cbin, cpath, "BINARY"))
+    _restorePaths(old)
+    return ret
+
+
