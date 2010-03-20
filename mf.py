@@ -722,7 +722,7 @@ class PyModule(Module):
         self.imports, self.warnings, self.binaries, allnms = scan_code(self.co)
         if allnms:
             self._all = allnms
-        if ctypes:
+        if ctypes and self.binaries:
             self.binaries = _resolveCtypesImports(self.binaries)
 
 
