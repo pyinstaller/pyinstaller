@@ -35,7 +35,14 @@ HOME = os.path.dirname(sys.argv[0])
 
 iswin = sys.platform[:3] == 'win'
 is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
+is26 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,6)
 cygwin = sys.platform == 'cygwin'
+
+if iswin and is26:
+    print "ERROR: Python 2.6+ on Windows is unsupported by PyInstaller 1.4"
+    print "Try the snapshot available on this page:"
+    print "    http://www.pyinstaller.org/wiki/Python26Win"
+    sys.exit(2)
 
 
 def find_EXE_dependencies(config):
