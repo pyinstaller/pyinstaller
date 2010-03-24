@@ -194,7 +194,6 @@ def _rmdir(path):
     """
     if not os.path.abspath(path):
         path = os.path.abspath(path)
-    path, name = os.path.split(path)
     if not path.startswith(BUILDPATH) and os.path.isdir(path) and os.listdir(path):
         specerr = 0
         if BUILDPATH.startswith(path):
