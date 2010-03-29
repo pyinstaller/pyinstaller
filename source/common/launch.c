@@ -234,11 +234,9 @@ static int checkFile(char *buf, const char *fmt, ...)
 {
     va_list args;
     struct stat tmp;
-    memset(buf, 0, _MAX_PATH + 1);    
     
     va_start(args, fmt);    
     vsnprintf(buf, _MAX_PATH, fmt, args);
-    buf[_MAX_PATH + 1] = '\0';
     va_end(args);
     
     return stat(buf, &tmp);    
