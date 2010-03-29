@@ -340,6 +340,7 @@ def getAssemblies(pth):
                     print 'I: Cannot get manifest resource from non-PE file:'
                     print 'I:', pth
                 return []
+            raise
     rv = []
     if RT_MANIFEST in res and len(res[RT_MANIFEST]):
         for name in res[RT_MANIFEST]:
