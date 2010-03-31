@@ -528,13 +528,10 @@ class ImportManager:
                         # Should we save the mod dict and restore it in case
                         # of failure?
                         if not reload:
-                            try:
-                                del sys.modules[fqname]
-                            except KeyError:
-                                # Some modules (eg: dbhash.py) cleanup
-                                # sys.modules themselves. We should then
-                                # be lenient and avoid errors.
-                                pass
+                            # Some modules (eg: dbhash.py) cleanup
+                            # sys.modules themselves. We should then
+                            # be lenient and avoid errors.
+                            sys.modules.pop(fqname, None)
                             if hasattr(parent, nm):
                                 delattr(parent, nm)
                     raise
