@@ -1,5 +1,10 @@
 (+ user visible changes, * internal stuff)
 
+Changes since PyInstaller 1.4
+-----------------------------
+ * Fix spurious KeyError when using dbhash
+
+
 Changes since PyInstaller 1.3
 -----------------------------
  + Fully support up to Python 2.6 on Linux/Mac and Python 2.5
