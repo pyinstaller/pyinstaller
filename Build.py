@@ -225,6 +225,18 @@ def _rmdir(path):
             print 'I: User aborted'
             sys.exit(1)
 
+def check_egg(pth):
+    """Check if path points to a file inside a python egg file (or to an egg 
+       directly)."""
+    components = pth.replace(os.path.altsep, os.path.sep).split(os.path.sep)
+    for i, name in enumerate(components):
+        if name.lower().endswith(".egg"):
+            eggpth = os.path.sep.join(components[:i + 1])
+            if os.path.isfile(eggpth):
+                # eggs can also be directories!
+                return True
+    return False
+
 #--
 
 class Target:
@@ -963,6 +975,9 @@ class COLLECT(Target):
                     inm = inm + binext
             toc.append((inm, fnm, typ))
         for inm, fnm, typ in toc:
+            if not os.path.isfile(fnm) and check_egg(fnm):
+                # file is contained within python egg, it is added with the egg
+                continue
             tofnm = os.path.join(self.name, inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):

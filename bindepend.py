@@ -47,7 +47,9 @@ darwin = sys.platform[:7] == 'darwin'
 silent = False  # True suppresses all informative messages from the dependency code
 
 if iswin:
+    import shutil
     import traceback
+    import zipfile
     
     from winmanifest import RT_MANIFEST, GetManifestResources, Manifest
     try:
@@ -317,8 +319,56 @@ def Dependencies(lTOC, platform=sys.platform, xtrapath=None):
 
     return lTOC
 
+def check_extract_from_egg(pth, todir=None):
+    """Check if path points to a file inside a python egg file, extract the 
+       file from the egg to a temporary directory and return 
+       [(extracted path, egg file path, relative path inside egg file)]. 
+       Otherwise, just return [(original path, None, None)].
+       If path points to an egg file directly, return a list with all files 
+       from the egg formatted like above.
+       
+       Example:
+       >>> check_extract_from_egg(r'C:\Python26\Lib\site-packages\my.egg\mymodule\my.pyd')
+       [(r'C:\Users\UserName\AppData\Local\Temp\pyi-win32-0a1b2c\my.egg\my.pyd',
+         r'C:\Python26\Lib\site-packages\my.egg', r'mymodule/my.pyd')]
+       """
+    rv = []
+    components = pth.replace(os.path.altsep, os.path.sep).split(os.path.sep)
+    for i, name in enumerate(components):
+        if name.lower().endswith(".egg"):
+            eggpth = os.path.sep.join(components[:i + 1])
+            if os.path.isfile(eggpth):
+                # eggs can also be directories!
+                try:
+                    egg = zipfile.ZipFile(eggpth)
+                except zipfile.BadZipfile, e:
+                    print "E:", eggpth, e
+                    sys.exit(1)
+                if todir is None:
+                    todir = os.path.join(os.path.join(os.environ["APPDATA"], 
+                                                      "Python-Eggs"), 
+                                         name + "-tmp")
+                if components[i + 1:]:
+                    members = ["/".join(components[i + 1:])]
+                else:
+                    members = egg.namelist()
+                for member in members:
+                    pth = os.path.join(todir, member)
+                    if not os.path.isfile(pth):
+                        dirname = os.path.dirname(pth)
+                        if not os.path.isdir(dirname):
+                            os.makedirs(dirname)
+                        f = open(pth, "wb")
+                        f.write(egg.read(member))
+                        f.close()
+                    rv.append((pth, eggpth, member))
+                return rv
+    return [(pth, None, None)]
+
 def getAssemblies(pth):
     """Return the dependent assemblies of a binary."""
+    if not os.path.isfile(pth):
+        pth = check_extract_from_egg(pth)[0][0]
     if pth.lower().endswith(".manifest"):
         return []
     # check for manifest file
@@ -374,6 +424,8 @@ def selectAssemblies(pth):
     Return a list of pairs (name, fullpath)
     """
     rv = []
+    if not os.path.isfile(pth):
+        pth = check_extract_from_egg(pth)[0][0]
     for assembly in getAssemblies(pth):
         if excludesRe.search(assembly.name):
             if not silent:
@@ -538,6 +590,8 @@ def _getImports_otool(pth):
 def getImports(pth, platform=sys.platform):
     """Forwards to the correct getImports implementation for the platform.
     """
+    if not os.path.isfile(pth):
+        pth = check_extract_from_egg(pth)[0][0]
     if platform[:3] == 'win' or platform == 'cygwin':
         if pth.lower().endswith(".manifest"):
             return []
