@@ -752,7 +752,7 @@ class Manifest(object):
             if isinstance(filename, unicode):
                 filename = filename.encode(sys.getdefaultencoding(), "replace")
             args.insert(0, '\n  File "%s"\n   ' % filename)
-            raise ManifestXMLParseError(" ".join(str(arg) for arg in args))
+            raise ManifestXMLParseError(" ".join([str(arg) for arg in args]))
         if initialize:
             self.__init__()
         self.filename = filename
