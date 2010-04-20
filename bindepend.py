@@ -50,6 +50,15 @@ if iswin:
     import shutil
     import traceback
     import zipfile
+
+    if hasattr(sys, "version_info") and sys.version_info[:2] >= (2,6):
+        try:
+            import win32api
+            import pywintypes
+        except ImportError:
+            print "ERROR: Python 2.6+ on Windows support needs pywin32"
+            print "Please install http://sourceforge.net/projects/pywin32/"
+            sys.exit(2)
     
     from winmanifest import RT_MANIFEST, GetManifestResources, Manifest
     try:
