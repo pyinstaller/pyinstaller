@@ -36,6 +36,7 @@ import archive
 import iu
 import carchive
 import bindepend
+import traceback
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
@@ -535,8 +536,9 @@ def cacheDigest(fnm):
 def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names
-    if not strip and not upx and sys.platform != 'darwin':
+    if not strip and not upx and sys.platform != 'darwin' and sys.platform != 'win32':
         return fnm
+    global winresource, winmanifest
     if strip:
         strip = 1
     else:
@@ -584,6 +586,55 @@ def checkCache(fnm, strip, upx):
             cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
+    
+    pyasm = bindepend.getAssemblies(sys.executable)
+    if pyasm:
+        # If python.exe has dependent assemblies, check for embedded manifest 
+        # of cached file because we may need to 'fix it' for pyinstaller
+        try:
+            res = winmanifest.GetManifestResources(cachedfile)
+        except winresource.pywintypes.error, e:
+            if e.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
+                # Not a win32 PE file
+                pass
+            else:
+                raise
+        else:
+            if winmanifest.RT_MANIFEST in res and len(res[winmanifest.RT_MANIFEST]):
+                for name in res[winmanifest.RT_MANIFEST]:
+                    for language in res[winmanifest.RT_MANIFEST][name]:
+                        try:
+                            manifest = winmanifest.Manifest()
+                            manifest.filename = ":".join([cachedfile, 
+                                                          str(winmanifest.RT_MANIFEST), 
+                                                          str(name), 
+                                                          str(language)])
+                            manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language],
+                                                  False)
+                        except Exception, exc:
+                            if not silent:
+                                print ("E: Cannot parse manifest resource %s, "
+                                       "%s from") % (name, language)
+                                print "E:", cachedfile
+                                print "E:", traceback.format_exc()
+                            pass
+                        else:
+                            # Fix the embedded manifest (if any):
+                            # Extension modules built with Python 2.6.5 have 
+                            # an empty <dependency> element, we need to add 
+                            # dependentAssemblies from python.exe for
+                            # pyinstaller
+                            olen = len(manifest.dependentAssemblies)
+                            for pydep in pyasm:
+                                if not pydep.name in [dep.name for dep in 
+                                                      manifest.dependentAssemblies]:
+                                    print ("Adding %s to dependent assemblies "
+                                           "of %s") % (pydep.name, cachedfile)
+                                    manifest.dependentAssemblies.append(pydep)
+                            if len(manifest.dependentAssemblies) > olen:
+                                manifest.update_resources(cachedfile, [name], 
+                                                          [language])
+    
     if cmd: system(cmd)
 
     # update cache index
