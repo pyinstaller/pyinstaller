@@ -27,6 +27,13 @@ import shutil
 
 HOME = '..'
 
+MIN_VERSION = {
+ 'test-relative-import': (2,5),
+ 'test-relative-import2': (2,5),
+ 'test-relative-import3': (2,5),
+ 'test-celementtree': (2,5),
+}
+
 try:
     here=os.path.dirname(os.path.abspath(__file__))
 except NameError:
@@ -105,6 +112,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
     counter = dict(passed=[],failed=[])
     for _,test in tests:
         test = os.path.splitext(os.path.basename(test))[0]
+        if test in MIN_VERSION and MIN_VERSION[test] > sys.version_info:
+            continue        
         _msg("BUILDING TEST", test)
         prog = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'Build.py'),
                             OPTS, test+".spec"],
@@ -146,7 +155,7 @@ if __name__ == '__main__':
     interactive_tests = glob.glob('test*i.spec')
 
     from optparse import OptionParser
-    if sys.version_info < (2,4):
+    if sys.version_info < (2,5):
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
     else:
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]",

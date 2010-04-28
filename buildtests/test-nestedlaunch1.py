@@ -3,7 +3,7 @@ import sys
 import datetime
 
 if __name__ == "__main__":
-    if sys.version_info >= (2,4):
+    if sys.version_info >= (2,5):
         import subprocess
         subprocess.check_call([os.path.dirname(sys.executable) + "/../test-nestedlaunch0/test-nestedlaunch0.exe"])
     else:
