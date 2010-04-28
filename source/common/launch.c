@@ -54,8 +54,10 @@ DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
 DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
+#if !EMULATED_REFCNT
 DECLPROC(Py_IncRef);
 DECLPROC(Py_DecRef);
+#endif
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
 DECLPROC(PySys_SetArgv);
@@ -387,8 +389,10 @@ int mapNames(HMODULE dll)
 	GETVAR(dll, Py_VerboseFlag);
 	GETPROC(dll, Py_Initialize);
 	GETPROC(dll, Py_Finalize);
+#if !EMULATED_REFCNT
 	GETPROC(dll, Py_IncRef);
 	GETPROC(dll, Py_DecRef);
+#endif
 	GETPROC(dll, PyImport_ExecCodeModule);
 	GETPROC(dll, PyRun_SimpleString);
 	GETPROC(dll, PyString_FromStringAndSize);
