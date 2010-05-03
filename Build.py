@@ -587,12 +587,11 @@ def checkCache(fnm, strip, upx):
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
     
-    pyasm = bindepend.getAssemblies(sys.executable)
     if pyasm:
         # If python.exe has dependent assemblies, check for embedded manifest 
         # of cached file because we may need to 'fix it' for pyinstaller
         try:
-            res = winmanifest.GetManifestResources(cachedfile)
+            res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))
         except winresource.pywintypes.error, e:
             if e.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
                 # Not a win32 PE file
@@ -1300,7 +1299,7 @@ def build(spec):
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
-    global icon, versionInfo, winresource, winmanifest
+    global icon, versionInfo, winresource, winmanifest, pyasm
 
     try:
         config = _load_data(configfilename)
@@ -1325,6 +1324,9 @@ def main(specfile, configfilename):
 
     if config['hasRsrcUpdate']:
         import icon, versionInfo, winresource, winmanifest
+        pyasm = bindepend.getAssemblies(config['python'])
+    else:
+        pyasm = None
 
     if config['hasUPX']:
         setupUPXFlags()
