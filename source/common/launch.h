@@ -42,6 +42,23 @@
 #include <netinet/in.h>
 #endif
 
+/* Python 2.4+ exports Py_IncRef/Py_DecRef as symbols in the dynamic library.
+   This lets us build a bootloader which does not depend on the binary layout
+   of the PyObject structure.
+   
+   Currently, the problem only exists on Windows, because on other platforms we
+   ask users to recompile their own bootloader on their own system, so we could
+   even depend on Python.h.
+   
+   As a quick hack, we check for the compiler version instead of Python version,
+   as Python 2.3- bootloaders are compiled with MSVC6, while 2.4+ with MSVC7.
+*/
+#if defined(_MSC_VER) && _MSC_VER < 1300
+	#define EMULATED_REFCNT  1
+#else
+	#define EMULATED_REFCNT  0
+#endif
+
 /* We use dynamic loading so one binary
    can be used with (nearly) any Python version.
    This is the cruft necessary to do dynamic loading
@@ -93,8 +110,8 @@
  */
 
 /* Forward declarations of opaque Python types. */
-struct _PyObject;
-typedef struct _PyObject PyObject;
+struct _object;
+typedef struct _object PyObject;
 struct _PyThreadState;
 typedef struct _PyThreadState PyThreadState;
 
@@ -105,8 +122,10 @@ EXTDECLVAR(int, Py_OptimizeFlag);
 EXTDECLVAR(int, Py_VerboseFlag);
 EXTDECLPROC(int, Py_Initialize, (void));
 EXTDECLPROC(int, Py_Finalize, (void));
+#if !EMULATED_REFCNT
 EXTDECLPROC(void, Py_IncRef, (PyObject *));
 EXTDECLPROC(void, Py_DecRef, (PyObject *));
+#endif
 EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
 EXTDECLPROC(int, PyRun_SimpleString, (char *));
 EXTDECLPROC(int, PySys_SetArgv, (int, char **));
@@ -138,6 +157,34 @@ EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(long, PyInt_AsLong, (PyObject *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
+#if EMULATED_REFCNT
+typedef struct _object { 
+	int ob_refcnt; 
+	struct _typeobject *ob_type; 
+} PyObject; 
+typedef void (*destructor)(PyObject *); 
+typedef struct _typeobject { 
+	int ob_refcnt; 
+	struct _typeobject *ob_type; 
+	int ob_size; 
+	char *tp_name; /* For printing */ 
+	int tp_basicsize, tp_itemsize; /* For allocation */ 
+	destructor tp_dealloc; 
+	/* ignore the rest.... */ 
+} PyTypeObject; 
+
+#define _Py_Dealloc(op) (*(op)->ob_type->tp_dealloc)((PyObject *)(op)) 
+#define Py_INCREF(op) ((op)->ob_refcnt++) 
+#define Py_DECREF(op) \
+    if (--(op)->ob_refcnt != 0) \
+        ; \
+    else \
+        _Py_Dealloc((PyObject *)(op))
+#define Py_XINCREF(op) if ((op) == NULL) ; else Py_INCREF(op) 
+#define Py_XDECREF(op) if ((op) == NULL) ; else Py_DECREF(op) 
+
+#else
+
 /* Macros for reference counting through exported functions
  * (that is: without binding to the binary structure of a PyObject.
  * These rely on the Py_IncRef/Py_DecRef API functions.
@@ -146,6 +193,8 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 #define Py_XDECREF(o)    PI_Py_DecRef(o)
 #define Py_DECREF(o)     Py_XDECREF(o)
 #define Py_INCREF(o)     Py_XINCREF(o)
+
+#endif
 
 /* Macros to declare and get Python entry points in the C file.
  * Typedefs '__PROC__...' have been done above

@@ -27,6 +27,13 @@ import shutil
 
 HOME = '..'
 
+MIN_VERSION = {
+ 'test-relative-import': (2,5),
+ 'test-relative-import2': (2,5),
+ 'test-relative-import3': (2,5),
+ 'test-celementtree': (2,5),
+}
+
 try:
     here=os.path.dirname(os.path.abspath(__file__))
 except NameError:
@@ -98,12 +105,15 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
         tests = []
         for part in filters:
             tests += [t for t in alltests if part in t and t not in tests]
-    if sys.version_info[:2] >= (2, 4):
-        tests.sort(key=lambda x: (len(x), x)) # test1 < test10
+    
+    tests = [(len(x), x) for x in tests]
+    tests.sort()
     path = os.environ["PATH"]
     counter = dict(passed=[],failed=[])
-    for test in tests:
+    for _,test in tests:
         test = os.path.splitext(os.path.basename(test))[0]
+        if test in MIN_VERSION and MIN_VERSION[test] > sys.version_info:
+            continue        
         _msg("BUILDING TEST", test)
         prog = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'Build.py'),
                             OPTS, test+".spec"],
@@ -145,11 +155,12 @@ if __name__ == '__main__':
     interactive_tests = glob.glob('test*i.spec')
 
     from optparse import OptionParser
-    if sys.version_info[:2] >= (2, 5):
+    if sys.version_info < (2,5):
+        parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
+    else:
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]",
                               epilog="TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.")
-    else:
-        parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
+    
     parser.add_option('-c', '--clean', action='store_true',
                       help='Clean up generated files')
     parser.add_option('-i', '--interactive-tests', action='store_true',
