@@ -3,6 +3,7 @@
 Changes since PyInstaller 1.4
 -----------------------------
  * Fix spurious KeyError when using dbhash
+ * Fix import of nested packages made from Pyrex-generated files.
 
 
 Changes since PyInstaller 1.3
