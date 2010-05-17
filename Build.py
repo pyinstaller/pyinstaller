@@ -863,14 +863,16 @@ class COLLECT(Target):
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
         Target.__init__(self)
-        self.appname = kws.get("appname", None)
+        self.name = kws.get('name', None)
+        if self.name is not None:
+            self.appname = os.path.splitext(os.path.basename(self.name))[0]
         self.version = kws.get("version", "0.0.0")
         self.toc = TOC()
         for arg in args:
             if isinstance(arg, EXE):
-                if self.appname is None:
-                    self.appname = "Mac%s" % (arg.name,)
-                self.name = os.path.join(os.path.dirname(SPECPATH), self.appname + ".app")
+                if self.name is None:
+                    self.appname = "Mac%s" % (os.path.splitext(os.path.basename(arg.name))[0],)
+                    self.name = os.path.join(SPECPATH, self.appname + ".app")
                 self.exename = arg.name
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 self.toc.extend(arg.dependencies)
