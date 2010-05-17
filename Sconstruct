@@ -18,8 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os
-
 platform = Platform()
 envs = []
 
@@ -31,8 +29,8 @@ if platform.name == "win32":
     #   Python 2.4).
     # - Either debug build (with debug messages) or release build.
     # - Either console program or windowed program.
-    for msvs_ver in "6.0", "7.1", "9.0":
-        base_env = Environment(MSVS_VERSION = msvs_ver, ENV = os.environ)
+    for msvs_ver in "6.0", "7.1":
+        base_env = Environment(MSVS_VERSION = msvs_ver)
 
         for flavour in "debug", "release":
             for mode in "cons", "win":
@@ -42,7 +40,7 @@ if platform.name == "win32":
                 # to be self-contained. Extra care was put in writing it so
                 # that it does not share objects/memory with python.dll (which
                 # it loads).
-                env.Append(CCFLAGS = ["/MT"])
+                env.Append(CCFLAGS = ["/ML"])
 
                 if flavour == "debug":
                     # No optimizations
