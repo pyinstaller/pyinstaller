@@ -229,7 +229,9 @@ def _rmdir(path):
 def check_egg(pth):
     """Check if path points to a file inside a python egg file (or to an egg 
        directly)."""
-    components = pth.replace(os.path.altsep, os.path.sep).split(os.path.sep)
+    if os.path.altsep:
+        pth = pth.replace(os.path.altsep, os.path.sep)
+    components = pth.split(os.path.sep)
     for i, name in enumerate(components):
         if name.lower().endswith(".egg"):
             eggpth = os.path.sep.join(components[:i + 1])
@@ -611,12 +613,10 @@ def checkCache(fnm, strip, upx):
                             manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language],
                                                   False)
                         except Exception, exc:
-                            if not silent:
-                                print ("E: Cannot parse manifest resource %s, "
-                                       "%s from") % (name, language)
-                                print "E:", cachedfile
-                                print "E:", traceback.format_exc()
-                            pass
+                            print ("E: Cannot parse manifest resource %s, "
+                                   "%s from") % (name, language)
+                            print "E:", cachedfile
+                            print "E:", traceback.format_exc()
                         else:
                             # Fix the embedded manifest (if any):
                             # Extension modules built with Python 2.6.5 have 

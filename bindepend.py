@@ -328,21 +328,66 @@ def Dependencies(lTOC, platform=sys.platform, xtrapath=None):
 
     return lTOC
 
+def pkg_resouces_get_default_cache():
+    """Determine the default cache location
+
+    This returns the ``PYTHON_EGG_CACHE`` environment variable, if set.
+    Otherwise, on Windows, it returns a "Python-Eggs" subdirectory of the
+    "Application Data" directory.  On all other systems, it's "~/.python-eggs".
+    """
+    # This function borrowed from setuptools/pkg_resources
+    try:
+        return os.environ['PYTHON_EGG_CACHE']
+    except KeyError:
+        pass
+
+    if os.name!='nt':
+        return os.path.expanduser('~/.python-eggs')
+
+    app_data = 'Application Data'   # XXX this may be locale-specific!
+    app_homes = [
+        (('APPDATA',), None),       # best option, should be locale-safe
+        (('USERPROFILE',), app_data),
+        (('HOMEDRIVE','HOMEPATH'), app_data),
+        (('HOMEPATH',), app_data),
+        (('HOME',), None),
+        (('WINDIR',), app_data),    # 95/98/ME
+    ]
+
+    for keys, subdir in app_homes:
+        dirname = ''
+        for key in keys:
+            if key in os.environ:
+                dirname = os.path.join(dirname, os.environ[key])
+            else:
+                break
+        else:
+            if subdir:
+                dirname = os.path.join(dirname,subdir)
+            return os.path.join(dirname, 'Python-Eggs')
+    else:
+        raise RuntimeError(
+            "Please set the PYTHON_EGG_CACHE enviroment variable"
+        )
+
 def check_extract_from_egg(pth, todir=None):
-    """Check if path points to a file inside a python egg file, extract the 
-       file from the egg to a temporary directory and return 
-       [(extracted path, egg file path, relative path inside egg file)]. 
+    r"""Check if path points to a file inside a python egg file, extract the 
+       file from the egg to a cache directory (following pkg_resources 
+       convention) and return [(extracted path, egg file path, relative path 
+       inside egg file)]. 
        Otherwise, just return [(original path, None, None)].
        If path points to an egg file directly, return a list with all files 
        from the egg formatted like above.
        
        Example:
        >>> check_extract_from_egg(r'C:\Python26\Lib\site-packages\my.egg\mymodule\my.pyd')
-       [(r'C:\Users\UserName\AppData\Local\Temp\pyi-win32-0a1b2c\my.egg\my.pyd',
+       [(r'C:\Users\UserName\AppData\Roaming\Python-Eggs\my.egg-tmp\mymodule\my.pyd',
          r'C:\Python26\Lib\site-packages\my.egg', r'mymodule/my.pyd')]
        """
     rv = []
-    components = pth.replace(os.path.altsep, os.path.sep).split(os.path.sep)
+    if os.path.altsep:
+        pth = pth.replace(os.path.altsep, os.path.sep)
+    components = pth.split(os.path.sep)
     for i, name in enumerate(components):
         if name.lower().endswith(".egg"):
             eggpth = os.path.sep.join(components[:i + 1])
@@ -354,8 +399,11 @@ def check_extract_from_egg(pth, todir=None):
                     print "E:", eggpth, e
                     sys.exit(1)
                 if todir is None:
-                    todir = os.path.join(os.path.join(os.environ["APPDATA"], 
-                                                      "Python-Eggs"), 
+                    # Use the same directory as setuptools/pkg_resources. So, 
+                    # if the specific egg was accessed before (not necessarily 
+                    # by pyinstaller), the extracted contents already exist 
+                    # (pkg_resources puts them there) and can be used. 
+                    todir = os.path.join(pkg_resouces_get_default_cache(), 
                                          name + "-tmp")
                 if components[i + 1:]:
                     members = ["/".join(components[i + 1:])]
@@ -412,12 +460,10 @@ def getAssemblies(pth):
                     manifest.parse_string(res[RT_MANIFEST][name][language],
                                           False)
                 except Exception, exc:
-                    if not silent:
-                        print ("E: Cannot parse manifest resource %s, %s "
-                               "from") % (name, language)
-                        print "E:", pth
-                        print "E:", traceback.format_exc()
-                    pass
+                    print ("E: Cannot parse manifest resource %s, %s "
+                           "from") % (name, language)
+                    print "E:", pth
+                    print "E:", traceback.format_exc()
                 else:
                     if manifest.dependentAssemblies and not silent:
                         print "I: Dependent assemblies of %s:" % pth
@@ -479,7 +525,7 @@ def selectAssemblies(pth):
                     #print "I: skipping", ftocnm, "part of assembly", \
                     #      assembly.name, "dependency of", pth
                     pass
-        elif not silent:
+        else:
             print "E: Assembly", assembly.getid(), "not found"
     return rv
 

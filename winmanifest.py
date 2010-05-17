@@ -427,10 +427,8 @@ class Manifest(object):
                         try:
                             policy = ManifestFromXMLFile(manifestpth)
                         except Exception, exc:
-                            if not silent:
-                                print "E: Could not parse file", manifestpth
-                                print "E:", str(exc)
-                            pass
+                            print "E: Could not parse file", manifestpth
+                            print "E:", str(exc)
                         else:
                             if not silent:
                                 print ("I: Checking publisher policy for "
@@ -513,10 +511,8 @@ class Manifest(object):
                     else:
                         manifest = ManifestFromXMLFile(manifestpth)
                 except Exception, exc:
-                    if not silent:
-                        print "E: Could not parse manifest", manifestpth
-                        print "E:", exc
-                    pass
+                    print "E: Could not parse manifest", manifestpth
+                    print "E:", exc
                 else:
                     if manifestpth.startswith(winsxs):
                         assemblydir = os.path.join(winsxs, assemblynm)
