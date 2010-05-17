@@ -453,7 +453,7 @@ class ImportManager:
                 return sys.modules[nmparts[0]]
             del sys.modules[fqname]
             raise ImportError, "No module named %s" % fqname
-        if fromlist is None:
+        if not fromlist:
             debug("importHook done with %s %s %s (case 2)" % (name, __globals_name, fromlist))
             if context:
                 return sys.modules[context+'.'+nmparts[0]]
