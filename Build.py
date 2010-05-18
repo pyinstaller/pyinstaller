@@ -717,6 +717,9 @@ class PKG(Target):
             toc.append((inm, fnm, typ))
         seen = {}
         for inm, fnm, typ in toc:
+            if not os.path.isfile(fnm) and check_egg(fnm):
+                # file is contained within python egg, it is added with the egg
+                continue
             if typ in ('BINARY', 'EXTENSION'):
                 if self.exclude_binaries:
                     self.dependencies.append((inm, fnm, typ))
