@@ -591,9 +591,11 @@ def checkCache(fnm, strip, upx):
     
     if os.path.altsep:
         fnm = fnm.replace(os.path.altsep, os.path.sep)
-    if pyasm and os.path.dirname(fnm.lower()) != os.path.join(HOMEPATH.lower(), 
-                                                              "support", 
-                                                              "loader"):
+    if pyasm and not fnm.lower().startswith("bincache") and \
+       os.path.dirname(fnm.lower()) not in (os.path.join(HOMEPATH.lower(), 
+                                                         "support", 
+                                                         "loader"),
+                                            tempfile.gettempdir().lower()):
         # If python.exe has dependent assemblies, check for embedded manifest 
         # of cached file because we may need to 'fix it' for pyinstaller
         # but NEVER alter the loader exe
@@ -604,6 +606,7 @@ def checkCache(fnm, strip, upx):
                 # Not a win32 PE file
                 pass
             else:
+                print "E:", os.path.abspath(cachedfile)
                 raise
         else:
             if winmanifest.RT_MANIFEST in res and len(res[winmanifest.RT_MANIFEST]):
@@ -636,8 +639,13 @@ def checkCache(fnm, strip, upx):
                                            "of %s") % (pydep.name, cachedfile)
                                     manifest.dependentAssemblies.append(pydep)
                             if len(manifest.dependentAssemblies) > olen:
-                                manifest.update_resources(cachedfile, [name], 
-                                                          [language])
+                                try:
+                                    manifest.update_resources(os.path.abspath(cachedfile), 
+                                                              [name], 
+                                                              [language])
+                                except Exception, e:
+                                    print "E:", os.path.abspath(cachedfile)
+                                    raise
     
     if cmd: system(cmd)
 
