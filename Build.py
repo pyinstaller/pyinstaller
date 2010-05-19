@@ -589,16 +589,9 @@ def checkCache(fnm, strip, upx):
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
     
-    if os.path.altsep:
-        fnm = fnm.replace(os.path.altsep, os.path.sep)
-    if pyasm and not fnm.lower().startswith("bincache") and \
-       os.path.dirname(fnm.lower()) not in (os.path.join(HOMEPATH.lower(), 
-                                                         "support", 
-                                                         "loader"),
-                                            tempfile.gettempdir().lower()):
+    if pyasm and fnm.lower().endswith(".pyd"):
         # If python.exe has dependent assemblies, check for embedded manifest 
-        # of cached file because we may need to 'fix it' for pyinstaller
-        # but NEVER alter the loader exe
+        # of cached pyd file because we may need to 'fix it' for pyinstaller
         try:
             res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))
         except winresource.pywintypes.error, e:
