@@ -2,8 +2,13 @@
 
 Changes since PyInstaller 1.4
 -----------------------------
+ + Full support for Python 2.6 on Windows. No manual redistribution
+   of DLLs, CRT, manifest, etc. is required: PyInstaller is able to
+   bundle all required dependencies (thanks to Florian Hoech).
  * Fix spurious KeyError when using dbhash
  * Fix import of nested packages made from Pyrex-generated files.
+ * PyInstaller is now able to follow dependencies of binary extensions
+   (.pyd/.so) compressed within .egg-files.
  + Add import hook for PyTables.
 
 
