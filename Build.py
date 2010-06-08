@@ -183,14 +183,14 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 def _rmdir(path):
     """
     Remove dirname(os.path.abspath(path)) and all its contents, but only if:
-    
+
     1. It doesn't start with BUILDPATH
-    2. It is a directory and not empty (otherwise continue without removing 
+    2. It is a directory and not empty (otherwise continue without removing
        the directory)
     3. BUILDPATH and SPECPATH don't start with it
-    4. The --noconfirm option is set, or sys.stdout is a tty and the user 
+    4. The --noconfirm option is set, or sys.stdout is a tty and the user
        confirms directory removal
-    
+
     Otherwise, error out.
     """
     if not os.path.abspath(path):
@@ -227,7 +227,7 @@ def _rmdir(path):
             sys.exit(1)
 
 def check_egg(pth):
-    """Check if path points to a file inside a python egg file (or to an egg 
+    """Check if path points to a file inside a python egg file (or to an egg
        directly)."""
     if os.path.altsep:
         pth = pth.replace(os.path.altsep, os.path.sep)
@@ -406,8 +406,8 @@ class Analysis(Target):
                         if modnm != '__main__':
                             pure.append((modnm, fnm, 'PYMODULE'))
         # Always add python's dependencies first
-        # This ensures that assembly depencies under Windows get pulled in 
-        # first and we do not need to add assembly DLLs to the exclude list 
+        # This ensures that assembly depencies under Windows get pulled in
+        # first and we do not need to add assembly DLLs to the exclude list
         # explicitly
         python = config['python']
         if not iswin:
@@ -588,9 +588,9 @@ def checkCache(fnm, strip, upx):
             cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
-    
+
     if pyasm and fnm.lower().endswith(".pyd"):
-        # If python.exe has dependent assemblies, check for embedded manifest 
+        # If python.exe has dependent assemblies, check for embedded manifest
         # of cached pyd file because we may need to 'fix it' for pyinstaller
         try:
             res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))
@@ -607,9 +607,9 @@ def checkCache(fnm, strip, upx):
                     for language in res[winmanifest.RT_MANIFEST][name]:
                         try:
                             manifest = winmanifest.Manifest()
-                            manifest.filename = ":".join([cachedfile, 
-                                                          str(winmanifest.RT_MANIFEST), 
-                                                          str(name), 
+                            manifest.filename = ":".join([cachedfile,
+                                                          str(winmanifest.RT_MANIFEST),
+                                                          str(name),
                                                           str(language)])
                             manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language],
                                                   False)
@@ -620,26 +620,26 @@ def checkCache(fnm, strip, upx):
                             print "E:", traceback.format_exc()
                         else:
                             # Fix the embedded manifest (if any):
-                            # Extension modules built with Python 2.6.5 have 
-                            # an empty <dependency> element, we need to add 
+                            # Extension modules built with Python 2.6.5 have
+                            # an empty <dependency> element, we need to add
                             # dependentAssemblies from python.exe for
                             # pyinstaller
                             olen = len(manifest.dependentAssemblies)
                             for pydep in pyasm:
-                                if not pydep.name in [dep.name for dep in 
+                                if not pydep.name in [dep.name for dep in
                                                       manifest.dependentAssemblies]:
                                     print ("Adding %s to dependent assemblies "
                                            "of %s") % (pydep.name, cachedfile)
                                     manifest.dependentAssemblies.append(pydep)
                             if len(manifest.dependentAssemblies) > olen:
                                 try:
-                                    manifest.update_resources(os.path.abspath(cachedfile), 
-                                                              [name], 
+                                    manifest.update_resources(os.path.abspath(cachedfile),
+                                                              [name],
                                                               [language])
                                 except Exception, e:
                                     print "E:", os.path.abspath(cachedfile)
                                     raise
-    
+
     if cmd: system(cmd)
 
     # update cache index
@@ -867,7 +867,7 @@ class EXE(Target):
         exe = os.path.join(HOMEPATH, exe)
         if target_iswin or cygwin:
             exe = exe + '.exe'
-        if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or 
+        if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
                                         self.manifest or self.resources):
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
@@ -907,9 +907,9 @@ class EXE(Target):
                 else:
                     restype = None
                 try:
-                    winresource.UpdateResourcesFromResFile(tmpnm, resfile, 
-                                                        [restype or "*"], 
-                                                        [resname or "*"], 
+                    winresource.UpdateResourcesFromResFile(tmpnm, resfile,
+                                                        [restype or "*"],
+                                                        [resname or "*"],
                                                         [reslang or "*"])
                 except winresource.pywintypes.error, exc:
                     if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
@@ -924,10 +924,10 @@ class EXE(Target):
                                "resources")
                         continue
                     try:
-                        winresource.UpdateResourcesFromDataFile(tmpnm, 
-                                                             resfile, 
-                                                             restype, 
-                                                             [resname], 
+                        winresource.UpdateResourcesFromDataFile(tmpnm,
+                                                             resfile,
+                                                             restype,
+                                                             [resname],
                                                              [reslang or 0])
                     except winresource.pywintypes.error, exc:
                         print "E:", str(exc)
