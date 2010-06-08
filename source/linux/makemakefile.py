@@ -29,7 +29,7 @@ def writevars(outfp, makevars, target):
     outfp.write("\nall: %s\n\n" % target)
     outfp.write("\nclean:\n\t-rm -f *.o %s\n" % target)
 
-def writerules(outfp, files, suffix, dflag, target):
+def writerules(outfp, files, suffix, dflag, lflag, target):
     deps = []
     for i in range(len(files)):
         file = files[i]
@@ -42,5 +42,5 @@ def writerules(outfp, files, suffix, dflag, target):
             deps.append(dest)
 
     outfp.write("\n%s: %s\n" % (target, string.join(deps)))
-    outfp.write("\t$(CC) %s -o %s $(LDLAST)\n" %
-                (string.join(files), target))
+    outfp.write("\t$(CC) %s -o %s %s $(LDLAST)\n\n\n" %
+                (string.join(files), target, lflag))

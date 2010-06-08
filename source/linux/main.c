@@ -29,6 +29,11 @@
 #include "getpath.h"
 #include <sys/wait.h>
 
+// To call TransformProcessType in the child process
+#if defined(__APPLE__) && defined(WINDOWED)
+#include "Processes.h"
+#endif
+
 #ifdef FREEZE_EXCEPTIONS
 extern unsigned char M_exceptions[];
 static struct _frozen _PyImport_FrozenModules[] = {
@@ -113,6 +118,10 @@ int main(int argc, char* argv[])
 
     if (workpath) {
         /* we're the "child" process */
+#if defined(__APPLE__) && defined(WINDOWED)
+        ProcessSerialNumber psn = { 0, kCurrentProcess };
+        OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+#endif
         VS("Already have a workpath - running!\n");
         rc = doIt(argc, argv);
     }
@@ -147,4 +156,3 @@ int main(int argc, char* argv[])
     }
     return rc;
 }
-

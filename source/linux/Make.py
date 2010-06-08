@@ -120,9 +120,11 @@ def main():
     pprint.pprint(config, configf)
     configf.close()
 
-    targets = [None, None]
+    targets = [None, None, None, None]
     targets[0] = os.path.join('../../support/loader/', 'run')
     targets[1] = os.path.join('../../support/loader/', 'run_d')
+    targets[2] = os.path.join('../../support/loader/', 'runw')
+    targets[3] = os.path.join('../../support/loader/', 'runw_d')
 
     # include local 'common' dir
     includes.append('-I../common')
@@ -184,11 +186,29 @@ def main():
             files + \
             ['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)', '-lz']  # XXX zlib not always -lz
 
+
+    ## Windowed and debug need per-target cflags and ldflags, we'll pass them to
+    # makemakefile.writerules.
+    flagsw = '-DWINDOWED'
+    flags_d = '-D_DEBUG -DLAUNCH_DEBUG'
+    ldflagsw = ''
+    ldflags_d = ''
+
+    if sys.platform.startswith("darwin"):
+        flagsw += " -I/Developer/Headers/FlatCarbon"
+        ldflagsw += " -framework Carbon"
+
+    flagsw_d = ' '.join([flagsw, flags_d])
+    ldflagsw_d = ' '.join([ldflagsw, ldflags_d])
+    ##
+
     outfp = bkfile.open('Makefile', 'w')
     try:
         makemakefile.writevars(outfp, somevars, string.join(targets))
-        makemakefile.writerules(outfp, files[:], '', '', targets[0])
-        makemakefile.writerules(outfp, files[:], '_d', '-D_DEBUG -DLAUNCH_DEBUG', targets[1])
+        makemakefile.writerules(outfp, files[:], '', '', '', targets[0])
+        makemakefile.writerules(outfp, files[:], '_d', flags_d, ldflags_d, targets[1])
+        makemakefile.writerules(outfp, files[:], 'w', flagsw, ldflagsw, targets[2])
+        makemakefile.writerules(outfp, files[:], 'w_d', flagsw_d, ldflagsw_d, targets[3])
     finally:
         outfp.close()
 
