@@ -1098,8 +1098,6 @@ class BUNDLE(Target):
         if os.path.exists(self.name):
             shutil.rmtree(self.name)
         # Create a minimal Mac bundle structure
-        os.makedirs(self.name)
-        os.makedirs(os.path.join(self.name, "Contents"))
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
