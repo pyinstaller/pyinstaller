@@ -19,10 +19,10 @@ def exec_statement(stat):
         cmd = '"%s" -c "%s" > "%s"' % (exe, stat, fnm)
 
     # Prepend PYTHONPATH with pathex
-    pp = ':'.join(sys.pathex)
+    pp = os.pathsep.join(sys.pathex)
     old_pp = os.environ.get('PYTHONPATH', '')
     if old_pp:
-        pp = ':'.join([pp, old_pp])
+        pp = os.pathsep.join([pp, old_pp])
     os.environ["PYTHONPATH"] = pp
     try:
         # Actually execute the statement
