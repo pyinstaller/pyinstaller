@@ -540,7 +540,6 @@ def checkCache(fnm, strip, upx):
     # with relative install names
     if not strip and not upx and sys.platform != 'darwin' and sys.platform != 'win32':
         return fnm
-    global winresource, winmanifest
     if strip:
         strip = 1
     else:
