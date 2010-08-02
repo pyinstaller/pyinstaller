@@ -502,12 +502,7 @@ def selectAssemblies(pth):
                     nm = assembly.name + fext
                 else:
                     nm = os.path.basename(fn)
-                if nm.lower() == (assembly.name + ".dll").lower():
-                    # If single DLL assembly with embedded manifest, do not 
-                    # create a subfolder
-                    ftocnm = nm
-                else:
-                    ftocnm = os.path.join(assembly.name, nm)
+                ftocnm = nm
                 if assembly.language not in (None, "", "*", "neutral"):
                     ftocnm = os.path.join(assembly.getlanguage(), 
                                           ftocnm)
