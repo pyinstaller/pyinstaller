@@ -14,7 +14,7 @@ if os.name == 'nt':
 else:
     if sys.platform == 'linux2':
         hiddenimports = ['OpenGL.platform.glx']
-    elif sys.platform == 'darwin':
+    elif sys.platform[:6] == 'darwin':
         hiddenimports = ['OpenGL.platform.darwin']
     else:
         print 'ERROR: hook-OpenGL: Unrecognised combo (os.name: %s, sys.platform: %s)' % (os.name, sys.platform)

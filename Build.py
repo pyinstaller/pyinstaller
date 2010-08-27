@@ -538,7 +538,7 @@ def cacheDigest(fnm):
 def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names
-    if not strip and not upx and sys.platform != 'darwin' and sys.platform != 'win32':
+    if not strip and not upx and sys.platform[:6] != 'darwin' and sys.platform != 'win32':
         return fnm
     if strip:
         strip = 1
