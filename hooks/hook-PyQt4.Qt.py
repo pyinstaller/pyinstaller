@@ -10,5 +10,6 @@ hiddenimports = ['sip',
                  'PyQt4.QtTest',
                  'PyQt4.QtSql',
                  'PyQt4.QtXml',
+                 'PyQt4.QtWebKit',
                  'PyQt4.QtOpenGL',
                  ]
