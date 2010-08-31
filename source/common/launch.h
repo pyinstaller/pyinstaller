@@ -244,23 +244,23 @@ typedef struct _typeobject {
  */
 #define MAGIC "MEI\014\013\012\013\016"
 
-#if !defined WIN32 && !defined _CONSOLE
-#define _CONSOLE
-#endif
+//#if !defined WIN32 && !defined _CONSOLE
+//#define _CONSOLE
+//#endif
 
-#ifdef _CONSOLE
-# define FATALERROR printf
-# define OTHERERROR printf
-#else
+#if defined(WIN32) && defined(WINDOWED)
 # define FATALERROR mbfatalerror
 # define OTHERERROR mbothererror
+#else
+# define FATALERROR printf
+# define OTHERERROR printf
 #endif
 
 #ifdef LAUNCH_DEBUG
-# ifdef _CONSOLE
-#  define VS printf
-# else
+# if defined(WIN32) && defined(WINDOWED)
 #  define VS mbvs
+# else
+#  define VS printf
 # endif
 #else
 # ifdef WIN32

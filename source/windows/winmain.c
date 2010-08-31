@@ -94,11 +94,11 @@ int relaunch(LPWSTR thisfile, char *workpath)
 }
 
 
-#ifdef _CONSOLE
-int main(int argc, char* argv[])
-#else
+#ifdef WINDOWED
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						LPSTR lpCmdLine, int nCmdShow )
+#else
+int main(int argc, char* argv[])
 #endif
 {
 	char here[_MAX_PATH + 1];
@@ -109,7 +109,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	char *workpath = NULL;
 	char *p;
 	int len;
-#ifndef _CONSOLE
+#ifdef WINDOWED
 	int argc = __argc;
 	char **argv = __argv;
 #endif

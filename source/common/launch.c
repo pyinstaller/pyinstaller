@@ -121,9 +121,8 @@ unsigned char *extract(TOC *ptoc);
  */
 
 
-#ifndef _CONSOLE
-/* This code will be used only on windows as for other platforms _CONSOLE
- * will be true. The code duplication in the functions below are because
+#if defined(WIN32) && defined(WINDOWED)
+/* The code duplication in the functions below are because
  * standard macros with variable numer of arguments (variadic macros) are
  * supported by Microsoft only starting from Visual C++ 2005.
  */
@@ -169,7 +168,7 @@ void mbvs(const char *fmt, ...)
 	MessageBox(NULL, msg, "Tracing", MB_OK);
 }
 
-#endif /* _CONSOLE */
+#endif /* WIN32 and WINDOWED */
 
 
 #ifdef WIN32
