@@ -53,6 +53,9 @@ def configure(conf):
     if opt.lsb:
         Utils.pprint('CYAN', 'Building LSB boot loader')
 
+    if myplatform.startswith('darwin'):
+        conf.env.MACOSX_DEPLOYMENT_TARGET = '10.4'
+
     ### C compiler
     
     if myplatform.startswith('win'):
@@ -137,7 +140,7 @@ def configure(conf):
         conf.check_cc(lib='kernel32', mandatory=True)
         conf.check_cc(lib='ws2_32', mandatory=True)
 
-    elif myplatform.startswith('linux'):
+    else:
         conf.check_cc(lib='z', mandatory=True)
 
     ### ccflags
@@ -177,12 +180,14 @@ def configure(conf):
     conf.env.append_value('CCFLAGS', conf.env.CCFLAGS_DEBUG)
     dbgw = conf.env.copy() # WINDOWED DEBUG environment
     dbgw.detach()
-    conf.env.append_value('CCDEFINES', '_CONSOLE')
+    if myplatform.startswith('win'):
+        conf.env.append_value('CCDEFINES', '_CONSOLE')
 
     ## setup windowed DEBUG environment
     conf.set_env_name('debugw', dbgw)
     conf.setenv('debugw')
-    conf.env.append_value('CCDEFINES', 'WINDOWED')
+    if myplatform.startswith('darwin'):
+        conf.env.append_value('CCDEFINES', 'WINDOWED')
     # disables console - MinGW option
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
         conf.env.append_value('LINKFLAGS', '-mwindows')
@@ -194,12 +199,14 @@ def configure(conf):
     conf.env.append_value('CCFLAGS', conf.env.CCFLAGS_RELEASE)
     relw = conf.env.copy() # WINDOWED RELEASE environment
     relw.detach()
-    conf.env.append_value('CCDEFINES', '_CONSOLE')
+    if myplatform.startswith('win'):
+        conf.env.append_value('CCDEFINES', '_CONSOLE')
 
-    ## setup environment
+    ## setup windowed RELEASE environment
     conf.set_env_name('releasew', relw)
     conf.setenv('releasew')
-    conf.env.append_value('CCDEFINES', 'WINDOWED')
+    if myplatform.startswith('darwin'):
+        conf.env.append_value('CCDEFINES', 'WINDOWED')
     # disables console - MinGW option
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
         conf.env.append_value('LINKFLAGS', '-mwindows')
@@ -263,7 +270,7 @@ def build(bld):
             )
 
 
-    elif myplatform.startswith('linux'):
+    else: # linux, darwin (MacOSX)
 
         targets = {'release': 'run', 'debug': 'run_d', 'releasew': 'runw', 'debugw': 'runw_d'}
         for env in targets.keys():
@@ -274,5 +281,6 @@ def build(bld):
                 install_path = '../../support/loader', # CWD is the 'build' directory
                 uselib = 'Z', # zlib
                 env = bld.env_of_name(env).copy(),
+                #mac_app = True # Mac application bundle (a .app) 
             )
 
