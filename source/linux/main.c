@@ -34,14 +34,6 @@
 #include "Processes.h"
 #endif
 
-#ifdef FREEZE_EXCEPTIONS
-extern unsigned char M_exceptions[];
-static struct _frozen _PyImport_FrozenModules[] = {
-    {"exceptions", M_exceptions, EXCEPTIONS_LEN},
-    {0, 0, 0}
-};
-#endif
-
 void exportWorkpath(char *workpath, char *envvar_name)
 {
     char *envvar;
@@ -81,9 +73,7 @@ int main(int argc, char* argv[])
     int pid;
     char *workpath = NULL;
     /* atexit(cleanUp); */
-#ifdef FREEZE_EXCEPTIONS
-    PyImport_FrozenModules = _PyImport_FrozenModules;
-#endif
+
     /* fill in thisfile */
 #ifdef __CYGWIN__
     if (strncasecmp(&argv[0][strlen(argv[0])-4], ".exe", 4)) {
