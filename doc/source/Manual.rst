@@ -57,11 +57,14 @@ On Fedora/RHEL and derivates, you can run the following lines::
         yum groupinstall "Development Tools"
         yum install python-devel
 
-On Windows you can use MinGW (gcc for Windows) and Visual Studion C++ (msvc)
+On Windows you can use MinGW (gcc for Windows) and Visual Studio C++ (msvc)
 compilers. Python development libraries are usually installed together with
 Python.
 
-*Note:* Not all msvc versions are compatible with all Python versions.
+*Note:* Not all msvc versions are compatible with all Python versions. It is
+recommended to use msvc version, which was used to compile Python for Windows.
+Recent Python binaries (2.6, 2.7, 3.1) are compiled with Visual Studio 2008
+and older (2.4, 2.5) with Visual Studio 2003.
 
 You can download and install or unpack MinGW distribution from one of the
 following locations:
