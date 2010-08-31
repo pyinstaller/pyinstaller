@@ -176,7 +176,7 @@ def configure(conf):
     ## setup DEBUG environment
     conf.set_env_name('debug', dbg)
     conf.setenv('debug')
-    conf.env.append_value('CCDEFINES', '_DEBUG LAUNCH_DEBUG HAVE_WARNINGS'.split())
+    conf.env.append_value('CCDEFINES', '_DEBUG LAUNCH_DEBUG')
     conf.env.append_value('CCFLAGS', conf.env.CCFLAGS_DEBUG)
     dbgw = conf.env.copy() # WINDOWED DEBUG environment
     dbgw.detach()
@@ -195,7 +195,7 @@ def configure(conf):
     ## setup RELEASE environment
     conf.set_env_name('release', rel)
     conf.setenv('release')
-    conf.env.append_value('CCDEFINES', 'NDEBUG HAVE_WARNINGS'.split())
+    conf.env.append_value('CCDEFINES', 'NDEBUG')
     conf.env.append_value('CCFLAGS', conf.env.CCFLAGS_RELEASE)
     relw = conf.env.copy() # WINDOWED RELEASE environment
     relw.detach()

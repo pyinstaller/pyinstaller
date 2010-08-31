@@ -414,9 +414,7 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyErr_Print);
 	GETPROC(dll, PyObject_CallObject);
 	GETPROC(dll, PyObject_CallMethod);
-	if (ntohl(f_cookie.pyvers) >= 21) {
-		GETPROC(dll, PySys_AddWarnOption);
-	}
+        GETPROC(dll, PySys_AddWarnOption);
 	GETPROC(dll, PyEval_InitThreads);
 	GETPROC(dll, PyEval_AcquireThread);
 	GETPROC(dll, PyEval_ReleaseThread);
@@ -569,13 +567,9 @@ int setRuntimeOptions(void)
 			case 'u':
 				unbuffered = 1;
 			break;
-#ifdef HAVE_WARNINGS
 			case 'W':
-				if (ntohl(f_cookie.pyvers) >= 21) {
-					PI_PySys_AddWarnOption(&ptoc->name[2]);
-				}
+                                PI_PySys_AddWarnOption(&ptoc->name[2]);
 			break;
-#endif
 			case 's':
 				*PI_Py_NoSiteFlag = 0;
 			break;
