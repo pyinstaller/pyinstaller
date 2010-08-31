@@ -110,16 +110,6 @@ On Windows this will produce in the ``support/loader`` directory: ``run*.exe``
 *Note:* If you have multiple versions of Python, the Python you use to run
 ``waf`` is the one whose configuration is used.
 
-..
-    The ``-n`` and ``-e`` options set a non-elf or elf flag in your ``config.dat``.
-    As of |InitialVersion|, the executable will try both strategies, and this flag
-    just sets how you want your executables built. In the elf strategy, the archive
-    is concatenated to the executable. In the non-elf strategy, the executable
-    expects an archive with the same name as itself in the executable's directory.
-    Note that the executable chases down symbolic links before determining it's name
-    and directory, so putting the archive in the same directory as the symbolic link
-    will not work.
-
 
 Linux Standard Base (LSB) binary
 ********************************
