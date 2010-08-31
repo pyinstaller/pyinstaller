@@ -843,17 +843,17 @@ class EXE(Target):
         return False
 
     def _bootloader_postfix(self, exe):
-        if target_iswin:
-            exe = exe + "_"
-            is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
-            exe = exe + "67"[is24]
-            exe = exe + "rd"[self.debug]
-            exe = exe + "wc"[self.console]
-        else:
-            if not self.console:
-                exe = exe + 'w'
-            if self.debug:
-                exe = exe + '_d'
+        #if target_iswin:
+            #exe = exe + "_"
+            #is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
+            #exe = exe + "67"[is24]
+            #exe = exe + "rd"[self.debug]
+            #exe = exe + "wc"[self.console]
+        #else:
+        if not self.console:
+            exe = exe + 'w'
+        if self.debug:
+            exe = exe + '_d'
         return exe
 
     def assemble(self):
