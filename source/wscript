@@ -213,6 +213,10 @@ def configure(conf):
 
 
 def build(bld):
+    # Force to run with 1 job (no parallel building).
+    # There are reported build failures on multicore CPUs
+    # with some msvc versions.
+    Options.options.jobs = 1
 
     myplatform = Utils.detect_platform()
 
