@@ -267,6 +267,13 @@ def build(bld):
 
         ## inprocsrvr console
 
+        if bld.env.CC_NAME == 'msvc':
+            linkflags_c = bld.env.CPPFLAGS_CONSOLE
+            linkflags_w = bld.env.CPPFLAGS_WINDOWS
+        else:
+            linkflags_c = ''
+            linkflags_w = ''
+
         for key, value in dict(release='inprocsrvr', debug='inprocsrvr_d').items():
             bld(
                 features = 'cc cshlib',
@@ -276,7 +283,7 @@ def build(bld):
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
                 env = bld.env_of_name(key).copy(),
-                linkflags = bld.env.CPPFLAGS_CONSOLE if bld.env.CC_NAME == 'msvc' else ''
+                linkflags = linkflags_c
             )
 
         ## inprocsrvr windowed
@@ -290,7 +297,7 @@ def build(bld):
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
                 env = bld.env_of_name(key).copy(),
-                linkflags = bld.env.CPPFLAGS_WINDOWS if bld.env.CC_NAME == 'msvc' else ''
+                linkflags = linkflags_w
             )
 
     else: # linux, darwin (MacOSX)
