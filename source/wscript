@@ -270,7 +270,8 @@ def build(bld):
 
         ## inprocsrvr
 
-        for key, value in targets.items():
+        targets2 = dict(release='inprocsrvr', debug='inprocsrvr_d', releasew='inprocsrvrw', debugw='inprocsrvrw_d')
+        for key, value in targets2.items():
             bld_e = bld(
                 features = 'cc cshlib',
                 source = bld.path.ant_glob('common/launch.c windows/dllmain.c'),
