@@ -41,9 +41,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "launch.h"
-#ifndef NOZLIB
+//#ifndef NOZLIB
 #include "zlib.h"
-#endif
+//#endif
 
 /*
  * Python Entry point declarations (see macros in launch.h).
@@ -54,10 +54,10 @@ DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
 DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
-#if !EMULATED_REFCNT
+//#if !EMULATED_REFCNT
 DECLPROC(Py_IncRef);
 DECLPROC(Py_DecRef);
-#endif
+//#endif
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
 DECLPROC(PySys_SetArgv);
@@ -628,15 +628,15 @@ int setRuntimeOptions(void)
 #else
 		fflush(stdout);
 		fflush(stderr);
-#ifdef HAVE_SETVBUF
-		setvbuf(stdin, (char *)NULL, _IONBF, 0);
-		setvbuf(stdout, (char *)NULL, _IONBF, 0);
-		setvbuf(stderr, (char *)NULL, _IONBF, 0);
-#else
+//#ifdef HAVE_SETVBUF
+//		setvbuf(stdin, (char *)NULL, _IONBF, 0);
+//		setvbuf(stdout, (char *)NULL, _IONBF, 0);
+//		setvbuf(stderr, (char *)NULL, _IONBF, 0);
+//#else
 		setbuf(stdin, (char *)NULL);
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
-#endif
+//#endif
 #endif
 	}
 	return 0;
@@ -835,7 +835,7 @@ int installZlibs()
 	return 0;
 }
 
-#ifndef NOZLIB
+//#ifndef NOZLIB
 /* decompress data in buff, described by ptoc
  * return in malloc'ed buffer (needs to be freed)
  */
@@ -878,7 +878,7 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 
 	return out;
 }
-#endif
+//#endif
 /*
  * extract an archive entry
  * returns pointer to the data (must be freed)
@@ -925,7 +925,7 @@ unsigned char *extract(TOC *ptoc)
 		VS("\n");
 	}
 	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
-#ifndef NOZLIB
+//#ifndef NOZLIB
 		tmp = decompress(data, ptoc);
 		free(data);
 		data = tmp;
@@ -933,10 +933,10 @@ unsigned char *extract(TOC *ptoc)
 			OTHERERROR("Error decompressing %s\n", ptoc->name);
 			return NULL;
 		}
-#else
-		FATALERROR("No ZLIB support but archive uses compression\n");
-		return NULL;
-#endif
+//#else
+		//FATALERROR("No ZLIB support but archive uses compression\n");
+		//return NULL;
+//#endif
 	}
 	return data;
 }
