@@ -187,17 +187,16 @@ def configure(conf):
     dbgw = conf.env.copy() # WINDOWED DEBUG environment
     dbgw.set_variant('debugw') # separate subfolder for building
     dbgw.detach()
-    if myplatform.startswith('win'):
-        conf.env.append_value('CCDEFINES', '_CONSOLE')
 
     ## setup windowed DEBUG environment
     conf.set_env_name('debugw', dbgw)
     conf.setenv('debugw')
-    if myplatform.startswith('darwin'):
+    if myplatform.startswith('darwin') or myplatform.startswith('win'):
         conf.env.append_value('CCDEFINES', 'WINDOWED')
-    # disables console - MinGW option
+    # disables console - mingw option
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
-        conf.env.append_value('LINKFLAGS', '-mwindows')
+            conf.env.append_value('LINKFLAGS', '-mwindows')
+
 
     ## setup RELEASE environment
     conf.set_env_name('release', rel)
@@ -207,17 +206,15 @@ def configure(conf):
     relw = conf.env.copy() # WINDOWED RELEASE environment
     relw.set_variant('releasew') # separate subfolder for building
     relw.detach()
-    if myplatform.startswith('win'):
-        conf.env.append_value('CCDEFINES', '_CONSOLE')
 
     ## setup windowed RELEASE environment
     conf.set_env_name('releasew', relw)
     conf.setenv('releasew')
-    if myplatform.startswith('darwin'):
+    if myplatform.startswith('darwin') or myplatform.startswith('win'):
         conf.env.append_value('CCDEFINES', 'WINDOWED')
-    # disables console - MinGW option
+    # disables console
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
-        conf.env.append_value('LINKFLAGS', '-mwindows')
+            conf.env.append_value('LINKFLAGS', '-mwindows')
 
 
 def build(bld):
@@ -268,11 +265,10 @@ def build(bld):
                 env = bld.env_of_name(key).copy(),
             )
 
-        ## inprocsrvr
+        ## inprocsrvr console
 
-        targets2 = dict(release='inprocsrvr', debug='inprocsrvr_d', releasew='inprocsrvrw', debugw='inprocsrvrw_d')
-        for key, value in targets2.items():
-            bld_e = bld(
+        for key, value in dict(release='inprocsrvr', debug='inprocsrvr_d').items():
+            bld(
                 features = 'cc cshlib',
                 source = bld.path.ant_glob('common/launch.c windows/dllmain.c'),
                 target = value,
@@ -280,8 +276,22 @@ def build(bld):
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
                 env = bld.env_of_name(key).copy(),
+                linkflags = bld.env.CPPFLAGS_CONSOLE if bld.env.CC_NAME == 'msvc' else ''
             )
 
+        ## inprocsrvr windowed
+
+        for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d').items():
+            bld(
+                features = 'cc cshlib',
+                source = bld.path.ant_glob('common/launch.c windows/dllmain.c'),
+                target = value,
+                install_path = '../../support/loader', # CWD is the 'build' directory
+                uselib_local = 'staticlib_zlib',
+                uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
+                env = bld.env_of_name(key).copy(),
+                linkflags = bld.env.CPPFLAGS_WINDOWS if bld.env.CC_NAME == 'msvc' else ''
+            )
 
     else: # linux, darwin (MacOSX)
 

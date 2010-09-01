@@ -244,10 +244,6 @@ typedef struct _typeobject {
  */
 #define MAGIC "MEI\014\013\012\013\016"
 
-//#if !defined WIN32 && !defined _CONSOLE
-//#define _CONSOLE
-//#endif
-
 #if defined(WIN32) && defined(WINDOWED)
 # define FATALERROR mbfatalerror
 # define OTHERERROR mbothererror
