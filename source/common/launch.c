@@ -379,19 +379,58 @@ int openArchive()
 #define HINSTANCE void *
 #endif
 
+/*
+ * Python versions before 2.4 do not export IncRef/DecRef as a binary API,
+ * but only as macros in header files. Since we do not want to depend on
+ * Python.h for many reasons (including the fact that we would like to
+ * have a single binary for all Python versions), we provide an emulated
+ * incref/decref here, that work on the binary layout of the PyObject
+ * structure as it was defined in Python 2.3 and older versions.
+ */
+struct _old_typeobject;
+typedef struct _old_object { 
+	int ob_refcnt; 
+	struct _old_typeobject *ob_type; 
+} OldPyObject; 
+typedef void (*destructor)(PyObject *); 
+typedef struct _old_typeobject { 
+	int ob_refcnt; 
+	struct _old_typeobject *ob_type; 
+	int ob_size; 
+	char *tp_name; /* For printing */ 
+	int tp_basicsize, tp_itemsize; /* For allocation */ 
+	destructor tp_dealloc; 
+	/* ignore the rest.... */ 
+} OldPyTypeObject; 
+
+static void _EmulatedIncRef(PyObject *o)
+{
+    OldPyObject *oo = (OldPyObject*)o;    
+    if (oo)
+        oo->ob_refcnt++;
+}
+
+static void _EmulatedDecRef(PyObject *o)
+{
+    #define _Py_Dealloc(op) \
+        (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
+    
+    OldPyObject *oo = (OldPyObject*)o;    
+    if (--(oo)->ob_refcnt == 0)
+        _Py_Dealloc(oo);
+}
+
 int mapNames(HMODULE dll)
 {
     /* Get all of the entry points that we are interested in */
-        GETVAR(dll, Py_FrozenFlag);
+    GETVAR(dll, Py_FrozenFlag);
 	GETVAR(dll, Py_NoSiteFlag);
 	GETVAR(dll, Py_OptimizeFlag);
 	GETVAR(dll, Py_VerboseFlag);
 	GETPROC(dll, Py_Initialize);
 	GETPROC(dll, Py_Finalize);
-#if !EMULATED_REFCNT
-	GETPROC(dll, Py_IncRef);
-	GETPROC(dll, Py_DecRef);
-#endif
+	GETPROCOPT(dll, Py_IncRef);
+	GETPROCOPT(dll, Py_DecRef);
 	GETPROC(dll, PyImport_ExecCodeModule);
 	GETPROC(dll, PyRun_SimpleString);
 	GETPROC(dll, PyString_FromStringAndSize);
@@ -413,7 +452,7 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyErr_Print);
 	GETPROC(dll, PyObject_CallObject);
 	GETPROC(dll, PyObject_CallMethod);
-        GETPROC(dll, PySys_AddWarnOption);
+    GETPROC(dll, PySys_AddWarnOption);
 	GETPROC(dll, PyEval_InitThreads);
 	GETPROC(dll, PyEval_AcquireThread);
 	GETPROC(dll, PyEval_ReleaseThread);
@@ -422,6 +461,9 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, Py_EndInterpreter);
 	GETPROC(dll, PyInt_AsLong);
 	GETPROC(dll, PySys_SetObject);
+
+    if (!PI_Py_IncRef) PI_Py_IncRef = _EmulatedIncRef;
+    if (!PI_Py_DecRef) PI_Py_DecRef = _EmulatedDecRef;
 
 	return 0;
 }
