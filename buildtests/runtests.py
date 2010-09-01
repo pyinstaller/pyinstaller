@@ -29,7 +29,7 @@ HOME = '..'
 
 MIN_VERSION = {
  'test-relative-import': (2,5),
- 'test-relative-import2': (2,5),
+ 'test-relative-import2': (2,6),
  'test-relative-import3': (2,5),
  'test-celementtree': (2,5),
 }
