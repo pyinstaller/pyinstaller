@@ -46,6 +46,9 @@ def set_options(opt):
 
 
 def configure(conf):
+
+    conf.env.NAME = 'default'
+    
     opt = Options.options
     myplatform = Utils.detect_platform()
     Utils.pprint('CYAN', '%s detected' % myplatform)
@@ -170,15 +173,19 @@ def configure(conf):
 
     rel = conf.env.copy()
     dbg = conf.env.copy()
+    rel.set_variant('release') # separate subfolder for building
+    dbg.set_variant('debug') # separate subfolder for building
     rel.detach() # detach environment from default
     dbg.detach()
 
     ## setup DEBUG environment
+    dbg.set_variant('debug') # separate subfolder for building
     conf.set_env_name('debug', dbg)
     conf.setenv('debug')
     conf.env.append_value('CCDEFINES', '_DEBUG LAUNCH_DEBUG'.split())
     conf.env.append_value('CCFLAGS', conf.env.CCFLAGS_DEBUG)
     dbgw = conf.env.copy() # WINDOWED DEBUG environment
+    dbgw.set_variant('debugw') # separate subfolder for building
     dbgw.detach()
     if myplatform.startswith('win'):
         conf.env.append_value('CCDEFINES', '_CONSOLE')
@@ -198,6 +205,7 @@ def configure(conf):
     conf.env.append_value('CCDEFINES', 'NDEBUG')
     conf.env.append_value('CCFLAGS', conf.env.CCFLAGS_RELEASE)
     relw = conf.env.copy() # WINDOWED RELEASE environment
+    relw.set_variant('releasew') # separate subfolder for building
     relw.detach()
     if myplatform.startswith('win'):
         conf.env.append_value('CCDEFINES', '_CONSOLE')
@@ -220,71 +228,69 @@ def build(bld):
 
     myplatform = Utils.detect_platform()
 
+    targets = dict(release='run', debug='run_d', releasew='runw', debugw='runw_d')
 
     if myplatform.startswith('win'):
 
-        # static lib zlib - compile only once
-        bld_a = bld(
-            features = 'cc cstaticlib',
-            source = bld.path.ant_glob('zlib/*.c'),
-            target = 'staticlib_zlib',
-            ccflags = bld.env.CCFLAGS_RELEASE,
-        )
+        # static lib zlib
+
+        for key in targets.keys():
+            bld(
+                features = 'cc cstaticlib',
+                source = bld.path.ant_glob('zlib/*.c'),
+                target = 'staticlib_zlib',
+                env = bld.env_of_name(key),
+            )
 
         # console
 
-        targets1 = {'release': 'run', 'debug': 'run_d'}
-        for env in targets1.keys():
-            bld_b = bld(
+        for key in ('release', 'debug'):
+            bld(
                 features = 'cc cprogram pyembed',
                 source = bld.path.ant_glob('windows/winmain.c windows/run.rc common/*.c'),
-                target = targets1[env],
+                target = targets[key],
                 install_path = '../../support/loader', # CWD is the 'build' directory
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-                env = bld.env_of_name(env).copy(),
+                env = bld.env_of_name(key).copy(),
             )
 
         # windowed
 
-        targets2 = {'releasew': 'runw', 'debugw': 'runw_d'}
-        for env in targets2.keys():
-            bld_d = bld(
+        for key in ('releasew', 'debugw'):
+            bld(
                 features = 'cc cprogram pyembed',
                 source = bld.path.ant_glob('windows/winmain.c windows/runw.rc common/*.c'), # uses different RC file (icon)
-                target = targets2[env],
+                target = targets[key],
                 install_path = '../../support/loader', # CWD is the 'build' directory
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-                env = bld.env_of_name(env).copy(),
+                env = bld.env_of_name(key).copy(),
             )
 
         ## inprocsrvr
 
-        targets3 = {'release': 'inprocsrvr', 'debug': 'inprocsrvr_d', 'releasew': 'inprocsrvrw', 'debugw': 'inprocsrvrw_d'}
-        for env in targets3.keys():
+        for key, value in targets.items():
             bld_e = bld(
                 features = 'cc cshlib',
                 source = bld.path.ant_glob('common/launch.c windows/dllmain.c'),
-                target = targets3[env],
+                target = value,
                 install_path = '../../support/loader', # CWD is the 'build' directory
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-                env = bld.env_of_name(env).copy(),
+                env = bld.env_of_name(key).copy(),
             )
 
 
     else: # linux, darwin (MacOSX)
 
-        targets = {'release': 'run', 'debug': 'run_d', 'releasew': 'runw', 'debugw': 'runw_d'}
-        for env in targets.keys():
+        for key, value in targets.items():
             bld(
                 features = 'cc cprogram pyembed',
                 source = bld.path.ant_glob('linux/*.c common/*.c'),
-                target = targets[env],
+                target = value,
                 install_path = '../../support/loader', # CWD is the 'build' directory
                 uselib = 'Z', # zlib
-                env = bld.env_of_name(env).copy(),
-                #mac_app = True # Mac application bundle (a .app) 
+                env = bld.env_of_name(key).copy(),
             )
 
