@@ -24,14 +24,14 @@ out = 'build'
 
 
 def set_options(opt):
-    opt.add_option('--lsb',
+    opt.add_option('--no-lsb',
             action = 'store_true',
-            help = 'Build LSB (Linux Standard Base) boot loader. By default PATH is searched for lsbcc otherwise is tried file /opt/lsb/bin/lsbcc.',
+            help = 'Prevent building LSB (Linux Standard Base) bootloader.',
             default = False,
-            dest = 'lsb')
+            dest = 'nolsb')
     opt.add_option('--lsbcc-path',
             action = 'store',
-            help = 'Path to lsbcc [Default: lsbcc]',
+            help = 'Path to lsbcc. By default PATH is searched for lsbcc otherwise is tried file /opt/lsb/bin/lsbcc. [Default: lsbcc]',
             default = 'lsbcc',
             dest = 'lsbcc_path')
     opt.add_option('--lsb-target-version',
@@ -54,8 +54,8 @@ def configure(conf):
     architecture = platform.architecture()[0] # 32bit or 64bit
     Utils.pprint('CYAN', '%s detected' % myplatform)
 
-    if opt.lsb:
-        Utils.pprint('CYAN', 'Building LSB boot loader')
+    if myplatform.startswith('linux') and not opt.nolsb:
+        Utils.pprint('CYAN', 'Building LSB bootloader.')
 
     if myplatform.startswith('darwin'):
         conf.env.MACOSX_DEPLOYMENT_TARGET = '10.4'
@@ -97,16 +97,21 @@ def configure(conf):
 
     ### build LSB (Linux Standard Base) boot loader
 
-    if opt.lsb:
-        # custom lsbcc path
-        if opt.lsbcc_path != 'lsbcc':
-            conf.env.LSBCC = conf.find_program(opt.lsbcc_path, mandatory=True)
-        # default values
-        else:
-            conf.env.LSBCC = conf.find_program(opt.lsbcc_path)
-            if not conf.env.LSBCC:
-                conf.env.LSBCC = conf.find_program('/opt/lsb/bin/lsbcc',
-                        mandatory=True)
+    if not opt.nolsb:
+        try:
+            # custom lsbcc path
+            if opt.lsbcc_path != 'lsbcc':
+                conf.env.LSBCC = conf.find_program(opt.lsbcc_path, mandatory=True)
+            # default values
+            else:
+                conf.env.LSBCC = conf.find_program(opt.lsbcc_path)
+                if not conf.env.LSBCC:
+                    conf.env.LSBCC = conf.find_program('/opt/lsb/bin/lsbcc',
+                            mandatory=True)
+        except:
+            Utils.pprint('RED', 'LSB (Linux Standard Base) tools >= 4.0 are required.')
+            Utils.pprint('RED', 'Try --no-lsb option if not interested in building LSB binary.')
+            exit(2)
         # lsbcc as CC compiler
         conf.env.append_value('CCFLAGS', '--lsb-cc=%s' % conf.env.CC[0])
         conf.env.append_value('LINKFLAGS', '--lsb-cc=%s' % conf.env.CC[0])
