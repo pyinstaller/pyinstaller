@@ -51,6 +51,7 @@ def configure(conf):
     
     opt = Options.options
     myplatform = Utils.detect_platform()
+    architecture = platform.architecture()[0] # 32bit or 64bit
     Utils.pprint('CYAN', '%s detected' % myplatform)
 
     if opt.lsb:
@@ -72,8 +73,10 @@ def configure(conf):
                 # msvc 8.0 (Visual Studio 2005)
                 # msvc 9.0 (Visual Studio 2008)
                 #conf.env['MSVC_VERSIONS'] = ['msvc 7.1', 'msvc 8.0', 'msvc 9.0']
-                # 32bit architecture
-                conf.env['MSVC_TARGETS'] = ['x86', 'ia32']
+                if architecture == '32bit':
+                    conf.env['MSVC_TARGETS'] = ['x86', 'ia32']
+                elif architecture == '64bit':
+                    conf.env['MSVC_TARGETS'] = ['x64', 'x86_amd64', 'intel64', 'em64t']
                 conf.check_tool('msvc')
                 conf.print_all_msvc_detected()
             except:
@@ -156,6 +159,14 @@ def configure(conf):
         conf.check_cc(ccflags='-mms-bitfields', mandatory=True,
                 msg='Checking for flags -mms-bitfields')
         conf.env.append_value('CCFLAGS', '-mms-bitfields')
+
+    elif myplatform.startswith('win') and conf.env.CC_NAME == 'msvc':
+        if architecture == '32bit':
+            conf.env.append_value('LINKFLAGS', '/MACHINE:X86')
+        elif architecture == '64bit':
+            conf.env.append_value('LINKFLAGS', '/MACHINE:X64')
+            # enable 64bit porting warnings
+            conf.env.append_value('CCFLAGS', '/Wp64')
 
     # link only with needed libraries
     if conf.check_cc(ccflags='-Wl,--as-needed',
