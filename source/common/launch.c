@@ -278,7 +278,7 @@ int checkCookie(int filelen)
   return 0;
 }
 
-int findDigitalSignature()
+int findDigitalSignature(void)
 {
 #ifdef WIN32
 	/* There might be a digital signature attached. Let's see. */
