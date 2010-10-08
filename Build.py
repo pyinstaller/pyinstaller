@@ -413,11 +413,22 @@ class Analysis(Target):
         if not iswin:
             while os.path.islink(python):
                 python = os.path.join(os.path.split(python)[0], os.readlink(python))
+            depmanifest = None
+        else:
+            depmanifest = winmanifest.Manifest(type_="win32", name=specnm, 
+                                               processorArchitecture="x86",
+                                               version=(1, 0, 0, 0))
+            depmanifest.filename = os.path.join(BUILDPATH, 
+                                                specnm + ".exe.manifest")
         binaries.extend(bindepend.Dependencies([('', python, '')],
                                                target_platform,
-                                               config['xtrapath'])[1:])
+                                               config['xtrapath'],
+                                               manifest=depmanifest)[1:])
         binaries.extend(bindepend.Dependencies(binaries,
-                                               platform=target_platform))
+                                               platform=target_platform,
+                                               manifest=depmanifest))
+        if iswin:
+            depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
         if zipfiles:
             scripts[-1:-1] = [("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE')]
@@ -538,7 +549,8 @@ def cacheDigest(fnm):
 def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names
-    if not strip and not upx and sys.platform[:6] != 'darwin' and sys.platform != 'win32':
+    if (not strip and not upx and sys.platform[:6] != 'darwin' and 
+        sys.platform != 'win32') or fnm.lower().endswith(".manifest"):
         return fnm
     if strip:
         strip = 1
@@ -788,9 +800,48 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
-        if iswin and sys.version[:3] == '1.5':
-            import exceptions
-            toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
+        if iswin:
+            if sys.version[:3] == '1.5':
+                import exceptions
+                toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
+            if self.manifest:
+                if isinstance(self.manifest, basestring) and "<" in self.manifest:
+                    # Assume XML string
+                    self.manifest = winmanifest.ManifestFromXML(self.manifest)
+                elif not isinstance(self.manifest, winmanifest.Manifest):
+                    # Assume filename
+                    self.manifest = winmanifest.ManifestFromXMLFile(self.manifest)
+            else:
+                self.manifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH, 
+                                                                             specnm + ".exe.manifest"))
+                self.manifest.name = os.path.splitext(os.path.basename(self.name))[0]
+            if self.manifest.filename != os.path.join(BUILDPATH, 
+                                                      specnm + ".exe.manifest"):
+                # Update dependent assemblies
+                depmanifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH, 
+                                                                           specnm + ".exe.manifest"))
+                for assembly in depmanifest.dependentAssemblies:
+                    if not assembly.name in [dependentAssembly.name 
+                                             for dependentAssembly in
+                                             self.manifest.dependentAssemblies]:
+                        self.manifest.dependentAssemblies.append(assembly)
+            if not self.console and \
+               not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name 
+                                                           for dependentAssembly in
+                                                           self.manifest.dependentAssemblies]:
+                # Add Microsoft.Windows.Common-Controls to dependent assemblies
+                self.manifest.dependentAssemblies.append(winmanifest.Manifest(type_="win32", 
+                                                                              name="Microsoft.Windows.Common-Controls",
+                                                                              language="*", 
+                                                                              processorArchitecture="x86", 
+                                                                              version=(6, 0, 0, 0),
+                                                                              publicKeyToken="6595b64144ccf1df"))
+            self.manifest.writeprettyxml(os.path.join(BUILDPATH, 
+                                                      specnm + ".exe.manifest"))
+            self.toc.append((os.path.basename(self.name) + ".manifest",
+                             os.path.join(BUILDPATH, 
+                                          specnm + ".exe.manifest"),
+                             'BINARY'))
         self.pkg = PKG(self.toc, cdict=kws.get('cdict',None), exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx, crypt=self.crypt)
         self.dependencies = self.pkg.dependencies
@@ -871,7 +922,7 @@ class EXE(Target):
         if target_iswin or cygwin:
             exe = exe + '.exe'
         if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
-                                        self.manifest or self.resources):
+                                        self.resources):
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
             os.chmod(tmpnm, 0755)
@@ -879,16 +930,6 @@ class EXE(Target):
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
                 versionInfo.SetVersion(tmpnm, self.versrsrc)
-            if self.manifest:
-                if isinstance(self.manifest, winmanifest.Manifest):
-                    # Manifest instance
-                    winmanifest.UpdateManifestResourcesFromXML(tmpnm, self.manifest.toprettyxml(), [1])
-                elif "<" in self.manifest:
-                    # Assume XML string
-                    winmanifest.UpdateManifestResourcesFromXML(tmpnm, self.manifest, [1])
-                else:
-                    # Assume filename
-                    winmanifest.UpdateManifestResourcesFromXMLFile(tmpnm, self.manifest, [1])
             for res in self.resources:
                 res = res.split(",")
                 for i in range(len(res[1:])):
@@ -948,7 +989,7 @@ class EXE(Target):
         os.chmod(self.name, 0755)
         _save_data(self.out,
                    (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, self.crypt, mtime(self.name)))
+                    self.versrsrc, self.resources, self.strip, self.upx, self.crypt, mtime(self.name)))
         for item in trash:
             os.remove(item)
         return 1
@@ -992,8 +1033,12 @@ class COLLECT(Target):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                if isinstance(arg, EXE) and not arg.append_pkg:
-                    self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
+                if isinstance(arg, EXE):
+                    for tocnm, fnm, typ in arg.toc:
+                        if tocnm == os.path.basename(arg.name) + ".manifest":
+                            self.toc.append((tocnm, fnm, typ))
+                    if not arg.append_pkg:
+                        self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
@@ -1289,7 +1334,7 @@ def TkPKG():
 #---
 
 def build(spec):
-    global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC
+    global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
     rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
     SPEC = spec
     SPECPATH, specnm = os.path.split(spec)
@@ -1335,8 +1380,11 @@ def main(specfile, configfilename):
         print "Configure.py optimize=%s, Build.py optimize=%s" % (not config['pythonDebug'], not __debug__)
         sys.exit(1)
 
+    if iswin:
+        import winmanifest
+
     if config['hasRsrcUpdate']:
-        import icon, versionInfo, winresource, winmanifest
+        import icon, versionInfo, winresource
         pyasm = bindepend.getAssemblies(config['python'])
     else:
         pyasm = None

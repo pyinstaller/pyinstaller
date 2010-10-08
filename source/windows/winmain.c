@@ -25,10 +25,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+#define _WIN32_WINNT 0x0501
 #include "launch.h"
 #include <windows.h>
 #include <commctrl.h> // InitCommonControls
 #include <signal.h>
+
+static char* basename (char *path)
+{
+  /* Search for the last directory separator in PATH.  */
+  char *basename = strrchr (path, '\\');
+  if (!basename) basename = strrchr (path, '/');
+  
+  /* If found, return the address of the following character,
+     or the start of the parameter passed in.  */
+  return basename ? ++basename : (char*)path;
+}
 
 int relaunch(LPWSTR thisfile, char *workpath)
 {
@@ -93,6 +105,94 @@ int relaunch(LPWSTR thisfile, char *workpath)
 	return rc;
 }
 
+static int IsXPOrLater(void)
+{
+    OSVERSIONINFO osvi;
+    
+    ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+
+    GetVersionEx(&osvi);
+
+    return ((osvi.dwMajorVersion > 5) ||
+       ((osvi.dwMajorVersion == 5) && (osvi.dwMinorVersion >= 1)));
+}
+
+
+static HANDLE hCtx = INVALID_HANDLE_VALUE;
+
+static int CreateActContext(char *workpath, char *thisfile)
+{
+	char manifestpath[_MAX_PATH + 1];
+	ACTCTX ctx;
+	ULONG_PTR actToken;
+	BOOL activated;
+
+    // If not XP, nothing to do -- return OK
+    if (!IsXPOrLater())
+        return 1;
+       
+    /* Setup activation context */
+    strcpy(manifestpath, workpath);
+    strcat(manifestpath, basename(thisfile));
+    strcat(manifestpath, ".manifest");
+    VS("manifestpath: %s\n", manifestpath);
+    
+    HANDLE (*CreateActCtx)(PACTCTX pActCtx);
+    BOOL (*ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
+
+    HANDLE k32 = LoadLibrary("kernel32");
+    CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA");
+    ActivateActCtx = (void*)GetProcAddress(k32, "ActivateActCtx");
+    FreeLibrary(k32);
+    
+    if (!CreateActCtx || !ActivateActCtx)
+    {
+        VS("Cannot find CreateActCtx/ActivateActCtx exports in kernel32.dll\n");
+        return 0;
+    }
+    
+    ZeroMemory(&ctx, sizeof(ctx));
+    ctx.cbSize = sizeof(ACTCTX);
+    ctx.lpSource = manifestpath;
+
+    hCtx = CreateActCtx(&ctx);
+    if (hCtx != INVALID_HANDLE_VALUE)
+    {
+        VS("Activation context created\n");
+        activated = ActivateActCtx(hCtx, &actToken);
+        if (activated)
+        {
+            VS("Activation context activated\n");
+            return 1;
+        }
+    }
+    
+    VS("Error activating the context\n");
+    return 0;
+}
+
+static void ReleaseActContext(void)
+{
+    if (!IsXPOrLater())
+        return;
+
+    void (*ReleaseActCtx)(HANDLE);
+
+    HANDLE k32 = LoadLibrary("kernel32");
+    ReleaseActCtx = (void*)GetProcAddress(k32, "ReleaseActCtx");
+    FreeLibrary(k32);
+    if (!ReleaseActCtx)
+    {
+        VS("Cannot find ReleaseActCtx export in kernel32.dll\n");
+        return;
+    }
+
+    VS("Releasing activation context\n");
+    if (hCtx != INVALID_HANDLE_VALUE)
+        ReleaseActCtx(hCtx);
+}
+
 
 #ifdef WINDOWED
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -113,6 +213,8 @@ int main(int argc, char* argv[])
 	int argc = __argc;
 	char **argv = __argv;
 #endif
+	
+	printf("%s\n", "Hello world!");
 
 	// Initialize common controls (needed to link with commctrl32.dll and
 	// obtain native XP look & feel).
@@ -149,12 +251,14 @@ int main(int argc, char* argv[])
 		VS("Found embedded PKG: %s\n", thisfile);
 	}
 	if (workpath) {
+		printf("workpath: %s\n", workpath);
 		// we're the "child" process
-		rc = doIt(argc, argv);
-		if (rc) {
-			return rc;
-		}
-		finalizePython();
+        CreateActContext(workpath, thisfile);
+        rc = doIt(argc, argv);
+        if (rc)
+            return rc;
+        finalizePython();
+        ReleaseActContext();
 	}
 	else {
 		if (extractBinaries(&workpath)) {
@@ -168,12 +272,14 @@ int main(int argc, char* argv[])
 		}
 		else {
 			// no "child" process necessary
-			rc = doIt(argc, argv);
-			if (rc) {
-				return rc;
-			}
-			finalizePython();
+            CreateActContext(here, thisfile);
+            rc = doIt(argc, argv);
+            if (rc)
+                return rc;
+            finalizePython();
+            ReleaseActContext();
 		}
+		printf("%s\n", "About to call cleanUp");
 		cleanUp();
 	}
 	return rc;

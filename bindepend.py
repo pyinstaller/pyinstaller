@@ -307,12 +307,15 @@ def _getImports_pe(path):
         data = data[iidescrsz:]
     return dlls
 
-def Dependencies(lTOC, platform=sys.platform, xtrapath=None):
+def Dependencies(lTOC, platform=sys.platform, xtrapath=None, manifest=None):
     """Expand LTOC to include all the closure of binary dependencies.
 
        LTOC is a logical table of contents, ie, a seq of tuples (name, path).
        Return LTOC expanded by all the binary dependencies of the entries
-       in LTOC, except those listed in the module global EXCLUDES"""
+       in LTOC, except those listed in the module global EXCLUDES
+       
+       manifest should be a winmanifest.Manifest instance on Windows, so
+       that all dependent assemblies can be added"""
     for nm, pth, typ in lTOC:
         if seen.get(string.upper(nm),0):
             continue
@@ -320,7 +323,7 @@ def Dependencies(lTOC, platform=sys.platform, xtrapath=None):
             print "I: Analyzing", pth
         seen[string.upper(nm)] = 1
         if iswin:
-            for ftocnm, fn in selectAssemblies(pth):
+            for ftocnm, fn in selectAssemblies(pth, manifest):
                 lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, platform, xtrapath):
             if seen.get(string.upper(lib),0) or seen.get(string.upper(npth),0):
@@ -475,7 +478,7 @@ def getAssemblies(pth):
                     rv.extend(manifest.dependentAssemblies)
     return rv
     
-def selectAssemblies(pth):
+def selectAssemblies(pth, manifest=None):
     """Return a binary's dependent assemblies files that should be included.
 
     Return a list of pairs (name, fullpath)
@@ -484,13 +487,21 @@ def selectAssemblies(pth):
     if not os.path.isfile(pth):
         pth = check_extract_from_egg(pth)[0][0]
     for assembly in getAssemblies(pth):
+        if seen.get(assembly.getid().upper(),0):
+            continue
+        if manifest:
+            # Add assembly as dependency to our final output exe's manifest
+            if not assembly.name in [dependentAssembly.name 
+                                     for dependentAssembly in
+                                     manifest.dependentAssemblies]:
+                print ("Adding %s to dependent assemblies "
+                       "of final executable") % assembly.name
+                manifest.dependentAssemblies.append(assembly)
         if excludesRe.search(assembly.name):
             if not silent:
                 print "I: Skipping assembly", assembly.getid()
             continue
-        if seen.get(assembly.getid().upper(),0):
-            continue
-        elif assembly.optional:
+        if assembly.optional:
             if not silent:
                 print "I: Skipping optional assembly", assembly.getid()
             continue
