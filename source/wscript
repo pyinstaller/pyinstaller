@@ -174,8 +174,10 @@ def configure(conf):
             conf.env.append_value('CCFLAGS', '/Wp64')
 
     # link only with needed libraries
+    # XXX: -Wl,--as-needed detected during configure but fails during mac build
     if conf.check_cc(ccflags='-Wl,--as-needed',
-            msg='Checking for flags -Wl,--as-needed'):
+            msg='Checking for flags -Wl,--as-needed') \
+            and not myplatform.startswith('darwin'):
         conf.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
 
