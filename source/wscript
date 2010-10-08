@@ -48,7 +48,7 @@ def set_options(opt):
 def configure(conf):
 
     conf.env.NAME = 'default'
-    
+
     opt = Options.options
     myplatform = Utils.detect_platform()
     architecture = platform.architecture()[0] # 32bit or 64bit
@@ -61,7 +61,7 @@ def configure(conf):
         conf.env.MACOSX_DEPLOYMENT_TARGET = '10.4'
 
     ### C compiler
-    
+
     if myplatform.startswith('win'):
         try:
             # mingw (gcc for Windows)
@@ -327,4 +327,3 @@ def build(bld):
                 uselib = 'Z', # zlib
                 env = bld.env_of_name(key).copy(),
             )
-
