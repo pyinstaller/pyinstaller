@@ -214,6 +214,10 @@ def configure(conf):
     # disables console - mingw option
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
             conf.env.append_value('LINKFLAGS', '-mwindows')
+    elif myplatform.startswith('darwin'):
+        conf.env.append_value('CCFLAGS', '-I/Developer/Headers/FlatCarbon')
+        conf.env.append_value('LINKFLAGS', '-framework')
+        conf.env.append_value('LINKFLAGS', 'Carbon')
 
 
     ## setup RELEASE environment
@@ -233,6 +237,10 @@ def configure(conf):
     # disables console
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
             conf.env.append_value('LINKFLAGS', '-mwindows')
+    elif myplatform.startswith('darwin'):
+        conf.env.append_value('CCFLAGS', '-I/Developer/Headers/FlatCarbon')
+        conf.env.append_value('LINKFLAGS', '-framework')
+        conf.env.append_value('LINKFLAGS', 'Carbon')
 
 
 def build(bld):
