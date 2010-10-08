@@ -842,19 +842,23 @@ class EXE(Target):
 
         return False
 
-    def _bootloader_postfix(self, exe):
-        if target_iswin:
-            exe = exe + "_"
-            is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
-            exe = exe + "67"[is24]
-            exe = exe + "rd"[self.debug]
-            exe = exe + "wc"[self.console]
-        else:
-            if not self.console:
-                exe = exe + 'w'
-            if self.debug:
-                exe = exe + '_d'
-        return exe
+    def _bootloader_file(self, exe):
+        base = "support/loader"
+
+        try:
+            import platform
+            dir = platform.system() + "-" + platform.architecture()[0]
+        except ImportError:
+            import os
+            n = { "nt": "Windows", "linux2": "Linux", "darwin": "Darwin" }
+            dir = n[os.name] + "-32bit"
+                             
+        if not self.console:
+            exe = exe + 'w'
+        if self.debug:
+            exe = exe + '_d'
+
+        return base + "/" + dir + "/" + exe
 
     def assemble(self):
         print "building EXE from", os.path.basename(self.out)
@@ -862,7 +866,7 @@ class EXE(Target):
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
         outf = open(self.name, 'wb')
-        exe = self._bootloader_postfix('support/loader/run')
+        exe = self._bootloader_file('run')
         exe = os.path.join(HOMEPATH, exe)
         if target_iswin or cygwin:
             exe = exe + '.exe'
@@ -960,7 +964,7 @@ class DLL(EXE):
     def assemble(self):
         print "building DLL", os.path.basename(self.out)
         outf = open(self.name, 'wb')
-        dll = self._bootloader_postfix('support/loader/inprocsrvr')
+        dll = self._bootloader_file('inprocsrvr')
         dll = os.path.join(HOMEPATH, dll)  + '.dll'
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)
