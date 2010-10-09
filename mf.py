@@ -123,6 +123,12 @@ class BaseDirOwner(Owner):
                     raise
             elif pyc:
                 stuff = self._read(pyc[0])
+                # If this file was not generated for this version of
+                # Python, we need to regenerate it.
+                if stuff[:4] != imp.get_magic():
+                    print "W: wrong version .pyc found (%s), will use .py" % pyc[0]
+                    pyc = None
+                    continue
                 try:
                     co = loadco(stuff[8:])
                     pth = pyc[0]
@@ -800,6 +806,10 @@ except:
 STORE_NAME = dis.opname.index('STORE_NAME')
 STORE_FAST = dis.opname.index('STORE_FAST')
 STORE_GLOBAL = dis.opname.index('STORE_GLOBAL')
+try:
+    STORE_MAP = dis.opname.index('STORE_MAP')
+except:
+    STORE_MAP = 999
 LOAD_GLOBAL = dis.opname.index('LOAD_GLOBAL')
 LOAD_ATTR = dis.opname.index('LOAD_ATTR')
 LOAD_NAME = dis.opname.index('LOAD_NAME')
@@ -814,15 +824,22 @@ if getattr(sys, 'version_info', (0,0,0)) > (2,5,0):
     LOAD_CONST_level = LOAD_CONST
 else:
     LOAD_CONST_level = 999
-JUMP_IF_FALSE = dis.opname.index('JUMP_IF_FALSE')
-JUMP_IF_TRUE = dis.opname.index('JUMP_IF_TRUE')
+if getattr(sys, 'version_info', (0,0,0)) >= (2,7,0):
+    COND_OPS = [dis.opname.index('POP_JUMP_IF_TRUE'),
+                dis.opname.index('POP_JUMP_IF_FALSE'),
+                dis.opname.index('JUMP_IF_TRUE_OR_POP'),
+                dis.opname.index('JUMP_IF_FALSE_OR_POP'),
+               ]
+else:
+    COND_OPS = [dis.opname.index('JUMP_IF_FALSE'),
+                dis.opname.index('JUMP_IF_TRUE'),
+               ]
 JUMP_FORWARD = dis.opname.index('JUMP_FORWARD')
 try:
     STORE_DEREF = dis.opname.index('STORE_DEREF')
 except ValueError:
     STORE_DEREF = 999
-COND_OPS = [JUMP_IF_TRUE, JUMP_IF_FALSE]
-STORE_OPS = [STORE_NAME, STORE_FAST, STORE_GLOBAL, STORE_DEREF]
+STORE_OPS = [STORE_NAME, STORE_FAST, STORE_GLOBAL, STORE_DEREF, STORE_MAP]
 #IMPORT_STAR -> IMPORT_NAME mod ; IMPORT_STAR
 #JUMP_IF_FALSE / JUMP_IF_TRUE / JUMP_FORWARD
 
@@ -846,7 +863,9 @@ def pass1(code):
             oparg = None
         if not incondition and op in COND_OPS:
             incondition = 1
-            out = i + oparg
+            out = oparg
+            if op in dis.hasjrel:
+                out += i
         elif incondition and op == JUMP_FORWARD:
             out = max(out, i + oparg)
         if op == SET_LINENO:
@@ -885,7 +904,8 @@ def scan_code(co, m=None, w=None, b=None, nested=0):
             #print name
             m.append((name, nested, conditional, level))
             assert lastname is not None
-        elif op == IMPORT_STAR:
+        elif op == IMPORT_STAR:           
+            assert lastname is not None
             m.append((lastname+'.*', nested, conditional, level))
         elif op == STORE_NAME:
             if co.co_names[oparg] == "__all__":
