@@ -24,21 +24,24 @@ out = 'build'
 
 
 def set_options(opt):
-    opt.add_option('--no-lsb',
-            action = 'store_true',
-            help = 'Prevent building LSB (Linux Standard Base) bootloader.',
-            default = False,
-            dest = 'nolsb')
-    opt.add_option('--lsbcc-path',
-            action = 'store',
-            help = 'Path to lsbcc. By default PATH is searched for lsbcc otherwise is tried file /opt/lsb/bin/lsbcc. [Default: lsbcc]',
-            default = 'lsbcc',
-            dest = 'lsbcc_path')
-    opt.add_option('--lsb-target-version',
-            action = 'store',
-            help = 'Specify LSB target version [Default: 4.0]',
-            default = '4.0',
-            dest = 'lsb_version')
+    myplatform = Utils.detect_platform()
+    
+    if myplatform.startswith('linux'):
+        opt.add_option('--no-lsb',
+                action = 'store_true',
+                help = 'Prevent building LSB (Linux Standard Base) bootloader.',
+                default = False,
+                dest = 'nolsb')
+        opt.add_option('--lsbcc-path',
+                action = 'store',
+                help = 'Path to lsbcc. By default PATH is searched for lsbcc otherwise is tried file /opt/lsb/bin/lsbcc. [Default: lsbcc]',
+                default = 'lsbcc',
+                dest = 'lsbcc_path')
+        opt.add_option('--lsb-target-version',
+                action = 'store',
+                help = 'Specify LSB target version [Default: 4.0]',
+                default = '4.0',
+                dest = 'lsb_version')
 
     opt.tool_options('compiler_cc')
     opt.tool_options('python')
@@ -96,8 +99,7 @@ def configure(conf):
 
 
     ### build LSB (Linux Standard Base) boot loader
-
-    if not opt.nolsb:
+    if myplatform.startswith('linux') and not opt.nolsb:
         try:
             # custom lsbcc path
             if opt.lsbcc_path != 'lsbcc':
