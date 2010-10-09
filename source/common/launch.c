@@ -699,12 +699,12 @@ int startPython(int argc, char *argv[])
 	tmp[strlen(tmp)-1] = '\0';
 	PI_PyRun_SimpleString("import sys\n");
 	PI_PyRun_SimpleString("while sys.path:\n del sys.path[0]\n");
-	sprintf(cmd, "sys.path.append('%s')", tmp);
+	sprintf(cmd, "sys.path.append('''%s''')", tmp);
 	PI_PyRun_SimpleString (cmd);
 	if (pathlen == 2) {
 		strcpy(tmp, f_workpath);
 		tmp[strlen(tmp)-1] = '\0';
-		sprintf(cmd, "sys.path.insert(0, '%s')", tmp);
+		sprintf(cmd, "sys.path.insert(0, '''%s''')", tmp);
 		PI_PyRun_SimpleString(cmd);
 	}
 
