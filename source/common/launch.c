@@ -41,9 +41,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "launch.h"
-//#ifndef NOZLIB
 #include "zlib.h"
-//#endif
 
 /*
  * Python Entry point declarations (see macros in launch.h).
@@ -54,10 +52,8 @@ DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
 DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
-//#if !EMULATED_REFCNT
 DECLPROC(Py_IncRef);
 DECLPROC(Py_DecRef);
-//#endif
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
 DECLPROC(PySys_SetArgv);
@@ -628,15 +624,10 @@ int setRuntimeOptions(void)
 #else
 		fflush(stdout);
 		fflush(stderr);
-//#ifdef HAVE_SETVBUF
-//		setvbuf(stdin, (char *)NULL, _IONBF, 0);
-//		setvbuf(stdout, (char *)NULL, _IONBF, 0);
-//		setvbuf(stderr, (char *)NULL, _IONBF, 0);
-//#else
+
 		setbuf(stdin, (char *)NULL);
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
-//#endif
 #endif
 	}
 	return 0;
@@ -835,7 +826,6 @@ int installZlibs()
 	return 0;
 }
 
-//#ifndef NOZLIB
 /* decompress data in buff, described by ptoc
  * return in malloc'ed buffer (needs to be freed)
  */
@@ -878,7 +868,7 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 
 	return out;
 }
-//#endif
+
 /*
  * extract an archive entry
  * returns pointer to the data (must be freed)
@@ -925,7 +915,6 @@ unsigned char *extract(TOC *ptoc)
 		VS("\n");
 	}
 	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
-//#ifndef NOZLIB
 		tmp = decompress(data, ptoc);
 		free(data);
 		data = tmp;
@@ -933,13 +922,10 @@ unsigned char *extract(TOC *ptoc)
 			OTHERERROR("Error decompressing %s\n", ptoc->name);
 			return NULL;
 		}
-//#else
-		//FATALERROR("No ZLIB support but archive uses compression\n");
-		//return NULL;
-//#endif
 	}
 	return data;
 }
+
 /*
  * helper for extract2fs
  * which may try multiple places
@@ -982,6 +968,7 @@ FILE *openTarget(char *path, char* name_)
     }
 	return fopen(fnm, "wb");
 }
+
 /*
  * extract from the archive
  * and copy to the filesystem
@@ -1026,6 +1013,7 @@ int extract2fs(TOC *ptoc)
 	free(data);
 	return 0;
 }
+
 /*
  * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  */
@@ -1043,6 +1031,7 @@ int extractBinaries(char **workpath)
 	*workpath = f_workpath;
 	return 0;
 }
+
 /*
  * Run scripts
  * Return non zero on failure
@@ -1224,6 +1213,7 @@ int init(char const * archivePath, char  const * archiveName, char const * workp
 
 	return 0;
 }
+
 /* once init'ed, you might want to extractBinaries()
  * If you do, what comes after is very platform specific.
  * Once you've taken care of the platform specific details,
@@ -1342,6 +1332,7 @@ void cleanUp()
 	if (f_temppath[0])
 		clear(f_temppath);
 }
+
 /*
  * Helpers for embedders
  */
