@@ -1,5 +1,5 @@
-_PyInstaller 1.3_
-=================
+_PyInstaller_
+=============
 
 Use
 ===
@@ -7,26 +7,16 @@ Use
 
 Installation in brief
 =====================
- Non-Windows users should first build the bootloader:
-    cd source/linux
-    python ./Make.py
-    make
-
  Everyone should:
     python Configure.py
     python Makespec.py /path/to/yourscript.py
     python Build.py /path/to/yourscript.spec
     .done.
 
-
-Linux notes
-===========
-You will need some basic C/C++ compilation packages installed
-on your computer to be able to build the bootloader. Debian/Ubuntu
-users can run:
-
-    sudo apt-get install build-essential python-dev zlib1g-dev
-
+ Non-Windows (32bit), Non-Linux (32/64bit) and Non-Mac OS X (32bit)
+ users should first build the bootloader:
+    cd source
+    python ./waf configure build install
 
 
 Major changes in this release
