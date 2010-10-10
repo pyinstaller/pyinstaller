@@ -17,11 +17,6 @@ top = '.'
 out = 'build'
 
 # TODO extensive testing with different configuration (should work with Python >= 2.3)
-# TODO optional usage of MSVC compiler
-# TODO test loader on win32 with and without -mms-bitfields CCFLAG
-# TODO 64bit Windows support
-# TODO Mac OS X support
-
 
 def set_options(opt):
     myplatform = Utils.detect_platform()
@@ -55,7 +50,7 @@ def configure(conf):
     opt = Options.options
     myplatform = Utils.detect_platform()
     architecture = platform.architecture()[0] # 32bit or 64bit
-    Utils.pprint('CYAN', '%s detected' % myplatform)
+    Utils.pprint('CYAN', '%s-%s detected' % (platform.system(), architecture))
 
     if myplatform.startswith('linux') and not opt.nolsb:
         Utils.pprint('CYAN', 'Building LSB bootloader.')
@@ -155,6 +150,9 @@ def configure(conf):
 
     else:
         conf.check_cc(lib='z', mandatory=True)
+        if conf.check_cc(function_name='readlink', header_name='unistd.h'):
+            conf.env.append_value('CCFLAGS', '-DHAVE_READLINK')
+
 
     ### ccflags
 

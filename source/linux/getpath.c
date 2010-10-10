@@ -43,10 +43,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>     /* getenv */
-
-//#if HAVE_UNISTD_H
-//#include <unistd.h>
-//#endif /* HAVE_UNISTD_H */
+#include <unistd.h>     /* readlink */
 
 //#ifdef WITH_NEXT_FRAMEWORK
 //#include <mach-o/dyld.h>
@@ -155,20 +152,20 @@ calculate_path(void)
 	char *epath;
 	char *path = NULL;
 	char *ppath = NULL;
-//#if HAVE_READLINK
-	//int  numchars;
-//#endif
+#if HAVE_READLINK
+	int  numchars;
+#endif
 
 	if (strchr(prog, SEP))
 		strcpy(progpath, prog);
 	else {
-//#if HAVE_READLINK
-            //sprintf(argv0_path, "/proc/%d/exe", getpid());
-            //numchars = readlink(argv0_path, progpath, MAXPATHLEN);
-            //if (numchars > 0) 
-                //progpath[numchars] = '\0';
-            //else {
-//#endif
+#if HAVE_READLINK
+            sprintf(argv0_path, "/proc/%d/exe", getpid());
+            numchars = readlink(argv0_path, progpath, MAXPATHLEN);
+            if (numchars > 0) 
+                progpath[numchars] = '\0';
+            else {
+#endif
 		epath = getenv("PATH");
                 if (epath) 
                     path = malloc(strlen(epath)+3);
@@ -201,32 +198,32 @@ calculate_path(void)
 		}
 		else
 			progpath[0] = '\0';
-//#if HAVE_READLINK
-            //}
-//#endif
+#if HAVE_READLINK
+            }
+#endif
 	}
 	/* at this point progpath includes the executable */
 	strcpy(argv0_path, progpath);
 	
-//#if HAVE_READLINK
-	//{
-		//char tmpbuffer[MAXPATHLEN+1];
-		//int linklen = readlink(progpath, tmpbuffer, MAXPATHLEN);
-		//while (linklen != -1) {
-			///* It's not null terminated! */
-			//tmpbuffer[linklen] = '\0';
-			//if (tmpbuffer[0] == SEP)
-				//strcpy(argv0_path, tmpbuffer);
-			//else {
-				///* Interpret relative to progpath */
-				//reduce(argv0_path);
-				//joinpath(argv0_path, tmpbuffer);
-			//}
-			//linklen = readlink(argv0_path, tmpbuffer, MAXPATHLEN);
-		//}
-                //strcpy(progpath, argv0_path);
-	//}
-//#endif /* HAVE_READLINK */
+#if HAVE_READLINK
+	{
+		char tmpbuffer[MAXPATHLEN+1];
+		int linklen = readlink(progpath, tmpbuffer, MAXPATHLEN);
+		while (linklen != -1) {
+			/* It's not null terminated! */
+			tmpbuffer[linklen] = '\0';
+			if (tmpbuffer[0] == SEP)
+				strcpy(argv0_path, tmpbuffer);
+			else {
+				/* Interpret relative to progpath */
+				reduce(argv0_path);
+				joinpath(argv0_path, tmpbuffer);
+			}
+			linklen = readlink(argv0_path, tmpbuffer, MAXPATHLEN);
+		}
+                strcpy(progpath, argv0_path);
+	}
+#endif /* HAVE_READLINK */
 
 	reduce(argv0_path);
 	/* now argv0_path is the directory of the executable */
