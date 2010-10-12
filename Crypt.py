@@ -45,7 +45,7 @@ def cmd_genkey(args):
 def main():
     global global_opts
     global opts
-    import pyi_optparse as optparsae
+    import pyi_optparse as optparse
 
     cmds = {}
     p = optparse.OptionParser(
