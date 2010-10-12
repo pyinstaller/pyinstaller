@@ -111,6 +111,7 @@ excludes = {
     'MSIMG32.DLL':1,
     'MPR.DLL':1,
     'DNSAPI.DLL':1,
+    'RASAPI32.DLL':1,
     # regex excludes
     # don't include in the bundle the libc and the tls stuff
     r'^/usr/lib/tls':1,
