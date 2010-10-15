@@ -910,9 +910,7 @@ unsigned char *extract(TOC *ptoc)
 		memcpy(data, PI_PyString_AsString(ddata), ntohl(ptoc->len)-32);
 		Py_DECREF(aes_obj);
 		Py_DECREF(ddata);
-		VS("decrypted ");
-		VS(ptoc->name);
-		VS("\n");
+		VS("decrypted %s\n", ptoc->name);
 	}
 	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
 		tmp = decompress(data, ptoc);
