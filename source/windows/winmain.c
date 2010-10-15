@@ -127,6 +127,9 @@ static int CreateActContext(char *workpath, char *thisfile)
 	ACTCTX ctx;
 	ULONG_PTR actToken;
 	BOOL activated;
+	HANDLE k32;
+	HANDLE (*CreateActCtx)(PACTCTX pActCtx);
+	BOOL (*ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
 
     // If not XP, nothing to do -- return OK
     if (!IsXPOrLater())
@@ -138,10 +141,7 @@ static int CreateActContext(char *workpath, char *thisfile)
     strcat(manifestpath, ".manifest");
     VS("manifestpath: %s\n", manifestpath);
     
-    HANDLE (*CreateActCtx)(PACTCTX pActCtx);
-    BOOL (*ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
-
-    HANDLE k32 = LoadLibrary("kernel32");
+    k32 = LoadLibrary("kernel32");
     CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA");
     ActivateActCtx = (void*)GetProcAddress(k32, "ActivateActCtx");
     FreeLibrary(k32);
@@ -174,12 +174,13 @@ static int CreateActContext(char *workpath, char *thisfile)
 
 static void ReleaseActContext(void)
 {
+	void (*ReleaseActCtx)(HANDLE);
+	HANDLE k32;
+
     if (!IsXPOrLater())
         return;
 
-    void (*ReleaseActCtx)(HANDLE);
-
-    HANDLE k32 = LoadLibrary("kernel32");
+	k32 = LoadLibrary("kernel32");
     ReleaseActCtx = (void*)GetProcAddress(k32, "ReleaseActCtx");
     FreeLibrary(k32);
     if (!ReleaseActCtx)
