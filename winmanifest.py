@@ -124,7 +124,6 @@ RT_MANIFEST = 24
 Document.aChild = Document.appendChild
 Document.cE = Document.createElement
 Document.cT = Document.createTextNode
-Document.getEById = Document.getElementById
 Document.getEByTN = Document.getElementsByTagName
 Element.aChild = Element.appendChild
 Element.getA = Element.getAttribute
@@ -893,8 +892,11 @@ class Manifest(object):
         # version-encoding-standalone (standalone being optional), otherwise 
         # if it is embedded in an exe the exe will fail to launch! 
         # ('application configuration incorrect')
-        xmlstr = domtree.toprettyxml(
-            indent, newl, encoding).strip(os.linesep).replace(
+        if sys.version_info >= (2,3):
+            xmlstr = domtree.toprettyxml(indent, newl, encoding)
+        else:
+            xmlstr = domtree.toprettyxml(indent, newl)
+        xmlstr = xmlstr.strip(os.linesep).replace(
                 '<?xml version="1.0" encoding="%s"?>' % encoding, 
                 '<?xml version="1.0" encoding="%s" standalone="yes"?>' % 
                 encoding)

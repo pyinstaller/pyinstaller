@@ -27,7 +27,6 @@ import pprint
 import re
 import glob
 
-import platform
 import mf
 import bindepend
 import Build
@@ -39,7 +38,7 @@ is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
 is26 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,6)
 cygwin = sys.platform == 'cygwin'
 
-if iswin and platform.architecture()[0] != "32bit" and not is26:
+if iswin and sys.version.find("32 bit") < 0 and not is26:
     print "ERROR: PyInstaller supports only Python 2.6+ on Windows 64-bit"
     print "pywin32 is available only for Python 2.6+ on Windows 64-bit"
     sys.exit(2)

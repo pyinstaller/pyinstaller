@@ -21,9 +21,9 @@
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference external" href="mailto:rasky&#64;develer.com">rasky&#64;develer.com</a></td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller v1.4</td></tr>
+<td>PyInstaller v1.5</td></tr>
 <tr><th class="docinfo-name">Revision:</th>
-<td>902</td></tr>
+<td>920</td></tr>
 <tr class="field"><th class="docinfo-name">Source URL:</th><td class="field-body">$HeadURL: <a class="reference external" href="https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst">https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst</a> $</td>
 </tr>
 <tr><th class="docinfo-name">Copyright:</th>
@@ -383,7 +383,7 @@ attached to the bootloader executable (or next to the executable in a non-elf
 configuration). When first started, it finds that it needs to extract these
 files before it can run &quot;for real&quot;. That's because locating and loading a
 shared lib or linked-in dll is a system level action, not user-level. With
-PyInstaller v1.4 it always uses a temporary directory (<tt class="docutils literal">_MEIXXXXX</tt>,
+PyInstaller v1.5 it always uses a temporary directory (<tt class="docutils literal">_MEIXXXXX</tt>,
 where <tt class="docutils literal">XXXXX</tt> is a random number to avoid conflicts) in the
 user's temp directory. It then executes itself again, setting things up so
 the system will be able to load the shared libs / dlls. When execution is
@@ -1118,7 +1118,7 @@ but modules the extensions are linked to).</li>
 <p>The first pass:</p>
 <ul class="simple">
 <li>opens the archive</li>
-<li>extracts all the binaries in the archive (in PyInstaller v1.4, this is always to a
+<li>extracts all the binaries in the archive (in PyInstaller v1.5, this is always to a
 temporary directory).</li>
 <li>sets a magic environment variable</li>
 <li>sets <tt class="docutils literal">LD_LIBRARY_PATH</tt> (non-Windows)</li>
@@ -1280,11 +1280,11 @@ set PATH=C:\MinGW\bin;%PATH%
 pyinstaller$ cd source
 pyinstaller/source$ python waf configure build install
 </pre>
-<p>This will produce <tt class="docutils literal">support/loader/run</tt>, <tt class="docutils literal">support/loader/run_d</tt>,
-<tt class="docutils literal">support/loader/runw</tt> and <tt class="docutils literal">support/loader/runw_d</tt>,
+<p>This will produce <tt class="docutils literal">support/loader/YOUR_OS/run</tt>, <tt class="docutils literal">support/loader/YOUR_OS/run_d</tt>,
+<tt class="docutils literal">support/loader/YOUR_OS/runw</tt> and <tt class="docutils literal">support/loader/YOUR_OS/runw_d</tt>,
 which are the bootloaders.</p>
-<p>On Windows this will produce in the <tt class="docutils literal">support/loader</tt> directory: <tt class="docutils literal"><span class="pre">run*.exe</span></tt>
-(bootloader for regular programs), and
+<p>On Windows this will produce in the <tt class="docutils literal">support/loader/YOUR_OS</tt> directory:
+<tt class="docutils literal"><span class="pre">run*.exe</span></tt> (bootloader for regular programs), and
 <tt class="docutils literal"><span class="pre">inprocsrvr*.dll</span></tt> (bootloader for in-process COM servers).</p>
 <p><em>Note:</em> If you have multiple versions of Python, the Python you use to run
 <tt class="docutils literal">waf</tt> is the one whose configuration is used.</p>
@@ -1296,7 +1296,7 @@ which are the bootloaders.</p>
 distributions. PyInstaller is able produce bootloader as LSB binary in order
 to increase compatibility for packaged applications among distributions.</p>
 <p><em>Note:</em> LSB version 4.0 is required for successfull building of bootloader.</p>
-<p>On Debian- and Ubuntu-based distros, you can installa LSB 4.0 tools by adding
+<p>On Debian- and Ubuntu-based distros, you can install LSB 4.0 tools by adding
 the following repository to the sources.list file:</p>
 <pre class="literal-block">
 deb http://ftp.linux-foundation.org/pub/lsb/repositories/debian lsb-4.0 main
@@ -1328,10 +1328,10 @@ instructions.</p>
 <p><em>NOTE:</em> if for some reason you want to avoid LSB compilation, you can
 do so by specifying --no-lsb on the waf command line, as follows:</p>
 <pre class="literal-block">
-pyinstaller/source$ python waf configure --lsb build install
+pyinstaller/source$ python waf configure --no-lsb build install
 </pre>
-<p>This will also produce <tt class="docutils literal">support/loader/run</tt>, <tt class="docutils literal">support/loader/run_d</tt>,
-<tt class="docutils literal">support/loader/runw</tt> and <tt class="docutils literal">support/loader/runw_d</tt>, but they will
+<p>This will also produce <tt class="docutils literal">support/loader/YOUR_OS/run</tt>, <tt class="docutils literal">support/loader/YOUR_OS/run_d</tt>,
+<tt class="docutils literal">support/loader/YOUR_OS/runw</tt> and <tt class="docutils literal">support/loader/YOUR_OS/runw_d</tt>, but they will
 not be LSB binaries.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
@@ -1658,7 +1658,7 @@ easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2010-10-09 13:22 UTC.
+Generated on: 2010-10-15 18:57 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
