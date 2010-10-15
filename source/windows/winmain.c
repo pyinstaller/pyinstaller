@@ -215,8 +215,6 @@ int main(int argc, char* argv[])
 	char **argv = __argv;
 #endif
 	
-	printf("%s\n", "Hello world!");
-
 	// Initialize common controls (needed to link with commctrl32.dll and
 	// obtain native XP look & feel).
 	InitCommonControls();
@@ -252,7 +250,7 @@ int main(int argc, char* argv[])
 		VS("Found embedded PKG: %s\n", thisfile);
 	}
 	if (workpath) {
-		printf("workpath: %s\n", workpath);
+		VS("workpath: %s\n", workpath);
 		// we're the "child" process
         CreateActContext(workpath, thisfile);
         rc = doIt(argc, argv);
@@ -280,7 +278,6 @@ int main(int argc, char* argv[])
             finalizePython();
             ReleaseActContext();
 		}
-		printf("%s\n", "About to call cleanUp");
 		cleanUp();
 	}
 	return rc;
