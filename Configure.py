@@ -27,7 +27,6 @@ import pprint
 import re
 import glob
 
-import platform
 import mf
 import bindepend
 import Build
@@ -39,7 +38,7 @@ is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
 is26 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,6)
 cygwin = sys.platform == 'cygwin'
 
-if iswin and platform.architecture()[0] != "32bit":
+if iswin and sys.version.find("32 bit") < 0:
     print "ERROR: PyInstaller does not support Windows 64-bit"
     print "Subscribe to this ticket for more information:"
     print "    http://www.pyinstaller.org/ticket/25"

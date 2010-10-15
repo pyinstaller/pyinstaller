@@ -109,7 +109,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
     tests = [(len(x), x) for x in tests]
     tests.sort()
     path = os.environ["PATH"]
-    counter = dict(passed=[],failed=[])
+    counter = { "passed": [], "failed": [] }
     for _,test in tests:
         test = os.path.splitext(os.path.basename(test))[0]
         if test in MIN_VERSION and MIN_VERSION[test] > sys.version_info:
@@ -161,7 +161,12 @@ if __name__ == '__main__':
     normal_tests = glob.glob('test*.spec')
     interactive_tests = glob.glob('test*i.spec')
 
-    from optparse import OptionParser
+    try:
+        from optparse import OptionParser
+    except ImportError:
+        sys.path.append("..")
+        from pyi_optparse import OptionParser
+        
     if sys.version_info < (2,5):
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
     else:
