@@ -156,6 +156,7 @@ def getfullnameof(mod, xtrapath = None):
                 return npth
     return ''
 
+# TODO function is not used - remove?
 def _getImports_dumpbin(pth):
     """Find the binary dependencies of PTH.
 
@@ -175,6 +176,21 @@ def _getImports_dumpbin(pth):
         i = i + 1
     return rslt
 
+def _getImports_pe_lib_pefile(pth):
+    """Find the binary dependencies of PTH.
+
+        This implementation walks through the PE header
+        and uses library pefile for that and supports
+        32/64bit Windows"""
+    import pefile
+    pe = pefile.PE(pth)
+    dlls = []
+    for entry in pe.DIRECTORY_ENTRY_IMPORT:
+        dlls.append(entry.dll)
+    return dlls
+
+
+# TODO function is not used - remove?
 def _getImports_pe_x(pth):
     """Find the binary dependencies of PTH.
 
@@ -660,7 +676,7 @@ def getImports(pth, platform=sys.platform):
         if pth.lower().endswith(".manifest"):
             return []
         try:
-            return _getImports_pe(pth)
+            return _getImports_pe_lib_pefile(pth)
         except Exception, exception:
             # Assemblies can pull in files which aren't necessarily PE, 
             # but are still needed by the assembly. Any additional binary 
