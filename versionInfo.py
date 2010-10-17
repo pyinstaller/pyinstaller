@@ -51,12 +51,18 @@ else:
 ##    WORD  Padding2[];
 ##    WORD  Children[];     // Specifies a list of zero or more StringFileInfo or VarFileInfo structures (or both) that are children of the current version structure.
 ##};
+
+#TODO remove old code
 def decode(pathnm):
+    import pefile
+    pe = pefile.PE(pathnm)
+    pe.parse_data_directories()
+
     h = win32api.LoadLibraryEx(pathnm, 0, LOAD_LIBRARY_AS_DATAFILE)
     nm = win32api.EnumResourceNames(h, RT_VERSION)[0]
     data = win32api.LoadResource(h, RT_VERSION, nm)
     vs = VSVersionInfo()
-    j = vs.fromRaw(data)
+    j = vs.fromRaw(data, pe)
     if TEST:
         print vs
         if data[:j] != vs.toRaw():
@@ -84,13 +90,13 @@ class VSVersionInfo:
         self.kids = kids
         if kids is None:
             self.kids = []
-    def fromRaw(self, data):
+    def fromRaw(self, data, pe=None):
         i, (sublen, vallen, wType, nm) = parseCommon(data)
         #vallen is length of the ffi, typ is 0, nm is 'VS_VERSION_INFO'
         i = ((i + 3) / 4) * 4
         # now a VS_FIXEDFILEINFO
         self.ffi = FixedFileInfo()
-        j = self.ffi.fromRaw(data, i)
+        j = self.ffi.fromRaw(data, i, pe)
         #print ffi
         if TEST:
             if data[i:j] != self.ffi.toRaw():
@@ -208,20 +214,23 @@ class FixedFileInfo:
         self.fileSubtype = subtype
         self.fileDateMS = date[0]
         self.fileDateLS = date[1]
-    def fromRaw(self, data, i):
-        (self.sig,
-         self.strucVersion,
-         self.fileVersionMS,
-         self.fileVersionLS,
-         self.productVersionMS,
-         self.productVersionLS,
-         self.fileFlagsMask,
-         self.fileFlags,
-         self.fileOS,
-         self.fileType,
-         self.fileSubtype,
-         self.fileDateMS,
-         self.fileDateLS) = struct.unpack('13l', data[i:i+52])
+    def fromRaw(self, data, i, pe=None):
+        if hasattr(pe, 'VS_FIXEDFILEINFO'):
+            info = pe.VS_FIXEDFILEINFO
+            self.sig = info.Signature
+            print 'type self.sig:', type(self.sig)
+            self.strucVersion = info.StrucVersion
+            self.fileVersionMS = info.FileVersionMS
+            self.fileVersionLS = info.FileVersionLS
+            self.productVersionMS = info.ProductVersionMS
+            self.productVersionLS = info.ProductVersionLS
+            self.fileFlagsMask = info.FileFlagsMask
+            self.fileFlags = info.FileFlags
+            self.fileOS = info.FileOS
+            self.fileType = info.FileType
+            self.fileSubtype = info.FileSubtype
+            self.fileDateMS = info.FileDateMS
+            self.fileDateLS = info.FileDateLS
         return i+52
     def toRaw(self):
         return struct.pack('L12l', self.sig,
