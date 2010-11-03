@@ -59,7 +59,7 @@ if iswin:
             print "ERROR: Python 2.6+ on Windows support needs pywin32"
             print "Please install http://sourceforge.net/projects/pywin32/"
             sys.exit(2)
-    
+
     from winmanifest import RT_MANIFEST, GetManifestResources, Manifest
     try:
         from winmanifest import winresource
@@ -314,7 +314,7 @@ def Dependencies(lTOC, platform=sys.platform, xtrapath=None, manifest=None):
        LTOC is a logical table of contents, ie, a seq of tuples (name, path).
        Return LTOC expanded by all the binary dependencies of the entries
        in LTOC, except those listed in the module global EXCLUDES
-       
+
        manifest should be a winmanifest.Manifest instance on Windows, so
        that all dependent assemblies can be added"""
     for nm, pth, typ in lTOC:
@@ -377,14 +377,14 @@ def pkg_resouces_get_default_cache():
         )
 
 def check_extract_from_egg(pth, todir=None):
-    r"""Check if path points to a file inside a python egg file, extract the 
-       file from the egg to a cache directory (following pkg_resources 
-       convention) and return [(extracted path, egg file path, relative path 
-       inside egg file)]. 
+    r"""Check if path points to a file inside a python egg file, extract the
+       file from the egg to a cache directory (following pkg_resources
+       convention) and return [(extracted path, egg file path, relative path
+       inside egg file)].
        Otherwise, just return [(original path, None, None)].
-       If path points to an egg file directly, return a list with all files 
+       If path points to an egg file directly, return a list with all files
        from the egg formatted like above.
-       
+
        Example:
        >>> check_extract_from_egg(r'C:\Python26\Lib\site-packages\my.egg\mymodule\my.pyd')
        [(r'C:\Users\UserName\AppData\Roaming\Python-Eggs\my.egg-tmp\mymodule\my.pyd',
@@ -405,11 +405,11 @@ def check_extract_from_egg(pth, todir=None):
                     print "E:", eggpth, e
                     sys.exit(1)
                 if todir is None:
-                    # Use the same directory as setuptools/pkg_resources. So, 
-                    # if the specific egg was accessed before (not necessarily 
-                    # by pyinstaller), the extracted contents already exist 
-                    # (pkg_resources puts them there) and can be used. 
-                    todir = os.path.join(pkg_resouces_get_default_cache(), 
+                    # Use the same directory as setuptools/pkg_resources. So,
+                    # if the specific egg was accessed before (not necessarily
+                    # by pyinstaller), the extracted contents already exist
+                    # (pkg_resources puts them there) and can be used.
+                    todir = os.path.join(pkg_resouces_get_default_cache(),
                                          name + "-tmp")
                 if components[i + 1:]:
                     members = ["/".join(components[i + 1:])]
@@ -461,7 +461,7 @@ def getAssemblies(pth):
                 # check the manifest for dependent assemblies
                 try:
                     manifest = Manifest()
-                    manifest.filename = ":".join([pth, str(RT_MANIFEST), 
+                    manifest.filename = ":".join([pth, str(RT_MANIFEST),
                                                   str(name), str(language)])
                     manifest.parse_string(res[RT_MANIFEST][name][language],
                                           False)
@@ -473,12 +473,12 @@ def getAssemblies(pth):
                 else:
                     if manifest.dependentAssemblies and not silent:
                         print "I: Dependent assemblies of %s:" % pth
-                        print "I:", ", ".join([assembly.getid() 
-                                               for assembly in 
+                        print "I:", ", ".join([assembly.getid()
+                                               for assembly in
                                                manifest.dependentAssemblies])
                     rv.extend(manifest.dependentAssemblies)
     return rv
-    
+
 def selectAssemblies(pth, manifest=None):
     """Return a binary's dependent assemblies files that should be included.
 
@@ -492,7 +492,7 @@ def selectAssemblies(pth, manifest=None):
             continue
         if manifest:
             # Add assembly as dependency to our final output exe's manifest
-            if not assembly.name in [dependentAssembly.name 
+            if not assembly.name in [dependentAssembly.name
                                      for dependentAssembly in
                                      manifest.dependentAssemblies]:
                 print ("Adding %s to dependent assemblies "
@@ -517,12 +517,12 @@ def selectAssemblies(pth, manifest=None):
                     nm = os.path.basename(fn)
                 ftocnm = nm
                 if assembly.language not in (None, "", "*", "neutral"):
-                    ftocnm = os.path.join(assembly.getlanguage(), 
+                    ftocnm = os.path.join(assembly.getlanguage(),
                                           ftocnm)
-                nm, ftocnm, fn = [item.encode(sys.getfilesystemencoding()) 
-                                  for item in 
+                nm, ftocnm, fn = [item.encode(sys.getfilesystemencoding())
+                                  for item in
                                   (nm,
-                                   ftocnm, 
+                                   ftocnm,
                                    fn)]
                 if not seen.get(fn.upper(),0):
                     if not silent:
@@ -580,7 +580,7 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
                 continue
             else:
                 pass
-        
+
         if npth:
             if not seen.get(string.upper(npth),0):
                 if not silent:
@@ -662,10 +662,10 @@ def getImports(pth, platform=sys.platform):
         try:
             return _getImports_pe(pth)
         except Exception, exception:
-            # Assemblies can pull in files which aren't necessarily PE, 
-            # but are still needed by the assembly. Any additional binary 
-            # dependencies should already have been handled by 
-            # selectAssemblies in that case, so just warn, return an empty 
+            # Assemblies can pull in files which aren't necessarily PE,
+            # but are still needed by the assembly. Any additional binary
+            # dependencies should already have been handled by
+            # selectAssemblies in that case, so just warn, return an empty
             # list and continue.
             if not silent:
                 print 'W: Cannot get binary dependencies for file:'
