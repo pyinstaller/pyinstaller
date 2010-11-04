@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import os
+
 def exec_statement(stat):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
@@ -53,3 +55,23 @@ def qwt_numeric_support():
     return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumeric')"))
 def qwt_numarray_support():
     return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumarray')"))
+
+def django_dottedstring_imports(django_root_dir):
+    package_name = os.path.basename(django_root_dir)
+    os.environ["DJANGO_SETTINGS_MODULE"] = "%s.settings" %package_name
+    return eval(exec_statement("execfile(r'%s')" %os.path.join(os.path.dirname(__file__), "django-import-finder.py")))
+
+def find_django_root(dir):
+    entities = os.listdir(dir)
+    if "manage.py" in entities and "settings.py" in entities and "urls.py" in entities:
+        return [dir]
+    else:
+        django_root_directories = []
+        for entity in entities:
+            path_to_analyze = os.path.join(dir, entity)
+            if os.path.isdir(path_to_analyze):
+                dir_entities = os.listdir(path_to_analyze)
+                if "manage.py" in dir_entities and "settings.py" in dir_entities and "urls.py" in dir_entities:
+                    django_root_directories.append(path_to_analyze)
+        return django_root_directories
+

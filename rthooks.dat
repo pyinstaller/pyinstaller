@@ -6,4 +6,5 @@
     'PyQt4':      ['support/rthooks/pyi_rth_qt4plugins.py'],
     'matplotlib': ['support/rthooks/pyi_rth_mpldata.py'],
     'babel':      ['support/rthooks/pyi_rth_babel.py'],
+    'django':     ['support/rthooks/pyi_rth_django.py'],
 }
