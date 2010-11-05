@@ -33,14 +33,15 @@
 __realopen__ = open
 
 def myopen(fn, *args):
-    if fn.endswith("version") and ".pyz" in fn:
-        # Restore original open, since we're almost done
-        __builtins__.__dict__["open"] = __realopen__
-        # Report a fake revision number. Anything would do since it's not
-        # used by the library, but it needs to be made of four numbers
-        # separated by dots.
-        import cStringIO
-        return cStringIO.StringIO("0.0.0.0")
+    if isinstance(fn, basestring):
+        if fn.endswith("version") and ".pyz" in fn:
+            # Restore original open, since we're almost done
+            __builtins__.__dict__["open"] = __realopen__
+            # Report a fake revision number. Anything would do since it's not
+            # used by the library, but it needs to be made of four numbers
+            # separated by dots.
+            import cStringIO
+            return cStringIO.StringIO("0.0.0.0")
     return __realopen__(fn, *args)
 
 __builtins__.__dict__["open"] = myopen
