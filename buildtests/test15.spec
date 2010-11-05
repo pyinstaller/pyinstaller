@@ -22,22 +22,20 @@ else:
     os.environ["DYLD_LIBRARY_PATH"] = CTYPES_DIR
     os.environ["LD_LIBRARY_PATH"] = CTYPES_DIR
 
-# Check for presence of testctypes shared library, build it if not present
-if not os.path.exists(TEST_LIB):
-    os.chdir(CTYPES_DIR)
-    if sys.platform[:6] == "darwin":
-        os.system("gcc -Wall -dynamiclib testctypes.c -o testctypes.dylib -headerpad_max_install_names")
-        id_dylib = os.path.abspath("testctypes.dylib")
-        os.system("install_name_tool -id %s testctypes.dylib" % (id_dylib,))
-    elif sys.platform == "linux2":
-        os.system("gcc -fPIC -shared testctypes.c -o testctypes.so")
-    else:
-        ret = os.system("cl /LD testctypes.c")
+os.chdir(CTYPES_DIR)
+if sys.platform[:6] == "darwin":
+    os.system("gcc -Wall -dynamiclib testctypes.c -o testctypes.dylib -headerpad_max_install_names")
+    id_dylib = os.path.abspath("testctypes.dylib")
+    os.system("install_name_tool -id %s testctypes.dylib" % (id_dylib,))
+elif sys.platform == "linux2":
+    os.system("gcc -fPIC -shared testctypes.c -o testctypes.so")
+else:
+    ret = os.system("cl /LD testctypes-win.c")
+    if ret != 0:
+        ret = os.system("gcc -shared testctypes-win.c -o testctypes.dll")
         if ret != 0:
-            ret = os.system("gcc -shared testctypes.c -o testctypes.dll")
-            if ret != 0:
-                raise NotImplementedError("Cannot find either MinGW or Visual Studio in PATH")
-    os.chdir("..")
+            raise NotImplementedError("Cannot find either MinGW or Visual Studio in PATH")
+os.chdir("..")
 
 __testname__ = 'test15'
 
