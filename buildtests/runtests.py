@@ -42,7 +42,7 @@ DEPENDENCIES = {
  'test-pycrypto': ["Crypto"],
  'test-zipimport1': ["pkg_resources"],
  'test-zipimport2': ["pkg_resources", "setuptools"],
- 
+ 'test15': ["ctypes"], 
 }
 
 try:
