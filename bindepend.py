@@ -488,7 +488,8 @@ def getAssemblies(pth):
                     print ("E: Cannot parse manifest resource %s, %s "
                            "from") % (name, language)
                     print "E:", pth
-                    print "E:", traceback.format_exc()
+                    print "E:",
+                    traceback.print_exc()
                 else:
                     if manifest.dependentAssemblies and not silent:
                         print "I: Dependent assemblies of %s:" % pth
@@ -689,7 +690,8 @@ def getImports(pth, platform=sys.platform):
             if not silent:
                 print 'W: Cannot get binary dependencies for file:'
                 print 'W:', pth
-                print 'W:', traceback.format_exc()
+                print 'W:',
+                traceback.print_exc()
             return []
     elif platform == 'darwin':
         return _getImports_otool(pth)
