@@ -2,25 +2,31 @@
 
 Changes since PyInstaller 1.4
 -----------------------------
+ + Full support for Python 2.7.
  + Full support for Python 2.6 on Windows. No manual redistribution
    of DLLs, CRT, manifest, etc. is required: PyInstaller is able to
    bundle all required dependencies (thanks to Florian Hoech).
- + Add support for Python 2.7.
  + Added binary bootloaders for Linux (32-bit and 64-bit, using LSB),
    and Darwin (32-bit). This means that PyInstaller users on this
    platform don't need to compile the bootloader themselves anymore
    (thanks to Martin Zibricky and Lorenzo Mancini).
+ * Preliminar support for Darwin 64-bit. Notice that you will need
+   to recompile the bootloader on this platform (see the manual).
  * Fix spurious KeyError when using dbhash
  * Fix import of nested packages made from Pyrex-generated files.
  * PyInstaller is now able to follow dependencies of binary extensions
    (.pyd/.so) compressed within .egg-files.
  + Add import hook for PyTables.
+ + Add missing import hook for QtWebKit.
+ * Improve Django import hooks.
  * Rewritten the build system for the bootloader using waf (thanks
    to Martin Zibricky)
  * Improve compatibility across multiple Linux distributions by
    being more careful on which libraries are included/excluded in
    the package.
-
+ * Improve compatibility with old Python versions.
+ * Fix double-bouncing-icon bug on Mac OSX. Now windowed applications
+   correctly start on Mac OSX showing a single bouncing icon.
 
 Changes since PyInstaller 1.3
 -----------------------------
