@@ -35,13 +35,7 @@ HOME = os.path.dirname(sys.argv[0])
 
 iswin = sys.platform[:3] == 'win'
 is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
-is26 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,6)
 cygwin = sys.platform == 'cygwin'
-
-if iswin and sys.version.find("32 bit") < 0 and not is26:
-    print "ERROR: PyInstaller supports only Python 2.6+ on Windows 64-bit"
-    print "pywin32 is available only for Python 2.6+ on Windows 64-bit"
-    sys.exit(2)
 
 def find_EXE_dependencies(config):
     global target_platform, target_iswin
