@@ -3,7 +3,7 @@ _PyInstaller 1.3_
 
 Use
 ===
- See doc/Tutorial.txt
+ See doc/Manual.html
 
 Installation in brief
 =====================
