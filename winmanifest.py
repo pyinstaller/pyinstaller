@@ -115,6 +115,14 @@ except ImportError, detail:
     print "W: unavailable. To enable resource access, please install "
     print "W: http://sourceforge.net/projects/pywin32/"
 
+try:
+    sys.getwindowsversion
+except AttributeError:
+    def getwindowsversion():
+        import win32api
+        return win32api.GetVersionEx(0)
+    sys.getwindowsversion = getwindowsversion
+
 silent = False  # True suppresses all messages
 
 LANGUAGE_NEUTRAL_NT5 = "x-ww"
