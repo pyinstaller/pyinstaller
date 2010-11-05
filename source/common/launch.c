@@ -337,7 +337,7 @@ int openArchive(ARCHIVE_STATUS *status)
 		filelen = findDigitalSignature(status);
 		if (filelen < 1)
 			return -1;
-		/* The digital signature has been aligned to 8-bytes boundary. 
+		/* The digital signature has been aligned to 8-bytes boundary.
 		   We need to look for our cookie taking into account some
 		   padding. */
 		for (i = 0; i < 8; ++i)
@@ -880,7 +880,7 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 		block_size = PI_PyInt_AsLong(PI_PyDict_GetItemString(aes_dict, "block_size"));
 		iv = malloc(block_size);
 		memset(iv, 0, block_size);
-        
+
 		aes_obj = PI_PyObject_CallFunction(func_new, "s#Os#",
 			data, 32,
 			PI_PyDict_GetItemString(aes_dict, "MODE_CFB"),
@@ -1212,7 +1212,7 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
 	TOC * ptoc = status_list[SELF]->tocbuff;
 	VS("Extracting binaries\n");
 	while (ptoc < status_list[SELF]->tocend) {
-		if (ptoc->typcd == 'b' || ptoc->typcd == 'x')
+		if (ptoc->typcd == 'b' || ptoc->typcd == 'x' || ptoc->typcd == 'Z')
 			if (extract2fs(status_list[SELF], ptoc))
 				return -1;
         
