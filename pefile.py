@@ -56,6 +56,14 @@ except ImportError:
         pass
 
 
+try:
+    enumerate
+except NameError:
+    def enumerate(iter):
+        L = list(iter)
+        return zip(range(0, len(L)), L)
+
+
 fast_load = False
 
 IMAGE_DOS_SIGNATURE             = 0x5A4D
