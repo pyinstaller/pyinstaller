@@ -38,6 +38,5 @@ else:
 
 for fn in os.listdir(d):
     sys.path.append(os.path.join(d, fn))
-    print "adding", sys.path[-1]
 
 
