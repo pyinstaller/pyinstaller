@@ -1183,6 +1183,13 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
 			return -1;
 		}
 	} else if (checkFile(srcpath, "%s../%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) 
+	{
+		VS("File %s found, assuming is onedir\n", srcpath);        
+		if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
+		    FATALERROR("Error coping %s\n", filename);
+		    free(dirname);
+		    return -1;
+        }
     } else {
         VS("File %s not found, assuming is onefile.\n", srcpath);
         if ((checkFile(archive_path, "%s%s.pkg", status_list[SELF]->homepath, path) != 0) && 
