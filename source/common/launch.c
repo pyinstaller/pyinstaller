@@ -1176,23 +1176,25 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
         return -1;
     }
 
-    VS("Checking if file exists\n");
-    if (checkFile(srcpath, "%s/%s/%s", status_list[SELF]->homepath, dirname, filename) == 0)
-    {
-		VS("File %s found, assuming is onedir\n", srcpath);        
-		if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1)
-		{
-			FATALERROR("Error coping %s\n", filename);
-			free(dirname);
-			return -1;
-		}
-	} else if (checkFile(srcpath, "%s../%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) 
-	{
-		VS("File %s found, assuming is onedir\n", srcpath);        
-		if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
-		    FATALERROR("Error coping %s\n", filename);
-		    free(dirname);
-		    return -1;
+    /* We need to identify three situations: 1) dependecies are in a onedir archive
+     * next to the current onefile archive, 2) dependencies are in a onedir/onefile
+     * archive next to the current onedir archive, 3) dependencies are in a onefile 
+     * archive next to the current onefile archive.
+     */
+    VS("Checking if file exists\n");    
+    if (checkFile(srcpath, "%s/%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) {
+        VS("File %s found, assuming is onedir\n", srcpath);        
+        if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
+            FATALERROR("Error coping %s\n", filename);
+            free(dirname);
+            return -1;
+        }
+    } else if (checkFile(srcpath, "%s../%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) {
+        VS("File %s found, assuming is onedir\n", srcpath);        
+        if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
+            FATALERROR("Error coping %s\n", filename);
+            free(dirname);
+            return -1;
         }
     } else {
         VS("File %s not found, assuming is onefile.\n", srcpath);
