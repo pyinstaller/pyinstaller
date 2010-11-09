@@ -16,8 +16,11 @@ else:
 # If the required dylib does not reside in the current directory, the Analysis
 # class machinery, based on ctypes.util.find_library, will not find it. This was
 # done on purpose for this test, to show how to give Analysis class a clue.
-os.environ["DYLD_LIBRARY_PATH"] = CTYPES_DIR
-os.environ["LD_LIBRARY_PATH"] = CTYPES_DIR
+if sys.platform == "win32":
+    os.environ["PATH"] = os.path.abspath(CTYPES_DIR) + ";" + os.environ["PATH"]
+else:
+    os.environ["DYLD_LIBRARY_PATH"] = CTYPES_DIR
+    os.environ["LD_LIBRARY_PATH"] = CTYPES_DIR
 
 # Check for presence of testctypes shared library, build it if not present
 if not os.path.exists(TEST_LIB):
@@ -29,7 +32,11 @@ if not os.path.exists(TEST_LIB):
     elif sys.platform == "linux2":
         os.system("gcc -fPIC -shared testctypes.c -o testctypes.so")
     else:
-        raise NotImplementedError
+        ret = os.system("cl /LD testctypes.c")
+        if ret != 0:
+            ret = os.system("gcc -shared testctypes.c -o testctypes.dll")
+            if ret != 0:
+                raise NotImplementedError("Cannot find either MinGW or Visual Studio in PATH")
     os.chdir("..")
 
 __testname__ = 'test15'
@@ -42,7 +49,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
-          name=os.path.join('dist', __testname__),
+          name=os.path.join('dist', __testname__ + '.exe'),
           debug=False,
           strip=False,
           upx=False,

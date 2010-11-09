@@ -25,8 +25,8 @@ if sys.version_info[:2] >= (2, 5):
     assert type(email.Header) == email.LazyImporter
 
     pyexe = open("python_exe.build").readline().strip()
-    out = subprocess.Popen(pyexe + ' -c "import sys; print sys.getfilesystemencoding()"',
-                           stdout=subprocess.PIPE, shell=True).stdout.read().strip()
+    out = subprocess.Popen([pyexe, '-c', 'import sys; print sys.getfilesystemencoding()'],
+                           stdout=subprocess.PIPE).stdout.read().strip()
     assert str(sys.getfilesystemencoding()) == out, (str(sys.getfilesystemencoding()), out)
 
     print "test_getfilesystemencoding DONE"

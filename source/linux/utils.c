@@ -29,14 +29,6 @@
 #include "getpath.h"
 #include <sys/wait.h>
 
-#ifdef FREEZE_EXCEPTIONS
-extern unsigned char M_exceptions[];
-static struct _frozen _PyImport_FrozenModules[] = {
-    {"exceptions", M_exceptions, EXCEPTIONS_LEN},
-    {0, 0, 0}
-};
-#endif
-
 int append2enviroment(const char *name, const char *value);
 
 void init_launcher(void)
@@ -45,9 +37,6 @@ void init_launcher(void)
 
 int get_thisfile(char *thisfile, const char *programname)
 {
-    #ifdef FREEZE_EXCEPTIONS
-    PyImport_FrozenModules = _PyImport_FrozenModules;
-#endif
     /* fill in thisfile */
 #ifdef __CYGWIN__
     if (strncasecmp(&programname[strlen(argv[0])-4], ".exe", 4)) {

@@ -35,24 +35,70 @@ time you switch the Python version).
 Building the bootloaders
 ------------------------
 
-*Note:* Windows users can skip this step, because |PyInstaller| already ships
-with binary bootloaders.
+..
+    *Note:* Windows users can skip this step, because |PyInstaller| already ships
+    with binary bootloaders.
 
-On Linux the first thing to do is build the bootloaders (that is, the
+The first thing to do is build the bootloaders (that is, the
 runtime executables). To do that, you need to have some basic C/C++
-development tools and the Python development libraries. On Debian/Ubuntu
-systems, you can run the following lines to install everything required::
+development tools and the Python development libraries.
+
+Development tools
+*****************
+
+On Debian/Ubuntu systems, you can run the following lines to install everything
+required::
 
         sudo apt-get install build-essential python-dev
 
-Change to the |install_path| ``source/linux`` subdirectory. Run::
+On Fedora/RHEL and derivates, you can run the following lines::
 
-        pyinstaller$ cd source/linux
-        pyinstaller/source/linux$ python Make.py  #[-n|-e]
-        pyinstaller/source/linux$ make
+        su
+        yum groupinstall "Development Tools"
+        yum install python-devel
 
-This will produce ``support/loader/run`` and ``support/loader/run_d``,
+On Windows you can use MinGW (gcc for Windows) and Visual Studio C++ (msvc)
+compilers. Python development libraries are usually installed together with
+Python.
+
+*Note:* Not all msvc versions are compatible with all Python versions. It is
+recommended to use msvc version, which was used to compile Python for Windows.
+Recent Python binaries (2.6, 2.7, 3.1) are compiled with Visual Studio 2008
+and older (2.4, 2.5) with Visual Studio 2003.
+
+You can download and install or unpack MinGW distribution from one of the
+following locations:
+
+* `MinGW <http://sourceforge.net/downloads/mingw/>`_ - stable and
+  mature, uses gcc 3.4 as its base
+
+* `MinGW-w64 <http://mingw-w64.sourceforge.net/>`_ - more recent, uses gcc
+  4.4 and up
+
+* `TDM-GCC <http://tdm-gcc.tdragon.net/>`_ - MinGW and MinGW-w64 installers
+
+
+Building
+********
+
+On Windows, when using MinGW, it is needed to add ``PATH_TO_MINGW\bin``
+to your system ``PATH``. variable. In command prompt before building
+bootloader run for example::
+
+        set PATH=C:\MinGW\bin;%PATH%
+
+Change to the |install_path| ``source`` subdirectory. Run::
+
+        pyinstaller$ cd source
+        pyinstaller/source$ python waf configure build install
+
+This will produce ``support/loader/run``, ``support/loader/run_d``,
+``support/loader/runw`` and ``support/loader/runw_d``,
 which are the bootloaders.
+
+On Windows this will produce in the ``support/loader`` directory: ``run*.exe``
+(bootloader for regular programs), and
+``inprocsrvr*.dll`` (bootloader for in-process COM servers).
 
 .. sidebar:: Bootloader
 
@@ -62,24 +108,43 @@ which are the bootloaders.
    `Self-extracting executables`_ for more details on the process.
 
 *Note:* If you have multiple versions of Python, the Python you use to run
-``Make.py`` is the one whose configuration is used.
+``waf`` is the one whose configuration is used.
 
-The ``-n`` and ``-e`` options set a non-elf or elf flag in your ``config.dat``.
-As of |InitialVersion|, the executable will try both strategies, and this flag
-just sets how you want your executables built. In the elf strategy, the archive
-is concatenated to the executable. In the non-elf strategy, the executable
-expects an archive with the same name as itself in the executable's directory.
-Note that the executable chases down symbolic links before determining it's name
-and directory, so putting the archive in the same directory as the symbolic link
-will not work.
 
-Windows distributions of |PyInstaller| come with several executables in the ``support/loader``
-directory: ``run_*.exe`` (bootloader for regular programs), and
-``inprocsrvr_*.dll`` (bootloader for in-process COM servers). To rebuild this,
-you need to install Scons_, and then just run ``scons`` from the |install_path|
-directory.
+Linux Standard Base (LSB) binary
+********************************
+
+LSB is a set of open standards that should increase compatibility among Linux
+distributions. |PyInstaller| is able produce bootloader as LSB binary in order
+to increase compatibility for packaged applications among distributions.
+
+*Note:* LSB version 4.0 is required for successfull building of bootloader.
+
+Most distributions contain only LSB 3.0 in their software repositories and
+thus LSB build tools 4.0 must be downloaded by hand. From Linux Foundation
+download
+`LSB sdk 4.0 <http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/>`_
+for your architecture.
+
+Unpack it by::
+
+        tar -xvzf lsb-sdk-4.0.3-1.ia32.tar.gz
+
+To install it run::
+
+        cd lsb-sdk
+        ./install.sh
+
+Change to the |install_path| ``source`` subdirectory. Run::
+
+        pyinstaller$ cd source
+        pyinstaller/source$ python waf configure --lsb build install
+
+This will also produce ``support/loader/run``, ``support/loader/run_d``,
+``support/loader/runw`` and ``support/loader/runw_d``.
 
 |GOBACK|_
+
 
 Configuring your PyInstaller setup
 ----------------------------------

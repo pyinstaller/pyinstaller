@@ -180,7 +180,7 @@ def test_RsrcUpdate(config):
         print 'I: ... resource update unavailable -', detail
         return
     
-    test_exe = os.path.join(HOME, 'support', 'loader', 'run_7rw.exe')
+    test_exe = os.path.join(HOME, 'support', 'loader', 'Windows-32bit', 'runw.exe')
     if not os.path.exists( test_exe ):
         config['hasRsrcUpdate'] = 0
         print 'E: ... resource update unavailable - %s not found' % test_exe

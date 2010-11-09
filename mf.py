@@ -1050,6 +1050,10 @@ def _resolveCtypesImports(cbinaries):
     # local paths to library search paths, then replaces original values.
     old = _savePaths()
     for cbin in cbinaries:
+        ext = os.path.splitext(cbin)[1]
+        # On Windows, only .dll files can be loaded.
+        if os.name == "nt" and ext.lower() in [".so", ".dylib"]:
+            continue
         cpath = find_library(os.path.splitext(cbin)[0])
         if sys.platform == "linux2":
             # CAVEAT: find_library() is not the correct function. Ctype's

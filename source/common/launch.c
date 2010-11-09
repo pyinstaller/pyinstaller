@@ -42,11 +42,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "launch.h"
-#include <stdio.h>
 #include <string.h>
-#ifndef NOZLIB
+//#ifndef NOZLIB
 #include "zlib.h"
-#endif
+//#endif
 
 #ifdef WIN32
 #define snprintf _snprintf
@@ -62,10 +61,10 @@ DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
 DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
-#if !EMULATED_REFCNT
+//#if !EMULATED_REFCNT
 DECLPROC(Py_IncRef);
 DECLPROC(Py_DecRef);
-#endif
+//#endif
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
 DECLPROC(PySys_SetArgv);
@@ -113,9 +112,8 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
  */
 
 
-#ifndef _CONSOLE
-/* This code will be used only on windows as for other platforms _CONSOLE
- * will be true. The code duplication in the functions below are because
+#if defined(WIN32) && defined(WINDOWED)
+/* The code duplication in the functions below are because
  * standard macros with variable numer of arguments (variadic macros) are
  * supported by Microsoft only starting from Visual C++ 2005.
  */
@@ -161,7 +159,7 @@ void mbvs(const char *fmt, ...)
 	MessageBox(NULL, msg, "Tracing", MB_OK);
 }
 
-#endif /* _CONSOLE */
+#endif /* WIN32 and WINDOWED */
 
 
 #ifdef WIN32
@@ -384,53 +382,93 @@ int openArchive(ARCHIVE_STATUS *status)
 #define HINSTANCE void *
 #endif
 
+/*
+ * Python versions before 2.4 do not export IncRef/DecRef as a binary API,
+ * but only as macros in header files. Since we do not want to depend on
+ * Python.h for many reasons (including the fact that we would like to
+ * have a single binary for all Python versions), we provide an emulated
+ * incref/decref here, that work on the binary layout of the PyObject
+ * structure as it was defined in Python 2.3 and older versions.
+ */
+struct _old_typeobject;
+typedef struct _old_object { 
+	int ob_refcnt; 
+	struct _old_typeobject *ob_type; 
+} OldPyObject; 
+typedef void (*destructor)(PyObject *); 
+typedef struct _old_typeobject { 
+	int ob_refcnt; 
+	struct _old_typeobject *ob_type; 
+	int ob_size; 
+	char *tp_name; /* For printing */ 
+	int tp_basicsize, tp_itemsize; /* For allocation */ 
+	destructor tp_dealloc; 
+	/* ignore the rest.... */ 
+} OldPyTypeObject; 
+
+static void _EmulatedIncRef(PyObject *o)
+{
+    OldPyObject *oo = (OldPyObject*)o;    
+    if (oo)
+        oo->ob_refcnt++;
+}
+
+static void _EmulatedDecRef(PyObject *o)
+{
+    #define _Py_Dealloc(op) \
+        (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
+    
+    OldPyObject *oo = (OldPyObject*)o;    
+    if (--(oo)->ob_refcnt == 0)
+        _Py_Dealloc(oo);
+}
+
 int mapNames(HMODULE dll, int pyvers)
 {
     /* Get all of the entry points that we are interested in */
-        GETVAR(dll, Py_FrozenFlag);
-	GETVAR(dll, Py_NoSiteFlag);
-	GETVAR(dll, Py_OptimizeFlag);
-	GETVAR(dll, Py_VerboseFlag);
-	GETPROC(dll, Py_Initialize);
-	GETPROC(dll, Py_Finalize);
-#if !EMULATED_REFCNT
-	GETPROC(dll, Py_IncRef);
-	GETPROC(dll, Py_DecRef);
-#endif
-	GETPROC(dll, PyImport_ExecCodeModule);
-	GETPROC(dll, PyRun_SimpleString);
-	GETPROC(dll, PyString_FromStringAndSize);
-	GETPROC(dll, PySys_SetArgv);
-	GETPROC(dll, Py_SetProgramName);
-	GETPROC(dll, PyImport_ImportModule);
-	GETPROC(dll, PyImport_AddModule);
-	GETPROC(dll, PyObject_SetAttrString);
-	GETPROC(dll, PyList_New);
-	GETPROC(dll, PyList_Append);
-	GETPROC(dll, Py_BuildValue);
-	GETPROC(dll, PyFile_FromString);
-	GETPROC(dll, PyString_AsString);
-	GETPROC(dll, PyObject_CallFunction);
-	GETPROC(dll, PyModule_GetDict);
-	GETPROC(dll, PyDict_GetItemString);
-	GETPROC(dll, PyErr_Clear);
-	GETPROC(dll, PyErr_Occurred);
-	GETPROC(dll, PyErr_Print);
-	GETPROC(dll, PyObject_CallObject);
-	GETPROC(dll, PyObject_CallMethod);
-	if (pyvers >= 21) {
-		GETPROC(dll, PySys_AddWarnOption);
-	}
-	GETPROC(dll, PyEval_InitThreads);
-	GETPROC(dll, PyEval_AcquireThread);
-	GETPROC(dll, PyEval_ReleaseThread);
-	GETPROC(dll, PyThreadState_Swap);
-	GETPROC(dll, Py_NewInterpreter);
-	GETPROC(dll, Py_EndInterpreter);
-	GETPROC(dll, PyInt_AsLong);
-	GETPROC(dll, PySys_SetObject);
+    GETVAR(dll, Py_FrozenFlag);
+    GETVAR(dll, Py_NoSiteFlag);
+    GETVAR(dll, Py_OptimizeFlag);
+    GETVAR(dll, Py_VerboseFlag);
+    GETPROC(dll, Py_Initialize);
+    GETPROC(dll, Py_Finalize);
+    GETPROCOPT(dll, Py_IncRef);
+    GETPROCOPT(dll, Py_DecRef);
+    GETPROC(dll, PyImport_ExecCodeModule);
+    GETPROC(dll, PyRun_SimpleString);
+    GETPROC(dll, PyString_FromStringAndSize);
+    GETPROC(dll, PySys_SetArgv);
+    GETPROC(dll, Py_SetProgramName);
+    GETPROC(dll, PyImport_ImportModule);
+    GETPROC(dll, PyImport_AddModule);
+    GETPROC(dll, PyObject_SetAttrString);
+    GETPROC(dll, PyList_New);
+    GETPROC(dll, PyList_Append);
+    GETPROC(dll, Py_BuildValue);
+    GETPROC(dll, PyFile_FromString);
+    GETPROC(dll, PyString_AsString);
+    GETPROC(dll, PyObject_CallFunction);
+    GETPROC(dll, PyModule_GetDict);
+    GETPROC(dll, PyDict_GetItemString);
+    GETPROC(dll, PyErr_Clear);
+    GETPROC(dll, PyErr_Occurred);
+    GETPROC(dll, PyErr_Print);
+    GETPROC(dll, PyObject_CallObject);
+    GETPROC(dll, PyObject_CallMethod);
+    GETPROC(dll, PySys_AddWarnOption);
+    GETPROC(dll, PyEval_InitThreads);
+    GETPROC(dll, PyEval_AcquireThread);
+    GETPROC(dll, PyEval_ReleaseThread);
+    GETPROC(dll, PyThreadState_Swap);
+    GETPROC(dll, Py_NewInterpreter);
+    GETPROC(dll, Py_EndInterpreter);
+    GETPROC(dll, PyInt_AsLong);
+    GETPROC(dll, PySys_SetObject);
 
-	return 0;
+    if (!PI_Py_IncRef) PI_Py_IncRef = _EmulatedIncRef;
+    if (!PI_Py_DecRef) PI_Py_DecRef = _EmulatedDecRef;
+
+    return 0;
 }
 
 /*
@@ -580,13 +618,9 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 			case 'u':
 				unbuffered = 1;
 			break;
-#ifdef HAVE_WARNINGS
 			case 'W':
-				if (ntohl(status->cookie.pyvers) >= 21) {
-					PI_PySys_AddWarnOption(&ptoc->name[2]);
-				}
+                                PI_PySys_AddWarnOption(&ptoc->name[2]);
 			break;
-#endif
 			case 's':
 				*PI_Py_NoSiteFlag = 0;
 			break;
@@ -604,15 +638,15 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 #else
 		fflush(stdout);
 		fflush(stderr);
-#ifdef HAVE_SETVBUF
-		setvbuf(stdin, (char *)NULL, _IONBF, 0);
-		setvbuf(stdout, (char *)NULL, _IONBF, 0);
-		setvbuf(stderr, (char *)NULL, _IONBF, 0);
-#else
+//#ifdef HAVE_SETVBUF
+//		setvbuf(stdin, (char *)NULL, _IONBF, 0);
+//		setvbuf(stdout, (char *)NULL, _IONBF, 0);
+//		setvbuf(stderr, (char *)NULL, _IONBF, 0);
+//#else
 		setbuf(stdin, (char *)NULL);
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
-#endif
+//#endif
 #endif
 	}
 	return 0;
@@ -808,7 +842,7 @@ int installZlibs(ARCHIVE_STATUS *status)
 	return 0;
 }
 
-#ifndef NOZLIB
+//#ifndef NOZLIB
 /* decompress data in buff, described by ptoc
  * return in malloc'ed buffer (needs to be freed)
  */
@@ -851,7 +885,7 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 
 	return out;
 }
-#endif
+//#endif
 /*
  * extract an archive entry
  * returns pointer to the data (must be freed)
@@ -897,7 +931,7 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 		VS("decrypted %s\n", ptoc->name);
 	}
 	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
-#ifndef NOZLIB
+//#ifndef NOZLIB
 		tmp = decompress(data, ptoc);
 		free(data);
 		data = tmp;
@@ -905,10 +939,10 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 			OTHERERROR("Error decompressing %s\n", ptoc->name);
 			return NULL;
 		}
-#else
-		FATALERROR("No ZLIB support but archive uses compression\n");
-		return NULL;
-#endif
+//#else
+		//FATALERROR("No ZLIB support but archive uses compression\n");
+		//return NULL;
+//#endif
 	}
 	return data;
 }
