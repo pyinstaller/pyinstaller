@@ -478,7 +478,7 @@ class Manifest(object):
                 if language in (LANGUAGE_NEUTRAL_NT5, 
                                 LANGUAGE_NEUTRAL_NT6):
                     for ext in (".dll", ".manifest"):
-                        paths.extend(glob(os.path.join(dirnm, self.name)))
+                        paths.extend(glob(os.path.join(dirnm, self.name + ext)))
                         paths.extend(glob(os.path.join(dirnm, self.name, 
                                                        self.name + ext)))
                 else:
