@@ -42,7 +42,7 @@ seen = {}
 _bpath = None
 iswin = sys.platform[:3] == 'win'
 cygwin = sys.platform == 'cygwin'
-darwin = sys.platform[:7] == 'darwin'
+darwin = sys.platform[:6] == 'darwin'
 
 silent = False  # True suppresses all informative messages from the dependency code
 

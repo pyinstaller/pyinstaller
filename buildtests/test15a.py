@@ -5,7 +5,7 @@ from ctypes import *
 def dummy(arg):
     if sys.platform == "linux2":
         tct = CDLL("testctypes.so")
-    elif sys.platform == "darwin":
+    elif sys.platform[:6] == "darwin":
         tct = CDLL("testctypes.dylib")
     elif sys.platform == "win32":
         tct = CDLL("testctypes.dll")

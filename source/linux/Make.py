@@ -54,7 +54,8 @@ def main():
     non_elf = 1                         # settable with -e option
     if ( sys.platform[:5] == 'linux' or
          sys.platform[:3] == 'win' or
-         sys.platform[:7] in ['freebsd','darwin'] or
+         sys.platform[:7] == 'freebsd' or
+         sys.platform[:6] == 'darwin' or
          sys.platform[:6] == 'cygwin' ):
         non_elf = 0                         # settable with -n option
 
