@@ -1114,9 +1114,10 @@ class BUNDLE(Target):
 
                            # Setting this to 1 will cause Mac OS X *not* to show
                            # a dock icon for the PyInstaller process which
-                           # decompresses the real executable's contents -
-                           # actually, it's not clear why the real executable
-                           # gets instead an icon doing so.
+                           # decompresses the real executable's contents. As a
+                           # side effect, the main application doesn't get one
+                           # as well, but at startup time the loader will take
+                           # care of transforming the process type.
                            "LSBackgroundOnly": "1",
 
                            }

@@ -30,6 +30,11 @@
 #include <sys/wait.h>
 #endif
 
+// To call TransformProcessType in the child process
+#if defined(__APPLE__) && defined(WINDOWED)
+#include "Processes.h"
+#endif
+
 #define MAX_STATUS_LIST 20
 
 #ifdef _CONSOLE
@@ -87,6 +92,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
          */
         if (strcmp(homepath, extractionpath) != 0) 
             strcpy(status_list[SELF]->temppath, extractionpath);
+#if defined(__APPLE__) && defined(WINDOWED)
+        ProcessSerialNumber psn = { 0, kCurrentProcess };
+        OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+#endif            
         rc = doIt(status_list[SELF], argc, argv);
     } else {
         if (extractBinaries(status_list)) {
@@ -96,8 +105,8 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
         VS("Executing self as child with ");
         /* run the "child" process, then clean up */
-		strcat(MEIPASS2, status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
-		putenv(MEIPASS2);
+        strcat(MEIPASS2, status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
+        putenv(MEIPASS2);
 		
         if (set_enviroment(status_list[SELF]) == -1)
             return -1;
@@ -105,7 +114,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #ifndef WIN32
         rc = spawn(thisfile, argv);
 #else
-	    rc = spawn(thisfilew);
+        rc = spawn(thisfilew);
 #endif
 
         VS("Back to parent...\n");
