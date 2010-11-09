@@ -138,6 +138,8 @@ if __name__ == '__main__':
 
 
     opts, args = parser.parse_args()
+    if not args:
+        parser.error('Requires at least one scriptname file or exactly one .spec-file')
 
     ## run Configure.py
     Configure.opts = opts
@@ -150,9 +152,6 @@ if __name__ == '__main__':
     opts.pathex = []
     for p in temppaths:
         opts.pathex.extend(string.split(p, os.pathsep))
-
-    if not args:
-        parser.error('Requires at least one scriptname file or exactly one .spec-file')
 
     spec_name = Makespec.main(args, **opts.__dict__)
     print "wrote %s" % spec_name
