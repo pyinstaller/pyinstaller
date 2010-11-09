@@ -135,7 +135,7 @@ class Path:
 
 def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0,
          strip=0, upx=0, comserver=0, ascii=0, workdir=None,
-         pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None):
+         pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None, **kwargs):
 
     try:
         config = eval(open(configfile, 'r').read())
