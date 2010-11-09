@@ -143,6 +143,7 @@ def test_Crypt(config):
     print "I: trying to build crypt support..."
     from distutils.core import run_setup
     cwd = os.getcwd()
+    args = sys.argv[:]
     try:
         os.chdir(os.path.join(HOME, "source", "crypto"))
         dist = run_setup("setup.py", ["install"])
@@ -154,6 +155,7 @@ def test_Crypt(config):
             print "I: ... error building crypto support"
     finally:
         os.chdir(cwd)
+        sys.argv = args
 
 def test_Zlib(config):
     #useZLIB
