@@ -43,9 +43,7 @@
 #include <sys/stat.h>
 #include "launch.h"
 #include <string.h>
-//#ifndef NOZLIB
 #include "zlib.h"
-//#endif
 
 #ifdef WIN32
 #define snprintf _snprintf
@@ -61,10 +59,8 @@ DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
 DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
-//#if !EMULATED_REFCNT
 DECLPROC(Py_IncRef);
 DECLPROC(Py_DecRef);
-//#endif
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
 DECLPROC(PySys_SetArgv);
@@ -638,15 +634,10 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 #else
 		fflush(stdout);
 		fflush(stderr);
-//#ifdef HAVE_SETVBUF
-//		setvbuf(stdin, (char *)NULL, _IONBF, 0);
-//		setvbuf(stdout, (char *)NULL, _IONBF, 0);
-//		setvbuf(stderr, (char *)NULL, _IONBF, 0);
-//#else
+
 		setbuf(stdin, (char *)NULL);
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
-//#endif
 #endif
 	}
 	return 0;
@@ -842,7 +833,6 @@ int installZlibs(ARCHIVE_STATUS *status)
 	return 0;
 }
 
-//#ifndef NOZLIB
 /* decompress data in buff, described by ptoc
  * return in malloc'ed buffer (needs to be freed)
  */
@@ -885,7 +875,7 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 
 	return out;
 }
-//#endif
+
 /*
  * extract an archive entry
  * returns pointer to the data (must be freed)
@@ -931,7 +921,6 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 		VS("decrypted %s\n", ptoc->name);
 	}
 	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
-//#ifndef NOZLIB
 		tmp = decompress(data, ptoc);
 		free(data);
 		data = tmp;
@@ -939,13 +928,10 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 			OTHERERROR("Error decompressing %s\n", ptoc->name);
 			return NULL;
 		}
-//#else
-		//FATALERROR("No ZLIB support but archive uses compression\n");
-		//return NULL;
-//#endif
 	}
 	return data;
 }
+
 /*
  * helper for extract2fs
  * which may try multiple places
@@ -1389,6 +1375,7 @@ int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archive
 
 	return 0;
 }
+
 /* once init'ed, you might want to extractBinaries()
  * If you do, what comes after is very platform specific.
  * Once you've taken care of the platform specific details,
@@ -1508,6 +1495,7 @@ void cleanUp(ARCHIVE_STATUS *status)
 	if (status->temppath[0])
 		clear(status->temppath);
 }
+
 /*
  * Helpers for embedders
  */
