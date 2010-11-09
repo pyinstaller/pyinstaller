@@ -17,7 +17,21 @@ def exec_statement(stat):
         cmd = 'echo on && "%s" -c "%s" > "%s"' % (exe, stat, fnm)
     else:
         cmd = '"%s" -c "%s" > "%s"' % (exe, stat, fnm)
-    os.system(cmd)
+
+    # Prepend PYTHONPATH with pathex
+    pp = ':'.join(sys.pathex)
+    old_pp = os.environ.get('PYTHONPATH', '')
+    if old_pp:
+        pp = ':'.join([pp, old_pp])
+    os.environ["PYTHONPATH"] = pp
+    try:
+        # Actually execute the statement
+        os.system(cmd)
+    finally:
+        if old_pp:
+            os.environ["PYTHONPATH"] = old_pp
+        else:
+            del os.environ["PYTHONPATH"]
 
     txt = open(fnm, 'r').read()[:-1]
     os.remove(fnm)
@@ -74,4 +88,3 @@ def find_django_root(dir):
                 if "manage.py" in dir_entities and "settings.py" in dir_entities and "urls.py" in dir_entities:
                     django_root_directories.append(path_to_analyze)
         return django_root_directories
-
