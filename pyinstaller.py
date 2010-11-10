@@ -27,6 +27,47 @@ import Build
 
 HOME = os.path.dirname(sys.argv[0])
 
+
+def run_configure(opts, args):
+    Configure.opts = opts
+    Configure.args = args
+    Configure.main(opts.configfile)
+
+
+def run_makespec(opts, args):
+    # Split pathex by using the path separator
+    temppaths = opts.pathex[:]
+    opts.pathex = []
+    for p in temppaths:
+        opts.pathex.extend(string.split(p, os.pathsep))
+
+    spec_file = Makespec.main(args, **opts.__dict__)
+    print "wrote %s" % spec_file
+    return spec_file
+
+
+def run_build(opts, args, spec_file):
+    Build.opts = opts
+    Build.args = args
+    Build.main(spec_file, configfilename=opts.configfile)
+
+
+def main(parser):
+    opts, args = parser.parse_args()
+    if not args:
+        parser.error('Requires at least one scriptname file or exactly one .spec-file')
+
+    run_configure(opts, args)
+
+    # Skip creating .spec when .spec file is supplied 
+    if args[0].endswith('.spec'):
+        spec_file = args[0]
+    else:
+        spec_file = run_makespec(opts, args)
+
+    run_build(opts, args, spec_file)
+
+
 if __name__ == '__main__':
     from pyi_optparse import OptionParser
 
@@ -135,32 +176,5 @@ if __name__ == '__main__':
             help='Remove output directory (default: %s) without '
                  'confirmation' % os.path.join('SPECPATH', 'dist'))
 
-
-    opts, args = parser.parse_args()
-    if not args:
-        parser.error('Requires at least one scriptname file or exactly one .spec-file')
-
-    ## run Configure.py
-    Configure.opts = opts
-    Configure.args = args
-    Configure.main(opts.configfile)
-
-    ## run Makespec.py
-    # Skip creating .spec when .spec file is supplied 
-    if args[0].endswith('.spec'):
-        spec_file = args[0]
-    else:
-        # Split pathex by using the path separator
-        temppaths = opts.pathex[:]
-        opts.pathex = []
-        for p in temppaths:
-            opts.pathex.extend(string.split(p, os.pathsep))
-
-        spec_file = Makespec.main(args, **opts.__dict__)
-        print "wrote %s" % spec_name
-
-    ## run Build.py
-    Build.opts = opts
-    Build.args = args
-    Build.main(spec_file, configfilename=opts.configfile)
+    main(parser)
 
