@@ -57,7 +57,15 @@ def main(parser):
     if not args:
         parser.error('Requires at least one scriptname file or exactly one .spec-file')
 
-    run_configure(opts, args)
+    # Skip configuring when using the same python as specified in config.dat
+    try:
+        config = Build._load_data(opts.configfile)
+        if config['pythonVersion'] == sys.version:
+            print 'I: skip Configure.py, use existing config', opts.configfile
+        else:
+            run_configure(opts, args)
+    except IOError, SyntaxError:
+        run_configure(opts, args)
 
     # Skip creating .spec when .spec file is supplied 
     if args[0].endswith('.spec'):
