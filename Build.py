@@ -245,6 +245,7 @@ def check_egg(pth):
 class Target:
     invcnum = 0
     def __init__(self):
+        # Get a unique number to avoid conflicts between toc objects
         self.invcnum = Target.invcnum
         Target.invcnum += 1
         self.out = os.path.join(BUILDPATH, 'out%s%d.toc' % (self.__class__.__name__,
@@ -305,6 +306,8 @@ class Analysis(Target):
         self.zipfiles = TOC()
         self.datas = TOC()
         self.dependencies = TOC()
+        # __postinit__ is in Target object, and it will check for guts, and
+        # it will call assemble().
         self.__postinit__()
 
     GUTS = (('inputs',    _check_guts_eq),
@@ -1289,9 +1292,14 @@ def TkTree():
 def TkPKG():
     return PKG(TkTree(), name='tk.pkg')
 
-#---
-
 def build(spec):
+    """
+    Build function.
+    In: specfile path.
+    Out: nothing.
+    """
+    
+    # Global variables declared and filled here
     global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC
     rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
     SPEC = spec
@@ -1302,6 +1310,7 @@ def build(spec):
     WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
     BUILDPATH = os.path.join(SPECPATH, 'build',
                              "pyi." + config['target_platform'], specnm)
+    # Check and adjustment for build path
     if opts.buildpath != parser.get_option('--buildpath').default:
         bpath = opts.buildpath
         if os.path.isabs(bpath):
@@ -1310,6 +1319,7 @@ def build(spec):
             BUILDPATH = os.path.join(SPECPATH, bpath)
     if not os.path.exists(BUILDPATH):
         os.makedirs(BUILDPATH)
+    # Executing the specfile (it's a valid python file)
     execfile(spec)
 
 def get_relative_path(startpath, topath):
@@ -1321,15 +1331,25 @@ def get_relative_path(startpath, topath):
         return result + os.sep + topath
     else:
         return topath
-    
+        
 def set_dependencies(analysis, dependencies, path):
+    """
+    Let the Analysis to include a dependency (if not yet found), or add a "DEPENDENCY"
+    record in the archive, if dependecy is already included.
+    In: Analysis object; dependencies dictionary: it keeps already included dep; path.
+    Out: nothing; functions modify analysis and dependencies.
+    """    
+    
     for toc in (analysis.binaries, analysis.datas):
+        # Cycle every dependencies
         for i in range(len(toc)):
             tpl = toc[i]
             if not tpl[1] in dependencies.keys():
+                # Dependency not yet found: so Analysis object must get it
                 print "Adding dependency %s located in %s" % (tpl[1], path)
                 dependencies[tpl[1]] = path
             else:
+                # Dependency already in dictionary: remove including and add reference
                 dep_path = get_relative_path(path, dependencies[tpl[1]])
                 print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
                 analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
@@ -1338,10 +1358,20 @@ def set_dependencies(analysis, dependencies, path):
         toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
 
 def MERGE(*args):
+    """
+    This function analyze different package analysis outputs and exclude repeated
+    dependencies.
+    In: a list of Analysis classes; they will be modified if necessary.
+    Out: nothing.
+    """
+    
+    # Get the longest common path
     common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a in args]))
     if common_prefix[-1] != os.sep:
         common_prefix += os.sep
     print "Common prefix: %s" % common_prefix
+    # For each Analysis adjust dependencies. 'dependencies' will be filled during
+    # the for cycle. As a result, the first Analysis in args include all dependencies.
     dependencies = {}
     for analysis in args:
         path = os.path.abspath(analysis.scripts[-1][1]).replace(common_prefix, "", 1)
@@ -1349,18 +1379,28 @@ def MERGE(*args):
         set_dependencies(analysis, dependencies, path)
 
 def main(specfile, configfilename):
+    """
+    Main function, called at startup.
+    In: specfile path, config file path.
+    Out: nothing.
+    """
+
+    # Global variables declared and filled here
     global target_platform, target_iswin, config
     global icon, versionInfo, winresource, winmanifest, pyasm
-
+    
+    # Test: is pyinstaller configured properly?
     try:
         config = _load_data(configfilename)
     except IOError:
         print "You must run Configure.py before building!"
         sys.exit(1)
-
+        
+    # On what platform are we? Get from config
     target_platform = config.get('target_platform', sys.platform)
     target_iswin = target_platform[:3] == 'win'
 
+    # Bad configuration checks
     if target_platform == sys.platform:
         # _not_ cross compiling
         if config['pythonVersion'] != sys.version:
@@ -1372,7 +1412,8 @@ def main(specfile, configfilename):
         print "python optimization flags changed: rerun Configure.py with the same [-O] option"
         print "Configure.py optimize=%s, Build.py optimize=%s" % (not config['pythonDebug'], not __debug__)
         sys.exit(1)
-
+        
+    # Some configuration check
     if config['hasRsrcUpdate']:
         import icon, versionInfo, winresource, winmanifest
         pyasm = bindepend.getAssemblies(config['python'])
@@ -1385,6 +1426,7 @@ def main(specfile, configfilename):
     if not config['useELFEXE']:
         EXE.append_pkg = 0
 
+    # Run package building
     build(specfile)
 
 
