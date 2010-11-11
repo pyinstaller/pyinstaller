@@ -87,11 +87,15 @@ int main(int argc, char* argv[])
 
     if (extractionpath) {
         VS("Already in the child - running!\n");
-        /*  If binaries where extracted to temppath, 
+        /*  If binaries were extracted to temppath, 
          *  we pass it through status variable 
          */
-        if (strcmp(homepath, extractionpath) != 0) 
+        if (strcmp(homepath, extractionpath) != 0) {
             strcpy(status_list[SELF]->temppath, extractionpath);
+#ifdef WIN32
+            strcpy(status_list[SELF]->temppathraw, extractionpath);
+#endif 
+        }
 #if defined(__APPLE__) && defined(WINDOWED)
         ProcessSerialNumber psn = { 0, kCurrentProcess };
         OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
