@@ -122,6 +122,10 @@ static int IsXPOrLater(void)
 static HANDLE hCtx = INVALID_HANDLE_VALUE;
 static ULONG_PTR actToken;
 
+#ifndef STATUS_SXS_EARLY_DEACTIVATION
+#define STATUS_SXS_EARLY_DEACTIVATION 0xC015000F
+#endif
+
 static int CreateActContext(char *workpath, char *thisfile)
 {
     char manifestpath[_MAX_PATH + 1];
@@ -190,14 +194,21 @@ static void ReleaseActContext(void)
         return;
     }
 
-    VS("Deactivating activation context\n");
-    if (!DeactivateActCtx(0, actToken))
-        VS("Error deactivating context!\n!");
-    
-    VS("Releasing activation context\n");
-    if (hCtx != INVALID_HANDLE_VALUE)
-        ReleaseActCtx(hCtx);
-    VS("Done\n");
+    __try
+    {
+        VS("Deactivating activation context\n");
+        if (!DeactivateActCtx(0, actToken))
+            VS("Error deactivating context!\n!");
+
+        VS("Releasing activation context\n");
+        if (hCtx != INVALID_HANDLE_VALUE)
+            ReleaseActCtx(hCtx);
+        VS("Done\n");
+    }
+    __except (STATUS_SXS_EARLY_DEACTIVATION)
+    {
+        VS("SXS early deactivation; somebody left the activation context dirty, let's ignore the problem");
+    }
 }
 
 
