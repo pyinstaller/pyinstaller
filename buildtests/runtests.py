@@ -43,6 +43,7 @@ DEPENDENCIES = {
  'test-zipimport1': ["pkg_resources"],
  'test-zipimport2': ["pkg_resources", "setuptools"],
  'test15': ["ctypes"], 
+ 'test-wx': ["wx"],
 }
 
 try:
