@@ -132,8 +132,8 @@ collectResources_def = """
 def collectResources(exploring_path, final_path, debug=False):
 	\"""
 	collectResources(exploring_path, final_path, debug=False) ~> list
-	This function returns a list of touples with all the path of the files found
-	in the `exploring_path' directory and its sub-dir in the
+	This function returns a list of touples with all the path of the
+	files found in the `exploring_path' directory and its sub-dir in the
 	[(final_file, exploring_file, type), (..., ..., ...), ...] form where:
 		final_file is the final filename including its path;
 		exploring_file is the name of the file found including its path;
@@ -165,3 +165,31 @@ def collectResources(exploring_path, final_path, debug=False):
 	return data
 """
 
+if __name__ == '__main__':
+
+	import pyi_optparse as optparse
+
+	parser = optparse.OptionParser(
+		usage="python %prog [opts] <scriptname> [<scriptname> ...]")
+
+	# Group of options: Packaging mode
+	g = p.add_option_group('Packaging mode')
+
+	g.add_option(
+		"-F", "--onefile", dest="freeze",
+		action="store_true", default=False,
+		help="create a single file deployment")
+	g.add_option(
+		"-D", "--onedir", dest="freeze", action="store_false",
+		help="create a single directory deployment (default)")
+
+	# opts contains a dictionary for the options 
+	# args contains the options given in the command line
+	opts, args = parser.parse_args()
+
+	if not args:
+		parser.error('Requires at least one scriptname file')
+
+	name = apply(main, (args,), opts.__dict__)
+	print "The spec file %s has been created." % name
+	print "Now you can edit it and run `Build.py %s'" % name
