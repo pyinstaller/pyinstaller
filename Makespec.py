@@ -19,10 +19,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os
-import sys
-import string
-
 # For Python 1.5 compatibility:
 # if keywords True and False don't exist
 # it sets them manually
@@ -32,15 +28,15 @@ except:
 	True = (1 is 1)
 	False = not True
 
-# This is the header present in the onefile template as in the
-# the onedir one
+# This is the part of the spec present both in onefile and in
+# onedir template
 # It is the part that the user has to edit on his own
 common_part = """\
 ############################################################
 # This file was automatically genereted by the Makespec.py #
 ############################################################
 
-###########################
+############################################################
 ### Edit it to your liking
 
 # This is the name of your final executable
@@ -51,7 +47,7 @@ name_of_exe = '%(exename)s'
 path_to_exe = %(pathex)s
 
 # Set here your resources paths as strings
-#	If you don't set paths, PyInstaller won't be able to find them
+#  If you don't set paths, PyInstaller won't be able to find them
 resourcesPaths = [
 #	"/path/to/images",
 #	"/path/to/fonts",
@@ -59,21 +55,21 @@ resourcesPaths = [
 #	"/these/are/only/examples"
 ]
 
-# Do you want to use Debug during build and  execution?
+# Do you want to use Debug during build and execution?
 useDebug = True # set True or False
 
 # Do you want to use the strip option?
-# 	This will remove the Debug symbols from the ELF executable
-#	making it smaller (only for UNIX)
+#  This will remove the Debug symbols from the ELF executable
+#  making it smaller (only for UNIX)
 useStrip = False # set True or False
 
 # Do you want to use UPX?
-# 	UPX is an executable packer that makes the executable
-#	smaller. It is convenient especially under Windows
+#  UPX is an executable packer that makes the executable
+#  smaller. It is convenient especially under Windows
 useUPX = True # set True or False
 
 
-####################################################
+############################################################
 ### Only for PyInstaller eyes - *edit with caution*
 
 # The Analysis class takes in input the source files *.py
@@ -82,7 +78,7 @@ useUPX = True # set True or False
 # sources after the Build step!!)
 a = Analysis(
 	%(scripts)s,
-    pathex=path_to_exe)
+	pathex=path_to_exe)
 
 # The PYZ class takes the `pure' of the last Analysis object
 # and generate the PYZ archive containing the pure python modules
@@ -129,9 +125,9 @@ exe = EXE(
 """
 
 # This is the implementation of the collectResources function
-collectResources_def = '''
+collectResources_def = """
 def collectResources(exploring_path, final_path, debug=False):
-	"""
+	\"""
 	collectResources(exploring_path, final_path, debug=False) ~> list
 	This function returns a list of touples with all the path of the files found
 	in the `exploring_path' directory and its sub-dir in the
@@ -139,7 +135,7 @@ def collectResources(exploring_path, final_path, debug=False):
 		final_file is the final filename including its path;
 		exploring_file is the name of the file found including its path;
 		type is the string 'DATA'
-	"""
+	\"""
 	import os
 	data = []
 	
@@ -164,5 +160,5 @@ def collectResources(exploring_path, final_path, debug=False):
 		(print "Found", filename[0]) for filename in data
 		
 	return data
-'''
+"""
 
