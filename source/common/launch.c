@@ -697,13 +697,13 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
     if (status->temppath[0] != NULL) {	
         strcpy(tmp, status->temppath);
 	    tmp[strlen(tmp)-1] = '\0';
-	    sprintf(cmd, "sys.path.append('%s')", tmp);
+	    sprintf(cmd, "sys.path.append('''%s''')", tmp);
         PI_PyRun_SimpleString(cmd);
     }	
 
 	strcpy(tmp, status->homepath);
 	tmp[strlen(tmp)-1] = '\0';
-	sprintf(cmd, "sys.path.append(os.path.abspath('%s'))", tmp);
+	sprintf(cmd, "sys.path.append(os.path.abspath('''%s'''))", tmp);
 	PI_PyRun_SimpleString (cmd);
 
 	/* Set argv[0] to be the archiveName */
