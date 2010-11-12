@@ -70,7 +70,10 @@ useUPX = True # set True or False
 
 
 ############################################################
-### Only for PyInstaller eyes - *edit with caution*
+### Only for PyInstaller eyes
+
+#(!) Edit with caution
+#(i) For more information take a look to the Makespec.README
 
 # The Analysis class takes in input the source files *.py
 # and analyzes all the imports for including dependencies
