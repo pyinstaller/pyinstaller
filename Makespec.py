@@ -2,7 +2,7 @@
 #
 # Automatically build spec files containing a description of the project
 #
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2010, Daniel Sanchez Iaizzo, codeverse@develer.com
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -19,311 +19,150 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import sys, os, string
+import os
+import sys
+import string
 
-# For Python 1.5 compatibility
+# For Python 1.5 compatibility:
+# if keywords True and False don't exist
+# it sets them manually
 try:
-    True, False
+	True
 except:
-    True  = 1 == 1
-    False = not True
+	True = (1 is 1)
+	False = not True
 
-freezetmplt = """# -*- mode: python -*-
-a = Analysis(%(scripts)s,
-             pathex=%(pathex)s)
+# This is the header present in the onefile template as in the
+# the onedir one
+# It is the part that the user has to edit on his own
+common_part = """\
+############################################################
+# This file was automatically genereted by the Makespec.py #
+############################################################
+
+###########################
+### Edit it to your liking
+
+# This is the name of your final executable
+name_of_exe = '%(exename)s'
+
+# This is the path where your executable and the relative
+# data will be putted
+path_to_exe = %(pathex)s
+
+# Set here your resources paths as strings
+#	If you don't set paths, PyInstaller won't be able to find them
+resourcesPaths = [
+#	"/path/to/images",
+#	"/path/to/fonts",
+#	"/path/to/configfiles",
+#	"/these/are/only/examples"
+]
+
+# Do you want to use Debug during build and  execution?
+useDebug = True # set True or False
+
+# Do you want to use the strip option?
+# 	This will remove the Debug symbols from the ELF executable
+#	making it smaller (only for UNIX)
+useStrip = False # set True or False
+
+# Do you want to use UPX?
+# 	UPX is an executable packer that makes the executable
+#	smaller. It is convenient especially under Windows
+useUPX = True # set True or False
+
+
+####################################################
+### Only for PyInstaller eyes - *edit with caution*
+
+# The Analysis class takes in input the source files *.py
+# and analyzes all the imports for including dependencies
+# into the final package (!!include here the unfound python
+# sources after the Build step!!)
+a = Analysis(
+	%(scripts)s,
+    pathex=path_to_exe)
+
+# The PYZ class takes the `pure' of the last Analysis object
+# and generate the PYZ archive containing the pure python modules
 pyz = PYZ(a.pure)
-exe = EXE(%(tkpkg)s pyz,
-          a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
-          name=os.path.join(%(distdir)s, '%(exename)s'),
-          debug=%(debug)s,
-          strip=%(strip)s,
-          upx=%(upx)s,
-          console=%(console)s %(exe_options)s)
-""" # pathex scripts exename tkpkg debug console distdir
+"""
 
-collecttmplt = """# -*- mode: python -*-
-a = Analysis(%(scripts)s,
-             pathex=%(pathex)s)
-pyz = PYZ(a.pure)
-exe = EXE(pyz,
-          a.scripts,
-          exclude_binaries=1,
-          name=os.path.join(%(builddir)s, '%(exename)s'),
-          debug=%(debug)s,
-          strip=%(strip)s,
-          upx=%(upx)s,
-          console=%(console)s %(exe_options)s)
-coll = COLLECT(%(tktree)s exe,
-               a.binaries,
-               a.zipfiles,
-               a.datas,
-               strip=%(strip)s,
-               upx=%(upx)s,
-               name=os.path.join(%(distdir)s, '%(name)s'))
-""" # scripts pathex, exename, debug, console tktree distdir name
+# The OneDir template generate (as final package) a directory
+# package containing the executable, the dynamic libraries and
+# all the resources needed by the program
+onedir_tpl = """
+exe = EXE(
+	pyz,
+	a.scripts,
+	exclude_binaries=1,
+	name=os.path.join(%(builddir)s, name_of_exe),
+	debug=useDebug,
+	strip=useStrip
+	upx=useUPX)
 
-comsrvrtmplt = """# -*- mode: python -*-
-a = Analysis(%(scripts)s,
-             pathex=%(pathex)s)
-pyz = PYZ(a.pure)
-exe = EXE(pyz,
-          a.scripts,
-          exclude_binaries=1,
-          name=os.path.join(%(builddir)s, '%(exename)s'),
-          debug=%(debug)s,
-          strip=%(strip)s,
-          upx=%(upx)s,
-          console=%(console)s %(exe_options)s)
-dll = DLL(pyz,
-          a.scripts,
-          exclude_binaries=1,
-          name=os.path.join(%(builddir)s, '%(dllname)s'),
-          debug=%(debug)s)
-coll = COLLECT(exe, dll,
-               a.binaries,
-               a.zipfiles,
-               a.datas,
-               strip=%(strip)s,
-               upx=%(upx)s,
-               name=os.path.join(%(distdir)s, '%(name)s'))
-""" # scripts pathex, exename, debug, console tktree distdir name
+coll = COLLECT(
+	%(tktree)s exe,
+	a.binaries,
+	a.zipfiles,
+	a.datas,
+	strip=useStrip,
+	upx=useUPX,
+	name=os.path.join(path_to_exe, name_of_exe)
+"""
 
-HOME = os.path.dirname(sys.argv[0])
-HOME = os.path.abspath(HOME)
+# The OneFile template generate (as final package) an executable
+# containing dynamic libraries, data resources, and the pure modules.
+# When the executable will be launched
+onefile_tpl = """
+exe = EXE(
+	pyz,
+	a.scripts,
+	a.binaries,
+	a.zipfiles,
+	a.datas + importResources(...)
+	name=os.path.join(path_to_exe, name_of_exe),
+	debug=useDebug,
+	strip=useStrip,
+	upx=useUPX)
+"""
 
-def quote_win_filepath( path ):
-    # quote all \ with another \ after using normpath to clean up the path
-    return string.join( string.split( os.path.normpath( path ), '\\' ), '\\\\' )
+# This is the implementation of the collectResources function
+collectResources_def = '''
+def collectResources(exploring_path, final_path, debug=False):
+	"""
+	collectResources(exploring_path, final_path, debug=False) ~> list
+	This function returns a list of touples with all the path of the files found
+	in the `exploring_path' directory and its sub-dir in the
+	[(final_file, exploring_file, type), (..., ..., ...), ...] form where:
+		final_file is the final filename including its path;
+		exploring_file is the name of the file found including its path;
+		type is the string 'DATA'
+	"""
+	import os
+	data = []
+	
+	# Normalizing paths
+	exploring_path = os.path.normpath(exploring_path)
+	final_path = os.path.normpath(final_path)
 
-# Support for trying to avoid hard-coded paths in the .spec files.
-# Eg, all files rooted in the Installer directory tree will be
-# written using "HOMEPATH", thus allowing this spec file to
-# be used with any Installer installation.
-# Same thing could be done for other paths too.
-path_conversions = (
-    (HOME, "HOMEPATH"),
-    # Add Tk etc?
-    )
+	# If debug flag is activated it prints some information
+	if debug is True:
+		print "Exploring the", os.path.basename(exploring_path), "directory in",
+			os.path.dirname(exploring_path), "and moving all its content to",
+			os.path.basename(final_path)
 
-def make_variable_path(filename, conversions = path_conversions):
-    for (from_path, to_name) in conversions:
-        assert os.path.abspath(from_path)==from_path, \
-            "path '%s' should already be absolute" % (from_path,)
-        if filename[:len(from_path)] == from_path:
-            rest = filename[len(from_path):]
-            if rest[0] in "\\/":
-                rest = rest[1:]
-            return to_name, rest
-    return None, filename
+	# This loop find every file in the `exploring_path' directory
+	# and all its sub-directory
+	for root, dirs, files in os.walk(exploring_path):
+		data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
+				  os.path.join(root, filename), 'DATA') for filename in files]
 
-# An object used in place of a "path string" which knows how to repr()
-# itself using variable names instead of hard-coded paths.
-class Path:
-    def __init__(self, *parts):
-        self.path = apply(os.path.join, parts)
-        self.variable_prefix = self.filename_suffix = None
-    def __repr__(self):
-        if self.filename_suffix is None:
-            self.variable_prefix, self.filename_suffix = make_variable_path(self.path)
-        if self.variable_prefix is None:
-            return repr(self.path)
-        return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
+	# If debug flag is activated it prints all the files found in exploring_path
+	if debug is True:
+		(print "Found", filename[0]) for filename in data
+		
+	return data
+'''
 
-
-def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0,
-         strip=0, upx=0, comserver=0, ascii=0, workdir=None,
-         pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None, **kwargs):
-
-    try:
-        config = eval(open(configfile, 'r').read())
-    except IOError:
-        raise SystemExit("Configfile is missing or unreadable. Please run Configure.py before building!")
-
-    if config['pythonVersion'] != sys.version:
-        print "The current version of Python is not the same with which PyInstaller was configured."
-        print "Please re-run Configure.py with this version."
-        raise SystemExit(1)
-
-    if not name:
-        name = os.path.splitext(os.path.basename(scripts[0]))[0]
-
-    distdir = "dist"
-    builddir = os.path.join('build', 'pyi.' + config['target_platform'], name)
-
-    pathex = pathex[:]
-    if workdir is None:
-        workdir = os.getcwd()
-        pathex.append(workdir)
-    else:
-        pathex.append(os.getcwd())
-    if workdir == HOME:
-        workdir = os.path.join(HOME, name)
-    if not os.path.exists(workdir):
-        os.makedirs(workdir)
-    exe_options = ''
-    if version_file:
-        exe_options = "%s, version='%s'" % (exe_options, quote_win_filepath(version_file))
-    if icon_file:
-        exe_options = "%s, icon='%s'" % (exe_options, quote_win_filepath(icon_file))
-    if manifest:
-		if "<" in manifest:
-			# Assume XML string
-			exe_options = "%s, manifest='%s'" % (exe_options, manifest.replace("'", "\\'"))
-		else:
-			# Assume filename
-			exe_options = "%s, manifest='%s'" % (exe_options, quote_win_filepath(manifest))
-    if resources:
-        for i in range(len(resources)):
-            resources[i] = quote_win_filepath(resources[i])
-        exe_options = "%s, resources=%s" % (exe_options, repr(resources))
-    if not ascii and config['hasUnicode']:
-        scripts.insert(0, os.path.join(HOME, 'support', 'useUnicode.py'))
-    for i in range(len(scripts)):
-        scripts[i] = Path(scripts[i]) # Use relative path in specfiles
-
-    d = {'tktree':'',
-         'tkpkg' :'',
-         'scripts':scripts,
-         'pathex' :pathex,
-         #'exename': '',
-         'name': name,
-         'distdir': repr(distdir),
-         'builddir': repr(builddir),
-         'debug': debug,
-         'strip': strip,
-         'upx' : upx,
-         'crypt' : repr(crypt),
-         'crypted': crypt is not None,
-         'console': console or debug,
-         'exe_options': exe_options}
-    if tk:
-        d['tktree'] = "TkTree(),"
-        if freeze:
-            scripts.insert(0, Path(HOME, 'support', 'useTK.py'))
-            scripts.insert(0, Path(HOME, 'support', 'unpackTK.py'))
-            scripts.append(Path(HOME, 'support', 'removeTK.py'))
-            d['tkpkg'] = "TkPKG(),"
-        else:
-            scripts.insert(0, Path(HOME, 'support', 'useTK.py'))
-    scripts.insert(0, Path(HOME, 'support', '_mountzlib.py'))
-    if config['target_platform'][:3] == "win" or \
-       config['target_platform'] == 'cygwin':
-        d['exename'] = name+'.exe'
-        d['dllname'] = name+'.dll'
-    else:
-        d['exename'] = name
-        d['console'] = 1
-    specfnm = os.path.join(workdir, name+'.spec')
-    specfile = open(specfnm, 'w')
-    if freeze:
-        specfile.write(freezetmplt % d)
-    elif comserver:
-        specfile.write(comsrvrtmplt % d)
-    else:
-        specfile.write(collecttmplt % d)
-    specfile.close()
-    return specfnm
-
-
-if __name__ == '__main__':
-    import pyi_optparse as optparse
-    p = optparse.OptionParser(
-        usage="python %prog [opts] <scriptname> [<scriptname> ...]"
-    )
-    p.add_option('-C', '--configfile',
-                 default=os.path.join(HOME, 'config.dat'),
-                 help='Name of configfile (default: %default)')
-
-    g = p.add_option_group('What to generate')
-    g.add_option("-F", "--onefile", dest="freeze",
-                 action="store_true", default=False,
-                 help="create a single file deployment")
-    g.add_option("-D", "--onedir", dest="freeze", action="store_false",
-                 help="create a single directory deployment (default)")
-    g.add_option("-o", "--out", type="string", default=None,
-                 dest="workdir", metavar="DIR",
-                 help="generate the spec file in the specified directory "
-                      "(default: current directory")
-    g.add_option("-n", "--name", type="string", default=None,
-                 metavar="NAME",
-                 help="name to assign to the project "
-                      "(default: first script's basename)")
-
-    g = p.add_option_group('What to bundle, where to search')
-    g.add_option("-p", "--paths", type="string", default=[], dest="pathex",
-                 metavar="DIR", action="append",
-                 help="set base path for import (like using PYTHONPATH). "
-                      "Multiple directories are allowed, separating them "
-                      "with %s, or using this option multiple times"
-                      % repr(os.pathsep))
-    g.add_option("-K", "--tk", default=False, action="store_true",
-                 help="include TCL/TK in the deployment")
-    g.add_option("-a", "--ascii", action="store_true", default=False,
-                 help="do NOT include unicode encodings "
-                      "(default: included if available)")
-
-    g = p.add_option_group('How to generate')
-    g.add_option("-d", "--debug", action="store_true", default=False,
-                 help="use the debug (verbose) build of the executable")
-    g.add_option("-s", "--strip", action="store_true", default=False,
-                 help="strip the exe and shared libs "
-                      "(don't try this on Windows)")
-    g.add_option("-X", "--upx", action="store_true", default=True,
-                 help="use UPX if available (works differently between "
-                      "Windows and *nix)")
-    #p.add_option("-Y", "--crypt", type="string", default=None, metavar="FILE",
-    #             help="encrypt pyc/pyo files")
-
-    g = p.add_option_group('Windows specific options')
-    g.add_option("-c", "--console", "--nowindowed", dest="console",
-                 action="store_true",
-                 help="use a console subsystem executable (Windows only) "
-                      "(default)")
-    g.add_option("-w", "--windowed", "--noconsole", dest="console",
-                 action="store_false", default=True,
-                 help="use a Windows subsystem executable (Windows only)")
-    g.add_option("-v", "--version", type="string",
-                 dest="version_file", metavar="FILE",
-                 help="add a version resource from FILE to the exe "
-                      "(Windows only)")
-    g.add_option("-i", "--icon", type="string", dest="icon_file",
-                 metavar="FILE.ICO or FILE.EXE,ID",
-                 help="If FILE is an .ico file, add the icon to the final "
-                      "executable. Otherwise, the syntax 'file.exe,id' to "
-                      "extract the icon with the specified id "
-                      "from file.exe and add it to the final executable")
-    g.add_option("-m", "--manifest", type="string",
-                 dest="manifest", metavar="FILE or XML",
-                 help="add manifest FILE or XML to the exe "
-                      "(Windows only)")
-    g.add_option("-r", "--resource", type="string", default=[], dest="resources",
-                 metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
-                 help="add/update resource of the given type, name and language "
-                      "from FILE to the final executable. FILE can be a "
-                      "data file or an exe/dll. For data files, atleast "
-                      "TYPE and NAME need to be specified, LANGUAGE defaults "
-                      "to 0 or may be specified as wildcard * to update all "
-                      "resources of the given TYPE and NAME. For exe/dll "
-                      "files, all resources from FILE will be added/updated "
-                      "to the final executable if TYPE, NAME and LANGUAGE "
-                      "are omitted or specified as wildcard *."
-                      "Multiple resources are allowed, using this option "
-                      "multiple times.")
-
-    opts,args = p.parse_args()
-
-    # Split pathex by using the path separator
-    temppaths = opts.pathex[:]
-    opts.pathex = []
-    for p in temppaths:
-        opts.pathex.extend(string.split(p, os.pathsep))
-
-    if not args:
-        p.error('Requires at least one scriptname file')
-
-    name = apply(main, (args,), opts.__dict__)
-    print "wrote %s" % name
-    print "now run Build.py to build the executable"
