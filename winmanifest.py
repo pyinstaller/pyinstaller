@@ -919,18 +919,22 @@ class Manifest(object):
         UpdateManifestResourcesFromXML(dstpath, self.toprettyxml(), names, 
                                        languages)
     
-    def writeprettyxml(self, filename_or_file, indent="  ", newl=os.linesep, 
+    def writeprettyxml(self, filename_or_file=None, indent="  ", newl=os.linesep, 
                        encoding="UTF-8"):
         """ Write the manifest as XML to a file or file object """
+        if not filename_or_file:
+            filename_or_file = self.filename
         if isinstance(filename_or_file, (str, unicode)):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toprettyxml(indent, newl, encoding)
         filename_or_file.write(xmlstr)
         filename_or_file.close()
     
-    def writexml(self, filename_or_file, indent="  ", newl=os.linesep, 
+    def writexml(self, filename_or_file=None, indent="  ", newl=os.linesep, 
                  encoding="UTF-8"):
         """ Write the manifest as XML to a file or file object """
+        if not filename_or_file:
+            filename_or_file = self.filename
         if isinstance(filename_or_file, (str, unicode)):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toxml(indent, newl, encoding)

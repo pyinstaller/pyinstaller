@@ -100,7 +100,13 @@ int main(int argc, char* argv[])
         ProcessSerialNumber psn = { 0, kCurrentProcess };
         OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
 #endif            
+#ifdef WIN32
+        CreateActContext(extractionpath, thisfile);
+#endif
         rc = doIt(status_list[SELF], argc, argv);
+#ifdef WIN32
+        ReleaseActContext();
+#endif
     } else {
         if (extractBinaries(status_list)) {
             VS("Error extracting binaries\n");

@@ -30,6 +30,8 @@
 void init_launcher(void);
 int get_thisfile(char *thisfile, const char *programname);
 #ifdef WIN32
+int CreateActContext(char *workpath, char *thisfile);
+void ReleaseActContext(void);
 int get_thisfilew(LPWSTR thisfilew);
 #endif
 void get_homepath(char *homepath, const char *thisfile);

@@ -25,12 +25,118 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+#define _WIN32_WINNT 0x0500
 #include "utils.h"
 #include <windows.h>
 #include <commctrl.h> // InitCommonControls
 #include <signal.h>
 #include <memory.h>
 #include <string.h>
+
+char* basename (char *path)
+{
+  /* Search for the last directory separator in PATH.  */
+  char *basename = strrchr (path, '\\');
+  if (!basename) basename = strrchr (path, '/');
+  
+  /* If found, return the address of the following character,
+     or the start of the parameter passed in.  */
+  return basename ? ++basename : (char*)path;
+}
+
+static HANDLE hCtx = INVALID_HANDLE_VALUE;
+static ULONG_PTR actToken;
+
+int IsXPOrLater(void)
+{
+    OSVERSIONINFO osvi;
+    
+    ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+
+    GetVersionEx(&osvi);
+
+    return ((osvi.dwMajorVersion > 5) ||
+       ((osvi.dwMajorVersion == 5) && (osvi.dwMinorVersion >= 1)));
+}
+
+int CreateActContext(char *workpath, char *thisfile)
+{
+    char manifestpath[_MAX_PATH + 1];
+    ACTCTX ctx;
+    BOOL activated;
+    HANDLE k32;
+    HANDLE (WINAPI *CreateActCtx)(PACTCTX pActCtx);
+    BOOL (WINAPI *ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
+
+    // If not XP, nothing to do -- return OK
+    if (!IsXPOrLater())
+        return 1;
+       
+    /* Setup activation context */
+    strcpy(manifestpath, workpath);
+    strcat(manifestpath, basename(thisfile));
+    strcat(manifestpath, ".manifest");
+    VS("manifestpath: %s\n", manifestpath);
+    
+    k32 = LoadLibrary("kernel32");
+    CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA");
+    ActivateActCtx = (void*)GetProcAddress(k32, "ActivateActCtx");
+    
+    if (!CreateActCtx || !ActivateActCtx)
+    {
+        VS("Cannot find CreateActCtx/ActivateActCtx exports in kernel32.dll\n");
+        return 0;
+    }
+    
+    ZeroMemory(&ctx, sizeof(ctx));
+    ctx.cbSize = sizeof(ACTCTX);
+    ctx.lpSource = manifestpath;
+
+    hCtx = CreateActCtx(&ctx);
+    if (hCtx != INVALID_HANDLE_VALUE)
+    {
+        VS("Activation context created\n");
+        activated = ActivateActCtx(hCtx, &actToken);
+        if (activated)
+        {
+            VS("Activation context activated\n");
+            return 1;
+        }
+    }
+
+    hCtx = INVALID_HANDLE_VALUE;
+    VS("Error activating the context\n");
+    return 0;
+}
+
+void ReleaseActContext(void)
+{
+    void (WINAPI *ReleaseActCtx)(HANDLE);
+    BOOL (WINAPI *DeactivateActCtx)(DWORD dwFlags, ULONG_PTR ulCookie);
+    HANDLE k32;
+
+    if (!IsXPOrLater())
+        return;
+
+    k32 = LoadLibrary("kernel32");
+    ReleaseActCtx = (void*)GetProcAddress(k32, "ReleaseActCtx");
+    DeactivateActCtx = (void*)GetProcAddress(k32, "DeactivateActCtx");
+    if (!ReleaseActCtx || !DeactivateActCtx)
+    {
+        VS("Cannot find ReleaseActCtx/DeactivateActCtx exports in kernel32.dll\n");
+        return;
+    }
+
+    VS("Deactivating activation context\n");
+    if (!DeactivateActCtx(0, actToken))
+        VS("Error deactivating context!\n!");
+    
+    VS("Releasing activation context\n");
+    if (hCtx != INVALID_HANDLE_VALUE)
+        ReleaseActCtx(hCtx);
+    VS("Done\n");
+}
 
 void init_launcher(void)
 {
