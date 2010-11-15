@@ -7,6 +7,7 @@ hiddenimports = [
 	"backend_gdk",
 	"backend_gtkagg",
 	"backend_gtkcairo",
+	"backend_macosx",
 	"backend_mixed",
 	"backend_pdf",
 	"backend_ps",
