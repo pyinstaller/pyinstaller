@@ -183,6 +183,8 @@ def configure(conf):
             conf.env.append_value('LINKFLAGS', '/MACHINE:X64')
             # enable 64bit porting warnings
             conf.env.append_value('CCFLAGS', '/Wp64')
+        # We use SEH exceptions in winmain.c; make sure they are activated.
+        conf.env.append_value('CCFLAGS', '/EHa')
 
     # link only with needed libraries
     # XXX: -Wl,--as-needed detected during configure but fails during mac build

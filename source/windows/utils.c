@@ -47,6 +47,10 @@ char* basename (char *path)
 static HANDLE hCtx = INVALID_HANDLE_VALUE;
 static ULONG_PTR actToken;
 
+#ifndef STATUS_SXS_EARLY_DEACTIVATION
+#define STATUS_SXS_EARLY_DEACTIVATION 0xC015000F
+#endif
+ 	
 int IsXPOrLater(void)
 {
     OSVERSIONINFO osvi;
@@ -127,15 +131,21 @@ void ReleaseActContext(void)
         VS("Cannot find ReleaseActCtx/DeactivateActCtx exports in kernel32.dll\n");
         return;
     }
-
-    VS("Deactivating activation context\n");
-    if (!DeactivateActCtx(0, actToken))
-        VS("Error deactivating context!\n!");
-    
-    VS("Releasing activation context\n");
-    if (hCtx != INVALID_HANDLE_VALUE)
-        ReleaseActCtx(hCtx);
-    VS("Done\n");
+    __try
+    {
+        VS("Deactivating activation context\n");
+        if (!DeactivateActCtx(0, actToken))
+            VS("Error deactivating context!\n!");
+        
+        VS("Releasing activation context\n");
+        if (hCtx != INVALID_HANDLE_VALUE)
+            ReleaseActCtx(hCtx);
+        VS("Done\n");
+    }
+    __except (STATUS_SXS_EARLY_DEACTIVATION)
+    {
+    	VS("XS early deactivation; somebody left the activation context dirty, let's ignore the problem\n");
+    }
 }
 
 void init_launcher(void)
