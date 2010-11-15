@@ -80,6 +80,12 @@ def configure(conf):
             except:
                 Utils.pprint('RED', 'GCC (MinGW) or MSVC compiler not found.')
                 exit(1)
+        else:
+            # When using GCC, deactivate declarations after statements
+            # (not supported by Visual Studio)
+            conf.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
+            conf.env.append_value('CCFLAGS', '-Werror')
+
     else:
         conf.check_tool('compiler_cc')
 
