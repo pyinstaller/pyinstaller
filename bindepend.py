@@ -113,12 +113,15 @@ excludes = {
     'DNSAPI.DLL':1,
     'RASAPI32.DLL':1,
     # regex excludes
-    # don't include in the bundle the libc and the tls stuff
-    r'^/usr/lib/tls':1,
-    r'^/lib/libc\.so\..*':1,
-    r'^/lib/tls':1,
+    r'/libc\.so\..*':1,
+    r'/libdl\.so\..*':1,
+    r'/libm\.so\..*':1,
+    r'/libpthread\.so\..*':1,
+    r'/librt\.so\..*':1,
+    r'/libthread_db\.so\..*':1,
+    r'/libdb-.*\.so':1,
     # libGL can reference some hw specific libraries (like nvidia libs)
-    r'/usr/lib/libGL.*':1,
+    r'/libGL\..*':1,
     # MS assembly excludes
     'Microsoft.Windows.Common-Controls':1,
 }
