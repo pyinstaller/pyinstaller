@@ -1053,7 +1053,7 @@ def _resolveCtypesImports(cbinaries):
 
     def _savePaths():
         old = os.environ.get(envvar, None)
-        os.environ[envvar] = os.pathsep.join(sys.pathex)
+        os.environ[envvar] = os.pathsep.join(getattr(sys, "pathex", []))
         if old is not None:
             os.environ[envvar] = os.pathsep.join([os.environ[envvar], old])
         return old
