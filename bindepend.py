@@ -570,8 +570,8 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
         else:
             candidatelib = lib
         if excludesRe.search(candidatelib):
-            if 'libpython' not in candidatelib and \
-               'Python.framework' not in candidatelib:
+            if candidatelib.find('libpython') < 0 and \
+               candidatelib.find('Python.framework') < 0:
                 # skip libs not containing (libpython or Python.framework)
                 if not silent and \
                    not seen.get(string.upper(npth),0):
