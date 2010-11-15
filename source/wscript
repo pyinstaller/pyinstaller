@@ -133,6 +133,11 @@ def configure(conf):
 
     ### Defines, Includes
 
+    if myplatform.startswith('lin'):
+        # make sure we don't use declarations after statement (break Visual Studio)
+        conf.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
+        conf.env.append_value('CCFLAGS', '-Werror')
+
     if myplatform.startswith('win'):
         conf.env.append_value('CCDEFINES', 'WIN32')
         conf.env.append_value('CPPPATH', '../zlib')
