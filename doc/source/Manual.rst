@@ -1291,12 +1291,12 @@ Change to the |install_path| ``source`` subdirectory. Run::
         pyinstaller$ cd source
         pyinstaller/source$ python waf configure build install
 
-This will produce ``support/loader/run``, ``support/loader/run_d``,
-``support/loader/runw`` and ``support/loader/runw_d``,
+This will produce ``support/loader/YOUR_OS/run``, ``support/loader/YOUR_OS/run_d``,
+``support/loader/YOUR_OS/runw`` and ``support/loader/YOUR_OS/runw_d``,
 which are the bootloaders.
 
-On Windows this will produce in the ``support/loader`` directory: ``run*.exe``
-(bootloader for regular programs), and
+On Windows this will produce in the ``support/loader/YOUR_OS`` directory:
+``run*.exe`` (bootloader for regular programs), and
 ``inprocsrvr*.dll`` (bootloader for in-process COM servers).
 
 *Note:* If you have multiple versions of Python, the Python you use to run
@@ -1314,7 +1314,7 @@ to increase compatibility for packaged applications among distributions.
 
 *Note:* LSB version 4.0 is required for successfull building of bootloader.
 
-On Debian- and Ubuntu-based distros, you can installa LSB 4.0 tools by adding
+On Debian- and Ubuntu-based distros, you can install LSB 4.0 tools by adding
 the following repository to the sources.list file::
 
         deb http://ftp.linux-foundation.org/pub/lsb/repositories/debian lsb-4.0 main
@@ -1349,10 +1349,10 @@ instructions.
 *NOTE:* if for some reason you want to avoid LSB compilation, you can
 do so by specifying --no-lsb on the waf command line, as follows::
 
-        pyinstaller/source$ python waf configure --lsb build install
+        pyinstaller/source$ python waf configure --no-lsb build install
 
-This will also produce ``support/loader/run``, ``support/loader/run_d``,
-``support/loader/runw`` and ``support/loader/runw_d``, but they will
+This will also produce ``support/loader/YOUR_OS/run``, ``support/loader/YOUR_OS/run_d``,
+``support/loader/YOUR_OS/runw`` and ``support/loader/YOUR_OS/runw_d``, but they will
 not be LSB binaries.
 
 |GOBACK|_
