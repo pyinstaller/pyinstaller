@@ -32,6 +32,17 @@ MIN_VERSION = {
  'test-relative-import2': (2,6),
  'test-relative-import3': (2,5),
  'test-celementtree': (2,5),
+ 'test9': (2,3),
+}
+
+DEPENDENCIES = {
+ 'test-ctypes-cdll-c': ["ctypes"],
+ 'test-ctypes-cdll-c2': ["ctypes"],
+ 'test-numpy': ["numpy"],
+ 'test-pycrypto': ["Crypto"],
+ 'test-zipimport1': ["pkg_resources"],
+ 'test-zipimport2': ["pkg_resources", "setuptools"],
+ 'test15': ["ctypes"], 
 }
 
 try:
@@ -109,11 +120,23 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
     tests = [(len(x), x) for x in tests]
     tests.sort()
     path = os.environ["PATH"]
-    counter = { "passed": [], "failed": [] }
+    counter = { "passed": [], "failed": [], "skipped": [] }
     for _,test in tests:
         test = os.path.splitext(os.path.basename(test))[0]
         if test in MIN_VERSION and MIN_VERSION[test] > sys.version_info:
-            continue        
+            counter["skipped"].append(test)
+            continue
+        if test in DEPENDENCIES:
+            failed = False
+            for mod in DEPENDENCIES[test]:
+                res = os.system(PYTHON + ' -c "import %s"' % mod)
+                if res != 0:
+                    failed = True
+                    break
+            if failed:
+                print "Skipping test because module %s is missing" % mod
+                counter["skipped"].append(test)
+                continue
         _msg("BUILDING TEST", test)
         prog = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'Build.py'),
                             OPTS, test+".spec"],

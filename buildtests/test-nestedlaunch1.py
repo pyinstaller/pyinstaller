@@ -1,6 +1,5 @@
 import os
 import sys
-import datetime
 
 if __name__ == "__main__":
     if sys.version_info >= (2,5):
