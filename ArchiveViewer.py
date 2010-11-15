@@ -27,13 +27,20 @@ import pprint
 
 stack = []
 cleanup = []
+name = None
+debug = False
 
 def main():
     global stack
+    global debug
+    global name
     name = sys.argv[1]
+    if len(sys.argv) > 2:
+        if sys.argv[2][:2] == '-d':
+            debug = True
     arch = getArchive(name)
     stack.append((name, arch))
-    show(name, arch)
+    show(name, arch, debug, name + '.log')
 
     while 1:
         try:
@@ -57,7 +64,7 @@ def main():
                 arch.lib.close()
                 del stack[-1]
             nm, arch = stack[-1]
-            show(nm, arch)
+            show(nm, arch, debug, name + '.' + nm + '.log')
         elif cmd == 'O':
             if not arg:
                 arg = raw_input('open name? ')
@@ -67,7 +74,7 @@ def main():
                 print arg, "not found"
                 continue
             stack.append((arg, arch))
-            show(arg, arch)
+            show(arg, arch, debug, name + '.' + arg + '.log')
         elif cmd == 'X':
             if not arg:
                 arg = raw_input('extract name? ')
@@ -132,7 +139,7 @@ def getData(nm, arch):
     x, data = arch.extract(ndx)
     return data
 
-def show(nm, arch):
+def show(nm, arch, onfile=False, fn=None):
     if type(arch.toc) == type({}):
         print " Name: (ispkg, pos, len)"
         toc = arch.toc
@@ -140,6 +147,10 @@ def show(nm, arch):
         print " pos, length, uncompressed, iscompressed, type, name"
         toc = arch.toc.data
     pprint.pprint(toc)
+    if onfile and fn != None:
+        out_file = open(fn, "w")
+        pprint.pprint(toc, stream=out_file)
+        out_file.close()
 
 class ZlibArchive(archive.ZlibArchive):
     def checkmagic(self):
