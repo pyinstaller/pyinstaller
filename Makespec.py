@@ -191,12 +191,10 @@ if __name__ == '__main__':
 
 
 
-
 	# Creating an argument parser
 	parser = argparse.ArgumentParser(
-		prog="Makespec.py"
+		prog="Makespec.py",
 		description="A sub-tool for creating the .spec file")
-	
 	
 
 	# Adding arguments `scripts' and `specs'in a mutually exclusive group
@@ -204,20 +202,20 @@ if __name__ == '__main__':
 	# at the same time. Only one option at time is valid
 	group = parser.add_mutually_exclusive_group()
 	group.add_argument(
-		"scripts", type=argparse.FileType('w'), nargs='+', type=ScriptFileType,
+		"scripts", nargs='+', type=ScriptFileType,
 		help="A python scripts that will be analyzed")
 	group.add_argument(
-		"specs", type=argparse.FileType('rw'), nargs='+', type=SpecFileType,
+		"specs", nargs='+', type=SpecFileType,
 		help="A spec file to convert in a newer one")
 	
 	# Adding arguments `--onefile' and `--onedir' in a MEG
 	# --onefile and --onedir arguments cannot coexist
 	group = parser.add_mutually_exclusive_group()
 	group.add_argument(
-		"-F", "--onefile", action="store_true", default=False
+		"-F", "--onefile", action="store_true", default=False,
 		help="Create a single file deployment")
 	group.add_argument(
-		"-D", "--onedir", action="store_true", default=True
+		"-D", "--onedir", action="store_true", default=True,
 		help="Create a single directory deployment")
 
 	# args contains the options given in the command line
