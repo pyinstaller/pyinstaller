@@ -3,7 +3,8 @@
 # Automatically build spec files containing a description of the project
 #
 # Copyright (C) 2010, Daniel Sanchez Iaizzo, codeverse@develer.com
-# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
+# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc. and
+# under copyright (c) 2005, Giovanni Bajo
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -165,31 +166,68 @@ def collectResources(exploring_path, final_path, debug=False):
 	return data
 """
 
+
 if __name__ == '__main__':
 
-	import pyi_optparse as optparse
+	import argparse
 
-	parser = optparse.OptionParser(
-		usage="python %prog [opts] <scriptname> [<scriptname> ...]")
+	# This def is called at the time you pass an argument in the command
+	# line as a script file
+	# It checks if the argument is a valid script file or not
+	def ScriptFileType(scriptfile):
+		if not scriptfile.endswith(".py") or not open(scriptfile, 'w'):
+			raise argparse.ArgumentTypeError(
+				"%s file is not a valid python script file" % scriptfile)
+		return scriptfile
 
-	# Group of options: Packaging mode
-	g = p.add_option_group('Packaging mode')
+	# This def is called at the time you pass an argument in the command
+	# line as a spec file
+	# It checks if the argument is a valid spec file or not
+	def SpecFileType(specfile):
+		if not specfile.endswith(".spec") or not open(specfile, "wr"):
+			raise argparse.ArgumentTypeError(
+				"%s file is not a valid spec file" % specfile)
+		return specfile
 
-	g.add_option(
-		"-F", "--onefile", dest="freeze",
-		action="store_true", default=False,
-		help="create a single file deployment")
-	g.add_option(
-		"-D", "--onedir", dest="freeze", action="store_false",
-		help="create a single directory deployment (default)")
 
-	# opts contains a dictionary for the options 
+
+
+	# Creating an argument parser
+	parser = argparse.ArgumentParser(
+		prog="Makespec.py"
+		description="A sub-tool for creating the .spec file")
+	
+	
+
+	# Adding arguments `scripts' and `specs'in a mutually exclusive group
+	# You cannot give more then one element of a MEG at the command line
+	# at the same time. Only one option at time is valid
+	group = parser.add_mutually_exclusive_group()
+	group.add_argument(
+		"scripts", type=argparse.FileType('w'), nargs='+', type=ScriptFileType,
+		help="A python scripts that will be analyzed")
+	group.add_argument(
+		"specs", type=argparse.FileType('rw'), nargs='+', type=SpecFileType,
+		help="A spec file to convert in a newer one")
+	
+	# Adding arguments `--onefile' and `--onedir' in a MEG
+	# --onefile and --onedir arguments cannot coexist
+	group = parser.add_mutually_exclusive_group()
+	group.add_argument(
+		"-F", "--onefile", action="store_true", default=False
+		help="Create a single file deployment")
+	group.add_argument(
+		"-D", "--onedir", action="store_true", default=True
+		help="Create a single directory deployment")
+
 	# args contains the options given in the command line
-	opts, args = parser.parse_args()
+	args = parser.parse_args()
 
-	if not args:
-		parser.error('Requires at least one scriptname file')
+	#if not args:
+	#	parser.error('Requires at least one scriptname file')
 
-	name = apply(main, (args,), opts.__dict__)
+	#name = apply(main, (args,), opts.__dict__)
 	print "The spec file %s has been created." % name
-	print "Now you can edit it and run `Build.py %s'" % name
+	print "Now you can edit it and run `Build.py %s\'" % name
+	
+
