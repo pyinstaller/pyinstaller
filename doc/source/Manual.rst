@@ -1750,7 +1750,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. |CArchiveImage| image:: images/CArchive.png
 .. |SE_exeImage| image:: images/SE_exe.png
 .. |PyInstaller| replace:: PyInstaller
-.. |PyInstallerVersion| replace:: PyInstaller v1.4
+.. |PyInstallerVersion| replace:: PyInstaller v1.5
 .. |InitialVersion| replace:: v1.0
 .. |install_path| replace:: /your/path/to/pyinstaller/
 .. |GOBACK| replace:: `Back to Top`
