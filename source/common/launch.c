@@ -269,7 +269,8 @@ int checkCookie(ARCHIVE_STATUS *status, int filelen)
 		return -1;
 
 	/* Read the Cookie, and check its MAGIC bytes */
-	fread(&(status->cookie), sizeof(COOKIE), 1, status->fp);
+	if (fread(&(status->cookie), sizeof(COOKIE), 1, status->fp) < 1)
+	    return -1;
 	if (strncmp(status->cookie.magic, MAGIC, strlen(MAGIC)))
 		return -1;
 
@@ -362,7 +363,11 @@ int openArchive(ARCHIVE_STATUS *status)
 		FATALERROR("Could not allocate buffer for TOC.");
 		return -1;
 	}
-	fread(status->tocbuff, ntohl(status->cookie.TOClen), 1, status->fp);
+	if (fread(status->tocbuff, ntohl(status->cookie.TOClen), 1, status->fp) < 1)
+	{
+	    FATALERROR("Could not read from file.");
+	    return -1;
+	}
 	status->tocend = (TOC *) (((char *)status->tocbuff) + ntohl(status->cookie.TOClen));
 
 	/* Check input file is still ok (should be). */
@@ -660,7 +665,7 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
     /* Set the PYTHONPATH */
 	VS("Manipulating evironment\n");
 	strcpy(pypath, "PYTHONPATH=");
-    if (status->temppath[0] != NULL) { /* Temppath is setted */
+    if (status->temppath[0] != '\0') { /* Temppath is setted */
 	    strcat(pypath, status->temppath);
 	    pypath[strlen(pypath)-1] = '\0';
 	    strcat(pypath, PATHSEP);
@@ -694,7 +699,7 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	/* VS("Manipulating Python's sys.path\n"); */
 	PI_PyRun_SimpleString("import sys,os\n");
 	PI_PyRun_SimpleString("del sys.path[:]\n");
-    if (status->temppath[0] != NULL) {	
+    if (status->temppath[0] != '\0') {	
         strcpy(tmp, status->temppath);
 	    tmp[strlen(tmp)-1] = '\0';
 	    sprintf(cmd, "sys.path.append('''%s''')", tmp);
@@ -891,7 +896,10 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 		OTHERERROR("Could not allocate read buffer\n");
 		return NULL;
 	}
-	fread(data, ntohl(ptoc->len), 1, status->fp);
+	if (fread(data, ntohl(ptoc->len), 1, status->fp) < 1) {
+	    OTHERERROR("Could not read from file\n");
+	    return NULL;
+	}
 	if (ptoc->cflag == '\2') {
         static PyObject *AES = NULL;
 		PyObject *func_new;
@@ -936,7 +944,7 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
  * helper for extract2fs
  * which may try multiple places
  */
-FILE *openTarget(char *path, char* name_)
+FILE *openTarget(const char *path, const char* name_)
 {
 	struct stat sbuf;
 	char fnm[_MAX_PATH+1];
@@ -984,7 +992,7 @@ static int createTempPath(ARCHIVE_STATUS *status)
 	char *p;
 #endif
 
-	if (status->temppath[0] == NULL) {
+	if (status->temppath[0] == '\0') {
 		if (!getTempPath(status->temppath))
 		{
             FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
@@ -1058,11 +1066,12 @@ static int copyFile(const char *src, const char *dst, const char *filename)
         return -1;
 
     while (!feof(in)) {
-        fread(buf, 4096, 1, in);        
-        if (ferror(in)) {
-            clearerr(in);
-            error = -1;
-            break;
+        if (fread(buf, 4096, 1, in) == -1) {     
+            if (ferror(in)) {
+                clearerr(in);
+                error = -1;
+                break;
+            }
         } else {
             fwrite(buf, 4096, 1, out);
             if (ferror(out)) {

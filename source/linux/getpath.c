@@ -124,7 +124,7 @@ isdir(char *filename)			/* Is directory */
 #endif
 
 static void
-joinpath(char *buffer, char *stuff)
+joinpath(char *buffer, const char *stuff)
 {
 	int n, k;
 	if (stuff[0] == SEP)
@@ -144,7 +144,7 @@ joinpath(char *buffer, char *stuff)
 static void
 calculate_path(void)
 {
-	char *prog = PI_GetProgramName();	/* use Py_SetProgramName(argv[0]) before Py_Initialize() */
+	const char *prog = PI_GetProgramName();	/* use Py_SetProgramName(argv[0]) before Py_Initialize() */
 	char argv0_path[MAXPATHLEN+1];
 	char *epath;
 	char *path = NULL;
@@ -233,7 +233,7 @@ calculate_path(void)
 }
 /* External interface */
 
-static char *progname = "python";
+static const char *progname = "python";
 
 void
 PI_SetProgramName(const char *pn)
@@ -242,7 +242,7 @@ PI_SetProgramName(const char *pn)
 		progname = pn;
 }
 
-char *
+const char *
 PI_GetProgramName(void)
 {
 	return progname;
