@@ -6,6 +6,7 @@ Changes since PyInstaller 1.4
  + Full support for Python 2.6 on Windows. No manual redistribution
    of DLLs, CRT, manifest, etc. is required: PyInstaller is able to
    bundle all required dependencies (thanks to Florian Hoech).
+ + Added support for Windows 64-bit (thanks to Martin Zibricky).
  + Added binary bootloaders for Linux (32-bit and 64-bit, using LSB),
    and Darwin (32-bit). This means that PyInstaller users on this
    platform don't need to compile the bootloader themselves anymore
