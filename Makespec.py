@@ -20,14 +20,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-# For Python 1.5 compatibility:
+import os
+import sys
+
+# For Python 1.5 compatibility
 # if keywords True and False don't exist
 # it sets them manually
 try:
-	True
+    True
 except:
-	True = (1 is 1)
-	False = not True
+    True = (1 is 1)
+    False = not True
 
 # This is the part of the spec present both in onefile and in
 # onedir template
@@ -38,6 +41,38 @@ common_part = """\
 ############################################################
 
 ############################################################
+def collectResources(exploring_path, final_path, debug=False):
+    \"""
+    collectResources(exploring_path, final_path, debug=False) ~> list
+    This function returns a list of touples with all the path of the
+    files found in the `exploring_path' directory and its sub-dir in the
+    [(final_file, exploring_file, type), (..., ..., ...), ...] form where:
+    final_file is the final filename including its path;
+    exploring_file is the name of the file found including its path;
+    type is the string 'DATA'
+    \"""
+    import os
+    data = []
+
+    exploring_path = os.path.normpath(exploring_path)
+    final_path = os.path.normpath(final_path)
+
+    if debug:
+    print "Exploring the", os.path.basename(exploring_path), "directory in",
+    os.path.dirname(exploring_path), "and moving all its content to",
+    os.path.basename(final_path)
+
+    for root, dirs, files in os.walk(exploring_path):
+    data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
+    os.path.join(root, filename), 'DATA') for filename in files]
+
+    if debug:
+    (print "Found", filename[0]) for filename in data
+
+    return data
+############################################################
+
+############################################################
 ### Edit it to your liking
 
 # This is the name of your final executable
@@ -45,15 +80,16 @@ name_of_exe = '%(exename)s'
 
 # This is the path where your executable and the relative
 # data will be putted
-path_to_exe = %(pathex)s
+path_to_exe = %(paths)s
 
 # Set here your resources paths as strings
 #  If you don't set paths, PyInstaller won't be able to find them
 resourcesPaths = [
-#	"/path/to/images",
-#	"/path/to/fonts",
-#	"/path/to/configfiles",
-#	"/these/are/only/examples"
+#   ("/where/to/find","/where/to/put")
+#   ("/path/to/images","../relative/path/to/images")
+#   ("/path/to/fonts","/my/home/project/fonts")
+#   ("/path/to/configfiles","./config/files")
+#   ("/these/are/only/examples","../../this/too")
 ]
 
 # Do you want to use Debug during build and execution?
@@ -74,15 +110,16 @@ useUPX = True # set True or False
 ### Only for PyInstaller eyes
 
 #(!) Edit with caution
-#(i) For more information take a look to the Makespec.README
+#(i) For more information take a check out the documentation
+#    on www.pyinstaller.org
 
 # The Analysis class takes in input the source files *.py
 # and analyzes all the imports for including dependencies
 # into the final package (!!include here the unfound python
 # sources after the Build step!!)
 a = Analysis(
-	%(scripts)s,
-	pathex=path_to_exe)
+    %(scripts)s,
+    pathex=path_to_exe)
 
 # The PYZ class takes the `pure' of the last Analysis object
 # and generate the PYZ archive containing the pure python modules
@@ -94,22 +131,22 @@ pyz = PYZ(a.pure)
 # all the resources needed by the program
 onedir_tpl = """
 exe = EXE(
-	pyz,
-	a.scripts,
-	exclude_binaries=1,
-	name=os.path.join(%(builddir)s, name_of_exe),
-	debug=useDebug,
-	strip=useStrip
-	upx=useUPX)
+    pyz,
+    a.scripts,
+    exclude_binaries=1,
+    name=os.path.join(%(builddir)s, name_of_exe),
+    debug=useDebug,
+    strip=useStrip
+    upx=useUPX)
 
 coll = COLLECT(
-	%(tktree)s exe,
-	a.binaries,
-	a.zipfiles,
-	a.datas,
-	strip=useStrip,
-	upx=useUPX,
-	name=os.path.join(path_to_exe, name_of_exe)
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=useStrip,
+    upx=useUPX,
+    name=os.path.join(path_to_exe, name_of_exe)
 """
 
 # The OneFile template generate (as final package) an executable
@@ -117,115 +154,112 @@ coll = COLLECT(
 # When the executable will be launched
 onefile_tpl = """
 exe = EXE(
-	pyz,
-	a.scripts,
-	a.binaries,
-	a.zipfiles,
-	a.datas + importResources(...)
-	name=os.path.join(path_to_exe, name_of_exe),
-	debug=useDebug,
-	strip=useStrip,
-	upx=useUPX)
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [collectResources(src, dest) for src, dest in resourcesPaths],
+    name=os.path.join(path_to_exe, name_of_exe),
+    debug=useDebug,
+    strip=useStrip,
+    upx=useUPX)
 """
 
-# This is the implementation of the collectResources function
-collectResources_def = """
-def collectResources(exploring_path, final_path, debug=False):
-	\"""
-	collectResources(exploring_path, final_path, debug=False) ~> list
-	This function returns a list of touples with all the path of the
-	files found in the `exploring_path' directory and its sub-dir in the
-	[(final_file, exploring_file, type), (..., ..., ...), ...] form where:
-		final_file is the final filename including its path;
-		exploring_file is the name of the file found including its path;
-		type is the string 'DATA'
-	\"""
-	import os
-	data = []
-	
-	# Normalizing paths
-	exploring_path = os.path.normpath(exploring_path)
-	final_path = os.path.normpath(final_path)
+HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-	# If debug flag is activated it prints some information
-	if debug is True:
-		print "Exploring the", os.path.basename(exploring_path), "directory in",
-			os.path.dirname(exploring_path), "and moving all its content to",
-			os.path.basename(final_path)
+def createSpecFile(scripts, options):
 
-	# This loop find every file in the `exploring_path' directory
-	# and all its sub-directory
-	for root, dirs, files in os.walk(exploring_path):
-		data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
-				  os.path.join(root, filename), 'DATA') for filename in files]
+    #configfile = os.path.join(HOME, "config.dat")
+    configfile = "/home/codeverse/.pyinstaller/config.dat"
 
-	# If debug flag is activated it prints all the files found in exploring_path
-	if debug is True:
-		(print "Found", filename[0]) for filename in data
-		
-	return data
-"""
+    try:
+        config = eval(open(configfile, 'r').read())
+    except IOError:
+        raise SystemExit("Configfile is missing or unreadable. Please run Configure.py before building!")
+
+    if config['pythonVersion'] != sys.version:
+        print "The current version of Python is not the same with which PyInstaller was configured."
+        print "Please re-run Configure.py with this version."
+        raise SystemExit(1)
+
+    exename, filetype = os.path.splitext(os.path.basename(scripts[0]))
+
+    # Check for parsing errors
+    if filetype == ".spec":
+        if len(scripts) > 1:
+            parser.error("Too many arguments. Give only one spec at time")
+
+        try:
+            old_specfile = open(exename + ".spec", 'r')
+        except IOError as (errno, strerror):
+            print "I/O error(%s): %s" % (errno, strerror)
+
+    elif filetype == ".py":
+        for filename in scripts:
+            if not filetype in filename:
+                parser.error("Arguments must be all python scripts (*.py)")
+    else:
+        parser.error("Give in input .py or .spec files only")
+
+
+    dic = {
+        "exename"   : exename,
+        "paths"     : "blablabla",
+        "scripts"   : scripts,
+        "builddir"  : os.getcwd(),
+        "onedir"    : options["onedir"],
+        "onefile"   : not options["onedir"]}
+
+
+    specfile = None
+    specfile_name = exename + ".spec"
+    count = 0
+    while not specfile:
+        specfile = open(specfile_name + ".spec", 'w')
+        specfile_name = exename + str(count) + ".spec"
+        count += 1
+
+
+    if filetype == ".py":
+        if dic["onedir"]:
+            specfile.write((common_part + onedir_tpl) % dic)
+        elif dic["onefile"]:
+            specfile.write((common_part + onefile_tpl) % dic)
+
+    specfile.close()
+
+    return specfile_name
 
 
 if __name__ == '__main__':
 
-	import argparse
+    import pyi_optparse as optparse
 
-	# This def is called at the time you pass an argument in the command
-	# line as a script file
-	# It checks if the argument is a valid script file or not
-	def ScriptFileType(scriptfile):
-		if not scriptfile.endswith(".py") or not open(scriptfile, 'w'):
-			raise argparse.ArgumentTypeError(
-				"%s file is not a valid python script file" % scriptfile)
-		return scriptfile
+    # Creating an argument parser
+    parser = optparse.OptionParser(
+        usage = "usage: %prog [--onefile | --onedir] <scriptname> [<scriptname ...] | <specname>")
 
-	# This def is called at the time you pass an argument in the command
-	# line as a spec file
-	# It checks if the argument is a valid spec file or not
-	def SpecFileType(specfile):
-		if not specfile.endswith(".spec") or not open(specfile, "wr"):
-			raise argparse.ArgumentTypeError(
-				"%s file is not a valid spec file" % specfile)
-		return specfile
+    parser.add_option(
+        "-F", "--onefile", dest="onedir", action="store_false", default=True,
+        help="Create a single file deployment")
+    parser.add_option(
+        "-D", "--onedir", dest="onedir", action="store_true", default=True,
+        help="Create a single directory deployment")
 
 
+    opts, args = parser.parse_args()
 
-	# Creating an argument parser
-	parser = argparse.ArgumentParser(
-		prog="Makespec.py",
-		description="A sub-tool for creating the .spec file")
-	
 
-	# Adding arguments `scripts' and `specs'in a mutually exclusive group
-	# You cannot give more then one element of a MEG at the command line
-	# at the same time. Only one option at time is valid
-	group = parser.add_mutually_exclusive_group()
-	group.add_argument(
-		"scripts", nargs='+', type=ScriptFileType,
-		help="A python scripts that will be analyzed")
-	group.add_argument(
-		"specs", nargs='+', type=SpecFileType,
-		help="A spec file to convert in a newer one")
-	
-	# Adding arguments `--onefile' and `--onedir' in a MEG
-	# --onefile and --onedir arguments cannot coexist
-	group = parser.add_mutually_exclusive_group()
-	group.add_argument(
-		"-F", "--onefile", action="store_true", default=False,
-		help="Create a single file deployment")
-	group.add_argument(
-		"-D", "--onedir", action="store_true", default=True,
-		help="Create a single directory deployment")
+    if opts["onedir"]:
+        dep_mode = "onedir"
+    else:
+        dep_mode = "onefile"
 
-	# args contains the options given in the command line
-	args = parser.parse_args()
+    if not args:
+        parser.error('Requires at least one scriptname file')
 
-	#if not args:
-	#	parser.error('Requires at least one scriptname file')
+    specfile_name = createSpecFile(args, opts.__dict__)
 
-	#name = apply(main, (args,), opts.__dict__)
-	print "The spec file %s has been created." % name
-	print "Now you can edit it and run `Build.py %s\'" % name
-	
-
+    print "The spec file %s has been created in %s mode." % (os.path.join(os.getcwd(), specfile_name), dep_mode)
+    print "Now you can edit it and run `Build.py %s'" % specfile_name
