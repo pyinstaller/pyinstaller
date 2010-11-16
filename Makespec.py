@@ -216,9 +216,11 @@ def createSpecFile(scripts, options):
     specfile_name = exename + ".spec"
     count = 0
     while not specfile:
-        specfile = open(specfile_name + ".spec", 'w')
-        specfile_name = exename + str(count) + ".spec"
-        count += 1
+        try:
+            specfile = open(specfile_name + ".spec", 'w')
+        except:
+            count += 1
+            specfile_name = exename + str(count) + ".spec"
 
 
     if filetype == ".py":
@@ -249,7 +251,7 @@ if __name__ == '__main__':
 
 
     opts, args = parser.parse_args()
-
+    opts = opts.__dict__
 
     if opts["onedir"]:
         dep_mode = "onedir"
@@ -259,7 +261,7 @@ if __name__ == '__main__':
     if not args:
         parser.error('Requires at least one scriptname file')
 
-    specfile_name = createSpecFile(args, opts.__dict__)
+    specfile_name = createSpecFile(args, opts)
 
     print "The spec file %s has been created in %s mode." % (os.path.join(os.getcwd(), specfile_name), dep_mode)
     print "Now you can edit it and run `Build.py %s'" % specfile_name
