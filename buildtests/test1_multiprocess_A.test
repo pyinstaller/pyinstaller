@@ -1,22 +1,10 @@
 # -*- mode: python -*-
 
-def test1_multiprocess_1():
-    print "Test prova aggiuntivo 1"
-    return True
-
-def test1_multiprocess_2():
-    print "Test prova aggiuntivo 2"
-    return True
-
-def test1_multiprocess_3():
-    print "Test prova aggiuntivo 3"
-    return True
-
 def testInfo():
     test = TestInfo()
     test.needExec = [os.path.join("dist", "test1_multiprocess_A.exe"), os.path.join("dist", "test1_multiprocess_B.exe")]
     test.needCheck = {os.path.join("dist", "test1_multiprocess_A.exe"): "0258ea37e701fe3f7a67dd838a0af3114f8e43c4d9310d1fe957cf068a7829ca", 
                       os.path.join("dist", "test1_multiprocess_B.exe"): "e151254df7e8dd82d3b6640baea5231cd01f335e378bf6ad29497afee755902a"}
-    test.needFunc = [test1_multiprocess_1, test1_multiprocess_2, test1_multiprocess_3]
+    test.needFunc = []
     return test
 

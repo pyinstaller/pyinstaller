@@ -187,6 +187,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
                     print "Executing supplementary test functions"
                     res_tmp = res_tmp or not toFunc()
                 res = res or res_tmp
+                os.environ["PATH"] = path
             else:
                 # runtests 1.0
                 of_prog = os.path.join('dist', test) # one-file deploy filename
