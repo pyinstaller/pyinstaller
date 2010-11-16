@@ -29,18 +29,20 @@ stack = []
 cleanup = []
 name = None
 debug = False
+checksum = False
 
-def main():
+def main(opts, args):
     global stack
     global debug
     global name
-    name = sys.argv[1]
-    if len(sys.argv) > 2:
-        if sys.argv[2][:2] == '-d':
-            debug = True
+    name = args[0]
+    debug = opts.log != None
     arch = getArchive(name)
     stack.append((name, arch))
-    show(name, arch, debug, name + '.log')
+    if debug:
+        log(opts.log, arch)
+        sys.exit()
+    show(name, arch)
 
     while 1:
         try:
@@ -64,7 +66,7 @@ def main():
                 arch.lib.close()
                 del stack[-1]
             nm, arch = stack[-1]
-            show(nm, arch, debug, name + '.' + nm + '.log')
+            show(nm, arch)
         elif cmd == 'O':
             if not arg:
                 arg = raw_input('open name? ')
@@ -74,7 +76,7 @@ def main():
                 print arg, "not found"
                 continue
             stack.append((arg, arch))
-            show(arg, arch, debug, name + '.' + arg + '.log')
+            show(arg, arch)
         elif cmd == 'X':
             if not arg:
                 arg = raw_input('extract name? ')
@@ -139,7 +141,7 @@ def getData(nm, arch):
     x, data = arch.extract(ndx)
     return data
 
-def show(nm, arch, onfile=False, fn=None):
+def show(nm, arch):
     if type(arch.toc) == type({}):
         print " Name: (ispkg, pos, len)"
         toc = arch.toc
@@ -147,10 +149,29 @@ def show(nm, arch, onfile=False, fn=None):
         print " pos, length, uncompressed, iscompressed, type, name"
         toc = arch.toc.data
     pprint.pprint(toc)
-    if onfile and fn != None:
-        out_file = open(fn, "w")
-        pprint.pprint(toc, stream=out_file)
-        out_file.close()
+
+def log(filename, arch, root=None, logfile=None):
+    f = logfile
+    if f == None:
+        f = open(filename, 'w')
+    if type(arch.toc) == type({}):
+        toc = arch.toc.keys()
+        el = arch.toc
+        toc.sort()
+        for name in toc:
+            output = "%s [-->] %s bytes - pkg = %d - %s\n" % (str(el[name][1]).rjust(8), str(el[name][2]).rjust(6), el[name][0], name)
+            f.write(output) 
+    else:
+        toc = sorted(arch.toc.data, key=lambda toc: toc[5].lower())
+        for el in toc:
+            output = "%s [ %s ] %s / %s bytes - %s\n" % (str(el[0]).rjust(8), el[4], str(el[1]).rjust(6), str(el[2]).ljust(6), el[5])
+            f.write(output)
+            if el[4] == 'z' or el[4] == 'a':
+                log(filename, getArchive(el[5]), arch, f)
+                stack.pop()
+    if logfile == None:  
+        f.close()
+        
 
 class ZlibArchive(archive.ZlibArchive):
     def checkmagic(self):
@@ -166,5 +187,22 @@ class ZlibArchive(archive.ZlibArchive):
             print "Warning: pyz is from a different Python version"
         self.lib.read(4)
 
+from pyi_optparse import OptionParser
+parser = OptionParser('%prog [options] pyi_archive')
+parser.add_option('-l', '--log-file',
+                  action='store',
+                  dest='log',
+                  help='Print an archive dump on file (default: %default)')
+parser.add_option('-c', '--checksum',
+                  default=False,
+                  action='store_false',
+                  dest='checksum',
+                  help='Create a checksum file for the archive (default: %default)')
+
 if __name__ == '__main__':
-    main()
+    opts, args = parser.parse_args()
+    if len(args) != 1:
+        parser.error('Requires exactly one pyinstaller archive')
+    if (os.path.exists(opts.log)):
+        parser.error('File already exists: cannot log on it')
+    main(opts, args)
