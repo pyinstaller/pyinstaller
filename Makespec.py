@@ -217,7 +217,7 @@ def createSpecFile(scripts, options):
     count = 0
     while not specfile:
         try:
-            specfile = open(specfile_name + ".spec", 'w')
+            specfile = open(specfile_name, 'w')
         except:
             count += 1
             specfile_name = exename + str(count) + ".spec"
