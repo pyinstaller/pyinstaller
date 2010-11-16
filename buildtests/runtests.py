@@ -44,6 +44,10 @@ DEPENDENCIES = {
  'test-zipimport2': ["pkg_resources", "setuptools"],
  'test15': ["ctypes"], 
  'test-wx': ["wx"],
+ 'test1_multiprocess_A': ["numpy", "PyQt4"],
+ 'test2_multiprocess_A': ["numpy", "PyQt4"],
+ 'test3_multiprocess_A': ["numpy", "PyQt4"],
+ 'test4_multiprocess_A': ["numpy", "PyQt4"], 
 }
 
 try:
