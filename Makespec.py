@@ -42,45 +42,28 @@ common_part = """\
 
 ############################################################
 def collectResources(exploring_path, final_path, debug=False):
-    \"""
-    collectResources(exploring_path, final_path, debug=False) ~> list
-    This function returns a list of touples with all the path of the
-    files found in the `exploring_path' directory and its sub-dir in the
-    [(final_file, exploring_file, type), (..., ..., ...), ...] form where:
-    final_file is the final filename including its path;
-    exploring_file is the name of the file found including its path;
-    type is the string 'DATA'
-    \"""
     import os
     data = []
-
     exploring_path = os.path.normpath(exploring_path)
     final_path = os.path.normpath(final_path)
-
     if debug:
-    print "Exploring the", os.path.basename(exploring_path), "directory in",
-    os.path.dirname(exploring_path), "and moving all its content to",
-    os.path.basename(final_path)
-
+        print "Exploring the", os.path.basename(exploring_path), "directory in",
+            os.path.dirname(exploring_path), "and moving all its content to",
+            os.path.basename(final_path)
     for root, dirs, files in os.walk(exploring_path):
-    data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
-    os.path.join(root, filename), 'DATA') for filename in files]
-
+        data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
+            os.path.join(root, filename), 'DATA') for filename in files]
     if debug:
-    (print "Found", filename[0]) for filename in data
-
+        (print "Found", filename[0]) for filename in data
     return data
 ############################################################
 
 ############################################################
 ### Edit it to your liking
 
-# This is the name of your final executable
 name_of_exe = '%(exename)s'
 
-# This is the path where your executable and the relative
-# data will be putted
-path_to_exe = %(paths)s
+paths_of_srcs = %(paths)s
 
 # Set here your resources paths as strings
 #  If you don't set paths, PyInstaller won't be able to find them
@@ -92,17 +75,15 @@ resourcesPaths = [
 #   ("/these/are/only/examples","../../this/too")
 ]
 
-# Do you want to use Debug during build and execution?
 useDebug = True # set True or False
 
-# Do you want to use the strip option?
-#  This will remove the Debug symbols from the ELF executable
-#  making it smaller (only for UNIX)
+
+# This will remove the Debug symbols from the ELF executable
+# making it smaller (only for UNIX)
 useStrip = False # set True or False
 
-# Do you want to use UPX?
-#  UPX is an executable packer that makes the executable
-#  smaller. It is convenient especially under Windows
+# UPX is an executable packer that makes the executable
+# smaller. It is convenient especially under Windows
 useUPX = True # set True or False
 
 
@@ -113,16 +94,10 @@ useUPX = True # set True or False
 #(i) For more information take a check out the documentation
 #    on www.pyinstaller.org
 
-# The Analysis class takes in input the source files *.py
-# and analyzes all the imports for including dependencies
-# into the final package (!!include here the unfound python
-# sources after the Build step!!)
 a = Analysis(
     %(scripts)s,
     pathex=path_to_exe)
 
-# The PYZ class takes the `pure' of the last Analysis object
-# and generate the PYZ archive containing the pure python modules
 pyz = PYZ(a.pure)
 """
 
@@ -263,5 +238,5 @@ if __name__ == '__main__':
 
     specfile_name = createSpecFile(args, opts)
 
-    print "The spec file %s has been created in %s mode." % (os.path.join(os.getcwd(), specfile_name), dep_mode)
-    print "Now you can edit it and run `Build.py %s'" % specfile_name
+    print "%s has been wrote in %s mode" % (os.path.join(os.getcwd(), specfile_name), dep_mode)
+    print "Now you can edit it and run the Build.py"
