@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 import archive
 import carchive
-import sys, string, tempfile, os
+import sys, string, tempfile, os, hashlib
 try:
     import zlib
 except ImportError:
@@ -37,11 +37,15 @@ def main(opts, args):
     global name
     name = args[0]
     debug = opts.log != None
+    checksum = opts.checksum
     arch = getArchive(name)
     stack.append((name, arch))
     if debug:
-        log(opts.log, arch)
-        sys.exit()
+        printLog(opts.log, arch)
+        sys.exit(0)
+    if checksum:
+        printChecksum(arch)
+        sys.exit(0)
     show(name, arch)
 
     while 1:
@@ -150,7 +154,7 @@ def show(nm, arch):
         toc = arch.toc.data
     pprint.pprint(toc)
 
-def log(filename, arch, root=None, logfile=None):
+def printLog(filename, arch, root=None, logfile=None):
     f = logfile
     if f == None:
         f = open(filename, 'w')
@@ -159,19 +163,34 @@ def log(filename, arch, root=None, logfile=None):
         el = arch.toc
         toc.sort()
         for name in toc:
-            output = "%s [-->] %s bytes - pkg = %d - %s\n" % (str(el[name][1]).rjust(8), str(el[name][2]).rjust(6), el[name][0], name)
-            f.write(output) 
+            output = "%s [ %s ] %s bytes - pkg = %d - %s\n" % (str(el[name][1]).rjust(8), root, str(el[name][2]).rjust(6), el[name][0], name)
+            f.write(output)
     else:
         toc = sorted(arch.toc.data, key=lambda toc: toc[5].lower())
         for el in toc:
             output = "%s [ %s ] %s / %s bytes - %s\n" % (str(el[0]).rjust(8), el[4], str(el[1]).rjust(6), str(el[2]).ljust(6), el[5])
             f.write(output)
             if el[4] == 'z' or el[4] == 'a':
-                log(filename, getArchive(el[5]), arch, f)
+                printLog(filename, getArchive(el[5]), el[5], f)
                 stack.pop()
-    if logfile == None:  
+    if logfile == None:
         f.close()
-        
+
+def printChecksum(arch):
+    global name
+    filename = name + '_tmp_.log.cks'
+    tmpf = open(filename, 'w')
+    printLog(filename, arch, logfile=tmpf)
+    tmpf.close()
+    tmpf = open(filename, 'r')
+    sha = hashlib.sha256()
+    sha.update(tmpf.read())
+    tmpf.close()
+    cksf = open(name + '.cks', 'w')
+    cksf.write(sha.hexdigest())
+    cksf.close()
+    os.remove(filename)
+    print "Checksum(sha256): %s" % sha.hexdigest()
 
 class ZlibArchive(archive.ZlibArchive):
     def checkmagic(self):
@@ -195,14 +214,14 @@ parser.add_option('-l', '--log-file',
                   help='Print an archive dump on file (default: %default)')
 parser.add_option('-c', '--checksum',
                   default=False,
-                  action='store_false',
+                  action='store_true',
                   dest='checksum',
-                  help='Create a checksum file for the archive (default: %default)')
+                  help='Create a checksum file next to the archive (default: %default)')
 
 if __name__ == '__main__':
     opts, args = parser.parse_args()
     if len(args) != 1:
         parser.error('Requires exactly one pyinstaller archive')
-    if (os.path.exists(opts.log)):
+    if (opts.log and os.path.exists(opts.log)):
         parser.error('File already exists: cannot log on it')
     main(opts, args)
