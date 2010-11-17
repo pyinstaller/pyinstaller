@@ -51,10 +51,10 @@ resourcesPaths = [
 #   ("/these/are/only/examples","../../this/too")
 ]
 
-useDebug = True # set True or False
+useDebug = False # set True or False
 
 # Remove the Debug symbols from the ELF executable (only for UNIX)
-useStrip = False # set True or False
+useStrip = True # set True or False
 
 # UPX Packer (good for Windows)
 useUPX = True # set True or False
@@ -69,20 +69,21 @@ useTk = False # set True or False
 #(i) For more information take a check out the documentation
 #    on www.pyinstaller.org
 
-def collectResources(exploring_path, final_path, debug=False):
+def collectResources(exploring_path, final_path):
     import os
     data = []
     exploring_path = os.path.normpath(exploring_path)
     final_path = os.path.normpath(final_path)
     if debug:
-        print "Exploring the", os.path.basename(exploring_path), "directory in",
-            os.path.dirname(exploring_path), "and moving all its content to",
+        print "Exploring the", os.path.basename(exploring_path), "directory in",\\
+            os.path.dirname(exploring_path), "and moving all its content to",\\
             os.path.basename(final_path)
     for root, dirs, files in os.walk(exploring_path):
         data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
             os.path.join(root, filename), 'DATA') for filename in files]
-    if debug:
-        (print "Found", filename[0]) for filename in data
+    if useDebug:
+        for what_from, what_to, type in data:
+            print "Found", what_from
     return data
 
 a = Analysis(
@@ -107,7 +108,7 @@ coll = COLLECT(
     a.binaries,
     a.zipfiles,
     a.datas,
-    [collectResources(src, dest, useDebug) for src, dest in resourcesPaths],
+    [collectResources(src, dest) for src, dest in resourcesPaths],
     strip=useStrip,
     upx=useUPX,
     name=os.path.join(path_to_exe, name_of_exe)
@@ -120,7 +121,7 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
-    [collectResources(src, dest, useDebug) for src, dest in resourcesPaths],
+    [collectResources(src, dest) for src, dest in resourcesPaths],
     name=os.path.join(path_to_exe, name_of_exe),
     debug=useDebug,
     strip=useStrip,
@@ -132,52 +133,46 @@ HOME = os.path.realpath(os.path.abspath(os.path.dirname(sys.argv[0])))
 def createSpecFile(exename, scripts, dep_mode):
     platform = sys.platform
     configfile = os.path.join(HOME, "config.dat")
-    workingdir = os.path.join(os.getcwd())
+    workingdir = os.getcwd()
 
-    try:
-        config = eval(open(configfile, 'r').read())
-    except IOError:
-        msg = "Configfile is missing or unreadable. Please run Configure.py before building!"
-        raise SystemExit(msg)
+    config = eval(open(configfile, 'r').read())
+    if not config:
+        raise SystemExit("Unable to open %s" % specfile_name)
 
     if config["pythonVersion"] != sys.version:
         msg = """PyInstaller configfile and current Python version are incompatible.
             Please re-run Configure.py with this version."""
         raise SystemExit(msg)
 
-    pathex = os.path.dirname(os.path.join(workingdir, scripts[0]))
+    script = [os.path.join(HOME, "support", "_mountzlib.py")]
+    if config["hasUnicode"]:
+        scripts = [os.path.join(HOME, "support", "useUnicode.py")] + scripts
+
+    pathex = [workingdir]
 
     options = {
         "exename"   : exename,
-        "pathex"    : [pathex],
+        "pathex"    : pathex,
         "scripts"   : scripts,
+        "distdir"   : "dist",
         "builddir"  : os.path.dirname(os.path.join(pathex, scripts[0])),
         "onedir"    : dep_mode is "onedir",
         "onefile"   : dep_mode is "onefile"}
 
 
-    #TODO: better implementation of this block
     specfile_name = exename + ".spec"
-    if os.path.isfile(specfile_name):
-        choice = raw_input("File %s exist! Overwrite? [Y/n]" % specfile_name)
-        if choice in ["y","Y",""]:
-            pass
-        else:
-            raise SystemExit("Program stopped by the user.")
 
-    try:
-        specfile = open(specfile_name, 'w')
-    except IOError:
-        msg = "%s unreadable.\nAbort!" % specfile_name
-        raise SystemExit(msg)
+    specfile = open(specfile_name, 'w')
+    if not specfile:
+        raise SystemExit("Unable to open %s" % specfile_name)
 
     if filetype == ".py":
         if options["onedir"]:
             specfile.write((common_part + onedir_tpl) % options)
         elif options["onefile"]:
             specfile.write((common_part + onefile_tpl) % options)
-
-    specfile.close()
+    elif filetype == ".spec":
+        pass #TODO: Analyze the old_specfile and generating the new one
 
     return specfile_name
 
@@ -208,10 +203,10 @@ if __name__ == '__main__':
     if filetype == ".spec":
         if len(scripts) > 1:
             parser.error("Too many arguments. Give only one spec at time")
-        try:
-            old_specfile = open(exename + ".spec", 'r')
-        except IOError as (errno, strerror):
-            print "I/O error(%s): %s" % (errno, strerror)
+
+        old_specfile = open(exename + ".spec", 'r')
+        #TODO: Old spec parsing implementation
+
     elif filetype == ".py":
         for filename in scripts:
             if not filetype in filename:
