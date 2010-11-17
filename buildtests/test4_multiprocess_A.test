@@ -1,0 +1,17 @@
+# -*- mode: python -*-
+
+__testname__ = 'test4_multiprocess_A'
+__testdep__ = 'test4_multiprocess_B'
+
+def testInfo():
+    test = TestInfo()
+    test.needExec = [os.path.join("dist", __testname__ , __testname__ + ".exe"),
+                     os.path.join("dist", __testdep__ , __testdep__ + ".exe")]
+    test.needCheck = {os.path.join("dist", __testname__):
+            "daa50f3ed4be3daaba7a6b36da719e5208a2f8c480fa432b6c5887aa6aa04a7e",
+                      os.path.join("dist", __testdep__):
+            "eca4467c939386809c0ba33ffd3c739541a238c9f522152e6fd99b1a87b2c277"}
+    test.needFunc = []
+    test.platform = "linux2"
+    test.python = (2, 6, 6)
+    return test

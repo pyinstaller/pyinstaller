@@ -174,12 +174,12 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
                         print "WARNING: checksum test useless: different python detected!"
                         continue
                     print "Calculating and testing checksum: %s" % toCheckFn
-                    if os.path.isfile(toCheckFn):
+                    if os.path.exists(toCheckFn):
                         command = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'ArchiveViewer.py'),
                             '-c', toCheckFn], ' ')
                         res_tmp = os.system(command)
                         res = res or res_tmp
-                        if (not os.path.isfile(toCheckFn + '.cks')):
+                        if (not os.path.exists(toCheckFn + '.cks')):
                             print "ERROR: no checksum file found!"
                             res = 1
                             continue

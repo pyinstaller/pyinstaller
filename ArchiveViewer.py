@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 import archive
 import carchive
-import sys, string, tempfile, os, hashlib
+import sys, string, tempfile, os, hashlib, glob
 try:
     import zlib
 except ImportError:
@@ -38,13 +38,15 @@ def main(opts, args):
     name = args[0]
     debug = opts.log != None
     checksum = opts.checksum
+    if checksum:
+        sys.exit(printChecksum(name))
+    if not os.path.isfile(name):
+        print "%s is an invalid file name!" % name
+        return 1
     arch = getArchive(name)
     stack.append((name, arch))
     if debug:
         printLog(opts.log, arch)
-        sys.exit(0)
-    if checksum:
-        printChecksum(arch)
         sys.exit(0)
     show(name, arch)
 
@@ -159,14 +161,15 @@ def printLog(filename, arch, root=None, logfile=None):
     if f == None:
         f = open(filename, 'w')
     if type(arch.toc) == type({}):
-        toc = arch.toc.keys()
-        el = arch.toc
-        toc.sort()
-        for name in toc:
-            output = "%s [ %s ] %s bytes - pkg = %d - %s\n" % (str(el[name][1]).rjust(8), root, str(el[name][2]).rjust(6), el[name][0], name)
+        toc = arch.toc
+        #el = arch.toc
+        #toc.sort()
+        for name, el in toc.items():
+            output = "%s [ %s ] %s bytes - pkg = %d - %s\n" % (str(el[1]).rjust(8), root, str(el[2]).rjust(6), el[0], name)
             f.write(output)
     else:
-        toc = sorted(arch.toc.data, key=lambda toc: toc[5].lower())
+        #toc = sorted(arch.toc.data, key=lambda toc: toc[5].lower())
+        toc = arch.toc.data
         for el in toc:
             output = "%s [ %s ] %s / %s bytes - %s\n" % (str(el[0]).rjust(8), el[4], str(el[1]).rjust(6), str(el[2]).ljust(6), el[5])
             f.write(output)
@@ -176,21 +179,36 @@ def printLog(filename, arch, root=None, logfile=None):
     if logfile == None:
         f.close()
 
-def printChecksum(arch):
-    global name
-    filename = name + '_tmp_.log.cks'
-    tmpf = open(filename, 'w')
-    printLog(filename, arch, logfile=tmpf)
-    tmpf.close()
-    tmpf = open(filename, 'r')
-    sha = hashlib.sha256()
-    sha.update(tmpf.read())
-    tmpf.close()
-    cksf = open(name + '.cks', 'w')
-    cksf.write(sha.hexdigest())
-    cksf.close()
-    os.remove(filename)
-    print "Checksum(sha256): %s" % sha.hexdigest()
+def printChecksum(filename):
+    if os.path.isfile(filename):
+        tmpf = open(filename, 'r')
+        sha = hashlib.sha256()
+        sha.update(tmpf.read())
+        tmpf.close()
+        cksf = open(filename + '.cks', 'w')
+        cksf.write(sha.hexdigest())
+        cksf.close()
+    elif os.path.isdir(filename):
+        files = glob.glob(os.path.join(filename, '*'))
+        sha = hashlib.sha256()
+        for fn in files:
+            f = open(fn, 'r')
+            sha.update(fn)
+            sha.update(f.read())
+            f.close()
+        if filename[-1] == os.sep:
+            pn = filename[:-1]
+        else:
+            pn = filename[:]
+        cksf = open(pn + '.cks', 'w')
+        cksf.write(sha.hexdigest())
+        cksf.close()
+        
+    else:
+        print "%s is an invalid file name!" % filename
+        return 1
+    print "Checksum: %s" % sha.hexdigest()
+    return 0
 
 class ZlibArchive(archive.ZlibArchive):
     def checkmagic(self):
@@ -224,4 +242,4 @@ if __name__ == '__main__':
         parser.error('Requires exactly one pyinstaller archive')
     if (opts.log and os.path.exists(opts.log)):
         parser.error('File already exists: cannot log on it')
-    main(opts, args)
+    sys.exit(main(opts, args))
