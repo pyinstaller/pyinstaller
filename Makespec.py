@@ -59,6 +59,8 @@ useStrip = False # set True or False
 # UPX Packer (good for Windows)
 useUPX = True # set True or False
 
+useTk = False # set True or False
+
 
 ##############################
 ### Only for PyInstaller eyes
@@ -105,7 +107,7 @@ coll = COLLECT(
     a.binaries,
     a.zipfiles,
     a.datas,
-    [collectResources(src, dest, useDebug) for src, dest in resourcesPaths]
+    [collectResources(src, dest, useDebug) for src, dest in resourcesPaths],
     strip=useStrip,
     upx=useUPX,
     name=os.path.join(path_to_exe, name_of_exe)
@@ -125,11 +127,11 @@ exe = EXE(
     upx=useUPX)
 """
 
-HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
+HOME = os.path.realpath(os.path.abspath(os.path.dirname(sys.argv[0])))
 
-def createSpecFile(exename, scripts, options):
-    #configfile = os.path.join(HOME, "config.dat")
-    configfile = "/home/codeverse/.pyinstaller/config.dat"
+def createSpecFile(exename, scripts, dep_mode):
+    platform = sys.platform
+    configfile = os.path.join(HOME, "config.dat")
     workingdir = os.path.join(os.getcwd())
 
     try:
@@ -145,31 +147,35 @@ def createSpecFile(exename, scripts, options):
 
     pathex = os.path.dirname(os.path.join(workingdir, scripts[0]))
 
-    dic = {
+    options = {
         "exename"   : exename,
         "pathex"    : [pathex],
         "scripts"   : scripts,
         "builddir"  : os.path.dirname(os.path.join(pathex, scripts[0])),
-        "onedir"    : options["onedir"],
-        "onefile"   : not options["onedir"]}
+        "onedir"    : dep_mode is "onedir",
+        "onefile"   : dep_mode is "onefile"}
 
 
-    specfile = None
+    #TODO: better implementation of this block
     specfile_name = exename + ".spec"
-    count = 0
-    while not specfile:
-        try:
-            specfile = open(specfile_name, 'w')
-        except:
-            count += 1
-            specfile_name = exename + str(count) + ".spec"
+    if os.path.isfile(specfile_name):
+        choice = raw_input("File %s exist! Overwrite? [Y/n]" % specfile_name)
+        if choice in ["y","Y",""]:
+            pass
+        else:
+            raise SystemExit("Program stopped by the user.")
 
+    try:
+        specfile = open(specfile_name, 'w')
+    except IOError:
+        msg = "%s unreadable.\nAbort!" % specfile_name
+        raise SystemExit(msg)
 
     if filetype == ".py":
-        if dic["onedir"]:
-            specfile.write((common_part + onedir_tpl) % dic)
-        elif dic["onefile"]:
-            specfile.write((common_part + onefile_tpl) % dic)
+        if options["onedir"]:
+            specfile.write((common_part + onedir_tpl) % options)
+        elif options["onefile"]:
+            specfile.write((common_part + onefile_tpl) % options)
 
     specfile.close()
 
@@ -190,14 +196,14 @@ if __name__ == '__main__':
         "-D", "--onedir", dest="onedir", action="store_true", default=True,
         help="Create a single directory deployment")
 
-    opts, args = parser.parse_args()
+    opts, scripts = parser.parse_args()
     opts = opts.__dict__
 
     # Check for parsing errors
-    if not args:
+    if not scripts:
         parser.error('Requires at least one scriptname file')
 
-    exename, filetype = os.path.splitext(os.path.basename(args[0]))
+    exename, filetype = os.path.splitext(os.path.basename(scripts[0]))
 
     if filetype == ".spec":
         if len(scripts) > 1:
@@ -207,18 +213,18 @@ if __name__ == '__main__':
         except IOError as (errno, strerror):
             print "I/O error(%s): %s" % (errno, strerror)
     elif filetype == ".py":
-        for filename in args:
+        for filename in scripts:
             if not filetype in filename:
                 parser.error("Arguments must be all python scripts (*.py)")
     else:
         parser.error("Give in input .py or .spec files only")
 
-    specfile_name = createSpecFile(exename, args, opts)
-
     if opts["onedir"]:
         dep_mode = "onedir"
     else:
         dep_mode = "onefile"
+
+    specfile_name = createSpecFile(exename, scripts, dep_mode)
 
     print "%s has been wrote in %s mode" % (os.path.join(os.getcwd(), specfile_name), dep_mode)
     print "Now you can edit it and run the Build.py"
