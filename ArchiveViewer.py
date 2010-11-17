@@ -36,7 +36,7 @@ def main(opts, args):
     global debug
     global name
     name = args[0]
-    debug = opts.log != None
+    debug = opts.log
     checksum = opts.checksum
     if checksum:
         sys.exit(printChecksum(name))
@@ -156,28 +156,18 @@ def show(nm, arch):
         toc = arch.toc.data
     pprint.pprint(toc)
 
-def printLog(filename, arch, root=None, logfile=None):
-    f = logfile
-    if f == None:
-        f = open(filename, 'w')
+def printLog(filename, arch, root=None):
     if type(arch.toc) == type({}):
         toc = arch.toc
-        #el = arch.toc
-        #toc.sort()
         for name, el in toc.items():
-            output = "%s [ %s ] %s bytes - pkg = %d - %s\n" % (str(el[1]).rjust(8), root, str(el[2]).rjust(6), el[0], name)
-            f.write(output)
+            print "%s [ %s ] %s bytes - pkg = %d - %s" % (str(el[1]).rjust(8), root, str(el[2]).rjust(6), el[0], name)
     else:
-        #toc = sorted(arch.toc.data, key=lambda toc: toc[5].lower())
         toc = arch.toc.data
         for el in toc:
-            output = "%s [ %s ] %s / %s bytes - %s\n" % (str(el[0]).rjust(8), el[4], str(el[1]).rjust(6), str(el[2]).ljust(6), el[5])
-            f.write(output)
+            print "%s [ %s ] %s / %s bytes - %s" % (str(el[0]).rjust(8), el[4], str(el[1]).rjust(6), str(el[2]).ljust(6), el[5])
             if el[4] == 'z' or el[4] == 'a':
-                printLog(filename, getArchive(el[5]), el[5], f)
+                printLog(filename, getArchive(el[5]), el[5])
                 stack.pop()
-    if logfile == None:
-        f.close()
 
 def printChecksum(filename):
     if os.path.isfile(filename):
@@ -226,10 +216,11 @@ class ZlibArchive(archive.ZlibArchive):
 
 from pyi_optparse import OptionParser
 parser = OptionParser('%prog [options] pyi_archive')
-parser.add_option('-l', '--log-file',
-                  action='store',
+parser.add_option('-l', '--log',
+                  default=False,
+                  action='store_true',
                   dest='log',
-                  help='Print an archive dump on file (default: %default)')
+                  help='Print an archive dump (default: %default)')
 parser.add_option('-c', '--checksum',
                   default=False,
                   action='store_true',
@@ -240,6 +231,4 @@ if __name__ == '__main__':
     opts, args = parser.parse_args()
     if len(args) != 1:
         parser.error('Requires exactly one pyinstaller archive')
-    if (opts.log and os.path.exists(opts.log)):
-        parser.error('File already exists: cannot log on it')
     sys.exit(main(opts, args))
