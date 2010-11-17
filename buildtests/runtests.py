@@ -169,11 +169,22 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
                         print "ERROR: no file to test found!"
                         res_tmp = 1
                 for toCheckFn, checkHash in test_info.needCheck.items():
+                    if test_info.platform != sys.platform:
+                        print "WARNING: checksum test useless: different platform detected!"
+                        continue
+                    a,b,c,_,_ = sys.version_info
+                    if test_info.python != (a, b, c):
+                        print "WARNING: checksum test useless: different python detected!"
+                        continue
                     print "Calculating and testing checksum: %s" % toCheckFn
                     if os.path.isfile(toCheckFn):
                         command = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'ArchiveViewer.py'),
                             '-c', toCheckFn], ' ')
                         res_tmp = res_tmp or os.system(command)
+                        if (not os.path.isfile(toCheckFn + '.cks')):
+                            print "ERROR: no checksum file found!"
+                            res_tmp = 1
+                            continue
                         f = open(toCheckFn + '.cks', 'r')
                         chk = f.read()
                         f.close()
@@ -225,6 +236,8 @@ class TestInfo:
         self.needExec = [] # exec and test any file here
         self.needCheck = {} # compare checksum {file: checksum}
         self.needFunc = [] # exec any function here
+        self.python = ""
+        self.platform = ""
 
 if __name__ == '__main__':
     normal_tests = glob.glob('test*.spec')
