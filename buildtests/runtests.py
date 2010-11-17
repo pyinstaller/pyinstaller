@@ -44,10 +44,6 @@ DEPENDENCIES = {
  'test-zipimport2': ["pkg_resources", "setuptools"],
  'test15': ["ctypes"], 
  'test-wx': ["wx"],
- 'test1_multiprocess_A': ["numpy", "PyQt4"],
- 'test2_multiprocess_A': ["numpy", "PyQt4"],
- 'test3_multiprocess_A': ["numpy", "PyQt4"],
- 'test4_multiprocess_A': ["numpy", "PyQt4"], 
 }
 
 try:
@@ -164,10 +160,11 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
                 for toExec in test_info.needExec:
                     print "Executing: %s" % toExec
                     if os.path.isfile(toExec):
-                        res_tmp = res_tmp or os.system(toExec)
+                        res_tmp = os.system(toExec)
+                        res = res or res_tmp
                     else:
                         print "ERROR: no file to test found!"
-                        res_tmp = 1
+                        res = 1
                 for toCheckFn, checkHash in test_info.needCheck.items():
                     if test_info.platform != sys.platform:
                         print "WARNING: checksum test useless: different platform detected!"
@@ -180,24 +177,27 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
                     if os.path.isfile(toCheckFn):
                         command = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'ArchiveViewer.py'),
                             '-c', toCheckFn], ' ')
-                        res_tmp = res_tmp or os.system(command)
+                        res_tmp = os.system(command)
+                        res = res or res_tmp
                         if (not os.path.isfile(toCheckFn + '.cks')):
                             print "ERROR: no checksum file found!"
-                            res_tmp = 1
+                            res = 1
                             continue
                         f = open(toCheckFn + '.cks', 'r')
                         chk = f.read()
                         f.close()
                         if chk != checkHash:
                             print "ERROR: wrong checksum!"
-                            res_tmp = 1
+                            res = 1
+                        else:
+                            print "Checksum test: SUCCESS"
                     else:
                         print "ERROR: no file to test checksum found!"
-                        res_tmp = 1
+                        res = 1
                 for toFunc in test_info.needFunc:
                     print "Executing supplementary test functions"
-                    res_tmp = res_tmp or not toFunc()
-                res = res or res_tmp
+                    res_tmp = not toFunc()
+                    res = res or res_tmp
                 os.environ["PATH"] = path
             else:
                 # runtests 1.0
