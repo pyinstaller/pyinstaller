@@ -146,15 +146,12 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
         res = os.system(prog)
         
         if res == 0 and run_executable:
-            if "_multiprocess_" in test:
-                tmpname = test.split('_multiprocess_')[0]
-                files = glob.glob(os.path.join('dist', tmpname + '_multiprocess_*'))
-                for exe in files:
-                    exe = os.path.splitext(exe)[0]
-                    res_tmp = test_exe(exe[5:])
+            files = glob.glob(os.path.join('dist', test + '*'))
+            print files
+            for exe in files:
+                exe = os.path.splitext(exe)[0]
+                res_tmp = test_exe(exe[5:])
                 res = res or res_tmp
-            else:
-                res == test_exe(os.path.join(test))
         if res == 0:
             _msg("FINISHING TEST", test, short=1)
             counter["passed"].append(test)
