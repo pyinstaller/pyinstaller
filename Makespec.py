@@ -168,7 +168,7 @@ def createSpecFile(exename, scripts, options):
 
     if options["onedir"]:
         specfile.write((common_part + onedir_tpl) % options)
-    elif options["onefile"]:
+    else:
         specfile.write((common_part + onefile_tpl) % options)
 
     return specfile_name
