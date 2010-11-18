@@ -24,23 +24,33 @@ try:
 except ImportError:
     zlib = archive.DummyZlib()
 import pprint
+from pyi_optparse import OptionParser
 
 stack = []
 cleanup = []
 name = None
 debug = False
+rec_debug=False
 
-def main():
+def main(opts, args):
     global stack
     global debug
+    global rec_debug
     global name
-    name = sys.argv[1]
-    if len(sys.argv) > 2:
-        if sys.argv[2][:2] == '-d':
-            debug = True
+    name = args[0]
+    debug = opts.log
+    rec_debug = opts.rec
+    if not os.path.isfile(name):
+        print "%s is an invalid file name!" % name
+        return 1
+        
     arch = getArchive(name)
     stack.append((name, arch))
-    show(name, arch, debug, name + '.log')
+    if not debug:
+        show(name, arch)
+    else:
+        show_log(name, arch)
+        sys.exit(0)
 
     while 1:
         try:
@@ -64,7 +74,7 @@ def main():
                 arch.lib.close()
                 del stack[-1]
             nm, arch = stack[-1]
-            show(nm, arch, debug, name + '.' + nm + '.log')
+            show(nm, arch)
         elif cmd == 'O':
             if not arg:
                 arg = raw_input('open name? ')
@@ -74,7 +84,7 @@ def main():
                 print arg, "not found"
                 continue
             stack.append((arg, arch))
-            show(arg, arch, debug, name + '.' + arg + '.log')
+            show(arg, arch)
         elif cmd == 'X':
             if not arg:
                 arg = raw_input('extract name? ')
@@ -139,7 +149,7 @@ def getData(nm, arch):
     x, data = arch.extract(ndx)
     return data
 
-def show(nm, arch, onfile=False, fn=None):
+def show(nm, arch):
     if type(arch.toc) == type({}):
         print " Name: (ispkg, pos, len)"
         toc = arch.toc
@@ -147,10 +157,25 @@ def show(nm, arch, onfile=False, fn=None):
         print " pos, length, uncompressed, iscompressed, type, name"
         toc = arch.toc.data
     pprint.pprint(toc)
-    if onfile and fn != None:
-        out_file = open(fn, "w")
-        pprint.pprint(toc, stream=out_file)
-        out_file.close()
+    
+def show_log(nm, arch):
+    global rec_debug
+    if type(arch.toc) == type({}):
+        print nm
+        print " Name: (ispkg, pos, len)"
+        toc = arch.toc
+        pprint.pprint(toc)
+    else:
+        print nm
+        print " pos, length, uncompressed, iscompressed, type, name"
+        toc = arch.toc.data
+        pprint.pprint(toc)
+        if rec_debug:
+            for el in toc:
+                if el[4] == 'z' or el[4] == 'a':
+                        show_log(el[5], getArchive(el[5]))
+                        stack.pop()
+        
 
 class ZlibArchive(archive.ZlibArchive):
     def checkmagic(self):
@@ -166,5 +191,21 @@ class ZlibArchive(archive.ZlibArchive):
             print "Warning: pyz is from a different Python version"
         self.lib.read(4)
 
+parser = OptionParser('%prog [options] pyi_archive')
+parser.add_option('-l', '--log',
+                  default=False,
+                  action='store_true',
+                  dest='log',
+                  help='Print an archive log (default: %default)')
+parser.add_option('-r', '--recursive',
+                  default=False,
+                  action='store_true',
+                  dest='rec',
+                  help='Recusively print an archive log (default: %default)')
+
 if __name__ == '__main__':
-    main()
+    opts, args = parser.parse_args()
+    if len(args) != 1:
+        parser.error('Requires exactly one pyinstaller archive')
+    sys.exit(main(opts, args))
+
