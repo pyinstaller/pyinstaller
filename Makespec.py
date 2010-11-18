@@ -72,18 +72,9 @@ useTk = False # set True or False
 def collectResources(exploring_path, final_path):
     import os
     data = []
-    exploring_path = os.path.normpath(exploring_path)
-    final_path = os.path.normpath(final_path)
-    if debug:
-        print "Exploring the", os.path.basename(exploring_path), "directory in",\\
-            os.path.dirname(exploring_path), "and moving all its content to",\\
-            os.path.basename(final_path)
     for root, dirs, files in os.walk(exploring_path):
         data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
             os.path.join(root, filename), 'DATA') for filename in files]
-    if useDebug:
-        for what_from, _, __ in data:
-            print "Found", what_from
     return data
 
 a = Analysis(
@@ -149,7 +140,8 @@ def createSpecFile(exename, scripts, options):
         home_paths.insert(0, os.path.join("support", "useUnicode.py"))
     home_paths.insert(0, os.path.join("support", "_mountzlib.py"))
 
-    scripts = map(makeHomePathVariable, home_paths) + scripts
+    home_paths = map(makeHomePathVariable, home_paths)
+    #TODO: Make home_paths printable in the template
 
     pathex = [workingdir]
 
@@ -179,7 +171,7 @@ if __name__ == '__main__':
     import pyi_optparse as optparse
 
     parser = optparse.OptionParser(
-        usage = "usage: %prog [--onefile | --onedir] <scriptname> [<scriptname> ...] | <specname>")
+        usage = "usage: %prog [-F | -D] [-h] <scriptname> [<scriptname> ...] | <specname>")
 
     parser.add_option(
         "-F", "--onefile", dest="onedir", action="store_false", default=True,
@@ -201,7 +193,7 @@ if __name__ == '__main__':
     if filetype == ".spec":
         if len(args) > 1:
             parser.error("Too many arguments. Give only one spec at time")
-        #TODO: Old spec parsing implementation for uptade
+        #TODO: Old spec parsing implementation for update
     elif filetype == ".py":
         for filename in args:
             if not filetype in filename:
