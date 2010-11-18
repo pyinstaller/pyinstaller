@@ -130,8 +130,14 @@ exe = EXE(
 
 HOME = os.path.realpath(os.path.abspath(os.path.dirname(sys.argv[0])))
 
+#path_conversions = {
+#    HOME : "HOMEPATH"}
+
+def makeHomePathVariable(path_suffix):
+    return "os.path.join('HOMEPATH', '%s')" % path_suffix
+
 def createSpecFile(exename, scripts, dep_mode):
-    platform = sys.platform
+    #platform = sys.platform
     configfile = os.path.join(HOME, "config.dat")
     workingdir = os.getcwd()
 
@@ -146,10 +152,11 @@ def createSpecFile(exename, scripts, dep_mode):
             Please re-run Configure.py with this version."""
         raise SystemExit(msg)
 
-    scripts = [os.path.join(HOME, "support", "_mountzlib.py")] + scripts
     if config["hasUnicode"]:
-        scripts = [os.path.join(HOME, "support", "useUnicode.py")] + scripts
+        scripts = [makeHomePathVariable(os.path.join("support", "useUnicode.py"))] + scripts
+    scripts = [makeHomePathVariable(os.path.join("support", "_mountzlib.py"))] + scripts
 
+    scripts = map()
     pathex = [workingdir]
 
     options = {
@@ -163,8 +170,8 @@ def createSpecFile(exename, scripts, dep_mode):
 
 
     specfile_name = exename + ".spec"
-
     specfile = open(specfile_name, 'w')
+
     if not specfile:
         raise SystemExit("Unable to open %s" % specfile_name)
 
