@@ -19,6 +19,7 @@ Changes since PyInstaller 1.4
    (.pyd/.so) compressed within .egg-files.
  + Add import hook for PyTables.
  + Add missing import hook for QtWebKit.
+ + Add import hook for pywinauto.
  * Improve matplotlib import hook (for Mac OSX).
  * Improve Django import hooks.
  * Rewritten the build system for the bootloader using waf (thanks
