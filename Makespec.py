@@ -121,9 +121,6 @@ exe = EXE(
 
 HOME = os.path.realpath(os.path.abspath(os.path.dirname(sys.argv[0])))
 
-def makeHomePathVariable(path_suffix):
-    return "os.path.join('HOMEPATH', '%s')" % path_suffix
-
 def createSpecFile(exename, scripts, options):
     configfile = os.path.join(HOME, "config.dat")
     workingdir = os.getcwd()
@@ -140,7 +137,6 @@ def createSpecFile(exename, scripts, options):
         home_paths.insert(0, os.path.join("support", "useUnicode.py"))
     home_paths.insert(0, os.path.join("support", "_mountzlib.py"))
 
-    home_paths = map(makeHomePathVariable, home_paths)
     #TODO: Make home_paths printable in the template
 
     pathex = [workingdir]
