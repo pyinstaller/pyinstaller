@@ -164,7 +164,7 @@ def createSpecFile(exename, scripts, dep_mode):
         "pathex"    : pathex,
         "scripts"   : scripts,
         "distdir"   : "dist",
-        "builddir"  : os.path.dirname(os.path.join(pathex, scripts[0])),
+        "builddir"  : os.path.join('build', 'pyi.' + config['target_platform'], exename),
         "onedir"    : dep_mode is "onedir",
         "onefile"   : dep_mode is "onefile"}
 
