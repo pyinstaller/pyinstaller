@@ -199,7 +199,7 @@ if __name__ == '__main__':
     name, filetype = os.path.splitext(os.path.basename(args[0]))
 
     if filetype == ".spec":
-        if len(scripts) > 1:
+        if len(args) > 1:
             parser.error("Too many arguments. Give only one spec at time")
         #TODO: Old spec parsing implementation for uptade
     elif filetype == ".py":
