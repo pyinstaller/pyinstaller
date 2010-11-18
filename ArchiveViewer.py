@@ -31,26 +31,32 @@ cleanup = []
 name = None
 debug = False
 rec_debug=False
+brief=False
 
 def main(opts, args):
     global stack
     global debug
     global rec_debug
     global name
+    global brief
     name = args[0]
     debug = opts.log
     rec_debug = opts.rec
+    brief = opts.brief
     if not os.path.isfile(name):
         print "%s is an invalid file name!" % name
         return 1
         
     arch = getArchive(name)
     stack.append((name, arch))
-    if not debug:
-        show(name, arch)
-    else:
+    if debug:
         show_log(name, arch)
         sys.exit(0)
+    elif brief:
+        show_brief(name, arch)
+        sys.exit(0)
+    else:
+        show(name, arch)
 
     while 1:
         try:
@@ -157,9 +163,8 @@ def show(nm, arch):
         print " pos, length, uncompressed, iscompressed, type, name"
         toc = arch.toc.data
     pprint.pprint(toc)
-    
+
 def show_log(nm, arch):
-    global rec_debug
     if type(arch.toc) == type({}):
         print nm
         print " Name: (ispkg, pos, len)"
@@ -175,7 +180,22 @@ def show_log(nm, arch):
                 if el[4] == 'z' or el[4] == 'a':
                         show_log(el[5], getArchive(el[5]))
                         stack.pop()
-        
+
+def show_brief(nm, arch):
+    if type(arch.toc) == type({}):
+        toc = arch.toc
+        for name,_ in toc.items():
+            print name + ','
+    else:
+        print '['
+        toc = arch.toc.data
+        for el in toc:
+            print el[5] + ','
+            if rec_debug:
+                if el[4] == 'z' or el[4] == 'a':
+                    show_brief(el[5], getArchive(el[5]))
+                    stack.pop()
+        print ']'
 
 class ZlibArchive(archive.ZlibArchive):
     def checkmagic(self):
@@ -201,7 +221,12 @@ parser.add_option('-r', '--recursive',
                   default=False,
                   action='store_true',
                   dest='rec',
-                  help='Recusively print an archive log (default: %default)')
+                  help='Recusively print an archive log (default: %default). Can be combined with -r')
+parser.add_option('-b', '--brief',
+                  default=False,
+                  action='store_true',
+                  dest='brief',
+                  help='Print only file name. (default: %default). Can be combined with -r')
 
 if __name__ == '__main__':
     opts, args = parser.parse_args()
