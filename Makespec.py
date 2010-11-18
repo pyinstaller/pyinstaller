@@ -172,13 +172,10 @@ def createSpecFile(exename, scripts, options):
     if not specfile:
         raise SystemExit("Unable to open %s" % specfile_name)
 
-    if filetype == ".py":
-        if options["onedir"]:
-            specfile.write((common_part + onedir_tpl) % options)
-        elif options["onefile"]:
-            specfile.write((common_part + onefile_tpl) % options)
-    elif filetype == ".spec":
-        pass #TODO: Analyze the old_specfile and generating the new one
+    if options["onedir"]:
+        specfile.write((common_part + onedir_tpl) % options)
+    elif options["onefile"]:
+        specfile.write((common_part + onefile_tpl) % options)
 
     return specfile_name
 
