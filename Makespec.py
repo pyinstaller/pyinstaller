@@ -82,7 +82,7 @@ def collectResources(exploring_path, final_path):
         data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
             os.path.join(root, filename), 'DATA') for filename in files]
     if useDebug:
-        for what_from, what_to, type in data:
+        for what_from, _, __ in data:
             print "Found", what_from
     return data
 
@@ -130,14 +130,10 @@ exe = EXE(
 
 HOME = os.path.realpath(os.path.abspath(os.path.dirname(sys.argv[0])))
 
-#path_conversions = {
-#    HOME : "HOMEPATH"}
-
 def makeHomePathVariable(path_suffix):
     return "os.path.join('HOMEPATH', '%s')" % path_suffix
 
-def createSpecFile(exename, scripts, dep_mode):
-    #platform = sys.platform
+def createSpecFile(exename, scripts, options):
     configfile = os.path.join(HOME, "config.dat")
     workingdir = os.getcwd()
 
@@ -152,26 +148,27 @@ def createSpecFile(exename, scripts, dep_mode):
             Please re-run Configure.py with this version."""
         raise SystemExit(msg)
 
+    home_paths = []
     if config["hasUnicode"]:
-        scripts = [makeHomePathVariable(os.path.join("support", "useUnicode.py"))] + scripts
-    scripts = [makeHomePathVariable(os.path.join("support", "_mountzlib.py"))] + scripts
+        home_paths.insert(0, os.path.join("support", "useUnicode.py"))
+    home_paths.insert(0, os.path.join("support", "_mountzlib.py"))
 
-    scripts = map()
+    scripts = map(makeHomePathVariable, home_paths) + scripts
+
     pathex = [workingdir]
-
+    print type(options), options
     options = {
         "exename"   : exename,
         "pathex"    : pathex,
         "scripts"   : scripts,
         "distdir"   : "dist",
         "builddir"  : os.path.join('build', 'pyi.' + config['target_platform'], exename),
-        "onedir"    : dep_mode is "onedir",
-        "onefile"   : dep_mode is "onefile"}
+        "onedir"    : options["onedir"],
+        "onefile"   : not options["onedir"]}
 
 
     specfile_name = exename + ".spec"
     specfile = open(specfile_name, 'w')
-
     if not specfile:
         raise SystemExit("Unable to open %s" % specfile_name)
 
@@ -200,35 +197,36 @@ if __name__ == '__main__':
         "-D", "--onedir", dest="onedir", action="store_true", default=True,
         help="Create a single directory deployment")
 
-    opts, scripts = parser.parse_args()
+    opts, args = parser.parse_args()
     opts = opts.__dict__
 
     # Check for parsing errors
-    if not scripts:
+    if not args:
         parser.error('Requires at least one scriptname file')
 
-    exename, filetype = os.path.splitext(os.path.basename(scripts[0]))
+    name, filetype = os.path.splitext(os.path.basename(args[0]))
 
     if filetype == ".spec":
         if len(scripts) > 1:
             parser.error("Too many arguments. Give only one spec at time")
 
-        old_specfile = open(exename + ".spec", 'r')
+        old_specfile = open(name + ".spec", 'r')
         #TODO: Old spec parsing implementation
 
     elif filetype == ".py":
-        for filename in scripts:
+        for filename in args:
             if not filetype in filename:
                 parser.error("Arguments must be all python scripts (*.py)")
     else:
         parser.error("Give in input .py or .spec files only")
 
+
+    specfile_name = createSpecFile(name, args, opts)
+
     if opts["onedir"]:
         dep_mode = "onedir"
     else:
         dep_mode = "onefile"
-
-    specfile_name = createSpecFile(exename, scripts, dep_mode)
 
     print "%s has been wrote in %s mode" % (os.path.join(os.getcwd(), specfile_name), dep_mode)
     print "Now you can edit it and run the Build.py"
