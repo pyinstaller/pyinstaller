@@ -185,12 +185,12 @@ def show_brief(nm, arch):
     if type(arch.toc) == type({}):
         toc = arch.toc
         for name,_ in toc.items():
-            print name + ','
+            print '"%s",' % name
     else:
         print '['
         toc = arch.toc.data
         for el in toc:
-            print el[5] + ','
+            print '"%s",' % el[5]
             if rec_debug:
                 if el[4] == 'z' or el[4] == 'a':
                     show_brief(el[5], getArchive(el[5]))
