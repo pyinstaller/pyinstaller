@@ -144,7 +144,7 @@ def createSpecFile(exename, scripts, dep_mode):
             Please re-run Configure.py with this version."""
         raise SystemExit(msg)
 
-    script = [os.path.join(HOME, "support", "_mountzlib.py")]
+    scripts = [os.path.join(HOME, "support", "_mountzlib.py")] + scripts
     if config["hasUnicode"]:
         scripts = [os.path.join(HOME, "support", "useUnicode.py")] + scripts
 
