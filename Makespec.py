@@ -137,7 +137,9 @@ def createSpecFile(exename, scripts, dep_mode):
 
     config = eval(open(configfile, 'r').read())
     if not config:
-        raise SystemExit("Unable to open %s" % config)
+        msg = """"Unable to open %s: file missing or unreadable.
+            Please run Configure.py before using PyInstaller""" % configfile
+        raise SystemExit(msg)
 
     if config["pythonVersion"] != sys.version:
         msg = """PyInstaller configfile and current Python version are incompatible.
