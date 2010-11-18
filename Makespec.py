@@ -165,8 +165,6 @@ def createSpecFile(exename, scripts, options):
 
     specfile_name = exename + ".spec"
     specfile = open(specfile_name, 'w')
-    if not specfile:
-        raise SystemExit("Unable to open %s" % specfile_name)
 
     if options["onedir"]:
         specfile.write((common_part + onedir_tpl) % options)
@@ -193,6 +191,7 @@ if __name__ == '__main__':
     opts, args = parser.parse_args()
     opts = opts.__dict__
 
+
     # Check for parsing errors
     if not args:
         parser.error('Requires at least one scriptname file')
@@ -202,10 +201,7 @@ if __name__ == '__main__':
     if filetype == ".spec":
         if len(scripts) > 1:
             parser.error("Too many arguments. Give only one spec at time")
-
-        old_specfile = open(name + ".spec", 'r')
-        #TODO: Old spec parsing implementation
-
+        #TODO: Old spec parsing implementation for uptade
     elif filetype == ".py":
         for filename in args:
             if not filetype in filename:
