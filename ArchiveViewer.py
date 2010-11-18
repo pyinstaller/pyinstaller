@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 import archive
 import carchive
-import sys, string, tempfile, os, hashlib, glob
+import sys, string, tempfile, os
 try:
     import zlib
 except ImportError:
@@ -29,26 +29,18 @@ stack = []
 cleanup = []
 name = None
 debug = False
-checksum = False
 
-def main(opts, args):
+def main():
     global stack
     global debug
     global name
-    name = args[0]
-    debug = opts.log
-    checksum = opts.checksum
-    if checksum:
-        sys.exit(printChecksum(name))
-    if not os.path.isfile(name):
-        print "%s is an invalid file name!" % name
-        return 1
+    name = sys.argv[1]
+    if len(sys.argv) > 2:
+        if sys.argv[2][:2] == '-d':
+            debug = True
     arch = getArchive(name)
     stack.append((name, arch))
-    if debug:
-        printLog(opts.log, arch)
-        sys.exit(0)
-    show(name, arch)
+    show(name, arch, debug, name + '.log')
 
     while 1:
         try:
@@ -72,7 +64,7 @@ def main(opts, args):
                 arch.lib.close()
                 del stack[-1]
             nm, arch = stack[-1]
-            show(nm, arch)
+            show(nm, arch, debug, name + '.' + nm + '.log')
         elif cmd == 'O':
             if not arg:
                 arg = raw_input('open name? ')
@@ -82,7 +74,7 @@ def main(opts, args):
                 print arg, "not found"
                 continue
             stack.append((arg, arch))
-            show(arg, arch)
+            show(arg, arch, debug, name + '.' + arg + '.log')
         elif cmd == 'X':
             if not arg:
                 arg = raw_input('extract name? ')
@@ -147,7 +139,7 @@ def getData(nm, arch):
     x, data = arch.extract(ndx)
     return data
 
-def show(nm, arch):
+def show(nm, arch, onfile=False, fn=None):
     if type(arch.toc) == type({}):
         print " Name: (ispkg, pos, len)"
         toc = arch.toc
@@ -155,50 +147,10 @@ def show(nm, arch):
         print " pos, length, uncompressed, iscompressed, type, name"
         toc = arch.toc.data
     pprint.pprint(toc)
-
-def printLog(filename, arch, root=None):
-    if type(arch.toc) == type({}):
-        toc = arch.toc
-        for name, el in toc.items():
-            print "%s [ %s ] %s bytes - pkg = %d - %s" % (str(el[1]).rjust(8), root, str(el[2]).rjust(6), el[0], name)
-    else:
-        toc = arch.toc.data
-        for el in toc:
-            print "%s [ %s ] %s / %s bytes - %s" % (str(el[0]).rjust(8), el[4], str(el[1]).rjust(6), str(el[2]).ljust(6), el[5])
-            if el[4] == 'z' or el[4] == 'a':
-                printLog(filename, getArchive(el[5]), el[5])
-                stack.pop()
-
-def printChecksum(filename):
-    if os.path.isfile(filename):
-        tmpf = open(filename, 'r')
-        sha = hashlib.sha256()
-        sha.update(tmpf.read())
-        tmpf.close()
-        cksf = open(filename + '.cks', 'w')
-        cksf.write(sha.hexdigest())
-        cksf.close()
-    elif os.path.isdir(filename):
-        files = glob.glob(os.path.join(filename, '*'))
-        sha = hashlib.sha256()
-        for fn in files:
-            f = open(fn, 'r')
-            sha.update(fn)
-            sha.update(f.read())
-            f.close()
-        if filename[-1] == os.sep:
-            pn = filename[:-1]
-        else:
-            pn = filename[:]
-        cksf = open(pn + '.cks', 'w')
-        cksf.write(sha.hexdigest())
-        cksf.close()
-        
-    else:
-        print "%s is an invalid file name!" % filename
-        return 1
-    print "Checksum: %s" % sha.hexdigest()
-    return 0
+    if onfile and fn != None:
+        out_file = open(fn, "w")
+        pprint.pprint(toc, stream=out_file)
+        out_file.close()
 
 class ZlibArchive(archive.ZlibArchive):
     def checkmagic(self):
@@ -214,21 +166,5 @@ class ZlibArchive(archive.ZlibArchive):
             print "Warning: pyz is from a different Python version"
         self.lib.read(4)
 
-from pyi_optparse import OptionParser
-parser = OptionParser('%prog [options] pyi_archive')
-parser.add_option('-l', '--log',
-                  default=False,
-                  action='store_true',
-                  dest='log',
-                  help='Print an archive dump (default: %default)')
-parser.add_option('-c', '--checksum',
-                  default=False,
-                  action='store_true',
-                  dest='checksum',
-                  help='Create a checksum file next to the archive (default: %default)')
-
 if __name__ == '__main__':
-    opts, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error('Requires exactly one pyinstaller archive')
-    sys.exit(main(opts, args))
+    main()
