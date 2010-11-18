@@ -152,7 +152,7 @@ def createSpecFile(exename, scripts, options):
     scripts = map(makeHomePathVariable, home_paths) + scripts
 
     pathex = [workingdir]
-    print type(options), options
+
     options = {
         "exename"   : exename,
         "pathex"    : pathex,
