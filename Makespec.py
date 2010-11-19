@@ -34,9 +34,8 @@ except:
 common_part = """# -*- mode: python -*-
 #(i) This file was automatically genereted by the Makespec.py
 
-
 ###########################
-### Edit it to your liking
+### Edit to your liking
 
 name_of_exe = '%(exename)s'
 path_to_exe = %(pathex)s
@@ -51,15 +50,10 @@ resourcesPaths = [
 #   ("/these/are/only/examples","../../this/too")
 ]
 
-useDebug = False # set True or False
-
-# Remove the Debug symbols from the ELF executable (only for UNIX)
-useStrip = True # set True or False
-
-# UPX Packer (good for Windows)
-useUPX = True # set True or False
-
-useTk = False # set True or False
+useDebug = False
+useStrip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
+useUPX = True # UPX Packer (useful for Windows)
+useTk = False
 
 
 ##############################
@@ -70,7 +64,6 @@ useTk = False # set True or False
 #    on www.pyinstaller.org
 
 def collectResources(exploring_path, final_path):
-    import os
     data = []
     for root, dirs, files in os.walk(exploring_path):
         data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
@@ -131,10 +124,11 @@ def stringfyHomePaths(hp_list):
     return string
 
 def createSpecFile(exename, scripts, options):
-    configfile = os.path.join(HOME, "config.dat")
+    configfile_name = os.path.join(HOME, "config.dat")
     workingdir = os.getcwd()
 
-    config = eval(open(configfile, 'r').read())
+    with open(configfile_name, 'r') as configfile:
+        config = eval(configfile.read())
 
     if config["pythonVersion"] != sys.version:
         msg = """PyInstaller configfile and current Python version are incompatible.
