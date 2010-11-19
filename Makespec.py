@@ -94,7 +94,7 @@ exe = EXE(
     exclude_binaries=1,
     name=os.path.join(%(builddir)s, name_of_exe),
     debug=useDebug,
-    strip=useStrip
+    strip=useStrip,
     upx=useUPX)
 
 coll = COLLECT(
@@ -104,7 +104,7 @@ coll = COLLECT(
     a.datas,
     strip=useStrip,
     upx=useUPX,
-    name=os.path.join(%(distdir)s, name_of_exe)
+    name=os.path.join(%(distdir)s, name_of_exe))
 """
 
 onefile_tpl = """
