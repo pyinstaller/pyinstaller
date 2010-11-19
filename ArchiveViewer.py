@@ -30,8 +30,8 @@ stack = []
 cleanup = []
 name = None
 debug = False
-rec_debug=False
-brief=False
+rec_debug = False
+brief = False
 
 def main(opts, args):
     global stack
@@ -49,11 +49,8 @@ def main(opts, args):
         
     arch = getArchive(name)
     stack.append((name, arch))
-    if debug:
+    if debug or brief:
         show_log(name, arch)
-        sys.exit(0)
-    elif brief:
-        show_brief(name, arch)
         sys.exit(0)
     else:
         show(name, arch)
@@ -164,38 +161,26 @@ def show(nm, arch):
         toc = arch.toc.data
     pprint.pprint(toc)
 
-def show_log(nm, arch):
-    if type(arch.toc) == type({}):
-        print nm
-        print " Name: (ispkg, pos, len)"
-        toc = arch.toc
-        pprint.pprint(toc)
-    else:
-        print nm
-        print " pos, length, uncompressed, iscompressed, type, name"
-        toc = arch.toc.data
-        pprint.pprint(toc)
-        if rec_debug:
-            for el in toc:
-                if el[4] == 'z' or el[4] == 'a':
-                        show_log(el[5], getArchive(el[5]))
-                        stack.pop()
-
-def show_brief(nm, arch):
+def show_log(nm, arch, output=[]):
     if type(arch.toc) == type({}):
         toc = arch.toc
-        for name,_ in toc.items():
-            print '"%s",' % name
+        if brief:
+            for name,_ in toc.items():
+                output.append(name)
+        else:
+            pprint.pprint(toc)
     else:
-        print '['
         toc = arch.toc.data
         for el in toc:
-            print '"%s",' % el[5]
+            if brief:
+                output.append(el[5])
+            else:
+                output.append(el)
             if rec_debug:
-                if el[4] == 'z' or el[4] == 'a':
-                    show_brief(el[5], getArchive(el[5]))
+                if el[4] in ('z', 'a'):
+                    show_log(el[5], getArchive(el[5]), output)
                     stack.pop()
-        print ']'
+        pprint.pprint(output)
 
 class ZlibArchive(archive.ZlibArchive):
     def checkmagic(self):
