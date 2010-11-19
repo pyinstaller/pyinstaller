@@ -1374,12 +1374,12 @@ def get_relative_path(startpath, topath):
         return result + os.sep + topath
     else:
         return topath
-        
+
 def set_dependencies(analysis, dependencies, path):
     """
     Syncronize the Analysis result with the needed dependencies.
     """
-    
+
     for toc in (analysis.binaries, analysis.datas):
         for i in range(len(toc)):
             tpl = toc[i]
@@ -1396,21 +1396,26 @@ def set_dependencies(analysis, dependencies, path):
 
 def MERGE(*args):
     """
-    Wipe repeated dependencies from a list of Analysis objects, supplied as 
-    argument.
+    Wipe repeated dependencies from a list of (Analysis, id, filename) tuples,
+    supplied as argument. Replace id with the correct filename.
     """
-    
+
     # Get the longest common path
-    common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a in args]))
+    common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a,_,_ in args]))
     if common_prefix[-1] != os.sep:
         common_prefix += os.sep
     print "Common prefix: %s" % common_prefix
     # Adjust dependencies for each Analysis object; the first Analysis in the 
     # list will include all dependencies.
+    id_to_path = {}
+    for _, i, p in args:
+        id_to_path[i] = p
     dependencies = {}
-    for analysis in args:
+    for analysis,_,_ in args:
         path = os.path.abspath(analysis.scripts[-1][1]).replace(common_prefix, "", 1)
         path = os.path.splitext(path)[0]
+        if path in id_to_path:
+            path = id_to_path[path]
         set_dependencies(analysis, dependencies, path)
 
 def main(specfile, configfilename):
