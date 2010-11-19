@@ -81,6 +81,9 @@ a = Analysis(
     %(scripts)s,
     pathex=path_to_exe)
 
+for src, dest in resourcesPaths:
+    a.datas.extend(collectResources(src, dest))
+
 pyz = PYZ(a.pure)
 """
 
@@ -99,10 +102,9 @@ coll = COLLECT(
     a.binaries,
     a.zipfiles,
     a.datas,
-    [collectResources(src, dest) for src, dest in resourcesPaths],
     strip=useStrip,
     upx=useUPX,
-    name=os.path.join(path_to_exe, name_of_exe)
+    name=os.path.join(%(distdir)s, name_of_exe)
 """
 
 onefile_tpl = """
@@ -112,8 +114,7 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
-    [collectResources(src, dest) for src, dest in resourcesPaths],
-    name=os.path.join(path_to_exe, name_of_exe),
+    name=os.path.join(%(distdir)s, name_of_exe),
     debug=useDebug,
     strip=useStrip,
     upx=useUPX)
