@@ -474,17 +474,33 @@ class Analysis(Target):
         Python executable to the libpython, so bindepend doesn't include
         it in its output.
         """
-        if target_platform != 'linux2': return
 
-        name = 'libpython%d.%d.so' % sys.version_info[:2]
+        if target_platform.startswith("linux"):
+            name = 'libpython%d.%d.so' % sys.version_info[:2]
+        elif target_platform.startswith("darwin"):
+            name = 'Python'
+        else:
+            return
+
         for (nm, fnm, typ) in binaries:
             if typ == 'BINARY' and name in fnm:
                 # lib found
                 return
 
-        lib = bindepend.findLibrary(name)
-        if lib is None:
-            raise IOError("Python library not found!")
+        if target_platform.startswith("linux"):
+            lib = bindepend.findLibrary(name)
+            if lib is None:
+                raise IOError("Python library not found!")
+
+        elif target_platform.startswith("darwin"):
+            # On MacPython, Analysis.assemble is able to find the libpython with
+            # no additional help, asking for config['python'] dependencies.
+            # However, this fails on system python, because the shared library
+            # is not listed as a dependency of the binary (most probably it's
+            # opened at runtime using some dlopen trickery).
+            lib = os.path.join(sys.exec_prefix, 'Python')
+            if not os.path.exists(lib):
+                raise IOError("Python library not found!")
 
         binaries.append((os.path.split(lib)[1], lib, 'BINARY'))
 
