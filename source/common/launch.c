@@ -94,10 +94,10 @@ DECLPROC(PySys_SetObject);
 
 #ifdef WIN32
 #define PATHSEP ";"
-#define SEP "/"
+#define SEP '\\'
 #else
 #define PATHSEP ":"
-#define SEP "/"
+#define SEP '/'
 #endif
 
 unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
@@ -1096,7 +1096,7 @@ static int copyFile(const char *src, const char *dst, const char *filename)
  */ 
 static char *dirName(const char *fullpath)
 {
-    char *match = strrchr(fullpath, '/');
+    char *match = strrchr(fullpath, SEP);
     char *pathname = (char *) calloc(_MAX_PATH, sizeof(char));
     VS("Calculating dirname from fullpath\n");
     if (match != NULL)
