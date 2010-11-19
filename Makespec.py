@@ -78,7 +78,7 @@ def collectResources(exploring_path, final_path):
     return data
 
 a = Analysis(
-    %(home_paths)s,
+    %(home_paths)s +
     %(scripts)s,
     pathex=path_to_exe)
 
