@@ -422,10 +422,10 @@ class Analysis(Target):
                 python = os.path.join(os.path.split(python)[0], os.readlink(python))
             depmanifest = None
         else:
-            depmanifest = winmanifest.Manifest(type_="win32", name=specnm, 
+            depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
                                                processorArchitecture="x86",
                                                version=(1, 0, 0, 0))
-            depmanifest.filename = os.path.join(BUILDPATH, 
+            depmanifest.filename = os.path.join(BUILDPATH,
                                                 specnm + ".exe.manifest")
         binaries.extend(bindepend.Dependencies([('', python, '')],
                                                target_platform,
@@ -572,7 +572,7 @@ def cacheDigest(fnm):
 def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names
-    if (not strip and not upx and sys.platform[:6] != 'darwin' and 
+    if (not strip and not upx and sys.platform[:6] != 'darwin' and
         sys.platform != 'win32') or fnm.lower().endswith(".manifest"):
         return fnm
     if strip:
@@ -835,34 +835,34 @@ class EXE(Target):
                     # Assume filename
                     self.manifest = winmanifest.ManifestFromXMLFile(self.manifest)
             else:
-                self.manifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH, 
+                self.manifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH,
                                                                              specnm + ".exe.manifest"))
                 self.manifest.name = os.path.splitext(os.path.basename(self.name))[0]
-            if self.manifest.filename != os.path.join(BUILDPATH, 
+            if self.manifest.filename != os.path.join(BUILDPATH,
                                                       specnm + ".exe.manifest"):
                 # Update dependent assemblies
-                depmanifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH, 
+                depmanifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH,
                                                                            specnm + ".exe.manifest"))
                 for assembly in depmanifest.dependentAssemblies:
-                    if not assembly.name in [dependentAssembly.name 
+                    if not assembly.name in [dependentAssembly.name
                                              for dependentAssembly in
                                              self.manifest.dependentAssemblies]:
                         self.manifest.dependentAssemblies.append(assembly)
             if not self.console and \
-               not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name 
+               not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name
                                                            for dependentAssembly in
                                                            self.manifest.dependentAssemblies]:
                 # Add Microsoft.Windows.Common-Controls to dependent assemblies
-                self.manifest.dependentAssemblies.append(winmanifest.Manifest(type_="win32", 
+                self.manifest.dependentAssemblies.append(winmanifest.Manifest(type_="win32",
                                                                               name="Microsoft.Windows.Common-Controls",
-                                                                              language="*", 
-                                                                              processorArchitecture="x86", 
+                                                                              language="*",
+                                                                              processorArchitecture="x86",
                                                                               version=(6, 0, 0, 0),
                                                                               publicKeyToken="6595b64144ccf1df"))
-            self.manifest.writeprettyxml(os.path.join(BUILDPATH, 
+            self.manifest.writeprettyxml(os.path.join(BUILDPATH,
                                                       specnm + ".exe.manifest"))
             self.toc.append((os.path.basename(self.name) + ".manifest",
-                             os.path.join(BUILDPATH, 
+                             os.path.join(BUILDPATH,
                                           specnm + ".exe.manifest"),
                              'BINARY'))
         self.pkg = PKG(self.toc, cdict=kws.get('cdict',None), exclude_binaries=self.exclude_binaries,
@@ -926,7 +926,7 @@ class EXE(Target):
             import os
             n = { "nt": "Windows", "linux2": "Linux", "darwin": "Darwin" }
             dir = n[os.name] + "-32bit"
-                             
+
         if not self.console:
             exe = exe + 'w'
         if self.debug:
