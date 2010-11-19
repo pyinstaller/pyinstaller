@@ -40,6 +40,9 @@ common_part = """# -*- mode: python -*-
 name_of_exe = '%(exename)s'
 path_to_exe = %(pathex)s
 
+build_dir = '%(builddir)s'
+dist_dir = '%(distdir)s'
+
 # Set here your resources paths as strings
 #  If you don't set paths, PyInstaller won't be able to find them
 resourcesPaths = [
@@ -49,6 +52,8 @@ resourcesPaths = [
 #   ("/path/to/configfiles","./config/files")
 #   ("/these/are/only/examples","../../this/too")
 ]
+
+
 
 useDebug = False
 useStrip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
@@ -79,14 +84,16 @@ for src, dest in resourcesPaths:
     a.datas.extend(collectResources(src, dest))
 
 pyz = PYZ(a.pure)
-"""
 
-onedir_tpl = """
+###@O@_"""
+
+
+onedir_tpl = """ Do not remove or edit this marker
 exe = EXE(
     pyz,
     a.scripts,
     exclude_binaries=1,
-    name=os.path.join('%(builddir)s', name_of_exe),
+    name=os.path.join(build_dir, name_of_exe),
     debug=useDebug,
     strip=useStrip,
     upx=useUPX)
@@ -98,17 +105,17 @@ coll = COLLECT(
     a.datas,
     strip=useStrip,
     upx=useUPX,
-    name=os.path.join('%(distdir)s', name_of_exe))
+    name=os.path.join(dist_dir, name_of_exe))
 """
 
-onefile_tpl = """
+onefile_tpl = """ Do not remove or edit this marker
 exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
     a.zipfiles,
     a.datas,
-    name=os.path.join('%(distdir)s', name_of_exe),
+    name=os.path.join(dist_dir, name_of_exe),
     debug=useDebug,
     strip=useStrip,
     upx=useUPX)
@@ -163,8 +170,24 @@ def createSpecFile(exename, scripts, options):
     else:
         specfile.write((common_part + onefile_tpl) % options)
 
-    return specfile_name
+def switchSpecDeployment(specfile_name, is_onedir):
+    with open(specfile_name, 'r') as specfile:
+        specfile_content = specfile.read()
 
+    marker_pos = specfile_content.rfind("###@O@_")
+    if marker_pos == -1:
+        raise SystemExit("Unable to find the marker. Abort!")
+
+    marker_pos += 7
+    specfile_content = specfile_content[:marker_pos]
+
+    if is_onedir:
+        specfile_content += onedir_tpl
+    else:
+        specfile_content += onefile_tpl
+
+    with open(specfile_name, 'w') as specfile:
+        specfile.write(specfile_content)
 
 if __name__ == '__main__':
 
@@ -193,21 +216,20 @@ if __name__ == '__main__':
     if filetype == ".spec":
         if len(args) > 1:
             parser.error("Too many arguments. Give only one spec at time")
-        #TODO: Old spec parsing implementation for update
+        switchSpecDeployment(name + filetype, opts["onedir"])
     elif filetype == ".py":
         for filename in args:
             if not filetype in filename:
                 parser.error("Arguments must be all python scripts (*.py)")
+        createSpecFile(name, args, opts)
     else:
         parser.error("Give in input .py or .spec files only")
 
-
-    specfile_name = createSpecFile(name, args, opts)
 
     if opts["onedir"]:
         dep_mode = "onedir"
     else:
         dep_mode = "onefile"
 
-    print "%s has been wrote in %s mode" % (os.path.join(os.getcwd(), specfile_name), dep_mode)
+    print "%s has been wrote in %s mode" % (os.path.join(os.getcwd(), name + filetype), dep_mode)
     print "Now you can edit it and run the Build.py"
