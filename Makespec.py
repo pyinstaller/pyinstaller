@@ -78,6 +78,7 @@ def collectResources(exploring_path, final_path):
     return data
 
 a = Analysis(
+    %(home_paths)s,
     %(scripts)s,
     pathex=path_to_exe)
 
@@ -92,7 +93,7 @@ exe = EXE(
     pyz,
     a.scripts,
     exclude_binaries=1,
-    name=os.path.join(%(builddir)s, name_of_exe),
+    name=os.path.join('%(builddir)s', name_of_exe),
     debug=useDebug,
     strip=useStrip,
     upx=useUPX)
@@ -104,7 +105,7 @@ coll = COLLECT(
     a.datas,
     strip=useStrip,
     upx=useUPX,
-    name=os.path.join(%(distdir)s, name_of_exe))
+    name=os.path.join('%(distdir)s', name_of_exe))
 """
 
 onefile_tpl = """
@@ -114,13 +115,20 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
-    name=os.path.join(%(distdir)s, name_of_exe),
+    name=os.path.join('%(distdir)s', name_of_exe),
     debug=useDebug,
     strip=useStrip,
     upx=useUPX)
 """
 
 HOME = os.path.realpath(os.path.abspath(os.path.dirname(sys.argv[0])))
+
+def stringfyHomePaths(hp_list):
+    string = '['
+    for path in hp_list:
+        string += "os.path.join(HOMEPATH, '" + path + "'), "
+    string += ']'
+    return string
 
 def createSpecFile(exename, scripts, options):
     configfile = os.path.join(HOME, "config.dat")
@@ -138,13 +146,14 @@ def createSpecFile(exename, scripts, options):
         home_paths.insert(0, os.path.join("support", "useUnicode.py"))
     home_paths.insert(0, os.path.join("support", "_mountzlib.py"))
 
-    #TODO: Make home_paths printable in the template
+    home_paths = stringfyHomePaths(home_paths)
 
     pathex = [workingdir]
 
     options = {
         "exename"   : exename,
         "pathex"    : pathex,
+        "home_paths": home_paths,
         "scripts"   : scripts,
         "distdir"   : "dist",
         "builddir"  : os.path.join('build', 'pyi.' + config['target_platform'], exename),
