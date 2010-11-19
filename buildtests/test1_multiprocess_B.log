@@ -204,9 +204,8 @@
     '.*util.*',
     '.*ssl.*',
     '.*crypto.*',
-    '.*z.*',
     '.*readline.*',
     '.*ncurses.*',
     '.*bz2.*',
-    '.*python26.*',
+    '.*python.*',
 ]

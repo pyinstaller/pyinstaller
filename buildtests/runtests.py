@@ -171,14 +171,20 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
                 fname_list = eval(f.read())
             count = 0
             for pattern in pattern_list:
+                found = False
                 for fname in fname_list:
                     if re.match(pattern, fname):
                         count += 1
+                        found =True
                         print "MATCH: %s --> %s" % (pattern, fname)
                         break
-            if count < len(pattern):
+                if not found:
+                    print "MISSING: %s" % pattern
+            if count < len(pattern_list):
                 res = 1
                 print "Matching FAILED!"
+            else:
+                print "Matching SUCCESS!"
 
         if res == 0:
             _msg("FINISHING TEST", test, short=1)

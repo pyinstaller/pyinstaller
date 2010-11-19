@@ -189,7 +189,7 @@
     'archive',
     '_mountzlib',
     'useUnicode',
-    'test2_multiprocess_A',
+    'test2_multiprocess',
     '.*_multibytecodec.*',
     '.*datetime.*',
     '.*_codecs_iso2022.*',
@@ -208,5 +208,5 @@
     '.*readline.*',
     '.*ncurses.*',
     '.*bz2.*',
-    '.*python26.*',
+    '.*python.*',
 ]
