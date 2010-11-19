@@ -205,7 +205,6 @@
     '.*ssl.*',
     '.*crypto.*',
     '.*readline.*',
-    '.*ncurses.*',
     '.*bz2.*',
     '.*python.*',
 ]
