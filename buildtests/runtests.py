@@ -147,7 +147,6 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
         
         if res == 0 and run_executable:
             files = glob.glob(os.path.join('dist', test + '*'))
-            print files
             for exe in files:
                 exe = os.path.splitext(exe)[0]
                 res_tmp = test_exe(exe[5:])
