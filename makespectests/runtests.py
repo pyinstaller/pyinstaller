@@ -15,7 +15,8 @@ warn*.txt
 *.py[co]
 */*.py[co]
 */*/*.py[co]
-*.spec
+*_od.spec
+*_of.spec
 build/
 dist/
 """.split()
@@ -26,8 +27,8 @@ class MakespecTest(unittest.TestCase):
         """
         Init the spec files used for tests
         """
-        os.system("%s -n spec_od --onedir %s" % (MAKESPEC_EXE, os.path.join(MST_DIR, SCRIPT_FOR_TEST)))
-        os.system("%s -n spec_of --onefile %s" % (MAKESPEC_EXE, os.path.join(MST_DIR, SCRIPT_FOR_TEST)))
+        os.system("%s -n spec_od --onedir %s" % (MAKESPEC_EXE, SCRIPT_FOR_TEST))
+        os.system("%s -n spec_of --onefile %s" % (MAKESPEC_EXE, SCRIPT_FOR_TEST))
 
     def tearDown(self):
         """
@@ -61,8 +62,17 @@ class MakespecTest(unittest.TestCase):
         """
         Tests the validity of switching a spec file from onedir to onefile deployment
         """
-        os.system("%s -n _spec_of --onefile %s" % (MAKESPEC_EXE, "spec_od.spec"))
+        os.system("%s -n _spec_of --onefile spec_od.spec" % MAKESPEC_EXE)
         os.system("%s -y _spec_of.spec" % BUILD_EXE)
+
+    def test_spec_edit(self):
+        # script to edit for editing tests
+        # re-run runtests.py if files do no exist
+        if not os.path.isfile(os.path.join(MST_DIR, "to_edit.spec")):
+            os.system("%s -n to_edit %s" % (MAKESPEC_EXE, SCRIPT_FOR_TEST))
+            print "### Test spec_edit skipped: edit the public part of to_edit.spec and re-run runtests.py"
+
+        os.system("%s -y to_edit.spec" % BUILD_EXE)
 
 if __name__ == "__main__":
     unittest.main()
