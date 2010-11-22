@@ -85,7 +85,7 @@ for src, dest in resourcesPaths:
 
 pyz = PYZ(a.pure)
 
-###@O@_"""
+%(marker)s"""
 
 
 onedir_tpl = """ Do not remove or edit this marker
@@ -120,7 +120,7 @@ exe = EXE(
     strip=useStrip,
     upx=useUPX)
 """
-
+marker = "###@O@_"
 HOME = os.path.realpath(os.path.abspath(os.path.dirname(sys.argv[0])))
 
 def stringfyHomePaths(hp_list):
@@ -158,7 +158,8 @@ def createSpecFile(exename, scripts, options):
         "distdir"   : "dist",
         "builddir"  : os.path.join('build', 'pyi.' + config['target_platform'], exename),
         "onedir"    : options["onedir"],
-        "onefile"   : not options["onedir"]}
+        "onefile"   : not options["onedir"],
+        "marker"    : marker}
 
 
     specfile_name = exename + ".spec"
@@ -171,7 +172,7 @@ def createSpecFile(exename, scripts, options):
 
 def switchSpecDeployment(specfile_name, is_onedir):
     specfile_content = open(specfile_name, 'r').read()
-    marker = "###@O@_"
+
     marker_pos = specfile_content.rfind(marker)
     if marker_pos == -1:
         raise SystemExit("Unable to find the marker. Abort!")
