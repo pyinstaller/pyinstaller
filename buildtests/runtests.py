@@ -166,10 +166,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
                     '-b -r >> ' + newlog, prog],
                     ' ')
             os.system(command)
-            with open(logfn, 'r') as f:
-                pattern_list = eval(f.read())
-            with open(newlog, 'r') as f:
-                fname_list = eval(f.read())
+            pattern_list = eval(open(newlog, 'r').read())
+            fname_list = eval(open(newlog, 'r').read())
             count = 0
             for pattern in pattern_list:
                 found = False
