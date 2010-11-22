@@ -166,7 +166,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
                     '-b -r >> ' + newlog, prog],
                     ' ')
             os.system(command)
-            pattern_list = eval(open(newlog, 'r').read())
+            pattern_list = eval(open(logfn, 'r').read())
             fname_list = eval(open(newlog, 'r').read())
             count = 0
             for pattern in pattern_list:
@@ -179,7 +179,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
                             print "MATCH: %s --> %s" % (pattern, fname)
                         break
                 if not found:
-                    print "MISSING: %s" % pattern
+                    if verbose:
+                        print "MISSING: %s" % pattern
             if count < len(pattern_list):
                 res = 1
                 print "Matching FAILED!"
