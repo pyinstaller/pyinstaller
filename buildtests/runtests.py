@@ -96,7 +96,7 @@ def _msg(*args, **kw):
     if not short: print
 
 
-def runtests(alltests, filters=None, configfile=None, run_executable=1):
+def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=False):
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
     print "*" * min(80, len(info))
     print info
@@ -135,7 +135,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
                     failed = True
                     break
             if failed:
-                print "Skipping test because module %s is missing" % mod
+                if verbose:
+                    print "Skipping test because module %s is missing" % mod
                 counter["skipped"].append(test)
                 continue
         _msg("BUILDING TEST", test)
@@ -176,7 +177,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1):
                     if re.match(pattern, fname):
                         count += 1
                         found =True
-                        print "MATCH: %s --> %s" % (pattern, fname)
+                        if verbose:
+                            print "MATCH: %s --> %s" % (pattern, fname)
                         break
                 if not found:
                     print "MISSING: %s" % pattern
@@ -253,6 +255,10 @@ if __name__ == '__main__':
     parser.add_option('-C', '--configfile',
                       default=os.path.join(HOME, 'config.dat'),
                       help='Name of generated configfile (default: %default)')
+    parser.add_option('-v', '--verbose',
+                      action='store_true',
+                      default=False,
+                      help='Verbose mode (default: %default)')
 
     opts, args = parser.parse_args()
 
@@ -272,4 +278,5 @@ if __name__ == '__main__':
         print "Running normal tests (-i for interactive tests)"
 
     clean()
-    runtests(tests, configfile=opts.configfile, run_executable=not opts.no_run)
+    runtests(tests, configfile=opts.configfile, run_executable=not opts.no_run,
+             verbose= opts.verbose)
