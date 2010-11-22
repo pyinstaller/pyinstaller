@@ -154,13 +154,13 @@ def createSpecFile(scripts, options):
         "home_paths": home_paths,
         "scripts"   : scripts,
         "distdir"   : "dist",
-        "builddir"  : os.path.join('build', 'pyi.' + config['target_platform'], exename),
+        "builddir"  : os.path.join('build', 'pyi.' + config['target_platform'], options["exename"]),
         "onedir"    : options["onedir"],
         "onefile"   : not options["onedir"],
         "marker"    : marker}
 
 
-    specfile_name = exename + ".spec"
+    specfile_name = options["exename"] + ".spec"
     specfile = open(specfile_name, 'w')
 
     if options["onedir"]:
@@ -168,7 +168,7 @@ def createSpecFile(scripts, options):
     else:
         specfile.write((common_part + onefile_tpl) % options)
 
-def switchSpecDeployment(specfile_name, is_onedir):
+def switchSpecDeployment(specfile_name, specfilenew_name, is_onedir):
     specfile_content = open(specfile_name, 'r').read()
 
     marker_pos = specfile_content.rfind(marker)
@@ -183,14 +183,14 @@ def switchSpecDeployment(specfile_name, is_onedir):
     else:
         specfile_content += onefile_tpl
 
-    open(specfile_name, 'w').write(specfile_content)
+    open(specfilenew_name, 'w').write(specfile_content)
 
 if __name__ == '__main__':
 
     import pyi_optparse as optparse
 
     parser = optparse.OptionParser(
-        usage = "usage: %prog [-F | -D] [-h] <scriptname> [<scriptname> ...] | <specname>")
+        usage = "usage: %prog [opts] <scriptname> [<scriptname> ...] | <specname>")
 
     parser.add_option(
         "-F", "--onefile", dest="onedir", action="store_false", default=True,
@@ -199,7 +199,7 @@ if __name__ == '__main__':
         "-D", "--onedir", dest="onedir", action="store_true", default=True,
         help="Create a single directory deployment")
     parser.add_option(
-        "-n", "--name", dest="exename", action="store_const", type="string", nargs=1,
+        "-n", "--name", dest="exename", action="store", type="string", nargs=1,
         help="The name to give to the executable")
 
     opts, args = parser.parse_args()
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     if filetype == ".spec":
         if len(args) > 1:
             parser.error("Too many arguments. Give only one spec at time")
-        switchSpecDeployment(name + filetype, opts["onedir"])
+        switchSpecDeployment(name + filetype, opts["exename"] + filetype, opts["onedir"])
     elif filetype == ".py":
         for filename in args:
             if not filetype in filename:
@@ -232,5 +232,5 @@ if __name__ == '__main__':
     else:
         dep_mode = "onefile"
 
-    print "%s has been wrote in %s mode" % (os.path.join(os.getcwd(), name + filetype), dep_mode)
+    print "%s has been wrote in %s mode" % (os.path.join(os.getcwd(), opts["exename"] + ".spec"), dep_mode)
     print "Now you can edit it and run the Build.py"
