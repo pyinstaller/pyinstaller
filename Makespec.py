@@ -170,7 +170,7 @@ def createSpecFile(exename, scripts, options):
         specfile.write((common_part + onefile_tpl) % options)
 
 def switchSpecDeployment(specfile_name, is_onedir):
-    specfile_content open(specfile_name, 'r').read()
+    specfile_content = open(specfile_name, 'r').read()
     marker = "###@O@_"
     marker_pos = specfile_content.rfind(marker)
     if marker_pos == -1:
