@@ -53,8 +53,6 @@ resourcesPaths = [
 #   ("/these/are/only/examples","../../this/too")
 ]
 
-
-
 useDebug = False
 useStrip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
 useUPX = True # UPX Packer (useful for Windows)
@@ -130,11 +128,11 @@ def stringfyHomePaths(hp_list):
     string += ']'
     return string
 
-def createSpecFile(exename, scripts, options):
+def createSpecFile(scripts, options):
     configfile_name = os.path.join(HOME, "config.dat")
     workingdir = os.getcwd()
 
-    config = eval(open(configfile, 'r').read())
+    config = eval(open(configfile_name, 'r').read())
 
     if config["pythonVersion"] != sys.version:
         msg = """PyInstaller configfile and current Python version are incompatible.
@@ -151,7 +149,7 @@ def createSpecFile(exename, scripts, options):
     pathex = [workingdir]
 
     options = {
-        "exename"   : exename,
+        "exename"   : options["exename"],
         "pathex"    : pathex,
         "home_paths": home_paths,
         "scripts"   : scripts,
@@ -200,6 +198,9 @@ if __name__ == '__main__':
     parser.add_option(
         "-D", "--onedir", dest="onedir", action="store_true", default=True,
         help="Create a single directory deployment")
+    parser.add_option(
+        "-n", "--name", dest="exename", action="store_const", type="string", nargs=1,
+        help="The name to give to the executable")
 
     opts, args = parser.parse_args()
     opts = opts.__dict__
@@ -210,6 +211,8 @@ if __name__ == '__main__':
         parser.error('Requires at least one scriptname file')
 
     name, filetype = os.path.splitext(os.path.basename(args[0]))
+    if not opts["exename"]:
+        opts["exename"] = name
 
     if filetype == ".spec":
         if len(args) > 1:
@@ -219,7 +222,7 @@ if __name__ == '__main__':
         for filename in args:
             if not filetype in filename:
                 parser.error("Arguments must be all python scripts (*.py)")
-        createSpecFile(name, args, opts)
+        createSpecFile(args, opts)
     else:
         parser.error("Give in input .py or .spec files only")
 
