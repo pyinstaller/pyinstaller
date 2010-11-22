@@ -134,8 +134,7 @@ def createSpecFile(exename, scripts, options):
     configfile_name = os.path.join(HOME, "config.dat")
     workingdir = os.getcwd()
 
-    with open(configfile_name, 'r') as configfile:
-        config = eval(configfile.read())
+    config = eval(open(configfile, 'r').read())
 
     if config["pythonVersion"] != sys.version:
         msg = """PyInstaller configfile and current Python version are incompatible.
@@ -171,8 +170,7 @@ def createSpecFile(exename, scripts, options):
         specfile.write((common_part + onefile_tpl) % options)
 
 def switchSpecDeployment(specfile_name, is_onedir):
-    with open(specfile_name, 'r') as specfile:
-        specfile_content = specfile.read()
+    specfile_content open(specfile_name, 'r').read()
 
     marker_pos = specfile_content.rfind("###@O@_")
     if marker_pos == -1:
@@ -186,8 +184,7 @@ def switchSpecDeployment(specfile_name, is_onedir):
     else:
         specfile_content += onefile_tpl
 
-    with open(specfile_name, 'w') as specfile:
-        specfile.write(specfile_content)
+    open(specfile_name, 'w').write(specfile_content)
 
 if __name__ == '__main__':
 
