@@ -171,12 +171,12 @@ def createSpecFile(exename, scripts, options):
 
 def switchSpecDeployment(specfile_name, is_onedir):
     specfile_content open(specfile_name, 'r').read()
-
-    marker_pos = specfile_content.rfind("###@O@_")
+    marker = "###@O@_"
+    marker_pos = specfile_content.rfind(marker)
     if marker_pos == -1:
         raise SystemExit("Unable to find the marker. Abort!")
 
-    marker_pos += 7
+    marker_pos += len(marker)
     specfile_content = specfile_content[:marker_pos]
 
     if is_onedir:
