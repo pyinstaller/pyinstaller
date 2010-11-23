@@ -39,7 +39,7 @@ def run_makespec(opts, args):
     temppaths = opts.pathex[:]
     opts.pathex = []
     for p in temppaths:
-        opts.pathex.extend(string.split(p, os.pathsep))
+        opts.pathex.extend(p.split(os.pathsep))
 
     spec_file = Makespec.main(args, **opts.__dict__)
     print "wrote %s" % spec_file
