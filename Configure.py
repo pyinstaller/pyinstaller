@@ -66,8 +66,8 @@ try:
     basedir = os.environ['_MEIPASS2']
 except KeyError:
     basedir = sys.path[0]
-tcldir = os.path.join(basedir, '_MEI', 'tcl%s')
-tkdir = os.path.join(basedir, '_MEI', 'tk%s')
+tcldir = os.path.join(basedir, '_MEI', '%s')
+tkdir = os.path.join(basedir, '_MEI', '%s')
 os.environ["TCL_LIBRARY"] = tcldir
 os.environ["TK_LIBRARY"] = tkdir
 os.putenv("TCL_LIBRARY", tcldir)
@@ -80,7 +80,14 @@ def test_TCL_TK(config):
     if not (target_iswin):
         saveexcludes = bindepend.excludes
         bindepend.excludes = {}
-    pattern = [r'libtcl(\d\.\d)?\.(so|dylib)', r'(?i)tcl(\d\d)\.dll'][target_iswin]
+
+    if target_platform.startswith("win"):
+        pattern = r'(?i)tcl(\d\d)\.dll'
+    elif target_platform.startswith("linux"):
+        pattern = r'libtcl(\d\.\d)?\.so'
+    elif target_platform.startswith("darwin"):
+        pattern = r'_tkinter'
+
     a = mf.ImportTracker()
     a.analyze_r('Tkinter')
     binaries = []
@@ -91,7 +98,9 @@ def test_TCL_TK(config):
     binaries.extend(bindepend.Dependencies([('', sys.executable, '')]))
     for nm, fnm, typ in binaries:
         mo = re.match(pattern, nm)
-        if mo:
+        if not mo:
+            continue
+        if not target_platform.startswith("darwin"):
             ver = mo.group(1)
             tclbindir = os.path.dirname(fnm)
             if target_iswin:
@@ -103,7 +112,7 @@ def test_TCL_TK(config):
                     if mo:
                         ver = mo.group(1)
             print "I: found TCL/TK version %s" % ver
-            open(os.path.join(HOME, 'support', 'useTK.py'), 'w').write(_useTK % (ver, ver))
+            open(os.path.join(HOME, 'support', 'useTK.py'), 'w').write(_useTK % ("tcl%s"%ver, "tk%s"%ver))
             tclnm = 'tcl%s' % ver
             tknm = 'tk%s' % ver
             # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3 and /usr/lib/tk8.3
@@ -114,10 +123,25 @@ def test_TCL_TK(config):
                     if os.path.exists(os.path.join(tclbindir, attempt, tclnm)):
                         config['TCL_root'] = os.path.join(tclbindir, attempt, tclnm)
                         config['TK_root'] = os.path.join(tclbindir, attempt, tknm)
+                        config['TCL_dirname'] = os.path.basename(config['TCL_root'])
+                        config['TK_dirname'] = os.path.basename(config['TK_root'])
                         break
             else:
                 config['TCL_root'] = os.path.join(tclbindir, tclnm)
                 config['TK_root'] = os.path.join(tclbindir, tknm)
+                config['TCL_dirname'] = os.path.basename(config['TCL_root'])
+                config['TK_dirname'] = os.path.basename(config['TK_root'])
+                break
+        elif target_platform.startswith("darwin"):
+            tclbindir = os.path.dirname(fnm)
+            print "I: found TCL/TK"
+            tcldir = "Tcl.framework/Resources/Scripts"
+            tkdir = "Tk.framework/Resources/Scripts"
+            open(os.path.join(HOME, 'support', 'useTK.py'), 'w').write(_useTK % (tcldir, tkdir))
+            config['TCL_root'] = "/System/Library/Frameworks/Tcl.framework/Versions/Current"
+            config['TK_root'] = "/System/Library/Frameworks/Tk.framework/Versions/Current"
+            config['TCL_dirname'] = "Tcl.framework"
+            config['TK_dirname'] = "Tk.framework"
             break
     else:
         print "I: could not find TCL/TK"
@@ -127,7 +151,7 @@ def test_TCL_TK(config):
 def test_Crypt(config):
     # TODO: disabled for now
     config["useCrypt"] = 0
-    return 
+    return
 
     #Crypt support. We need to build the AES module and we'll use distutils
     # for that. FIXME: the day we'll use distutils for everything this will be
@@ -171,7 +195,7 @@ def test_RsrcUpdate(config):
     except ImportError, detail:
         print 'I: ... resource update unavailable -', detail
         return
-    
+
     test_exe = os.path.join(HOME, 'support', 'loader', 'Windows-32bit', 'runw.exe')
     if not os.path.exists( test_exe ):
         config['hasRsrcUpdate'] = 0
