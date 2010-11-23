@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 
     extractionpath = getenv( "_MEIPASS2" );
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
-    
+
     if (init(status_list[SELF], homepath, &thisfile[strlen(homepath)])) {
         if (init(status_list[SELF], homepath, &archivefile[strlen(homepath)])) {
             FATALERROR("Cannot open self %s or archive %s\n",
@@ -87,19 +87,19 @@ int main(int argc, char* argv[])
 
     if (extractionpath) {
         VS("Already in the child - running!\n");
-        /*  If binaries were extracted to temppath, 
-         *  we pass it through status variable 
+        /*  If binaries were extracted to temppath,
+         *  we pass it through status variable
          */
         if (strcmp(homepath, extractionpath) != 0) {
             strcpy(status_list[SELF]->temppath, extractionpath);
 #ifdef WIN32
             strcpy(status_list[SELF]->temppathraw, extractionpath);
-#endif 
+#endif
         }
 #if defined(__APPLE__) && defined(WINDOWED)
         ProcessSerialNumber psn = { 0, kCurrentProcess };
         OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
-#endif            
+#endif
 #ifdef WIN32
         CreateActContext(extractionpath, thisfile);
 #endif
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
         /* run the "child" process, then clean up */
         strcat(MEIPASS2, status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
         putenv(MEIPASS2);
-		
+
         if (set_enviroment(status_list[SELF]) == -1)
             return -1;
 
@@ -128,9 +128,9 @@ int main(int argc, char* argv[])
 #endif
 
         VS("Back to parent...\n");
-        if (status_list[SELF]->temppath[0] != 0)        
+        if (status_list[SELF]->temppath[0] != 0)
             clear(status_list[SELF]->temppath);
-        
+
         for (i = SELF; status_list[i] != NULL; i++) {
             VS("Freeing status for %s\n", status_list[i]->archivename);
             free(status_list[i]);
@@ -138,4 +138,3 @@ int main(int argc, char* argv[])
     }
     return rc;
 }
-
