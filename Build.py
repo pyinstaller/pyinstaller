@@ -1344,9 +1344,9 @@ class Tree(Target, TOC):
 
 def TkTree():
     tclroot = config['TCL_root']
-    tclnm = os.path.join('_MEI', os.path.basename(tclroot))
+    tclnm = os.path.join('_MEI', config['TCL_dirname'])
     tkroot = config['TK_root']
-    tknm = os.path.join('_MEI', os.path.basename(tkroot))
+    tknm = os.path.join('_MEI', config['TK_dirname'])
     tcltree = Tree(tclroot, tclnm, excludes=['demos','encoding','*.lib'])
     tktree = Tree(tkroot, tknm, excludes=['demos','encoding','*.lib'])
     return tcltree + tktree
