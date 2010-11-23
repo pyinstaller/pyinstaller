@@ -222,8 +222,7 @@ def configure(conf):
     ## setup windowed DEBUG environment
     conf.set_env_name('debugw', dbgw)
     conf.setenv('debugw')
-    if myplatform.startswith('darwin') or myplatform.startswith('win'):
-        conf.env.append_value('CCDEFINES', 'WINDOWED')
+    conf.env.append_value('CCDEFINES', 'WINDOWED')
     # disables console - mingw option
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
             conf.env.append_value('LINKFLAGS', '-mwindows')
@@ -245,8 +244,7 @@ def configure(conf):
     ## setup windowed RELEASE environment
     conf.set_env_name('releasew', relw)
     conf.setenv('releasew')
-    if myplatform.startswith('darwin') or myplatform.startswith('win'):
-        conf.env.append_value('CCDEFINES', 'WINDOWED')
+    conf.env.append_value('CCDEFINES', 'WINDOWED')
     # disables console
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
             conf.env.append_value('LINKFLAGS', '-mwindows')
