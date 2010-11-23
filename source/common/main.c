@@ -37,7 +37,7 @@
 
 #define MAX_STATUS_LIST 20
 
-#ifdef WINDOWED
+#if defined(WIN32) && defined(WINDOWED)
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						LPSTR lpCmdLine, int nCmdShow )
 #else
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     char MEIPASS2[_MAX_PATH + 11] = "_MEIPASS2=";
     int rc = 0;
     char *extractionpath = NULL;
-#ifdef WINDOWED
+#if defined(WIN32) && defined(WINDOWED)
     int argc = __argc;
     char **argv = __argv;
 #endif
