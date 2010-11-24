@@ -1125,6 +1125,11 @@ class COLLECT(Target):
 
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
+
+        # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
+        if not sys.platform.startswith("darwin"):
+            return
+
         Target.__init__(self)
         self.name = kws.get('name', None)
         if self.name is not None:
