@@ -43,6 +43,11 @@ path_to_exe = %(pathex)s
 build_dir = '%(builddir)s'
 dist_dir = '%(distdir)s'
 
+exeIcon = ""
+useConsole = True #on Windows set False if you want to use the subsystem executable
+exeManifest = ""
+exeVersion = ""
+
 # Set here your resources paths as strings
 #  If you don't set paths, PyInstaller won't be able to find them
 resourcesPaths = [
@@ -94,9 +99,20 @@ exe = EXE(
     name=os.path.join(build_dir, name_of_exe),
     debug=useDebug,
     strip=useStrip,
-    upx=useUPX)
+    upx=useUPX,
+    console=useConsole,
+    icon=exeIcon,
+    manifest=exeManifest,
+    version=exeVersion)
+
+if useTk:
+    useTk = []
+    useTk.extend(TkTree())
+else:
+    useTk = []
 
 coll = COLLECT(
+    useTk,
     exe,
     a.binaries,
     a.zipfiles,
@@ -107,7 +123,14 @@ coll = COLLECT(
 """
 
 onefile_tpl = """ Do not remove or edit this marker
+if useTk:
+    useTk = []
+    useTk.extend(TkPKG())
+else:
+    useTk = []
+
 exe = EXE(
+    useTk,
     pyz,
     a.scripts,
     a.binaries,
@@ -116,7 +139,11 @@ exe = EXE(
     name=os.path.join(dist_dir, name_of_exe),
     debug=useDebug,
     strip=useStrip,
-    upx=useUPX)
+    upx=useUPX,
+    console=useConsole,
+    icon=exeIcon,
+    manifest=exeManifest,
+    version=exeVersion)
 """
 marker = "###@O@_"
 HOME = os.path.realpath(os.path.abspath(os.path.dirname(sys.argv[0])))
@@ -142,7 +169,11 @@ def createSpecFile(scripts, options):
     home_paths = []
     if config["hasUnicode"]:
         home_paths.insert(0, os.path.join("support", "useUnicode.py"))
+    if not options["onedir"]:
+        home_paths.insert(0, os.path.join("support", "unpackTK.py"))
+        home_paths.append(os.path.join("support", "removeTK.py"))
     home_paths.insert(0, os.path.join("support", "_mountzlib.py"))
+    home_paths.insert(0, os.path.join("support", "useTK.py"))
 
     home_paths = stringfyHomePaths(home_paths)
 
