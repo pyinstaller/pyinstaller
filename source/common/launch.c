@@ -48,7 +48,7 @@
 #ifdef WIN32
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
-#endif 
+#endif
 
 /*
  * Python Entry point declarations (see macros in launch.h).
@@ -230,12 +230,12 @@ static int checkFile(char *buf, const char *fmt, ...)
 {
     va_list args;
     struct stat tmp;
-    
-    va_start(args, fmt);    
+
+    va_start(args, fmt);
     vsnprintf(buf, _MAX_PATH, fmt, args);
     va_end(args);
-    
-    return stat(buf, &tmp);    
+
+    return stat(buf, &tmp);
 }
 
 /*
@@ -392,24 +392,24 @@ int openArchive(ARCHIVE_STATUS *status)
  * structure as it was defined in Python 2.3 and older versions.
  */
 struct _old_typeobject;
-typedef struct _old_object { 
-	int ob_refcnt; 
-	struct _old_typeobject *ob_type; 
-} OldPyObject; 
-typedef void (*destructor)(PyObject *); 
-typedef struct _old_typeobject { 
-	int ob_refcnt; 
-	struct _old_typeobject *ob_type; 
-	int ob_size; 
-	char *tp_name; /* For printing */ 
-	int tp_basicsize, tp_itemsize; /* For allocation */ 
-	destructor tp_dealloc; 
-	/* ignore the rest.... */ 
-} OldPyTypeObject; 
+typedef struct _old_object {
+    int ob_refcnt;
+    struct _old_typeobject *ob_type;
+} OldPyObject;
+typedef void (*destructor)(PyObject *);
+typedef struct _old_typeobject {
+    int ob_refcnt;
+    struct _old_typeobject *ob_type;
+    int ob_size;
+    char *tp_name; /* For printing */
+    int tp_basicsize, tp_itemsize; /* For allocation */
+    destructor tp_dealloc;
+    /* ignore the rest.... */
+} OldPyTypeObject;
 
 static void _EmulatedIncRef(PyObject *o)
 {
-    OldPyObject *oo = (OldPyObject*)o;    
+    OldPyObject *oo = (OldPyObject*)o;
     if (oo)
         oo->ob_refcnt++;
 }
@@ -418,8 +418,8 @@ static void _EmulatedDecRef(PyObject *o)
 {
     #define _Py_Dealloc(op) \
         (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
-    
-    OldPyObject *oo = (OldPyObject*)o;    
+
+    OldPyObject *oo = (OldPyObject*)o;
     if (--(oo)->ob_refcnt == 0)
         _Py_Dealloc(oo);
 }
@@ -479,7 +479,7 @@ int loadPython(ARCHIVE_STATUS *status)
 {
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
-    int pyvers = ntohl(status->cookie.pyvers);   
+    int pyvers = ntohl(status->cookie.pyvers);
 
 #ifdef WIN32
 	/* Determine the path */
@@ -557,7 +557,7 @@ int attachPython(ARCHIVE_STATUS *status, int *loadedNew)
 #ifdef WIN32
 	HMODULE dll;
 	char nm[_MAX_PATH + 1];
-    int pyvers = ntohl(status->cookie.pyvers);    
+    int pyvers = ntohl(status->cookie.pyvers);
 
 	/* Get python's name */
 	sprintf(nm, "python%02d.dll", pyvers);
@@ -669,7 +669,7 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	    strcat(pypath, status->temppath);
 	    pypath[strlen(pypath)-1] = '\0';
 	    strcat(pypath, PATHSEP);
-    } 
+    }
 	strcat(pypath, status->homepath);
 
 	/* don't chop off SEP if root directory */
@@ -704,7 +704,7 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	    tmp[strlen(tmp)-1] = '\0';
 	    sprintf(cmd, "sys.path.append(os.path.abspath(r\"%s\"))", tmp);
         PI_PyRun_SimpleString(cmd);
-    }	
+    }
 
 	strcpy(tmp, status->homepath);
 	tmp[strlen(tmp)-1] = '\0';
@@ -1066,7 +1066,7 @@ static int copyFile(const char *src, const char *dst, const char *filename)
         return -1;
 
     while (!feof(in)) {
-        if (fread(buf, 4096, 1, in) == -1) {     
+        if (fread(buf, 4096, 1, in) == -1) {
             if (ferror(in)) {
                 clearerr(in);
                 error = -1;
@@ -1090,10 +1090,10 @@ static int copyFile(const char *src, const char *dst, const char *filename)
     return error;
 }
 
-/* Giving a fullpath, returns a newly allocated string 
+/* Giving a fullpath, returns a newly allocated string
  * which contains the directory name.
  * The returned string must be freed after use.
- */ 
+ */
 static char *dirName(const char *fullpath)
 {
     char *match = strrchr(fullpath, SEP);
@@ -1103,9 +1103,9 @@ static char *dirName(const char *fullpath)
         strncpy(pathname, fullpath, match - fullpath + 1);
     else
         strcpy(pathname, fullpath);
-    
+
     VS("Pathname: %s\n", pathname);
-    return pathname;    
+    return pathname;
 }
 
 /* Copy the dependencies file from a directory to the tempdir */
@@ -1123,7 +1123,7 @@ static int copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, co
 }
 
 /* Look for the archive identified by path into the ARCHIVE_STATUS pool status_list.
- * If the archive is found, a pointer to the associated ARCHIVE_STATUS is returned 
+ * If the archive is found, a pointer to the associated ARCHIVE_STATUS is returned
  * otherwise the needed archive is opened and added to the pool and then returned.
  * If an error occurs, returns NULL.
  */
@@ -1131,7 +1131,7 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
 {
     ARCHIVE_STATUS *status = NULL;
     int i = 0;
-    
+
     VS("Getting file from archive.\n");
     if (createTempPath(status_list[SELF]) == -1){
         return NULL;
@@ -1161,9 +1161,9 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
     if (openArchive(status)) {
         FATALERROR("Error openning archive %s\n", path);
         free(status);
-        return NULL;   
+        return NULL;
     }
- 
+
     status_list[i] = status;
     return status;
 }
@@ -1194,11 +1194,11 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
     char archive_path[_MAX_PATH + 1];
 
     char *dirname = NULL;
-    
+
     VS("Extracting dependencies\n");
     if (splitName(path, filename, item) == -1)
         return -1;
-            
+
     dirname = dirName(path);
     if (dirname[0] == 0) {
         free(dirname);
@@ -1207,19 +1207,19 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
 
     /* We need to identify three situations: 1) dependecies are in a onedir archive
      * next to the current onefile archive, 2) dependencies are in a onedir/onefile
-     * archive next to the current onedir archive, 3) dependencies are in a onefile 
+     * archive next to the current onedir archive, 3) dependencies are in a onefile
      * archive next to the current onefile archive.
      */
-    VS("Checking if file exists\n");    
+    VS("Checking if file exists\n");
     if (checkFile(srcpath, "%s/%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) {
-        VS("File %s found, assuming is onedir\n", srcpath);        
+        VS("File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
             free(dirname);
             return -1;
         }
     } else if (checkFile(srcpath, "%s../%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) {
-        VS("File %s found, assuming is onedir\n", srcpath);        
+        VS("File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
             free(dirname);
@@ -1230,7 +1230,7 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
         if ((checkFile(archive_path, "%s%s.pkg", status_list[SELF]->homepath, path) != 0) &&
             (checkFile(archive_path, "%s%s.exe", status_list[SELF]->homepath, path) != 0) &&
             (checkFile(archive_path, "%s%s", status_list[SELF]->homepath, path) != 0)) {
-            FATALERROR("Archive not found: %s\n", archive_path);            
+            FATALERROR("Archive not found: %s\n", archive_path);
             return -1;
         }
 
@@ -1245,7 +1245,7 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
         }
     }
     free(dirname);
-    
+
     return 0;
 }
 
@@ -1261,7 +1261,7 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
 		if (ptoc->typcd == 'b' || ptoc->typcd == 'x' || ptoc->typcd == 'Z')
 			if (extract2fs(status_list[SELF], ptoc))
 				return -1;
-        
+
         if (ptoc->typcd == 'd') {
             if (extractDependency(status_list, ptoc->name) == -1)
                 return -1;
@@ -1517,4 +1517,3 @@ void finalizePython(void)
 {
 	PI_Py_Finalize();
 }
-
