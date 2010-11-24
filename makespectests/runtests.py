@@ -20,106 +20,94 @@ build/
 dist/
 """.split()
 lastEdited = ""
-newSpecFail = "Unable to makespec %s" % lastEdited
-switchSpecFail = "Unable to convert the %s" % lastEdited
-buildFail = "Unable to build the %s file" % lastEdited
+def newSpecFail(): return "Unable to makespec %s" % lastEdited
+def switchSpecFail(): return "Unable to convert the %s" % lastEdited
+def buildFail(): return "Unable to build the %s file" % lastEdited
+
+def clean(to_clean=CLEANUP):
+    """Cleaning tests resouces"""
+    for clean in to_clean:
+        clean = glob.glob(clean)
+        for path in clean:
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.remove(path)
+
+def build(specfile):
+    global lastEdited
+    lastEdited = specfile
+    return os.system("%s -y %s >> %s" % (BUILD_EXE, specfile, LOG_FILE))
+
+def makespec(scriptfile, newscriptname = None, dep_mode = "--onedir"):
+    global lastEdited
+    lastEdited = scriptfile
+    name, _ = os.path.splitext(scriptfile)
+    if newscriptname == None:
+        newscriptname = name
+    return os.system("%s -n %s %s %s >> %s" % (MAKESPEC_EXE, newscriptname,
+        dep_mode, scriptfile, LOG_FILE))
+
 
 class MakespecTest(unittest.TestCase):
-    def build(self, specfile):
-        global lastEdited
-        lastEdited = specfile
-        return os.system("%s -y %s >> %s" % (BUILD_EXE, specfile, LOG_FILE))
-
-    def makespec(self, scriptfile, newscriptname = None, dep_mode = "--onedir"):
-        global lastEdited
-        lastEdited = scriptfile
-        name, _ = os.path.splitext(scriptfile)
-        if newscriptname == None:
-            newscriptname = name
-        return os.system("%s -n %s %s %s >> %s" % (MAKESPEC_EXE, newscriptname,
-            dep_mode, scriptfile, LOG_FILE))
-
-    def setUp(self):
-        """
-        Init the spec files used for tests
-        """
-        open(LOG_FILE, 'w').write('')
-        res = self.makespec(SCRIPT_FOR_TESTS, "spec_od")
-        self.assertEqual(res, 0, newSpecFail)
-        res = self.makespec(SCRIPT_FOR_TESTS, "spec_of", "--onefile")
-        self.assertEqual(res, 0, newSpecFail)
-
     def tearDown(self):
-        """
-        Cleaning tests resouces
-        """
-        for clean in CLEANUP:
-            clean = glob.glob(clean)
-            for path in clean:
-                if os.path.isdir(path):
-                    shutil.rmtree(path)
-                else:
-                    os.remove(path)
+        clean(["dist/", "build/"])
 
     def test_build_onedir(self):
-        """\
-        BUILDING ONEDIR SPEC DEPLOYMENT
-        """
-        res = self.build("spec_od.spec")
-        self.assertEqual(res, 0, buildFail)
+        """BUILDING ONEDIR SPEC DEPLOYMENT"""
+        res = makespec(SCRIPT_FOR_TESTS, "spec_od")
+        self.assertEqual(res, 0, newSpecFail())
+        res = build("spec_od.spec")
+        self.assertEqual(res, 0, buildFail())
 
     def test_build_onefile(self):
-        """\
-        BUILDING ONEFILE SPEC DEPLOYMENT
-        """
-        res = self.build("spec_of.spec")
-        self.assertEqual(res, 0, buildFail)
+        """BUILDING ONEFILE SPEC DEPLOYMENT"""
+        res = makespec(SCRIPT_FOR_TESTS, "spec_of", "--onefile")
+        self.assertEqual(res, 0, newSpecFail())
+        res = build("spec_of.spec")
+        self.assertEqual(res, 0, buildFail())
 
     def test_spec_edit(self):
-        """\
-        BUILDING AN EDITED SPEC
-        """
+        """BUILDING AN EDITED SPEC"""
         # edit the to_edit.spec file before running this test
         if not os.path.isfile(os.path.join(MST_DIR, "to_edit.spec")):
-            res = self.makespec(SCRIPT_FOR_TESTS, "to_edit")
-            self.assertEqual(res, 0, newSpecFail)
+            res = makespec(SCRIPT_FOR_TESTS, "to_edit")
+            self.assertEqual(res, 0, newSpecFail())
         else:
-            res = self.build("to_edit.spec")
-            self.assertEqual(res, 0, buildFail)
+            res = build("to_edit.spec")
+            self.assertEqual(res, 0, buildFail())
 
     def test_switch_edited_file(self):
-        """\
-        SWITCHING AN EDITED SPEC FILE
-        """
+        """SWITCHING AN EDITED SPEC FILE"""
         if not os.path.isfile(os.path.join(MST_DIR, "to_edit.spec")):
-            res = self.makespec(SCRIPT_FOR_TESTS, "to_edit")
-            self.assertEqual(res, 0, newSpecFail)
+            res = makespec(SCRIPT_FOR_TESTS, "to_edit")
+            self.assertEqual(res, 0, newSpecFail())
         else:
-            res = self.makespec("to_edit.spec", "to_edit", "--onefile")
-            self.assertEqual(res, 0, switchSpecFail)
-            res = self.build("_to_edit.spec")
-            self.assertEqual(res, 0, buildFail)
+            res = makespec("to_edit.spec", "to_edit", "--onefile")
+            self.assertEqual(res, 0, switchSpecFail())
+            res = build("_to_edit.spec")
+            self.assertEqual(res, 0, buildFail())
 
     def test_switch_to_onedir(self):
-        """\
-        SWITCHING A SPEC FILE FROM ONEFILE TO ONEDIR DEPLOYMENT
-        """
-        res = self.makespec("spec_of.spec", "_spec_od")
-        self.assertEqual(res, 0, switchSpecFail)
-
-        res = self.build("_spec_od.spec")
-        self.assertEqual(res, 0, buildFail)
+        """SWITCHING A SPEC FILE FROM ONEFILE TO ONEDIR DEPLOYMENT"""
+        res = makespec(SCRIPT_FOR_TESTS, "spec_of")
+        self.assertEqual(res, 0, newSpecFail())
+        res = makespec("spec_of.spec", "_spec_od")
+        self.assertEqual(res, 0, switchSpecFail())
+        res = build("_spec_od.spec")
+        self.assertEqual(res, 0, buildFail())
 
     def test_switch_to_onefile(self):
-        """\
-        SWITCHING A SPEC FILE FROM ONEDIR TO ONEFILE DEPLOYMENT
-        """
-        res = self.makespec("spec_of.spec", "_spec_of", "--onefile")
-        self.assertEqual(res, 0, switchSpecFail)
-
-        res = self.build("_spec_of.spec")
-        self.assertEqual(res, 0, buildFail)
+        """SWITCHING A SPEC FILE FROM ONEDIR TO ONEFILE DEPLOYMENT"""
+        res = makespec(SCRIPT_FOR_TESTS, "spec_od")
+        self.assertEqual(res, 0, newSpecFail())
+        res = makespec("spec_od.spec", "_spec_of", "--onefile")
+        self.assertEqual(res, 0, switchSpecFail())
+        res = build("_spec_of.spec")
+        self.assertEqual(res, 0, buildFail())
 
 if __name__ == "__main__":
+    open(LOG_FILE, 'w').write('')
     suite = unittest.TestLoader().loadTestsFromTestCase(MakespecTest)
-    unittest.TextTestRunner(verbosity=3).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(suite)
+    clean()
