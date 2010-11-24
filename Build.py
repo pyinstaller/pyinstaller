@@ -142,6 +142,18 @@ def compile_pycos(toc):
 
     return new_toc
 
+def addSuffixToExtensions(toc):
+    """
+    Returns a new TOC with proper library suffix for EXTENSION items.
+    """
+    new_toc = TOC()
+    for inm, fnm, typ in toc:
+        if typ == 'EXTENSION':
+            binext = os.path.splitext(fnm)[1]
+            if not os.path.splitext(inm)[1] == binext:
+                inm = inm + binext
+        new_toc.append((inm, fnm, typ))
+    return new_toc
 
 #--- functons for checking guts ---
 
@@ -747,15 +759,8 @@ class PKG(Target):
         print "building PKG", os.path.basename(self.name)
         trash = []
         mytoc = []
-        toc = TOC()
-        for item in self.toc:
-            inm, fnm, typ = item
-            if typ == 'EXTENSION':
-                binext = os.path.splitext(fnm)[1]
-                if not os.path.splitext(inm)[1] == binext:
-                    inm = inm + binext
-            toc.append((inm, fnm, typ))
         seen = {}
+        toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
             if not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
@@ -1097,13 +1102,7 @@ class COLLECT(Target):
         print "building COLLECT", os.path.basename(self.out)
         if not os.path.exists(self.name):
             os.makedirs(self.name)
-        toc = TOC()
-        for inm, fnm, typ in self.toc:
-            if typ == 'EXTENSION':
-                binext = os.path.splitext(fnm)[1]
-                if not os.path.splitext(inm)[1] == binext:
-                    inm = inm + binext
-            toc.append((inm, fnm, typ))
+        toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
             if not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
@@ -1134,14 +1133,24 @@ class BUNDLE(Target):
         self.toc = TOC()
         for arg in args:
             if isinstance(arg, EXE):
-                if self.name is None:
-                    self.appname = "Mac%s" % (os.path.splitext(os.path.basename(arg.name))[0],)
-                    self.name = os.path.join(SPECPATH, self.appname + ".app")
-                self.exename = arg.name
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 self.toc.extend(arg.dependencies)
+            elif isinstance(arg, TOC):
+                self.toc.extend(arg)
+            elif isinstance(arg, COLLECT):
+                self.toc.extend(arg.toc)
             else:
                 print "unsupported entry %s", arg.__class__.__name__
+        # Now, find values for app filepath (name), app name (appname), and name
+        # of the actual executable (exename) from the first EXECUTABLE item in
+        # toc, which might have come from a COLLECT too (not from an EXE).
+        for inm, name, typ in self.toc:
+            if typ == "EXECUTABLE":
+                self.exename = name
+                if self.name is None:
+                    self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
+                    self.name = os.path.join(SPECPATH, self.appname + ".app")
+                break
         self.__postinit__()
 
     GUTS = (('toc',             _check_guts_eq), # additional check below
@@ -1201,7 +1210,9 @@ class BUNDLE(Target):
         f = open(os.path.join(self.name, "Contents", "Info.plist"), "w")
         f.write(info_plist)
         f.close()
-        for inm, fnm, typ in self.toc:
+
+        toc = addSuffixToExtensions(self.toc)
+        for inm, fnm, typ in toc:
             tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
