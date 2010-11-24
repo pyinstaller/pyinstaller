@@ -169,12 +169,12 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
     if icon_file:
         exe_options = "%s, icon='%s'" % (exe_options, quote_win_filepath(icon_file))
     if manifest:
-		if "<" in manifest:
-			# Assume XML string
-			exe_options = "%s, manifest='%s'" % (exe_options, manifest.replace("'", "\\'"))
-		else:
-			# Assume filename
-			exe_options = "%s, manifest='%s'" % (exe_options, quote_win_filepath(manifest))
+        if "<" in manifest:
+            # Assume XML string
+            exe_options = "%s, manifest='%s'" % (exe_options, manifest.replace("'", "\\'"))
+        else:
+            # Assume filename
+            exe_options = "%s, manifest='%s'" % (exe_options, quote_win_filepath(manifest))
     if resources:
         for i in range(len(resources)):
             resources[i] = quote_win_filepath(resources[i])
