@@ -697,18 +697,18 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 
 	/* Set sys.path */
 	/* VS("Manipulating Python's sys.path\n"); */
-	PI_PyRun_SimpleString("import sys,os\n");
+	PI_PyRun_SimpleString("import sys\n");
 	PI_PyRun_SimpleString("del sys.path[:]\n");
     if (status->temppath[0] != '\0') {
         strcpy(tmp, status->temppath);
 	    tmp[strlen(tmp)-1] = '\0';
-	    sprintf(cmd, "sys.path.append(os.path.abspath(r\"%s\"))", tmp);
+	    sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
         PI_PyRun_SimpleString(cmd);
     }
 
 	strcpy(tmp, status->homepath);
 	tmp[strlen(tmp)-1] = '\0';
-	sprintf(cmd, "sys.path.append(os.path.abspath(r\"%s\"))", tmp);
+	sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
 	PI_PyRun_SimpleString (cmd);
 
 	/* Set argv[0] to be the archiveName */
@@ -798,7 +798,7 @@ int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	int rc;
 	int zlibpos = status->pkgstart + ntohl(ptoc->pos);
-	char *tmpl = "sys.path.append(os.path.abspath(r\"%s\") + r\"?%d\")\n";
+	char *tmpl = "sys.path.append(r\"%s?%d\")\n";
 	char *cmd = (char *) malloc(strlen(tmpl) + strlen(status->archivename) + 32);
 	sprintf(cmd, tmpl, status->archivename, zlibpos);
 	/*VS(cmd);*/
