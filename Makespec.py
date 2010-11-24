@@ -146,7 +146,7 @@ exe = EXE(
     version=exeVersion)
 """
 marker = "###@O@_"
-HOME = os.path.realpath(os.path.abspath(os.path.dirname(sys.argv[0])))
+HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 def stringfyHomePaths(hp_list):
     string = '['
@@ -194,7 +194,7 @@ def createSpecFile(scripts, options):
     specfile = open(specfile_name, 'w')
 
     if config["target_platform"][:3] == "win" or \
-       config["target_platform"] == "cygwin"
+       config["target_platform"] == "cygwin":
         options["exename"] += ".exe"
 
     if options["onedir"]:
