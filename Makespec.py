@@ -185,14 +185,17 @@ def createSpecFile(scripts, options):
         "home_paths": home_paths,
         "scripts"   : scripts,
         "distdir"   : "dist",
-        "builddir"  : os.path.join('build', 'pyi.' + config['target_platform'], options["exename"]),
+        "builddir"  : os.path.join("build", "pyi." + config["target_platform"], options["exename"]),
         "onedir"    : options["onedir"],
         "onefile"   : not options["onedir"],
         "marker"    : marker}
 
-
     specfile_name = options["exename"] + ".spec"
     specfile = open(specfile_name, 'w')
+
+    if config["target_platform"][:3] == "win" or \
+       config["target_platform"] == "cygwin"
+        options["exename"] += ".exe"
 
     if options["onedir"]:
         specfile.write((common_part + onedir_tpl) % options)
