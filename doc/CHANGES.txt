@@ -11,6 +11,7 @@ Changes since PyInstaller 1.4
    and Darwin (32-bit). This means that PyInstaller users on this
    platform don't need to compile the bootloader themselves anymore
    (thanks to Martin Zibricky and Lorenzo Mancini).
+ + Add support for generating Mac bundles in one-dir mode.
  * Preliminar support for Darwin 64-bit. Notice that you will need
    to recompile the bootloader on this platform (see the manual).
  * Fix spurious KeyError when using dbhash
