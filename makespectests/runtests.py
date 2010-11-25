@@ -41,71 +41,62 @@ def execute(cmdargs):
         retcode = subprocess.Popen(cmdargs, stdout=open(os.devnull, 'w'), stderr=LOG_FILE).wait()
     return retcode
 
-def build(specfile):
-    global lastEdited
-    lastEdited = specfile
-    return execute([BUILD_EXE, "-y", specfile])
-
-def makespec(scriptfile, newscriptname = None, dep_mode = "--onedir"):
-    global lastEdited
-    lastEdited = scriptfile
-    name = os.path.splitext(scriptfile)[0]
-    if newscriptname == None:
-        newscriptname = name
-    return execute([MAKESPEC_EXE, "-n", newscriptname, dep_mode, scriptfile])
-
 class MakespecTest(unittest.TestCase):
     def tearDown(self):
         clean()
 
-    def test_build_onedir(self):
-        """BUILDING ONEDIR SPEC DEPLOYMENT"""
-        res = makespec(SCRIPT_FOR_TESTS, "spec_od")
-        self.assertEqual(res, 0, newSpecFail())
-        res = build("spec_od.spec")
+    def build(self, specfile):
+        global lastEdited
+        lastEdited = specfile
+        res = execute([BUILD_EXE, "-y", specfile])
         self.assertEqual(res, 0, buildFail())
+
+    def makespec(self, scriptfile, newscriptname = None, dep_mode = "--onedir"):
+        global lastEdited
+        lastEdited = scriptfile
+        name = os.path.splitext(scriptfile)[0]
+        if newscriptname == None:
+            newscriptname = name
+        res = execute([MAKESPEC_EXE, "-n", newscriptname, dep_mode, scriptfile])
+        if scriptfile.endswith(".spec"):
+            self.assertEqual(res, 0, switchSpecFail())
+        else:
+            self.assertEqual(res, 0, newSpecFail())
+
+
+    def test_build_onedir(self):
+        """Building onedir spec deployment"""
+        self.makespec(SCRIPT_FOR_TESTS, "spec_od")
+        self.build("spec_od.spec")
 
     def test_build_onefile(self):
-        """BUILDING ONEFILE SPEC DEPLOYMENT"""
-        res = makespec(SCRIPT_FOR_TESTS, "spec_of", "--onefile")
-        self.assertEqual(res, 0, newSpecFail())
-        res = build("spec_of.spec")
-        self.assertEqual(res, 0, buildFail())
+        """Building onefile spec deployment"""
+        self.makespec(SCRIPT_FOR_TESTS, "spec_of", "--onefile")
+        self.build("spec_of.spec")
 
     def test_edited_file(self):
-        """BUILDING AN EDITED SPEC"""
+        """Building an edited spec"""
         # edit the to_edit.spec file before running this test
-        res = makespec(SCRIPT_FOR_TESTS, "to_edit")
-        self.assertEqual(res, 0, newSpecFail())
-        res = build("to_edit.spec")
-        self.assertEqual(res, 0, buildFail())
+        self.makespec(SCRIPT_FOR_TESTS, "to_edit")
+        self.build("to_edit.spec")
 
     def test_switch_to_onedir(self):
-        """ONEFILE TO ONEDIR DEPLOYMENT"""
-        res = makespec(SCRIPT_FOR_TESTS, "spec_of", "--onefile")
-        self.assertEqual(res, 0, newSpecFail())
-        res = makespec("spec_of.spec", "_spec_od")
-        self.assertEqual(res, 0, switchSpecFail())
-        res = build("_spec_od.spec")
-        self.assertEqual(res, 0, buildFail())
+        """Onefile to onedir deployment"""
+        self.makespec(SCRIPT_FOR_TESTS, "spec_of", "--onefile")
+        self.makespec("spec_of.spec", "_spec_od")
+        self.build("_spec_od.spec")
 
     def test_switch_to_onefile(self):
-        """ONEDIR TO ONEFILE DEPLOYMENT"""
-        res = makespec(SCRIPT_FOR_TESTS, "spec_od")
-        self.assertEqual(res, 0, newSpecFail())
-        res = makespec("spec_od.spec", "_spec_of", "--onefile")
-        self.assertEqual(res, 0, switchSpecFail())
-        res = build("_spec_of.spec")
-        self.assertEqual(res, 0, buildFail())
+        """Onedir to onefile deployment"""
+        self.makespec(SCRIPT_FOR_TESTS, "spec_od")
+        self.makespec("spec_od.spec", "_spec_of", "--onefile")
+        self.build("_spec_of.spec")
 
     def test_switch_to_onefile_edited_file(self):
-        """SWITCHING AN EDITED SPEC FILE"""
-        res = makespec(SCRIPT_FOR_TESTS, "to_edit")
-        self.assertEqual(res, 0, newSpecFail())
-        res = makespec("to_edit.spec", "_to_edit", "--onefile")
-        self.assertEqual(res, 0, switchSpecFail())
-        res = build("_to_edit.spec")
-        self.assertEqual(res, 0, buildFail())
+        """Switching an edited spec file"""
+        self.makespec(SCRIPT_FOR_TESTS, "to_edit")
+        self.makespec("to_edit.spec", "_to_edit", "--onefile")
+        self.build("_to_edit.spec")
 
 if __name__ == "__main__":
     os.chdir(MST_DIR)
