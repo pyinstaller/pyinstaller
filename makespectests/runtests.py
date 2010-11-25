@@ -9,12 +9,12 @@ HOME = os.path.normpath(os.path.join(MST_DIR, ".."))
 MAKESPEC_EXE = os.path.join(HOME, "Makespec.py")
 BUILD_EXE = os.path.join(HOME, "Build.py")
 SCRIPT_FOR_TESTS = os.path.join(MST_DIR, "test.py")
-LOG_FILE = os.path.join(MST_DIR, "run.log")
+LOG_FILE = os.path.join(MST_DIR, "err.log")
 if os.name == "posix":
     NULL_DEV = "/dev/null"
 else:
     NULL_DEV = "nul"
-CLEANUP = ["logdict*", "warn*.txt", "*.py[co]", "*/*.py[co]", "build/", "dist/",
+CLEANUP = ["*.log", "warn*.txt", "*.py[co]", "*/*.py[co]", "build/", "dist/",
            "*/*/*.py[co]", "*.spec"]
 lastEdited = None
 def newSpecFail(): return "Unable to makespec %s" % lastEdited
@@ -33,7 +33,8 @@ def clean(to_clean=CLEANUP):
 
 def execute(cmd):
     retcode = os.system(cmd + " > " + NULL_DEV + " 2> " + LOG_FILE)
-    return retcode
+    errstring = "\nMore datails:\n" + open(LOG_FILE, 'r').read()
+    return retcode, errstring
 
 class MakespecTest(unittest.TestCase):
     def tearDown(self):
@@ -42,17 +43,18 @@ class MakespecTest(unittest.TestCase):
     def build(self, specfile="test.spec"):
         global lastEdited
         lastEdited = specfile
-        res = execute("%s -y %s" % (BUILD_EXE, specfile))
-        self.assertEqual(res, 0, buildFail())
+        retcode, errstring = execute("%s -y %s" % (BUILD_EXE, specfile))
+        self.assertEqual(retcode, 0, buildFail() + errstring)
 
     def makespec(self, scriptfile=SCRIPT_FOR_TESTS, dep_mode = "--onedir"):
         global lastEdited
         lastEdited = scriptfile
-        res = execute("%s %s %s" % (MAKESPEC_EXE, dep_mode, scriptfile))
+        retcode, errstring = execute("%s %s %s" % (MAKESPEC_EXE, dep_mode, scriptfile))
+        #FIXME: display only errstring?
         if scriptfile.endswith(".spec"):
-            self.assertEqual(res, 0, switchSpecFail())
+            self.assertEqual(retcode, 0, switchSpecFail() + errstring)
         else:
-            self.assertEqual(res, 0, newSpecFail())
+            self.assertEqual(retcode, 0, newSpecFail() + errstring)
 
     def editspec(self):
         pass
@@ -94,4 +96,5 @@ class MakespecTest(unittest.TestCase):
 
 if __name__ == "__main__":
     os.chdir(MST_DIR)
+    #open(LOG_FILE, 'w')
     unittest.main()
