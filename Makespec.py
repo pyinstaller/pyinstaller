@@ -105,14 +105,12 @@ exe = EXE(
     manifest=exeManifest,
     version=exeVersion)
 
+tkTree = []
 if useTk:
-    useTk = []
-    useTk.extend(TkTree())
-else:
-    useTk = []
+    tkTree.extend(TkTree())
 
 coll = COLLECT(
-    useTk,
+    tkTree,
     exe,
     a.binaries,
     a.zipfiles,
@@ -123,14 +121,12 @@ coll = COLLECT(
 """
 
 onefile_tpl = """ Do not remove or edit this marker
+tkPKG = []
 if useTk:
-    useTk = []
-    useTk.extend(TkPKG())
-else:
-    useTk = []
+    tkPKG.extend(TkPKG())
 
 exe = EXE(
-    useTk,
+    tkPKG,
     pyz,
     a.scripts,
     a.binaries,
