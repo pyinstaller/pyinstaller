@@ -57,7 +57,6 @@ class MakespecTest(unittest.TestCase):
     def editspec(self):
         pass
 
-
     def test_build_onedir(self):
         """Building onedir spec deployment"""
         self.makespec()
@@ -70,7 +69,6 @@ class MakespecTest(unittest.TestCase):
 
     def test_edited_file(self):
         """Building an edited spec"""
-        # edit the to_edit.spec file before running this test
         self.makespec()
         self.editspec()
         self.build()
