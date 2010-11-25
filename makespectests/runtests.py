@@ -12,7 +12,7 @@ MST_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 HOME = os.path.normpath(os.path.join(MST_DIR, ".."))
 MAKESPEC_EXE = os.path.join(HOME, "Makespec.py")
 BUILD_EXE = os.path.join(HOME, "Build.py")
-SCRIPT_FOR_TESTS = os.path.join(MST_DIR, "script_for_tests.py")
+SCRIPT_FOR_TESTS = os.path.join(MST_DIR, "test.py")
 LOG_FILE = open(os.path.join(MST_DIR, "run.log"), 'w')
 CLEANUP = ["logdict*", "warn*.txt", "*.py[co]", "*/*.py[co]", "build/", "dist/",
            "*/*/*.py[co]", "*_od.spec", "*_of.spec", "_*.spec"]
@@ -45,13 +45,13 @@ class MakespecTest(unittest.TestCase):
     def tearDown(self):
         clean()
 
-    def build(self, specfile):
+    def build(self, specfile="test.spec"):
         global lastEdited
         lastEdited = specfile
         res = execute([BUILD_EXE, "-y", specfile])
         self.assertEqual(res, 0, buildFail())
 
-    def makespec(self, scriptfile, newscriptname = None, dep_mode = "--onedir"):
+    def makespec(self, scriptfile=SCRIPT_FOR_TESTS, newscriptname = None, dep_mode = "--onedir"):
         global lastEdited
         lastEdited = scriptfile
         name = os.path.splitext(scriptfile)[0]
@@ -63,40 +63,45 @@ class MakespecTest(unittest.TestCase):
         else:
             self.assertEqual(res, 0, newSpecFail())
 
+    def editspec():
+        pass
+
 
     def test_build_onedir(self):
         """Building onedir spec deployment"""
-        self.makespec(SCRIPT_FOR_TESTS, "spec_od")
-        self.build("spec_od.spec")
+        self.makespec()
+        self.build()
 
     def test_build_onefile(self):
         """Building onefile spec deployment"""
-        self.makespec(SCRIPT_FOR_TESTS, "spec_of", "--onefile")
-        self.build("spec_of.spec")
+        self.makespec(dep_mode="--onefile")
+        self.build()
 
     def test_edited_file(self):
         """Building an edited spec"""
         # edit the to_edit.spec file before running this test
-        self.makespec(SCRIPT_FOR_TESTS, "to_edit")
-        self.build("to_edit.spec")
+        self.makespec()
+        self.editspec()
+        self.build()
 
     def test_switch_to_onedir(self):
         """Onefile to onedir deployment"""
-        self.makespec(SCRIPT_FOR_TESTS, "spec_of", "--onefile")
-        self.makespec("spec_of.spec", "_spec_od")
-        self.build("_spec_od.spec")
+        self.makespec(dep_mode="--onefile")
+        self.makespec(scriptfile="test.spec")
+        self.build()
 
     def test_switch_to_onefile(self):
         """Onedir to onefile deployment"""
-        self.makespec(SCRIPT_FOR_TESTS, "spec_od")
-        self.makespec("spec_od.spec", "_spec_of", "--onefile")
-        self.build("_spec_of.spec")
+        self.makespec()
+        self.makespec(scriptfile="test.spec", dep_mode="--onefile")
+        self.build()
 
     def test_switch_to_onefile_edited_file(self):
         """Switching an edited spec file"""
-        self.makespec(SCRIPT_FOR_TESTS, "to_edit")
-        self.makespec("to_edit.spec", "_to_edit", "--onefile")
-        self.build("_to_edit.spec")
+        self.makespec()
+        self.editspec()
+        self.makespec(specfile="test.spec", dep_mode="--onefile")
+        self.build()
 
 if __name__ == "__main__":
     os.chdir(MST_DIR)
