@@ -3,19 +3,19 @@ import glob
 import os, sys
 import shutil
 import unittest
-if sys.version_info < (2, 4):
-    import commands
-else:
-    import subprocess
 
 MST_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 HOME = os.path.normpath(os.path.join(MST_DIR, ".."))
 MAKESPEC_EXE = os.path.join(HOME, "Makespec.py")
 BUILD_EXE = os.path.join(HOME, "Build.py")
 SCRIPT_FOR_TESTS = os.path.join(MST_DIR, "test.py")
-LOG_FILE = open(os.path.join(MST_DIR, "run.log"), 'w')
+LOG_FILE = os.path.join(MST_DIR, "run.log")
+if os.name == "posix":
+    NULL_DEV = "/dev/null"
+else:
+    NULL_DEV = "nul"
 CLEANUP = ["logdict*", "warn*.txt", "*.py[co]", "*/*.py[co]", "build/", "dist/",
-           "*/*/*.py[co]", "*_od.spec", "*_of.spec", "_*.spec"]
+           "*/*/*.py[co]", "*.spec"]
 lastEdited = None
 def newSpecFail(): return "Unable to makespec %s" % lastEdited
 def switchSpecFail(): return "Unable to convert the %s" % lastEdited
@@ -31,14 +31,8 @@ def clean(to_clean=CLEANUP):
             else:
                 os.remove(path)
 
-def execute(cmdargs):
-    if sys.version_info < (2, 4):
-        cmd = " ".join(cmdargs)
-        #TODO: how to redirect output?
-        retcode, out = commands.getstatusoutput(cmd)
-        #FIXME: commands is only for Unix!!!
-    else:
-        retcode = subprocess.Popen(cmdargs, stdout=open(os.devnull, 'w'), stderr=LOG_FILE).wait()
+def execute(cmd):
+    retcode = os.system(cmd + " > " + NULL_DEV + " 2> " + LOG_FILE)
     return retcode
 
 class MakespecTest(unittest.TestCase):
@@ -48,22 +42,19 @@ class MakespecTest(unittest.TestCase):
     def build(self, specfile="test.spec"):
         global lastEdited
         lastEdited = specfile
-        res = execute([BUILD_EXE, "-y", specfile])
+        res = execute("%s -y %s" % (BUILD_EXE, specfile))
         self.assertEqual(res, 0, buildFail())
 
-    def makespec(self, scriptfile=SCRIPT_FOR_TESTS, newscriptname = None, dep_mode = "--onedir"):
+    def makespec(self, scriptfile=SCRIPT_FOR_TESTS, dep_mode = "--onedir"):
         global lastEdited
         lastEdited = scriptfile
-        name = os.path.splitext(scriptfile)[0]
-        if newscriptname == None:
-            newscriptname = name
-        res = execute([MAKESPEC_EXE, "-n", newscriptname, dep_mode, scriptfile])
+        res = execute("%s %s %s" % (MAKESPEC_EXE, dep_mode, scriptfile))
         if scriptfile.endswith(".spec"):
             self.assertEqual(res, 0, switchSpecFail())
         else:
             self.assertEqual(res, 0, newSpecFail())
 
-    def editspec():
+    def editspec(self):
         pass
 
 
@@ -100,7 +91,7 @@ class MakespecTest(unittest.TestCase):
         """Switching an edited spec file"""
         self.makespec()
         self.editspec()
-        self.makespec(specfile="test.spec", dep_mode="--onefile")
+        self.makespec(scriptfile="test.spec", dep_mode="--onefile")
         self.build()
 
 if __name__ == "__main__":
