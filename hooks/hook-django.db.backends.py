@@ -29,5 +29,8 @@ def hook(mod):
             fn = os.path.basename(fn)
             hiddenimports.append('django.db.backends.' + fn + '.base')
 
+    # Compiler (see class BaseDatabaseOperations)
+    hiddenimports.append("django.db.models.sql.compiler")
+
     return mod
 

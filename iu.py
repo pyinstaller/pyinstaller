@@ -453,7 +453,7 @@ class ImportManager:
                 return sys.modules[nmparts[0]]
             del sys.modules[fqname]
             raise ImportError, "No module named %s" % fqname
-        if fromlist is None:
+        if not fromlist:
             debug("importHook done with %s %s %s (case 2)" % (name, __globals_name, fromlist))
             if context:
                 return sys.modules[context+'.'+nmparts[0]]
@@ -528,7 +528,10 @@ class ImportManager:
                         # Should we save the mod dict and restore it in case
                         # of failure?
                         if not reload:
-                            del sys.modules[fqname]
+                            # Some modules (eg: dbhash.py) cleanup
+                            # sys.modules themselves. We should then
+                            # be lenient and avoid errors.
+                            sys.modules.pop(fqname, None)
                             if hasattr(parent, nm):
                                 delattr(parent, nm)
                     raise

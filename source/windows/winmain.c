@@ -25,10 +25,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+#define _WIN32_WINNT 0x0500
 #include "launch.h"
 #include <windows.h>
 #include <commctrl.h> // InitCommonControls
 #include <signal.h>
+
+static char* basename (char *path)
+{
+  /* Search for the last directory separator in PATH.  */
+  char *basename = strrchr (path, '\\');
+  if (!basename) basename = strrchr (path, '/');
+  
+  /* If found, return the address of the following character,
+     or the start of the parameter passed in.  */
+  return basename ? ++basename : (char*)path;
+}
 
 int relaunch(LPWSTR thisfile, char *workpath)
 {
@@ -93,12 +105,118 @@ int relaunch(LPWSTR thisfile, char *workpath)
 	return rc;
 }
 
+static int IsXPOrLater(void)
+{
+    OSVERSIONINFO osvi;
+    
+    ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 
-#ifdef _CONSOLE
-int main(int argc, char* argv[])
-#else
+    GetVersionEx(&osvi);
+
+    return ((osvi.dwMajorVersion > 5) ||
+       ((osvi.dwMajorVersion == 5) && (osvi.dwMinorVersion >= 1)));
+}
+
+
+static HANDLE hCtx = INVALID_HANDLE_VALUE;
+static ULONG_PTR actToken;
+
+#ifndef STATUS_SXS_EARLY_DEACTIVATION
+#define STATUS_SXS_EARLY_DEACTIVATION 0xC015000F
+#endif
+
+static int CreateActContext(char *workpath, char *thisfile)
+{
+    char manifestpath[_MAX_PATH + 1];
+    ACTCTX ctx;
+    BOOL activated;
+    HANDLE k32;
+    HANDLE (WINAPI *CreateActCtx)(PACTCTX pActCtx);
+    BOOL (WINAPI *ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
+
+    // If not XP, nothing to do -- return OK
+    if (!IsXPOrLater())
+        return 1;
+       
+    /* Setup activation context */
+    strcpy(manifestpath, workpath);
+    strcat(manifestpath, basename(thisfile));
+    strcat(manifestpath, ".manifest");
+    VS("manifestpath: %s\n", manifestpath);
+    
+    k32 = LoadLibrary("kernel32");
+    CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA");
+    ActivateActCtx = (void*)GetProcAddress(k32, "ActivateActCtx");
+    
+    if (!CreateActCtx || !ActivateActCtx)
+    {
+        VS("Cannot find CreateActCtx/ActivateActCtx exports in kernel32.dll\n");
+        return 0;
+    }
+    
+    ZeroMemory(&ctx, sizeof(ctx));
+    ctx.cbSize = sizeof(ACTCTX);
+    ctx.lpSource = manifestpath;
+
+    hCtx = CreateActCtx(&ctx);
+    if (hCtx != INVALID_HANDLE_VALUE)
+    {
+        VS("Activation context created\n");
+        activated = ActivateActCtx(hCtx, &actToken);
+        if (activated)
+        {
+            VS("Activation context activated\n");
+            return 1;
+        }
+    }
+
+    hCtx = INVALID_HANDLE_VALUE;
+    VS("Error activating the context\n");
+    return 0;
+}
+
+static void ReleaseActContext(void)
+{
+    void (WINAPI *ReleaseActCtx)(HANDLE);
+    BOOL (WINAPI *DeactivateActCtx)(DWORD dwFlags, ULONG_PTR ulCookie);
+    HANDLE k32;
+
+    if (!IsXPOrLater())
+        return;
+
+    k32 = LoadLibrary("kernel32");
+    ReleaseActCtx = (void*)GetProcAddress(k32, "ReleaseActCtx");
+    DeactivateActCtx = (void*)GetProcAddress(k32, "DeactivateActCtx");
+    if (!ReleaseActCtx || !DeactivateActCtx)
+    {
+        VS("Cannot find ReleaseActCtx/DeactivateActCtx exports in kernel32.dll\n");
+        return;
+    }
+
+    __try
+    {
+        VS("Deactivating activation context\n");
+        if (!DeactivateActCtx(0, actToken))
+            VS("Error deactivating context!\n!");
+
+        VS("Releasing activation context\n");
+        if (hCtx != INVALID_HANDLE_VALUE)
+            ReleaseActCtx(hCtx);
+        VS("Done\n");
+    }
+    __except (STATUS_SXS_EARLY_DEACTIVATION)
+    {
+        VS("SXS early deactivation; somebody left the activation context dirty, let's ignore the problem");
+    }
+}
+
+
+#ifdef WINDOWED
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						LPSTR lpCmdLine, int nCmdShow )
+#else
+int main(int argc, char* argv[])
 #endif
 {
 	char here[_MAX_PATH + 1];
@@ -109,11 +227,11 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	char *workpath = NULL;
 	char *p;
 	int len;
-#ifndef _CONSOLE
+#ifdef WINDOWED
 	int argc = __argc;
 	char **argv = __argv;
 #endif
-
+	
 	// Initialize common controls (needed to link with commctrl32.dll and
 	// obtain native XP look & feel).
 	InitCommonControls();
@@ -149,12 +267,14 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		VS("Found embedded PKG: %s\n", thisfile);
 	}
 	if (workpath) {
+		VS("workpath: %s\n", workpath);
 		// we're the "child" process
-		rc = doIt(argc, argv);
-		if (rc) {
-			return rc;
-		}
-		finalizePython();
+        CreateActContext(workpath, thisfile);
+        rc = doIt(argc, argv);
+        if (rc)
+            return rc;
+        finalizePython();
+        ReleaseActContext();
 	}
 	else {
 		if (extractBinaries(&workpath)) {
@@ -168,11 +288,12 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		}
 		else {
 			// no "child" process necessary
-			rc = doIt(argc, argv);
-			if (rc) {
-				return rc;
-			}
-			finalizePython();
+            CreateActContext(here, thisfile);
+            rc = doIt(argc, argv);
+            if (rc)
+                return rc;
+            finalizePython();
+            ReleaseActContext();
 		}
 		cleanUp();
 	}

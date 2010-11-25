@@ -93,8 +93,8 @@
  */
 
 /* Forward declarations of opaque Python types. */
-struct _PyObject;
-typedef struct _PyObject PyObject;
+struct _object;
+typedef struct _object PyObject;
 struct _PyThreadState;
 typedef struct _PyThreadState PyThreadState;
 
@@ -140,7 +140,8 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
 /* Macros for reference counting through exported functions
  * (that is: without binding to the binary structure of a PyObject.
- * These rely on the Py_IncRef/Py_DecRef API functions.
+ * These rely on the Py_IncRef/Py_DecRef API functions on Pyhton 2.4+,
+ * or the emulated version for older versions (see launch.c).
  */
 #define Py_XINCREF(o)    PI_Py_IncRef(o)
 #define Py_XDECREF(o)    PI_Py_DecRef(o)
@@ -154,8 +155,10 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
 #define DECLPROC(name)\
     __PROC__##name PI_##name = NULL;
+#define GETPROCOPT(dll, name)\
+    PI_##name = (__PROC__##name)GetProcAddress (dll, #name)
 #define GETPROC(dll, name)\
-    PI_##name = (__PROC__##name)GetProcAddress (dll, #name);\
+    GETPROCOPT(dll, name); \
     if (!PI_##name) {\
         FATALERROR ("Cannot GetProcAddress for " #name);\
         return -1;\
@@ -173,8 +176,10 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
 #define DECLPROC(name)\
     __PROC__##name PI_##name = NULL;
+#define GETPROCOPT(dll, name)\
+    PI_##name = (__PROC__##name)dlsym (dll, #name)
 #define GETPROC(dll, name)\
-    PI_##name = (__PROC__##name)dlsym (dll, #name);\
+    GETPROCOPT(dll, name);\
     if (!PI_##name) {\
         FATALERROR ("Cannot dlsym for " #name);\
         return -1;\
@@ -195,23 +200,19 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
  */
 #define MAGIC "MEI\014\013\012\013\016"
 
-#if !defined WIN32 && !defined _CONSOLE
-#define _CONSOLE
-#endif
-
-#ifdef _CONSOLE
-# define FATALERROR printf
-# define OTHERERROR printf
-#else
+#if defined(WIN32) && defined(WINDOWED)
 # define FATALERROR mbfatalerror
 # define OTHERERROR mbothererror
+#else
+# define FATALERROR printf
+# define OTHERERROR printf
 #endif
 
 #ifdef LAUNCH_DEBUG
-# ifdef _CONSOLE
-#  define VS printf
-# else
+# if defined(WIN32) && defined(WINDOWED)
 #  define VS mbvs
+# else
+#  define VS printf
 # endif
 #else
 # ifdef WIN32

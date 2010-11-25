@@ -29,12 +29,9 @@
 #include "getpath.h"
 #include <sys/wait.h>
 
-#ifdef FREEZE_EXCEPTIONS
-extern unsigned char M_exceptions[];
-static struct _frozen _PyImport_FrozenModules[] = {
-    {"exceptions", M_exceptions, EXCEPTIONS_LEN},
-    {0, 0, 0}
-};
+// To call TransformProcessType in the child process
+#if defined(__APPLE__) && defined(WINDOWED)
+#include "Processes.h"
 #endif
 
 void exportWorkpath(char *workpath, char *envvar_name)
@@ -76,9 +73,7 @@ int main(int argc, char* argv[])
     int pid;
     char *workpath = NULL;
     /* atexit(cleanUp); */
-#ifdef FREEZE_EXCEPTIONS
-    PyImport_FrozenModules = _PyImport_FrozenModules;
-#endif
+
     /* fill in thisfile */
 #ifdef __CYGWIN__
     if (strncasecmp(&argv[0][strlen(argv[0])-4], ".exe", 4)) {
@@ -113,6 +108,10 @@ int main(int argc, char* argv[])
 
     if (workpath) {
         /* we're the "child" process */
+#if defined(__APPLE__) && defined(WINDOWED)
+        ProcessSerialNumber psn = { 0, kCurrentProcess };
+        OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+#endif
         VS("Already have a workpath - running!\n");
         rc = doIt(argc, argv);
     }
@@ -147,4 +146,3 @@ int main(int argc, char* argv[])
     }
     return rc;
 }
-

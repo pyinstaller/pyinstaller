@@ -41,9 +41,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "launch.h"
-#ifndef NOZLIB
 #include "zlib.h"
-#endif
 
 /*
  * Python Entry point declarations (see macros in launch.h).
@@ -119,9 +117,8 @@ unsigned char *extract(TOC *ptoc);
  */
 
 
-#ifndef _CONSOLE
-/* This code will be used only on windows as for other platforms _CONSOLE
- * will be true. The code duplication in the functions below are because
+#if defined(WIN32) && defined(WINDOWED)
+/* The code duplication in the functions below are because
  * standard macros with variable numer of arguments (variadic macros) are
  * supported by Microsoft only starting from Visual C++ 2005.
  */
@@ -167,7 +164,7 @@ void mbvs(const char *fmt, ...)
 	MessageBox(NULL, msg, "Tracing", MB_OK);
 }
 
-#endif /* _CONSOLE */
+#endif /* WIN32 and WINDOWED */
 
 
 #ifdef WIN32
@@ -276,7 +273,7 @@ int checkCookie(int filelen)
   return 0;
 }
 
-int findDigitalSignature()
+int findDigitalSignature(void)
 {
 #ifdef WIN32
 	/* There might be a digital signature attached. Let's see. */
@@ -378,17 +375,58 @@ int openArchive()
 #define HINSTANCE void *
 #endif
 
+/*
+ * Python versions before 2.4 do not export IncRef/DecRef as a binary API,
+ * but only as macros in header files. Since we do not want to depend on
+ * Python.h for many reasons (including the fact that we would like to
+ * have a single binary for all Python versions), we provide an emulated
+ * incref/decref here, that work on the binary layout of the PyObject
+ * structure as it was defined in Python 2.3 and older versions.
+ */
+struct _old_typeobject;
+typedef struct _old_object { 
+	int ob_refcnt; 
+	struct _old_typeobject *ob_type; 
+} OldPyObject; 
+typedef void (*destructor)(PyObject *); 
+typedef struct _old_typeobject { 
+	int ob_refcnt; 
+	struct _old_typeobject *ob_type; 
+	int ob_size; 
+	char *tp_name; /* For printing */ 
+	int tp_basicsize, tp_itemsize; /* For allocation */ 
+	destructor tp_dealloc; 
+	/* ignore the rest.... */ 
+} OldPyTypeObject; 
+
+static void _EmulatedIncRef(PyObject *o)
+{
+    OldPyObject *oo = (OldPyObject*)o;    
+    if (oo)
+        oo->ob_refcnt++;
+}
+
+static void _EmulatedDecRef(PyObject *o)
+{
+    #define _Py_Dealloc(op) \
+        (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
+    
+    OldPyObject *oo = (OldPyObject*)o;    
+    if (--(oo)->ob_refcnt == 0)
+        _Py_Dealloc(oo);
+}
+
 int mapNames(HMODULE dll)
 {
     /* Get all of the entry points that we are interested in */
-        GETVAR(dll, Py_FrozenFlag);
+    GETVAR(dll, Py_FrozenFlag);
 	GETVAR(dll, Py_NoSiteFlag);
 	GETVAR(dll, Py_OptimizeFlag);
 	GETVAR(dll, Py_VerboseFlag);
 	GETPROC(dll, Py_Initialize);
 	GETPROC(dll, Py_Finalize);
-	GETPROC(dll, Py_IncRef);
-	GETPROC(dll, Py_DecRef);
+	GETPROCOPT(dll, Py_IncRef);
+	GETPROCOPT(dll, Py_DecRef);
 	GETPROC(dll, PyImport_ExecCodeModule);
 	GETPROC(dll, PyRun_SimpleString);
 	GETPROC(dll, PyString_FromStringAndSize);
@@ -410,9 +448,7 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, PyErr_Print);
 	GETPROC(dll, PyObject_CallObject);
 	GETPROC(dll, PyObject_CallMethod);
-	if (ntohl(f_cookie.pyvers) >= 21) {
-		GETPROC(dll, PySys_AddWarnOption);
-	}
+    GETPROC(dll, PySys_AddWarnOption);
 	GETPROC(dll, PyEval_InitThreads);
 	GETPROC(dll, PyEval_AcquireThread);
 	GETPROC(dll, PyEval_ReleaseThread);
@@ -421,6 +457,9 @@ int mapNames(HMODULE dll)
 	GETPROC(dll, Py_EndInterpreter);
 	GETPROC(dll, PyInt_AsLong);
 	GETPROC(dll, PySys_SetObject);
+
+    if (!PI_Py_IncRef) PI_Py_IncRef = _EmulatedIncRef;
+    if (!PI_Py_DecRef) PI_Py_DecRef = _EmulatedDecRef;
 
 	return 0;
 }
@@ -565,13 +604,9 @@ int setRuntimeOptions(void)
 			case 'u':
 				unbuffered = 1;
 			break;
-#ifdef HAVE_WARNINGS
 			case 'W':
-				if (ntohl(f_cookie.pyvers) >= 21) {
-					PI_PySys_AddWarnOption(&ptoc->name[2]);
-				}
+                                PI_PySys_AddWarnOption(&ptoc->name[2]);
 			break;
-#endif
 			case 's':
 				*PI_Py_NoSiteFlag = 0;
 			break;
@@ -589,15 +624,10 @@ int setRuntimeOptions(void)
 #else
 		fflush(stdout);
 		fflush(stderr);
-#ifdef HAVE_SETVBUF
-		setvbuf(stdin, (char *)NULL, _IONBF, 0);
-		setvbuf(stdout, (char *)NULL, _IONBF, 0);
-		setvbuf(stderr, (char *)NULL, _IONBF, 0);
-#else
+
 		setbuf(stdin, (char *)NULL);
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
-#endif
 #endif
 	}
 	return 0;
@@ -660,12 +690,12 @@ int startPython(int argc, char *argv[])
 	tmp[strlen(tmp)-1] = '\0';
 	PI_PyRun_SimpleString("import sys\n");
 	PI_PyRun_SimpleString("while sys.path:\n del sys.path[0]\n");
-	sprintf(cmd, "sys.path.append('%s')", tmp);
+	sprintf(cmd, "sys.path.append('''%s''')", tmp);
 	PI_PyRun_SimpleString (cmd);
 	if (pathlen == 2) {
 		strcpy(tmp, f_workpath);
 		tmp[strlen(tmp)-1] = '\0';
-		sprintf(cmd, "sys.path.insert(0, '%s')", tmp);
+		sprintf(cmd, "sys.path.insert(0, '''%s''')", tmp);
 		PI_PyRun_SimpleString(cmd);
 	}
 
@@ -796,7 +826,6 @@ int installZlibs()
 	return 0;
 }
 
-#ifndef NOZLIB
 /* decompress data in buff, described by ptoc
  * return in malloc'ed buffer (needs to be freed)
  */
@@ -839,7 +868,7 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 
 	return out;
 }
-#endif
+
 /*
  * extract an archive entry
  * returns pointer to the data (must be freed)
@@ -881,12 +910,9 @@ unsigned char *extract(TOC *ptoc)
 		memcpy(data, PI_PyString_AsString(ddata), ntohl(ptoc->len)-32);
 		Py_DECREF(aes_obj);
 		Py_DECREF(ddata);
-		VS("decrypted ");
-		VS(ptoc->name);
-		VS("\n");
+		VS("decrypted %s\n", ptoc->name);
 	}
 	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
-#ifndef NOZLIB
 		tmp = decompress(data, ptoc);
 		free(data);
 		data = tmp;
@@ -894,13 +920,10 @@ unsigned char *extract(TOC *ptoc)
 			OTHERERROR("Error decompressing %s\n", ptoc->name);
 			return NULL;
 		}
-#else
-		FATALERROR("No ZLIB support but archive uses compression\n");
-		return NULL;
-#endif
 	}
 	return data;
 }
+
 /*
  * helper for extract2fs
  * which may try multiple places
@@ -943,6 +966,7 @@ FILE *openTarget(char *path, char* name_)
     }
 	return fopen(fnm, "wb");
 }
+
 /*
  * extract from the archive
  * and copy to the filesystem
@@ -987,6 +1011,7 @@ int extract2fs(TOC *ptoc)
 	free(data);
 	return 0;
 }
+
 /*
  * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  */
@@ -1004,6 +1029,7 @@ int extractBinaries(char **workpath)
 	*workpath = f_workpath;
 	return 0;
 }
+
 /*
  * Run scripts
  * Return non zero on failure
@@ -1185,6 +1211,7 @@ int init(char const * archivePath, char  const * archiveName, char const * workp
 
 	return 0;
 }
+
 /* once init'ed, you might want to extractBinaries()
  * If you do, what comes after is very platform specific.
  * Once you've taken care of the platform specific details,
@@ -1303,6 +1330,7 @@ void cleanUp()
 	if (f_temppath[0])
 		clear(f_temppath);
 }
+
 /*
  * Helpers for embedders
  */

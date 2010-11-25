@@ -36,6 +36,7 @@ import archive
 import iu
 import carchive
 import bindepend
+import traceback
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
@@ -43,6 +44,7 @@ UNCOMPRESSED, COMPRESSED = range(2)
 
 # todo: use pkg_resources here
 HOMEPATH = os.path.dirname(sys.argv[0])
+SPEC = None
 SPECPATH = None
 BUILDPATH = None
 WARNFILE = None
@@ -140,6 +142,18 @@ def compile_pycos(toc):
 
     return new_toc
 
+def addSuffixToExtensions(toc):
+    """
+    Returns a new TOC with proper library suffix for EXTENSION items.
+    """
+    new_toc = TOC()
+    for inm, fnm, typ in toc:
+        if typ == 'EXTENSION':
+            binext = os.path.splitext(fnm)[1]
+            if not os.path.splitext(inm)[1] == binext:
+                inm = inm + binext
+        new_toc.append((inm, fnm, typ))
+    return new_toc
 
 #--- functons for checking guts ---
 
@@ -177,6 +191,73 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
     """
     return    _check_guts_eq       (attr, old, toc, last_build) \
            or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc)
+
+def _rmdir(path):
+    """
+    Remove dirname(os.path.abspath(path)) and all its contents, but only if:
+
+    1. It doesn't start with BUILDPATH
+    2. It is a directory and not empty (otherwise continue without removing
+       the directory)
+    3. BUILDPATH and SPECPATH don't start with it
+    4. The --noconfirm option is set, or sys.stdout is a tty and the user
+       confirms directory removal
+
+    Otherwise, error out.
+    """
+    if not os.path.abspath(path):
+        path = os.path.abspath(path)
+    if not path.startswith(BUILDPATH) and os.path.isdir(path) and os.listdir(path):
+        specerr = 0
+        if BUILDPATH.startswith(path):
+            print ('E: specfile error: The output path "%s" contains '
+                   'BUILDPATH (%s)') % (path, BUILDPATH)
+            specerr += 1
+        if SPECPATH.startswith(path):
+            print ('E: Specfile error: The output path "%s" contains '
+                   'SPECPATH (%s)') % (path, SPECPATH)
+            specerr += 1
+        if specerr:
+            print ('Please edit/recreate the specfile (%s), set a different '
+                   'output name (e.g. "dist") and run Build.py again.') % SPEC
+            sys.exit(1)
+        if opts.noconfirm:
+            choice = 'y'
+        elif sys.stdout.isatty():
+            choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
+                               'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+        else:
+            print ('E: The output directory "%s" is not empty. Please remove '
+                   'all its contents and run Build.py again, or use Build.py '
+                   '-y (remove output directory without confirmation).') % path
+            sys.exit(1)
+        if choice.strip().lower() == 'y':
+            print 'I: Removing', path
+            shutil.rmtree(path)
+        else:
+            print 'I: User aborted'
+            sys.exit(1)
+
+def check_egg(pth):
+    """Check if path points to a file inside a python egg file (or to an egg
+       directly)."""
+    if sys.version_info >= (2,3):
+        if os.path.altsep:
+            pth = pth.replace(os.path.altsep, os.path.sep)
+        components = pth.split(os.path.sep)
+        sep = os.path.sep
+    else:
+        components = pth.replace("\\", "/").split("/")
+        sep = "/"
+        if iswin:
+            sep = "\\"
+    for i,name in zip(range(0,len(components)), components):
+        if name.lower().endswith(".egg"):
+            eggpth = sep.join(components[:i + 1])
+            if os.path.isfile(eggpth):
+                # eggs can also be directories!
+                return True
+    return False
 
 #--
 
@@ -343,8 +424,30 @@ class Analysis(Target):
                         binaries.extend(mod.binaries)
                         if modnm != '__main__':
                             pure.append((modnm, fnm, 'PYMODULE'))
+        # Always add python's dependencies first
+        # This ensures that assembly depencies under Windows get pulled in
+        # first and we do not need to add assembly DLLs to the exclude list
+        # explicitly
+        python = config['python']
+        if not iswin:
+            while os.path.islink(python):
+                python = os.path.join(os.path.split(python)[0], os.readlink(python))
+            depmanifest = None
+        else:
+            depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
+                                               processorArchitecture="x86",
+                                               version=(1, 0, 0, 0))
+            depmanifest.filename = os.path.join(BUILDPATH,
+                                                specnm + ".exe.manifest")
+        binaries.extend(bindepend.Dependencies([('', python, '')],
+                                               target_platform,
+                                               config['xtrapath'],
+                                               manifest=depmanifest)[1:])
         binaries.extend(bindepend.Dependencies(binaries,
-                                               platform=target_platform))
+                                               platform=target_platform,
+                                               manifest=depmanifest))
+        if iswin:
+            depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
         if zipfiles:
             scripts[-1:-1] = [("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE')]
@@ -383,17 +486,33 @@ class Analysis(Target):
         Python executable to the libpython, so bindepend doesn't include
         it in its output.
         """
-        if target_platform != 'linux2': return
 
-        name = 'libpython%d.%d.so' % sys.version_info[:2]
+        if target_platform.startswith("linux"):
+            name = 'libpython%d.%d.so' % sys.version_info[:2]
+        elif target_platform.startswith("darwin"):
+            name = 'Python'
+        else:
+            return
+
         for (nm, fnm, typ) in binaries:
             if typ == 'BINARY' and name in fnm:
                 # lib found
                 return
 
-        lib = bindepend.findLibrary(name)
-        if lib is None:
-            raise IOError("Python library not found!")
+        if target_platform.startswith("linux"):
+            lib = bindepend.findLibrary(name)
+            if lib is None:
+                raise IOError("Python library not found!")
+
+        elif target_platform.startswith("darwin"):
+            # On MacPython, Analysis.assemble is able to find the libpython with
+            # no additional help, asking for config['python'] dependencies.
+            # However, this fails on system python, because the shared library
+            # is not listed as a dependency of the binary (most probably it's
+            # opened at runtime using some dlopen trickery).
+            lib = os.path.join(sys.exec_prefix, 'Python')
+            if not os.path.exists(lib):
+                raise IOError("Python library not found!")
 
         binaries.append((os.path.split(lib)[1], lib, 'BINARY'))
 
@@ -439,6 +558,7 @@ class PYZ(Target):
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         if not os.path.exists(self.name):
             print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
             return True
@@ -464,7 +584,8 @@ def cacheDigest(fnm):
 def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names
-    if not strip and not upx and sys.platform != 'darwin':
+    if (not strip and not upx and sys.platform[:6] != 'darwin' and
+        sys.platform != 'win32') or fnm.lower().endswith(".manifest"):
         return fnm
     if strip:
         strip = 1
@@ -513,6 +634,58 @@ def checkCache(fnm, strip, upx):
             cmd = "strip \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
+
+    if pyasm and fnm.lower().endswith(".pyd"):
+        # If python.exe has dependent assemblies, check for embedded manifest
+        # of cached pyd file because we may need to 'fix it' for pyinstaller
+        try:
+            res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))
+        except winresource.pywintypes.error, e:
+            if e.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
+                # Not a win32 PE file
+                pass
+            else:
+                print "E:", os.path.abspath(cachedfile)
+                raise
+        else:
+            if winmanifest.RT_MANIFEST in res and len(res[winmanifest.RT_MANIFEST]):
+                for name in res[winmanifest.RT_MANIFEST]:
+                    for language in res[winmanifest.RT_MANIFEST][name]:
+                        try:
+                            manifest = winmanifest.Manifest()
+                            manifest.filename = ":".join([cachedfile,
+                                                          str(winmanifest.RT_MANIFEST),
+                                                          str(name),
+                                                          str(language)])
+                            manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language],
+                                                  False)
+                        except Exception, exc:
+                            print ("E: Cannot parse manifest resource %s, "
+                                   "%s from") % (name, language)
+                            print "E:", cachedfile
+                            print "E:", traceback.format_exc()
+                        else:
+                            # Fix the embedded manifest (if any):
+                            # Extension modules built with Python 2.6.5 have
+                            # an empty <dependency> element, we need to add
+                            # dependentAssemblies from python.exe for
+                            # pyinstaller
+                            olen = len(manifest.dependentAssemblies)
+                            for pydep in pyasm:
+                                if not pydep.name in [dep.name for dep in
+                                                      manifest.dependentAssemblies]:
+                                    print ("Adding %s to dependent assemblies "
+                                           "of %s") % (pydep.name, cachedfile)
+                                    manifest.dependentAssemblies.append(pydep)
+                            if len(manifest.dependentAssemblies) > olen:
+                                try:
+                                    manifest.update_resources(os.path.abspath(cachedfile),
+                                                              [name],
+                                                              [language])
+                                except Exception, e:
+                                    print "E:", os.path.abspath(cachedfile)
+                                    raise
+
     if cmd: system(cmd)
 
     # update cache index
@@ -570,6 +743,7 @@ class PKG(Target):
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         if not os.path.exists(self.name):
             print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
             return 1
@@ -585,16 +759,12 @@ class PKG(Target):
         print "building PKG", os.path.basename(self.name)
         trash = []
         mytoc = []
-        toc = TOC()
-        for item in self.toc:
-            inm, fnm, typ = item
-            if typ == 'EXTENSION':
-                binext = os.path.splitext(fnm)[1]
-                if not os.path.splitext(inm)[1] == binext:
-                    inm = inm + binext
-            toc.append((inm, fnm, typ))
         seen = {}
+        toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
+            if not os.path.isfile(fnm) and check_egg(fnm):
+                # file is contained within python egg, it is added with the egg
+                continue
             if typ in ('BINARY', 'EXTENSION'):
                 if self.exclude_binaries:
                     self.dependencies.append((inm, fnm, typ))
@@ -634,6 +804,8 @@ class EXE(Target):
         self.name = kws.get('name',None)
         self.icon = kws.get('icon',None)
         self.versrsrc = kws.get('version',None)
+        self.manifest = kws.get('manifest',None)
+        self.resources = kws.get('resources',[])
         self.strip = kws.get('strip',None)
         self.upx = kws.get('upx',None)
         self.crypt = kws.get('crypt', 0)
@@ -656,7 +828,48 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
-        self.toc.extend(config['EXE_dependencies'])
+        if iswin:
+            if sys.version[:3] == '1.5':
+                import exceptions
+                toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
+            if self.manifest:
+                if isinstance(self.manifest, basestring) and "<" in self.manifest:
+                    # Assume XML string
+                    self.manifest = winmanifest.ManifestFromXML(self.manifest)
+                elif not isinstance(self.manifest, winmanifest.Manifest):
+                    # Assume filename
+                    self.manifest = winmanifest.ManifestFromXMLFile(self.manifest)
+            else:
+                self.manifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH,
+                                                                             specnm + ".exe.manifest"))
+                self.manifest.name = os.path.splitext(os.path.basename(self.name))[0]
+            if self.manifest.filename != os.path.join(BUILDPATH,
+                                                      specnm + ".exe.manifest"):
+                # Update dependent assemblies
+                depmanifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH,
+                                                                           specnm + ".exe.manifest"))
+                for assembly in depmanifest.dependentAssemblies:
+                    if not assembly.name in [dependentAssembly.name
+                                             for dependentAssembly in
+                                             self.manifest.dependentAssemblies]:
+                        self.manifest.dependentAssemblies.append(assembly)
+            if not self.console and \
+               not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name
+                                                           for dependentAssembly in
+                                                           self.manifest.dependentAssemblies]:
+                # Add Microsoft.Windows.Common-Controls to dependent assemblies
+                self.manifest.dependentAssemblies.append(winmanifest.Manifest(type_="win32",
+                                                                              name="Microsoft.Windows.Common-Controls",
+                                                                              language="*",
+                                                                              processorArchitecture="x86",
+                                                                              version=(6, 0, 0, 0),
+                                                                              publicKeyToken="6595b64144ccf1df"))
+            self.manifest.writeprettyxml(os.path.join(BUILDPATH,
+                                                      specnm + ".exe.manifest"))
+            self.toc.append((os.path.basename(self.name) + ".manifest",
+                             os.path.join(BUILDPATH,
+                                          specnm + ".exe.manifest"),
+                             'BINARY'))
         self.pkg = PKG(self.toc, cdict=kws.get('cdict',None), exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx, crypt=self.crypt)
         self.dependencies = self.pkg.dependencies
@@ -667,6 +880,8 @@ class EXE(Target):
             ('debug',    _check_guts_eq),
             ('icon',     _check_guts_eq),
             ('versrsrc', _check_guts_eq),
+            ('manifest', _check_guts_eq),
+            ('resources', _check_guts_eq),
             ('strip',    _check_guts_eq),
             ('upx',      _check_guts_eq),
             ('crypt',    _check_guts_eq),
@@ -674,6 +889,7 @@ class EXE(Target):
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         if not os.path.exists(self.name):
             print "rebuilding %s because %s missing" % (self.outnm, os.path.basename(self.name))
             return 1
@@ -686,10 +902,10 @@ class EXE(Target):
         if not data:
             return True
 
-        icon, versrsrc = data[3:5]
-        if (icon or versrsrc) and not config['hasRsrcUpdate']:
+        icon, versrsrc, manifest, resources = data[3:7]
+        if (icon or versrsrc or manifest or resources) and not config['hasRsrcUpdate']:
             # todo: really ignore :-)
-            print "ignoring icon and version resources = platform not capable"
+            print "ignoring icon, version, manifest and resources = platform not capable"
 
         mtm = data[-1]
         crypt = data[-2]
@@ -705,19 +921,23 @@ class EXE(Target):
 
         return False
 
-    def _bootloader_postfix(self, exe):
-        if target_iswin:
-            exe = exe + "_"
-            is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
-            exe = exe + "67"[is24]
-            exe = exe + "rd"[self.debug]
-            exe = exe + "wc"[self.console]
-        else:
-            if not self.console:
-                exe = exe + 'w'
-            if self.debug:
-                exe = exe + '_d'
-        return exe
+    def _bootloader_file(self, exe):
+        base = "support/loader"
+
+        try:
+            import platform
+            dir = platform.system() + "-" + platform.architecture()[0]
+        except ImportError:
+            import os
+            n = { "nt": "Windows", "linux2": "Linux", "darwin": "Darwin" }
+            dir = n[os.name] + "-32bit"
+
+        if not self.console:
+            exe = exe + 'w'
+        if self.debug:
+            exe = exe + '_d'
+
+        return base + "/" + dir + "/" + exe
 
     def assemble(self):
         print "building EXE from", os.path.basename(self.out)
@@ -725,25 +945,66 @@ class EXE(Target):
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
         outf = open(self.name, 'wb')
-        exe = self._bootloader_postfix('support/loader/run')
+        exe = self._bootloader_file('run')
         exe = os.path.join(HOMEPATH, exe)
         if target_iswin or cygwin:
             exe = exe + '.exe'
-        if config['hasRsrcUpdate']:
+        if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
+                                        self.resources):
+            tmpnm = tempfile.mktemp()
+            shutil.copy2(exe, tmpnm)
+            os.chmod(tmpnm, 0755)
             if self.icon:
-                tmpnm = tempfile.mktemp()
-                shutil.copy2(exe, tmpnm)
-                os.chmod(tmpnm, 0755)
                 icon.CopyIcons(tmpnm, self.icon)
-                trash.append(tmpnm)
-                exe = tmpnm
             if self.versrsrc:
-                tmpnm = tempfile.mktemp()
-                shutil.copy2(exe, tmpnm)
-                os.chmod(tmpnm, 0755)
                 versionInfo.SetVersion(tmpnm, self.versrsrc)
-                trash.append(tmpnm)
-                exe = tmpnm
+            for res in self.resources:
+                res = res.split(",")
+                for i in range(len(res[1:])):
+                    try:
+                        res[i + 1] = int(res[i + 1])
+                    except ValueError:
+                        pass
+                resfile = res[0]
+                if len(res) > 1:
+                    restype = res[1]
+                else:
+                    restype = None
+                if len(res) > 2:
+                    resname = res[2]
+                else:
+                    restype = None
+                if len(res) > 3:
+                    reslang = res[3]
+                else:
+                    restype = None
+                try:
+                    winresource.UpdateResourcesFromResFile(tmpnm, resfile,
+                                                        [restype or "*"],
+                                                        [resname or "*"],
+                                                        [reslang or "*"])
+                except winresource.pywintypes.error, exc:
+                    if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
+                        print "E:", str(exc)
+                        continue
+                    if not restype or not resname:
+                        print "E: resource type and/or name not specified"
+                        continue
+                    if "*" in (restype, resname):
+                        print ("E: no wildcards allowed for resource type "
+                               "and name when source file does not contain "
+                               "resources")
+                        continue
+                    try:
+                        winresource.UpdateResourcesFromDataFile(tmpnm,
+                                                             resfile,
+                                                             restype,
+                                                             [resname],
+                                                             [reslang or 0])
+                    except winresource.pywintypes.error, exc:
+                        print "E:", str(exc)
+            trash.append(tmpnm)
+            exe = tmpnm
         exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
         self.copy(exe, outf)
         if self.append_pkg:
@@ -756,7 +1017,7 @@ class EXE(Target):
         os.chmod(self.name, 0755)
         _save_data(self.out,
                    (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.strip, self.upx, self.crypt, mtime(self.name)))
+                    self.versrsrc, self.resources, self.strip, self.upx, self.crypt, mtime(self.name)))
         for item in trash:
             os.remove(item)
         return 1
@@ -772,7 +1033,7 @@ class DLL(EXE):
     def assemble(self):
         print "building DLL", os.path.basename(self.out)
         outf = open(self.name, 'wb')
-        dll = self._bootloader_postfix('support/loader/inprocsrvr')
+        dll = self._bootloader_file('inprocsrvr')
         dll = os.path.join(HOMEPATH, dll)  + '.dll'
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)
@@ -780,7 +1041,7 @@ class DLL(EXE):
         os.chmod(self.name, 0755)
         _save_data(self.out,
                    (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.strip, self.upx, mtime(self.name)))
+                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, mtime(self.name)))
         return 1
 
 
@@ -800,8 +1061,12 @@ class COLLECT(Target):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                if isinstance(arg, EXE) and not arg.append_pkg:
-                    self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
+                if isinstance(arg, EXE):
+                    for tocnm, fnm, typ in arg.toc:
+                        if tocnm == os.path.basename(arg.name) + ".manifest":
+                            self.toc.append((tocnm, fnm, typ))
+                    if not arg.append_pkg:
+                        self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
@@ -814,6 +1079,7 @@ class COLLECT(Target):
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         data = Target.get_guts(self, last_build)
         if not data:
             return True
@@ -836,14 +1102,11 @@ class COLLECT(Target):
         print "building COLLECT", os.path.basename(self.out)
         if not os.path.exists(self.name):
             os.makedirs(self.name)
-        toc = TOC()
-        for inm, fnm, typ in self.toc:
-            if typ == 'EXTENSION':
-                binext = os.path.splitext(fnm)[1]
-                if not os.path.splitext(inm)[1] == binext:
-                    inm = inm + binext
-            toc.append((inm, fnm, typ))
+        toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
+            if not os.path.isfile(fnm) and check_egg(fnm):
+                # file is contained within python egg, it is added with the egg
+                continue
             tofnm = os.path.join(self.name, inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
@@ -862,26 +1125,44 @@ class COLLECT(Target):
 
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
+
+        # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
+        if not sys.platform.startswith("darwin"):
+            return
+
         Target.__init__(self)
-        self.appname = kws.get("appname", None)
+        self.name = kws.get('name', None)
+        if self.name is not None:
+            self.appname = os.path.splitext(os.path.basename(self.name))[0]
         self.version = kws.get("version", "0.0.0")
         self.toc = TOC()
         for arg in args:
             if isinstance(arg, EXE):
-                if self.appname is None:
-                    self.appname = "Mac%s" % (arg.name,)
-                self.name = os.path.join(os.path.dirname(SPECPATH), self.appname + ".app")
-                self.exename = arg.name
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 self.toc.extend(arg.dependencies)
+            elif isinstance(arg, TOC):
+                self.toc.extend(arg)
+            elif isinstance(arg, COLLECT):
+                self.toc.extend(arg.toc)
             else:
                 print "unsupported entry %s", arg.__class__.__name__
+        # Now, find values for app filepath (name), app name (appname), and name
+        # of the actual executable (exename) from the first EXECUTABLE item in
+        # toc, which might have come from a COLLECT too (not from an EXE).
+        for inm, name, typ in self.toc:
+            if typ == "EXECUTABLE":
+                self.exename = name
+                if self.name is None:
+                    self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
+                    self.name = os.path.join(SPECPATH, self.appname + ".app")
+                break
         self.__postinit__()
 
     GUTS = (('toc',             _check_guts_eq), # additional check below
             )
 
     def check_guts(self, last_build):
+        _rmdir(self.name)
         data = Target.get_guts(self, last_build)
         if not data:
             return True
@@ -902,8 +1183,6 @@ class BUNDLE(Target):
         if os.path.exists(self.name):
             shutil.rmtree(self.name)
         # Create a minimal Mac bundle structure
-        os.makedirs(self.name)
-        os.makedirs(os.path.join(self.name, "Contents"))
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
@@ -918,9 +1197,10 @@ class BUNDLE(Target):
 
                            # Setting this to 1 will cause Mac OS X *not* to show
                            # a dock icon for the PyInstaller process which
-                           # decompresses the real executable's contents -
-                           # actually, it's not clear why the real executable
-                           # gets instead an icon doing so.
+                           # decompresses the real executable's contents. As a
+                           # side effect, the main application doesn't get one
+                           # as well, but at startup time the loader will take
+                           # care of transforming the process type.
                            "LSBackgroundOnly": "1",
 
                            }
@@ -935,7 +1215,9 @@ class BUNDLE(Target):
         f = open(os.path.join(self.name, "Contents", "Info.plist"), "w")
         f.write(info_plist)
         f.close()
-        for inm, fnm, typ in self.toc:
+
+        toc = addSuffixToExtensions(self.toc)
+        for inm, fnm, typ in toc:
             tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
@@ -1078,9 +1360,9 @@ class Tree(Target, TOC):
 
 def TkTree():
     tclroot = config['TCL_root']
-    tclnm = os.path.join('_MEI', os.path.basename(tclroot))
+    tclnm = os.path.join('_MEI', config['TCL_dirname'])
     tkroot = config['TK_root']
-    tknm = os.path.join('_MEI', os.path.basename(tkroot))
+    tknm = os.path.join('_MEI', config['TK_dirname'])
     tcltree = Tree(tclroot, tclnm, excludes=['demos','encoding','*.lib'])
     tktree = Tree(tkroot, tknm, excludes=['demos','encoding','*.lib'])
     return tcltree + tktree
@@ -1091,8 +1373,9 @@ def TkPKG():
 #---
 
 def build(spec):
-    global SPECPATH, BUILDPATH, WARNFILE, rthooks
+    global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
     rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
+    SPEC = spec
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]
     if SPECPATH == '':
@@ -1100,8 +1383,8 @@ def build(spec):
     WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
     BUILDPATH = os.path.join(SPECPATH, 'build',
                              "pyi." + config['target_platform'], specnm)
-    if '-o' in sys.argv:
-        bpath = sys.argv[sys.argv.index('-o')+1]
+    if opts.buildpath != parser.get_option('--buildpath').default:
+        bpath = opts.buildpath
         if os.path.isabs(bpath):
             BUILDPATH = bpath
         else:
@@ -1113,7 +1396,7 @@ def build(spec):
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
-    global icon, versionInfo
+    global icon, versionInfo, winresource, winmanifest, pyasm
 
     try:
         config = _load_data(configfilename)
@@ -1136,8 +1419,14 @@ def main(specfile, configfilename):
         print "Configure.py optimize=%s, Build.py optimize=%s" % (not config['pythonDebug'], not __debug__)
         sys.exit(1)
 
+    if iswin:
+        import winmanifest
+
     if config['hasRsrcUpdate']:
-        import icon, versionInfo
+        import icon, versionInfo, winresource
+        pyasm = bindepend.getAssemblies(config['python'])
+    else:
+        pyasm = None
 
     if config['hasUPX']:
         setupUPXFlags()
@@ -1147,14 +1436,26 @@ def main(specfile, configfilename):
 
     build(specfile)
 
+
+from pyi_optparse import OptionParser
+parser = OptionParser('%prog [options] specfile')
+parser.add_option('-C', '--configfile',
+                  default=os.path.join(HOMEPATH, 'config.dat'),
+                  help='Name of generated configfile (default: %default)')
+parser.add_option('-o', '--buildpath',
+                  default=os.path.join('SPECPATH', 'build',
+                                       'pyi.TARGET_PLATFORM', 'SPECNAME'),
+                  help='Buildpath (default: %default)')
+parser.add_option('-y', '--noconfirm',
+                  action="store_true", default=False,
+                  help='Remove output directory (default: %s) without '
+                       'confirmation' % os.path.join('SPECPATH', 'dist'))
+
 if __name__ == '__main__':
-    from pyi_optparse import OptionParser
-    parser = OptionParser('%prog [options] specfile')
-    parser.add_option('-C', '--configfile',
-                      default=os.path.join(HOMEPATH, 'config.dat'),
-                      help='Name of generated configfile (default: %default)')
     opts, args = parser.parse_args()
     if len(args) != 1:
         parser.error('Requires exactly one .spec-file')
 
     main(args[0], configfilename=opts.configfile)
+else:
+    opts = parser.get_default_values()

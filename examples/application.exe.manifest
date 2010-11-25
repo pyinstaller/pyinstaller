@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+Application Manifests example
+http://msdn.microsoft.com/en-us/library/aa374191%28VS.85%29.aspx#example
+-->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity type="win32" 
+                    name="myOrganization.myDivision.mySampleApp" 
+                    version="6.0.0.0" 
+                    processorArchitecture="x86" 
+                    publicKeyToken="0000000000000000"
+  />
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" 
+                        name="Proseware.Research.SampleAssembly" 
+                        version="6.0.0.0" 
+                        processorArchitecture="X86" 
+                        publicKeyToken="0000000000000000" 
+                        language="*"
+      />
+    </dependentAssembly>
+  </dependency>
+</assembly>

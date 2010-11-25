@@ -43,14 +43,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>     /* getenv */
-
-#if HAVE_UNISTD_H
-#include <unistd.h>
-#endif /* HAVE_UNISTD_H */
-
-#ifdef WITH_NEXT_FRAMEWORK
-#include <mach-o/dyld.h>
-#endif
+#include <stdio.h>      /* sprintf */
+#include <unistd.h>     /* readlink */
 
 static char prefix[MAXPATHLEN+1];
 static char *exec_prefix;

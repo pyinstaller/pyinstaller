@@ -24,70 +24,27 @@ using a couple of scripts in the |install_path| directory, and these will find
 everything they need from their own location. For convenience, keep the paths
 to these scripts short (don't install in a deeply nested subdirectory).
 
-|PyInstaller| is dependant to the version of python you configure it for. In
-other words, you will need a separate copy of |PyInstaller| for each Python
-version you wish to work with *or* you'll need to rerun ``Configure.py`` every
-time you switch the Python version).
-
-|GOBACK|_
-
-
-Building the bootloaders
-------------------------
-
-*Note:* Windows users can skip this step, because |PyInstaller| already ships
-with binary bootloaders.
-
-On Linux the first thing to do is build the bootloaders (that is, the
-runtime executables). To do that, you need to have some basic C/C++
-development tools and the Python development libraries. On Debian/Ubuntu
-systems, you can run the following lines to install everything required::
-
-        sudo apt-get install build-essential python-dev
-
-Change to the |install_path| ``source/linux`` subdirectory. Run::
-
-        pyinstaller$ cd source/linux
-        pyinstaller/source/linux$ python Make.py  #[-n|-e]
-        pyinstaller/source/linux$ make
-
-This will produce ``support/loader/run`` and ``support/loader/run_d``,
-which are the bootloaders.
-
-.. sidebar:: Bootloader
-
-   The bootloader (also known as *stub* in literature) is the small program
-   which starts up your packaged program. Usually, the archive containing the
-   bytecoded modules of your program is simply attended to it. See
-   `Self-extracting executables`_ for more details on the process.
-
-*Note:* If you have multiple versions of Python, the Python you use to run
-``Make.py`` is the one whose configuration is used.
-
-The ``-n`` and ``-e`` options set a non-elf or elf flag in your ``config.dat``.
-As of |InitialVersion|, the executable will try both strategies, and this flag
-just sets how you want your executables built. In the elf strategy, the archive
-is concatenated to the executable. In the non-elf strategy, the executable
-expects an archive with the same name as itself in the executable's directory.
-Note that the executable chases down symbolic links before determining it's name
-and directory, so putting the archive in the same directory as the symbolic link
-will not work.
-
-Windows distributions of |PyInstaller| come with several executables in the ``support/loader``
-directory: ``run_*.exe`` (bootloader for regular programs), and
-``inprocsrvr_*.dll`` (bootloader for in-process COM servers). To rebuild this,
-you need to install Scons_, and then just run ``scons`` from the |install_path|
-directory.
-
 |GOBACK|_
 
 Configuring your PyInstaller setup
 ----------------------------------
 
-In the |install_path| directory, run ``Configure.py``. This saves some
-information into ``config.dat`` that would otherwise be recomputed every time.
-It can be rerun at any time if your configuration changes. It must be run before
-trying to build anything.
+In the |install_path| directory, run::
+
+     python Configure.py
+
+This will configure PyInstaller usage based on the current system, 
+and save some information into ``config.dat`` that would otherwise
+be recomputed every time.
+
+It can be rerun at any time if your configuration changes. It must be
+run at least once before trying to build anything.
+
+|PyInstaller| is dependant to the version of python you configure it for. In
+other words, you will need a separate copy of |PyInstaller| for each Python
+version you wish to work with *or* you'll need to rerun ``Configure.py`` every
+time you switch the Python version).
+
 
 |GOBACK|_
 
@@ -312,6 +269,13 @@ temporary upx-created executable.
 How one-file mode works
 -----------------------
 
+.. sidebar:: Bootloader
+
+   The bootloader (also known as *stub* in literature) is the small program
+   which starts up your packaged program. Usually, the archive containing the
+   bytecoded modules of your program is simply appended to it. See
+   `Self-extracting executables`_ for more details on the process.
+
 A ``--onefile`` works by packing all the shared libs / dlls into the archive
 attached to the bootloader executable (or next to the executable in a non-elf
 configuration). When first started, it finds that it needs to extract these
@@ -487,6 +451,14 @@ Spec Files
 Introduction
 ------------
 
+When you run ``Makespec.py`` (documented
+in section `Create a spec file for your project`_), it generates a
+spec file for you. In fact,
+you can think of ``Makespec.py`` just like a wizard that lets you generate
+a standard spec file for most standard usages. But advanced users can
+learn to edit spec files to fully customize PyInstaller behaviour to
+their needs, giving beyond the standard settings provided by the wizard.
+
 Spec files are in Python syntax. They are evaluated by Build.py. A simplistic
 spec file might look like this::
 
@@ -505,8 +477,8 @@ A simplistic single directory deployment might look like this::
       dist = COLLECT(exe, a.binaries, name="dist")
 
 
-Note that neither of these examples are realistic. Use ``Makespec.py`` (documented
-in section `Create a spec file for your project`_) to create your specfile,
+Note that neither of these examples are realistic. If you want to
+start hacking a spec file, use ``Makespec.py`` to create a basic specfile,
 and tweak it (if necessary) from there.
 
 All of the classes you see above are subclasses of ``Build.Target``. A Target acts
@@ -898,8 +870,8 @@ These messages will always go to ``stdout``, so you won't see them on Windows if
 
 |GOBACK|_
 
-Helping Installer Find Modules
-------------------------------
+Helping PyInstaller Find Modules
+--------------------------------
 
 Extending the Path
 ******************
@@ -1064,15 +1036,6 @@ also able to reconstruct directory trees). The work directory is best found by
 Miscellaneous
 +++++++++++++
 
-Pmw -- Python Mega Widgets
---------------------------
-
-`Pmw`_ comes with a script named ``bundlepmw`` in the bin directory. If you follow the
-instructions in that script, you'll end up with a module named ``Pmw.py``. Ensure
-that Builder finds that module and not the development package.
-
-|GOBACK|_
-
 Win9xpopen
 ----------
 
@@ -1233,11 +1196,10 @@ are used by the self-extracting executables.
 
 |GOBACK|_
 
-
 License
 +++++++
 PyInstaller is mainly distributed  under the
-`GPL License <http://pyinstaller.hpcf.upr.edu/pyinstaller/browser/trunk/doc/LICENSE.GPL?rev=latest>`_
+`GPL License`_
 but it has an exception such that you can use it to compile commercial products.
 
 In a nutshell, the license is GPL for the source code with the exception that:
@@ -1253,9 +1215,7 @@ In a nutshell, the license is GPL for the source code with the exception that:
     words, any modifications to will *have* to be distributed under GPL.
 
 For updated information or clarification see our
-`FAQ <http://pyinstaller.hpcf.upr.edu/pyinstaller/wiki/FAQ>`_ at `PyInstaller`_
-home page: http://pyinstaller.hpcf.upr.edu
-
+`FAQ`_ at `PyInstaller`_ home page.
 
 
 |GOBACK|_
@@ -1268,6 +1228,134 @@ Appendix
     ... if you are not interested in technical details. This appendix contains
     insights of the internal workings of |PyInstaller|, and you do not need this
     information unless you plan to work on |PyInstaller| itself.
+
+
+Building the bootloaders
+------------------------
+
+PyInstaller comes with binary bootloaders for most platforms, shipped 
+in |install_path|/support/loader. If you need to build the bootloader
+for your own platform (either because your platform is not officially
+supported, or because you tweaked bootloader's source code), you can
+follow this guide.
+
+Development tools
+*****************
+
+On Debian/Ubuntu systems, you can run the following lines to install everything
+required::
+
+        sudo apt-get install build-essential python-dev
+
+On Fedora/RHEL and derivates, you can run the following lines::
+
+        su
+        yum groupinstall "Development Tools"
+        yum install python-devel
+
+On Windows you can use MinGW (gcc for Windows) and Visual Studio C++ (msvc)
+compilers. Python development libraries are usually installed together with
+Python.
+
+*Note:* There is no interdependence between the Visual Studio
+version used to compile the bootloader and the Visual Studio version used to
+compile Python. The bootloader is a self-contained static executable,
+that imposes no restrictions on the version of Python being used. So
+you can simply use any Visual Studio version you have around.
+
+You can download and install or unpack MinGW distribution from one of the
+following locations:
+
+* `MinGW`_ - stable and
+  mature, uses gcc 3.4 as its base
+
+* `MinGW-w64`_ - more recent, uses gcc
+  4.4 and up. Please notice that Windows 64-bit is still not supported by
+  PyInstaller, so building a 64-bit bootloader can be useful only if you
+  plan to contribute full Windows 64-bit support.
+
+* `TDM-GCC`_ - MinGW and MinGW-w64 installers
+
+
+Building
+********
+
+On Windows, when using MinGW, it is needed to add ``PATH_TO_MINGW\bin``
+to your system ``PATH``. variable. In command prompt before building
+bootloader run for example::
+
+        set PATH=C:\MinGW\bin;%PATH%
+
+Change to the |install_path| ``source`` subdirectory. Run::
+
+        pyinstaller$ cd source
+        pyinstaller/source$ python waf configure build install
+
+This will produce ``support/loader/YOUR_OS/run``, ``support/loader/YOUR_OS/run_d``,
+``support/loader/YOUR_OS/runw`` and ``support/loader/YOUR_OS/runw_d``,
+which are the bootloaders.
+
+On Windows this will produce in the ``support/loader/YOUR_OS`` directory:
+``run*.exe`` (bootloader for regular programs), and
+``inprocsrvr*.dll`` (bootloader for in-process COM servers).
+
+*Note:* If you have multiple versions of Python, the Python you use to run
+``waf`` is the one whose configuration is used.
+
+
+Linux Standard Base (LSB) binary
+********************************
+
+By default, the bootloaders on Linux are LSB binaries.
+
+LSB is a set of open standards that should increase compatibility among Linux
+distributions. |PyInstaller| is able produce bootloader as LSB binary in order
+to increase compatibility for packaged applications among distributions.
+
+*Note:* LSB version 4.0 is required for successfull building of bootloader.
+
+On Debian- and Ubuntu-based distros, you can install LSB 4.0 tools by adding
+the following repository to the sources.list file::
+
+        deb http://ftp.linux-foundation.org/pub/lsb/repositories/debian lsb-4.0 main
+        
+then after having update the apt repository::
+
+        sudo apt-get update
+        
+you can install LSB 4.0::
+
+        sudo apt-get install lsb lsb-build-cc
+
+Most other distributions contain only LSB 3.0 in their software repositories and
+thus LSB build tools 4.0 must be downloaded by hand. From Linux Foundation
+download
+`LSB sdk 4.0`_
+for your architecture.
+
+Unpack it by::
+
+        tar -xvzf lsb-sdk-4.0.3-1.ia32.tar.gz
+
+To install it run::
+
+        cd lsb-sdk
+        ./install.sh
+
+
+After having installed the LSB tools, you can follow the standard building
+instructions.
+
+*NOTE:* if for some reason you want to avoid LSB compilation, you can
+do so by specifying --no-lsb on the waf command line, as follows::
+
+        pyinstaller/source$ python waf configure --no-lsb build install
+
+This will also produce ``support/loader/YOUR_OS/run``, ``support/loader/YOUR_OS/run_d``,
+``support/loader/YOUR_OS/runw`` and ``support/loader/YOUR_OS/runw_d``, but they will
+not be LSB binaries.
+
+|GOBACK|_
 
 
 ``mf.py``: A Modulefinder Replacement
@@ -1411,8 +1499,8 @@ importers list are sorted.
 
 |GOBACK|_
 
-Usage
-*****
+mf Usage
+********
 
 A simple example follows:
 
@@ -1630,8 +1718,8 @@ easy to implement.
 
 |GOBACK|_
 
-Usage
-*****
+iu Usage
+********
 
 Here's a simple example of using ``iu`` as a builtin import replacement.
 
@@ -1647,23 +1735,23 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 |GOBACK|_
 
 .. _PyInstaller: http://www.pyinstaller.org
-.. _Roadmap: http://www.pyinstaller.org/roadmap
-.. _`Submit a Bug`: http://www.pyinstaller.org/newticket
-.. _Scons: http://www.scons.org
 .. _hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/hooks/hook-win32com.py?rev=latest
-.. _support\/unpackTK.py: http://www.pyinstaller.org/browser/trunk/support/unpackTK.py?rev=latest
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
-.. _Pmw: http://pmw.sourceforge.net/
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _PyQt: http://www.riverbankcomputing.co.uk/pyqt/index.php
 .. _PyWin32: http://starship.python.net/crew/mhammond/win32/
+.. _`GPL License`: http://www.pyinstaller.org/browser/trunk/doc/LICENSE.GPL?rev=latest
+.. _FAQ: http://www.pyinstaller.org/wiki/FAQ
+.. _MinGW: http://sourceforge.net/downloads/mingw/
+.. _MinGW-w64: http://mingw-w64.sourceforge.net/
+.. _TDM-GCC: http://tdm-gcc.tdragon.net/
+.. _`LSB sdk 4.0`: http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/
 .. |ZlibArchiveImage| image:: images/ZlibArchive.png
 .. |CArchiveImage| image:: images/CArchive.png
 .. |SE_exeImage| image:: images/SE_exe.png
 .. |PyInstaller| replace:: PyInstaller
-.. |PyInstallerVersion| replace:: PyInstaller v1.4
+.. |PyInstallerVersion| replace:: PyInstaller v1.5
 .. |InitialVersion| replace:: v1.0
 .. |install_path| replace:: /your/path/to/pyinstaller/
 .. |GOBACK| replace:: `Back to Top`
 .. _GOBACK: `PyInstaller Manual`_
-
