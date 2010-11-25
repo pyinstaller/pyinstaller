@@ -74,7 +74,7 @@ useTk = False
 def collectResources(exploring_path, final_path):
     data = []
     for root, dirs, files in os.walk(exploring_path):
-        data += [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
+        data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
             os.path.join(root, filename), 'DATA') for filename in files]
     return data
 
@@ -151,8 +151,8 @@ HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
 def stringfyHomePaths(hp_list):
     string = '['
     for path in hp_list:
-        string += "os.path.join(HOMEPATH, '" + path + "'), "
-    string += ']'
+        string = string + "os.path.join(HOMEPATH, '" + path + "'), "
+    string = string + ']'
     return string
 
 def createSpecFile(scripts, options):
@@ -195,7 +195,7 @@ def createSpecFile(scripts, options):
 
     if config["target_platform"][:3] == "win" or \
        config["target_platform"] == "cygwin":
-        options["exename"] += ".exe"
+        options["exename"] = options["exename"] + ".exe"
 
     if options["onedir"]:
         specfile.write((common_part + onedir_tpl) % options)
@@ -209,13 +209,13 @@ def switchSpecDeployment(specfile_name, specfilenew_name, is_onedir):
     if marker_pos == -1:
         raise SystemExit("Unable to find the marker. Abort!")
 
-    marker_pos += len(marker)
+    marker_pos = marker_pos + len(marker)
     specfile_content = specfile_content[:marker_pos]
 
     if is_onedir:
-        specfile_content += onedir_tpl
+        specfile_content = specfile_content + onedir_tpl
     else:
-        specfile_content += onefile_tpl
+        specfile_content = specfile_content + onefile_tpl
 
     open(specfilenew_name, 'w').write(specfile_content)
 
@@ -254,6 +254,8 @@ if __name__ == '__main__':
         for filename in args:
             if not filename.endswith(filetype):
                 parser.error("Arguments must be all python scripts (*.py)")
+            if not open(filename):
+                parser.error("File %s not found" % filename)
         createSpecFile(args, opts)
     else:
         parser.error("Give in input .py or .spec files only")
