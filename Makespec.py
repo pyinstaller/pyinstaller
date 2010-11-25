@@ -239,8 +239,6 @@ if __name__ == '__main__':
     opts, args = parser.parse_args()
     opts = opts.__dict__
 
-
-    # Check for parsing errors
     if not args:
         parser.error('Requires at least one scriptname file')
 
@@ -254,7 +252,7 @@ if __name__ == '__main__':
         switchSpecDeployment(name + filetype, opts["exename"] + filetype, opts["onedir"])
     elif filetype == ".py":
         for filename in args:
-            if not filetype in filename:
+            if not filename.endswith(filetype):
                 parser.error("Arguments must be all python scripts (*.py)")
         createSpecFile(args, opts)
     else:
@@ -266,5 +264,5 @@ if __name__ == '__main__':
     else:
         dep_mode = "onefile"
 
-    print "%s has been wrote in %s mode" % (os.path.join(os.getcwd(), opts["exename"] + ".spec"), dep_mode)
+    print "%s has been wrote in %s mode" % (opts["exename"] + ".spec", dep_mode)
     print "Now you can edit it and run the Build.py"
