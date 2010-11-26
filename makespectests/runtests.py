@@ -14,12 +14,11 @@ if os.name == "posix":
     NULL_DEV = "/dev/null"
 else:
     NULL_DEV = "nul"
-CLEANUP = ["*.log", "warn*.txt", "*.py[co]", "*/*.py[co]", "build/", "dist/",
+CLEANUP = ["build/", "dist/", "*.log", "warn*.txt", "*.py[co]", "*/*.py[co]",
            "*/*/*.py[co]", "*.spec"]
-lastEdited = None
-def newSpecFail(): return "Unable to makespec %s" % lastEdited
-def switchSpecFail(): return "Unable to convert the %s" % lastEdited
-def buildFail(): return "Unable to build the %s file" % lastEdited
+newSpecFail = "Unable to makespec test.py"
+switchSpecFail = "Unable to convert test.spec"
+buildFail = "Unable to build test.spec"
 
 def clean(to_clean=CLEANUP):
     """Cleaning tests resouces"""
@@ -41,23 +40,24 @@ class MakespecTest(unittest.TestCase):
         clean()
 
     def build(self, specfile="test.spec"):
-        global lastEdited
-        lastEdited = specfile
         retcode, errstring = execute("%s -y %s" % (BUILD_EXE, specfile))
-        self.assertEqual(retcode, 0, buildFail() + errstring)
+        self.assertEqual(retcode, 0, buildFail + errstring)
 
     def makespec(self, scriptfile=SCRIPT_FOR_TESTS, dep_mode = "--onedir"):
-        global lastEdited
-        lastEdited = scriptfile
         retcode, errstring = execute("%s %s %s" % (MAKESPEC_EXE, dep_mode, scriptfile))
-        #FIXME: display only errstring?
+        #TODO: display only errstring?
         if scriptfile.endswith(".spec"):
-            self.assertEqual(retcode, 0, switchSpecFail() + errstring)
+            self.assertEqual(retcode, 0, switchSpecFail + errstring)
         else:
-            self.assertEqual(retcode, 0, newSpecFail() + errstring)
+            self.assertEqual(retcode, 0, newSpecFail + errstring)
 
     def editspec(self):
-        pass
+        specfile_content = open("test.spec", 'r').read()
+        specfile_content = specfile_content.replace("name_of_exe = 'test'", "name_of_exe = 'edited'")
+        specfile_content = specfile_content.replace("build_dir = 'build/pyi.linux2/test'", "build_dir = 'build/pyi.linux2/edited'")
+        specfile_content = specfile_content.replace("useDebug = False", "useDebug = True")
+        #TODO: edit more?
+        open("test.spec", 'w').write(specfile_content)
 
     def test_build_onedir(self):
         """Building onedir spec deployment"""
@@ -96,5 +96,4 @@ class MakespecTest(unittest.TestCase):
 
 if __name__ == "__main__":
     os.chdir(MST_DIR)
-    #open(LOG_FILE, 'w')
     unittest.main()
