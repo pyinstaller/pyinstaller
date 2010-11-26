@@ -190,7 +190,7 @@
     '_mountzlib',
     'useUnicode',
     'test3_multiprocess_B',
-    '.*bz2.*',
     '.*ssl.*',
+    '.*bz2.*',
     '.*python.*',
 ]
