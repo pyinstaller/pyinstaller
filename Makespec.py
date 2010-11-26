@@ -91,6 +91,14 @@ coll = COLLECT(exe, dll,
                name=os.path.join(%(distdir)s, '%(name)s'))
 """ # scripts pathex, exename, debug, console tktree distdir name
 
+bundleexetmplt = """app = BUNDLE(exe,
+             name=os.path.join(%(distdir)s, '%(exename)s.app'))
+""" # distdir exename
+
+bundletmplt = """app = BUNDLE(coll,
+             name=os.path.join(%(distdir)s, '%(name)s.app'))
+""" # distdir name
+
 HOME = os.path.dirname(sys.argv[0])
 HOME = os.path.abspath(HOME)
 
@@ -220,10 +228,16 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
     specfile = open(specfnm, 'w')
     if freeze:
         specfile.write(freezetmplt % d)
+        if not console:
+            specfile.write(bundleexetmplt % d)
     elif comserver:
         specfile.write(comsrvrtmplt % d)
+        if not console:
+            specfile.write(bundletmplt % d)
     else:
         specfile.write(collecttmplt % d)
+        if not console:
+            specfile.write(bundletmplt % d)
     specfile.close()
     return specfnm
 
