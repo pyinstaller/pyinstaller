@@ -222,8 +222,7 @@ def configure(conf):
     ## setup windowed DEBUG environment
     conf.set_env_name('debugw', dbgw)
     conf.setenv('debugw')
-    if myplatform.startswith('darwin') or myplatform.startswith('win'):
-        conf.env.append_value('CCDEFINES', 'WINDOWED')
+    conf.env.append_value('CCDEFINES', 'WINDOWED')
     # disables console - mingw option
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
             conf.env.append_value('LINKFLAGS', '-mwindows')
@@ -245,8 +244,7 @@ def configure(conf):
     ## setup windowed RELEASE environment
     conf.set_env_name('releasew', relw)
     conf.setenv('releasew')
-    if myplatform.startswith('darwin') or myplatform.startswith('win'):
-        conf.env.append_value('CCDEFINES', 'WINDOWED')
+    conf.env.append_value('CCDEFINES', 'WINDOWED')
     # disables console
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
             conf.env.append_value('LINKFLAGS', '-mwindows')
@@ -283,7 +281,7 @@ def build(bld):
         for key in ('release', 'debug'):
             bld(
                 features = 'cc cprogram pyembed',
-                source = bld.path.ant_glob('windows/winmain.c windows/run.rc common/*.c'),
+                source = bld.path.ant_glob('windows/utils.c windows/run.rc common/*.c'),
                 target = targets[key],
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',
@@ -296,7 +294,7 @@ def build(bld):
         for key in ('releasew', 'debugw'):
             bld(
                 features = 'cc cprogram pyembed',
-                source = bld.path.ant_glob('windows/winmain.c windows/runw.rc common/*.c'), # uses different RC file (icon)
+                source = bld.path.ant_glob('windows/utils.c windows/runw.rc common/*.c'), # uses different RC file (icon)
                 target = targets[key],
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',

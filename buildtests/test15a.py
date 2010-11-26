@@ -8,7 +8,7 @@ def dummy(arg):
     elif sys.platform[:6] == "darwin":
         tct = CDLL("ctypes/testctypes.dylib")
     elif sys.platform == "win32":
-        tct = CDLL("ctypes\\testctypes.dll")
+        tct = CDLL("ctypes\\testctypes-win.dll")
     else:
         raise NotImplementedError
     return tct.dummy(arg)

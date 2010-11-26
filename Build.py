@@ -148,7 +148,7 @@ def addSuffixToExtensions(toc):
     """
     new_toc = TOC()
     for inm, fnm, typ in toc:
-        if typ == 'EXTENSION':
+        if typ in ('EXTENSION', 'DEPENDENCY'):
             binext = os.path.splitext(fnm)[1]
             if not os.path.splitext(inm)[1] == binext:
                 inm = inm + binext
@@ -264,6 +264,7 @@ def check_egg(pth):
 class Target:
     invcnum = 0
     def __init__(self):
+        # Get a unique number to avoid conflicts between toc objects
         self.invcnum = Target.invcnum
         Target.invcnum += 1
         self.out = os.path.join(BUILDPATH, 'out%s%d.toc' % (self.__class__.__name__,
@@ -323,6 +324,7 @@ class Analysis(Target):
         self.binaries = TOC()
         self.zipfiles = TOC()
         self.datas = TOC()
+        self.dependencies = TOC()
         self.__postinit__()
 
     GUTS = (('inputs',    _check_guts_eq),
@@ -705,7 +707,8 @@ class PKG(Target):
                  'DATA': 'x',
                  'BINARY': 'b',
                  'ZIPFILE': 'Z',
-                 'EXECUTABLE': 'b'}
+                 'EXECUTABLE': 'b',
+                 'DEPENDENCY':  'd'}
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=0, upx_binaries=0, crypt=0):
         Target.__init__(self)
@@ -765,8 +768,8 @@ class PKG(Target):
             if not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
-            if typ in ('BINARY', 'EXTENSION'):
-                if self.exclude_binaries:
+            if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
+                if self.exclude_binaries and typ != 'DEPENDENCY':
                     self.dependencies.append((inm, fnm, typ))
                 else:
                     fnm = checkCache(fnm, self.strip_binaries,
@@ -1115,7 +1118,8 @@ class COLLECT(Target):
                 fnm = checkCache(fnm, self.strip_binaries,
                                  self.upx_binaries and ( iswin or cygwin )
                                   and config['hasUPX'])
-            shutil.copy2(fnm, tofnm)
+            if typ != 'DEPENDENCY':
+                shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0755)
         _save_data(self.out,
@@ -1370,8 +1374,6 @@ def TkTree():
 def TkPKG():
     return PKG(TkTree(), name='tk.pkg')
 
-#---
-
 def build(spec):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
     rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
@@ -1383,6 +1385,7 @@ def build(spec):
     WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
     BUILDPATH = os.path.join(SPECPATH, 'build',
                              "pyi." + config['target_platform'], specnm)
+    # Check and adjustment for build path
     if opts.buildpath != parser.get_option('--buildpath').default:
         bpath = opts.buildpath
         if os.path.isabs(bpath):
@@ -1391,8 +1394,61 @@ def build(spec):
             BUILDPATH = os.path.join(SPECPATH, bpath)
     if not os.path.exists(BUILDPATH):
         os.makedirs(BUILDPATH)
+    # Executing the specfile (it's a valid python file)
     execfile(spec)
 
+def get_relative_path(startpath, topath):
+    start = startpath.split(os.sep)[:-1]
+    for i in range(len(start)):
+        start[i] = ".."
+    result = os.sep.join(start)
+    if len(result) > 0:
+        return result + os.sep + topath
+    else:
+        return topath
+
+def set_dependencies(analysis, dependencies, path):
+    """
+    Syncronize the Analysis result with the needed dependencies.
+    """
+
+    for toc in (analysis.binaries, analysis.datas):
+        for i in range(len(toc)):
+            tpl = toc[i]
+            if not tpl[1] in dependencies.keys():
+                print "Adding dependency %s located in %s" % (tpl[1], path)
+                dependencies[tpl[1]] = path
+            else:
+                dep_path = get_relative_path(path, dependencies[tpl[1]])
+                print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
+                analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
+                toc[i] = (None, None, None)
+        # Clean the list
+        toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
+
+def MERGE(*args):
+    """
+    Wipe repeated dependencies from a list of (Analysis, id, filename) tuples,
+    supplied as argument. Replace id with the correct filename.
+    """
+
+    # Get the longest common path
+    common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a,_,_ in args]))
+    if common_prefix[-1] != os.sep:
+        common_prefix += os.sep
+    print "Common prefix: %s" % common_prefix
+    # Adjust dependencies for each Analysis object; the first Analysis in the
+    # list will include all dependencies.
+    id_to_path = {}
+    for _, i, p in args:
+        id_to_path[i] = p
+    dependencies = {}
+    for analysis,_,_ in args:
+        path = os.path.abspath(analysis.scripts[-1][1]).replace(common_prefix, "", 1)
+        path = os.path.splitext(path)[0]
+        if path in id_to_path:
+            path = id_to_path[path]
+        set_dependencies(analysis, dependencies, path)
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
