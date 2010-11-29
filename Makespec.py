@@ -328,7 +328,7 @@ def createSpecFile(scripts, options):
             specfile.write((common_part + merge_onedir_tpl) % options)
         else:
             #TODO: merge_onefile_tpl
-            specfile.write((common_part + merge_onedir_tpl) % options)
+            specfile.write((common_part + merge_onefile_tpl) % options)
     elif options["onedir"]:
         specfile.write((common_part + onedir_tpl) % options)
     else:
