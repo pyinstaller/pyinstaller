@@ -272,7 +272,7 @@ for i in range(len(scripts)):
         console=useConsole,
         icon=exeIcon,
         manifest=exeManifest,
-        version=exeVersion))
+        version=exeVersion)
 """
 marker = "###@O@_"
 HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
@@ -388,7 +388,7 @@ if __name__ == '__main__':
     if filetype == ".spec":
         if len(args) > 1:
             parser.error("Too many arguments. Give only one spec at time")
-        switchSpecDeployment(name + filetype, opts["exename"] + filetype, opts["onedir"])
+        switchSpecDeployment(name + filetype, opts["exenames"][0] + filetype, opts["onedir"])
     elif filetype == ".py":
         for filename in args:
             if not filename.endswith(filetype):
