@@ -81,11 +81,11 @@ def collectResources(exploring_path, final_path):
 home_paths=%(home_paths)s
 scripts=%(scripts)s
 
-%(marker)s"""
+%(marker)s
+"""
 
 
-onedir_tpl = """ Do not remove or edit this marker
-
+onedir_tpl = """
 if useTk:
     scripts = scripts + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
@@ -129,8 +129,7 @@ coll = COLLECT(
     name=dist_dir)
 """
 
-onefile_tpl = """ Do not remove or edit this marker
-
+onefile_tpl = """
 if useTk:
     scripts = scripts + [os.path.join(HOMEPATH, "support", "useTK.py")]
 
@@ -164,8 +163,7 @@ exe = EXE(
     version=exeVersion)
 """
 
-merge_onedir_tpl = """ Do not remove or edit this marker
-
+merge_onedir_tpl = """
 if useTk:
     scripts = scripts + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
@@ -225,8 +223,7 @@ coll = COLLECT(
     name=dist_dir)
 """
 
-merge_onefile_tpl = """ Do not remove or edit this marker
-
+merge_onefile_tpl = """
 if useTk:
     scripts = scripts + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
@@ -274,7 +271,7 @@ for i in range(len(scripts)):
         manifest=exeManifest,
         version=exeVersion)
 """
-marker = "###@O@_"
+marker = "### DO_NOT_REMOVE_THIS_MARKER"
 HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 def stringfyHomePaths(hp_list):
