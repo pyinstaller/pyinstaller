@@ -9,7 +9,7 @@ HOME = os.path.normpath(os.path.join(MST_DIR, ".."))
 MAKESPEC_EXE = os.path.join(HOME, "Makespec.py")
 BUILD_EXE = os.path.join(HOME, "Build.py")
 SCRIPT_FOR_TESTS = os.path.join(MST_DIR, "test.py")
-SCRIPT_FOR_TESTS = os.path.join(MST_DIR, "test2.py")
+SCRIPT_FOR_TESTS_2 = os.path.join(MST_DIR, "test2.py")
 LOG_FILE = os.path.join(MST_DIR, "err.log")
 if os.name == "posix":
     NULL_DEV = "/dev/null"
