@@ -173,25 +173,28 @@ if useTk:
         os.path.join(HOMEPATH, "support", "removeTK.py")]
 
 an = []
-an_binaries = []
-an_zipfils = []
-an_datas = []
 tuples = []
-exes = []
+scripts_count = len(scripts)
 
-for i in range(len(scripts)):
+for i in range(scripts_count):
     a = Analysis(home_paths + [scripts[i]], pathex=path_to_exe)
     an.append(a)
-    an_binaries.extend(a.binaries)
-    an_zipfiles.extend(a.zipfiles)
-    an_datas.extend(a.datas)
-    for src, dest in resourcesPaths[i]:
-        an_datas.extend(collectResources(src, dest))
     tuples.append((a, name_of_exes[i], dist_dir))
 
 MERGE(*tuples)
 
-for i in range(len(scripts)):
+an_binaries = []
+an_zipfils = []
+an_datas = []
+for i in range(scripts_count):
+    an_binaries.extend(an[i].binaries)
+    an_zipfiles.extend(an[i].zipfiles)
+    an_datas.extend(an[i].datas)
+    for src, dest in resourcesPaths[i]:
+        an_datas.extend(collectResources(src, dest))
+
+exes = []
+for i in range(scripts_count):
     pyz = (an[i].pure)
     exes.append(EXE(
         pyz,
@@ -221,6 +224,54 @@ coll = COLLECT(
     name=dist_dir)
 """
 
+merge_onefile_tpl = """ Do not remove or edit this marker
+
+if useTk:
+    scripts = scripts + [
+        os.path.join(HOMEPATH, "support", "useTK.py"),
+        os.path.join(HOMEPATH, "support", "unpackTK.py"),
+        os.path.join(HOMEPATH, "support", "removeTK.py")]
+
+an = []
+tuples = []
+scripts_count = len(scripts)
+
+for i in range(scripts_count):
+    a = Analysis(home_paths + [scripts[i]], pathex=path_to_exe)
+    an.append(a)
+    tuples.append((a, name_of_exes[i], dist_dir))
+
+MERGE(*tuples)
+
+an_binaries = []
+an_zipfils = []
+an_datas = []
+for i in range(scripts_count):
+    an[i].data.extend(collectResources(src, dest))
+
+tkPKG = []
+if useTk:
+    tkPKG.extend(TkPKG())
+
+for i in range(len(scripts)):
+    pyz = (an[i].pure)
+    EXE(
+        tkPKG,
+        pyz,
+        an[i].scripts,
+        an[i].binaries,
+        an[i].zipfiles,
+        an[i].datas,
+        exclude_binaries=1,
+        name=os.path.join(build_dir, names_of_exes[i]),
+        debug=useDebug,
+        strip=useStrip,
+        upx=useUPX,
+        console=useConsole,
+        icon=exeIcon,
+        manifest=exeManifest,
+        version=exeVersion))
+"""
 marker = "###@O@_"
 HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
 
@@ -298,8 +349,8 @@ def switchSpecDeployment(specfile_name, specfilenew_name, is_onedir):
 
     open(specfilenew_name, 'w').write(specfile_content)
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     import pyi_optparse as optparse
 
     parser = optparse.OptionParser(
