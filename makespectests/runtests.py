@@ -59,6 +59,7 @@ class MakespecTest(unittest.TestCase):
         #TODO: edit more?
         open("test.spec", 'w').write(specfile_content)
 
+    # Tests are performed from here, in alphabetical order
     def test_build_onedir(self):
         """Building onedir spec deployment"""
         self.makespec()

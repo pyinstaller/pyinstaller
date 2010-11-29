@@ -78,9 +78,22 @@ def collectResources(exploring_path, final_path):
             os.path.join(root, filename), 'DATA') for filename in files]
     return data
 
+home_paths=%(home_paths)s
+scripts=%(scripts)s
+
+%(marker)s"""
+
+
+onedir_tpl = """ Do not remove or edit this marker
+
+if useTk:
+    scripts = scripts + [
+        os.path.join(HOMEPATH, "support", "useTK.py"),
+        os.path.join(HOMEPATH, "support", "unpackTK.py"),
+        os.path.join(HOMEPATH, "support", "removeTK.py")]
+
 a = Analysis(
-    %(home_paths)s +
-    %(scripts)s,
+    scripts,
     pathex=path_to_exe)
 
 for src, dest in resourcesPaths:
@@ -88,10 +101,6 @@ for src, dest in resourcesPaths:
 
 pyz = PYZ(a.pure)
 
-%(marker)s"""
-
-
-onedir_tpl = """ Do not remove or edit this marker
 exe = EXE(
     pyz,
     a.scripts,
@@ -117,10 +126,23 @@ coll = COLLECT(
     a.datas,
     strip=useStrip,
     upx=useUPX,
-    name=os.path.join(dist_dir, name_of_exe))
+    name=dist_dir)
 """
 
 onefile_tpl = """ Do not remove or edit this marker
+
+if useTk:
+    scripts = scripts + [os.path.join(HOMEPATH, "support", "useTK.py")]
+
+a = Analysis(
+    scripts,
+    pathex=path_to_exe)
+
+for src, dest in resourcesPaths:
+    a.datas.extend(collectResources(src, dest))
+
+pyz = PYZ(a.pure)
+
 tkPKG = []
 if useTk:
     tkPKG.extend(TkPKG())
@@ -132,7 +154,7 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
-    name=os.path.join(dist_dir, name_of_exe),
+    name=dist_dir,
     debug=useDebug,
     strip=useStrip,
     upx=useUPX,
@@ -141,6 +163,116 @@ exe = EXE(
     manifest=exeManifest,
     version=exeVersion)
 """
+merge_common_part = """# -*- mode: python -*-
+#(i) This file was automatically genereted by the Makespec.py
+
+###########################
+### Edit to your liking
+
+name_of_exes = %(exename)s
+path_to_exes = %(pathex)s
+
+build_dir = '%(builddir)s'
+dist_dir = '%(distdir)s'
+
+exeIcon = ""
+useConsole = True #on Windows set False if you want to use the subsystem executable
+exeManifest = ""
+exeVersion = ""
+
+# Set here your resources paths as strings
+#  If you don't set paths, PyInstaller won't be able to find them
+resourcesPaths = [
+#   [("/where/to/find","/where/to/put"),
+#    ("/path/to/images","../relative/path/to/images"),
+#    ("/path/to/fonts","/my/home/project/fonts")],
+#   [("/path/to/configfiles","./config/files"),
+#   ("/these/are/only/examples","../../this/too")]
+]
+
+useDebug = False
+useStrip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
+useUPX = True # UPX Packer (useful for Windows)
+useTk = False
+
+
+##############################
+### Only for PyInstaller eyes
+#
+#(!) Edit with *caution*
+#(i) For more information take a check out the documentation
+#    on www.pyinstaller.org
+
+def collectResources(exploring_path, final_path):
+    data = []
+    for root, dirs, files in os.walk(exploring_path):
+        data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
+            os.path.join(root, filename), 'DATA') for filename in files]
+    return data
+
+home_paths=%(home_paths)s
+scripts=%(scripts)s
+
+%(marker)s"""
+
+merge_onedir_tpl = """ Do not remove or edit this marker
+
+if useTk:
+    scripts = scripts + [
+        os.path.join(HOMEPATH, "support", "useTK.py"),
+        os.path.join(HOMEPATH, "support", "unpackTK.py"),
+        os.path.join(HOMEPATH, "support", "removeTK.py")]
+
+an = []
+an_binaries = []
+an_zipfils = []
+an_datas = []
+an_pure = []
+tuples = []
+exes = []
+
+for i in range(len(scripts)):
+    a = Analysis(home_paths + [scripts[i]], pathex=path_to_exe)
+    an.append(a)
+    an_binaries.extend(a.binaries)
+    an_zipfiles.extend(a.zipfiles)
+    an_datas.extend(a.datas)
+    for src, dest in resourcesPaths[i]:
+        an_datas.extend(collectResources(src, dest))
+    tuples.append((a, name_of_exes[i], dist_dir))
+
+MERGE(*tuples)
+
+for i in range(len(scripts)):
+    pyz = (an[i].pure)
+    exes.append(EXE(
+        pyz,
+        an[i].scripts,
+        exclude_binaries=1,
+        name=os.path.join(build_dir, name_of_exes[0]),
+        debug=useDebug,
+        strip=useStrip,
+        upx=useUPX,
+        console=useConsole,
+        icon=exeIcon,
+        manifest=exeManifest,
+        version=exeVersion))
+
+tkTree = []
+if useTk:
+    tkTree.extend(TkTree())
+
+coll = COLLECT(
+    tkTree,
+    an_binaries,
+    an_zipfiles,
+    an_datas,
+    *exes,
+    strip=useStrip,
+    upx=useUPX,
+    name=dist_dir)
+"""
+
 marker = "###@O@_"
 HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
 
@@ -165,11 +297,7 @@ def createSpecFile(scripts, options):
     home_paths = []
     if config["hasUnicode"]:
         home_paths.insert(0, os.path.join("support", "useUnicode.py"))
-    if not options["onedir"]:
-        home_paths.insert(0, os.path.join("support", "unpackTK.py"))
-        home_paths.append(os.path.join("support", "removeTK.py"))
     home_paths.insert(0, os.path.join("support", "_mountzlib.py"))
-    home_paths.insert(0, os.path.join("support", "useTK.py"))
 
     home_paths = stringfyHomePaths(home_paths)
 
@@ -180,7 +308,7 @@ def createSpecFile(scripts, options):
         "pathex"    : pathex,
         "home_paths": home_paths,
         "scripts"   : scripts,
-        "distdir"   : "dist",
+        "distdir"   : os.path.join("dist", options["exename"]),
         "builddir"  : os.path.join("build", "pyi." + config["target_platform"], options["exename"]),
         "onedir"    : options["onedir"],
         "onefile"   : not options["onedir"],
@@ -228,6 +356,9 @@ if __name__ == '__main__':
     parser.add_option(
         "-D", "--onedir", dest="onedir", action="store_true", default=True,
         help="Create a single directory deployment")
+    parser.add_option(
+        "-M", "--merge", dest="merge", actione="store_true", default=False,
+        help="Create a group of interdependent packages")
     parser.add_option(
         "-n", "--name", dest="exename", action="store", type="string", nargs=1,
         help="The name to give to the executable")
