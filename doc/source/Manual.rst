@@ -833,7 +833,7 @@ With the MERGE function we can create a group of interdependent packages.
 
 
 ``*args``
-    This is a list of tuples. The first element of the tuple is an object analysis,
+    This is a list of tuples. The first element of the tuple is an analysis object,
     the second one is the script name without extension and the third one is the final path
     given to ``EXE`` and ``COLLECT``.
 
