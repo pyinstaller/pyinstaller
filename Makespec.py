@@ -94,7 +94,7 @@ if useTk:
 
 a = Analysis(
     scripts,
-    pathex=path_to_exe)
+    pathex=paths_to_exes)
 
 for src, dest in resourcesPaths:
     a.datas.extend(collectResources(src, dest))
@@ -105,7 +105,7 @@ exe = EXE(
     pyz,
     a.scripts,
     exclude_binaries=1,
-    name=os.path.join(build_dir, name_of_exe),
+    name=os.path.join(build_dir, names_of_exes[0]),
     debug=useDebug,
     strip=useStrip,
     upx=useUPX,
@@ -136,7 +136,7 @@ if useTk:
 
 a = Analysis(
     scripts,
-    pathex=path_to_exe)
+    pathex=paths_to_exes)
 
 for src, dest in resourcesPaths:
     a.datas.extend(collectResources(src, dest))
@@ -177,9 +177,9 @@ tuples = []
 scripts_count = len(scripts)
 
 for i in range(scripts_count):
-    a = Analysis(home_paths + [scripts[i]], pathex=path_to_exe)
+    a = Analysis(home_paths + [scripts[i]], pathex=paths_to_exes)
     an.append(a)
-    tuples.append((a, name_of_exes[i], dist_dir))
+    tuples.append((a, names_of_exes[i], dist_dir))
 
 MERGE(*tuples)
 
@@ -240,7 +240,7 @@ scripts_count = len(scripts)
 for i in range(scripts_count):
     a = Analysis(home_paths + [scripts[i]], pathex=path_to_exe)
     an.append(a)
-    tuples.append((a, name_of_exes[i], dist_dir))
+    tuples.append((a, names_of_exes[i], dist_dir))
 
 MERGE(*tuples)
 
@@ -310,7 +310,7 @@ def createSpecFile(scripts, options):
         "home_paths": home_paths,
         "scripts"   : scripts,
         "distdir"   : os.path.join("dist", options["exenames"][0]),
-        "builddir"  : os.path.join("build", "pyi." + config["target_platform"], options["exenames"][0]),
+        "builddir"  : os.path.join("build", "pyi." + config["target_platform"]),
         "onedir"    : options["onedir"],
         "onefile"   : not options["onedir"],
         "merge"     : options["merge"],
