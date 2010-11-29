@@ -32,7 +32,7 @@ def clean(to_clean=CLEANUP):
 
 def execute(cmd):
     retcode = os.system(cmd + " > " + NULL_DEV + " 2> " + LOG_FILE)
-    errstring = "\nMore datails:\n" + open(LOG_FILE, 'r').read()
+    errstring = "\nMore details:\n" + open(LOG_FILE, 'r').read()
     return retcode, errstring
 
 class MakespecTest(unittest.TestCase):
