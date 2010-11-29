@@ -51,7 +51,6 @@ class MakespecTest(unittest.TestCase):
         specfile_content = specfile_content.replace("name_of_exe = 'test'", "name_of_exe = 'edited'")
         specfile_content = specfile_content.replace("build_dir = 'build/pyi.linux2/test'", "build_dir = 'build/pyi.linux2/edited'")
         specfile_content = specfile_content.replace("useDebug = False", "useDebug = True")
-        #TODO: edit more?
         open("test.spec", 'w').write(specfile_content)
 
     # Tests are performed from here, in alphabetical order
