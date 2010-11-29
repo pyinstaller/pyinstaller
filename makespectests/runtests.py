@@ -16,10 +16,6 @@ else:
     NULL_DEV = "nul"
 CLEANUP = ["build/", "dist/", "*.log", "warn*.txt", "*.py[co]", "*/*.py[co]",
            "*/*/*.py[co]", "*.spec"]
-newSpecFail = "Unable to makespec test.py"
-switchSpecFail = "Unable to convert test.spec"
-buildFail = "Unable to build test.spec"
-
 def clean(to_clean=CLEANUP):
     """Cleaning tests resouces"""
     for clean in to_clean:
@@ -41,15 +37,14 @@ class MakespecTest(unittest.TestCase):
 
     def build(self, specfile="test.spec"):
         retcode, errstring = execute("%s -y %s" % (BUILD_EXE, specfile))
-        self.assertEqual(retcode, 0, buildFail + errstring)
+        self.assertEqual(retcode, 0, "Unable to build test.spec" + errstring)
 
     def makespec(self, scriptfile=SCRIPT_FOR_TESTS, dep_mode = "--onedir"):
         retcode, errstring = execute("%s %s %s" % (MAKESPEC_EXE, dep_mode, scriptfile))
-        #TODO: display only errstring?
         if scriptfile.endswith(".spec"):
-            self.assertEqual(retcode, 0, switchSpecFail + errstring)
+            self.assertEqual(retcode, 0, "Unable to convert test.spec" + errstring)
         else:
-            self.assertEqual(retcode, 0, newSpecFail + errstring)
+            self.assertEqual(retcode, 0, "Unable to makespec test.py" + errstring)
 
     def editspec(self):
         specfile_content = open("test.spec", 'r').read()
