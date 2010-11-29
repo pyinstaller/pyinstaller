@@ -199,6 +199,7 @@ for i in range(scripts_count):
     exes.append(EXE(
         pyz,
         an[i].scripts,
+        an[i].dependencies,
         exclude_binaries=1,
         name=os.path.join(build_dir, names_of_exes[i]),
         debug=useDebug,
@@ -262,6 +263,7 @@ for i in range(len(scripts)):
         an[i].binaries,
         an[i].zipfiles,
         an[i].datas,
+        an[i].dependencies,
         exclude_binaries=1,
         name=os.path.join(build_dir, names_of_exes[i]),
         debug=useDebug,
