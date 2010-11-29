@@ -37,8 +37,8 @@ common_part = """# -*- mode: python -*-
 ###########################
 ### Edit to your liking
 
-name_of_exe = '%(exename)s'
-path_to_exe = %(pathex)s
+names_of_exes = %(exenames)s
+paths_to_exes = %(pathex)s
 
 build_dir = '%(builddir)s'
 dist_dir = '%(distdir)s'
@@ -163,6 +163,7 @@ exe = EXE(
     manifest=exeManifest,
     version=exeVersion)
 """
+
 merge_common_part = """# -*- mode: python -*-
 #(i) This file was automatically genereted by the Makespec.py
 
@@ -248,7 +249,7 @@ for i in range(len(scripts)):
         pyz,
         an[i].scripts,
         exclude_binaries=1,
-        name=os.path.join(build_dir, name_of_exes[i]),
+        name=os.path.join(build_dir, names_of_exes[i]),
         debug=useDebug,
         strip=useStrip,
         upx=useUPX,
@@ -303,18 +304,18 @@ def createSpecFile(scripts, options):
     pathex = [workingdir]
 
     options = {
-        "exename"   : options["exename"],
+        "exenames"  : options["exenames"],
         "pathex"    : pathex,
         "home_paths": home_paths,
         "scripts"   : scripts,
-        "distdir"   : os.path.join("dist", options["exename"]),
-        "builddir"  : os.path.join("build", "pyi." + config["target_platform"], options["exename"]),
+        "distdir"   : os.path.join("dist", options["exenames"][0]),
+        "builddir"  : os.path.join("build", "pyi." + config["target_platform"], options["exenames"][0]),
         "onedir"    : options["onedir"],
         "onefile"   : not options["onedir"],
-        "merge"     : options["merge"]
+        "merge"     : options["merge"],
         "marker"    : marker}
 
-    specfile_name = options["exename"] + ".spec"
+    specfile_name = options["exenames"][0] + ".spec"
     specfile = open(specfile_name, 'w')
 
     if config["target_platform"][:3] == "win" or \
@@ -323,10 +324,10 @@ def createSpecFile(scripts, options):
 
     if options["merge"]:
         if options["onedir"]:
-            specfile.write((merge_common_part + merge_onedir_tpl) % options)
+            specfile.write((common_part + merge_onedir_tpl) % options)
         else:
             #TODO: merge_onefile_tpl
-            specfile.write((merge_common_part + merge_onedir_tpl) % options)
+            specfile.write((common_part + merge_onedir_tpl) % options)
     elif options["onedir"]:
         specfile.write((common_part + onedir_tpl) % options)
     else:
@@ -363,11 +364,8 @@ if __name__ == '__main__':
         "-D", "--onedir", dest="onedir", action="store_true", default=True,
         help="Create a single directory deployment")
     parser.add_option(
-        "-M", "--merge", dest="merge", actione="store_true", default=False,
+        "-M", "--merge", dest="merge", action="store_true", default=False,
         help="Create a group of interdependent packages")
-    parser.add_option(
-        "-n", "--name", dest="exename", action="store", type="string", nargs=1,
-        help="The name to give to the executable")
 
     opts, args = parser.parse_args()
     opts = opts.__dict__
@@ -376,8 +374,15 @@ if __name__ == '__main__':
         parser.error('Requires at least one scriptname file')
 
     name, filetype = os.path.splitext(os.path.basename(args[0]))
-    if not opts["exename"]:
-        opts["exename"] = name
+
+    exenames = []
+    if opts["merge"]:
+        for script in args:
+            exenames.append(os.path.splitext(os.path.basename(script))[0])
+    else:
+        exenames = [name]
+
+    opts["exenames"] = exenames
 
     if filetype == ".spec":
         if len(args) > 1:
@@ -399,5 +404,5 @@ if __name__ == '__main__':
     else:
         dep_mode = "onefile"
 
-    print "%s has been wrote in %s mode" % (opts["exename"] + ".spec", dep_mode)
+    print "%s has been wrote in %s mode" % (opts["exenames"][0] + ".spec", dep_mode)
     print "Now you can edit it and run the Build.py"
