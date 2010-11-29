@@ -359,6 +359,19 @@ Improved support for ``eggs`` is planned for a future release of |PyInstaller|.
 
 |GOBACK|_
 
+Multiprocess function
+---------------------
+With Pyinstaller you can create a collection of packages to avoid library duplication.
+You can establish links between one-file and one-dir packages using function `MERGE`_
+in spec files.
+You could wish, for example, deploy your application with an updater utility and a configurator,
+both sharing libraries with main application. In such a case you could use `MERGE`_ function
+in order to create a main, big, package, with all libraries and dependencies inside, and two small
+packages next to the first one. As a result, you can't change directory structure after merge.
+
+
+
+|GOBACK|_
 
 PyInstaller Utilities
 +++++++++++++++++++++
@@ -389,6 +402,19 @@ X <nm>
 Q
     Quit.
 
+Futhermore ArchiveViewer has some simple console commands:
+
+-h, --help
+    Show help.
+
+-l, --log
+    Quick contents log.
+
+-b, --brief
+    Print a python evaluable list of contents filenames.
+
+-r, --recursive
+    Used with -l or -b, applies recusive behaviour.
 
 |GOBACK|_
 
