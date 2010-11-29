@@ -164,58 +164,6 @@ exe = EXE(
     version=exeVersion)
 """
 
-merge_common_part = """# -*- mode: python -*-
-#(i) This file was automatically genereted by the Makespec.py
-
-###########################
-### Edit to your liking
-
-name_of_exes = %(exename)s
-path_to_exes = %(pathex)s
-
-build_dir = '%(builddir)s'
-dist_dir = '%(distdir)s'
-
-exeIcon = ""
-useConsole = True #on Windows set False if you want to use the subsystem executable
-exeManifest = ""
-exeVersion = ""
-
-# Set here your resources paths as strings
-#  If you don't set paths, PyInstaller won't be able to find them
-resourcesPaths = [
-#   [("/where/to/find","/where/to/put"),
-#    ("/path/to/images","../relative/path/to/images"),
-#    ("/path/to/fonts","/my/home/project/fonts")],
-#   [("/path/to/configfiles","./config/files"),
-#   ("/these/are/only/examples","../../this/too")]
-]
-
-useDebug = False
-useStrip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
-useUPX = True # UPX Packer (useful for Windows)
-useTk = False
-
-
-##############################
-### Only for PyInstaller eyes
-#
-#(!) Edit with *caution*
-#(i) For more information take a check out the documentation
-#    on www.pyinstaller.org
-
-def collectResources(exploring_path, final_path):
-    data = []
-    for root, dirs, files in os.walk(exploring_path):
-        data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
-            os.path.join(root, filename), 'DATA') for filename in files]
-    return data
-
-home_paths=%(home_paths)s
-scripts=%(scripts)s
-
-%(marker)s"""
-
 merge_onedir_tpl = """ Do not remove or edit this marker
 
 if useTk:
