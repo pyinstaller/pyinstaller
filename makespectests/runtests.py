@@ -9,6 +9,7 @@ HOME = os.path.normpath(os.path.join(MST_DIR, ".."))
 MAKESPEC_EXE = os.path.join(HOME, "Makespec.py")
 BUILD_EXE = os.path.join(HOME, "Build.py")
 SCRIPT_FOR_TESTS = os.path.join(MST_DIR, "test.py")
+SCRIPT_FOR_TESTS = os.path.join(MST_DIR, "test2.py")
 LOG_FILE = os.path.join(MST_DIR, "err.log")
 if os.name == "posix":
     NULL_DEV = "/dev/null"
@@ -39,8 +40,13 @@ class MakespecTest(unittest.TestCase):
         retcode, errstring = execute("%s -y %s" % (BUILD_EXE, specfile))
         self.assertEqual(retcode, 0, "Unable to build test.spec" + errstring)
 
-    def makespec(self, scriptfile=SCRIPT_FOR_TESTS, dep_mode = "--onedir"):
-        retcode, errstring = execute("%s %s %s" % (MAKESPEC_EXE, dep_mode, scriptfile))
+    def makespec(self, scriptfile=SCRIPT_FOR_TESTS, scriptfile2=SCRIPT_FOR_TESTS_2,
+                 dep_mode = "--onedir", merge="False"):
+        if merge:
+            retcode, errstring = execute("%s %s %s %s" % (MAKESPEC_EXE, "--merge", dep_mode, scriptfile))
+        else:
+            retcode, errstring = execute("%s %s %s" % (MAKESPEC_EXE, dep_mode, scriptfile))
+
         if scriptfile.endswith(".spec"):
             self.assertEqual(retcode, 0, "Unable to convert test.spec" + errstring)
         else:
@@ -62,6 +68,16 @@ class MakespecTest(unittest.TestCase):
     def test_build_onefile(self):
         """Building onefile spec deployment"""
         self.makespec(dep_mode="--onefile")
+        self.build()
+
+    def test_build_onedir_merge(self):
+        """Building merge onedir spec deployment"""
+        self.makespec(merge=True)
+        self.build()
+
+    def test_build_onefile_merge(self):
+        """Building merge onefile spec deployment"""
+        self.makespec(dep_mode="--onefile", merge=True)
         self.build()
 
     def test_edited_file(self):
