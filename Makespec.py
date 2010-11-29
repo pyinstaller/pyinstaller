@@ -227,7 +227,6 @@ an = []
 an_binaries = []
 an_zipfils = []
 an_datas = []
-an_pure = []
 tuples = []
 exes = []
 
@@ -249,7 +248,7 @@ for i in range(len(scripts)):
         pyz,
         an[i].scripts,
         exclude_binaries=1,
-        name=os.path.join(build_dir, name_of_exes[0]),
+        name=os.path.join(build_dir, name_of_exes[i]),
         debug=useDebug,
         strip=useStrip,
         upx=useUPX,
@@ -312,6 +311,7 @@ def createSpecFile(scripts, options):
         "builddir"  : os.path.join("build", "pyi." + config["target_platform"], options["exename"]),
         "onedir"    : options["onedir"],
         "onefile"   : not options["onedir"],
+        "merge"     : options["merge"]
         "marker"    : marker}
 
     specfile_name = options["exename"] + ".spec"
@@ -321,7 +321,13 @@ def createSpecFile(scripts, options):
        config["target_platform"] == "cygwin":
         options["exename"] = options["exename"] + ".exe"
 
-    if options["onedir"]:
+    if options["merge"]:
+        if options["onedir"]:
+            specfile.write((merge_common_part + merge_onedir_tpl) % options)
+        else:
+            #TODO: merge_onefile_tpl
+            specfile.write((merge_common_part + merge_onedir_tpl) % options)
+    elif options["onedir"]:
         specfile.write((common_part + onedir_tpl) % options)
     else:
         specfile.write((common_part + onefile_tpl) % options)
