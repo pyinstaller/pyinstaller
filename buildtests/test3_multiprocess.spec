@@ -10,7 +10,7 @@ a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(HO
 b = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(HOMEPATH,'support', 'useUnicode.py'), __testdep__ + '.py'],
              pathex=['.'])
 
-MERGE((b, __testdep__, os.path.join(__testname__, __testdep__ + '.exe')),
+MERGE((b, __testdep__, os.path.join(__testdep__ + '.exe')),
       (a, __testname__, os.path.join(__testname__, __testname__ + '.exe')))
 
 pyz = PYZ(a.pure)
@@ -39,7 +39,7 @@ exeB = EXE(pyzB,
           b.zipfiles,
           b.datas,
           b.dependencies,
-          name=os.path.join('dist', __testname__ , __testdep__ + '.exe'),
+          name=os.path.join('dist', __testdep__ + '.exe'),
           debug=False,
           strip=False,
           upx=True,
