@@ -359,7 +359,7 @@ Improved support for ``eggs`` is planned for a future release of |PyInstaller|.
 
 |GOBACK|_
 
-Multiprocess function
+Multipackage function
 ---------------------
 With Pyinstaller you can create a collection of packages to avoid library duplication.
 You can establish links between packages using function `MERGE`_ in spec files.
