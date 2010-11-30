@@ -375,14 +375,12 @@ if __name__ == '__main__':
 
     name, filetype = os.path.splitext(os.path.basename(args[0]))
 
-    exenames = []
+    opts["exenames"] = []
     if opts["merge"]:
         for script in args:
-            exenames.append(os.path.splitext(os.path.basename(script))[0])
+            opts["exenames"].append(os.path.splitext(os.path.basename(script))[0])
     else:
-        exenames = [name]
-
-    opts["exenames"] = exenames
+        opts["exenames"] = [name]
 
     if filetype == ".spec":
         if len(args) > 1:
