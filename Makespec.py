@@ -320,7 +320,8 @@ def createSpecFile(scripts, options):
 
     if config["target_platform"][:3] == "win" or \
        config["target_platform"] == "cygwin":
-        options["exename"] = options["exename"] + ".exe"
+        for i in range(len(options["exenames"])):
+            options["exenames"][i] = options["exenames"][i] + ".exe"
 
     if options["merge"]:
         if options["onedir"]:
