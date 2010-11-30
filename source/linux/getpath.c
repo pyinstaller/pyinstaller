@@ -52,12 +52,11 @@ static char progpath[MAXPATHLEN+1];
 static char *module_search_path = NULL;
 
 static void
-reduce(char *dir)
-{
-	int i = strlen(dir);
-	while (i > 0 && dir[i] != SEP)
-		--i;
-	dir[i] = '\0';
+reduce(char *dir) {
+    int i = strlen(dir);
+    while (i > 0 && dir[i] != SEP)
+        --i;
+    dir[i] = '\0';
 }
 
 
@@ -70,212 +69,198 @@ reduce(char *dir)
 #endif
 #if 0
 static int
-isfile(char *filename)		/* Is file, not directory */
-{
-	struct stat buf;
-	if (stat(filename, &buf) != 0)
-		return 0;
-	if (!S_ISREG(buf.st_mode))
-		return 0;
-	return 1;
+isfile(char *filename) { /* Is file, not directory */
+    struct stat buf;
+    if (stat(filename, &buf) != 0)
+        return 0;
+    if (!S_ISREG(buf.st_mode))
+        return 0;
+    return 1;
 }
 #endif
 #if 0
 static int
-ismodule(char *filename)		/* Is module -- check for .pyc/.pyo too */
-{
-	if (isfile(filename))
-		return 1;
+ismodule(char *filename) { /* Is module -- check for .pyc/.pyo too */
+    if (isfile(filename))
+        return 1;
 
-	/* Check for the compiled version of prefix. */
-	if (strlen(filename) < MAXPATHLEN) {
-		strcat(filename, Py_OptimizeFlag ? "o" : "c");
-		if (isfile(filename))
-			return 1;
-	}
-	return 0;
+    /* Check for the compiled version of prefix. */
+    if (strlen(filename) < MAXPATHLEN) {
+        strcat(filename, Py_OptimizeFlag ? "o" : "c");
+        if (isfile(filename))
+            return 1;
+    }
+    return 0;
 }
 #endif
 
 static int
-isxfile(char *filename)		/* Is executable file */
-{
-	struct stat buf;
-	if (stat(filename, &buf) != 0)
-		return 0;
-	if (!S_ISREG(buf.st_mode))
-		return 0;
-	if ((buf.st_mode & 0111) == 0)
-		return 0;
-	return 1;
+isxfile(char *filename) { /* Is executable file */
+    struct stat buf;
+    if (stat(filename, &buf) != 0)
+        return 0;
+    if (!S_ISREG(buf.st_mode))
+        return 0;
+    if ((buf.st_mode & 0111) == 0)
+        return 0;
+    return 1;
 }
 
 #if 0
 static int
-isdir(char *filename)			/* Is directory */
-{
-	struct stat buf;
-	if (stat(filename, &buf) != 0)
-		return 0;
-	if (!S_ISDIR(buf.st_mode))
-		return 0;
-	return 1;
+isdir(char *filename) { /* Is directory */
+    struct stat buf;
+    if (stat(filename, &buf) != 0)
+        return 0;
+    if (!S_ISDIR(buf.st_mode))
+        return 0;
+    return 1;
 }
 #endif
 
 static void
-joinpath(char *buffer, char *stuff)
-{
-	int n, k;
-	if (stuff[0] == SEP)
-		n = 0;
-	else {
-		n = strlen(buffer);
-		if (n > 0 && buffer[n-1] != SEP && n < MAXPATHLEN)
-			buffer[n++] = SEP;
-	}
-	k = strlen(stuff);
-	if (n + k > MAXPATHLEN)
-		k = MAXPATHLEN - n;
-	strncpy(buffer+n, stuff, k);
-	buffer[n+k] = '\0';
+joinpath(char *buffer, const char *stuff) {
+    int n, k;
+    if (stuff[0] == SEP)
+        n = 0;
+    else {
+        n = strlen(buffer);
+        if (n > 0 && buffer[n-1] != SEP && n < MAXPATHLEN)
+            buffer[n++] = SEP;
+    }
+    k = strlen(stuff);
+    if (n + k > MAXPATHLEN)
+        k = MAXPATHLEN - n;
+    strncpy(buffer+n, stuff, k);
+    buffer[n+k] = '\0';
 }
 
 static void
-calculate_path(void)
-{
-	char *prog = PI_GetProgramName();	/* use Py_SetProgramName(argv[0]) before Py_Initialize() */
-	char argv0_path[MAXPATHLEN+1];
-	char *epath;
-	char *path = NULL;
-	char *ppath = NULL;
+calculate_path(void) {
+    const char *prog = PI_GetProgramName(); /* use Py_SetProgramName(argv[0]) before Py_Initialize() */
+    char argv0_path[MAXPATHLEN+1];
+    char *epath;
+    char *path = NULL;
+    char *ppath = NULL;
 #if HAVE_READLINK
-	int  numchars;
+    int  numchars;
 #endif
 
-	if (strchr(prog, SEP))
-		strcpy(progpath, prog);
-	else {
+    if (strchr(prog, SEP))
+        strcpy(progpath, prog);
+    else {
 #if HAVE_READLINK
-            sprintf(argv0_path, "/proc/%d/exe", getpid());
-            numchars = readlink(argv0_path, progpath, MAXPATHLEN);
-            if (numchars > 0) 
-                progpath[numchars] = '\0';
+        sprintf(argv0_path, "/proc/%d/exe", getpid());
+        numchars = readlink(argv0_path, progpath, MAXPATHLEN);
+        if (numchars > 0)
+            progpath[numchars] = '\0';
+        else {
+#endif
+            epath = getenv("PATH");
+            if (epath)
+                path = malloc(strlen(epath)+3);
+            if (path) {
+                strcpy(path, ".:");
+                strcat(path, epath);
+                ppath = path;
+                while (1) {
+                    char *delim = strchr(ppath, DELIM);
+
+                    if (delim) {
+                        int len = delim - ppath;
+                        strncpy(progpath, ppath, len);
+                        *(progpath + len) = '\0';
+                    } else
+                        strcpy(progpath, ppath);
+
+                    joinpath(progpath, prog);
+                    if (isxfile(progpath))
+                        break;
+
+                    if (!delim) {
+                        progpath[0] = '\0';
+                        break;
+                    }
+                    ppath = delim + 1;
+                }
+                free(path);
+            } else
+                progpath[0] = '\0';
+#if HAVE_READLINK
+        }
+#endif
+    }
+    /* at this point progpath includes the executable */
+    strcpy(argv0_path, progpath);
+
+#if HAVE_READLINK
+    {
+        char tmpbuffer[MAXPATHLEN+1];
+        int linklen = readlink(progpath, tmpbuffer, MAXPATHLEN);
+        while (linklen != -1) {
+            /* It's not null terminated! */
+            tmpbuffer[linklen] = '\0';
+            if (tmpbuffer[0] == SEP)
+                strcpy(argv0_path, tmpbuffer);
             else {
-#endif
-		epath = getenv("PATH");
-                if (epath) 
-                    path = malloc(strlen(epath)+3);
-		if (path) {
-                    strcpy(path, ".:");
-                    strcat(path, epath);
-		    ppath = path;
-	    	    while (1) {
-				char *delim = strchr(ppath, DELIM);
-
-				if (delim) {
-					int len = delim - ppath;
-					strncpy(progpath, ppath, len);
-					*(progpath + len) = '\0';
-				}
-				else
-					strcpy(progpath, ppath);
-
-				joinpath(progpath, prog);
-				if (isxfile(progpath))
-					break;
-
-				if (!delim) {
-					progpath[0] = '\0';
-					break;
-				}
-				ppath = delim + 1;
-		    }
-                    free(path);
-		}
-		else
-			progpath[0] = '\0';
-#if HAVE_READLINK
+                /* Interpret relative to progpath */
+                reduce(argv0_path);
+                joinpath(argv0_path, tmpbuffer);
             }
-#endif
-	}
-	/* at this point progpath includes the executable */
-	strcpy(argv0_path, progpath);
-	
-#if HAVE_READLINK
-	{
-		char tmpbuffer[MAXPATHLEN+1];
-		int linklen = readlink(progpath, tmpbuffer, MAXPATHLEN);
-		while (linklen != -1) {
-			/* It's not null terminated! */
-			tmpbuffer[linklen] = '\0';
-			if (tmpbuffer[0] == SEP)
-				strcpy(argv0_path, tmpbuffer);
-			else {
-				/* Interpret relative to progpath */
-				reduce(argv0_path);
-				joinpath(argv0_path, tmpbuffer);
-			}
-			linklen = readlink(argv0_path, tmpbuffer, MAXPATHLEN);
-		}
-                strcpy(progpath, argv0_path);
-	}
+            linklen = readlink(argv0_path, tmpbuffer, MAXPATHLEN);
+        }
+        strcpy(progpath, argv0_path);
+    }
 #endif /* HAVE_READLINK */
 
-	reduce(argv0_path);
-	/* now argv0_path is the directory of the executable */
+    reduce(argv0_path);
+    /* now argv0_path is the directory of the executable */
 
-	strcpy(prefix, argv0_path);
-	exec_prefix = prefix;
-	module_search_path = malloc(strlen(prefix)+1);
-	strcpy(module_search_path, prefix);
+    strcpy(prefix, argv0_path);
+    exec_prefix = prefix;
+    module_search_path = malloc(strlen(prefix)+1);
+    strcpy(module_search_path, prefix);
 
 }
 /* External interface */
 
-static char *progname = "python";
+static const char *progname = "python";
 
 void
-PI_SetProgramName(char *pn)
-{
-	if (pn && *pn)
-		progname = pn;
+PI_SetProgramName(const char *pn) {
+    if (pn && *pn)
+        progname = pn;
+}
+
+const char *
+PI_GetProgramName(void) {
+    return progname;
 }
 
 char *
-PI_GetProgramName(void)
-{
-	return progname;
+PI_GetPath(void) {
+    if (!module_search_path)
+        calculate_path();
+    return module_search_path;
 }
 
 char *
-PI_GetPath(void)
-{
-	if (!module_search_path)
-		calculate_path();
-	return module_search_path;
+PI_GetPrefix(void) {
+    if (!module_search_path)
+        calculate_path();
+    return prefix;
 }
 
 char *
-PI_GetPrefix(void)
-{
-	if (!module_search_path)
-		calculate_path();
-	return prefix;
+PI_GetExecPrefix(void) {
+    if (!module_search_path)
+        calculate_path();
+    return exec_prefix;
 }
 
 char *
-PI_GetExecPrefix(void)
-{
-	if (!module_search_path)
-		calculate_path();
-	return exec_prefix;
-}
-
-char *
-PI_GetProgramFullPath(void)
-{
-	if (!module_search_path)
-		calculate_path();
-	return progpath;
+PI_GetProgramFullPath(void) {
+    if (!module_search_path)
+        calculate_path();
+    return progpath;
 }

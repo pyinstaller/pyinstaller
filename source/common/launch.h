@@ -222,6 +222,13 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 # endif
 #endif
 
+/* _MAX_PATH for non-Windows */
+#ifndef _MAX_PATH
+#define _MAX_PATH 256
+#endif
+
+#define SELF 0
+
 /* TOC entry for a CArchive */
 typedef struct _toc {
     int structlen;    /*len of this one - including full len of name */
@@ -244,26 +251,20 @@ typedef struct _cookie {
     int  pyvers;   /* new in v4 */
 } COOKIE;
 
-/* _MAX_PATH for non-Windows */
-#ifndef _MAX_PATH
-#define _MAX_PATH 256
+typedef struct _archive_status {
+    FILE    *fp;
+    int     pkgstart;
+    TOC     *tocbuff;
+    TOC     *tocend;
+    COOKIE  cookie;
+    char    archivename[_MAX_PATH + 1];
+    char    homepath[_MAX_PATH + 1];
+    char    temppath[_MAX_PATH + 1];
+#ifdef WIN32
+    char    homepathraw[_MAX_PATH + 1];
+    char    temppathraw[_MAX_PATH + 1];
 #endif
-
-/**
- * Load Python using code stored in the following archive.
- * Intended for use by embedding applications.
- *
- * @param archivePath  The path to the archive directory, with trailing
- *                     backslash. This directory will also contain the binary
- *                     dependencies of the application. There can be no
- *                     binaries inside the archive.
- *
- * @param archiveName  The file name of the archive, without a path.
- *
- * @return 0 on success, non-zero otherwise.
- *
- */
-int launchembedded(char const * archivePath, char  const * archiveName);
+} ARCHIVE_STATUS;
 
 /*****************************************************************
  * The following 4 entries are for applications which may need to
@@ -285,7 +286,7 @@ int launchembedded(char const * archivePath, char  const * archiveName);
  *
  * @return 0 on success, non-zero otherwise.
  */
-int init(char const * archivePath, char  const * archiveName, char const * workpath);
+int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName);
 
 /**
  * Extract binaries in the archive
@@ -295,7 +296,7 @@ int init(char const * archivePath, char  const * archiveName, char const * workp
  *
  * @return 0 on success, non-zero otherwise.
  */
-int extractBinaries(char **workpath);
+int extractBinaries(ARCHIVE_STATUS *status_list[]);
 
 /**
  * Load Python and execute all scripts in the archive
@@ -306,7 +307,7 @@ int extractBinaries(char **workpath);
  *
  * @return -1 for internal failures, or the rc of the last script.
  */
-int doIt(int argc, char *argv[]);
+int doIt(ARCHIVE_STATUS *status, int argc, char *argv[]);
 
 /*
  * Call a simple "int func(void)" entry point.  Assumes such a function
@@ -322,29 +323,27 @@ int callSimpleEntryPoint(char *name, int *presult);
 /**
  * Clean up extracted binaries
  */
-void cleanUp(void);
+void cleanUp(ARCHIVE_STATUS *status);
 
 /**
  * Helpers for embedders
  */
-int getPyVersion(void);
+int getPyVersion(ARCHIVE_STATUS *status);
 void finalizePython(void);
 
 /**
  * The gory detail level
  */
-int setPaths(char const * archivePath, char const * archiveName);
-int openArchive(void);
-int attachPython(int *loadedNew);
-int loadPython(void); /* note - attachPython will call this if not already loaded */
-void acquirePythonThread(void);
-void releasePythonThread(void);
-int startPython(int argc, char *argv[]);
-int importModules(void);
-int installZlibs(void);
-int runScripts(void);
-TOC *getFirstTocEntry(void);
-TOC *getNextTocEntry(TOC *entry);
+int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
+int openArchive(ARCHIVE_STATUS *status);
+int attachPython(ARCHIVE_STATUS *status, int *loadedNew);
+int loadPython(ARCHIVE_STATUS *status); /* note - attachPython will call this if not already loaded */
+int startPython(ARCHIVE_STATUS *status, int argc, char *argv[]);
+int importModules(ARCHIVE_STATUS *status);
+int installZlibs(ARCHIVE_STATUS *status);
+int runScripts(ARCHIVE_STATUS *status);
+TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
+TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 void clear(const char *dir);
 #endif
 

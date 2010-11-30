@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'), os.path.join(HOMEPATH,'support/useUnicode.py'), 'test-celementtree.py'],
-             pathex=['/home/rasky/src/pyinstaller/buildtests'])
+             pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,

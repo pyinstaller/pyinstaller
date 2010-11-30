@@ -24,16 +24,36 @@ try:
 except ImportError:
     zlib = archive.DummyZlib()
 import pprint
+from pyi_optparse import OptionParser
 
 stack = []
 cleanup = []
+name = None
+debug = False
+rec_debug = False
+brief = False
 
-def main():
+def main(opts, args):
     global stack
-    name = sys.argv[1]
+    global debug
+    global rec_debug
+    global name
+    global brief
+    name = args[0]
+    debug = opts.log
+    rec_debug = opts.rec
+    brief = opts.brief
+    if not os.path.isfile(name):
+        print "%s is an invalid file name!" % name
+        return 1
+        
     arch = getArchive(name)
     stack.append((name, arch))
-    show(name, arch)
+    if debug or brief:
+        show_log(name, arch)
+        sys.exit(0)
+    else:
+        show(name, arch)
 
     while 1:
         try:
@@ -141,6 +161,27 @@ def show(nm, arch):
         toc = arch.toc.data
     pprint.pprint(toc)
 
+def show_log(nm, arch, output=[]):
+    if type(arch.toc) == type({}):
+        toc = arch.toc
+        if brief:
+            for name,_ in toc.items():
+                output.append(name)
+        else:
+            pprint.pprint(toc)
+    else:
+        toc = arch.toc.data
+        for el in toc:
+            if brief:
+                output.append(el[5])
+            else:
+                output.append(el)
+            if rec_debug:
+                if el[4] in ('z', 'a'):
+                    show_log(el[5], getArchive(el[5]), output)
+                    stack.pop()
+        pprint.pprint(output)
+
 class ZlibArchive(archive.ZlibArchive):
     def checkmagic(self):
         """ Overridable.
@@ -155,5 +196,26 @@ class ZlibArchive(archive.ZlibArchive):
             print "Warning: pyz is from a different Python version"
         self.lib.read(4)
 
+parser = OptionParser('%prog [options] pyi_archive')
+parser.add_option('-l', '--log',
+                  default=False,
+                  action='store_true',
+                  dest='log',
+                  help='Print an archive log (default: %default)')
+parser.add_option('-r', '--recursive',
+                  default=False,
+                  action='store_true',
+                  dest='rec',
+                  help='Recusively print an archive log (default: %default). Can be combined with -r')
+parser.add_option('-b', '--brief',
+                  default=False,
+                  action='store_true',
+                  dest='brief',
+                  help='Print only file name. (default: %default). Can be combined with -r')
+
 if __name__ == '__main__':
-    main()
+    opts, args = parser.parse_args()
+    if len(args) != 1:
+        parser.error('Requires exactly one pyinstaller archive')
+    sys.exit(main(opts, args))
+

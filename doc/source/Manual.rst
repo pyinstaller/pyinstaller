@@ -33,7 +33,7 @@ In the |install_path| directory, run::
 
      python Configure.py
 
-This will configure PyInstaller usage based on the current system, 
+This will configure PyInstaller usage based on the current system,
 and save some information into ``config.dat`` that would otherwise
 be recomputed every time.
 
@@ -359,6 +359,18 @@ Improved support for ``eggs`` is planned for a future release of |PyInstaller|.
 
 |GOBACK|_
 
+Multiprocess function
+---------------------
+With Pyinstaller you can create a collection of packages to avoid library duplication.
+You can establish links between packages using function `MERGE`_ in spec files.
+You could wish, for example, deploy your application with an updater utility and a configurator,
+both sharing libraries with main application. In such a case you could use `MERGE`_ function
+in order to create a main, big, package, with all libraries and dependencies inside, and two small
+packages next to the first one. As a result, you can't change directory structure after merge.
+
+
+
+|GOBACK|_
 
 PyInstaller Utilities
 +++++++++++++++++++++
@@ -389,6 +401,19 @@ X <nm>
 Q
     Quit.
 
+Futhermore ArchiveViewer has some simple console commands:
+
+-h, --help
+    Show help.
+
+-l, --log
+    Quick contents log.
+
+-b, --brief
+    Print a python evaluable list of contents filenames.
+
+-r, --recursive
+    Used with -l or -b, applies recusive behaviour.
 
 |GOBACK|_
 
@@ -792,6 +817,29 @@ Tree
 
 Since a ``Tree`` is a ``TOC``, you can also use the exclude technique described above
 in the section on ``TOCs``.
+
+
+|GOBACK|_
+
+MERGE
+*****
+
+With the MERGE function we can create a group of interdependent packages.
+
+::
+
+      MERGE(*args)
+
+
+``*args``
+    This is a list of tuples. The first element of the tuple is an analysis object,
+    the second one is the script name without extension and the third one is the final name.
+
+
+``MERGE`` function filters the analysis to avoid duplication of libraries and modules.
+As a result the packages generated will be connected. Furthermore, to ensure the consistency
+of dependencies, it replaces the temporary names with the actual names.
+MERGE is used after the analysis phase and before ``EXE`` and ``COLLECT``.
 
 
 |GOBACK|_
@@ -1233,7 +1281,7 @@ Appendix
 Building the bootloaders
 ------------------------
 
-PyInstaller comes with binary bootloaders for most platforms, shipped 
+PyInstaller comes with binary bootloaders for most platforms, shipped
 in |install_path|/support/loader. If you need to build the bootloader
 for your own platform (either because your platform is not officially
 supported, or because you tweaked bootloader's source code), you can
@@ -1318,11 +1366,11 @@ On Debian- and Ubuntu-based distros, you can install LSB 4.0 tools by adding
 the following repository to the sources.list file::
 
         deb http://ftp.linux-foundation.org/pub/lsb/repositories/debian lsb-4.0 main
-        
+
 then after having update the apt repository::
 
         sudo apt-get update
-        
+
 you can install LSB 4.0::
 
         sudo apt-get install lsb lsb-build-cc

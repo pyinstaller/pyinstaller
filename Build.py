@@ -142,6 +142,18 @@ def compile_pycos(toc):
 
     return new_toc
 
+def addSuffixToExtensions(toc):
+    """
+    Returns a new TOC with proper library suffix for EXTENSION items.
+    """
+    new_toc = TOC()
+    for inm, fnm, typ in toc:
+        if typ in ('EXTENSION', 'DEPENDENCY'):
+            binext = os.path.splitext(fnm)[1]
+            if not os.path.splitext(inm)[1] == binext:
+                inm = inm + binext
+        new_toc.append((inm, fnm, typ))
+    return new_toc
 
 #--- functons for checking guts ---
 
@@ -252,6 +264,7 @@ def check_egg(pth):
 class Target:
     invcnum = 0
     def __init__(self):
+        # Get a unique number to avoid conflicts between toc objects
         self.invcnum = Target.invcnum
         Target.invcnum += 1
         self.out = os.path.join(BUILDPATH, 'out%s%d.toc' % (self.__class__.__name__,
@@ -311,6 +324,7 @@ class Analysis(Target):
         self.binaries = TOC()
         self.zipfiles = TOC()
         self.datas = TOC()
+        self.dependencies = TOC()
         self.__postinit__()
 
     GUTS = (('inputs',    _check_guts_eq),
@@ -422,10 +436,10 @@ class Analysis(Target):
                 python = os.path.join(os.path.split(python)[0], os.readlink(python))
             depmanifest = None
         else:
-            depmanifest = winmanifest.Manifest(type_="win32", name=specnm, 
+            depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
                                                processorArchitecture="x86",
                                                version=(1, 0, 0, 0))
-            depmanifest.filename = os.path.join(BUILDPATH, 
+            depmanifest.filename = os.path.join(BUILDPATH,
                                                 specnm + ".exe.manifest")
         binaries.extend(bindepend.Dependencies([('', python, '')],
                                                target_platform,
@@ -474,17 +488,33 @@ class Analysis(Target):
         Python executable to the libpython, so bindepend doesn't include
         it in its output.
         """
-        if target_platform != 'linux2': return
 
-        name = 'libpython%d.%d.so' % sys.version_info[:2]
+        if target_platform.startswith("linux"):
+            name = 'libpython%d.%d.so' % sys.version_info[:2]
+        elif target_platform.startswith("darwin"):
+            name = 'Python'
+        else:
+            return
+
         for (nm, fnm, typ) in binaries:
             if typ == 'BINARY' and name in fnm:
                 # lib found
                 return
 
-        lib = bindepend.findLibrary(name)
-        if lib is None:
-            raise IOError("Python library not found!")
+        if target_platform.startswith("linux"):
+            lib = bindepend.findLibrary(name)
+            if lib is None:
+                raise IOError("Python library not found!")
+
+        elif target_platform.startswith("darwin"):
+            # On MacPython, Analysis.assemble is able to find the libpython with
+            # no additional help, asking for config['python'] dependencies.
+            # However, this fails on system python, because the shared library
+            # is not listed as a dependency of the binary (most probably it's
+            # opened at runtime using some dlopen trickery).
+            lib = os.path.join(sys.exec_prefix, 'Python')
+            if not os.path.exists(lib):
+                raise IOError("Python library not found!")
 
         binaries.append((os.path.split(lib)[1], lib, 'BINARY'))
 
@@ -556,7 +586,7 @@ def cacheDigest(fnm):
 def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names
-    if (not strip and not upx and sys.platform[:6] != 'darwin' and 
+    if (not strip and not upx and sys.platform[:6] != 'darwin' and
         sys.platform != 'win32') or fnm.lower().endswith(".manifest"):
         return fnm
     if strip:
@@ -677,7 +707,8 @@ class PKG(Target):
                  'DATA': 'x',
                  'BINARY': 'b',
                  'ZIPFILE': 'Z',
-                 'EXECUTABLE': 'b'}
+                 'EXECUTABLE': 'b',
+                 'DEPENDENCY':  'd'}
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=0, upx_binaries=0, crypt=0):
         Target.__init__(self)
@@ -731,21 +762,14 @@ class PKG(Target):
         print "building PKG", os.path.basename(self.name)
         trash = []
         mytoc = []
-        toc = TOC()
-        for item in self.toc:
-            inm, fnm, typ = item
-            if typ == 'EXTENSION':
-                binext = os.path.splitext(fnm)[1]
-                if not os.path.splitext(inm)[1] == binext:
-                    inm = inm + binext
-            toc.append((inm, fnm, typ))
         seen = {}
+        toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
             if not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
-            if typ in ('BINARY', 'EXTENSION'):
-                if self.exclude_binaries:
+            if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
+                if self.exclude_binaries and typ != 'DEPENDENCY':
                     self.dependencies.append((inm, fnm, typ))
                 else:
                     fnm = checkCache(fnm, self.strip_binaries,
@@ -819,34 +843,34 @@ class EXE(Target):
                     # Assume filename
                     self.manifest = winmanifest.ManifestFromXMLFile(self.manifest)
             else:
-                self.manifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH, 
+                self.manifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH,
                                                                              specnm + ".exe.manifest"))
                 self.manifest.name = os.path.splitext(os.path.basename(self.name))[0]
-            if self.manifest.filename != os.path.join(BUILDPATH, 
+            if self.manifest.filename != os.path.join(BUILDPATH,
                                                       specnm + ".exe.manifest"):
                 # Update dependent assemblies
-                depmanifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH, 
+                depmanifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH,
                                                                            specnm + ".exe.manifest"))
                 for assembly in depmanifest.dependentAssemblies:
-                    if not assembly.name in [dependentAssembly.name 
+                    if not assembly.name in [dependentAssembly.name
                                              for dependentAssembly in
                                              self.manifest.dependentAssemblies]:
                         self.manifest.dependentAssemblies.append(assembly)
             if not self.console and \
-               not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name 
+               not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name
                                                            for dependentAssembly in
                                                            self.manifest.dependentAssemblies]:
                 # Add Microsoft.Windows.Common-Controls to dependent assemblies
-                self.manifest.dependentAssemblies.append(winmanifest.Manifest(type_="win32", 
+                self.manifest.dependentAssemblies.append(winmanifest.Manifest(type_="win32",
                                                                               name="Microsoft.Windows.Common-Controls",
-                                                                              language="*", 
-                                                                              processorArchitecture="x86", 
+                                                                              language="*",
+                                                                              processorArchitecture="x86",
                                                                               version=(6, 0, 0, 0),
                                                                               publicKeyToken="6595b64144ccf1df"))
-            self.manifest.writeprettyxml(os.path.join(BUILDPATH, 
+            self.manifest.writeprettyxml(os.path.join(BUILDPATH,
                                                       specnm + ".exe.manifest"))
             self.toc.append((os.path.basename(self.name) + ".manifest",
-                             os.path.join(BUILDPATH, 
+                             os.path.join(BUILDPATH,
                                           specnm + ".exe.manifest"),
                              'BINARY'))
         self.pkg = PKG(self.toc, cdict=kws.get('cdict',None), exclude_binaries=self.exclude_binaries,
@@ -910,7 +934,7 @@ class EXE(Target):
             import os
             n = { "nt": "Windows", "linux2": "Linux", "darwin": "Darwin" }
             dir = n[os.name] + "-32bit"
-                             
+
         if not self.console:
             exe = exe + 'w'
         if self.debug:
@@ -1081,13 +1105,7 @@ class COLLECT(Target):
         print "building COLLECT", os.path.basename(self.out)
         if not os.path.exists(self.name):
             os.makedirs(self.name)
-        toc = TOC()
-        for inm, fnm, typ in self.toc:
-            if typ == 'EXTENSION':
-                binext = os.path.splitext(fnm)[1]
-                if not os.path.splitext(inm)[1] == binext:
-                    inm = inm + binext
-            toc.append((inm, fnm, typ))
+        toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
             if not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
@@ -1100,7 +1118,8 @@ class COLLECT(Target):
                 fnm = checkCache(fnm, self.strip_binaries,
                                  self.upx_binaries and ( iswin or cygwin )
                                   and config['hasUPX'])
-            shutil.copy2(fnm, tofnm)
+            if typ != 'DEPENDENCY':
+                shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0755)
         _save_data(self.out,
@@ -1110,6 +1129,11 @@ class COLLECT(Target):
 
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
+
+        # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
+        if not sys.platform.startswith("darwin"):
+            return
+
         Target.__init__(self)
         self.name = kws.get('name', None)
         if self.name is not None:
@@ -1118,14 +1142,24 @@ class BUNDLE(Target):
         self.toc = TOC()
         for arg in args:
             if isinstance(arg, EXE):
-                if self.name is None:
-                    self.appname = "Mac%s" % (os.path.splitext(os.path.basename(arg.name))[0],)
-                    self.name = os.path.join(SPECPATH, self.appname + ".app")
-                self.exename = arg.name
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 self.toc.extend(arg.dependencies)
+            elif isinstance(arg, TOC):
+                self.toc.extend(arg)
+            elif isinstance(arg, COLLECT):
+                self.toc.extend(arg.toc)
             else:
                 print "unsupported entry %s", arg.__class__.__name__
+        # Now, find values for app filepath (name), app name (appname), and name
+        # of the actual executable (exename) from the first EXECUTABLE item in
+        # toc, which might have come from a COLLECT too (not from an EXE).
+        for inm, name, typ in self.toc:
+            if typ == "EXECUTABLE":
+                self.exename = name
+                if self.name is None:
+                    self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
+                    self.name = os.path.join(SPECPATH, self.appname + ".app")
+                break
         self.__postinit__()
 
     GUTS = (('toc',             _check_guts_eq), # additional check below
@@ -1185,7 +1219,9 @@ class BUNDLE(Target):
         f = open(os.path.join(self.name, "Contents", "Info.plist"), "w")
         f.write(info_plist)
         f.close()
-        for inm, fnm, typ in self.toc:
+
+        toc = addSuffixToExtensions(self.toc)
+        for inm, fnm, typ in toc:
             tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
@@ -1328,17 +1364,15 @@ class Tree(Target, TOC):
 
 def TkTree():
     tclroot = config['TCL_root']
-    tclnm = os.path.join('_MEI', os.path.basename(tclroot))
+    tclnm = os.path.join('_MEI', config['TCL_dirname'])
     tkroot = config['TK_root']
-    tknm = os.path.join('_MEI', os.path.basename(tkroot))
+    tknm = os.path.join('_MEI', config['TK_dirname'])
     tcltree = Tree(tclroot, tclnm, excludes=['demos','encoding','*.lib'])
     tktree = Tree(tkroot, tknm, excludes=['demos','encoding','*.lib'])
     return tcltree + tktree
 
 def TkPKG():
     return PKG(TkTree(), name='tk.pkg')
-
-#---
 
 def build(spec):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
@@ -1351,6 +1385,7 @@ def build(spec):
     WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
     BUILDPATH = os.path.join(SPECPATH, 'build',
                              "pyi." + config['target_platform'], specnm)
+    # Check and adjustment for build path
     if opts.buildpath != parser.get_option('--buildpath').default:
         bpath = opts.buildpath
         if os.path.isabs(bpath):
@@ -1359,8 +1394,61 @@ def build(spec):
             BUILDPATH = os.path.join(SPECPATH, bpath)
     if not os.path.exists(BUILDPATH):
         os.makedirs(BUILDPATH)
+    # Executing the specfile (it's a valid python file)
     execfile(spec)
 
+def get_relative_path(startpath, topath):
+    start = startpath.split(os.sep)[:-1]
+    for i in range(len(start)):
+        start[i] = ".."
+    result = os.sep.join(start)
+    if len(result) > 0:
+        return result + os.sep + topath
+    else:
+        return topath
+
+def set_dependencies(analysis, dependencies, path):
+    """
+    Syncronize the Analysis result with the needed dependencies.
+    """
+
+    for toc in (analysis.binaries, analysis.datas):
+        for i in range(len(toc)):
+            tpl = toc[i]
+            if not tpl[1] in dependencies.keys():
+                print "Adding dependency %s located in %s" % (tpl[1], path)
+                dependencies[tpl[1]] = path
+            else:
+                dep_path = get_relative_path(path, dependencies[tpl[1]])
+                print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
+                analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
+                toc[i] = (None, None, None)
+        # Clean the list
+        toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
+
+def MERGE(*args):
+    """
+    Wipe repeated dependencies from a list of (Analysis, id, filename) tuples,
+    supplied as argument. Replace id with the correct filename.
+    """
+
+    # Get the longest common path
+    common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a,_,_ in args]))
+    if common_prefix[-1] != os.sep:
+        common_prefix += os.sep
+    print "Common prefix: %s" % common_prefix
+    # Adjust dependencies for each Analysis object; the first Analysis in the
+    # list will include all dependencies.
+    id_to_path = {}
+    for _, i, p in args:
+        id_to_path[i] = p
+    dependencies = {}
+    for analysis,_,_ in args:
+        path = os.path.abspath(analysis.scripts[-1][1]).replace(common_prefix, "", 1)
+        path = os.path.splitext(path)[0]
+        if path in id_to_path:
+            path = id_to_path[path]
+        set_dependencies(analysis, dependencies, path)
 
 def main(specfile, configfilename):
     global target_platform, target_iswin, config
