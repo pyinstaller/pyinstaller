@@ -190,7 +190,7 @@
     '_mountzlib',
     'useUnicode',
     'test3_multiprocess',
-    '.*/test3_multiprocess_B\.exe:.*ssl.*',
-    '.*/test3_multiprocess_B\.exe:.*bz2.*',
-    '(?i).*/test3_multiprocess_B\.exe:.*python.*',
+    '.*test3_multiprocess_B\.exe:.*ssl.*',
+    '.*test3_multiprocess_B\.exe:.*bz2.*',
+    '(?i).*test3_multiprocess_B\.exe:.*python.*',
 ]
