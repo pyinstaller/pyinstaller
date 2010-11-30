@@ -1,1 +1,1 @@
-import sys, string
+import string, PyQt4
