@@ -177,7 +177,7 @@ scripts_count = len(scripts)
 for i in range(scripts_count):
     a = Analysis(home_paths + [scripts[i]], pathex=paths_to_exes)
     an.append(a)
-    tuples.append((a, names_of_exes[i], dist_dir))
+    tuples.append((a, os.path.splitext(names_of_exes[i])[0], os.path.join(dist_dir, names_of_exes[i])))
 
 MERGE(*tuples)
 
@@ -237,7 +237,7 @@ scripts_count = len(scripts)
 for i in range(scripts_count):
     a = Analysis(home_paths + [scripts[i]], pathex=paths_to_exes)
     an.append(a)
-    tuples.append((a, names_of_exes[i], dist_dir))
+    tuples.append((a, os.path.splitext(names_of_exes[i])[0], os.path.join(dist_dir, names_of_exes[i])))
 
 MERGE(*tuples)
 
