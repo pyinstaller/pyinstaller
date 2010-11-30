@@ -31,6 +31,7 @@ except:
     False = not True
 
 # This is the part of the spec present in both onefile and onedir template
+#TODO: resolving the dependence of len(resourcesPaths) with len(scripts)
 common_part = """# -*- mode: python -*-
 #(i) This file was automatically genereted by the Makespec.py
 
@@ -50,7 +51,7 @@ exeVersion = ""
 
 # Set here your resources paths as strings
 #  If you don't set paths, PyInstaller won't be able to find them
-resourcesPaths = [
+resourcesPaths = [[],[]
 #   ("/where/to/find","/where/to/put")
 #   ("/path/to/images","../relative/path/to/images")
 #   ("/path/to/fonts","/my/home/project/fonts")
@@ -182,7 +183,7 @@ for i in range(scripts_count):
 MERGE(*tuples)
 
 an_binaries = []
-an_zipfils = []
+an_zipfiles = []
 an_datas = []
 for i in range(scripts_count):
     an_binaries.extend(an[i].binaries)
@@ -235,17 +236,18 @@ tuples = []
 scripts_count = len(scripts)
 
 for i in range(scripts_count):
-    a = Analysis(home_paths + [scripts[i]], pathex=path_to_exe)
+    a = Analysis(home_paths + [scripts[i]], pathex=paths_to_exes)
     an.append(a)
     tuples.append((a, names_of_exes[i], dist_dir))
 
 MERGE(*tuples)
 
 an_binaries = []
-an_zipfils = []
+an_zipfiles = []
 an_datas = []
 for i in range(scripts_count):
-    an[i].data.extend(collectResources(src, dest))
+    for src, dest in resourcesPaths[i]:
+        an[i].datas.extend(collectResources(src, dest))
 
 tkPKG = []
 if useTk:
