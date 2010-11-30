@@ -3,6 +3,7 @@
 
 import os
 import sys
+import httplib
 import gzip
 
 def main():
