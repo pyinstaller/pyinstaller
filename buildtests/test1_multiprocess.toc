@@ -192,5 +192,5 @@
     'test1_multiprocess',
     '.*test1_multiprocess_B\.exe:.*ssl.*',
     '.*test1_multiprocess_B\.exe:.*bz2.*',
-    '.*test1_multiprocess_B\.exe:.*python.*',
+    '(?i).*test1_multiprocess_B\.exe:.*python.*',
 ]

@@ -192,5 +192,5 @@
     'test1_multiprocess_B',
     '.*bz2.*',
     '.*ssl.*',
-    '.*python.*',
+    '(?i).*python.*',
 ]
