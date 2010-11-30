@@ -93,7 +93,7 @@ if useTk:
         os.path.join(HOMEPATH, "support", "removeTK.py")]
 
 a = Analysis(
-    scripts,
+    home_paths + scripts,
     pathex=paths_to_exes)
 
 for src, dest in resourcesPaths[0]:
@@ -134,7 +134,7 @@ if useTk:
     home_paths = home_paths + [os.path.join(HOMEPATH, "support", "useTK.py")]
 
 a = Analysis(
-    scripts,
+    home_paths + scripts,
     pathex=paths_to_exes)
 
 for src, dest in resourcesPaths[0]:
