@@ -309,7 +309,7 @@ def createSpecFile(scripts, options):
         "home_paths": home_paths,
         "scripts"   : scripts,
         "distdir"   : os.path.join("dist", options["exenames"][0]),
-        "builddir"  : os.path.join("build", "pyi." + config["target_platform"]),
+        "builddir"  : os.path.join("build", "pyi." + config["target_platform"], options["exenames"][0]),
         "onedir"    : options["onedir"],
         "onefile"   : not options["onedir"],
         "merge"     : options["merge"],
