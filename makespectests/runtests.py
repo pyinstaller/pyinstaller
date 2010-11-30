@@ -41,7 +41,7 @@ class MakespecTest(unittest.TestCase):
         self.assertEqual(retcode, 0, "Unable to build test.spec" + errstring)
 
     def makespec(self, scriptfile=SCRIPT_FOR_TESTS, scriptfile2=SCRIPT_FOR_TESTS_2,
-                 dep_mode = "--onedir", merge="False"):
+                 dep_mode="--onedir", merge=False):
         if merge:
             retcode, errstring = execute("%s %s %s %s" % (MAKESPEC_EXE, "--merge", dep_mode, scriptfile))
         else:
