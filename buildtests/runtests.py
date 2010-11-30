@@ -42,7 +42,7 @@ DEPENDENCIES = {
  'test-pycrypto': ["Crypto"],
  'test-zipimport1': ["pkg_resources"],
  'test-zipimport2': ["pkg_resources", "setuptools"],
- 'test15': ["ctypes"], 
+ 'test15': ["ctypes"],
  'test-wx': ["wx"],
 }
 
@@ -117,7 +117,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
         tests = []
         for part in filters:
             tests += [t for t in alltests if part in t and t not in tests]
-    
+
     tests = [(len(x), x) for x in tests]
     tests.sort()
     path = os.environ["PATH"]
@@ -145,7 +145,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
                            ' ')
         print "BUILDING:", prog
         res = os.system(prog)
-        
+
         if res == 0 and run_executable:
             files = glob.glob(os.path.join('dist', test + '*'))
             for exe in files:
@@ -153,8 +153,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
                 res_tmp = test_exe(exe[5:])
                 res = res or res_tmp
 
-        logsfn = glob.glob(test + '.log')
-        logsfn += glob.glob(test + '_?.log')
+        logsfn = glob.glob(test + '.toc')
+        logsfn += glob.glob(test + '_?.toc')
         for logfn in logsfn:
             _msg("EXECUTING MATCHING", logfn)
             tmpname = os.path.splitext(logfn)[0]
@@ -237,13 +237,13 @@ if __name__ == '__main__':
     except ImportError:
         sys.path.append("..")
         from pyi_optparse import OptionParser
-        
+
     if sys.version_info < (2,5):
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
     else:
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]",
                               epilog="TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.")
-    
+
     parser.add_option('-c', '--clean', action='store_true',
                       help='Clean up generated files')
     parser.add_option('-i', '--interactive-tests', action='store_true',
