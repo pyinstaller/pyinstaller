@@ -87,7 +87,7 @@ scripts=%(scripts)s
 
 onedir_tpl = """
 if useTk:
-    scripts = scripts + [
+    home_paths = home_paths + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
         os.path.join(HOMEPATH, "support", "unpackTK.py"),
         os.path.join(HOMEPATH, "support", "removeTK.py")]
@@ -131,7 +131,7 @@ coll = COLLECT(
 
 onefile_tpl = """
 if useTk:
-    scripts = scripts + [os.path.join(HOMEPATH, "support", "useTK.py")]
+    home_paths = home_paths + [os.path.join(HOMEPATH, "support", "useTK.py")]
 
 a = Analysis(
     scripts,
@@ -165,7 +165,7 @@ exe = EXE(
 
 merge_onedir_tpl = """
 if useTk:
-    scripts = scripts + [
+    home_paths = home_paths + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
         os.path.join(HOMEPATH, "support", "unpackTK.py"),
         os.path.join(HOMEPATH, "support", "removeTK.py")]
@@ -225,7 +225,7 @@ coll = COLLECT(
 
 merge_onefile_tpl = """
 if useTk:
-    scripts = scripts + [
+    home_paths = home_paths + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
         os.path.join(HOMEPATH, "support", "unpackTK.py"),
         os.path.join(HOMEPATH, "support", "removeTK.py")]
