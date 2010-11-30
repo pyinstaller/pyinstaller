@@ -51,13 +51,12 @@ exeVersion = ""
 
 # Set here your resources paths as strings
 #  If you don't set paths, PyInstaller won't be able to find them
-resourcesPaths = [[],[]
+resourcesPaths = %(resources)s
 #   ("/where/to/find","/where/to/put")
 #   ("/path/to/images","../relative/path/to/images")
 #   ("/path/to/fonts","/my/home/project/fonts")
 #   ("/path/to/configfiles","./config/files")
 #   ("/these/are/only/examples","../../this/too")
-]
 
 useDebug = False
 useStrip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
