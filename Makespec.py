@@ -313,7 +313,8 @@ def createSpecFile(scripts, options):
         "onedir"    : options["onedir"],
         "onefile"   : not options["onedir"],
         "merge"     : options["merge"],
-        "marker"    : marker}
+        "marker"    : marker,
+        "resources" : [[None]]*len(scripts)}
 
     specfile_name = options["exenames"][0] + ".spec"
     specfile = open(specfile_name, 'w')
