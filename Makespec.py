@@ -97,7 +97,7 @@ a = Analysis(
     scripts,
     pathex=paths_to_exes)
 
-for src, dest in resourcesPaths:
+for src, dest in resourcesPaths[0]:
     a.datas.extend(collectResources(src, dest))
 
 pyz = PYZ(a.pure)
