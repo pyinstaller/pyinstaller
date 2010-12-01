@@ -273,10 +273,10 @@ def create_spec_file(scripts, options):
         "marker"    : marker,
         "voidlist"  : [[]]*len(options["exenames"])}
 
-    options["scripts"] = [[]]*len(options["exenames"])
+    options["scripts"] = []
     if options["merge"]:
-        for i in range(len(options["scripts"])):
-            options["scripts"][i].append(scripts[i])
+        for i in range(len(options["exenames"])):
+            options["scripts"].append([scripts[i]])
     else:
         options["scripts"][0] = scripts
 
