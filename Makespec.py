@@ -44,25 +44,23 @@ paths_to_exes = %(pathex)s
 build_dir = '%(builddir)s'
 dist_dir = '%(distdir)s'
 
-useConsole = True #on Windows set False if you want to use the subsystem executable
 exesIcon = %(voidlist)s
 exesManifest = %(voidlist)s
 exesVersion = %(voidlist)s
 
 # Set here your resources paths as strings
-#  If you don't set paths, PyInstaller won't be able to find them
 resourcesPaths = %(voidlist)s
-#   ("/where/to/find","/where/to/put")
-#   ("/path/to/images","../relative/path/to/images")
-#   ("/path/to/fonts","/my/home/project/fonts")
-#   ("/path/to/configfiles","./config/files")
-#   ("/these/are/only/examples","../../this/too")
+# eg.
+# resourcesPaths = [
+#   [("/where/to/find","/where/to/put")], #exe1
+#   [("/path/to/configfiles","./config/files"),("/these/are/only/examples","../../this/too")] #exe2
+#]
 
+useConsole = True #on Windows set False if you want to use the subsystem executable
 useDebug = True
 useStrip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
 useUPX = True # UPX Packer (useful for Windows)
 useTk = False
-
 
 ##############################
 ### Only for PyInstaller eyes
@@ -288,7 +286,6 @@ if __name__ == '__main__':
     else:
         opts["exenames"] = [name]
 
-
     if filetype == ".spec":
         if len(args) > 1:
             parser.error("Too many arguments. Give only one spec at time")
@@ -302,7 +299,6 @@ if __name__ == '__main__':
         createSpecFile(args, opts)
     else:
         parser.error("Give in input .py or .spec files only")
-
 
     if opts["onedir"]:
         dep_mode = "onedir"
