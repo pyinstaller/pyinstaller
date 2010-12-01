@@ -33,13 +33,15 @@ except:
 # This is the part of the spec present in both onefile and onedir template
 #TODO: resolving the dependence of len(resourcesPaths) with len(scripts)
 public_tpl = """# -*- mode: python -*-
-#(i) This file was automatically genereted by the Makespec.py
+#(ii) This file was automatically genereted by the Makespec.py
 
-###########################
-### Edit to your liking
+#####################################################
+### (PUBLIC SPACE) Edit to your liking
 
 names_of_exes = %(exenames)s
 paths_to_exes = %(pathex)s
+scripts=%(scripts)s
+home_paths=%(home_paths)s
 
 build_dir = '%(builddir)s'
 dist_dir = '%(distdir)s'
@@ -62,12 +64,15 @@ use_strip = True # Remove the Debug symbols from the ELF executable (only for UN
 use_UPX = True # UPX Packer (useful for Windows)
 use_tk = False
 
-##############################
-### Only for PyInstaller eyes
+%(marker)s"""
+
+onedir_tpl = """
+#####################################################
+### (PRIVATE SPACE) Only for PyInstaller eyes
 #
-#(!) Edit with *caution*
-#(i) For more information take a check out the documentation
-#    on www.pyinstaller.org
+#(!!) Edit with *caution*
+#(ii) For more information take a look to the documentation
+#     on www.pyinstaller.org
 
 def collect_resources(exploring_path, final_path):
     data = []
@@ -76,18 +81,8 @@ def collect_resources(exploring_path, final_path):
             os.path.join(root, filename), 'DATA') for filename in files]
     return data
 
-home_paths=%(home_paths)s
-scripts=%(scripts)s
-
-%(marker)s
-"""
-
-onedir_tpl = """
 if use_tk:
-    home_paths = home_paths + [
-        os.path.join(HOMEPATH, "support", "useTK.py"),
-        os.path.join(HOMEPATH, "support", "unpackTK.py"),
-        os.path.join(HOMEPATH, "support", "removeTK.py")]
+    home_paths = home_paths + [os.path.join(HOMEPATH, "support", "useTK.py")]
 
 an = []
 tuples = []
@@ -142,6 +137,20 @@ COLLECT(
 """
 
 onefile_tpl = """
+##############################
+### Only for PyInstaller eyes
+#
+#(!) Edit with *caution*
+#(i) For more information take a check out the documentation
+#    on www.pyinstaller.org
+
+def collect_resources(exploring_path, final_path):
+    data = []
+    for root, dirs, files in os.walk(exploring_path):
+        data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
+            os.path.join(root, filename), 'DATA') for filename in files]
+    return data
+
 if use_tk:
     home_paths = home_paths + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
