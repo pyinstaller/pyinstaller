@@ -44,23 +44,23 @@ paths_to_exes = %(pathex)s
 build_dir = '%(builddir)s'
 dist_dir = '%(distdir)s'
 
-exesIcon = %(voidlist)s
-exesManifest = %(voidlist)s
-exesVersion = %(voidlist)s
+exes_icon = %(voidlist)s
+exes_manifest = %(voidlist)s
+exes_version = %(voidlist)s
 
 # Set here your resources paths as strings
-resourcesPaths = %(voidlist)s
+resources_paths = %(voidlist)s
 # eg.
-# resourcesPaths = [
+# resources_paths = [
 #   [("/where/to/find","/where/to/put")], #exe1
 #   [("/path/to/configfiles","./config/files"),("/these/are/only/examples","../../this/too")] #exe2
 #]
 
-useConsole = True #on Windows set False if you want to use the subsystem executable
-useDebug = True
-useStrip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
-useUPX = True # UPX Packer (useful for Windows)
-useTk = False
+use_console = True #on Windows set False if you want to use the subsystem executable
+use_debug = True
+use_strip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
+use_UPX = True # UPX Packer (useful for Windows)
+use_tk = False
 
 ##############################
 ### Only for PyInstaller eyes
@@ -69,7 +69,7 @@ useTk = False
 #(i) For more information take a check out the documentation
 #    on www.pyinstaller.org
 
-def collectResources(exploring_path, final_path):
+def collect_resources(exploring_path, final_path):
     data = []
     for root, dirs, files in os.walk(exploring_path):
         data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
@@ -83,7 +83,7 @@ scripts=%(scripts)s
 """
 
 onedir_tpl = """
-if useTk:
+if use_tk:
     home_paths = home_paths + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
         os.path.join(HOMEPATH, "support", "unpackTK.py"),
@@ -107,8 +107,8 @@ for i in scripts_range:
     an_binaries.extend(an[i].binaries)
     an_zipfiles.extend(an[i].zipfiles)
     an_datas.extend(an[i].datas)
-    for src, dest in resourcesPaths[i]:
-        an_datas.extend(collectResources(src, dest))
+    for src, dest in resources_paths[i]:
+        an_datas.extend(collect_resources(src, dest))
     pyz = PYZ(an[i].pure)
     exes.append(EXE(
         pyz,
@@ -116,31 +116,31 @@ for i in scripts_range:
         an[i].dependencies,
         exclude_binaries=1,
         name=os.path.join(build_dir, names_of_exes[i]),
-        debug=useDebug,
-        strip=useStrip,
-        upx=useUPX,
-        console=useConsole,
-        icon=exesIcon[i],
-        manifest=exesManifest[i],
-        version=exesVersion[i]))
+        debug=use_debug,
+        strip=use_strip,
+        upx=use_UPX,
+        console=use_console,
+        icon=exes_icon[i],
+        manifest=exes_manifest[i],
+        version=exes_version[i]))
 
-tkTree = []
-if useTk:
-    tkTree.extend(TkTree())
+tk_tree = []
+if use_tk:
+    tk_tree.extend(TkTree())
 
 coll = COLLECT(
-    tkTree,
+    tk_tree,
     an_binaries,
     an_zipfiles,
     an_datas,
     *exes,
-    strip=useStrip,
-    upx=useUPX,
+    strip=use_strip,
+    upx=use_UPX,
     name=dist_dir)
 """
 
 onefile_tpl = """
-if useTk:
+if use_tk:
     home_paths = home_paths + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
         os.path.join(HOMEPATH, "support", "unpackTK.py"),
@@ -156,16 +156,16 @@ for i in scripts_range:
 
 MERGE(*tuples)
 
-tkPKG = []
-if useTk:
-    tkPKG.extend(TkPKG())
+tk_PKG = []
+if use_tk:
+    tk_PKG.extend(TkPKG())
 
 for i in scripts_range:
-    for src, dest in resourcesPaths[i]:
-        an[i].datas.extend(collectResources(src, dest))
+    for src, dest in resources_paths[i]:
+        an[i].datas.extend(collect_resources(src, dest))
     pyz = PYZ(an[i].pure)
     EXE(
-        tkPKG,
+        tk_PKG,
         pyz,
         an[i].scripts,
         an[i].binaries,
@@ -173,13 +173,13 @@ for i in scripts_range:
         an[i].datas,
         an[i].dependencies,
         name=os.path.join(dist_dir, names_of_exes[i]),
-        debug=useDebug,
-        strip=useStrip,
-        upx=useUPX,
-        console=useConsole,
-        icon=exesIcon[i],
-        manifest=exesManifest[i],
-        version=exesVersion[i])
+        debug=use_debug,
+        strip=use_strip,
+        upx=use_UPX,
+        console=use_console,
+        icon=exes_icon[i],
+        manifest=exes_manifest[i],
+        version=exes_version[i])
 """
 marker = "### DO_NOT_REMOVE_THIS_MARKER"
 HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
