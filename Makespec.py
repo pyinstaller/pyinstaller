@@ -32,7 +32,7 @@ except:
 
 # This is the part of the spec present in both onefile and onedir template
 #TODO: resolving the dependence of len(resourcesPaths) with len(scripts)
-common_part = """# -*- mode: python -*-
+public_tpl = """# -*- mode: python -*-
 #(i) This file was automatically genereted by the Makespec.py
 
 ###########################
@@ -233,9 +233,9 @@ def createSpecFile(scripts, options):
             options["exenames"][i] = options["exenames"][i] + ".exe"
 
     if options["onedir"]:
-        specfile.write((common_part + onedir_tpl) % options)
+        specfile.write((public_tpl + onedir_tpl) % options)
     else:
-        specfile.write((common_part + onefile_tpl) % options)
+        specfile.write((public_tpl + onefile_tpl) % options)
 
 def switchSpecDeployment(specfile_name, specfilenew_name, is_onedir):
     specfile_content = open(specfile_name, 'r').read()
