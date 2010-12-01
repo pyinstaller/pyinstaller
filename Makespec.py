@@ -38,33 +38,67 @@ public_tpl = """# -*- mode: python -*-
 #####################################################
 ### (PUBLIC SPACE) Edit to your liking
 
+# A list with the names of all the executables to build
 names_of_exes = %(exenames)s
-paths_to_exes = %(pathex)s
+
+# An optional list of paths to be searched before sys.path
+paths_to_src = %(pathex)s
+
+# A list of lists of scripts. Nth list are relative to the Nth executable in 'names_of_exes'
+# Every list into 'scripts' contains the scripts to be analyzed for a specific executable
 scripts=%(scripts)s
+
+# This list contains modules relative to the HOMEPATH.
+# HOMEPATH is the system Python path
 home_paths=%(home_paths)s
 
+# You can add more modules in here. Every list is positionally relative
+# to the executable in 'names_of_exes'.
+# Modules must be written as a tuple:
+#   ("nameOfModule", "nameOfModule.pyc", "PYMODULE")
+# where the constant string 'PYMODULE' specifies to PyInstaller that is a module
+more_pyz=%(voidlist)s
+
+# This is the working directory where PyInstaller will build the executables
 build_dir = '%(builddir)s'
+
+# This is the directory where PyInstaller will deploy you final package
 dist_dir = '%(distdir)s'
 
+# This is the the icon file to use for the executable (Windows only)
 exes_icon = %(voidlist)s
+
+# This is the manifest file to use for the executable (Window only)
 exes_manifest = %(voidlist)s
+
+#This is the version file to use for the executable (Windows only)
 exes_version = %(voidlist)s
 
-# Set here your resources paths as strings
+# Set here your resources paths
+# Nth list are relative to the Nth executable in 'names_of_exes'
+# A resource must be written as a tuple:
+#   ("/where/to/find","/where/to/put")
+# where the first element is the path to search for take data and
+# the second is the path where to put the data (it should be relative to the 'dist_dir')
 resources_paths = %(voidlist)s
-# eg.
-# resources_paths = [
-#   [("/where/to/find","/where/to/put")], #exe1
-#   [("/path/to/configfiles","./config/files"),("/these/are/only/examples","../../this/too")] #exe2
-#]
 
-use_console = True #on Windows set False if you want to use the subsystem executable
-use_debug = True
-use_strip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
-use_UPX = True # UPX Packer (useful for Windows)
+# Set False in Windows if you want to use the subsystem executable
+use_console = True
+
+# Set True if you want to enable the verbose mode running the executable
+use_debug = False
+
+# Set True if you want to remove the Debug symbols from the ELF executable (UNIX only)
+use_strip = True
+
+# Set True if you want UPX Packer (useful for Windows). If you are uncertain, leave True
+use_UPX = True
+
+# Set True if you want to include Tcl/Tk in you final package
 use_tk = False
 
-%(marker)s"""
+%(marker)s
+"""
 
 onedir_tpl = """
 #####################################################
@@ -87,13 +121,13 @@ if use_tk:
 an = []
 tuples = []
 
-if len(names_of_exes) > 1: #if we are in merge mode
-    for i in range(len(scripts)):
-        an.append(Analysis(home_paths + [scripts[i]], pathex=paths_to_exes))
-        tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
-    MERGE(*tuples)
-else:
-    an.append(Analysis(home_paths + scripts, pathex=paths_to_exes))
+for i in range(len(names_of_exes)):
+    an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
+    tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
+    for src, dest in resources_paths[i]:
+        an[i].datas.extend(collect_resources(src, dest))
+
+MERGE(*tuples)
 
 an_binaries = []
 an_zipfiles = []
@@ -104,9 +138,7 @@ for i in range(len(an)):
     an_binaries.extend(an[i].binaries)
     an_zipfiles.extend(an[i].zipfiles)
     an_datas.extend(an[i].datas)
-    for src, dest in resources_paths[i]:
-        an_datas.extend(collect_resources(src, dest))
-    pyz = PYZ(an[i].pure)
+    pyz = PYZ(an[i].pure + more_pyz[i])
     exes.append(EXE(
         pyz,
         an[i].scripts,
@@ -160,22 +192,20 @@ if use_tk:
 an = []
 tuples = []
 
-if len(names_of_exes) > 1: #if we are in merge mode
-    for i in range(len(scripts)):
-        an.append(Analysis(home_paths + [scripts[i]], pathex=paths_to_exes))
-        tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
-    MERGE(*tuples)
-else:
-    an.append(Analysis(home_paths + scripts, pathex=paths_to_exes))
+for i in range(len(names_of_exes)):
+    an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
+    tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
+    for src, dest in resources_paths[i]:
+        an[i].datas.extend(collect_resources(src, dest))
+
+MERGE(*tuples)
 
 tk_PKG = []
 if use_tk:
     tk_PKG.extend(TkPKG())
 
 for i in range(len(an)):
-    for src, dest in resources_paths[i]:
-        an[i].datas.extend(collect_resources(src, dest))
-    pyz = PYZ(an[i].pure)
+    pyz = PYZ(an[i].pure + more_pyz[i])
     EXE(
         tk_PKG,
         pyz,
@@ -233,14 +263,14 @@ def create_spec_file(scripts, options):
         "onefile"   : not options["onedir"],
         "merge"     : options["merge"],
         "marker"    : marker,
-        "voidlist"  : [[]]*len(scripts)}
+        "voidlist"  : [[]]*len(options["exenames"])}
 
-    options["scripts"] = options["voidlist"]
+    options["scripts"] = [[]]*len(options["exenames"])
     if options["merge"]:
         options["scripts"][0] = scripts
     else:
         for i in range(len(options["scripts"])):
-            options["scripts"][i] = scripts[i]
+            options["scripts"][i].append(scripts[i])
 
     specfile_name = options["exenames"][0] + ".spec"
     specfile = open(specfile_name, 'w')
@@ -302,7 +332,7 @@ if __name__ == '__main__':
         for script in args:
             opts["exenames"].append(os.path.splitext(os.path.basename(script))[0])
     else:
-        opts["exenames"] = [name]
+        opts["exenames"].append(name)
 
     if filetype == ".spec":
         if len(args) > 1:
