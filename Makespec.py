@@ -227,7 +227,6 @@ def create_spec_file(scripts, options):
         "exenames"  : options["exenames"],
         "pathex"    : pathex,
         "home_paths": home_paths,
-        "scripts"   : scripts,
         "distdir"   : os.path.join("dist", options["exenames"][0]),
         "builddir"  : os.path.join("build", "pyi." + config["target_platform"], options["exenames"][0]),
         "onedir"    : options["onedir"],
@@ -235,6 +234,13 @@ def create_spec_file(scripts, options):
         "merge"     : options["merge"],
         "marker"    : marker,
         "voidlist"  : [[]]*len(scripts)}
+
+    options["scripts"] = options["voidlist"]
+    if options["merge"]:
+        options["scripts"][0] = scripts
+    else:
+        for i in range(len(options["scripts"])):
+            options["scripts"][i] = scripts[i]
 
     specfile_name = options["exenames"][0] + ".spec"
     specfile = open(specfile_name, 'w')
