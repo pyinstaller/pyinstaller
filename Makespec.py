@@ -44,10 +44,10 @@ paths_to_exes = %(pathex)s
 build_dir = '%(builddir)s'
 dist_dir = '%(distdir)s'
 
-exeIcon = ''
 useConsole = True #on Windows set False if you want to use the subsystem executable
-exeManifest = ''
-exeVersion = ''
+exesIcon = %(icons)s
+exesManifest = %(manifests)s
+exesVersion = %(versions)s
 
 # Set here your resources paths as strings
 #  If you don't set paths, PyInstaller won't be able to find them
@@ -110,9 +110,9 @@ exe = EXE(
     strip=useStrip,
     upx=useUPX,
     console=useConsole,
-    icon=exeIcon,
-    manifest=exeManifest,
-    version=exeVersion)
+    icon=exesIcon[0],
+    manifest=exesManifests[0],
+    version=exesVersion[0])
 
 tkTree = []
 if useTk:
@@ -158,9 +158,9 @@ exe = EXE(
     strip=useStrip,
     upx=useUPX,
     console=useConsole,
-    icon=exeIcon,
-    manifest=exeManifest,
-    version=exeVersion)
+    icon=exesIcon[0],
+    manifest=exesManifests[0],
+    version=exesVersion[0])
 """
 
 merge_onedir_tpl = """
@@ -201,9 +201,9 @@ for i in scripts_range:
         strip=useStrip,
         upx=useUPX,
         console=useConsole,
-        icon=exeIcon,
-        manifest=exeManifest,
-        version=exeVersion))
+        icon=exesIcon[i],
+        manifest=exesManifests[i],
+        version=exesVersion[i]))
 
 tkTree = []
 if useTk:
@@ -258,9 +258,9 @@ for i in scripts_range:
         strip=useStrip,
         upx=useUPX,
         console=useConsole,
-        icon=exeIcon,
-        manifest=exeManifest,
-        version=exeVersion)
+        icon=exesIcon[i],
+        manifest=exesManifests[i],
+        version=exesVersion[i])
 """
 marker = "### DO_NOT_REMOVE_THIS_MARKER"
 HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
