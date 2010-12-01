@@ -108,6 +108,8 @@ onedir_tpl = """
 #(ii) For more information take a look to the documentation
 #     on www.pyinstaller.org
 
+merge_mod = len(names_of_exes) > 1
+
 def collect_resources(exploring_path, final_path):
     data = []
     for root, dirs, files in os.walk(exploring_path):
@@ -123,11 +125,13 @@ tuples = []
 
 for i in range(len(names_of_exes)):
     an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
-    tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
+    if merge_mod:
+        tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
     for src, dest in resources_paths[i]:
         an[i].datas.extend(collect_resources(src, dest))
 
-MERGE(*tuples)
+if merge_mod:
+    MERGE(*tuples)
 
 an_binaries = []
 an_zipfiles = []
@@ -176,6 +180,8 @@ onefile_tpl = """
 #(i) For more information take a check out the documentation
 #    on www.pyinstaller.org
 
+merge_mod = len(names_of_exes) > 1
+
 def collect_resources(exploring_path, final_path):
     data = []
     for root, dirs, files in os.walk(exploring_path):
@@ -194,11 +200,13 @@ tuples = []
 
 for i in range(len(names_of_exes)):
     an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
-    tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
+    if merge_mod:
+        tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
     for src, dest in resources_paths[i]:
         an[i].datas.extend(collect_resources(src, dest))
 
-MERGE(*tuples)
+if merge_mod:
+    MERGE(*tuples)
 
 tk_PKG = []
 if use_tk:
