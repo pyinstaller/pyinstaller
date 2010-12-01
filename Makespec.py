@@ -44,10 +44,10 @@ paths_to_exes = %(pathex)s
 build_dir = '%(builddir)s'
 dist_dir = '%(distdir)s'
 
-exeIcon = ""
+exeIcon = ''
 useConsole = True #on Windows set False if you want to use the subsystem executable
-exeManifest = ""
-exeVersion = ""
+exeManifest = ''
+exeVersion = ''
 
 # Set here your resources paths as strings
 #  If you don't set paths, PyInstaller won't be able to find them
@@ -58,7 +58,7 @@ resourcesPaths = %(resources)s
 #   ("/path/to/configfiles","./config/files")
 #   ("/these/are/only/examples","../../this/too")
 
-useDebug = False
+useDebug = True
 useStrip = True # Remove the Debug symbols from the ELF executable (only for UNIX)
 useUPX = True # UPX Packer (useful for Windows)
 useTk = False
@@ -153,7 +153,7 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
-    name=dist_dir,
+    name=os.path.join(dist_dir, names_of_exes[0]),
     debug=useDebug,
     strip=useStrip,
     upx=useUPX,
@@ -172,28 +172,25 @@ if useTk:
 
 an = []
 tuples = []
-scripts_count = len(scripts)
+scripts_range = range(len(scripts))
 
-for i in range(scripts_count):
-    a = Analysis(home_paths + [scripts[i]], pathex=paths_to_exes)
-    an.append(a)
-    tuples.append((a, os.path.splitext(names_of_exes[i])[0], os.path.join(dist_dir, names_of_exes[i])))
+for i in scripts_range:
+    an.append(Analysis(home_paths + [scripts[i]], pathex=paths_to_exes))
+    tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
 
 MERGE(*tuples)
 
 an_binaries = []
 an_zipfiles = []
 an_datas = []
-for i in range(scripts_count):
+exes = []
+for i in scripts_range:
     an_binaries.extend(an[i].binaries)
     an_zipfiles.extend(an[i].zipfiles)
     an_datas.extend(an[i].datas)
     for src, dest in resourcesPaths[i]:
         an_datas.extend(collectResources(src, dest))
-
-exes = []
-for i in range(scripts_count):
-    pyz = (an[i].pure)
+    pyz = PYZ(an[i].pure)
     exes.append(EXE(
         pyz,
         an[i].scripts,
@@ -232,28 +229,22 @@ if useTk:
 
 an = []
 tuples = []
-scripts_count = len(scripts)
+scripts_range = range(len(scripts))
 
-for i in range(scripts_count):
-    a = Analysis(home_paths + [scripts[i]], pathex=paths_to_exes)
-    an.append(a)
-    tuples.append((a, os.path.splitext(names_of_exes[i])[0], os.path.join(dist_dir, names_of_exes[i])))
+for i in scripts_range:
+    an.append(Analysis(home_paths + [scripts[i]], pathex=paths_to_exes))
+    tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
 
 MERGE(*tuples)
-
-an_binaries = []
-an_zipfiles = []
-an_datas = []
-for i in range(scripts_count):
-    for src, dest in resourcesPaths[i]:
-        an[i].datas.extend(collectResources(src, dest))
 
 tkPKG = []
 if useTk:
     tkPKG.extend(TkPKG())
 
-for i in range(len(scripts)):
-    pyz = (an[i].pure)
+for i in scripts_range:
+    for src, dest in resourcesPaths[i]:
+        an[i].datas.extend(collectResources(src, dest))
+    pyz = PYZ(an[i].pure)
     EXE(
         tkPKG,
         pyz,
@@ -262,8 +253,7 @@ for i in range(len(scripts)):
         an[i].zipfiles,
         an[i].datas,
         an[i].dependencies,
-        exclude_binaries=1,
-        name=os.path.join(build_dir, names_of_exes[i]),
+        name=os.path.join(dist_dir, names_of_exes[i]),
         debug=useDebug,
         strip=useStrip,
         upx=useUPX,
@@ -381,6 +371,7 @@ if __name__ == '__main__':
             opts["exenames"].append(os.path.splitext(os.path.basename(script))[0])
     else:
         opts["exenames"] = [name]
+
 
     if filetype == ".spec":
         if len(args) > 1:
