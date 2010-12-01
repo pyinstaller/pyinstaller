@@ -111,7 +111,7 @@ exe = EXE(
     upx=useUPX,
     console=useConsole,
     icon=exesIcon[0],
-    manifest=exesManifests[0],
+    manifest=exesManifest[0],
     version=exesVersion[0])
 
 tkTree = []
@@ -159,7 +159,7 @@ exe = EXE(
     upx=useUPX,
     console=useConsole,
     icon=exesIcon[0],
-    manifest=exesManifests[0],
+    manifest=exesManifest[0],
     version=exesVersion[0])
 """
 
@@ -202,7 +202,7 @@ for i in scripts_range:
         upx=useUPX,
         console=useConsole,
         icon=exesIcon[i],
-        manifest=exesManifests[i],
+        manifest=exesManifest[i],
         version=exesVersion[i]))
 
 tkTree = []
@@ -259,7 +259,7 @@ for i in scripts_range:
         upx=useUPX,
         console=useConsole,
         icon=exesIcon[i],
-        manifest=exesManifests[i],
+        manifest=exesManifest[i],
         version=exesVersion[i])
 """
 marker = "### DO_NOT_REMOVE_THIS_MARKER"
