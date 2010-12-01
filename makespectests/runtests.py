@@ -52,6 +52,10 @@ class MakespecTest(unittest.TestCase):
         else:
             self.assertEqual(retcode, 0, "Unable to makespec test.py" + errstring)
 
+    def runExe(self, exename):
+        retcode, errstring = execute("./%s" % exename)
+        self.assertEqual(retcode, 0, ("Unable to run %s" % exename) + errstring)
+
     def editspec(self):
         specfile_content = open("test.spec", 'r').read()
         specfile_content = specfile_content.replace("name_of_exe = 'test'", "name_of_exe = 'edited'")
@@ -65,20 +69,24 @@ class MakespecTest(unittest.TestCase):
         self.makespec()
         self.build()
 
-    def test_build_onefile(self):
-        """Building onefile spec deployment"""
-        self.makespec(dep_mode="--onefile")
-        self.build()
-
     def test_build_onedir_merge(self):
         """Building merge onedir spec deployment"""
         self.makespec(merge=True)
+        self.build()
+        self.runExe("dist/test/test")
+        self.runExe("dist/test/test2")
+
+    def test_build_onefile(self):
+        """Building onefile spec deployment"""
+        self.makespec(dep_mode="--onefile")
         self.build()
 
     def test_build_onefile_merge(self):
         """Building merge onefile spec deployment"""
         self.makespec(dep_mode="--onefile", merge=True)
         self.build()
+        self.runExe("dist/test/test")
+        self.runExe("dist/test/test2")
 
     def test_edited_file(self):
         """Building an edited spec"""
