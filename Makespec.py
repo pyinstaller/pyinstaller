@@ -45,13 +45,13 @@ build_dir = '%(builddir)s'
 dist_dir = '%(distdir)s'
 
 useConsole = True #on Windows set False if you want to use the subsystem executable
-exesIcon = %(icons)s
-exesManifest = %(manifests)s
-exesVersion = %(versions)s
+exesIcon = %(voidlist)s
+exesManifest = %(voidlist)s
+exesVersion = %(voidlist)s
 
 # Set here your resources paths as strings
 #  If you don't set paths, PyInstaller won't be able to find them
-resourcesPaths = %(resources)s
+resourcesPaths = %(voidlist)s
 #   ("/where/to/find","/where/to/put")
 #   ("/path/to/images","../relative/path/to/images")
 #   ("/path/to/fonts","/my/home/project/fonts")
@@ -224,10 +224,7 @@ def createSpecFile(scripts, options):
         "onefile"   : not options["onedir"],
         "merge"     : options["merge"],
         "marker"    : marker,
-        "icons"     : [['']]*len(scripts),
-        "manifests" : [['']]*len(scripts),
-        "versions"  : [['']]*len(scripts),
-        "resources" : [[]]*len(scripts)}
+        "voidlist"  : [[]]*len(scripts)}
 
     specfile_name = options["exenames"][0] + ".spec"
     specfile = open(specfile_name, 'w')
