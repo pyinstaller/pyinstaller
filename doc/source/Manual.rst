@@ -366,7 +366,10 @@ You can establish links between packages using function `MERGE`_ in spec files.
 You could wish, for example, deploy your application with an updater utility and a configurator,
 both sharing libraries with main application. In such a case you could use `MERGE`_ function
 in order to create a main, big, package, with all libraries and dependencies inside, and two small
-packages next to the first one. As a result, you can't change directory structure after merge.
+packages next to the first one.
+All packages linked this way must be placed in the same directory and you can't
+change directory structure after merge.
+You can look at multipackage examples in 'buildtests' dir.
 
 
 
