@@ -16,7 +16,7 @@ if os.name == "posix":
 else:
     NULL_DEV = "nul"
 CLEANUP = ["build/", "dist/", "*.log", "warn*.txt", "*.py[co]", "*/*.py[co]",
-           "*/*/*.py[co]", "*.spec"]
+           "*/*/*.py[co]", "*.spec", "*~"]
 def clean(to_clean=CLEANUP):
     """Cleaning tests resouces"""
     for clean in to_clean:
