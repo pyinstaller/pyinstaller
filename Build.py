@@ -1382,9 +1382,9 @@ def build(spec):
     specnm = os.path.splitext(specnm)[0]
     if SPECPATH == '':
         SPECPATH = os.getcwd()
-    WARNFILE = os.path.join(SPECPATH, 'warn%s.txt' % specnm)
     BUILDPATH = os.path.join(SPECPATH, 'build',
-                             "pyi." + config['target_platform'], specnm)
+                             "pyi." + config['target_platform'], specnm)  
+    WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
     # Check and adjustment for build path
     if opts.buildpath != parser.get_option('--buildpath').default:
         bpath = opts.buildpath
