@@ -1,1 +1,1 @@
-import string, PyQt4
+import sys, string, random

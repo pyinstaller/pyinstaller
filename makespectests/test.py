@@ -1,2 +1,2 @@
-import os, sys, string, PyQt4
+import os, sys, string
 print "This is the file used for tests"
