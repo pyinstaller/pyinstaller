@@ -84,86 +84,7 @@ scripts=%(scripts)s
 %(marker)s
 """
 
-
 onedir_tpl = """
-if useTk:
-    home_paths = home_paths + [
-        os.path.join(HOMEPATH, "support", "useTK.py"),
-        os.path.join(HOMEPATH, "support", "unpackTK.py"),
-        os.path.join(HOMEPATH, "support", "removeTK.py")]
-
-a = Analysis(
-    home_paths + scripts,
-    pathex=paths_to_exes)
-
-for src, dest in resourcesPaths[0]:
-    a.datas.extend(collectResources(src, dest))
-
-pyz = PYZ(a.pure)
-
-exe = EXE(
-    pyz,
-    a.scripts,
-    exclude_binaries=1,
-    name=os.path.join(build_dir, names_of_exes[0]),
-    debug=useDebug,
-    strip=useStrip,
-    upx=useUPX,
-    console=useConsole,
-    icon=exesIcon[0],
-    manifest=exesManifest[0],
-    version=exesVersion[0])
-
-tkTree = []
-if useTk:
-    tkTree.extend(TkTree())
-
-coll = COLLECT(
-    tkTree,
-    exe,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    strip=useStrip,
-    upx=useUPX,
-    name=dist_dir)
-"""
-
-onefile_tpl = """
-if useTk:
-    home_paths = home_paths + [os.path.join(HOMEPATH, "support", "useTK.py")]
-
-a = Analysis(
-    home_paths + scripts,
-    pathex=paths_to_exes)
-
-for src, dest in resourcesPaths[0]:
-    a.datas.extend(collectResources(src, dest))
-
-pyz = PYZ(a.pure)
-
-tkPKG = []
-if useTk:
-    tkPKG.extend(TkPKG())
-
-exe = EXE(
-    tkPKG,
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    name=os.path.join(dist_dir, names_of_exes[0]),
-    debug=useDebug,
-    strip=useStrip,
-    upx=useUPX,
-    console=useConsole,
-    icon=exesIcon[0],
-    manifest=exesManifest[0],
-    version=exesVersion[0])
-"""
-
-merge_onedir_tpl = """
 if useTk:
     home_paths = home_paths + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
@@ -220,7 +141,7 @@ coll = COLLECT(
     name=dist_dir)
 """
 
-merge_onefile_tpl = """
+onefile_tpl = """
 if useTk:
     home_paths = home_paths + [
         os.path.join(HOMEPATH, "support", "useTK.py"),
@@ -316,12 +237,7 @@ def createSpecFile(scripts, options):
         for i in range(len(options["exenames"])):
             options["exenames"][i] = options["exenames"][i] + ".exe"
 
-    if options["merge"]:
-        if options["onedir"]:
-            specfile.write((common_part + merge_onedir_tpl) % options)
-        else:
-            specfile.write((common_part + merge_onefile_tpl) % options)
-    elif options["onedir"]:
+    if options["onedir"]:
         specfile.write((common_part + onedir_tpl) % options)
     else:
         specfile.write((common_part + onefile_tpl) % options)
