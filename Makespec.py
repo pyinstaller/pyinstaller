@@ -91,19 +91,21 @@ if use_tk:
 
 an = []
 tuples = []
-scripts_range = range(len(scripts))
 
-for i in scripts_range:
-    an.append(Analysis(home_paths + [scripts[i]], pathex=paths_to_exes))
-    tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
-
-MERGE(*tuples)
+if len(names_of_exes) > 1: #if we are in merge mode
+    for i in range(len(scripts)):
+        an.append(Analysis(home_paths + [scripts[i]], pathex=paths_to_exes))
+        tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
+    MERGE(*tuples)
+else:
+    an.append(Analysis(home_paths + scripts, pathex=paths_to_exes))
 
 an_binaries = []
 an_zipfiles = []
 an_datas = []
 exes = []
-for i in scripts_range:
+
+for i in range(len(an)):
     an_binaries.extend(an[i].binaries)
     an_zipfiles.extend(an[i].zipfiles)
     an_datas.extend(an[i].datas)
@@ -128,7 +130,7 @@ tk_tree = []
 if use_tk:
     tk_tree.extend(TkTree())
 
-coll = COLLECT(
+COLLECT(
     tk_tree,
     an_binaries,
     an_zipfiles,
@@ -148,19 +150,20 @@ if use_tk:
 
 an = []
 tuples = []
-scripts_range = range(len(scripts))
 
-for i in scripts_range:
-    an.append(Analysis(home_paths + [scripts[i]], pathex=paths_to_exes))
-    tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
-
-MERGE(*tuples)
+if len(names_of_exes) > 1: #if we are in merge mode
+    for i in range(len(scripts)):
+        an.append(Analysis(home_paths + [scripts[i]], pathex=paths_to_exes))
+        tuples.append((an[i], os.path.splitext(names_of_exes[i])[0], names_of_exes[i]))
+    MERGE(*tuples)
+else:
+    an.append(Analysis(home_paths + scripts, pathex=paths_to_exes))
 
 tk_PKG = []
 if use_tk:
     tk_PKG.extend(TkPKG())
 
-for i in scripts_range:
+for i in range(len(an)):
     for src, dest in resources_paths[i]:
         an[i].datas.extend(collect_resources(src, dest))
     pyz = PYZ(an[i].pure)
