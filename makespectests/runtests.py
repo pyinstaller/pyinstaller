@@ -43,7 +43,7 @@ class MakespecTest(unittest.TestCase):
     def makespec(self, scriptfile=SCRIPT_FOR_TESTS, scriptfile2=SCRIPT_FOR_TESTS_2,
                  dep_mode="--onedir", merge=False):
         if merge:
-            retcode, errstring = execute("%s %s %s %s" % (MAKESPEC_EXE, "--merge", dep_mode, scriptfile))
+            retcode, errstring = execute("%s %s %s %s %s" % (MAKESPEC_EXE, "--merge", dep_mode, scriptfile, scriptfile2))
         else:
             retcode, errstring = execute("%s %s %s" % (MAKESPEC_EXE, dep_mode, scriptfile))
 
