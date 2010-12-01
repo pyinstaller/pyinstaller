@@ -184,14 +184,14 @@ for i in scripts_range:
 marker = "### DO_NOT_REMOVE_THIS_MARKER"
 HOME = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-def stringfyHomePaths(hp_list):
+def stringfy_home_paths(hp_list):
     string = '['
     for path in hp_list:
         string = string + "os.path.join(HOMEPATH, '" + path + "'), "
     string = string + ']'
     return string
 
-def createSpecFile(scripts, options):
+def create_spec_file(scripts, options):
     configfile_name = os.path.join(HOME, "config.dat")
     workingdir = os.getcwd()
 
@@ -207,7 +207,7 @@ def createSpecFile(scripts, options):
         home_paths.insert(0, os.path.join("support", "useUnicode.py"))
     home_paths.insert(0, os.path.join("support", "_mountzlib.py"))
 
-    home_paths = stringfyHomePaths(home_paths)
+    home_paths = stringfy_home_paths(home_paths)
 
     pathex = [workingdir]
 
@@ -237,7 +237,7 @@ def createSpecFile(scripts, options):
     else:
         specfile.write((public_tpl + onefile_tpl) % options)
 
-def switchSpecDeployment(specfile_name, specfilenew_name, is_onedir):
+def switch_spec_deployment(specfile_name, specfilenew_name, is_onedir):
     specfile_content = open(specfile_name, 'r').read()
 
     marker_pos = specfile_content.rfind(marker)
@@ -289,14 +289,14 @@ if __name__ == '__main__':
     if filetype == ".spec":
         if len(args) > 1:
             parser.error("Too many arguments. Give only one spec at time")
-        switchSpecDeployment(name + filetype, opts["exenames"][0] + filetype, opts["onedir"])
+        switch_spec_deployment(name + filetype, opts["exenames"][0] + filetype, opts["onedir"])
     elif filetype == ".py":
         for filename in args:
             if not filename.endswith(filetype):
                 parser.error("Arguments must be all python scripts (*.py)")
             if not open(filename):
                 parser.error("File %s not found" % filename)
-        createSpecFile(args, opts)
+        create_spec_file(args, opts)
     else:
         parser.error("Give in input .py or .spec files only")
 
