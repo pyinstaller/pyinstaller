@@ -278,7 +278,7 @@ def create_spec_file(scripts, options):
         for i in range(len(options["exenames"])):
             options["scripts"].append([scripts[i]])
     else:
-        options["scripts"][0] = scripts
+        options["scripts"].append(scripts)
 
     specfile_name = options["exenames"][0] + ".spec"
     specfile = open(specfile_name, 'w')
