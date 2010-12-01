@@ -2,8 +2,8 @@
 
 print "TESTING MULTIPROCESS FEATURE: file A (onedir pack) depends on file B (onefile pack)."
 
-__testname__ = 'test3_multiprocess'
-__testdep__ = 'test3_multiprocess_B'
+__testname__ = 'test3_multipackage'
+__testdep__ = 'test3_multipackage_B'
 
 a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(HOMEPATH,'support', 'useUnicode.py'), __testname__ + '.py'],
              pathex=['.'])

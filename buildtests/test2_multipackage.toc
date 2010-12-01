@@ -189,8 +189,8 @@
     'archive',
     '_mountzlib',
     'useUnicode',
-    'test1_multiprocess_B',
-    '.*bz2.*',
-    '.*ssl.*',
-    '(?i).*python.*',
+    'test2_multipackage',
+    '.*test2_multipackage_B.test2_multipackage_B\.exe:.*bz2.*',
+    '.*test2_multipackage_B.test2_multipackage_B\.exe:.*ssl.*',
+    '(?i).*test2_multipackage_B.test2_multipackage_B\.exe:.*python.*',
 ]
