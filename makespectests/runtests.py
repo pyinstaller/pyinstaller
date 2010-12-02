@@ -28,7 +28,7 @@ def clean(to_clean=CLEANUP):
                 os.remove(path)
 
 def execute(cmd):
-    retcode = os.system(cmd + " > " + NULL_DEV + " 2> " + LOG_FILE)
+    retcode = os.system('%s > %s 2> "%s"' % (cmd, NULL_DEV, LOG_FILE))
     errstring = "\nMore details:\n" + open(LOG_FILE, 'r').read()
     return retcode, errstring
 
@@ -37,15 +37,15 @@ class MakespecTest(unittest.TestCase):
         clean()
 
     def build(self, specfile="test.spec"):
-        retcode, errstring = execute("%s -y %s" % (BUILD_EXE, specfile))
+        retcode, errstring = execute('"%s" -y "%s"' % (BUILD_EXE, specfile))
         self.assertEqual(retcode, 0, "Unable to build test.spec" + errstring)
 
     def makespec(self, scriptfile=SCRIPT_FOR_TESTS, scriptfile2=SCRIPT_FOR_TESTS_2,
                  dep_mode="--onedir", merge=False):
         if merge:
-            retcode, errstring = execute("%s %s %s %s %s" % (MAKESPEC_EXE, "--merge", dep_mode, scriptfile, scriptfile2))
+            retcode, errstring = execute('"%s" --merge %s "%s" "%s"' % (MAKESPEC_EXE, dep_mode, scriptfile, scriptfile2))
         else:
-            retcode, errstring = execute("%s %s %s" % (MAKESPEC_EXE, dep_mode, scriptfile))
+            retcode, errstring = execute('"%s" %s "%s"' % (MAKESPEC_EXE, dep_mode, scriptfile))
 
         if scriptfile.endswith(".spec"):
             self.assertEqual(retcode, 0, "Unable to convert test.spec" + errstring)
