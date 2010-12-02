@@ -31,7 +31,6 @@ except:
     False = not True
 
 # This is the part of the spec present in both onefile and onedir template
-#TODO: resolving the dependence of len(resourcesPaths) with len(scripts)
 public_tpl = """# -*- mode: python -*-
 #(ii) This file was automatically genereted by the Makespec.py
 
