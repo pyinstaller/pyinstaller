@@ -4,6 +4,12 @@ import os, sys
 import shutil
 import unittest
 
+try:
+    True
+except:
+    True = (1 is 1)
+    False = not True
+
 MST_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 HOME = os.path.normpath(os.path.join(MST_DIR, ".."))
 MAKESPEC_EXE = os.path.join(HOME, "Makespec.py")
