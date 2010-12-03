@@ -30,7 +30,6 @@ except:
     True = (1 == 1)
     False = not True
 
-# This is the part of the spec present in both onefile and onedir template
 public_tpl = """# -*- mode: python -*-
 #(ii) This file was automatically genereted by the Makespec.py
 
