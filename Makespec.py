@@ -112,7 +112,8 @@ def collect_resources(exploring_path, final_path):
     data = []
     for root, dirs, files in os.walk(exploring_path):
         data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
-            os.path.join(root, filename), 'DATA') for filename in files]
+            os.path.join(root, filename), 'DATA') for filename in files
+            if not (filename.endswith(".pyc") or filename.endswith(".py"))]
     return data
 
 if use_tk:
@@ -184,7 +185,8 @@ def collect_resources(exploring_path, final_path):
     data = []
     for root, dirs, files in os.walk(exploring_path):
         data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
-            os.path.join(root, filename), 'DATA') for filename in files]
+            os.path.join(root, filename), 'DATA') for filename in files
+            if not (filename.endswith(".pyc") or filename.endswith(".py"))]
     return data
 
 if use_tk:
