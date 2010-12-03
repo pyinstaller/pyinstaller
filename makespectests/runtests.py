@@ -5,9 +5,9 @@ import shutil
 import unittest
 
 try:
-    True
+    True, False
 except:
-    True = (1 is 1)
+    True = (1 == 1)
     False = not True
 
 MST_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))

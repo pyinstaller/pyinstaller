@@ -25,9 +25,9 @@ import sys
 
 # For Python 1.5 compatibility
 try:
-    True
+    True, False
 except:
-    True = (1 is 1)
+    True = (1 == 1)
     False = not True
 
 # This is the part of the spec present in both onefile and onedir template
