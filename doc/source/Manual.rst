@@ -1317,13 +1317,9 @@ you can simply use any Visual Studio version you have around.
 You can download and install or unpack MinGW distribution from one of the
 following locations:
 
-* `MinGW`_ - stable and
-  mature, uses gcc 3.4 as its base
+* `MinGW`_ - stable and mature, uses gcc 3.4 as its base
 
-* `MinGW-w64`_ - more recent, uses gcc
-  4.4 and up. Please notice that Windows 64-bit is still not supported by
-  PyInstaller, so building a 64-bit bootloader can be useful only if you
-  plan to contribute full Windows 64-bit support.
+* `MinGW-w64`_ - more recent, uses gcc 4.4 and up.
 
 * `TDM-GCC`_ - MinGW and MinGW-w64 installers
 
