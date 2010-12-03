@@ -348,7 +348,7 @@ if __name__ == '__main__':
         for filename in args:
             if not filename.endswith(filetype):
                 parser.error("Arguments must be all python scripts (*.py)")
-            if not open(filename):
+            if not os.path.exists(filename):
                 parser.error("File %s not found" % filename)
         create_spec_file(args, opts)
     else:
