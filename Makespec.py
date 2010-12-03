@@ -78,6 +78,7 @@ exes_version = %(voidlist)s
 #   ("/where/to/find","/where/to/put")
 # where the first element is the path to search for take data and
 # the second is the path where to put the data (it should be relative to the 'dist_dir')
+# Note that the root directory of the first script is already included!
 resources_paths = %(voidlist)s
 
 # Set False in Windows if you want to use the subsystem executable
@@ -124,6 +125,7 @@ if use_tk:
 
 an = []
 tuples = []
+resources_paths[0].append((paths_to_src[0], paths_to_src[0]))
 
 for i in range(len(names_of_exes)):
     an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
@@ -203,6 +205,7 @@ if use_tk:
 
 an = []
 tuples = []
+resources_paths[0].append((paths_to_src[0], paths_to_src[0]))
 
 for i in range(len(names_of_exes)):
     an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
