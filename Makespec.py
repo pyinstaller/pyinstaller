@@ -108,9 +108,12 @@ onedir_tpl = """
 
 merge_mod = len(names_of_exes) > 1
 
+excluded_dirs = [".svn", "CVS"]
 def collect_resources(exploring_path, final_path):
     data = []
     for root, dirs, files in os.walk(exploring_path):
+        for dir in (set(excluded_dirs) & set(dirs)):
+            dirs.remove(dir)
         data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
             os.path.join(root, filename), 'DATA') for filename in files
             if not (filename.endswith(".pyc") or filename.endswith(".py"))]
@@ -181,9 +184,12 @@ onefile_tpl = """
 
 merge_mod = len(names_of_exes) > 1
 
+excluded_dirs = [".svn", "CVS"]
 def collect_resources(exploring_path, final_path):
     data = []
     for root, dirs, files in os.walk(exploring_path):
+        for dir in (set(excluded_dirs) & set(dirs)):
+            dirs.remove(dir)
         data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
             os.path.join(root, filename), 'DATA') for filename in files
             if not (filename.endswith(".pyc") or filename.endswith(".py"))]
