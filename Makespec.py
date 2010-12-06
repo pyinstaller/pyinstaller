@@ -109,15 +109,16 @@ onedir_tpl = """
 
 merge_mod = len(names_of_exes) > 1
 
-excluded_dirs = [".svn", "CVS"]
-def collect_resources(exploring_path, final_path):
+def collect_resources(exploring_path, final_path = "."):
     data = []
+    excluded_dirs = [os.sep + ".svn", os.sep + "CVS", os.sep + "build"]
+    excluded_ext = [".py", ".pyc"]
     for root, dirs, files in os.walk(exploring_path):
-        for dir in (set(excluded_dirs) & set(dirs)):
-            dirs.remove(dir)
+        if True in [dir in root for dir in excluded_dirs]:
+            continue
         data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
             os.path.join(root, filename), 'DATA') for filename in files
-            if not (filename.endswith(".pyc") or filename.endswith(".py"))]
+            if not True in [filename.endswith(ext) for ext in excluded_ext]]
     return data
 
 if use_tk:
@@ -125,7 +126,7 @@ if use_tk:
 
 an = []
 tuples = []
-resources_paths[0].append((paths_to_src[0], paths_to_src[0]))
+resources_paths[0].append((paths_to_src[0]))
 
 for i in range(len(names_of_exes)):
     an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
@@ -186,15 +187,16 @@ onefile_tpl = """
 
 merge_mod = len(names_of_exes) > 1
 
-excluded_dirs = [".svn", "CVS"]
-def collect_resources(exploring_path, final_path):
+def collect_resources(exploring_path, final_path = "."):
     data = []
+    excluded_dirs = [os.sep + ".svn", os.sep + "CVS", os.sep + "build"]
+    excluded_ext = [".py", ".pyc"]
     for root, dirs, files in os.walk(exploring_path):
-        for dir in (set(excluded_dirs) & set(dirs)):
-            dirs.remove(dir)
+        if True in [dir in root for dir in excluded_dirs]:
+            continue
         data = data + [(os.path.join(root, filename).replace(exploring_path, final_path, 1),
             os.path.join(root, filename), 'DATA') for filename in files
-            if not (filename.endswith(".pyc") or filename.endswith(".py"))]
+            if not True in [filename.endswith(ext) for ext in excluded_ext]]
     return data
 
 if use_tk:
@@ -205,7 +207,7 @@ if use_tk:
 
 an = []
 tuples = []
-resources_paths[0].append((paths_to_src[0], paths_to_src[0]))
+resources_paths[0].append((paths_to_src[0]))
 
 for i in range(len(names_of_exes)):
     an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
