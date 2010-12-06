@@ -126,7 +126,6 @@ if use_tk:
 
 an = []
 tuples = []
-resources_paths[0].append((paths_to_src[0]))
 
 for i in range(len(names_of_exes)):
     an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
@@ -207,7 +206,6 @@ if use_tk:
 
 an = []
 tuples = []
-resources_paths[0].append((paths_to_src[0]))
 
 for i in range(len(names_of_exes)):
     an.append(Analysis(home_paths + scripts[i], pathex=paths_to_src))
