@@ -1,7 +1,7 @@
 hiddenimports = [
 	"backend_agg",
 	"backend_cairo",
-	"backend_cocaagg",
+	"backend_cocoaagg",
 	"backend_emf",
 	"backend_fltkagg",
 	"backend_gdk",
