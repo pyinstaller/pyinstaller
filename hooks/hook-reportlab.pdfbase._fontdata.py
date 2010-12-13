@@ -1,0 +1,23 @@
+hiddenimports = [
+    '_fontdata_enc_macexpert',
+    '_fontdata_enc_macroman',
+    '_fontdata_enc_pdfdoc',
+    '_fontdata_enc_standard',
+    '_fontdata_enc_symbol',
+    '_fontdata_enc_winansi',
+    '_fontdata_enc_zapfdingbats',
+    '_fontdata_widths_courier',
+    '_fontdata_widths_courierbold',
+    '_fontdata_widths_courierboldoblique',
+    '_fontdata_widths_courieroblique',
+    '_fontdata_widths_helvetica',
+    '_fontdata_widths_helveticabold',
+    '_fontdata_widths_helveticaboldoblique',
+    '_fontdata_widths_helveticaoblique',
+    '_fontdata_widths_symbol',
+    '_fontdata_widths_timesbold',
+    '_fontdata_widths_timesbolditalic',
+    '_fontdata_widths_timesitalic',
+    '_fontdata_widths_timesroman',
+    '_fontdata_widths_zapfdingbats']
+
