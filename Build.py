@@ -653,7 +653,10 @@ def checkCache(fnm, strip, upx):
         cmd = '"' + upx_executable + '" ' + bestopt + " -q \"%s\"" % cachedfile
     else:
         if strip:
-            cmd = "strip \"%s\"" % cachedfile
+            # -S = strip only debug symbols.
+            # The default strip behaviour breaks some shared libraries
+            # under Mac OSX
+            cmd = "strip -S \"%s\"" % cachedfile
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
 
