@@ -37,6 +37,13 @@ iswin = sys.platform[:3] == 'win'
 is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
 cygwin = sys.platform == 'cygwin'
 
+if sys.platform == 'darwin' and Build.architecture() == '64bit':
+    print "W: PyInstaller support for Python 64-bit on Mac OSX is experimental."
+    print "W: If you need 32-bit version of Python and you use Python distributed"
+    print "   with Mac OX, try setting"
+    print "   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment"
+
+
 def find_EXE_dependencies(config):
     global target_platform, target_iswin
     print "I: computing EXE_dependencies"

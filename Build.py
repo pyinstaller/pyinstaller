@@ -37,6 +37,7 @@ import iu
 import carchive
 import bindepend
 import traceback
+import platform
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
@@ -154,6 +155,25 @@ def addSuffixToExtensions(toc):
                 inm = inm + binext
         new_toc.append((inm, fnm, typ))
     return new_toc
+
+def architecture():
+    """
+    Returns the bit depth of the python interpreter's architecture as
+    a string ('32bit' or '64bit'). Similar to platform.architecture(),
+    but with fixes for universal binaries on MacOS.
+    """
+    if sys.platform == "darwin":
+        # Darwin's platform.architecture() is buggy and always
+        # returns "64bit" event for the 32bit version of Python's
+        # universal binary. So we roll out our own (that works
+        # on Darwin).
+        if sys.maxint > 2L**32:
+            return '64bit'
+        else:
+            return '32bit'
+
+    return platform.architecture()[0]
+
 
 #--- functons for checking guts ---
 
@@ -929,7 +949,7 @@ class EXE(Target):
 
         try:
             import platform
-            dir = platform.system() + "-" + platform.architecture()[0]
+            dir = platform.system() + "-" + architecture()
         except ImportError:
             import os
             n = { "nt": "Windows", "linux2": "Linux", "darwin": "Darwin" }
