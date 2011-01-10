@@ -38,7 +38,14 @@ import sys
 import re
 from glob import glob
 import traceback
-import zipfile
+
+try:
+    # zipfile is available since Python 1.6. Here it is only required for
+    # extracting eggs, which are not supported prior to 2.3 anyway
+    import zipfile
+except ImportError:
+    pass
+
 
 seen = {}
 _bpath = None
