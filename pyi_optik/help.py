@@ -224,7 +224,7 @@ class IndentedHelpFormatter (HelpFormatter):
             self, indent_increment, max_help_position, width, short_first)
 
     def format_usage(self, usage):
-        return _("usage: %s\n") % usage
+        return _("Usage: %s\n") % usage
 
     def format_heading(self, heading):
         return "%*s%s:\n" % (self.current_indent, "", heading)
