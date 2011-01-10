@@ -2,20 +2,26 @@
 # Generate PyInstaller documentation
 #
 
-.PHONY: doc pdf
+.PHONY: doc pdf man
 
 all:
-	@echo "make doc   ===> To generate a html and pdf of the documentation"
+	@echo "make doc   ===> To generate html and pdf of the documentation and man pages"
 	@echo "make html  ===> To generate a html of the documentation"
 	@echo "make pdf   ===> To generate a pdf of the documentation"
+	@echo "make man   ===> To generate man pages documentation"
 
 
-doc: html pdf cleanlogs
+doc: html pdf man cleanlogs
 	@echo "Documentation generated: Please see ../*.html and ../*.pdf for files"
 
 
 html: ../Manual.html
 pdf: ../Manual.pdf
+man: ../pyi-configure.1 ../pyi-makespec.1 ../pyi-build.1 ../pyinstaller.1 \
+	../pyi-makeCOMServer.1
+
+../%.1: %.rst docutils-man.conf docutils.conf
+	rst2man.py --config=docutils-man.conf $< $@
 
 ../Manual.html: Manual.rst
 	tools/buildrecursive.py --local --strict --title='PyInstaller Manual' --outpath=..
@@ -34,6 +40,7 @@ clean:
 cleanall: cleanlogs
 	rm -f ../*.pdf
 	rm -f ../*.html
+	rm -f ../*.1
 	@echo "All logs and documentation removed."
 
 
