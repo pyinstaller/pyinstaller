@@ -474,9 +474,11 @@ class ImportTracker:
         return map(lambda a: a[0], nms)
 
     def analyze_one(self, nm, importernm=None, imptyp=0, level=-1):
+        """
+        break the name being imported up so we get:
+        a.b.c -> [a, b, c] ; ..z -> ['', '', z]
+        """
         #print '## analyze_one', nm, importernm, imptyp, level
-        # break the name being imported up so we get:
-        # a.b.c -> [a, b, c] ; ..z -> ['', '', z]
         if not nm:
             nm = importernm
             importernm = None
