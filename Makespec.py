@@ -99,8 +99,9 @@ bundletmplt = """app = BUNDLE(coll,
              name=os.path.join(%(distdir)s, '%(name)s.app'))
 """ # distdir name
 
-HOME = os.path.dirname(sys.argv[0])
-HOME = os.path.abspath(HOME)
+HOMEPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
+CONFIGDIR = HOMEPATH
+DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
 def quote_win_filepath( path ):
     # quote all \ with another \ after using normpath to clean up the path
@@ -112,7 +113,7 @@ def quote_win_filepath( path ):
 # be used with any Installer installation.
 # Same thing could be done for other paths too.
 path_conversions = (
-    (HOME, "HOMEPATH"),
+    (HOMEPATH, "HOMEPATH"),
     # Add Tk etc?
     )
 
@@ -167,8 +168,8 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
         pathex.append(workdir)
     else:
         pathex.append(os.getcwd())
-    if workdir == HOME:
-        workdir = os.path.join(HOME, name)
+    if workdir == HOMEPATH:
+        workdir = os.path.join(HOMEPATH, name)
     if not os.path.exists(workdir):
         os.makedirs(workdir)
     exe_options = ''
@@ -188,7 +189,7 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
             resources[i] = quote_win_filepath(resources[i])
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
     if not ascii and config['hasUnicode']:
-        scripts.insert(0, os.path.join(HOME, 'support', 'useUnicode.py'))
+        scripts.insert(0, os.path.join(HOMEPATH, 'support', 'useUnicode.py'))
     for i in range(len(scripts)):
         scripts[i] = Path(scripts[i]) # Use relative path in specfiles
 
@@ -210,13 +211,13 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
     if tk:
         d['tktree'] = "TkTree(),"
         if freeze:
-            scripts.insert(0, Path(HOME, 'support', 'useTK.py'))
-            scripts.insert(0, Path(HOME, 'support', 'unpackTK.py'))
-            scripts.append(Path(HOME, 'support', 'removeTK.py'))
+            scripts.insert(0, Path(HOMEPATH, 'support', 'useTK.py'))
+            scripts.insert(0, Path(HOMEPATH, 'support', 'unpackTK.py'))
+            scripts.append(Path(HOMEPATH, 'support', 'removeTK.py'))
             d['tkpkg'] = "TkPKG(),"
         else:
-            scripts.insert(0, Path(HOME, 'support', 'useTK.py'))
-    scripts.insert(0, Path(HOME, 'support', '_mountzlib.py'))
+            scripts.insert(0, Path(HOMEPATH, 'support', 'useTK.py'))
+    scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
     if config['target_platform'][:3] == "win" or \
        config['target_platform'] == 'cygwin':
         d['exename'] = name+'.exe'
@@ -248,7 +249,7 @@ if __name__ == '__main__':
         usage="python %prog [opts] <scriptname> [<scriptname> ...]"
     )
     p.add_option('-C', '--configfile',
-                 default=os.path.join(HOME, 'config.dat'),
+                 default=DEFAULT_CONFIGFILE,
                  help='Name of configfile (default: %default)')
 
     g = p.add_option_group('What to generate')

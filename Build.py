@@ -44,7 +44,10 @@ TUPLETYPE = type((None,))
 UNCOMPRESSED, COMPRESSED = range(2)
 
 # todo: use pkg_resources here
-HOMEPATH = os.path.dirname(sys.argv[0])
+HOMEPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
+CONFIGDIR = HOMEPATH
+DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
+
 SPEC = None
 SPECPATH = None
 BUILDPATH = None
@@ -619,7 +622,7 @@ def checkCache(fnm, strip, upx):
         upx = 0
 
     # Load cache index
-    cachedir = os.path.join(HOMEPATH, 'bincache%d%d' %  (strip, upx))
+    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d' %  (strip, upx))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
@@ -1519,7 +1522,7 @@ def main(specfile, configfilename):
 from pyi_optparse import OptionParser
 parser = OptionParser('%prog [options] specfile')
 parser.add_option('-C', '--configfile',
-                  default=os.path.join(HOMEPATH, 'config.dat'),
+                  default=DEFAULT_CONFIGFILE,
                   help='Name of generated configfile (default: %default)')
 parser.add_option('-o', '--buildpath',
                   default=os.path.join('SPECPATH', 'build',

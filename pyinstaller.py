@@ -25,7 +25,10 @@ import Configure
 import Makespec
 import Build
 
-HOME = os.path.dirname(sys.argv[0])
+HOMEPATH = os.path.dirname(sys.argv[0])
+HOMEPATH = os.path.abspath(HOMEPATH)
+CONFIGDIR = HOMEPATH
+DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
 
 def run_configure(opts, args):
@@ -94,7 +97,7 @@ if __name__ == '__main__':
             help='Python executable to use. Required for '
                  'cross-bundling.')
     g.add_option('-C', '--configfile',
-            default=os.path.join(HOME, 'config.dat'),
+            default=DEFAULT_CONFIGFILE,
             help='Name of generated configfile (default: %default)')
 
     # Makespec.py options

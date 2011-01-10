@@ -31,7 +31,9 @@ import mf
 import bindepend
 import Build
 
-HOME = os.path.dirname(sys.argv[0])
+HOMEPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
+CONFIGDIR = HOMEPATH
+DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
 iswin = sys.platform[:3] == 'win'
 is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
@@ -119,7 +121,7 @@ def test_TCL_TK(config):
                     if mo:
                         ver = mo.group(1)
             print "I: found TCL/TK version %s" % ver
-            open(os.path.join(HOME, 'support', 'useTK.py'), 'w').write(_useTK % ("tcl%s"%ver, "tk%s"%ver))
+            open(os.path.join(HOMEPATH, 'support', 'useTK.py'), 'w').write(_useTK % ("tcl%s"%ver, "tk%s"%ver))
             tclnm = 'tcl%s' % ver
             tknm = 'tk%s' % ver
             # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3 and /usr/lib/tk8.3
@@ -144,7 +146,7 @@ def test_TCL_TK(config):
             print "I: found TCL/TK"
             tcldir = "Tcl.framework/Resources/Scripts"
             tkdir = "Tk.framework/Resources/Scripts"
-            open(os.path.join(HOME, 'support', 'useTK.py'), 'w').write(_useTK % (tcldir, tkdir))
+            open(os.path.join(HOMEPATH, 'support', 'useTK.py'), 'w').write(_useTK % (tcldir, tkdir))
             config['TCL_root'] = "/System/Library/Frameworks/Tcl.framework/Versions/Current"
             config['TK_root'] = "/System/Library/Frameworks/Tk.framework/Versions/Current"
             config['TCL_dirname'] = "Tcl.framework"
@@ -168,7 +170,7 @@ def test_Crypt(config):
     cwd = os.getcwd()
     args = sys.argv[:]
     try:
-        os.chdir(os.path.join(HOME, "source", "crypto"))
+        os.chdir(os.path.join(HOMEPATH, "source", "crypto"))
         dist = run_setup("setup.py", ["install"])
         if dist.have_run.get("install", 0):
             config["useCrypt"] = 1
@@ -203,7 +205,7 @@ def test_RsrcUpdate(config):
         print 'I: ... resource update unavailable -', detail
         return
 
-    test_exe = os.path.join(HOME, 'support', 'loader', 'Windows-32bit', 'runw.exe')
+    test_exe = os.path.join(HOMEPATH, 'support', 'loader', 'Windows-32bit', 'runw.exe')
     if not os.path.exists( test_exe ):
         config['hasRsrcUpdate'] = 0
         print 'E: ... resource update unavailable - %s not found' % test_exe
@@ -230,7 +232,7 @@ _useUnicode = """\
 import %s
 """
 
-_useUnicodeFN = os.path.join(HOME, 'support', 'useUnicode.py')
+_useUnicodeFN = os.path.join(HOMEPATH, 'support', 'useUnicode.py')
 
 def test_unicode(config):
     print 'I: Testing for Unicode support...'
@@ -278,7 +280,7 @@ def test_UPX(config):
 
 def find_PYZ_dependencies(config):
     print "I: computing PYZ dependencies..."
-    a = mf.ImportTracker([os.path.join(HOME, 'support')])
+    a = mf.ImportTracker([os.path.join(HOMEPATH, 'support')])
     a.analyze_r('archive')
     mod = a.modules['archive']
     toc = Build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
@@ -337,7 +339,7 @@ if __name__ == '__main__':
                       help='Python executable to use. Required for '
                            'cross-bundling.')
     parser.add_option('-C', '--configfile',
-                      default=os.path.join(HOME, 'config.dat'),
+                      default=DEFAULT_CONFIGFILE,
                       help='Name of generated configfile (default: %default)')
 
     opts, args = parser.parse_args()
