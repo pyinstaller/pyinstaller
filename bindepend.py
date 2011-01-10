@@ -37,6 +37,8 @@ import string
 import sys
 import re
 from glob import glob
+import traceback
+import zipfile
 
 seen = {}
 _bpath = None
@@ -47,10 +49,6 @@ darwin = sys.platform[:6] == 'darwin'
 silent = False  # True suppresses all informative messages from the dependency code
 
 if iswin:
-    import shutil
-    import traceback
-    import zipfile
-
     if hasattr(sys, "version_info") and sys.version_info[:2] >= (2,6):
         try:
             import win32api
