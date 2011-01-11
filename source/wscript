@@ -91,6 +91,9 @@ def configure(conf):
                     conf.env['MSVC_TARGETS'] = ['x64', 'x86_amd64', 'intel64', 'em64t']
                 conf.check_tool('msvc')
                 conf.print_all_msvc_detected()
+                # Do not embed manifest file.
+                # Manifest file will be added in the phase of packaging python application.
+                conf.env.MSVC_MANIFEST = False
             except:
                 Utils.pprint('RED', 'GCC (MinGW) or MSVC compiler not found.')
                 exit(1)
