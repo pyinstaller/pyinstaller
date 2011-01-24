@@ -30,7 +30,7 @@
 #ifndef WIN32
 #include <sys/wait.h>
 #endif
-#include "locale.h"
+
 
 
 // To call TransformProcessType in the child process
@@ -53,7 +53,6 @@ int main(int argc, char* argv[])
 #ifdef WIN32
 	WCHAR thisfilew[_MAX_PATH+1];
 #endif
-	char * loc;
     TCHAR homepath[_MAX_PATH];
     TCHAR archivefile[_MAX_PATH + 5];
     TCHAR MEIPASS2[_MAX_PATH + 11] = _T("_MEIPASS2=");
@@ -76,9 +75,7 @@ int main(int argc, char* argv[])
     }
 
 #ifdef UNICODE
-	VS(_T("UNICODE SUPPORT = YES\n"));
-	_tprintf(_T("Sizeof TCHAR: %d\n"),sizeof(TCHAR));
-	//loc = setlocale(LC_ALL,""); // Problem: is calling this a mistake?  Leave things in the C locale?
+	VS(_T("UNICODE SUPPORT = YES [UCS%d]\n"),sizeof(TCHAR));
 #else
 	VS(_T("UNICODE SUPPORT = NO\n"));
 #endif

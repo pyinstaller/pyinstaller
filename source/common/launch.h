@@ -166,21 +166,24 @@ EXTDECLPROC(PyObject *, PyString_FromString, (const char *));
 
 #define DECLPROC(name)\
     __PROC__##name PI_##name = NULL;
+
 #define GETPROCOPT(dll, name)\
     PI_##name = (__PROC__##name)GetProcAddress (dll, #name)
+
 #define GETPROC(dll, name)\
     GETPROCOPT(dll, name); \
     if (!PI_##name) {\
-	printf("CANNOT GETPROCADDRESS FOR " #name "\n");\
+	FATALERROR(_T("CANNOT GETPROCADDRESS FOR ") _T(#name)	);\
         return -1;\
     }
-	//FATALERROR ("Cannot GetProcAddress for " #name); //PROBLEM
+
 #define DECLVAR(name)\
     __VAR__##name *PI_##name = NULL;
+
 #define GETVAR(dll, name)\
     PI_##name = (__VAR__##name *)GetProcAddress (dll, #name);\
     if (!PI_##name) {\
-        FATALERROR ("Cannot GetProcAddress for " #name);\
+        FATALERROR (_T("Cannot GetProcAddress for ") _T(#name));\
         return -1;\
     }
 
@@ -188,24 +191,27 @@ EXTDECLPROC(PyObject *, PyString_FromString, (const char *));
 
 #define DECLPROC(name)\
     __PROC__##name PI_##name = NULL;
+
 #define GETPROCOPT(dll, name)\
     PI_##name = (__PROC__##name)dlsym (dll, #name)
+
 #define GETPROC(dll, name)\
     GETPROCOPT(dll, name);\
     if (!PI_##name) {\
-        printf("CANNOT DLSYM FOR\n");\
+        FATALERROR (_T("Cannot dlsym for ") _T(#name));\
         return -1;\
     }
-	//FATALERROR ("Cannot dlsym for " #name);//PROBLEM
+
 #define DECLVAR(name)\
     __VAR__##name *PI_##name = NULL;
+
 #define GETVAR(dll, name)\
     PI_##name = (__VAR__##name *)dlsym(dll, #name);\
     if (!PI_##name) {\
-        printf("CANNOT DLSYM FOR \n");\
+        FATALERROR (_T("Cannot dlsym for ") _T(#name));\
         return -1;\
     }
-//FATALERROR ("Cannot dlsym for " #name);//PROBLEM
+
 #endif /* WIN32 */
 
 /*
@@ -226,6 +232,7 @@ EXTDECLPROC(PyObject *, PyString_FromString, (const char *));
 #  define VS mbvs 
 #  define VSA mbvs
 # else
+   // unicode: we have to have an ascii version of VS around, for cases in which that is necessary.  That's what VSA is.
 #  define VS _tprintf
 #  define VSA printf
 # endif
