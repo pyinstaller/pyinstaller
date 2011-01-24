@@ -26,6 +26,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #define _WIN32_WINNT 0x0500
+#include "pyi_unicode.h" 
 #include "utils.h"
 #include <windows.h>
 #include <commctrl.h> // InitCommonControls
@@ -33,16 +34,27 @@
 #include <memory.h>
 #include <string.h>
 
-char* basename (char *path)
+
+//unicode OK
+TCHAR* basename (TCHAR *path)
 {
   /* Search for the last directory separator in PATH.  */
-  char *basename = strrchr (path, '\\');
-  if (!basename) basename = strrchr (path, '/');
+  TCHAR *basename = _tcsrchr (path, _T('\\'));
+  if (!basename) basename = _tcsrchr (path, _T('/'));
   
   /* If found, return the address of the following character,
      or the start of the parameter passed in.  */
-  return basename ? ++basename : (char*)path;
+  if (!basename)
+  {
+	  return path;
+  }
+  else
+  {
+	  return &basename[1]; // this will work OK, I guess.  At this stage, *basename points to either a slash or backslash, which can always
+	                       // be stored as one 16-bit quantity (no surrogate pairs).
+  }
 }
+
 
 static HANDLE hCtx = INVALID_HANDLE_VALUE;
 static ULONG_PTR actToken;
@@ -51,6 +63,7 @@ static ULONG_PTR actToken;
 #define STATUS_SXS_EARLY_DEACTIVATION 0xC015000F
 #endif
  	
+// unicode OK
 int IsXPOrLater(void)
 {
     OSVERSIONINFO osvi;
@@ -64,9 +77,10 @@ int IsXPOrLater(void)
        ((osvi.dwMajorVersion == 5) && (osvi.dwMinorVersion >= 1)));
 }
 
-int CreateActContext(char *workpath, char *thisfile)
+// unicode OK
+int CreateActContext(TCHAR *workpath, TCHAR *thisfile)
 {
-    char manifestpath[_MAX_PATH + 1];
+    TCHAR manifestpath[_MAX_PATH + 1];
     ACTCTX ctx;
     BOOL activated;
     HANDLE k32;
@@ -78,18 +92,22 @@ int CreateActContext(char *workpath, char *thisfile)
         return 1;
        
     /* Setup activation context */
-    strcpy(manifestpath, workpath);
-    strcat(manifestpath, basename(thisfile));
-    strcat(manifestpath, ".manifest");
-    VS("manifestpath: %s\n", manifestpath);
+    _tcscpy(manifestpath, workpath);
+    _tcscat(manifestpath, basename(thisfile));
+    _tcscat(manifestpath, _T(".manifest"));
+    VS(_T("manifestpath: %s\n"), manifestpath);
     
-    k32 = LoadLibrary("kernel32");
-    CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA");
+    k32 = LoadLibrary(_T("kernel32")); 
+#ifdef UNICODE
+    CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxW"); // unicode note: GetProcAddress is ascii only.
+#else
+	CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA"); // unicode note: GetProcAddress is ascii only.
+#endif
     ActivateActCtx = (void*)GetProcAddress(k32, "ActivateActCtx");
     
     if (!CreateActCtx || !ActivateActCtx)
     {
-        VS("Cannot find CreateActCtx/ActivateActCtx exports in kernel32.dll\n");
+        VS(_T("Cannot find CreateActCtx/ActivateActCtx exports in kernel32.dll [%p %p]\n"),CreateActCtx,ActivateActCtx);
         return 0;
     }
     
@@ -100,20 +118,21 @@ int CreateActContext(char *workpath, char *thisfile)
     hCtx = CreateActCtx(&ctx);
     if (hCtx != INVALID_HANDLE_VALUE)
     {
-        VS("Activation context created\n");
+        VS(_T("Activation context created\n"));
         activated = ActivateActCtx(hCtx, &actToken);
         if (activated)
         {
-            VS("Activation context activated\n");
+            VS(_T("Activation context activated\n"));
             return 1;
         }
     }
 
     hCtx = INVALID_HANDLE_VALUE;
-    VS("Error activating the context\n");
+    VS(_T("Error activating the context\n"));
     return 0;
 }
 
+// unicode OK
 void ReleaseActContext(void)
 {
     void (WINAPI *ReleaseActCtx)(HANDLE);
@@ -123,77 +142,119 @@ void ReleaseActContext(void)
     if (!IsXPOrLater())
         return;
 
-    k32 = LoadLibrary("kernel32");
+    k32 = LoadLibrary(_T("kernel32"));
     ReleaseActCtx = (void*)GetProcAddress(k32, "ReleaseActCtx");
     DeactivateActCtx = (void*)GetProcAddress(k32, "DeactivateActCtx");
     if (!ReleaseActCtx || !DeactivateActCtx)
     {
-        VS("Cannot find ReleaseActCtx/DeactivateActCtx exports in kernel32.dll\n");
+        VS(_T("Cannot find ReleaseActCtx/DeactivateActCtx exports in kernel32.dll [%p %p]\n"),ReleaseActCtx,DeactivateActCtx);
         return;
     }
     __try
     {
-        VS("Deactivating activation context\n");
+        VS(_T("Deactivating activation context\n"));
         if (!DeactivateActCtx(0, actToken))
-            VS("Error deactivating context!\n!");
+            VS(_T("Error deactivating context!\n!"));
         
-        VS("Releasing activation context\n");
+        VS(_T("Releasing activation context\n"));
         if (hCtx != INVALID_HANDLE_VALUE)
             ReleaseActCtx(hCtx);
-        VS("Done\n");
+        VS(_T("Done\n"));
     }
     __except (STATUS_SXS_EARLY_DEACTIVATION)
     {
-    	VS("XS early deactivation; somebody left the activation context dirty, let's ignore the problem\n");
+    	VS(_T("XS early deactivation; somebody left the activation context dirty, let's ignore the problem\n"));
     }
 }
 
+// unicode OK
 void init_launcher(void)
 {
 	InitCommonControls();
 }
 
-int get_thisfile(char *thisfile, const char *programname)
+// unicode OK
+int get_thisfile(TCHAR *thisfile, const TCHAR *programname)
 {
-	if (!GetModuleFileNameA(NULL, thisfile, _MAX_PATH)) {
-		FATALERROR("System error - unable to load!");
+	if (!GetModuleFileName(NULL, thisfile, _MAX_PATH)) {
+		FATALERROR(_T("System error - unable to load!"));
 		return -1;
 	}
 	
 	return 0;
 }
 
-int get_thisfilew(LPWSTR thisfilew)
+// unicode OK
+int get_thisfilew(WCHAR *thisfilew)
 {
 	if (!GetModuleFileNameW(NULL, thisfilew, _MAX_PATH)) {
-		FATALERROR("System error - unable to load!");
+		FATALERROR(_T("System error - unable to load!"));
 		return -1;
 	}
 	
 	return 0;
 }
 
-void get_homepath(char *homepath, const char *thisfile)
+// unicode OK
+void get_homepath(TCHAR *homepath, const TCHAR *thisfile)
 {
-	char *p = NULL;
+	TCHAR *p = NULL;
+	TCHAR *pos = NULL;
+	_tcscpy(homepath, thisfile);
+
+
+	// in this below, this is a backward search for a backslash, making sure that the final path is at least two chars
+	// long.  Presumably, under windows, this is the drive letter part, like "C:".  I'm not sure why this guard is needed,
+	// as the path should always have a slash in it.  i.e., "c:\", especially since we are using 'thisfile' in order to
+    // extract it.
 	
-	strcpy(homepath, thisfile);
-	for (p = homepath + strlen(homepath); *p != '\\' && p >= homepath + 2; --p);
+#ifdef UNICODE
+	pos = _tcsrchr(homepath,_T('\\'));
+
+	
+	if (pos)
+	{
+		_tcscpy(pos,_T("\\"));
+	}
+	else
+	{
+		_tprintf(_T("Error: could not generate the path of the file we are running.\n"));
+		_tprintf(_T("  file: %s\n"),thisfile);
+	}
+#else
+	for (p = homepath + _tcslen(homepath); *p != _T('\\') && p >= homepath + 2; --p); /// sorry, can't do this in unicode.
 	*++p = '\0';
+#endif
+
+	return;
 }
 
-void get_archivefile(char *archivefile, const char *thisfile)
+// unicode OK
+void get_archivefile(TCHAR *archivefile, const TCHAR *thisfile)
 {
-	strcpy(archivefile, thisfile);
-	strcpy(archivefile + strlen(archivefile) - 3, "pkg");
+	TCHAR*pos = NULL;
+	_tcscpy(archivefile, thisfile);
+	// remove the .exe and replace it with .pkg.
+#ifdef UNICODE
+	pos = _tcsrchr(archivefile,_T('.'));
+	_tcscpy(pos, _T(".pkg"));  
+#else
+	strcpy(archivefile + _tcslen(archivefile) - 3, "pkg");  // sorry, can't do this in unicode.
+#endif
+	
+	
+
+	return;
+	
 }
 
+//unicode OK
 int set_enviroment(const ARCHIVE_STATUS *status)
 {
 	return 0;
 }
 
-int spawn(LPWSTR thisfile)
+int spawn(LPWSTR thisfilew) //unicode OK
 {
 	SECURITY_ATTRIBUTES sa;
 	STARTUPINFOW si;
@@ -206,7 +267,7 @@ int spawn(LPWSTR thisfile)
 	signal(SIGTERM, SIG_IGN);
 	signal(SIGBREAK, SIG_IGN);
 
-	VS("Setting up to run child\n");
+	VS(_T("Setting up to run child\n"));
 	sa.nLength = sizeof(sa);
 	sa.lpSecurityDescriptor = NULL;
 	sa.bInheritHandle = TRUE;
@@ -220,9 +281,9 @@ int spawn(LPWSTR thisfile)
 	si.hStdOutput = (void*)_get_osfhandle(fileno(stdout));
 	si.hStdError = (void*)_get_osfhandle(fileno(stderr));
 
-	VS("Creating child process\n");
+	VS(_T("Creating child process\n"));
 	if (CreateProcessW( 
-			thisfile, // pointer to name of executable module 
+			thisfilew, // pointer to name of executable module 
 			GetCommandLineW(),  // pointer to command line string 
 			&sa,  // pointer to process security attributes 
 			NULL,  // pointer to thread security attributes 
@@ -233,11 +294,11 @@ int spawn(LPWSTR thisfile)
 			&si,  // pointer to STARTUPINFO 
 			&pi  // pointer to PROCESS_INFORMATION 
 			)) {
-		VS("Waiting for child process to finish...\n");
+		VS(_T("Waiting for child process to finish...\n"));
 		WaitForSingleObject(pi.hProcess, INFINITE);
 		GetExitCodeProcess(pi.hProcess, (unsigned long *)&rc);
 	} else {
-		FATALERROR("Error creating child process!\n");
+		FATALERROR(_T("Error creating child process!\n"));
 		rc = -1;
 	}
 	return rc;

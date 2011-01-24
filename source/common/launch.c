@@ -26,12 +26,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #include <stdio.h>
+#include "pyi_unicode.h"
 #ifdef WIN32
  #include <windows.h>
  #include <direct.h>
  #include <process.h>
  #include <io.h>
- #define unsetenv(x) _putenv(x "=")
+ #define unsetenv(x) _tputenv(x _T("="))
 #else
  #include <unistd.h>
  #include <fcntl.h>
@@ -45,10 +46,7 @@
 #include <string.h>
 #include "zlib.h"
 
-#ifdef WIN32
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
-#endif
+
 
 /*
  * Python Entry point declarations (see macros in launch.h).
@@ -91,14 +89,21 @@ DECLPROC(Py_NewInterpreter);
 DECLPROC(Py_EndInterpreter);
 DECLPROC(PyInt_AsLong);
 DECLPROC(PySys_SetObject);
+DECLPROC(PyUnicodeUCS2_FromUnicode);  // PROBLEM: how to find out if the python build is using UCS4?
+DECLPROC(PyUnicodeUCS4_FromUnicode);  // PROBLEM: how to find out if the python build is using UCS4?
+DECLPROC(PyObject_GetAttr);
+DECLPROC(PyString_FromString);
+
 
 #ifdef WIN32
-#define PATHSEP ";"
-#define SEP '\\'
+#define PATHSEPA ";"
+#define SEPA '\\'
 #else
-#define PATHSEP ":"
-#define SEP '/'
+#define PATHSEPA ":"
+#define SEPA '/'
 #endif
+#define PATHSEP _T(PATHSEPA)
+#define SEP _T(SEPA)
 
 unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
 
@@ -126,7 +131,7 @@ void mbfatalerror(const char *fmt, ...)
 	msg[MBTXTLEN-1] = '\0';
 	va_end(args);
 
-	MessageBox(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
+	MessageBoxA(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION); // UNICODE: explicitly use ascii version.
 }
 
 void mbothererror(const char *fmt, ...)
@@ -139,7 +144,7 @@ void mbothererror(const char *fmt, ...)
 	msg[MBTXTLEN-1] = '\0';
 	va_end(args);
 
-	MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
+	MessageBoxA(NULL, msg, "Error!", MB_OK | MB_ICONWARNING); // UNICODE: explicitly use ascii version.
 }
 
 void mbvs(const char *fmt, ...)
@@ -152,7 +157,7 @@ void mbvs(const char *fmt, ...)
 	msg[MBTXTLEN-1] = '\0';
 	va_end(args);
 
-	MessageBox(NULL, msg, "Tracing", MB_OK);
+	MessageBoxA(NULL, msg, "Tracing", MB_OK); // UNICODE: explicitly use ascii version.
 }
 
 #endif /* WIN32 and WINDOWED */
@@ -160,23 +165,23 @@ void mbvs(const char *fmt, ...)
 
 #ifdef WIN32
 
-int getTempPath(char *buff)
+int getTempPath(TCHAR *buff)
 {
     int i;
-    char *ret;
-    char prefix[16];
+    TCHAR *ret;
+    TCHAR prefix[16];
 
     GetTempPath(MAX_PATH, buff);
-    sprintf(prefix, "_MEI%d", getpid());
+    _stprintf(prefix, _T("_MEI%d"), getpid());
 
     // Windows does not have a race-free function to create a temporary
     // directory. Thus, we rely on _tempnam, and simply try several times
     // to avoid stupid race conditions.
     for (i=0;i<5;i++) {
-        ret = _tempnam(buff, prefix);
-        if (mkdir(ret) == 0) {
-            strcpy(buff, ret);
-            strcat(buff, "\\");
+		ret = _ttempnam(buff, prefix); 
+        if (_tmkdir(ret) == 0) {
+            _tcscpy(buff, ret);
+            _tcscat(buff, _T("\\"));
             free(ret);
             return 1;
         }
@@ -185,14 +190,15 @@ int getTempPath(char *buff)
     return 0;
 }
 
-#else
-
+#else  // not windows.
+// UNICODE note: here, we have more control over the directories we are choosing as temp directories.  So,
+// there is no need (yet) to unicode this part.
 int testTempPath(char *buff)
 {
-	strcat(buff, "/_MEIXXXXXX");
+	_tcscat(buff, "/_MEIXXXXXX"_;
     if (mkdtemp(buff))
     {
-        strcat(buff, "/");
+        _tcscat(buff, "/");
         return 1;
     }
     return 0;
@@ -200,7 +206,7 @@ int testTempPath(char *buff)
 
 int getTempPath(char *buff)
 {
-	static const char *envname[] = {
+	static const TCHAR *envname[] = {
 		"TMPDIR", "TEMP", "TMP", 0
 	};
 	static const char *dirname[] = {
@@ -224,40 +230,69 @@ int getTempPath(char *buff)
     return 0;
 }
 
-#endif
+#endif // end platforms other than windows.
 
-static int checkFile(char *buf, const char *fmt, ...)
+
+
+static int checkFile(char *buf, const char *fmt, ...) // PROBLEM: need to figure out how to handle va_args in unicode.
 {
-    va_list args;
+	va_list args;
     struct stat tmp;
 
     va_start(args, fmt);
-    vsnprintf(buf, _MAX_PATH, fmt, args);
+    _vsntprintf(buf, _MAX_PATH, fmt, args);
+	_tprintf(_T("BUF = %s\n"),buf);
     va_end(args);
 
-    return stat(buf, &tmp);
+    return _tstat(buf, &tmp);
+}
+
+
+void BackslashToFrontslash(TCHAR *pth)
+{
+#ifndef WIN32
+	return;
+#else
+	TCHAR *p;
+#ifdef UNICODE
+	TCHAR buffer[_MAX_PATH + 1];
+	// super argh.  I'm sure that there is a better way of doing this, but I just can't think of a better
+	// method at the moment.  Tokenize the string at the backslashes, and put it back together with frontslashes.
+	_tcscpy(buffer,_T("\0"));
+	p = _tcstok(pth,_T("\\"));
+	while (p)
+	{
+		_tcscat(buffer,p);
+		p = _tcstok(NULL,_T("\\"));
+		_tcscat(buffer,_T("/"));
+	}
+	_tcscpy(pth,buffer);
+#else
+	for ( p = pth; *p; p++ )
+		if (*p == '\\')
+			*p = '/';
+#endif
+#endif
 }
 
 /*
  * Set up paths required by rest of this module
  * Sets f_archivename, f_homepath
  */
-int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
+int setPaths(ARCHIVE_STATUS *status, TCHAR const * archivePath, TCHAR const * archiveName)
 {
-#ifdef WIN32
-	char *p;
-#endif
 	/* Get the archive Path */
-	strcpy(status->archivename, archivePath);
-	strcat(status->archivename, archiveName);
+	_tcscpy(status->archivename, archivePath);
+	_tcscat(status->archivename, archiveName);
 
 	/* Set homepath to where the archive is */
-	strcpy(status->homepath, archivePath);
+	_tcscpy(status->homepath, archivePath);
 #ifdef WIN32
-	strcpy(status->homepathraw, archivePath);
-	for ( p = status->homepath; *p; p++ )
-		if (*p == '\\')
-			*p = '/';
+	_tcscpy(status->homepathraw, archivePath);
+	BackslashToFrontslash(status->homepath);
+
+	VS(_T("HOMEPATH   : %s\n"),status->homepath);
+	VS(_T("HOMEPATHRAW: %s\n"),status->homepathraw);
 #endif
 
 	return 0;
@@ -296,7 +331,7 @@ int findDigitalSignature(ARCHIVE_STATUS * const status)
 	fread(&offset, 4, 1, status->fp);
 	if (offset == 0)
 		return -1;
-  VS("%s contains a digital signature\n", status->archivename);
+    VS(_T("%s contains a digital signature\n"), status->archivename);
 	return offset;
 #else
 	return -1;
@@ -314,10 +349,12 @@ int openArchive(ARCHIVE_STATUS *status)
 #endif
 	int filelen;
 
+	VS(_T("openArchive called.  Attempting to open %s\n"),status->archivename);
+
 	/* Physically open the file */
-	status->fp = fopen(status->archivename, "rb");
+	status->fp = _tfopen(status->archivename, _T("rb"));
 	if (status->fp == NULL) {
-		VS("Cannot open archive: %s\n", status->archivename);
+		VS(_T("Cannot open archive: %s\n"), status->archivename);
 		return -1;
 	}
 
@@ -327,7 +364,9 @@ int openArchive(ARCHIVE_STATUS *status)
 
 	if (checkCookie(status, filelen) < 0)
 	{
-		VS("%s does not contain an embedded package\n", status->archivename);
+		VS(_T("inside of checkcookie\n"));
+
+		VS(_T("%s does not contain an embedded package\n"), status->archivename); 
 #ifndef WIN32
     return -1;
 #else
@@ -345,10 +384,10 @@ int openArchive(ARCHIVE_STATUS *status)
 		}
 		if (i == 8)
 		{
-			VS("%s does not contain an embedded package, even skipping the signature\n", status->archivename);
+			VS(_T("%s does not contain an embedded package, even skipping the signature\n"), status->archivename);
 			return -1;
 		}
-		VS("package found skipping digital signature in %s\n", status->archivename);
+		VS(_T("package found skipping digital signature in %s\n"), status->archivename);
 #endif
 	}
 
@@ -360,12 +399,12 @@ int openArchive(ARCHIVE_STATUS *status)
 	status->tocbuff = (TOC *) malloc(ntohl(status->cookie.TOClen));
 	if (status->tocbuff == NULL)
 	{
-		FATALERROR("Could not allocate buffer for TOC.");
+		FATALERROR(_T("Could not allocate buffer for TOC."));
 		return -1;
 	}
 	if (fread(status->tocbuff, ntohl(status->cookie.TOClen), 1, status->fp) < 1)
 	{
-	    FATALERROR("Could not read from file.");
+	    FATALERROR(_T("Could not read from file."));
 	    return -1;
 	}
 	status->tocend = (TOC *) (((char *)status->tocbuff) + ntohl(status->cookie.TOClen));
@@ -373,7 +412,7 @@ int openArchive(ARCHIVE_STATUS *status)
 	/* Check input file is still ok (should be). */
 	if (ferror(status->fp))
 	{
-		FATALERROR("Error on file");
+		FATALERROR(_T("Error on file"));
 		return -1;
 	}
 	return 0;
@@ -465,6 +504,10 @@ int mapNames(HMODULE dll, int pyvers)
     GETPROC(dll, Py_EndInterpreter);
     GETPROC(dll, PyInt_AsLong);
     GETPROC(dll, PySys_SetObject);
+	GETPROC(dll, PyObject_GetAttr);
+	GETPROC(dll, PyString_FromString);
+	GETPROC(dll, PyUnicodeUCS2_FromUnicode);  
+	GETPROC(dll, PyUnicodeUCS4_FromUnicode);  
 
     if (!PI_Py_IncRef) PI_Py_IncRef = _EmulatedIncRef;
     if (!PI_Py_DecRef) PI_Py_DecRef = _EmulatedDecRef;
@@ -478,27 +521,29 @@ int mapNames(HMODULE dll, int pyvers)
 int loadPython(ARCHIVE_STATUS *status)
 {
 	HINSTANCE dll;
-	char dllpath[_MAX_PATH + 1];
+	TCHAR dllpath[_MAX_PATH + 1];
     int pyvers = ntohl(status->cookie.pyvers);
 
 #ifdef WIN32
 	/* Determine the path */
-	sprintf(dllpath, "%spython%02d.dll", status->homepathraw, pyvers);
+	
+	_stprintf(dllpath, _T("%spython%02d.dll"), status->homepathraw, pyvers);
+	VS(_T("PYTHON PATH ATTEMPTED: %s\n"),dllpath);
 
 	/* Load the DLL */
-	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+	dll = LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH); 
 	if (dll) {
-		VS("%s\n", dllpath);
+		VS(_T("%s\n"), dllpath);
 	}
 	else {
-		sprintf(dllpath, "%spython%02d.dll", status->temppathraw, pyvers);
-		dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
+		_stprintf(dllpath, _T("%spython%02d.dll"), status->temppathraw, pyvers);
+		dll = LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
 		if (dll) {
-			VS("%s\n", dllpath);
+			VS(_T("%s\n"), dllpath);
 		}
 	}
 	if (dll == 0) {
-		FATALERROR("Error loading Python DLL: %s (error code %d)\n",
+		FATALERROR(_T("Error loading Python DLL: %s (error code %d)\n"),
 			dllpath, GetLastError());
 		return -1;
 	}
@@ -510,20 +555,20 @@ int loadPython(ARCHIVE_STATUS *status)
 #ifdef __APPLE__
 
     /* Try to load python library both from temppath and homepath */
-	if (checkFile(dllpath, "%sPython", status->temppath) != 0) {
-        if (checkFile(dllpath, "%sPython", status->homepath) != 0) {
-            if (checkFile(dllpath, "%s.Python", status->temppath) != 0){
-                if (checkFile(dllpath, "%s.Python", status->homepath) != 0){
-                    FATALERROR("Python library not found.");
+	if (checkFile(dllpath, _T("%sPython"), status->temppath) != 0) {
+        if (checkFile(dllpath, _T("%sPython"), status->homepath) != 0) {
+            if (checkFile(dllpath, _T("%s.Python"), status->temppath) != 0){
+                if (checkFile(dllpath, _T("%s.Python"), status->homepath) != 0){
+                    FATALERROR(_T("Python library not found."));
                     return -1;
                 }
             }
         }
     }
 #else
-    if (checkFile(dllpath, "%slibpython%01d.%01d.so.1.0", status->temppath, pyvers / 10, pyvers % 10) != 0) {
-        if (checkFile(dllpath, "%slibpython%01d.%01d.so.1.0", status->homepath, pyvers / 10, pyvers % 10) != 0) {
-            FATALERROR("Python library not found.");
+    if (checkFile(dllpath, _T("%slibpython%01d.%01d.so.1.0"), status->temppath, pyvers / 10, pyvers % 10) != 0) {
+        if (checkFile(dllpath, _T("%slibpython%01d.%01d.so.1.0"), status->homepath, pyvers / 10, pyvers % 10) != 0) {
+            FATALERROR(_T("Python library not found."));
             return -1;
         }
     }
@@ -532,10 +577,10 @@ int loadPython(ARCHIVE_STATUS *status)
 	/* Load the DLL */
 	dll = dlopen(dllpath, RTLD_NOW|RTLD_GLOBAL);
 	if (dll) {
-		VS("%s\n", dllpath);
+		VS(_T("%s\n"), dllpath);
 	}
 	if (dll == 0) {
-		FATALERROR("Error loading Python lib '%s': %s\n",
+		FATALERROR(_T("Error loading Python lib '%s': %s\n"),
 			dllpath, dlerror());
 		return -1;
 	}
@@ -556,14 +601,14 @@ int attachPython(ARCHIVE_STATUS *status, int *loadedNew)
 {
 #ifdef WIN32
 	HMODULE dll;
-	char nm[_MAX_PATH + 1];
+	TCHAR nm[_MAX_PATH + 1];
     int pyvers = ntohl(status->cookie.pyvers);
 
 	/* Get python's name */
-	sprintf(nm, "python%02d.dll", pyvers);
+	_stprintf(nm, _T("python%02d.dll"), pyvers);
 
 	/* See if it's loaded */
-	dll = GetModuleHandleA(nm);
+	dll = GetModuleHandle(nm); // UNICODE: was "A"
 	if (dll == 0) {
 		*loadedNew = 1;
 		return loadPython(status);
@@ -611,23 +656,23 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 	TOC *ptoc = status->tocbuff;
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == 'o') {
-			VS("%s\n", ptoc->name);
+			VSA("%s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
 				*PI_Py_VerboseFlag = 1;
-			break;
+			    break;
 			case 'u':
 				unbuffered = 1;
-			break;
+			    break;
 			case 'W':
-                                PI_PySys_AddWarnOption(&ptoc->name[2]);
-			break;
+                PI_PySys_AddWarnOption(&ptoc->name[2]);
+			    break;
 			case 's':
 				*PI_Py_NoSiteFlag = 0;
-			break;
+			    break;
 			case 'O':
 				*PI_Py_OptimizeFlag = 1;
-			break;
+			    break;
 			}
 		}
 		ptoc = incrementTocPtr(status, ptoc);
@@ -647,44 +692,87 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 	}
 	return 0;
 }
+
+
+
+int insertSearchPath(PyObject*sys,TCHAR *pth)
+{
+	PyObject *ppth;
+	PyObject *attr;
+	PyObject *sysdotpath;
+
+	VS(_T("Adding search path to sys.path: %s\n"),pth);   fflush(stdout);
+
+#ifdef UNICODE
+	// ASSUMPTION: unicode on the C side is the same as the Python side.  For Windows, I think
+    // this is true.  The others, I doubt it.  See http://docs.python.org/c-api/unicode.html.
+
+	if (!PI_PyUnicodeUCS2_FromUnicode && !PI_PyUnicodeUCS4_FromUnicode)
+	{
+		printf("FATAL: no PyUnicode_FromUnicode function available.  It could be that that the call signature assumed in PyInstaller is incorrect.\n");
+		printf("       See source/launch.c and source/launch.h and search for FromUnicode.\n");
+		exit(1);
+	}
+	if (PI_PyUnicodeUCS2_FromUnicode)
+	    ppth = PI_PyUnicodeUCS2_FromUnicode(pth,_tcslen(pth));
+	else
+		ppth = PI_PyUnicodeUCS4_FromUnicode(pth,_tcslen(pth));
+	
+#else
+	ppth = PI_PyString_FromString(pth,_tcslen(pth));
+#endif
+	attr = PI_PyString_FromString("path");
+	
+	sysdotpath = PI_PyObject_GetAttr(sys,attr);
+
+	PI_PyList_Append(sysdotpath,ppth);
+
+	PI_Py_DecRef(ppth);
+	PI_Py_DecRef(attr);
+
+	return 0;
+}
+
+
 /*
  * Start python - return 0 on success
  */
 int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
+	char itemtype[3];
     /* Set PYTHONPATH so dynamic libs will load */
-	static char pypath[2*_MAX_PATH + 14];
+	static TCHAR pypath[2*_MAX_PATH + 14];
 	int pathlen = 1;
 	int i;
-	char cmd[_MAX_PATH+1+80];
-	char tmp[_MAX_PATH+1];
+	TCHAR cmd[_MAX_PATH+1+80];
+	TCHAR tmp[_MAX_PATH+1];
 	PyObject *py_argv;
 	PyObject *val;
 	PyObject *sys;
 
     /* Set the PYTHONPATH */
-	VS("Manipulating evironment\n");
-	strcpy(pypath, "PYTHONPATH=");
-    if (status->temppath[0] != '\0') { /* Temppath is setted */
-	    strcat(pypath, status->temppath);
-	    pypath[strlen(pypath)-1] = '\0';
-	    strcat(pypath, PATHSEP);
+	VS(_T("Manipulating evironment\n"));
+	_tcscpy(pypath, _T("PYTHONPATH="));
+    if (status->temppath[0] != _T('\0')) { /* Temppath is set */
+	    _tcscat(pypath, status->temppath);
+	    pypath[_tcslen(pypath)-1] = _T('\0'); 
+	    _tcscat(pypath, PATHSEP);
     }
-	strcat(pypath, status->homepath);
+	_tcscat(pypath, status->homepath);
 
 	/* don't chop off SEP if root directory */
 #ifdef WIN32
-	if (strlen(pypath) > 14)
+	if (_tcslen(pypath) > 14)
 #else
-	if (strlen(pypath) > 12)
+	if (_tcslen(pypath) > 12)
 #endif
-		pypath[strlen(pypath)-1] = '\0';
+		pypath[_tcslen(pypath)-1] = _T('\0'); 
 
-	putenv(pypath);
-	VS("%s\n", pypath);
+	_tputenv(pypath); 
+	VS(_T("%s\n"), pypath);
 	/* Clear out PYTHONHOME to avoid clashing with any installation */
 #ifdef WIN32
-	putenv("PYTHONHOME=");
+	_tputenv(_T("PYTHONHOME="));
 #endif
 
 	/* Start python. */
@@ -692,41 +780,55 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	*PI_Py_NoSiteFlag = 1;	/* maybe changed to 0 by setRuntimeOptions() */
     *PI_Py_FrozenFlag = 1;
 	setRuntimeOptions(status);
-	PI_Py_SetProgramName(status->archivename); /*XXX*/
+	PI_Py_SetProgramName(status->archivename); /*XXX*/    // PROBLEM: archivename is Unicode...how does this work????? or maybe it doesn't?
 	PI_Py_Initialize();
 
+	// import sys
+	VS(_T("Importing sys...\n"));  fflush(stdout);
+	sys = PI_PyImport_ImportModule("sys");
+
+
 	/* Set sys.path */
-	/* VS("Manipulating Python's sys.path\n"); */
+	VS(_T("Manipulating Python's sys.path\n"));   fflush(stdout);
 	PI_PyRun_SimpleString("import sys\n");
-	PI_PyRun_SimpleString("del sys.path[:]\n");
-    if (status->temppath[0] != '\0') {
-        strcpy(tmp, status->temppath);
-	    tmp[strlen(tmp)-1] = '\0';
-	    sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
-        PI_PyRun_SimpleString(cmd);
+	PI_PyRun_SimpleString("del sys.path[:]\n"); // TODO: why not call a Python API to both import and del sys.path[:]? 
+
+    if (status->temppath[0] != _T('\0')) {
+        _tcscpy(tmp, status->temppath);
+	    tmp[_tcslen(tmp)-1] = _T('\0');
+	    //_stprintf(cmd, "sys.path.append(r\"%s\")", tmp);
+        //PI_PyRun_SimpleString(cmd); // PROBLEM UNICODE: how to I run a unicode string???		
+		insertSearchPath(sys,tmp);
     }
 
-	strcpy(tmp, status->homepath);
-	tmp[strlen(tmp)-1] = '\0';
-	sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
-	PI_PyRun_SimpleString (cmd);
+	_tcscpy(tmp, status->homepath);
+	tmp[_tcslen(tmp)-1] = _T('\0');
+	insertSearchPath(sys,tmp);
+	//_stprintf(cmd, _T("sys.path.append(r\"%s\")"), tmp);
+	//PI_PyRun_SimpleString (cmd);
 
 	/* Set argv[0] to be the archiveName */
+#ifdef UNICODE
+	strcpy(itemtype,"u");
+#else
+	strcpy(itemtype,"s");
+#endif
 	py_argv = PI_PyList_New(0);
-	val = PI_Py_BuildValue("s", status->archivename);
+    //val = PI_Py_BuildValue("s", status->archivename);  
+	val = PI_Py_BuildValue(itemtype, status->archivename);  // UNICODECONCERN: I guess the first item of argv being unicode and the rest ascii is appropriate at this point?
 	PI_PyList_Append(py_argv, val);
 	for (i = 1; i < argc; ++i) {
-		val = PI_Py_BuildValue ("s", argv[i]);
+		val = PI_Py_BuildValue ("s", argv[i]); // UNICODE: replace this with 'itemtype' if you want to pass unicode in the list.  Needs investigation.
 		PI_PyList_Append (py_argv, val);
 	}
-	sys = PI_PyImport_ImportModule("sys");
+	
 	/* VS("Setting sys.argv\n"); */
 	PI_PyObject_SetAttrString(sys, "argv", py_argv);
 
 	/* Check for a python error */
 	if (PI_PyErr_Occurred())
 	{
-		FATALERROR("Error detected starting Python VM.");
+		FATALERROR(_T("Error detected starting Python VM."));
 		return -1;
 	}
 
@@ -745,7 +847,7 @@ int importModules(ARCHIVE_STATUS *status)
 	PyObject *co;
 	PyObject *mod;
 
-	VS("importing modules from CArchive\n");
+	VS(_T("importing modules from CArchive\n"));
 
 	/* Get the Python function marshall.load
 		* Here we collect some reference to PyObject that we don't dereference
@@ -764,7 +866,7 @@ int importModules(ARCHIVE_STATUS *status)
 		{
 			unsigned char *modbuf = extract(status, ptoc);
 
-			VS("extracted %s\n", ptoc->name);
+			VSA("extracted %s\n", ptoc->name);
 
 			/* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
 			 * data form the right point.
@@ -774,7 +876,7 @@ int importModules(ARCHIVE_STATUS *status)
 
 			/* Check for errors in loading */
 			if (mod == NULL) {
-				FATALERROR("mod is NULL - %s", ptoc->name);
+				FATALERROR(_T("mod is NULL - %s"), ptoc->name);
 			}
 			if (PI_PyErr_Occurred())
 			{
@@ -798,19 +900,32 @@ int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	int rc;
 	int zlibpos = status->pkgstart + ntohl(ptoc->pos);
+#ifndef UNICODE // TODO remove this in favor of that is below.
 	char *tmpl = "sys.path.append(r\"%s?%d\")\n";
 	char *cmd = (char *) malloc(strlen(tmpl) + strlen(status->archivename) + 32);
 	sprintf(cmd, tmpl, status->archivename, zlibpos);
-	/*VS(cmd);*/
+	VS(cmd);
 	rc = PI_PyRun_SimpleString(cmd);
-	if (rc != 0)
-	{
-		FATALERROR("Error in command: %s\n", cmd);
-		free(cmd);
-		return -1;
-	}
+	
+#else
+	PyObject *sys;
+	TCHAR pth[_MAX_PATH*2];
+	sys = PI_PyImport_ImportModule("sys");
+	_stprintf(pth,_T("%s?%d"),status->archivename,zlibpos);
 
-	free(cmd);
+	insertSearchPath(sys,pth);
+	PI_Py_DecRef(sys);
+#endif
+
+	// TODO error detection
+	//if (rc != 0)
+	//{
+	//	FATALERROR("Error in command: %s\n", cmd);
+	//	free(cmd);
+	//	return -1;
+	//}
+
+	//free(cmd);
 	return 0;
 }
 
@@ -822,19 +937,23 @@ int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
 int installZlibs(ARCHIVE_STATUS *status)
 {
 	TOC * ptoc;
-	VS("Installing import hooks\n");
+	VS(_T("Installing import hooks\n"));
 
 	/* Iterate through toc looking for zlibs (type 'z') */
 	ptoc = status->tocbuff;
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == 'z')
 		{
-			VS("%s\n", ptoc->name);
+			VSA("installZlibs: ptoc->name = %s\n", ptoc->name);
 			installZlib(status, ptoc);
 		}
 
 		ptoc = incrementTocPtr(status, ptoc);
 	}
+
+	printf("After intalling the zlibs, the path is now:\n");
+	PI_PyRun_SimpleString("for i in sys.path: print \"  ==>\" + repr(i)");
+
 	return 0;
 }
 
@@ -869,12 +988,12 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 			rc = (inflateEnd)(&zstream);
 		}
 		else {
-			OTHERERROR("Error %d from inflate: %s\n", rc, zstream.msg);
+			OTHERERROR(_T("Error %d from inflate: %s\n"), rc, zstream.msg);
 			return NULL;
 		}
 	}
 	else {
-		OTHERERROR("Error %d from inflateInit: %s\n", rc, zstream.msg);
+		OTHERERROR(_T("Error %d from inflateInit: %s\n"), rc, zstream.msg);
 		return NULL;
 	}
 
@@ -893,11 +1012,11 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 	fseek(status->fp, status->pkgstart + ntohl(ptoc->pos), SEEK_SET);
 	data = (unsigned char *)malloc(ntohl(ptoc->len));
 	if (data == NULL) {
-		OTHERERROR("Could not allocate read buffer\n");
+		OTHERERROR(_T("Could not allocate read buffer\n"));
 		return NULL;
 	}
 	if (fread(data, ntohl(ptoc->len), 1, status->fp) < 1) {
-	    OTHERERROR("Could not read from file\n");
+	    OTHERERROR(_T("Could not read from file\n"));
 	    return NULL;
 	}
 	if (ptoc->cflag == '\2') {
@@ -926,14 +1045,14 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 		memcpy(data, PI_PyString_AsString(ddata), ntohl(ptoc->len)-32);
 		Py_DECREF(aes_obj);
 		Py_DECREF(ddata);
-		VS("decrypted %s\n", ptoc->name);
+		VS(_T("decrypted %s\n"), ptoc->name);
 	}
 	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
 		tmp = decompress(data, ptoc);
 		free(data);
 		data = tmp;
 		if (data == NULL) {
-			OTHERERROR("Error decompressing %s\n", ptoc->name);
+			OTHERERROR(_T("Error decompressing %s\n"), ptoc->name);
 			return NULL;
 		}
 	}
@@ -944,43 +1063,45 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
  * helper for extract2fs
  * which may try multiple places
  */
-FILE *openTarget(const char *path, const char* name_)
+FILE *openTarget(const TCHAR *path, const TCHAR* name_)
 {
 	struct stat sbuf;
-	char fnm[_MAX_PATH+1];
-	char name[_MAX_PATH+1];
-	char *dir;
+	TCHAR fnm[_MAX_PATH+1];
+	TCHAR name[_MAX_PATH+1];
+	TCHAR *dir;
 
-	strcpy(fnm, path);
-	strcpy(name, name_);
-	fnm[strlen(fnm)-1] = '\0';
+	VS(_T("openTarget: %s %s\n"),path,name_);
 
-	dir = strtok(name, "/\\");
+	_tcscpy(fnm, path);
+	_tcscpy(name, name_);
+	fnm[_tcslen(fnm)-1] = _T('\0'); // knock off the slash at the end
+
+	dir = _tcstok(name, _T("/\\")); 
 	while (dir != NULL)
 	{
 #ifdef WIN32
-		strcat(fnm, "\\");
+		_tcscat(fnm, _T("\\"));
 #else
-		strcat(fnm, "/");
+		_tcscat(fnm, _T("/"));
 #endif
-		strcat(fnm, dir);
-		dir = strtok(NULL, "/\\");
+		_tcscat(fnm, dir);
+		dir = _tcstok(NULL, _T("/\\"));
 		if (!dir)
 			break;
-		if (stat(fnm, &sbuf) < 0)
+		if (_tstat(fnm, &sbuf) < 0)
     {
 #ifdef WIN32
-			mkdir(fnm);
+			_tmkdir(fnm);
 #else
-			mkdir(fnm, 0700);
+			_tmkdir(fnm, 0700);
 #endif
     }
 	}
 
-	if (stat(fnm, &sbuf) == 0) {
-		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
+	if (_tstat(fnm, &sbuf) == 0) {
+		OTHERERROR(_T("WARNING: file already exists but should not: %s\n"), fnm);
     }
-	return fopen(fnm, "wb");
+	return _tfopen(fnm, _T("wb"));
 }
 
 /* Function that creates a temporany directory if it doesn't exists
@@ -989,24 +1110,46 @@ FILE *openTarget(const char *path, const char* name_)
 static int createTempPath(ARCHIVE_STATUS *status)
 {
 #ifdef WIN32
-	char *p;
+	TCHAR *p;
 #endif
 
-	if (status->temppath[0] == '\0') {
+	if (status->temppath[0] == _T('\0')) {
 		if (!getTempPath(status->temppath))
 		{
-            FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
+            FATALERROR(_T("INTERNAL ERROR: cannot create temporary directory!\n"));
             return -1;
 		}
 #ifdef WIN32
-		strcpy(status->temppathraw, status->temppath);
-		for ( p=status->temppath; *p; p++ )
-			if (*p == '\\')
-				*p = '/';
+		_tcscpy(status->temppathraw, status->temppath);
+		BackslashToFrontslash(status->temppath);
+		VS(_T("temppath (in createTempPath) set to %s\n"),status->temppath);
 #endif
 	}
     return 0;
 }
+
+// TODO: split this into a platform-specific utility function.
+// kind of like a strncpy, but promotes ascii to unicode.
+// PROBLEM: windows specific, with no corresponding code for Linux/OSX yet.
+//
+// if nascii is -1, it copies all characters in txta up to and including the null terminator.
+void ascii_to_unicode(TCHAR * txtu,const char *txta,int txtu_len,int nascii)
+{
+#ifdef UNICODE
+#ifdef WIN32
+	MultiByteToWideChar(CP_ACP,0,txta,nascii,txtu,txtu_len);
+#else	
+	if (nascii == -1) nascii = strlen(txta) + 1;
+	strncpy(txtu,txta,nascii);
+#endif	
+#else
+	if (nascii == -1) nascii = strlen(txta) + 1;
+	strncpy(txtu,txta,nascii);
+#endif
+
+}
+
+
 
 /*
  * extract from the archive
@@ -1016,16 +1159,21 @@ static int createTempPath(ARCHIVE_STATUS *status)
 int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	FILE *out;
+	TCHAR thename[_MAX_PATH];
+
 	unsigned char *data = extract(status, ptoc);
 
     if (createTempPath(status) == -1){
         return -1;
     }
+	ascii_to_unicode(thename,ptoc->name,_MAX_PATH,-1);
 
-	out = openTarget(status->temppath, ptoc->name);
+	_tprintf(_T("ptoc->name(wide) = %s\n"),thename);
+
+	out = openTarget(status->temppath, thename);
 
 	if (out == NULL)  {
-		FATALERROR("%s could not be extracted!\n", ptoc->name);
+		FATALERROR(_T("%s could not be extracted!\n"), ptoc->name);
 		return -1;
 	}
 	else {
@@ -1040,24 +1188,30 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 }
 
 /* Splits the item in the form path:filename */
+// UNICODE note.  In the usage of this function, "item" is a name in the archive, which is currently a char.
+// From what I can tell, what gets passed in here is something like "test1_multipackage_B.exe:_socket.pyd".  So
+// no paths, which means we can keep this ascii.  For now.
 static int splitName(char *path, char *filename, const char *item)
 {
     char name[_MAX_PATH + 1];
 
-    VS("Splitting item into path and filename\n");
+    VSA("Splitting item into path and filename: %s\n",item);
+	fflush(stdout);
+
     strcpy(name, item);
-    strcpy(path, strtok(name, ":"));
-    strcpy(filename, strtok(NULL, ":")) ;
+    strcpy(path, strtok(name, _T(":")));
+    strcpy(filename, strtok(NULL, _T(":"))) ;
 
     if (path[0] == 0 || filename[0] == 0)
         return -1;
+
     return 0;
 }
 
 /* Copy the file src to dst 4KB per time */
-static int copyFile(const char *src, const char *dst, const char *filename)
+static int copyFile(const TCHAR *src, const TCHAR *dst, const TCHAR *filename)
 {
-    FILE *in = fopen(src, "rb");
+    FILE *in = _tfopen(src, _T("rb"));
     FILE *out = openTarget(dst, filename);
     char buf[4096];
     int error = 0;
@@ -1094,28 +1248,36 @@ static int copyFile(const char *src, const char *dst, const char *filename)
  * which contains the directory name.
  * The returned string must be freed after use.
  */
-static char *dirName(const char *fullpath)
+// UNICODE: the name of this function seems to indicate that it is meant for more than it does.
+// "fullpath" is really just a filename, at least as far as I can tell at this point.  UNICODECONCERN.
+static TCHAR *dirName(const char *fullpath)
 {
-    char *match = strrchr(fullpath, SEP);
-    char *pathname = (char *) calloc(_MAX_PATH, sizeof(char));
-    VS("Calculating dirname from fullpath\n");
-    if (match != NULL)
-        strncpy(pathname, fullpath, match - fullpath + 1);
+    char *match = strrchr(fullpath, SEPA);
+    TCHAR *pathname = (TCHAR *) calloc(_MAX_PATH, sizeof(TCHAR));
+    VS(_T("Calculating dirname from fullpath\n"));
+    if (match != NULL) {
+		VS(_T("WARNING: match was nonnull, and I never thought it would be!\n"));
+		ascii_to_unicode(pathname,fullpath,_MAX_PATH,match-fullpath+1);
+        //_tcsncpy(pathname, fullpath, match - fullpath + 1);
+	}
     else
-        strcpy(pathname, fullpath);
+	{
+		ascii_to_unicode(pathname,fullpath,_MAX_PATH,-1);
+        //_tcscpy(pathname, fullpath);
+	}
 
-    VS("Pathname: %s\n", pathname);
+    VS(_T("Pathname: %s\n"), pathname);
     return pathname;
 }
 
 /* Copy the dependencies file from a directory to the tempdir */
-static int copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, const char *filename)
+static int copyDependencyFromDir(ARCHIVE_STATUS *status, const TCHAR *srcpath, const TCHAR *filename)
 {
     if (createTempPath(status) == -1){
         return -1;
     }
 
-    VS("Coping file %s to %s\n", srcpath, status->temppath);
+    VS(_T("Copying file %s to %s\n"), srcpath, status->temppath);
     if (copyFile(srcpath, status->temppath, filename) == -1) {
         return -1;
     }
@@ -1132,34 +1294,34 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
     ARCHIVE_STATUS *status = NULL;
     int i = 0;
 
-    VS("Getting file from archive.\n");
+    VS(_T("Getting file from archive.\n"));
     if (createTempPath(status_list[SELF]) == -1){
         return NULL;
     }
 
     for (i = 1; status_list[i] != NULL; i++){
         if (strcmp(status_list[i]->archivename, path) == 0) {
-            VS("Archive found: %s\n", path);
+            VS(_T("Archive found: %s\n"), path);
             return status_list[i];
         }
-        VS("Checking next archive in the list...\n");
+        VS(_T("Checking next archive in the list...\n"));
     }
 
     if ((status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL) {
-        FATALERROR("Error allocating memory for status\n");
+        FATALERROR(_T("Error allocating memory for status\n"));
         return NULL;
     }
 
-    strcpy(status->archivename, path);
-    strcpy(status->homepath, status_list[SELF]->homepath);
-    strcpy(status->temppath, status_list[SELF]->temppath);
+    _tcscpy(status->archivename, path);
+    _tcscpy(status->homepath, status_list[SELF]->homepath);
+    _tcscpy(status->temppath, status_list[SELF]->temppath);
 #ifdef WIN32
-    strcpy(status->homepathraw, status_list[SELF]->homepathraw);
-    strcpy(status->temppathraw, status_list[SELF]->temppathraw);
+    _tcscpy(status->homepathraw, status_list[SELF]->homepathraw);
+    _tcscpy(status->temppathraw, status_list[SELF]->temppathraw);
 #endif
 
     if (openArchive(status)) {
-        FATALERROR("Error openning archive %s\n", path);
+        FATALERROR(_T("Error opening archive %s\n"), path);
         free(status);
         return NULL;
     }
@@ -1172,9 +1334,9 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
 static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
 {
 	TOC * ptoc = status->tocbuff;
-	VS("Extracting dependencies from archive\n");
+	VS(_T("Extracting dependencies from archive\n"));
 	while (ptoc < status->tocend) {
-		if (strcmp(ptoc->name, filename) == 0)
+		if (strcmp(ptoc->name, filename) == 0)  
 			if (extract2fs(status, ptoc))
 				return -1;
 		ptoc = incrementTocPtr(status, ptoc);
@@ -1182,25 +1344,30 @@ static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *file
 	return 0;
 }
 
-/* Decide if the dependency identified by item is in a onedir or onfile archive
+
+
+
+/* Decide if the dependency identified by item is in a onedir or onefile archive
  * then call the appropriate function.
  */
 static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
 {
     ARCHIVE_STATUS *status = NULL;
     char path[_MAX_PATH + 1];
+	TCHAR pathu[_MAX_PATH + 1];
     char filename[_MAX_PATH + 1];
-    char srcpath[_MAX_PATH + 1];
-    char archive_path[_MAX_PATH + 1];
+	TCHAR filenameu[_MAX_PATH + 1];
+    TCHAR srcpath[_MAX_PATH + 1];
+    TCHAR archive_path[_MAX_PATH + 1];
+    TCHAR *dirname = NULL;
 
-    char *dirname = NULL;
+	VSA("Extracting dependencies for: %s\n",item);
 
-    VS("Extracting dependencies\n");
     if (splitName(path, filename, item) == -1)
         return -1;
 
-    dirname = dirName(path);
-    if (dirname[0] == 0) {
+    dirname = dirName(path); // unicode note.  path going in is a char.  What is return is unicode.
+    if (dirname[0] == _T('\0')) {
         free(dirname);
         return -1;
     }
@@ -1210,36 +1377,45 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
      * archive next to the current onedir archive, 3) dependencies are in a onefile
      * archive next to the current onefile archive.
      */
-    VS("Checking if file exists\n");
-    if (checkFile(srcpath, "%s/%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) {
-        VS("File %s found, assuming is onedir\n", srcpath);
-        if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
-            FATALERROR("Error coping %s\n", filename);
+    VS(_T("Checking if file exists\n"));
+
+	ascii_to_unicode(filenameu,filename,_MAX_PATH,-1);
+	ascii_to_unicode(pathu,path,_MAX_PATH,-1);
+
+	VS(_T("PRE %s|%s|%s\n"), status_list[SELF]->homepath, dirname,filenameu);
+	
+	
+    if (checkFile(srcpath, _T("%s/%s/%s"), status_list[SELF]->homepath, dirname, filenameu) == 0) {
+        VS(_T("File %s found, assuming is onedir\n"), srcpath);
+        if (copyDependencyFromDir(status_list[SELF], srcpath, filenameu) == -1) {
+            FATALERROR(_T("Error copying %s\n"), filenameu);
             free(dirname);
             return -1;
         }
-    } else if (checkFile(srcpath, "%s../%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) {
-        VS("File %s found, assuming is onedir\n", srcpath);
-        if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
-            FATALERROR("Error coping %s\n", filename);
+    } else if (checkFile(srcpath, _T("%s../%s/%s"), status_list[SELF]->homepath, dirname, filenameu) == 0) {
+        VS(_T("File %s found, assuming is onedir\n"), srcpath);
+        if (copyDependencyFromDir(status_list[SELF], srcpath, filenameu) == -1) {
+            FATALERROR(_T("Error copying %s\n"), filenameu);
             free(dirname);
             return -1;
         }
     } else {
-        VS("File %s not found, assuming is onefile.\n", srcpath);
-        if ((checkFile(archive_path, "%s%s.pkg", status_list[SELF]->homepath, path) != 0) &&
-            (checkFile(archive_path, "%s%s.exe", status_list[SELF]->homepath, path) != 0) &&
-            (checkFile(archive_path, "%s%s", status_list[SELF]->homepath, path) != 0)) {
-            FATALERROR("Archive not found: %s\n", archive_path);
+        VS(_T("File %s not found, assuming is onefile.\n"), srcpath);
+
+        if ((checkFile(archive_path, _T("%s%s.pkg"), status_list[SELF]->homepath, pathu) != 0) &&
+            (checkFile(archive_path, _T("%s%s.exe"), status_list[SELF]->homepath, pathu) != 0) &&
+            (checkFile(archive_path, _T("%s%s"), status_list[SELF]->homepath, pathu) != 0)) {
+            FATALERROR(_T("Archive not found: %s\n"), archive_path);
             return -1;
         }
 
         if ((status = get_archive(status_list, archive_path)) == NULL) {
-            FATALERROR("Archive not found: %s\n", archive_path);
+            FATALERROR(_T("Archive not found: %s\n"), archive_path);
             return -1;
         }
-        if (extractDependencyFromArchive(status, filename) == -1) {
-            FATALERROR("Error extracting %s\n", filename);
+
+        if (extractDependencyFromArchive(status, filename) == -1) { 
+            FATALERROR(_T("Error extracting %s\n"), filenameu);
             free(status);
             return -1;
         }
@@ -1256,18 +1432,20 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
 int extractBinaries(ARCHIVE_STATUS *status_list[])
 {
 	TOC * ptoc = status_list[SELF]->tocbuff;
-	VS("Extracting binaries\n");
+	VS(_T("Extracting binaries\n"));
 	while (ptoc < status_list[SELF]->tocend) {
 		if (ptoc->typcd == 'b' || ptoc->typcd == 'x' || ptoc->typcd == 'Z')
 			if (extract2fs(status_list[SELF], ptoc))
 				return -1;
 
         if (ptoc->typcd == 'd') {
+			printf("IN EXTRACTBINARIES: %d\n",ptoc->name);
             if (extractDependency(status_list, ptoc->name) == -1)
                 return -1;
         }
 		ptoc = incrementTocPtr(status_list[SELF], ptoc);
 	}
+	VS(_T("Finished extracting binaries\n"));
 	return 0;
 }
 
@@ -1283,7 +1461,7 @@ int runScripts(ARCHIVE_STATUS *status)
 	TOC * ptoc = status->tocbuff;
 	PyObject *__main__ = PI_PyImport_AddModule("__main__");
 	PyObject *__file__;
-	VS("Running scripts\n");
+	VS(_T("Running scripts\n"));
 
 	/*
 	 * Now that the startup is complete, we can reset the _MEIPASS2 env
@@ -1291,7 +1469,7 @@ int runScripts(ARCHIVE_STATUS *status)
 	 * as subprocess, this subprocess will not fooled into thinking that it
 	 * is already unpacked.
 	 */
-	unsetenv("_MEIPASS2");
+	unsetenv(_T("_MEIPASS2")); 
 
 	/* Iterate through toc looking for scripts (type 's') */
 	while (ptoc < status->tocend) {
@@ -1306,10 +1484,12 @@ int runScripts(ARCHIVE_STATUS *status)
             PI_PyObject_SetAttrString(__main__, "__file__", __file__);
             Py_DECREF(__file__);
 			/* Run it */
+			printf("ABOUT TO RUN THIS IN THE INTERPRETER\n");
+			printf("%s\n",data);
 			rc = PI_PyRun_SimpleString(data);
 			/* log errors and abort */
 			if (rc != 0) {
-				VS("RC: %d from %s\n", rc, ptoc->name);
+				VSA("RC: %d from %s\n", rc, ptoc->name); 
 				return rc;
 			}
 			free(data);
@@ -1336,17 +1516,17 @@ int callSimpleEntryPoint(char *name, int *presult)
 
 	mod = PI_PyImport_AddModule("__main__"); /* NO ref added */
 	if (!mod) {
-		VS("No __main__\n");
+		VS(_T("No __main__\n"));
 		goto done;
 	}
 	dict = PI_PyModule_GetDict(mod); /* NO ref added */
 	if (!mod) {
-		VS("No __dict__\n");
+		VS(_T("No __dict__\n"));
 		goto done;
 	}
 	func = PI_PyDict_GetItemString(dict, name);
 	if (func == NULL) { /* should explicitly check KeyError */
-		VS("CallSimpleEntryPoint can't find the function name\n");
+		VS(_T("CallSimpleEntryPoint can't find the function name\n"));
 		rc = -2;
 		goto done;
 	}
@@ -1355,7 +1535,7 @@ int callSimpleEntryPoint(char *name, int *presult)
 	PI_PyErr_Clear();
 	*presult = PI_PyInt_AsLong(pyresult);
 	rc = PI_PyErr_Occurred() ? -1 : 0;
-	VS( rc ? "Finished with failure\n" : "Finished OK\n");
+	VS( rc ? _T("Finished with failure\n" : "Finished OK\n"));
 	/* all done! */
 done:
 	Py_XDECREF(func);
@@ -1373,8 +1553,11 @@ done:
 /*
  * initialize (this always needs to be done)
  */
-int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
+int init(ARCHIVE_STATUS *status, TCHAR const * archivePath, TCHAR const * archiveName)
 {
+	VS(_T("INIT: archivepath = %s\n"),archivePath);
+	VS(_T("INIT: archivename = %s\n"),archiveName);
+
 	/* Set up paths */
 	if (setPaths(status, archivePath, archiveName))
 		return -1;
@@ -1395,33 +1578,40 @@ int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archive
 int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
 	int rc = 0;
+
+	VS(_T("LOADPYTHON\n")); fflush(stdout);
 	/* Load Python DLL */
 	if (loadPython(status))
 		return -1;
 
+	VS(_T("STARTPYTHON\n"));fflush(stdout);
 	/* Start Python. */
 	if (startPython(status, argc, argv))
 		return -1;
 
+	VS(_T("IMPORTMODULES\n"));fflush(stdout);
 	/* Import modules from archive - bootstrap */
 	if (importModules(status))
 		return -1;
 
+	VS(_T("INSTALLZLIBS\n"));fflush(stdout);
 	/* Install zlibs  - now all hooks in place */
 	if (installZlibs(status))
 		return -1;
 
 	/* Run scripts */
+	VS(_T("RUNSCRIPTS\n"));fflush(stdout);
 	rc = runScripts(status);
 
-	VS("OK.\n");
+	VS(_T("OK.\n"));
 
 	return rc;
 }
 
 void clear(const char *dir);
+// UNICODE PROBLEM
 #ifdef WIN32
-void removeOne(char *fnm, int pos, struct _finddata_t finfo)
+void removeOne(TCHAR *fnm, int pos, struct _finddata_t finfo)
 {
 	if ( strcmp(finfo.name, ".")==0  || strcmp(finfo.name, "..") == 0 )
 		return;
@@ -1435,14 +1625,16 @@ void removeOne(char *fnm, int pos, struct _finddata_t finfo)
         remove(fnm);
     }
 }
-void clear(const char *dir)
+
+// UNICODE PROBLEM
+void clear(const TCHAR *dir)
 {
-	char fnm[_MAX_PATH+1];
+	TCHAR fnm[_MAX_PATH+1];
 	struct _finddata_t finfo;
 	long h;
 	int dirnmlen;
-	strcpy(fnm, dir);
-	dirnmlen = strlen(fnm);
+	_tcscpy(fnm, dir);
+	dirnmlen = _tcslen(fnm);
 	if ( fnm[dirnmlen-1] != '/' && fnm[dirnmlen-1] != '\\' ) {
 		strcat(fnm, "\\");
 		dirnmlen++;
@@ -1458,6 +1650,7 @@ void clear(const char *dir)
 	rmdir(dir);
 }
 #else
+// UNICODE PROBLEM
 void removeOne(char *pnm, int pos, const char *fnm)
 {
 	struct stat sbuf;
@@ -1472,6 +1665,7 @@ void removeOne(char *pnm, int pos, const char *fnm)
 			unlink(pnm);
 	}
 }
+// UNICODE PROBLEM
 void clear(const char *dir)
 {
 	char fnm[_MAX_PATH+1];

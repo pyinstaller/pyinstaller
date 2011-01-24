@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "pyi_unicode.h"
 #ifdef WIN32
 #include <io.h>
 #else
@@ -95,6 +96,12 @@
 /* Forward declarations of opaque Python types. */
 struct _object;
 typedef struct _object PyObject;
+#ifdef WIN32
+typedef wchar_t Py_UNICODE ; // UNICODEPROBLEM: for Windows, OK.  For other platforms, assume UCS-2?  That's what the docs seem to say.
+#else
+typedef unsigned short Py_UNICODE;
+#endif
+typedef int Py_ssize_t; // UNICODEPROBLEM: is this right?
 struct _PyThreadState;
 typedef struct _PyThreadState PyThreadState;
 
@@ -137,10 +144,14 @@ EXTDECLPROC(PyThreadState *, Py_NewInterpreter, (void) );
 EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(long, PyInt_AsLong, (PyObject *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
+EXTDECLPROC(PyObject *, PyUnicodeUCS2_FromUnicode, (const Py_UNICODE *, Py_ssize_t )); 
+EXTDECLPROC(PyObject *, PyUnicodeUCS4_FromUnicode, (const int *, Py_ssize_t ));   // PROBLEM: this is most likely wrong.
+EXTDECLPROC(PyObject *, PyObject_GetAttr, (PyObject *, PyObject *));
+EXTDECLPROC(PyObject *, PyString_FromString, (const char *));
 
 /* Macros for reference counting through exported functions
  * (that is: without binding to the binary structure of a PyObject.
- * These rely on the Py_IncRef/Py_DecRef API functions on Pyhton 2.4+,
+ * These rely on the Py_IncRef/Py_DecRef API functions on Python 2.4+,
  * or the emulated version for older versions (see launch.c).
  */
 #define Py_XINCREF(o)    PI_Py_IncRef(o)
@@ -160,9 +171,10 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 #define GETPROC(dll, name)\
     GETPROCOPT(dll, name); \
     if (!PI_##name) {\
-        FATALERROR ("Cannot GetProcAddress for " #name);\
+	printf("CANNOT GETPROCADDRESS FOR " #name "\n");\
         return -1;\
     }
+	//FATALERROR ("Cannot GetProcAddress for " #name); //PROBLEM
 #define DECLVAR(name)\
     __VAR__##name *PI_##name = NULL;
 #define GETVAR(dll, name)\
@@ -181,18 +193,19 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 #define GETPROC(dll, name)\
     GETPROCOPT(dll, name);\
     if (!PI_##name) {\
-        FATALERROR ("Cannot dlsym for " #name);\
+        printf("CANNOT DLSYM FOR\n");\
         return -1;\
     }
+	//FATALERROR ("Cannot dlsym for " #name);//PROBLEM
 #define DECLVAR(name)\
     __VAR__##name *PI_##name = NULL;
 #define GETVAR(dll, name)\
     PI_##name = (__VAR__##name *)dlsym(dll, #name);\
     if (!PI_##name) {\
-        FATALERROR ("Cannot dlsym for " #name);\
+        printf("CANNOT DLSYM FOR \n");\
         return -1;\
     }
-
+//FATALERROR ("Cannot dlsym for " #name);//PROBLEM
 #endif /* WIN32 */
 
 /*
@@ -204,21 +217,25 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 # define FATALERROR mbfatalerror
 # define OTHERERROR mbothererror
 #else
-# define FATALERROR printf
-# define OTHERERROR printf
+# define FATALERROR _tprintf
+# define OTHERERROR _tprintf
 #endif
 
 #ifdef LAUNCH_DEBUG
 # if defined(WIN32) && defined(WINDOWED)
-#  define VS mbvs
+#  define VS mbvs 
+#  define VSA mbvs
 # else
-#  define VS printf
+#  define VS _tprintf
+#  define VSA printf
 # endif
 #else
 # ifdef WIN32
 #  define VS
+#  define VSA
 # else
 #  define VS(...)
+#  define VSA(...)
 # endif
 #endif
 
@@ -257,12 +274,12 @@ typedef struct _archive_status {
     TOC     *tocbuff;
     TOC     *tocend;
     COOKIE  cookie;
-    char    archivename[_MAX_PATH + 1];
-    char    homepath[_MAX_PATH + 1];
-    char    temppath[_MAX_PATH + 1];
+    TCHAR    archivename[_MAX_PATH + 1];
+    TCHAR    homepath[_MAX_PATH + 1];
+    TCHAR    temppath[_MAX_PATH + 1];
 #ifdef WIN32
-    char    homepathraw[_MAX_PATH + 1];
-    char    temppathraw[_MAX_PATH + 1];
+    TCHAR    homepathraw[_MAX_PATH + 1];
+    TCHAR    temppathraw[_MAX_PATH + 1];
 #endif
 } ARCHIVE_STATUS;
 
@@ -286,7 +303,7 @@ typedef struct _archive_status {
  *
  * @return 0 on success, non-zero otherwise.
  */
-int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName);
+int init(ARCHIVE_STATUS *status, TCHAR const * archivePath, TCHAR  const * archiveName);
 
 /**
  * Extract binaries in the archive
@@ -334,7 +351,7 @@ void finalizePython(void);
 /**
  * The gory detail level
  */
-int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
+int setPaths(ARCHIVE_STATUS *status, TCHAR const * archivePath, TCHAR const * archiveName);
 int openArchive(ARCHIVE_STATUS *status);
 int attachPython(ARCHIVE_STATUS *status, int *loadedNew);
 int loadPython(ARCHIVE_STATUS *status); /* note - attachPython will call this if not already loaded */
@@ -344,6 +361,6 @@ int installZlibs(ARCHIVE_STATUS *status);
 int runScripts(ARCHIVE_STATUS *status);
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
-void clear(const char *dir);
+void clear(const TCHAR *dir);
 #endif
 
