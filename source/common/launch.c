@@ -195,7 +195,7 @@ int getTempPath(TCHAR *buff)
 // there is no need (yet) to unicode this part.
 int testTempPath(char *buff)
 {
-	_tcscat(buff, "/_MEIXXXXXX"_;
+	_tcscat(buff, "/_MEIXXXXXX");
     if (mkdtemp(buff))
     {
         _tcscat(buff, "/");
@@ -718,7 +718,7 @@ int insertSearchPath(PyObject*sys,TCHAR *pth)
 		ppth = PI_PyUnicodeUCS4_FromUnicode(pth,_tcslen(pth));
 	
 #else
-	ppth = PI_PyString_FromString(pth,_tcslen(pth));
+	ppth = PI_PyString_FromString(pth);
 #endif
 	attr = PI_PyString_FromString("path");
 	

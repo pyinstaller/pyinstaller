@@ -9,7 +9,9 @@
 
 #else
 
-// include our own cut-down version of tchar.h
+// for now, if we are not on a windows platform, just compile nonunicode.  
+
+#include "tchar_nonwindows.h"
 
 
 #endif

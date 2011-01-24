@@ -29,8 +29,8 @@
 
 void init_launcher(void);
 int get_thisfile(TCHAR *thisfile, const TCHAR *programname);
-int get_thisfilew(WCHAR *thisfile);
 #ifdef WIN32
+int get_thisfilew(WCHAR *thisfile);
 int CreateActContext(TCHAR *workpath, TCHAR *thisfile);
 void ReleaseActContext(void);
 #endif
