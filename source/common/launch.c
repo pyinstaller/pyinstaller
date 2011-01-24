@@ -89,8 +89,8 @@ DECLPROC(Py_NewInterpreter);
 DECLPROC(Py_EndInterpreter);
 DECLPROC(PyInt_AsLong);
 DECLPROC(PySys_SetObject);
-DECLPROC(PyUnicodeUCS2_FromUnicode);  // PROBLEM: how to find out if the python build is using UCS4?
-DECLPROC(PyUnicodeUCS4_FromUnicode);  // PROBLEM: how to find out if the python build is using UCS4?
+DECLPROC(PyUnicodeUCS2_FromUnicode);  
+DECLPROC(PyUnicodeUCS4_FromUnicode);  
 DECLPROC(PyObject_GetAttr);
 DECLPROC(PyString_FromString);
 
@@ -121,43 +121,43 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
 
 #define MBTXTLEN 200
 
-void mbfatalerror(const char *fmt, ...)
+void mbfatalerror(const TCHAR *fmt, ...)
 {
-	char msg[MBTXTLEN];
+	TCHAR msg[MBTXTLEN];
 	va_list args;
 
 	va_start(args, fmt);
-	vsnprintf(msg, MBTXTLEN, fmt, args);
-	msg[MBTXTLEN-1] = '\0';
+	_vsntprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = _T('\0');
 	va_end(args);
 
-	MessageBoxA(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION); // UNICODE: explicitly use ascii version.
+	MessageBox(NULL, msg, _T("Fatal Error!"), MB_OK | MB_ICONEXCLAMATION);
 }
 
-void mbothererror(const char *fmt, ...)
+void mbothererror(const TCHAR *fmt, ...)
 {
-	char msg[MBTXTLEN];
+	TCHAR msg[MBTXTLEN];
 	va_list args;
 
 	va_start(args, fmt);
-	vsnprintf(msg, MBTXTLEN, fmt, args);
-	msg[MBTXTLEN-1] = '\0';
+	_vsntprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = _T('\0');
 	va_end(args);
 
-	MessageBoxA(NULL, msg, "Error!", MB_OK | MB_ICONWARNING); // UNICODE: explicitly use ascii version.
+	MessageBox(NULL, msg, _T("Error!"), MB_OK | MB_ICONWARNING); 
 }
 
-void mbvs(const char *fmt, ...)
+void mbvs(const TCHAR *fmt, ...)
 {
-	char msg[MBTXTLEN];
+	TCHAR msg[MBTXTLEN];
 	va_list args;
 
 	va_start(args, fmt);
-	vsnprintf(msg, MBTXTLEN, fmt, args);
-	msg[MBTXTLEN-1] = '\0';
+	_vsntprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = _T('\0');
 	va_end(args);
 
-	MessageBoxA(NULL, msg, "Tracing", MB_OK); // UNICODE: explicitly use ascii version.
+	MessageBoxA(NULL, msg, _T("Tracing"), MB_OK);
 }
 
 #endif /* WIN32 and WINDOWED */
@@ -234,14 +234,13 @@ int getTempPath(char *buff)
 
 
 
-static int checkFile(char *buf, const char *fmt, ...) // PROBLEM: need to figure out how to handle va_args in unicode.
+static int checkFile(TCHAR *buf, const TCHAR *fmt, ...) 
 {
 	va_list args;
     struct stat tmp;
 
     va_start(args, fmt);
     _vsntprintf(buf, _MAX_PATH, fmt, args);
-	_tprintf(_T("BUF = %s\n"),buf);
     va_end(args);
 
     return _tstat(buf, &tmp);
@@ -626,7 +625,7 @@ TOC *incrementTocPtr(ARCHIVE_STATUS *status, TOC* ptoc)
 {
 	TOC *result = (TOC*)((char *)ptoc + ntohl(ptoc->structlen));
 	if (result < status->tocbuff) {
-		FATALERROR("Cannot read Table of Contents.\n");
+		FATALERROR(_T("Cannot read Table of Contents.\n"));
 		return status->tocend;
 	}
 	return result;
@@ -920,7 +919,7 @@ int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
 	// TODO error detection
 	//if (rc != 0)
 	//{
-	//	FATALERROR("Error in command: %s\n", cmd);
+	//	FATALERROR(_(T"Error in command: %s\n"), cmd);
 	//	free(cmd);
 	//	return -1;
 	//}
@@ -1609,8 +1608,8 @@ int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 }
 
 void clear(const char *dir);
-// UNICODE PROBLEM
 #ifdef WIN32
+// UNICODE PROBLEM: NEEDS TO BE ADDRESSED
 void removeOne(TCHAR *fnm, int pos, struct _finddata_t finfo)
 {
 	if ( strcmp(finfo.name, ".")==0  || strcmp(finfo.name, "..") == 0 )
