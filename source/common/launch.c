@@ -43,6 +43,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "launch.h"
+#include "utils.h"
 #include <string.h>
 #include "zlib.h"
 
@@ -1081,6 +1082,7 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 FILE *openTarget(const TCHAR *path, const TCHAR* name_)
 {
 	struct _tstat64i32 sbuf;
+
 	TCHAR fnm[_MAX_PATH+1];
 	TCHAR name[_MAX_PATH+1];
 	TCHAR *dir;
