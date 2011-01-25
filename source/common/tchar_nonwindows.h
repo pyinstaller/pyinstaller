@@ -22,8 +22,15 @@
 #define _ttempnam   _tempnam
 #define _tmkdir     mkdir
 #define _tstat      stat
+#define _trmdir     _rmdir
+#define _tremove    remove
 
 #define _tgetenv    getenv
 #define _tputenv    putenv
+
+#define _tfindfirst      _findfirst
+#define _tfindnext       _findnext
+#define _tfinddata_t      _finddata_t
+
 
 #endif

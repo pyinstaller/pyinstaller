@@ -163,6 +163,8 @@ def configure(conf):
 
     if myplatform.startswith('win'):
         conf.env.append_value('CCDEFINES', 'WIN32')
+        conf.env.append_value('CCDEFINES', '_CRT_SECURE_NO_WARNINGS')
+        conf.env.append_value('CCDEFINES', '_CRT_NON_CONFORMING_SWPRINTFS')
         conf.env.append_value('CPPPATH', '../zlib')
 
     conf.env.append_value('CPPPATH', '../common')

@@ -174,7 +174,7 @@ void init_launcher(void)
 }
 
 // unicode OK
-int get_thisfile(TCHAR *thisfile, const TCHAR *programname)
+int get_thisfile(TCHAR *thisfile, const char *unused)
 {
 	if (!GetModuleFileName(NULL, thisfile, _MAX_PATH)) {
 		FATALERROR(_T("System error - unable to load!"));
@@ -277,9 +277,9 @@ int spawn(LPWSTR thisfilew) //unicode OK
 	si.lpTitle = NULL;
 	si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_NORMAL;
-	si.hStdInput = (void*)_get_osfhandle(fileno(stdin));
-	si.hStdOutput = (void*)_get_osfhandle(fileno(stdout));
-	si.hStdError = (void*)_get_osfhandle(fileno(stderr));
+	si.hStdInput = (void*)_get_osfhandle(_fileno(stdin));
+	si.hStdOutput = (void*)_get_osfhandle(_fileno(stdout));
+	si.hStdError = (void*)_get_osfhandle(_fileno(stderr));
 
 	VS(_T("Creating child process\n"));
 	if (CreateProcessW( 

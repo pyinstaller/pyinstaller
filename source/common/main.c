@@ -29,6 +29,8 @@
 #include "utils.h"
 #ifndef WIN32
 #include <sys/wait.h>
+#else
+#include <process.h>
 #endif
 
 
@@ -82,7 +84,7 @@ int main(int argc, char* argv[])
 
 	get_thisfile(thisfile, argv[0]);
 #ifdef WIN32
-    get_thisfilew(thisfilew,NULL);
+    get_thisfilew(thisfilew);
 #endif
 
     get_archivefile(archivefile, thisfile);
@@ -160,6 +162,6 @@ int main(int argc, char* argv[])
         }
     }
 
-	VS(_T("Process %d ending normally (return code %d).\n"),getpid(),rc);
+	VS(_T("Process %d ending normally (return code %d).\n"),_getpid(),rc);
     return rc;
 }

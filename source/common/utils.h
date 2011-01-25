@@ -28,7 +28,7 @@
 #include "launch.h"
 
 void init_launcher(void);
-int get_thisfile(TCHAR *thisfile, const TCHAR *programname);
+int get_thisfile(TCHAR *thisfile, const char *programname);
 #ifdef WIN32
 int get_thisfilew(WCHAR *thisfile);
 int CreateActContext(TCHAR *workpath, TCHAR *thisfile);
@@ -39,6 +39,8 @@ void get_archivefile(TCHAR *archivefile, const TCHAR *thisfile);
 int set_enviroment(const ARCHIVE_STATUS *status);
 #ifndef WIN32
 int spawn(const TCHAR *thisfile, char *const argv[]);
+#define _getpid getpid
+#define _fileno fileno
 #else
 int spawn(TCHAR* thisfile);
 #endif

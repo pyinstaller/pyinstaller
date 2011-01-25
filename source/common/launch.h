@@ -145,7 +145,7 @@ EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(long, PyInt_AsLong, (PyObject *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 EXTDECLPROC(PyObject *, PyUnicodeUCS2_FromUnicode, (const Py_UNICODE *, Py_ssize_t )); 
-EXTDECLPROC(PyObject *, PyUnicodeUCS4_FromUnicode, (const int *, Py_ssize_t ));   // PROBLEM: this is most likely wrong.
+EXTDECLPROC(PyObject *, PyUnicodeUCS4_FromUnicode, (const Py_UNICODE *, Py_ssize_t ));   // PROBLEM: this is most likely wrong.
 EXTDECLPROC(PyObject *, PyObject_GetAttr, (PyObject *, PyObject *));
 EXTDECLPROC(PyObject *, PyString_FromString, (const char *));
 
@@ -230,7 +230,7 @@ EXTDECLPROC(PyObject *, PyString_FromString, (const char *));
 #ifdef LAUNCH_DEBUG
 # if defined(WIN32) && defined(WINDOWED)
 #  define VS mbvs 
-#  define VSA mbvs
+#  define VSA mbvsa
 # else
    // unicode: we have to have an ascii version of VS around, for cases in which that is necessary.  That's what VSA is.
 #  define VS _tprintf
@@ -245,6 +245,15 @@ EXTDECLPROC(PyObject *, PyString_FromString, (const char *));
 #  define VSA(...)
 # endif
 #endif
+
+// function protoypes for the debugging print functions
+#if defined(WIN32) && defined(WINDOWED)
+void mbfatalerror(const TCHAR *fmt, ...);
+void mbothererror(const TCHAR *fmt, ...);
+void mbvs(const TCHAR *fmt, ...);
+void mbvsa(const char *fmt, ...);
+#endif
+
 
 /* _MAX_PATH for non-Windows */
 #ifndef _MAX_PATH

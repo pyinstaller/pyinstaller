@@ -157,7 +157,20 @@ void mbvs(const TCHAR *fmt, ...)
 	msg[MBTXTLEN-1] = _T('\0');
 	va_end(args);
 
-	MessageBoxA(NULL, msg, _T("Tracing"), MB_OK);
+	MessageBox(NULL, msg, _T("Tracing"), MB_OK);
+}
+
+void mbvsa(const char *fmt, ...)
+{
+	char msg[MBTXTLEN];
+	va_list args;
+
+	va_start(args, fmt);
+	vsnprintf(msg, MBTXTLEN, fmt, args);
+	msg[MBTXTLEN-1] = '\0';
+	va_end(args);
+
+	MessageBoxA(NULL, msg, "Tracing", MB_OK);
 }
 
 #endif /* WIN32 and WINDOWED */
@@ -172,7 +185,7 @@ int getTempPath(TCHAR *buff)
     TCHAR prefix[16];
 
     GetTempPath(MAX_PATH, buff);
-    _stprintf(prefix, _T("_MEI%d"), getpid());
+    _stprintf(prefix, _T("_MEI%d"), _getpid());
 
     // Windows does not have a race-free function to create a temporary
     // directory. Thus, we rely on _tempnam, and simply try several times
@@ -237,8 +250,11 @@ int getTempPath(char *buff)
 static int checkFile(TCHAR *buf, const TCHAR *fmt, ...) 
 {
 	va_list args;
-    struct stat tmp;
-
+#ifdef UNICODE
+    struct _stat64i32 tmp; //Grr
+#else
+	struct stat tmp;
+#endif
     va_start(args, fmt);
     _vsntprintf(buf, _MAX_PATH, fmt, args);
     va_end(args);
@@ -678,8 +694,8 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 	}
 	if (unbuffered) {
 #ifdef WIN32
-		_setmode(fileno(stdin), O_BINARY);
-		_setmode(fileno(stdout), O_BINARY);
+		_setmode(_fileno(stdin), O_BINARY);
+		_setmode(_fileno(stdout), O_BINARY);
 #else
 		fflush(stdout);
 		fflush(stderr);
@@ -743,7 +759,7 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	static TCHAR pypath[2*_MAX_PATH + 14];
 	int pathlen = 1;
 	int i;
-	TCHAR cmd[_MAX_PATH+1+80];
+	//TCHAR cmd[_MAX_PATH+1+80];
 	TCHAR tmp[_MAX_PATH+1];
 	PyObject *py_argv;
 	PyObject *val;
@@ -897,15 +913,24 @@ int importModules(ARCHIVE_STATUS *status)
  */
 int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
-	int rc;
 	int zlibpos = status->pkgstart + ntohl(ptoc->pos);
 #ifndef UNICODE // TODO remove this in favor of that is below.
+	int rc;
 	char *tmpl = "sys.path.append(r\"%s?%d\")\n";
 	char *cmd = (char *) malloc(strlen(tmpl) + strlen(status->archivename) + 32);
 	sprintf(cmd, tmpl, status->archivename, zlibpos);
 	VS(cmd);
 	rc = PI_PyRun_SimpleString(cmd);
 	
+	// TODO error detection
+	if (rc != 0)
+	{
+		FATALERROR(_(T"Error in command: %s\n"), cmd);
+		free(cmd);
+		return -1;
+	}
+	free(cmd);
+
 #else
 	PyObject *sys;
 	TCHAR pth[_MAX_PATH*2];
@@ -914,17 +939,11 @@ int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
 
 	insertSearchPath(sys,pth);
 	PI_Py_DecRef(sys);
-#endif
 
 	// TODO error detection
-	//if (rc != 0)
-	//{
-	//	FATALERROR(_(T"Error in command: %s\n"), cmd);
-	//	free(cmd);
-	//	return -1;
-	//}
+#endif
 
-	//free(cmd);
+	
 	return 0;
 }
 
@@ -969,7 +988,7 @@ unsigned char *decompress(unsigned char * buff, TOC *ptoc)
 	ver = (zlibVersion)();
 	out = (unsigned char *)malloc(ntohl(ptoc->ulen));
 	if (out == NULL) {
-		OTHERERROR("Error allocating decompression buffer\n");
+		OTHERERROR(_T("Error allocating decompression buffer\n"));
 		return NULL;
 	}
 
@@ -1064,7 +1083,11 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
  */
 FILE *openTarget(const TCHAR *path, const TCHAR* name_)
 {
+#ifdef UNICODE
+	struct _stat64i32 sbuf;  //Grr
+#else
 	struct stat sbuf;
+#endif
 	TCHAR fnm[_MAX_PATH+1];
 	TCHAR name[_MAX_PATH+1];
 	TCHAR *dir;
@@ -1108,9 +1131,6 @@ FILE *openTarget(const TCHAR *path, const TCHAR* name_)
  */
 static int createTempPath(ARCHIVE_STATUS *status)
 {
-#ifdef WIN32
-	TCHAR *p;
-#endif
 
 	if (status->temppath[0] == _T('\0')) {
 		if (!getTempPath(status->temppath))
@@ -1178,7 +1198,7 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 	else {
 		fwrite(data, ntohl(ptoc->ulen), 1, out);
 #ifndef WIN32
-		fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
+		fchmod(_fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
 #endif
 		fclose(out);
 	}
@@ -1198,8 +1218,8 @@ static int splitName(char *path, char *filename, const char *item)
 	fflush(stdout);
 
     strcpy(name, item);
-    strcpy(path, strtok(name, _T(":")));
-    strcpy(filename, strtok(NULL, _T(":"))) ;
+    strcpy(path, strtok(name, ":"));
+    strcpy(filename, strtok(NULL, ":")) ;
 
     if (path[0] == 0 || filename[0] == 0)
         return -1;
@@ -1235,7 +1255,7 @@ static int copyFile(const TCHAR *src, const TCHAR *dst, const TCHAR *filename)
         }
     }
 #ifndef WIN32
-    fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
+    fchmod(_fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
 #endif
     fclose(in);
     fclose(out);
@@ -1288,7 +1308,7 @@ static int copyDependencyFromDir(ARCHIVE_STATUS *status, const TCHAR *srcpath, c
  * otherwise the needed archive is opened and added to the pool and then returned.
  * If an error occurs, returns NULL.
  */
-static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *path)
+static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const TCHAR *path)
 {
     ARCHIVE_STATUS *status = NULL;
     int i = 0;
@@ -1299,7 +1319,7 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
     }
 
     for (i = 1; status_list[i] != NULL; i++){
-        if (strcmp(status_list[i]->archivename, path) == 0) {
+        if (_tcscmp(status_list[i]->archivename, path) == 0) {
             VS(_T("Archive found: %s\n"), path);
             return status_list[i];
         }
@@ -1534,7 +1554,7 @@ int callSimpleEntryPoint(char *name, int *presult)
 	PI_PyErr_Clear();
 	*presult = PI_PyInt_AsLong(pyresult);
 	rc = PI_PyErr_Occurred() ? -1 : 0;
-	VS( rc ? _T("Finished with failure\n" : "Finished OK\n"));
+	VS( rc ? _T("Finished with failure\n") : _T("Finished OK\n"));
 	/* all done! */
 done:
 	Py_XDECREF(func);
@@ -1607,46 +1627,50 @@ int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 	return rc;
 }
 
-void clear(const char *dir);
+void clear(const TCHAR *dir);
+
+
+
 #ifdef WIN32
-// UNICODE PROBLEM: NEEDS TO BE ADDRESSED
-void removeOne(TCHAR *fnm, int pos, struct _finddata_t finfo)
+void removeOne(TCHAR *fnm, int pos, struct _tfinddata_t finfo)
 {
-	if ( strcmp(finfo.name, ".")==0  || strcmp(finfo.name, "..") == 0 )
+	if ( _tcscmp(finfo.name, _T("."))==0  || _tcscmp(finfo.name, _T("..")) == 0 )
 		return;
-	fnm[pos] = '\0';
-	strcat(fnm, finfo.name);
+
+	fnm[pos] = _T('\0');
+	_tcscat(fnm, finfo.name);
 	if ( finfo.attrib & _A_SUBDIR )
 		clear(fnm);
-	else if (remove(fnm)) {
+	else if (_tremove(fnm)) {
         /* HACK: Possible concurrency issue... spin a little while */
         Sleep(100);
-        remove(fnm);
+        _tremove(fnm);
     }
 }
 
-// UNICODE PROBLEM
+
+
 void clear(const TCHAR *dir)
 {
 	TCHAR fnm[_MAX_PATH+1];
-	struct _finddata_t finfo;
+	struct _tfinddata_t finfo;
 	long h;
 	int dirnmlen;
 	_tcscpy(fnm, dir);
 	dirnmlen = _tcslen(fnm);
-	if ( fnm[dirnmlen-1] != '/' && fnm[dirnmlen-1] != '\\' ) {
-		strcat(fnm, "\\");
+	if ( fnm[dirnmlen-1] != _T('/') && fnm[dirnmlen-1] != _T('\\') ) {
+		_tcscat(fnm, _T("\\"));
 		dirnmlen++;
 	}
-	strcat(fnm, "*");
-	h = _findfirst(fnm, &finfo);
+	_tcscat(fnm, _T("*"));
+	h = _tfindfirst(fnm, &finfo);
 	if (h != -1) {
 		removeOne(fnm, dirnmlen, finfo);
-		while ( _findnext(h, &finfo) == 0 )
+		while ( _tfindnext(h, &finfo) == 0 )
 			removeOne(fnm, dirnmlen, finfo);
 		_findclose(h);
 	}
-	rmdir(dir);
+	_trmdir(dir);
 }
 #else
 // UNICODE PROBLEM
