@@ -25,6 +25,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+
+#ifndef PYI_UTILS_H__
+#define PYI_UTILS_H__
+
 #include "launch.h"
 
 void init_launcher(void);
@@ -43,4 +47,8 @@ int spawn(const TCHAR *thisfile, char *const argv[]);
 #define _fileno fileno
 #else
 int spawn(TCHAR* thisfile);
+#endif
+
+
+
 #endif

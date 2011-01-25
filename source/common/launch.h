@@ -25,8 +25,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#ifndef LAUNCH_H
-#define LAUNCH_H
+#ifndef __PYI_LAUNCH_H
+#define __PYI_LAUNCH_H
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -26,6 +26,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #include "launch.h"
+#include "utils.h"
 #include <windows.h>
 #include <olectl.h>
 #include <memory.h>
@@ -43,29 +44,29 @@ typedef void (__cdecl *__PROC__PyCom_CoUninitialize) (void);
 __PROC__PyCom_CoUninitialize PyCom_CoUninitialize = NULL;
 
 HINSTANCE gPythoncom = 0;
-char here[_MAX_PATH + 1];
+TCHAR here[_MAX_PATH + 1];
 int LoadPythonCom(ARCHIVE_STATUS *status);
 void releasePythonCom(void);
 HINSTANCE gInstance;
 PyThreadState *thisthread = NULL;
 
-int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
+int launch(ARCHIVE_STATUS *status, TCHAR const * archivePath, TCHAR  const * archiveName)
 {
 	PyObject *obHandle;
 	int loadedNew = 0;
-	char pathnm[_MAX_PATH];
+	TCHAR pathnm[_MAX_PATH];
 
-    VS("START");
-	strcpy(pathnm, archivePath);
-	strcat(pathnm, archiveName);
+    VS(_T("START"));
+	_tcscpy(pathnm, archivePath);
+	_tcscpy(pathnm, archiveName);
     /* Set up paths */
     if (setPaths(status, archivePath, archiveName))
         return -1;
-	VS("Got Paths");
+	VS(_T("Got Paths"));
     /* Open the archive */
     if (openArchive(status))
         return -1;
-	VS("Opened Archive");
+	VS(_T("Opened Archive"));
     /* Load Python DLL */
     if (attachPython(status, &loadedNew))
         return -1;
@@ -73,30 +74,30 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
 	if (loadedNew) {
 		/* Start Python with silly command line */
 		PI_PyEval_InitThreads();
-		if (startPython(status, 1, (char**)&pathnm))
+		if (startPython(status, 0, NULL))   // argv is never used in startPython. So, no arguments.
 			return -1;
-		VS("Started new Python");
+		VS(_T("Started new Python"));
 		thisthread = PI_PyThreadState_Swap(NULL);
 		PI_PyThreadState_Swap(thisthread);
 	}
 	else {
-		VS("Attached to existing Python");
+		VS(_T("Attached to existing Python"));
 
 		/* start a mew interp */
 		thisthread = PI_PyThreadState_Swap(NULL);
 		PI_PyThreadState_Swap(thisthread);
 		if (thisthread == NULL) {
 			thisthread = PI_Py_NewInterpreter();
-			VS("created thisthread");
+			VS(_T("created thisthread"));
 		}
 		else
-			VS("grabbed thisthread");
+			VS(_T("grabbed thisthread"));
 		PI_PyRun_SimpleString("import sys;sys.argv=[]");
 	}
 
 	/* a signal to scripts */
 	PI_PyRun_SimpleString("import sys;sys.frozen='dll'\n");
-	VS("set sys.frozen");
+	VS(_T("set sys.frozen"));
 	/* Create a 'frozendllhandle' as a counterpart to
 	   sys.dllhandle (which is the Pythonxx.dll handle)
 	*/
@@ -106,44 +107,48 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
     /* Import modules from archive - this is to bootstrap */
     if (importModules(status))
         return -1;
-	VS("Imported Modules");
+	VS(_T("Imported Modules"));
     /* Install zlibs - now import hooks are in place */
     if (installZlibs(status))
         return -1;
-	VS("Installed Zlibs");
+	VS(_T("Installed Zlibs"));
     /* Run scripts */
     if (runScripts(status))
         return -1;
-	VS("All scripts run");
+	VS(_T("All scripts run"));
     if (PI_PyErr_Occurred()) {
 		// PI_PyErr_Print();
 		//PI_PyErr_Clear();
-		VS("Some error occurred");
+		VS(_T("Some error occurred"));
     }
-	VS("PGL released");
+	VS(_T("PGL released"));
 	// Abandon our thread state.
 	PI_PyEval_ReleaseThread(thisthread);
-    VS("OK.");
+    VS(_T("OK."));
     return 0;
 }
 void startUp()
 {
 	ARCHIVE_STATUS *status_list[20];
-	char thisfile[_MAX_PATH + 1];
-	char *p;
+	TCHAR thisfile[_MAX_PATH + 1];
+	//char *p;
 	int len;
 	memset(status_list, 0, 20 * sizeof(ARCHIVE_STATUS *));
 	
-	if (!GetModuleFileNameA(gInstance, thisfile, _MAX_PATH)) {
-		FATALERROR("System error - unable to load!");
+	if (!GetModuleFileName(gInstance, thisfile, _MAX_PATH)) {
+		FATALERROR(_T("System error - unable to load!"));
 		return;
 	}
 	// fill in here (directory of thisfile)
 	//GetModuleFileName returns an absolute path
-	strcpy(here, thisfile);
-	for (p=here+strlen(here); *p != '\\' && p >= here+2; --p);
-	*++p = '\0';
-	len = p - here;
+	_tcscpy(here, thisfile);
+
+	// COMPLETELY UNTESTED!  The following two lines replace the two commented out ones.
+	get_homepath(here,thisfile); // not a good name for what this function does.
+	len = _tcslen(here);
+	//for (p=here+_tcslen(here); *p != '\\' && p >= here+2; --p);
+	//*++p = '\0';
+	
 	//VS(here);
 	//VS(&thisfile[len]);
 	launch(status_list[SELF], here, &thisfile[len]);
@@ -154,11 +159,11 @@ void startUp()
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 {
 	if ( dwReason == DLL_PROCESS_ATTACH) {
-		VS("Attach from thread %x", GetCurrentThreadId());
+		VS(_T("Attach from thread %x"), GetCurrentThreadId());
 		gInstance = hInstance;
 	}
 	else if ( dwReason == DLL_PROCESS_DETACH ) {
-		VS("Process Detach");
+		VS(_T("Process Detach"));
 		//if (gPythoncom)
 		//	releasePythonCom();
 		//finalizePython();
@@ -169,25 +174,25 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 
 int LoadPythonCom(ARCHIVE_STATUS *status)
 {
-	char dllpath[_MAX_PATH+1];
-	VS("Loading Pythoncom");
+	TCHAR dllpath[_MAX_PATH+1];
+	VS(_T("Loading Pythoncom"));
 	// see if pythoncom is already loaded
-	sprintf(dllpath, "pythoncom%02d.dll", getPyVersion(status));
-	gPythoncom = GetModuleHandleA(dllpath);
+	_stprintf(dllpath, _T("pythoncom%02d.dll"), getPyVersion(status));
+	gPythoncom = GetModuleHandle(dllpath);
 	if (gPythoncom == NULL) {
-		sprintf(dllpath, "%spythoncom%02d.dll", here, getPyVersion(status));
+		_stprintf(dllpath, _T("%spythoncom%02d.dll"), here, getPyVersion(status));
 		//VS(dllpath);
-		gPythoncom = LoadLibraryExA( dllpath, // points to name of executable module 
+		gPythoncom = LoadLibraryEx( dllpath, // points to name of executable module 
 					   NULL, // HANDLE hFile, // reserved, must be NULL 
 					   LOAD_WITH_ALTERED_SEARCH_PATH // DWORD dwFlags // entry-point execution flag 
 					  ); 
 	}
 	if (!gPythoncom) {
-		VS("Pythoncom failed to load");
+		VS(_T("Pythoncom failed to load"));
 		return -1;
 	}
 	// debugging
-	GetModuleFileNameA(gPythoncom, dllpath, _MAX_PATH);
+	GetModuleFileName(gPythoncom, dllpath, _MAX_PATH);
 	VS(dllpath);
 
 	Pyc_DllCanUnloadNow = (__PROC__DllCanUnloadNow)GetProcAddress(gPythoncom, "DllCanUnloadNow");
@@ -198,11 +203,11 @@ int LoadPythonCom(ARCHIVE_STATUS *status)
 	Pyc_DllUnregisterServerEx = (__PROC__DllUnregisterServerEx)GetProcAddress(gPythoncom, "DllUnregisterServerEx");
 	PyCom_CoUninitialize = (__PROC__PyCom_CoUninitialize)GetProcAddress(gPythoncom, "PyCom_CoUninitialize");
 	if (Pyc_DllGetClassObject == NULL) {
-		VS("Couldn't get DllGetClassObject from pythoncom!");
+		VS(_T("Couldn't get DllGetClassObject from pythoncom!"));
 		return -1;
 	}
 	if (PyCom_CoUninitialize == NULL) {
-		VS("Couldn't get PyCom_CoUninitialize from pythoncom!");
+		VS(_T("Couldn't get PyCom_CoUninitialize from pythoncom!"));
 		return -1;
 	}
 	return 0;
@@ -222,11 +227,11 @@ HRESULT __stdcall DllCanUnloadNow(void)
 {
 	HRESULT rc;
 
-	VS("DllCanUnloadNow from thread %x", GetCurrentThreadId());
+	VS(_T("DllCanUnloadNow from thread %x"), GetCurrentThreadId());
 	if (gPythoncom == 0)
 		startUp();
 	rc = Pyc_DllCanUnloadNow();
-	VS("DllCanUnloadNow returns %x", rc);
+	VS(_T("DllCanUnloadNow returns %x"), rc);
 	//if (rc == S_OK)
 	//	PyCom_CoUninitialize();
 	return rc;
@@ -237,18 +242,18 @@ HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
 	HRESULT rc;
 
-	VS("DllGetClassObject from thread %x", GetCurrentThreadId());
+	VS(_T("DllGetClassObject from thread %x"), GetCurrentThreadId());
 	if (gPythoncom == 0)
 		startUp();
 	rc = Pyc_DllGetClassObject(rclsid, riid, ppv);
-	VS("DllGetClassObject set %x and returned %x", *ppv, rc);
+	VS(_T("DllGetClassObject set %x and returned %x"), *ppv, rc);
 
 	return rc;
 }
 
 __declspec(dllexport) int DllRegisterServerEx(LPCSTR fileName)
 {
-	VS("DllRegisterServerEx from thread %x", GetCurrentThreadId());
+	VS(_T("DllRegisterServerEx from thread %x"), GetCurrentThreadId());
 	if (gPythoncom == 0)
 		startUp();
 	return Pyc_DllRegisterServerEx(fileName);

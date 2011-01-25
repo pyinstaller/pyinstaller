@@ -214,7 +214,8 @@ void get_homepath(TCHAR *homepath, const TCHAR *thisfile)
 	
 	if (pos)
 	{
-		_tcscpy(pos,_T("\\"));
+		//_tcscpy(pos,_T("\\"));
+		_tcscpy(pos,_T(""));
 	}
 	else
 	{
