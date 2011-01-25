@@ -1438,7 +1438,7 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
 				return -1;
 
         if (ptoc->typcd == 'd') {
-			printf("IN EXTRACTBINARIES: %d\n",ptoc->name);
+			printf("IN EXTRACTBINARIES: %s\n",ptoc->name);
             if (extractDependency(status_list, ptoc->name) == -1)
                 return -1;
         }
