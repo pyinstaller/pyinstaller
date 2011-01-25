@@ -26,6 +26,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "pyi_unicode.h"
 #ifdef WIN32
  #include <windows.h>
@@ -40,8 +42,7 @@
  #include <dirent.h>
  #include <stdarg.h>
 #endif
-#include <sys/types.h>
-#include <sys/stat.h>
+
 #include "launch.h"
 #include "utils.h"
 #include <string.h>
@@ -251,13 +252,13 @@ int getTempPath(char *buff)
 static int checkFile(TCHAR *buf, const TCHAR *fmt, ...) 
 {
 	va_list args;
-    struct _tstat64i32 tmp; 
+    struct __stat64 tmp; 
 
     va_start(args, fmt);
     _vsntprintf(buf, _MAX_PATH, fmt, args);
     va_end(args);
 
-    return _tstat(buf, &tmp);
+    return _tstat64(buf, &tmp);
 }
 
 
@@ -1081,7 +1082,7 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
  */
 FILE *openTarget(const TCHAR *path, const TCHAR* name_)
 {
-	struct _tstat64i32 sbuf;
+	struct __stat64 sbuf;
 
 	TCHAR fnm[_MAX_PATH+1];
 	TCHAR name[_MAX_PATH+1];
@@ -1115,7 +1116,7 @@ FILE *openTarget(const TCHAR *path, const TCHAR* name_)
     }
 	}
 
-	if (_tstat(fnm, &sbuf) == 0) {
+	if (_tstat64(fnm, &sbuf) == 0) {
 		OTHERERROR(_T("WARNING: file already exists but should not: %s\n"), fnm);
     }
 	return _tfopen(fnm, _T("wb"));

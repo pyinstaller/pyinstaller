@@ -22,6 +22,7 @@
 #define _ttempnam   _tempnam
 #define _tmkdir     mkdir
 #define _tstat      stat
+#define _tstat64    stat
 #define _tstat64i32 stat
 #define _trmdir     _rmdir
 #define _tremove    remove
