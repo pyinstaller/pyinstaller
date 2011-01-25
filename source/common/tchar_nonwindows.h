@@ -30,7 +30,6 @@
 
 #define _tfindfirst      _findfirst
 #define _tfindnext       _findnext
-#define _tfinddata_t      _finddata_t
-
+#define _tfinddata_t     _finddata_t
 
 #endif

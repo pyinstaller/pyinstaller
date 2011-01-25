@@ -46,7 +46,7 @@ int spawn(const TCHAR *thisfile, char *const argv[]);
 #define _getpid getpid
 #define _fileno fileno
 #else
-int spawn(TCHAR* thisfile);
+int spawn(LPWSTR thisfile);
 #endif
 
 

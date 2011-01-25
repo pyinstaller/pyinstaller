@@ -250,11 +250,8 @@ int getTempPath(char *buff)
 static int checkFile(TCHAR *buf, const TCHAR *fmt, ...) 
 {
 	va_list args;
-#ifdef UNICODE
-    struct _stat64i32 tmp; //Grr
-#else
-	struct stat tmp;
-#endif
+    struct _tstat64i32 tmp; 
+
     va_start(args, fmt);
     _vsntprintf(buf, _MAX_PATH, fmt, args);
     va_end(args);
@@ -925,7 +922,7 @@ int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
 	// TODO error detection
 	if (rc != 0)
 	{
-		FATALERROR(_(T"Error in command: %s\n"), cmd);
+		FATALERROR(_T("Error in command: %s\n"), cmd);
 		free(cmd);
 		return -1;
 	}
@@ -1083,11 +1080,7 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
  */
 FILE *openTarget(const TCHAR *path, const TCHAR* name_)
 {
-#ifdef UNICODE
-	struct _stat64i32 sbuf;  //Grr
-#else
-	struct stat sbuf;
-#endif
+	struct _tstat64i32 sbuf;
 	TCHAR fnm[_MAX_PATH+1];
 	TCHAR name[_MAX_PATH+1];
 	TCHAR *dir;
