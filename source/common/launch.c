@@ -252,7 +252,11 @@ int getTempPath(char *buff)
 static int checkFile(TCHAR *buf, const TCHAR *fmt, ...) 
 {
 	va_list args;
+#ifdef WIN32
     struct __stat64 tmp; 
+#else
+    struct stat tmp;
+#endif
 
     va_start(args, fmt);
     _vsntprintf(buf, _MAX_PATH, fmt, args);
@@ -1082,7 +1086,11 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
  */
 FILE *openTarget(const TCHAR *path, const TCHAR* name_)
 {
+#ifdef WIN32
 	struct __stat64 sbuf;
+#else
+	struct stat sbuf;
+#endif
 
 	TCHAR fnm[_MAX_PATH+1];
 	TCHAR name[_MAX_PATH+1];
