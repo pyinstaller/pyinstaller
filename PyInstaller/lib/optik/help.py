@@ -10,8 +10,8 @@ to generate formatted help text.
 import os
 import string
 import textwrap
-from pyi_optik.option import NO_DEFAULT
-from pyi_optik.errors import gettext
+from PyInstaller.lib.optik.option import NO_DEFAULT
+from PyInstaller.lib.optik.errors import gettext
 _ = gettext
 
 __revision__ = "$Id: help.py 470 2004-12-07 01:39:56Z gward $"

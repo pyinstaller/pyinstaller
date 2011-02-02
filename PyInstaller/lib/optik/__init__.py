@@ -16,12 +16,12 @@ __version__ = "1.5"
 
 
 # Re-import these for convenience
-from pyi_optik.option import Option
-from pyi_optik.option_parser import *
-from pyi_optik.help import *
-from pyi_optik.errors import *
+from PyInstaller.lib.optik.option import Option
+from PyInstaller.lib.optik.option_parser import *
+from PyInstaller.lib.optik.help import *
+from PyInstaller.lib.optik.errors import *
 
-from pyi_optik import option, option_parser, help, errors
+from PyInstaller.lib.optik import option, option_parser, help, errors
 __all__ = (option.__all__ +
            option_parser.__all__ +
            help.__all__ +
