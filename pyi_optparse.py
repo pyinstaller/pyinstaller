@@ -9,5 +9,5 @@ try:
     from optparse import __version__, __all__
     from optparse import *
 except:
-    from pyi_optik import __version__, __all__
-    from pyi_optik import *
+    from PyInstaller.lib.optik import __version__, __all__
+    from PyInstaller.lib.optik import *
