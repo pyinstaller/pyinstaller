@@ -54,7 +54,7 @@ BUILDPATH = None
 WARNFILE = None
 
 rthooks = {}
-iswin = sys.platform[:3] == 'win'
+iswin = sys.platform.startswith('win')
 cygwin = sys.platform == 'cygwin'
 
 def system(cmd):
@@ -858,7 +858,7 @@ class EXE(Target):
             else:
                 self.toc.extend(arg)
         if iswin:
-            if sys.version[:3] == '1.5':
+            if sys.version.startswith('1.5'):
                 import exceptions
                 toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
             if self.manifest:
@@ -1487,7 +1487,7 @@ def main(specfile, configfilename):
         sys.exit(1)
 
     target_platform = config.get('target_platform', sys.platform)
-    target_iswin = target_platform[:3] == 'win'
+    target_iswin = target_platform.startswith('win')
 
     if target_platform == sys.platform:
         # _not_ cross compiling

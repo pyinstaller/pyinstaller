@@ -218,7 +218,7 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
         else:
             scripts.insert(0, Path(HOMEPATH, 'support', 'useTK.py'))
     scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
-    if config['target_platform'][:3] == "win" or \
+    if config['target_platform'].startswith("win") or \
        config['target_platform'] == 'cygwin':
         d['exename'] = name+'.exe'
         d['dllname'] = name+'.dll'

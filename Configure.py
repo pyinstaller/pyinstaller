@@ -35,8 +35,8 @@ HOMEPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 CONFIGDIR = HOMEPATH
 DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
-iswin = sys.platform[:3] == 'win'
-is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
+iswin = sys.platform.startswith('win')
+is24 = hasattr(sys, "version_info") and sys.version_info >= (2,4)
 cygwin = sys.platform == 'cygwin'
 
 if sys.platform == 'darwin' and Build.architecture() == '64bit':
@@ -53,7 +53,7 @@ def find_EXE_dependencies(config):
     target_platform = opts.target_platform or sys.platform
     config['python'] = python
     config['target_platform'] = target_platform
-    target_iswin = target_platform[:3] == 'win'
+    target_iswin = target_platform.startswith('win')
 
     xtrapath = []
     if target_iswin and not iswin:
