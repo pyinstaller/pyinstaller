@@ -24,7 +24,7 @@ try:
 except ImportError:
     zlib = archive.DummyZlib()
 import pprint
-from pyi_optparse import OptionParser
+from PyInstaller.lib.pyi_optparse import OptionParser
 
 stack = []
 cleanup = []

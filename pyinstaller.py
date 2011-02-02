@@ -80,7 +80,7 @@ def main(parser):
 
 
 if __name__ == '__main__':
-    from pyi_optparse import OptionParser
+    from PyInstaller.lib.pyi_optparse import OptionParser
 
     parser = OptionParser(
         usage="python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>"

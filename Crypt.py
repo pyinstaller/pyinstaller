@@ -45,10 +45,10 @@ def cmd_genkey(args):
 def main():
     global global_opts
     global opts
-    import pyi_optparse as optparse
+    import PyInstaller.lib.pyi_optparse as optparse
 
     cmds = {}
-    p = optparse.OptionParser(
+    p = pyi_optparse.OptionParser(
         usage="%prog [opts] file",
         description="Generate a plaintext keyfile containing a "
                     "random-generated encryption key. ")

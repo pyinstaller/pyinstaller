@@ -1519,7 +1519,7 @@ def main(specfile, configfilename):
     build(specfile)
 
 
-from pyi_optparse import OptionParser
+from PyInstaller.lib.pyi_optparse import OptionParser
 parser = OptionParser('%prog [options] specfile')
 parser.add_option('-C', '--configfile',
                   default=DEFAULT_CONFIGFILE,

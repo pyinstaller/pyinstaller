@@ -328,7 +328,7 @@ def main(configfilename):
 
 
 if __name__ == '__main__':
-    from pyi_optparse import OptionParser
+    from PyInstaller.lib.pyi_optparse import OptionParser
     parser = OptionParser(usage="%prog [options]")
     parser.add_option('--target-platform', default=None,
                       help='Target platform, required for cross-bundling '

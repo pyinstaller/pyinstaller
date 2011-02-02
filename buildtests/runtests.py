@@ -236,7 +236,7 @@ if __name__ == '__main__':
         from optparse import OptionParser
     except ImportError:
         sys.path.append("..")
-        from pyi_optparse import OptionParser
+        from PyInstaller.lib.pyi_optparse import OptionParser
 
     if sys.version_info < (2,5):
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
