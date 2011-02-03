@@ -190,7 +190,7 @@ def _getImports_pe_lib_pefile(pth):
         This implementation walks through the PE header
         and uses library pefile for that and supports
         32/64bit Windows"""
-    import pefile
+    import PyInstaller.pefile as pefile
     pe = pefile.PE(pth)
     dlls = []
     for entry in pe.DIRECTORY_ENTRY_IMPORT:
