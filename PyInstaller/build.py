@@ -39,14 +39,12 @@ import bindepend
 import traceback
 import platform
 
+from PyInstaller import *
+
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
 UNCOMPRESSED, COMPRESSED = range(2)
 
-# todo: use pkg_resources here
-HOMEPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
-CONFIGDIR = HOMEPATH
-DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
 SPEC = None
 SPECPATH = None
@@ -54,8 +52,6 @@ BUILDPATH = None
 WARNFILE = None
 
 rthooks = {}
-iswin = sys.platform.startswith('win')
-cygwin = sys.platform == 'cygwin'
 
 def system(cmd):
     # This workaround is required because NT shell doesn't work with commands
@@ -1532,12 +1528,4 @@ parser.add_option('-y', '--noconfirm',
                   action="store_true", default=False,
                   help='Remove output directory (default: %s) without '
                        'confirmation' % os.path.join('SPECPATH', 'dist'))
-
-if __name__ == '__main__':
-    opts, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error('Requires exactly one .spec-file')
-
-    main(args[0], configfilename=opts.configfile)
-else:
-    opts = parser.get_default_values()
+opts = parser.get_default_values()
