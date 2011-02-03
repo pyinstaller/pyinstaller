@@ -215,9 +215,8 @@ parser.add_option('-b', '--brief',
                   dest='brief',
                   help='Print only file name. (default: %default). Can be combined with -r')
 
-if __name__ == '__main__':
-    opts, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error('Requires exactly one pyinstaller archive')
-    sys.exit(main(opts, args))
+opts, args = parser.parse_args()
+if len(args) != 1:
+    parser.error('Requires exactly one pyinstaller archive')
+sys.exit(main(opts, args))
 

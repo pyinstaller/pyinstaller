@@ -84,5 +84,4 @@ def main():
     except ArgsError, e:
         p.error(e)
 
-if __name__ == "__main__":
-    sys.exit(main())
+sys.exit(main())

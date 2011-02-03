@@ -19,27 +19,26 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import PyInstaller.configure
+from PyInstaller.lib.pyi_optparse import OptionParser
 
-if __name__ == '__main__':
-    from PyInstaller.lib.pyi_optparse import OptionParser
-    parser = OptionParser(usage="%prog [options]")
-    parser.add_option('--target-platform', default=None,
-                      help='Target platform, required for cross-bundling '
-                           '(default: current platform).')
-    parser.add_option('--upx-dir', default=None,
-                      help='Directory containing UPX.')
-    parser.add_option('--executable', default=None,
-                      help='Python executable to use. Required for '
-                           'cross-bundling.')
-    parser.add_option('-C', '--configfile',
-                      default=PyInstaller.configure.DEFAULT_CONFIGFILE,
-                      help='Name of generated configfile (default: %default)')
+parser = OptionParser(usage="%prog [options]")
+parser.add_option('--target-platform', default=None,
+                  help='Target platform, required for cross-bundling '
+                       '(default: current platform).')
+parser.add_option('--upx-dir', default=None,
+                  help='Directory containing UPX.')
+parser.add_option('--executable', default=None,
+                  help='Python executable to use. Required for '
+                       'cross-bundling.')
+parser.add_option('-C', '--configfile',
+                  default=PyInstaller.configure.DEFAULT_CONFIGFILE,
+                  help='Name of generated configfile (default: %default)')
 
-    opts, args = parser.parse_args()
-    if args:
-        parser.error('Does not expect any arguments')
+opts, args = parser.parse_args()
+if args:
+    parser.error('Does not expect any arguments')
 
-    # :HACK: monkey-patch global variable in module
-    PyInstaller.configure.opts = opts
-    PyInstaller.configure.args = args
-    PyInstaller.configure.main(opts.configfile)
+# :HACK: monkey-patch global variable in module
+PyInstaller.configure.opts = opts
+PyInstaller.configure.args = args
+PyInstaller.configure.main(opts.configfile)
