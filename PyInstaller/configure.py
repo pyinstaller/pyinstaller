@@ -31,13 +31,7 @@ import mf
 import bindepend
 import Build
 
-HOMEPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
-CONFIGDIR = HOMEPATH
-DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
-
-iswin = sys.platform.startswith('win')
-is24 = hasattr(sys, "version_info") and sys.version_info >= (2,4)
-cygwin = sys.platform == 'cygwin'
+from PyInstaller import *
 
 if sys.platform == 'darwin' and Build.architecture() == '64bit':
     print "W: PyInstaller support for Python 64-bit on Mac OSX is experimental."
@@ -325,25 +319,3 @@ def main(configfilename):
 
     Build._save_data(configfilename, config)
     print "I: done generating", configfilename
-
-
-if __name__ == '__main__':
-    from PyInstaller.lib.pyi_optparse import OptionParser
-    parser = OptionParser(usage="%prog [options]")
-    parser.add_option('--target-platform', default=None,
-                      help='Target platform, required for cross-bundling '
-                           '(default: current platform).')
-    parser.add_option('--upx-dir', default=None,
-                      help='Directory containing UPX.')
-    parser.add_option('--executable', default=None,
-                      help='Python executable to use. Required for '
-                           'cross-bundling.')
-    parser.add_option('-C', '--configfile',
-                      default=DEFAULT_CONFIGFILE,
-                      help='Name of generated configfile (default: %default)')
-
-    opts, args = parser.parse_args()
-    if args:
-        parser.error('Does not expect any arguments')
-
-    main(opts.configfile)
