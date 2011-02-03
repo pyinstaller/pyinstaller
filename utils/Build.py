@@ -19,10 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
 
-import PyInstaller
 import PyInstaller.build
-
-import os
 
 parser = PyInstaller.build.parser
 opts, args = parser.parse_args()
