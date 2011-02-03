@@ -27,13 +27,13 @@ import pprint
 import re
 import glob
 
-import mf
-import bindepend
-import Build
-
 from PyInstaller import *
 
-if sys.platform == 'darwin' and Build.architecture() == '64bit':
+import PyInstaller.mf as mf
+import PyInstaller.bindepend as bindepend
+import PyInstaller.build as build
+
+if sys.platform == 'darwin' and build.architecture() == '64bit':
     print "W: PyInstaller support for Python 64-bit on Mac OSX is experimental."
     print "W: If you need 32-bit version of Python and you use Python distributed"
     print "   with Mac OX, try setting"
@@ -274,10 +274,16 @@ def test_UPX(config):
 
 def find_PYZ_dependencies(config):
     print "I: computing PYZ dependencies..."
-    a = mf.ImportTracker([os.path.join(HOMEPATH, 'support')])
+    # We need to import `archive` from `PyInstaller` directory, but
+    # not from package `PyInstaller`
+    import inspect
+    import PyInstaller
+    a = mf.ImportTracker([
+        os.path.dirname(inspect.getsourcefile(PyInstaller)),
+        os.path.join(HOMEPATH, 'support')])
     a.analyze_r('archive')
-    mod = a.modules['archive']
-    toc = Build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
+    mod = a.modules['archive']        
+    toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
     for i in range(len(toc)):
         nm, fnm, typ = toc[i]
         mod = a.modules[nm]
@@ -296,7 +302,7 @@ def find_PYZ_dependencies(config):
 
 def main(configfilename):
     try:
-        config = Build._load_data(configfilename)
+        config = build._load_data(configfilename)
         print 'I: read old config from', configfilename
     except IOError, SyntaxError:
         # IOerror: file not present/readable
@@ -317,5 +323,5 @@ def main(configfilename):
     test_UPX(config)
     find_PYZ_dependencies(config)
 
-    Build._save_data(configfilename, config)
+    build._save_data(configfilename, config)
     print "I: done generating", configfilename
