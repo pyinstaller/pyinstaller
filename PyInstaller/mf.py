@@ -34,12 +34,7 @@ except ImportError:
 
 import suffixes
 
-try:
-    STRINGTYPE = basestring
-except NameError:
-    STRINGTYPE = type("")
-
-if not os.environ.has_key('PYTHONCASEOK') and sys.version_info >= (2, 1):
+if not os.environ.has_key('PYTHONCASEOK'):
     def caseOk(filename):
         files = dircache.listdir(os.path.dirname(filename))
         return os.path.basename(filename) in files
@@ -347,7 +342,7 @@ class PathImportDirector(ImportDirector):
     def getmod(self, nm):
         mod = None
         for thing in self.path:
-            if isinstance(thing, STRINGTYPE):
+            if isinstance(thing, basestring):
                 owner = self.shadowpath.get(thing, -1)
                 if owner == -1:
                     owner = self.shadowpath[thing] = self.makeOwner(thing)
@@ -1109,5 +1104,3 @@ def _resolveCtypesImports(cbinaries):
             ret.append((cbin, cpath, "BINARY"))
     _restorePaths(old)
     return ret
-
-
