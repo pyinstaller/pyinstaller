@@ -45,11 +45,14 @@ STRINGTYPE = type('')
 TUPLETYPE = type((None,))
 UNCOMPRESSED, COMPRESSED = range(2)
 
+DEFAULT_BUILDPATH = os.path.join('SPECPATH', 'build',
+                                 'pyi.TARGET_PLATFORM', 'SPECNAME')
 
 SPEC = None
 SPECPATH = None
 BUILDPATH = None
 WARNFILE = None
+NOCONFIRM = None
 
 rthooks = {}
 
@@ -239,7 +242,7 @@ def _rmdir(path):
             print ('Please edit/recreate the specfile (%s), set a different '
                    'output name (e.g. "dist") and run Build.py again.') % SPEC
             sys.exit(1)
-        if opts.noconfirm:
+        if NOCONFIRM:
             choice = 'y'
         elif sys.stdout.isatty():
             choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
@@ -1395,7 +1398,7 @@ def TkTree():
 def TkPKG():
     return PKG(TkTree(), name='tk.pkg')
 
-def build(spec):
+def build(spec, buildpath):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
     rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
     SPEC = spec
@@ -1407,8 +1410,8 @@ def build(spec):
                              "pyi." + config['target_platform'], specnm)  
     WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
     # Check and adjustment for build path
-    if opts.buildpath != parser.get_option('--buildpath').default:
-        bpath = opts.buildpath
+    if buildpath != DEFAULT_BUILDPATH:
+        bpath = buildpath
         if os.path.isabs(bpath):
             BUILDPATH = bpath
         else:
@@ -1471,9 +1474,21 @@ def MERGE(*args):
             path = id_to_path[path]
         set_dependencies(analysis, dependencies, path)
 
-def main(specfile, configfilename):
+
+def __add_options(parser):
+    parser.add_option('-o', '--buildpath', default=DEFAULT_BUILDPATH,
+                      help='Buildpath (default: %default)')
+    parser.add_option('-y', '--noconfirm',
+                      action="store_true", default=False,
+                      help='Remove output directory (default: %s) without '
+                      'confirmation' % os.path.join('SPECPATH', 'dist'))
+
+
+def main(specfile, configfilename, buildpath, noconfirm, **kw):
     global target_platform, target_iswin, config
     global icon, versionInfo, winresource, winmanifest, pyasm
+    global NOCONFIRM
+    NOCONFIRM = noconfirm
 
     try:
         config = _load_data(configfilename)
@@ -1511,20 +1526,4 @@ def main(specfile, configfilename):
     if not config['useELFEXE']:
         EXE.append_pkg = 0
 
-    build(specfile)
-
-
-from PyInstaller.lib.pyi_optparse import OptionParser
-parser = OptionParser('%prog [options] specfile')
-parser.add_option('-C', '--configfile',
-                  default=DEFAULT_CONFIGFILE,
-                  help='Name of generated configfile (default: %default)')
-parser.add_option('-o', '--buildpath',
-                  default=os.path.join('SPECPATH', 'build',
-                                       'pyi.TARGET_PLATFORM', 'SPECNAME'),
-                  help='Buildpath (default: %default)')
-parser.add_option('-y', '--noconfirm',
-                  action="store_true", default=False,
-                  help='Remove output directory (default: %s) without '
-                       'confirmation' % os.path.join('SPECPATH', 'dist'))
-opts = parser.get_default_values()
+    build(specfile, buildpath)

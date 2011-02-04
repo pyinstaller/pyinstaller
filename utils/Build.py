@@ -20,10 +20,17 @@
 # 02110-1301, USA
 
 import PyInstaller.build
+from PyInstaller.lib.pyi_optparse import OptionParser
 
-parser = PyInstaller.build.parser
+parser = OptionParser(usage="%prog [options] specfile")
+parser.add_option('-C', '--configfile',
+                  default=PyInstaller.build.DEFAULT_CONFIGFILE,
+                  dest='configfilename',
+                  help='Name of generated configfile (default: %default)')
+PyInstaller.build.__add_options(parser)
+
 opts, args = parser.parse_args()
 if len(args) != 1:
     parser.error('Requires exactly one .spec-file')
 
-PyInstaller.build.main(args[0], configfilename=opts.configfile)
+PyInstaller.build.main(args[0], **opts.__dict__)
