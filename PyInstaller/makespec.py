@@ -28,6 +28,8 @@ except:
     True  = 1 == 1
     False = not True
 
+from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE
+
 freezetmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
@@ -99,9 +101,6 @@ bundletmplt = """app = BUNDLE(coll,
              name=os.path.join(%(distdir)s, '%(name)s.app'))
 """ # distdir name
 
-HOMEPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
-CONFIGDIR = HOMEPATH
-DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
 def quote_win_filepath( path ):
     # quote all \ with another \ after using normpath to clean up the path
