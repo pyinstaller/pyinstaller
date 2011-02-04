@@ -33,7 +33,7 @@ import PyInstaller.mf as mf
 import PyInstaller.bindepend as bindepend
 import PyInstaller.build as build
 
-if sys.platform == 'darwin' and build.architecture() == '64bit':
+if is_darwin and build.architecture() == '64bit':
     print "W: PyInstaller support for Python 64-bit on Mac OSX is experimental."
     print "W: If you need 32-bit version of Python and you use Python distributed"
     print "   with Mac OX, try setting"
@@ -50,7 +50,7 @@ def find_EXE_dependencies(config):
     target_iswin = target_platform.startswith('win')
 
     xtrapath = []
-    if target_iswin and not iswin:
+    if target_iswin and not is_win:
         # try to find a mounted Windows system
         xtrapath = glob.glob('/mnt/*/WINDOWS/system32/')
         if not xtrapath:
@@ -189,7 +189,7 @@ def test_Zlib(config):
 
 def test_RsrcUpdate(config):
     config['hasRsrcUpdate'] = 0
-    if not iswin:
+    if not is_win:
         return
     # only available on windows
     print "I: Testing for ability to set icons, version resources..."
@@ -261,7 +261,7 @@ def test_UPX(config):
         if vers:
             v = string.split(vers[0])[1]
             hasUPX = tuple(map(int, string.split(v, ".")))
-            if iswin and is24 and hasUPX < (1,92):
+            if is_win and is_py24 and hasUPX < (1,92):
                 print 'E: UPX is too old! Python 2.4 under Windows requires UPX 1.92+'
                 hasUPX = 0
         print 'I: ...UPX %s' % (('unavailable','available')[hasUPX != 0])

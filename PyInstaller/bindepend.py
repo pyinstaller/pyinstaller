@@ -39,6 +39,8 @@ import re
 from glob import glob
 import traceback
 
+from PyInstaller import is_win, is_cygwin, is_darwin
+
 try:
     # zipfile is available since Python 1.6. Here it is only required for
     # extracting eggs, which are not supported prior to 2.3 anyway
@@ -49,13 +51,10 @@ except ImportError:
 
 seen = {}
 _bpath = None
-iswin = sys.platform[:3] == 'win'
-cygwin = sys.platform == 'cygwin'
-darwin = sys.platform[:6] == 'darwin'
 
 silent = False  # True suppresses all informative messages from the dependency code
 
-if iswin:
+if is_win:
     if hasattr(sys, "version_info") and sys.version_info[:2] >= (2,6):
         try:
             import win32api
@@ -133,7 +132,7 @@ excludes = {
 
 # Darwin has a stable ABI for applications, so there is no need
 # to include either /usr/lib nor system frameworks.
-if darwin:
+if is_darwin:
     excludes['^/usr/lib/'] = 1
     excludes['^/System/Library/Frameworks'] = 1
 
@@ -347,7 +346,7 @@ def Dependencies(lTOC, platform=sys.platform, xtrapath=None, manifest=None):
         if not silent:
             print "I: Analyzing", pth
         seen[string.upper(nm)] = 1
-        if iswin:
+        if is_win:
             for ftocnm, fn in selectAssemblies(pth, manifest):
                 lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, platform, xtrapath):
@@ -578,7 +577,7 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
     for lib in dlls:
         if seen.get(string.upper(lib),0):
             continue
-        if not iswin and not cygwin:
+        if not is_win and not is_cygwin:
             # all other platforms
             npth = lib
             dir, lib = os.path.split(lib)
@@ -708,7 +707,7 @@ def getWindowsPath():
     global _bpath
     if _bpath is None:
         _bpath = []
-        if iswin:
+        if is_win:
             try:
                 import win32api
             except ImportError:

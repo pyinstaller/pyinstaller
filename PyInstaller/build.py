@@ -57,7 +57,7 @@ def system(cmd):
     # This workaround is required because NT shell doesn't work with commands
     # that start with double quotes (required if there are spaces inside the
     # command path)
-    if iswin:
+    if is_win:
         cmd = 'echo on && ' + cmd
     os.system(cmd)
 
@@ -71,8 +71,7 @@ def _load_data(filename):
 
 def setupUPXFlags():
     f = os.environ.get("UPX", "")
-    is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
-    if iswin and is24:
+    if is_win and is_py24:
         # Binaries built with Visual Studio 7.1 require --strip-loadconf
         # or they won't compress. Configure.py makes sure that UPX is new
         # enough to support --strip-loadconf.
@@ -161,7 +160,7 @@ def architecture():
     a string ('32bit' or '64bit'). Similar to platform.architecture(),
     but with fixes for universal binaries on MacOS.
     """
-    if sys.platform == "darwin":
+    if is_darwin:
         # Darwin's platform.architecture() is buggy and always
         # returns "64bit" event for the 32bit version of Python's
         # universal binary. So we roll out our own (that works
@@ -268,7 +267,7 @@ def check_egg(pth):
     else:
         components = pth.replace("\\", "/").split("/")
         sep = "/"
-        if iswin:
+        if is_win:
             sep = "\\"
     for i,name in zip(range(0,len(components)), components):
         if name.lower().endswith(".egg"):
@@ -450,7 +449,7 @@ class Analysis(Target):
         # first and we do not need to add assembly DLLs to the exclude list
         # explicitly
         python = config['python']
-        if not iswin:
+        if not is_win:
             while os.path.islink(python):
                 python = os.path.join(os.path.split(python)[0], os.readlink(python))
             depmanifest = None
@@ -467,7 +466,7 @@ class Analysis(Target):
         binaries.extend(bindepend.Dependencies(binaries,
                                                platform=target_platform,
                                                manifest=depmanifest))
-        if iswin:
+        if is_win:
             depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
         if zipfiles:
@@ -605,8 +604,8 @@ def cacheDigest(fnm):
 def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names
-    if (not strip and not upx and sys.platform[:6] != 'darwin' and
-        sys.platform != 'win32') or fnm.lower().endswith(".manifest"):
+    if ((not strip and not upx and not is_darwin and not is_win)
+        or fnm.lower().endswith(".manifest")):
         return fnm
     if strip:
         strip = 1
@@ -795,8 +794,8 @@ class PKG(Target):
                     self.dependencies.append((inm, fnm, typ))
                 else:
                     fnm = checkCache(fnm, self.strip_binaries,
-                                     self.upx_binaries and ( iswin or cygwin )
-                                      and config['hasUPX'])
+                                     self.upx_binaries and (is_win or is_cygwin)
+                                     and config['hasUPX'])
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
@@ -840,7 +839,7 @@ class EXE(Target):
             self.name = self.out[:-3] + 'exe'
         if not os.path.isabs(self.name):
             self.name = os.path.join(SPECPATH, self.name)
-        if target_iswin or cygwin:
+        if target_iswin or is_cygwin:
             self.pkgname = self.name[:-3] + 'pkg'
         else:
             self.pkgname = self.name + '.pkg'
@@ -853,7 +852,7 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
-        if iswin:
+        if is_win:
             if sys.version.startswith('1.5'):
                 import exceptions
                 toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
@@ -972,7 +971,7 @@ class EXE(Target):
         outf = open(self.name, 'wb')
         exe = self._bootloader_file('run')
         exe = os.path.join(HOMEPATH, exe)
-        if target_iswin or cygwin:
+        if target_iswin or is_cygwin:
             exe = exe + '.exe'
         if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
                                         self.resources):
@@ -1138,8 +1137,8 @@ class COLLECT(Target):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, self.strip_binaries,
-                                 self.upx_binaries and ( iswin or cygwin )
-                                  and config['hasUPX'])
+                                 self.upx_binaries and (is_win or is_cygwin)
+                                 and config['hasUPX'])
             if typ != 'DEPENDENCY':
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
@@ -1153,7 +1152,7 @@ class BUNDLE(Target):
     def __init__(self, *args, **kws):
 
         # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
-        if not sys.platform.startswith("darwin"):
+        if is_darwin:
             return
 
         Target.__init__(self)
@@ -1497,7 +1496,7 @@ def main(specfile, configfilename):
         print "Configure.py optimize=%s, Build.py optimize=%s" % (not config['pythonDebug'], not __debug__)
         sys.exit(1)
 
-    if iswin:
+    if is_win:
         import winmanifest
 
     if config['hasRsrcUpdate']:

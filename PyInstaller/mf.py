@@ -1052,7 +1052,7 @@ def _resolveCtypesImports(cbinaries):
     """
     if sys.platform.startswith("linux"):
         envvar = "LD_LIBRARY_PATH"
-    elif sys.platform.startswith("darwin"):
+    elif is_darwin:
         envvar = "DYLD_LIBRARY_PATH"
     else:
         envvar = "PATH"
