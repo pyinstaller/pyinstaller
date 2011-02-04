@@ -40,11 +40,10 @@ if is_darwin and build.architecture() == '64bit':
     print "   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment"
 
 
-def find_EXE_dependencies(config):
-    global target_platform, target_iswin
+def find_EXE_dependencies(config, executable, target_platform):
     print "I: computing EXE_dependencies"
-    python = opts.executable or sys.executable
-    target_platform = opts.target_platform or sys.platform
+    python = executable or sys.executable
+    target_platform = target_platform or sys.platform
     config['python'] = python
     config['target_platform'] = target_platform
     target_iswin = target_platform.startswith('win')
@@ -59,6 +58,8 @@ def find_EXE_dependencies(config):
 
     xtrapath = config.get('xtrapath') or xtrapath
     config['xtrapath'] = xtrapath
+
+    return target_platform, target_iswin
 
 
 _useTK = """\
@@ -77,7 +78,8 @@ os.putenv("TCL_LIBRARY", tcldir)
 os.putenv("TK_LIBRARY", tkdir)
 """
 
-def test_TCL_TK(config):
+
+def test_TCL_TK(config, target_platform, target_iswin):
     # TCL_root, TK_root and support/useTK.py
     print "I: Finding TCL/TK..."
     if not (target_iswin):
@@ -249,11 +251,11 @@ def test_unicode(config):
         config['hasUnicode'] = 0
         print 'I: ... Unicode NOT available'
 
-def test_UPX(config):
+def test_UPX(config, upx_dir):
     print 'I: testing for UPX...'
     cmd = "upx"
-    if opts.upx_dir:
-        cmd = '"' + os.path.normpath(os.path.join(opts.upx_dir, cmd)) + '"'
+    if upx_dir:
+        cmd = '"' + os.path.normpath(os.path.join(upx_dir, cmd)) + '"'
 
     hasUPX = 0
     try:
@@ -269,7 +271,7 @@ def test_UPX(config):
         print 'I: ...exception result in testing for UPX'
         print e, e.args
     config['hasUPX'] = hasUPX
-    config['upx_dir'] = opts.upx_dir
+    config['upx_dir'] = upx_dir
 
 
 def find_PYZ_dependencies(config):
@@ -300,7 +302,25 @@ def find_PYZ_dependencies(config):
     config['PYZ_dependencies'] = toc.data
 
 
-def main(configfilename):
+def __add_options(parser):
+    """
+    Add the `Configure` options to a option-parser instance or a
+    option group.
+    """
+    parser.add_option('--upx-dir', default=None,
+                      help='Directory containing UPX.')
+    parser.add_option('-C', '--configfile',
+                      default=DEFAULT_CONFIGFILE,
+                      dest='configfilename',
+                      help='Name of generated configfile (default: %default)')
+    parser.add_option('--target-platform', default=None,
+                      help='Target platform, required for cross-bundling '
+                           '(default: current platform).')
+    parser.add_option('--executable', default=None,
+                      help='Python executable to use. Required for '
+                           'cross-bundling.')
+
+def main(configfilename, upx_dir, executable, target_platform, **kw):
     try:
         config = build._load_data(configfilename)
         print 'I: read old config from', configfilename
@@ -314,13 +334,14 @@ def main(configfilename):
     config["pythonVersion"] = sys.version
     config["pythonDebug"] = __debug__
 
-    find_EXE_dependencies(config)
-    test_TCL_TK(config)
+    target_platform, target_iswin = \
+                     find_EXE_dependencies(config, executable, target_platform)
+    test_TCL_TK(config, target_platform, target_iswin)
     test_Zlib(config)
     test_Crypt(config)
     test_RsrcUpdate(config)
     test_unicode(config)
-    test_UPX(config)
+    test_UPX(config, upx_dir)
     find_PYZ_dependencies(config)
 
     build._save_data(configfilename, config)
