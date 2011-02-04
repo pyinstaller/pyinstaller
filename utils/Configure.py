@@ -28,5 +28,4 @@ opts, args = parser.parse_args()
 if args:
     parser.error('Does not expect any arguments')
 
-# :HACK: monkey-patch global variable in module
 PyInstaller.configure.main(**opts.__dict__)
