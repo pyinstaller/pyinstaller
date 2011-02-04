@@ -25,20 +25,8 @@ TEST=0
 LOAD_LIBRARY_AS_DATAFILE = 2
 RT_VERSION = 16
 
-def getRaw0(o):
-    return o.raw
-def getRaw1(o):
+def getRaw(o):
     return str(buffer(o))
-import sys
-if hasattr(sys, "version_info"):
-    pyvers = sys.version_info[0]*10 + sys.version_info[1]
-else:
-    toks = string.split(sys.version, '.', 2)
-    pyvers = int(toks[0])*10 + int(toks[1])
-if pyvers < 20:
-    getRaw = getRaw0
-else:
-    getRaw = getRaw1
 
 
 ##VS_VERSION_INFO {
@@ -409,10 +397,7 @@ class StringStruct:
         sublen = sublen + len(pad) + 2*vallen
         return struct.pack('hhh', sublen, vallen, typ) + getRaw(self.name) + '\000\000' + pad + getRaw(self.val) + '\000\000'
     def __repr__(self, indent=''):
-        if pyvers < 20:
-            return "StringStruct('%s', '%s')" % (str(self.name), str(self.val))
-        else:
-            return "StringStruct('%s', '%s')" % (self.name, self.val)
+        return "StringStruct('%s', '%s')" % (self.name, self.val)
 
 def parseCodePage(data, i, limit):
     #print "Parsing CodePage"
