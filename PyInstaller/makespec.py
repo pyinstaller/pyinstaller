@@ -223,12 +223,12 @@ def __add_options(parser):
                       "multiple times.")
 
 
-def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0,
+def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, debug=0,
          strip=0, upx=0, comserver=0, ascii=0, workdir=None,
          pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None, **kwargs):
 
     try:
-        config = eval(open(configfile, 'r').read())
+        config = eval(open(configfilename, 'r').read())
     except IOError:
         raise SystemExit("Configfile is missing or unreadable. Please run Configure.py before building!")
 
