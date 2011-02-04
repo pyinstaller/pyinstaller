@@ -1476,7 +1476,7 @@ def MERGE(*args):
 
 
 def __add_options(parser):
-    parser.add_option('-o', '--buildpath', default=DEFAULT_BUILDPATH,
+    parser.add_option('--buildpath', default=DEFAULT_BUILDPATH,
                       help='Buildpath (default: %default)')
     parser.add_option('-y', '--noconfirm',
                       action="store_true", default=False,
