@@ -32,7 +32,8 @@ try:
 except ImportError:
     ctypes = None
 
-import suffixes
+from PyInstaller import is_py25, is_py27
+import PyInstaller.suffixes as suffixes
 
 if not os.environ.has_key('PYTHONCASEOK'):
     def caseOk(filename):
@@ -821,11 +822,11 @@ except ValueError:
     SET_LINENO = 999
 BUILD_LIST = dis.opname.index('BUILD_LIST')
 LOAD_CONST = dis.opname.index('LOAD_CONST')
-if getattr(sys, 'version_info', (0,0,0)) > (2,5,0):
+if is_py25:
     LOAD_CONST_level = LOAD_CONST
 else:
     LOAD_CONST_level = 999
-if getattr(sys, 'version_info', (0,0,0)) >= (2,7,0):
+if is_py27:
     COND_OPS = [dis.opname.index('POP_JUMP_IF_TRUE'),
                 dis.opname.index('POP_JUMP_IF_FALSE'),
                 dis.opname.index('JUMP_IF_TRUE_OR_POP'),

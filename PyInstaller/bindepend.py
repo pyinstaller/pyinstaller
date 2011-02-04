@@ -39,7 +39,7 @@ import re
 from glob import glob
 import traceback
 
-from PyInstaller import is_win, is_cygwin, is_darwin
+from PyInstaller import is_win, is_cygwin, is_darwin, is_py26
 
 try:
     # zipfile is available since Python 1.6. Here it is only required for
@@ -55,7 +55,7 @@ _bpath = None
 silent = False  # True suppresses all informative messages from the dependency code
 
 if is_win:
-    if hasattr(sys, "version_info") and sys.version_info[:2] >= (2,6):
+    if is_py26:
         try:
             import win32api
             import pywintypes

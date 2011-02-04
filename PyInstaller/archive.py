@@ -52,21 +52,7 @@ for nm in ('nt', 'posix', 'dos', 'os2', 'mac'):
         _environ = mod.environ
         break
 
-if hasattr(sys, 'version_info'):
-    versuffix = '%d%d'%(sys.version_info[0],sys.version_info[1])
-else:
-    vers = sys.version
-    dot1 = dot2 = 0
-    for i in range(len(vers)):
-        if vers[i] == '.':
-            if dot1:
-                dot2 = i
-                break
-            else:
-                dot1 = i
-    else:
-        dot2 = len(vers)
-    versuffix = '%s%s' % (vers[:dot1], vers[dot1+1:dot2])
+versuffix = '%d%d' % sys.version_info[:2] # :todo: is this still used?
 
 if "-vi" in sys.argv[1:]:
     _verbose = 1

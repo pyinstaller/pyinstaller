@@ -268,11 +268,7 @@ class CArchive(archive.Archive):
            CArchives can be opened from the end - the trailer points
            back to the start. """
         totallen = tocpos + self.toclen + self.TRLLEN
-        if hasattr(sys, "version_info"):
-            pyvers = sys.version_info[0]*10 + sys.version_info[1]
-        else:
-            toks = split(sys.version, '.', 2)
-            pyvers = int(toks[0])*10 + int(toks[1])
+        pyvers = sys.version_info[0]*10 + sys.version_info[1]
         trl = struct.pack(self.TRLSTRUCT, self.MAGIC, totallen,
                           tocpos, self.toclen, pyvers)
         self.lib.write(trl)

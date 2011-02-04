@@ -259,7 +259,7 @@ def _rmdir(path):
 def check_egg(pth):
     """Check if path points to a file inside a python egg file (or to an egg
        directly)."""
-    if sys.version_info >= (2,3):
+    if is_py23:
         if os.path.altsep:
             pth = pth.replace(os.path.altsep, os.path.sep)
         components = pth.split(os.path.sep)
