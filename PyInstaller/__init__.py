@@ -17,8 +17,8 @@
 # 02110-1301, USA
 
 __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE',
-           'is_py24', 'is_win', 'is_cygwin', 'is_darwin',
-           'is24', 'iswin', 'cygwin', 'darwin')
+           'is_py23', 'is_py24', 'is_py25', 'is_py26', 'is_py27',
+           'is_win', 'is_cygwin', 'is_darwin')
 
 import os
 import sys
@@ -27,14 +27,12 @@ HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 CONFIGDIR = HOMEPATH
 DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
-is_py24 = hasattr(sys, "version_info") and sys.version_info >= (2,4)
+is_py23 = sys.version_info >= (2,3)
+is_py24 = sys.version_info >= (2,4)
+is_py25 = sys.version_info >= (2,5)
+is_py26 = sys.version_info >= (2,6)
+is_py27 = sys.version_info >= (2,7)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
-is_darwin = sys.platform.startswith('darwin')
-
-# backward compatibility
-is24 = is_py24
-iswin = is_win
-darwin = is_darwin
-cygwin = is_cygwin
+is_darwin = sys.platform == 'darwin'
