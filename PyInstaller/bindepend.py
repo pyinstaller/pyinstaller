@@ -39,6 +39,8 @@ import re
 from glob import glob
 import traceback
 
+from PyInstaller import is_win, is_cygwin, is_darwin, is_py26
+
 try:
     # zipfile is available since Python 1.6. Here it is only required for
     # extracting eggs, which are not supported prior to 2.3 anyway
@@ -49,14 +51,11 @@ except ImportError:
 
 seen = {}
 _bpath = None
-iswin = sys.platform[:3] == 'win'
-cygwin = sys.platform == 'cygwin'
-darwin = sys.platform[:6] == 'darwin'
 
 silent = False  # True suppresses all informative messages from the dependency code
 
-if iswin:
-    if hasattr(sys, "version_info") and sys.version_info[:2] >= (2,6):
+if is_win:
+    if is_py26:
         try:
             import win32api
             import pywintypes
@@ -133,7 +132,7 @@ excludes = {
 
 # Darwin has a stable ABI for applications, so there is no need
 # to include either /usr/lib nor system frameworks.
-if darwin:
+if is_darwin:
     excludes['^/usr/lib/'] = 1
     excludes['^/System/Library/Frameworks'] = 1
 
@@ -190,7 +189,7 @@ def _getImports_pe_lib_pefile(pth):
         This implementation walks through the PE header
         and uses library pefile for that and supports
         32/64bit Windows"""
-    import pefile
+    import PyInstaller.pefile as pefile
     pe = pefile.PE(pth)
     dlls = []
     for entry in pe.DIRECTORY_ENTRY_IMPORT:
@@ -347,7 +346,7 @@ def Dependencies(lTOC, platform=sys.platform, xtrapath=None, manifest=None):
         if not silent:
             print "I: Analyzing", pth
         seen[string.upper(nm)] = 1
-        if iswin:
+        if is_win:
             for ftocnm, fn in selectAssemblies(pth, manifest):
                 lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, platform, xtrapath):
@@ -578,7 +577,7 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
     for lib in dlls:
         if seen.get(string.upper(lib),0):
             continue
-        if not iswin and not cygwin:
+        if not is_win and not is_cygwin:
             # all other platforms
             npth = lib
             dir, lib = os.path.split(lib)
@@ -708,7 +707,7 @@ def getWindowsPath():
     global _bpath
     if _bpath is None:
         _bpath = []
-        if iswin:
+        if is_win:
             try:
                 import win32api
             except ImportError:
@@ -774,7 +773,7 @@ def getSoname(filename):
 
 
 if __name__ == "__main__":
-    from pyi_optparse import OptionParser
+    from PyInstaller.lib.pyi_optparse import OptionParser
     parser = OptionParser(usage="%prog [options] <executable_or_dynamic_library>")
     parser.add_option('--target-platform', default=sys.platform,
                       help='Target platform, required for cross-bundling (default: current platform)')

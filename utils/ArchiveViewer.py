@@ -16,15 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-import archive
-import carchive
+
+import PyInstaller.archive as archive
+import PyInstaller.carchive as carchive
+
 import sys, string, tempfile, os
 try:
     import zlib
 except ImportError:
     zlib = archive.DummyZlib()
 import pprint
-from pyi_optparse import OptionParser
+from PyInstaller.lib.pyi_optparse import OptionParser
 
 stack = []
 cleanup = []
@@ -213,9 +215,8 @@ parser.add_option('-b', '--brief',
                   dest='brief',
                   help='Print only file name. (default: %default). Can be combined with -r')
 
-if __name__ == '__main__':
-    opts, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error('Requires exactly one pyinstaller archive')
-    sys.exit(main(opts, args))
+opts, args = parser.parse_args()
+if len(args) != 1:
+    parser.error('Requires exactly one pyinstaller archive')
+sys.exit(main(opts, args))
 

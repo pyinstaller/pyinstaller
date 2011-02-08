@@ -34,11 +34,6 @@ import imp
 import marshal
 
 try:
-    py_version = sys.version_info
-except AttributeError:
-    py_version = (1,5)
-
-try:
     # zipimport is supported starting with Python 2.3
     import zipimport
 except ImportError:
@@ -523,7 +518,7 @@ class ImportManager:
                     # In Python 2.4 and above, sys.modules is left clean
                     # after a broken import. We need to do the same to
                     # achieve perfect compatibility (see ticket #32).
-                    if py_version >= (2,4,0):
+                    if sys.version_info >= (2,4):
                         # FIXME: how can we recover from a broken reload()?
                         # Should we save the mod dict and restore it in case
                         # of failure?
@@ -737,7 +732,7 @@ def _string_bootstrap():
 
 _os_bootstrap()
 
-if not _os_environ.has_key('PYTHONCASEOK') and sys.version_info >= (2, 1):
+if not _os_environ.has_key('PYTHONCASEOK'):
     def caseOk(filename):
         files = _os_listdir(_os_path_dirname(filename))
         return _os_path_basename(filename) in files

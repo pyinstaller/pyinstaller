@@ -32,14 +32,10 @@ try:
 except ImportError:
     ctypes = None
 
-import suffixes
+from PyInstaller import is_py25, is_py27
+import PyInstaller.suffixes as suffixes
 
-try:
-    STRINGTYPE = basestring
-except NameError:
-    STRINGTYPE = type("")
-
-if not os.environ.has_key('PYTHONCASEOK') and sys.version_info >= (2, 1):
+if not os.environ.has_key('PYTHONCASEOK'):
     def caseOk(filename):
         files = dircache.listdir(os.path.dirname(filename))
         return os.path.basename(filename) in files
@@ -347,7 +343,7 @@ class PathImportDirector(ImportDirector):
     def getmod(self, nm):
         mod = None
         for thing in self.path:
-            if isinstance(thing, STRINGTYPE):
+            if isinstance(thing, basestring):
                 owner = self.shadowpath.get(thing, -1)
                 if owner == -1:
                     owner = self.shadowpath[thing] = self.makeOwner(thing)
@@ -826,11 +822,11 @@ except ValueError:
     SET_LINENO = 999
 BUILD_LIST = dis.opname.index('BUILD_LIST')
 LOAD_CONST = dis.opname.index('LOAD_CONST')
-if getattr(sys, 'version_info', (0,0,0)) > (2,5,0):
+if is_py25:
     LOAD_CONST_level = LOAD_CONST
 else:
     LOAD_CONST_level = 999
-if getattr(sys, 'version_info', (0,0,0)) >= (2,7,0):
+if is_py27:
     COND_OPS = [dis.opname.index('POP_JUMP_IF_TRUE'),
                 dis.opname.index('POP_JUMP_IF_FALSE'),
                 dis.opname.index('JUMP_IF_TRUE_OR_POP'),
@@ -1052,7 +1048,7 @@ def _resolveCtypesImports(cbinaries):
     """
     if sys.platform.startswith("linux"):
         envvar = "LD_LIBRARY_PATH"
-    elif sys.platform.startswith("darwin"):
+    elif is_darwin:
         envvar = "DYLD_LIBRARY_PATH"
     else:
         envvar = "PATH"
@@ -1109,5 +1105,3 @@ def _resolveCtypesImports(cbinaries):
             ret.append((cbin, cpath, "BINARY"))
     _restorePaths(old)
     return ret
-
-

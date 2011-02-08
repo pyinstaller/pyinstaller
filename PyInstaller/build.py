@@ -39,29 +39,28 @@ import bindepend
 import traceback
 import platform
 
+from PyInstaller import *
+
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
 UNCOMPRESSED, COMPRESSED = range(2)
 
-# todo: use pkg_resources here
-HOMEPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
-CONFIGDIR = HOMEPATH
-DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
+DEFAULT_BUILDPATH = os.path.join('SPECPATH', 'build',
+                                 'pyi.TARGET_PLATFORM', 'SPECNAME')
 
 SPEC = None
 SPECPATH = None
 BUILDPATH = None
 WARNFILE = None
+NOCONFIRM = None
 
 rthooks = {}
-iswin = sys.platform[:3] == 'win'
-cygwin = sys.platform == 'cygwin'
 
 def system(cmd):
     # This workaround is required because NT shell doesn't work with commands
     # that start with double quotes (required if there are spaces inside the
     # command path)
-    if iswin:
+    if is_win:
         cmd = 'echo on && ' + cmd
     os.system(cmd)
 
@@ -75,8 +74,7 @@ def _load_data(filename):
 
 def setupUPXFlags():
     f = os.environ.get("UPX", "")
-    is24 = hasattr(sys, "version_info") and sys.version_info[:2] >= (2,4)
-    if iswin and is24:
+    if is_win and is_py24:
         # Binaries built with Visual Studio 7.1 require --strip-loadconf
         # or they won't compress. Configure.py makes sure that UPX is new
         # enough to support --strip-loadconf.
@@ -165,7 +163,7 @@ def architecture():
     a string ('32bit' or '64bit'). Similar to platform.architecture(),
     but with fixes for universal binaries on MacOS.
     """
-    if sys.platform == "darwin":
+    if is_darwin:
         # Darwin's platform.architecture() is buggy and always
         # returns "64bit" event for the 32bit version of Python's
         # universal binary. So we roll out our own (that works
@@ -244,7 +242,7 @@ def _rmdir(path):
             print ('Please edit/recreate the specfile (%s), set a different '
                    'output name (e.g. "dist") and run Build.py again.') % SPEC
             sys.exit(1)
-        if opts.noconfirm:
+        if NOCONFIRM:
             choice = 'y'
         elif sys.stdout.isatty():
             choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
@@ -264,7 +262,7 @@ def _rmdir(path):
 def check_egg(pth):
     """Check if path points to a file inside a python egg file (or to an egg
        directly)."""
-    if sys.version_info >= (2,3):
+    if is_py23:
         if os.path.altsep:
             pth = pth.replace(os.path.altsep, os.path.sep)
         components = pth.split(os.path.sep)
@@ -272,7 +270,7 @@ def check_egg(pth):
     else:
         components = pth.replace("\\", "/").split("/")
         sep = "/"
-        if iswin:
+        if is_win:
             sep = "\\"
     for i,name in zip(range(0,len(components)), components):
         if name.lower().endswith(".egg"):
@@ -454,7 +452,7 @@ class Analysis(Target):
         # first and we do not need to add assembly DLLs to the exclude list
         # explicitly
         python = config['python']
-        if not iswin:
+        if not is_win:
             while os.path.islink(python):
                 python = os.path.join(os.path.split(python)[0], os.readlink(python))
             depmanifest = None
@@ -471,11 +469,11 @@ class Analysis(Target):
         binaries.extend(bindepend.Dependencies(binaries,
                                                platform=target_platform,
                                                manifest=depmanifest))
-        if iswin:
+        if is_win:
             depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
         if zipfiles:
-            scripts[-1:-1] = [("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE')]
+            scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
         # Add realtime hooks just before the last script (which is
         # the entrypoint of the application).
         scripts[-1:-1] = rthooks
@@ -609,8 +607,8 @@ def cacheDigest(fnm):
 def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names
-    if (not strip and not upx and sys.platform[:6] != 'darwin' and
-        sys.platform != 'win32') or fnm.lower().endswith(".manifest"):
+    if ((not strip and not upx and not is_darwin and not is_win)
+        or fnm.lower().endswith(".manifest")):
         return fnm
     if strip:
         strip = 1
@@ -799,8 +797,8 @@ class PKG(Target):
                     self.dependencies.append((inm, fnm, typ))
                 else:
                     fnm = checkCache(fnm, self.strip_binaries,
-                                     self.upx_binaries and ( iswin or cygwin )
-                                      and config['hasUPX'])
+                                     self.upx_binaries and (is_win or is_cygwin)
+                                     and config['hasUPX'])
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
@@ -844,7 +842,7 @@ class EXE(Target):
             self.name = self.out[:-3] + 'exe'
         if not os.path.isabs(self.name):
             self.name = os.path.join(SPECPATH, self.name)
-        if target_iswin or cygwin:
+        if target_iswin or is_cygwin:
             self.pkgname = self.name[:-3] + 'pkg'
         else:
             self.pkgname = self.name + '.pkg'
@@ -857,8 +855,8 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
-        if iswin:
-            if sys.version[:3] == '1.5':
+        if is_win:
+            if sys.version.startswith('1.5'):
                 import exceptions
                 toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
             if self.manifest:
@@ -976,7 +974,7 @@ class EXE(Target):
         outf = open(self.name, 'wb')
         exe = self._bootloader_file('run')
         exe = os.path.join(HOMEPATH, exe)
-        if target_iswin or cygwin:
+        if target_iswin or is_cygwin:
             exe = exe + '.exe'
         if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
                                         self.resources):
@@ -1142,8 +1140,8 @@ class COLLECT(Target):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, self.strip_binaries,
-                                 self.upx_binaries and ( iswin or cygwin )
-                                  and config['hasUPX'])
+                                 self.upx_binaries and (is_win or is_cygwin)
+                                 and config['hasUPX'])
             if typ != 'DEPENDENCY':
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
@@ -1157,7 +1155,7 @@ class BUNDLE(Target):
     def __init__(self, *args, **kws):
 
         # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
-        if not sys.platform.startswith("darwin"):
+        if is_darwin:
             return
 
         Target.__init__(self)
@@ -1400,7 +1398,7 @@ def TkTree():
 def TkPKG():
     return PKG(TkTree(), name='tk.pkg')
 
-def build(spec):
+def build(spec, buildpath):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
     rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
     SPEC = spec
@@ -1412,8 +1410,8 @@ def build(spec):
                              "pyi." + config['target_platform'], specnm)  
     WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
     # Check and adjustment for build path
-    if opts.buildpath != parser.get_option('--buildpath').default:
-        bpath = opts.buildpath
+    if buildpath != DEFAULT_BUILDPATH:
+        bpath = buildpath
         if os.path.isabs(bpath):
             BUILDPATH = bpath
         else:
@@ -1476,9 +1474,21 @@ def MERGE(*args):
             path = id_to_path[path]
         set_dependencies(analysis, dependencies, path)
 
-def main(specfile, configfilename):
+
+def __add_options(parser):
+    parser.add_option('--buildpath', default=DEFAULT_BUILDPATH,
+                      help='Buildpath (default: %default)')
+    parser.add_option('-y', '--noconfirm',
+                      action="store_true", default=False,
+                      help='Remove output directory (default: %s) without '
+                      'confirmation' % os.path.join('SPECPATH', 'dist'))
+
+
+def main(specfile, configfilename, buildpath, noconfirm, **kw):
     global target_platform, target_iswin, config
     global icon, versionInfo, winresource, winmanifest, pyasm
+    global NOCONFIRM
+    NOCONFIRM = noconfirm
 
     try:
         config = _load_data(configfilename)
@@ -1487,7 +1497,7 @@ def main(specfile, configfilename):
         sys.exit(1)
 
     target_platform = config.get('target_platform', sys.platform)
-    target_iswin = target_platform[:3] == 'win'
+    target_iswin = target_platform.startswith('win')
 
     if target_platform == sys.platform:
         # _not_ cross compiling
@@ -1501,7 +1511,7 @@ def main(specfile, configfilename):
         print "Configure.py optimize=%s, Build.py optimize=%s" % (not config['pythonDebug'], not __debug__)
         sys.exit(1)
 
-    if iswin:
+    if is_win:
         import winmanifest
 
     if config['hasRsrcUpdate']:
@@ -1516,28 +1526,4 @@ def main(specfile, configfilename):
     if not config['useELFEXE']:
         EXE.append_pkg = 0
 
-    build(specfile)
-
-
-from pyi_optparse import OptionParser
-parser = OptionParser('%prog [options] specfile')
-parser.add_option('-C', '--configfile',
-                  default=DEFAULT_CONFIGFILE,
-                  help='Name of generated configfile (default: %default)')
-parser.add_option('-o', '--buildpath',
-                  default=os.path.join('SPECPATH', 'build',
-                                       'pyi.TARGET_PLATFORM', 'SPECNAME'),
-                  help='Buildpath (default: %default)')
-parser.add_option('-y', '--noconfirm',
-                  action="store_true", default=False,
-                  help='Remove output directory (default: %s) without '
-                       'confirmation' % os.path.join('SPECPATH', 'dist'))
-
-if __name__ == '__main__':
-    opts, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error('Requires exactly one .spec-file')
-
-    main(args[0], configfilename=opts.configfile)
-else:
-    opts = parser.get_default_values()
+    build(specfile, buildpath)

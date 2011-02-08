@@ -28,6 +28,8 @@ except:
     True  = 1 == 1
     False = not True
 
+from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE
+
 freezetmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s)
@@ -99,9 +101,6 @@ bundletmplt = """app = BUNDLE(coll,
              name=os.path.join(%(distdir)s, '%(name)s.app'))
 """ # distdir name
 
-HOMEPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
-CONFIGDIR = HOMEPATH
-DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
 def quote_win_filepath( path ):
     # quote all \ with another \ after using normpath to clean up the path
@@ -142,12 +141,93 @@ class Path:
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
 
-def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0,
+def __add_options(parser):
+    """
+    Add the `Makespec` options to a option-parser instance or a
+    option group.
+    """
+    g = parser.add_option_group('What to generate')
+    g.add_option("-F", "--onefile", dest="freeze",
+                 action="store_true", default=False,
+                 help="create a single file deployment")
+    g.add_option("-D", "--onedir", dest="freeze",
+                 action="store_false",
+                 help="create a single directory deployment (default)")
+    g.add_option("-o", "--out",
+                 dest="workdir", metavar="DIR",
+                 help="generate the spec file in the specified directory "
+                      "(default: current directory")
+    g.add_option("-n", "--name",
+                 help="name to assign to the project "
+                      "(default: first script's basename)")
+
+    g = parser.add_option_group('What to bundle, where to search')
+    g.add_option("-p", "--paths", default=[], dest="pathex",
+                 metavar="DIR", action="append",
+                 help="set base path for import (like using PYTHONPATH). "
+                      "Multiple directories are allowed, separating them "
+                      "with %s, or using this option multiple times"
+                      % repr(os.pathsep))
+    g.add_option("-K", "--tk", action="store_true",
+                 help="include TCL/TK in the deployment")
+    g.add_option("-a", "--ascii", action="store_true",
+                 help="do NOT include unicode encodings "
+                      "(default: included if available)")
+
+    g = parser.add_option_group('How to generate')
+    g.add_option("-d", "--debug", action="store_true",
+                 help="use the debug (verbose) build of the executable")
+    g.add_option("-s", "--strip", action="store_true",
+                 help="strip the exe and shared libs "
+                      "(don't try this on Windows)")
+    g.add_option("-X", "--upx", action="store_true", default=True,
+                 help="use UPX if available (works differently between "
+                      "Windows and *nix)")
+    #p.add_option("-Y", "--crypt", metavar="FILE",
+    #             help="encrypt pyc/pyo files")
+
+    g = parser.add_option_group('Windows specific options')
+    g.add_option("-c", "--console", "--nowindowed", dest="console",
+                 action="store_true",
+                 help="use a console subsystem executable (Windows only) "
+                      "(default)")
+    g.add_option("-w", "--windowed", "--noconsole", dest="console",
+                 action="store_false", default=True,
+                 help="use a Windows subsystem executable (Windows only)")
+    g.add_option("-v", "--version",
+                 dest="version_file", metavar="FILE",
+                 help="add a version resource from FILE to the exe "
+                      "(Windows only)")
+    g.add_option("-i", "--icon", dest="icon_file",
+                 metavar="FILE.ICO or FILE.EXE,ID",
+                 help="If FILE is an .ico file, add the icon to the final "
+                      "executable. Otherwise, the syntax 'file.exe,id' to "
+                      "extract the icon with the specified id "
+                      "from file.exe and add it to the final executable")
+    g.add_option("-m", "--manifest", metavar="FILE or XML",
+                 help="add manifest FILE or XML to the exe "
+                      "(Windows only)")
+    g.add_option("-r", "--resource", default=[], dest="resources",
+                 metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
+                 help="add/update resource of the given type, name and language "
+                      "from FILE to the final executable. FILE can be a "
+                      "data file or an exe/dll. For data files, atleast "
+                      "TYPE and NAME need to be specified, LANGUAGE defaults "
+                      "to 0 or may be specified as wildcard * to update all "
+                      "resources of the given TYPE and NAME. For exe/dll "
+                      "files, all resources from FILE will be added/updated "
+                      "to the final executable if TYPE, NAME and LANGUAGE "
+                      "are omitted or specified as wildcard *."
+                      "Multiple resources are allowed, using this option "
+                      "multiple times.")
+
+
+def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, debug=0,
          strip=0, upx=0, comserver=0, ascii=0, workdir=None,
          pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None, **kwargs):
 
     try:
-        config = eval(open(configfile, 'r').read())
+        config = eval(open(configfilename, 'r').read())
     except IOError:
         raise SystemExit("Configfile is missing or unreadable. Please run Configure.py before building!")
 
@@ -218,7 +298,7 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
         else:
             scripts.insert(0, Path(HOMEPATH, 'support', 'useTK.py'))
     scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
-    if config['target_platform'][:3] == "win" or \
+    if config['target_platform'].startswith("win") or \
        config['target_platform'] == 'cygwin':
         d['exename'] = name+'.exe'
         d['dllname'] = name+'.dll'
@@ -242,103 +322,3 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
     specfile.close()
     return specfnm
 
-
-if __name__ == '__main__':
-    import pyi_optparse as optparse
-    p = optparse.OptionParser(
-        usage="python %prog [opts] <scriptname> [<scriptname> ...]"
-    )
-    p.add_option('-C', '--configfile',
-                 default=DEFAULT_CONFIGFILE,
-                 help='Name of configfile (default: %default)')
-
-    g = p.add_option_group('What to generate')
-    g.add_option("-F", "--onefile", dest="freeze",
-                 action="store_true", default=False,
-                 help="create a single file deployment")
-    g.add_option("-D", "--onedir", dest="freeze", action="store_false",
-                 help="create a single directory deployment (default)")
-    g.add_option("-o", "--out", type="string", default=None,
-                 dest="workdir", metavar="DIR",
-                 help="generate the spec file in the specified directory "
-                      "(default: current directory")
-    g.add_option("-n", "--name", type="string", default=None,
-                 metavar="NAME",
-                 help="name to assign to the project "
-                      "(default: first script's basename)")
-
-    g = p.add_option_group('What to bundle, where to search')
-    g.add_option("-p", "--paths", type="string", default=[], dest="pathex",
-                 metavar="DIR", action="append",
-                 help="set base path for import (like using PYTHONPATH). "
-                      "Multiple directories are allowed, separating them "
-                      "with %s, or using this option multiple times"
-                      % repr(os.pathsep))
-    g.add_option("-K", "--tk", default=False, action="store_true",
-                 help="include TCL/TK in the deployment")
-    g.add_option("-a", "--ascii", action="store_true", default=False,
-                 help="do NOT include unicode encodings "
-                      "(default: included if available)")
-
-    g = p.add_option_group('How to generate')
-    g.add_option("-d", "--debug", action="store_true", default=False,
-                 help="use the debug (verbose) build of the executable")
-    g.add_option("-s", "--strip", action="store_true", default=False,
-                 help="strip the exe and shared libs "
-                      "(don't try this on Windows)")
-    g.add_option("-X", "--upx", action="store_true", default=True,
-                 help="use UPX if available (works differently between "
-                      "Windows and *nix)")
-    #p.add_option("-Y", "--crypt", type="string", default=None, metavar="FILE",
-    #             help="encrypt pyc/pyo files")
-
-    g = p.add_option_group('Windows specific options')
-    g.add_option("-c", "--console", "--nowindowed", dest="console",
-                 action="store_true",
-                 help="use a console subsystem executable (Windows only) "
-                      "(default)")
-    g.add_option("-w", "--windowed", "--noconsole", dest="console",
-                 action="store_false", default=True,
-                 help="use a Windows subsystem executable (Windows only)")
-    g.add_option("-v", "--version", type="string",
-                 dest="version_file", metavar="FILE",
-                 help="add a version resource from FILE to the exe "
-                      "(Windows only)")
-    g.add_option("-i", "--icon", type="string", dest="icon_file",
-                 metavar="FILE.ICO or FILE.EXE,ID",
-                 help="If FILE is an .ico file, add the icon to the final "
-                      "executable. Otherwise, the syntax 'file.exe,id' to "
-                      "extract the icon with the specified id "
-                      "from file.exe and add it to the final executable")
-    g.add_option("-m", "--manifest", type="string",
-                 dest="manifest", metavar="FILE or XML",
-                 help="add manifest FILE or XML to the exe "
-                      "(Windows only)")
-    g.add_option("-r", "--resource", type="string", default=[], dest="resources",
-                 metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
-                 help="add/update resource of the given type, name and language "
-                      "from FILE to the final executable. FILE can be a "
-                      "data file or an exe/dll. For data files, atleast "
-                      "TYPE and NAME need to be specified, LANGUAGE defaults "
-                      "to 0 or may be specified as wildcard * to update all "
-                      "resources of the given TYPE and NAME. For exe/dll "
-                      "files, all resources from FILE will be added/updated "
-                      "to the final executable if TYPE, NAME and LANGUAGE "
-                      "are omitted or specified as wildcard *."
-                      "Multiple resources are allowed, using this option "
-                      "multiple times.")
-
-    opts,args = p.parse_args()
-
-    # Split pathex by using the path separator
-    temppaths = opts.pathex[:]
-    opts.pathex = []
-    for p in temppaths:
-        opts.pathex.extend(string.split(p, os.pathsep))
-
-    if not args:
-        p.error('Requires at least one scriptname file')
-
-    name = apply(main, (args,), opts.__dict__)
-    print "wrote %s" % name
-    print "now run Build.py to build the executable"
