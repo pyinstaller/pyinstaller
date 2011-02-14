@@ -1155,7 +1155,7 @@ class BUNDLE(Target):
     def __init__(self, *args, **kws):
 
         # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
-        if is_darwin:
+        if not is_darwin:
             return
 
         Target.__init__(self)
@@ -1183,6 +1183,8 @@ class BUNDLE(Target):
                 if self.name is None:
                     self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
                     self.name = os.path.join(SPECPATH, self.appname + ".app")
+                else:
+                    self.name = os.path.join(SPECPATH, self.name)
                 break
         self.__postinit__()
 
