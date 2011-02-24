@@ -116,6 +116,7 @@ excludes = {
     'MPR.DLL':1,
     'DNSAPI.DLL':1,
     'RASAPI32.DLL':1,
+    'IRPROPS.CPL':1,
     # regex excludes
     r'/libc\.so\..*':1,
     r'/libdl\.so\..*':1,
