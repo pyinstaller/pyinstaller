@@ -70,54 +70,21 @@ if is_win:
     except ImportError, detail:
         winresource = None
 
+    def get_windows_dir():
+        """Return the Windows directory e.g. C:\\Windows"""
+        try:
+            import win32api
+        except ImportError:
+            windir = os.getenv('SystemRoot', os.getenv('WINDIR'))
+        else:
+            windir = win32api.GetWindowsDirectory()
+        if not windir:
+            print "E: Cannot determine your Windows directory"
+            sys.exit(1)
+        return windir
+
+# regex excludes
 excludes = {
-    'KERNEL32.DLL':1,
-    'ADVAPI.DLL':1,
-    'MSVCRT.DLL':1,
-    'ADVAPI32.DLL':1,
-    'COMCTL32.DLL':1,
-    'CRTDLL.DLL':1,
-    'GDI32.DLL':1,
-    'MFC42.DLL':1,
-    'NTDLL.DLL':1,
-    'OLE32.DLL':1,
-    'OLEAUT32.DLL':1,
-    'RPCRT4.DLL':1,
-    'SHELL32.DLL':1,
-    'USER32.DLL':1,
-    'WINSPOOL.DRV':1,
-    'WS2HELP.DLL':1,
-    'WS2_32.DLL':1,
-    'WSOCK32.DLL':1,
-    'MSWSOCK.DLL':1,
-    'WINMM.DLL':1,
-    'COMDLG32.DLL':1,
-##    'ZLIB.DLL':1,   # test with python 1.5.2
-    'ODBC32.DLL':1,
-    'VERSION.DLL':1,
-    'IMM32.DLL':1,
-    'DDRAW.DLL':1,
-    'DCIMAN32.DLL':1,
-    'OPENGL32.DLL':1,
-    'GLU32.DLL':1,
-    'GLUB32.DLL':1,
-    'NETAPI32.DLL':1,
-    'MSCOREE.DLL':1,
-    'PSAPI.DLL':1,
-    'MSVCP80.DLL':1,
-    'MSVCR80.DLL':1,
-    'MSVCP90.DLL':1,
-    'MSVCR90.DLL':1,
-    'IERTUTIL.DLL':1,
-    'POWRPROF.DLL':1,
-    'SHLWAPI.DLL':1,
-    'URLMON.DLL':1,
-    'MSIMG32.DLL':1,
-    'MPR.DLL':1,
-    'DNSAPI.DLL':1,
-    'RASAPI32.DLL':1,
-    'IRPROPS.CPL':1,
-    # regex excludes
     r'/libc\.so\..*':1,
     r'/libdl\.so\..*':1,
     r'/libm\.so\..*':1,
@@ -128,8 +95,11 @@ excludes = {
     # libGL can reference some hw specific libraries (like nvidia libs)
     r'/libGL\..*':1,
     # MS assembly excludes
-    'Microsoft.Windows.Common-Controls':1,
+    r'^Microsoft\.Windows\.Common-Controls$':1,
 }
+
+# regex includes - overrides excludes
+includes = {}
 
 # Darwin has a stable ABI for applications, so there is no need
 # to include either /usr/lib nor system frameworks.
@@ -137,7 +107,15 @@ if is_darwin:
     excludes['^/usr/lib/'] = 1
     excludes['^/System/Library/Frameworks'] = 1
 
+if is_win:
+    sep = '[%s]' % re.escape(os.sep + os.altsep)
+    # Exclude everything from the Windows directory by default
+    excludes['^%s%s' % (re.escape(get_windows_dir()), sep)] = 1
+    # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
+    includes[r'%spy(?:thon(?:com)?|wintypes)\d+\.dll$' % sep] = 1
+
 excludesRe = re.compile('|'.join(excludes.keys()), re.I)
+includesRe = re.compile('|'.join(includes.keys()), re.I)
 
 def getfullnameof(mod, xtrapath = None):
     """Return the full path name of MOD.
@@ -525,7 +503,8 @@ def selectAssemblies(pth, manifest=None):
                 print ("Adding %s to dependent assemblies "
                        "of final executable") % assembly.name
                 manifest.dependentAssemblies.append(assembly)
-        if excludesRe.search(assembly.name):
+        if (excludesRe.search(assembly.name) and (not includes or
+            not includesRe.search(assembly.name))):
             if not silent:
                 print "I: Skipping assembly", assembly.getid()
             continue
@@ -584,8 +563,6 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
             # all other platforms
             npth = lib
             dir, lib = os.path.split(lib)
-            if excludes.get(dir,0):
-                continue
         else:
             # plain win case
             npth = getfullnameof(lib, xtrapath)
@@ -596,7 +573,8 @@ def selectImports(pth, platform=sys.platform, xtrapath=None):
             candidatelib = npth
         else:
             candidatelib = lib
-        if excludesRe.search(candidatelib):
+        if (excludesRe.search(candidatelib) and (not includes or
+            not includesRe.search(candidatelib))):
             if candidatelib.find('libpython') < 0 and \
                candidatelib.find('Python.framework') < 0:
                 # skip libs not containing (libpython or Python.framework)
