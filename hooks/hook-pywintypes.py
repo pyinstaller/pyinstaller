@@ -31,6 +31,6 @@ def hook(mod):
         h = win32api.LoadLibrary(newname+'.dll')
         pth = win32api.GetModuleFileName(h)
         #win32api.FreeLibrary(h)
-        import mf
+        import PyInstaller.mf as mf
         mod = mf.ExtensionModule(newname, pth)
     return mod
