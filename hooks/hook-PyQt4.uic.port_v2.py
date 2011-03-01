@@ -20,7 +20,7 @@ import sys
 def hook(mod):
     # forbid imports in the port_v2 directory under Python 3
     # The code wouldn't import and would crash the build process.
-    if sys.hexversion >= 0x03000000:
+    if sys.version_info >= (3,):
         mod.__path__ = []
     return mod
 
