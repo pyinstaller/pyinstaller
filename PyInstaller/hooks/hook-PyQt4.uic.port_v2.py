@@ -1,4 +1,4 @@
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2009, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -15,16 +15,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+import sys
+
 def hook(mod):
-    import sys
-    newname = 'PyWinTypes%d%d' % sys.version_info[:2]
-    if mod.typ == 'EXTENSION':
-        mod.__name__ = newname
-    else:
-        import win32api
-        import PyInstaller.mf as mf
-        h = win32api.LoadLibrary(newname+'.dll')
-        pth = win32api.GetModuleFileName(h)
-        #win32api.FreeLibrary(h)
-        mod = mf.ExtensionModule(newname, pth)
+    # forbid imports in the port_v2 directory under Python 3
+    # The code wouldn't import and would crash the build process.
+    if sys.hexversion >= 0x03000000:
+        mod.__path__ = []
     return mod
+
+

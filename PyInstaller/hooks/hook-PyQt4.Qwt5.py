@@ -1,4 +1,4 @@
-from hooks import hookutils
+from PyInstaller.hooks import hookutils
 
 hiddenimports = ["PyQt4.QtCore", "PyQt4.QtGui", "PyQt4.QtSvg"]
 

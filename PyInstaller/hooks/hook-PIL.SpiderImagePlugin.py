@@ -14,10 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-import sys
 
-def hook(mod):
-    for i in range(len(mod.imports)-1, -1, -1):
-        if mod.imports[i][0] == 'strop':
-            del mod.imports[i]
-    return mod
+# Forward to shared code for PIL. PIL can be imported either as a top-level package
+# (from PIL import Image), or not (import Image), because it installs a
+# PIL.pth.
+from PyInstaller.hooks.shared_PIL_SpiderImagePlugin import *

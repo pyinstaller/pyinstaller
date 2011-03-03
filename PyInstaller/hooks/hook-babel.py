@@ -1,4 +1,4 @@
-from hooks.hookutils import babel_localedata_dir
+from PyInstaller.hooks.hookutils import babel_localedata_dir
 
 hiddenimports = ["babel.dates"]
 

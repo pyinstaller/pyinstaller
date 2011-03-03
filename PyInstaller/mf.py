@@ -390,7 +390,7 @@ def getDescr(fnm):
 UNTRIED = -1
 
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
-import hooks
+import PyInstaller.hooks as hooks
 
 if __debug__:
     import sys
@@ -612,7 +612,7 @@ class ImportTracker:
             # this (and scan_code) are instead of doing "exec co in mod.__dict__"
             try:
                 hookmodnm = 'hook-'+fqname
-                hooks = __import__('hooks', globals(), locals(), [hookmodnm])
+                hooks = __import__('PyInstaller.hooks', globals(), locals(), [hookmodnm])
                 hook = getattr(hooks, hookmodnm)
             except AttributeError:
                 pass

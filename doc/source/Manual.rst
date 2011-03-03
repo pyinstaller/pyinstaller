@@ -972,7 +972,7 @@ is a hidden import.
 Hidden imports are handled by hooking the module (the one doing the hidden
 imports) at ``Analysis`` time. Do this by creating a file named ``hook-module.py``
 (where module is the fully-qualified Python name, eg, ``hook-xml.dom.py``), and
-placing it in the ``hooks`` package under |PyInstaller|'s root directory,
+placing it in the ``PyInstaller.hooks`` package under |PyInstaller|'s root directory,
 (alternatively, you can save it elsewhere, and then use the ``hookspath`` arg to
 ``Analysis`` so your private hooks directory will be searched). Normally, it will
 have only one line::
@@ -1006,7 +1006,7 @@ however, because the new entry on ``__path__`` may well require computation. So
 instance of ``mf.Module`` which has (more or less) the same attributes as a real
 module object. The hook function should return a ``mf.Module`` instance - perhaps
 a brand new one, but more likely the same one used as an arg, but mutated.
-See `mf.py: A Modulefinder Replacement`_ for details, and `hooks\/hook-win32com.py`_
+See `mf.py: A Modulefinder Replacement`_ for details, and `PyInstaller\/hooks\/hook-win32com.py`_
 for an example.
 
 Note that manipulations of ``__path__`` hooked in this way apply to the analysis,
@@ -1490,8 +1490,9 @@ Hooks
 In modulefinder, scanning the code takes the place of executing the code
 object. ``mf`` goes further and allows a module to be hooked (after it has been
 scanned, but before analyze_one is done with it). A hook is a module named
-``hook-fullyqualifiedname`` in the ``hooks`` package. These modules should have one or
-more of the following three global names defined:
+``hook-fullyqualifiedname`` in the ``PyInstaller.hooks`` package.
+These modules should have one or more of the following three global
+names defined:
 
 ``hiddenimports``
     a list of modules names (relative or absolute) that the module imports in some untrackable way.
@@ -1782,7 +1783,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 |GOBACK|_
 
 .. _PyInstaller: http://www.pyinstaller.org
-.. _hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/hooks/hook-win32com.py?rev=latest
+.. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _PyQt: http://www.riverbankcomputing.co.uk/pyqt/index.php

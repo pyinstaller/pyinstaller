@@ -14,19 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-
-hiddenimports = ['win32com.server.policy']
+import sys
 
 def hook(mod):
-    import sys
-    newname = 'pythoncom%d%d' % sys.version_info[:2]
-    if mod.typ == 'EXTENSION':
-        mod.__name__ = newname
-    else:
-        import win32api
-        import PyInstaller.mf as mf
-        h = win32api.LoadLibrary(newname+'.dll')
-        pth = win32api.GetModuleFileName(h)
-        #win32api.FreeLibrary(h)
-        mod = mf.ExtensionModule(newname, pth)
+    if sys.version[0] > '1':
+        for i in range(len(mod.imports)-1, -1, -1):
+            if mod.imports[i][0] == 'strop':
+                del mod.imports[i]
     return mod

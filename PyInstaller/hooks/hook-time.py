@@ -19,5 +19,5 @@ import sys
 
 # Since Python 2.3, builtin module "time" imports Python module _strptime
 # to implement "time.strptime".
-if sys.version_info >= (2,3):
+if hasattr(sys, "version_info") and sys.version_info >= (2,3):
     hiddenimports = ['_strptime']
