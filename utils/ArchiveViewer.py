@@ -17,6 +17,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+try:
+    import PyInstaller
+except ImportError:
+    # if importing PyInstaller fails, try to load from current
+    # directory or parent directory to support running without
+    # installation
+    import imp, os
+    if not hasattr(os, "getuid") or os.getuid() != 0:
+        imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
+
 import PyInstaller.archive as archive
 import PyInstaller.carchive as carchive
 

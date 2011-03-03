@@ -1,6 +1,17 @@
 #!/usr/bin/env python
 # Crypt support routines
 # Copyright (C) 2005, Giovanni Bajo
+
+try:
+    import PyInstaller
+except ImportError:
+    # if importing PyInstaller fails, try to load from current
+    # directory or parent directory to support running without
+    # installation
+    import imp, os
+    if not hasattr(os, "getuid") or os.getuid() != 0:
+        imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
+
 import sys
 
 class ArgsError(Exception):
