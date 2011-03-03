@@ -140,7 +140,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
                 counter["skipped"].append(test)
                 continue
         _msg("BUILDING TEST", test)
-        prog = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'Build.py'),
+        prog = string.join([PYTHON, PYOPTS, os.path.join(HOME,'utils','Build.py'),
                             OPTS, test+".spec"],
                            ' ')
         print "BUILDING:", prog
@@ -162,7 +162,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
             prog = find_exepath(tmpname)
             if prog is None:
                 prog = find_exepath(tmpname, os.path.join('dist', test))
-            command = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'ArchiveViewer.py'),
+            command = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'utils','ArchiveViewer.py'),
                     '-b -r >> ' + newlog, prog],
                     ' ')
             os.system(command)
