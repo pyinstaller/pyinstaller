@@ -756,15 +756,13 @@ def getSoname(filename):
 if __name__ == "__main__":
     from PyInstaller.lib.pyi_optparse import OptionParser
     parser = OptionParser(usage="%prog [options] <executable_or_dynamic_library>")
-    parser.add_option('--target-platform', default=sys.platform,
-                      help='Target platform, required for cross-bundling (default: current platform)')
 
     opts, args = parser.parse_args()
     silent = True  # Suppress all informative messages from the dependency code
     import glob
     for a in args:
         for fn in glob.glob(a):
-            imports = getImports(fn, opts.target_platform)
-            if opts.target_platform == "win32":
+            imports = getImports(fn, sys.platform)
+            if sys.platform == "win32":
                 imports.extend([a.getid() for a in getAssemblies(fn)])
             print fn, imports

@@ -313,12 +313,6 @@ def __add_options(parser):
                       default=DEFAULT_CONFIGFILE,
                       dest='configfilename',
                       help='Name of generated configfile (default: %default)')
-    parser.add_option('--target-platform', default=None,
-                      help='Target platform, required for cross-bundling '
-                           '(default: current platform).')
-    parser.add_option('--executable', default=None,
-                      help='Python executable to use. Required for '
-                           'cross-bundling.')
 
 def main(configfilename, upx_dir, executable, target_platform, **kw):
     try:
