@@ -23,10 +23,6 @@ __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE',
 import os
 import sys
 
-HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-CONFIGDIR = HOMEPATH
-DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
-
 is_py23 = sys.version_info >= (2,3)
 is_py24 = sys.version_info >= (2,4)
 is_py25 = sys.version_info >= (2,5)
@@ -36,3 +32,28 @@ is_py27 = sys.version_info >= (2,7)
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
 is_darwin = sys.platform == 'darwin'
+
+HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+
+if iswin:
+    CONFIGDIR = os.environ['APPDATA']
+    if not CONFIGDIR:
+        CONFIGDIR = os.path.expanduser('~\\Application Data')
+elif is_darwin:
+    # From http://stackoverflow.com/questions/1084697/
+    import AppKit
+    # http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
+    # NSApplicationSupportDirectory = 14
+    # NSUserDomainMask = 1
+    # True for expanding the tilde into a fully qualified path
+    CONFIGDIR = AppKit.NSSearchPathForDirectoriesInDomains(14, 1, True)[0]
+    del AppKit
+else:
+    # According to XDG specification
+    # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
+    CONFIGDIR = os.environ.get('XDG_DATA_HOME', None)
+    if CONFIGDIR is None:
+        CONFIGDIR = os.path.expanduser('~/.local/share')
+CONFIGDIR = os.path.join(CONFIGDIR, 'pyinstaller')
+
+DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')

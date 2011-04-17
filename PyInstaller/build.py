@@ -65,6 +65,9 @@ def system(cmd):
     os.system(cmd)
 
 def _save_data(filename, data):
+    dirname = os.path.dirname(filename)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
     outf = open(filename, 'w')
     pprint.pprint(data, outf)
     outf.close()
