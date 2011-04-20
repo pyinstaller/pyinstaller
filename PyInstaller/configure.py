@@ -40,26 +40,26 @@ if is_darwin and build.architecture() == '64bit':
     print "   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment"
 
 
-def find_EXE_dependencies(config, executable, target_platform):
+def find_EXE_dependencies(config):
     print "I: computing EXE_dependencies"
-    python = executable or sys.executable
-    target_platform = target_platform or sys.platform
+    python = sys.executable
+    target_platform = sys.platform
     config['python'] = python
     config['target_platform'] = target_platform
-    target_iswin = target_platform.startswith('win')
+    #target_iswin = target_platform.startswith('win')
 
-    xtrapath = []
-    if target_iswin and not is_win:
-        # try to find a mounted Windows system
-        xtrapath = glob.glob('/mnt/*/WINDOWS/system32/')
-        if not xtrapath:
-            print "E: Can not find a mounted Windows system"
-            print "W: Please set 'xtrpath' in the config file yourself"
+    #xtrapath = []
+    #if target_iswin and not is_win:
+    #    # try to find a mounted Windows system
+    #    xtrapath = glob.glob('/mnt/*/WINDOWS/system32/')
+    #    if not xtrapath:
+    #        print "E: Can not find a mounted Windows system"
+    #        print "W: Please set 'xtrpath' in the config file yourself"
 
-    xtrapath = config.get('xtrapath') or xtrapath
-    config['xtrapath'] = xtrapath
+    #xtrapath = config.get('xtrapath') or xtrapath
+    #config['xtrapath'] = xtrapath
 
-    return target_platform, target_iswin
+    return target_platform
 
 
 _useTK = """\
@@ -79,7 +79,13 @@ os.putenv("TK_LIBRARY", tkdir)
 """
 
 
-def test_TCL_TK(config, target_platform, target_iswin):
+def test_TCL_TK(config, target_platform):
+
+    if target_platform.startswith("win"):
+        target_iswin = True
+    else:
+        target_iswin = False
+
     # TCL_root, TK_root and support/useTK.py
     print "I: Finding TCL/TK..."
     if not (target_iswin):
@@ -314,7 +320,7 @@ def __add_options(parser):
                       dest='configfilename',
                       help='Name of generated configfile (default: %default)')
 
-def main(configfilename, upx_dir, executable, target_platform, **kw):
+def main(configfilename, upx_dir, **kw):
     try:
         config = build._load_data(configfilename)
         print 'I: read old config from', configfilename
@@ -328,9 +334,8 @@ def main(configfilename, upx_dir, executable, target_platform, **kw):
     config["pythonVersion"] = sys.version
     config["pythonDebug"] = __debug__
 
-    target_platform, target_iswin = \
-                     find_EXE_dependencies(config, executable, target_platform)
-    test_TCL_TK(config, target_platform, target_iswin)
+    target_platform = find_EXE_dependencies(config)
+    test_TCL_TK(config, target_platform)
     test_Zlib(config)
     test_Crypt(config)
     test_RsrcUpdate(config)

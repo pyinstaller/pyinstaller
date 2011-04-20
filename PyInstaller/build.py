@@ -465,10 +465,10 @@ class Analysis(Target):
                                                version=(1, 0, 0, 0))
             depmanifest.filename = os.path.join(BUILDPATH,
                                                 specnm + ".exe.manifest")
-        binaries.extend(bindepend.Dependencies([('', python, '')],
-                                               target_platform,
-                                               config['xtrapath'],
-                                               manifest=depmanifest)[1:])
+        #binaries.extend(bindepend.Dependencies([('', python, '')],
+                                               #target_platform,
+                                               #config['xtrapath'],
+                                               #manifest=depmanifest)[1:])
         binaries.extend(bindepend.Dependencies(binaries,
                                                platform=target_platform,
                                                manifest=depmanifest))
