@@ -751,18 +751,3 @@ def getSoname(filename):
     cmd = "objdump -p -j .dynamic 2>/dev/null " + filename
     m = re.search(r'\s+SONAME\s+([^\s]+)', os.popen(cmd).read())
     if m: return m.group(1)
-
-
-if __name__ == "__main__":
-    from PyInstaller.lib.pyi_optparse import OptionParser
-    parser = OptionParser(usage="%prog [options] <executable_or_dynamic_library>")
-
-    opts, args = parser.parse_args()
-    silent = True  # Suppress all informative messages from the dependency code
-    import glob
-    for a in args:
-        for fn in glob.glob(a):
-            imports = getImports(fn, sys.platform)
-            if sys.platform == "win32":
-                imports.extend([a.getid() for a in getAssemblies(fn)])
-            print fn, imports
