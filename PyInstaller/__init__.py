@@ -35,7 +35,7 @@ is_darwin = sys.platform == 'darwin'
 
 HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
-if iswin:
+if is_win:
     CONFIGDIR = os.environ['APPDATA']
     if not CONFIGDIR:
         CONFIGDIR = os.path.expanduser('~\\Application Data')
