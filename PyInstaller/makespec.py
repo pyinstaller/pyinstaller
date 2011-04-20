@@ -156,7 +156,7 @@ def __add_options(parser):
     g.add_option("-o", "--out",
                  dest="workdir", metavar="DIR",
                  help="generate the spec file in the specified directory "
-                      "(default: current directory")
+                      "(default: current directory)")
     g.add_option("-n", "--name",
                  help="name to assign to the project "
                       "(default: first script's basename)")
