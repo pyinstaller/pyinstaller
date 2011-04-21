@@ -1486,7 +1486,7 @@ def __add_options(parser):
     parser.add_option('-y', '--noconfirm',
                       action="store_true", default=False,
                       help='Remove output directory (default: %s) without '
-                      'confirmation' % os.path.join('SPECPATH', 'dist'))
+                      'confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'))
 
 
 def main(specfile, configfilename, buildpath, noconfirm, **kw):
