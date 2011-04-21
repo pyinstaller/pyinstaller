@@ -242,8 +242,8 @@ def _rmdir(path):
                    'SPECPATH (%s)') % (path, SPECPATH)
             specerr += 1
         if specerr:
-            print ('Please edit/recreate the specfile (%s), set a different '
-                   'output name (e.g. "dist") and run Build.py again.') % SPEC
+            print ('Please edit/recreate the specfile (%s) and set a different '
+                   'output name (e.g. "dist").') % SPEC
             sys.exit(1)
         if NOCONFIRM:
             choice = 'y'
@@ -252,8 +252,8 @@ def _rmdir(path):
                                'CONTENTS will be REMOVED! Continue? (y/n)' % path)
         else:
             print ('E: The output directory "%s" is not empty. Please remove '
-                   'all its contents and run Build.py again, or use Build.py '
-                   '-y (remove output directory without confirmation).') % path
+                   'all its contents or use the -y option (remove output '
+                   'directory without confirmation).') % path
             sys.exit(1)
         if choice.strip().lower() == 'y':
             print 'I: Removing', path
@@ -1498,7 +1498,7 @@ def main(specfile, configfilename, buildpath, noconfirm, **kw):
     try:
         config = _load_data(configfilename)
     except IOError:
-        print "You must run Configure.py before building!"
+        print "You must run utils/Configure.py before building or use pyinstaller.py!"
         sys.exit(1)
 
     target_platform = config.get('target_platform', sys.platform)
@@ -1508,12 +1508,11 @@ def main(specfile, configfilename, buildpath, noconfirm, **kw):
         # _not_ cross compiling
         if config['pythonVersion'] != sys.version:
             print "The current version of Python is not the same with which PyInstaller was configured."
-            print "Please re-run Configure.py with this version."
+            print "Please re-run utils/Configure.py or use pyinstaller.py with this version."
             sys.exit(1)
 
     if config.setdefault('pythonDebug', None) != __debug__:
-        print "python optimization flags changed: rerun Configure.py with the same [-O] option"
-        print "Configure.py optimize=%s, Build.py optimize=%s" % (not config['pythonDebug'], not __debug__)
+        print "python optimization flags changed: rerun python -O utils/Configure.py"
         sys.exit(1)
 
     if is_win:

@@ -229,11 +229,11 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, deb
     try:
         config = eval(open(configfilename, 'r').read())
     except IOError:
-        raise SystemExit("Configfile is missing or unreadable. Please run Configure.py before building!")
+        raise SystemExit("Configfile is missing or unreadable. Please run utils/Configure.py before building or use pyinstaller.py!")
 
     if config['pythonVersion'] != sys.version:
         print "The current version of Python is not the same with which PyInstaller was configured."
-        print "Please re-run Configure.py with this version."
+        print "Please re-run utils/Configure.py or use pyinstaller.py with this version."
         raise SystemExit(1)
 
     if not name:
