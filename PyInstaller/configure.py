@@ -105,8 +105,12 @@ def test_TCL_TK(config, target_platform):
     for modnm, mod in a.modules.items():
         if isinstance(mod, mf.ExtensionModule):
             binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
-    binaries.extend(bindepend.Dependencies(binaries))
+    # Always add python's dependencies first
+    # This ensures that assembly depencies under Windows get pulled in
+    # first and we do not need to add assembly DLLs to the exclude list
+    # explicitly
     binaries.extend(bindepend.Dependencies([('', sys.executable, '')]))
+    binaries.extend(bindepend.Dependencies(binaries))
     for nm, fnm, typ in binaries:
         mo = re.match(pattern, nm)
         if not mo:
