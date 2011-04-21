@@ -450,10 +450,6 @@ class Analysis(Target):
                         binaries.extend(mod.binaries)
                         if modnm != '__main__':
                             pure.append((modnm, fnm, 'PYMODULE'))
-        # Always add python's dependencies first
-        # This ensures that assembly depencies under Windows get pulled in
-        # first and we do not need to add assembly DLLs to the exclude list
-        # explicitly
         python = config['python']
         if not is_win:
             while os.path.islink(python):
@@ -465,10 +461,13 @@ class Analysis(Target):
                                                version=(1, 0, 0, 0))
             depmanifest.filename = os.path.join(BUILDPATH,
                                                 specnm + ".exe.manifest")
-        #binaries.extend(bindepend.Dependencies([('', python, '')],
-                                               #target_platform,
-                                               #config['xtrapath'],
-                                               #manifest=depmanifest)[1:])
+        # Always add python's dependencies first
+        # This ensures that assembly depencies under Windows get pulled in
+        # first and we do not need to add assembly DLLs to the exclude list
+        # explicitly
+        binaries.extend(bindepend.Dependencies([('', python, '')],
+                                               target_platform,
+                                               manifest=depmanifest)[1:])
         binaries.extend(bindepend.Dependencies(binaries,
                                                platform=target_platform,
                                                manifest=depmanifest))
