@@ -40,14 +40,7 @@ if is_win:
     if not CONFIGDIR:
         CONFIGDIR = os.path.expanduser('~\\Application Data')
 elif is_darwin:
-    # From http://stackoverflow.com/questions/1084697/
-    import AppKit
-    # http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
-    # NSApplicationSupportDirectory = 14
-    # NSUserDomainMask = 1
-    # True for expanding the tilde into a fully qualified path
-    CONFIGDIR = AppKit.NSSearchPathForDirectoriesInDomains(14, 1, True)[0]
-    del AppKit
+    CONFIGDIR = os.path.expanduser('~/Library/Application Support')
 else:
     # According to XDG specification
     # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
