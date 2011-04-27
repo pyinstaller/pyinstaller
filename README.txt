@@ -6,7 +6,7 @@ Requirements
  Python:
     2.2+ (Python 3 not supported)
  OS:
-    Windows XP/Vista/7 (32bit/64bit)
+    Windows (32bit/64bit)
     Linux (32bit/64bit)
     Mac OS X (32bit)
 
