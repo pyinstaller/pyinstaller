@@ -1,6 +1,15 @@
 _PyInstaller_
 =============
 
+Requirements
+============
+ Python:
+    2.2+ (Python 3 not supported)
+ OS:
+    Windows (32bit/64bit)
+    Linux (32bit/64bit)
+    Mac OS X (32bit)
+
 Use
 ===
  See doc/Manual.html
@@ -13,8 +22,10 @@ Installation in brief
     python Build.py /path/to/yourscript.spec
     .done.
 
- Non-Windows (32bit), Non-Linux (32/64bit) and Non-Mac OS X (32bit)
- users should first build the bootloader:
+ For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32bit) are
+ available precompiled bootloaders.
+
+ Other users should first try to build the bootloader:
     cd source
     python ./waf configure build install
 
