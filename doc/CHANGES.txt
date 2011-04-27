@@ -31,7 +31,7 @@ Changes since PyInstaller 1.4
  * Improve compatibility across multiple Linux distributions by
    being more careful on which libraries are included/excluded in
    the package.
- * Improve compatibility with old Python versions.
+ * Improve compatibility with older Python versions (Python 2.2+).
  * Fix double-bouncing-icon bug on Mac OSX. Now windowed applications
    correctly start on Mac OSX showing a single bouncing icon.
  * Fix weird "missing symbol" errors under Mac OSX (thanks to Isaac
