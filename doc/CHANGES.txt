@@ -1,5 +1,13 @@
 (+ user visible changes, * internal stuff)
 
+Changes since PyInstaller 1.5
+-----------------------------
+ + Added Multipackage function to create a collection of packages to avoid
+   library duplication. See documentation for more details.
+ + New symplified command line interface. Configure.py/Makespec.py/Build.py
+   replaced by pyinstaller.py. See documentation for more details.
+ + Add experimental support for Mac OSX 64-bit
+
 Changes since PyInstaller 1.4
 -----------------------------
  + Full support for Python 2.7.
