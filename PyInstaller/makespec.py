@@ -21,14 +21,8 @@
 
 import sys, os, string
 
-# For Python 1.5 compatibility
-try:
-    True, False
-except:
-    True  = 1 == 1
-    False = not True
-
 from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE
+
 
 freezetmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
