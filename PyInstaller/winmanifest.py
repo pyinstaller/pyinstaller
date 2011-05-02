@@ -92,12 +92,6 @@ Updates or adds manifest <xmlpath> as resource in Win32 PE file <dstpath>.
 
 """
 
-try:
-    import hashlib
-except ImportError, detail:
-    hashlib = None
-    import md5
-    import sha
 import os
 from glob import glob
 import re
@@ -105,6 +99,8 @@ import sys
 import xml
 from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
+
+from PyInstaller import hashlib
 
 try:
     import winresource
@@ -116,6 +112,7 @@ except ImportError, detail:
     print "W: http://sourceforge.net/projects/pywin32/"
 
 try:
+    # Python 2.3+
     sys.getwindowsversion
 except AttributeError:
     def getwindowsversion():
@@ -163,16 +160,6 @@ Document.getCEByTN = getChildElementsByTagName
 Document.getFCEByTN = getFirstChildElementByTagName
 Element.getCEByTN = getChildElementsByTagName
 Element.getFCEByTN = getFirstChildElementByTagName
-
-
-class _Hash(object):
-
-    def __init__(self):
-        self.md5 = md5.new
-        self.sha = sha.new
-
-if hashlib is None:
-    hashlib = _Hash()
 
 
 class _Dummy:

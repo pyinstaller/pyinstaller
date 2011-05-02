@@ -18,7 +18,7 @@
 
 __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE',
            'is_py23', 'is_py24', 'is_py25', 'is_py26', 'is_py27',
-           'is_win', 'is_cygwin', 'is_darwin')
+           'is_win', 'is_cygwin', 'is_darwin', 'hashlib')
 
 import os
 import sys
@@ -50,3 +50,17 @@ else:
 CONFIGDIR = os.path.join(CONFIGDIR, 'pyinstaller')
 
 DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
+
+
+# For Python compatibility
+try:
+    # Python 2.5+
+    import hashlib
+except ImportError:
+    import md5
+    import sha
+    class _Hash(object):
+        def __init__(self):
+            self.md5 = md5.new
+            self.sha = sha.new
+    hashlib = _Hash()
