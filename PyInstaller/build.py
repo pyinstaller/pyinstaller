@@ -853,9 +853,6 @@ class EXE(Target):
             else:
                 self.toc.extend(arg)
         if is_win:
-            if sys.version.startswith('1.5'):
-                import exceptions
-                toc.append((os.path.basename(exceptions.__file__), exceptions.__file__, 'BINARY'))
             if self.manifest:
                 if isinstance(self.manifest, basestring) and "<" in self.manifest:
                     # Assume XML string
