@@ -18,7 +18,7 @@
 
 __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE',
            'is_py23', 'is_py24', 'is_py25', 'is_py26', 'is_py27',
-           'is_win', 'is_cygwin', 'is_darwin', 'hashlib')
+           'is_win', 'is_cygwin', 'is_darwin', 'is_linux', 'hashlib')
 
 import os
 import sys
@@ -31,6 +31,7 @@ is_py27 = sys.version_info >= (2,7)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
+is_linux = sys.platform == 'linux2'
 is_darwin = sys.platform == 'darwin'
 
 HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))

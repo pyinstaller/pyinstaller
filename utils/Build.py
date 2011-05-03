@@ -34,7 +34,7 @@ from PyInstaller.lib.pyi_optparse import OptionParser
 
 parser = OptionParser(usage="%prog [options] specfile")
 parser.add_option('-C', '--configfile',
-                  default=PyInstaller.build.DEFAULT_CONFIGFILE,
+                  default=PyInstaller.DEFAULT_CONFIGFILE,
                   dest='configfilename',
                   help='Name of generated configfile (default: %default)')
 PyInstaller.build.__add_options(parser)

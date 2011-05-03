@@ -35,7 +35,9 @@ import bindepend
 import traceback
 import platform
 
-from PyInstaller import *
+from PyInstaller import HOMEPATH, CONFIGDIR
+from PyInstaller import is_win, is_linux, is_darwin, is_cygwin
+from PyInstaller import is_py23, is_py24, hashlib
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
@@ -407,8 +409,7 @@ class Analysis(Target):
         ###################################################
         # Initialize analyzer and analyze scripts
         analyzer = mf.ImportTracker(dirs.keys()+paths, self.hookspath,
-                                    self.excludes,
-                                    target_platform=target_platform)
+                                    self.excludes)
         #print analyzer.path
         scripts = [] # will contain scripts to bundle
         for i in range(len(self.inputs)):
@@ -462,10 +463,8 @@ class Analysis(Target):
         # first and we do not need to add assembly DLLs to the exclude list
         # explicitly
         binaries.extend(bindepend.Dependencies([('', python, '')],
-                                               target_platform,
                                                manifest=depmanifest)[1:])
         binaries.extend(bindepend.Dependencies(binaries,
-                                               platform=target_platform,
                                                manifest=depmanifest))
         if is_win:
             depmanifest.writeprettyxml()
@@ -508,9 +507,9 @@ class Analysis(Target):
         it in its output.
         """
 
-        if target_platform.startswith("linux"):
+        if is_linux:
             name = 'libpython%d.%d.so' % sys.version_info[:2]
-        elif target_platform.startswith("darwin"):
+        elif is_darwin:
             name = 'Python'
         else:
             return
@@ -520,12 +519,12 @@ class Analysis(Target):
                 # lib found
                 return
 
-        if target_platform.startswith("linux"):
+        if is_linux:
             lib = bindepend.findLibrary(name)
             if lib is None:
                 raise IOError("Python library not found!")
 
-        elif target_platform.startswith("darwin"):
+        elif is_darwin:
             # On MacPython, Analysis.assemble is able to find the libpython with
             # no additional help, asking for config['python'] dependencies.
             # However, this fails on system python, because the shared library
@@ -840,7 +839,7 @@ class EXE(Target):
             self.name = self.out[:-3] + 'exe'
         if not os.path.isabs(self.name):
             self.name = os.path.join(SPECPATH, self.name)
-        if target_iswin or is_cygwin:
+        if is_win or is_cygwin:
             self.pkgname = self.name[:-3] + 'pkg'
         else:
             self.pkgname = self.name + '.pkg'
@@ -972,7 +971,7 @@ class EXE(Target):
         outf = open(self.name, 'wb')
         exe = self._bootloader_file('run')
         exe = os.path.join(HOMEPATH, exe)
-        if target_iswin or is_cygwin:
+        if is_win or is_cygwin:
             exe = exe + '.exe'
         if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
                                         self.resources):
@@ -1407,7 +1406,7 @@ def build(spec, buildpath):
     if SPECPATH == '':
         SPECPATH = os.getcwd()
     BUILDPATH = os.path.join(SPECPATH, 'build',
-                             "pyi." + config['target_platform'], specnm)  
+                             "pyi." + sys.platform, specnm)  
     WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
     # Check and adjustment for build path
     if buildpath != DEFAULT_BUILDPATH:
@@ -1485,7 +1484,7 @@ def __add_options(parser):
 
 
 def main(specfile, configfilename, buildpath, noconfirm, **kw):
-    global target_platform, target_iswin, config
+    global config
     global icon, versionInfo, winresource, winmanifest, pyasm
     global NOCONFIRM
     NOCONFIRM = noconfirm
@@ -1496,25 +1495,20 @@ def main(specfile, configfilename, buildpath, noconfirm, **kw):
         print "You must run utils/Configure.py before building or use pyinstaller.py!"
         sys.exit(1)
 
-    target_platform = config.get('target_platform', sys.platform)
-    target_iswin = target_platform.startswith('win')
-
-    if target_platform == sys.platform:
-        # _not_ cross compiling
-        if config['pythonVersion'] != sys.version:
-            print "The current version of Python is not the same with which PyInstaller was configured."
-            print "Please re-run utils/Configure.py or use pyinstaller.py with this version."
-            sys.exit(1)
+    if config['pythonVersion'] != sys.version:
+        print "The current version of Python is not the same with which PyInstaller was configured."
+        print "Please re-run utils/Configure.py or use pyinstaller.py with this version."
+        sys.exit(1)
 
     if config.setdefault('pythonDebug', None) != __debug__:
         print "python optimization flags changed: rerun python -O utils/Configure.py"
         sys.exit(1)
 
     if is_win:
-        import winmanifest
+        from PyInstaller import winmanifest
 
     if config['hasRsrcUpdate']:
-        import icon, versionInfo, winresource
+        from PyInstaller import icon, versionInfo, winresource
         pyasm = bindepend.getAssemblies(config['python'])
     else:
         pyasm = None

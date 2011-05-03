@@ -27,7 +27,8 @@ import pprint
 import re
 import glob
 
-from PyInstaller import *
+from PyInstaller import HOMEPATH, DEFAULT_CONFIGFILE
+from PyInstaller import is_win, is_linux, is_darwin, is_py24
 
 import PyInstaller.mf as mf
 import PyInstaller.bindepend as bindepend
@@ -43,23 +44,8 @@ if is_darwin and build.architecture() == '64bit':
 def find_EXE_dependencies(config):
     print "I: computing EXE_dependencies"
     python = sys.executable
-    target_platform = sys.platform
     config['python'] = python
-    config['target_platform'] = target_platform
-    #target_iswin = target_platform.startswith('win')
-
-    #xtrapath = []
-    #if target_iswin and not is_win:
-    #    # try to find a mounted Windows system
-    #    xtrapath = glob.glob('/mnt/*/WINDOWS/system32/')
-    #    if not xtrapath:
-    #        print "E: Can not find a mounted Windows system"
-    #        print "W: Please set 'xtrpath' in the config file yourself"
-
-    #xtrapath = config.get('xtrapath') or xtrapath
-    #config['xtrapath'] = xtrapath
-
-    return target_platform
+    config['target_platform'] = sys.platform
 
 
 _useTK = """\
@@ -79,24 +65,19 @@ os.putenv("TK_LIBRARY", tkdir)
 """
 
 
-def test_TCL_TK(config, target_platform):
-
-    if target_platform.startswith("win"):
-        target_iswin = True
-    else:
-        target_iswin = False
+def test_TCL_TK(config):
 
     # TCL_root, TK_root and support/useTK.py
     print "I: Finding TCL/TK..."
-    if not (target_iswin):
+    if not (is_win):
         saveexcludes = bindepend.excludes
         bindepend.excludes = {}
 
-    if target_platform.startswith("win"):
+    if is_win:
         pattern = r'(?i)tcl(\d\d)\.dll'
-    elif target_platform.startswith("linux"):
+    elif is_linux:
         pattern = r'libtcl(\d\.\d)?\.so'
-    elif target_platform.startswith("darwin"):
+    elif is_darwin:
         pattern = r'_tkinter'
 
     a = mf.ImportTracker()
@@ -115,10 +96,10 @@ def test_TCL_TK(config, target_platform):
         mo = re.match(pattern, nm)
         if not mo:
             continue
-        if not target_platform.startswith("darwin"):
+        if not is_darwin:
             ver = mo.group(1)
             tclbindir = os.path.dirname(fnm)
-            if target_iswin:
+            if is_win:
                 ver = ver[0] + '.' + ver[1:]
             elif ver is None:
                 # we found "libtcl.so.0" so we need to get the version from the lib directory
@@ -133,7 +114,7 @@ def test_TCL_TK(config, target_platform):
             # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3 and /usr/lib/tk8.3
             # Windows: Python21/DLLs with the .tcl files in Python21/tcl/tcl8.3 and Python21/tcl/tk8.3
             #      or  D:/Programs/Tcl/bin with the .tcl files in D:/Programs/Tcl/lib/tcl8.0 and D:/Programs/Tcl/lib/tk8.0
-            if target_iswin:
+            if is_win:
                 for attempt in ['../tcl', '../lib']:
                     if os.path.exists(os.path.join(tclbindir, attempt, tclnm)):
                         config['TCL_root'] = os.path.join(tclbindir, attempt, tclnm)
@@ -147,7 +128,7 @@ def test_TCL_TK(config, target_platform):
                 config['TCL_dirname'] = os.path.basename(config['TCL_root'])
                 config['TK_dirname'] = os.path.basename(config['TK_root'])
                 break
-        elif target_platform.startswith("darwin"):
+        elif is_darwin:
             tclbindir = os.path.dirname(fnm)
             print "I: found TCL/TK"
             tcldir = "Tcl.framework/Resources/Scripts"
@@ -160,7 +141,7 @@ def test_TCL_TK(config, target_platform):
             break
     else:
         print "I: could not find TCL/TK"
-    if not target_iswin:
+    if not is_win:
         bindepend.excludes = saveexcludes
 
 def test_Crypt(config):
@@ -338,8 +319,8 @@ def main(configfilename, upx_dir, **kw):
     config["pythonVersion"] = sys.version
     config["pythonDebug"] = __debug__
 
-    target_platform = find_EXE_dependencies(config)
-    test_TCL_TK(config, target_platform)
+    find_EXE_dependencies(config)
+    test_TCL_TK(config)
     test_Zlib(config)
     test_Crypt(config)
     test_RsrcUpdate(config)
