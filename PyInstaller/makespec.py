@@ -22,6 +22,7 @@
 import sys, os, string
 
 from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE
+from PyInstaller import is_win, is_cygwin
 
 
 freezetmplt = """# -*- mode: python -*-
@@ -234,7 +235,7 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, deb
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
 
     distdir = "dist"
-    builddir = os.path.join('build', 'pyi.' + config['target_platform'], name)
+    builddir = os.path.join('build', 'pyi.' + sys.platform, name)
 
     pathex = pathex[:]
     if workdir is None:
@@ -292,8 +293,7 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, deb
         else:
             scripts.insert(0, Path(HOMEPATH, 'support', 'useTK.py'))
     scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
-    if config['target_platform'].startswith("win") or \
-       config['target_platform'] == 'cygwin':
+    if is_win or is_cygwin:
         d['exename'] = name+'.exe'
         d['dllname'] = name+'.dll'
     else:

@@ -403,7 +403,7 @@ class Keyfile:
             self.key = None
 
 class PYZOwner(iu.Owner):
-    def __init__(self, path, target_platform=None):
+    def __init__(self, path):
         try:
             self.pyz = ZlibArchive(path)
             self.pyz.checkmagic()
