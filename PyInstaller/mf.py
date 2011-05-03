@@ -32,8 +32,7 @@ try:
 except ImportError:
     ctypes = None
 
-from PyInstaller import is_py25, is_py27
-import PyInstaller.suffixes as suffixes
+from PyInstaller import is_linux, is_darwin, is_py25, is_py27
 
 if not os.environ.has_key('PYTHONCASEOK'):
     def caseOk(filename):
@@ -64,9 +63,8 @@ class OwnerError(Exception):
     pass
 
 class Owner:
-    def __init__(self, path, target_platform=None):
+    def __init__(self, path):
         self.path = path
-        self.target_platform = target_platform
 
     def __str__(self):
         return self.path
@@ -76,7 +74,7 @@ class Owner:
 
 class BaseDirOwner(Owner):
     def _getsuffixes(self):
-        return suffixes.get_suffixes(self.target_platform)
+        return imp.get_suffixes()
 
     def getmod(self, nm, getsuffixes=None, loadco=marshal.loads):
         if getsuffixes is None:
@@ -146,12 +144,12 @@ class BaseDirOwner(Owner):
         return mod
 
 class DirOwner(BaseDirOwner):
-    def __init__(self, path, target_platform=None):
+    def __init__(self, path):
         if path == '':
             path = os.getcwd()
         if not os.path.isdir(path):
             raise OwnerError("%s is not a directory" % repr(path))
-        Owner.__init__(self, path, target_platform)
+        Owner.__init__(self, path)
 
     def _isdir(self, fn):
         return os.path.isdir(os.path.join(self.path, fn))
@@ -170,10 +168,10 @@ class DirOwner(BaseDirOwner):
         return caseOk(os.path.join(self.path, fn))
 
 class PYZOwner(Owner):
-    def __init__(self, path, target_platform=None):
+    def __init__(self, path):
         import archive
         self.pyz = archive.ZlibArchive(path)
-        Owner.__init__(self, path, target_platform)
+        Owner.__init__(self, path)
     def getmod(self, nm):
         rslt = self.pyz.extract(nm)
         if not rslt:
@@ -195,13 +193,13 @@ if zipimport:
     # Instead, we'll reuse the BaseDirOwner logic, simply changing
     # the template methods.
     class ZipOwner(BaseDirOwner):
-        def __init__(self, path, target_platform=None):
+        def __init__(self, path):
             import zipfile
             try:
                 self.zf = zipfile.ZipFile(path, "r")
             except IOError:
                 raise OwnerError("%s is not a zipfile" % path)
-            Owner.__init__(self, path, target_platform)
+            Owner.__init__(self, path)
         def getmod(self, fn):
             fn = fn.replace(".", "/")
             return BaseDirOwner.getmod(self, fn)
@@ -319,8 +317,7 @@ class RegistryImportDirector(ImportDirector):
         return None
 
 class PathImportDirector(ImportDirector):
-    def __init__(self, pathlist=None, importers=None, ownertypes=None,
-                 target_platform=None):
+    def __init__(self, pathlist=None, importers=None, ownertypes=None):
         if pathlist is None:
             self.path = sys.path
         else:
@@ -335,7 +332,6 @@ class PathImportDirector(ImportDirector):
             self.shadowpath = {}
         self.inMakeOwner = 0
         self.building = {}
-        self.target_platform = target_platform
 
     def __str__(self):
         return str(self.path)
@@ -364,7 +360,7 @@ class PathImportDirector(ImportDirector):
             try:
                 # this may cause an import, which may cause recursion
                 # hence the protection
-                owner = klass(path, self.target_platform)
+                owner = klass(path)
             except OwnerError:
                 pass
             except Exception, e:
@@ -418,8 +414,7 @@ else:
 
 class ImportTracker:
     # really the equivalent of builtin import
-    def __init__(self, xpath=None, hookspath=None, excludes=None,
-                 target_platform=None):
+    def __init__(self, xpath=None, hookspath=None, excludes=None):
         self.path = []
         self.warnings = {}
         if xpath:
@@ -430,14 +425,13 @@ class ImportTracker:
             BuiltinImportDirector(),
             FrozenImportDirector(),
             RegistryImportDirector(),
-            PathImportDirector(self.path, target_platform=target_platform)
+            PathImportDirector(self.path)
         ]
         if hookspath:
             hooks.__path__.extend(hookspath)
         self.excludes = excludes
         if excludes is None:
             self.excludes = []
-        self.target_platform = target_platform
 
     def analyze_r(self, nm, importernm=None):
         importer = importernm
@@ -1046,7 +1040,7 @@ def scan_code_for_ctypes(co, instrs, i):
 def _resolveCtypesImports(cbinaries):
     """Completes ctypes BINARY entries for modules with their full path.
     """
-    if sys.platform.startswith("linux"):
+    if is_linux:
         envvar = "LD_LIBRARY_PATH"
     elif is_darwin:
         envvar = "DYLD_LIBRARY_PATH"
