@@ -37,7 +37,6 @@ import iu
 import carchive
 import bindepend
 import traceback
-import platform
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
@@ -172,6 +171,8 @@ def architecture():
         else:
             return '32bit'
 
+    # Python 2.3+
+    import platform
     return platform.architecture()[0]
 
 
@@ -948,6 +949,7 @@ class EXE(Target):
         base = "support/loader"
 
         try:
+            import platform
             dir = platform.system() + "-" + architecture()
         except ImportError:
             import os
