@@ -7,6 +7,7 @@ Changes since PyInstaller 1.5
  + New symplified command line interface. Configure.py/Makespec.py/Build.py
    replaced by pyinstaller.py. See documentation for more details.
  + Add experimental support for Mac OSX 64-bit
+ + Removed cross-building/bundling feature which was never really finished.
 
 Changes since PyInstaller 1.4
 -----------------------------
