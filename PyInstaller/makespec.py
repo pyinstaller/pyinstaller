@@ -175,7 +175,7 @@ def __add_options(parser):
     g.add_option("-s", "--strip", action="store_true",
                  help="strip the exe and shared libs "
                       "(don't try this on Windows)")
-    g.add_option("-X", "--upx", action="store_true", default=True,
+    g.add_option("-X", "--noupx", action="store_true", default=False,
                  help="use UPX if available (works differently between "
                       "Windows and *nix)")
     #p.add_option("-Y", "--crypt", metavar="FILE",
@@ -218,7 +218,7 @@ def __add_options(parser):
 
 
 def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, debug=0,
-         strip=0, upx=0, comserver=0, ascii=0, workdir=None,
+         strip=0, noupx=0, comserver=0, ascii=0, workdir=None,
          pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None, **kwargs):
 
     try:
@@ -278,7 +278,7 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, deb
          'builddir': repr(builddir),
          'debug': debug,
          'strip': strip,
-         'upx' : upx,
+         'upx' : not noupx,
          'crypt' : repr(crypt),
          'crypted': crypt is not None,
          'console': console or debug,
