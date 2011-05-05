@@ -176,8 +176,8 @@ def __add_options(parser):
                  help="strip the exe and shared libs "
                       "(don't try this on Windows)")
     g.add_option("-X", "--noupx", action="store_true", default=False,
-                 help="use UPX if available (works differently between "
-                      "Windows and *nix)")
+                 help="do not use UPX even if available (works differently "
+                      "between Windows and *nix)")
     #p.add_option("-Y", "--crypt", metavar="FILE",
     #             help="encrypt pyc/pyo files")
 
