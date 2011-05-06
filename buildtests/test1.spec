@@ -2,7 +2,7 @@
 
 __testname__ = 'test1'
 
-a = Analysis(['../support/_mountzlib.py', 'test1.py'],
+a = Analysis(['../support/_mountzlib.py', __testname__ + '.py'],
              pathex=[],
              hookspath=['hooks1'])
 pyz = PYZ(a.pure)

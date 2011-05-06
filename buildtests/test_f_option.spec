@@ -2,7 +2,7 @@
 
 __testname__ = 'test_f_option'
 
-a = Analysis(['../support/_mountzlib.py', 'test_f_option.py'],
+a = Analysis(['../support/_mountzlib.py', __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

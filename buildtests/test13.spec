@@ -4,7 +4,7 @@ __testname__ = 'test13'
 
 a = Analysis(['../support/_mountzlib.py',
               '../support/useUnicode.py',
-              'test13.py'],
+              __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

@@ -1,14 +1,17 @@
 # -*- mode: python -*-
+
+__testname__ = 'test-nestedlaunch0'
+
 a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
               os.path.join(HOMEPATH,'support/useUnicode.py'), 
-              'test-nestedlaunch0.py'],
+              __testname__ + '.py'],
              pathex=[''])
 pyz = PYZ(a.pure)
 exe = EXE( pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
-          name=os.path.join('dist', 'test-nestedlaunch0', 'test-nestedlaunch0.exe'),
+          name=os.path.join('dist', __testname__, __testname__ + '.exe'),
           debug=False,
           strip=False,
           upx=False,

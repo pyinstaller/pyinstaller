@@ -4,7 +4,7 @@ __testname__ = 'test_getfilesystemencoding'
 
 a = Analysis(['../support/_mountzlib.py',
               '../support/useUnicode.py',
-              'test_getfilesystemencoding.py'],
+              __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

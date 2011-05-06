@@ -3,7 +3,7 @@
 __testname__ = 'test2'
 
 config['useZLIB'] = 0
-a = Analysis(['../support/_mountzlib.py', 'test2.py'],
+a = Analysis(['../support/_mountzlib.py', __testname__ + '.py'],
              pathex=[],
              hookspath=['hooks1'])
 pyz = PYZ(a.pure, level=0)

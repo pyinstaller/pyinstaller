@@ -41,13 +41,13 @@ __testname__ = 'test15'
 
 a = Analysis(['../support/_mountzlib.py',
               '../support/useUnicode.py',
-              'test15.py'],
+              __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
-          name=os.path.join('dist', __testname__ + '.exe'),
+          name=os.path.join('dist', __testname__, __testname__ + '.exe'),
           debug=False,
           strip=False,
           upx=False,

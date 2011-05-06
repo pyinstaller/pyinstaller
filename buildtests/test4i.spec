@@ -2,7 +2,7 @@
 
 __testname__ = 'test4i'
 
-a = Analysis(['../support/_mountzlib.py', 'test4i.py'],
+a = Analysis(['../support/_mountzlib.py', __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

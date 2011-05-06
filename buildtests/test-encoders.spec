@@ -1,11 +1,14 @@
 # -*- mode: python -*-
-a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'), os.path.join(HOMEPATH,'support/useUnicode.py'), 'test-encoders.py'],
+
+__testname__ = 'test-encoders'
+
+a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'), os.path.join(HOMEPATH,'support/useUnicode.py'), __testname__ + '.py'],
              pathex=['/home/rasky/src/pyinstaller/buildtests'])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('build/pyi.linux2/test-email', 'test-encoders.exe'),
+          name=os.path.join('build', 'pyi.' + config['target_platform'], __testname__ + '.exe'),
           debug=False,
           strip=False,
           upx=False,
@@ -16,4 +19,4 @@ coll = COLLECT( exe,
                a.datas,
                strip=False,
                upx=False,
-               name=os.path.join('dist', 'test-encoders'))
+               name=os.path.join('dist', __testname__),)

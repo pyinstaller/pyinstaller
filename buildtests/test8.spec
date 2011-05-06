@@ -4,7 +4,7 @@ __testname__ = 'test8'
 
 a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
               os.path.join(HOMEPATH,'support', 'useUnicode.py'),
-              'test8.py'],
+              __testname__ + '.py'],
              pathex=['.'])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
