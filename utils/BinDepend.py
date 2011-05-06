@@ -30,6 +30,7 @@ except ImportError:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
 
 import PyInstaller.bindepend
+from PyInstaller import is_win
 from PyInstaller.lib.pyi_optparse import OptionParser
 
 import glob, sys
@@ -43,7 +44,7 @@ if len(args) == 0:
 PyInstaller.bindepend.silent = True  # Suppress all informative messages from the dependency code
 for a in args:
     for fn in glob.glob(a):
-        imports = PyInstaller.bindepend.getImports(fn, sys.platform)
-        if sys.platform == "win32":
+        imports = PyInstaller.bindepend.getImports(fn)
+        if is_win:
             imports.extend([a.getid() for a in PyInstaller.bindepend.getAssemblies(fn)])
         print fn, imports
