@@ -100,7 +100,7 @@ import xml
 from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
-from PyInstaller import hashlib
+from PyInstaller.compat import hashlib
 
 try:
     import winresource

@@ -37,7 +37,8 @@ import platform
 
 from PyInstaller import HOMEPATH, CONFIGDIR
 from PyInstaller import is_win, is_linux, is_darwin, is_cygwin
-from PyInstaller import is_py23, is_py24, hashlib
+from PyInstaller import is_py23, is_py24
+from PyInstaller.compat import hashlib
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
