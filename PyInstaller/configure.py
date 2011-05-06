@@ -27,14 +27,15 @@ import pprint
 import re
 import glob
 
-from PyInstaller import HOMEPATH, DEFAULT_CONFIGFILE
+from PyInstaller import HOMEPATH, DEFAULT_CONFIGFILE, PLATFORM
 from PyInstaller import is_win, is_linux, is_darwin, is_py24
 
 import PyInstaller.mf as mf
 import PyInstaller.bindepend as bindepend
 import PyInstaller.build as build
+import PyInstaller.compat as compat
 
-if is_darwin and build.architecture() == '64bit':
+if is_darwin and compat.architecture() == '64bit':
     print "W: PyInstaller support for Python 64-bit on Mac OSX is experimental."
     print "W: If you need 32-bit version of Python and you use Python distributed"
     print "   with Mac OX, try setting"
@@ -192,7 +193,7 @@ def test_RsrcUpdate(config):
         print 'I: ... resource update unavailable -', detail
         return
 
-    test_exe = os.path.join(HOMEPATH, 'support', 'loader', 'Windows-32bit', 'runw.exe')
+    test_exe = os.path.join(HOMEPATH, 'support', 'loader', PLATFORM, 'runw.exe')
     if not os.path.exists( test_exe ):
         config['hasRsrcUpdate'] = 0
         print 'E: ... resource update unavailable - %s not found' % test_exe

@@ -33,9 +33,8 @@ import iu
 import carchive
 import bindepend
 import traceback
-import platform
 
-from PyInstaller import HOMEPATH, CONFIGDIR
+from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
 from PyInstaller import is_win, is_linux, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
 from PyInstaller.compat import hashlib
@@ -158,24 +157,6 @@ def addSuffixToExtensions(toc):
                 inm = inm + binext
         new_toc.append((inm, fnm, typ))
     return new_toc
-
-def architecture():
-    """
-    Returns the bit depth of the python interpreter's architecture as
-    a string ('32bit' or '64bit'). Similar to platform.architecture(),
-    but with fixes for universal binaries on MacOS.
-    """
-    if is_darwin:
-        # Darwin's platform.architecture() is buggy and always
-        # returns "64bit" event for the 32bit version of Python's
-        # universal binary. So we roll out our own (that works
-        # on Darwin).
-        if sys.maxint > 2L**32:
-            return '64bit'
-        else:
-            return '32bit'
-
-    return platform.architecture()[0]
 
 
 #--- functons for checking guts ---
@@ -946,20 +927,12 @@ class EXE(Target):
     def _bootloader_file(self, exe):
         base = "support/loader"
 
-        try:
-            import platform
-            dir = platform.system() + "-" + architecture()
-        except ImportError:
-            import os
-            n = { "nt": "Windows", "linux2": "Linux", "darwin": "Darwin" }
-            dir = n[os.name] + "-32bit"
-
         if not self.console:
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
 
-        return base + "/" + dir + "/" + exe
+        return base + "/" + PLATFORM + "/" + exe
 
     def assemble(self):
         print "building EXE from", os.path.basename(self.out)
