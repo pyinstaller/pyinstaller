@@ -140,7 +140,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
                 counter["skipped"].append(test)
                 continue
         _msg("BUILDING TEST", test)
-        prog = string.join([PYTHON, PYOPTS, os.path.join(HOME,'utils','Build.py'),
+        # use pyinstaller.py for building tests
+        prog = string.join([PYTHON, PYOPTS, os.path.join(HOME,'pyinstaller.py'),
                             OPTS, test+".spec"],
                            ' ')
         print "BUILDING:", prog
