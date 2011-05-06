@@ -26,6 +26,7 @@ import shutil
 import pprint
 import re
 import glob
+import time
 
 from PyInstaller import HOMEPATH, DEFAULT_CONFIGFILE, PLATFORM
 from PyInstaller import is_win, is_linux, is_darwin, is_py24
@@ -40,6 +41,8 @@ if is_darwin and compat.architecture() == '64bit':
     print "W: If you need 32-bit version of Python and you use Python distributed"
     print "   with Mac OX, try setting"
     print "   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment"
+    # wait several seconds for user to see this message
+    time.sleep(10)
 
 
 def find_EXE_dependencies(config):
