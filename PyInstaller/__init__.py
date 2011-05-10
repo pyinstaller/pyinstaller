@@ -17,6 +17,7 @@
 # 02110-1301, USA
 
 __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE', 'PLATFORM',
+           'VERSION', 'get_version',
            'is_py23', 'is_py24', 'is_py25', 'is_py26', 'is_py27',
            'is_win', 'is_cygwin', 'is_darwin', 'is_linux')
 
@@ -24,6 +25,8 @@ import os
 import sys
 
 import compat
+
+VERSION = (1, 6, 0, 'dev')
 
 is_py23 = sys.version_info >= (2,3)
 is_py24 = sys.version_info >= (2,4)
@@ -55,3 +58,12 @@ CONFIGDIR = os.path.join(CONFIGDIR, 'pyinstaller')
 DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
 PLATFORM = compat.system() + '-' + compat.architecture()
+
+
+def get_version():
+    version = '%s.%s' % (VERSION[0], VERSION[1])
+    if VERSION[2]:
+        version = '%s.%s' % (version, VERSION[2])
+    if VERSION[3]:
+        version = '%s%s' % (version, VERSION[3])
+    return version
