@@ -183,16 +183,14 @@ def __add_options(parser):
 
     g = parser.add_option_group('Windows specific options')
     g.add_option("-c", "--console", "--nowindowed", dest="console",
-                 action="store_true",
-                 help="use a console subsystem executable (Windows only) "
-                      "(default)")
+                 action="store_true", default=True,
+                 help="use a console subsystem executable (default)")
     g.add_option("-w", "--windowed", "--noconsole", dest="console",
-                 action="store_false", default=True,
-                 help="use a Windows subsystem executable (Windows only)")
+                 action="store_false",
+                 help="use a Windows subsystem executable")
     g.add_option("-v", "--version",
                  dest="version_file", metavar="FILE",
-                 help="add a version resource from FILE to the exe "
-                      "(Windows only)")
+                 help="add a version resource from FILE to the exe")
     g.add_option("-i", "--icon", dest="icon_file",
                  metavar="FILE.ICO or FILE.EXE,ID",
                  help="If FILE is an .ico file, add the icon to the final "
@@ -200,8 +198,7 @@ def __add_options(parser):
                       "extract the icon with the specified id "
                       "from file.exe and add it to the final executable")
     g.add_option("-m", "--manifest", metavar="FILE or XML",
-                 help="add manifest FILE or XML to the exe "
-                      "(Windows only)")
+                 help="add manifest FILE or XML to the exe")
     g.add_option("-r", "--resource", default=[], dest="resources",
                  metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
                  help="add/update resource of the given type, name and language "
