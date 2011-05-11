@@ -188,7 +188,7 @@ def __add_options(parser):
     g.add_option("-w", "--windowed", "--noconsole", dest="console",
                  action="store_false",
                  help="use a Windows subsystem executable")
-    g.add_option("-v", "--version",
+    g.add_option("--version-file",
                  dest="version_file", metavar="FILE",
                  help="add a version resource from FILE to the exe")
     g.add_option("-i", "--icon", dest="icon_file",

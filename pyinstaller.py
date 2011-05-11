@@ -25,11 +25,14 @@ import sys
 import PyInstaller.configure
 import PyInstaller.makespec
 import PyInstaller.build
+import PyInstaller
 
 from PyInstaller.lib.pyi_optparse import OptionParser
 
+
 def run_configure(opts, args):
     PyInstaller.configure.main(**opts.__dict__)
+
 
 def run_makespec(opts, args):
     # Split pathex by using the path separator
@@ -42,18 +45,32 @@ def run_makespec(opts, args):
     print "wrote %s" % spec_file
     return spec_file
 
+
 def run_build(opts, spec_file):
     PyInstaller.build.main(spec_file, **opts.__dict__)
+
+
+def __add_options(parser):
+    parser.add_option('-v', '--version', default=False, action="store_true",
+                      help='show program version')
 
 
 parser = OptionParser(
     usage="python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>"
     )
+
+__add_options(parser)
 PyInstaller.configure.__add_options(parser)
 PyInstaller.makespec.__add_options(parser)
 PyInstaller.build.__add_options(parser)
 
 opts, args = parser.parse_args()
+
+# Print program version and exit
+if opts.version:
+    print PyInstaller.get_version()
+    sys.exit()
+
 if not args:
     parser.error('Requires at least one scriptname file '
                  'or exactly one .spec-file')
@@ -68,7 +85,7 @@ try:
 except IOError, SyntaxError:
     run_configure(opts, args)
 
-# Skip creating .spec when .spec file is supplied 
+# Skip creating .spec when .spec file is supplied
 if args[0].endswith('.spec'):
     spec_file = args[0]
 else:
