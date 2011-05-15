@@ -1187,7 +1187,8 @@ class BUNDLE(Target):
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,
                            "CFBundleName": self.appname,
-                           "CFBundleExecutable": os.path.basename(self.exename),
+                           # Fix for #156 - 'MacOS' must be in the name - not sure why
+                           "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
                            "CFBundleIconFile": "App.icns",
                            "CFBundleInfoDictionaryVersion": "6.0",
                            "CFBundlePackageType": "APPL",
