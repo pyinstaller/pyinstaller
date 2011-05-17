@@ -261,7 +261,7 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, deb
             resources[i] = quote_win_filepath(resources[i])
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
     if not ascii and config['hasUnicode']:
-        scripts.insert(0, os.path.join(HOMEPATH, 'support', 'useUnicode.py'))
+        scripts.insert(0, os.path.join(CONFIGDIR, 'support', 'useUnicode.py'))
     for i in range(len(scripts)):
         scripts[i] = Path(scripts[i]) # Use relative path in specfiles
 
@@ -283,12 +283,12 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, deb
     if tk:
         d['tktree'] = "TkTree(),"
         if freeze:
-            scripts.insert(0, Path(HOMEPATH, 'support', 'useTK.py'))
+            scripts.insert(0, Path(CONFIGDIR, 'support', 'useTK.py'))
             scripts.insert(0, Path(HOMEPATH, 'support', 'unpackTK.py'))
             scripts.append(Path(HOMEPATH, 'support', 'removeTK.py'))
             d['tkpkg'] = "TkPKG(),"
         else:
-            scripts.insert(0, Path(HOMEPATH, 'support', 'useTK.py'))
+            scripts.insert(0, Path(CONFIGDIR, 'support', 'useTK.py'))
     scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
     if is_win or is_cygwin:
         d['exename'] = name+'.exe'

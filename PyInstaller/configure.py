@@ -28,7 +28,7 @@ import re
 import glob
 import time
 
-from PyInstaller import HOMEPATH, DEFAULT_CONFIGFILE, PLATFORM
+from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE, PLATFORM
 from PyInstaller import is_win, is_linux, is_darwin, is_py24
 
 import PyInstaller.mf as mf
@@ -43,6 +43,19 @@ if is_darwin and compat.architecture() == '64bit':
     print "   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment"
     # wait several seconds for user to see this message
     time.sleep(10)
+
+
+def _write_textfile(filename, text):
+    """
+    Write `text` into file `filename`. If the target directory does
+    not exist, create it.
+    """
+    dirname = os.path.dirname(filename)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    outf = open(filename, 'w')
+    outf.write(text)
+    outf.close()
 
 
 def find_EXE_dependencies(config):
@@ -68,6 +81,7 @@ os.putenv("TCL_LIBRARY", tcldir)
 os.putenv("TK_LIBRARY", tkdir)
 """
 
+_useTkFN = os.path.join(CONFIGDIR, 'support', 'useTK.py')
 
 def test_TCL_TK(config):
 
@@ -112,7 +126,7 @@ def test_TCL_TK(config):
                     if mo:
                         ver = mo.group(1)
             print "I: found TCL/TK version %s" % ver
-            open(os.path.join(HOMEPATH, 'support', 'useTK.py'), 'w').write(_useTK % ("tcl%s"%ver, "tk%s"%ver))
+            _write_textfile(_useTkFN, _useTK % ("tcl%s"%ver, "tk%s"%ver))
             tclnm = 'tcl%s' % ver
             tknm = 'tk%s' % ver
             # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3 and /usr/lib/tk8.3
@@ -137,7 +151,7 @@ def test_TCL_TK(config):
             print "I: found TCL/TK"
             tcldir = "Tcl.framework/Resources/Scripts"
             tkdir = "Tk.framework/Resources/Scripts"
-            open(os.path.join(HOMEPATH, 'support', 'useTK.py'), 'w').write(_useTK % (tcldir, tkdir))
+            _write_suport_module(_useTkFN, _useTK % (tcldir, tkdir))
             config['TCL_root'] = "/System/Library/Frameworks/Tcl.framework/Versions/Current"
             config['TK_root'] = "/System/Library/Frameworks/Tk.framework/Versions/Current"
             config['TCL_dirname'] = "Tcl.framework"
@@ -223,7 +237,7 @@ _useUnicode = """\
 import %s
 """
 
-_useUnicodeFN = os.path.join(HOMEPATH, 'support', 'useUnicode.py')
+_useUnicodeFN = os.path.join(CONFIGDIR, 'support', 'useUnicode.py')
 
 def test_unicode(config):
     print 'I: Testing for Unicode support...'
@@ -236,7 +250,7 @@ def test_unicode(config):
             module = "codecs"
         else:
             module = "encodings"
-        open(_useUnicodeFN, 'w').write(_useUnicode % module)
+        _write_textfile(_useUnicodeFN, _useUnicode % module)
         print 'I: ... Unicode available'
     except ImportError:
         try:
