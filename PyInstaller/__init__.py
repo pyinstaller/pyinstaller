@@ -24,9 +24,10 @@ __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE', 'PLATFORM',
 import os
 import sys
 
-import compat
+import PyInstaller.compat as compat
+import PyInstaller.utils as utils
 
-VERSION = (1, 6, 0, 'dev')
+VERSION = (1, 6, 0, 'dev', utils.get_svn_revision())
 
 is_py23 = sys.version_info >= (2,3)
 is_py24 = sys.version_info >= (2,4)
@@ -66,4 +67,7 @@ def get_version():
         version = '%s.%s' % (version, VERSION[2])
     if VERSION[3]:
         version = '%s%s' % (version, VERSION[3])
+    # include svn revision in version string
+    if VERSION[3] == 'dev' and VERSION[4] > 0:
+        version = '%s%s' % (version, VERSION[4])
     return version
