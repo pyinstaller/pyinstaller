@@ -25,9 +25,9 @@ import sys
 import PyInstaller.configure
 import PyInstaller.makespec
 import PyInstaller.build
-import PyInstaller
 
 from PyInstaller.lib.pyi_optparse import OptionParser
+from PyInstaller import get_version
 
 
 def run_configure(opts, args):
@@ -68,22 +68,14 @@ opts, args = parser.parse_args()
 
 # Print program version and exit
 if opts.version:
-    print PyInstaller.get_version()
+    print get_version()
     sys.exit()
 
 if not args:
     parser.error('Requires at least one scriptname file '
                  'or exactly one .spec-file')
 
-# Skip configuring when using the same python as specified in config.dat
-try:
-    config = PyInstaller.build._load_data(opts.configfilename)
-    if config['pythonVersion'] == sys.version:
-        print 'I: skip Configure.py, use existing config', opts.configfilename
-    else:
-        run_configure(opts, args)
-except IOError, SyntaxError:
-    run_configure(opts, args)
+run_configure(opts, args)
 
 # Skip creating .spec when .spec file is supplied
 if args[0].endswith('.spec'):

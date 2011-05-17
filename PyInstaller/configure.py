@@ -29,7 +29,7 @@ import glob
 import time
 
 from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE, PLATFORM
-from PyInstaller import is_win, is_linux, is_darwin, is_py24
+from PyInstaller import is_win, is_linux, is_darwin, is_py24, get_version
 
 import PyInstaller.mf as mf
 import PyInstaller.bindepend as bindepend
@@ -336,6 +336,10 @@ def main(configfilename, upx_dir, **kw):
     # Save Python version, to detect and avoid conflicts
     config["pythonVersion"] = sys.version
     config["pythonDebug"] = __debug__
+
+    # Save PyInstaller path and version
+    config["pyinstaller_version"] = get_version()
+    config["pyinstaller_homepath"] = HOMEPATH
 
     find_EXE_dependencies(config)
     test_TCL_TK(config)
