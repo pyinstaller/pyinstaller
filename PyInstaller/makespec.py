@@ -170,7 +170,7 @@ def __add_options(parser):
                       "(default: included if available)")
 
     g = parser.add_option_group('How to generate')
-    g.add_option("-d", "--debug", action="store_true",
+    g.add_option("-d", "--debug", action="store_true", default=False,
                  help="use the debug (verbose) build of the executable")
     g.add_option("-s", "--strip", action="store_true",
                  help="strip the exe and shared libs "
@@ -181,13 +181,15 @@ def __add_options(parser):
     #p.add_option("-Y", "--crypt", metavar="FILE",
     #             help="encrypt pyc/pyo files")
 
-    g = parser.add_option_group('Windows specific options')
+    g = parser.add_option_group('Windows and Mac OS X specific options')
     g.add_option("-c", "--console", "--nowindowed", dest="console",
                  action="store_true", default=True,
                  help="use a console subsystem executable (default)")
     g.add_option("-w", "--windowed", "--noconsole", dest="console",
                  action="store_false",
-                 help="use a Windows subsystem executable")
+                 help="use a windowed subsystem executable")
+
+    g = parser.add_option_group('Windows specific options')
     g.add_option("--version-file",
                  dest="version_file", metavar="FILE",
                  help="add a version resource from FILE to the exe")
@@ -214,9 +216,11 @@ def __add_options(parser):
                       "multiple times.")
 
 
-def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, debug=0,
+def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=True, debug=False,
          strip=0, noupx=0, comserver=0, ascii=0, workdir=None,
          pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None, **kwargs):
+    #print 'abcde', console
+    #exit(0)
 
     try:
         config = eval(open(configfilename, 'r').read())
@@ -290,12 +294,17 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=1, deb
         else:
             scripts.insert(0, Path(CONFIGDIR, 'support', 'useTK.py'))
     scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
+
     if is_win or is_cygwin:
         d['exename'] = name+'.exe'
         d['dllname'] = name+'.dll'
     else:
         d['exename'] = name
-        d['console'] = 1
+
+    # only Windows and Mac OS X distinguish windowed and console apps
+    if not is_win and not is_darwin:
+        d['console'] = True
+
     specfnm = os.path.join(workdir, name+'.spec')
     specfile = open(specfnm, 'w')
     if freeze:
