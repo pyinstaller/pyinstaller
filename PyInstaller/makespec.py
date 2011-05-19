@@ -219,8 +219,6 @@ def __add_options(parser):
 def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=True, debug=False,
          strip=0, noupx=0, comserver=0, ascii=0, workdir=None,
          pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None, **kwargs):
-    #print 'abcde', console
-    #exit(0)
 
     try:
         config = eval(open(configfilename, 'r').read())
