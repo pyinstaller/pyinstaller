@@ -22,7 +22,7 @@
 import sys, os, string
 
 from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE
-from PyInstaller import is_win, is_cygwin
+from PyInstaller import is_win, is_cygwin, is_darwin
 
 
 freezetmplt = """# -*- mode: python -*-
