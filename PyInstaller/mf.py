@@ -396,12 +396,12 @@ if __debug__:
         def __init__(self, *args):
             UserDict.UserDict.__init__(self, *args)
             LogDict.count += 1
+            logfile = "logdict%s-%d.log" % (".".join(map(str, sys.version_info)),
+                                            LogDict.count)
             if os.path.isdir("build"):
-                logdir = "build" + os.sep
-            else:
-                logdir = ''
-            self.logfile = open("%slogdict%s-%d.log" % (logdir, ".".join(map(str, sys.version_info)),
-                                                      LogDict.count), "w")
+                logfile = os.path.join("build", logfile)
+            self.logfile = open(logfile, "w")
+
         def __setitem__(self, key, value):
             self.logfile.write("%s: %s -> %s\n" % (key, self.data.get(key), value))
             UserDict.UserDict.__setitem__(self, key, value)
