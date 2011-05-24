@@ -462,10 +462,9 @@ def _getImports_otool(pth):
         This implementation is for otool platforms"""
     # dyld searches these paths for framework libs
     # we ignore DYLD_FALLBACK_LIBRARY_PATH for now (man dyld)
-    fwpaths = ['/Library/Frameworks', '/Network/Library/Frameworks', '/System/Library/Frameworks']
-    for p in reversed(os.environ.get('DYLD_FRAMEWORK_PATH', '').split(':')):
-        if p:
-            fwpaths.insert(0, p)
+    fwpaths = filter(None, os.environ.get('DYLD_FRAMEWORK_PATH', '').split(':'))
+    fwpaths.extend(['/Library/Frameworks', '/Network/Library/Frameworks',
+                    '/System/Library/Frameworks'])
     rslt = []
     for line in os.popen('otool -L "%s"' % pth).readlines():
         m = re.search(r"\s+(.*?)\s+\(.*\)", line)
