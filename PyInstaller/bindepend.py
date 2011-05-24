@@ -471,11 +471,11 @@ def _getImports_otool(pth):
         if m:
             lib = m.group(1)
             if lib.startswith("@executable_path"):
-                rel_path = lib.replace("@executable_path",".")
+                rel_path = lib.replace("@executable_path", ".")
                 rel_path = os.path.join(os.path.dirname(pth), rel_path)
                 lib = os.path.abspath(rel_path)
             elif lib.startswith("@loader_path"):
-                rel_path = lib.replace("@loader_path",".")
+                rel_path = lib.replace("@loader_path", ".")
                 rel_path = os.path.join(os.path.dirname(pth), rel_path)
                 lib = os.path.abspath(rel_path)
             elif not os.path.isabs(lib):
@@ -488,8 +488,7 @@ def _getImports_otool(pth):
             if os.path.exists(lib):
                 rslt.append(lib)
             else:
-                print 'E: cannot find path %s (needed by %s)' % \
-                      (lib, pth)
+                print 'E: cannot find path %s (needed by %s)' % (lib, pth)
 
     return rslt
 
