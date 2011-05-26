@@ -302,4 +302,5 @@ if __name__ == '__main__':
             print "Running normal tests (-i for interactive tests)"
 
         clean()
-        runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)
+        #runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)
+        os.chdir('..')
