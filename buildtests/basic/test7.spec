@@ -1,10 +1,9 @@
 # -*- mode: python -*-
 
-__testname__ = 'test1'
+__testname__ = 'test7'
 
-a = Analysis(['../support/_mountzlib.py', __testname__ + '.py'],
-             pathex=[],
-             hookspath=['hooks1'])
+a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'), __testname__ + '.py'],
+             pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,

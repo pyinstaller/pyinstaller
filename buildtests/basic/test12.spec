@@ -1,8 +1,8 @@
 # -*- mode: python -*-
 
-__testname__ = 'test7'
+__testname__ = 'test12'
 
-a = Analysis(['../support/_mountzlib.py', __testname__ + '.py'],
+a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'), __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

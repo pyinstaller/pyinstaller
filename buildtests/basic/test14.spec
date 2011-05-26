@@ -2,8 +2,8 @@
 
 __testname__ = 'test14'
 
-a = Analysis(['../support/_mountzlib.py',
-              '../support/useUnicode.py',
+a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'),
+              os.path.join(CONFIGDIR, 'support/useUnicode.py'),
               __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)

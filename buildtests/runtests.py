@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2005-2011 Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -21,18 +21,35 @@
 # by this program but be recognizable by any one as a dependency of that
 # particual test.
 
-import os, sys, glob, string, re
+import os
+import sys
+import glob
+import string
+import re
 import pprint
 import shutil
 
-HOME = '..'
+try:
+    import PyInstaller
+except ImportError:
+    # if importing PyInstaller fails, try to load from current
+    # directory or parent directory to support running without
+    # installation
+    import imp
+    if not hasattr(os, "getuid") or os.getuid() != 0:
+        imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
+
+from PyInstaller import HOMEPATH, DEFAULT_CONFIGFILE
+from PyInstaller import is_py23, is_py25, is_py26, is_win
+from PyInstaller.lib.pyi_optparse import OptionParser
+
 
 MIN_VERSION = {
- 'test-relative-import': (2,5),
- 'test-relative-import2': (2,6),
- 'test-relative-import3': (2,5),
- 'test-celementtree': (2,5),
- 'test9': (2,3),
+ 'test-relative-import': is_py25,
+ 'test-relative-import2': is_py26,
+ 'test-relative-import3': is_py25,
+ 'test-celementtree': is_py25,
+ 'test9': is_py23,
 }
 
 DEPENDENCIES = {
@@ -46,15 +63,14 @@ DEPENDENCIES = {
  'test-wx': ["wx"],
 }
 
-try:
-    here=os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    here=os.path.dirname(os.path.abspath(sys.argv[0]))
-os.chdir(here)
+
 PYTHON = sys.executable
-if sys.platform[:3] == 'win':
-    if string.find(PYTHON, ' ') > -1:
-        PYTHON='"%s"' % PYTHON
+
+if is_win:
+    # add quotation marks if path contain spaces
+    if ' ' in PYTHON:
+        PYTHON = '"%s"' % PYTHON
+
 if __debug__:
     PYOPTS = ""
 else:
@@ -73,6 +89,7 @@ build/
 dist/
 """.split()
 
+
 def clean():
     for clean in CLEANUP:
         clean = glob.glob(clean)
@@ -89,27 +106,30 @@ def clean():
 def _msg(*args, **kw):
     short = kw.get('short', 0)
     sep = kw.get('sep', '#')
-    if not short: print
-    print sep*20,
-    for a in args: print a,
-    print sep*20
-    if not short: print
+    if not short:
+        print
+    print sep * 20,
+    for a in args:
+        print a,
+    print sep * 20
+    if not short:
+        print
 
 
-def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=False):
+def runtests(alltests, filters=None, run_executable=1, verbose=False):
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
     print "*" * min(80, len(info))
     print info
     print "*" * min(80, len(info))
 
     OPTS = ''
-    if configfile:
+    #if configfile:
         # todo: quote correctly
-        OTPS = ' -c "%s"' %  configfile
+        #OPTS = ' -c "%s"' % configfile
 
     build_python = open("python_exe.build", "w")
-    build_python.write(sys.executable+"\n")
-    build_python.write("debug=%s" % __debug__+"\n")
+    build_python.write(sys.executable + "\n")
+    build_python.write("debug=%s" % __debug__ + "\n")
     build_python.close()
     if not filters:
         tests = alltests
@@ -120,11 +140,10 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
 
     tests = [(len(x), x) for x in tests]
     tests.sort()
-    path = os.environ["PATH"]
-    counter = { "passed": [], "failed": [], "skipped": [] }
-    for _,test in tests:
-        test = os.path.splitext(os.path.basename(test))[0]
-        if test in MIN_VERSION and MIN_VERSION[test] > sys.version_info:
+    counter = {"passed": [], "failed": [], "skipped": []}
+    for _, test in tests:
+        test = os.path.splitext(test)[0]
+        if test in MIN_VERSION and MIN_VERSION[test]:
             counter["skipped"].append(test)
             continue
         if test in DEPENDENCIES:
@@ -141,8 +160,8 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
                 continue
         _msg("BUILDING TEST", test)
         # use pyinstaller.py for building tests
-        prog = string.join([PYTHON, PYOPTS, os.path.join(HOME,'pyinstaller.py'),
-                            OPTS, test+".spec"],
+        prog = string.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'pyinstaller.py'),
+                            OPTS, test + ".spec"],
                            ' ')
         print "BUILDING:", prog
         res = os.system(prog)
@@ -163,7 +182,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
             prog = find_exepath(tmpname)
             if prog is None:
                 prog = find_exepath(tmpname, os.path.join('dist', test))
-            command = string.join([PYTHON, PYOPTS, os.path.join(HOME, 'utils','ArchiveViewer.py'),
+            command = string.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
                     '-b -r >> ' + newlog, prog],
                     ' ')
             os.system(command)
@@ -175,7 +194,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
                 for fname in fname_list:
                     if re.match(pattern, fname):
                         count += 1
-                        found =True
+                        found = True
                         if verbose:
                             print "MATCH: %s --> %s" % (pattern, fname)
                         break
@@ -196,6 +215,7 @@ def runtests(alltests, filters=None, configfile=None, run_executable=1, verbose=
             counter["failed"].append(test)
     pprint.pprint(counter)
 
+
 def test_exe(test):
     _msg("EXECUTING TEST", test)
     # Run the test in a clean environment to make sure they're
@@ -213,9 +233,10 @@ def test_exe(test):
         os.environ["PATH"] = path
         return tmp
 
+
 def find_exepath(test, parent_dir='dist'):
-    of_prog = os.path.join(parent_dir, test) # one-file deploy filename
-    od_prog = os.path.join(parent_dir, test, test) # one-dir deploy filename
+    of_prog = os.path.join(parent_dir, test)  # one-file deploy filename
+    od_prog = os.path.join(parent_dir, test, test)  # one-dir deploy filename
 
     prog = None
     if os.path.isfile(of_prog):
@@ -230,16 +251,12 @@ def find_exepath(test, parent_dir='dist'):
     return prog
 
 if __name__ == '__main__':
+    os.chdir('basic')
     normal_tests = glob.glob('test*.spec')
+    #normal_tests = glob.glob('test*.spec')
     interactive_tests = glob.glob('test*i.spec')
 
-    try:
-        from optparse import OptionParser
-    except ImportError:
-        sys.path.append("..")
-        from PyInstaller.lib.pyi_optparse import OptionParser
-
-    if sys.version_info < (2,5):
+    if not is_py25:
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
     else:
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]",
@@ -252,9 +269,9 @@ if __name__ == '__main__':
     parser.add_option('-n', '--no-run', action='store_true',
                       help='Do not run the built executables. '
                            'Useful for cross builds.')
-    parser.add_option('-C', '--configfile',
-                      default=os.path.join(HOME, 'config.dat'),
-                      help='Name of generated configfile (default: %default)')
+    #parser.add_option('-C', '--configfile',
+                      #default=DEFAULT_CONFIGFILE,
+                      #help='Name of generated configfile (default: %default)')
     parser.add_option('-v', '--verbose',
                       action='store_true',
                       default=False,
@@ -278,5 +295,4 @@ if __name__ == '__main__':
         print "Running normal tests (-i for interactive tests)"
 
     clean()
-    runtests(tests, configfile=opts.configfile, run_executable=not opts.no_run,
-             verbose= opts.verbose)
+    runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)

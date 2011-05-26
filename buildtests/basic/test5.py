@@ -15,8 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 print "test5 - W ignore"
-try:
-    import regex
-except ImportError:
-    import re
+
+import re
 print "test5 - done"

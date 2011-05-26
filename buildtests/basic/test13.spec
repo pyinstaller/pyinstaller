@@ -1,11 +1,11 @@
 # -*- mode: python -*-
 
-__testname__ = 'test11'
+__testname__ = 'test13'
 
-a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
-              os.path.join(HOMEPATH,'support', 'useUnicode.py'),
+a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'),
+              os.path.join(CONFIGDIR, 'support/useUnicode.py'),
               __testname__ + '.py'],
-             pathex=['.'])
+             pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -14,9 +14,10 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=False,
-          console=True )
+          console=1 )
 coll = COLLECT( exe,
                a.binaries,
                strip=False,
                upx=False,
                name=os.path.join('dist', __testname__),)
+
