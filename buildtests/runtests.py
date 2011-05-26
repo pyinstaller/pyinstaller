@@ -250,10 +250,8 @@ def find_exepath(test, parent_dir='dist'):
             prog = od_prog + ".exe"
     return prog
 
+
 if __name__ == '__main__':
-    os.chdir('multipackage')
-    normal_tests = glob.glob('test*.spec')
-    interactive_tests = glob.glob('test*i.spec')
 
     if not is_py25:
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
@@ -278,20 +276,30 @@ if __name__ == '__main__':
 
     opts, args = parser.parse_args()
 
+    dirs = ('basic', 'multipackage')
+
     if opts.clean:
-        clean()
+        for d in dirs:
+            clean()
         raise SystemExit()
 
-    if args:
-        if opts.interactive_tests:
-            parser.error('Must not specify -i/--interactive-tests when passing test names.')
-        tests = args
-    elif opts.interactive_tests:
-        print "Running interactive tests"
-        tests = interactive_tests
-    else:
-        tests = [t for t in normal_tests if t not in interactive_tests]
-        print "Running normal tests (-i for interactive tests)"
+    # run tests for every folder
+    for d in dirs:
+        os.chdir(d)
 
-    clean()
-    runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)
+        normal_tests = glob.glob('test*.spec')
+        interactive_tests = glob.glob('test*i.spec')
+
+        if args:
+            if opts.interactive_tests:
+                parser.error('Must not specify -i/--interactive-tests when passing test names.')
+            tests = args
+        elif opts.interactive_tests:
+            print "Running interactive tests"
+            tests = interactive_tests
+        else:
+            tests = [t for t in normal_tests if t not in interactive_tests]
+            print "Running normal tests (-i for interactive tests)"
+
+        clean()
+        runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)
