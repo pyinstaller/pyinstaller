@@ -108,6 +108,8 @@ def quote_win_filepath( path ):
 # Same thing could be done for other paths too.
 path_conversions = (
     (HOMEPATH, "HOMEPATH"),
+    # For useUnicode.py and useTk.py
+    (CONFIGDIR, "CONFIGDIR"),
     # Add Tk etc?
     )
 
