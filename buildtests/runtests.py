@@ -253,6 +253,9 @@ def find_exepath(test, parent_dir='dist'):
 
 if __name__ == '__main__':
 
+    # Change working directory to place where this script is.
+    os.chdir(os.path.dirname(__file__))
+
     if not is_py25:
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
     else:
@@ -280,7 +283,9 @@ if __name__ == '__main__':
 
     if opts.clean:
         for d in dirs:
+            os.chdir(d)
             clean()
+            os.chdir('..')
         raise SystemExit()
 
     # run tests for every folder
