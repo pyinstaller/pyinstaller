@@ -251,9 +251,8 @@ def find_exepath(test, parent_dir='dist'):
     return prog
 
 if __name__ == '__main__':
-    os.chdir('basic')
+    os.chdir('multipackage')
     normal_tests = glob.glob('test*.spec')
-    #normal_tests = glob.glob('test*.spec')
     interactive_tests = glob.glob('test*i.spec')
 
     if not is_py25:

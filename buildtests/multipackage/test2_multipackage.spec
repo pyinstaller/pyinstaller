@@ -5,9 +5,9 @@ print "TESTING MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (on
 __testname__ = 'test2_multipackage'
 __testdep__ = 'test2_multipackage_B'
 
-a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(HOMEPATH,'support', 'useUnicode.py'), __testname__ + '.py'],
+a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(CONFIGDIR,'support', 'useUnicode.py'), __testname__ + '.py'],
              pathex=['.'])
-b = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(HOMEPATH,'support', 'useUnicode.py'), __testdep__ + '.py'],
+b = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(CONFIGDIR,'support', 'useUnicode.py'), __testdep__ + '.py'],
              pathex=['.'])
 
 MERGE((b, __testdep__, os.path.join(__testdep__, __testdep__ + '.exe')),
@@ -31,7 +31,7 @@ exeB = EXE(pyzB,
           b.scripts,
           b.dependencies,
           exclude_binaries=1,
-          name=os.path.join('build', 'pyi.linux2', __testdep__, __testdep__ + '.exe'),
+          name=os.path.join('build', 'pyi.' + config['target_platform'], __testdep__,__testdep__ + '.exe'),
           debug=False,
           strip=False,
           upx=True,
