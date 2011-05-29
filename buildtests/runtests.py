@@ -44,22 +44,22 @@ from PyInstaller.lib.pyi_optparse import OptionParser
 
 
 MIN_VERSION = {
- 'test-relative-import': is_py25,
- 'test-relative-import2': is_py26,
- 'test-relative-import3': is_py25,
+ 'import/test_relative_import': is_py25,
+ 'import/test_relative_import2': is_py26,
+ 'import/test_relative_import3': is_py25,
  'test-celementtree': is_py25,
  'basic/test9': is_py23,
 }
 
 DEPENDENCIES = {
- 'test-ctypes-cdll-c': ["ctypes"],
- 'test-ctypes-cdll-c2': ["ctypes"],
- 'test-numpy': ["numpy"],
- 'test-pycrypto': ["Crypto"],
- 'test-zipimport1': ["pkg_resources"],
- 'test-zipimport2': ["pkg_resources", "setuptools"],
+ 'import/test_ctypes_cdll_c': ["ctypes"],
+ 'import/test_ctypes_cdll_c2': ["ctypes"],
+ 'libraries/test_numpy': ["numpy"],
+ 'libraries/test_pycrypto': ["Crypto"],
+ 'import/test_zipimport1': ["pkg_resources"],
+ 'import/test_zipimport2': ["pkg_resources", "setuptools"],
  'basic/test15': ["ctypes"],
- 'basic/test-wx': ["wx"],
+ 'libraries/test_wx': ["wx"],
 }
 
 
@@ -153,7 +153,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         test = os.path.splitext(test)[0]
         testdir, testfile = os.path.split(test)
         os.chdir(testdir)  # go to testdir
-        if test in MIN_VERSION and MIN_VERSION[test]:
+        if test in MIN_VERSION and not MIN_VERSION[test]:
             counter["skipped"].append(test)
             os.chdir('..')  # go back from testdir
             continue

@@ -3,7 +3,7 @@
 __testname__ = 'test_error_during_import'
 
 a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
-              os.path.join(HOMEPATH,'support/useUnicode.py'),
+              os.path.join(CONFIGDIR,'support/useUnicode.py'),
               __testname__ + '.py'],
              )
 pyz = PYZ(a.pure)

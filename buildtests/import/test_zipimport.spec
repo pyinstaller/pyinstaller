@@ -1,8 +1,9 @@
 # -*- mode: python -*-
 
-__testname__ = 'test-relative-import2'
+__testname__ = 'test_zipimport'
 
 a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
+              os.path.join(CONFIGDIR,'support/useUnicode.py'),
               __testname__ + '.py'],
              )
 pyz = PYZ(a.pure)
