@@ -7,4 +7,4 @@ if sys.version_info >= (2,5):
     from email.mime.multipart import MIMEMultipart
     from email.mime.nonmultipart import MIMENonMultipart
 else:
-    print "test-email skipped"
+    print "test_email skipped"

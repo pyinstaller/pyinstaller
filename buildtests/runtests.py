@@ -47,7 +47,7 @@ MIN_VERSION = {
  'import/test_relative_import': is_py25,
  'import/test_relative_import2': is_py26,
  'import/test_relative_import3': is_py25,
- 'test-celementtree': is_py25,
+ 'basic/test-celementtree': is_py25,
  'basic/test9': is_py23,
 }
 
