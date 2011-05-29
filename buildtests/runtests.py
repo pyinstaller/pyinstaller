@@ -24,7 +24,6 @@
 import os
 import sys
 import glob
-import string
 import re
 import pprint
 import shutil
@@ -39,7 +38,7 @@ except ImportError:
     if not hasattr(os, "getuid") or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
 
-from PyInstaller import HOMEPATH, DEFAULT_CONFIGFILE
+from PyInstaller import HOMEPATH
 from PyInstaller import is_py23, is_py25, is_py26, is_win
 from PyInstaller.lib.pyi_optparse import OptionParser
 
@@ -49,7 +48,7 @@ MIN_VERSION = {
  'test-relative-import2': is_py26,
  'test-relative-import3': is_py25,
  'test-celementtree': is_py25,
- 'test9': is_py23,
+ 'basic/test9': is_py23,
 }
 
 DEPENDENCIES = {
@@ -59,10 +58,13 @@ DEPENDENCIES = {
  'test-pycrypto': ["Crypto"],
  'test-zipimport1': ["pkg_resources"],
  'test-zipimport2': ["pkg_resources", "setuptools"],
- 'test15': ["ctypes"],
- 'test-wx': ["wx"],
+ 'basic/test15': ["ctypes"],
+ 'basic/test-wx': ["wx"],
 }
 
+
+TEST_DIRS = ['basic', 'import', 'libraries', 'multipackage']
+INTERACT_TEST_DIRS = ['interactive']
 
 PYTHON = sys.executable
 
@@ -91,16 +93,19 @@ dist/
 
 
 def clean():
-    for clean in CLEANUP:
-        clean = glob.glob(clean)
-        for path in clean:
-            try:
-                if os.path.isdir(path):
-                    shutil.rmtree(path)
-                else:
-                    os.remove(path)
-            except OSError, e:
-                print e
+    for d in TEST_DIRS + INTERACT_TEST_DIRS:
+        os.chdir(d)
+        for clean in CLEANUP:
+            clean = glob.glob(clean)
+            for path in clean:
+                try:
+                    if os.path.isdir(path):
+                        shutil.rmtree(path)
+                    else:
+                        os.remove(path)
+                except OSError, e:
+                    print e
+        os.chdir('..')
 
 
 def _msg(*args, **kw):
@@ -127,10 +132,11 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         # todo: quote correctly
         #OPTS = ' -c "%s"' % configfile
 
-    build_python = open("python_exe.build", "w")
+    build_python = open('basic/python_exe.build', 'w')
     build_python.write(sys.executable + "\n")
-    build_python.write("debug=%s" % __debug__ + "\n")
+    build_python.write('debug=%s' % __debug__ + '\n')
     build_python.close()
+
     if not filters:
         tests = alltests
     else:
@@ -141,10 +147,15 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     tests = [(len(x), x) for x in tests]
     tests.sort()
     counter = {"passed": [], "failed": [], "skipped": []}
+
+    # execute tests
     for _, test in tests:
         test = os.path.splitext(test)[0]
+        testdir, testfile = os.path.split(test)
+        os.chdir(testdir)  # go to testdir
         if test in MIN_VERSION and MIN_VERSION[test]:
             counter["skipped"].append(test)
+            os.chdir('..')  # go back from testdir
             continue
         if test in DEPENDENCIES:
             failed = False
@@ -152,39 +163,39 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
                 res = os.system(PYTHON + ' -c "import %s"' % mod)
                 if res != 0:
                     failed = True
+                    os.chdir('..')  # go back from testdir
                     break
             if failed:
                 if verbose:
                     print "Skipping test because module %s is missing" % mod
                 counter["skipped"].append(test)
+                os.chdir('..')  # go back from testdir
                 continue
         _msg("BUILDING TEST", test)
         # use pyinstaller.py for building tests
-        prog = string.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'pyinstaller.py'),
-                            OPTS, test + ".spec"],
-                           ' ')
-        print "BUILDING:", prog
+        prog = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'pyinstaller.py'),
+                            OPTS, testfile + ".spec"])
+
         res = os.system(prog)
 
         if res == 0 and run_executable:
-            files = glob.glob(os.path.join('dist', test + '*'))
+            files = glob.glob(os.path.join('dist', testfile + '*'))
             for exe in files:
                 exe = os.path.splitext(exe)[0]
-                res_tmp = test_exe(exe[5:])
+                res_tmp = test_exe(exe[5:], testdir)
                 res = res or res_tmp
 
-        logsfn = glob.glob(test + '.toc')
-        logsfn += glob.glob(test + '_?.toc')
+        logsfn = glob.glob(testfile + '.toc')
+        logsfn += glob.glob(testfile + '_?.toc')
         for logfn in logsfn:
             _msg("EXECUTING MATCHING", logfn)
             tmpname = os.path.splitext(logfn)[0]
             newlog = os.path.join('dist', logfn)
             prog = find_exepath(tmpname)
             if prog is None:
-                prog = find_exepath(tmpname, os.path.join('dist', test))
-            command = string.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
-                    '-b -r >> ' + newlog, prog],
-                    ' ')
+                prog = find_exepath(tmpname, os.path.join('dist', testfile))
+            command = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
+                    '-b -r >> ' + newlog, prog])
             os.system(command)
             pattern_list = eval(open(logfn, 'r').read())
             fname_list = eval(open(newlog, 'r').read())
@@ -213,11 +224,12 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         else:
             _msg("TEST", test, "FAILED", short=1, sep="!!")
             counter["failed"].append(test)
+        os.chdir('..')  # go back from testdir
     pprint.pprint(counter)
 
 
-def test_exe(test):
-    _msg("EXECUTING TEST", test)
+def test_exe(test, testdir=None):
+    _msg("EXECUTING TEST", testdir + '/' + test)
     # Run the test in a clean environment to make sure they're
     # really self-contained
     path = os.environ["PATH"]
@@ -251,6 +263,13 @@ def find_exepath(test, parent_dir='dist'):
     return prog
 
 
+def detect_tests(folders):
+    tests = []
+    for f in folders:
+        tests += glob.glob(f + '/test*.spec')
+    return tests
+
+
 if __name__ == '__main__':
 
     # Change working directory to place where this script is.
@@ -279,33 +298,20 @@ if __name__ == '__main__':
 
     opts, args = parser.parse_args()
 
-    dirs = ('basic', 'multipackage')
-
     if opts.clean:
-        for d in dirs:
-            os.chdir(d)
-            clean()
-            os.chdir('..')
+        clean()
         raise SystemExit()
 
-    # run tests for every folder
-    for d in dirs:
-        os.chdir(d)
+    if args:
+        if opts.interactive_tests:
+            parser.error('Must not specify -i/--interactive-tests when passing test names.')
+        tests = args
+    elif opts.interactive_tests:
+        print "Running interactive tests"
+        tests = detect_tests(INTERACT_TEST_DIRS)
+    else:
+        print "Running normal tests (-i for interactive tests)"
+        tests = detect_tests(TEST_DIRS)
 
-        normal_tests = glob.glob('test*.spec')
-        interactive_tests = glob.glob('test*i.spec')
-
-        if args:
-            if opts.interactive_tests:
-                parser.error('Must not specify -i/--interactive-tests when passing test names.')
-            tests = args
-        elif opts.interactive_tests:
-            print "Running interactive tests"
-            tests = interactive_tests
-        else:
-            tests = [t for t in normal_tests if t not in interactive_tests]
-            print "Running normal tests (-i for interactive tests)"
-
-        clean()
-        #runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)
-        os.chdir('..')
+    clean()
+    runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)

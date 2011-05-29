@@ -1,9 +1,9 @@
 # -*- mode: python -*-
 
-__testname__ = 'test-tkinter_i'
+__testname__ = 'test_tkinter'
 
 a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
-              os.path.join(HOMEPATH,'support', 'useUnicode.py'),
+              os.path.join(CONFIGDIR,'support', 'useUnicode.py'),
               __testname__ + '.py'])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

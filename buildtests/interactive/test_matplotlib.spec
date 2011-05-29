@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-__testname__ = 'test-matplotlib_i'
+__testname__ = 'test_matplotlib'
 
 if config['target_platform'] == 'win32' and sys.version_info[:2] >= (2, 6):
     manifest = '''<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
@@ -14,7 +14,7 @@ else:
     manifest = None
 
 a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), 
-              os.path.join(HOMEPATH,'support', 'useUnicode.py'), 
+              os.path.join(CONFIGDIR,'support', 'useUnicode.py'), 
               __testname__ + '.py'])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

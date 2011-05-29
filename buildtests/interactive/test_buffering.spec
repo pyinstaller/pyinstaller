@@ -1,8 +1,8 @@
 # -*- mode: python -*-
 
-__testname__ = 'test4i'
+__testname__ = 'test_buffering'
 
-a = Analysis(['../support/_mountzlib.py', __testname__ + '.py'],
+a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'), os.path.join(CONFIGDIR, 'support/useUnicode.py'), __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
