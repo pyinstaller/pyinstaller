@@ -1,8 +1,9 @@
 # -*- mode: python -*-
 
-__testname__ = 'test-wx'
+__testname__ = 'test_wx'
 
-a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'), os.path.join(HOMEPATH,'support/useUnicode.py'), 'test-wx.py'],
+a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
+              os.path.join(CONFIGDIR,'support/useUnicode.py'), __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
