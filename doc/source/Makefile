@@ -20,17 +20,17 @@ pdf: ../Manual.pdf
 man: ../pyi-configure.1 ../pyi-makespec.1 ../pyi-build.1 ../pyinstaller.1 \
 	../pyi-makeCOMServer.1
 
-../%.1: %.rst docutils-man.conf docutils.conf
+../%.1: %.rst docutils-man.conf docutils.conf _definitions.txt
 	rst2man.py --config=docutils-man.conf $< $@
 
-../Manual.html: Manual.rst
+../Manual.html: Manual.rst docutils.conf _definitions.txt
 	rst2html.py --config=docutils.conf $< $@
 
-Manual.tex: Manual.rst
+Manual.tex: Manual.rst _definitions.txt
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
 
 ../Manual.pdf: srcdir=$(dir $(abspath $<))
-../Manual.pdf: Manual.rst
+../Manual.pdf: Manual.rst _definitions.txt
 	cd ${srcdir}/.. && \
 	rst2pdf < ${srcdir}/$< -o ${srcdir}/$@ \
 	   --header='###Title### - ###Section###' \
