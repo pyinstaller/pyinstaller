@@ -2,7 +2,7 @@
 # Generate PyInstaller documentation
 #
 
-.PHONY: doc pdf man
+.PHONY: all doc pdf man html clean cleanall cleanlogs
 
 all:
 	@echo "make doc   ===> To generate html and pdf of the documentation and man pages"
