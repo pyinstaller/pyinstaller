@@ -1,4 +1,4 @@
-.. -*- mode: rst -*-
+.. -*- mode: rst ; ispell-local-dictionary: "american" -*-
 
 ==========================
 pyi-build

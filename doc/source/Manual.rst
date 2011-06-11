@@ -1,3 +1,5 @@
+.. -*- mode: rst ; ispell-local-dictionary: "american" -*-
+
 ==================
 PyInstaller Manual
 ==================
