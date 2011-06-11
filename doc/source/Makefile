@@ -12,7 +12,7 @@ all:
 
 
 doc: html pdf man cleanlogs
-	@echo "Documentation generated: Please see ../*.html and ../*.pdf for files"
+	@echo "Documentation generated: Please see ../*.html, ../*.pdf and ../*.1 for files"
 
 
 html: ../Manual.html
