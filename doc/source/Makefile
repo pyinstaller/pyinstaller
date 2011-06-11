@@ -29,8 +29,13 @@ man: ../pyi-configure.1 ../pyi-makespec.1 ../pyi-build.1 ../pyinstaller.1 \
 Manual.tex: Manual.rst
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
 
-../Manual.pdf: ../Manual.html
-	wkhtmltopdf --outline ../Manual.html ../Manual.pdf
+../Manual.pdf: srcdir=$(dir $(abspath $<))
+../Manual.pdf: Manual.rst
+	cd ${srcdir}/.. && \
+	rst2pdf < ${srcdir}/$< -o ${srcdir}/$@ \
+	   --header='###Title### - ###Section###' \
+	   --footer='###Page###' \
+	   --default-dpi=75 
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
