@@ -14,16 +14,16 @@ all:
 doc: html pdf man cleanlogs
 	@echo "Documentation generated: Please see ../*.html, ../*.pdf and ../*.1 for files"
 
+manpages := pyinstaller pyi-configure pyi-makespec pyi-build pyi-makeCOMServer
 
-html: ../Manual.html
+html: ../Manual.html $(foreach manpage,${manpages},../${manpage}.html)
 pdf: ../Manual.pdf
-man: ../pyi-configure.1 ../pyi-makespec.1 ../pyi-build.1 ../pyinstaller.1 \
-	../pyi-makeCOMServer.1
+man: $(foreach manpage,${manpages},../${manpage}.1)
 
 ../%.1: %.rst docutils-man.conf docutils.conf _definitions.txt
 	rst2man.py --config=docutils-man.conf $< $@
 
-../Manual.html: Manual.rst docutils.conf _definitions.txt
+../%.html: %.rst docutils.conf _definitions.txt
 	rst2html.py --config=docutils.conf $< $@
 
 Manual.tex: Manual.rst _definitions.txt
