@@ -57,8 +57,6 @@ SEE ALSO
 
 ``pyi-makespec``\(1), The PyInstaller Manual, ``pyinstaller``\(1)
 
-Project Homepage http://www.pyinstaller.org/
+Project Homepage |Homepage|
 
-.. |PyInstaller| replace:: ``PyInstaller``
-.. |PyInstallerVersion| replace:: 1.5-rc1
-.. |config.dat| replace:: /etc/pyinstaller.conf
+.. include:: _definitions.txt

@@ -1,0 +1,10 @@
+.. -*- mode: rst ; ispell-local-dictionary: "american" -*-
+
+.. _PyInstaller: http://www.pyinstaller.org
+
+.. |Homepage| replace:: http://www.pyinstaller.org
+.. |PyInstaller| replace:: `PyInstaller`
+.. |Version| replace:: v1.6dev
+.. |PyInstallerVersion| replace:: PyInstaller |Version|
+.. |install_path| replace:: /your/path/to/pyinstaller/
+.. |config.dat| replace:: /etc/pyinstaller.conf

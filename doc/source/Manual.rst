@@ -1782,7 +1782,6 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 
 |GOBACK|_
 
-.. _PyInstaller: http://www.pyinstaller.org
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
 .. _PIL: http://www.pythonware.com/products/pil/
@@ -1797,9 +1796,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. |ZlibArchiveImage| image:: images/ZlibArchive.png
 .. |CArchiveImage| image:: images/CArchive.png
 .. |SE_exeImage| image:: images/SE_exe.png
-.. |PyInstaller| replace:: PyInstaller
-.. |PyInstallerVersion| replace:: PyInstaller v1.5
-.. |InitialVersion| replace:: v1.0
-.. |install_path| replace:: /your/path/to/pyinstaller/
 .. |GOBACK| replace:: `Back to Top`
 .. _GOBACK: `PyInstaller Manual`_
+
+.. include:: _definitions.txt
