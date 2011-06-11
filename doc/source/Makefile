@@ -24,7 +24,7 @@ man: ../pyi-configure.1 ../pyi-makespec.1 ../pyi-build.1 ../pyinstaller.1 \
 	rst2man.py --config=docutils-man.conf $< $@
 
 ../Manual.html: Manual.rst
-	tools/buildrecursive.py --local --strict --title='PyInstaller Manual' --outpath=..
+	rst2html.py --config=docutils.conf $< $@
 
 Manual.tex: Manual.rst
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
