@@ -31,11 +31,13 @@ Manual.tex: Manual.rst _definitions.txt
 
 ../Manual.pdf: srcdir=$(dir $(abspath $<))
 ../Manual.pdf: Manual.rst _definitions.txt
+	cp _definitions.txt ..
 	cd ${srcdir}/.. && \
 	rst2pdf < ${srcdir}/$< -o ${srcdir}/$@ \
 	   --header='###Title### - ###Section###' \
 	   --footer='###Page###' \
 	   --default-dpi=75 
+	rm ../_definitions.txt
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
