@@ -3,9 +3,11 @@
 ==================
 PyInstaller Manual
 ==================
+
+:Version: |PyInstallerVersion|
+:Homepage: |Homepage|
 :Author: Giovanni Bajo & William Caban (based on Gordon McMillan's manual)
 :Contact: rasky@develer.com
-:Version: |PyInstallerVersion|
 :Revision: $Rev$
 :Source URL: $HeadURL$
 :Copyright: This document has been placed in the public domain.
