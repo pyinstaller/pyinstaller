@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
 <title>PyInstaller Manual</title>
 <meta name="author" content="Giovanni Bajo &amp; William Caban (based on Gordon McMillan's manual)" />
 <meta name="copyright" content="This document has been placed in the public domain." />
@@ -16,20 +16,23 @@
 <col class="docinfo-name" />
 <col class="docinfo-content" />
 <tbody valign="top">
+<tr><th class="docinfo-name">Version:</th>
+<td>PyInstaller v1.6dev</td></tr>
+<tr class="field"><th class="docinfo-name">Homepage:</th><td class="field-body"><a class="reference external" href="http://www.pyinstaller.org">http://www.pyinstaller.org</a></td>
+</tr>
 <tr><th class="docinfo-name">Author:</th>
 <td>Giovanni Bajo &amp; William Caban (based on Gordon McMillan's manual)</td></tr>
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference external" href="mailto:rasky&#64;develer.com">rasky&#64;develer.com</a></td></tr>
-<tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller v1.5</td></tr>
 <tr><th class="docinfo-name">Revision:</th>
-<td>1242</td></tr>
+<td>1444</td></tr>
 <tr class="field"><th class="docinfo-name">Source URL:</th><td class="field-body">$HeadURL: <a class="reference external" href="https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst">https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst</a> $</td>
 </tr>
 <tr><th class="docinfo-name">Copyright:</th>
 <td>This document has been placed in the public domain.</td></tr>
 </tbody>
 </table>
+<!-- -*- mode: rst ; ispell-local-dictionary: "american" -*- -->
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="simple">
@@ -161,8 +164,8 @@ and save some information into <tt class="docutils literal">config.dat</tt> that
 be recomputed every time.</p>
 <p>It can be rerun at any time if your configuration changes. It must be
 run at least once before trying to build anything.</p>
-<p>PyInstaller is dependant to the version of python you configure it for. In
-other words, you will need a separate copy of PyInstaller for each Python
+<p><cite>PyInstaller</cite> is dependant to the version of python you configure it for. In
+other words, you will need a separate copy of <cite>PyInstaller</cite> for each Python
 version you wish to work with <em>or</em> you'll need to rerun <tt class="docutils literal">Configure.py</tt> every
 time you switch the Python version).</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
@@ -171,12 +174,12 @@ time you switch the Python version).</p>
 <h2><a class="toc-backref" href="#id4">Create a spec file for your project</a></h2>
 <p>[For Windows COM server support, see section <a class="reference internal" href="#windows-com-server-support">Windows COM Server Support</a>]</p>
 <p>This is the first step to do. The spec file is the description of what you
-want PyInstaller to do with your program. In the root directory of PyInstaller,
+want <cite>PyInstaller</cite> to do with your program. In the root directory of <cite>PyInstaller</cite>,
 there is a simple wizard to create simple spec files that cover all basic usages:</p>
 <pre class="literal-block">
 python Makespec.py [--onefile] yourprogram.py
 </pre>
-<p>By deafult, <tt class="docutils literal">Makespec.py</tt> generates a spec file that tells PyInstaller to
+<p>By deafult, <tt class="docutils literal">Makespec.py</tt> generates a spec file that tells <cite>PyInstaller</cite> to
 create a distribution directory contains the main executable and the dynamic
 libraries. The option <tt class="docutils literal"><span class="pre">--onefile</span></tt> specifies that you want PyInstaller to build
 a single file with everything inside.</p>
@@ -364,7 +367,7 @@ benefit, you might rebuild Python with more things statically linked.</p>
 <p>More importantly, when <tt class="docutils literal">run</tt> finds that its <tt class="docutils literal">sys.argv[0]</tt> does not contain a path,
 it will use <tt class="docutils literal">/proc/pid/exe</tt> to find itself (if it can). This happens, for
 example, when executed by Apache. If it has been upx-ed, this symbolic link
-points to the tempfile created by the upx stub and PyInstaller will fail (please
+points to the tempfile created by the upx stub and <cite>PyInstaller</cite> will fail (please
 see the UPX docs for more information). So for now, at least, you can't use upx
 for CGI's executed by Apache. Otherwise, you can ignore the warnings in the UPX
 docs, since what PyInstaller opens is the executable Installer created, not the
@@ -385,7 +388,7 @@ attached to the bootloader executable (or next to the executable in a non-elf
 configuration). When first started, it finds that it needs to extract these
 files before it can run &quot;for real&quot;. That's because locating and loading a
 shared lib or linked-in dll is a system level action, not user-level. With
-PyInstaller v1.5 it always uses a temporary directory (<tt class="docutils literal">_MEIXXXXX</tt>,
+PyInstaller v1.6dev it always uses a temporary directory (<tt class="docutils literal">_MEIXXXXX</tt>,
 where <tt class="docutils literal">XXXXX</tt> is a random number to avoid conflicts) in the
 user's temp directory. It then executes itself again, setting things up so
 the system will be able to load the shared libs / dlls. When execution is
@@ -427,22 +430,22 @@ a standard Python package, with some additional metadata that can be used for
 advanced <a class="reference external" href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools</a> features like entry-points. An <tt class="docutils literal">egg</tt> file is simply a
 ZIP file, and it works as a package as well because Python 2.3+ is able to
 transparently import modules stored within ZIP files.</p>
-<p>PyInstaller supports <tt class="docutils literal">eggs</tt> at a good level. In fact:</p>
+<p><cite>PyInstaller</cite> supports <tt class="docutils literal">eggs</tt> at a good level. In fact:</p>
 <ul class="simple">
 <li>It is able to follow dependencies within <tt class="docutils literal">eggs</tt> (both files and directories).
 So if your program imports a package shipped in <tt class="docutils literal">egg</tt> format, and this package
-requires additional libraries, PyInstaller will correctly include everything
+requires additional libraries, <cite>PyInstaller</cite> will correctly include everything
 within the generated executable.</li>
 <li><tt class="docutils literal"><span class="pre">egg-files</span></tt> are fully supported. To let everything works (entry-points,
-<tt class="docutils literal">pkg_resource</tt> library, etc.), PyInstaller either copy the <tt class="docutils literal"><span class="pre">egg-files</span></tt>
+<tt class="docutils literal">pkg_resource</tt> library, etc.), <cite>PyInstaller</cite> either copy the <tt class="docutils literal"><span class="pre">egg-files</span></tt>
 into the distribution directory (in one-dir mode) or packs them as-is within
 the generated executable and unpack them at startup into the temporary directory
 (see <a class="reference internal" href="#how-one-file-mode-works">How one-file mode works</a>).</li>
-<li><tt class="docutils literal"><span class="pre">egg-directories</span></tt> are partially supported. In fact, PyInstaller at build
+<li><tt class="docutils literal"><span class="pre">egg-directories</span></tt> are partially supported. In fact, <cite>PyInstaller</cite> at build
 time treat them as regular package. This means that all advanced features requiring
 <tt class="docutils literal">egg</tt> metadatas will not work.</li>
 </ul>
-<p>Improved support for <tt class="docutils literal">eggs</tt> is planned for a future release of PyInstaller.</p>
+<p>Improved support for <tt class="docutils literal">eggs</tt> is planned for a future release of <cite>PyInstaller</cite>.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="multipackage-function">
@@ -467,7 +470,7 @@ You can look at multipackage examples in 'buildtests' dir.</p>
 python ArchiveViewer.py &lt;archivefile&gt;
 </pre>
 <p>ArchiveViewer lets you examine the contents of any archive build with
-PyInstaller or executable (PYZ, PKG or exe). Invoke it with the target as the
+<cite>PyInstaller</cite> or executable (PYZ, PKG or exe). Invoke it with the target as the
 first arg (It has been set up as a Send-To so it shows on the context menu in
 Explorer). The archive can be navigated using these commands:</p>
 <dl class="docutils">
@@ -510,7 +513,7 @@ python bindepend.py &lt;executable_or_dynamic_library&gt;
 </pre>
 <p>bindepend will analyze the executable you pass to it, and write to stdout all
 its binary dependencies. This is handy to find out which DLLs are required by
-an executable or another DLL. This module is used by PyInstaller itself to
+an executable or another DLL. This module is used by <cite>PyInstaller</cite> itself to
 follow the chain of dependencies of binary extensions and make sure that all
 of them get included in the final package.</p>
 </div>
@@ -524,7 +527,7 @@ a version resource. Invoke it with the full path name of a Windows executable
 (with a version resource) as the first argument. If you cut &amp; paste (or
 redirect to a file), you can then edit the version information. The edited
 text file can be used in a <tt class="docutils literal">version = myversion.txt</tt> option on any executable
-in an PyInstaller spec file.</p>
+in an <cite>PyInstaller</cite> spec file.</p>
 <p>This was done in this way because version resources are rather strange beasts,
 and fully understanding them is probably impossible. Some elements are
 optional, others required, but you could spend unbounded amounts of time
@@ -1024,7 +1027,7 @@ hidden imports for the most common packages out there. For instance,
 <p>Hidden imports are handled by hooking the module (the one doing the hidden
 imports) at <tt class="docutils literal">Analysis</tt> time. Do this by creating a file named <tt class="docutils literal"><span class="pre">hook-module.py</span></tt>
 (where module is the fully-qualified Python name, eg, <tt class="docutils literal"><span class="pre">hook-xml.dom.py</span></tt>), and
-placing it in the <tt class="docutils literal">hooks</tt> package under PyInstaller's root directory,
+placing it in the <tt class="docutils literal">PyInstaller.hooks</tt> package under <cite>PyInstaller</cite>'s root directory,
 (alternatively, you can save it elsewhere, and then use the <tt class="docutils literal">hookspath</tt> arg to
 <tt class="docutils literal">Analysis</tt> so your private hooks directory will be searched). Normally, it will
 have only one line:</p>
@@ -1054,7 +1057,7 @@ however, because the new entry on <tt class="docutils literal">__path__</tt> may
 instance of <tt class="docutils literal">mf.Module</tt> which has (more or less) the same attributes as a real
 module object. The hook function should return a <tt class="docutils literal">mf.Module</tt> instance - perhaps
 a brand new one, but more likely the same one used as an arg, but mutated.
-See <a class="reference internal" href="#mf-py-a-modulefinder-replacement">mf.py: A Modulefinder Replacement</a> for details, and <a class="reference external" href="http://www.pyinstaller.org/browser/trunk/hooks/hook-win32com.py?rev=latest">hooks/hook-win32com.py</a>
+See <a class="reference internal" href="#mf-py-a-modulefinder-replacement">mf.py: A Modulefinder Replacement</a> for details, and <a class="reference external" href="http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest">PyInstaller/hooks/hook-win32com.py</a>
 for an example.</p>
 <p>Note that manipulations of <tt class="docutils literal">__path__</tt> hooked in this way apply to the analysis,
 and only the analysis. That is, at runtime <tt class="docutils literal">win32com.shell</tt> is resolved the same
@@ -1170,7 +1173,7 @@ but modules the extensions are linked to).</li>
 <p>The first pass:</p>
 <ul class="simple">
 <li>opens the archive</li>
-<li>extracts all the binaries in the archive (in PyInstaller v1.5, this is always to a
+<li>extracts all the binaries in the archive (in PyInstaller v1.6dev, this is always to a
 temporary directory).</li>
 <li>sets a magic environment variable</li>
 <li>sets <tt class="docutils literal">LD_LIBRARY_PATH</tt> (non-Windows)</li>
@@ -1192,7 +1195,7 @@ of Python) makes use of the config information in your install (if you
 installed from RPM, you need the Python-development RPM). It also overrides
 <tt class="docutils literal">getpath.c</tt> since we don't want it hunting around the filesystem to build
 <tt class="docutils literal">sys.path</tt>.</p>
-<p>In both cases, while one PyInstaller download can be used with any Python
+<p>In both cases, while one <cite>PyInstaller</cite> download can be used with any Python
 version, you need to have separate installations for each Python version.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
@@ -1276,8 +1279,8 @@ words, any modifications to will <em>have</em> to be distributed under GPL.</li>
 <div class="sidebar">
 <p class="first sidebar-title">You can stop reading here...</p>
 <p class="last">... if you are not interested in technical details. This appendix contains
-insights of the internal workings of PyInstaller, and you do not need this
-information unless you plan to work on PyInstaller itself.</p>
+insights of the internal workings of <cite>PyInstaller</cite>, and you do not need this
+information unless you plan to work on <cite>PyInstaller</cite> itself.</p>
 </div>
 <div class="section" id="building-the-bootloaders">
 <h2><a class="toc-backref" href="#id52">Building the bootloaders</a></h2>
@@ -1341,7 +1344,7 @@ which are the bootloaders.</p>
 <h3><a class="toc-backref" href="#id55">Linux Standard Base (LSB) binary</a></h3>
 <p>By default, the bootloaders on Linux are LSB binaries.</p>
 <p>LSB is a set of open standards that should increase compatibility among Linux
-distributions. PyInstaller is able produce bootloader as LSB binary in order
+distributions. <cite>PyInstaller</cite> is able produce bootloader as LSB binary in order
 to increase compatibility for packaged applications among distributions.</p>
 <p><em>Note:</em> LSB version 4.0 is required for successfull building of bootloader.</p>
 <p>On Debian- and Ubuntu-based distros, you can install LSB 4.0 tools by adding
@@ -1452,8 +1455,9 @@ whether the import is inside a condition (conditional imports).</p>
 <p>In modulefinder, scanning the code takes the place of executing the code
 object. <tt class="docutils literal">mf</tt> goes further and allows a module to be hooked (after it has been
 scanned, but before analyze_one is done with it). A hook is a module named
-<tt class="docutils literal"><span class="pre">hook-fullyqualifiedname</span></tt> in the <tt class="docutils literal">hooks</tt> package. These modules should have one or
-more of the following three global names defined:</p>
+<tt class="docutils literal"><span class="pre">hook-fullyqualifiedname</span></tt> in the <tt class="docutils literal">PyInstaller.hooks</tt> package.
+These modules should have one or more of the following three global
+names defined:</p>
 <dl class="docutils">
 <dt><tt class="docutils literal">hiddenimports</tt></dt>
 <dd>a list of modules names (relative or absolute) that the module imports in some untrackable way.</dd>
@@ -1672,7 +1676,7 @@ implement certain kinds of policies within a particular domain, but
 fundamentally iu works by dividing up the import namespace into independent
 domains.</p>
 <p>Quite simply, I think cross-domain import hacks are a very bad idea. As author
-of the original package on which PyInstaller is based, McMillan worked with
+of the original package on which <cite>PyInstaller</cite> is based, McMillan worked with
 import hacks for many years. Many of them are highly fragile; they often rely
 on undocumented (maybe even accidental) features of implementation.
 A cross-domain import hack is not likely to work with PyXML, for example.</p>
@@ -1699,6 +1703,7 @@ easy to implement.</p>
 </pre>
 </blockquote>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
+<!-- -*- mode: rst ; ispell-local-dictionary: "american" -*- -->
 </div>
 </div>
 </div>
@@ -1706,7 +1711,7 @@ easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2010-12-03 11:08 UTC.
+Generated on: 2011-06-14 07:49 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
