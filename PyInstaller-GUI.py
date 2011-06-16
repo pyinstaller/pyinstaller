@@ -1,10 +1,12 @@
 #!/usr/bin/python
 
-# Tkinter interface to the McMillan installer
+# Tkinter interface to the McMillan installer / PyInstaller
 # (c) 2003 Alan James Salmoni - yes, all this bad code is all mine!!!
+# (c) 2011 Hartmut Goebel: adopted to PyInstaller 1.6, use subprocess
 # released under the MIT license
 
 import os, os.path
+import subprocess
 from Tkinter import *
 import tkFileDialog
 import FileDialog
@@ -73,24 +75,20 @@ class McGUI:
         sys.exit(0)
 
     def makePackage(self, event):
-        commands = 'python Makespec.py '
-        if (self.filetype.get() == 1):
-            commands = commands + '--onefile '
-        if (self.tk.get() == 1):
-            commands = commands + '--tk '
-        if (self.ascii.get() == 1):
-            commands = commands + '--ascii '
-        if (self.debug.get() == 1):
-            commands = commands + '--debug '
-        if (self.noconsole.get() == 1):
-            commands = commands + '--noconsole '
-        commands = commands + self.fin
-        x = os.path.split(self.fin)
-        y = os.path.splitext(x[1])
-        os.system(commands)
-        commands = 'python Build.py '+str(y[0])+os.sep+str(y[0])+'.spec'
-        os.system(commands)
-        sys.exit(0)
+        commands = ['python', 'pyinstaller.py']
+        if self.filetype.get():
+            commands.append('--onefile')
+        if self.tk.get():
+            commands.append('--tk')
+        if self.ascii.get():
+            commands.append('--ascii')
+        if self.debug.get():
+            commands.append('--debug')
+        if self.noconsole.get():
+            commands.append('--noconsole')
+        commands.append(self.fin)
+        retcode = subprocess.call(commands)
+        sys.exit(retcode)
 
     def GetFile(self, event):
         self.fin = tkFileDialog.askopenfilename()
