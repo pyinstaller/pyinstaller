@@ -5,13 +5,14 @@
 # (c) 2011 Hartmut Goebel: adopted to PyInstaller 1.6, use subprocess
 # released under the MIT license
 
-import os, os.path
+import os
+import sys
 import subprocess
 from Tkinter import *
 import tkFileDialog
 import FileDialog
 
-class McGUI:
+class PyInstallerGUI:
     def __init__(self):
         root = Tk()
         fr1 = Frame(root)
@@ -25,12 +26,12 @@ class McGUI:
         fr2["relief"] = "ridge"
         fr2.pack()
         fr4 = Frame(root)
-        fr4["width"]=200
-        fr4["height"]=100
+        fr4["width"] = 200
+        fr4["height"] = 100
         fr4.pack(side="bottom")
         getFileButton = Button(fr1)
         getFileButton["text"] = "Script..."
-        getFileButton.bind("<Button>",self.GetFile)
+        getFileButton.bind("<Button>", self.GetFile)
         getFileButton.pack(side="left")
         self.filein = Entry(fr1)
         self.filein.pack(side="right")
@@ -61,11 +62,11 @@ class McGUI:
         self.noconsolecheck.pack()
         okaybutton = Button(fr4)
         okaybutton["text"] = "Okay   "
-        okaybutton.bind("<Button>",self.makePackage)
+        okaybutton.bind("<Button>", self.makePackage)
         okaybutton.pack(side="left")
         cancelbutton = Button(fr4)
         cancelbutton["text"] = "Cancel"
-        cancelbutton.bind("<Button>",self.killapp)
+        cancelbutton.bind("<Button>", self.killapp)
         cancelbutton.pack(side="right")
         self.fin = ''
         self.fout = ''
@@ -92,7 +93,7 @@ class McGUI:
 
     def GetFile(self, event):
         self.fin = tkFileDialog.askopenfilename()
-        self.filein.insert(0,self.fin)
+        self.filein.insert(0, self.fin)
 
 if __name__ == "__main__":
-    app = McGUI()
+    app = PyInstallerGUI()
