@@ -45,18 +45,14 @@ clean:
 
 
 cleanall: cleanlogs
-	rm -f ../*.pdf
-	rm -f ../*.html
-	rm -f ../*.1
+	rm -f ../*.pdf ../*.html ../*.1
 	@echo "All logs and documentation removed."
 
 
 cleanlogs:
-	rm -f ../*.aux
-	rm -f ../*.out
-	rm -f .log *.log  ../*.log
+	rm -f ../*.aux ../*.out ../*.log
+	rm -f .log *.log
 	@echo "All logs and aux removed."
-
 
 #
 # END OF FILE
