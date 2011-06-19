@@ -27,6 +27,7 @@ import os
 
 scripts = [
     'pyinstaller.py',
+    'pyinstaller_gui.py',
     'utils/ArchiveViewer.py',
     #'utils/BinDepend.py',
     'utils/Build.py',
@@ -34,7 +35,6 @@ scripts = [
     #'utils/Crypt.py',
     #'utils/GrabVersion.py',
     'utils/Makespec.py',
-    'PyInstaller-GUI.py',
 ]
 
 if platform.system() == "Windows":
