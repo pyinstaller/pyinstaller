@@ -27,7 +27,7 @@ import os
 
 scripts = [
     'pyinstaller.py',
-    'pyinstaller_gui.py',
+    'pyinstaller-gui.py',
     'utils/ArchiveViewer.py',
     #'utils/BinDepend.py',
     'utils/Build.py',
