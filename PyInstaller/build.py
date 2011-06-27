@@ -1379,7 +1379,6 @@ def build(spec, buildpath):
         SPECPATH = os.getcwd()
     BUILDPATH = os.path.join(SPECPATH, 'build',
                              "pyi." + sys.platform, specnm)  
-    WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
     # Check and adjustment for build path
     if buildpath != DEFAULT_BUILDPATH:
         bpath = buildpath
@@ -1387,6 +1386,7 @@ def build(spec, buildpath):
             BUILDPATH = bpath
         else:
             BUILDPATH = os.path.join(SPECPATH, bpath)
+    WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
     if not os.path.exists(BUILDPATH):
         os.makedirs(BUILDPATH)
     # Executing the specfile (it's a valid python file)
