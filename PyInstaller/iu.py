@@ -102,7 +102,12 @@ class DirOwner(Owner):
                     if typ == imp.C_EXTENSION:
                         fp = open(attempt, 'rb')
                         mod = imp.load_module(nm, fp, attempt, (ext, mode, typ))
-                        mod.__file__ = attempt
+                        if hasattr(mod, "__setattr__"):
+                            mod.__file__ = attempt
+                        else:
+                            # Some modules (eg: Python for .NET) have no __setattr__
+                            # and dict entry have to be set
+                            mod.__dict__["__file__"] = attempt
                         return mod
                     elif typ == imp.PY_SOURCE:
                         py = (attempt, st)
@@ -501,7 +506,12 @@ class ImportManager:
                 if mod:
                     break
         if mod:
-            mod.__name__ = fqname
+            if hasattr(mod, "__setattr__"):
+                mod.__name__ = fqname
+            else:
+                # Some modules (eg: Python for .NET) have no __setattr__
+                # and dict entry have to be set
+                mod.__dict__["__name__"] = fqname
             if reload:
                 sys.modules[fqname].__dict__.update(mod.__dict__)
             else:
