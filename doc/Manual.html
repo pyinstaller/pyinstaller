@@ -25,7 +25,7 @@
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference external" href="mailto:rasky&#64;develer.com">rasky&#64;develer.com</a></td></tr>
 <tr><th class="docinfo-name">Revision:</th>
-<td>1444</td></tr>
+<td>1464</td></tr>
 <tr class="field"><th class="docinfo-name">Source URL:</th><td class="field-body">$HeadURL: <a class="reference external" href="https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst">https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst</a> $</td>
 </tr>
 <tr><th class="docinfo-name">Copyright:</th>
@@ -38,9 +38,9 @@
 <ul class="simple">
 <li><a class="reference internal" href="#getting-started" id="id1">Getting Started</a><ul>
 <li><a class="reference internal" href="#installing-pyinstaller" id="id2">Installing PyInstaller</a></li>
-<li><a class="reference internal" href="#configuring-your-pyinstaller-setup" id="id3">Configuring your PyInstaller setup</a></li>
-<li><a class="reference internal" href="#create-a-spec-file-for-your-project" id="id4">Create a spec file for your project</a></li>
-<li><a class="reference internal" href="#build-your-project" id="id5">Build your project</a></li>
+<li><a class="reference internal" href="#build-your-project" id="id3">Build your project</a></li>
+<li><a class="reference internal" href="#allowed-options" id="id4">Allowed OPTIONS</a></li>
+<li><a class="reference internal" href="#a-spec-file-for-your-project" id="id5">A spec file for your project</a></li>
 <li><a class="reference internal" href="#windows-com-server-support" id="id6">Windows COM Server support</a></li>
 <li><a class="reference internal" href="#building-optimized" id="id7">Building Optimized</a></li>
 <li><a class="reference internal" href="#a-note-on-using-upx" id="id8">A Note on using UPX</a></li>
@@ -51,7 +51,7 @@
 </li>
 <li><a class="reference internal" href="#pyinstaller-utilities" id="id12">PyInstaller Utilities</a><ul>
 <li><a class="reference internal" href="#archiveviewer" id="id13">ArchiveViewer</a></li>
-<li><a class="reference internal" href="#bindepend" id="id14">bindepend</a></li>
+<li><a class="reference internal" href="#bindepend" id="id14">BinDepend</a></li>
 <li><a class="reference internal" href="#grabversion-windows" id="id15">GrabVersion (Windows)</a></li>
 <li><a class="reference internal" href="#analyzing-dependencies" id="id16">Analyzing Dependencies</a></li>
 </ul>
@@ -91,50 +91,49 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#miscellaneous" id="id41">Miscellaneous</a><ul>
-<li><a class="reference internal" href="#win9xpopen" id="id42">Win9xpopen</a></li>
-<li><a class="reference internal" href="#self-extracting-executables" id="id43">Self-extracting executables</a><ul>
-<li><a class="reference internal" href="#one-pass-execution" id="id44">One Pass Execution</a></li>
-<li><a class="reference internal" href="#two-pass-execution" id="id45">Two Pass Execution</a></li>
+<li><a class="reference internal" href="#self-extracting-executables" id="id42">Self-extracting executables</a><ul>
+<li><a class="reference internal" href="#one-pass-execution" id="id43">One Pass Execution</a></li>
+<li><a class="reference internal" href="#two-pass-execution" id="id44">Two Pass Execution</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pyinstaller-archives" id="id46">PyInstaller Archives</a><ul>
-<li><a class="reference internal" href="#archives-introduction" id="id47">Archives Introduction</a></li>
-<li><a class="reference internal" href="#zlibarchive" id="id48"><tt class="docutils literal">ZlibArchive</tt></a></li>
-<li><a class="reference internal" href="#carchive" id="id49"><tt class="docutils literal">CArchive</tt></a></li>
+<li><a class="reference internal" href="#pyinstaller-archives" id="id45">PyInstaller Archives</a><ul>
+<li><a class="reference internal" href="#archives-introduction" id="id46">Archives Introduction</a></li>
+<li><a class="reference internal" href="#zlibarchive" id="id47"><tt class="docutils literal">ZlibArchive</tt></a></li>
+<li><a class="reference internal" href="#carchive" id="id48"><tt class="docutils literal">CArchive</tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#license" id="id50">License</a></li>
-<li><a class="reference internal" href="#appendix" id="id51">Appendix</a><ul>
-<li><a class="reference internal" href="#building-the-bootloaders" id="id52">Building the bootloaders</a><ul>
-<li><a class="reference internal" href="#development-tools" id="id53">Development tools</a></li>
-<li><a class="reference internal" href="#building" id="id54">Building</a></li>
-<li><a class="reference internal" href="#linux-standard-base-lsb-binary" id="id55">Linux Standard Base (LSB) binary</a></li>
+<li><a class="reference internal" href="#license" id="id49">License</a></li>
+<li><a class="reference internal" href="#appendix" id="id50">Appendix</a><ul>
+<li><a class="reference internal" href="#building-the-bootloaders" id="id51">Building the bootloaders</a><ul>
+<li><a class="reference internal" href="#development-tools" id="id52">Development tools</a></li>
+<li><a class="reference internal" href="#building" id="id53">Building</a></li>
+<li><a class="reference internal" href="#linux-standard-base-lsb-binary" id="id54">Linux Standard Base (LSB) binary</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#mf-py-a-modulefinder-replacement" id="id56"><tt class="docutils literal">mf.py</tt>: A Modulefinder Replacement</a><ul>
-<li><a class="reference internal" href="#importtracker" id="id57">ImportTracker</a></li>
-<li><a class="reference internal" href="#analyze-one" id="id58"><tt class="docutils literal">analyze_one()</tt></a></li>
-<li><a class="reference internal" href="#module-classes" id="id59">Module Classes</a></li>
-<li><a class="reference internal" href="#code-scanning" id="id60">code scanning</a></li>
-<li><a class="reference internal" href="#hooks" id="id61">Hooks</a></li>
-<li><a class="reference internal" href="#warnings" id="id62">Warnings</a></li>
-<li><a class="reference internal" href="#cross-reference" id="id63">Cross Reference</a></li>
-<li><a class="reference internal" href="#mf-usage" id="id64">mf Usage</a></li>
+<li><a class="reference internal" href="#mf-py-a-modulefinder-replacement" id="id55"><tt class="docutils literal">mf.py</tt>: A Modulefinder Replacement</a><ul>
+<li><a class="reference internal" href="#importtracker" id="id56">ImportTracker</a></li>
+<li><a class="reference internal" href="#analyze-one" id="id57"><tt class="docutils literal">analyze_one()</tt></a></li>
+<li><a class="reference internal" href="#module-classes" id="id58">Module Classes</a></li>
+<li><a class="reference internal" href="#code-scanning" id="id59">code scanning</a></li>
+<li><a class="reference internal" href="#hooks" id="id60">Hooks</a></li>
+<li><a class="reference internal" href="#warnings" id="id61">Warnings</a></li>
+<li><a class="reference internal" href="#cross-reference" id="id62">Cross Reference</a></li>
+<li><a class="reference internal" href="#mf-usage" id="id63">mf Usage</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#iu-py-an-imputil-replacement" id="id65"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a><ul>
-<li><a class="reference internal" href="#importmanager" id="id66"><tt class="docutils literal">ImportManager</tt></a></li>
-<li><a class="reference internal" href="#importdirector" id="id67"><tt class="docutils literal">ImportDirector</tt></a></li>
-<li><a class="reference internal" href="#pathimportdirector" id="id68"><tt class="docutils literal">PathImportDirector</tt></a></li>
-<li><a class="reference internal" href="#owner" id="id69"><tt class="docutils literal">Owner</tt></a></li>
-<li><a class="reference internal" href="#packages" id="id70">Packages</a></li>
-<li><a class="reference internal" href="#possibilities" id="id71">Possibilities</a></li>
-<li><a class="reference internal" href="#compatibility" id="id72">Compatibility</a></li>
-<li><a class="reference internal" href="#performance" id="id73">Performance</a></li>
-<li><a class="reference internal" href="#limitations" id="id74">Limitations</a></li>
-<li><a class="reference internal" href="#iu-usage" id="id75">iu Usage</a></li>
+<li><a class="reference internal" href="#iu-py-an-imputil-replacement" id="id64"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a><ul>
+<li><a class="reference internal" href="#importmanager" id="id65"><tt class="docutils literal">ImportManager</tt></a></li>
+<li><a class="reference internal" href="#importdirector" id="id66"><tt class="docutils literal">ImportDirector</tt></a></li>
+<li><a class="reference internal" href="#pathimportdirector" id="id67"><tt class="docutils literal">PathImportDirector</tt></a></li>
+<li><a class="reference internal" href="#owner" id="id68"><tt class="docutils literal">Owner</tt></a></li>
+<li><a class="reference internal" href="#packages" id="id69">Packages</a></li>
+<li><a class="reference internal" href="#possibilities" id="id70">Possibilities</a></li>
+<li><a class="reference internal" href="#compatibility" id="id71">Compatibility</a></li>
+<li><a class="reference internal" href="#performance" id="id72">Performance</a></li>
+<li><a class="reference internal" href="#limitations" id="id73">Limitations</a></li>
+<li><a class="reference internal" href="#iu-usage" id="id74">iu Usage</a></li>
 </ul>
 </li>
 </ul>
@@ -153,78 +152,80 @@ everything they need from their own location. For convenience, keep the paths
 to these scripts short (don't install in a deeply nested subdirectory).</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
-<div class="section" id="configuring-your-pyinstaller-setup">
-<h2><a class="toc-backref" href="#id3">Configuring your PyInstaller setup</a></h2>
+<div class="section" id="build-your-project">
+<h2><a class="toc-backref" href="#id3">Build your project</a></h2>
+<p>[For Windows COM server support, see section <a class="reference internal" href="#windows-com-server-support">Windows COM Server Support</a>]</p>
 <p>In the /your/path/to/pyinstaller/ directory, run:</p>
 <pre class="literal-block">
-python Configure.py
+python pyinstaller.py [opts] yourprogram.py
 </pre>
-<p>This will configure PyInstaller usage based on the current system,
-and save some information into <tt class="docutils literal">config.dat</tt> that would otherwise
-be recomputed every time.</p>
-<p>It can be rerun at any time if your configuration changes. It must be
-run at least once before trying to build anything.</p>
-<p><cite>PyInstaller</cite> is dependant to the version of python you configure it for. In
-other words, you will need a separate copy of <cite>PyInstaller</cite> for each Python
-version you wish to work with <em>or</em> you'll need to rerun <tt class="docutils literal">Configure.py</tt> every
-time you switch the Python version).</p>
+<p>A <tt class="docutils literal">yourprogram</tt> subdirectory will be created in the /your/path/to/pyinstaller/ directory.
+If you are not in /your/path/to/pyinstaller/ directory, directories <tt class="docutils literal">build</tt> and <tt class="docutils literal">dist</tt>
+will be created in your current working directory.</p>
+<p>The generated files will be placed within the <tt class="docutils literal">dist</tt> subdirectory; that's where
+the files you are interested in will be placed.</p>
+<p>If you have created a spec file for your project then in the /your/path/to/pyinstaller/
+directory run:</p>
+<pre class="literal-block">
+python pyinstaller.py [opts] yourspecfile.spec
+</pre>
+<p>If you like default settings and everything is working, this will be all
+you have to do. If not, see <a class="reference internal" href="#allowed-options">Allowed OPTIONS</a>, <a class="reference internal" href="#when-things-go-wrong">When things go wrong</a> and
+be sure to read the introduction to <a class="reference internal" href="#spec-files">Spec Files</a>.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
-<div class="section" id="create-a-spec-file-for-your-project">
-<h2><a class="toc-backref" href="#id4">Create a spec file for your project</a></h2>
-<p>[For Windows COM server support, see section <a class="reference internal" href="#windows-com-server-support">Windows COM Server Support</a>]</p>
-<p>This is the first step to do. The spec file is the description of what you
-want <cite>PyInstaller</cite> to do with your program. In the root directory of <cite>PyInstaller</cite>,
-there is a simple wizard to create simple spec files that cover all basic usages:</p>
+<div class="section" id="allowed-options">
+<h2><a class="toc-backref" href="#id4">Allowed OPTIONS</a></h2>
+<p>By default, <tt class="docutils literal">pyinstaller.py</tt> creates a distribution directory containing the main
+executable and the dynamic libraries. The option <tt class="docutils literal"><span class="pre">--onefile</span></tt> specifies that you want
+PyInstaller to build a single file with everything inside.</p>
+<p>The syntax to use <tt class="docutils literal">pyinstaller.py</tt> is the following:</p>
 <pre class="literal-block">
-python Makespec.py [--onefile] yourprogram.py
+python pyinstaller.py [opts] &lt;scriptname&gt; [ &lt;scriptname&gt; ...] | &lt;specfile&gt;
 </pre>
-<p>By deafult, <tt class="docutils literal">Makespec.py</tt> generates a spec file that tells <cite>PyInstaller</cite> to
-create a distribution directory contains the main executable and the dynamic
-libraries. The option <tt class="docutils literal"><span class="pre">--onefile</span></tt> specifies that you want PyInstaller to build
-a single file with everything inside.</p>
-<p>Elaborating on Makespec.py, this is the supported command line:</p>
-<pre class="literal-block">
-python Makespec.py [opts] &lt;scriptname&gt; [&lt;scriptname&gt; ...]
-</pre>
-<p>Where allowed OPTIONS are:</p>
+<p>Allowed OPTIONS are:</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-v</span>, <span class="option">--version</span></kbd></td>
+<td>show program version</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--upx-dir=<var>UPX_DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Directory containing UPX.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-C <var>CONFIGFILENAME</var></span>, <span class="option">--configfile=<var>CONFIGFILENAME</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Name of generated configfile (default:
+/home/martin/.local/share/pyinstaller/config.dat)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--buildpath=<var>BUILDPATH</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Buildpath (default:
+SPECPATH/build/pyi.TARGET_PLATFORM/SPECNAME)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-y</span>, <span class="option">--noconfirm</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Remove output directory (default:
+SPECPATH/dist/SPECNAME) without confirmation</td></tr>
+</tbody>
+</table>
+<p>What to generate:</p>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group">
 <kbd><span class="option">-F</span>, <span class="option">--onefile</span></kbd></td>
-<td>produce a single file deployment (see below).</td></tr>
+<td>create a single file deployment</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">-D</span>, <span class="option">--onedir</span></kbd></td>
-<td>produce a single directory deployment (default).</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-K</span>, <span class="option">--tk</span></kbd></td>
-<td>include TCL/TK in the deployment.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-a</span>, <span class="option">--ascii</span></kbd></td>
-<td>do not include encodings. The default (on Python versions with unicode
-support) is now to include all encodings.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-d</span>, <span class="option">--debug</span></kbd></td>
-<td>use debug (verbose) versions of the executables.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-w</span>, <span class="option">--windowed</span>, <span class="option">--noconsole</span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Use the Windows subsystem executable, which does not open
-the console when the program is launched. <strong>(Windows only)</strong></td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-c</span>, <span class="option">--nowindowed</span>, <span class="option">--console</span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Use the console subsystem executable. This is the default. <strong>(Windows only)</strong></td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-s</span>, <span class="option">--strip</span></kbd></td>
-<td>the executable and all shared libraries will be run through strip. Note
-that cygwin's strip tends to render normal Win32 dlls unusable.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-X</span>, <span class="option">--upx</span></kbd></td>
-<td>if you have UPX installed (detected by Configure), this will use it to
-compress your executable (and, on Windows, your dlls). See note below.</td></tr>
+<td>create a single directory deployment (default)</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">-o <var>DIR</var></span>, <span class="option">--out=<var>DIR</var></span></kbd></td>
 </tr>
@@ -232,58 +233,133 @@ compress your executable (and, on Windows, your dlls). See note below.</td></tr>
 directory is Installer's root directory, an output subdirectory will be
 created. Otherwise the current directory is used.</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">-p <var>DIR</var></span>, <span class="option">--paths=<var>DIR</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>set base path for import (like using PYTHONPATH). Multiple directories are
-allowed, separating them with the path separator (';' under Windows, ':'
-under Linux), or using this option multiple times.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--icon=<var>&lt;FILE.ICO&gt;</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>add <em>file.ico</em> to the executable's resources. <strong>(Windows only)</strong></td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--icon=<var>&lt;FILE.EXE,N&gt;</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>add the <em>n</em>-th incon in <em>file.exe</em> to the executable's resources. <strong>(Windows
-only)</strong></td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-v <var>FILE</var></span>, <span class="option">--version=<var>FILE</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>add verfile as a version resource to the executable. <strong>(Windows only)</strong></td></tr>
-<tr><td class="option-group" colspan="2">
 <kbd><span class="option">-n <var>NAME</var></span>, <span class="option">--name=<var>NAME</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>optional <em>name</em> to assign to the project (from which the spec file name is
 generated). If omitted, the basename of the (first) script is used.</td></tr>
 </tbody>
 </table>
+<p>What to bundle, where to search:</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-p <var>DIR</var></span>, <span class="option">--paths=<var>DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>set base path for import (like using PYTHONPATH). Multiple directories are
+allowed, separating them with the path separator (';' under Windows, ':'
+under Linux), or using this option multiple times.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-K</span>, <span class="option">--tk</span></kbd></td>
+<td>include TCL/TK in the deployment</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-a</span>, <span class="option">--ascii</span></kbd></td>
+<td>do NOT include unicode encodings (default: included if
+available)</td></tr>
+</tbody>
+</table>
+<p>How to generate:</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-d</span>, <span class="option">--debug</span></kbd></td>
+<td>use the debug (verbose) build of the executable</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-s</span>, <span class="option">--strip</span></kbd></td>
+<td>the executable and all shared libraries will be run through strip. Note
+that cygwin's strip tends to render normal Win32 dlls unusable.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-X</span>, <span class="option">--noupx</span></kbd></td>
+<td>do not use UPX even if available (works differently
+between Windows and *nix)</td></tr>
+</tbody>
+</table>
+<p>Windows and Mac OS X specific options:</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-c</span>, <span class="option">--console</span>, <span class="option">--nowindowed</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>use a console subsystem executable (default)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-w</span>, <span class="option">--windowed</span>, <span class="option">--noconsole</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>use a windowed subsystem executable, which on Windows
+does not open the console when the program is launched.</td></tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>-i FILE.ICO or FILE.EXE,ID or FILE.ICNS, --icon=FILE.ICO or FILE.EXE,ID or FILE.ICNS</dt>
+<dd>If FILE is an .ico file, add the icon to the final
+executable. Otherwise, the syntax 'file.exe,id' to
+extract the icon with the specified id from file.exe
+and add it to the final executable. If FILE is an
+.icns file, add the icon to the final .app bundle on
+Mac OS X (for Mac not yet implemented)</dd>
+</dl>
+<p>Windows specific options:</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--version-file=<var>FILE</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>add a version resource from FILE to the exe</td></tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>-m FILE or XML, --manifest=FILE or XML</dt>
+<dd>add manifest FILE or XML to the exe</dd>
+<dt>-r FILE[,TYPE[,NAME[,LANGUAGE]]], --resource=FILE[,TYPE[,NAME[,LANGUAGE]]]</dt>
+<dd>add/update resource of the given type, name and
+language from FILE to the final executable. FILE can
+be a data file or an exe/dll. For data files, atleast
+TYPE and NAME need to be specified, LANGUAGE defaults
+to 0 or may be specified as wildcard * to update all
+resources of the given TYPE and NAME. For exe/dll
+files, all resources from FILE will be added/updated
+to the final executable if TYPE, NAME and LANGUAGE are
+omitted or specified as wildcard *.Multiple resources
+are allowed, using this option multiple times.</dd>
+</dl>
 <p>[For building with optimization on (like <tt class="docutils literal">Python <span class="pre">-O</span></tt>), see section
 <a class="reference internal" href="#building-optimized">Building Optimized</a>]</p>
-<p>For simple projects, the generated spec file will probably be sufficient. For
-more complex projects, it should be regarded as a template. The spec file is
-actually Python code, and modifying it should be ease. See <a class="reference internal" href="#spec-files">Spec Files</a> for
-details.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
-<div class="section" id="build-your-project">
-<h2><a class="toc-backref" href="#id5">Build your project</a></h2>
+<div class="section" id="a-spec-file-for-your-project">
+<h2><a class="toc-backref" href="#id5">A spec file for your project</a></h2>
+<p>The spec file is the description of what you want <cite>PyInstaller</cite> to do with
+your program. By deafult, <tt class="docutils literal">pyinstaller.py</tt> generates a spec file automatically.
+For simple projects, the generated spec file will be probably sufficient.</p>
+<p>For more complex projects, it should be regarded as a template. The spec file is
+actually Python code, and modifying it should be ease. See <a class="reference internal" href="#spec-files">Spec Files</a> for
+details.</p>
+<p>In the root directory of <cite>PyInstaller</cite>, there is a simple wizard to create simple
+spec files that cover all basic usages:</p>
 <pre class="literal-block">
-python Build.py specfile
+python utils/Makespec.py [--onefile] yourprogram.py
 </pre>
-<p>A <tt class="docutils literal">buildproject</tt> subdirectory will be created in the specfile's directory. This
-is a private workspace so that <tt class="docutils literal">Build.py</tt> can act like a makefile. Any named
-targets will appear in the specfile's directory.</p>
-<p>The generated files will be placed within the <tt class="docutils literal">dist</tt> subdirectory; that's where
-the files you are interested in will be placed.</p>
-<p>In most cases, this will be all you have to do. If not, see <a class="reference internal" href="#when-things-go-wrong">When things go
-wrong</a> and be sure to read the introduction to <a class="reference internal" href="#spec-files">Spec Files</a>.</p>
+<p>Elaborating on Makespec.py, this is the supported command line:</p>
+<pre class="literal-block">
+python utils/Makespec.py [opts] &lt;scriptname&gt; [&lt;scriptname&gt; ...]
+</pre>
+<p>Script <tt class="docutils literal">Makespec.py</tt> shares some options with <tt class="docutils literal">pyinstaller.py</tt>. For allowed options see:</p>
+<pre class="literal-block">
+python utils/Makespec.py --help
+</pre>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="windows-com-server-support">
 <h2><a class="toc-backref" href="#id6">Windows COM Server support</a></h2>
 <p>For Windows COM support execute:</p>
 <pre class="literal-block">
-python MakeCOMServer.py [OPTION] script...
+python MakeComServer.py [OPTION] script...
 </pre>
 <p>This will generate a new script <tt class="docutils literal">drivescript.py</tt> and a spec file for the script.</p>
 <p>These options are allowed:</p>
@@ -329,7 +405,7 @@ o = win32com.client.Dispatch(progid,
 <p>There are two facets to running optimized: gathering <tt class="docutils literal">.pyo</tt>'s, and setting the
 <tt class="docutils literal">Py_OptimizeFlag</tt>. Installer will gather <tt class="docutils literal">.pyo</tt>'s if it is run optimized:</p>
 <pre class="literal-block">
-python -O Build.py ...
+python -O pyinstaller.py ...
 </pre>
 <p>The <tt class="docutils literal">Py_OptimizeFlag</tt> will be set if you use a <tt class="docutils literal"><span class="pre">('O','','OPTION')</span></tt> in one of
 the <tt class="docutils literal">TOCs</tt> building the <tt class="docutils literal">EXE</tt>:</p>
@@ -352,7 +428,7 @@ generated by Microsoft Visual Studio .NET 2003 (or the equivalent free
 toolkit available for download). This is especially worrisome for users of
 Python 2.4+, where most extensions (and Python itself) are compiled with that
 compiler. This issue has been fixed in later beta versions of UPX, so you
-will need at least UPX 1.92 beta. <a class="reference internal" href="#configuring-your-pyinstaller-setup">Configure.py</a> will check this for you
+will need at least UPX 1.92 beta. <tt class="docutils literal">pyinstaller.py</tt> will check this for you
 and complain if you have an older version of UPX and you are using Python 2.4.</p>
 <div class="sidebar">
 <p class="first sidebar-title">UPX and Unix</p>
@@ -467,7 +543,7 @@ You can look at multipackage examples in 'buildtests' dir.</p>
 <div class="section" id="archiveviewer">
 <h2><a class="toc-backref" href="#id13">ArchiveViewer</a></h2>
 <pre class="literal-block">
-python ArchiveViewer.py &lt;archivefile&gt;
+python utils/ArchiveViewer.py &lt;archivefile&gt;
 </pre>
 <p>ArchiveViewer lets you examine the contents of any archive build with
 <cite>PyInstaller</cite> or executable (PYZ, PKG or exe). Invoke it with the target as the
@@ -507,11 +583,11 @@ given, extracted to stdout.</dd>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="bindepend">
-<h2><a class="toc-backref" href="#id14">bindepend</a></h2>
+<h2><a class="toc-backref" href="#id14">BinDepend</a></h2>
 <pre class="literal-block">
-python bindepend.py &lt;executable_or_dynamic_library&gt;
+python utils/BinDepend.py &lt;executable_or_dynamic_library&gt;
 </pre>
-<p>bindepend will analyze the executable you pass to it, and write to stdout all
+<p>BinDepend will analyze the executable you pass to it, and write to stdout all
 its binary dependencies. This is handy to find out which DLLs are required by
 an executable or another DLL. This module is used by <cite>PyInstaller</cite> itself to
 follow the chain of dependencies of binary extensions and make sure that all
@@ -520,7 +596,7 @@ of them get included in the final package.</p>
 <div class="section" id="grabversion-windows">
 <h2><a class="toc-backref" href="#id15">GrabVersion (Windows)</a></h2>
 <pre class="literal-block">
-python GrabVersion.py &lt;executable_with_version_resource&gt;
+python utils/GrabVersion.py &lt;executable_with_version_resource&gt;
 </pre>
 <p>GrabVersion outputs text which can be eval'ed by <tt class="docutils literal">versionInfo.py</tt> to reproduce
 a version resource. Invoke it with the full path name of a Windows executable
@@ -551,14 +627,14 @@ Replacement</a></p>
 <h1><a class="toc-backref" href="#id17">Spec Files</a></h1>
 <div class="section" id="introduction">
 <h2><a class="toc-backref" href="#id18">Introduction</a></h2>
-<p>When you run <tt class="docutils literal">Makespec.py</tt> (documented
-in section <a class="reference internal" href="#create-a-spec-file-for-your-project">Create a spec file for your project</a>), it generates a
+<p>When you run <tt class="docutils literal">utils/Makespec.py</tt> (documented
+in section <a class="reference internal" href="#a-spec-file-for-your-project">A spec file for your project</a>), it generates a
 spec file for you. In fact,
-you can think of <tt class="docutils literal">Makespec.py</tt> just like a wizard that lets you generate
+you can think of <tt class="docutils literal">utils/Makespec.py</tt> just like a wizard that lets you generate
 a standard spec file for most standard usages. But advanced users can
 learn to edit spec files to fully customize PyInstaller behaviour to
 their needs, giving beyond the standard settings provided by the wizard.</p>
-<p>Spec files are in Python syntax. They are evaluated by Build.py. A simplistic
+<p>Spec files are in Python syntax. They are evaluated by pyinstaller.py. A simplistic
 spec file might look like this:</p>
 <pre class="literal-block">
 a = Analysis(['myscript.py'])
@@ -575,7 +651,7 @@ exe = EXE(a.scripts, pyz, name=&quot;myapp.exe&quot;, exclude_binaries=1)
 dist = COLLECT(exe, a.binaries, name=&quot;dist&quot;)
 </pre>
 <p>Note that neither of these examples are realistic. If you want to
-start hacking a spec file, use <tt class="docutils literal">Makespec.py</tt> to create a basic specfile,
+start hacking a spec file, use <tt class="docutils literal">utils/Makespec.py</tt> to create a basic specfile,
 and tweak it (if necessary) from there.</p>
 <p>All of the classes you see above are subclasses of <tt class="docutils literal">Build.Target</tt>. A Target acts
 like a rule in a makefile. It knows enough to cache its last inputs and
@@ -999,9 +1075,10 @@ anal = Analysis(['somedir/myscript.py'],
 <pre class="literal-block">
 ['somedir', 'path/to/thisdir', 'path/to/thatdir'] + sys.path
 </pre>
-<p>You can do the same when running <tt class="docutils literal">Makespec.py</tt>:</p>
+<p>You can do the same when running <tt class="docutils literal">utils/Makespec.py</tt> or <tt class="docutils literal">pyinstaller.py</tt>:</p>
 <pre class="literal-block">
-Makespec.py --paths=path/to/thisdir;path/to/thatdir ...
+utils/Makespec.py --paths=path/to/thisdir;path/to/thatdir ...
+pyinstaller.py --paths=path/to/thisdir;path/to/thatdir ...
 </pre>
 <p>(on *nix, use <tt class="docutils literal">:</tt> as the path separator).</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
@@ -1125,16 +1202,8 @@ os.path.join(os.environ[&quot;_MEIPASS2], relativename))
 </div>
 <div class="section" id="miscellaneous">
 <h1><a class="toc-backref" href="#id41">Miscellaneous</a></h1>
-<div class="section" id="win9xpopen">
-<h2><a class="toc-backref" href="#id42">Win9xpopen</a></h2>
-<p>If you're using popen on Windows and want the code to work on Win9x, you'll
-need to distribute <tt class="docutils literal">win9xpopen.exe</tt> with your app. On older Pythons with
-Win32all, this would apply to Win32pipe and <tt class="docutils literal">win32popenWin9x.exe</tt>. (On yet older
-Pythons, no form of popen worked on Win9x).</p>
-<p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
-</div>
 <div class="section" id="self-extracting-executables">
-<h2><a class="toc-backref" href="#id43">Self-extracting executables</a></h2>
+<h2><a class="toc-backref" href="#id42">Self-extracting executables</a></h2>
 <p>The ELF executable format (Windows, Linux and some others) allows arbitrary
 data to be concatenated to the end of the executable without disturbing its
 functionality. For this reason, a <tt class="docutils literal">CArchive</tt>'s Table of Contents is at the end of
@@ -1145,7 +1214,7 @@ archive is named <tt class="docutils literal">executable.pkg</tt>, and expected 
 Other than that, the process is the same.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 <div class="section" id="one-pass-execution">
-<h3><a class="toc-backref" href="#id44">One Pass Execution</a></h3>
+<h3><a class="toc-backref" href="#id43">One Pass Execution</a></h3>
 <p>In a single directory deployment (<tt class="docutils literal"><span class="pre">--onedir</span></tt>, which is the default), all of the
 binaries are already in the file system. In that case, the embedding app:</p>
 <ul class="simple">
@@ -1161,7 +1230,7 @@ bootstraps the import hooks)</li>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="two-pass-execution">
-<h3><a class="toc-backref" href="#id45">Two Pass Execution</a></h3>
+<h3><a class="toc-backref" href="#id44">Two Pass Execution</a></h3>
 <p>There are a couple situations which require two passes:</p>
 <ul class="simple">
 <li>a <tt class="docutils literal"><span class="pre">--onefile</span></tt> deployment (on Windows, the files can't be cleaned up afterwards
@@ -1202,9 +1271,9 @@ version, you need to have separate installations for each Python version.</p>
 </div>
 </div>
 <div class="section" id="pyinstaller-archives">
-<h1><a class="toc-backref" href="#id46">PyInstaller Archives</a></h1>
+<h1><a class="toc-backref" href="#id45">PyInstaller Archives</a></h1>
 <div class="section" id="archives-introduction">
-<h2><a class="toc-backref" href="#id47">Archives Introduction</a></h2>
+<h2><a class="toc-backref" href="#id46">Archives Introduction</a></h2>
 <p>You know what an archive is: a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils literal">.jar</tt> file, a <tt class="docutils literal">.zip</tt> file. Two kinds
 of archives are used here. One is equivalent to a Java <tt class="docutils literal">.jar</tt> file - it allows
 Python modules to be stored efficiently and, (with some import hooks) imported
@@ -1216,7 +1285,7 @@ making it fairly easy to create new kinds of archives.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="zlibarchive">
-<h2><a class="toc-backref" href="#id48"><tt class="docutils literal">ZlibArchive</tt></a></h2>
+<h2><a class="toc-backref" href="#id47"><tt class="docutils literal">ZlibArchive</tt></a></h2>
 <p>A <tt class="docutils literal">ZlibArchive</tt> contains compressed <tt class="docutils literal">.pyc</tt> (or <tt class="docutils literal">.pyo</tt>) files. The Table of Contents
 is a marshalled dictionary, with the key (the module's name as given in an
 <tt class="docutils literal">import</tt> statement) associated with a seek position and length. Because it is
@@ -1234,7 +1303,7 @@ useful, but if they send you the traceback, at least you can make sense of it.</
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="carchive">
-<h2><a class="toc-backref" href="#id49"><tt class="docutils literal">CArchive</tt></a></h2>
+<h2><a class="toc-backref" href="#id48"><tt class="docutils literal">CArchive</tt></a></h2>
 <p>A <tt class="docutils literal">CArchive</tt> contains whatever you want to stuff into it. It's very much like a
 <tt class="docutils literal">.zip</tt> file. They are easy to create in Python and unpack from C code. <tt class="docutils literal">CArchives</tt>
 can be appended to other files (like ELF and COFF executables, for example).
@@ -1254,7 +1323,7 @@ are used by the self-extracting executables.</p>
 </div>
 </div>
 <div class="section" id="license">
-<h1><a class="toc-backref" href="#id50">License</a></h1>
+<h1><a class="toc-backref" href="#id49">License</a></h1>
 <p>PyInstaller is mainly distributed  under the
 <a class="reference external" href="http://www.pyinstaller.org/browser/trunk/doc/LICENSE.GPL?rev=latest">GPL License</a>
 but it has an exception such that you can use it to compile commercial products.</p>
@@ -1275,7 +1344,7 @@ words, any modifications to will <em>have</em> to be distributed under GPL.</li>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id51">Appendix</a></h1>
+<h1><a class="toc-backref" href="#id50">Appendix</a></h1>
 <div class="sidebar">
 <p class="first sidebar-title">You can stop reading here...</p>
 <p class="last">... if you are not interested in technical details. This appendix contains
@@ -1283,14 +1352,14 @@ insights of the internal workings of <cite>PyInstaller</cite>, and you do not ne
 information unless you plan to work on <cite>PyInstaller</cite> itself.</p>
 </div>
 <div class="section" id="building-the-bootloaders">
-<h2><a class="toc-backref" href="#id52">Building the bootloaders</a></h2>
+<h2><a class="toc-backref" href="#id51">Building the bootloaders</a></h2>
 <p>PyInstaller comes with binary bootloaders for most platforms, shipped
 in /your/path/to/pyinstaller//support/loader. If you need to build the bootloader
 for your own platform (either because your platform is not officially
 supported, or because you tweaked bootloader's source code), you can
 follow this guide.</p>
 <div class="section" id="development-tools">
-<h3><a class="toc-backref" href="#id53">Development tools</a></h3>
+<h3><a class="toc-backref" href="#id52">Development tools</a></h3>
 <p>On Debian/Ubuntu systems, you can run the following lines to install everything
 required:</p>
 <pre class="literal-block">
@@ -1319,7 +1388,7 @@ following locations:</p>
 </ul>
 </div>
 <div class="section" id="building">
-<h3><a class="toc-backref" href="#id54">Building</a></h3>
+<h3><a class="toc-backref" href="#id53">Building</a></h3>
 <p>On Windows, when using MinGW, it is needed to add <tt class="docutils literal">PATH_TO_MINGW\bin</tt>
 to your system <tt class="docutils literal">PATH</tt>. variable. In command prompt before building
 bootloader run for example:</p>
@@ -1341,7 +1410,7 @@ which are the bootloaders.</p>
 <tt class="docutils literal">waf</tt> is the one whose configuration is used.</p>
 </div>
 <div class="section" id="linux-standard-base-lsb-binary">
-<h3><a class="toc-backref" href="#id55">Linux Standard Base (LSB) binary</a></h3>
+<h3><a class="toc-backref" href="#id54">Linux Standard Base (LSB) binary</a></h3>
 <p>By default, the bootloaders on Linux are LSB binaries.</p>
 <p>LSB is a set of open standards that should increase compatibility among Linux
 distributions. <cite>PyInstaller</cite> is able produce bootloader as LSB binary in order
@@ -1388,7 +1457,7 @@ not be LSB binaries.</p>
 </div>
 </div>
 <div class="section" id="mf-py-a-modulefinder-replacement">
-<h2><a class="toc-backref" href="#id56"><tt class="docutils literal">mf.py</tt>: A Modulefinder Replacement</a></h2>
+<h2><a class="toc-backref" href="#id55"><tt class="docutils literal">mf.py</tt>: A Modulefinder Replacement</a></h2>
 <p>Module <tt class="docutils literal">mf</tt> is modelled after <tt class="docutils literal">iu</tt>.</p>
 <p>It also uses <tt class="docutils literal">ImportDirectors</tt> and <tt class="docutils literal">Owners</tt> to partition the import name space.
 Except for the fact that these return <tt class="docutils literal">Module</tt> instances instead of real module
@@ -1396,7 +1465,7 @@ objects, they are identical.</p>
 <p>Instead of an <tt class="docutils literal">ImportManager</tt>, <tt class="docutils literal">mf</tt> has an <tt class="docutils literal">ImportTracker</tt> managing things.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 <div class="section" id="importtracker">
-<h3><a class="toc-backref" href="#id57">ImportTracker</a></h3>
+<h3><a class="toc-backref" href="#id56">ImportTracker</a></h3>
 <p><tt class="docutils literal">ImportTracker</tt> can be called in two ways: <tt class="docutils literal">analyze_one(name, importername=None)</tt>
 or <tt class="docutils literal">analyze_r(name, importername=None)</tt>. The second method does what modulefinder
 does - it recursively finds all the module names that importing name would
@@ -1407,7 +1476,7 @@ involve recursion), it deserves some explanation.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="analyze-one">
-<h3><a class="toc-backref" href="#id58"><tt class="docutils literal">analyze_one()</tt></a></h3>
+<h3><a class="toc-backref" href="#id57"><tt class="docutils literal">analyze_one()</tt></a></h3>
 <p>When a name is imported, there are structural and dynamic effects. The dynamic
 effects are due to the execution of the top-level code in the module (or
 modules) that get imported. The structural effects have to do with whether the
@@ -1422,7 +1491,7 @@ for them.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="module-classes">
-<h3><a class="toc-backref" href="#id59">Module Classes</a></h3>
+<h3><a class="toc-backref" href="#id58">Module Classes</a></h3>
 <p>There are Module subclasses for builtins, extensions, packages and (normal)
 modules. Besides the normal module object attributes, they have an attribute
 imports. For packages and normal modules, imports is a list populated by
@@ -1437,7 +1506,7 @@ it's hooks mechanism.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="code-scanning">
-<h3><a class="toc-backref" href="#id60">code scanning</a></h3>
+<h3><a class="toc-backref" href="#id59">code scanning</a></h3>
 <p>Like modulefinder, <tt class="docutils literal">mf</tt> scans the byte code of a module, looking for imports. In
 addition, <tt class="docutils literal">mf</tt> will pick out a module's <tt class="docutils literal">__all__</tt> attribute, if it is built as a
 list of constant names. This means that if a package declares an <tt class="docutils literal">__all__</tt> list
@@ -1451,7 +1520,7 @@ whether the import is inside a condition (conditional imports).</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="hooks">
-<h3><a class="toc-backref" href="#id61">Hooks</a></h3>
+<h3><a class="toc-backref" href="#id60">Hooks</a></h3>
 <p>In modulefinder, scanning the code takes the place of executing the code
 object. <tt class="docutils literal">mf</tt> goes further and allows a module to be hooked (after it has been
 scanned, but before analyze_one is done with it). A hook is a module named
@@ -1482,7 +1551,7 @@ called before looking at the others - that way it can, for example, test
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="warnings">
-<h3><a class="toc-backref" href="#id62">Warnings</a></h3>
+<h3><a class="toc-backref" href="#id61">Warnings</a></h3>
 <p><tt class="docutils literal">ImportTracker</tt> has a <tt class="docutils literal">getwarnings()</tt> method that returns all the warnings
 accumulated by the instance, and by the <tt class="docutils literal">Module</tt> instances in its modules dict.
 Generally, it is <tt class="docutils literal">ImportTracker</tt> who will accumulate the warnings generated
@@ -1493,7 +1562,7 @@ warnings, but not all of them.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="cross-reference">
-<h3><a class="toc-backref" href="#id63">Cross Reference</a></h3>
+<h3><a class="toc-backref" href="#id62">Cross Reference</a></h3>
 <p>Once a full analysis (that is, an <tt class="docutils literal">analyze_r</tt> call) has been done, you can get a
 cross reference by using <tt class="docutils literal">getxref()</tt>. This returns a list of tuples. Each tuple
 is <tt class="docutils literal">(modulename, importers)</tt>, where importers is a list of the (fully qualified)
@@ -1502,7 +1571,7 @@ importers list are sorted.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="mf-usage">
-<h3><a class="toc-backref" href="#id64">mf Usage</a></h3>
+<h3><a class="toc-backref" href="#id63">mf Usage</a></h3>
 <p>A simple example follows:</p>
 <blockquote>
 <pre class="doctest-block">
@@ -1551,7 +1620,7 @@ W: delayed  eval hack detected at line 418
 </div>
 </div>
 <div class="section" id="iu-py-an-imputil-replacement">
-<span id="iu-py"></span><h2><a class="toc-backref" href="#id65"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a></h2>
+<span id="iu-py"></span><h2><a class="toc-backref" href="#id64"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a></h2>
 <p>Module <tt class="docutils literal">iu</tt> grows out of the pioneering work that Greg Stein did with <tt class="docutils literal">imputil</tt>
 (actually, it includes some verbatim <tt class="docutils literal">imputil</tt> code, but since Greg didn't
 copyright it, we won't mention it). Both modules can take over Python's
@@ -1565,7 +1634,7 @@ and hides all the semantic complexities of a Python import request from it's
 delegates.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 <div class="section" id="importmanager">
-<h3><a class="toc-backref" href="#id66"><tt class="docutils literal">ImportManager</tt></a></h3>
+<h3><a class="toc-backref" href="#id65"><tt class="docutils literal">ImportManager</tt></a></h3>
 <p><tt class="docutils literal">ImportManager</tt> formalizes the concept of a metapath. This concept implicitly
 exists in native Python in that builtins and frozen modules are searched
 before <tt class="docutils literal">sys.path</tt>, (on Windows there's also a search of the registry while on
@@ -1582,7 +1651,7 @@ date; to handle the fromlist and return the correct module object.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="importdirector">
-<h3><a class="toc-backref" href="#id67"><tt class="docutils literal">ImportDirector</tt></a></h3>
+<h3><a class="toc-backref" href="#id66"><tt class="docutils literal">ImportDirector</tt></a></h3>
 <p>An <tt class="docutils literal">ImportDirector</tt> just needs to respond to <tt class="docutils literal">getmod(name)</tt> by returning a module
 object or <tt class="docutils literal">None</tt>. As you will see, an <tt class="docutils literal">ImportDirector</tt> can consider name to be
 atomic - it has no need to examine name to see if it is dotted.</p>
@@ -1590,7 +1659,7 @@ atomic - it has no need to examine name to see if it is dotted.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="pathimportdirector">
-<h3><a class="toc-backref" href="#id68"><tt class="docutils literal">PathImportDirector</tt></a></h3>
+<h3><a class="toc-backref" href="#id67"><tt class="docutils literal">PathImportDirector</tt></a></h3>
 <p>The <tt class="docutils literal">PathImportDirector</tt> subclass manages a list of names - most notably,
 <tt class="docutils literal">sys.path</tt>. To do so, it maintains a shadowpath - a dictionary mapping the names
 on its pathlist (eg, <tt class="docutils literal">sys.path</tt>) to their associated <tt class="docutils literal">Owners</tt>. (It could do this
@@ -1601,7 +1670,7 @@ your imports are satisfied by the first two elements of <tt class="docutils lite
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="owner">
-<h3><a class="toc-backref" href="#id69"><tt class="docutils literal">Owner</tt></a></h3>
+<h3><a class="toc-backref" href="#id68"><tt class="docutils literal">Owner</tt></a></h3>
 <p>An <tt class="docutils literal">Owner</tt> is much like an <tt class="docutils literal">ImportDirector</tt> but manages a much more concrete piece
 of turf. For example, a <tt class="docutils literal">DirOwner</tt> manages one directory. Since there are no
 other officially recognized filesystem-like namespaces for importing, that's
@@ -1619,7 +1688,7 @@ package module (an <tt class="docutils literal">__init__.py</tt>).</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="packages">
-<h3><a class="toc-backref" href="#id70">Packages</a></h3>
+<h3><a class="toc-backref" href="#id69">Packages</a></h3>
 <p>To make this work, <tt class="docutils literal">Owners</tt> need to recognize when a module is a package. For a
 <tt class="docutils literal">DirOwner</tt>, this means that name is a subdirectory which contains an <tt class="docutils literal">__init__.py</tt>.
 The <tt class="docutils literal">__init__</tt> module is loaded and its <tt class="docutils literal">__path__</tt> is initialized with the
@@ -1637,7 +1706,7 @@ perfectly easy to route the request back up the package tree to the archive
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="possibilities">
-<h3><a class="toc-backref" href="#id71">Possibilities</a></h3>
+<h3><a class="toc-backref" href="#id70">Possibilities</a></h3>
 <p>Let's say we want to import from zip files. So, we subclass <tt class="docutils literal">Owner</tt>. The
 <tt class="docutils literal">__init__</tt> method should take a filename, and raise a <tt class="docutils literal">ValueError</tt> if the file is
 not an acceptable <tt class="docutils literal">.zip</tt> file, (when a new name is encountered on <tt class="docutils literal">sys.path</tt> or a
@@ -1652,7 +1721,7 @@ age with it's <tt class="docutils literal">__subimporter__</tt>).</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="compatibility">
-<h3><a class="toc-backref" href="#id72">Compatibility</a></h3>
+<h3><a class="toc-backref" href="#id71">Compatibility</a></h3>
 <p>This code has been tested with the PyXML, mxBase and Win32 packages, covering
 over a dozen import hacks from manipulations of <tt class="docutils literal">__path__</tt> to replacing a module
 in <tt class="docutils literal">sys.modules</tt> with a different one. Emulation of Python's native import is
@@ -1661,7 +1730,7 @@ nearly exact, including the names recorded in <tt class="docutils literal">sys.m
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="performance">
-<h3><a class="toc-backref" href="#id73">Performance</a></h3>
+<h3><a class="toc-backref" href="#id72">Performance</a></h3>
 <p>In most cases, <tt class="docutils literal">iu</tt> is slower than builtin import (by 15 to 20%) but faster than
 <tt class="docutils literal">imputil</tt> (by 15 to 20%). By inserting archives at the front of <tt class="docutils literal">sys.path</tt>
 containing the standard lib and the package being tested, this can be reduced
@@ -1670,7 +1739,7 @@ more can be shaved off by manipulating the <tt class="docutils literal">ImportMa
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="limitations">
-<h3><a class="toc-backref" href="#id74">Limitations</a></h3>
+<h3><a class="toc-backref" href="#id73">Limitations</a></h3>
 <p>This module makes no attempt to facilitate policy import hacks. It is easy to
 implement certain kinds of policies within a particular domain, but
 fundamentally iu works by dividing up the import namespace into independent
@@ -1688,7 +1757,7 @@ easy to implement.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="iu-usage">
-<h3><a class="toc-backref" href="#id75">iu Usage</a></h3>
+<h3><a class="toc-backref" href="#id74">iu Usage</a></h3>
 <p>Here's a simple example of using <tt class="docutils literal">iu</tt> as a builtin import replacement.</p>
 <blockquote>
 <pre class="doctest-block">
@@ -1711,7 +1780,7 @@ easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2011-06-14 07:49 UTC.
+Generated on: 2011-06-29 21:45 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
