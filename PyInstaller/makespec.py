@@ -190,17 +190,19 @@ def __add_options(parser):
     g.add_option("-w", "--windowed", "--noconsole", dest="console",
                  action="store_false",
                  help="use a windowed subsystem executable")
+    g.add_option("-i", "--icon", dest="icon_file",
+                 metavar="FILE.ICO or FILE.EXE,ID or FILE.ICNS",
+                 help="If FILE is an .ico file, add the icon to the final "
+                      "executable. Otherwise, the syntax 'file.exe,id' to "
+                      "extract the icon with the specified id "
+                      "from file.exe and add it to the final executable. "
+                      "If FILE is an .icns file, add the icon to the final "
+                      ".app bundle on Mac OS X (for Mac not yet implemented)")
 
     g = parser.add_option_group('Windows specific options')
     g.add_option("--version-file",
                  dest="version_file", metavar="FILE",
                  help="add a version resource from FILE to the exe")
-    g.add_option("-i", "--icon", dest="icon_file",
-                 metavar="FILE.ICO or FILE.EXE,ID",
-                 help="If FILE is an .ico file, add the icon to the final "
-                      "executable. Otherwise, the syntax 'file.exe,id' to "
-                      "extract the icon with the specified id "
-                      "from file.exe and add it to the final executable")
     g.add_option("-m", "--manifest", metavar="FILE or XML",
                  help="add manifest FILE or XML to the exe")
     g.add_option("-r", "--resource", default=[], dest="resources",
