@@ -30,143 +30,189 @@ to these scripts short (don't install in a deeply nested subdirectory).
 
 |GOBACK|_
 
-Configuring your PyInstaller setup
-----------------------------------
+
+Build your project
+------------------
+
+[For Windows COM server support, see section `Windows COM Server Support`_]
 
 In the |install_path| directory, run::
 
-     python Configure.py
+      python pyinstaller.py [opts] yourprogram.py
 
-This will configure PyInstaller usage based on the current system,
-and save some information into ``config.dat`` that would otherwise
-be recomputed every time.
+A ``yourprogram`` subdirectory will be created in the |install_path| directory.
+If you are not in |install_path| directory, directories ``build`` and ``dist``
+will be created in your current working directory.
 
-It can be rerun at any time if your configuration changes. It must be
-run at least once before trying to build anything.
+The generated files will be placed within the ``dist`` subdirectory; that's where
+the files you are interested in will be placed.
 
-|PyInstaller| is dependant to the version of python you configure it for. In
-other words, you will need a separate copy of |PyInstaller| for each Python
-version you wish to work with *or* you'll need to rerun ``Configure.py`` every
-time you switch the Python version).
+If you have created a spec file for your project then in the |install_path|
+directory run::
 
+       python pyinstaller.py [opts] yourspecfile.spec
+
+If you like default settings and everything is working, this will be all
+you have to do. If not, see `Allowed OPTIONS`_, `When things go wrong`_ and
+be sure to read the introduction to `Spec Files`_.
 
 |GOBACK|_
 
 
-Create a spec file for your project
------------------------------------
+Allowed OPTIONS
+---------------
 
-[For Windows COM server support, see section `Windows COM Server Support`_]
+By default, ``pyinstaller.py`` creates a distribution directory containing the main
+executable and the dynamic libraries. The option ``--onefile`` specifies that you want
+PyInstaller to build a single file with everything inside.
 
-This is the first step to do. The spec file is the description of what you
-want |PyInstaller| to do with your program. In the root directory of |PyInstaller|,
-there is a simple wizard to create simple spec files that cover all basic usages::
+The syntax to use ``pyinstaller.py`` is the following::
 
-       python Makespec.py [--onefile] yourprogram.py
+       python pyinstaller.py [opts] <scriptname> [ <scriptname> ...] | <specfile>
 
-By deafult, ``Makespec.py`` generates a spec file that tells |PyInstaller| to
-create a distribution directory contains the main executable and the dynamic
-libraries. The option ``--onefile`` specifies that you want PyInstaller to build
-a single file with everything inside.
+Allowed OPTIONS are:
 
-Elaborating on Makespec.py, this is the supported command line::
+-h, --help
+    show this help message and exit
 
-       python Makespec.py [opts] <scriptname> [<scriptname> ...]
+-v, --version
+    show program version
 
-Where allowed OPTIONS are:
+--upx-dir=UPX_DIR
+    Directory containing UPX.
+
+-C CONFIGFILENAME, --configfile=CONFIGFILENAME
+    Name of generated configfile (default:
+    /home/martin/.local/share/pyinstaller/config.dat)
+
+--buildpath=BUILDPATH
+    Buildpath (default:
+    SPECPATH/build/pyi.TARGET_PLATFORM/SPECNAME)
+
+-y, --noconfirm
+    Remove output directory (default:
+    SPECPATH/dist/SPECNAME) without confirmation
+
+What to generate:
 
 -F, --onefile
-    produce a single file deployment (see below).
+    create a single file deployment
 
 -D, --onedir
-    produce a single directory deployment (default).
-
--K, --tk
-    include TCL/TK in the deployment.
-
--a, --ascii
-    do not include encodings. The default (on Python versions with unicode
-    support) is now to include all encodings.
-
--d, --debug
-    use debug (verbose) versions of the executables.
-
--w, --windowed, --noconsole
-    Use the Windows subsystem executable, which does not open
-    the console when the program is launched. **(Windows only)**
-
--c, --nowindowed, --console
-    Use the console subsystem executable. This is the default. **(Windows only)**
-
--s, --strip
-    the executable and all shared libraries will be run through strip. Note
-    that cygwin's strip tends to render normal Win32 dlls unusable.
-
--X, --upx
-    if you have UPX installed (detected by Configure), this will use it to
-    compress your executable (and, on Windows, your dlls). See note below.
+    create a single directory deployment (default)
 
 -o DIR, --out=DIR
     create the spec file in *directory*. If not specified, and the current
     directory is Installer's root directory, an output subdirectory will be
     created. Otherwise the current directory is used.
 
+-n NAME, --name=NAME
+    optional *name* to assign to the project (from which the spec file name is
+    generated). If omitted, the basename of the (first) script is used.
+
+What to bundle, where to search:
+
 -p DIR, --paths=DIR
     set base path for import (like using PYTHONPATH). Multiple directories are
     allowed, separating them with the path separator (';' under Windows, ':'
     under Linux), or using this option multiple times.
 
---icon=<FILE.ICO>
-    add *file.ico* to the executable's resources. **(Windows only)**
+-K, --tk
+    include TCL/TK in the deployment
 
---icon=<FILE.EXE,N>
-    add the *n*-th incon in *file.exe* to the executable's resources. **(Windows
-    only)**
+-a, --ascii
+    do NOT include unicode encodings (default: included if
+    available)
 
--v FILE, --version=FILE
-    add verfile as a version resource to the executable. **(Windows only)**
+How to generate:
 
--n NAME, --name=NAME
-    optional *name* to assign to the project (from which the spec file name is
-    generated). If omitted, the basename of the (first) script is used.
+-d, --debug
+    use the debug (verbose) build of the executable
+
+-s, --strip
+    the executable and all shared libraries will be run through strip. Note
+    that cygwin's strip tends to render normal Win32 dlls unusable.
+
+-X, --noupx
+    do not use UPX even if available (works differently
+    between Windows and \*nix)
+
+Windows and Mac OS X specific options:
+
+-c, --console, --nowindowed
+    use a console subsystem executable (default)
+
+-w, --windowed, --noconsole
+    use a windowed subsystem executable, which on Windows
+    does not open the console when the program is launched.
+
+-i FILE.ICO or FILE.EXE,ID or FILE.ICNS, --icon=FILE.ICO or FILE.EXE,ID or FILE.ICNS
+    If FILE is an .ico file, add the icon to the final
+    executable. Otherwise, the syntax 'file.exe,id' to
+    extract the icon with the specified id from file.exe
+    and add it to the final executable. If FILE is an
+    .icns file, add the icon to the final .app bundle on
+    Mac OS X (for Mac not yet implemented)
+
+Windows specific options:
+
+--version-file=FILE
+    add a version resource from FILE to the exe
+
+-m FILE or XML, --manifest=FILE or XML
+    add manifest FILE or XML to the exe
+
+-r FILE[,TYPE[,NAME[,LANGUAGE]]], --resource=FILE[,TYPE[,NAME[,LANGUAGE]]]
+    add/update resource of the given type, name and
+    language from FILE to the final executable. FILE can
+    be a data file or an exe/dll. For data files, atleast
+    TYPE and NAME need to be specified, LANGUAGE defaults
+    to 0 or may be specified as wildcard * to update all
+    resources of the given TYPE and NAME. For exe/dll
+    files, all resources from FILE will be added/updated
+    to the final executable if TYPE, NAME and LANGUAGE are
+    omitted or specified as wildcard \*.Multiple resources
+    are allowed, using this option multiple times.
 
 [For building with optimization on (like ``Python -O``), see section
 `Building Optimized`_]
 
-For simple projects, the generated spec file will probably be sufficient. For
-more complex projects, it should be regarded as a template. The spec file is
+|GOBACK|_
+
+
+A spec file for your project
+-----------------------------------
+
+The spec file is the description of what you want |PyInstaller| to do with
+your program. By deafult, ``pyinstaller.py`` generates a spec file automatically.
+For simple projects, the generated spec file will be probably sufficient.
+
+For more complex projects, it should be regarded as a template. The spec file is
 actually Python code, and modifying it should be ease. See `Spec Files`_ for
 details.
 
+In the root directory of |PyInstaller|, there is a simple wizard to create simple
+spec files that cover all basic usages::
+
+       python utils/Makespec.py [--onefile] yourprogram.py
+
+Elaborating on Makespec.py, this is the supported command line::
+
+       python utils/Makespec.py [opts] <scriptname> [<scriptname> ...]
+
+Script ``Makespec.py`` shares some options with ``pyinstaller.py``. For allowed options see::
+
+       python utils/Makespec.py --help
 
 |GOBACK|_
 
-Build your project
-------------------
-
-::
-
-      python Build.py specfile
-
-
-A ``buildproject`` subdirectory will be created in the specfile's directory. This
-is a private workspace so that ``Build.py`` can act like a makefile. Any named
-targets will appear in the specfile's directory.
-
-The generated files will be placed within the ``dist`` subdirectory; that's where
-the files you are interested in will be placed.
-
-In most cases, this will be all you have to do. If not, see `When things go
-wrong`_ and be sure to read the introduction to `Spec Files`_.
-
-|GOBACK|_
 
 Windows COM Server support
 --------------------------
 
 For Windows COM support execute::
 
-       python MakeCOMServer.py [OPTION] script...
+       python MakeComServer.py [OPTION] script...
 
 
 This will generate a new script ``drivescript.py`` and a spec file for the script.
@@ -215,7 +261,7 @@ Building Optimized
 There are two facets to running optimized: gathering ``.pyo``'s, and setting the
 ``Py_OptimizeFlag``. Installer will gather ``.pyo``'s if it is run optimized::
 
-       python -O Build.py ...
+       python -O pyinstaller.py ...
 
 
 The ``Py_OptimizeFlag`` will be set if you use a ``('O','','OPTION')`` in one of
@@ -387,7 +433,7 @@ ArchiveViewer
 
 ::
 
-      python ArchiveViewer.py <archivefile>
+      python utils/ArchiveViewer.py <archivefile>
 
 
 ArchiveViewer lets you examine the contents of any archive build with
@@ -425,14 +471,14 @@ Futhermore ArchiveViewer has some simple console commands:
 |GOBACK|_
 
 
-bindepend
+BinDepend
 ---------
 
 ::
 
-    python bindepend.py <executable_or_dynamic_library>
+    python utils/BinDepend.py <executable_or_dynamic_library>
 
-bindepend will analyze the executable you pass to it, and write to stdout all
+BinDepend will analyze the executable you pass to it, and write to stdout all
 its binary dependencies. This is handy to find out which DLLs are required by
 an executable or another DLL. This module is used by |PyInstaller| itself to
 follow the chain of dependencies of binary extensions and make sure that all
@@ -444,7 +490,7 @@ GrabVersion (Windows)
 
 ::
 
-      python GrabVersion.py <executable_with_version_resource>
+      python utils/GrabVersion.py <executable_with_version_resource>
 
 
 GrabVersion outputs text which can be eval'ed by ``versionInfo.py`` to reproduce
@@ -483,15 +529,15 @@ Spec Files
 Introduction
 ------------
 
-When you run ``Makespec.py`` (documented
+When you run ``utils/Makespec.py`` (documented
 in section `Create a spec file for your project`_), it generates a
 spec file for you. In fact,
-you can think of ``Makespec.py`` just like a wizard that lets you generate
+you can think of ``utils/Makespec.py`` just like a wizard that lets you generate
 a standard spec file for most standard usages. But advanced users can
 learn to edit spec files to fully customize PyInstaller behaviour to
 their needs, giving beyond the standard settings provided by the wizard.
 
-Spec files are in Python syntax. They are evaluated by Build.py. A simplistic
+Spec files are in Python syntax. They are evaluated by pyinstaller.py. A simplistic
 spec file might look like this::
 
       a = Analysis(['myscript.py'])
@@ -510,7 +556,7 @@ A simplistic single directory deployment might look like this::
 
 
 Note that neither of these examples are realistic. If you want to
-start hacking a spec file, use ``Makespec.py`` to create a basic specfile,
+start hacking a spec file, use ``utils/Makespec.py`` to create a basic specfile,
 and tweak it (if necessary) from there.
 
 All of the classes you see above are subclasses of ``Build.Target``. A Target acts
@@ -944,9 +990,10 @@ In this case, the ``Analysis`` will have a search path::
        ['somedir', 'path/to/thisdir', 'path/to/thatdir'] + sys.path
 
 
-You can do the same when running ``Makespec.py``::
+You can do the same when running ``utils/Makespec.py`` or ``pyinstaller.py``::
 
-       Makespec.py --paths=path/to/thisdir;path/to/thatdir ...
+       utils/Makespec.py --paths=path/to/thisdir;path/to/thatdir ...
+       pyinstaller.py --paths=path/to/thisdir;path/to/thatdir ...
 
 
 (on \*nix, use ``:`` as the path separator).
@@ -1090,16 +1137,6 @@ also able to reconstruct directory trees). The work directory is best found by
 
 Miscellaneous
 +++++++++++++
-
-Win9xpopen
-----------
-
-If you're using popen on Windows and want the code to work on Win9x, you'll
-need to distribute ``win9xpopen.exe`` with your app. On older Pythons with
-Win32all, this would apply to Win32pipe and ``win32popenWin9x.exe``. (On yet older
-Pythons, no form of popen worked on Win9x).
-
-|GOBACK|_
 
 Self-extracting executables
 ---------------------------
