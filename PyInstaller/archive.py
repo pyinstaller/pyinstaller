@@ -425,7 +425,7 @@ class PYZOwner(iu.Owner):
         except AttributeError:
             raise ImportError, "PYZ entry '%s' (%s) is not a valid code object" % (nm, repr(co))
         if ispkg:
-            if _environ.has_key('_MEIPASS2'):
+            if '_MEIPASS2' in _environ:
                 localpath = _environ['_MEIPASS2'][:-1]
             else:
                 localpath = iu._os_path_dirname(self.path)

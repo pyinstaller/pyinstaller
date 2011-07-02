@@ -54,6 +54,7 @@ NOCONFIRM = None
 
 rthooks = {}
 
+
 def system(cmd):
     # This workaround is required because NT shell doesn't work with commands
     # that start with double quotes (required if there are spaces inside the
@@ -61,6 +62,7 @@ def system(cmd):
     if is_win:
         cmd = 'echo on && ' + cmd
     os.system(cmd)
+
 
 def _save_data(filename, data):
     dirname = os.path.dirname(filename)
@@ -70,8 +72,10 @@ def _save_data(filename, data):
     pprint.pprint(data, outf)
     outf.close()
 
+
 def _load_data(filename):
-    return eval(open(filename, 'r').read().replace("\r\n","\n"))
+    return eval(open(filename, 'r').read().replace("\r\n", "\n"))
+
 
 def setupUPXFlags():
     f = os.environ.get("UPX", "")
@@ -86,14 +90,17 @@ def setupUPXFlags():
     f = "--best " + f
     os.environ["UPX"] = f
 
+
 def mtime(fnm):
     try:
         return os.stat(fnm)[8]
     except:
         return 0
 
+
 def absnormpath(apath):
     return os.path.abspath(os.path.normpath(apath))
+
 
 def compile_pycos(toc):
     """Given a TOC or equivalent list of tuples, generates all the required
@@ -145,6 +152,7 @@ def compile_pycos(toc):
 
     return new_toc
 
+
 def addSuffixToExtensions(toc):
     """
     Returns a new TOC with proper library suffix for EXTENSION items.
@@ -170,6 +178,7 @@ def _check_guts_eq(attr, old, new, last_build):
         return True
     return False
 
+
 def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     """
     rebuild is required if mtimes of files listed in old toc are newer
@@ -186,6 +195,7 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
             return True
     return False
 
+
 def _check_guts_toc(attr, old, toc, last_build, pyc=0):
     """
     rebuild is required if either toc content changed if mtimes of
@@ -193,8 +203,9 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
     if pyc=1, check for .py files, too
     """
-    return    _check_guts_eq       (attr, old, toc, last_build) \
+    return    _check_guts_eq(attr, old, toc, last_build) \
            or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc)
+
 
 def _rmdir(path):
     """
@@ -242,6 +253,7 @@ def _rmdir(path):
             print 'I: User aborted'
             sys.exit(1)
 
+
 def check_egg(pth):
     """Check if path points to a file inside a python egg file (or to an egg
        directly)."""
@@ -255,7 +267,7 @@ def check_egg(pth):
         sep = "/"
         if is_win:
             sep = "\\"
-    for i,name in zip(range(0,len(components)), components):
+    for i, name in zip(range(0, len(components)), components):
         if name.lower().endswith(".egg"):
             eggpth = sep.join(components[:i + 1])
             if os.path.isfile(eggpth):
@@ -265,8 +277,10 @@ def check_egg(pth):
 
 #--
 
+
 class Target:
     invcnum = 0
+
     def __init__(self):
         # Get a unique number to avoid conflicts between toc objects
         self.invcnum = Target.invcnum
@@ -286,7 +300,7 @@ class Target:
     def check_guts(self, last_build):
         pass
 
-    def get_guts(self, last_build, missing ='missing or bad'):
+    def get_guts(self, last_build, missing='missing or bad'):
         """
         returns None if guts have changed
         """
@@ -315,7 +329,7 @@ class Analysis(Target):
         self.inputs = scripts
         for script in scripts:
             if not os.path.exists(script):
-                raise ValueError, "script '%s' not found" % script
+                raise ValueError("script '%s' not found" % script)
         self.pathex = []
         if pathex:
             for path in pathex:
@@ -331,16 +345,16 @@ class Analysis(Target):
         self.dependencies = TOC()
         self.__postinit__()
 
-    GUTS = (('inputs',    _check_guts_eq),
-            ('pathex',    _check_guts_eq),
+    GUTS = (('inputs', _check_guts_eq),
+            ('pathex', _check_guts_eq),
             ('hookspath', _check_guts_eq),
-            ('excludes',  _check_guts_eq),
-            ('scripts',   _check_guts_toc_mtime),
-            ('pure',      lambda *args: apply(_check_guts_toc_mtime,
-                                              args, {'pyc': 1 }   )),
-            ('binaries',  _check_guts_toc_mtime),
-            ('zipfiles',  _check_guts_toc_mtime),
-            ('datas',     _check_guts_toc_mtime),
+            ('excludes', _check_guts_eq),
+            ('scripts', _check_guts_toc_mtime),
+            ('pure', lambda *args: apply(_check_guts_toc_mtime,
+                                              args, {'pyc': 1})),
+            ('binaries', _check_guts_toc_mtime),
+            ('zipfiles', _check_guts_toc_mtime),
+            ('datas', _check_guts_toc_mtime),
             )
 
     def check_guts(self, last_build):
@@ -376,7 +390,7 @@ class Analysis(Target):
         ###################################################
         # Scan inputs and prepare:
         dirs = {}  # input directories
-        pynms = [] # python filenames with no extension
+        pynms = []  # python filenames with no extension
         for script in self.inputs:
             if not os.path.exists(script):
                 print "Analysis: script %s not found!" % script
@@ -390,10 +404,10 @@ class Analysis(Target):
             pynms.append(pynm)
         ###################################################
         # Initialize analyzer and analyze scripts
-        analyzer = mf.ImportTracker(dirs.keys()+paths, self.hookspath,
+        analyzer = mf.ImportTracker(dirs.keys() + paths, self.hookspath,
                                     self.excludes)
         #print analyzer.path
-        scripts = [] # will contain scripts to bundle
+        scripts = []  # will contain scripts to bundle
         for i in range(len(self.inputs)):
             script = self.inputs[i]
             print "Analyzing:", script
@@ -402,14 +416,14 @@ class Analysis(Target):
         ###################################################
         # Fills pure, binaries and rthookcs lists to TOC
         pure = []     # pure python modules
-        binaries = [] # binaries to bundle
-        zipfiles = [] # zipfiles to bundle
+        binaries = []  # binaries to bundle
+        zipfiles = []  # zipfiles to bundle
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
         for modnm, mod in analyzer.modules.items():
             # FIXME: why can we have a mod == None here?
             if mod is not None:
-                hooks = findRTHook(modnm)  #XXX
+                hooks = findRTHook(modnm)  # XXX
                 if hooks:
                     rthooks.extend(hooks)
                 datas.extend(mod.datas)
@@ -461,7 +475,7 @@ class Analysis(Target):
         self.binaries = TOC(binaries)
         self.zipfiles = TOC(zipfiles)
         self.datas = TOC(datas)
-        try: # read .toc
+        try:  # read .toc
             oldstuff = _load_data(self.out)
         except:
             oldstuff = None
@@ -474,7 +488,7 @@ class Analysis(Target):
             _save_data(self.out, newstuff)
             wf = open(WARNFILE, 'w')
             for ln in analyzer.getwarnings():
-                wf.write(ln+'\n')
+                wf.write(ln + '\n')
             wf.close()
             print "Warnings written to %s" % WARNFILE
             return 1
@@ -488,26 +502,26 @@ class Analysis(Target):
         Python executable to the libpython, so bindepend doesn't include
         it in its output.
 
-        Darwin custom builds could possibly also have non-framework style libraries, 
+        Darwin custom builds could possibly also have non-framework style libraries,
         so this method also checks for that variant as well.
         """
 
         if is_linux:
-            names = ('libpython%d.%d.so' % sys.version_info[:2]) 
+            names = ('libpython%d.%d.so' % sys.version_info[:2])
         elif is_darwin:
             names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
         else:
             return
 
         for (nm, fnm, typ) in binaries:
-            for name in names: 
+            for name in names:
                 if typ == 'BINARY' and name in fnm:
                     # lib found
                     return
 
         # resume search using the first item in names
         name = names[0]
- 
+
         if is_linux:
             lib = bindepend.findLibrary(name)
             if lib is None:
@@ -541,8 +555,10 @@ def findRTHook(modnm):
         return rslt
     return None
 
+
 class PYZ(Target):
     typ = 'PYZ'
+
     def __init__(self, toc, name=None, level=9, crypt=None):
         Target.__init__(self)
         self.toc = toc
@@ -560,10 +576,10 @@ class PYZ(Target):
         self.dependencies = compile_pycos(config['PYZ_dependencies'])
         self.__postinit__()
 
-    GUTS = (('name',   _check_guts_eq),
-            ('level',  _check_guts_eq),
-            ('crypt',  _check_guts_eq),
-            ('toc',    _check_guts_toc), # todo: pyc=1
+    GUTS = (('name', _check_guts_eq),
+            ('level', _check_guts_eq),
+            ('crypt', _check_guts_eq),
+            ('toc', _check_guts_toc),  # todo: pyc=1
             )
 
     def check_guts(self, last_build):
@@ -585,10 +601,12 @@ class PYZ(Target):
         _save_data(self.out, (self.name, self.level, self.crypt, self.toc))
         return 1
 
+
 def cacheDigest(fnm):
     data = open(fnm, "rb").read()
     digest = hashlib.md5(data).digest()
     return digest
+
 
 def checkCache(fnm, strip, upx):
     # On darwin a cache is required anyway to keep the libaries
@@ -606,7 +624,7 @@ def checkCache(fnm, strip, upx):
         upx = 0
 
     # Load cache index
-    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d' %  (strip, upx))
+    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d' % (strip, upx))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
@@ -620,7 +638,7 @@ def checkCache(fnm, strip, upx):
     digest = cacheDigest(fnm)
     cachedfile = os.path.join(cachedir, basenm)
     cmd = None
-    if cache_index.has_key(basenm):
+    if basenm in cache_index:
         if digest != cache_index[basenm]:
             os.remove(cachedfile)
         else:
@@ -698,7 +716,8 @@ def checkCache(fnm, strip, upx):
                                     print "E:", os.path.abspath(cachedfile)
                                     raise
 
-    if cmd: system(cmd)
+    if cmd:
+        system(cmd)
 
     # update cache index
     cache_index[basenm] = digest
@@ -706,19 +725,23 @@ def checkCache(fnm, strip, upx):
 
     return cachedfile
 
+
 UNCOMPRESSED, COMPRESSED, ENCRYPTED = range(3)
+
+
 class PKG(Target):
     typ = 'PKG'
-    xformdict = {'PYMODULE' : 'm',
-                 'PYSOURCE' : 's',
-                 'EXTENSION' : 'b',
-                 'PYZ' : 'z',
-                 'PKG' : 'a',
+    xformdict = {'PYMODULE': 'm',
+                 'PYSOURCE': 's',
+                 'EXTENSION': 'b',
+                 'PYZ': 'z',
+                 'PKG': 'a',
                  'DATA': 'x',
                  'BINARY': 'b',
                  'ZIPFILE': 'Z',
                  'EXECUTABLE': 'b',
-                 'DEPENDENCY':  'd'}
+                 'DEPENDENCY': 'd'}
+
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=0, upx_binaries=0, crypt=0):
         Target.__init__(self)
@@ -733,25 +756,25 @@ class PKG(Target):
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
             if config['useZLIB']:
-                self.cdict = {'EXTENSION':COMPRESSED,
-                              'DATA':COMPRESSED,
-                              'BINARY':COMPRESSED,
-                              'EXECUTABLE':COMPRESSED,
-                              'PYSOURCE':COMPRESSED,
-                              'PYMODULE':COMPRESSED }
+                self.cdict = {'EXTENSION': COMPRESSED,
+                              'DATA': COMPRESSED,
+                              'BINARY': COMPRESSED,
+                              'EXECUTABLE': COMPRESSED,
+                              'PYSOURCE': COMPRESSED,
+                              'PYMODULE': COMPRESSED}
                 if self.crypt:
                     self.cdict['PYSOURCE'] = ENCRYPTED
                     self.cdict['PYMODULE'] = ENCRYPTED
             else:
-                self.cdict = { 'PYSOURCE':UNCOMPRESSED }
+                self.cdict = {'PYSOURCE': UNCOMPRESSED}
         self.__postinit__()
 
-    GUTS = (('name',   _check_guts_eq),
-            ('cdict',  _check_guts_eq),
-            ('toc',    _check_guts_toc_mtime),
-            ('exclude_binaries',  _check_guts_eq),
-            ('strip_binaries',  _check_guts_eq),
-            ('upx_binaries',  _check_guts_eq),
+    GUTS = (('name', _check_guts_eq),
+            ('cdict', _check_guts_eq),
+            ('toc', _check_guts_toc_mtime),
+            ('exclude_binaries', _check_guts_eq),
+            ('strip_binaries', _check_guts_eq),
+            ('upx_binaries', _check_guts_eq),
             ('crypt', _check_guts_eq),
             )
 
@@ -766,7 +789,6 @@ class PKG(Target):
             return True
         # todo: toc equal
         return False
-
 
     def assemble(self):
         print "building PKG", os.path.basename(self.name)
@@ -788,15 +810,15 @@ class PKG(Target):
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
-                    if typ == 'BINARY' and seen.has_key(fnm):
+                    if typ == 'BINARY' and fnm in seen:
                         continue
                     seen[fnm] = 1
-                    mytoc.append((inm, fnm, self.cdict.get(typ,0),
-                                  self.xformdict.get(typ,'b')))
+                    mytoc.append((inm, fnm, self.cdict.get(typ, 0),
+                                  self.xformdict.get(typ, 'b')))
             elif typ == 'OPTION':
                 mytoc.append((inm, '', 0, 'o'))
             else:
-                mytoc.append((inm, fnm, self.cdict.get(typ,0), self.xformdict.get(typ,'b')))
+                mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
         archive = carchive.CArchive()
         archive.build(self.name, mytoc)
         _save_data(self.out,
@@ -806,23 +828,25 @@ class PKG(Target):
             os.remove(item)
         return 1
 
+
 class EXE(Target):
     typ = 'EXECUTABLE'
     exclude_binaries = 0
     append_pkg = 1
+
     def __init__(self, *args, **kws):
         Target.__init__(self)
-        self.console = kws.get('console',1)
-        self.debug = kws.get('debug',0)
-        self.name = kws.get('name',None)
-        self.icon = kws.get('icon',None)
-        self.versrsrc = kws.get('version',None)
-        self.manifest = kws.get('manifest',None)
-        self.resources = kws.get('resources',[])
-        self.strip = kws.get('strip',None)
-        self.upx = kws.get('upx',None)
+        self.console = kws.get('console', 1)
+        self.debug = kws.get('debug', 0)
+        self.name = kws.get('name', None)
+        self.icon = kws.get('icon', None)
+        self.versrsrc = kws.get('version', None)
+        self.manifest = kws.get('manifest', None)
+        self.resources = kws.get('resources', [])
+        self.strip = kws.get('strip', None)
+        self.upx = kws.get('upx', None)
         self.crypt = kws.get('crypt', 0)
-        self.exclude_binaries = kws.get('exclude_binaries',0)
+        self.exclude_binaries = kws.get('exclude_binaries', 0)
         self.append_pkg = kws.get('append_pkg', self.append_pkg)
         if self.name is None:
             self.name = self.out[:-3] + 'exe'
@@ -880,22 +904,22 @@ class EXE(Target):
                              os.path.join(BUILDPATH,
                                           specnm + ".exe.manifest"),
                              'BINARY'))
-        self.pkg = PKG(self.toc, cdict=kws.get('cdict',None), exclude_binaries=self.exclude_binaries,
+        self.pkg = PKG(self.toc, cdict=kws.get('cdict', None), exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx, crypt=self.crypt)
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
-    GUTS = (('name',     _check_guts_eq),
-            ('console',  _check_guts_eq),
-            ('debug',    _check_guts_eq),
-            ('icon',     _check_guts_eq),
+    GUTS = (('name', _check_guts_eq),
+            ('console', _check_guts_eq),
+            ('debug', _check_guts_eq),
+            ('icon', _check_guts_eq),
             ('versrsrc', _check_guts_eq),
             ('manifest', _check_guts_eq),
             ('resources', _check_guts_eq),
-            ('strip',    _check_guts_eq),
-            ('upx',      _check_guts_eq),
-            ('crypt',    _check_guts_eq),
-            ('mtm',      None,), # checked bellow
+            ('strip', _check_guts_eq),
+            ('upx', _check_guts_eq),
+            ('crypt', _check_guts_eq),
+            ('mtm', None,),  # checked bellow
             )
 
     def check_guts(self, last_build):
@@ -1023,20 +1047,22 @@ class EXE(Target):
         for item in trash:
             os.remove(item)
         return 1
+
     def copy(self, fnm, outf):
         inf = open(fnm, 'rb')
         while 1:
-            data = inf.read(64*1024)
+            data = inf.read(64 * 1024)
             if not data:
                 break
             outf.write(data)
+
 
 class DLL(EXE):
     def assemble(self):
         print "building DLL", os.path.basename(self.out)
         outf = open(self.name, 'wb')
         dll = self._bootloader_file('inprocsrvr')
-        dll = os.path.join(HOMEPATH, dll)  + '.dll'
+        dll = os.path.join(HOMEPATH, dll) + '.dll'
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)
         outf.close()
@@ -1050,11 +1076,11 @@ class DLL(EXE):
 class COLLECT(Target):
     def __init__(self, *args, **kws):
         Target.__init__(self)
-        self.name = kws.get('name',None)
+        self.name = kws.get('name', None)
         if self.name is None:
             self.name = 'dist_' + self.out[:-4]
-        self.strip_binaries = kws.get('strip',0)
-        self.upx_binaries = kws.get('upx',0)
+        self.strip_binaries = kws.get('strip', 0)
+        self.upx_binaries = kws.get('upx', 0)
         if not os.path.isabs(self.name):
             self.name = os.path.join(SPECPATH, self.name)
         self.toc = TOC()
@@ -1074,10 +1100,10 @@ class COLLECT(Target):
                 self.toc.extend(arg)
         self.__postinit__()
 
-    GUTS = (('name',            _check_guts_eq),
-            ('strip_binaries',  _check_guts_eq),
-            ('upx_binaries',    _check_guts_eq),
-            ('toc',             _check_guts_eq), # additional check below
+    GUTS = (('name', _check_guts_eq),
+            ('strip_binaries', _check_guts_eq),
+            ('upx_binaries', _check_guts_eq),
+            ('toc', _check_guts_eq),  # additional check below
             )
 
     def check_guts(self, last_build):
@@ -1089,7 +1115,7 @@ class COLLECT(Target):
         for inm, fnm, typ in self.toc:
             if typ == 'EXTENSION':
                 ext = os.path.splitext(fnm)[1]
-                test = os.path.join(self.name, inm+ext)
+                test = os.path.join(self.name, inm + ext)
             else:
                 test = os.path.join(self.name, os.path.basename(fnm))
             if not os.path.exists(test):
@@ -1163,7 +1189,7 @@ class BUNDLE(Target):
                 break
         self.__postinit__()
 
-    GUTS = (('toc',             _check_guts_eq), # additional check below
+    GUTS = (('toc', _check_guts_eq),  # additional check below
             )
 
     def check_guts(self, last_build):
@@ -1239,6 +1265,7 @@ class TOC(UserList.UserList):
         if initlist:
             for tpl in initlist:
                 self.append(tpl)
+
     def append(self, tpl):
         try:
             fn = tpl[0]
@@ -1254,6 +1281,7 @@ class TOC(UserList.UserList):
         except TypeError:
             print "TOC found a %s, not a tuple" % tpl
             raise
+
     def insert(self, pos, tpl):
         fn = tpl[0]
         if tpl[2] == "BINARY":
@@ -1261,38 +1289,45 @@ class TOC(UserList.UserList):
         if not self.fltr.get(fn):
             self.data.insert(pos, tpl)
             self.fltr[fn] = 1
+
     def __add__(self, other):
         rslt = TOC(self.data)
         rslt.extend(other)
         return rslt
+
     def __radd__(self, other):
         rslt = TOC(other)
         rslt.extend(self.data)
         return rslt
+
     def extend(self, other):
         for tpl in other:
             self.append(tpl)
+
     def __sub__(self, other):
         fd = self.fltr.copy()
         # remove from fd if it's in other
         for tpl in other:
-            if fd.get(tpl[0],0):
+            if fd.get(tpl[0], 0):
                 del fd[tpl[0]]
         rslt = TOC()
         # return only those things still in fd (preserve order)
         for tpl in self.data:
-            if fd.get(tpl[0],0):
+            if fd.get(tpl[0], 0):
                 rslt.append(tpl)
         return rslt
+
     def __rsub__(self, other):
         rslt = TOC(other)
         return rslt.__sub__(self)
+
     def intersect(self, other):
         rslt = TOC()
         for tpl in other:
-            if self.fltr.get(tpl[0],0):
+            if self.fltr.get(tpl[0], 0):
                 rslt.append(tpl)
         return rslt
+
 
 class Tree(Target, TOC):
     def __init__(self, root=None, prefix=None, excludes=None):
@@ -1305,18 +1340,18 @@ class Tree(Target, TOC):
             self.excludes = []
         self.__postinit__()
 
-    GUTS = (('root',     _check_guts_eq),
-            ('prefix',   _check_guts_eq),
+    GUTS = (('root', _check_guts_eq),
+            ('prefix', _check_guts_eq),
             ('excludes', _check_guts_eq),
-            ('toc',      None),
+            ('toc', None),
             )
 
     def check_guts(self, last_build):
         data = Target.get_guts(self, last_build)
         if not data:
             return True
-        stack = [ data[0] ] # root
-        toc = data[3] # toc
+        stack = [data[0]]  # root
+        toc = data[3]  # toc
         while stack:
             d = stack.pop()
             if mtime(d) > last_build:
@@ -1345,7 +1380,7 @@ class Tree(Target, TOC):
             for fnm in os.listdir(dir):
                 if excludes.get(fnm, 0) == 0:
                     ext = os.path.splitext(fnm)[1]
-                    if xexcludes.get(ext,0) == 0:
+                    if xexcludes.get(ext, 0) == 0:
                         fullfnm = os.path.join(dir, fnm)
                         rfnm = prefix and os.path.join(prefix, fnm) or fnm
                         if os.path.isdir(fullfnm):
@@ -1364,17 +1399,20 @@ class Tree(Target, TOC):
         print self.out, "no change!"
         return 0
 
+
 def TkTree():
     tclroot = config['TCL_root']
     tclnm = os.path.join('_MEI', config['TCL_dirname'])
     tkroot = config['TK_root']
     tknm = os.path.join('_MEI', config['TK_dirname'])
-    tcltree = Tree(tclroot, tclnm, excludes=['demos','encoding','*.lib'])
-    tktree = Tree(tkroot, tknm, excludes=['demos','encoding','*.lib'])
+    tcltree = Tree(tclroot, tclnm, excludes=['demos', 'encoding', '*.lib'])
+    tktree = Tree(tkroot, tknm, excludes=['demos', 'encoding', '*.lib'])
     return tcltree + tktree
+
 
 def TkPKG():
     return PKG(TkTree(), name='tk.pkg')
+
 
 def build(spec, buildpath):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
@@ -1385,7 +1423,7 @@ def build(spec, buildpath):
     if SPECPATH == '':
         SPECPATH = os.getcwd()
     BUILDPATH = os.path.join(SPECPATH, 'build',
-                             "pyi." + sys.platform, specnm)  
+                             "pyi." + sys.platform, specnm)
     # Check and adjustment for build path
     if buildpath != DEFAULT_BUILDPATH:
         bpath = buildpath
@@ -1399,6 +1437,7 @@ def build(spec, buildpath):
     # Executing the specfile (it's a valid python file)
     execfile(spec)
 
+
 def get_relative_path(startpath, topath):
     start = startpath.split(os.sep)[:-1]
     for i in range(len(start)):
@@ -1408,6 +1447,7 @@ def get_relative_path(startpath, topath):
         return result + os.sep + topath
     else:
         return topath
+
 
 def set_dependencies(analysis, dependencies, path):
     """
@@ -1428,6 +1468,7 @@ def set_dependencies(analysis, dependencies, path):
         # Clean the list
         toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
 
+
 def MERGE(*args):
     """
     Wipe repeated dependencies from a list of (Analysis, id, filename) tuples,
@@ -1435,7 +1476,7 @@ def MERGE(*args):
     """
 
     # Get the longest common path
-    common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a,_,_ in args]))
+    common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a, _, _ in args]))
     if common_prefix[-1] != os.sep:
         common_prefix += os.sep
     print "Common prefix: %s" % common_prefix
@@ -1445,7 +1486,7 @@ def MERGE(*args):
     for _, i, p in args:
         id_to_path[i] = p
     dependencies = {}
-    for analysis,_,_ in args:
+    for analysis, _, _ in args:
         path = os.path.abspath(analysis.scripts[-1][1]).replace(common_prefix, "", 1)
         path = os.path.splitext(path)[0]
         if path in id_to_path:

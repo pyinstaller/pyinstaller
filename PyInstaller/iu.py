@@ -742,7 +742,7 @@ def _string_bootstrap():
 
 _os_bootstrap()
 
-if not _os_environ.has_key('PYTHONCASEOK'):
+if 'PYTHONCASEOK' not in _os_environ:
     def caseOk(filename):
         files = _os_listdir(_os_path_dirname(filename))
         return _os_path_basename(filename) in files

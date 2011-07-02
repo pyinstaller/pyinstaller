@@ -34,7 +34,7 @@ except ImportError:
 
 from PyInstaller import is_linux, is_darwin, is_py25, is_py27
 
-if not os.environ.has_key('PYTHONCASEOK'):
+if 'PYTHONCASEOK' not in os.environ:
     def caseOk(filename):
         files = dircache.listdir(os.path.dirname(filename))
         return os.path.basename(filename) in files
@@ -539,7 +539,7 @@ class ImportTracker:
                 if not self.ispackage(ctx):
                     return nms
             self.warnings["W: no module named %s (%s import by %s)" % (fqname, imptyps[imptyp], importernm or "__main__")] = 1
-            if self.modules.has_key(fqname):
+            if fqname in self.modules:
                 del self.modules[fqname]
             return nms
         if _all is None:
