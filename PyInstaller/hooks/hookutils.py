@@ -61,6 +61,15 @@ def qt4_phonon_plugins_dir():
     return ""
 def babel_localedata_dir():
     return exec_statement("import babel.localedata; print babel.localedata._dirname")
+
+def enchant_win32_data_files():
+    files = eval(exec_statement("import enchant; print enchant.utils.win32_data_files()"))
+    datas = []  # data files in PyInstaller hook format
+    for d in files:
+        for f in d[1]:
+            datas.append((f, d[0]))
+    return datas
+
 def mpl_data_dir():
     return exec_statement("import matplotlib; print matplotlib._get_data_path()")
 def qwt_numpy_support():
