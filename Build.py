@@ -506,19 +506,26 @@ class Analysis(Target):
         Some linux distributions (e.g. debian-based) statically build the
         Python executable to the libpython, so bindepend doesn't include
         it in its output.
+
+	Darwin custom builds could possibly also have non-framework style libraries, 
+	so this method also checks for that variant as well.
         """
 
         if target_platform.startswith("linux"):
-            name = 'libpython%d.%d.so' % sys.version_info[:2]
+            names = ('libpython%d.%d.so' % sys.version_info[:2]) 
         elif target_platform.startswith("darwin"):
-            name = 'Python'
+            names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
         else:
             return
 
         for (nm, fnm, typ) in binaries:
-            if typ == 'BINARY' and name in fnm:
-                # lib found
-                return
+	    for name in names: 
+            	if typ == 'BINARY' and name in fnm:
+                	# lib found
+                	return
+
+	# resume search using the first item in names
+	name = names[0]
 
         if target_platform.startswith("linux"):
             lib = bindepend.findLibrary(name)

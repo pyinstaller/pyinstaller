@@ -506,9 +506,17 @@ int loadPython()
 	/* Workaround for virtualenv: it renames the Python framework. */
 	/* A proper solution would be to let Build.py found out the correct
 	 * name and embed it in the PKG as metadata. */
-	if (stat(dllpath, &sbuf) < 0)
+	if (stat(dllpath, &sbuf) < 0) {
 		sprintf(dllpath, "%s.Python",
 			f_workpath ? f_workpath : f_homepath);
+        
+        if(stat(dllpath, &sbuf) < 0) {
+            /* Python might be compiled as a .dylib (using --enable-shared) so lets try that one */
+            sprintf(dllpath, "%slibpython%01d.%01d.dylib",
+                    f_workpath ? f_workpath : f_homepath,
+                    ntohl(f_cookie.pyvers) / 10, ntohl(f_cookie.pyvers) % 10);
+        }
+    }
 #else
 	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0",
 		f_workpath ? f_workpath : f_homepath,
