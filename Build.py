@@ -507,8 +507,8 @@ class Analysis(Target):
         Python executable to the libpython, so bindepend doesn't include
         it in its output.
 
-	Darwin custom builds could possibly also have non-framework style libraries, 
-	so this method also checks for that variant as well.
+        Darwin custom builds could possibly also have non-framework style libraries, 
+        so this method also checks for that variant as well.
         """
 
         if target_platform.startswith("linux"):
@@ -519,13 +519,13 @@ class Analysis(Target):
             return
 
         for (nm, fnm, typ) in binaries:
-	    for name in names: 
-            	if typ == 'BINARY' and name in fnm:
-                	# lib found
-                	return
+            for name in names: 
+                if typ == 'BINARY' and name in fnm:
+                    # lib found
+                    return
 
-	# resume search using the first item in names
-	name = names[0]
+        # resume search using the first item in names
+        name = names[0]
 
         if target_platform.startswith("linux"):
             lib = bindepend.findLibrary(name)
@@ -957,7 +957,12 @@ class EXE(Target):
 
         try:
             import platform
-            dir = platform.system() + "-" + architecture()
+            # On some Windows installation (Python 2.4) platform.system() is
+            # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
+            # http://mail.python.org/pipermail/patches/2007-June/022947.html
+            syst = platform.system()
+            syst_real = {'Microsoft': 'Windows'}.get(syst, syst)
+            dir = syst_real + "-" + architecture()
         except ImportError:
             import os
             n = { "nt": "Windows", "linux2": "Linux", "darwin": "Darwin" }
