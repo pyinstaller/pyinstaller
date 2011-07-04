@@ -65,7 +65,11 @@ def system():
     try:
         # Python 2.3+
         import platform
-        return platform.system()
+        # On some Windows installation (Python 2.4) platform.system() is
+        # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
+        # http://mail.python.org/pipermail/patches/2007-June/022947.html
+        syst = platform.system()
+        return {'Microsoft': 'Windows'}.get(syst, syst)
     except ImportError:
         n = {'nt': 'Windows', 'linux2': 'Linux', 'darwin': 'Darwin'}
         return n[os.name]
