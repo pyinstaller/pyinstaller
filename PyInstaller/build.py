@@ -956,14 +956,11 @@ class EXE(Target):
         return False
 
     def _bootloader_file(self, exe):
-        base = "support/loader"
-
         if not self.console:
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
-
-        return base + "/" + PLATFORM + "/" + exe
+        return os.path.join("support", "loader", PLATFORM, exe)
 
     def assemble(self):
         print "building EXE from", os.path.basename(self.out)
