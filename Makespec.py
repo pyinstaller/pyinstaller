@@ -226,7 +226,7 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
 
     # only Windows and Mac OS X distinguish windowed and console apps
     if not config['target_platform'][:3] == "win" and \
-       not config['target_platform'].startswith() == 'darwin':
+       not config['target_platform'].startswith('darwin'):
         d['console'] = 1
 
     specfnm = os.path.join(workdir, name+'.spec')
