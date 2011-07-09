@@ -953,8 +953,6 @@ class EXE(Target):
         return False
 
     def _bootloader_file(self, exe):
-        base = "support/loader"
-
         try:
             import platform
             # On some Windows installation (Python 2.4) platform.system() is
@@ -962,18 +960,19 @@ class EXE(Target):
             # http://mail.python.org/pipermail/patches/2007-June/022947.html
             syst = platform.system()
             syst_real = {'Microsoft': 'Windows'}.get(syst, syst)
-            dir = syst_real + "-" + architecture()
+            PLATFORM = syst_real + "-" + architecture()
         except ImportError:
             import os
             n = { "nt": "Windows", "linux2": "Linux", "darwin": "Darwin" }
-            dir = n[os.name] + "-32bit"
+            PLATFORM = n[os.name] + "-32bit"
 
         if not self.console:
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
 
-        return base + "/" + dir + "/" + exe
+        import os
+        return os.path.join('support', 'loader', PLATFORM, exe)
 
     def assemble(self):
         print "building EXE from", os.path.basename(self.out)
