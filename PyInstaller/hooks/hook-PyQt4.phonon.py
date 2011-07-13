@@ -8,4 +8,3 @@ datas = [
      (pdir + "/phonon_backend/*.dll",     "qt4_plugins/phonon_backend"),
      (pdir + "/phonon_backend/*.dylib",   "qt4_plugins/phonon_backend"),
 ]
-

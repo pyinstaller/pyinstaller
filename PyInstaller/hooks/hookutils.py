@@ -2,6 +2,7 @@
 
 import os
 
+
 def exec_statement(stat):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
@@ -37,6 +38,18 @@ def exec_statement(stat):
     os.remove(fnm)
     return txt
 
+
+def dlls_in_dir(directory):
+    """Returns *.dll, *.so, *.dylib in given directories)"""
+    from glob import glob
+    d = directory
+    files = []
+    files.extend(glob('%s/*.so' % d))
+    files.extend(glob('%s/*.dll' % d))
+    files.extend(glob('%s/*.dylib' % d))
+    return files
+
+
 def qt4_plugins_dir():
     import os
     qt4_plugin_dirs = eval(exec_statement("from PyQt4.QtCore import QCoreApplication; app=QCoreApplication([]); print map(unicode,app.libraryPaths())"))
@@ -48,6 +61,8 @@ def qt4_plugins_dir():
             return str(d)  # must be 8-bit chars for one-file builds
     print "E: Cannot find existing PyQt4 plugin directory"
     return ""
+
+
 def qt4_phonon_plugins_dir():
     import os
     qt4_plugin_dirs = eval(exec_statement("from PyQt4.QtGui import QApplication; app=QApplication([]); app.setApplicationName('pyinstaller'); from PyQt4.phonon import Phonon; v=Phonon.VideoPlayer(Phonon.VideoCategory); print map(unicode,app.libraryPaths())"))
@@ -59,8 +74,24 @@ def qt4_phonon_plugins_dir():
             return str(d)  # must be 8-bit chars for one-file builds
     print "E: Cannot find existing PyQt4 phonon plugin directory"
     return ""
+
+
+def qt4_plugins_binaries(plugin_type):
+    """Return list of dynamic libraries formated for mod.binaries."""
+    from os.path import basename, join
+    binaries = []
+    pdir = qt4_plugins_dir()
+    files = dlls_in_dir(join(pdir, plugin_type))
+    for f in files:
+        binaries.append((
+            join('qt4_plugins', plugin_type, basename(f)),
+            f, 'BINARY'))
+    return binaries
+
+
 def babel_localedata_dir():
     return exec_statement("import babel.localedata; print babel.localedata._dirname")
+
 
 def enchant_win32_data_files():
     files = eval(exec_statement("import enchant; print enchant.utils.win32_data_files()"))
@@ -70,19 +101,28 @@ def enchant_win32_data_files():
             datas.append((f, d[0]))
     return datas
 
+
 def mpl_data_dir():
     return exec_statement("import matplotlib; print matplotlib._get_data_path()")
+
+
 def qwt_numpy_support():
     return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumpy')"))
+
+
 def qwt_numeric_support():
     return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumeric')"))
+
+
 def qwt_numarray_support():
     return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumarray')"))
 
+
 def django_dottedstring_imports(django_root_dir):
     package_name = os.path.basename(django_root_dir)
-    os.environ["DJANGO_SETTINGS_MODULE"] = "%s.settings" %package_name
-    return eval(exec_statement("execfile(r'%s')" %os.path.join(os.path.dirname(__file__), "django-import-finder.py")))
+    os.environ["DJANGO_SETTINGS_MODULE"] = "%s.settings" % package_name
+    return eval(exec_statement("execfile(r'%s')" % os.path.join(os.path.dirname(__file__), "django-import-finder.py")))
+
 
 def find_django_root(dir):
     entities = os.listdir(dir)

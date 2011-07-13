@@ -433,6 +433,9 @@ class Analysis(Target):
                     fnm = mod.__file__
                     if isinstance(mod, mf.ExtensionModule):
                         binaries.append((mod.__name__, fnm, 'EXTENSION'))
+                        # allows hooks to specify additional dependency
+                        # on other shared libraries loaded at runtime (by dlopen)
+                        binaries.extend(mod.binaries)
                     elif isinstance(mod, (mf.PkgInZipModule, mf.PyInZipModule)):
                         zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
                                          str(mod.owner), 'ZIPFILE'))

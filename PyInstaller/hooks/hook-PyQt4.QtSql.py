@@ -1,11 +1,8 @@
 hiddenimports = ['sip', 'PyQt4.QtCore', 'PyQt4.QtGui', 'PyQt4._qt']
 
-from PyInstaller.hooks.hookutils import qt4_plugins_dir
-pdir = qt4_plugins_dir()
+from PyInstaller.hooks.hookutils import qt4_plugins_binaries
 
-datas = [
-     (pdir + "/sqldrivers/*.so",      "qt4_plugins/sqldrivers"),
-     (pdir + "/sqldrivers/*.dll",     "qt4_plugins/sqldrivers"),
-     (pdir + "/sqldrivers/*.dylib",   "qt4_plugins/sqldrivers"),
-]
 
+def hook(mod):
+    mod.binaries.extend(qt4_plugins_binaries('sqldrivers'))
+    return mod

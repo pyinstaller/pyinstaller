@@ -1,11 +1,8 @@
 hiddenimports = ['sip', 'PyQt4.QtCore', 'PyQt4._qt']
 
-from PyInstaller.hooks.hookutils import qt4_plugins_dir
-pdir = qt4_plugins_dir()
+from PyInstaller.hooks.hookutils import qt4_plugins_binaries
 
-datas = [
-     (pdir + "/script/*.so",      "qt4_plugins/script"),
-     (pdir + "/script/*.dll",     "qt4_plugins/script"),
-     (pdir + "/script/*.dylib",   "qt4_plugins/script"),
-]
 
+def hook(mod):
+    mod.binaries.extend(qt4_plugins_binaries('script'))
+    return mod
