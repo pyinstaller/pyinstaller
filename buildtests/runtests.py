@@ -273,7 +273,7 @@ def detect_tests(folders):
 if __name__ == '__main__':
 
     # Change working directory to place where this script is.
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     if not is_py25:
         parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
