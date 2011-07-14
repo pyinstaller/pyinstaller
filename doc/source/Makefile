@@ -2,7 +2,7 @@
 # Generate PyInstaller documentation
 #
 
-.PHONY: doc pdf
+.PHONY: doc pdf html clean cleanall cleanlogs
 
 all:
 	@echo "make doc   ===> To generate a html and pdf of the documentation"
@@ -18,7 +18,7 @@ html: ../Manual.html
 pdf: ../Manual.pdf
 
 ../Manual.html: Manual.rst
-	tools/buildrecursive.py --local --strict --title='PyInstaller Manual' --outpath=..
+	rst2html --config=docutils.conf $< $@
 
 Manual.tex: Manual.rst
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
