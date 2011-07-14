@@ -20,10 +20,10 @@ pdf: ../Manual.pdf
 ../Manual.html: Manual.rst
 	rst2html --config=docutils.conf $< $@
 
-Manual.tex: Manual.rst
+Manual.tex: Manual.rst docutils.conf _definitions.txt
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
 
-../Manual.pdf: ../Manual.html
+../Manual.pdf: ../Manual.html docutils.conf _definitions.txt
 	wkhtmltopdf --outline ../Manual.html ../Manual.pdf
 
 clean:
