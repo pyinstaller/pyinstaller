@@ -1119,7 +1119,10 @@ The first pass:
 The child process executes as in `One Pass Execution`_ above (the magic
 environment variable is what tells it that this is pass two).
 
-|SE_exeImage| figure 3 - Self Extracting Executable
+.. image:: images/SE_exe.png
+   :width: 9cm
+
+figure 3 - Self Extracting Executable
 
 There are, of course, quite a few differences between the Windows and
 Unix/Linux versions. The major one is that because all of Python on Windows is
@@ -1171,7 +1174,8 @@ entry was created from (the ``__file__`` attribute from the time the ``.pyc`` wa
 compiled). On a user's box with no source installed, this is not terribly
 useful, but if they send you the traceback, at least you can make sense of it.
 
-|ZlibArchiveImage|
+.. image:: images/ZlibArchive.png
+   :width: 9cm
 
 |GOBACK|_
 
@@ -1195,7 +1199,8 @@ There is also a type code associated with each entry. If you're using a
 ``CArchive`` as a ``.zip`` file, you don't need to worry about this. The type codes
 are used by the self-extracting executables.
 
-|CArchiveImage|
+.. image:: images/CArchive.png
+   :width: 9cm
 
 |GOBACK|_
 
@@ -1748,9 +1753,6 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _MinGW-w64: http://mingw-w64.sourceforge.net/
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
 .. _`LSB sdk 4.0`: http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/
-.. |ZlibArchiveImage| image:: images/ZlibArchive.png
-.. |CArchiveImage| image:: images/CArchive.png
-.. |SE_exeImage| image:: images/SE_exe.png
 .. |GOBACK| replace:: `Back to Top`
 .. _GOBACK: `PyInstaller Manual`_
 
