@@ -2,23 +2,4 @@
 KNOWN BUGS
 ==========
 
-Consult http://pyinstaller.hpcf.upr.edu/cgi-bin/trac.cgi/report/1 for the
-current list of Known Bugs.
-
-
-New platforms development status
-================================
-**NOTE**: These platforms are not supported, they are in development
-
-MacOS X (darwin)
-----------------
-	- python framework not detected correctly (broken path in generated Makefile)
-	- multiple definition of objects
-
-SGI IRIX
---------
-	- Done
-
-Solaris
--------
-	- (need developer)
+Consult http://www.pyinstaller.org/report/1 for the current list of Known Bugs
