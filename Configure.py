@@ -41,6 +41,9 @@ if sys.platform == 'darwin' and Build.architecture() == '64bit':
     print "ERROR: PyInstaller does not support Python 64-bit on Mac OSX"
     print "Try using the 32-bit version of Python, by setting"
     print "VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment"
+    print "or run Python as 32-bit binary by command:"
+    print ""
+    print "arch -i386 python"
     sys.exit(2)
 
 
