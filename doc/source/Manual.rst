@@ -14,13 +14,49 @@ PyInstaller Manual
 .. contents::
 
 
+Requirements
+++++++++++++
+
+Windows
+-------
+
+PyWin32_
+    Python extensions for Windows is only necessary for users of Python 2.6+.
+
+|GOBACK|_
+
+Linux
+-----
+
+ldd
+    Console application to print the shared libraries required by each program
+    or shared library.
+
+objdump
+    Console application to display information from object files.
+
+|GOBACK|_
+
+Mac OS X
+--------
+
+Xcode_
+    is a suite of tools for developing software for Mac OS X. It can be also
+    installed from your ``Mac OS X Install DVD``. It is not necessary to
+    install the version 4 of Xcode. PyInstaller depends on ``otool`` which is
+    installed together with Xcode. ``otool`` displays information of object
+    files or libraries.
+
+|GOBACK|_
+
+
 Getting Started
 +++++++++++++++
 
 Installing PyInstaller
 ----------------------
 
-First, unpack the archive on you path of choice. Installer is **not** a Python
+First, unpack the archive on your path of choice. Installer is **not** a Python
 package, so it doesn't need to go in site-packages, or have a .pth file. For
 the purpose of this documentation we will assume |install_path|. You will be
 using a couple of scripts in the |install_path| directory, and these will find
@@ -1261,6 +1297,10 @@ On Fedora/RHEL and derivates, you can run the following lines::
         yum groupinstall "Development Tools"
         yum install python-devel
 
+On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
+for developing software for Mac OS X. It can be also installed from your
+``Mac OS X Install DVD``. It is not necessary to install the version 4 of Xcode.
+
 On Windows you can use MinGW (gcc for Windows) and Visual Studio C++ (msvc)
 compilers. Python development libraries are usually installed together with
 Python.
@@ -1746,7 +1786,8 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _PyQt: http://www.riverbankcomputing.co.uk/pyqt/index.php
-.. _PyWin32: http://starship.python.net/crew/mhammond/win32/
+.. _PyWin32: http://sourceforge.net/projects/pywin32/files/
+.. _Xcode: http://developer.apple.com/xcode
 .. _`GPL License`: http://www.pyinstaller.org/browser/trunk/doc/LICENSE.GPL?rev=latest
 .. _FAQ: http://www.pyinstaller.org/wiki/FAQ
 .. _MinGW: http://sourceforge.net/downloads/mingw/
