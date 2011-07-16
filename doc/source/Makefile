@@ -24,7 +24,7 @@ man: $(foreach manpage,${manpages},../${manpage}.1)
 	rst2man.py --config=docutils-man.conf $< $@
 
 ../%.html: %.rst docutils.conf _definitions.txt
-	rst2html.py --config=docutils.conf $< $@
+	rst2html --config=docutils.conf $< $@
 
 Manual.tex: Manual.rst _definitions.txt
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
