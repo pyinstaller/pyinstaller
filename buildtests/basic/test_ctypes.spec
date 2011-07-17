@@ -37,7 +37,7 @@ else:
             raise NotImplementedError("Cannot find either MinGW or Visual Studio in PATH")
 os.chdir("..")
 
-__testname__ = 'test15'
+__testname__ = 'test_ctypes'
 
 a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'),
               os.path.join(CONFIGDIR, 'support/useUnicode.py'),

@@ -58,7 +58,7 @@ DEPENDENCIES = {
  'libraries/test_pycrypto': ["Crypto"],
  'import/test_zipimport1': ["pkg_resources"],
  'import/test_zipimport2': ["pkg_resources", "setuptools"],
- 'basic/test15': ["ctypes"],
+ 'basic/test_ctypes': ["ctypes"],
  'libraries/test_wx': ["wx"],
 }
 
