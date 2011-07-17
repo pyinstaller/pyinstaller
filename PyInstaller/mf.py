@@ -1000,7 +1000,7 @@ def scan_code_for_ctypes(co, instrs, i):
                     # Fetch next, and finally get the library name
                     _libFromConst(i+2)
 
-        elif name == ("cdll", "windll"):
+        elif name in ("cdll", "windll"):
             # Guesses ctypes imports of these types:
 
             #  * cdll.library (only valid on Windows)
