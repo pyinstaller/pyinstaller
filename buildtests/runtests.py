@@ -54,6 +54,7 @@ MIN_VERSION = {
 DEPENDENCIES = {
  'import/test_ctypes_cdll_c': ["ctypes"],
  'import/test_ctypes_cdll_c2': ["ctypes"],
+ 'libraries/test_enchant': ["enchant"],
  'libraries/test_numpy': ["numpy"],
  'libraries/test_pycrypto': ["Crypto"],
  'import/test_zipimport1': ["pkg_resources"],
