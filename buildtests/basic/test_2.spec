@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-__testname__ = 'test2'
+__testname__ = 'test_2'
 
 config['useZLIB'] = 0
 a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'), __testname__ + '.py'],
@@ -11,8 +11,8 @@ exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
           name=os.path.join('build', 'pyi.' + config['target_platform'], __testname__ + '.exe'),
-          icon='test2.ico',
-          version='test2-version.txt',
+          icon='test_2.ico',
+          version='test_2-version.txt',
           debug=0,
           console=1)
 coll = COLLECT( exe,

@@ -1,10 +1,9 @@
 # -*- mode: python -*-
 
-__testname__ = 'test1'
+__testname__ = 'test_7'
 
 a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'), __testname__ + '.py'],
-        hookspath=['hooks1'])
-
+             pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -12,7 +11,6 @@ exe = EXE(pyz,
           name=os.path.join('build', 'pyi.' + config['target_platform'], __testname__ + '.exe'),
           debug=0,
           console=1)
-
 coll = COLLECT( exe,
                a.binaries,
                name=os.path.join('dist', __testname__),)
