@@ -172,9 +172,15 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
                 os.chdir('..')  # go back from testdir
                 continue
         _msg("BUILDING TEST", test)
+
         # use pyinstaller.py for building tests
+        testfile_spec = testfile + '.spec'
+        if not os.path.exists(testfile + '.spec'):
+            # .spec file does not exist and it has to be generated
+            # for main script
+            testfile_spec = testfile + '.py'
         prog = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'pyinstaller.py'),
-                            OPTS, testfile + ".spec"])
+            OPTS, testfile_spec])
 
         res = os.system(prog)
 
@@ -266,7 +272,7 @@ def find_exepath(test, parent_dir='dist'):
 def detect_tests(folders):
     tests = []
     for f in folders:
-        tests += glob.glob(f + '/test*.spec')
+        tests += glob.glob(f + '/test*.py')
     return tests
 
 
