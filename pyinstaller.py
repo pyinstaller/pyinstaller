@@ -53,6 +53,10 @@ def run_build(opts, spec_file):
 def __add_options(parser):
     parser.add_option('-v', '--version', default=False, action="store_true",
                       help='show program version')
+    parser.add_option('--skip-configure', default=False, action="store_true",
+                      help='Skip configure phase.'
+                      'Configure phase can be skipped to speed up pyinstaller'
+                      'if running multiple times with the same configuration.')
 
 
 parser = OptionParser(
@@ -75,7 +79,9 @@ if not args:
     parser.error('Requires at least one scriptname file '
                  'or exactly one .spec-file')
 
-run_configure(opts, args)
+# Skip configure when --skip-configure option present
+if not opts.skip_configure:
+    run_configure(opts, args)
 
 # Skip creating .spec when .spec file is supplied
 if args[0].endswith('.spec'):
