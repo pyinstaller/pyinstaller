@@ -83,6 +83,7 @@ os.putenv("TK_LIBRARY", tkdir)
 
 _useTkFN = os.path.join(CONFIGDIR, 'support', 'useTK.py')
 
+
 def test_TCL_TK(config):
 
     # TCL_root, TK_root and support/useTK.py
@@ -126,7 +127,7 @@ def test_TCL_TK(config):
                     if mo:
                         ver = mo.group(1)
             print "I: found TCL/TK version %s" % ver
-            _write_textfile(_useTkFN, _useTK % ("tcl%s"%ver, "tk%s"%ver))
+            _write_textfile(_useTkFN, _useTK % ("tcl%s" % ver, "tk%s" % ver))
             tclnm = 'tcl%s' % ver
             tknm = 'tk%s' % ver
             # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3 and /usr/lib/tk8.3
@@ -162,6 +163,7 @@ def test_TCL_TK(config):
     if not is_win:
         bindepend.excludes = saveexcludes
 
+
 def test_Crypt(config):
     # TODO: disabled for now
     config["useCrypt"] = 0
@@ -187,6 +189,7 @@ def test_Crypt(config):
         os.chdir(cwd)
         sys.argv = args
 
+
 def test_Zlib(config):
     #useZLIB
     print "I: testing for Zlib..."
@@ -198,6 +201,7 @@ def test_Zlib(config):
         config['useZLIB'] = 0
         print 'I: ... Zlib unavailable'
 
+
 def test_RsrcUpdate(config):
     config['hasRsrcUpdate'] = 0
     if not is_win:
@@ -205,21 +209,23 @@ def test_RsrcUpdate(config):
     # only available on windows
     print "I: Testing for ability to set icons, version resources..."
     try:
-        import win32api, icon, versionInfo
+        import win32api
+        import icon
+        import versionInfo
     except ImportError, detail:
         print 'I: ... resource update unavailable -', detail
         return
 
     test_exe = os.path.join(HOMEPATH, 'support', 'loader', PLATFORM, 'runw.exe')
-    if not os.path.exists( test_exe ):
+    if not os.path.exists(test_exe):
         config['hasRsrcUpdate'] = 0
         print 'E: ... resource update unavailable - %s not found' % test_exe
         return
 
     # The test_exe may be read-only
     # make a writable copy and test using that
-    rw_test_exe = os.path.join( os.environ['TEMP'], 'me_test_exe.tmp' )
-    shutil.copyfile( test_exe, rw_test_exe )
+    rw_test_exe = os.path.join(os.environ['TEMP'], 'me_test_exe.tmp')
+    shutil.copyfile(test_exe, rw_test_exe)
     try:
         hexe = win32api.BeginUpdateResource(rw_test_exe, 0)
     except:
@@ -238,6 +244,7 @@ import %s
 """
 
 _useUnicodeFN = os.path.join(CONFIGDIR, 'support', 'useUnicode.py')
+
 
 def test_unicode(config):
     print 'I: Testing for Unicode support...'
@@ -260,6 +267,7 @@ def test_unicode(config):
         config['hasUnicode'] = 0
         print 'I: ... Unicode NOT available'
 
+
 def test_UPX(config, upx_dir):
     print 'I: testing for UPX...'
     cmd = "upx"
@@ -272,10 +280,10 @@ def test_UPX(config, upx_dir):
         if vers:
             v = string.split(vers[0])[1]
             hasUPX = tuple(map(int, string.split(v, ".")))
-            if is_win and is_py24 and hasUPX < (1,92):
+            if is_win and is_py24 and hasUPX < (1, 92):
                 print 'E: UPX is too old! Python 2.4 under Windows requires UPX 1.92+'
                 hasUPX = 0
-        print 'I: ...UPX %s' % (('unavailable','available')[hasUPX != 0])
+        print 'I: ...UPX %s' % (('unavailable', 'available')[hasUPX != 0])
     except Exception, e:
         print 'I: ...exception result in testing for UPX'
         print e, e.args
@@ -293,7 +301,7 @@ def find_PYZ_dependencies(config):
         os.path.dirname(inspect.getsourcefile(PyInstaller)),
         os.path.join(HOMEPATH, 'support')])
     a.analyze_r('archive')
-    mod = a.modules['archive']        
+    mod = a.modules['archive']
     toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
     for i in range(len(toc)):
         nm, fnm, typ = toc[i]
@@ -323,11 +331,12 @@ def __add_options(parser):
                       dest='configfilename',
                       help='Name of generated configfile (default: %default)')
 
+
 def main(configfilename, upx_dir, **kw):
     try:
         config = build._load_data(configfilename)
         print 'I: read old config from', configfilename
-    except IOError, SyntaxError:
+    except (IOError, SyntaxError):
         # IOerror: file not present/readable
         # SyntaxError: invalid file (platform change?)
         # if not set by Make.py we can assume Windows
