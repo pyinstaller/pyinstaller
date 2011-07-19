@@ -128,10 +128,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     print info
     print "*" * min(80, len(info))
 
-    OPTS = ''
-    #if configfile:
-        # todo: quote correctly
-        #OPTS = ' -c "%s"' % configfile
+    OPTS = '--skip-configure'
 
     build_python = open('basic/python_exe.build', 'w')
     build_python.write(sys.executable + "\n")
@@ -148,6 +145,11 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     tests = [(len(x), x) for x in tests]
     tests.sort()
     counter = {"passed": [], "failed": [], "skipped": []}
+
+    # run configure phase only once
+    prog_conf = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'utils',
+        'Configure.py')])
+    os.system(prog_conf)
 
     # execute tests
     for _, test in tests:
