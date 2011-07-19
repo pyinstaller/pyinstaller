@@ -151,7 +151,7 @@ def test_TCL_TK(config):
             print "I: found TCL/TK"
             tcldir = "Tcl.framework/Resources/Scripts"
             tkdir = "Tk.framework/Resources/Scripts"
-            _write_suport_module(_useTkFN, _useTK % (tcldir, tkdir))
+            _write_textfile(_useTkFN, _useTK % (tcldir, tkdir))
             config['TCL_root'] = "/System/Library/Frameworks/Tcl.framework/Versions/Current"
             config['TK_root'] = "/System/Library/Frameworks/Tk.framework/Versions/Current"
             config['TCL_dirname'] = "Tcl.framework"
