@@ -73,3 +73,22 @@ def system():
     except ImportError:
         n = {'nt': 'Windows', 'linux2': 'Linux', 'darwin': 'Darwin'}
         return n[os.name]
+
+
+# Set and get environment variables does not handle unicode strings correctly
+# on Windows.
+
+
+def getenv(name):
+    """
+    Returns unicode string containing value of environment variable 'name'.
+    """
+    pass
+
+
+def setenv(name, value):
+    """
+    Accepts unicode string and set it as environment variable 'name' containing
+    value 'value'.
+    """
+    pass
