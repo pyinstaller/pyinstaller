@@ -27,6 +27,8 @@
  */
 #include "utils.h"
 #include "getpath.h"
+#include <stdlib.h>
+#include <limits.h>
 #include <sys/wait.h>
 
 int append2enviroment(const char *name, const char *value);
@@ -101,6 +103,7 @@ int append2enviroment(const char *name, const char *value)
 int set_enviroment(const ARCHIVE_STATUS *status)
 {
     int rc = 0;
+    char buf[PATH_MAX+2];
 
     /* add temppath to LD_LIBRARY_PATH */
     if (status->temppath[0] != 0){
@@ -110,10 +113,17 @@ int set_enviroment(const ARCHIVE_STATUS *status)
         rc = append2enviroment("DYLD_LIBRARY_PATH", status->temppath);
 #endif
     }
-    rc = append2enviroment("LD_LIBRARY_PATH", status->homepath);
+    /* make homepath absolute
+     * homepath contains ./ which breaks some modules when changing the CWD.
+     * Relative LD_LIBRARY_PATH is also a security problem.
+     */
+    realpath(status->homepath, buf);
+    /* path must end with slash / */
+    strcat(buf, "/");
+    rc = append2enviroment("LD_LIBRARY_PATH", buf);
 #ifdef __APPLE__
         /* add homepath to DYLD_LIBRARY_PATH */
-    rc = append2enviroment("DYLD_LIBRARY_PATH", status->homepath);
+    rc = append2enviroment("DYLD_LIBRARY_PATH", buf);
 #endif
 
     return rc;
