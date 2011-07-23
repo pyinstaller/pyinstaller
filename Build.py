@@ -512,7 +512,7 @@ class Analysis(Target):
         """
 
         if target_platform.startswith("linux"):
-            names = ('libpython%d.%d.so' % sys.version_info[:2]) 
+            names = ('libpython%d.%d.so' % sys.version_info[:2],) 
         elif target_platform.startswith("darwin"):
             names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
         else:
