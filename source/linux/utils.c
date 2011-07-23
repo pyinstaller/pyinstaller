@@ -104,6 +104,7 @@ int set_enviroment(const ARCHIVE_STATUS *status)
 {
     int rc = 0;
     char buf[PATH_MAX+2];
+    char *p;
 
     /* add temppath to LD_LIBRARY_PATH */
     if (status->temppath[0] != 0){
@@ -117,7 +118,12 @@ int set_enviroment(const ARCHIVE_STATUS *status)
      * homepath contains ./ which breaks some modules when changing the CWD.
      * Relative LD_LIBRARY_PATH is also a security problem.
      */
-    realpath(status->homepath, buf);
+    p = realpath(status->homepath, buf);
+    if(p == NULL) {
+        FATALERROR("Error in making homepath absolute.\n");
+        return -1;
+    }
+
     /* path must end with slash / */
     strcat(buf, "/");
     rc = append2enviroment("LD_LIBRARY_PATH", buf);
