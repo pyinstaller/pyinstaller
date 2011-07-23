@@ -510,7 +510,7 @@ class Analysis(Target):
         """
 
         if is_linux:
-            names = ('libpython%d.%d.so' % sys.version_info[:2])
+            names = ('libpython%d.%d.so' % sys.version_info[:2],)
         elif is_darwin:
             names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
         else:
