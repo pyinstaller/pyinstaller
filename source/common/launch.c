@@ -517,7 +517,7 @@ int loadPython(ARCHIVE_STATUS *status)
                     /* Python might be compiled as a .dylib (using --enable-shared) so lets try that one */
                     if (checkFile(dllpath, "%slibpython%01d.%01d.dylib", status->temppath, pyvers / 10, pyvers % 10) != 0) {
                         if (checkFile(dllpath, "%slibpython%01d.%01d.dylib", status->homepath, pyvers / 10, pyvers % 10) != 0) {
-                            FATALERROR("Python library not found.");
+                            FATALERROR("Python library not found.\n");
                             return -1;
                         }
                     }
@@ -528,7 +528,7 @@ int loadPython(ARCHIVE_STATUS *status)
 #else
     if (checkFile(dllpath, "%slibpython%01d.%01d.so.1.0", status->temppath, pyvers / 10, pyvers % 10) != 0) {
         if (checkFile(dllpath, "%slibpython%01d.%01d.so.1.0", status->homepath, pyvers / 10, pyvers % 10) != 0) {
-            FATALERROR("Python library not found.");
+            FATALERROR("Python library not found.\n");
             return -1;
         }
     }
