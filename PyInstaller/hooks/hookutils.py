@@ -29,6 +29,9 @@ def exec_statement(statement):
             del os.environ["PYTHONPATH"]
     return txt[:-1]
 
+def eval_statement(statement):
+    return eval(exec_statement(statement))
+
 def dlls_in_dir(directory):
     """Returns *.dll, *.so, *.dylib in given directories)"""
     files = []
@@ -38,7 +41,7 @@ def dlls_in_dir(directory):
     return files
 
 def qt4_plugins_dir():
-    qt4_plugin_dirs = eval(exec_statement("from PyQt4.QtCore import QCoreApplication; app=QCoreApplication([]); print map(unicode,app.libraryPaths())"))
+    qt4_plugin_dirs = eval_statement("from PyQt4.QtCore import QCoreApplication; app=QCoreApplication([]); print map(unicode,app.libraryPaths())")
     if not qt4_plugin_dirs:
         print "E: Cannot find PyQt4 plugin directories"
         return ""
@@ -50,7 +53,7 @@ def qt4_plugins_dir():
 
 
 def qt4_phonon_plugins_dir():
-    qt4_plugin_dirs = eval(exec_statement("from PyQt4.QtGui import QApplication; app=QApplication([]); app.setApplicationName('pyinstaller'); from PyQt4.phonon import Phonon; v=Phonon.VideoPlayer(Phonon.VideoCategory); print map(unicode,app.libraryPaths())"))
+    qt4_plugin_dirs = eval_statement("from PyQt4.QtGui import QApplication; app=QApplication([]); app.setApplicationName('pyinstaller'); from PyQt4.phonon import Phonon; v=Phonon.VideoPlayer(Phonon.VideoCategory); print map(unicode,app.libraryPaths())")
     if not qt4_plugin_dirs:
         print "E: Cannot find PyQt4 phonon plugin directories"
         return ""
@@ -78,7 +81,7 @@ def babel_localedata_dir():
 
 
 def enchant_win32_data_files():
-    files = eval(exec_statement("import enchant; print enchant.utils.win32_data_files()"))
+    files = eval_statement("import enchant; print enchant.utils.win32_data_files()")
     datas = []  # data files in PyInstaller hook format
     for d in files:
         for f in d[1]:
@@ -91,21 +94,21 @@ def mpl_data_dir():
 
 
 def qwt_numpy_support():
-    return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumpy')"))
+    return eval_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumpy')")
 
 
 def qwt_numeric_support():
-    return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumeric')"))
+    return eval_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumeric')")
 
 
 def qwt_numarray_support():
-    return eval(exec_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumarray')"))
+    return eval_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumarray')")
 
 
 def django_dottedstring_imports(django_root_dir):
     package_name = os.path.basename(django_root_dir)
     os.environ["DJANGO_SETTINGS_MODULE"] = "%s.settings" % package_name
-    return eval(exec_statement("execfile(r'%s')" % os.path.join(os.path.dirname(__file__), "django-import-finder.py")))
+    return eval_statement("execfile(r'%s')" % os.path.join(os.path.dirname(__file__), "django-import-finder.py"))
 
 
 def find_django_root(dir):
