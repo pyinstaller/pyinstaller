@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-import os, sys, subprocess
-
+import os
+import sys
+import glob
+import subprocess
 
 def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
@@ -28,21 +30,16 @@ def exec_statement(statement):
             del os.environ["PYTHONPATH"]
     return txt[:-1]
 
-
-
 def dlls_in_dir(directory):
     """Returns *.dll, *.so, *.dylib in given directories)"""
-    from glob import glob
     d = directory
     files = []
-    files.extend(glob('%s/*.so' % d))
-    files.extend(glob('%s/*.dll' % d))
-    files.extend(glob('%s/*.dylib' % d))
+    files.extend(glob.glob('%s/*.so' % d))
+    files.extend(glob.glob('%s/*.dll' % d))
+    files.extend(glob.glob('%s/*.dylib' % d))
     return files
 
-
 def qt4_plugins_dir():
-    import os
     qt4_plugin_dirs = eval(exec_statement("from PyQt4.QtCore import QCoreApplication; app=QCoreApplication([]); print map(unicode,app.libraryPaths())"))
     if not qt4_plugin_dirs:
         print "E: Cannot find PyQt4 plugin directories"
@@ -55,7 +52,6 @@ def qt4_plugins_dir():
 
 
 def qt4_phonon_plugins_dir():
-    import os
     qt4_plugin_dirs = eval(exec_statement("from PyQt4.QtGui import QApplication; app=QApplication([]); app.setApplicationName('pyinstaller'); from PyQt4.phonon import Phonon; v=Phonon.VideoPlayer(Phonon.VideoCategory); print map(unicode,app.libraryPaths())"))
     if not qt4_plugin_dirs:
         print "E: Cannot find PyQt4 phonon plugin directories"
@@ -69,13 +65,12 @@ def qt4_phonon_plugins_dir():
 
 def qt4_plugins_binaries(plugin_type):
     """Return list of dynamic libraries formated for mod.binaries."""
-    from os.path import basename, join
     binaries = []
     pdir = qt4_plugins_dir()
-    files = dlls_in_dir(join(pdir, plugin_type))
+    files = dlls_in_dir(os.path.join(pdir, plugin_type))
     for f in files:
         binaries.append((
-            join('qt4_plugins', plugin_type, basename(f)),
+            os.path.join('qt4_plugins', plugin_type, os.path.basename(f)),
             f, 'BINARY'))
     return binaries
 
