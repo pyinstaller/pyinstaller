@@ -1405,8 +1405,10 @@ def TkTree():
     tclnm = os.path.join('_MEI', config['TCL_dirname'])
     tkroot = config['TK_root']
     tknm = os.path.join('_MEI', config['TK_dirname'])
-    tcltree = Tree(tclroot, tclnm, excludes=['demos', 'encoding', '*.lib'])
-    tktree = Tree(tkroot, tknm, excludes=['demos', 'encoding', '*.lib'])
+    tcltree = Tree(tclroot, tclnm,
+                   excludes=['demos', 'encoding', '*.lib', 'tclConfig.sh'])
+    tktree = Tree(tkroot, tknm,
+                  excludes=['demos', 'encoding', '*.lib', 'tkConfig.sh'])
     return tcltree + tktree
 
 
