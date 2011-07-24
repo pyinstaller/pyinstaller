@@ -194,8 +194,10 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
                 res_tmp = test_exe(exe[5:], testdir)
                 res = res or res_tmp
 
+        # compare log files (now used only by multipackage tests)
         logsfn = glob.glob(testfile + '.toc')
-        logsfn += glob.glob(testfile + '_?.toc')
+        # other main scritps do not start with 'test_'
+        logsfn += glob.glob(testfile.split('_', 1)[1] + '_?.toc')
         for logfn in logsfn:
             _msg("EXECUTING MATCHING", logfn)
             tmpname = os.path.splitext(logfn)[0]
@@ -275,7 +277,7 @@ def find_exepath(test, parent_dir='dist'):
 def detect_tests(folders):
     tests = []
     for f in folders:
-        tests += glob.glob(f + '/test*.py')
+        tests += glob.glob(f + '/test_*.py')
     return tests
 
 
@@ -314,7 +316,12 @@ if __name__ == '__main__':
     if args:
         if opts.interactive_tests:
             parser.error('Must not specify -i/--interactive-tests when passing test names.')
-        tests = args
+        # run all tests in specified dir
+        if args[0] in TEST_DIRS:
+            tests = detect_tests(args)
+        # run only single specified tests
+        else:
+            tests = args
     elif opts.interactive_tests:
         print "Running interactive tests"
         tests = detect_tests(INTERACT_TEST_DIRS)

@@ -182,5 +182,5 @@
     'archive',
     '_mountzlib',
     'useUnicode',
-    'test5_multipackage_B',
+    'multipackage5_B',
 ]
