@@ -30,7 +30,11 @@ def exec_statement(statement):
     return txt[:-1]
 
 def eval_statement(statement):
-    return eval(exec_statement(statement))
+    txt = exec_statement(statement).strip()
+    if not txt:
+        # return an empty string which is "not true" but iterable
+        return ''
+    return eval(txt)
 
 def dlls_in_dir(directory):
     """Returns *.dll, *.so, *.dylib in given directories)"""
