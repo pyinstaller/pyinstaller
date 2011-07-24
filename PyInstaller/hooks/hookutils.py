@@ -12,7 +12,7 @@ def exec_statement(statement):
     cmd = [sys.executable, '-c', statement]
 
     # Prepend PYTHONPATH with pathex
-    pp = os.pathsep.join(sys.path)
+    pp = os.pathsep.join(sys.pathex)
     old_pp = os.environ.get('PYTHONPATH', '')
     if old_pp:
         pp = os.pathsep.join([pp, old_pp])
