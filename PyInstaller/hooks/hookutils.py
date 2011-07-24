@@ -9,7 +9,6 @@ def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
     """
-
     cmd = [sys.executable, '-c', statement]
 
     # Prepend PYTHONPATH with pathex
@@ -32,11 +31,10 @@ def exec_statement(statement):
 
 def dlls_in_dir(directory):
     """Returns *.dll, *.so, *.dylib in given directories)"""
-    d = directory
     files = []
-    files.extend(glob.glob('%s/*.so' % d))
-    files.extend(glob.glob('%s/*.dll' % d))
-    files.extend(glob.glob('%s/*.dylib' % d))
+    files.extend(glob.glob('%s/*.so' % directory))
+    files.extend(glob.glob('%s/*.dll' % directory))
+    files.extend(glob.glob('%s/*.dylib' % directory))
     return files
 
 def qt4_plugins_dir():
