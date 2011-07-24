@@ -56,7 +56,7 @@ NOCONFIRM = None
 rthooks = {}
 
 
-def system(cmd):
+def _system(cmd):
     try:
         subprocess.call(cmd)
     except OSError, e:
@@ -719,7 +719,7 @@ def checkCache(fnm, strip, upx):
                                     raise
 
     if cmd:
-        system(cmd)
+        _system(cmd)
 
     # update cache index
     cache_index[basenm] = digest
