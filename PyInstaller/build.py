@@ -33,6 +33,7 @@ import iu
 import carchive
 import bindepend
 import traceback
+import subprocess
 
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
 from PyInstaller import is_win, is_linux, is_darwin, is_cygwin
@@ -56,12 +57,10 @@ rthooks = {}
 
 
 def system(cmd):
-    # This workaround is required because NT shell doesn't work with commands
-    # that start with double quotes (required if there are spaces inside the
-    # command path)
-    if is_win:
-        cmd = 'echo on && ' + cmd
-    os.system(cmd)
+    try:
+        subprocess.call(cmd)
+    except OSError, e:
+        raise SystemExit("Execution failed: %s" % e)
 
 
 def _save_data(filename, data):
@@ -658,13 +657,13 @@ def checkCache(fnm, strip, upx):
         upx_executable = "upx"
         if config.get('upx_dir'):
             upx_executable = os.path.join(config['upx_dir'], upx_executable)
-        cmd = '"' + upx_executable + '" ' + bestopt + " -q \"%s\"" % cachedfile
+        cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
             # -S = strip only debug symbols.
             # The default strip behaviour breaks some shared libraries
             # under Mac OSX
-            cmd = "strip -S \"%s\"" % cachedfile
+            cmd = ["strip", "-S", cachedfile]
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
 
