@@ -1,42 +1,33 @@
 #!/usr/bin/env python
 
-import os
+import os, sys, subprocess
 
 
-def exec_statement(stat):
+def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
     """
 
-    import os, tempfile, sys
-
-    fnm = tempfile.mktemp()
-    exe = sys.executable
-
-    # Using "echo on" as a workaround for a bug in NT4 shell
-    if os.name == "nt":
-        cmd = 'echo on && "%s" -c "%s" > "%s"' % (exe, stat, fnm)
-    else:
-        cmd = '"%s" -c "%s" > "%s"' % (exe, stat, fnm)
+    cmd = [sys.executable, '-c', statement]
 
     # Prepend PYTHONPATH with pathex
-    pp = os.pathsep.join(sys.pathex)
+    pp = os.pathsep.join(sys.path)
     old_pp = os.environ.get('PYTHONPATH', '')
     if old_pp:
         pp = os.pathsep.join([pp, old_pp])
     os.environ["PYTHONPATH"] = pp
     try:
-        # Actually execute the statement
-        os.system(cmd)
+        try:
+            txt = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
+        except OSError, e:
+            raise SystemExit("Execution failed: %s" % e)
     finally:
         if old_pp:
             os.environ["PYTHONPATH"] = old_pp
         else:
             del os.environ["PYTHONPATH"]
+    return txt[:-1]
 
-    txt = open(fnm, 'r').read()[:-1]
-    os.remove(fnm)
-    return txt
 
 
 def dlls_in_dir(directory):
