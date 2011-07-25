@@ -37,11 +37,11 @@ def eval_statement(statement):
     return eval(txt)
 
 def dlls_in_dir(directory):
-    """Returns *.dll, *.so, *.dylib in given directories)"""
+    """Returns *.dll, *.so, *.dylib in given directories"""
     files = []
-    files.extend(glob.glob('%s/*.so' % directory))
-    files.extend(glob.glob('%s/*.dll' % directory))
-    files.extend(glob.glob('%s/*.dylib' % directory))
+    files.extend(glob.glob(os.path.join(directory, '*.so')))
+    files.extend(glob.glob(os.path.join(directory, '*.dll')))
+    files.extend(glob.glob(os.path.join(directory, '*.dylib'))))
     return files
 
 def qt4_plugins_dir():
