@@ -181,8 +181,8 @@ def pkg_resouces_get_default_cache():
     """Determine the default cache location
 
     This returns the ``PYTHON_EGG_CACHE`` environment variable, if set.
-    Otherwise, on Windows, it returns a "Python-Eggs" subdirectory of the
-    "Application Data" directory.  On all other systems, it's "~/.python-eggs".
+    Otherwise, on Windows, it returns a 'Python-Eggs' subdirectory of the
+    'Application Data' directory.  On all other systems, it's '~/.python-eggs'.
     """
     # This function borrowed from setuptools/pkg_resources
     try:
@@ -190,7 +190,7 @@ def pkg_resouces_get_default_cache():
     except KeyError:
         pass
 
-    if os.name!='nt':
+    if os.name != 'nt':
         return os.path.expanduser('~/.python-eggs')
 
     app_data = 'Application Data'   # XXX this may be locale-specific!
