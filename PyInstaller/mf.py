@@ -18,7 +18,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 
-import sys, string, os, imp, marshal, dircache, glob
+import sys
+import string
+import os
+import imp
+import marshal
+import dircache
+import glob
+
 try:
     # zipimport is supported starting with Python 2.3
     import zipimport
