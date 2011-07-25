@@ -43,12 +43,13 @@ from PyInstaller import is_py23, is_py25, is_py26, is_win
 from PyInstaller.lib.pyi_optparse import OptionParser
 
 
-MIN_VERSION = {
+MIN_VERSION_OR_OS = {
  'import/test_relative_import': is_py25,
  'import/test_relative_import2': is_py26,
  'import/test_relative_import3': is_py25,
- 'basic/test-celementtree': is_py25,
+ 'basic/test_celementtree': is_py25,
  'basic/test_9': is_py23,
+ 'basic/test_absolute_ld_library_path': not is_win,
 }
 
 DEPENDENCIES = {
@@ -156,7 +157,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         test = os.path.splitext(test)[0]
         testdir, testfile = os.path.split(test)
         os.chdir(testdir)  # go to testdir
-        if test in MIN_VERSION and not MIN_VERSION[test]:
+        if test in MIN_VERSION_OR_OS and not MIN_VERSION_OR_OS[test]:
             counter["skipped"].append(test)
             os.chdir('..')  # go back from testdir
             continue
