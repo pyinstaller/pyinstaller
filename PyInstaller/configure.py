@@ -27,6 +27,7 @@ import pprint
 import re
 import glob
 import time
+import subprocess
 
 from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE, PLATFORM
 from PyInstaller import is_win, is_linux, is_darwin, is_py24, get_version
@@ -272,11 +273,12 @@ def test_UPX(config, upx_dir):
     print 'I: testing for UPX...'
     cmd = "upx"
     if upx_dir:
-        cmd = '"' + os.path.normpath(os.path.join(upx_dir, cmd)) + '"'
+        cmd = os.path.normpath(os.path.join(upx_dir, cmd))
 
     hasUPX = 0
     try:
-        vers = os.popen(cmd + ' -V').readlines()
+        vers = subprocess.Popen([cmd, '-V'], stdout=PIPE).communicate()[0]
+        vers = vers.strip().splitlines()
         if vers:
             v = string.split(vers[0])[1]
             hasUPX = tuple(map(int, string.split(v, ".")))

@@ -25,6 +25,7 @@ import imp
 import marshal
 import dircache
 import glob
+import subprocess
 
 try:
     # zipimport is supported starting with Python 2.3
@@ -1093,7 +1094,8 @@ def _resolveCtypesImports(cbinaries):
                     cpath = d + "/" + cpath
                     break
             else:
-                for L in os.popen("ldconfig -p").read().splitlines():
+                txt = subprocess.Popen(["ldconfig", "-p"]), stdout=PIPE).communicate()[0]
+                for L in text.strip().splitlines():
                     if cpath in L:
                         cpath = L.split("=>", 1)[1].strip()
                         assert os.path.isfile(cpath)
