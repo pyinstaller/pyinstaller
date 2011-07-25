@@ -32,7 +32,7 @@ def get_svn_revision():
     '''
     rev = 0
     path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    entries_path = '%s/.svn/entries' % path
+    entries_path = os.path.join(path, '.svn', 'entries')
 
     try:
         entries = open(entries_path, 'r').read()

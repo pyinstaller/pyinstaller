@@ -212,6 +212,7 @@ if zipimport:
             fn = fn.replace(".", "/")
             return BaseDirOwner.getmod(self, fn)
         def _modtime(self, fn):
+            # zipfiles always use forward slashes
             fn = fn.replace("\\","/")
             try:
                 dt = self.zf.getinfo(fn).date_time
@@ -1090,8 +1091,8 @@ def _resolveCtypesImports(cbinaries):
             # "man ld.so" says that we should first search LD_LIBRARY_PATH
             # and then the ldcache
             for d in os.environ["LD_LIBRARY_PATH"].split(":"):
-                if os.path.isfile(d + "/" + cpath):
-                    cpath = d + "/" + cpath
+                if os.path.isfile(os.path.join(d, cpath)):
+                    cpath = os.path.join(d, cpath)
                     break
             else:
                 txt = subprocess.Popen(["ldconfig", "-p"]), stdout=PIPE).communicate()[0]

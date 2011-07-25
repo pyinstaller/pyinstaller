@@ -110,7 +110,7 @@ def compile_pycos(toc):
 
     # For those modules that need to be rebuilt, use the build directory
     # PyInstaller creates during the build process.
-    basepath = "/".join([BUILDPATH, "localpycos"])
+    basepath = os.path.join(BUILDPATH, "localpycos")
 
     new_toc = []
     for (nm, fnm, typ) in toc:
@@ -138,13 +138,12 @@ def compile_pycos(toc):
                     # as leading path and use "__init__" as the module name
                     leading, mod_name = nm.split("."), "__init__"
 
-                leading.insert(0, basepath)
-                leading = "/".join(leading)
+                leading = os.path.join(basepath, *leading)
 
                 if not os.path.exists(leading):
                     os.makedirs(leading)
 
-                fnm = "/".join([leading, mod_name + ext])
+                fnm = os.path.join(leading, mod_name + ext)
                 py_compile.compile(source_fnm, fnm)
 
         new_toc.append((nm, fnm, typ))
