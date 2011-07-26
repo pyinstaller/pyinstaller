@@ -37,7 +37,7 @@ try:
 except ImportError:
     zlib = archive.DummyZlib()
 import pprint
-from PyInstaller.lib.pyi_optparse import OptionParser
+import optparse
 
 stack = []
 cleanup = []
@@ -209,7 +209,7 @@ class ZlibArchive(archive.ZlibArchive):
             print "Warning: pyz is from a different Python version"
         self.lib.read(4)
 
-parser = OptionParser('%prog [options] pyi_archive')
+parser = optparse.ptionParser('%prog [options] pyi_archive')
 parser.add_option('-l', '--log',
                   default=False,
                   action='store_true',

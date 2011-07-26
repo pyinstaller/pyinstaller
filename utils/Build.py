@@ -30,9 +30,9 @@ except ImportError:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
 
 import PyInstaller.build
-from PyInstaller.lib.pyi_optparse import OptionParser
+import optparse
 
-parser = OptionParser(usage="%prog [options] specfile")
+parser = optparse.OptionParser(usage="%prog [options] specfile")
 parser.add_option('-C', '--configfile',
                   default=PyInstaller.DEFAULT_CONFIGFILE,
                   dest='configfilename',

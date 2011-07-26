@@ -31,11 +31,11 @@ except ImportError:
 
 import PyInstaller.bindepend
 from PyInstaller import is_win
-from PyInstaller.lib.pyi_optparse import OptionParser
+import optparse
 
 import glob, sys
 
-parser = OptionParser(usage="python %prog <executable_or_dynamic_library> [ <executable_or_dynamic_library> ... ]")
+parser = optparse.OptionParser(usage="python %prog <executable_or_dynamic_library> [ <executable_or_dynamic_library> ... ]")
 
 opts, args = parser.parse_args()
 if len(args) == 0:

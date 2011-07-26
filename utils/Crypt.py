@@ -56,7 +56,7 @@ def cmd_genkey(args):
 def main():
     global global_opts
     global opts
-    import PyInstaller.lib.pyi_optparse as optparse
+    import optparse
 
     cmds = {}
     p = pyi_optparse.OptionParser(

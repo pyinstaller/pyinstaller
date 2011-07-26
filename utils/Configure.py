@@ -29,9 +29,9 @@ except ImportError:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
 
 import PyInstaller.configure
-from PyInstaller.lib.pyi_optparse import OptionParser
+import optparse
 
-parser = OptionParser(usage="%prog [options]")
+parser = optparse.OptionParser(usage="%prog [options]")
 PyInstaller.configure.__add_options(parser)
 
 opts, args = parser.parse_args()

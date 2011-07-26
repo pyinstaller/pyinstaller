@@ -30,7 +30,7 @@ except ImportError:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
 
 import PyInstaller.makespec
-import PyInstaller.lib.pyi_optparse as optparse
+import optparse
 
 import os
 
