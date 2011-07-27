@@ -445,16 +445,23 @@ Improved support for ``eggs`` is planned for a future release of |PyInstaller|.
 
 Multipackage function
 ---------------------
-With Pyinstaller you can create a collection of packages to avoid library duplication.
-You can establish links between packages using function `MERGE`_ in spec files.
-You could wish, for example, deploy your application with an updater utility and a configurator,
-both sharing libraries with main application. In such a case you could use `MERGE`_ function
-in order to create a main, big, package, with all libraries and dependencies inside, and two small
-packages next to the first one.
-All packages linked this way must be placed in the same directory and you can't
-change directory structure after merge.
-You can look at multipackage examples in 'buildtests' dir.
 
+With Pyinstaller you can create a collection of packages to avoid library duplication.
+You can establish links between packages using the function `MERGE`_ in your spec file. 
+
+For example, you might wish to deploy your application with an updater utility and a configurator,
+both sharing libraries with main application. In such a case you could use `MERGE`_ function
+in order to create a main, big, package, with all libraries and dependencies inside,
+and two small packages next to the first one. In this case, you'd pass a list of three tuples
+to `MERGE`_: the first one for the main application, and two for the updater and duplicator;
+the result will be three package directories.
+
+Note that all common dependency files will be created  in the first package,
+and referenced there by the other executables.  For this reason, all packages linked this way
+must be placed in the same parent directory, and changing directory structure after the merge
+will result in failure of the executables.
+
+There are multipackage examples in the ``buildtests/multipackage`` directory.
 
 
 |GOBACK|_
@@ -927,6 +934,59 @@ With the MERGE function we can create a group of interdependent packages.
 As a result the packages generated will be connected. Furthermore, to ensure the consistency
 of dependencies, it replaces the temporary names with the actual names.
 MERGE is used after the analysis phase and before ``EXE`` and ``COLLECT``.
+
+Here is spec file example with ``MERGE`` function::
+
+      ## Where the package folders will be built, and the shortcuts will reside
+      TargetDir = os.path.abspath(os.path.join('..','..','Client','Programs'))
+      
+      ## The application names
+      AppNames = [d for d in os.listdir(os.getcwd())
+                  if os.path.isdir(d)
+                  and d[0]!='.'
+                  and d[0:6]!='Common'
+                  and d != 'build'
+                  and d != 'dummy']
+      
+      ## Build MERGE arguments (analysis object, script base name, final exe path)
+      #  Start with the dummy package
+      Analyses = [(Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
+                             os.path.join(HOMEPATH,'support', 'useUnicode.py'),
+                             os.path.join('dummy','dummy.py')]),
+                   'dummy', os.path.join('dummy','dummy.exe'))
+                  ]
+      
+      #  NOTE: this assumes that the main script in each is appname.pyw in the appname folder
+      Analyses += [(Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
+                              os.path.join(HOMEPATH,'support', 'useUnicode.py'),
+                              os.path.join(appname, appname + '.pyw')]),
+                    appname, os.path.join(appname,appname+'.exe'))
+                   for appname in AppNames]
+      
+      ## Merge all the dependencies
+      MERGE(*Analyses)
+      
+      ## Build each app
+      for anal, basename, exename in Analyses:
+          pyz = PYZ(anal.pure)
+          exe = EXE(pyz,
+                    anal.scripts,
+                    anal.dependencies,
+                    exclude_binaries=1,
+                    name=exename,
+                    version='FalconVersion.txt',
+                    debug=False,
+                    strip=False,
+                    upx=True,
+                    console=False )
+          dist = COLLECT(exe,
+                         anal.binaries,
+                         anal.zipfiles,
+                         anal.datas,
+                         strip=False,
+                         ###upx=True if (basename == 'dummy') else False,
+                         upx=False,
+                         name=os.path.join(TargetDir,basename))
 
 
 |GOBACK|_
