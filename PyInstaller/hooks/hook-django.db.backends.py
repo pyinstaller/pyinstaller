@@ -24,7 +24,7 @@ def hook(mod):
     modpath = mod.__path__[0]
     hiddenimports = []
 
-    for fn in glob.glob('%s/*' % modpath):
+    for fn in glob.glob(os.path.join(modpath, '*')):
         if os.path.isdir(fn):
             fn = os.path.basename(fn)
             hiddenimports.append('django.db.backends.' + fn + '.base')

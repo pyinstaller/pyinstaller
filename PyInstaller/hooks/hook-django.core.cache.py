@@ -24,7 +24,7 @@ def hook(mod):
     modpath = mod.__path__[0]
     hiddenimports = []
 
-    for fn in glob.glob('%s/backends/*.py' % modpath):
+    for fn in glob.glob(os.path.join(modpath, 'backends', '*.py')):
         fn = os.path.basename(fn)
         fn = os.path.splitext(fn)[0]
         hiddenimports.append('django.core.cache.backends.' + fn)

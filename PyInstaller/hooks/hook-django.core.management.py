@@ -25,7 +25,7 @@ def hook(mod):
 
     hiddenimports = []
 
-    for fn in glob.glob('%s/commands/*.py' % modpath):
+    for fn in glob.glob(os.path.join(modpath, 'commands', '*.py')):
         fn = os.path.basename(fn)
         fn = os.path.splitext(fn)[0]
         hiddenimports.append('django.core.management.commands.' + fn)
