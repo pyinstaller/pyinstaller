@@ -277,7 +277,7 @@ def test_UPX(config, upx_dir):
 
     hasUPX = 0
     try:
-        vers = subprocess.Popen([cmd, '-V'], stdout=PIPE).communicate()[0]
+        vers = subprocess.Popen([cmd, '-V'], stdout=subprocess.PIPE).communicate()[0]
         vers = vers.strip().splitlines()
         if vers:
             v = string.split(vers[0])[1]

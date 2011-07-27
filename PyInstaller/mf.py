@@ -1095,7 +1095,8 @@ def _resolveCtypesImports(cbinaries):
                     cpath = os.path.join(d, cpath)
                     break
             else:
-                txt = subprocess.Popen(["ldconfig", "-p"]), stdout=PIPE).communicate()[0]
+                text = subprocess.Popen(["ldconfig", "-p"],
+                    stdout=subprocess.PIPE).communicate()[0]
                 for L in text.strip().splitlines():
                     if cpath in L:
                         cpath = L.split("=>", 1)[1].strip()

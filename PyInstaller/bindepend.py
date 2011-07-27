@@ -437,7 +437,7 @@ def selectImports(pth, xtrapath=None):
     return rv
 
 def __popen(*cmd):
-    return subprocess.Popen(cmd, stdout=PIPE).communicate()[0]
+    return subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
 
 def _getImports_ldd(pth):
     """Find the binary dependencies of PTH.
@@ -589,5 +589,6 @@ def findLibrary(name):
 def getSoname(filename):
     """Return the soname of a library."""
     cmd = ["objdump", "-p", "-j", ".dynamic", filename]
-    m = re.search(r'\s+SONAME\s+([^\s]+)', __popen(*cmd)
-    if m: return m.group(1)
+    m = re.search(r'\s+SONAME\s+([^\s]+)', __popen(*cmd))
+    if m:
+        return m.group(1)
