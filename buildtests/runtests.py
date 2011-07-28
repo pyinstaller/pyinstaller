@@ -51,7 +51,15 @@ try:
 except NameError:
     here=os.path.dirname(os.path.abspath(sys.argv[0]))
 os.chdir(here)
+
 PYTHON = sys.executable
+
+# On Mac OS X we support only 32bit
+# python interpreter can be run as 32bit or 64bit
+# run as 32bit
+if sys.platform.startswith('darwin'):
+    PYTHON = 'arch -i386 ' + PYTHON
+
 if sys.platform[:3] == 'win':
     if string.find(PYTHON, ' ') > -1:
         PYTHON='"%s"' % PYTHON
