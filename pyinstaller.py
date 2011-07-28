@@ -21,12 +21,12 @@
 
 import os
 import sys
+import optparse
 
 import PyInstaller.configure
 import PyInstaller.makespec
 import PyInstaller.build
 
-from PyInstaller.lib.pyi_optparse import OptionParser
 from PyInstaller import get_version
 
 
@@ -59,7 +59,7 @@ def __add_options(parser):
                       'if running multiple times with the same configuration.')
 
 
-parser = OptionParser(
+parser = optparse.OptionParser(
     usage="python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>"
     )
 
