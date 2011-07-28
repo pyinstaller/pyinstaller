@@ -506,19 +506,26 @@ class Analysis(Target):
         Some linux distributions (e.g. debian-based) statically build the
         Python executable to the libpython, so bindepend doesn't include
         it in its output.
+
+        Darwin custom builds could possibly also have non-framework style libraries, 
+        so this method also checks for that variant as well.
         """
 
         if target_platform.startswith("linux"):
-            name = 'libpython%d.%d.so' % sys.version_info[:2]
+            names = ('libpython%d.%d.so' % sys.version_info[:2],) 
         elif target_platform.startswith("darwin"):
-            name = 'Python'
+            names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
         else:
             return
 
         for (nm, fnm, typ) in binaries:
-            if typ == 'BINARY' and name in fnm:
-                # lib found
-                return
+            for name in names: 
+                if typ == 'BINARY' and name in fnm:
+                    # lib found
+                    return
+
+        # resume search using the first item in names
+        name = names[0]
 
         if target_platform.startswith("linux"):
             lib = bindepend.findLibrary(name)
@@ -946,22 +953,26 @@ class EXE(Target):
         return False
 
     def _bootloader_file(self, exe):
-        base = "support/loader"
-
         try:
             import platform
-            dir = platform.system() + "-" + architecture()
+            # On some Windows installation (Python 2.4) platform.system() is
+            # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
+            # http://mail.python.org/pipermail/patches/2007-June/022947.html
+            syst = platform.system()
+            syst_real = {'Microsoft': 'Windows'}.get(syst, syst)
+            PLATFORM = syst_real + "-" + architecture()
         except ImportError:
             import os
             n = { "nt": "Windows", "linux2": "Linux", "darwin": "Darwin" }
-            dir = n[os.name] + "-32bit"
+            PLATFORM = n[os.name] + "-32bit"
 
         if not self.console:
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
 
-        return base + "/" + dir + "/" + exe
+        import os
+        return os.path.join('support', 'loader', PLATFORM, exe)
 
     def assemble(self):
         print "building EXE from", os.path.basename(self.out)

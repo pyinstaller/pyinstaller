@@ -223,7 +223,12 @@ def main(scripts, configfile=None, name=None, tk=0, freeze=0, console=1, debug=0
         d['dllname'] = name+'.dll'
     else:
         d['exename'] = name
+
+    # only Windows and Mac OS X distinguish windowed and console apps
+    if not config['target_platform'][:3] == "win" and \
+       not config['target_platform'].startswith('darwin'):
         d['console'] = 1
+
     specfnm = os.path.join(workdir, name+'.spec')
     specfile = open(specfnm, 'w')
     if freeze:
@@ -291,18 +296,19 @@ if __name__ == '__main__':
     #p.add_option("-Y", "--crypt", type="string", default=None, metavar="FILE",
     #             help="encrypt pyc/pyo files")
 
-    g = p.add_option_group('Windows specific options')
+    g = p.add_option_group('Windows and Mac OS X specific options')
     g.add_option("-c", "--console", "--nowindowed", dest="console",
                  action="store_true",
-                 help="use a console subsystem executable (Windows only) "
+                 help="use a console subsystem executable"
                       "(default)")
     g.add_option("-w", "--windowed", "--noconsole", dest="console",
                  action="store_false", default=True,
-                 help="use a Windows subsystem executable (Windows only)")
+                 help="use a Windows subsystem executable")
+
+    g = p.add_option_group('Windows specific options')
     g.add_option("-v", "--version", type="string",
                  dest="version_file", metavar="FILE",
-                 help="add a version resource from FILE to the exe "
-                      "(Windows only)")
+                 help="add a version resource from FILE to the exe ")
     g.add_option("-i", "--icon", type="string", dest="icon_file",
                  metavar="FILE.ICO or FILE.EXE,ID",
                  help="If FILE is an .ico file, add the icon to the final "
@@ -311,8 +317,7 @@ if __name__ == '__main__':
                       "from file.exe and add it to the final executable")
     g.add_option("-m", "--manifest", type="string",
                  dest="manifest", metavar="FILE or XML",
-                 help="add manifest FILE or XML to the exe "
-                      "(Windows only)")
+                 help="add manifest FILE or XML to the exe ")
     g.add_option("-r", "--resource", type="string", default=[], dest="resources",
                  metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
                  help="add/update resource of the given type, name and language "

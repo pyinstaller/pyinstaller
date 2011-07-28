@@ -1,14 +1,53 @@
+.. -*- mode: rst ; ispell-local-dictionary: "american" -*-
+
 ==================
 PyInstaller Manual
 ==================
+:Version: |PyInstallerVersion|
+:Homepage: |Homepage|
 :Author: Giovanni Bajo & William Caban (based on Gordon McMillan's manual)
 :Contact: rasky@develer.com
-:Version: |PyInstallerVersion|
-:Revision: $Rev$
+:Revision: |SvnRevision|
 :Source URL: $HeadURL$
 :Copyright: This document has been placed in the public domain.
 
 .. contents::
+
+
+Requirements
+++++++++++++
+
+Windows
+-------
+
+PyWin32_
+    Python extensions for Windows is only necessary for users of Python 2.6+.
+
+|GOBACK|_
+
+Linux
+-----
+
+ldd
+    Console application to print the shared libraries required by each program
+    or shared library.
+
+objdump
+    Console application to display information from object files.
+
+|GOBACK|_
+
+Mac OS X
+--------
+
+Xcode_
+    is a suite of tools for developing software for Mac OS X. It can be also
+    installed from your ``Mac OS X Install DVD``. It is not necessary to
+    install the version 4 of Xcode. PyInstaller depends on ``otool`` which is
+    installed together with Xcode. ``otool`` displays information of object
+    files or libraries.
+
+|GOBACK|_
 
 
 Getting Started
@@ -17,7 +56,7 @@ Getting Started
 Installing PyInstaller
 ----------------------
 
-First, unpack the archive on you path of choice. Installer is **not** a Python
+First, unpack the archive on your path of choice. Installer is **not** a Python
 package, so it doesn't need to go in site-packages, or have a .pth file. For
 the purpose of this documentation we will assume |install_path|. You will be
 using a couple of scripts in the |install_path| directory, and these will find
@@ -443,6 +482,22 @@ cross-references by using ``mf.py``, documented in section `mf.py: A modulefinde
 Replacement`_
 
 |GOBACK|_
+
+
+pyinstaller.py
+--------------
+
+::
+
+    python pyinstaller.py [options] <scriptname> [ <scriptname> ...] | <specfile>
+
+Utility ``pyinstaller.py`` is new alternative interface for using PyInstaller.
+It will be the default interface for using PyInstaller in next major release
+(PyInstaller v1.6). ``pyinstaller.py`` should simplify usage of PyInstaller
+by wrapping the fuctionality of scripts ``Configure.py``, ``Makespec.py`` and
+``Build.py``.
+
+It should accept all optios of ``Configure.py``, ``Makespec.py`` and ``Build.py``.
 
 
 Spec Files
@@ -1116,7 +1171,10 @@ The first pass:
 The child process executes as in `One Pass Execution`_ above (the magic
 environment variable is what tells it that this is pass two).
 
-|SE_exeImage| figure 3 - Self Extracting Executable
+.. image:: images/SE_exe.png
+   :width: 9cm
+
+figure 3 - Self Extracting Executable
 
 There are, of course, quite a few differences between the Windows and
 Unix/Linux versions. The major one is that because all of Python on Windows is
@@ -1168,7 +1226,8 @@ entry was created from (the ``__file__`` attribute from the time the ``.pyc`` wa
 compiled). On a user's box with no source installed, this is not terribly
 useful, but if they send you the traceback, at least you can make sense of it.
 
-|ZlibArchiveImage|
+.. image:: images/ZlibArchive.png
+   :width: 9cm
 
 |GOBACK|_
 
@@ -1192,7 +1251,8 @@ There is also a type code associated with each entry. If you're using a
 ``CArchive`` as a ``.zip`` file, you don't need to worry about this. The type codes
 are used by the self-extracting executables.
 
-|CArchiveImage|
+.. image:: images/CArchive.png
+   :width: 9cm
 
 |GOBACK|_
 
@@ -1252,6 +1312,10 @@ On Fedora/RHEL and derivates, you can run the following lines::
         su
         yum groupinstall "Development Tools"
         yum install python-devel
+
+On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
+for developing software for Mac OS X. It can be also installed from your
+``Mac OS X Install DVD``. It is not necessary to install the version 4 of Xcode.
 
 On Windows you can use MinGW (gcc for Windows) and Visual Studio C++ (msvc)
 compilers. Python development libraries are usually installed together with
@@ -1734,24 +1798,19 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 
 |GOBACK|_
 
-.. _PyInstaller: http://www.pyinstaller.org
 .. _hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/hooks/hook-win32com.py?rev=latest
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _PyQt: http://www.riverbankcomputing.co.uk/pyqt/index.php
-.. _PyWin32: http://starship.python.net/crew/mhammond/win32/
+.. _PyWin32: http://sourceforge.net/projects/pywin32/files/
+.. _Xcode: http://developer.apple.com/xcode
 .. _`GPL License`: http://www.pyinstaller.org/browser/trunk/doc/LICENSE.GPL?rev=latest
 .. _FAQ: http://www.pyinstaller.org/wiki/FAQ
 .. _MinGW: http://sourceforge.net/downloads/mingw/
 .. _MinGW-w64: http://mingw-w64.sourceforge.net/
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
 .. _`LSB sdk 4.0`: http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/
-.. |ZlibArchiveImage| image:: images/ZlibArchive.png
-.. |CArchiveImage| image:: images/CArchive.png
-.. |SE_exeImage| image:: images/SE_exe.png
-.. |PyInstaller| replace:: PyInstaller
-.. |PyInstallerVersion| replace:: PyInstaller v1.5
-.. |InitialVersion| replace:: v1.0
-.. |install_path| replace:: /your/path/to/pyinstaller/
 .. |GOBACK| replace:: `Back to Top`
 .. _GOBACK: `PyInstaller Manual`_
+
+.. include:: _definitions.txt
