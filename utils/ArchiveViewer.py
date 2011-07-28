@@ -209,7 +209,7 @@ class ZlibArchive(archive.ZlibArchive):
             print "Warning: pyz is from a different Python version"
         self.lib.read(4)
 
-parser = optparse.ptionParser('%prog [options] pyi_archive')
+parser = optparse.OptionParser('%prog [options] pyi_archive')
 parser.add_option('-l', '--log',
                   default=False,
                   action='store_true',
