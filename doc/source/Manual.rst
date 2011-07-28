@@ -484,6 +484,22 @@ Replacement`_
 |GOBACK|_
 
 
+pyinstaller.py
+--------------
+
+::
+
+    python pyinstaller.py [options] <scriptname> [ <scriptname> ...] | <specfile>
+
+Utility ``pyinstaller.py`` is new alternative interface for using PyInstaller.
+It will be the default interface for using PyInstaller in next major release
+(PyInstaller v1.6). ``pyinstaller.py`` should simplify usage of PyInstaller
+by wrapping the fuctionality of scripts ``Configure.py``, ``Makespec.py`` and
+``Build.py``.
+
+It should accept all optios of ``Configure.py``, ``Makespec.py`` and ``Build.py``.
+
+
 Spec Files
 ++++++++++
 

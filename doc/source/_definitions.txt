@@ -7,4 +7,4 @@
 .. |Version| replace:: v1.5.1
 .. |PyInstallerVersion| replace:: PyInstaller |Version|
 .. |install_path| replace:: /your/path/to/pyinstaller/
-.. |SvnRevision| replace:: 1482
+.. |SvnRevision| replace:: 1545
