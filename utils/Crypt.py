@@ -59,7 +59,7 @@ def main():
     import optparse
 
     cmds = {}
-    p = pyi_optparse.OptionParser(
+    p = optparse.OptionParser(
         usage="%prog [opts] file",
         description="Generate a plaintext keyfile containing a "
                     "random-generated encryption key. ")
