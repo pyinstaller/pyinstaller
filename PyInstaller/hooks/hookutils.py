@@ -5,6 +5,7 @@ import sys
 import glob
 import subprocess
 
+
 def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
@@ -29,6 +30,7 @@ def exec_statement(statement):
             del os.environ["PYTHONPATH"]
     return txt[:-1]
 
+
 def eval_statement(statement):
     txt = exec_statement(statement).strip()
     if not txt:
@@ -36,13 +38,15 @@ def eval_statement(statement):
         return ''
     return eval(txt)
 
+
 def dlls_in_dir(directory):
     """Returns *.dll, *.so, *.dylib in given directories"""
     files = []
     files.extend(glob.glob(os.path.join(directory, '*.so')))
     files.extend(glob.glob(os.path.join(directory, '*.dll')))
-    files.extend(glob.glob(os.path.join(directory, '*.dylib'))))
+    files.extend(glob.glob(os.path.join(directory, '*.dylib')))
     return files
+
 
 def qt4_plugins_dir():
     qt4_plugin_dirs = eval_statement(
