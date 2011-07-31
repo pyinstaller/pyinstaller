@@ -42,7 +42,6 @@ import marshal
 import struct
 import imp
 import sys
-import os
 
 _c_suffixes = filter(lambda x: x[2] == imp.C_EXTENSION, imp.get_suffixes())
 
@@ -374,7 +373,7 @@ class ZlibArchive(Archive):
             txt = iu._string_replace(txt, '\r\n', '\n')
             try:
                 import os
-                co = compile(txt, os.path.join(self.path, nm), 'exec')
+                co = compile(txt, self.os.path.join(self.path, nm), 'exec')
             except SyntaxError, e:
                 print "Syntax error in", pth[:-1]
                 print e.args
