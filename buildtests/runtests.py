@@ -156,8 +156,6 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     for _, test in tests:
         test = os.path.splitext(test)[0]
         testdir, testfile = os.path.split(test)
-        print os.getcwd()
-        print testdir
         os.chdir(testdir)  # go to testdir
         if test in MIN_VERSION_OR_OS and not MIN_VERSION_OR_OS[test]:
             counter["skipped"].append(test)
@@ -169,7 +167,6 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
                 res = os.system(PYTHON + ' -c "import %s"' % mod)
                 if res != 0:
                     failed = True
-                    os.chdir('..')  # go back from testdir
                     break
             if failed:
                 if verbose:
