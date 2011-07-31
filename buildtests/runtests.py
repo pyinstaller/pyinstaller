@@ -27,6 +27,7 @@ import glob
 import re
 import pprint
 import shutil
+import optparse
 
 try:
     import PyInstaller
@@ -40,7 +41,6 @@ except ImportError:
 
 from PyInstaller import HOMEPATH
 from PyInstaller import is_py23, is_py25, is_py26, is_win
-from PyInstaller.lib.pyi_optparse import OptionParser
 
 
 MIN_VERSION_OR_OS = {
@@ -156,6 +156,8 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     for _, test in tests:
         test = os.path.splitext(test)[0]
         testdir, testfile = os.path.split(test)
+        print os.getcwd()
+        print testdir
         os.chdir(testdir)  # go to testdir
         if test in MIN_VERSION_OR_OS and not MIN_VERSION_OR_OS[test]:
             counter["skipped"].append(test)
@@ -288,9 +290,9 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     if not is_py25:
-        parser = OptionParser(usage="%prog [options] [TEST-NAME ...]")
+        parser = optparse.OptionParser(usage="%prog [options] [TEST-NAME ...]")
     else:
-        parser = OptionParser(usage="%prog [options] [TEST-NAME ...]",
+        parser = optparse.OptionParser(usage="%prog [options] [TEST-NAME ...]",
                               epilog="TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.")
 
     parser.add_option('-c', '--clean', action='store_true',
