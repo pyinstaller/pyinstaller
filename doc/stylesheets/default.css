@@ -19,19 +19,7 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 {
 	text-align: center;
- 	font-size: 24pt;
 	font-variant: small-caps;
-}
-h2 {
- 	font-size: 14pt;
-}
-
-h3 {
-	font-size: 12pt;
-}
-
-h4 {
-	font-size: 11pt;
 }
 
 a:link, a:visited { color: #006699; }
