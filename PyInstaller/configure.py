@@ -37,14 +37,6 @@ import PyInstaller.bindepend as bindepend
 import PyInstaller.build as build
 import PyInstaller.compat as compat
 
-if is_darwin and compat.architecture() == '64bit':
-    print "W: PyInstaller support for Python 64-bit on Mac OSX is experimental."
-    print "W: If you need 32-bit version of Python and you use Python distributed"
-    print "   with Mac OX, try setting"
-    print "   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment"
-    # wait several seconds for user to see this message
-    time.sleep(10)
-
 
 def _write_textfile(filename, text):
     """
@@ -335,6 +327,15 @@ def __add_options(parser):
 
 
 def main(configfilename, upx_dir, **kw):
+
+    if is_darwin and compat.architecture() == '64bit':
+        print "W: PyInstaller support for Python 64-bit on Mac OSX is experimental."
+        print "W: If you need 32-bit version of Python and you use Python distributed"
+        print "   with Mac OX, try setting"
+        print "   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment"
+        # wait several seconds for user to see this message
+        time.sleep(4)
+
     try:
         config = build._load_data(configfilename)
         print 'I: read old config from', configfilename
