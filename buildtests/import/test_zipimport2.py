@@ -37,7 +37,6 @@ print '-----------'
 print 'now importing pkg_resources' 
 import pkg_resources
 
-import distutils.core
 print '-----------'
 print 'now importing setuptools.dist'
 import setuptools.dist
