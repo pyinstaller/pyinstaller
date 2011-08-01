@@ -92,3 +92,11 @@ def setenv(name, value):
     value 'value'.
     """
     pass
+
+
+# Wrap creating subprocesses
+# We might decide to use subprocess module instead os.system()
+
+
+def exec_command(cmd):
+    pass
