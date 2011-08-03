@@ -70,27 +70,39 @@ to these scripts short (don't install in a deeply nested subdirectory).
 Build your project
 ------------------
 
-[For Windows COM server support, see section `Windows COM Server Support`_]
+[For building a Windows COM server, please see section `Windows COM
+Server Support`_ below.]
 
 In the |install_path| directory, run::
 
       python pyinstaller.py [opts] yourprogram.py
 
-A ``yourprogram`` subdirectory will be created in the |install_path| directory.
-If you are not in |install_path| directory, directories ``build`` and ``dist``
-will be created in your current working directory.
+This will create a sub-directory ``your-program`` in the |install_path|
+directory. The generated files will be placed within the sub-directory
+``your-program/dist``; that's where the files you are interested in
+will be placed. A `spec` file called ``your-program.spec`` will be
+created in the sub-directory ``your-program``, too. Additionally a
+subtracts ``your-program/build`` is created where intermediate build
+files are kept.
 
-The generated files will be placed within the ``dist`` subdirectory; that's where
-the files you are interested in will be placed.
+If your current working directory is not |install_path|, the
+directories ``dist`` and ``build`` and the `spec` file will be
+created in the current working directory. Say: the intermediate
+directory ``your-program`` will be skipped.
 
-If you have created a spec file for your project then in the |install_path|
-directory run::
 
-       python pyinstaller.py [opts] yourspecfile.spec
+If you have already created a `spec` file for your project then in
+the |install_path| directory run::
 
-If you like default settings and everything is working, this will be all
-you have to do. If not, see `Allowed OPTIONS`_, `When things go wrong`_ and
-be sure to read the introduction to `Spec Files`_.
+       python pyinstaller.py [opts] your-program.spec
+
+If your current working directory is not |install_path|, this works
+analogously.
+
+If everything is working and you are happy with the defaults settings,
+this will be all you have to do. If not, see `Allowed OPTIONS`_, `When
+things go wrong`_ and be sure to read the introduction to `Spec
+Files`_.
 
 |GOBACK|_
 
