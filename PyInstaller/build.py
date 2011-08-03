@@ -330,8 +330,7 @@ class Analysis(Target):
                 raise ValueError("script '%s' not found" % script)
         self.pathex = []
         if pathex:
-            for path in pathex:
-                self.pathex.append(absnormpath(path))
+            self.pathex = [absnormpath(path) for path in pathex]
         sys.pathex = self.pathex[:]
         self.hookspath = hookspath
         self.excludes = excludes
@@ -381,10 +380,6 @@ class Analysis(Target):
         # if there are multiple Analysis in a single specfile.
         bindepend.seen = {}
 
-        paths = self.pathex
-        for i in range(len(paths)):
-            # FIXME: isn't self.pathex already norm-abs-pathed?
-            paths[i] = absnormpath(paths[i])
         ###################################################
         # Scan inputs and prepare:
         dirs = {}  # input directories
@@ -402,7 +397,7 @@ class Analysis(Target):
             pynms.append(pynm)
         ###################################################
         # Initialize analyzer and analyze scripts
-        analyzer = mf.ImportTracker(dirs.keys() + paths, self.hookspath,
+        analyzer = mf.ImportTracker(dirs.keys() + self.pathex, self.hookspath,
                                     self.excludes)
         #print analyzer.path
         scripts = []  # will contain scripts to bundle
