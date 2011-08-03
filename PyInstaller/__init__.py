@@ -60,6 +60,9 @@ DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
 PLATFORM = compat.system() + '-' + compat.architecture()
 
+# path extensions for module seach
+# :fixme: this should not be a global variable
+__pathex__ = []
 
 def get_version():
     version = '%s.%s' % (VERSION[0], VERSION[1])

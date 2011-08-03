@@ -40,6 +40,7 @@ try:
 except ImportError:
     ctypes = None
 
+import PyInstaller
 from PyInstaller import is_linux, is_darwin, is_py25, is_py27
 
 if 'PYTHONCASEOK' not in os.environ:
@@ -1058,7 +1059,7 @@ def _resolveCtypesImports(cbinaries):
 
     def _setPaths():
         old = os.environ.get(envvar, None)
-        os.environ[envvar] = os.pathsep.join(getattr(sys, "pathex", []))
+        os.environ[envvar] = os.pathsep.join(PyInstaller.__pathex__)
         if old is not None:
             os.environ[envvar] = os.pathsep.join([os.environ[envvar], old])
         return old

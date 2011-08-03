@@ -35,6 +35,7 @@ import bindepend
 import traceback
 import subprocess
 
+import PyInstaller
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
 from PyInstaller import is_win, is_linux, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
@@ -331,7 +332,6 @@ class Analysis(Target):
         self.pathex = []
         if pathex:
             self.pathex = [absnormpath(path) for path in pathex]
-        sys.pathex = self.pathex[:]
         self.hookspath = hookspath
         self.excludes = excludes
         self.scripts = TOC()
@@ -400,12 +400,14 @@ class Analysis(Target):
         analyzer = mf.ImportTracker(dirs.keys() + self.pathex, self.hookspath,
                                     self.excludes)
         #print analyzer.path
+        PyInstaller.__pathex__ = self.pathex[:]
         scripts = []  # will contain scripts to bundle
         for i in range(len(self.inputs)):
             script = self.inputs[i]
             print "Analyzing:", script
             analyzer.analyze_script(script)
             scripts.append((pynms[i], script, 'PYSOURCE'))
+        PyInstaller.__pathex__ = []
         ###################################################
         # Fills pure, binaries and rthookcs lists to TOC
         pure = []     # pure python modules

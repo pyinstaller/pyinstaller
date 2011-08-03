@@ -4,7 +4,7 @@ import os
 import sys
 import glob
 import subprocess
-
+import PyInstaller
 
 def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
@@ -13,7 +13,7 @@ def exec_statement(statement):
     cmd = [sys.executable, '-c', statement]
 
     # Prepend PYTHONPATH with pathex
-    pp = os.pathsep.join(sys.pathex)
+    pp = os.pathsep.join(PyInstaller.__pathex__)
     old_pp = os.environ.get('PYTHONPATH', '')
     if old_pp:
         pp = os.pathsep.join([pp, old_pp])
