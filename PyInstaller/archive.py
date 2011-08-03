@@ -372,7 +372,7 @@ class ZlibArchive(Archive):
             except (IOError, ValueError, EOFError, AttributeError):
                 raise ValueError("bad bytecode in %s and no source" % pth)
         else:
-            txt = iu._string_replace(txt, '\r\n', '\n')
+            txt = txt.replace('\r\n', '\n')
             try:
                 import os
                 co = compile(txt, self.os.path.join(self.path, nm), 'exec')

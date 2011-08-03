@@ -401,8 +401,8 @@ class ImportManager:
                 # level=1 => current package
                 # level=2 => previous package => drop 1 level
                 if level > 1:
-                    importernm = _string_split(importernm, '.')[:-level+1]
-                    importernm = _string_join('.', importernm)
+                    importernm = importernm.split('.')[:-level+1]
+                    importernm = '.'.join(importernm)
                 contexts = [None]
             if importernm:
                 if ispkg:
@@ -695,51 +695,6 @@ def _os_bootstrap():
     _os_listdir = _listdir
     _os_path_basename = basename
 
-_string_replace = _string_join = _string_split = None
-
-def _string_bootstrap():
-    """
-    Set up 'string' module replacement functions for use during import bootstrap.
-
-    During bootstrap, we can use only builtin modules since import does not work
-    yet. For Python 2.0+, we can use string methods so this is not a problem.
-    For Python 1.5, we would need the string module, so we need replacements.
-    """
-    global _string_replace, _string_join, _string_split
-
-    def join(sep, words):
-        res = ''
-        for w in words:
-            res = res + (sep + w)
-        return res[len(sep):]
-
-    def split(s, sep, maxsplit=0):
-        res = []
-        nsep = len(sep)
-        if nsep == 0:
-            return [s]
-        ns = len(s)
-        if maxsplit <= 0: maxsplit = ns
-        i = j = 0
-        count = 0
-        while j+nsep <= ns:
-            if s[j:j+nsep] == sep:
-                count = count + 1
-                res.append(s[i:j])
-                i = j = j + nsep
-                if count >= maxsplit: break
-            else:
-                j = j + 1
-        res.append(s[i:])
-        return res
-
-    def replace(str, old, new):
-        return _string_join(new, _string_split(str, old))
-
-    _string_join    = getattr(STRINGTYPE, "join",    join)
-    _string_split   = getattr(STRINGTYPE, "split",   split)
-    _string_replace = getattr(STRINGTYPE, "replace", replace)
-
 _os_bootstrap()
 
 if 'PYTHONCASEOK' not in _os_environ:
@@ -749,5 +704,3 @@ if 'PYTHONCASEOK' not in _os_environ:
 else:
     def caseOk(filename):
         return True
-
-_string_bootstrap()
