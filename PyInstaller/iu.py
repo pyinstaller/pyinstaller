@@ -32,17 +32,7 @@
 import sys
 import imp
 import marshal
-
-try:
-    # zipimport is supported starting with Python 2.3
-    import zipimport
-except ImportError:
-    zipimport = None
-
-try:
-    STRINGTYPE = basestring
-except NameError:
-    STRINGTYPE = type("")
+import zipimport
 
 def debug(msg):
     if 0:
@@ -145,51 +135,49 @@ class DirOwner(Owner):
         return mod
 
 
-ZipOwner = None
-if zipimport:
-    class ZipOwner(Owner):
-        def __init__(self, path):
-            try:
-                self.__zip = zipimport.zipimporter(path)
-            except zipimport.ZipImportError, e:
-                raise OwnerError('%s: %s' % (str(e), path))
-            Owner.__init__(self, path)
+class ZipOwner(Owner):
+    def __init__(self, path):
+        try:
+            self.__zip = zipimport.zipimporter(path)
+        except zipimport.ZipImportError, e:
+            raise OwnerError('%s: %s' % (str(e), path))
+        Owner.__init__(self, path)
 
-        def getmod(self, nm, newmod=imp.new_module):
-            # We cannot simply use zipimport.load_module here
-            # because it both loads (= create module object)
-            # and imports (= execute bytecode). Instead, our
-            # getmod() functions are supposed to only load the modules.
-            # Note that imp.load_module() does the right thing, instead.
-            debug('zipimport try: %s within %s' % (nm, self.__zip))
-            try:
-                co = self.__zip.get_code(nm)
-                mod = newmod(nm)
-                mod.__file__ = co.co_filename
-                if self.__zip.is_package(nm):
-                    mod.__path__ = [_os_path_join(self.path, nm)]
-                    subimporter = PathImportDirector(mod.__path__)
-                    mod.__importsub__ = subimporter.getmod
-                if self.path.endswith(".egg"):
-                    # Fixup some additional special attribute so that
-                    # pkg_resources works correctly.
-                    # TODO: couldn't we fix these attributes always,
-                    # for all zip files?
-                    mod.__file__ = _os_path_join(
-                        _os_path_join(self.path, nm), "__init__.py")
-                    mod.__loader__ = self.__zip
-                mod.__co__ = co
-                return mod
-            except zipimport.ZipImportError:
-                debug('zipimport not found %s' % nm)
-                return None
+    def getmod(self, nm, newmod=imp.new_module):
+        # We cannot simply use zipimport.load_module here
+        # because it both loads (= create module object)
+        # and imports (= execute bytecode). Instead, our
+        # getmod() functions are supposed to only load the modules.
+        # Note that imp.load_module() does the right thing, instead.
+        debug('zipimport try: %s within %s' % (nm, self.__zip))
+        try:
+            co = self.__zip.get_code(nm)
+            mod = newmod(nm)
+            mod.__file__ = co.co_filename
+            if self.__zip.is_package(nm):
+                mod.__path__ = [_os_path_join(self.path, nm)]
+                subimporter = PathImportDirector(mod.__path__)
+                mod.__importsub__ = subimporter.getmod
+            if self.path.endswith(".egg"):
+                # Fixup some additional special attribute so that
+                # pkg_resources works correctly.
+                # TODO: couldn't we fix these attributes always,
+                # for all zip files?
+                mod.__file__ = _os_path_join(
+                    _os_path_join(self.path, nm), "__init__.py")
+                mod.__loader__ = self.__zip
+            mod.__co__ = co
+            return mod
+        except zipimport.ZipImportError:
+            debug('zipimport not found %s' % nm)
+            return None
 
 # _mountzlib.py will insert archive.PYZOwner in front later
-_globalownertypes = filter(None, [
+_globalownertypes = [
     ZipOwner,
     DirOwner,
     Owner,
-])
+]
 
 #===================Import Directors====================================#
 # ImportDirectors live on the metapath
@@ -289,7 +277,7 @@ class PathImportDirector(ImportDirector):
     def getmod(self, nm):
         mod = None
         for thing in (self.path or sys.path):
-            if isinstance(thing, STRINGTYPE):
+            if isinstance(thing, basestring):
                 owner = self.shadowpath.get(thing, -1)
                 if owner == -1:
                     owner = self.shadowpath[thing] = self.makeOwner(thing)
