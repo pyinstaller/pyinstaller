@@ -567,29 +567,21 @@ class ImportManager:
 #========= some helper functions =============================#
 
 def packagename(s):
-    for i in range(len(s)-1, -1, -1):
-        if s[i] == '.':
-            break
+    i = s.rfind('.')
+    if i >= 0:
+        return s[:i]
     else:
         return ''
-    return s[:i]
 
 def namesplit(s):
-    rslt = []
-    i = j = 0
-    for j in range(len(s)):
-        if s[j] == '.':
-            rslt.append(s[i:j])
-            i = j+1
-    if i < len(s):
-        rslt.append(s[i:])
-    return rslt
+    return s.split('.')
 
 def getpathext(fnm):
-    for i in range(len(fnm)-1, -1, -1):
-        if fnm[i] == '.':
-            return fnm[i:]
-    return ''
+    i = s.rfind('.')
+    if i >= 0:
+        return s[i:]
+    else:
+        return ''
 
 def pathisdir(pathname):
     "Local replacement for os.path.isdir()."
