@@ -15,11 +15,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from hookutils import django_dottedstring_imports, find_django_root
-
 import glob
 import os
 import PyInstaller
+
+from hookutils import django_dottedstring_imports, find_django_root
 
 python_path = os.environ.get("PYTHONPATH")
 
@@ -28,21 +28,21 @@ if python_path:
 else:
     python_path = os.pathsep.join(PyInstaller.__pathex__)
 
-django_root_dirs = []
-
-for path in python_path.split(os.pathsep):
-    django_root_dirs += find_django_root(path)
+django_root_dirs = [find_django_root(path)
+                    for path in python_path.split(os.pathsep)]
 
 if not django_root_dirs:
-    raise RuntimeError("No django root directory found. Please check your pathex definition in the project spec file.")
+    raise RuntimeError("No django root directory found. Please check your "
+                       "pathex definition in the project spec file.")
+
 if django_root_dirs[0] in PyInstaller.__pathex__:
-    raise RuntimeError("The django root directory is defined in the pathex. You have to define the parent directory instead of the django root directory.")
+    raise RuntimeError("The django root directory is defined in the pathex. "
+                       "You have to define the parent directory instead of "
+                       "the django root directory.")
 
 os.environ["PYTHONPATH"] = python_path
 
-hiddenimports = []
-
-for django_root_dir in django_root_dirs:
-    hiddenimports += django_dottedstring_imports(django_root_dir)
+hiddenimports = [django_dottedstring_imports(root_dir)
+                 for root_dir in django_root_dirs]
 
 
