@@ -37,7 +37,8 @@ _verbose = 0
 _listdir = None
 _environ = None
 
-# **NOTE** This module is used during bootstrap. Import *ONLY* builtin modules.
+### **NOTE** This module is used during bootstrap.
+### Import *ONLY* builtin modules.
 import marshal
 import struct
 import imp
@@ -68,12 +69,13 @@ class Archive:
           extract('a.b')
     """
     MAGIC = 'PYL\0'
-    HDRLEN = 12        # default is MAGIC followed by python's magic, int pos of toc
+    HDRLEN = 12    # default is MAGIC followed by python's magic, int pos of toc
     TOCPOS = 8
-    TRLLEN = 0        # default - no trailer
-    TOCTMPLT = {}     #
+    TRLLEN = 0     # default - no trailer
+    TOCTMPLT = {}  #
     os = None
     _bincache = None
+
     def __init__(self, path=None, start=0):
         "Initialize an Archive. If path is omitted, it will be an empty Archive."
         self.toc = None
@@ -86,7 +88,7 @@ class Archive:
             self.checkmagic()
             self.loadtoc()
 
-            ####### Sub-methods of __init__ - override as needed #############
+    ####### Sub-methods of __init__ - override as needed #############
     def checkmagic(self):
         """ Overridable.
             Check to see if the file object self.lib actually has a file
@@ -158,7 +160,7 @@ class Archive:
         ##        print "I: import %s found %s" % (fqname, iname)
         ##    return ispkg, code, values
 
-        ####### Core method - Override as needed  #########
+    ####### Core method - Override as needed  #########
     def extract(self, name):
         """ Get the object corresponding to name, or None.
             For use with imputil ArchiveImporter, object is a python code object.
@@ -178,8 +180,8 @@ class Archive:
         self.lib.seek(self.start + pos)
         return ispkg, marshal.load(self.lib)
 
-        ########################################################################
-        # Informational methods
+    ########################################################################
+    # Informational methods
 
     def contents(self):
         """Return a list of the contents
@@ -188,10 +190,10 @@ class Archive:
         """
         return self.toc.keys()
 
-        ########################################################################
-        # Building
+    ########################################################################
+    # Building
 
-        ####### Top level method - shouldn't need overriding #######
+    ####### Top level method - shouldn't need overriding #######
     def build(self, path, lTOC):
         """Create an archive file of name 'path'.
            lTOC is a 'logical TOC' - a list of (name, path, ...)
@@ -223,7 +225,7 @@ class Archive:
         self.lib.close()
 
 
-        ####### manages keeping the internal TOC and the guts in sync #######
+    ####### manages keeping the internal TOC and the guts in sync #######
     def add(self, entry):
         """Override this to influence the mechanics of the Archive.
            Assumes entry is a seq beginning with (nm, pth, ...) where
@@ -447,6 +449,8 @@ class PkgInPYZImporter:
     def getmod(self, nm):
         #print "PkgInPYZImporter.getmod %s -> %s" % (nm, self.name+'.'+nm)
         return self.owner.getmod(self.name+'.'+nm)
+
+
 class ExtInPkgImporter(iu.DirOwner):
     def __init__(self, path, prefix):
         iu.DirOwner.__init__(self, path)
