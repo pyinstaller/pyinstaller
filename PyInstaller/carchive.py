@@ -68,7 +68,6 @@ class CTOC:
 
     def tobinary(self):
         """Return self as a binary string."""
-        import string
         entrylen = struct.calcsize(self.ENTRYSTRUCT)
         rslt = []
         for (dpos, dlen, ulen, flag, typcd, nm) in self.data:
@@ -89,7 +88,7 @@ class CTOC:
                             nmlen+entrylen, dpos, dlen, ulen, flag, typcd, nm+pad))
             # end version 5
 
-        return string.join(rslt, '')
+        return ''.join(rslt)
 
     def add(self, dpos, dlen, ulen, flag, typcd, nm):
         """Add an entry to the table of contents.

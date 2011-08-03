@@ -21,7 +21,6 @@
 
 import os
 import sys
-import string
 import shutil
 import pprint
 import re
@@ -272,8 +271,8 @@ def test_UPX(config, upx_dir):
         vers = subprocess.Popen([cmd, '-V'], stdout=subprocess.PIPE).communicate()[0]
         vers = vers.strip().splitlines()
         if vers:
-            v = string.split(vers[0])[1]
-            hasUPX = tuple(map(int, string.split(v, ".")))
+            v = vers[0].split()[1]
+            hasUPX = tuple(map(int, v.split(".")))
             if is_win and is_py24 and hasUPX < (1, 92):
                 print 'E: UPX is too old! Python 2.4 under Windows requires UPX 1.92+'
                 hasUPX = 0

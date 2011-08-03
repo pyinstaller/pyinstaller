@@ -19,7 +19,6 @@
 #
 
 import sys
-import string
 import os
 import imp
 import marshal
@@ -117,7 +116,7 @@ class BaseDirOwner(Owner):
             if pyc is None or py and pyc[1] < py[1]:
                 try:
                     stuff = self._read(py[0])+'\n'
-                    co = compile(string.replace(stuff, "\r\n", "\n"), py[0], 'exec')
+                    co = compile(stuff.replace("\r\n", "\n"), py[0], 'exec')
                     pth = py[0] + pyco()
                     break
                 except SyntaxError, e:
@@ -315,7 +314,7 @@ class RegistryImportDirector(ImportDirector):
             elif typ == imp.PY_SOURCE:
                 try:
                     stuff = open(fnm, 'r').read()+'\n'
-                    co = compile(string.replace(stuff, "\r\n", "\n"), fnm, 'exec')
+                    co = compile(stuff.replace("\r\n", "\n"), fnm, 'exec')
                 except SyntaxError, e:
                     print "Invalid syntax in %s" % py[0]
                     print e.args
@@ -483,7 +482,7 @@ class ImportTracker:
             nm = importernm
             importernm = None
             level = 0
-        nmparts = string.split(nm, '.')
+        nmparts = nm.split('.')
 
         if level < 0:
             # behaviour up to Python 2.4 (and default in Python 2.5)
@@ -493,7 +492,7 @@ class ImportTracker:
                 if self.ispackage(importernm):
                     contexts.insert(0, importernm)
                 else:
-                    pkgnm = string.join(string.split(importernm, '.')[:-1], '.')
+                    pkgnm = ".".join(importernm.split(".")[:-1])
                     if pkgnm:
                         contexts.insert(0, pkgnm)
         elif level == 0:
@@ -505,7 +504,7 @@ class ImportTracker:
             if self.ispackage(importernm):
                 level -= 1
             if level > 0:
-                importernm = string.join(string.split(importernm, '.')[:-level], ".")
+                importernm = ".".join(importernm.split('.')[:-level])
             contexts = [importernm, None]
             importernm = None
 
@@ -568,7 +567,7 @@ class ImportTracker:
     def analyze_script(self, fnm):
         try:
             stuff = open(fnm, 'r').read()+'\n'
-            co = compile(string.replace(stuff, "\r\n", "\n"), fnm, 'exec')
+            co = compile(stuff.replace("\r\n", "\n"), fnm, 'exec')
         except SyntaxError, e:
             print "Invalid syntax in %s" % fnm
             print e.args

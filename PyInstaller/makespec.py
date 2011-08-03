@@ -19,7 +19,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import sys, os, string
+import sys, os
 
 from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE
 from PyInstaller import is_win, is_cygwin, is_darwin
@@ -99,7 +99,7 @@ bundletmplt = """app = BUNDLE(coll,
 
 def quote_win_filepath( path ):
     # quote all \ with another \ after using normpath to clean up the path
-    return string.join( string.split( os.path.normpath( path ), '\\' ), '\\\\' )
+    return os.path.normpath(path).replace('\\' '\\\\')
 
 # Support for trying to avoid hard-coded paths in the .spec files.
 # Eg, all files rooted in the Installer directory tree will be

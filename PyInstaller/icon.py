@@ -131,15 +131,15 @@ def CopyIcons_FromIco (dstpath, srcpath, id=1):
     win32api.EndUpdateResource (hdst, 0)
 
 def CopyIcons (dstpath, srcpath):
-    import os.path, string
+    import os.path
 
     if type(srcpath) in StringTypes:
         srcpath = [ srcpath ]
 
     def splitter(s):
         try:
-            srcpath, index = map(string.strip, string.split(s, ','))
-            return srcpath, int(index)
+            srcpath, index = s.split(',')
+            return srcpath.strip(), int(index)
         except ValueError:
             return s, None
 
@@ -151,7 +151,7 @@ def CopyIcons (dstpath, srcpath):
         srcs = []
         for s in srcpath:
             e = os.path.splitext(s[0])[1]
-            if string.lower(e) != '.ico':
+            if e.lower() != '.ico':
                 raise ValueError, "multiple icons supported only from .ico files"
             if s[1] is not None:
                 raise ValueError, "index not allowed for .ico files"
@@ -160,7 +160,7 @@ def CopyIcons (dstpath, srcpath):
 
     srcpath,index = srcpath[0]
     srcext = os.path.splitext(srcpath)[1]
-    if string.lower (srcext) == '.ico':
+    if srcext.lower() == '.ico':
         return CopyIcons_FromIco (dstpath, [srcpath])
     if index is not None:
         print "I: Updating icons from", srcpath, ", %d to" % index, dstpath

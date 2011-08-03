@@ -17,7 +17,6 @@
 import win32api
 import struct
 import pywintypes
-import string
 import pprint
 
 TEST=0
@@ -88,7 +87,7 @@ class VSVersionInfo:
         while i < sublen:
             j = i
             i, (csublen, cvallen, ctyp, nm) = parseCommon(data, i)
-            if string.strip(str(nm)) == "StringFileInfo":
+            if str(nm).strip() == "StringFileInfo":
                 sfi = StringFileInfo()
                 k = sfi.fromRaw(csublen, cvallen, nm, data, i, j+csublen)
                 if TEST:
@@ -134,7 +133,7 @@ class VSVersionInfo:
         tmp = []
         for kid in self.kids:
             tmp.append(kid.toRaw())
-        tmp = string.join(tmp, '')
+        tmp = "".join(tmp)
         sublen = sublen + len(pad2) + len(tmp)
         return struct.pack('hhh', sublen, vallen, typ) + getRaw(nm) + '\000\000' + pad + rawffi + pad2 + tmp
     def __repr__(self, indent=''):
@@ -142,7 +141,7 @@ class VSVersionInfo:
         newindent = indent + '  '
         for kid in self.kids:
             tmp.append(kid.__repr__(newindent+'  '))
-        tmp = string.join(tmp, ', \n')
+        tmp = ', \n'.join(tmp)
         return "VSVersionInfo(\n%sffi=%s,\n%skids=[\n%s\n%s]\n)" % (newindent, self.ffi.__repr__(newindent), newindent, tmp, newindent)
 
 def parseCommon(data, start=0):
@@ -240,7 +239,7 @@ class FixedFileInfo:
                "date=%s" % (fd,),
                ")"
               ]
-        return string.join(tmp, '\n'+indent+'  ')
+        return ('\n'+indent+'  ').join(tmp)
 
 ##StringFileInfo {
 ##    WORD        wLength;      // Specifies the length of the version resource
@@ -291,7 +290,7 @@ class StringFileInfo:
         tmp = []
         for kid in self.kids:
             tmp.append(kid.toRaw())
-        tmp = string.join(tmp, '')
+        tmp = ''.join(tmp)
         sublen = sublen + len(pad) + len(tmp)
         if tmp[-2:] == '\000\000':
             sublen = sublen - 2
@@ -301,7 +300,7 @@ class StringFileInfo:
         newindent = indent + '  '
         for kid in self.kids:
             tmp.append(kid.__repr__(newindent))
-        tmp = string.join(tmp, ', \n')
+        tmp = ', \n'.join(tmp)
         return "%sStringFileInfo(\n%s[\n%s\n%s])" % (indent, newindent, tmp, newindent)
 
 ##StringTable {
@@ -347,7 +346,7 @@ class StringTable:
             if len(raw) % 4:
                 raw = raw + '\000\000'
             tmp.append(raw)
-        tmp = string.join(tmp, '')
+        tmp = ''.join(tmp)
         sublen = sublen + len(tmp)
         if tmp[-2:] == '\000\000':
             sublen = sublen - 2
@@ -357,7 +356,7 @@ class StringTable:
         newindent = indent + '  '
         for kid in self.kids:
             tmp.append(repr(kid))
-        tmp = string.join(tmp, ',\n%s' % newindent)
+        tmp = (',\n%s' % newindent).join(tmp)
         return "%sStringTable(\n%s'%s', \n%s[%s])" % (indent, newindent, str(self.name), newindent, tmp)
 
 ##String {
@@ -446,12 +445,12 @@ class VarFileInfo:
         tmp = []
         for kid in self.kids:
             tmp.append(kid.toRaw())
-        tmp = string.join(tmp, '')
+        tmp = ''.join(tmp)
         self.sublen = sublen + len(pad) + len(tmp)
         return struct.pack('hhh', self.sublen, self.vallen, self.wType) + getRaw(self.name) + '\000\000' + pad + tmp
     def __repr__(self, indent=''):
         tmp = map(repr, self.kids)
-        return "%sVarFileInfo([%s])" % (indent, string.join(tmp, ', '))
+        return "%sVarFileInfo([%s])" % (indent, ', '.join(tmp))
 
 ##Var {
 ##    WORD  wLength;        // Specifies the length of the version resource
@@ -493,7 +492,7 @@ class VarStruct:
         tmp = []
         for kid in self.kids:
             tmp.append(struct.pack('h', kid))
-        tmp = string.join(tmp, '')
+        tmp = ''.join(tmp)
         return struct.pack('hhh', self.sublen, self.wValueLength, self.wType) + getRaw(self.name) + '\000\000' + pad + tmp
     def __repr__(self, indent=''):
         return "VarStruct('%s', %s)" % (str(self.name), repr(self.kids))

@@ -22,11 +22,11 @@ def hook(mod):
     # http://www.amk.ca/diary/2003/03/pythons__xmlplus_hack.html
 
     from hookutils import exec_statement
-    import string, marshal
+    import marshal
 
     txt = exec_statement("import xml;print xml.__file__")
 
-    if string.find(txt, '_xmlplus') > -1:
+    if txt.find('_xmlplus') > -1:
         if txt[:-3] == ".py":
             txt = txt + 'c'
         co = marshal.loads(open(txt, 'rb').read()[8:])

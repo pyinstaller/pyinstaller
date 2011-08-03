@@ -26,7 +26,6 @@
 
 import os
 import time
-import string
 import sys
 import re
 from glob import glob
@@ -131,7 +130,7 @@ def getfullnameof(mod, xtrapath = None):
             return npth
         # second try: lower case filename
         for p in epath:
-            npth = os.path.join(p, string.lower(mod))
+            npth = os.path.join(p, mod.lower())
             if os.path.exists(npth):
                 return npth
     return ''
@@ -161,18 +160,18 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
        manifest should be a winmanifest.Manifest instance on Windows, so
        that all dependent assemblies can be added"""
     for nm, pth, typ in lTOC:
-        if seen.get(string.upper(nm),0):
+        if seen.get(nm.upper(),0):
             continue
         if not silent:
             print "I: Analyzing", pth
-        seen[string.upper(nm)] = 1
+        seen[nm.upper()] = 1
         if is_win:
             for ftocnm, fn in selectAssemblies(pth, manifest):
                 lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, xtrapath):
-            if seen.get(string.upper(lib),0) or seen.get(string.upper(npth),0):
+            if seen.get(lib.upper(),0) or seen.get(npth.upper(),0):
                 continue
-            seen[string.upper(npth)] = 1
+            seen[npth.upper()] = 1
             lTOC.append((lib, npth, 'BINARY'))
 
     return lTOC
@@ -396,7 +395,7 @@ def selectImports(pth, xtrapath=None):
         xtrapath = [os.path.dirname(pth)] + xtrapath # make a copy
     dlls = getImports(pth)
     for lib in dlls:
-        if seen.get(string.upper(lib),0):
+        if seen.get(lib.upper(),0):
             continue
         if not is_win and not is_cygwin:
             # all other platforms
@@ -418,7 +417,7 @@ def selectImports(pth, xtrapath=None):
                candidatelib.find('Python.framework') < 0:
                 # skip libs not containing (libpython or Python.framework)
                 if not silent and \
-                   not seen.get(string.upper(npth),0):
+                   not seen.get(npth.upper(),0):
                     print "I: Skipping", lib, "dependency of", \
                           os.path.basename(pth)
                 continue
@@ -426,7 +425,7 @@ def selectImports(pth, xtrapath=None):
                 pass
 
         if npth:
-            if not seen.get(string.upper(npth),0):
+            if not seen.get(npth.upper(),0):
                 if not silent:
                     print "I: Adding", lib, "dependency of", \
                           os.path.basename(pth)
@@ -540,7 +539,7 @@ def getWindowsPath():
                 sysdir2 = os.path.normpath(os.path.join(sysdir, '..', 'SYSTEM'))
                 windir = win32api.GetWindowsDirectory()
                 _bpath = [sysdir, sysdir2, windir]
-        _bpath.extend(string.split(os.environ.get('PATH', ''), os.pathsep))
+        _bpath.extend(os.environ.get('PATH', '').split(os.pathsep))
     return _bpath
 
 def findLibrary(name):
@@ -557,7 +556,7 @@ def findLibrary(name):
     # Look in the LD_LIBRARY_PATH
     lp = os.environ.get('LD_LIBRARY_PATH')
     if lp:
-        for path in string.split(lp, os.pathsep):
+        for path in lp.split(os.pathsep):
             libs = glob(os.path.join(path, name + '*'))
             if libs:
                 lib = libs[0]

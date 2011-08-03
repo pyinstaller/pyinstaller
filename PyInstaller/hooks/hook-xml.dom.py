@@ -15,7 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import string
 attrs = [('Node', 0),
          ('INDEX_SIZE_ERR', 1),
          ('DOMSTRING_SIZE_ERR', 2),
@@ -53,7 +52,7 @@ attrs = [('Node', 0),
 ]
 
 def hook(mod):
-    if string.find(mod.__file__, '_xmlplus') > -1:
+    if mod.__file__.find('_xmlplus') > -1:
         mod.UNSPECIFIED_EVENT_TYPE_ERR = 0
         mod.FT_EXCEPTION_BASE = 1000
         mod.XML_PARSE_ERR = 1001
