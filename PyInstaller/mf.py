@@ -1056,7 +1056,7 @@ def _resolveCtypesImports(cbinaries):
     else:
         envvar = "PATH"
 
-    def _savePaths():
+    def _setPaths():
         old = os.environ.get(envvar, None)
         os.environ[envvar] = os.pathsep.join(getattr(sys, "pathex", []))
         if old is not None:
@@ -1073,7 +1073,7 @@ def _resolveCtypesImports(cbinaries):
     # Try to locate the shared library on disk. This is done by
     # executing ctypes.utile.find_library prepending ImportTracker's
     # local paths to library search paths, then replaces original values.
-    old = _savePaths()
+    old = _setPaths()
     for cbin in cbinaries:
         ext = os.path.splitext(cbin)[1]
         # On Windows, only .dll files can be loaded.
@@ -1090,7 +1090,7 @@ def _resolveCtypesImports(cbinaries):
                 cpath = cbin
             # "man ld.so" says that we should first search LD_LIBRARY_PATH
             # and then the ldcache
-            for d in os.environ["LD_LIBRARY_PATH"].split(":"):
+            for d in os.environ[envvar].split(os.pathsep):
                 if os.path.isfile(os.path.join(d, cpath)):
                     cpath = os.path.join(d, cpath)
                     break
