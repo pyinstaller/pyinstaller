@@ -142,7 +142,11 @@ def find_django_root(dir):
         for entity in entities:
             path_to_analyze = os.path.join(dir, entity)
             if os.path.isdir(path_to_analyze):
-                dir_entities = os.listdir(path_to_analyze)
+                try:
+                    dir_entities = os.listdir(path_to_analyze)
+                except (IOError, OSError):
+                    # silently skip unreadable directories
+                    continue
                 if "manage.py" in dir_entities and "settings.py" in dir_entities and "urls.py" in dir_entities:
                     django_root_directories.append(path_to_analyze)
         return django_root_directories
