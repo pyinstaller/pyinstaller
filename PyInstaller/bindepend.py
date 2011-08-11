@@ -105,7 +105,7 @@ if is_win:
     # Exclude everything from the Windows directory by default
     excludes['^%s%s' % (re.escape(get_windows_dir()), sep)] = 1
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
-    includes[r'%spy(?:thon(?:com)?|wintypes)\d+\.dll$' % sep] = 1
+    includes[r'%spy(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll$' % sep] = 1
 
 excludesRe = re.compile('|'.join(excludes.keys()), re.I)
 includesRe = re.compile('|'.join(includes.keys()), re.I)
