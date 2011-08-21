@@ -55,7 +55,7 @@ def __add_options(parser):
                       help='show program version')
     parser.add_option('--skip-configure', default=False, action="store_true",
                       help='Skip configure phase.'
-                      'Configure phase can be skipped to speed up pyinstaller'
+                      'Configure phase can be skipped to speed up pyinstaller '
                       'if running multiple times with the same configuration.')
 
 
