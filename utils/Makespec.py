@@ -26,8 +26,8 @@ except ImportError:
     # directory or parent directory to support running without
     # installation
     import imp, os
-    if not hasattr(os, "getuid") or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
+    if not hasattr(os, 'getuid') or os.getuid() != 0:
+        imp.load_module('PyInstaller', *imp.find_module('PyInstaller', ['.', '..']))
 
 import PyInstaller.makespec
 import PyInstaller.compat
@@ -36,7 +36,7 @@ import optparse
 import os
 
 p = optparse.OptionParser(
-    usage="python %prog [opts] <scriptname> [<scriptname> ...]"
+    usage='python %prog [opts] <scriptname> [<scriptname> ...]'
 )
 p.add_option('-C', '--configfile',
              default=PyInstaller.DEFAULT_CONFIGFILE,
@@ -56,5 +56,5 @@ if not args:
     p.error('Requires at least one scriptname file')
 
 name = PyInstaller.makespec.main(args, **opts.__dict__)
-print "wrote %s" % name
-print "now run Build.py to build the executable"
+print 'wrote %s' % name
+print 'now run Build.py to build the executable'

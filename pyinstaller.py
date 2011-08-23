@@ -46,7 +46,7 @@ def run_makespec(opts, args):
         opts.pathex.extend(p.split(os.pathsep))
 
     spec_file = PyInstaller.makespec.main(args, **opts.__dict__)
-    print "wrote %s" % spec_file
+    print 'wrote %s' % spec_file
     return spec_file
 
 
@@ -55,9 +55,9 @@ def run_build(opts, spec_file):
 
 
 def __add_options(parser):
-    parser.add_option('-v', '--version', default=False, action="store_true",
+    parser.add_option('-v', '--version', default=False, action='store_true',
                       help='show program version')
-    parser.add_option('--skip-configure', default=False, action="store_true",
+    parser.add_option('--skip-configure', default=False, action='store_true',
                       help='Skip configure phase.'
                       'Configure phase can be skipped to speed up pyinstaller '
                       'if running multiple times with the same configuration.')
@@ -65,7 +65,7 @@ def __add_options(parser):
 
 def main():
     parser = optparse.OptionParser(
-        usage="python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>"
+        usage='python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
         )
     __add_options(parser)
     PyInstaller.configure.__add_options(parser)

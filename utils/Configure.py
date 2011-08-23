@@ -25,14 +25,14 @@ except ImportError:
     # directory or parent directory to support running without
     # installation
     import imp, os
-    if not hasattr(os, "getuid") or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
+    if not hasattr(os, 'getuid') or os.getuid() != 0:
+        imp.load_module('PyInstaller', *imp.find_module('PyInstaller', ['.', '..']))
 
 import PyInstaller.configure
 import PyInstaller.compat
 import optparse
 
-parser = optparse.OptionParser(usage="%prog [options]")
+parser = optparse.OptionParser(usage='%prog [options]')
 PyInstaller.configure.__add_options(parser)
 PyInstaller.compat.__add_obsolete_options(parser)
 
