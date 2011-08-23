@@ -177,7 +177,7 @@ def __add_options(parser):
     g.add_option("-s", "--strip", action="store_true",
                  help="strip the exe and shared libs "
                       "(don't try this on Windows)")
-    g.add_option("-X", "--noupx", action="store_true", default=False,
+    g.add_option("--noupx", action="store_true", default=False,
                  help="do not use UPX even if available (works differently "
                       "between Windows and *nix)")
     #p.add_option("-Y", "--crypt", metavar="FILE",

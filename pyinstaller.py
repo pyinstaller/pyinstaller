@@ -26,6 +26,10 @@ import optparse
 import PyInstaller.configure
 import PyInstaller.makespec
 import PyInstaller.build
+import PyInstaller.compat
+
+
+# Warn when old command line option is used
 
 from PyInstaller import get_version
 
@@ -59,34 +63,39 @@ def __add_options(parser):
                       'if running multiple times with the same configuration.')
 
 
-parser = optparse.OptionParser(
-    usage="python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>"
-    )
+def main():
+    parser = optparse.OptionParser(
+        usage="python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>"
+        )
+    __add_options(parser)
+    PyInstaller.configure.__add_options(parser)
+    PyInstaller.makespec.__add_options(parser)
+    PyInstaller.build.__add_options(parser)
+    PyInstaller.compat.__add_obsolete_options(parser)
 
-__add_options(parser)
-PyInstaller.configure.__add_options(parser)
-PyInstaller.makespec.__add_options(parser)
-PyInstaller.build.__add_options(parser)
+    opts, args = parser.parse_args()
 
-opts, args = parser.parse_args()
+    # Print program version and exit
+    if opts.version:
+        print get_version()
+        sys.exit()
 
-# Print program version and exit
-if opts.version:
-    print get_version()
-    sys.exit()
+    if not args:
+        parser.error('Requires at least one scriptname file '
+                     'or exactly one .spec-file')
 
-if not args:
-    parser.error('Requires at least one scriptname file '
-                 'or exactly one .spec-file')
+    # Skip configure when --skip-configure option present
+    if not opts.skip_configure:
+        run_configure(opts, args)
 
-# Skip configure when --skip-configure option present
-if not opts.skip_configure:
-    run_configure(opts, args)
+    # Skip creating .spec when .spec file is supplied
+    if args[0].endswith('.spec'):
+        spec_file = args[0]
+    else:
+        spec_file = run_makespec(opts, args)
 
-# Skip creating .spec when .spec file is supplied
-if args[0].endswith('.spec'):
-    spec_file = args[0]
-else:
-    spec_file = run_makespec(opts, args)
+    run_build(opts, spec_file)
 
-run_build(opts, spec_file)
+
+if __name__ == '__main__':
+    main()

@@ -23,6 +23,9 @@ import os
 import sys
 
 
+# Obsolete command line options (do not exist anymore)
+OLD_OPTIONS = ['--upx', '-X']
+
 try:
     # Python 2.5+
     import hashlib
@@ -100,3 +103,20 @@ def setenv(name, value):
 
 def exec_command(cmd):
     pass
+
+
+# Obsolete command line options
+
+
+def __obsolete_option(option, opt, value, parser):
+    parser.error('%s option does not exist anymore (obsolete).' % opt)
+
+
+def __add_obsolete_options(parser):
+    """
+    Add the obsolete options to a option-parser instance and
+    print error message when they are present.
+    """
+    g = parser.add_option_group('Obsolete options (not used anymore)')
+    g.add_option(*OLD_OPTIONS, action='callback', callback=__obsolete_option,
+                 help='This option does not exist anymore.')
