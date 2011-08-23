@@ -29,10 +29,12 @@ except ImportError:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
 
 import PyInstaller.configure
+import PyInstaller.compat
 import optparse
 
 parser = optparse.OptionParser(usage="%prog [options]")
 PyInstaller.configure.__add_options(parser)
+PyInstaller.compat.__add_obsolete_options(parser)
 
 opts, args = parser.parse_args()
 if args:

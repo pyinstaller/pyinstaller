@@ -30,6 +30,7 @@ except ImportError:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
 
 import PyInstaller.build
+import PyInstaller.compat
 import optparse
 
 parser = optparse.OptionParser(usage="%prog [options] specfile")
@@ -38,6 +39,7 @@ parser.add_option('-C', '--configfile',
                   dest='configfilename',
                   help='Name of generated configfile (default: %default)')
 PyInstaller.build.__add_options(parser)
+PyInstaller.compat.__add_obsolete_options(parser)
 
 opts, args = parser.parse_args()
 if len(args) != 1:
