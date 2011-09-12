@@ -53,15 +53,16 @@ MIN_VERSION_OR_OS = {
 }
 
 DEPENDENCIES = {
- 'import/test_ctypes_cdll_c': ["ctypes"],
- 'import/test_ctypes_cdll_c2': ["ctypes"],
- 'libraries/test_enchant': ["enchant"],
- 'libraries/test_numpy': ["numpy"],
- 'libraries/test_pycrypto': ["Crypto"],
- 'import/test_zipimport1': ["pkg_resources"],
- 'import/test_zipimport2': ["pkg_resources", "setuptools"],
- 'basic/test_ctypes': ["ctypes"],
- 'libraries/test_wx': ["wx"],
+ 'import/test_ctypes_cdll_c': ['ctypes'],
+ 'import/test_ctypes_cdll_c2': ['ctypes'],
+ 'libraries/test_enchant': ['enchant'],
+ 'libraries/test_numpy': ['numpy'],
+ 'libraries/test_pycrypto': ['Crypto'],
+ 'libraries/test_sqlalchemy': ['MySQLdb', 'psycopg2'],
+ 'libraries/test_wx': ['wx'],
+ 'import/test_zipimport1': ['pkg_resources'],
+ 'import/test_zipimport2': ['pkg_resources', 'setuptools'],
+ 'basic/test_ctypes': ['ctypes'],
 }
 
 
