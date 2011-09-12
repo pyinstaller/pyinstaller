@@ -23,18 +23,18 @@ hiddenimports = []
 
 # sqlalchemy.databases package from pre 0.6 sqlachemy versions
 databases = exec_statement("import sqlalchemy.databases;print sqlalchemy.databases.__all__")
-databases = eval(databases)
+databases = eval(databases.strip())
 
 for n in databases:
     hiddenimports.append("sqlalchemy.databases." + n)
 
 # sqlalchemy.dialects package from 0.6 and newer sqlachemy versions
-version = exec_statement('import sqlachemy; print sqlalchemy.__version__')
-is_alch06 = eval(version) >= '0.6'
+version = exec_statement('import sqlalchemy; print sqlalchemy.__version__')
+is_alch06 = version >= '0.6'
 
 if is_alch06:
     dialects = exec_statement("import sqlalchemy.dialects;print sqlalchemy.dialects.__all__")
-    dialects = eval(dialects)
+    dialects = eval(dialects.strip())
 
     for n in databases:
         hiddenimports.append("sqlalchemy.dialects." + n)
