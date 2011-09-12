@@ -19,7 +19,10 @@
 
 from PyInstaller.hooks.hookutils import exec_statement
 
-hiddenimports = []
+# include most common database bindings
+# some database bindings are detected and include some
+# are not. We should explicitly include database backends.
+hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2']
 
 # sqlalchemy.databases package from pre 0.6 sqlachemy versions
 databases = exec_statement("import sqlalchemy.databases;print sqlalchemy.databases.__all__")
