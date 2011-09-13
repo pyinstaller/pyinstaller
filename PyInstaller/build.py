@@ -702,8 +702,8 @@ def checkCache(fnm, strip, upx):
                             for pydep in pyasm:
                                 if not pydep.name in [dep.name for dep in
                                                       manifest.dependentAssemblies]:
-                                    print ("Adding %s to dependent assemblies "
-                                           "of %s") % (pydep.name, cachedfile)
+                                    print ("Adding %r to dependent assemblies "
+                                           "of %r") % (pydep.name, cachedfile)
                                     manifest.dependentAssemblies.append(pydep)
                             if len(manifest.dependentAssemblies) > olen:
                                 try:
