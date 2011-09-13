@@ -44,26 +44,33 @@ from PyInstaller import is_py23, is_py25, is_py26, is_win
 
 
 MIN_VERSION_OR_OS = {
- 'import/test_relative_import': is_py25,
- 'import/test_relative_import2': is_py26,
- 'import/test_relative_import3': is_py25,
- 'basic/test_celementtree': is_py25,
- 'basic/test_9': is_py23,
- 'basic/test_absolute_ld_library_path': not is_win,
+    'import/test_relative_import': is_py25,
+    'import/test_relative_import2': is_py26,
+    'import/test_relative_import3': is_py25,
+    'basic/test_celementtree': is_py25,
+    'basic/test_9': is_py23,
+    'basic/test_absolute_ld_library_path': not is_win,
 }
 
 DEPENDENCIES = {
- 'import/test_ctypes_cdll_c': ['ctypes'],
- 'import/test_ctypes_cdll_c2': ['ctypes'],
- 'libraries/test_enchant': ['enchant'],
- 'libraries/test_numpy': ['numpy'],
- 'libraries/test_pycrypto': ['Crypto'],
- 'libraries/test_sqlalchemy': ['MySQLdb', 'psycopg2'],
- 'libraries/test_wx': ['wx'],
- 'import/test_zipimport1': ['pkg_resources'],
- 'import/test_zipimport2': ['pkg_resources', 'setuptools'],
- 'basic/test_ctypes': ['ctypes'],
+    'basic/test_ctypes': ['ctypes'],
+    'libraries/test_enchant': ['enchant'],
+    'libraries/test_numpy': ['numpy'],
+    'libraries/test_pycrypto': ['Crypto'],
+    'libraries/test_sqlalchemy': ['MySQLdb', 'psycopg2'],
+    'libraries/test_wx': ['wx'],
+    'import/test_ctypes_cdll_c': ['ctypes'],
+    'import/test_ctypes_cdll_c2': ['ctypes'],
+    'import/test_zipimport1': ['pkg_resources'],
+    'import/test_zipimport2': ['pkg_resources', 'setuptools'],
 }
+
+NO_SPEC_FILE = [
+    'basic/test_absolute_ld_library_path',
+    'basic/test_absolute_ld_library_path_onedir',
+    'libraries/test_enchant',
+    'libraries/test_sqlalchemy',
+]
 
 
 TEST_DIRS = ['basic', 'import', 'libraries', 'multipackage']
@@ -109,6 +116,11 @@ def clean():
                 except OSError, e:
                     print e
         os.chdir('..')
+    # delete *.spec files for tests without spec
+    for path in NO_SPEC_FILE:
+        path += '.spec'
+        if os.path.exists(path):
+            os.remove(path)
 
 
 def _msg(*args, **kw):
