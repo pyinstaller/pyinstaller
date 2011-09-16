@@ -41,6 +41,15 @@ def set_options(opt):
     opt.tool_options('compiler_cc')
     opt.tool_options('python')
 
+    # Option to enable static linking of Python library with bootloader.
+    # This is necessary for some platforms or Python distributions where
+    # Python interpreter is linked statically (e.g. AIX).
+    opt.add_option('--static-link-python',
+        action = 'store_true',
+        help = 'Link Python Library statically with bootloader. '
+            '(Required for some platforms or implementations e.g. AIX)',
+        default = False,
+        dest = 'static_python')
 
 
 def configure(conf):
@@ -54,6 +63,13 @@ def configure(conf):
 
     if myplatform.startswith('linux') and not opt.nolsb:
         Utils.pprint('CYAN', 'Building LSB bootloader.')
+
+    # Enable static Python linking by default for some platforms
+    # (AIX)
+    if myplatform.startswith('aix'):
+        opt.static_python = True
+    if opt.static_python:
+        Utils.pprint('CYAN', 'Linking libpython statically.')
 
     if myplatform.startswith('darwin'):
         conf.env.MACOSX_DEPLOYMENT_TARGET = '10.4'
@@ -84,6 +100,7 @@ def configure(conf):
             # When using GCC, deactivate declarations after statements
             # (not supported by Visual Studio)
             conf.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
+            # Treat warnings as errors.
             conf.env.append_value('CCFLAGS', '-Werror')
 
     else:
@@ -93,9 +110,16 @@ def configure(conf):
     conf.check_tool('python')
     conf.check_python_headers()
 
-    # Do not link with libpython and libpthread.
+    # Enable boot loader modifications for static Python library
+    if opt.static_python:
+        conf.env.append_value('CCFLAGS', '-DUSE_STATIC_PYTHON_LIB')
+
+    # Do not link
+    # - with libpython (except on platforms where we link statically to Python)
+    # - with libpthread.
     for lib in conf.env.LIB_PYEMBED:
-        if lib.startswith('python') or lib.startswith('pthread'):
+        if (not opt.static_python and lib.startswith('python')) or \
+            lib.startswith('pthread'):
             conf.env.LIB_PYEMBED.remove(lib)
 
 
@@ -186,11 +210,11 @@ def configure(conf):
         # We use SEH exceptions in winmain.c; make sure they are activated.
         conf.env.append_value('CCFLAGS', '/EHa')
 
-    # link only with needed libraries
-    # XXX: -Wl,--as-needed detected during configure but fails during mac build
-    if conf.check_cc(ccflags='-Wl,--as-needed',
-            msg='Checking for flags -Wl,--as-needed') \
-            and not myplatform.startswith('darwin'):
+    # On linux link only with needed libraries.
+    # -Wl,--as-needed is on some platforms detected during configure but
+    # fails during build. (Mac OS X, AIX)
+    if myplatform.startswith('linux') and conf.check_cc(ccflags='-Wl,--as-needed',
+            msg='Checking for flags -Wl,--as-needed'):
         conf.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
 
