@@ -85,6 +85,21 @@ excludes = {
     r'/librt\.so\..*':1,
     r'/libthread_db\.so\..*':1,
     r'/libdb-.*\.so':1,
+    # glibc regex excludes
+    r'/ld-linux\.so\..*':1,
+    r'/libBrokenLocale\.so\..*':1,
+    r'/libanl\.so\..*':1,
+    r'/libcidn\.so\..*':1,
+    r'/libcrypt\.so\..*':1,
+    r'/libnsl\.so\..*':1,
+    r'/libnss_compat.*\.so\..*':1,
+    r'/libnss_dns.*\.so\..*':1,
+    r'/libnss_files.*\.so\..*':1,
+    r'/libnss_hesiod.*\.so\..*':1,
+    r'/libnss_nis.*\.so\..*':1,
+    r'/libnss_nisplus.*\.so\..*':1,
+    r'/libresolv\.so\..*':1,
+    r'/libutil\.so\..*':1,
     # libGL can reference some hw specific libraries (like nvidia libs)
     r'/libGL\..*':1,
     # MS assembly excludes
