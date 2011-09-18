@@ -27,7 +27,8 @@ except ImportError:
     # installation
     import imp, os
     if not hasattr(os, 'getuid') or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller', ['.', '..']))
+        imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
+            [os.path.dirname(os.path.dirname(__file__))]))
 
 import PyInstaller.build
 import PyInstaller.compat

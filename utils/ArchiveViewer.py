@@ -26,7 +26,7 @@ except ImportError:
     import imp, os
     if not hasattr(os, "getuid") or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.join(os.path.dirname(__file__), '.', '..')]))
+            [os.path.dirname(os.path.dirname(__file__))]))
 
 import PyInstaller.archive as archive
 import PyInstaller.carchive as carchive
