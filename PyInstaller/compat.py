@@ -118,5 +118,7 @@ def __add_obsolete_options(parser):
     print error message when they are present.
     """
     g = parser.add_option_group('Obsolete options (not used anymore)')
-    g.add_option(*OLD_OPTIONS, action='callback', callback=__obsolete_option,
-                 help='This option does not exist anymore.')
+    g.add_option(*OLD_OPTIONS,
+                 **{'action': 'callback',
+                    'callback': __obsolete_option,
+                    'help': 'This option does not exist anymore.'})
