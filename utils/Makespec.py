@@ -50,7 +50,7 @@ opts, args = p.parse_args()
 temppaths = opts.pathex[:]
 opts.pathex = []
 for p in temppaths:
-    opts.pathex.extend(string.split(p, os.pathsep))
+    opts.pathex.extend(p.split(os.pathsep))
 
 if not args:
     p.error('Requires at least one scriptname file')

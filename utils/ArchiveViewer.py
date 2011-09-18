@@ -31,7 +31,7 @@ except ImportError:
 import PyInstaller.archive as archive
 import PyInstaller.carchive as carchive
 
-import sys, string, tempfile, os
+import sys, tempfile, os
 try:
     import zlib
 except ImportError:
@@ -70,7 +70,7 @@ def main(opts, args):
 
     while 1:
         try:
-            toks = string.split(raw_input('? '), None, 1)
+            toks = raw_input('? ').split(None, 1)
         except EOFError:
             # Ctrl-D
             print # clear line
@@ -83,7 +83,7 @@ def main(opts, args):
             arg = ''
         else:
             cmd, arg = toks
-        cmd = string.upper(cmd)
+        cmd = cmd.upper()
         if cmd == 'U':
             if len(stack) > 1:
                 arch = stack[-1][1]
@@ -94,7 +94,7 @@ def main(opts, args):
         elif cmd == 'O':
             if not arg:
                 arg = raw_input('open name? ')
-            arg = string.strip(arg)
+            arg = arg.strip()
             arch = getArchive(arg)
             if arch is None:
                 print arg, "not found"
@@ -104,7 +104,7 @@ def main(opts, args):
         elif cmd == 'X':
             if not arg:
                 arg = raw_input('extract name? ')
-            arg = string.strip(arg)
+            arg = arg.strip()
             data = getData(arg, arch)
             if data is None:
                 print "Not found"
@@ -133,7 +133,7 @@ def usage():
     print "Q: quit"
 def getArchive(nm):
     if not stack:
-        if string.lower(nm[-4:]) == '.pyz':
+        if nm[-4:].lower() == '.pyz':
             return ZlibArchive(nm)
         return carchive.CArchive(nm)
     parent = stack[-1][1]
