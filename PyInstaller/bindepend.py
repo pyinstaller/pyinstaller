@@ -160,6 +160,8 @@ def _getImports_pe(pth):
     import PyInstaller.lib.pefile as pefile
     pe = pefile.PE(pth)
     dlls = []
+    # Some libraries have no other binary dependencies.
+    # e.g. C:\windows\system32\kernel32.dll on Wine
     for entry in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', []):
         dlls.append(entry.dll)
     return dlls
