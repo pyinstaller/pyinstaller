@@ -160,7 +160,7 @@ def _getImports_pe(pth):
     import PyInstaller.lib.pefile as pefile
     pe = pefile.PE(pth)
     dlls = []
-    for entry in pe.DIRECTORY_ENTRY_IMPORT:
+    for entry in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', []):
         dlls.append(entry.dll)
     return dlls
 
