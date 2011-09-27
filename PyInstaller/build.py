@@ -538,7 +538,7 @@ class Analysis(Target):
 
 def _findRTHook(modnm):
     rslt = []
-    for script in rthooks.get(modnm):
+    for script in rthooks.get(modnm) or []:
         nm = os.path.basename(script)
         nm = os.path.splitext(nm)[0]
         if os.path.isabs(script):
