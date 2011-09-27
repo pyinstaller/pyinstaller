@@ -221,19 +221,24 @@ def __add_options(parser):
                       "multiple times.")
 
 
-def main(scripts, configfilename=None, name=None, tk=0, freeze=0, console=True, debug=False,
-         strip=0, noupx=0, comserver=0, ascii=0, workdir=None,
-         pathex=[], version_file=None, icon_file=None, manifest=None, resources=[], crypt=None, **kwargs):
+def main(scripts, configfilename=None, name=None, tk=0, freeze=0,
+         console=True, debug=False, strip=0, noupx=0, comserver=0,
+         ascii=0, workdir=None, pathex=[], version_file=None,
+         icon_file=None, manifest=None, resources=[], crypt=None,
+         **kwargs):
 
     try:
         config = eval(open(configfilename, 'r').read())
     except IOError:
-        raise SystemExit("Configfile is missing or unreadable. Please run utils/Configure.py before building or use pyinstaller.py!")
+        raise SystemExit("Configfile is missing or unreadable. Please run "
+                         "utils/Configure.py before building or use "
+                         "pyinstaller.py!")
 
     if config['pythonVersion'] != sys.version:
-        print "The current version of Python is not the same with which PyInstaller was configured."
-        print "Please re-run utils/Configure.py or use pyinstaller.py with this version."
-        raise SystemExit(1)
+        raise SystemExit("The current version of Python is not the same "
+                         "with which PyInstaller was configured.\n"
+                         "Please re-run utils/Configure.py or use "
+                         "pyinstaller.py with this version.")
 
     if not name:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
