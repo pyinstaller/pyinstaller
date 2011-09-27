@@ -132,14 +132,16 @@ def test_TCL_TK(config):
                         config['TK_root'] = os.path.join(tclbindir, attempt, tknm)
                         config['TCL_dirname'] = os.path.basename(config['TCL_root'])
                         config['TK_dirname'] = os.path.basename(config['TK_root'])
-                        break
+                        break # for attempt ...
+                break # for nm, ...
             else:
                 config['TCL_root'] = os.path.join(tclbindir, tclnm)
                 config['TK_root'] = os.path.join(tclbindir, tknm)
                 config['TCL_dirname'] = os.path.basename(config['TCL_root'])
                 config['TK_dirname'] = os.path.basename(config['TK_root'])
                 break
-        elif is_darwin:
+        else:
+            # is_darwin
             tclbindir = os.path.dirname(fnm)
             print "I: found TCL/TK"
             tcldir = "Tcl.framework/Resources/Scripts"
