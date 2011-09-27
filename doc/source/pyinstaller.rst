@@ -37,7 +37,7 @@ OPTIONS
 ========
 
 For now, please use ``pyinstaller --help`` to get all options.
-Basically these are teh same as for pyi-configure, pyi-makespec and
+Basically these are the same as for pyi-configure, pyi-makespec and
 pyi-build together.
 
 
