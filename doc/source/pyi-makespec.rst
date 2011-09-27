@@ -72,6 +72,9 @@ What to bundle, where to search
                     set base path for import (like using PYTHONPATH).
                     Multiple directories are allowed, separating them with
                     ':', or using this option multiple times
+--additional-hooks-dir=HOOKSPATH
+                    additional path to search for hooks (may be given
+                    several times)
 -K, --tk            include TCL/TK in the deployment
 -a, --ascii         do NOT include unicode encodings (default: included if
                     available)

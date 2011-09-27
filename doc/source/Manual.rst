@@ -165,6 +165,11 @@ What to bundle, where to search:
     allowed, separating them with the path separator (';' under Windows, ':'
     under Linux), or using this option multiple times.
 
+--additional-hooks-dir=HOOKSPATH
+    Additional path to search for hooks. This will go into the extend
+    the `hookspath`, see `Analysis`_ below. This option may be given
+    several times.
+
 -K, --tk
     include TCL/TK in the deployment
 

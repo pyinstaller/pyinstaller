@@ -27,7 +27,8 @@ from PyInstaller import is_win, is_cygwin, is_darwin
 
 freezetmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
-             pathex=%(pathex)s)
+             pathex=%(pathex)s,
+             hookspath=%(hookspath)r)
 pyz = PYZ(a.pure)
 exe = EXE(%(tkpkg)s pyz,
           a.scripts,
@@ -43,7 +44,8 @@ exe = EXE(%(tkpkg)s pyz,
 
 collecttmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
-             pathex=%(pathex)s)
+             pathex=%(pathex)s,
+             hookspath=%(hookspath)r)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -64,7 +66,8 @@ coll = COLLECT(%(tktree)s exe,
 
 comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
-             pathex=%(pathex)s)
+             pathex=%(pathex)s,
+             hookspath=%(hookspath)r)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -165,6 +168,9 @@ def __add_options(parser):
                       "Multiple directories are allowed, separating them "
                       "with %s, or using this option multiple times"
                       % repr(os.pathsep))
+    g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
+                 help="additional path to search for hooks "
+                      "(may be given several times)")    
     g.add_option("-K", "--tk", action="store_true",
                  help="include TCL/TK in the deployment")
     g.add_option("-a", "--ascii", action="store_true",
@@ -225,7 +231,7 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
          ascii=0, workdir=None, pathex=[], version_file=None,
          icon_file=None, manifest=None, resources=[], crypt=None,
-         **kwargs):
+         hookspath=None, **kwargs):
 
     try:
         config = eval(open(configfilename, 'r').read())
@@ -281,6 +287,7 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0,
          'tkpkg' :'',
          'scripts':scripts,
          'pathex' :pathex,
+         'hookspath': hookspath,
          #'exename': '',
          'name': name,
          'distdir': repr(distdir),
