@@ -418,9 +418,7 @@ class Analysis(Target):
         for modnm, mod in analyzer.modules.items():
             # FIXME: why can we have a mod == None here?
             if mod is not None:
-                hooks = findRTHook(modnm)  # XXX
-                if hooks:
-                    rthooks.extend(hooks)
+                rthooks.extend(_findRTHook(modnm)) # XXX
                 datas.extend(mod.datas)
                 if isinstance(mod, mf.BuiltinModule):
                     pass
@@ -538,20 +536,17 @@ class Analysis(Target):
         binaries.append((os.path.split(lib)[1], lib, 'BINARY'))
 
 
-def findRTHook(modnm):
-    hooklist = rthooks.get(modnm)
-    if hooklist:
-        rslt = []
-        for script in hooklist:
-            nm = os.path.basename(script)
-            nm = os.path.splitext(nm)[0]
-            if os.path.isabs(script):
-                path = script
-            else:
-                path = os.path.join(HOMEPATH, script)
-            rslt.append((nm, path, 'PYSOURCE'))
-        return rslt
-    return None
+def _findRTHook(modnm):
+    rslt = []
+    for script in rthooks.get(modnm):
+        nm = os.path.basename(script)
+        nm = os.path.splitext(nm)[0]
+        if os.path.isabs(script):
+            path = script
+        else:
+            path = os.path.join(HOMEPATH, script)
+        rslt.append((nm, path, 'PYSOURCE'))
+    return rslt
 
 
 class PYZ(Target):
