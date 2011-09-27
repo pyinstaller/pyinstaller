@@ -41,4 +41,7 @@ opts, args = parser.parse_args()
 if args:
     parser.error('Does not expect any arguments')
 
-PyInstaller.configure.main(**opts.__dict__)
+try:
+    PyInstaller.configure.main(**opts.__dict__)
+except KeyboardInterrupt:
+    raise SystemExit("Aborted by user request.")

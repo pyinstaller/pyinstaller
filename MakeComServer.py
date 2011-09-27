@@ -162,4 +162,7 @@ if __name__ == '__main__':
     if not args:
         print usage % sys.argv[0]
     else:
-        create(args, debug, verbosity, workdir, ascii)
+        try:
+            create(args, debug, verbosity, workdir, ascii)
+        except KeyboardInterrupt:
+            raise SystemExit("Aborted by user request.")

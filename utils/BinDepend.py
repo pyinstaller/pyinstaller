@@ -43,9 +43,12 @@ if len(args) == 0:
     parser.error('Requires one or more executables or dynamic libraries')
 
 PyInstaller.bindepend.silent = True  # Suppress all informative messages from the dependency code
-for a in args:
-    for fn in glob.glob(a):
-        imports = PyInstaller.bindepend.getImports(fn)
-        if is_win:
-            imports.extend([a.getid() for a in PyInstaller.bindepend.getAssemblies(fn)])
-        print fn, imports
+try:
+    for a in args:
+        for fn in glob.glob(a):
+            imports = PyInstaller.bindepend.getImports(fn)
+            if is_win:
+                imports.extend([a.getid() for a in PyInstaller.bindepend.getAssemblies(fn)])
+            print fn, imports
+except KeyboardInterrupt:
+    raise SystemExit("Aborted by user request.")

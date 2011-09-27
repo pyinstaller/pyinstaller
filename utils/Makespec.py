@@ -56,6 +56,9 @@ for p in temppaths:
 if not args:
     p.error('Requires at least one scriptname file')
 
-name = PyInstaller.makespec.main(args, **opts.__dict__)
-print 'wrote %s' % name
-print 'now run Build.py to build the executable'
+try:
+    name = PyInstaller.makespec.main(args, **opts.__dict__)
+    print 'wrote %s' % name
+    print 'now run Build.py to build the executable'
+except KeyboardInterrupt:
+    raise SystemExit("Aborted by user request.")

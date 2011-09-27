@@ -96,4 +96,7 @@ class PyInstallerGUI:
         self.filein.insert(0, self.fin)
 
 if __name__ == "__main__":
-    app = PyInstallerGUI()
+    try:
+        app = PyInstallerGUI()
+    except KeyboardInterrupt:
+        raise SystemExit("Aborted by user request.")

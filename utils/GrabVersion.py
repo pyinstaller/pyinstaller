@@ -38,5 +38,8 @@ if len(sys.argv) < 2:
     print ' executable targets in an Installer config file.'
     print ' Note that only NT / Win2K can set version resources.'
 else:
-    vs  = versionInfo.decode(sys.argv[1])
-    print vs
+    try:
+        vs  = versionInfo.decode(sys.argv[1])
+        print vs
+    except KeyboardInterrupt:
+        raise SystemExit("Aborted by user request.")

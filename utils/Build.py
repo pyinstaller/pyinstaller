@@ -46,4 +46,7 @@ opts, args = parser.parse_args()
 if len(args) != 1:
     parser.error('Requires exactly one .spec-file')
 
-PyInstaller.build.main(args[0], **opts.__dict__)
+try:
+    PyInstaller.build.main(args[0], **opts.__dict__)
+except KeyboardInterrupt:
+    raise SystemExit("Aborted by user request.")

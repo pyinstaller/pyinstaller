@@ -229,5 +229,7 @@ parser.add_option('-b', '--brief',
 opts, args = parser.parse_args()
 if len(args) != 1:
     parser.error('Requires exactly one pyinstaller archive')
-sys.exit(main(opts, args))
-
+try:
+    sys.exit(main(opts, args))
+except KeyboardInterrupt:
+    raise SystemExit("Aborted by user request.")

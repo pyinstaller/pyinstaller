@@ -96,4 +96,7 @@ def main():
     except ArgsError, e:
         p.error(e)
 
-sys.exit(main())
+try:
+    sys.exit(main())
+except KeyboardInterrupt:
+    raise SystemExit("Aborted by user request.")
