@@ -14,14 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 import os, sys, win32api, Makespec
 
-tmplt = """\
+tmplt = '''\
 import sys
 import os
 import pythoncom
 pythoncom.frozen = 1
-inprocess = getattr(sys, 'frozen', None)
+inprocess = getattr(sys, "frozen", None)
 
 %(modules)s
 klasses = (%(klasses)s,)
@@ -36,7 +37,7 @@ def DllUnregisterServer():
     win32com.server.register.UnregisterClasses(*klasses)
     return 0
 
-if sys.frozen!="dll":
+if sys.frozen != "dll":
     import win32com.server.localserver
     for i in range(1, len(sys.argv)):
         arg = sys.argv[i].lower()
@@ -58,8 +59,11 @@ if sys.frozen!="dll":
     else:
         # You could do something else useful here.
         import win32api
-        win32api.MessageBox(0, "This program hosts a COM Object and\\r\\nis started automatically", "COM Object")
-"""
+        win32api.MessageBox(0,
+                            "This program hosts a COM Object and\\r\\n"
+                            "is started automatically",
+                            "COM Object")
+'''
 
 def create(scripts, debug, verbosity, workdir, ascii=0):
     infos = []  # (path, module, klasses)
