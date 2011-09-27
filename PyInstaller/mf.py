@@ -887,7 +887,7 @@ def scan_code(co, m=None, w=None, b=None, nested=0):
         w = []
     if b is None:
         b = []
-    all = None
+    all = []
     lastname = None
     level = -1 # import-level, same behaviour as up to Python 2.4
     for i in range(len(instrs)):
@@ -961,8 +961,7 @@ def scan_code(co, m=None, w=None, b=None, nested=0):
             # FIXME: "all" was not updated here nor returned. Was it the desired
             # behaviour?
             _, _, _, all_nested = scan_code(c, m, w, b, 1)
-            if all_nested:
-                all.extend(all_nested)
+            all.extend(all_nested)
     return m, w, b, all
 
 def scan_code_for_ctypes(co, instrs, i):
