@@ -1231,9 +1231,10 @@ Accessing Data Files
 ********************
 
 In a ``--onedir`` distribution, this is easy: pass a list of your data files
-(in ``TOC`` format) to the ``COLLECT``, and they will show up in the distribution
-directory tree. The name in the ``(name, path, 'DATA')`` tuple can be a relative
-path name. Then, at runtime, you can use code like this to find the file::
+(in ``TOC`` format) to the ``COLLECT``, and they will show up in the
+distribution directory tree. The name in the ``(name, path, 'DATA')``
+tuple can be a relative path name. Then, at runtime, you can use code
+like this to find the file::
 
        os.path.join(os.path.dirname(sys.executable), relativename))
 
@@ -1254,9 +1255,9 @@ Self-extracting executables
 
 The ELF executable format (Windows, Linux and some others) allows arbitrary
 data to be concatenated to the end of the executable without disturbing its
-functionality. For this reason, a ``CArchive``'s Table of Contents is at the end of
-the archive. The executable can open itself as a binary file name, seek to the
-end and 'open' the ``CArchive`` (see figure 3).
+functionality. For this reason, a ``CArchive``'s Table of Contents is
+at the end of the archive. The executable can open itself as a binary
+file name, seek to the end and 'open' the ``CArchive`` (see figure 3).
 
 On other platforms, the archive and the executable are separate, but the
 archive is named ``executable.pkg``, and expected to be in the same directory.
@@ -1267,8 +1268,9 @@ Other than that, the process is the same.
 One Pass Execution
 ******************
 
-In a single directory deployment (``--onedir``, which is the default), all of the
-binaries are already in the file system. In that case, the embedding app:
+In a single directory deployment (``--onedir``, which is the default),
+all of the binaries are already in the file system. In that case, the
+embedding app:
 
 * opens the archive
 
@@ -1291,19 +1293,20 @@ Two Pass Execution
 
 There are a couple situations which require two passes:
 
-* a ``--onefile`` deployment (on Windows, the files can't be cleaned up afterwards
-  because Python does not call ``FreeLibrary``; on other platforms, Python won't
-  find them if they're extracted in the same process that uses them)
+* a ``--onefile`` deployment (on Windows, the files can't be cleaned
+  up afterwards because Python does not call ``FreeLibrary``; on other
+  platforms, Python won't find them if they're extracted in the same
+  process that uses them)
 
-* ``LD_LIBRARY_PATH`` needs to be set to find the binaries (not extension modules,
-  but modules the extensions are linked to).
+* ``LD_LIBRARY_PATH`` needs to be set to find the binaries (not
+  extension modules, but modules the extensions are linked to).
 
 The first pass:
 
 * opens the archive
 
-* extracts all the binaries in the archive (in |PyInstallerVersion|, this is always to a
-  temporary directory).
+* extracts all the binaries in the archive (in |PyInstallerVersion|,
+  this is always to a temporary directory).
 
 * sets a magic environment variable
 
@@ -1323,9 +1326,9 @@ environment variable is what tells it that this is pass two).
 
 There are, of course, quite a few differences between the Windows and
 Unix/Linux versions. The major one is that because all of Python on Windows is
-in ``pythonXX.dll``, and dynamic loading is so simple-minded, that one binary can
-be use with any version of Python. There's much in common, though, and that C
-code can be found in `source/common/launch.c`_.
+in ``pythonXX.dll``, and dynamic loading is so simple-minded, that one
+binary can be use with any version of Python. There's much in common,
+though, and that C code can be found in `source/common/launch.c`_.
 
 The Unix/Linux build process (which you need to run just once for any version
 of Python) makes use of the config information in your install (if you
@@ -1343,33 +1346,40 @@ PyInstaller Archives
 
 Archives Introduction
 ---------------------
-You know what an archive is: a ``.tar`` file, a ``.jar`` file, a ``.zip`` file. Two kinds
-of archives are used here. One is equivalent to a Java ``.jar`` file - it allows
-Python modules to be stored efficiently and, (with some import hooks) imported
-directly. This is a ``ZlibArchive``. The other (a ``CArchive``) is equivalent to a
-``.zip`` file - a general way of packing up (and optionally compressing) arbitrary
-blobs of data. It gets its name from the fact that it can be manipulated easily
-from C, as well as from Python. Both of these derive from a common base class,
-making it fairly easy to create new kinds of archives.
+
+You know what an archive is: a ``.tar`` file, a ``.jar`` file, a
+``.zip`` file. Two kinds of archives are used here. One is equivalent
+to a Java ``.jar`` file - it allows Python modules to be stored
+efficiently and, (with some import hooks) imported directly. This is a
+``ZlibArchive``. The other (a ``CArchive``) is equivalent to a
+``.zip`` file - a general way of packing up (and optionally
+compressing) arbitrary blobs of data. It gets its name from the fact
+that it can be manipulated easily from C, as well as from Python. Both
+of these derive from a common base class, making it fairly easy to
+create new kinds of archives.
 
 |GOBACK|_
 
 ``ZlibArchive``
 ---------------
-A ``ZlibArchive`` contains compressed ``.pyc`` (or ``.pyo``) files. The Table of Contents
-is a marshalled dictionary, with the key (the module's name as given in an
-``import`` statement) associated with a seek position and length. Because it is
-all marshalled Python, ``ZlibArchives`` are completely cross-platform.
 
-A ``ZlibArchive`` hooks in with `iu.py`_ so that, with a little setup, the archived
-modules can be imported transparently. Even with compression at level 9, this
-works out to being faster than the normal import. Instead of searching
-``sys.path``, there's a lookup in the dictionary. There's no ``stat``-ing of the ``.py``
-and ``.pyc`` and no file opens (the file is already open). There's just a seek, a
-read and a decompress. A traceback will point to the source file the archive
-entry was created from (the ``__file__`` attribute from the time the ``.pyc`` was
-compiled). On a user's box with no source installed, this is not terribly
-useful, but if they send you the traceback, at least you can make sense of it.
+A ``ZlibArchive`` contains compressed ``.pyc`` (or ``.pyo``) files.
+The Table of Contents is a marshalled dictionary, with the key (the
+module's name as given in an ``import`` statement) associated with a
+seek position and length. Because it is all marshalled Python,
+``ZlibArchives`` are completely cross-platform.
+
+A ``ZlibArchive`` hooks in with `iu.py`_ so that, with a little setup,
+the archived modules can be imported transparently. Even with
+compression at level 9, this works out to being faster than the normal
+import. Instead of searching ``sys.path``, there's a lookup in the
+dictionary. There's no ``stat``-ing of the ``.py`` and ``.pyc`` and no
+file opens (the file is already open). There's just a seek, a read and
+a decompress. A traceback will point to the source file the archive
+entry was created from (the ``__file__`` attribute from the time the
+``.pyc`` was compiled). On a user's box with no source installed, this
+is not terribly useful, but if they send you the traceback, at least
+you can make sense of it.
 
 |ZlibArchiveImage|
 
@@ -1377,23 +1387,26 @@ useful, but if they send you the traceback, at least you can make sense of it.
 
 ``CArchive``
 ------------
-A ``CArchive`` contains whatever you want to stuff into it. It's very much like a
-``.zip`` file. They are easy to create in Python and unpack from C code. ``CArchives``
-can be appended to other files (like ELF and COFF executables, for example).
-To allow this, they are opened from the end, so the ``TOC`` for a ``CArchive`` is at
-the back, followed only by a cookie that tells you where the ``TOC`` starts and
+
+A ``CArchive`` contains whatever you want to stuff into it. It's very
+much like a ``.zip`` file. They are easy to create in Python and
+unpack from C code. ``CArchives`` can be appended to other files (like
+ELF and COFF executables, for example). To allow this, they are opened
+from the end, so the ``TOC`` for a ``CArchive`` is at the back,
+followed only by a cookie that tells you where the ``TOC`` starts and
 where the archive itself starts.
 
-``CArchives`` can also be embedded within other ``CArchives``. The inner archive can be
-opened in place (without extraction).
+``CArchives`` can also be embedded within other ``CArchives``. The
+inner archive can be opened in place (without extraction).
 
-Each ``TOC`` entry is variable length. The first field in the entry tells you the
-length of the entry. The last field is the name of the corresponding packed
-file. The name is null terminated. Compression is optional by member.
+Each ``TOC`` entry is variable length. The first field in the entry
+tells you the length of the entry. The last field is the name of the
+corresponding packed file. The name is null terminated. Compression is
+optional by member.
 
-There is also a type code associated with each entry. If you're using a
-``CArchive`` as a ``.zip`` file, you don't need to worry about this. The type codes
-are used by the self-extracting executables.
+There is also a type code associated with each entry. If you're using
+a ``CArchive`` as a ``.zip`` file, you don't need to worry about this.
+The type codes are used by the self-extracting executables.
 
 |CArchiveImage|
 
@@ -1401,9 +1414,9 @@ are used by the self-extracting executables.
 
 License
 +++++++
-PyInstaller is mainly distributed  under the
-`GPL License`_
-but it has an exception such that you can use it to compile commercial products.
+
+PyInstaller is mainly distributed under the `GPL License`_ but it has
+an exception such that you can use it to compile commercial products.
 
 In a nutshell, the license is GPL for the source code with the exception that:
 
@@ -1428,9 +1441,10 @@ Appendix
 
 .. sidebar:: You can stop reading here...
 
-    ... if you are not interested in technical details. This appendix contains
-    insights of the internal workings of |PyInstaller|, and you do not need this
-    information unless you plan to work on |PyInstaller| itself.
+    ... if you are not interested in technical details. This appendix
+    contains insights of the internal workings of |PyInstaller|, and
+    you do not need this information unless you plan to work on
+    |PyInstaller| itself.
 
 
 Building the bootloaders
@@ -1494,9 +1508,9 @@ Change to the |install_path| ``source`` subdirectory. Run::
         pyinstaller$ cd source
         pyinstaller/source$ python waf configure build install
 
-This will produce ``support/loader/YOUR_OS/run``, ``support/loader/YOUR_OS/run_d``,
-``support/loader/YOUR_OS/runw`` and ``support/loader/YOUR_OS/runw_d``,
-which are the bootloaders.
+This will produce ``support/loader/YOUR_OS/run``,
+``support/loader/YOUR_OS/run_d``, ``support/loader/YOUR_OS/runw`` and
+``support/loader/YOUR_OS/runw_d``, which are the bootloaders.
 
 On Windows this will produce in the ``support/loader/YOUR_OS`` directory:
 ``run*.exe`` (bootloader for regular programs), and
@@ -1530,11 +1544,9 @@ you can install LSB 4.0::
 
         sudo apt-get install lsb lsb-build-cc
 
-Most other distributions contain only LSB 3.0 in their software repositories and
-thus LSB build tools 4.0 must be downloaded by hand. From Linux Foundation
-download
-`LSB sdk 4.0`_
-for your architecture.
+Most other distributions contain only LSB 3.0 in their software
+repositories and thus LSB build tools 4.0 must be downloaded by hand.
+From Linux Foundation download `LSB sdk 4.0`_ for your architecture.
 
 Unpack it by::
 
@@ -1554,9 +1566,9 @@ do so by specifying --no-lsb on the waf command line, as follows::
 
         pyinstaller/source$ python waf configure --no-lsb build install
 
-This will also produce ``support/loader/YOUR_OS/run``, ``support/loader/YOUR_OS/run_d``,
-``support/loader/YOUR_OS/runw`` and ``support/loader/YOUR_OS/runw_d``, but they will
-not be LSB binaries.
+This will also produce ``support/loader/YOUR_OS/run``,
+``support/loader/YOUR_OS/run_d``, ``support/loader/YOUR_OS/runw`` and
+``support/loader/YOUR_OS/runw_d``, but they will not be LSB binaries.
 
 |GOBACK|_
 
@@ -1566,24 +1578,26 @@ not be LSB binaries.
 
 Module ``mf`` is modelled after ``iu``.
 
-It also uses ``ImportDirectors`` and ``Owners`` to partition the import name space.
-Except for the fact that these return ``Module`` instances instead of real module
-objects, they are identical.
+It also uses ``ImportDirectors`` and ``Owners`` to partition the
+import name space. Except for the fact that these return ``Module``
+instances instead of real module objects, they are identical.
 
-Instead of an ``ImportManager``, ``mf`` has an ``ImportTracker`` managing things.
+Instead of an ``ImportManager``, ``mf`` has an ``ImportTracker``
+managing things.
 
 |GOBACK|_
 
 ImportTracker
 *************
 
-``ImportTracker`` can be called in two ways: ``analyze_one(name, importername=None)``
-or ``analyze_r(name, importername=None)``. The second method does what modulefinder
-does - it recursively finds all the module names that importing name would
-cause to appear in ``sys.modules``. The first method is non-recursive. This is
-useful, because it is the only way of answering the question "Who imports
-name?" But since it is somewhat unrealistic (very few real imports do not
-involve recursion), it deserves some explanation.
+``ImportTracker`` can be called in two ways: ``analyze_one(name,
+importername=None)`` or ``analyze_r(name, importername=None)``. The
+second method does what modulefinder does - it recursively finds all
+the module names that importing name would cause to appear in
+``sys.modules``. The first method is non-recursive. This is useful,
+because it is the only way of answering the question "Who imports
+name?" But since it is somewhat unrealistic (very few real imports do
+not involve recursion), it deserves some explanation.
 
 |GOBACK|_
 
@@ -1597,11 +1611,11 @@ import is relative or absolute, and whether the name is a dotted name (if there
 are N dots in the name, then N+1 modules will be imported even without any code
 running).
 
-The analyze_one method determines the structural effects, and defers the
-dynamic effects. For example, ``analyze_one("B.C", "A")`` could return ``["B", "B.C"]``
-or ``["A.B", "A.B.C"]`` depending on whether the import turns out to be relative or
-absolute. In addition, ImportTracker's modules dict will have Module instances
-for them.
+The analyze_one method determines the structural effects, and defers
+the dynamic effects. For example, ``analyze_one("B.C", "A")`` could
+return ``["B", "B.C"]`` or ``["A.B", "A.B.C"]`` depending on whether
+the import turns out to be relative or absolute. In addition,
+ImportTracker's modules dict will have Module instances for them.
 
 |GOBACK|_
 
@@ -1614,24 +1628,27 @@ imports. For packages and normal modules, imports is a list populated by
 scanning the code object (and therefor, the names in this list may be relative
 or absolute names - we don't know until they have been analyzed).
 
-The highly astute will notice that there is a hole in ``analyze_one()`` here. The
-first thing that happens when ``B.C`` is being imported is that ``B`` is imported and
-it's top-level code executed. That top-level code can do various things so that
-when the import of ``B.C`` finally occurs, something completely different happens
-(from what a structural analysis would predict). But mf can handle this through
-it's hooks mechanism.
+The highly astute will notice that there is a hole in
+``analyze_one()`` here. The first thing that happens when ``B.C`` is
+being imported is that ``B`` is imported and it's top-level code
+executed. That top-level code can do various things so that when the
+import of ``B.C`` finally occurs, something completely different
+happens (from what a structural analysis would predict). But mf can
+handle this through it's hooks mechanism.
 
 |GOBACK|_
 
 code scanning
 *************
 
-Like modulefinder, ``mf`` scans the byte code of a module, looking for imports. In
-addition, ``mf`` will pick out a module's ``__all__`` attribute, if it is built as a
-list of constant names. This means that if a package declares an ``__all__`` list
-as a list of names, ImportTracker will track those names if asked to analyze
-``package.*``. The code scan also notes the occurance of ``__import__``, ``exec`` and ``eval``,
-and can issue warnings when they're found.
+Like modulefinder, ``mf`` scans the byte code of a module, looking for
+imports. In addition, ``mf`` will pick out a module's ``__all__``
+attribute, if it is built as a list of constant names. This means that
+if a package declares an ``__all__`` list as a list of names,
+ImportTracker will track those names if asked to analyze
+``package.*``. The code scan also notes the occurance of
+``__import__``, ``exec`` and ``eval``, and can issue warnings when
+they're found.
 
 The code scanning also keeps track (as well as it can) of the context of an
 import. It recognizes when imports are found at the top-level, and when they
@@ -1651,18 +1668,20 @@ These modules should have one or more of the following three global
 names defined:
 
 ``hiddenimports``
-    a list of modules names (relative or absolute) that the module imports in some untrackable way.
+    a list of modules names (relative or absolute) that the module
+    imports in some untrackable way.
 
 ``attrs``
     a list of ``(name, value)`` pairs (where value is normally meaningless).
 
 ``hook(mod)``
-    a function taking a ``Module`` instance and returning a ``Module`` instance (so it can modify or replace).
+    a function taking a ``Module`` instance and returning a ``Module`` 
+    instance (so it can modify or replace).
 
 
-The first hook (``hiddenimports``) extends the list created by scanning the code.
-``ExtensionModules``, of course, don't get scanned, so this is the only way of
-recording any imports they do.
+The first hook (``hiddenimports``) extends the list created by
+scanning the code. ``ExtensionModules``, of course, don't get scanned,
+so this is the only way of recording any imports they do.
 
 The second hook (``attrs``) exists mainly so that ImportTracker won't issue
 spurious warnings when the rightmost node in a dotted name turns out to be an
@@ -1670,22 +1689,23 @@ attribute in a package module, instead of a missing submodule.
 
 The callable hook exists for things like dynamic modification of a package's
 ``__path__`` or perverse situations, like ``xml.__init__`` replacing itself in
-``sys.modules`` with ``_xmlplus.__init__``. (It takes nine hook modules to properly
-trace through PyXML-using code, and I can't believe that it's any easier for
-the poor programmer using that package). The ``hook(mod)`` (if it exists) is
-called before looking at the others - that way it can, for example, test
-``sys.version`` and adjust what's in ``hiddenimports``.
+``sys.modules`` with ``_xmlplus.__init__``. (It takes nine hook modules to
+properly trace through PyXML-using code, and I can't believe that it's
+any easier for the poor programmer using that package). The
+``hook(mod)`` (if it exists) is called before looking at the others -
+that way it can, for example, test ``sys.version`` and adjust what's
+in ``hiddenimports``.
 
 |GOBACK|_
 
 Warnings
 ********
 
-``ImportTracker`` has a ``getwarnings()`` method that returns all the warnings
-accumulated by the instance, and by the ``Module`` instances in its modules dict.
-Generally, it is ``ImportTracker`` who will accumulate the warnings generated
-during the structural phase, and ``Modules`` that will get the warnings generated
-during the code scan.
+``ImportTracker`` has a ``getwarnings()`` method that returns all the
+warnings accumulated by the instance, and by the ``Module`` instances
+in its modules dict. Generally, it is ``ImportTracker`` who will
+accumulate the warnings generated during the structural phase, and
+``Modules`` that will get the warnings generated during the code scan.
 
 Note that by using a hook module, you can silence some particularly tiresome
 warnings, but not all of them.
@@ -1695,11 +1715,12 @@ warnings, but not all of them.
 Cross Reference
 ***************
 
-Once a full analysis (that is, an ``analyze_r`` call) has been done, you can get a
-cross reference by using ``getxref()``. This returns a list of tuples. Each tuple
-is ``(modulename, importers)``, where importers is a list of the (fully qualified)
-names of the modules importing ``modulename``. Both the returned list and the
-importers list are sorted.
+Once a full analysis (that is, an ``analyze_r`` call) has been done,
+you can get a cross reference by using ``getxref()``. This returns a
+list of tuples. Each tuple is ``(modulename, importers)``, where
+importers is a list of the (fully qualified) names of the modules
+importing ``modulename``. Both the returned list and the importers
+list are sorted.
 
 |GOBACK|_
 
@@ -1756,10 +1777,11 @@ The tuples in the imports list are (name, delayed, conditional).
 ``iu.py``: An *imputil* Replacement
 -----------------------------------
 
-Module ``iu`` grows out of the pioneering work that Greg Stein did with ``imputil``
-(actually, it includes some verbatim ``imputil`` code, but since Greg didn't
-copyright it, we won't mention it). Both modules can take over Python's
-builtin import and ease writing of at least certain kinds of import hooks.
+Module ``iu`` grows out of the pioneering work that Greg Stein did
+with ``imputil`` (actually, it includes some verbatim ``imputil``
+code, but since Greg didn't copyright it, we won't mention it). Both
+modules can take over Python's builtin import and ease writing of at
+least certain kinds of import hooks.
 
 ``iu`` differs from ``imputil``:
 * faster
@@ -1779,11 +1801,12 @@ delegates.
 exists in native Python in that builtins and frozen modules are searched
 before ``sys.path``, (on Windows there's also a search of the registry while on
 Mac, resources may be searched). This metapath is a list populated with
-``ImportDirector`` instances. There are ``ImportDirector`` subclasses for builtins,
-frozen modules, (on Windows) modules found through the registry and a
-``PathImportDirector`` for handling ``sys.path``. For a top-level import (that is, not
-an import of a module in a package), ``ImportManager`` tries each director on it's
-metapath until one succeeds.
+``ImportDirector`` instances. There are ``ImportDirector`` subclasses
+for builtins, frozen modules, (on Windows) modules found through the
+registry and a ``PathImportDirector`` for handling ``sys.path``. For a
+top-level import (that is, not an import of a module in a package),
+``ImportManager`` tries each director on it's metapath until one
+succeeds.
 
 ``ImportManager`` hides the semantic complexity of an import from the directors.
 It's up to the ``ImportManager`` to decide if an import is relative or absolute;
@@ -1795,9 +1818,10 @@ date; to handle the fromlist and return the correct module object.
 ``ImportDirector``
 ******************
 
-An ``ImportDirector`` just needs to respond to ``getmod(name)`` by returning a module
-object or ``None``. As you will see, an ``ImportDirector`` can consider name to be
-atomic - it has no need to examine name to see if it is dotted.
+An ``ImportDirector`` just needs to respond to ``getmod(name)`` by
+returning a module object or ``None``. As you will see, an
+``ImportDirector`` can consider name to be atomic - it has no need to
+examine name to see if it is dotted.
 
 To see how this works, we need to examine the ``PathImportDirector``.
 
@@ -1806,33 +1830,37 @@ To see how this works, we need to examine the ``PathImportDirector``.
 ``PathImportDirector``
 **********************
 
-The ``PathImportDirector`` subclass manages a list of names - most notably,
-``sys.path``. To do so, it maintains a shadowpath - a dictionary mapping the names
-on its pathlist (eg, ``sys.path``) to their associated ``Owners``. (It could do this
-directly, but the assumption that sys.path is occupied solely by strings seems
-ineradicable.) ``Owners`` of the appropriate kind are created as needed (if all
-your imports are satisfied by the first two elements of ``sys.path``, the
-``PathImportDirector``'s shadowpath will only have two entries).
+The ``PathImportDirector`` subclass manages a list of names - most
+notably, ``sys.path``. To do so, it maintains a shadowpath - a
+dictionary mapping the names on its pathlist (eg, ``sys.path``) to
+their associated ``Owners``. (It could do this directly, but the
+assumption that sys.path is occupied solely by strings seems
+ineradicable.) ``Owners`` of the appropriate kind are created as
+needed (if all your imports are satisfied by the first two elements of
+``sys.path``, the ``PathImportDirector``'s shadowpath will only have
+two entries).
 
 |GOBACK|_
 
 ``Owner``
 *********
 
-An ``Owner`` is much like an ``ImportDirector`` but manages a much more concrete piece
-of turf. For example, a ``DirOwner`` manages one directory. Since there are no
-other officially recognized filesystem-like namespaces for importing, that's
-all that's included in iu, but it's easy to imagine ``Owners`` for zip files
-(and I have one for my own ``.pyz`` archive format) or even URLs.
+An ``Owner`` is much like an ``ImportDirector`` but manages a much
+more concrete piece of turf. For example, a ``DirOwner`` manages one
+directory. Since there are no other officially recognized
+filesystem-like namespaces for importing, that's all that's included
+in iu, but it's easy to imagine ``Owners`` for zip files (and I have
+one for my own ``.pyz`` archive format) or even URLs.
 
-As with ``ImportDirectors``, an ``Owner`` just needs to respond to ``getmod(name)`` by
-returning a module object or ``None``, and it can consider name to be atomic.
+As with ``ImportDirectors``, an ``Owner`` just needs to respond to
+``getmod(name)`` by returning a module object or ``None``, and it can
+consider name to be atomic.
 
-So structurally, we have a tree, rooted at the ``ImportManager``. At the next
-level, we have a set of ``ImportDirectors``. At least one of those directors, the
-``PathImportDirector`` in charge of ``sys.path``, has another level beneath it,
-consisting of ``Owners``. This much of the tree covers the entire top-level import
-namespace.
+So structurally, we have a tree, rooted at the ``ImportManager``. At
+the next level, we have a set of ``ImportDirectors``. At least one of
+those directors, the ``PathImportDirector`` in charge of ``sys.path``,
+has another level beneath it, consisting of ``Owners``. This much of
+the tree covers the entire top-level import namespace.
 
 The rest of the import namespace is covered by treelets, each rooted in a
 package module (an ``__init__.py``).
@@ -1842,20 +1870,22 @@ package module (an ``__init__.py``).
 Packages
 ********
 
-To make this work, ``Owners`` need to recognize when a module is a package. For a
-``DirOwner``, this means that name is a subdirectory which contains an ``__init__.py``.
-The ``__init__`` module is loaded and its ``__path__`` is initialized with the
-subdirectory. Then, a ``PathImportDirector`` is created to manage this ``__path__``.
-Finally the new ``PathImportDirector``'s ``getmod`` is assigned to the package's
-``__importsub__`` function.
+To make this work, ``Owners`` need to recognize when a module is a
+package. For a ``DirOwner``, this means that name is a subdirectory
+which contains an ``__init__.py``. The ``__init__`` module is loaded
+and its ``__path__`` is initialized with the subdirectory. Then, a
+``PathImportDirector`` is created to manage this ``__path__``. Finally
+the new ``PathImportDirector``'s ``getmod`` is assigned to the
+package's ``__importsub__`` function.
 
-When a module within the package is imported, the request is routed (by the
-``ImportManager``) diretly to the package's ``__importsub__``. In a hierarchical
-namespace (like a filesystem), this means that ``__importsub__`` (which is really
-the bound getmod method of a ``PathImportDirector`` instance) needs only the
-module name, not the package name or the fully qualified name. And that's
-exactly what it gets. (In a flat namespace - like most archives - it is
-perfectly easy to route the request back up the package tree to the archive
+When a module within the package is imported, the request is routed
+(by the ``ImportManager``) diretly to the package's ``__importsub__``.
+In a hierarchical namespace (like a filesystem), this means that
+``__importsub__`` (which is really the bound getmod method of a
+``PathImportDirector`` instance) needs only the module name, not the
+package name or the fully qualified name. And that's exactly what it
+gets. (In a flat namespace - like most archives - it is perfectly easy
+to route the request back up the package tree to the archive
 ``Owner``, qualifying the name at each step.)
 
 |GOBACK|_
@@ -1863,40 +1893,45 @@ perfectly easy to route the request back up the package tree to the archive
 Possibilities
 *************
 
-Let's say we want to import from zip files. So, we subclass ``Owner``. The
-``__init__`` method should take a filename, and raise a ``ValueError`` if the file is
-not an acceptable ``.zip`` file, (when a new name is encountered on ``sys.path`` or a
-package's ``__path__``, registered Owners are tried until one accepts the name).
-The ``getmod`` method would check the zip file's contents and return ``None`` if the
-name is not found. Otherwise, it would extract the marshalled code object from
-the zip, create a new module object and perform a bit of initialization (12
-lines of code all told for my own archive format, including initializing a pack
-age with it's ``__subimporter__``).
+Let's say we want to import from zip files. So, we subclass ``Owner``.
+The ``__init__`` method should take a filename, and raise a
+``ValueError`` if the file is not an acceptable ``.zip`` file, (when a
+new name is encountered on ``sys.path`` or a package's ``__path__``,
+registered Owners are tried until one accepts the name). The
+``getmod`` method would check the zip file's contents and return
+``None`` if the name is not found. Otherwise, it would extract the
+marshalled code object from the zip, create a new module object and
+perform a bit of initialization (12 lines of code all told for my own
+archive format, including initializing a pack age with it's
+``__subimporter__``).
 
-Once the new ``Owner`` class is registered with ``iu``, you can put a zip file on
-``sys.path``. A package could even put a zip file on its ``__path__``.
+Once the new ``Owner`` class is registered with ``iu``, you can put a
+zip file on ``sys.path``. A package could even put a zip file on its
+``__path__``.
 
 |GOBACK|_
 
 Compatibility
 *************
 
-This code has been tested with the PyXML, mxBase and Win32 packages, covering
-over a dozen import hacks from manipulations of ``__path__`` to replacing a module
-in ``sys.modules`` with a different one. Emulation of Python's native import is
-nearly exact, including the names recorded in ``sys.modules`` and module attributes
-(packages imported through ``iu`` have an extra attribute - ``__importsub__``).
+This code has been tested with the PyXML, mxBase and Win32 packages,
+covering over a dozen import hacks from manipulations of ``__path__``
+to replacing a module in ``sys.modules`` with a different one.
+Emulation of Python's native import is nearly exact, including the
+names recorded in ``sys.modules`` and module attributes (packages
+imported through ``iu`` have an extra attribute - ``__importsub__``).
 
 |GOBACK|_
 
 Performance
 ***********
 
-In most cases, ``iu`` is slower than builtin import (by 15 to 20%) but faster than
-``imputil`` (by 15 to 20%). By inserting archives at the front of ``sys.path``
-containing the standard lib and the package being tested, this can be reduced
-to 5 to 10% slower (or, on my 1.52 box, 10% faster!) than builtin import. A bit
-more can be shaved off by manipulating the ``ImportManager``'s metapath.
+In most cases, ``iu`` is slower than builtin import (by 15 to 20%) but
+faster than ``imputil`` (by 15 to 20%). By inserting archives at the
+front of ``sys.path`` containing the standard lib and the package
+being tested, this can be reduced to 5 to 10% slower (or, on my 1.52
+box, 10% faster!) than builtin import. A bit more can be shaved off by
+manipulating the ``ImportManager``'s metapath.
 
 |GOBACK|_
 
@@ -1914,11 +1949,12 @@ import hacks for many years. Many of them are highly fragile; they often rely
 on undocumented (maybe even accidental) features of implementation.
 A cross-domain import hack is not likely to work with PyXML, for example.
 
-That rant aside, you can modify ``ImportManger`` to implement different policies.
-For example, a version that implements three import primitives: absolute
-import, relative import and recursive-relative import. No idea what the Python
-syntax for those should be, but ``__aimport__``, ``__rimport__`` and ``__rrimport__`` were
-easy to implement.
+That rant aside, you can modify ``ImportManger`` to implement
+different policies. For example, a version that implements three
+import primitives: absolute import, relative import and
+recursive-relative import. No idea what the Python syntax for those
+should be, but ``__aimport__``, ``__rimport__`` and ``__rrimport__``
+were easy to implement.
 
 |GOBACK|_
 
