@@ -166,13 +166,18 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     os.system(prog_conf)
 
     # execute tests
+    testbasedir = os.getcwdu()
     for _, test in tests:
         test = os.path.splitext(test)[0]
         testdir, testfile = os.path.split(test)
+        if not testdir:
+            testdir = '.'
+        elif not os.path.exists(testdir):
+            os.makedirs(testdir)
         os.chdir(testdir)  # go to testdir
         if test in MIN_VERSION_OR_OS and not MIN_VERSION_OR_OS[test]:
             counter["skipped"].append(test)
-            os.chdir('..')  # go back from testdir
+            os.chdir(testbasedir)  # go back from testdir
             continue
         if test in DEPENDENCIES:
             failed = False
@@ -185,7 +190,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
                 if verbose:
                     print "Skipping test because module %s is missing" % mod
                 counter["skipped"].append(test)
-                os.chdir('..')  # go back from testdir
+                os.chdir(testbasedir)  # go back from testdir
                 continue
         _msg("BUILDING TEST", test)
 
@@ -248,7 +253,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         else:
             _msg("TEST", test, "FAILED", short=1, sep="!!")
             counter["failed"].append(test)
-        os.chdir('..')  # go back from testdir
+        os.chdir(testbasedir)  # go back from testdir
     pprint.pprint(counter)
 
 
