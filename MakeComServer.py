@@ -14,11 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-import string, os, sys, win32api, Makespec
+import os, sys, win32api, Makespec
 
 tmplt = """\
 import sys
-import string
 import os
 import pythoncom
 pythoncom.frozen = 1
@@ -40,17 +39,17 @@ def DllUnregisterServer():
 if sys.frozen!="dll":
     import win32com.server.localserver
     for i in range(1, len(sys.argv)):
-        arg = string.lower(sys.argv[i])
-        if string.find(arg, "/reg") > -1 or string.find(arg, "--reg") > -1:
+        arg = sys.argv[i].lower()
+        if arg.find("/reg") > -1 or arg.find("--reg") > -1:
             DllRegisterServer()
             break
 
-        if string.find(arg, "/unreg") > -1 or string.find(arg, "--unreg") > -1:
+        if arg.find("/unreg") > -1 or arg.find("--unreg") > -1:
             DllUnregisterServer()
             break
 
         # MS seems to like /automate to run the class factories.
-        if string.find(arg, "/automate") > -1:
+        if arg.find("/automate") > -1:
             clsids = []
             for k in klasses:
                 clsids.append(k._reg_clsid_)
@@ -84,8 +83,8 @@ def create(scripts, debug, verbosity, workdir, ascii=0):
     for i in range(len(paths)):
         path = paths[i]
         paths[i] = win32api.GetShortPathName(os.path.normpath(path))
-    modimports = string.join(modimports, '\n')
-    klassspecs = string.join(klassspecs, ', ')
+    modimports = '\n'.join(modimports)
+    klassspecs = ', '.join(klassspecs)
     d = { 'modules':modimports,
           'klasses':klassspecs,
           }
