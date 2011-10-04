@@ -567,6 +567,11 @@ class ImportManager:
 #========= some helper functions =============================#
 
 def packagename(s):
+    """
+    For package name like 'module.submodule.subsubmodule' returns
+    'module.submodule'. If name does not contain any dots '.',
+    empty string '' is returned.
+    """
     i = s.rfind('.')
     if i >= 0:
         return s[:i]
@@ -574,7 +579,19 @@ def packagename(s):
         return ''
 
 def namesplit(s):
-    return s.split('.')
+    """
+    Split package name at the position of dot '.'.
+
+    Examples:
+        'module.submodule' =>  ['module', 'submodule']
+        'module'           =>  ['module']
+        ''                 =>  []
+    """
+    rslt = []
+    # Ensure that for empty string '' an empty list is returned.
+    if s:
+        rslt = s.split('.')
+    return rslt
 
 def getpathext(fnm):
     i = s.rfind('.')
