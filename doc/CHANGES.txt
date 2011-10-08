@@ -1,5 +1,9 @@
 (+ user visible changes, * internal stuff)
 
+Changes since PyInstaller 1.5.1
+-----------------------------
+ + Added experimental support for Solaris (thanks to Hywel Richards).
+
 Changes since PyInstaller 1.5
 -----------------------------
  + New default PyInstaller icon for generated executables on Windows.
