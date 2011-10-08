@@ -161,7 +161,7 @@ def configure(conf):
         conf.env.append_value('LINKFLAGS', lsb_target_flag)
 
 
-    ### Defines, Includes
+    ### Defines, Includes, Platform specific CFLAGS
 
     if myplatform.startswith('lin'):
         # make sure we don't use declarations after statement (break Visual Studio)
@@ -171,6 +171,9 @@ def configure(conf):
     if myplatform.startswith('win'):
         conf.env.append_value('CCDEFINES', 'WIN32')
         conf.env.append_value('CPPPATH', '../zlib')
+
+    if myplatform.startswith('sun'):
+        conf.env.append_value('CCDEFINES', 'SUNOS')
 
     conf.env.append_value('CPPPATH', '../common')
 
@@ -212,7 +215,7 @@ def configure(conf):
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
-    # fails during build. (Mac OS X, AIX)
+    # fails during build. (Mac OS X, Solaris, AIX)
     if myplatform.startswith('linux') and conf.check_cc(ccflags='-Wl,--as-needed',
             msg='Checking for flags -Wl,--as-needed'):
         conf.env.append_value('LINKFLAGS', '-Wl,--as-needed')

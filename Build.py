@@ -511,7 +511,8 @@ class Analysis(Target):
         so this method also checks for that variant as well.
         """
 
-        if target_platform.startswith("linux"):
+        if target_platform.startswith("linux") or \
+            target_platform.startswith('sun'):
             names = ('libpython%d.%d.so' % sys.version_info[:2],) 
         elif target_platform.startswith("darwin"):
             names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
@@ -527,7 +528,8 @@ class Analysis(Target):
         # resume search using the first item in names
         name = names[0]
 
-        if target_platform.startswith("linux"):
+        if target_platform.startswith("linux") or \
+            target_platform.startswith('sun'):
             lib = bindepend.findLibrary(name)
             if lib is None:
                 raise IOError("Python library not found!")

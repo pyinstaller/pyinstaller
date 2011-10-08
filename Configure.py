@@ -93,7 +93,8 @@ def test_TCL_TK(config):
 
     if target_platform.startswith("win"):
         pattern = r'(?i)tcl(\d\d)\.dll'
-    elif target_platform.startswith("linux"):
+    elif target_platform.startswith("linux") or \
+        target_platform.startswith('sun'):
         pattern = r'libtcl(\d\.\d)?\.so'
     elif target_platform.startswith("darwin"):
         pattern = r'_tkinter'

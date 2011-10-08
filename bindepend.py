@@ -740,7 +740,8 @@ def findLibrary(name):
 
     `name`must include the prefix, e.g. ``libpython2.4.so``
     """
-    assert sys.platform == 'linux2', "Current implementation for Linux only"
+    assert sys.platform == 'linux2' or sys.platform.startswith('sunos'), \
+        "Current implementation for Linux and Solaris (sunos) only"
 
     lib = None
 

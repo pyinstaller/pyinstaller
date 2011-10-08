@@ -42,6 +42,10 @@
 #include <sys/stat.h>
 #include "launch.h"
 #include "zlib.h"
+/* On Solaris is missing function 'mkdtemp'. */
+#ifdef SUNOS
+#include "mkdtemp.h"
+#endif
 
 /*
  * Python Entry point declarations (see macros in launch.h).
