@@ -1074,6 +1074,11 @@ def _resolveCtypesImports(cbinaries):
     # local paths to library search paths, then replaces original values.
     old = _setPaths()
     for cbin in cbinaries:
+        # Ignore annoying warnings like:
+        # 'W: library kernel32.dll required via ctypes not found'
+        # 'W: library coredll.dll required via ctypes not found'
+        if cbin in ['coredll.dll', 'kernel32.dll']:
+            continue
         ext = os.path.splitext(cbin)[1]
         # On Windows, only .dll files can be loaded.
         if os.name == "nt" and ext.lower() in [".so", ".dylib"]:
