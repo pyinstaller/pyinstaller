@@ -9,7 +9,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('build/pyi.linux2/test-email', __testname__ + '.exe'),
+          name=os.path.join('build', 'pyi.' + config['target_platform'], __testname__ + '.exe'),
           debug=False,
           strip=False,
           upx=False,

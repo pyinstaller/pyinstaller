@@ -165,6 +165,10 @@ def configure(conf):
         conf.env.append_value('CCDEFINES', 'WIN32')
         conf.env.append_value('CPPPATH', '../zlib')
 
+    # Enable Solaris specific code for bootloader
+    if myplatform.startswith('sun'):
+        conf.env.append_value('CCDEFINES', 'SUNOS')
+
     conf.env.append_value('CPPPATH', '../common')
 
 
@@ -213,11 +217,11 @@ def configure(conf):
         elif myarch == '64bit':
             conf.env.append_value('CCFLAGS', '-m64')
 
-    # link only with needed libraries
-    # XXX: -Wl,--as-needed detected during configure but fails during mac build
-    if conf.check_cc(ccflags='-Wl,--as-needed',
-            msg='Checking for flags -Wl,--as-needed') \
-            and not myplatform.startswith('darwin'):
+    # On linux link only with needed libraries.
+    # -Wl,--as-needed is on some platforms detected during configure but
+    # fails during build. (Mac OS X, Solaris, AIX)
+    if myplatform.startswith('linux') and conf.check_cc(ccflags='-Wl,--as-needed',
+            msg='Checking for flags -Wl,--as-needed'):
         conf.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
 

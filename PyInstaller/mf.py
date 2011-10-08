@@ -40,7 +40,7 @@ except ImportError:
     ctypes = None
 
 import PyInstaller
-from PyInstaller import is_linux, is_darwin, is_py25, is_py27
+from PyInstaller import is_unix, is_darwin, is_py25, is_py27
 
 if 'PYTHONCASEOK' not in os.environ:
     def caseOk(filename):
@@ -1048,7 +1048,7 @@ def scan_code_for_ctypes(co, instrs, i):
 def _resolveCtypesImports(cbinaries):
     """Completes ctypes BINARY entries for modules with their full path.
     """
-    if is_linux:
+    if is_unix:
         envvar = "LD_LIBRARY_PATH"
     elif is_darwin:
         envvar = "DYLD_LIBRARY_PATH"
@@ -1079,7 +1079,7 @@ def _resolveCtypesImports(cbinaries):
         if os.name == "nt" and ext.lower() in [".so", ".dylib"]:
             continue
         cpath = find_library(os.path.splitext(cbin)[0])
-        if sys.platform == "linux2":
+        if is_unix:
             # CAVEAT: find_library() is not the correct function. Ctype's
             # documentation says that it is meant to resolve only the filename
             # (as a *compiler* does) not the full path. Anyway, it works well

@@ -32,7 +32,7 @@ from glob import glob
 import traceback
 import subprocess
 
-from PyInstaller import is_win, is_cygwin, is_darwin, is_py26
+from PyInstaller import is_win, is_unix, is_cygwin, is_darwin, is_py26
 
 try:
     # zipfile is available since Python 1.6. Here it is only required for
@@ -566,7 +566,7 @@ def findLibrary(name):
 
     `name`must include the prefix, e.g. ``libpython2.4.so``
     """
-    assert sys.platform == 'linux2', "Current implementation for Linux only"
+    assert is_unix, "Current implementation for Unix only (Linux, Solaris, AIX)"
 
     lib = None
 

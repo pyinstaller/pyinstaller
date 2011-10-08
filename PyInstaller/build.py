@@ -37,7 +37,7 @@ import subprocess
 
 import PyInstaller
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
-from PyInstaller import is_win, is_linux, is_darwin, is_cygwin
+from PyInstaller import is_win, is_unix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
 from PyInstaller.compat import hashlib
 
@@ -502,7 +502,7 @@ class Analysis(Target):
         so this method also checks for that variant as well.
         """
 
-        if is_linux:
+        if is_unix:
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
         elif is_darwin:
             names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
@@ -518,7 +518,7 @@ class Analysis(Target):
         # resume search using the first item in names
         name = names[0]
 
-        if is_linux:
+        if is_unix:
             lib = bindepend.findLibrary(name)
             if lib is None:
                 raise IOError("Python library not found!")

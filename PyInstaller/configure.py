@@ -29,7 +29,7 @@ import time
 import subprocess
 
 from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE, PLATFORM
-from PyInstaller import is_win, is_linux, is_darwin, is_py24, get_version
+from PyInstaller import is_win, is_unix, is_darwin, is_py24, get_version
 
 import PyInstaller.mf as mf
 import PyInstaller.bindepend as bindepend
@@ -86,7 +86,7 @@ def test_TCL_TK(config):
 
     if is_win:
         pattern = r'(?i)tcl(\d\d)\.dll'
-    elif is_linux:
+    elif is_unix:
         pattern = r'libtcl(\d\.\d)?\.so'
     elif is_darwin:
         pattern = r'_tkinter'

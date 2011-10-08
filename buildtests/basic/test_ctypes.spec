@@ -4,7 +4,8 @@ import os
 
 CTYPES_DIR = "ctypes"
 TEST_LIB = os.path.join(CTYPES_DIR, "testctypes")
-if sys.platform == "linux2":
+if sys.platform == "linux2" or sys.platform.startswith('sun') or \
+    sys.platform.startswith('aix'):
     TEST_LIB += ".so"
 elif sys.platform[:6] == "darwin":
     TEST_LIB += ".dylib"
@@ -27,7 +28,8 @@ if sys.platform[:6] == "darwin":
     os.system("gcc -Wall -dynamiclib testctypes.c -o testctypes.dylib -headerpad_max_install_names")
     id_dylib = os.path.abspath("testctypes.dylib")
     os.system("install_name_tool -id %s testctypes.dylib" % (id_dylib,))
-elif sys.platform == "linux2":
+elif sys.platform == "linux2" or sys.platform.startswith('sun') or \
+    sys.platform.startswith('aix'):
     os.system("gcc -fPIC -shared testctypes.c -o testctypes.so")
 else:
     ret = os.system("cl /LD testctypes-win.c")

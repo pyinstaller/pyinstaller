@@ -19,7 +19,8 @@
 __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE', 'PLATFORM',
            'VERSION', 'get_version',
            'is_py23', 'is_py24', 'is_py25', 'is_py26', 'is_py27',
-           'is_win', 'is_cygwin', 'is_darwin', 'is_linux')
+           'is_win', 'is_cygwin', 'is_darwin', 'is_unix', 'is_linux',
+           'is_solar', 'is_aix')
 
 import os
 import sys
@@ -37,8 +38,18 @@ is_py27 = sys.version_info >= (2,7)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
+is_darwin = sys.platform == 'darwin'  # Mac OS X
+
+# Unix platforms
 is_linux = sys.platform == 'linux2'
-is_darwin = sys.platform == 'darwin'
+is_solar = sys.platform.startswith('sun')  # Solaris
+is_aix = sys.platform.startswith('aix')
+
+# Some code parts are similar to several unix platforms
+# (e.g. Linux, Solaris, AIX)
+# Mac OS X is not considered as unix since there are many
+# platform specific details for Mac in PyInstaller.
+is_unix = is_linux or is_solar or is_aix
 
 HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 

@@ -50,6 +50,11 @@
 #define vsnprintf _vsnprintf
 #endif
 
+/* On Solaris is missing function 'mkdtemp'. */
+#ifdef SUNOS
+#include "mkdtemp.h"
+#endif
+
 /*
  * Python Entry point declarations (see macros in launch.h).
  */
