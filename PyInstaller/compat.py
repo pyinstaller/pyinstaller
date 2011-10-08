@@ -30,14 +30,9 @@ try:
     # Python 2.5+
     import hashlib
 except ImportError:
-    import md5
-    import sha
-
-    class _Hash(object):
-        def __init__(self):
-            self.md5 = md5.new
-            self.sha = sha.new
-    hashlib = _Hash()
+    class hashlib(object):
+        from md5 import new as md5
+        from sha import new as sha
 
 
 def architecture():
