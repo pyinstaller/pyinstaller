@@ -19,6 +19,8 @@ Logging module for PyInstaller
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+__all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'ERROR', 'FATAL']
+
 import logging
 from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
 
