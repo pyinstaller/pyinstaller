@@ -1154,6 +1154,10 @@ class BUNDLE(Target):
         if not is_darwin:
             return
 
+        # icns icon for app bundle.
+        self.icon = kws.get('icon', os.path.join(os.path.dirname(__file__),
+            '..', 'source', 'images', 'icon-windowed.icns'))
+            
         Target.__init__(self)
         self.name = kws.get('name', None)
         if self.name is not None:
@@ -1213,12 +1217,18 @@ class BUNDLE(Target):
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
 
+        # Copy icns icon to Resources directory.
+        if os.path.exists(self.icon):
+            shutil.copy(self.icon, os.path.join(self.name, 'Contents', 'Resources'))
+        else:
+            logger.warn("icon not found %s" % self.icon)
+
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,
                            "CFBundleName": self.appname,
                            # Fix for #156 - 'MacOS' must be in the name - not sure why
                            "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
-                           "CFBundleIconFile": "App.icns",
+                           "CFBundleIconFile": os.path.basename(self.icon),
                            "CFBundleInfoDictionaryVersion": "6.0",
                            "CFBundlePackageType": "APPL",
                            "CFBundleShortVersionString": self.version,
