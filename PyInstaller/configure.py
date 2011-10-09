@@ -332,10 +332,10 @@ def __add_options(parser):
 def main(configfilename, upx_dir, **kw):
 
     if is_darwin and compat.architecture() == '64bit':
-        print "W: PyInstaller support for Python 64-bit on Mac OSX is experimental."
-        print "W: If you need 32-bit version of Python and you use Python distributed"
-        print "   with Mac OX, try setting"
-        print "   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment"
+        logging.warn("PyInstaller support for Python 64-bit on Mac OSX is experimental.")
+        logging.warn("If you need 32-bit version of Python and you use Python distributed")
+        logging.warn("   with Mac OX, try setting")
+        logging.warn("   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment")
         # wait several seconds for user to see this message
         time.sleep(4)
 
