@@ -6,6 +6,9 @@ import glob
 import subprocess
 import PyInstaller
 
+import PyInstaller.log as logging
+logger = logging.getLogger('PyInstaller.build.hooks')
+
 def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
@@ -54,12 +57,12 @@ def qt4_plugins_dir():
         "app=QCoreApplication([]);"
         "print map(unicode,app.libraryPaths())")
     if not qt4_plugin_dirs:
-        print "E: Cannot find PyQt4 plugin directories"
+        logger.error("Cannot find PyQt4 plugin directories")
         return ""
     for d in qt4_plugin_dirs:
         if os.path.isdir(d):
             return str(d)  # must be 8-bit chars for one-file builds
-    print "E: Cannot find existing PyQt4 plugin directory"
+    logger.error("Cannot find existing PyQt4 plugin directory")
     return ""
 
 
@@ -71,12 +74,12 @@ def qt4_phonon_plugins_dir():
         "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
         "print map(unicode,app.libraryPaths())")
     if not qt4_plugin_dirs:
-        print "E: Cannot find PyQt4 phonon plugin directories"
+        logger.error("Cannot find PyQt4 phonon plugin directories")
         return ""
     for d in qt4_plugin_dirs:
         if os.path.isdir(d):
             return str(d)  # must be 8-bit chars for one-file builds
-    print "E: Cannot find existing PyQt4 phonon plugin directory"
+    logger.error("Cannot find existing PyQt4 phonon plugin directory")
     return ""
 
 

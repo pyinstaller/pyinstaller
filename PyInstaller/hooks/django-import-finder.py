@@ -16,6 +16,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import os
+
+from hookutils import logger
+
 if not os.environ.get("DJANGO_SETTINGS_MODULE"):
     os.environ["DJANGO_SETTINGS_MODULE"] = "settings"
 
@@ -50,5 +53,5 @@ else:
     import urls
 hiddenimports += find_url_callbacks(urls)
 
-print repr(sorted(set(hiddenimports)))
+logger.debug('%r', sorted(set(hiddenimports)))
 

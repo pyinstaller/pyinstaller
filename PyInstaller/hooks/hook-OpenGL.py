@@ -6,6 +6,8 @@
 import os
 import sys
 
+from hookutils import logger
+
 ## PlatformPlugin performs a conditional import based on os.name and
 ## sys.platform. pyinstaller misses this so let's add it ourselves...
 
@@ -17,7 +19,8 @@ else:
     elif sys.platform[:6] == 'darwin':
         hiddenimports = ['OpenGL.platform.darwin']
     else:
-        print 'ERROR: hook-OpenGL: Unrecognised combo (os.name: %s, sys.platform: %s)' % (os.name, sys.platform)
+        logger.error('hook-OpenGL: Unrecognised combo (os.name: %s, sys.platform: %s)',
+                     os.name, sys.platform)
 
 
 ## arrays modules are needed too
