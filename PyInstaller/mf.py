@@ -42,6 +42,9 @@ except ImportError:
 import PyInstaller
 from PyInstaller import is_unix, is_darwin, is_py25, is_py27
 
+import PyInstaller.log as logging
+logger = logging.getLogger('PyInstaller.build.mf')
+
 if 'PYTHONCASEOK' not in os.environ:
     def caseOk(filename):
         files = dircache.listdir(os.path.dirname(filename))
@@ -120,15 +123,15 @@ class BaseDirOwner(Owner):
                     pth = py[0] + pyco()
                     break
                 except SyntaxError, e:
-                    print "Syntax error in", py[0]
-                    print e.args
-                    raise
+                    logger.exception(e)
+                    raise SystemExit(10)
             elif pyc:
                 stuff = self._read(pyc[0])
                 # If this file was not generated for this version of
                 # Python, we need to regenerate it.
                 if stuff[:4] != imp.get_magic():
-                    print "W: wrong version .pyc found (%s), will use .py" % pyc[0]
+                    logger.warn("wrong version .pyc found (%s), will use .py",
+                                pyc[0])
                     pyc = None
                     continue
                 try:
@@ -136,7 +139,8 @@ class BaseDirOwner(Owner):
                     pth = pyc[0]
                     break
                 except (ValueError, EOFError):
-                    print "W: bad .pyc found (%s), will use .py" % pyc[0]
+                    logger.warn("bad .pyc found (%s), will use .py",
+                                pyc[0])
                     pyc = None
             else:
                 #print "DirOwner.getmod while 1 -> None"
@@ -316,9 +320,8 @@ class RegistryImportDirector(ImportDirector):
                     stuff = open(fnm, 'r').read()+'\n'
                     co = compile(stuff.replace("\r\n", "\n"), fnm, 'exec')
                 except SyntaxError, e:
-                    print "Invalid syntax in %s" % py[0]
-                    print e.args
-                    raise
+                    logger.exception(e)
+                    raise SystemExit(10)
             else:
                 stuff = open(fnm, 'rb').read()
                 co = loadco(stuff[8:])
@@ -569,9 +572,8 @@ class ImportTracker:
             stuff = open(fnm, 'r').read()+'\n'
             co = compile(stuff.replace("\r\n", "\n"), fnm, 'exec')
         except SyntaxError, e:
-            print "Invalid syntax in %s" % fnm
-            print e.args
-            raise
+            logger.exception(e)
+            raise SystemExit(10)
         mod = PyScript(fnm, co)
         self.modules['__main__'] = mod
         return self.analyze_r('__main__')
@@ -645,7 +647,8 @@ class ImportTracker:
                                             datas.append((dest_dir + fn[len(base)+1:], fn, 'DATA'))
                                 os.path.walk(fn, visit, (os.path.dirname(fn),dest_dir,mod.datas))
                 if fqname != mod.__name__:
-                    print "W: %s is changing it's name to %s" % (fqname, mod.__name__)
+                    logger.warn("%s is changing it's name to %s",
+                                fqname, mod.__name__)
                     self.modules[mod.__name__] = mod
         else:
             assert (mod == None), mod
@@ -1109,7 +1112,7 @@ def _resolveCtypesImports(cbinaries):
                 else:
                     cpath = None
         if cpath is None:
-            print "W: library %s required via ctypes not found" % (cbin,)
+            logger.warn("library %s required via ctypes not found", cbin)
         else:
             ret.append((cbin, cpath, "BINARY"))
     _restorePaths(old)
