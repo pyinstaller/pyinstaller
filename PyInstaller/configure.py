@@ -36,6 +36,8 @@ import PyInstaller.bindepend as bindepend
 import PyInstaller.build as build
 import PyInstaller.compat as compat
 
+import PyInstaller.log as logging
+logger = logging.getLogger('PyInstaller.configure')
 
 def _write_textfile(filename, text):
     """
@@ -51,7 +53,7 @@ def _write_textfile(filename, text):
 
 
 def find_EXE_dependencies(config):
-    print "I: computing EXE_dependencies"
+    logger.info("Computing EXE_dependencies")
     python = sys.executable
     config['python'] = python
     config['target_platform'] = sys.platform
@@ -79,7 +81,7 @@ _useTkFN = os.path.join(CONFIGDIR, 'support', 'useTK.py')
 def test_TCL_TK(config):
 
     # TCL_root, TK_root and support/useTK.py
-    print "I: Finding TCL/TK..."
+    logger.info("Finding TCL/TK...")
     if not (is_win):
         saveexcludes = bindepend.excludes
         bindepend.excludes = {}
@@ -118,7 +120,7 @@ def test_TCL_TK(config):
                     mo = re.match(r'tcl(\d.\d)', name)
                     if mo:
                         ver = mo.group(1)
-            print "I: found TCL/TK version %s" % ver
+            logger.info("found TCL/TK version %s", ver)
             _write_textfile(_useTkFN, _useTK % ("tcl%s" % ver, "tk%s" % ver))
             tclnm = 'tcl%s' % ver
             tknm = 'tk%s' % ver
@@ -143,7 +145,7 @@ def test_TCL_TK(config):
         else:
             # is_darwin
             tclbindir = os.path.dirname(fnm)
-            print "I: found TCL/TK"
+            logger.info("found TCL/TK")
             tcldir = "Tcl.framework/Resources/Scripts"
             tkdir = "Tk.framework/Resources/Scripts"
             _write_textfile(_useTkFN, _useTK % (tcldir, tkdir))
@@ -153,7 +155,7 @@ def test_TCL_TK(config):
             config['TK_dirname'] = "Tk.framework"
             break
     else:
-        print "I: could not find TCL/TK"
+        logger.info("could not find TCL/TK")
     if not is_win:
         bindepend.excludes = saveexcludes
 
@@ -166,7 +168,7 @@ def test_Crypt(config):
     #Crypt support. We need to build the AES module and we'll use distutils
     # for that. FIXME: the day we'll use distutils for everything this will be
     # a solved problem.
-    print "I: trying to build crypt support..."
+    logger.info("trying to build crypt support...")
     from distutils.core import run_setup
     cwd = os.getcwd()
     args = sys.argv[:]
@@ -175,10 +177,10 @@ def test_Crypt(config):
         dist = run_setup("setup.py", ["install"])
         if dist.have_run.get("install", 0):
             config["useCrypt"] = 1
-            print "I: ... crypto support available"
+            logger.info("... crypto support available")
         else:
             config["useCrypt"] = 0
-            print "I: ... error building crypto support"
+            logger.info("... error building crypto support")
     finally:
         os.chdir(cwd)
         sys.argv = args
@@ -186,14 +188,14 @@ def test_Crypt(config):
 
 def test_Zlib(config):
     #useZLIB
-    print "I: testing for Zlib..."
+    logger.info("testing for Zlib...")
     try:
         import zlib
         config['useZLIB'] = 1
-        print 'I: ... Zlib available'
+        logger.info('... Zlib available')
     except ImportError:
         config['useZLIB'] = 0
-        print 'I: ... Zlib unavailable'
+        logger.info('... Zlib unavailable')
 
 
 def test_RsrcUpdate(config):
@@ -201,19 +203,19 @@ def test_RsrcUpdate(config):
     if not is_win:
         return
     # only available on windows
-    print "I: Testing for ability to set icons, version resources..."
+    logger.info("Testing for ability to set icons, version resources...")
     try:
         import win32api
         import icon
         import versionInfo
     except ImportError, detail:
-        print 'I: ... resource update unavailable -', detail
+        logger.info('... resource update unavailable - %s', detail)
         return
 
     test_exe = os.path.join(HOMEPATH, 'support', 'loader', PLATFORM, 'runw.exe')
     if not os.path.exists(test_exe):
         config['hasRsrcUpdate'] = 0
-        print 'E: ... resource update unavailable - %s not found' % test_exe
+        logger.error('... resource update unavailable - %s not found', test_exe)
         return
 
     # The test_exe may be read-only
@@ -223,11 +225,11 @@ def test_RsrcUpdate(config):
     try:
         hexe = win32api.BeginUpdateResource(rw_test_exe, 0)
     except:
-        print 'I: ... resource update unavailable - win32api.BeginUpdateResource failed'
+        logger.info('... resource update unavailable - win32api.BeginUpdateResource failed')
     else:
         win32api.EndUpdateResource(hexe, 1)
         config['hasRsrcUpdate'] = 1
-        print 'I: ... resource update available'
+        logger.info('... resource update available')
     os.remove(rw_test_exe)
 
 
@@ -241,7 +243,7 @@ _useUnicodeFN = os.path.join(CONFIGDIR, 'support', 'useUnicode.py')
 
 
 def test_unicode(config):
-    print 'I: Testing for Unicode support...'
+    logger.info('Testing for Unicode support...')
     try:
         import codecs
         config['hasUnicode'] = 1
@@ -252,18 +254,18 @@ def test_unicode(config):
         else:
             module = "encodings"
         _write_textfile(_useUnicodeFN, _useUnicode % module)
-        print 'I: ... Unicode available'
+        logger.info('... Unicode available')
     except ImportError:
         try:
             os.remove(_useUnicodeFN)
         except OSError:
             pass
         config['hasUnicode'] = 0
-        print 'I: ... Unicode NOT available'
+        logger.info('... Unicode NOT available')
 
 
 def test_UPX(config, upx_dir):
-    print 'I: testing for UPX...'
+    logger.info('testing for UPX...')
     cmd = "upx"
     if upx_dir:
         cmd = os.path.normpath(os.path.join(upx_dir, cmd))
@@ -276,18 +278,18 @@ def test_UPX(config, upx_dir):
             v = vers[0].split()[1]
             hasUPX = tuple(map(int, v.split(".")))
             if is_win and is_py24 and hasUPX < (1, 92):
-                print 'E: UPX is too old! Python 2.4 under Windows requires UPX 1.92+'
+                logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
                 hasUPX = 0
-        print 'I: ...UPX %s' % (('unavailable', 'available')[hasUPX != 0])
+        logger.info('...UPX %s', ('unavailable', 'available')[hasUPX != 0])
     except Exception, e:
-        print 'I: ...exception result in testing for UPX'
-        print e, e.args
+        logger.info('...exception result in testing for UPX')
+        logger.info('  %r %r', e, e.args)
     config['hasUPX'] = hasUPX
     config['upx_dir'] = upx_dir
 
 
 def find_PYZ_dependencies(config):
-    print "I: computing PYZ dependencies..."
+    logger.info("computing PYZ dependencies...")
     # We need to import `archive` from `PyInstaller` directory, but
     # not from package `PyInstaller`
     import inspect
@@ -339,7 +341,7 @@ def main(configfilename, upx_dir, **kw):
 
     try:
         config = build._load_data(configfilename)
-        print 'I: read old config from', configfilename
+        logger.info('read old config from %s', configfilename)
     except (IOError, SyntaxError):
         # IOerror: file not present/readable
         # SyntaxError: invalid file (platform change?)
@@ -364,4 +366,4 @@ def main(configfilename, upx_dir, **kw):
     find_PYZ_dependencies(config)
 
     build._save_data(configfilename, config)
-    print "I: done generating", configfilename
+    logger.info("done generating %s", configfilename)
