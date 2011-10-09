@@ -17,6 +17,8 @@
 
 import os, sys, win32api, Makespec
 
+import optparse
+
 tmplt = '''\
 import sys
 import os
@@ -65,7 +67,7 @@ if sys.frozen != "dll":
                             "COM Object")
 '''
 
-def create(scripts, debug, verbosity, workdir, ascii=0):
+def create(scripts, debug, verbose, workdir, ascii=0):
     infos = []  # (path, module, klasses)
     for script in scripts:
         infos.append(analscriptname(script))
@@ -76,7 +78,7 @@ def create(scripts, debug, verbosity, workdir, ascii=0):
     outf = open(outfnm, 'w')
     klassspecs = []
     modimports = []
-    flags = 'debug=%s, quiet=%s' % (debug, verbosity==0)
+    flags = 'debug=%s, quiet=%s' % (debug, not verbose)
     paths = []
     for path, module, klasses in infos:
         if path:
@@ -135,38 +137,31 @@ def ispkgdir(path):
             return 0
     return 1
 
-usage = """\
-Usage: python %s [options] <scriptname>.py [<scriptname>.py ...]
- --debug -> use debug console build and register COM servers with debug
- --verbose -> use verbose flag in COM server registration
- --out dir -> generate script and spec file in dir
-
-The next step is to run Build.py against the generated spec file.
-See doc/Tutorial.html for details.
-"""
+epilog = ("The next step is to run Build.py against the generated "
+          "spec file. See doc/Tutorial.html for details.")
 
 if __name__ == '__main__':
-    #scripts, debug, verbosity, workdir
-    debug = verbosity = ascii = 0
-    workdir = '.'
-    import getopt
-    opts, args = getopt.getopt(sys.argv[1:], '', ['debug', 'verbose', 'ascii', 'out='])
-    for opt, val in opts:
-        if opt == '--debug':
-            debug = 1
-        elif opt == '--verbose':
-            verbosity = 1
-        elif opt == '--out':
-            workdir = val
-        elif opt == '--ascii':
-            ascii = 1
-        else:
-            print usage % sys.argv[0]
-            sys.exit(1)
+    parser = optparse.OptionParser(
+        usage='python %s [options] <scriptname>.py [<scriptname>.py ...]',
+        epilog="The next step is to run Build.py against the generated"
+               "spec file. See doc/Tutorial.html for details."
+        )
+    parser.add_option('--debug', default=False, action='store_true',
+                      help='use debug console build and register COM servers with debug')
+    parser.add_option('--verbose', default=False, action='store_true',
+                      help='use verbose flag in COM server registration')
+    parser.add_option('--out', default='.',
+                      metavar='DIR',
+                      dest='workdir',
+                      help='generate script and spec file in dir')
+    parser.add_option('--ascii', default=False, action='store_true')
+
+    opts, args = parser.parse_args()
     if not args:
-        print usage % sys.argv[0]
-    else:
-        try:
-            create(args, debug, verbosity, workdir, ascii)
-        except KeyboardInterrupt:
-            raise SystemExit("Aborted by user request.")
+        parser.error('Requires at least one script filename')
+
+    try:
+        print
+        print epilog
+    except KeyboardInterrupt:
+        raise SystemExit("Aborted by user request.")
