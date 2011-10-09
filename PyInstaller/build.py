@@ -41,8 +41,8 @@ from PyInstaller import is_win, is_unix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
 from PyInstaller.compat import hashlib
 
-from PyInstaller.log import getLogger
-logger = getLogger('PyInstaller.build')
+import PyInstaller.log as logging
+logger = logging.getLogger('PyInstaller.build.bindepend')
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
