@@ -18,9 +18,8 @@
 try:
     import PyInstaller
 except ImportError:
-    # if importing PyInstaller fails, try to load from current
-    # directory or parent directory to support running without
-    # installation
+    # if importing PyInstaller fails, try to load from parent
+    # directory to support running without installation
     import imp, os
     if not hasattr(os, 'getuid') or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
