@@ -20,8 +20,7 @@ Logging module for PyInstaller
 #
 
 import logging
-
-getLogger = logging.getLogger
+from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
 
 FORMAT = '%(levelname)s: %(message)s'
 logging.basicConfig(format=FORMAT, level=logging.INFO)
