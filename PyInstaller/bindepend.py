@@ -41,11 +41,11 @@ try:
 except ImportError:
     pass
 
+import PyInstaller.log as logging
+logger = logging.getLogger('PyInstaller.build.bindepend')
 
 seen = {}
 _bpath = None
-
-silent = False  # True suppresses all informative messages from the dependency code
 
 if is_win:
     if is_py26:
@@ -177,8 +177,7 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
     for nm, pth, typ in lTOC:
         if seen.get(nm.upper(),0):
             continue
-        if not silent:
-            print "I: Analyzing", pth
+        logger.info("Analyzing %s", pth)
         seen[nm.upper()] = 1
         if is_win:
             for ftocnm, fn in selectAssemblies(pth, manifest):
@@ -305,9 +304,8 @@ def getAssemblies(pth):
             res = GetManifestResources(pth)
         except winresource.pywintypes.error, exc:
             if exc.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
-                if not silent:
-                    print 'I: Cannot get manifest resource from non-PE file:'
-                    print 'I:', pth
+                logger.info('Cannot get manifest resource from non-PE '
+                            'file %s', pth)
                 return []
             raise
     rv = []
@@ -322,17 +320,15 @@ def getAssemblies(pth):
                     manifest.parse_string(res[RT_MANIFEST][name][language],
                                           False)
                 except Exception, exc:
-                    print ("E: Cannot parse manifest resource %s, %s "
-                           "from") % (name, language)
-                    print "E:", pth
-                    print "E:",
-                    traceback.print_exc()
+                    logger.error("Can not parse manifest resource %s, %s"
+                                 "from %s", name, language, pth)
+                    logger.exception(exc)
                 else:
-                    if manifest.dependentAssemblies and not silent:
-                        print "I: Dependent assemblies of %s:" % pth
-                        print "I:", ", ".join([assembly.getid()
+                    if manifest.dependentAssemblies:
+                        logger.debug("Dependent assemblies of %s:", pth)
+                        logger.debug(", ".join([assembly.getid()
                                                for assembly in
-                                               manifest.dependentAssemblies])
+                                               manifest.dependentAssemblies]))
                     rv.extend(manifest.dependentAssemblies)
     return rv
 
@@ -352,17 +348,15 @@ def selectAssemblies(pth, manifest=None):
             if not assembly.name in [dependentAssembly.name
                                      for dependentAssembly in
                                      manifest.dependentAssemblies]:
-                print ("Adding %s to dependent assemblies "
-                       "of final executable") % assembly.name
+                logger.info("Adding %s to dependent assemblies "
+                            "of final executable", assembly.name)
                 manifest.dependentAssemblies.append(assembly)
         if (excludesRe.search(assembly.name) and (not includes or
             not includesRe.search(assembly.name))):
-            if not silent:
-                print "I: Skipping assembly", assembly.getid()
+            logger.debug("Skipping assembly %s", assembly.getid())
             continue
         if assembly.optional:
-            if not silent:
-                print "I: Skipping optional assembly", assembly.getid()
+            logger.debug("Skipping optional assembly %s", assembly.getid())
             continue
         files = assembly.find_files()
         if files:
@@ -383,17 +377,16 @@ def selectAssemblies(pth, manifest=None):
                                    ftocnm,
                                    fn)]
                 if not seen.get(fn.upper(),0):
-                    if not silent:
-                        print "I: Adding", ftocnm
+                    logger.debug("Adding %s", ftocnm)
                     seen[nm.upper()] = 1
                     seen[fn.upper()] = 1
                     rv.append((ftocnm, fn))
                 else:
-                    #print "I: skipping", ftocnm, "part of assembly", \
-                    #      assembly.name, "dependency of", pth
+                    #logger.info("skipping %s part of assembly %s dependency of %s",
+                    #            ftocnm, assembly.name, pth)
                     pass
         else:
-            print "E: Assembly", assembly.getid(), "not found"
+            logger.error("Assembly %s not found", assembly.getid())
     return rv
 
 def selectImports(pth, xtrapath=None):
@@ -430,22 +423,20 @@ def selectImports(pth, xtrapath=None):
             if candidatelib.find('libpython') < 0 and \
                candidatelib.find('Python.framework') < 0:
                 # skip libs not containing (libpython or Python.framework)
-                if not silent and \
-                   not seen.get(npth.upper(),0):
-                    print "I: Skipping", lib, "dependency of", \
-                          os.path.basename(pth)
+                if not seen.get(npth.upper(),0):
+                    logger.debug("Skipping %s dependency of %s",
+                                 lib, os.path.basename(pth))
                 continue
             else:
                 pass
 
         if npth:
             if not seen.get(npth.upper(),0):
-                if not silent:
-                    print "I: Adding", lib, "dependency of", \
-                          os.path.basename(pth)
+                logger.debug("Adding %s dependency of %s",
+                             lib, os.path.basename(pth))
                 rv.append((lib, npth))
         else:
-            print "E: lib not found:", lib, "dependency of", pth
+            logger.error("lib not found: %s dependency of %s", lib, pth)
 
     return rv
 
@@ -469,8 +460,8 @@ def _getImports_ldd(pth):
             if os.path.exists(lib):
                 rslt.append(lib)
             else:
-                print 'E: cannot find %s in path %s (needed by %s)' % \
-                      (name, lib, pth)
+                logger.error('Can not find %s in path %s (needed by %s)',
+                             name, lib, pth)
     return rslt
 
 def _getImports_otool(pth):
@@ -505,7 +496,7 @@ def _getImports_otool(pth):
             if os.path.exists(lib):
                 rslt.append(lib)
             else:
-                print 'E: cannot find path %s (needed by %s)' % (lib, pth)
+                logger.error('Can not find path %s (needed by %s)', lib, pth)
 
     return rslt
 
@@ -525,11 +516,10 @@ def getImports(pth):
             # dependencies should already have been handled by
             # selectAssemblies in that case, so just warn, return an empty
             # list and continue.
-            if not silent:
-                print 'W: Cannot get binary dependencies for file:'
-                print 'W:', pth
-                print 'W:',
-                traceback.print_exc()
+            if logger.isEnabledFor(logging.WARN):
+                 # logg excaption only if level >= warn
+                logger.warn('Can not get binary dependencies for file: %s', pth)
+                logger.exception(exception)
             return []
     elif is_darwin:
         return _getImports_otool(pth)
@@ -545,9 +535,9 @@ def getWindowsPath():
             try:
                 import win32api
             except ImportError:
-                print "W: Cannot determine your Windows or System directories"
-                print "W: Please add them to your PATH if .dlls are not found"
-                print "W: or install http://sourceforge.net/projects/pywin32/"
+                logger.warn("Cannot determine your Windows or System directories")
+                logger.warn("Please add them to your PATH if .dlls are not found")
+                logger.warn("or install http://sourceforge.net/projects/pywin32/")
             else:
                 sysdir = win32api.GetSystemDirectory()
                 sysdir2 = os.path.normpath(os.path.join(sysdir, '..', 'SYSTEM'))
