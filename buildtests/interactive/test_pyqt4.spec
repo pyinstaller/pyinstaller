@@ -25,6 +25,6 @@ coll = COLLECT(exe,
                
 import sys
 if sys.platform.startswith("darwin"):
-    app = BUNDLE(exe,
+    app = BUNDLE(coll,
         name=os.path.join('dist', __testname__ + '.app'),
         version='0.0.1')
