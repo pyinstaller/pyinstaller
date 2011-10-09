@@ -41,6 +41,9 @@ from PyInstaller import is_win, is_unix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
 from PyInstaller.compat import hashlib
 
+from PyInstaller.log import getLogger
+logger = getLogger('PyInstaller.build')
+
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
 UNCOMPRESSED, COMPRESSED = range(2)
@@ -173,7 +176,7 @@ def _check_guts_eq(attr, old, new, last_build):
     rebuild is required if values differ
     """
     if old != new:
-        print "building because %s changed" % attr
+        logger.info("building because %s changed", attr)
         return True
     return False
 
@@ -187,10 +190,10 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     """
     for (nm, fnm, typ) in old:
         if mtime(fnm) > last_build:
-            print "building because %s changed" % fnm
+            logger.info("building because %s changed", fnm)
             return True
         elif pyc and mtime(fnm[:-1]) > last_build:
-            print "building because %s changed" % fnm[:-1]
+            logger.info("building because %s changed", fnm[:-1])
             return True
     return False
 
@@ -224,12 +227,12 @@ def _rmdir(path):
     if not path.startswith(BUILDPATH) and os.path.isdir(path) and os.listdir(path):
         specerr = 0
         if BUILDPATH.startswith(path):
-            print ('E: specfile error: The output path "%s" contains '
-                   'BUILDPATH (%s)') % (path, BUILDPATH)
+            logger.error('specfile error: The output path "%s" contains '
+                         'BUILDPATH (%s)', path, BUILDPATH)
             specerr += 1
         if SPECPATH.startswith(path):
-            print ('E: Specfile error: The output path "%s" contains '
-                   'SPECPATH (%s)') % (path, SPECPATH)
+            logger.error('Specfile error: The output path "%s" contains '
+                         'SPECPATH (%s)', path, SPECPATH)
             specerr += 1
         if specerr:
             raise SystemExit('Error: Please edit/recreate the specfile (%s) '
@@ -246,7 +249,7 @@ def _rmdir(path):
                              '-y option (remove output directory without '
                              'confirmation).' % path)
         if choice.strip().lower() == 'y':
-            print 'I: Removing', path
+            logger.info('Removing %s', path)
             shutil.rmtree(path)
         else:
             raise SystemExit('User aborted')
@@ -289,7 +292,7 @@ class Target:
         self.dependencies = TOC()
 
     def __postinit__(self):
-        print "checking %s" % (self.__class__.__name__,)
+        logger.info("checking %s", self.__class__.__name__)
         if self.check_guts(mtime(self.out)):
             self.assemble()
 
@@ -305,11 +308,11 @@ class Target:
         try:
             data = _load_data(self.out)
         except:
-            print "building because", os.path.basename(self.out), missing
+            logger.info("building because %s %s", os.path.basename(self.out), missing)
             return None
 
         if len(data) != len(self.GUTS):
-            print "building because %s is bad" % self.outnm
+            logger.info("building because %s is bad", self.outnm)
             return None
         for i in range(len(self.GUTS)):
             attr, func = self.GUTS[i]
@@ -355,11 +358,11 @@ class Analysis(Target):
 
     def check_guts(self, last_build):
         if last_build == 0:
-            print "building %s because %s non existent" % (self.__class__.__name__, self.outnm)
+            logger.info("building %s because %s non existent", self.__class__.__name__, self.outnm)
             return True
         for fnm in self.inputs:
             if mtime(fnm) > last_build:
-                print "building because %s changed" % fnm
+                logger.info("building because %s changed", fnm)
                 return True
 
         data = Target.get_guts(self, last_build)
@@ -374,7 +377,7 @@ class Analysis(Target):
         return False
 
     def assemble(self):
-        print "running Analysis", os.path.basename(self.out)
+        logger.info("running Analysis %s", os.path.basename(self.out))
         # Reset seen variable to correctly discover dependencies
         # if there are multiple Analysis in a single specfile.
         bindepend.seen = {}
@@ -402,7 +405,7 @@ class Analysis(Target):
         scripts = []  # will contain scripts to bundle
         for i in range(len(self.inputs)):
             script = self.inputs[i]
-            print "Analyzing:", script
+            logger.info("Analyzing %s", script)
             analyzer.analyze_script(script)
             scripts.append((pynms[i], script, 'PYSOURCE'))
         PyInstaller.__pathex__ = []
@@ -484,9 +487,9 @@ class Analysis(Target):
             for ln in analyzer.getwarnings():
                 wf.write(ln + '\n')
             wf.close()
-            print "Warnings written to %s" % WARNFILE
+            logger.info("Warnings written to %s", WARNFILE)
             return 1
-        print self.out, "no change!"
+        logger.info("%s no change!", self.out)
         return 0
 
     def fixMissingPythonLib(self, binaries):
@@ -576,7 +579,8 @@ class PYZ(Target):
     def check_guts(self, last_build):
         _rmdir(self.name)
         if not os.path.exists(self.name):
-            print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
+            logger.info("rebuilding %s because %s is missing",
+                        self.outnm, os.path.basename(self.name))
             return True
 
         data = Target.get_guts(self, last_build)
@@ -585,7 +589,7 @@ class PYZ(Target):
         return False
 
     def assemble(self):
-        print "building PYZ", os.path.basename(self.out)
+        logger.info("building PYZ %s", os.path.basename(self.out))
         pyz = archive.ZlibArchive(level=self.level, crypt=self.crypt)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
@@ -666,7 +670,7 @@ def checkCache(fnm, strip, upx):
                 # Not a win32 PE file
                 pass
             else:
-                print "E:", os.path.abspath(cachedfile)
+                logger.error(os.path.abspath(cachedfile))
                 raise
         else:
             if winmanifest.RT_MANIFEST in res and len(res[winmanifest.RT_MANIFEST]):
@@ -681,10 +685,10 @@ def checkCache(fnm, strip, upx):
                             manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language],
                                                   False)
                         except Exception, exc:
-                            print ("E: Cannot parse manifest resource %s, "
-                                   "%s from") % (name, language)
-                            print "E:", cachedfile
-                            print "E:", traceback.format_exc()
+                            logger.error("Cannot parse manifest resource %s, "
+                                         "%s from", name, language)
+                            logger.error(cachedfile)
+                            logger.exception(exc)
                         else:
                             # Fix the embedded manifest (if any):
                             # Extension modules built with Python 2.6.5 have
@@ -695,8 +699,9 @@ def checkCache(fnm, strip, upx):
                             for pydep in pyasm:
                                 if not pydep.name in [dep.name for dep in
                                                       manifest.dependentAssemblies]:
-                                    print ("Adding %r to dependent assemblies "
-                                           "of %r") % (pydep.name, cachedfile)
+                                    logger.info("Adding %r to dependent "
+                                                "assemblies of %r",
+                                                pydep.name, cachedfile)
                                     manifest.dependentAssemblies.append(pydep)
                             if len(manifest.dependentAssemblies) > olen:
                                 try:
@@ -704,7 +709,7 @@ def checkCache(fnm, strip, upx):
                                                               [name],
                                                               [language])
                                 except Exception, e:
-                                    print "E:", os.path.abspath(cachedfile)
+                                    logger.error(os.path.abspath(cachedfile))
                                     raise
 
     if cmd:
@@ -772,7 +777,8 @@ class PKG(Target):
     def check_guts(self, last_build):
         _rmdir(self.name)
         if not os.path.exists(self.name):
-            print "rebuilding %s because %s is missing" % (self.outnm, os.path.basename(self.name))
+            logger.info("rebuilding %s because %s is missing",
+                        self.outnm, os.path.basename(self.name))
             return 1
 
         data = Target.get_guts(self, last_build)
@@ -782,7 +788,7 @@ class PKG(Target):
         return False
 
     def assemble(self):
-        print "building PKG", os.path.basename(self.name)
+        logger.info("building PKG %s", os.path.basename(self.name))
         trash = []
         mytoc = []
         seen = {}
@@ -916,11 +922,12 @@ class EXE(Target):
     def check_guts(self, last_build):
         _rmdir(self.name)
         if not os.path.exists(self.name):
-            print "rebuilding %s because %s missing" % (self.outnm, os.path.basename(self.name))
+            logger.info("rebuilding %s because %s missing",
+                        self.outnm, os.path.basename(self.name))
             return 1
         if not self.append_pkg and not os.path.exists(self.pkgname):
-            print "rebuilding because %s missing" % (
-                os.path.basename(self.pkgname),)
+            logger.info("rebuilding because %s missing",
+                        os.path.basename(self.pkgname))
             return 1
 
         data = Target.get_guts(self, last_build)
@@ -930,18 +937,18 @@ class EXE(Target):
         icon, versrsrc, manifest, resources = data[3:7]
         if (icon or versrsrc or manifest or resources) and not config['hasRsrcUpdate']:
             # todo: really ignore :-)
-            print "ignoring icon, version, manifest and resources = platform not capable"
+            logger.info("ignoring icon, version, manifest and resources = platform not capable")
 
         mtm = data[-1]
         crypt = data[-2]
         if crypt != self.crypt:
-            print "rebuilding %s because crypt option changed" % outnm
+            logger.info("rebuilding %s because crypt option changed", outnm)
             return 1
         if mtm != mtime(self.name):
-            print "rebuilding", self.outnm, "because mtimes don't match"
+            logger.info("rebuilding %s because mtimes don't match", self.outnm)
             return True
         if mtm < mtime(self.pkg.out):
-            print "rebuilding", self.outnm, "because pkg is more recent"
+            logger.info("rebuilding %s because pkg is more recent", self.outnm)
             return True
 
         return False
@@ -954,7 +961,7 @@ class EXE(Target):
         return os.path.join("support", "loader", PLATFORM, exe)
 
     def assemble(self):
-        print "building EXE from", os.path.basename(self.out)
+        logger.info("building EXE from %s", os.path.basename(self.out))
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
@@ -999,15 +1006,15 @@ class EXE(Target):
                                                         [reslang or "*"])
                 except winresource.pywintypes.error, exc:
                     if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
-                        print "E:", str(exc)
+                        logger.exception(exc)
                         continue
                     if not restype or not resname:
-                        print "E: resource type and/or name not specified"
+                        logger.error("resource type and/or name not specified")
                         continue
                     if "*" in (restype, resname):
-                        print ("E: no wildcards allowed for resource type "
-                               "and name when source file does not contain "
-                               "resources")
+                        logger.error("no wildcards allowed for resource type "
+                                     "and name when source file does not "
+                                     "contain resources")
                         continue
                     try:
                         winresource.UpdateResourcesFromDataFile(tmpnm,
@@ -1016,16 +1023,16 @@ class EXE(Target):
                                                              [resname],
                                                              [reslang or 0])
                     except winresource.pywintypes.error, exc:
-                        print "E:", str(exc)
+                        logger.exception(exc)
             trash.append(tmpnm)
             exe = tmpnm
         exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
         self.copy(exe, outf)
         if self.append_pkg:
-            print "Appending archive to EXE", self.name
+            logger.info("Appending archive to EXE %s", self.name)
             self.copy(self.pkg.name, outf)
         else:
-            print "Copying archive to", self.pkgname
+            logger.info("Copying archive to %s", self.pkgname)
             shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
         os.chmod(self.name, 0755)
@@ -1047,7 +1054,7 @@ class EXE(Target):
 
 class DLL(EXE):
     def assemble(self):
-        print "building DLL", os.path.basename(self.out)
+        logger.info("building DLL %s", os.path.basename(self.out))
         outf = open(self.name, 'wb')
         dll = self._bootloader_file('inprocsrvr')
         dll = os.path.join(HOMEPATH, dll) + '.dll'
@@ -1107,15 +1114,15 @@ class COLLECT(Target):
             else:
                 test = os.path.join(self.name, os.path.basename(fnm))
             if not os.path.exists(test):
-                print "building %s because %s is missing" % (self.outnm, test)
+                logger.info("building %s because %s is missing", self.outnm, test)
                 return 1
             if mtime(fnm) > mtime(test):
-                print "building %s because %s is more recent" % (self.outnm, fnm)
+                logger.info("building %s because %s is more recent", self.outnm, fnm)
                 return 1
         return 0
 
     def assemble(self):
-        print "building COLLECT", os.path.basename(self.out)
+        logger.info("building COLLECT %s", os.path.basename(self.out))
         if not os.path.exists(self.name):
             os.makedirs(self.name)
         toc = addSuffixToExtensions(self.toc)
@@ -1162,7 +1169,7 @@ class BUNDLE(Target):
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
             else:
-                print "unsupported entry %s", arg.__class__.__name__
+                logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
         # of the actual executable (exename) from the first EXECUTABLE item in
         # toc, which might have come from a COLLECT too (not from an EXE).
@@ -1189,15 +1196,15 @@ class BUNDLE(Target):
         for inm, fnm, typ in self.toc:
             test = os.path.join(self.name, os.path.basename(fnm))
             if not os.path.exists(test):
-                print "building %s because %s is missing" % (self.outnm, test)
+                logger.info("building %s because %s is missing", self.outnm, test)
                 return 1
             if mtime(fnm) > mtime(test):
-                print "building %s because %s is more recent" % (self.outnm, fnm)
+                logger.info( "building %s because %s is more recent", self.outnm, fnm)
                 return 1
         return 0
 
     def assemble(self):
-        print "building BUNDLE", os.path.basename(self.out)
+        logger.info("building BUNDLE %s", os.path.basename(self.out))
 
         if os.path.exists(self.name):
             shutil.rmtree(self.name)
@@ -1267,7 +1274,7 @@ class TOC(UserList.UserList):
                 self.data.append(tpl)
                 self.fltr[fn] = 1
         except TypeError:
-            print "TOC found a %s, not a tuple" % tpl
+            logger.info("TOC found a %s, not a tuple", tpl)
             raise
 
     def insert(self, pos, tpl):
@@ -1343,7 +1350,8 @@ class Tree(Target, TOC):
         while stack:
             d = stack.pop()
             if mtime(d) > last_build:
-                print "building %s because directory %s changed" % (self.outnm, d)
+                logger.info("building %s because directory %s changed",
+                            self.outnm, d)
                 return True
             for nm in os.listdir(d):
                 path = os.path.join(d, nm)
@@ -1353,7 +1361,7 @@ class Tree(Target, TOC):
         return False
 
     def assemble(self):
-        print "building Tree", os.path.basename(self.out)
+        logger.info("building Tree %s", os.path.basename(self.out))
         stack = [(self.root, self.prefix)]
         excludes = {}
         xexcludes = {}
@@ -1384,7 +1392,7 @@ class Tree(Target, TOC):
         if oldstuff != newstuff:
             _save_data(self.out, newstuff)
             return 1
-        print self.out, "no change!"
+        logger.info("%s no change!", self.out)
         return 0
 
 
@@ -1448,11 +1456,11 @@ def set_dependencies(analysis, dependencies, path):
         for i in range(len(toc)):
             tpl = toc[i]
             if not tpl[1] in dependencies.keys():
-                print "Adding dependency %s located in %s" % (tpl[1], path)
+                logger.info("Adding dependency %s located in %s", tpl[1], path)
                 dependencies[tpl[1]] = path
             else:
                 dep_path = get_relative_path(path, dependencies[tpl[1]])
-                print "Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path)
+                logger.info("Referencing %s to be a dependecy for %s, located in %s" % tpl[1], path, dep_path)
                 analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
                 toc[i] = (None, None, None)
         # Clean the list
@@ -1469,7 +1477,7 @@ def MERGE(*args):
     common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a, _, _ in args]))
     if common_prefix[-1] != os.sep:
         common_prefix += os.sep
-    print "Common prefix: %s" % common_prefix
+    logger.info("Common prefix: %s", common_prefix)
     # Adjust dependencies for each Analysis object; the first Analysis in the
     # list will include all dependencies.
     id_to_path = {}
