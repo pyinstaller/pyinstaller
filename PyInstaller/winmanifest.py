@@ -101,15 +101,17 @@ from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
 from PyInstaller.compat import hashlib
+import PyInstaller.log as logging
+logger = logging.getLogger('PyInstaller.build.winmanifest')
 
 try:
     import winresource
 except ImportError, detail:
     winresource = None
-    print "W:", detail
-    print "W: Cannot check for assembly dependencies - resource access "
-    print "W: unavailable. To enable resource access, please install "
-    print "W: http://sourceforge.net/projects/pywin32/"
+    logger.warn(detail)
+    logger.warn("Cannot check for assembly dependencies - resource access ")
+    logger.warn("unavailable. To enable resource access, please install ")
+    logger.warn("http://sourceforge.net/projects/pywin32/")
 
 try:
     # Python 2.3+
@@ -119,8 +121,6 @@ except AttributeError:
         import win32api
         return win32api.GetVersionEx(0)
     sys.getwindowsversion = getwindowsversion
-
-silent = False  # True suppresses all messages
 
 LANGUAGE_NEUTRAL_NT5 = "x-ww"
 LANGUAGE_NEUTRAL_NT6 = "none"
@@ -215,16 +215,13 @@ class File(_File):
         self.hash = getattr(hashlib, self.hashalg.lower())(buf).hexdigest()
 
     def find(self, searchpath):
-        if not silent:
-            print "I: Searching for file", self.name
+        logger.info("Searching for file %s", self.name)
         fn = os.path.join(searchpath, self.name)
         if os.path.isfile(fn):
-            if not silent:
-                print "I: Found file", fn
+            logger.info("Found file %s", fn)
             return fn
         else:
-            if not silent:
-                print "W: No such file", fn
+            logger.warn("No such file %s", fn)
             return None
 
 
@@ -360,17 +357,17 @@ class Manifest(object):
         languages.append(self.getlanguage("*"))
         
         winsxs = os.path.join(os.getenv("SystemRoot"), "WinSxS")
-        if not os.path.isdir(winsxs) and not silent:
-            print "W: No such dir", winsxs
+        if not os.path.isdir(winsxs):
+            logger.warn("No such dir %s", winsxs)
         manifests = os.path.join(winsxs, "Manifests")
-        if not os.path.isdir(manifests) and not silent:
-            print "W: No such dir", manifests
+        if not os.path.isdir(manifests):
+            logger.warn("No such dir %s", manifests)
         if not ignore_policies and self.version:
             if sys.getwindowsversion() < (6, ):
                 # Windows XP
                 pcfiles = os.path.join(winsxs, "Policies")
-                if not os.path.isdir(pcfiles) and not silent:
-                    print "W: No such dir", pcfiles
+                if not os.path.isdir(pcfiles):
+                    logger.warn("No such dir %s", pcfiles)
             else:
                 # Vista or later
                 pcfiles = manifests
@@ -396,9 +393,8 @@ class Manifest(object):
                 # <name>.manifest files inside %SystemRoot%\winsxs\Manifests
                 redirected = False
                 if os.path.isdir(pcfiles):
-                    if not silent:
-                        print ("I: Searching for publisher configuration %s..." %
-                               self.getpolicyid(True, language=language))
+                    logger.info("Searching for publisher configuration %s ...",
+                                self.getpolicyid(True, language=language))
                     if sys.getwindowsversion() < (6, ):
                         # Windows XP
                         policies = os.path.join(pcfiles, 
@@ -413,27 +409,24 @@ class Manifest(object):
                                                 ".manifest")
                     for manifestpth in glob(policies):
                         if not os.path.isfile(manifestpth):
-                            if not silent:
-                                print "W: Not a file", manifestpth
+                            logger.warn("Not a file %s", manifestpth)
                             continue
-                        if not silent:
-                            print "I: Found", manifestpth
+                        logger.info("Found %s", manifestpth)
                         try:
                             policy = ManifestFromXMLFile(manifestpth)
                         except Exception, exc:
-                            print "E: Could not parse file", manifestpth
-                            print "E:", str(exc)
+                            logger.error("Could not parse file %s", manifestpth)
+                            logger.exception(exc)
                         else:
-                            if not silent:
-                                print ("I: Checking publisher policy for "
-                                       "binding redirects")
+                            logger.info("Checking publisher policy for "
+                                        "binding redirects")
                             for assembly in policy.dependentAssemblies:
                                 if not assembly.same_id(self, True) or \
                                    assembly.optional:
                                     continue
                                 for redirect in \
                                     assembly.bindingRedirects:
-                                    if not silent:
+                                    if logger.isEnabledFor(logging.INFO):
                                         old = "-".join([".".join([str(i) 
                                                                   for i in 
                                                                   part]) 
@@ -442,21 +435,22 @@ class Manifest(object):
                                         new = ".".join([str(i) 
                                                         for i in
                                                         redirect[1]])
-                                        print "I: Found redirect for " \
-                                              "version(s)", old, "->", new
+                                        logger.info("Found redirect for "
+                                                    "version(s) %s -> %n",
+                                                    old, new)
                                     if version >= redirect[0][0] and \
                                        version <= redirect[0][-1] and \
                                        version != redirect[1]:
-                                        if not silent:
-                                            print "I: Applying redirect", \
-                                                  ".".join([str(i) 
-                                                            for i in
-                                                            version]), \
-                                                  "->", new
+                                        logger.info("Applying redirect "
+                                                    "%s -> %s",
+                                                    ".".join([str(i) 
+                                                              for i in
+                                                              version]),
+                                                    new)
                                         version = redirect[1]
                                         redirected = True
-                    if not redirected and not silent:
-                        print "I: Publisher configuration not used"
+                    if not redirected:
+                        logger.info("Publisher configuration not used")
             
             # Search for assemblies according to assembly searching sequence
             paths = []
@@ -483,37 +477,30 @@ class Manifest(object):
                         paths.extend(glob(os.path.join(dirnm, language, 
                                                        self.name, 
                                                        self.name + ext)))
-            if not silent:
-                print ("I: Searching for assembly %s..." % 
-                       self.getid(language=language, 
-                                  version=version))
+            logger.info("Searching for assembly %s ...",
+                        self.getid(language=language, version=version))
             for manifestpth in paths:
                 if not os.path.isfile(manifestpth):
-                    if not silent:
-                        print "W: Not a file", manifestpth
+                    logger.warn("Not a file %s", manifestpth)
                     continue
                 assemblynm = os.path.basename(
                     os.path.splitext(manifestpth)[0])
-                if not silent:
-                    if manifestpth.endswith(".dll"):
-                        print "I: Found manifest in", manifestpth
-                    else:
-                        print "I: Found manifest", manifestpth
                 try:
                     if manifestpth.endswith(".dll"):
+                        logger.info("Found manifest in %s", manifestpth)
                         manifest = ManifestFromResFile(manifestpth, [1])
                     else:
+                        logger.info("Found manifest %s", manifestpth)
                         manifest = ManifestFromXMLFile(manifestpth)
                 except Exception, exc:
-                    print "E: Could not parse manifest", manifestpth
-                    print "E:", exc
+                    logger.error("Could not parse manifest %s", manifestpth)
+                    logger.exception(exc)
                 else:
                     if manifestpth.startswith(winsxs):
                         assemblydir = os.path.join(winsxs, assemblynm)
                         if not os.path.isdir(assemblydir):
-                            if not silent:
-                                print "W: No such dir", assemblydir
-                                print "W: Assembly incomplete"
+                            logger.warn("No such dir %s", assemblydir)
+                            logger.warn("Assembly incomplete")
                             return []
                     else:
                         assemblydir = os.path.dirname(manifestpth)
@@ -525,12 +512,11 @@ class Manifest(object):
                         else:
                             # If any of our files does not exist,
                             # the assembly is incomplete
-                            if not silent:
-                                print "W: Assembly incomplete"
+                            logger.warn("Assembly incomplete")
                             return []
                 return files
 
-        print "W: Assembly not found"
+        logger.warn("Assembly not found")
         return []
 
     def getid(self, language=None, version=None):
@@ -547,8 +533,7 @@ class Manifest(object):
         
         """
         if not self.name:
-            if not silent:
-                print "W: Assembly metadata incomplete"
+            logger.warn("Assembly metadata incomplete")
             return ""
         id = []
         if self.processorArchitecture:
@@ -596,8 +581,7 @@ class Manifest(object):
         
         """
         if not self.name:
-            if not silent:
-                print "W: Assembly metadata incomplete"
+            logger.warn("Assembly metadata incomplete")
             return ""
         id = []
         if self.processorArchitecture:
@@ -653,8 +637,7 @@ class Manifest(object):
             raise InvalidManifestError(
                 "Invalid root element <%s> - has to be one of <%s>" % 
                 (rootElement.tagName, ">, <".join(allowed_names)))
-        # print "I: loading manifest metadata from element <%s>" % \
-              # rootElement.tagName
+        # logger.info("loading manifest metadata from element <%s>", rootElement.tagName)
         if rootElement.tagName == "configuration":
             for windows in rootElement.getCEByTN("windows"):
                 for assemblyBinding in windows.getCEByTN("assemblyBinding"):
@@ -986,8 +969,7 @@ def GetManifestResources(filename, names=None, languages=None):
 def UpdateManifestResourcesFromXML(dstpath, xmlstr, names=None, 
                                    languages=None):
     """ Update or add manifest XML as resource in dstpath """
-    if not silent:
-        print "I: Updating manifest in", dstpath
+    logger.info("Updating manifest in %s", dstpath)
     if dstpath.lower().endswith(".exe"):
         name = 1 
     else:
@@ -999,8 +981,7 @@ def UpdateManifestResourcesFromXML(dstpath, xmlstr, names=None,
 def UpdateManifestResourcesFromXMLFile(dstpath, srcpath, names=None, 
                                        languages=None):
     """ Update or add manifest XML from srcpath as resource in dstpath """
-    if not silent:
-        print "I: Updating manifest from", srcpath, "in", dstpath
+    logger.info("Updating manifest from %s in %s", srcpath, dstpath)
     if dstpath.lower().endswith(".exe"):
         name = 1 
     else:
