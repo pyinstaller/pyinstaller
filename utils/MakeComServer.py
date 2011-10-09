@@ -15,7 +15,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os, sys, win32api, Makespec
+try:
+    import PyInstaller
+except ImportError:
+    # if importing PyInstaller fails, try to load from current
+    # directory or parent directory to support running without
+    # installation
+    import imp, os
+    if not hasattr(os, 'getuid') or os.getuid() != 0:
+        imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
+            [os.path.dirname(os.path.dirname(__file__))]))
+
+import PyInstaller.makespec as makespec
+
+import os, sys, win32api
 
 import optparse
 
@@ -98,7 +111,7 @@ def create(scripts, debug, verbose, workdir, ascii=0):
     outf.close()
     print "**********************************"
     print "Driver script %s created" % outfnm
-    specfnm = Makespec.main([outfnm], console=debug, debug=debug,
+    specfnm = makespec.main([outfnm], console=debug, debug=debug,
                             workdir=workdir, pathex=paths, comserver=1, ascii=ascii)
     print "Spec file %s created" % specfnm
 
