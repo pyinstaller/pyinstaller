@@ -1,4 +1,4 @@
-# -*- coding: Latin-1 -*-
+# -*- coding: latin-1 -*-
 """pefile, Portable Executable reader module
 
 
