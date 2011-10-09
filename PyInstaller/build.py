@@ -1466,11 +1466,11 @@ def set_dependencies(analysis, dependencies, path):
         for i in range(len(toc)):
             tpl = toc[i]
             if not tpl[1] in dependencies.keys():
-                logger.info("Adding dependency %s located in %s", tpl[1], path)
+                logger.info("Adding dependency %s located in %s" % (tpl[1], path))
                 dependencies[tpl[1]] = path
             else:
                 dep_path = get_relative_path(path, dependencies[tpl[1]])
-                logger.info("Referencing %s to be a dependecy for %s, located in %s" % tpl[1], path, dep_path)
+                logger.info("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
                 analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
                 toc[i] = (None, None, None)
         # Clean the list
