@@ -20,7 +20,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import os
-import sys
 import optparse
 
 import PyInstaller.configure
@@ -78,7 +77,7 @@ def main():
     # Print program version and exit
     if opts.version:
         print get_version()
-        sys.exit()
+        raise SystemExit(0)
 
     if not args:
         parser.error('Requires at least one scriptname file '

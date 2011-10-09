@@ -53,9 +53,8 @@ if is_win:
             import win32api
             import pywintypes
         except ImportError:
-            print "ERROR: Python 2.6+ on Windows support needs pywin32"
-            print "Please install http://sourceforge.net/projects/pywin32/"
-            sys.exit(2)
+            raise SystemExit("Error: Python 2.6+ on Windows support needs "
+                             "pywin32.\r\nPlease install from http://sourceforge.net/projects/pywin32/")
 
     from winmanifest import RT_MANIFEST, GetManifestResources, Manifest
     try:
@@ -72,8 +71,7 @@ if is_win:
         else:
             windir = win32api.GetWindowsDirectory()
         if not windir:
-            print "E: Cannot determine your Windows directory"
-            sys.exit(1)
+            raise SystemExit("Error: Can not determine your Windows directory")
         return windir
 
 # regex excludes
@@ -261,8 +259,7 @@ def check_extract_from_egg(pth, todir=None):
                 try:
                     egg = zipfile.ZipFile(eggpth)
                 except zipfile.BadZipfile, e:
-                    print "E:", eggpth, e
-                    sys.exit(1)
+                    raise SystemExit("Error: %s %s" % (eggpth, e))
                 if todir is None:
                     # Use the same directory as setuptools/pkg_resources. So,
                     # if the specific egg was accessed before (not necessarily

@@ -31,7 +31,7 @@ except ImportError:
 import PyInstaller.archive as archive
 import PyInstaller.carchive as carchive
 
-import sys, tempfile, os
+import tempfile, os
 try:
     import zlib
 except ImportError:
@@ -64,7 +64,7 @@ def main(opts, args):
     stack.append((name, arch))
     if debug or brief:
         show_log(name, arch)
-        sys.exit(0)
+        raise SystemExit(0)
     else:
         show(name, arch)
 
@@ -230,6 +230,6 @@ opts, args = parser.parse_args()
 if len(args) != 1:
     parser.error('Requires exactly one pyinstaller archive')
 try:
-    sys.exit(main(opts, args))
+    raise SystemExit(main(opts, args))
 except KeyboardInterrupt:
     raise SystemExit("Aborted by user request.")

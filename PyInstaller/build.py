@@ -232,25 +232,24 @@ def _rmdir(path):
                    'SPECPATH (%s)') % (path, SPECPATH)
             specerr += 1
         if specerr:
-            print ('Please edit/recreate the specfile (%s) and set a different '
-                   'output name (e.g. "dist").') % SPEC
-            sys.exit(1)
+            raise SystemExit('Error: Please edit/recreate the specfile (%s) '
+                             'and set a different output name (e.g. "dist").'
+                             % SPEC)
         if NOCONFIRM:
             choice = 'y'
         elif sys.stdout.isatty():
             choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
                                'CONTENTS will be REMOVED! Continue? (y/n)' % path)
         else:
-            print ('E: The output directory "%s" is not empty. Please remove '
-                   'all its contents or use the -y option (remove output '
-                   'directory without confirmation).') % path
-            sys.exit(1)
+            raise SystemExit('Error: The output directory "%s" is not empty. '
+                             'Please remove all its contents or use the '
+                             '-y option (remove output directory without '
+                             'confirmation).' % path)
         if choice.strip().lower() == 'y':
             print 'I: Removing', path
             shutil.rmtree(path)
         else:
-            print 'I: User aborted'
-            sys.exit(1)
+            raise SystemExit('User aborted')
 
 
 def check_egg(pth):
@@ -386,8 +385,7 @@ class Analysis(Target):
         pynms = []  # python filenames with no extension
         for script in self.inputs:
             if not os.path.exists(script):
-                print "Analysis: script %s not found!" % script
-                sys.exit(1)
+                raise SystemExit("Error: Analysis: script %s not found!" % script)
             d, base = os.path.split(script)
             if not d:
                 d = os.getcwd()
@@ -1504,17 +1502,16 @@ def main(specfile, configfilename, buildpath, noconfirm, **kw):
     try:
         config = _load_data(configfilename)
     except IOError:
-        print "You must run utils/Configure.py before building or use pyinstaller.py!"
-        sys.exit(1)
+        raise SystemExit("You must run utils/Configure.py before building "
+                         "or use pyinstaller.py!")
 
     if config['pythonVersion'] != sys.version:
         print "The current version of Python is not the same with which PyInstaller was configured."
         print "Please re-run utils/Configure.py or use pyinstaller.py with this version."
-        sys.exit(1)
+        raise SystemExit(1)
 
     if config.setdefault('pythonDebug', None) != __debug__:
-        print "python optimization flags changed: rerun python -O utils/Configure.py"
-        sys.exit(1)
+        raise SystemExit("Python optimization flags have changed: rerun `python -O utils/Configure.py`")
 
     if is_win:
         from PyInstaller import winmanifest

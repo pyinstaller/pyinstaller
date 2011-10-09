@@ -97,6 +97,6 @@ def main():
         p.error(e)
 
 try:
-    sys.exit(main())
+    raise SystemExit(main())
 except KeyboardInterrupt:
     raise SystemExit("Aborted by user request.")
