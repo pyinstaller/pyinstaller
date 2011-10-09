@@ -1787,8 +1787,7 @@ class PE:
         # Set the image's flags according the the Characteristics member
         set_flags(self.FILE_HEADER, self.FILE_HEADER.Characteristics, image_flags)
         
-        optional_header_offset =    \
-            nt_headers_offset+4+self.FILE_HEADER.sizeof()
+        optional_header_offset = nt_headers_offset+4+self.FILE_HEADER.sizeof()
         
         # Note: location of sections can be controlled from PE header:
         sections_offset = optional_header_offset + self.FILE_HEADER.SizeOfOptionalHeader
@@ -4650,4 +4649,3 @@ class PE:
             return self.__data__[ : overlay_data_offset ]
             
         return self.__data__[:]
-        

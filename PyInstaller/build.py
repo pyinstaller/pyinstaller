@@ -205,8 +205,8 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
     if pyc=1, check for .py files, too
     """
-    return    _check_guts_eq(attr, old, toc, last_build) \
-           or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc)
+    return (_check_guts_eq(attr, old, toc, last_build) 
+            or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc))
 
 
 def _rmdir(path):
@@ -884,10 +884,10 @@ class EXE(Target):
                                              for dependentAssembly in
                                              self.manifest.dependentAssemblies]:
                         self.manifest.dependentAssemblies.append(assembly)
-            if not self.console and \
-               not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name
-                                                           for dependentAssembly in
-                                                           self.manifest.dependentAssemblies]:
+            if (not self.console and
+                not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name
+                                                            for dependentAssembly in
+                                                            self.manifest.dependentAssemblies]):
                 # Add Microsoft.Windows.Common-Controls to dependent assemblies
                 self.manifest.dependentAssemblies.append(winmanifest.Manifest(type_="win32",
                                                                               name="Microsoft.Windows.Common-Controls",

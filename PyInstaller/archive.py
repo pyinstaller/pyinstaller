@@ -96,8 +96,8 @@ class Archive:
         """
         self.lib.seek(self.start)       #default - magic is at start of file
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise ArchiveReadError, "%s is not a valid %s archive file" \
-              % (self.path, self.__class__.__name__)
+            raise ArchiveReadError("%s is not a valid %s archive file"
+                                   % (self.path, self.__class__.__name__))
         if self.lib.read(len(self.pymagic)) != self.pymagic:
             raise ArchiveReadError, "%s has version mismatch to dll" % (self.path)
         self.lib.read(4)

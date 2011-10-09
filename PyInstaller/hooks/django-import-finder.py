@@ -24,14 +24,14 @@ if not os.environ.get("DJANGO_SETTINGS_MODULE"):
 
 from django.conf import settings
 
-hiddenimports = list(settings.AUTHENTICATION_BACKENDS) + \
-    [settings.DEFAULT_FILE_STORAGE] + \
-    list(settings.FILE_UPLOAD_HANDLERS) + \
-    list(settings.INSTALLED_APPS) + \
-    list(settings.MIDDLEWARE_CLASSES) + \
-    list(settings.TEMPLATE_CONTEXT_PROCESSORS) + \
-    list(settings.TEMPLATE_LOADERS) + \
-    [settings.ROOT_URLCONF]
+hiddenimports = (list(settings.AUTHENTICATION_BACKENDS) +
+                 [settings.DEFAULT_FILE_STORAGE] +
+                 list(settings.FILE_UPLOAD_HANDLERS) +
+                 list(settings.INSTALLED_APPS) +
+                 list(settings.MIDDLEWARE_CLASSES) +
+                 list(settings.TEMPLATE_CONTEXT_PROCESSORS) +
+                 list(settings.TEMPLATE_LOADERS) +
+                 [settings.ROOT_URLCONF])
 
 def find_url_callbacks(urls_module):
     urlpatterns = urls_module.urlpatterns

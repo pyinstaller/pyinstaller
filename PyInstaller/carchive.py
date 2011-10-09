@@ -153,8 +153,8 @@ class CArchive(archive.Archive):
         (magic, totallen, tocpos, toclen, pyvers) = struct.unpack(self.TRLSTRUCT,
                             self.lib.read(self.TRLLEN))
         if magic != self.MAGIC:
-            raise RuntimeError, "%s is not a valid %s archive file" \
-              % (self.path, self.__class__.__name__)
+            raise RuntimeError("%s is not a valid %s archive file"
+                               % (self.path, self.__class__.__name__))
         self.pkgstart = filelen - totallen
         if self.len:
             if totallen != self.len or self.pkgstart != self.start:

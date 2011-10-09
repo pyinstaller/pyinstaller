@@ -705,8 +705,8 @@ class Module:
         self._xref[nm] = 1
 
     def __str__(self):
-        return "<Module %s %s imports=%s binaries=%s datas=%s>" % \
-            (self.__name__, self.__file__, self.imports, self.binaries, self.datas)
+        return ("<Module %s %s imports=%s binaries=%s datas=%s>" %
+                (self.__name__, self.__file__, self.imports, self.binaries, self.datas))
 
 class BuiltinModule(Module):
     typ = 'BUILTIN'

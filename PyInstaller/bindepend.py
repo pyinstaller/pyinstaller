@@ -420,8 +420,8 @@ def selectImports(pth, xtrapath=None):
             candidatelib = lib
         if (excludesRe.search(candidatelib) and (not includes or
             not includesRe.search(candidatelib))):
-            if candidatelib.find('libpython') < 0 and \
-               candidatelib.find('Python.framework') < 0:
+            if (candidatelib.find('libpython') < 0 and
+               candidatelib.find('Python.framework') < 0):
                 # skip libs not containing (libpython or Python.framework)
                 if not seen.get(npth.upper(),0):
                     logger.debug("Skipping %s dependency of %s",

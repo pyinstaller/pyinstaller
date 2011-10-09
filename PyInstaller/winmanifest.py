@@ -188,8 +188,8 @@ class File(_File):
             self.hashalg = hashalg.upper()
         else:
             self.hashalg = None
-        if os.path.isfile(filename) and hashalg and hashlib and \
-           hasattr(hashlib, hashalg.lower()):
+        if (os.path.isfile(filename) and hashalg and hashlib and
+            hasattr(hashlib, hashalg.lower())):
             self.calc_hash()
         else:
             self.hash = hash
@@ -421,11 +421,10 @@ class Manifest(object):
                             logger.info("Checking publisher policy for "
                                         "binding redirects")
                             for assembly in policy.dependentAssemblies:
-                                if not assembly.same_id(self, True) or \
-                                   assembly.optional:
+                                if (not assembly.same_id(self, True) or
+                                    assembly.optional):
                                     continue
-                                for redirect in \
-                                    assembly.bindingRedirects:
+                                for redirect in assembly.bindingRedirects:
                                     if logger.isEnabledFor(logging.INFO):
                                         old = "-".join([".".join([str(i) 
                                                                   for i in 
@@ -438,9 +437,9 @@ class Manifest(object):
                                         logger.info("Found redirect for "
                                                     "version(s) %s -> %n",
                                                     old, new)
-                                    if version >= redirect[0][0] and \
-                                       version <= redirect[0][-1] and \
-                                       version != redirect[1]:
+                                    if (version >= redirect[0][0] and
+                                        version <= redirect[0][-1] and
+                                        version != redirect[1]):
                                         logger.info("Applying redirect "
                                                     "%s -> %s",
                                                     ".".join([str(i) 
@@ -670,16 +669,11 @@ class Manifest(object):
                     self.description = description.firstChild.wholeText
             for trustInfo in rootElement.getCEByTN("trustInfo"):
                 for security in trustInfo.getCEByTN("security"):
-                    for requestedPrivileges in \
-                        security.getCEByTN("requestedPrivileges"):
-                        for requestedExecutionLevel in \
-                            requestedPrivileges.getCEByTN(
-                                "requestedExecutionLevel"):
-                            self.requestedExecutionLevel = \
-                                requestedExecutionLevel.getA("level")
-                            self.uiAccess = (
-                                requestedExecutionLevel.getA("uiAccess") or 
-                                "").lower() == "true"
+                    for reqPriv in security.getCEByTN("requestedPrivileges"):
+                        for reqExeLev in reqPriv.getCEByTN("requestedExecutionLevel"):
+                            self.requestedExecutionLevel = reqExeLev.getA("level")
+                            self.uiAccess = (reqExeLev.getA("uiAccess") or 
+                                             "").lower() == "true"
             if rootElement.tagName == "assemblyBinding":
                 dependencies = [rootElement]
             else:

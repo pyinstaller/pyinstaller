@@ -118,8 +118,8 @@ path_conversions = (
 
 def make_variable_path(filename, conversions = path_conversions):
     for (from_path, to_name) in conversions:
-        assert os.path.abspath(from_path)==from_path, \
-            "path '%s' should already be absolute" % (from_path,)
+        assert os.path.abspath(from_path)==from_path, (
+            "path '%s' should already be absolute" % from_path)
         if filename[:len(from_path)] == from_path:
             rest = filename[len(from_path):]
             if rest[0] in "\\/":
