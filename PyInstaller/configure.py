@@ -330,10 +330,12 @@ def __add_options(parser):
 def main(configfilename, upx_dir, **kw):
 
     if is_darwin and compat.architecture() == '64bit':
-        logger.warn("PyInstaller support for Python 64-bit on Mac OSX is experimental.")
-        logger.warn("If you need 32-bit version of Python and you use Python distributed")
-        logger.warn("   with Mac OX, try setting")
-        logger.warn("   VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment")
+        logger.warn('You are running 64-bit Python. Created binary will not'
+            ' work on Mac OS X 10.4 or 10.5. For this version it is necessary'
+            ' to create 32-bit binaries.'
+            ' If you need 32-bit version of Python, run Python as 32-bit binary'
+            ' by command:\n\n'
+            '    arch -i386 python\n')
         # wait several seconds for user to see this message
         time.sleep(4)
 
