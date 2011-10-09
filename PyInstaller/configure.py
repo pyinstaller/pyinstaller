@@ -22,9 +22,7 @@
 import os
 import sys
 import shutil
-import pprint
 import re
-import glob
 import time
 import subprocess
 
