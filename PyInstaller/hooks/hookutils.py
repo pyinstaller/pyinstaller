@@ -9,6 +9,7 @@ import PyInstaller
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.hooks')
 
+
 def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
@@ -31,7 +32,7 @@ def exec_statement(statement):
             os.environ["PYTHONPATH"] = old_pp
         else:
             del os.environ["PYTHONPATH"]
-    return txt[:-1]
+    return txt.strip()
 
 
 def eval_statement(statement):
@@ -93,6 +94,36 @@ def qt4_plugins_binaries(plugin_type):
             os.path.join('qt4_plugins', plugin_type, os.path.basename(f)),
             f, 'BINARY'))
     return binaries
+
+
+def qt4_menu_nib_dir():
+    """Return path to Qt resource dir qt_menu.nib."""
+    menu_dir = ''
+    # Detect MacPorts prefix (usually /opt/local).
+    # Suppose that PyInstaller is using python from macports.
+    macports_prefix = sys.executable.split('/Library')[0]
+    # list of directories where to look for qt_menu.nib
+    dirs = [
+        # Qt4 from MacPorts not compiled as framework.
+        os.path.join(macports_prefix, 'lib', 'Resources'),
+        # Qt4 from MacPorts compiled as framework.
+        os.path.join(macports_prefix, 'libexec', 'qt4-mac', 'lib',
+            'QtGui.framework', 'Versions', '4', 'Resources'),
+        # Qt4 installed into default location.
+        '/Library/Frameworks/QtGui.framework/Resources',
+        '/Library/Frameworks/QtGui.framework/Versions/4/Resources',
+        '/Library/Frameworks/QtGui.Framework/Versions/Current/Resources',
+    ]
+    # Check directory existence
+    for d in dirs:
+        d = os.path.join(d, 'qt_menu.nib')
+        if os.path.exists(d):
+            menu_dir = d
+            break
+
+    if not menu_dir:
+        logger.error('Cannont find qt_menu.nib directory')
+    return menu_dir
 
 
 def babel_localedata_dir():

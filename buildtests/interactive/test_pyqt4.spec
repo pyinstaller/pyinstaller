@@ -22,3 +22,9 @@ coll = COLLECT(exe,
                strip=False,
                upx=False,
                name=os.path.join('dist', __testname__))
+               
+import sys
+if sys.platform.startswith("darwin"):
+    app = BUNDLE(exe,
+        name=os.path.join('dist', __testname__ + '.app'),
+        version='0.0.1')
