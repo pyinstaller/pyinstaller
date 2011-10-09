@@ -38,8 +38,10 @@ import optparse
 import glob, sys
 
 parser = optparse.OptionParser(usage="python %prog <executable_or_dynamic_library> [ <executable_or_dynamic_library> ... ]")
+PyInstaller.log.__add_options(parser)
 
 opts, args = parser.parse_args()
+PyInstaller.log.__process_options(parser, opts)
 if len(args) == 0:
     parser.error('Requires one or more executables or dynamic libraries')
 

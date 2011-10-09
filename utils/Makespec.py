@@ -32,6 +32,7 @@ except ImportError:
 
 import PyInstaller.makespec
 import PyInstaller.compat
+import PyInstaller.log
 import optparse
 
 import os
@@ -44,8 +45,11 @@ p.add_option('-C', '--configfile',
              dest='configfilename',
              help='Name of configfile (default: %default)')
 PyInstaller.makespec.__add_options(p)
+PyInstaller.log.__add_options(p)
 PyInstaller.compat.__add_obsolete_options(p)
+
 opts, args = p.parse_args()
+PyInstaller.log.__process_options(p, opts)
 
 # Split pathex by using the path separator
 temppaths = opts.pathex[:]

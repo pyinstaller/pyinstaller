@@ -26,6 +26,7 @@ import PyInstaller.configure
 import PyInstaller.makespec
 import PyInstaller.build
 import PyInstaller.compat
+import PyInstaller.log
 
 
 # Warn when old command line option is used
@@ -70,9 +71,11 @@ def main():
     PyInstaller.configure.__add_options(parser)
     PyInstaller.makespec.__add_options(parser)
     PyInstaller.build.__add_options(parser)
+    PyInstaller.log.__add_options(parser)
     PyInstaller.compat.__add_obsolete_options(parser)
 
     opts, args = parser.parse_args()
+    PyInstaller.log.__process_options(parser, opts)
 
     # Print program version and exit
     if opts.version:

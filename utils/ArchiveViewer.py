@@ -30,6 +30,7 @@ except ImportError:
 
 import PyInstaller.archive as archive
 import PyInstaller.carchive as carchive
+import PyInstaller.log
 
 import tempfile, os
 try:
@@ -225,10 +226,13 @@ parser.add_option('-b', '--brief',
                   action='store_true',
                   dest='brief',
                   help='Print only file name. (default: %default). Can be combined with -r')
+PyInstaller.log.__add_options(parser)
 
 opts, args = parser.parse_args()
+PyInstaller.log.__process_options(parser, opts)
 if len(args) != 1:
     parser.error('Requires exactly one pyinstaller archive')
+
 try:
     raise SystemExit(main(opts, args))
 except KeyboardInterrupt:

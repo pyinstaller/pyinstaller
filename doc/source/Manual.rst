@@ -141,6 +141,9 @@ Allowed OPTIONS are:
     Remove output directory (default:
     SPECPATH/dist/SPECNAME) without confirmation
 
+--log-level=LOGLEVEL  Log level (default: INFO, choose one of DEBUG, INFO,
+                      WARN, ERROR, CRITICAL)
+
 What to generate:
 
 -F, --onefile

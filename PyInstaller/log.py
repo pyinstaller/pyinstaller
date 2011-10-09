@@ -28,3 +28,21 @@ FORMAT = '%(levelname)s: %(message)s'
 logging.basicConfig(format=FORMAT, level=logging.INFO)
 
 logger = getLogger('PyInstaller')
+
+
+def __add_options(parser):
+    levels = ('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
+    parser.add_option('--log-level',
+                      choices=levels,
+                      default='INFO',
+                      dest='loglevel',
+                      help=('Log level (default: %%default, choose one of %s)'
+                            % ', '.join(levels))
+                      )
+
+def __process_options(parser, opts):
+    try:
+        level = getattr(logging, opts.loglevel.upper())
+    except AttributeError:
+        parser.error('Unknown log level `%s`' % opts.loglevel)
+    logger.setLevel(level)

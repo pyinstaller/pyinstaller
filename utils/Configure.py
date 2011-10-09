@@ -31,13 +31,16 @@ except ImportError:
 
 import PyInstaller.configure
 import PyInstaller.compat
+import PyInstaller.log
 import optparse
 
 parser = optparse.OptionParser(usage='%prog [options]')
 PyInstaller.configure.__add_options(parser)
+PyInstaller.log.__add_options(parser)
 PyInstaller.compat.__add_obsolete_options(parser)
 
 opts, args = parser.parse_args()
+PyInstaller.log.__process_options(parser, opts)
 if args:
     parser.error('Does not expect any arguments')
 

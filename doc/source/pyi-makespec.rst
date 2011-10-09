@@ -53,6 +53,8 @@ General Options
 
 -C CONFIGFILE, --configfile=CONFIGFILE
                     Name of configfile to use (default: |config.dat|)
+--log-level=LOGLEVEL  Log level (default: INFO, choose one of DEBUG, INFO,
+                      WARN, ERROR, CRITICAL)
 
 What to generate
 ------------------

@@ -32,6 +32,7 @@ except ImportError:
 
 import PyInstaller.build
 import PyInstaller.compat
+import PyInstaller.log
 import optparse
 
 parser = optparse.OptionParser(usage='%prog [options] specfile')
@@ -40,9 +41,11 @@ parser.add_option('-C', '--configfile',
                   dest='configfilename',
                   help='Name of generated configfile (default: %default)')
 PyInstaller.build.__add_options(parser)
+PyInstaller.log.__add_options(parser)
 PyInstaller.compat.__add_obsolete_options(parser)
 
 opts, args = parser.parse_args()
+PyInstaller.log.__process_options(parser, opts)
 if len(args) != 1:
     parser.error('Requires exactly one .spec-file')
 
