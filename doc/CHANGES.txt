@@ -9,6 +9,7 @@ Changes since PyInstaller 1.5
    replaced by pyinstaller.py. See documentation for more details.
  + Add experimental support for Mac OSX 64-bit
  + Removed cross-building/bundling feature which was never really finished.
+ * Fix missing qt_menu.nib in dist directory on Mac OSX when using PyQt4.
 
 Changes since PyInstaller 1.4
 -----------------------------
