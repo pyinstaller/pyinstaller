@@ -32,6 +32,7 @@ except ImportError:
 
 import PyInstaller.bindepend
 from PyInstaller import is_win
+import PyInstaller.log
 import optparse
 
 import glob, sys
@@ -42,7 +43,9 @@ opts, args = parser.parse_args()
 if len(args) == 0:
     parser.error('Requires one or more executables or dynamic libraries')
 
-PyInstaller.bindepend.silent = True  # Suppress all informative messages from the dependency code
+# Suppress all informative messages from the dependency code
+PyInstaller.log.getLogger('PyInstaller.build.bindepend').setLevel(PyInstaller.log.WARN)
+
 try:
     for a in args:
         for fn in glob.glob(a):
