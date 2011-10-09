@@ -18,6 +18,7 @@
 
 # This code is courtesy of Thomas Heller, who
 # has kindly donated it to this project.
+
 RT_ICON = 3
 RT_GROUP_ICON = 14
 LOAD_LIBRARY_AS_DATAFILE = 2
@@ -29,6 +30,9 @@ try:
 except AttributeError:
     StringTypes = [ type("") ]
 
+import PyInstaller.log as logging
+logger = logging.getLogger('PyInstaller.icon')
+
 class Structure:
     def __init__ (self):
         size = self._sizeInBytes = struct.calcsize (self._format_)
@@ -37,11 +41,11 @@ class Structure:
         for i in range (len (self._names_)):
             indexes[self._names_[i]] = i
     def dump (self):
-        print "I: DUMP of", self
+        logger.info("DUMP of %s", self)
         for name in self._names_:
             if name[0] != '_':
-                print "I: %20s = %s" % (name, getattr (self, name))
-        print
+                logger.info("%20s = %s", name, getattr(self, name))
+        logger.info("")
     def __getattr__ (self, name):
         if name in self._names_:
             index = self._indexes_[name]
@@ -112,7 +116,7 @@ class IconFile:
 def CopyIcons_FromIco (dstpath, srcpath, id=1):
     import win32api #, win32con
     icons = map(IconFile, srcpath)
-    print "I: Updating icons from", srcpath, "to", dstpath
+    logger.info("Updating icons from %s to %s", srcpath, dstpath)
 
     hdst = win32api.BeginUpdateResource (dstpath, 0)
 
@@ -122,10 +126,10 @@ def CopyIcons_FromIco (dstpath, srcpath, id=1):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
         win32api.UpdateResource (hdst, RT_GROUP_ICON, i, data)
-        print "I: Writing RT_GROUP_ICON %d resource with %d bytes" % (i, len(data))
+        logger.info("Writing RT_GROUP_ICON %d resource with %d bytes", i, len(data))
         for data in f.images:
             win32api.UpdateResource (hdst, RT_ICON, iconid, data)
-            print "I: Writing RT_ICON %d resource with %d bytes" % (iconid, len (data))
+            logger.info("Writing RT_ICON %d resource with %d bytes", iconid, len(data))
             iconid = iconid + 1
 
     win32api.EndUpdateResource (hdst, 0)
@@ -144,7 +148,7 @@ def CopyIcons (dstpath, srcpath):
             return s, None
 
     srcpath = map(splitter, srcpath)
-    print "I: SRCPATH", srcpath
+    logger.info("SRCPATH %s", srcpath)
 
     if len(srcpath) > 1:
         # At the moment, we support multiple icons only from .ico files
@@ -163,9 +167,9 @@ def CopyIcons (dstpath, srcpath):
     if srcext.lower() == '.ico':
         return CopyIcons_FromIco (dstpath, [srcpath])
     if index is not None:
-        print "I: Updating icons from", srcpath, ", %d to" % index, dstpath
+        logger.info("Updating icons from %s, %d to %s", srcpath, index, dstpath)
     else:
-        print "I: Updating icons from", srcpath, "to", dstpath
+        logger.info("Updating icons from %s to %s", srcpath, dstpath)
     import win32api #, win32con
     hdst = win32api.BeginUpdateResource (dstpath, 0)
     hsrc = win32api.LoadLibraryEx (srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
