@@ -1212,6 +1212,7 @@ class BUNDLE(Target):
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
+
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,
                            "CFBundleName": self.appname,
@@ -1250,6 +1251,15 @@ class BUNDLE(Target):
             if not os.path.exists(todir):
                 os.makedirs(todir)
             shutil.copy2(fnm, tofnm)
+
+        ## For some hooks copy resource to ./Contents/Resources dir.
+        # PyQt4 hook: On Mac Qt requires resources 'qt_menu.nib'.
+        # It is copied from dist directory.
+        qt_menu_dir = os.path.join(self.name, 'Contents', 'MacOS', 'qt_menu.nib')
+        qt_menu_dest = os.path.join(self.name, 'Contents', 'Resources', 'qt_menu.nib')
+        if os.path.exists(qt_menu_dir):
+            shutil.copytree(qt_menu_dir, qt_menu_dest)
+
         return 1
 
 
