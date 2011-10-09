@@ -24,6 +24,6 @@ import logging
 getLogger = logging.getLogger
 
 FORMAT = '%(levelname)s: %(message)s'
-logging.basicConfig(format=FORMAT)
+logging.basicConfig(format=FORMAT, level=logging.INFO)
 
 logger = getLogger('PyInstaller')
