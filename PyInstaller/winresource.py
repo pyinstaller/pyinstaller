@@ -33,7 +33,8 @@ import os.path
 import pywintypes
 import win32api
 
-silent = False  # True suppresses all messages
+import PyInstaller.log as logging
+logger = logging.getLogger('PyInstaller.build.winresource')
 
 LOAD_LIBRARY_AS_DATAFILE = 2
 ERROR_BAD_EXE_FORMAT = 193
@@ -127,21 +128,21 @@ def _GetResources(hsrc, types=None, names=None, languages=None):
     """
     res = {}
     try:
-        # print "I: Enumerating resource types"
+        # logger.debug("Enumerating resource types")
         enum_types = win32api.EnumResourceTypes(hsrc)
         if types and not "*" in types:
             enum_types = filter(lambda type_: 
                                 type_ in types, 
                                 enum_types)
         for type_ in enum_types:
-            # print "I: Enumerating resources of type", type_
+            # logger.debug("Enumerating resources of type %s", type_)
             enum_names = win32api.EnumResourceNames(hsrc, type_)
             if names and not "*" in names:
                 enum_names = filter(lambda name: 
                                     name in names, 
                                     enum_names)
             for name in enum_names:
-                # print "I: Enumerating resources of type", type_, "name", name
+                # logger.debug("Enumerating resources of type %s name %s", type_, name)
                 enum_languages = win32api.EnumResourceLanguages(hsrc, 
                                                                 type_, 
                                                                 name)
@@ -161,9 +162,8 @@ def _GetResources(hsrc, types=None, names=None, languages=None):
                                  ERROR_RESOURCE_TYPE_NOT_FOUND,
                                  ERROR_RESOURCE_NAME_NOT_FOUND,
                                  ERROR_RESOURCE_LANG_NOT_FOUND):
-                                     # print "I:", exception.args[1] + ":", \
-                                         # exception.args[2]
-                                     pass
+            # logger.info('%s: %s', exception.args[1:3])
+            pass
         else:
             raise exception
     return res
@@ -213,9 +213,8 @@ def UpdateResources(dstpath, data, type_, names=None, languages=None):
     for type_ in res:
         for name in res[type_]:
             for language in res[type_][name]:
-                if not silent:
-                    print "I: Updating resource type", type_, "name", name, \
-                          "language", language
+                logger.info("Updating resource type %s name %s language %s",
+                            type_, name, language)
                 win32api.UpdateResource(hdst, type_, name, data, language)
     win32api.EndUpdateResource(hdst, 0)
 
