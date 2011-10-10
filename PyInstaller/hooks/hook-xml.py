@@ -27,7 +27,7 @@ def hook(mod):
     txt = exec_statement("import xml;print xml.__file__")
 
     if txt.find('_xmlplus') > -1:
-        if txt[:-3] == ".py":
+        if txt.endswith(".py"):
             txt = txt + 'c'
         co = marshal.loads(open(txt, 'rb').read()[8:])
         old_pth = mod.__path__[:]
