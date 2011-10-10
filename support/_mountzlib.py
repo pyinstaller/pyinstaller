@@ -22,12 +22,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 import archive, iu, sys
 iu._globalownertypes.insert(0, archive.PYZOwner)
 sys.importManager = iu.ImportManager()
 sys.importManager.install()
 if not hasattr(sys, 'frozen'):
     sys.frozen = 1
+
 # Implement workaround for prints in non-console mode. In non-console mode
 # (with "pythonw"), print randomically fails with "[errno 9] Bad file descriptor"
 # when the printed text is flushed (eg: buffer full); this is because the
@@ -36,6 +38,7 @@ if not hasattr(sys, 'frozen'):
 # feel that a workaround in PyInstaller is a good thing since most people
 # found this problem for the first time with PyInstaller as they don't
 # usually run their code with "pythonw" (and it's hard to debug anyway).
+
 class NullWriter:
     def write(*args): pass
     def flush(*args): pass
