@@ -11,6 +11,7 @@ Changes since PyInstaller 1.5
  + Removed cross-building/bundling feature which was never really finished.
  + Added option --log-level to all scripts to adjust level of output
    (thanks to Hartmut Goebel).
+ + rthooks.dat moved to support/rthooks.dat
  * Fix missing qt_menu.nib in dist directory on Mac OSX when using PyQt4.
  * Use Python logging system for message output (thanks to Hartmut
    Goebel).

@@ -1190,14 +1190,15 @@ scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.
 
 At the tail end of an analysis, the module list is examined for matches in
-``rthooks.dat``, which is the string representation of a Python dictionary. The
-key is the module name, and the value is a list of hook-script pathnames.
+``support/rthooks.dat``, which is the string representation of a
+Python dictionary. The key is the module name, and the value is a list
+of hook-script pathnames.
 
 So putting an entry::
 
        'somemodule': ['path/to/somescript.py'],
 
-into ``rthooks.dat`` is almost the same thing as doing this::
+into ``support/rthooks.dat`` is almost the same thing as doing this::
 
        anal = Analysis(['path/to/somescript.py', 'main.py'], ...
 

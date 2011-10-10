@@ -1434,7 +1434,7 @@ def TkPKG():
 
 def build(spec, buildpath):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
-    rthooks = _load_data(os.path.join(HOMEPATH, 'rthooks.dat'))
+    rthooks = _load_data(os.path.join(HOMEPATH, 'support', 'rthooks.dat'))
     SPEC = spec
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]
