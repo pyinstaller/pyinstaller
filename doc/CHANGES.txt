@@ -2,6 +2,7 @@
 
 Changes since PyInstaller 1.5
 -----------------------------
+ + New default PyInstaller icon for generated app bundles on Mac OS X.
  + Added experimental support for Solaris (thanks to Hywel Richards).
  + Added Multipackage function to create a collection of packages to avoid
    library duplication. See documentation for more details.
