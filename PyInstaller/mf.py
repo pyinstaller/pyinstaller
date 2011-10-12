@@ -26,6 +26,8 @@ import dircache
 import glob
 import subprocess
 
+from PyInstaller.loader import archive
+
 try:
     # zipimport is supported starting with Python 2.3
     import zipimport
@@ -181,7 +183,6 @@ class DirOwner(BaseDirOwner):
 
 class PYZOwner(Owner):
     def __init__(self, path):
-        import archive
         self.pyz = archive.ZlibArchive(path)
         Owner.__init__(self, path)
     def getmod(self, nm):

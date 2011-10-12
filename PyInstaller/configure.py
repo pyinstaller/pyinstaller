@@ -25,6 +25,7 @@ import shutil
 import re
 import time
 import subprocess
+import inspect
 
 from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE, PLATFORM
 from PyInstaller import is_win, is_unix, is_darwin, is_py24, get_version
@@ -290,11 +291,11 @@ def find_PYZ_dependencies(config):
     logger.info("computing PYZ dependencies...")
     # We need to import `archive` from `PyInstaller` directory, but
     # not from package `PyInstaller`
-    import inspect
-    import PyInstaller
+    import PyInstaller.loader
     a = mf.ImportTracker([
-        os.path.dirname(inspect.getsourcefile(PyInstaller)),
+        os.path.dirname(inspect.getsourcefile(PyInstaller.loader)),
         os.path.join(HOMEPATH, 'support')])
+
     a.analyze_r('archive')
     mod = a.modules['archive']
     toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])

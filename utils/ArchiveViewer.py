@@ -27,8 +27,7 @@ except ImportError:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
             [os.path.dirname(os.path.dirname(__file__))]))
 
-import PyInstaller.archive as archive
-import PyInstaller.carchive as carchive
+from PyInstaller.loader import archive, carchive
 import PyInstaller.log
 
 import tempfile, os

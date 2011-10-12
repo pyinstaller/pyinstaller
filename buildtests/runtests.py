@@ -32,12 +32,13 @@ import optparse
 try:
     import PyInstaller
 except ImportError:
-    # if importing PyInstaller fails, try to load from current
-    # directory or parent directory to support running without
-    # installation
-    import imp
+    # if importing PyInstaller fails, try to load from parent
+    # directory to support running without installation
+    import imp, os
     if not hasattr(os, "getuid") or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller', [".", ".."]))
+        imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
+            [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
+
 
 from PyInstaller import HOMEPATH
 from PyInstaller import is_py23, is_py25, is_py26, is_win

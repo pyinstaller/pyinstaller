@@ -28,12 +28,11 @@ import py_compile
 import tempfile
 import UserList
 import mf
-import archive
-import iu
-import carchive
 import bindepend
 import traceback
 import subprocess
+
+from PyInstaller.loader import archive, carchive, iu
 
 import PyInstaller
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
