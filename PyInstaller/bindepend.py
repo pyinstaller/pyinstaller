@@ -56,9 +56,9 @@ if is_win:
             raise SystemExit("Error: Python 2.6+ on Windows support needs "
                              "pywin32.\r\nPlease install from http://sourceforge.net/projects/pywin32/")
 
-    from winmanifest import RT_MANIFEST, GetManifestResources, Manifest
+    from PyInstaller.utils.winmanifest import RT_MANIFEST, GetManifestResources, Manifest
     try:
-        from winmanifest import winresource
+        from PyInstaller.utils.winmanifest import winresource
     except ImportError, detail:
         winresource = None
 

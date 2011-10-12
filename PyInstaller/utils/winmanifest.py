@@ -101,11 +101,11 @@ from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
 from PyInstaller.compat import hashlib
-import PyInstaller.log as logging
+from PyInstaller import log as logging
 logger = logging.getLogger('PyInstaller.build.winmanifest')
 
 try:
-    import winresource
+    from PyInstaller.utils import winresource
 except ImportError, detail:
     winresource = None
     logger.warn(detail)

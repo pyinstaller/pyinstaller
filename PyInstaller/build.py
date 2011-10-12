@@ -977,7 +977,7 @@ class EXE(Target):
             if self.icon:
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
-                versionInfo.SetVersion(tmpnm, self.versrsrc)
+                versioninfo.SetVersion(tmpnm, self.versrsrc)
             for res in self.resources:
                 res = res.split(",")
                 for i in range(len(res[1:])):
@@ -1522,7 +1522,7 @@ def __add_options(parser):
 
 def main(specfile, configfilename, buildpath, noconfirm, **kw):
     global config
-    global icon, versionInfo, winresource, winmanifest, pyasm
+    global icon, versioninfo, winresource, winmanifest, pyasm
     global NOCONFIRM
     NOCONFIRM = noconfirm
 
@@ -1541,10 +1541,10 @@ def main(specfile, configfilename, buildpath, noconfirm, **kw):
         raise SystemExit("Python optimization flags have changed: rerun `python -O utils/Configure.py`")
 
     if is_win:
-        from PyInstaller import winmanifest
+        from PyInstaller.utils import winmanifest
 
     if config['hasRsrcUpdate']:
-        from PyInstaller import icon, versionInfo, winresource
+        from PyInstaller.utils import icon, versioninfo, winresource
         pyasm = bindepend.getAssemblies(config['python'])
     else:
         pyasm = None

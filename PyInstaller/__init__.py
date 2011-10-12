@@ -25,10 +25,10 @@ __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE', 'PLATFORM',
 import os
 import sys
 
-import PyInstaller.compat as compat
-import PyInstaller.utils as utils
+from PyInstaller import compat
+from PyInstaller.utils import svn
 
-VERSION = (1, 6, 0, 'dev', utils.get_svn_revision())
+VERSION = (1, 6, 0, 'dev', svn.get_svn_revision())
 
 is_py23 = sys.version_info >= (2,3)
 is_py24 = sys.version_info >= (2,4)

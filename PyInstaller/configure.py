@@ -205,8 +205,7 @@ def test_RsrcUpdate(config):
     logger.info("Testing for ability to set icons, version resources...")
     try:
         import win32api
-        import icon
-        import versionInfo
+        from PyInstaller.utils import icon, versioninfo
     except ImportError, detail:
         logger.info('... resource update unavailable - %s', detail)
         return
