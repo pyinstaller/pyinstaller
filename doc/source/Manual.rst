@@ -201,6 +201,8 @@ Windows and Mac OS X specific options:
 -w, --windowed, --noconsole
     use a windowed subsystem executable, which on Windows
     does not open the console when the program is launched.
+    **This option is mandatory when creating .app bundle on
+    Mac OS X**.
 
 -i FILE.ICO or FILE.EXE,ID or FILE.ICNS, --icon=FILE.ICO or FILE.EXE,ID or FILE.ICNS
     If FILE is an .ico file, add the icon to the final
