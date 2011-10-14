@@ -1,11 +1,14 @@
 
+import os
+import enchant
+
 def _win32_data_files():
-    # This is a copy of enchant.utils.win32_data_files as of release
-    # 1.6.0. We use this as a fallback for older versions of enchant
-    # which do not have this function.
+    # This is basically a copy of enchant.utils.win32_data_files as of
+    # release 1.6.0. We use this as a fallback for older versions of
+    # enchant which do not have this function.
     # enchant is licenced under LGPL.
     dataDirs = ("share/enchant/myspell","share/enchant/ispell","lib/enchant")
-    mainDir = os.path.abspath(os.path.dirname(__file__))
+    mainDir = os.path.abspath(os.path.dirname(enchant.__file__))
     dataFiles = []
     for dataDir in dataDirs:
         files = []
