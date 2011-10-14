@@ -19,33 +19,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-# Note also that you should check the results to make sure that the
-# dlls are redistributable. I've listed most of the common MS dlls
-# under "excludes" below; add to this list as necessary (or use the
-# "excludes" option in the INSTALL section of the config file).
-
 import os
-import time
 import sys
 import re
 from glob import glob
-import traceback
 import subprocess
+# Required for extracting eggs.
+import zipfile
 
 from PyInstaller import is_win, is_unix, is_cygwin, is_darwin, is_py26
+from PyInstaller.depend import dylib
+from PyInstaller.utils import winutils
 
-try:
-    # zipfile is available since Python 1.6. Here it is only required for
-    # extracting eggs, which are not supported prior to 2.3 anyway
-    import zipfile
-except ImportError:
-    pass
 
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.bindepend')
 
 seen = {}
-_bpath = None
 
 if is_win:
     if is_py26:
@@ -62,68 +52,8 @@ if is_win:
     except ImportError, detail:
         winresource = None
 
-    def get_windows_dir():
-        """Return the Windows directory e.g. C:\\Windows"""
-        try:
-            import win32api
-        except ImportError:
-            windir = os.getenv('SystemRoot', os.getenv('WINDIR'))
-        else:
-            windir = win32api.GetWindowsDirectory()
-        if not windir:
-            raise SystemExit("Error: Can not determine your Windows directory")
-        return windir
 
-# regex excludes
-excludes = {
-    r'/libc\.so\..*':1,
-    r'/libdl\.so\..*':1,
-    r'/libm\.so\..*':1,
-    r'/libpthread\.so\..*':1,
-    r'/librt\.so\..*':1,
-    r'/libthread_db\.so\..*':1,
-    r'/libdb-.*\.so':1,
-    # glibc regex excludes
-    r'/ld-linux\.so\..*':1,
-    r'/libBrokenLocale\.so\..*':1,
-    r'/libanl\.so\..*':1,
-    r'/libcidn\.so\..*':1,
-    r'/libcrypt\.so\..*':1,
-    r'/libnsl\.so\..*':1,
-    r'/libnss_compat.*\.so\..*':1,
-    r'/libnss_dns.*\.so\..*':1,
-    r'/libnss_files.*\.so\..*':1,
-    r'/libnss_hesiod.*\.so\..*':1,
-    r'/libnss_nis.*\.so\..*':1,
-    r'/libnss_nisplus.*\.so\..*':1,
-    r'/libresolv\.so\..*':1,
-    r'/libutil\.so\..*':1,
-    # libGL can reference some hw specific libraries (like nvidia libs)
-    r'/libGL\..*':1,
-    # MS assembly excludes
-    r'^Microsoft\.Windows\.Common-Controls$':1,
-}
-
-# regex includes - overrides excludes
-includes = {}
-
-# Darwin has a stable ABI for applications, so there is no need
-# to include either /usr/lib nor system frameworks.
-if is_darwin:
-    excludes['^/usr/lib/'] = 1
-    excludes['^/System/Library/Frameworks'] = 1
-
-if is_win:
-    sep = '[%s]' % re.escape(os.sep + os.altsep)
-    # Exclude everything from the Windows directory by default
-    excludes['^%s%s' % (re.escape(get_windows_dir()), sep)] = 1
-    # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
-    includes[r'%spy(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll$' % sep] = 1
-
-excludesRe = re.compile('|'.join(excludes.keys()), re.I)
-includesRe = re.compile('|'.join(includes.keys()), re.I)
-
-def getfullnameof(mod, xtrapath = None):
+def getfullnameof(mod, xtrapath=None):
     """Return the full path name of MOD.
 
         MOD is the basename of a dll or pyd.
@@ -131,7 +61,7 @@ def getfullnameof(mod, xtrapath = None):
         Return the full path name of MOD.
         Will search the full Windows search path, as well as sys.path"""
     # Search sys.path first!
-    epath = sys.path + getWindowsPath()
+    epath = sys.path + winutils.get_system_path()
     if xtrapath is not None:
         if type(xtrapath) == type(''):
             epath.insert(0, xtrapath)
@@ -175,7 +105,7 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
        manifest should be a winmanifest.Manifest instance on Windows, so
        that all dependent assemblies can be added"""
     for nm, pth, typ in lTOC:
-        if seen.get(nm.upper(),0):
+        if seen.get(nm.upper(), 0):
             continue
         logger.info("Analyzing %s", pth)
         seen[nm.upper()] = 1
@@ -183,12 +113,13 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
             for ftocnm, fn in selectAssemblies(pth, manifest):
                 lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, xtrapath):
-            if seen.get(lib.upper(),0) or seen.get(npth.upper(),0):
+            if seen.get(lib.upper(), 0) or seen.get(npth.upper(), 0):
                 continue
             seen[npth.upper()] = 1
             lTOC.append((lib, npth, 'BINARY'))
 
     return lTOC
+
 
 def pkg_resouces_get_default_cache():
     """Determine the default cache location
@@ -210,7 +141,7 @@ def pkg_resouces_get_default_cache():
     app_homes = [
         (('APPDATA',), None),       # best option, should be locale-safe
         (('USERPROFILE',), app_data),
-        (('HOMEDRIVE','HOMEPATH'), app_data),
+        (('HOMEDRIVE', 'HOMEPATH'), app_data),
         (('HOMEPATH',), app_data),
         (('HOME',), None),
         (('WINDIR',), app_data),    # 95/98/ME
@@ -225,12 +156,13 @@ def pkg_resouces_get_default_cache():
                 break
         else:
             if subdir:
-                dirname = os.path.join(dirname,subdir)
+                dirname = os.path.join(dirname, subdir)
             return os.path.join(dirname, 'Python-Eggs')
     else:
         raise RuntimeError(
             "Please set the PYTHON_EGG_CACHE enviroment variable"
         )
+
 
 def check_extract_from_egg(pth, todir=None):
     r"""Check if path points to a file inside a python egg file, extract the
@@ -283,6 +215,7 @@ def check_extract_from_egg(pth, todir=None):
                 return rv
     return [(pth, None, None)]
 
+
 def getAssemblies(pth):
     """Return the dependent assemblies of a binary."""
     if not os.path.isfile(pth):
@@ -332,6 +265,7 @@ def getAssemblies(pth):
                     rv.extend(manifest.dependentAssemblies)
     return rv
 
+
 def selectAssemblies(pth, manifest=None):
     """Return a binary's dependent assemblies files that should be included.
 
@@ -341,7 +275,7 @@ def selectAssemblies(pth, manifest=None):
     if not os.path.isfile(pth):
         pth = check_extract_from_egg(pth)[0][0]
     for assembly in getAssemblies(pth):
-        if seen.get(assembly.getid().upper(),0):
+        if seen.get(assembly.getid().upper(), 0):
             continue
         if manifest:
             # Add assembly as dependency to our final output exe's manifest
@@ -351,8 +285,8 @@ def selectAssemblies(pth, manifest=None):
                 logger.info("Adding %s to dependent assemblies "
                             "of final executable", assembly.name)
                 manifest.dependentAssemblies.append(assembly)
-        if (excludesRe.search(assembly.name) and (not includes or
-            not includesRe.search(assembly.name))):
+        if (dylib.exclude_list.search(assembly.name) and
+            not dylib.include_list.search(assembly.name)):
             logger.debug("Skipping assembly %s", assembly.getid())
             continue
         if assembly.optional:
@@ -376,7 +310,7 @@ def selectAssemblies(pth, manifest=None):
                                   (nm,
                                    ftocnm,
                                    fn)]
-                if not seen.get(fn.upper(),0):
+                if not seen.get(fn.upper(), 0):
                     logger.debug("Adding %s", ftocnm)
                     seen[nm.upper()] = 1
                     seen[fn.upper()] = 1
@@ -389,6 +323,7 @@ def selectAssemblies(pth, manifest=None):
             logger.error("Assembly %s not found", assembly.getid())
     return rv
 
+
 def selectImports(pth, xtrapath=None):
     """Return the dependencies of a binary that should be included.
 
@@ -399,10 +334,10 @@ def selectImports(pth, xtrapath=None):
         xtrapath = [os.path.dirname(pth)]
     else:
         assert isinstance(xtrapath, list)
-        xtrapath = [os.path.dirname(pth)] + xtrapath # make a copy
+        xtrapath = [os.path.dirname(pth)] + xtrapath  # make a copy
     dlls = getImports(pth)
     for lib in dlls:
-        if seen.get(lib.upper(),0):
+        if seen.get(lib.upper(), 0):
             continue
         if not is_win and not is_cygwin:
             # all other platforms
@@ -418,12 +353,12 @@ def selectImports(pth, xtrapath=None):
             candidatelib = npth
         else:
             candidatelib = lib
-        if (excludesRe.search(candidatelib) and (not includes or
-            not includesRe.search(candidatelib))):
+        if (dylib.exclude_list.search(candidatelib) and
+            not dylib.include_list.search(candidatelib)):
             if (candidatelib.find('libpython') < 0 and
                candidatelib.find('Python.framework') < 0):
                 # skip libs not containing (libpython or Python.framework)
-                if not seen.get(npth.upper(),0):
+                if not seen.get(npth.upper(), 0):
                     logger.debug("Skipping %s dependency of %s",
                                  lib, os.path.basename(pth))
                 continue
@@ -431,7 +366,7 @@ def selectImports(pth, xtrapath=None):
                 pass
 
         if npth:
-            if not seen.get(npth.upper(),0):
+            if not seen.get(npth.upper(), 0):
                 logger.debug("Adding %s dependency of %s",
                              lib, os.path.basename(pth))
                 rv.append((lib, npth))
@@ -440,8 +375,10 @@ def selectImports(pth, xtrapath=None):
 
     return rv
 
+
 def __popen(*cmd):
     return subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
+
 
 def _getImports_ldd(pth):
     """Find the binary dependencies of PTH.
@@ -463,6 +400,7 @@ def _getImports_ldd(pth):
                 logger.error('Can not find %s in path %s (needed by %s)',
                              name, lib, pth)
     return rslt
+
 
 def _getImports_otool(pth):
     """Find the binary dependencies of PTH.
@@ -500,6 +438,7 @@ def _getImports_otool(pth):
 
     return rslt
 
+
 def getImports(pth):
     """Forwards to the correct getImports implementation for the platform.
     """
@@ -526,25 +465,6 @@ def getImports(pth):
     else:
         return _getImports_ldd(pth)
 
-def getWindowsPath():
-    """Return the path that Windows will search for dlls."""
-    global _bpath
-    if _bpath is None:
-        _bpath = []
-        if is_win:
-            try:
-                import win32api
-            except ImportError:
-                logger.warn("Cannot determine your Windows or System directories")
-                logger.warn("Please add them to your PATH if .dlls are not found")
-                logger.warn("or install http://sourceforge.net/projects/pywin32/")
-            else:
-                sysdir = win32api.GetSystemDirectory()
-                sysdir2 = os.path.normpath(os.path.join(sysdir, '..', 'SYSTEM'))
-                windir = win32api.GetWindowsDirectory()
-                _bpath = [sysdir, sysdir2, windir]
-        _bpath.extend(os.environ.get('PATH', '').split(os.pathsep))
-    return _bpath
 
 def findLibrary(name):
     """Look for a library in the system.
@@ -588,6 +508,7 @@ def findLibrary(name):
     # Resolve the file name into the soname
     dir, file = os.path.split(lib)
     return os.path.join(dir, getSoname(lib))
+
 
 def getSoname(filename):
     """Return the soname of a library."""

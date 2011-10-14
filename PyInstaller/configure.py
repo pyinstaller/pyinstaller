@@ -35,6 +35,8 @@ import PyInstaller.bindepend as bindepend
 import PyInstaller.build as build
 import PyInstaller.compat as compat
 
+from PyInstaller.depend import dylib
+
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.configure')
 
@@ -82,8 +84,8 @@ def test_TCL_TK(config):
     # TCL_root, TK_root and support/useTK.py
     logger.info("Finding TCL/TK...")
     if not (is_win):
-        saveexcludes = bindepend.excludes
-        bindepend.excludes = {}
+        saveexcludes = dylib._excludes
+        dylib._excludes = {}
 
     if is_win:
         pattern = r'(?i)tcl(\d\d)\.dll'
@@ -156,7 +158,7 @@ def test_TCL_TK(config):
     else:
         logger.info("could not find TCL/TK")
     if not is_win:
-        bindepend.excludes = saveexcludes
+        dylib._excludes = saveexcludes
 
 
 def test_Crypt(config):
