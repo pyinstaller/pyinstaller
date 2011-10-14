@@ -1,5 +1,11 @@
 import sys
 
+from hookutils import eval_script
+
 if sys.platform == 'win32':
-    from PyInstaller.hooks.hookutils import enchant_win32_data_files
-    datas = enchant_win32_data_files()
+    files = eval_script('enchant-datafiles-finder.py')
+    datas = []  # data files in PyInstaller hook format
+    for d in files:
+        for f in d[1]:
+            datas.append((f, d[0]))
+    return datas
