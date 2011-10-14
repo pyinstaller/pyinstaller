@@ -25,14 +25,10 @@ import marshal
 import dircache
 import glob
 import subprocess
+import zipimport
 
 from PyInstaller.loader import archive
 
-try:
-    # zipimport is supported starting with Python 2.3
-    import zipimport
-except ImportError:
-    zipimport = None
 
 try:
     # if ctypes is present, we can enable specific dependency discovery
