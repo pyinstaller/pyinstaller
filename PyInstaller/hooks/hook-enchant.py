@@ -8,4 +8,3 @@ if sys.platform == 'win32':
     for d in files:
         for f in d[1]:
             datas.append((f, d[0]))
-    return datas
