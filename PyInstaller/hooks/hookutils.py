@@ -199,7 +199,7 @@ def qwt_numarray_support():
 def django_dottedstring_imports(django_root_dir):
     package_name = os.path.basename(django_root_dir)
     os.environ["DJANGO_SETTINGS_MODULE"] = "%s.settings" % package_name
-    return eval_statement("execfile(r'%s')" % os.path.join(os.path.dirname(__file__), "django-import-finder.py"))
+    return eval_script("django-import-finder.py")
 
 
 def find_django_root(dir):
