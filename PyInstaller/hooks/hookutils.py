@@ -58,7 +58,7 @@ def exec_script(scriptfilename, *args):
                           "hookutils.exec-script must be located in "
                           "the `hooks` directory.")
     
-    cmd = [sys.executable, scriptname]
+    cmd = [sys.executable, os.path.join(os.path.dirname(__file__), scriptname)]
     cmd.extend(args)
     return __exec_python_cmd(cmd)
 
