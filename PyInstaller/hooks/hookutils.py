@@ -10,12 +10,13 @@ import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.hooks')
 
 
-def exec_statement(statement):
-    """Executes a Python statement in an externally spawned interpreter, and
-    returns anything that was emitted in the standard output as a single string.
-    """
-    cmd = [sys.executable, '-c', statement]
 
+def __exec_python_cmd(cmd):
+    """
+    Executes an externally spawned Python interpreter and returns
+    anything that was emitted in the standard output as a single
+    string.
+    """
     # Prepend PYTHONPATH with pathex
     pp = os.pathsep.join(PyInstaller.__pathex__)
     old_pp = os.environ.get('PYTHONPATH', '')
@@ -34,6 +35,32 @@ def exec_statement(statement):
             del os.environ["PYTHONPATH"]
     return txt.strip()
 
+def exec_statement(statement):
+    """Executes a Python statement in an externally spawned interpreter, and
+    returns anything that was emitted in the standard output as a single string.
+    """
+    cmd = [sys.executable, '-c', statement]
+    return __exec_python_cmd(cmd)
+
+
+def exec_script(scriptfilename, *args):
+    """
+    Executes a Python script in an externally spawned interpreter, and
+    returns anything that was emitted in the standard output as a
+    single string.
+
+    To prevent missuse, the script passed to hookutils.exec-script
+    must be located in the `hooks` directory.
+    """
+
+    if scriptfilename != os.path.basename(scriptfilename):
+        raise SystemError("To prevent missuse, the script passed to "
+                          "hookutils.exec-script must be located in "
+                          "the `hooks` directory.")
+    
+    cmd = [sys.executable, scriptname]
+    cmd.extend(args)
+    return __exec_python_cmd(cmd)
 
 def eval_statement(statement):
     txt = exec_statement(statement).strip()
@@ -129,16 +156,6 @@ def qt4_menu_nib_dir():
 def babel_localedata_dir():
     return exec_statement(
         "import babel.localedata; print babel.localedata._dirname")
-
-
-def enchant_win32_data_files():
-    files = eval_statement(
-        "import enchant; print enchant.utils.win32_data_files()")
-    datas = []  # data files in PyInstaller hook format
-    for d in files:
-        for f in d[1]:
-            datas.append((f, d[0]))
-    return datas
 
 
 def mpl_data_dir():
