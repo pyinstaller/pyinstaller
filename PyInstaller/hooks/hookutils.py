@@ -70,6 +70,14 @@ def eval_statement(statement):
     return eval(txt)
 
 
+def eval_script(scriptfilename, *args):
+    txt = exec_script(scriptfilename, *args).strip()
+    if not txt:
+        # return an empty string which is "not true" but iterable
+        return ''
+    return eval(txt)
+
+
 def dlls_in_dir(directory):
     """Returns *.dll, *.so, *.dylib in given directories"""
     files = []
