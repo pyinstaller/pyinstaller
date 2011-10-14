@@ -10,7 +10,6 @@ import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.hooks')
 
 
-
 def __exec_python_cmd(cmd):
     """
     Executes an externally spawned Python interpreter and returns
@@ -35,6 +34,7 @@ def __exec_python_cmd(cmd):
             del os.environ["PYTHONPATH"]
     return txt.strip()
 
+
 def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
@@ -57,10 +57,12 @@ def exec_script(scriptfilename, *args):
         raise SystemError("To prevent missuse, the script passed to "
                           "hookutils.exec-script must be located in "
                           "the `hooks` directory.")
-    
-    cmd = [sys.executable, os.path.join(os.path.dirname(__file__), scriptname)]
+
+    cmd = [sys.executable, os.path.join(os.path.dirname(__file__),
+        scriptfilename)]
     cmd.extend(args)
     return __exec_python_cmd(cmd)
+
 
 def eval_statement(statement):
     txt = exec_statement(statement).strip()
