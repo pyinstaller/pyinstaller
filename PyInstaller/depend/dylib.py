@@ -26,7 +26,7 @@ Manipulating with dynamic libraries.
 """
 
 
-__all__ = ['exclude_list', 'include_list']
+__all__ = ['exclude_list', 'include_list', 'include_library']
 
 import os
 import re
@@ -129,3 +129,12 @@ if is_darwin:
             return util.in_system_path(libname)
 
     exclude_list = MacExcludeList()
+
+
+def include_library(libname):
+    """Check if a dynamic library should be included with application or not."""
+    # For configuration phase we need to have exclude / include lists None
+    # so these checking is skipped.
+    if exclude_list and include_list:
+        return (exclude_list.search(libname) and
+            not include_list.search(libname))

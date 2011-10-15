@@ -285,13 +285,9 @@ def selectAssemblies(pth, manifest=None):
                 logger.info("Adding %s to dependent assemblies "
                             "of final executable", assembly.name)
                 manifest.dependentAssemblies.append(assembly)
-        # For configuration phase we need to have exclude / include empty
-        # so these checking is skipped.
-        if dylib.exclude_list and dylib.include_list:
-            if (dylib.exclude_list.search(assembly.name) and
-                not dylib.include_list.search(assembly.name)):
-                logger.debug("Skipping assembly %s", assembly.getid())
-                continue
+        if not dylib.include_library(assembly.name):
+            logger.debug("Skipping assembly %s", assembly.getid())
+            continue
         if assembly.optional:
             logger.debug("Skipping optional assembly %s", assembly.getid())
             continue
@@ -357,20 +353,16 @@ def selectImports(pth, xtrapath=None):
         else:
             candidatelib = lib
 
-        # For configuration phase we need to have exclude / include empty
-        # so these checking is skipped.
-        if dylib.exclude_list and dylib.include_list:
-            if (dylib.exclude_list.search(candidatelib) and
-                not dylib.include_list.search(candidatelib)):
-                if (candidatelib.find('libpython') < 0 and
-                   candidatelib.find('Python.framework') < 0):
-                    # skip libs not containing (libpython or Python.framework)
-                    if not seen.get(npth.upper(), 0):
-                        logger.debug("Skipping %s dependency of %s",
-                                     lib, os.path.basename(pth))
-                    continue
-                else:
-                    pass
+        if not dylib.include_library(candidatelib):
+            if (candidatelib.find('libpython') < 0 and
+               candidatelib.find('Python.framework') < 0):
+                # skip libs not containing (libpython or Python.framework)
+                if not seen.get(npth.upper(), 0):
+                    logger.debug("Skipping %s dependency of %s",
+                                 lib, os.path.basename(pth))
+                continue
+            else:
+                pass
 
         if npth:
             if not seen.get(npth.upper(), 0):
