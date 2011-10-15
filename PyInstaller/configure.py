@@ -85,9 +85,7 @@ def test_TCL_TK(config):
     logger.info("Finding TCL/TK...")
     if not (is_win):
         save_exclude = dylib.exclude_list
-        save_include = dylib.include_list
         dylib.exclude_list = None
-        dylib.include_list = None
 
     if is_win:
         pattern = r'(?i)tcl(\d\d)\.dll'
@@ -160,9 +158,7 @@ def test_TCL_TK(config):
     else:
         logger.info("could not find TCL/TK")
     if not is_win:
-        save_include = dylib.include_list
         dylib.exclude_list = save_exclude
-        dylib.include_list = save_include
 
 
 def test_Crypt(config):

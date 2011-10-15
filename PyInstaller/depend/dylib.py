@@ -39,8 +39,11 @@ logger = logging.getLogger('PyInstaller.build.bindepend')
 
 
 # Regex excludes
+# Ignoring some system libraries speeds up packaging process
 _excludes = {}
 # Regex includes - overrides excludes.
+# Include list is used only to override specific libraries
+# from exclude list.
 _includes = {}
 
 
@@ -83,10 +86,10 @@ if is_win:
     from PyInstaller.utils import winutils
     sep = '[%s]' % re.escape(os.sep + os.altsep)
     # Exclude everything from the Windows directory by default.
-    _excludes['^%s%s' % (re.escape(winutils.get_windows_dir()), sep)] = 1
+    windir = re.escape(winutils.get_windows_dir())
+    _excludes['^%s%s' % (windir, sep)] = 1
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     _includes[r'%spy(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll$' % sep] = 1
-
 
 elif is_unix:
     _excludes = _unix_excludes
@@ -134,7 +137,15 @@ if is_darwin:
 def include_library(libname):
     """Check if a dynamic library should be included with application or not."""
     # For configuration phase we need to have exclude / include lists None
-    # so these checking is skipped.
-    if exclude_list and include_list:
-        return (exclude_list.search(libname) and
-            not include_list.search(libname))
+    # so these checking is skipped and library gets included.
+    if exclude_list:
+        if exclude_list.search(libname) and not include_list.search(libname):
+            # Library is excluded and is not overriden by include list.
+            # It should be then excluded.
+            return False
+        else:
+            # Include library
+            return True
+    else:
+        # By default include library.
+        return True
