@@ -20,4 +20,4 @@ coll = COLLECT( exe,
                a.datas,
                strip=False,
                upx=False,
-               name=os.path.join('dist', '__testname__'))
+               name=os.path.join('dist', __testname__))
