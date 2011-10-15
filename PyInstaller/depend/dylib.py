@@ -78,13 +78,6 @@ _unix_excludes = {
 }
 
 
-# Mac OS X has a stable ABI for applications, so there is no need
-# to include either /usr/lib nor system frameworks.
-_darwin_excludes = {
-    '^/usr/lib/': 1,
-    '^/System/Library/Frameworks': 1,
-}
-
 if is_win:
     _excludes = _win_excludes
     from PyInstaller.utils import winutils
@@ -94,12 +87,45 @@ if is_win:
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     _includes[r'%spy(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll$' % sep] = 1
 
-elif is_darwin:
-    _excludes = _darwin_excludes
 
 elif is_unix:
     _excludes = _unix_excludes
 
 
-exclude_list = re.compile('|'.join(_excludes.keys()), re.I)
-include_list = re.compile('|'.join(_includes.keys()), re.I)
+class ExcludeList(object):
+    def __init__(self):
+        self.regex = re.compile('|'.join(_excludes.keys()), re.I)
+
+    def search(self, libname):
+        # Running re.search() on '' regex never returns None.
+        if _excludes:
+            return self.regex.search(libname)
+        else:
+            return False
+
+
+class IncludeList(object):
+    def __init__(self):
+        self.regex = re.compile('|'.join(_includes.keys()), re.I)
+
+    def search(self, libname):
+        # Running re.search() on '' regex never returns None.
+        if _includes:
+            return self.regex.search(libname)
+        else:
+            return False
+
+
+exclude_list = ExcludeList()
+include_list = IncludeList()
+
+
+if is_darwin:
+    # On Mac use macholib to decide if a binary is a system one.
+    from PyInstaller.lib.macholib import util
+
+    class MacExcludeList(object):
+        def search(self, libname):
+            return util.in_system_path(libname)
+
+    exclude_list = MacExcludeList()
