@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2005-2011, Giovanni Bajo
 #
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -27,16 +27,18 @@
 #
 
 
-### **NOTE** This module is used during bootstrap. 
-### Import *ONLY* builtin modules. 
+### **NOTE** This module is used during bootstrap.
+### Import *ONLY* builtin modules.
+### List of built-in modules: sys.builtin_module_names
 import sys
 import imp
 import marshal
 import zipimport
 
+
 def debug(msg):
     if 0:
-        sys.stderr.write(msg+"\n")
+        sys.stderr.write(msg + "\n")
 
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
@@ -46,6 +48,7 @@ def debug(msg):
 # A shadowpath (a dictionary mapping the names in
 # sys.path to their owners) is used so that sys.path
 # (or a package's __path__) is still a bunch of strings,
+
 
 class OwnerError(IOError):
     def __str__(self):
@@ -73,18 +76,18 @@ class DirOwner(Owner):
 
     def getmod(self, nm, getsuffixes=imp.get_suffixes,
                loadco=marshal.loads, newmod=imp.new_module):
-        pth =  _os_path_join(self.path, nm)
+        pth = _os_path_join(self.path, nm)
         possibles = [(pth, 0, None)]
         if pathisdir(pth) and caseOk(pth):
             possibles.insert(0, (_os_path_join(pth, '__init__'), 1, pth))
         py = pyc = None
         for pth, ispkg, pkgpth in possibles:
             for ext, mode, typ in getsuffixes():
-                attempt = pth+ext
+                attempt = pth + ext
                 try:
                     st = _os_stat(attempt)
                 except OSError, e:
-                    assert e.errno == 2 #[Errno 2] No such file or directory
+                    assert e.errno == 2  # [Errno 2] No such file or directory
                 else:
                     # Check case
                     if not caseOk(attempt):
@@ -110,7 +113,7 @@ class DirOwner(Owner):
         while 1:
             if pyc is None or py and pyc[1][8] < py[1][8]:
                 try:
-                    co = compile(open(py[0], 'r').read()+'\n', py[0], 'exec')
+                    co = compile(open(py[0], 'r').read() + '\n', py[0], 'exec')
                     break
                 except SyntaxError, e:
                     print "Invalid syntax in %s" % py[0]
@@ -186,8 +189,10 @@ _globalownertypes = [
 # Mac would have them for PY_RESOURCE modules etc.
 # A generalization of Owner - their concept of "turf" is broader
 
+
 class ImportDirector(Owner):
     pass
+
 
 class BuiltinImportDirector(ImportDirector):
     def __init__(self):
@@ -195,9 +200,10 @@ class BuiltinImportDirector(ImportDirector):
 
     def getmod(self, nm, isbuiltin=imp.is_builtin):
         if isbuiltin(nm):
-            mod = imp.load_module(nm, None, nm, ('','',imp.C_BUILTIN))
+            mod = imp.load_module(nm, None, nm, ('', '', imp.C_BUILTIN))
             return mod
         return None
+
 
 class FrozenImportDirector(ImportDirector):
     def __init__(self):
@@ -205,11 +211,12 @@ class FrozenImportDirector(ImportDirector):
 
     def getmod(self, nm, isfrozen=imp.is_frozen):
         if isfrozen(nm):
-            mod = imp.load_module(nm, None, nm, ('','',imp.PY_FROZEN))
+            mod = imp.load_module(nm, None, nm, ('', '', imp.PY_FROZEN))
             if hasattr(mod, '__path__'):
-                mod.__importsub__ = lambda name, pname=nm, owner=self: owner.getmod(pname+'.'+name)
+                mod.__importsub__ = lambda name, pname=nm, owner=self: owner.getmod(pname + '.' + name)
             return mod
         return None
+
 
 class RegistryImportDirector(ImportDirector):
     # for Windows only
@@ -256,6 +263,7 @@ class RegistryImportDirector(ImportDirector):
             mod.__file__ = fnm
             return mod
         return None
+
 
 class PathImportDirector(ImportDirector):
     def __init__(self, pathlist=None, importers=None, ownertypes=None):
@@ -306,6 +314,7 @@ class PathImportDirector(ImportDirector):
         del self.building[path]
         return owner
 
+
 def getDescr(fnm):
     ext = getpathext(fnm)
     for (suffix, mode, typ) in imp.get_suffixes():
@@ -317,6 +326,7 @@ def getDescr(fnm):
 # ie, the builtin import
 
 UNTRIED = -1
+
 
 class ImportManagerException(Exception):
     def __init__(self, args):
@@ -374,7 +384,7 @@ class ImportManager:
         elif level == 0:
             # absolute import, do not try relative
             contexts = [None]
-        else: # level != 0
+        else:  # level != 0
             importernm = globals.get('__name__', '')
             ispkg = hasattr(_sys_modules_get(importernm), '__path__')
             debug('importernm %s' % importernm)
@@ -389,7 +399,7 @@ class ImportManager:
                 # level=1 => current package
                 # level=2 => previous package => drop 1 level
                 if level > 1:
-                    importernm = importernm.split('.')[:-level+1]
+                    importernm = importernm.split('.')[:-level + 1]
                     importernm = '.'.join(importernm)
                 contexts = [None]
             if importernm:
@@ -398,7 +408,7 @@ class ImportManager:
                     # name will have a __init__ in it. We want to strip it.
                     if importernm[-len(".__init__"):] == ".__init__":
                         importernm = importernm[:-len(".__init__")]
-                    contexts.insert(0,importernm)
+                    contexts.insert(0, importernm)
                 else:
                     pkgnm = packagename(importernm)
                     if pkgnm:
@@ -435,16 +445,16 @@ class ImportManager:
             if i:
                 break
 
-        if i<len(nmparts):
+        if i < len(nmparts):
             if ctx and hasattr(sys.modules[ctx], nmparts[i]):
                 debug("importHook done with %s %s %s (case 1)" % (name, __globals_name, fromlist))
                 return sys.modules[nmparts[0]]
             del sys.modules[fqname]
-            raise ImportError, "No module named %s" % fqname
+            raise ImportError("No module named %s" % fqname)
         if not fromlist:
             debug("importHook done with %s %s %s (case 2)" % (name, __globals_name, fromlist))
             if context:
-                return sys.modules[context+'.'+nmparts[0]]
+                return sys.modules[context + '.' + nmparts[0]]
             return sys.modules[nmparts[0]]
         bottommod = sys.modules[ctx]
         if hasattr(bottommod, '__path__'):
@@ -453,7 +463,7 @@ class ImportManager:
             while i < len(fromlist):
                 nm = fromlist[i]
                 if nm == '*':
-                    fromlist[i:i+1] = list(getattr(bottommod, '__all__', []))
+                    fromlist[i:i + 1] = list(getattr(bottommod, '__all__', []))
                     if i >= len(fromlist):
                         break
                     nm = fromlist[i]
@@ -462,7 +472,7 @@ class ImportManager:
                     if threaded:
                         self._acquire()
                     try:
-                        mod = self.doimport(nm, ctx, ctx+'.'+nm)
+                        mod = self.doimport(nm, ctx, ctx + '.' + nm)
                     finally:
                         if threaded:
                             self._release()
@@ -516,7 +526,7 @@ class ImportManager:
                     # In Python 2.4 and above, sys.modules is left clean
                     # after a broken import. We need to do the same to
                     # achieve perfect compatibility (see ticket #32).
-                    if sys.version_info >= (2,4):
+                    if sys.version_info >= (2, 4):
                         # FIXME: how can we recover from a broken reload()?
                         # Should we save the mod dict and restore it in case
                         # of failure?
@@ -566,6 +576,7 @@ class ImportManager:
 
 #========= some helper functions =============================#
 
+
 def packagename(s):
     """
     For package name like 'module.submodule.subsubmodule' returns
@@ -577,6 +588,7 @@ def packagename(s):
         return s[:i]
     else:
         return ''
+
 
 def namesplit(s):
     """
@@ -593,12 +605,14 @@ def namesplit(s):
         rslt = s.split('.')
     return rslt
 
+
 def getpathext(fnm):
     i = s.rfind('.')
     if i >= 0:
         return s[i:]
     else:
         return ''
+
 
 def pathisdir(pathname):
     "Local replacement for os.path.isdir()."
@@ -611,15 +625,21 @@ def pathisdir(pathname):
 
 _os_stat = _os_path_join = _os_getcwd = _os_path_dirname = _os_environ = _os_listdir = _os_path_basename = None
 
-def _os_bootstrap():
-    "Set up 'os' module replacement functions for use during import bootstrap."
 
-    global _os_stat, _os_path_join, _os_path_dirname, _os_getcwd, _os_environ, _os_listdir, _os_path_basename
+def _os_bootstrap():
+    """
+    Set up 'os' module replacement functions for use during import bootstrap.
+    """
+
+    global _os_stat, _os_getcwd, _os_environ, _os_listdir
+    global _os_path_join, _os_path_dirname, _os_path_basename
 
     names = sys.builtin_module_names
 
     join = dirname = environ = listdir = basename = None
     mindirlen = 0
+    # Only 'posix' and 'nt' os specific modules are supported.
+    # 'dos', 'os2' and 'mac' (MacOS 9) are not supported.
     if 'posix' in names:
         from posix import stat, getcwd, environ, listdir
         sep = '/'
@@ -628,26 +648,8 @@ def _os_bootstrap():
         from nt import stat, getcwd, environ, listdir
         sep = '\\'
         mindirlen = 3
-    elif 'dos' in names:
-        from dos import stat, getcwd, environ, listdir
-        sep = '\\'
-        mindirlen = 3
-    elif 'os2' in names:
-        from os2 import stat, getcwd, environ, listdir
-        sep = '\\'
-    elif 'mac' in names:
-        from mac import stat, getcwd, environ, listdir
-        def join(a, b):
-            if a == '':
-                return b
-            path = s
-            if ':' not in a:
-                a = ':' + a
-            if a[-1:] != ':':
-                a = a + ':'
-            return a + b
     else:
-        raise ImportError, 'no os specific module found'
+        raise ImportError('no os specific module found')
 
     if join is None:
         def join(a, b, sep=sep):
@@ -660,11 +662,11 @@ def _os_bootstrap():
 
     if dirname is None:
         def dirname(a, sep=sep, mindirlen=mindirlen):
-            for i in range(len(a)-1, -1, -1):
+            for i in range(len(a) - 1, -1, -1):
                 c = a[i]
                 if c == '/' or c == sep:
                     if i < mindirlen:
-                        return a[:i+1]
+                        return a[:i + 1]
                     return a[:i]
             return ''
 
@@ -692,7 +694,9 @@ def _os_bootstrap():
     _os_listdir = _listdir
     _os_path_basename = basename
 
+
 _os_bootstrap()
+
 
 if 'PYTHONCASEOK' not in _os_environ:
     def caseOk(filename):
