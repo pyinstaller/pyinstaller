@@ -15,8 +15,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+from PyInstaller import is_unix, is_darwin
+
 hiddenimports = [
     # Test case import/test_zipimport2 fails during importing
     # pkg_resources or setuptools when module not present.
     'distutils.command.build_ext',
 ]
+
+# Necessary for setuptools on Mac/Unix
+if is_unix or is_darwin:
+    hiddenimports.append('syslog')
