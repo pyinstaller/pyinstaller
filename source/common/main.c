@@ -1,6 +1,6 @@
 /*
  * Bootloader for a packed executable.
- * Copyright (C) 2005, Giovanni Bajo
+ * Copyright (C) 2005-2011, Giovanni Bajo
  * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
  *
  * This program is free software; you can redistribute it and/or

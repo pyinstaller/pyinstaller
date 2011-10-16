@@ -1,6 +1,6 @@
 /*
  * Launch a python module from an archive.
- * Copyright (C) 2005, Giovanni Bajo
+ * Copyright (C) 2005-2011, Giovanni Bajo
  * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
  *
  * This program is free software; you can redistribute it and/or
@@ -1294,14 +1294,6 @@ int runScripts(ARCHIVE_STATUS *status)
 	PyObject *__main__ = PI_PyImport_AddModule("__main__");
 	PyObject *__file__;
 	VS("Running scripts\n");
-
-	/*
-	 * Now that the startup is complete, we can reset the _MEIPASS2 env
-	 * so that if the program invokes another PyInstaller one-file program
-	 * as subprocess, this subprocess will not fooled into thinking that it
-	 * is already unpacked.
-	 */
-	unsetenv("_MEIPASS2");
 
 	/* Iterate through toc looking for scripts (type 's') */
 	while (ptoc < status->tocend) {
