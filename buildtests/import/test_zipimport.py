@@ -30,7 +30,7 @@ print __name__, 'is running'
 print 'sys.path:', sys.path
 print 'dir contents .exe:', os.listdir(os.path.dirname(sys.executable))
 print '-----------'
-print 'dir contents _MEIPASS2:', os.listdir(os.environ['_MEIPASS2'])
+print 'dir contents sys._MEIPASS:', os.listdir(sys._MEIPASS)
 
 print '-----------'
 print 'now importing pkg_resources' 

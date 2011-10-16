@@ -31,7 +31,7 @@ print 'sys.path:', sys.path
 print 'dir contents .exe:', os.listdir(os.path.dirname(sys.executable))
 if hasattr(sys, 'frozen') and sys.frozen:
     print '-----------'
-    print 'dir contents _MEIPASS2:', os.listdir(os.environ['_MEIPASS2'])
+    print 'dir contents sys._MEIPASS:', os.listdir(sys._MEIPASS)
 
 print '-----------'
 print 'now importing pkg_resources' 
@@ -42,4 +42,3 @@ print 'now importing setuptools.dist'
 import setuptools.dist
 print '-----------'
 print 'now importing setuptools.command'
-import setuptools.command

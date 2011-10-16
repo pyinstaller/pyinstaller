@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import os
-os.chdir(os.environ["_MEIPASS2"])
+import sys
+
+os.chdir(sys._MEIPASS)
 
 import data6
 

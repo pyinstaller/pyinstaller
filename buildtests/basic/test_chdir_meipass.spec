@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-__testname__ = 'test_16'
+__testname__ = 'test_chdir_meipass'
 
 a = Analysis([os.path.join(HOMEPATH, 'support', '_mountzlib.py'),
               os.path.join(CONFIGDIR, 'support', 'useUnicode.py'),
