@@ -394,7 +394,7 @@ the system will be able to load the shared libs / dlls. When execution is
 complete, it recursively removes the entire directory it created.
 
 The temporary directory is exported to the program's environment as
-``os.environ['_MEIPASS2']``. This can be used in case you manually modified
+``sys._MEIPASS``. This can be used in case you manually modified
 the spec file to tell PyInstaller to add additional files (eg: data files)
 within the executable (see also `Accessing Data Files`_).
 
@@ -412,7 +412,7 @@ This has a number of implications:
 
 * Otherwise, on both platforms, the directory will be recursively deleted.
 
-* So any files you might create in ``os.environ['_MEIPASS2']`` will be deleted.
+* So any files you might create in ``sys._MEIPASS`` will be deleted.
 
 * The executable can be in a protected or read-only directory.
 
@@ -1016,6 +1016,11 @@ Here is spec file example with ``MERGE`` function::
 When Things Go Wrong
 ++++++++++++++++++++
 
+Recipes
+-------
+
+For some common issues there are available some code examples on our Recipe_ page.
+
 Finding out What Went Wrong
 ---------------------------
 
@@ -1029,9 +1034,9 @@ platform it is on, then importing (and rebinding names from) the appropriate
 platform-specific module. So analyzing ``os.py`` will produce a set of warnings
 like::
 
-      W: no module named dos (conditional import by os)
-      W: no module named ce (conditional import by os)
-      W: no module named os2 (conditional import by os)
+      WARNING: no module named dos (conditional import by os)
+      WARNING: no module named ce (conditional import by os)
+      WARNING: no module named os2 (conditional import by os)
 
 
 Note that the analysis has detected that the import is within a conditional
@@ -1057,6 +1062,11 @@ See `Listing Hidden Imports`_ below for how to do it.
 
 Getting Debug Messages
 **********************
+
+Debug messages for PyInstaller  can be enabled by passing the ``--log-level``
+flag to the ``pyinstaller.py`` script::
+
+        pyinstaller.py --log-level=DEBUG <scriptname>
 
 Setting ``debug=1`` on an ``EXE`` will cause the executable to put out progress
 messages (for console apps, these go to stdout; for Windows apps, these show as
@@ -1247,9 +1257,9 @@ like this to find the file::
 In a ``--onefile`` distribution, data files are bundled within the executable
 and then extracted at runtime into the work directory by the C code (which is
 also able to reconstruct directory trees). The work directory is best found by
-``os.environ['_MEIPASS2']``. So, you can access those files through::
+``sys._MEIPASS``. So, you can access those files through::
 
-       os.path.join(os.environ["_MEIPASS2], relativename))
+       os.path.join(sys._MEIPASS, relativename))
 
 |GOBACK|_
 
@@ -1988,6 +1998,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _Xcode: http://developer.apple.com/xcode
 .. _`GPL License`: http://www.pyinstaller.org/browser/trunk/doc/LICENSE.GPL?rev=latest
 .. _FAQ: http://www.pyinstaller.org/wiki/FAQ
+.. _Recipe: http://www.pyinstaller.org/wiki/Recipe
 .. _MinGW: http://sourceforge.net/downloads/mingw/
 .. _MinGW-w64: http://mingw-w64.sourceforge.net/
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/

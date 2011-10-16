@@ -25,7 +25,7 @@
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference external" href="mailto:rasky&#64;develer.com">rasky&#64;develer.com</a></td></tr>
 <tr><th class="docinfo-name">Revision:</th>
-<td>1651</td></tr>
+<td>1658</td></tr>
 <tr class="field"><th class="docinfo-name">Source URL:</th><td class="field-body">$HeadURL: <a class="reference external" href="https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst">https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst</a> $</td>
 </tr>
 <tr><th class="docinfo-name">Copyright:</th>
@@ -79,67 +79,68 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#when-things-go-wrong" id="id33">When Things Go Wrong</a><ul>
-<li><a class="reference internal" href="#finding-out-what-went-wrong" id="id34">Finding out What Went Wrong</a><ul>
-<li><a class="reference internal" href="#buildtime-warnings" id="id35">Buildtime Warnings</a></li>
-<li><a class="reference internal" href="#getting-debug-messages" id="id36">Getting Debug Messages</a></li>
-<li><a class="reference internal" href="#getting-python-s-verbose-imports" id="id37">Getting Python's Verbose Imports</a></li>
+<li><a class="reference internal" href="#recipes" id="id34">Recipes</a></li>
+<li><a class="reference internal" href="#finding-out-what-went-wrong" id="id35">Finding out What Went Wrong</a><ul>
+<li><a class="reference internal" href="#buildtime-warnings" id="id36">Buildtime Warnings</a></li>
+<li><a class="reference internal" href="#getting-debug-messages" id="id37">Getting Debug Messages</a></li>
+<li><a class="reference internal" href="#getting-python-s-verbose-imports" id="id38">Getting Python's Verbose Imports</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#helping-pyinstaller-find-modules" id="id38">Helping PyInstaller Find Modules</a><ul>
-<li><a class="reference internal" href="#extending-the-path" id="id39">Extending the Path</a></li>
-<li><a class="reference internal" href="#listing-hidden-imports" id="id40">Listing Hidden Imports</a></li>
-<li><a class="reference internal" href="#extending-a-package-s-path" id="id41">Extending a Package's <tt class="docutils literal">__path__</tt></a></li>
-<li><a class="reference internal" href="#changing-runtime-behavior" id="id42">Changing Runtime Behavior</a></li>
-<li><a class="reference internal" href="#adapting-to-being-frozen" id="id43">Adapting to being &quot;frozen&quot;</a></li>
-<li><a class="reference internal" href="#accessing-data-files" id="id44">Accessing Data Files</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#miscellaneous" id="id45">Miscellaneous</a><ul>
-<li><a class="reference internal" href="#self-extracting-executables" id="id46">Self-extracting executables</a><ul>
-<li><a class="reference internal" href="#one-pass-execution" id="id47">One Pass Execution</a></li>
-<li><a class="reference internal" href="#two-pass-execution" id="id48">Two Pass Execution</a></li>
+<li><a class="reference internal" href="#helping-pyinstaller-find-modules" id="id39">Helping PyInstaller Find Modules</a><ul>
+<li><a class="reference internal" href="#extending-the-path" id="id40">Extending the Path</a></li>
+<li><a class="reference internal" href="#listing-hidden-imports" id="id41">Listing Hidden Imports</a></li>
+<li><a class="reference internal" href="#extending-a-package-s-path" id="id42">Extending a Package's <tt class="docutils literal">__path__</tt></a></li>
+<li><a class="reference internal" href="#changing-runtime-behavior" id="id43">Changing Runtime Behavior</a></li>
+<li><a class="reference internal" href="#adapting-to-being-frozen" id="id44">Adapting to being &quot;frozen&quot;</a></li>
+<li><a class="reference internal" href="#accessing-data-files" id="id45">Accessing Data Files</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pyinstaller-archives" id="id49">PyInstaller Archives</a><ul>
-<li><a class="reference internal" href="#archives-introduction" id="id50">Archives Introduction</a></li>
-<li><a class="reference internal" href="#zlibarchive" id="id51"><tt class="docutils literal">ZlibArchive</tt></a></li>
-<li><a class="reference internal" href="#carchive" id="id52"><tt class="docutils literal">CArchive</tt></a></li>
+<li><a class="reference internal" href="#miscellaneous" id="id46">Miscellaneous</a><ul>
+<li><a class="reference internal" href="#self-extracting-executables" id="id47">Self-extracting executables</a><ul>
+<li><a class="reference internal" href="#one-pass-execution" id="id48">One Pass Execution</a></li>
+<li><a class="reference internal" href="#two-pass-execution" id="id49">Two Pass Execution</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#license" id="id53">License</a></li>
-<li><a class="reference internal" href="#appendix" id="id54">Appendix</a><ul>
-<li><a class="reference internal" href="#building-the-bootloaders" id="id55">Building the bootloaders</a><ul>
-<li><a class="reference internal" href="#development-tools" id="id56">Development tools</a></li>
-<li><a class="reference internal" href="#building" id="id57">Building</a></li>
-<li><a class="reference internal" href="#linux-standard-base-lsb-binary" id="id58">Linux Standard Base (LSB) binary</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#mf-py-a-modulefinder-replacement" id="id59"><tt class="docutils literal">mf.py</tt>: A Modulefinder Replacement</a><ul>
-<li><a class="reference internal" href="#importtracker" id="id60">ImportTracker</a></li>
-<li><a class="reference internal" href="#analyze-one" id="id61"><tt class="docutils literal">analyze_one()</tt></a></li>
-<li><a class="reference internal" href="#module-classes" id="id62">Module Classes</a></li>
-<li><a class="reference internal" href="#code-scanning" id="id63">code scanning</a></li>
-<li><a class="reference internal" href="#hooks" id="id64">Hooks</a></li>
-<li><a class="reference internal" href="#warnings" id="id65">Warnings</a></li>
-<li><a class="reference internal" href="#cross-reference" id="id66">Cross Reference</a></li>
-<li><a class="reference internal" href="#mf-usage" id="id67">mf Usage</a></li>
+<li><a class="reference internal" href="#pyinstaller-archives" id="id50">PyInstaller Archives</a><ul>
+<li><a class="reference internal" href="#archives-introduction" id="id51">Archives Introduction</a></li>
+<li><a class="reference internal" href="#zlibarchive" id="id52"><tt class="docutils literal">ZlibArchive</tt></a></li>
+<li><a class="reference internal" href="#carchive" id="id53"><tt class="docutils literal">CArchive</tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#iu-py-an-imputil-replacement" id="id68"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a><ul>
-<li><a class="reference internal" href="#importmanager" id="id69"><tt class="docutils literal">ImportManager</tt></a></li>
-<li><a class="reference internal" href="#importdirector" id="id70"><tt class="docutils literal">ImportDirector</tt></a></li>
-<li><a class="reference internal" href="#pathimportdirector" id="id71"><tt class="docutils literal">PathImportDirector</tt></a></li>
-<li><a class="reference internal" href="#owner" id="id72"><tt class="docutils literal">Owner</tt></a></li>
-<li><a class="reference internal" href="#packages" id="id73">Packages</a></li>
-<li><a class="reference internal" href="#possibilities" id="id74">Possibilities</a></li>
-<li><a class="reference internal" href="#compatibility" id="id75">Compatibility</a></li>
-<li><a class="reference internal" href="#performance" id="id76">Performance</a></li>
-<li><a class="reference internal" href="#limitations" id="id77">Limitations</a></li>
-<li><a class="reference internal" href="#iu-usage" id="id78">iu Usage</a></li>
+<li><a class="reference internal" href="#license" id="id54">License</a></li>
+<li><a class="reference internal" href="#appendix" id="id55">Appendix</a><ul>
+<li><a class="reference internal" href="#building-the-bootloaders" id="id56">Building the bootloaders</a><ul>
+<li><a class="reference internal" href="#development-tools" id="id57">Development tools</a></li>
+<li><a class="reference internal" href="#building" id="id58">Building</a></li>
+<li><a class="reference internal" href="#linux-standard-base-lsb-binary" id="id59">Linux Standard Base (LSB) binary</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mf-py-a-modulefinder-replacement" id="id60"><tt class="docutils literal">mf.py</tt>: A Modulefinder Replacement</a><ul>
+<li><a class="reference internal" href="#importtracker" id="id61">ImportTracker</a></li>
+<li><a class="reference internal" href="#analyze-one" id="id62"><tt class="docutils literal">analyze_one()</tt></a></li>
+<li><a class="reference internal" href="#module-classes" id="id63">Module Classes</a></li>
+<li><a class="reference internal" href="#code-scanning" id="id64">code scanning</a></li>
+<li><a class="reference internal" href="#hooks" id="id65">Hooks</a></li>
+<li><a class="reference internal" href="#warnings" id="id66">Warnings</a></li>
+<li><a class="reference internal" href="#cross-reference" id="id67">Cross Reference</a></li>
+<li><a class="reference internal" href="#mf-usage" id="id68">mf Usage</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#iu-py-an-imputil-replacement" id="id69"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a><ul>
+<li><a class="reference internal" href="#importmanager" id="id70"><tt class="docutils literal">ImportManager</tt></a></li>
+<li><a class="reference internal" href="#importdirector" id="id71"><tt class="docutils literal">ImportDirector</tt></a></li>
+<li><a class="reference internal" href="#pathimportdirector" id="id72"><tt class="docutils literal">PathImportDirector</tt></a></li>
+<li><a class="reference internal" href="#owner" id="id73"><tt class="docutils literal">Owner</tt></a></li>
+<li><a class="reference internal" href="#packages" id="id74">Packages</a></li>
+<li><a class="reference internal" href="#possibilities" id="id75">Possibilities</a></li>
+<li><a class="reference internal" href="#compatibility" id="id76">Compatibility</a></li>
+<li><a class="reference internal" href="#performance" id="id77">Performance</a></li>
+<li><a class="reference internal" href="#limitations" id="id78">Limitations</a></li>
+<li><a class="reference internal" href="#iu-usage" id="id79">iu Usage</a></li>
 </ul>
 </li>
 </ul>
@@ -533,7 +534,7 @@ user's temp directory. It then executes itself again, setting things up so
 the system will be able to load the shared libs / dlls. When execution is
 complete, it recursively removes the entire directory it created.</p>
 <p>The temporary directory is exported to the program's environment as
-<tt class="docutils literal"><span class="pre">os.environ['_MEIPASS2']</span></tt>. This can be used in case you manually modified
+<tt class="docutils literal">sys._MEIPASS</tt>. This can be used in case you manually modified
 the spec file to tell PyInstaller to add additional files (eg: data files)
 within the executable (see also <a class="reference internal" href="#accessing-data-files">Accessing Data Files</a>).</p>
 <p>This has a number of implications:</p>
@@ -545,7 +546,7 @@ shared).</li>
 directory behind.</li>
 <li>On *nix, a kill -9 (or crash) will leave the directory behind.</li>
 <li>Otherwise, on both platforms, the directory will be recursively deleted.</li>
-<li>So any files you might create in <tt class="docutils literal"><span class="pre">os.environ['_MEIPASS2']</span></tt> will be deleted.</li>
+<li>So any files you might create in <tt class="docutils literal">sys._MEIPASS</tt> will be deleted.</li>
 <li>The executable can be in a protected or read-only directory.</li>
 </ul>
 <p><strong>Notes for *nix users</strong>: Take notice that if the executable does a setuid root,
@@ -1120,10 +1121,14 @@ for anal, basename, exename in Analyses:
 </div>
 <div class="section" id="when-things-go-wrong">
 <h1><a class="toc-backref" href="#id33">When Things Go Wrong</a></h1>
+<div class="section" id="recipes">
+<h2><a class="toc-backref" href="#id34">Recipes</a></h2>
+<p>For some common issues there are available some code examples on our <a class="reference external" href="http://www.pyinstaller.org/wiki/Recipe">Recipe</a> page.</p>
+</div>
 <div class="section" id="finding-out-what-went-wrong">
-<h2><a class="toc-backref" href="#id34">Finding out What Went Wrong</a></h2>
+<h2><a class="toc-backref" href="#id35">Finding out What Went Wrong</a></h2>
 <div class="section" id="buildtime-warnings">
-<h3><a class="toc-backref" href="#id35">Buildtime Warnings</a></h3>
+<h3><a class="toc-backref" href="#id36">Buildtime Warnings</a></h3>
 <p>When an <tt class="docutils literal">Analysis</tt> step runs, it produces a warnings file (named <tt class="docutils literal">warnproject.txt</tt>)
 in the spec file's directory. Generally, most of these warnings are harmless.
 For example, <tt class="docutils literal">os.py</tt> (which is cross-platform) works by figuring out what
@@ -1131,9 +1136,9 @@ platform it is on, then importing (and rebinding names from) the appropriate
 platform-specific module. So analyzing <tt class="docutils literal">os.py</tt> will produce a set of warnings
 like:</p>
 <pre class="literal-block">
-W: no module named dos (conditional import by os)
-W: no module named ce (conditional import by os)
-W: no module named os2 (conditional import by os)
+WARNING: no module named dos (conditional import by os)
+WARNING: no module named ce (conditional import by os)
+WARNING: no module named os2 (conditional import by os)
 </pre>
 <p>Note that the analysis has detected that the import is within a conditional
 block (an if statement). The analysis also detects if an import within a
@@ -1153,7 +1158,12 @@ See <a class="reference internal" href="#listing-hidden-imports">Listing Hidden 
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="getting-debug-messages">
-<h3><a class="toc-backref" href="#id36">Getting Debug Messages</a></h3>
+<h3><a class="toc-backref" href="#id37">Getting Debug Messages</a></h3>
+<p>Debug messages for PyInstaller  can be enabled by passing the <tt class="docutils literal"><span class="pre">--log-level</span></tt>
+flag to the <tt class="docutils literal">pyinstaller.py</tt> script:</p>
+<pre class="literal-block">
+pyinstaller.py --log-level=DEBUG &lt;scriptname&gt;
+</pre>
 <p>Setting <tt class="docutils literal">debug=1</tt> on an <tt class="docutils literal">EXE</tt> will cause the executable to put out progress
 messages (for console apps, these go to stdout; for Windows apps, these show as
 MessageBoxes). This can be useful if you are doing complex packaging, or your
@@ -1161,7 +1171,7 @@ app doesn't seem to be starting, or just to learn how the runtime works.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="getting-python-s-verbose-imports">
-<h3><a class="toc-backref" href="#id37">Getting Python's Verbose Imports</a></h3>
+<h3><a class="toc-backref" href="#id38">Getting Python's Verbose Imports</a></h3>
 <p>You can also pass a <tt class="docutils literal"><span class="pre">-v</span></tt> (verbose imports) flag to the embedded Python. This can
 be extremely useful. I usually try it even on apparently working apps, just to
 make sure that I'm always getting my copies of the modules and no import has
@@ -1181,9 +1191,9 @@ EXE(..., anal.scripts + [('v', '', 'OPTION')], ...)
 </div>
 </div>
 <div class="section" id="helping-pyinstaller-find-modules">
-<h2><a class="toc-backref" href="#id38">Helping PyInstaller Find Modules</a></h2>
+<h2><a class="toc-backref" href="#id39">Helping PyInstaller Find Modules</a></h2>
 <div class="section" id="extending-the-path">
-<h3><a class="toc-backref" href="#id39">Extending the Path</a></h3>
+<h3><a class="toc-backref" href="#id40">Extending the Path</a></h3>
 <p>When the analysis phase cannot find needed modules, it may be that the code is
 manipulating <tt class="docutils literal">sys.path</tt>. The easiest thing to do in this case is tell <tt class="docutils literal">Analysis</tt>
 about the new directory through the second arg to the constructor:</p>
@@ -1204,7 +1214,7 @@ pyinstaller.py --paths=path/to/thisdir;path/to/thatdir ...
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="listing-hidden-imports">
-<h3><a class="toc-backref" href="#id40">Listing Hidden Imports</a></h3>
+<h3><a class="toc-backref" href="#id41">Listing Hidden Imports</a></h3>
 <p>Hidden imports are fairly common. These can occur when the code is using
 <tt class="docutils literal">__import__</tt> (or, perhaps <tt class="docutils literal">exec</tt> or <tt class="docutils literal">eval</tt>), in which case you will see a warning in
 the <tt class="docutils literal">warnproject.txt</tt> file. They can also occur when an extension module uses the
@@ -1239,7 +1249,7 @@ us the hook so we can make it available to others.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="extending-a-package-s-path">
-<h3><a class="toc-backref" href="#id41">Extending a Package's <tt class="docutils literal">__path__</tt></a></h3>
+<h3><a class="toc-backref" href="#id42">Extending a Package's <tt class="docutils literal">__path__</tt></a></h3>
 <p>Python allows a package to extend the search path used to find modules and
 sub-packages through the <tt class="docutils literal">__path__</tt> mechanism. Normally, a package's <tt class="docutils literal">__path__</tt> has
 only one entry - the directory in which the <tt class="docutils literal">__init__.py</tt> was found. But
@@ -1263,7 +1273,7 @@ way as <tt class="docutils literal">win32com.anythingelse</tt>, and <tt class="d
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="changing-runtime-behavior">
-<h3><a class="toc-backref" href="#id42">Changing Runtime Behavior</a></h3>
+<h3><a class="toc-backref" href="#id43">Changing Runtime Behavior</a></h3>
 <p>More bizarre situations can be accomodated with runtime hooks. These are small
 scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.</p>
@@ -1289,7 +1299,7 @@ found in the win32com package.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="adapting-to-being-frozen">
-<h3><a class="toc-backref" href="#id43">Adapting to being &quot;frozen&quot;</a></h3>
+<h3><a class="toc-backref" href="#id44">Adapting to being &quot;frozen&quot;</a></h3>
 <p>In most sophisticated apps, it becomes necessary to figure out (at runtime)
 whether you're running &quot;live&quot; or &quot;frozen&quot;. For example, you might have a
 configuration file that (running &quot;live&quot;) you locate based on a module's
@@ -1302,7 +1312,7 @@ embedding DLL sets <tt class="docutils literal"><span class="pre">sys.frozen='dl
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="accessing-data-files">
-<h3><a class="toc-backref" href="#id44">Accessing Data Files</a></h3>
+<h3><a class="toc-backref" href="#id45">Accessing Data Files</a></h3>
 <p>In a <tt class="docutils literal"><span class="pre">--onedir</span></tt> distribution, this is easy: pass a list of your data files
 (in <tt class="docutils literal">TOC</tt> format) to the <tt class="docutils literal">COLLECT</tt>, and they will show up in the
 distribution directory tree. The name in the <tt class="docutils literal">(name, path, 'DATA')</tt>
@@ -1314,18 +1324,18 @@ os.path.join(os.path.dirname(sys.executable), relativename))
 <p>In a <tt class="docutils literal"><span class="pre">--onefile</span></tt> distribution, data files are bundled within the executable
 and then extracted at runtime into the work directory by the C code (which is
 also able to reconstruct directory trees). The work directory is best found by
-<tt class="docutils literal"><span class="pre">os.environ['_MEIPASS2']</span></tt>. So, you can access those files through:</p>
+<tt class="docutils literal">sys._MEIPASS</tt>. So, you can access those files through:</p>
 <pre class="literal-block">
-os.path.join(os.environ[&quot;_MEIPASS2], relativename))
+os.path.join(sys._MEIPASS, relativename))
 </pre>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 </div>
 </div>
 <div class="section" id="miscellaneous">
-<h1><a class="toc-backref" href="#id45">Miscellaneous</a></h1>
+<h1><a class="toc-backref" href="#id46">Miscellaneous</a></h1>
 <div class="section" id="self-extracting-executables">
-<h2><a class="toc-backref" href="#id46">Self-extracting executables</a></h2>
+<h2><a class="toc-backref" href="#id47">Self-extracting executables</a></h2>
 <p>The ELF executable format (Windows, Linux and some others) allows arbitrary
 data to be concatenated to the end of the executable without disturbing its
 functionality. For this reason, a <tt class="docutils literal">CArchive</tt>'s Table of Contents is
@@ -1336,7 +1346,7 @@ archive is named <tt class="docutils literal">executable.pkg</tt>, and expected 
 Other than that, the process is the same.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 <div class="section" id="one-pass-execution">
-<h3><a class="toc-backref" href="#id47">One Pass Execution</a></h3>
+<h3><a class="toc-backref" href="#id48">One Pass Execution</a></h3>
 <p>In a single directory deployment (<tt class="docutils literal"><span class="pre">--onedir</span></tt>, which is the default),
 all of the binaries are already in the file system. In that case, the
 embedding app:</p>
@@ -1353,7 +1363,7 @@ bootstraps the import hooks)</li>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="two-pass-execution">
-<h3><a class="toc-backref" href="#id48">Two Pass Execution</a></h3>
+<h3><a class="toc-backref" href="#id49">Two Pass Execution</a></h3>
 <p>There are a couple situations which require two passes:</p>
 <ul class="simple">
 <li>a <tt class="docutils literal"><span class="pre">--onefile</span></tt> deployment (on Windows, the files can't be cleaned
@@ -1395,9 +1405,9 @@ version, you need to have separate installations for each Python version.</p>
 </div>
 </div>
 <div class="section" id="pyinstaller-archives">
-<h1><a class="toc-backref" href="#id49">PyInstaller Archives</a></h1>
+<h1><a class="toc-backref" href="#id50">PyInstaller Archives</a></h1>
 <div class="section" id="archives-introduction">
-<h2><a class="toc-backref" href="#id50">Archives Introduction</a></h2>
+<h2><a class="toc-backref" href="#id51">Archives Introduction</a></h2>
 <p>You know what an archive is: a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils literal">.jar</tt> file, a
 <tt class="docutils literal">.zip</tt> file. Two kinds of archives are used here. One is equivalent
 to a Java <tt class="docutils literal">.jar</tt> file - it allows Python modules to be stored
@@ -1411,7 +1421,7 @@ create new kinds of archives.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="zlibarchive">
-<h2><a class="toc-backref" href="#id51"><tt class="docutils literal">ZlibArchive</tt></a></h2>
+<h2><a class="toc-backref" href="#id52"><tt class="docutils literal">ZlibArchive</tt></a></h2>
 <p>A <tt class="docutils literal">ZlibArchive</tt> contains compressed <tt class="docutils literal">.pyc</tt> (or <tt class="docutils literal">.pyo</tt>) files.
 The Table of Contents is a marshalled dictionary, with the key (the
 module's name as given in an <tt class="docutils literal">import</tt> statement) associated with a
@@ -1432,7 +1442,7 @@ you can make sense of it.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="carchive">
-<h2><a class="toc-backref" href="#id52"><tt class="docutils literal">CArchive</tt></a></h2>
+<h2><a class="toc-backref" href="#id53"><tt class="docutils literal">CArchive</tt></a></h2>
 <p>A <tt class="docutils literal">CArchive</tt> contains whatever you want to stuff into it. It's very
 much like a <tt class="docutils literal">.zip</tt> file. They are easy to create in Python and
 unpack from C code. <tt class="docutils literal">CArchives</tt> can be appended to other files (like
@@ -1454,7 +1464,7 @@ The type codes are used by the self-extracting executables.</p>
 </div>
 </div>
 <div class="section" id="license">
-<h1><a class="toc-backref" href="#id53">License</a></h1>
+<h1><a class="toc-backref" href="#id54">License</a></h1>
 <p>PyInstaller is mainly distributed under the <a class="reference external" href="http://www.pyinstaller.org/browser/trunk/doc/LICENSE.GPL?rev=latest">GPL License</a> but it has
 an exception such that you can use it to compile commercial products.</p>
 <p>In a nutshell, the license is GPL for the source code with the exception that:</p>
@@ -1474,7 +1484,7 @@ words, any modifications to will <em>have</em> to be distributed under GPL.</li>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id54">Appendix</a></h1>
+<h1><a class="toc-backref" href="#id55">Appendix</a></h1>
 <div class="sidebar">
 <p class="first sidebar-title">You can stop reading here...</p>
 <p class="last">... if you are not interested in technical details. This appendix
@@ -1483,14 +1493,14 @@ you do not need this information unless you plan to work on
 <cite>PyInstaller</cite> itself.</p>
 </div>
 <div class="section" id="building-the-bootloaders">
-<h2><a class="toc-backref" href="#id55">Building the bootloaders</a></h2>
+<h2><a class="toc-backref" href="#id56">Building the bootloaders</a></h2>
 <p>PyInstaller comes with binary bootloaders for most platforms, shipped
 in /your/path/to/pyinstaller//support/loader. If you need to build the bootloader
 for your own platform (either because your platform is not officially
 supported, or because you tweaked bootloader's source code), you can
 follow this guide.</p>
 <div class="section" id="development-tools">
-<h3><a class="toc-backref" href="#id56">Development tools</a></h3>
+<h3><a class="toc-backref" href="#id57">Development tools</a></h3>
 <p>On Debian/Ubuntu systems, you can run the following lines to install everything
 required:</p>
 <pre class="literal-block">
@@ -1522,7 +1532,7 @@ following locations:</p>
 </ul>
 </div>
 <div class="section" id="building">
-<h3><a class="toc-backref" href="#id57">Building</a></h3>
+<h3><a class="toc-backref" href="#id58">Building</a></h3>
 <p>On Windows, when using MinGW, it is needed to add <tt class="docutils literal">PATH_TO_MINGW\bin</tt>
 to your system <tt class="docutils literal">PATH</tt>. variable. In command prompt before building
 bootloader run for example:</p>
@@ -1544,7 +1554,7 @@ pyinstaller/source$ python waf configure build install
 <tt class="docutils literal">waf</tt> is the one whose configuration is used.</p>
 </div>
 <div class="section" id="linux-standard-base-lsb-binary">
-<h3><a class="toc-backref" href="#id58">Linux Standard Base (LSB) binary</a></h3>
+<h3><a class="toc-backref" href="#id59">Linux Standard Base (LSB) binary</a></h3>
 <p>By default, the bootloaders on Linux are LSB binaries.</p>
 <p>LSB is a set of open standards that should increase compatibility among Linux
 distributions. <cite>PyInstaller</cite> is able produce bootloader as LSB binary in order
@@ -1589,7 +1599,7 @@ pyinstaller/source$ python waf configure --no-lsb build install
 </div>
 </div>
 <div class="section" id="mf-py-a-modulefinder-replacement">
-<h2><a class="toc-backref" href="#id59"><tt class="docutils literal">mf.py</tt>: A Modulefinder Replacement</a></h2>
+<h2><a class="toc-backref" href="#id60"><tt class="docutils literal">mf.py</tt>: A Modulefinder Replacement</a></h2>
 <p>Module <tt class="docutils literal">mf</tt> is modelled after <tt class="docutils literal">iu</tt>.</p>
 <p>It also uses <tt class="docutils literal">ImportDirectors</tt> and <tt class="docutils literal">Owners</tt> to partition the
 import name space. Except for the fact that these return <tt class="docutils literal">Module</tt>
@@ -1598,7 +1608,7 @@ instances instead of real module objects, they are identical.</p>
 managing things.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 <div class="section" id="importtracker">
-<h3><a class="toc-backref" href="#id60">ImportTracker</a></h3>
+<h3><a class="toc-backref" href="#id61">ImportTracker</a></h3>
 <p><tt class="docutils literal">ImportTracker</tt> can be called in two ways: <tt class="docutils literal">analyze_one(name,
 importername=None)</tt> or <tt class="docutils literal">analyze_r(name, importername=None)</tt>. The
 second method does what modulefinder does - it recursively finds all
@@ -1610,7 +1620,7 @@ not involve recursion), it deserves some explanation.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="analyze-one">
-<h3><a class="toc-backref" href="#id61"><tt class="docutils literal">analyze_one()</tt></a></h3>
+<h3><a class="toc-backref" href="#id62"><tt class="docutils literal">analyze_one()</tt></a></h3>
 <p>When a name is imported, there are structural and dynamic effects. The dynamic
 effects are due to the execution of the top-level code in the module (or
 modules) that get imported. The structural effects have to do with whether the
@@ -1625,7 +1635,7 @@ ImportTracker's modules dict will have Module instances for them.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="module-classes">
-<h3><a class="toc-backref" href="#id62">Module Classes</a></h3>
+<h3><a class="toc-backref" href="#id63">Module Classes</a></h3>
 <p>There are Module subclasses for builtins, extensions, packages and (normal)
 modules. Besides the normal module object attributes, they have an attribute
 imports. For packages and normal modules, imports is a list populated by
@@ -1641,7 +1651,7 @@ handle this through it's hooks mechanism.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="code-scanning">
-<h3><a class="toc-backref" href="#id63">code scanning</a></h3>
+<h3><a class="toc-backref" href="#id64">code scanning</a></h3>
 <p>Like modulefinder, <tt class="docutils literal">mf</tt> scans the byte code of a module, looking for
 imports. In addition, <tt class="docutils literal">mf</tt> will pick out a module's <tt class="docutils literal">__all__</tt>
 attribute, if it is built as a list of constant names. This means that
@@ -1657,7 +1667,7 @@ whether the import is inside a condition (conditional imports).</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="hooks">
-<h3><a class="toc-backref" href="#id64">Hooks</a></h3>
+<h3><a class="toc-backref" href="#id65">Hooks</a></h3>
 <p>In modulefinder, scanning the code takes the place of executing the code
 object. <tt class="docutils literal">mf</tt> goes further and allows a module to be hooked (after it has been
 scanned, but before analyze_one is done with it). A hook is a module named
@@ -1691,7 +1701,7 @@ in <tt class="docutils literal">hiddenimports</tt>.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="warnings">
-<h3><a class="toc-backref" href="#id65">Warnings</a></h3>
+<h3><a class="toc-backref" href="#id66">Warnings</a></h3>
 <p><tt class="docutils literal">ImportTracker</tt> has a <tt class="docutils literal">getwarnings()</tt> method that returns all the
 warnings accumulated by the instance, and by the <tt class="docutils literal">Module</tt> instances
 in its modules dict. Generally, it is <tt class="docutils literal">ImportTracker</tt> who will
@@ -1702,7 +1712,7 @@ warnings, but not all of them.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="cross-reference">
-<h3><a class="toc-backref" href="#id66">Cross Reference</a></h3>
+<h3><a class="toc-backref" href="#id67">Cross Reference</a></h3>
 <p>Once a full analysis (that is, an <tt class="docutils literal">analyze_r</tt> call) has been done,
 you can get a cross reference by using <tt class="docutils literal">getxref()</tt>. This returns a
 list of tuples. Each tuple is <tt class="docutils literal">(modulename, importers)</tt>, where
@@ -1712,7 +1722,7 @@ list are sorted.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="mf-usage">
-<h3><a class="toc-backref" href="#id67">mf Usage</a></h3>
+<h3><a class="toc-backref" href="#id68">mf Usage</a></h3>
 <p>A simple example follows:</p>
 <blockquote>
 <pre class="doctest-block">
@@ -1761,7 +1771,7 @@ W: delayed  eval hack detected at line 418
 </div>
 </div>
 <div class="section" id="iu-py-an-imputil-replacement">
-<span id="iu-py"></span><h2><a class="toc-backref" href="#id68"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a></h2>
+<span id="iu-py"></span><h2><a class="toc-backref" href="#id69"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a></h2>
 <p>Module <tt class="docutils literal">iu</tt> grows out of the pioneering work that Greg Stein did
 with <tt class="docutils literal">imputil</tt> (actually, it includes some verbatim <tt class="docutils literal">imputil</tt>
 code, but since Greg didn't copyright it, we won't mention it). Both
@@ -1776,7 +1786,7 @@ and hides all the semantic complexities of a Python import request from it's
 delegates.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 <div class="section" id="importmanager">
-<h3><a class="toc-backref" href="#id69"><tt class="docutils literal">ImportManager</tt></a></h3>
+<h3><a class="toc-backref" href="#id70"><tt class="docutils literal">ImportManager</tt></a></h3>
 <p><tt class="docutils literal">ImportManager</tt> formalizes the concept of a metapath. This concept implicitly
 exists in native Python in that builtins and frozen modules are searched
 before <tt class="docutils literal">sys.path</tt>, (on Windows there's also a search of the registry while on
@@ -1794,7 +1804,7 @@ date; to handle the fromlist and return the correct module object.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="importdirector">
-<h3><a class="toc-backref" href="#id70"><tt class="docutils literal">ImportDirector</tt></a></h3>
+<h3><a class="toc-backref" href="#id71"><tt class="docutils literal">ImportDirector</tt></a></h3>
 <p>An <tt class="docutils literal">ImportDirector</tt> just needs to respond to <tt class="docutils literal">getmod(name)</tt> by
 returning a module object or <tt class="docutils literal">None</tt>. As you will see, an
 <tt class="docutils literal">ImportDirector</tt> can consider name to be atomic - it has no need to
@@ -1803,7 +1813,7 @@ examine name to see if it is dotted.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="pathimportdirector">
-<h3><a class="toc-backref" href="#id71"><tt class="docutils literal">PathImportDirector</tt></a></h3>
+<h3><a class="toc-backref" href="#id72"><tt class="docutils literal">PathImportDirector</tt></a></h3>
 <p>The <tt class="docutils literal">PathImportDirector</tt> subclass manages a list of names - most
 notably, <tt class="docutils literal">sys.path</tt>. To do so, it maintains a shadowpath - a
 dictionary mapping the names on its pathlist (eg, <tt class="docutils literal">sys.path</tt>) to
@@ -1816,7 +1826,7 @@ two entries).</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="owner">
-<h3><a class="toc-backref" href="#id72"><tt class="docutils literal">Owner</tt></a></h3>
+<h3><a class="toc-backref" href="#id73"><tt class="docutils literal">Owner</tt></a></h3>
 <p>An <tt class="docutils literal">Owner</tt> is much like an <tt class="docutils literal">ImportDirector</tt> but manages a much
 more concrete piece of turf. For example, a <tt class="docutils literal">DirOwner</tt> manages one
 directory. Since there are no other officially recognized
@@ -1836,7 +1846,7 @@ package module (an <tt class="docutils literal">__init__.py</tt>).</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="packages">
-<h3><a class="toc-backref" href="#id73">Packages</a></h3>
+<h3><a class="toc-backref" href="#id74">Packages</a></h3>
 <p>To make this work, <tt class="docutils literal">Owners</tt> need to recognize when a module is a
 package. For a <tt class="docutils literal">DirOwner</tt>, this means that name is a subdirectory
 which contains an <tt class="docutils literal">__init__.py</tt>. The <tt class="docutils literal">__init__</tt> module is loaded
@@ -1856,7 +1866,7 @@ to route the request back up the package tree to the archive
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="possibilities">
-<h3><a class="toc-backref" href="#id74">Possibilities</a></h3>
+<h3><a class="toc-backref" href="#id75">Possibilities</a></h3>
 <p>Let's say we want to import from zip files. So, we subclass <tt class="docutils literal">Owner</tt>.
 The <tt class="docutils literal">__init__</tt> method should take a filename, and raise a
 <tt class="docutils literal">ValueError</tt> if the file is not an acceptable <tt class="docutils literal">.zip</tt> file, (when a
@@ -1874,7 +1884,7 @@ zip file on <tt class="docutils literal">sys.path</tt>. A package could even put
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="compatibility">
-<h3><a class="toc-backref" href="#id75">Compatibility</a></h3>
+<h3><a class="toc-backref" href="#id76">Compatibility</a></h3>
 <p>This code has been tested with the PyXML, mxBase and Win32 packages,
 covering over a dozen import hacks from manipulations of <tt class="docutils literal">__path__</tt>
 to replacing a module in <tt class="docutils literal">sys.modules</tt> with a different one.
@@ -1884,7 +1894,7 @@ imported through <tt class="docutils literal">iu</tt> have an extra attribute - 
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="performance">
-<h3><a class="toc-backref" href="#id76">Performance</a></h3>
+<h3><a class="toc-backref" href="#id77">Performance</a></h3>
 <p>In most cases, <tt class="docutils literal">iu</tt> is slower than builtin import (by 15 to 20%) but
 faster than <tt class="docutils literal">imputil</tt> (by 15 to 20%). By inserting archives at the
 front of <tt class="docutils literal">sys.path</tt> containing the standard lib and the package
@@ -1894,7 +1904,7 @@ manipulating the <tt class="docutils literal">ImportManager</tt>'s metapath.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="limitations">
-<h3><a class="toc-backref" href="#id77">Limitations</a></h3>
+<h3><a class="toc-backref" href="#id78">Limitations</a></h3>
 <p>This module makes no attempt to facilitate policy import hacks. It is easy to
 implement certain kinds of policies within a particular domain, but
 fundamentally iu works by dividing up the import namespace into independent
@@ -1913,7 +1923,7 @@ were easy to implement.</p>
 <p><a class="reference internal" href="#pyinstaller-manual"><cite>Back to Top</cite></a></p>
 </div>
 <div class="section" id="iu-usage">
-<h3><a class="toc-backref" href="#id78">iu Usage</a></h3>
+<h3><a class="toc-backref" href="#id79">iu Usage</a></h3>
 <p>Here's a simple example of using <tt class="docutils literal">iu</tt> as a builtin import replacement.</p>
 <blockquote>
 <pre class="doctest-block">
@@ -1936,7 +1946,7 @@ were easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2011-10-12 22:35 UTC.
+Generated on: 2011-10-16 19:49 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
