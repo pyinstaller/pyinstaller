@@ -143,7 +143,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     print info
     print "*" * min(80, len(info))
 
-    OPTS = '--skip-configure --debug'
+    OPTS = '--skip-configure --log-level=DEBUG --debug'
 
     build_python = open('basic/python_exe.build', 'w')
     build_python.write(sys.executable + "\n")
