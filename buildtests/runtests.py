@@ -139,6 +139,10 @@ def _msg(*args, **kw):
 
 
 def runtests(alltests, filters=None, run_executable=1, verbose=False):
+    # Use path separator '/' even on windows for test names.
+    if is_win:
+        alltests = [x.replace('\\', '/') for x in alltests]
+
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
     print "*" * min(80, len(info))
     print info
