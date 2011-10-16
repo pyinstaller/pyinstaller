@@ -1,4 +1,4 @@
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2005-2011, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -23,12 +23,39 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import archive, iu, sys
+
+### Start bootstrap process
+# Only python built-in modules can be used.
+
+import archive
+import iu
+import sys
 iu._globalownertypes.insert(0, archive.PYZOwner)
 sys.importManager = iu.ImportManager()
 sys.importManager.install()
+
+### Bootstrap process is complete.
+# We can use other python modules (e.g. os)
+
+
+# Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, 'frozen'):
     sys.frozen = 1
+
+
+# Now that the startup is complete, we can reset the _MEIPASS2 env
+# so that if the program invokes another PyInstaller one-file program
+# as subprocess, this subprocess will not fooled into thinking that it
+# is already unpacked.
+#
+# But we need to preserve _MEIPASS2 value for cases where reseting it
+# causes some issues (e.g. multiprocess module on Windows).
+# set  sys._MEIPASS
+import os
+if '_MEIPASS2' in os.environ:
+    sys._MEIPASS = os.environ['_MEIPASS2']
+    del os.environ['_MEIPASS2']
+
 
 # Implement workaround for prints in non-console mode. In non-console mode
 # (with "pythonw"), print randomically fails with "[errno 9] Bad file descriptor"
@@ -38,10 +65,14 @@ if not hasattr(sys, 'frozen'):
 # feel that a workaround in PyInstaller is a good thing since most people
 # found this problem for the first time with PyInstaller as they don't
 # usually run their code with "pythonw" (and it's hard to debug anyway).
-
 class NullWriter:
-    def write(*args): pass
-    def flush(*args): pass
+    def write(*args):
+        pass
+
+    def flush(*args):
+        pass
+
+
 if sys.stdout.fileno() < 0:
     sys.stdout = NullWriter()
 if sys.stderr.fileno() < 0:
