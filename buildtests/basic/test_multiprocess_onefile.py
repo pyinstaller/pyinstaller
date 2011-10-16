@@ -14,8 +14,8 @@ class _Popen(multiprocessing.forking.Popen):
         if hasattr(sys, 'frozen'):
             # We have to get original _MEIPASS2 value from PYTHONPATH
             # to get --onefile and --onedir mode working.
-            meipass = sys.path[0]
-            os.putenv('_MEIPASS2', meipass + '/') # last character is stripped in C-loader
+            # Last character is stripped in C-loader.
+            os.putenv('_MEIPASS2', sys._MEIPASS) 
         try:
             super(_Popen, self).__init__(*args, **kw)
         finally:
