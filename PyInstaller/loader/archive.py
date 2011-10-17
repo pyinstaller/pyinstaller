@@ -46,7 +46,7 @@ import sys
 
 _c_suffixes = filter(lambda x: x[2] == imp.C_EXTENSION, imp.get_suffixes())
 
-for nm in ('nt', 'posix', 'dos', 'os2', 'mac'):
+for nm in ('nt', 'posix'):
     if nm in sys.builtin_module_names:
         mod = __import__(nm)
         _listdir = mod.listdir
