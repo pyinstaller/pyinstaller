@@ -36,8 +36,9 @@ def __add_options(parser):
                       choices=levels,
                       default='INFO',
                       dest='loglevel',
-                      help=('Log level (default: %%default, choose one of %s)'
-                            % ', '.join(levels))
+                      help=('Log level for %s '
+                            '(default: %%default, choose one of %s)'
+                            % (parser.get_prog_name(), ', '.join(levels)))
                       )
 
 def __process_options(parser, opts):
