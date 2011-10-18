@@ -52,8 +52,8 @@ OPTIONS
                       Python executable to use. Required for cross-bundling.
 -C CONFIGFILE, --configfile=CONFIGFILE
                       Name of generated configfile (default: |config.dat|)
---log-level=LOGLEVEL  Log level (default: INFO, choose one of DEBUG, INFO,
-                      WARN, ERROR, CRITICAL)
+--log-level=LOGLEVEL  Log level Configure.py (default: INFO, choose one 
+                      of DEBUG, INFO, WARN, ERROR, CRITICAL)
 
 
 SEE ALSO

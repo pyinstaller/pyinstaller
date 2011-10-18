@@ -53,8 +53,9 @@ General Options
 
 -C CONFIGFILE, --configfile=CONFIGFILE
                     Name of configfile to use (default: |config.dat|)
---log-level=LOGLEVEL  Log level (default: INFO, choose one of DEBUG, INFO,
-                      WARN, ERROR, CRITICAL)
+
+--log-level=LOGLEVEL  Log level for MakeSpec.py (default: INFO, choose
+                      one of DEBUG, INFO, WARN, ERROR, CRITICAL)
 
 What to generate
 ------------------
@@ -87,7 +88,9 @@ What to bundle, where to search
 How to generate
 -------------------
 
--d, --debug         use the debug (verbose) build of the executable
+-d, --debug         use the debug (verbose) build of the executable for
+                    packaging. This will make the packaged executable be
+                    more verbose when run.
 -s, --strip         strip the exe and shared libs (don't try this on
                     Windows)
 -X, --upx           use UPX if available (works differently between

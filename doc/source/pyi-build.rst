@@ -50,8 +50,8 @@ OPTIONS
                       SPECPATH/build/pyi.TARGET_PLATFORM/SPECNAME)
 -y, --noconfirm       Remove output directory (default: SPECPATH/dist)
                       without confirmation
---log-level=LOGLEVEL  Log level (default: INFO, choose one of DEBUG, INFO,
-                      WARN, ERROR, CRITICAL)
+--log-level=LOGLEVEL  Log level for Build.py (default: INFO, choose one 
+                      of DEBUG, INFO, WARN, ERROR, CRITICAL)
 
 
 SEE ALSO
