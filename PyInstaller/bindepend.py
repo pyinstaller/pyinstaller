@@ -401,6 +401,41 @@ def _getImports_ldd(pth):
     return rslt
 
 
+def _getImports_macholib(pth):
+    """
+    Find the binary dependencies of PTH.
+
+    This implementation is for Mac OS X and uses library macholib.
+    """
+    from PyInstaller.lib.macholib.MachO import MachO
+    from PyInstaller.lib.macholib.dyld import dyld_find
+    rslt = []
+    seen = set()  # Libraries read from binary headers.
+    # Walk through mach binary headers.
+    m = MachO(pth)
+    for header in m.headers:
+        for idx, name, lib in header.walkRelocatables():
+            # Sometimes some libraries are present multiple times.
+            if lib not in seen:
+                seen.add(lib)
+    # Try to find files in file system.
+    exec_path = os.path.abspath('.')
+    for lib in seen:
+        if lib.startswith('@loader_path'):
+            # macholib can't handle @loader_path. It has to be
+            # handled the same way as @executable_path.
+            # It is also replaced by 'exec_path'.
+            lib = lib.replace('@loader_path', '@executable_path')
+        try:
+            lib = dyld_find(lib, executable_path=exec_path)
+            rslt.append(lib)
+        except ValueError:
+            logger.error('Can not find path %s (needed by %s)', lib, pth)
+
+    return rslt
+
+
+# TODO remove this function if no issues with macholib implementation
 def _getImports_otool(pth):
     """Find the binary dependencies of PTH.
 
@@ -460,7 +495,8 @@ def getImports(pth):
                 logger.exception(exception)
             return []
     elif is_darwin:
-        return _getImports_otool(pth)
+        #return _getImports_otool(pth)
+        return _getImports_macholib(pth)
     else:
         return _getImports_ldd(pth)
 
