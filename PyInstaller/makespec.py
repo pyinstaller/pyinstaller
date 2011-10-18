@@ -179,7 +179,7 @@ def __add_options(parser):
 
     g = parser.add_option_group('How to generate')
     g.add_option("-d", "--debug", action="store_true", default=False,
-                 help="use the debug (verbose) build of the executable")
+                 help="use the debug (verbose) build of the executable for packaging")
     g.add_option("-s", "--strip", action="store_true",
                  help="strip the exe and shared libs "
                       "(don't try this on Windows)")
