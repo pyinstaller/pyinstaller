@@ -41,12 +41,7 @@ objdump
 Mac OS X
 --------
 
-Xcode_
-    is a suite of tools for developing software for Mac OS X. It can be also
-    installed from your ``Mac OS X Install DVD``. It is not necessary to
-    install the version 4 of Xcode. PyInstaller depends on ``otool`` which is
-    installed together with Xcode. ``otool`` displays information of object
-    files or libraries.
+No dependency on other modules or software.
 
 |GOBACK|_
 
