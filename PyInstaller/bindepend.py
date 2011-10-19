@@ -30,6 +30,7 @@ import zipfile
 from PyInstaller import is_win, is_unix, is_cygwin, is_darwin, is_py26
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
+from PyInstaller.compat import set
 
 
 import PyInstaller.log as logging
