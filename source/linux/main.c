@@ -128,12 +128,17 @@ int main(int argc, char* argv[])
         /* run the "child" process, then clean up */
         setenv("_MEIPASS2", workpath, 1);
 
+#ifdef AIX
+        /* prepend workpath to LIBPATH on AIX */
+        exportWorkpath(workpath, "LIBPATH");
+#else
         /* add workpath to LD_LIBRARY_PATH */
         exportWorkpath(workpath, "LD_LIBRARY_PATH");
 #ifdef __APPLE__
         /* add workpath to DYLD_LIBRARY_PATH */
         exportWorkpath(workpath, "DYLD_LIBRARY_PATH");
-#endif
+#endif /* __APPLE__ */
+#endif /* AIX */
         pid = fork();
         if (pid == 0)
             execvp(thisfile, argv);

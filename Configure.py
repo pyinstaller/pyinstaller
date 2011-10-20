@@ -87,17 +87,23 @@ os.putenv("TK_LIBRARY", tkdir)
 def test_TCL_TK(config):
     # TCL_root, TK_root and support/useTK.py
     print "I: Finding TCL/TK..."
-    if not (target_iswin):
-        saveexcludes = bindepend.excludes
-        bindepend.excludes = {}
 
     if target_platform.startswith("win"):
         pattern = r'(?i)tcl(\d\d)\.dll'
-    elif target_platform.startswith("linux") or \
-        target_platform.startswith('sun'):
+    elif (target_platform.startswith("linux") or
+        target_platform.startswith('sun') or
+        target_platform.startswith("aix")):
         pattern = r'libtcl(\d\.\d)?\.so'
     elif target_platform.startswith("darwin"):
         pattern = r'_tkinter'
+    else:
+        # If no pattern is in place for this platform, skip TCL/TK detection.
+        print "I: ... skipping TCL/TK detection on this target platform (%s)" % target_platform
+        return
+
+    if not (target_iswin):
+        saveexcludes = bindepend.excludes
+        bindepend.excludes = {}
 
     a = mf.ImportTracker()
     a.analyze_r('Tkinter')

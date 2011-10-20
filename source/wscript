@@ -175,6 +175,9 @@ def configure(conf):
     if myplatform.startswith('sun'):
         conf.env.append_value('CCDEFINES', 'SUNOS')
 
+    if myplatform.startswith('aix'):
+        conf.env.append_value('CCDEFINES', 'AIX')
+
     conf.env.append_value('CPPPATH', '../common')
 
 

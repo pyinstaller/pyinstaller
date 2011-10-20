@@ -66,80 +66,94 @@ if iswin:
     except ImportError, detail:
         winresource = None
 
-excludes = {
-    'KERNEL32.DLL':1,
-    'ADVAPI.DLL':1,
-    'MSVCRT.DLL':1,
-    'ADVAPI32.DLL':1,
-    'COMCTL32.DLL':1,
-    'CRTDLL.DLL':1,
-    'GDI32.DLL':1,
-    'MFC42.DLL':1,
-    'NTDLL.DLL':1,
-    'OLE32.DLL':1,
-    'OLEAUT32.DLL':1,
-    'RPCRT4.DLL':1,
-    'SHELL32.DLL':1,
-    'USER32.DLL':1,
-    'WINSPOOL.DRV':1,
-    'WS2HELP.DLL':1,
-    'WS2_32.DLL':1,
-    'WSOCK32.DLL':1,
-    'MSWSOCK.DLL':1,
-    'WINMM.DLL':1,
-    'COMDLG32.DLL':1,
-##    'ZLIB.DLL':1,   # test with python 1.5.2
-    'ODBC32.DLL':1,
-    'VERSION.DLL':1,
-    'IMM32.DLL':1,
-    'DDRAW.DLL':1,
-    'DCIMAN32.DLL':1,
-    'OPENGL32.DLL':1,
-    'GLU32.DLL':1,
-    'GLUB32.DLL':1,
-    'NETAPI32.DLL':1,
-    'MSCOREE.DLL':1,
-    'PSAPI.DLL':1,
-    'MSVCP80.DLL':1,
-    'MSVCR80.DLL':1,
-    'MSVCP90.DLL':1,
-    'MSVCR90.DLL':1,
-    'IERTUTIL.DLL':1,
-    'POWRPROF.DLL':1,
-    'SHLWAPI.DLL':1,
-    'URLMON.DLL':1,
-    'MSIMG32.DLL':1,
-    'MPR.DLL':1,
-    'DNSAPI.DLL':1,
-    'RASAPI32.DLL':1,
-    # regex excludes
-    r'/libc\.so\..*':1,
-    r'/libdl\.so\..*':1,
-    r'/libm\.so\..*':1,
-    r'/libpthread\.so\..*':1,
-    r'/librt\.so\..*':1,
-    r'/libthread_db\.so\..*':1,
-    r'/libdb-.*\.so':1,
-    # glibc regex excludes
-    r'/ld-linux\.so\..*':1,
-    r'/libBrokenLocale\.so\..*':1,
-    r'/libanl\.so\..*':1,
-    r'/libcidn\.so\..*':1,
-    r'/libcrypt\.so\..*':1,
-    r'/libnsl\.so\..*':1,
-    r'/libnss_compat.*\.so\..*':1,
-    r'/libnss_dns.*\.so\..*':1,
-    r'/libnss_files.*\.so\..*':1,
-    r'/libnss_hesiod.*\.so\..*':1,
-    r'/libnss_nis.*\.so\..*':1,
-    r'/libnss_nisplus.*\.so\..*':1,
-    r'/libresolv\.so\..*':1,
-    r'/libutil\.so\..*':1,
-    # libGL can reference some hw specific libraries (like nvidia libs)
-    r'/libGL\..*':1,
-    # MS assembly excludes
-    'Microsoft.Windows.Common-Controls':1,
-}
+if sys.platform.startswith('aix'):
+    excludes = {
+        r'/libbz2\.a':1,
+        r'/libc\.a':1,
+        r'/libC\.a':1,
+        r'/libcrypt\.a':1,
+        r'/libdl\.a':1,
+        r'/libintl\.a':1,
+        r'/libpthreads\.a':1,
+        r'/librt\\.a':1,
+        r'/librtl\.a':1,
+        r'/libz\.a':1,
+    }
+else:
+    excludes = {
+        'KERNEL32.DLL':1,
+        'ADVAPI.DLL':1,
+        'MSVCRT.DLL':1,
+        'ADVAPI32.DLL':1,
+        'COMCTL32.DLL':1,
+        'CRTDLL.DLL':1,
+        'GDI32.DLL':1,
+        'MFC42.DLL':1,
+        'NTDLL.DLL':1,
+        'OLE32.DLL':1,
+        'OLEAUT32.DLL':1,
+        'RPCRT4.DLL':1,
+        'SHELL32.DLL':1,
+        'USER32.DLL':1,
+        'WINSPOOL.DRV':1,
+        'WS2HELP.DLL':1,
+        'WS2_32.DLL':1,
+        'WSOCK32.DLL':1,
+        'MSWSOCK.DLL':1,
+        'WINMM.DLL':1,
+        'COMDLG32.DLL':1,
+    ##    'ZLIB.DLL':1,   # test with python 1.5.2
+        'ODBC32.DLL':1,
+        'VERSION.DLL':1,
+        'IMM32.DLL':1,
+        'DDRAW.DLL':1,
+        'DCIMAN32.DLL':1,
+        'OPENGL32.DLL':1,
+        'GLU32.DLL':1,
+        'GLUB32.DLL':1,
+        'NETAPI32.DLL':1,
+        'MSCOREE.DLL':1,
+        'PSAPI.DLL':1,
+        'MSVCP80.DLL':1,
+        'MSVCR80.DLL':1,
+        'MSVCP90.DLL':1,
+        'MSVCR90.DLL':1,
+        'IERTUTIL.DLL':1,
+        'POWRPROF.DLL':1,
+        'SHLWAPI.DLL':1,
+        'URLMON.DLL':1,
+        'MSIMG32.DLL':1,
+        'MPR.DLL':1,
+        'DNSAPI.DLL':1,
+        'RASAPI32.DLL':1,
+        # regex excludes
+        r'/libc\.so\..*':1,
+        r'/libdl\.so\..*':1,
+        r'/libm\.so\..*':1,
+        r'/libpthread\.so\..*':1,
+        r'/librt\.so\..*':1,
+        r'/libthread_db\.so\..*':1,
+        r'/libdb-.*\.so':1,
+        # glibc regex excludes
+        r'/ld-linux\.so\..*':1,
+        r'/libBrokenLocale\.so\..*':1,
+        r'/libanl\.so\..*':1,
+        r'/libcidn\.so\..*':1,
+        r'/libcrypt\.so\..*':1,
+        r'/libnsl\.so\..*':1,
+        r'/libnss_compat.*\.so\..*':1,
+        r'/libnss_dns.*\.so\..*':1,
+        r'/libnss_files.*\.so\..*':1,
+        r'/libnss_hesiod.*\.so\..*':1,
+        r'/libnss_nis.*\.so\..*':1,
+        r'/libnss_nisplus.*\.so\..*':1,
+        r'/libresolv\.so\..*':1,
+        r'/libutil\.so\..*':1,
+        # libGL can reference some hw specific libraries (like nvidia libs)
+        r'/libGL\..*':1,
+        # MS assembly excludes
+        'Microsoft.Windows.Common-Controls':1,
+    }
 
 # Darwin has a stable ABI for applications, so there is no need
 # to include either /usr/lib nor system frameworks.
@@ -632,17 +646,32 @@ def _getImports_ldd(pth):
 
         This implementation is for ldd platforms"""
     rslt = []
+    if sys.platform.startswith('aix'):
+        # Match libs of the form 'archive.a(sharedobject.so)'
+        # Will not match the fake lib '/unix'
+        lddPattern = re.compile(r"\s+(.*?)(\(.*\))")
+    else:
+        lddPattern = re.compile(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)")
+
     for line in os.popen('ldd "%s"' % pth).readlines():
-        m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
+        m = lddPattern.search(line)
         if m:
-            name, lib = m.group(1), m.group(2)
+            if sys.platform.startswith('aix'):
+                lib = m.group(1)
+                name = os.path.basename(lib) + m.group(2)
+            else:
+                name, lib = m.group(1), m.group(2)
             if name[:10] in ('linux-gate', 'linux-vdso'):
                 # linux-gate is a fake library which does not exist and
                 # should be ignored. See also:
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
                 continue
+
             if os.path.exists(lib):
-                rslt.append(lib)
+                # Add lib if it is not already found.
+                # (Should use set() instead of list but that is not in Python 2.2.)
+                if lib not in rslt:
+                    rslt.append(lib)
             else:
                 print 'E: cannot find %s in path %s (needed by %s)' % \
                       (name, lib, pth)
@@ -740,8 +769,10 @@ def findLibrary(name):
 
     `name`must include the prefix, e.g. ``libpython2.4.so``
     """
-    assert sys.platform == 'linux2' or sys.platform.startswith('sunos'), \
-        "Current implementation for Linux and Solaris (sunos) only"
+    "Current implementation for Linux, Solaris (sunos) and AIX only"
+    assert (sys.platform == 'linux2' or
+           sys.platform.startswith('sunos') or
+           sys.platform.startswith('aix'))
 
     lib = None
 
@@ -763,7 +794,10 @@ def findLibrary(name):
 
     # Look in the known safe paths
     if lib is None:
-        for path in ['/lib', '/usr/lib']:
+        paths = ['/lib', '/usr/lib']
+        if sys.platform.startswith('aix'):
+          paths.append('/opt/freeware/lib')
+        for path in paths:
             libs = glob(os.path.join(path, name + '*'))
             if libs:
                 lib = libs[0]

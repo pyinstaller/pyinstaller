@@ -42,8 +42,14 @@
 #include <sys/stat.h>
 #include "launch.h"
 #include "zlib.h"
-/* On Solaris is missing function 'mkdtemp'. */
-#ifdef SUNOS
+
+/*
+ * Function 'mkdtemp' (make temporary directory) is missing on some *NIX platforms: 
+ * - On Solaris function 'mkdtemp' is missing.
+ * - On AIX 5.2 function 'mkdtemp' is missing. It is there in version 6.1 but we don't know
+ *   the runtime platform at compile time, so we always include our own implementation on AIX.
+ */
+#if defined(SUNOS) || defined(AIX)
 #include "mkdtemp.h"
 #endif
 
@@ -475,6 +481,7 @@ int loadPython()
 {
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
+    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
 
 #ifdef WIN32
 	/* Determine the path */
@@ -501,34 +508,54 @@ int loadPython()
 	mapNames(dll);
 #else
 
+    uint32_t pyvers_major;
+    uint32_t pyvers_minor;
+    const char* dllPathPrefix;
+    
+    pyvers_major = ntohl(f_cookie.pyvers) / 10;
+    pyvers_minor = ntohl(f_cookie.pyvers) % 10;
+    dllPathPrefix = f_workpath ? f_workpath : f_homepath;
+
 	/* Determine the path */
 #ifdef __APPLE__
 	struct stat sbuf;
 
-	sprintf(dllpath, "%sPython",
-		f_workpath ? f_workpath : f_homepath);
+	sprintf(dllpath, "%sPython", dllPathPrefix);
 	/* Workaround for virtualenv: it renames the Python framework. */
 	/* A proper solution would be to let Build.py found out the correct
 	 * name and embed it in the PKG as metadata. */
 	if (stat(dllpath, &sbuf) < 0) {
-		sprintf(dllpath, "%s.Python",
-			f_workpath ? f_workpath : f_homepath);
+		sprintf(dllpath, "%s.Python", dllPathPrefix);
         
         if(stat(dllpath, &sbuf) < 0) {
             /* Python might be compiled as a .dylib (using --enable-shared) so lets try that one */
             sprintf(dllpath, "%slibpython%01d.%01d.dylib",
-                    f_workpath ? f_workpath : f_homepath,
-                    ntohl(f_cookie.pyvers) / 10, ntohl(f_cookie.pyvers) % 10);
+                    dllPathPrefix,
+                    pyvers_major, pyvers_minor);
         }
     }
 #else
+
+#ifdef AIX
+    /* On AIX 'ar' archives are used for both static and shared object.
+     * To load a shared object from a library, it should be loaded like this:
+     *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
+     */
+     sprintf(dllpath, "%slibpython%01d.%01d.a(libpython%01d.%01d.so)",
+             dllPathPrefix,
+             pyvers_major, pyvers_minor,
+             pyvers_major, pyvers_minor);
+     dlopenMode |= RTLD_MEMBER;
+#else
 	sprintf(dllpath, "%slibpython%01d.%01d.so.1.0",
-		f_workpath ? f_workpath : f_homepath,
-		ntohl(f_cookie.pyvers) / 10, ntohl(f_cookie.pyvers) % 10);
+		dllPathPrefix,
+		pyvers_major, pyvers_minor);
+#endif /* AIX */
+
 #endif
 
 	/* Load the DLL */
-	dll = dlopen(dllpath, RTLD_NOW|RTLD_GLOBAL);
+	dll = dlopen(dllpath, dlopenMode);
 	if (dll) {
 		VS("%s\n", dllpath);
 	}

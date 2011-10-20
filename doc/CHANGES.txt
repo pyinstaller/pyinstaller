@@ -2,6 +2,7 @@
 
 Changes since PyInstaller 1.5.1
 -----------------------------
+ + Added experimental support for AIX (thanks to Martin Gamwell Dawids).
  + Added experimental support for Solaris (thanks to Hywel Richards).
 
 Changes since PyInstaller 1.5
