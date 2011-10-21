@@ -524,7 +524,7 @@ class Analysis(Target):
 
         for (nm, fnm, typ) in binaries:
             for name in names: 
-                if typ == 'BINARY' and name in fnm:
+                if typ == 'BINARY' and fnm.find(name) != -1:
                     # lib found
                     return
 
