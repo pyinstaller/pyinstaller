@@ -481,7 +481,6 @@ int loadPython()
 {
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
-    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
 
 #ifdef WIN32
 	/* Determine the path */
@@ -510,6 +509,7 @@ int loadPython()
 
     uint32_t pyvers_major;
     uint32_t pyvers_minor;
+    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
     const char* dllPathPrefix;
     
     pyvers_major = ntohl(f_cookie.pyvers) / 10;
