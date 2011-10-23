@@ -38,9 +38,9 @@ except ImportError:
 # In Python 2.4+ there is a builtin type set(). In Python 2.3
 # it is class Set in module sets.
 try:
-    from sets import Set as set
-except NameError:
     from __builtin__ import set
+except ImportError:
+    from sets import Set as set
 
 
 def architecture():
