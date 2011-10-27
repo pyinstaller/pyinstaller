@@ -5,6 +5,7 @@ import sys
 import glob
 import subprocess
 import PyInstaller
+from PyInstaller.compat import set
 
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.hooks')
@@ -195,7 +196,7 @@ def django_dottedstring_imports(django_root_dir):
 
 
 def find_django_root(dir):
-    entities = os.listdir(dir)
+    entities = set(os.listdir(dir))
     if "manage.py" in entities and "settings.py" in entities and "urls.py" in entities:
         return [dir]
     else:
