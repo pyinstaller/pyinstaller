@@ -1028,25 +1028,26 @@ class EXE(Target):
         elif not isinstance(self.manifest, winmanifest.Manifest):
             # Assume filename
             self.manifest = winmanifest.ManifestFromXMLFile(self.manifest)
-        _depNames = set([dep.name for dep in self.manifest.dependentAssemblies])
-        if self.manifest.filename != manifest_filename:
+        manifest = self.manifest # shortcurt
+        _depNames = set([dep.name for dep in manifest.dependentAssemblies])
+        if manifest.filename != manifest_filename:
             # Update dependent assemblies
             depmanifest = winmanifest.ManifestFromXMLFile(manifest_filename)
             for assembly in depmanifest.dependentAssemblies:
                 if not assembly.name in _depNames:
-                    self.manifest.dependentAssemblies.append(assembly)
+                    manifest.dependentAssemblies.append(assembly)
                     _depNames.add(assembly.name)
         if (not self.console and
             not "Microsoft.Windows.Common-Controls" in _depNames):
             # Add Microsoft.Windows.Common-Controls to dependent assemblies
-            self.manifest.dependentAssemblies.append(
+            manifest.dependentAssemblies.append(
                 winmanifest.Manifest(type_="win32",
                                      name="Microsoft.Windows.Common-Controls",
                                      language="*",
                                      processorArchitecture="x86",
                                      version=(6, 0, 0, 0),
                                      publicKeyToken="6595b64144ccf1df"))
-        self.manifest.writeprettyxml(manifest_filename)
+        manifest.writeprettyxml(manifest_filename)
         self.toc.append((os.path.basename(self.name) + ".manifest",
                          manifest_filename,
                          'BINARY'))
