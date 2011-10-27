@@ -275,17 +275,17 @@ def selectAssemblies(pth, manifest=None):
     rv = []
     if not os.path.isfile(pth):
         pth = check_extract_from_egg(pth)[0][0]
+    if manifest:
+        _depNames = set([dep.name for dep in manifest.dependentAssemblies])
     for assembly in getAssemblies(pth):
         if seen.get(assembly.getid().upper(), 0):
             continue
-        if manifest:
+        if manifest and not assembly.name in _depNames:
             # Add assembly as dependency to our final output exe's manifest
-            if not assembly.name in [dependentAssembly.name
-                                     for dependentAssembly in
-                                     manifest.dependentAssemblies]:
-                logger.info("Adding %s to dependent assemblies "
-                            "of final executable", assembly.name)
-                manifest.dependentAssemblies.append(assembly)
+            logger.info("Adding %s to dependent assemblies "
+                        "of final executable", assembly.name)
+            manifest.dependentAssemblies.append(assembly)
+            _depNames.add(assembly.name)
         if not dylib.include_library(assembly.name):
             logger.debug("Skipping assembly %s", assembly.getid())
             continue
