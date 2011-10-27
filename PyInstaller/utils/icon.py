@@ -44,7 +44,7 @@ class Structure:
     def dump(self):
         logger.info("DUMP of %s", self)
         for name in self._names_:
-            if name[0] != '_':
+            if not name.startswith('_'):
                 logger.info("%20s = %s", name, getattr(self, name))
         logger.info("")
 
