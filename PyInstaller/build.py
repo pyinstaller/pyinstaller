@@ -862,46 +862,11 @@ class EXE(Target):
             else:
                 self.toc.extend(arg)
         if is_win:
-            if self.manifest:
-                if isinstance(self.manifest, basestring) and "<" in self.manifest:
-                    # Assume XML string
-                    self.manifest = winmanifest.ManifestFromXML(self.manifest)
-                elif not isinstance(self.manifest, winmanifest.Manifest):
-                    # Assume filename
-                    self.manifest = winmanifest.ManifestFromXMLFile(self.manifest)
-            else:
-                self.manifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH,
-                                                                             specnm + ".exe.manifest"))
-                self.manifest.name = os.path.splitext(os.path.basename(self.name))[0]
-            if self.manifest.filename != os.path.join(BUILDPATH,
-                                                      specnm + ".exe.manifest"):
-                # Update dependent assemblies
-                depmanifest = winmanifest.ManifestFromXMLFile(os.path.join(BUILDPATH,
-                                                                           specnm + ".exe.manifest"))
-                for assembly in depmanifest.dependentAssemblies:
-                    if not assembly.name in [dependentAssembly.name
-                                             for dependentAssembly in
-                                             self.manifest.dependentAssemblies]:
-                        self.manifest.dependentAssemblies.append(assembly)
-            if (not self.console and
-                not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name
-                                                            for dependentAssembly in
-                                                            self.manifest.dependentAssemblies]):
-                # Add Microsoft.Windows.Common-Controls to dependent assemblies
-                self.manifest.dependentAssemblies.append(winmanifest.Manifest(type_="win32",
-                                                                              name="Microsoft.Windows.Common-Controls",
-                                                                              language="*",
-                                                                              processorArchitecture="x86",
-                                                                              version=(6, 0, 0, 0),
-                                                                              publicKeyToken="6595b64144ccf1df"))
-            self.manifest.writeprettyxml(os.path.join(BUILDPATH,
-                                                      specnm + ".exe.manifest"))
-            self.toc.append((os.path.basename(self.name) + ".manifest",
-                             os.path.join(BUILDPATH,
-                                          specnm + ".exe.manifest"),
-                             'BINARY'))
-        self.pkg = PKG(self.toc, cdict=kws.get('cdict', None), exclude_binaries=self.exclude_binaries,
-                       strip_binaries=self.strip, upx_binaries=self.upx, crypt=self.crypt)
+            self._create_win_manifest()
+        self.pkg = PKG(self.toc, cdict=kws.get('cdict', None),
+                       exclude_binaries=self.exclude_binaries,
+                       strip_binaries=self.strip, upx_binaries=self.upx,
+                       crypt=self.crypt)
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
@@ -1050,6 +1015,41 @@ class EXE(Target):
                 break
             outf.write(data)
 
+    def _create_win_manifest(self):
+        manifest_filename = os.path.join(BUILDPATH, specnm + ".exe.manifest")
+        if not self.manifest:
+            self.manifest = winmanifest.ManifestFromXMLFile(manifest_filename)
+            self.manifest.name = os.path.splitext(os.path.basename(self.name))[0]
+        elif isinstance(self.manifest, basestring) and "<" in self.manifest:
+            # Assume XML string
+            self.manifest = winmanifest.ManifestFromXML(self.manifest)
+        elif not isinstance(self.manifest, winmanifest.Manifest):
+            # Assume filename
+            self.manifest = winmanifest.ManifestFromXMLFile(self.manifest)
+        if self.manifest.filename != manifest_filename:
+            # Update dependent assemblies
+            depmanifest = winmanifest.ManifestFromXMLFile(manifest_filename)
+            for assembly in depmanifest.dependentAssemblies:
+                if not assembly.name in [dependentAssembly.name
+                                         for dependentAssembly in
+                                         self.manifest.dependentAssemblies]:
+                    self.manifest.dependentAssemblies.append(assembly)
+        if (not self.console and
+            not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name
+                                                        for dependentAssembly in
+                                                        self.manifest.dependentAssemblies]):
+            # Add Microsoft.Windows.Common-Controls to dependent assemblies
+            self.manifest.dependentAssemblies.append(
+                winmanifest.Manifest(type_="win32",
+                                     name="Microsoft.Windows.Common-Controls",
+                                     language="*",
+                                     processorArchitecture="x86",
+                                     version=(6, 0, 0, 0),
+                                     publicKeyToken="6595b64144ccf1df"))
+        self.manifest.writeprettyxml(manifest_filename)
+        self.toc.append((os.path.basename(self.name) + ".manifest",
+                         manifest_filename,
+                         'BINARY'))
 
 class DLL(EXE):
     def assemble(self):
