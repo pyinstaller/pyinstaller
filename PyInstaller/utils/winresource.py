@@ -36,6 +36,8 @@ import win32api
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.winresource')
 
+from PyInstaller.compat import set
+
 LOAD_LIBRARY_AS_DATAFILE = 2
 ERROR_BAD_EXE_FORMAT = 193
 ERROR_RESOURCE_DATA_NOT_FOUND = 1812
@@ -126,6 +128,9 @@ def _GetResources(hsrc, types=None, names=None, languages=None):
     might also be empty if no matching resources were found.
     
     """
+    if types: types = set(types)
+    if names: names = set(names)
+    if languages: languages = set(languages)
     res = {}
     try:
         # logger.debug("Enumerating resource types")
@@ -245,6 +250,9 @@ def UpdateResourcesFromDict(dstpath, res, types=None, names=None,
     languages = a list of resource languages to update (None = all)
     
     """
+    if types: types = set(types)
+    if names: names = set(names)
+    if langauges: languages = set(languages)
     for type_ in res:
         if not types or type_ in types:
             for name in res[type_]:
