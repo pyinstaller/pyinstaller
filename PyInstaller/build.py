@@ -38,7 +38,7 @@ import PyInstaller
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
 from PyInstaller import is_win, is_unix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
-from PyInstaller.compat import hashlib
+from PyInstaller.compat import hashlib, set
 
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.bindepend')
@@ -695,13 +695,15 @@ def checkCache(fnm, strip, upx):
                             # dependentAssemblies from python.exe for
                             # pyinstaller
                             olen = len(manifest.dependentAssemblies)
+                            _depNames = set([dep.name for dep in
+                                             manifest.dependentAssemblies])
                             for pydep in pyasm:
-                                if not pydep.name in [dep.name for dep in
-                                                      manifest.dependentAssemblies]:
+                                if not pydep.name in _depNames:
                                     logger.info("Adding %r to dependent "
                                                 "assemblies of %r",
                                                 pydep.name, cachedfile)
                                     manifest.dependentAssemblies.append(pydep)
+                                    _depNames.append(pydep.name)
                             if len(manifest.dependentAssemblies) > olen:
                                 try:
                                     manifest.update_resources(os.path.abspath(cachedfile),
@@ -1026,18 +1028,16 @@ class EXE(Target):
         elif not isinstance(self.manifest, winmanifest.Manifest):
             # Assume filename
             self.manifest = winmanifest.ManifestFromXMLFile(self.manifest)
+        _depNames = set([dep.name for dep in self.manifest.dependentAssemblies])
         if self.manifest.filename != manifest_filename:
             # Update dependent assemblies
             depmanifest = winmanifest.ManifestFromXMLFile(manifest_filename)
             for assembly in depmanifest.dependentAssemblies:
-                if not assembly.name in [dependentAssembly.name
-                                         for dependentAssembly in
-                                         self.manifest.dependentAssemblies]:
+                if not assembly.name in _depNames:
                     self.manifest.dependentAssemblies.append(assembly)
+                    _depNames.add(assembly.name)
         if (not self.console and
-            not "Microsoft.Windows.Common-Controls" in [dependentAssembly.name
-                                                        for dependentAssembly in
-                                                        self.manifest.dependentAssemblies]):
+            not "Microsoft.Windows.Common-Controls" in _depNames):
             # Add Microsoft.Windows.Common-Controls to dependent assemblies
             self.manifest.dependentAssemblies.append(
                 winmanifest.Manifest(type_="win32",
