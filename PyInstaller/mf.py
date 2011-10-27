@@ -28,6 +28,7 @@ import subprocess
 import zipimport
 
 from PyInstaller.loader import archive
+from PyInstaller.compat import set
 
 
 try:
@@ -438,9 +439,10 @@ class ImportTracker:
         ]
         if hookspath:
             hooks.__path__.extend(hookspath)
-        self.excludes = excludes
         if excludes is None:
-            self.excludes = []
+            self.excludes = set()
+        else:
+            self.excludes = set(excludes)
 
     def analyze_r(self, nm, importernm=None):
         importer = importernm
@@ -830,23 +832,24 @@ if is_py25:
 else:
     LOAD_CONST_level = None
 if is_py27:
-    COND_OPS = [dis.opname.index('POP_JUMP_IF_TRUE'),
-                dis.opname.index('POP_JUMP_IF_FALSE'),
-                dis.opname.index('JUMP_IF_TRUE_OR_POP'),
-                dis.opname.index('JUMP_IF_FALSE_OR_POP'),
-               ]
+    COND_OPS = set([dis.opname.index('POP_JUMP_IF_TRUE'),
+                    dis.opname.index('POP_JUMP_IF_FALSE'),
+                    dis.opname.index('JUMP_IF_TRUE_OR_POP'),
+                    dis.opname.index('JUMP_IF_FALSE_OR_POP'),
+                    ])
 else:
-    COND_OPS = [dis.opname.index('JUMP_IF_FALSE'),
-                dis.opname.index('JUMP_IF_TRUE'),
-               ]
+    COND_OPS = set([dis.opname.index('JUMP_IF_FALSE'),
+                    dis.opname.index('JUMP_IF_TRUE'),
+                    ])
 JUMP_FORWARD = dis.opname.index('JUMP_FORWARD')
 try:
     STORE_DEREF = dis.opname.index('STORE_DEREF')
 except ValueError:
     STORE_DEREF = None
-STORE_OPS = [STORE_NAME, STORE_FAST, STORE_GLOBAL, STORE_DEREF, STORE_MAP]
+STORE_OPS = set([STORE_NAME, STORE_FAST, STORE_GLOBAL, STORE_DEREF, STORE_MAP])
 #IMPORT_STAR -> IMPORT_NAME mod ; IMPORT_STAR
 #JUMP_IF_FALSE / JUMP_IF_TRUE / JUMP_FORWARD
+HASJREL = set(dis.hasjrel)
 
 def pass1(code):
     instrs = []
@@ -869,7 +872,7 @@ def pass1(code):
         if not incondition and op in COND_OPS:
             incondition = 1
             out = oparg
-            if op in dis.hasjrel:
+            if op in HASJREL:
                 out += i
         elif incondition and op == JUMP_FORWARD:
             out = max(out, i + oparg)
