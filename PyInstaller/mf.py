@@ -164,17 +164,22 @@ class DirOwner(BaseDirOwner):
 
     def _isdir(self, fn):
         return os.path.isdir(os.path.join(self.path, fn))
+
     def _modtime(self, fn):
         try:
             return os.stat(os.path.join(self.path, fn))[8]
         except OSError:
             return None
+
     def _read(self, fn):
         return open(os.path.join(self.path, fn), 'rb').read()
+
     def _pkgclass(self):
         return PkgModule
+
     def _modclass(self):
         return PyModule
+
     def _caseok(self, fn):
         return caseOk(os.path.join(self.path, fn))
 
@@ -182,6 +187,7 @@ class PYZOwner(Owner):
     def __init__(self, path):
         self.pyz = archive.ZlibArchive(path)
         Owner.__init__(self, path)
+
     def getmod(self, nm):
         rslt = self.pyz.extract(nm)
         if not rslt:
@@ -203,6 +209,7 @@ if zipimport:
     # Instead, we'll reuse the BaseDirOwner logic, simply changing
     # the template methods.
     class ZipOwner(BaseDirOwner):
+
         def __init__(self, path):
             import zipfile
             try:
@@ -210,9 +217,11 @@ if zipimport:
             except IOError:
                 raise OwnerError("%s is not a zipfile" % path)
             Owner.__init__(self, path)
+
         def getmod(self, fn):
             fn = fn.replace(".", "/")
             return BaseDirOwner.getmod(self, fn)
+
         def _modtime(self, fn):
             # zipfiles always use forward slashes
             fn = fn.replace("\\","/")
@@ -221,20 +230,25 @@ if zipimport:
                 return dt
             except KeyError:
                 return None
+
         def _isdir(self, fn):
             # No way to find out if "fn" is a directory
             # so just always look into it in case it is.
             return True
+
         def _caseok(self, fn):
             # zipfile is always case-sensitive, so surely
             # there is no case mismatch.
             return True
+
         def _read(self, fn):
             # zipfiles always use forward slashes
             fn = fn.replace("\\","/")
             return self.zf.read(fn)
+
         def _pkgclass(self):
             return lambda *args: PkgInZipModule(self, *args)
+
         def _modclass(self):
             return lambda *args: PyInZipModule(self, *args)
 
