@@ -113,14 +113,6 @@ except ImportError, detail:
     logger.warn("unavailable. To enable resource access, please install ")
     logger.warn("http://sourceforge.net/projects/pywin32/")
 
-try:
-    # Python 2.3+
-    sys.getwindowsversion
-except AttributeError:
-    def getwindowsversion():
-        import win32api
-        return win32api.GetVersionEx(0)
-    sys.getwindowsversion = getwindowsversion
 
 LANGUAGE_NEUTRAL_NT5 = "x-ww"
 LANGUAGE_NEUTRAL_NT6 = "none"
