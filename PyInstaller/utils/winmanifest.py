@@ -977,6 +977,44 @@ def UpdateManifestResourcesFromXMLFile(dstpath, srcpath, names=None,
                                          languages or [0, "*"])
 
 
+def create_manifest(filename, manifest, console):
+    """
+    Create assembly manifest.
+    """
+    if not manifest:
+        manifest = ManifestFromXMLFile(filename)
+        # /path/NAME.exe.manifest - split extension twice to get NAME.
+        name = os.path.basename(filename)
+        manifest.name = os.path.splitext(os.path.splitext(name)[0])[0]
+    elif isinstance(manifest, basestring) and "<" in manifest:
+        # Assume XML string
+        manifest = ManifestFromXML(manifest)
+    elif not isinstance(manifest, Manifest):
+        # Assume filename
+        manifest = ManifestFromXMLFile(manifest)
+    dep_names = set([dep.name for dep in manifest.dependentAssemblies])
+    if manifest.filename != filename:
+        # Update dependent assemblies
+        depmanifest = ManifestFromXMLFile(filename)
+        for assembly in depmanifest.dependentAssemblies:
+            if not assembly.name in dep_names:
+                manifest.dependentAssemblies.append(assembly)
+                dep_names.add(assembly.name)
+    if (not console and
+        not "Microsoft.Windows.Common-Controls" in dep_names):
+        # Add Microsoft.Windows.Common-Controls to dependent assemblies
+        manifest.dependentAssemblies.append(
+            Manifest(type_="win32",
+                 name="Microsoft.Windows.Common-Controls",
+                 language="*",
+                 processorArchitecture="x86",
+                 version=(6, 0, 0, 0),
+                 publicKeyToken="6595b64144ccf1df")
+            )
+    manifest.writeprettyxml(filename)
+    return manifest
+
+
 if __name__ == "__main__":    
     dstpath = sys.argv[1]
     srcpath = sys.argv[2]

@@ -40,6 +40,9 @@ from PyInstaller import is_win, is_unix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
 from PyInstaller.compat import hashlib, set
 
+if is_win:
+    from PyInstaller.utils import winmanifest
+
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.bindepend')
 
@@ -204,7 +207,7 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
     if pyc=1, check for .py files, too
     """
-    return (_check_guts_eq(attr, old, toc, last_build) 
+    return (_check_guts_eq(attr, old, toc, last_build)
             or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc))
 
 
@@ -418,7 +421,7 @@ class Analysis(Target):
         for modnm, mod in analyzer.modules.items():
             # FIXME: why can we have a mod == None here?
             if mod is not None:
-                rthooks.extend(_findRTHook(modnm)) # XXX
+                rthooks.extend(_findRTHook(modnm))  # XXX
                 datas.extend(mod.datas)
                 if isinstance(mod, mf.BuiltinModule):
                     pass
@@ -864,7 +867,11 @@ class EXE(Target):
             else:
                 self.toc.extend(arg)
         if is_win:
-            self._create_win_manifest()
+            filename = os.path.join(BUILDPATH, specnm + ".exe.manifest")
+            self.manifest = winmanifest.create_manifest(filename, self.manifest,
+                self.console)
+            self.toc.append((os.path.basename(self.name) + ".manifest", filename,
+                'BINARY'))
         self.pkg = PKG(self.toc, cdict=kws.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
@@ -1017,40 +1024,6 @@ class EXE(Target):
                 break
             outf.write(data)
 
-    def _create_win_manifest(self):
-        manifest_filename = os.path.join(BUILDPATH, specnm + ".exe.manifest")
-        if not self.manifest:
-            self.manifest = winmanifest.ManifestFromXMLFile(manifest_filename)
-            self.manifest.name = os.path.splitext(os.path.basename(self.name))[0]
-        elif isinstance(self.manifest, basestring) and "<" in self.manifest:
-            # Assume XML string
-            self.manifest = winmanifest.ManifestFromXML(self.manifest)
-        elif not isinstance(self.manifest, winmanifest.Manifest):
-            # Assume filename
-            self.manifest = winmanifest.ManifestFromXMLFile(self.manifest)
-        manifest = self.manifest # shortcurt
-        _depNames = set([dep.name for dep in manifest.dependentAssemblies])
-        if manifest.filename != manifest_filename:
-            # Update dependent assemblies
-            depmanifest = winmanifest.ManifestFromXMLFile(manifest_filename)
-            for assembly in depmanifest.dependentAssemblies:
-                if not assembly.name in _depNames:
-                    manifest.dependentAssemblies.append(assembly)
-                    _depNames.add(assembly.name)
-        if (not self.console and
-            not "Microsoft.Windows.Common-Controls" in _depNames):
-            # Add Microsoft.Windows.Common-Controls to dependent assemblies
-            manifest.dependentAssemblies.append(
-                winmanifest.Manifest(type_="win32",
-                                     name="Microsoft.Windows.Common-Controls",
-                                     language="*",
-                                     processorArchitecture="x86",
-                                     version=(6, 0, 0, 0),
-                                     publicKeyToken="6595b64144ccf1df"))
-        manifest.writeprettyxml(manifest_filename)
-        self.toc.append((os.path.basename(self.name) + ".manifest",
-                         manifest_filename,
-                         'BINARY'))
 
 class DLL(EXE):
     def assemble(self):
@@ -1157,7 +1130,7 @@ class BUNDLE(Target):
         # icns icon for app bundle.
         self.icon = kws.get('icon', os.path.join(os.path.dirname(__file__),
             '..', 'source', 'images', 'icon-windowed.icns'))
-            
+
         Target.__init__(self)
         self.name = kws.get('name', None)
         if self.name is not None:
@@ -1203,7 +1176,7 @@ class BUNDLE(Target):
                 logger.info("building %s because %s is missing", self.outnm, test)
                 return 1
             if mtime(fnm) > mtime(test):
-                logger.info( "building %s because %s is more recent", self.outnm, fnm)
+                logger.info("building %s because %s is more recent", self.outnm, fnm)
                 return 1
         return 0
 
@@ -1540,9 +1513,6 @@ def main(specfile, configfilename, buildpath, noconfirm, **kw):
 
     if config.setdefault('pythonDebug', None) != __debug__:
         raise SystemExit("Python optimization flags have changed: rerun `python -O utils/Configure.py`")
-
-    if is_win:
-        from PyInstaller.utils import winmanifest
 
     if config['hasRsrcUpdate']:
         from PyInstaller.utils import icon, versioninfo, winresource
