@@ -100,7 +100,7 @@ import xml
 from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
-from PyInstaller.compat import hashlib
+from PyInstaller.compat import hashlib, architecture
 from PyInstaller import log as logging
 logger = logging.getLogger('PyInstaller.build.winmanifest')
 
@@ -1007,12 +1007,26 @@ def create_manifest(filename, manifest, console):
             Manifest(type_="win32",
                  name="Microsoft.Windows.Common-Controls",
                  language="*",
-                 processorArchitecture="x86",
+                 processorArchitecture=processor_architecture(),
                  version=(6, 0, 0, 0),
                  publicKeyToken="6595b64144ccf1df")
             )
     manifest.writeprettyxml(filename)
     return manifest
+
+
+def processor_architecture():
+    """
+    Detect processor architecture for assembly manifest.
+
+    According to:
+    http://msdn.microsoft.com/en-us/library/windows/desktop/aa374219(v=vs.85).aspx
+    item processorArchitecture in assembly manifest is
+
+    'x86' - 32bit Windows
+    'amd64' - 64bit Windows
+    """
+    return 'x86' if architecture() == '32bit' else 'amd64'
 
 
 if __name__ == "__main__":    

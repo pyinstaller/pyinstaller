@@ -449,7 +449,7 @@ class Analysis(Target):
             depmanifest = None
         else:
             depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
-                                               processorArchitecture="x86",
+                                               processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
             depmanifest.filename = os.path.join(BUILDPATH,
                                                 specnm + ".exe.manifest")
@@ -706,7 +706,7 @@ def checkCache(fnm, strip, upx):
                                                 "assemblies of %r",
                                                 pydep.name, cachedfile)
                                     manifest.dependentAssemblies.append(pydep)
-                                    _depNames.append(pydep.name)
+                                    _depNames.update(pydep.name)
                             if len(manifest.dependentAssemblies) > olen:
                                 try:
                                     manifest.update_resources(os.path.abspath(cachedfile),
