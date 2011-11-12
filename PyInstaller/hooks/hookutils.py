@@ -2,10 +2,10 @@
 
 import os
 import sys
-import glob
 import subprocess
 import PyInstaller
 from PyInstaller.compat import set
+from PyInstaller.utils import misc
 
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.hooks')
@@ -81,15 +81,6 @@ def eval_script(scriptfilename, *args):
     return eval(txt)
 
 
-def dlls_in_dir(directory):
-    """Returns *.dll, *.so, *.dylib in given directories"""
-    files = []
-    files.extend(glob.glob(os.path.join(directory, '*.so')))
-    files.extend(glob.glob(os.path.join(directory, '*.dll')))
-    files.extend(glob.glob(os.path.join(directory, '*.dylib')))
-    return files
-
-
 def qt4_plugins_dir():
     qt4_plugin_dirs = eval_statement(
         "from PyQt4.QtCore import QCoreApplication;"
@@ -126,7 +117,7 @@ def qt4_plugins_binaries(plugin_type):
     """Return list of dynamic libraries formated for mod.binaries."""
     binaries = []
     pdir = qt4_plugins_dir()
-    files = dlls_in_dir(os.path.join(pdir, plugin_type))
+    files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
     for f in files:
         binaries.append((
             os.path.join('qt4_plugins', plugin_type, os.path.basename(f)),
