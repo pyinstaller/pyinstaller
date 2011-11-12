@@ -25,6 +25,9 @@ __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE', 'PLATFORM',
 import os
 import sys
 
+if sys.version_info < (2,3):
+    raise SystemExit('PyInstaller requires at least Python 2.3, sorry.')
+
 from PyInstaller import compat
 from PyInstaller.utils import svn
 
