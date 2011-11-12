@@ -164,7 +164,7 @@ def _mac_set_relative_dylib_deps(libname):
     """
 
     from PyInstaller.lib.macholib import util
-    from macholib.MachO import MachO
+    from PyInstaller.lib.macholib.MachO import MachO
 
     def match_func(pth):
         """For system libraries is still used absolute path. It is unchanged."""
