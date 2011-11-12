@@ -25,6 +25,7 @@ __all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE', 'PLATFORM',
 import os
 import sys
 
+# Fail hard if Python does not have minimum required version
 if sys.version_info < (2,3):
     raise SystemExit('PyInstaller requires at least Python 2.3, sorry.')
 
