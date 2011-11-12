@@ -149,3 +149,44 @@ def include_library(libname):
     else:
         # By default include library.
         return True
+
+
+def _mac_set_relative_dylib_deps(libname):
+    """
+    On Mac OS X set relative paths to dynamic library dependencies of `libname`.
+
+    Relative paths allow to avoid using environment variable DYLD_LIBRARY_PATH.
+    There are known some issues with DYLD_LIBRARY_PATH. Relative paths is
+    more flexible mechanism.
+
+    Current location of dependend libraries is derived from the location
+    of the executable (paths start with '@executable_path').
+    """
+
+    from PyInstaller.lib.macholib import util
+    from macholib.MachO import MachO
+
+    def match_func(pth):
+        """For system libraries is still used absolute path. It is unchanged."""
+        # Match non system dynamic libraries.
+        if not util.in_system_path(pth):
+            # Use relative path to dependend dynamic libraries bases on
+            # location of the executable.
+            return os.path.join('@executable_path', os.path.basename(pth))
+
+    # Rewrite mach headers with @executable_path.
+    dll = MachO(libname)
+    dll.rewriteLoadCommands(match_func)
+
+    # Write changes into file.
+    # Write code is based on macholib example.
+    try:
+        f = open(dll.filename, 'rb+')
+        for header in dll.headers:
+            f.seek(0)
+            dll.write(f)
+        f.seek(0, 2)
+        f.flush()
+        f.close()
+    except Exception:
+        pass
