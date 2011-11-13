@@ -39,9 +39,11 @@ from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
 from PyInstaller import is_win, is_unix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
 from PyInstaller.compat import hashlib, set
+from PyInstaller.depend import dylib
 
 if is_win:
     from PyInstaller.utils import winmanifest
+
 
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.bindepend')
@@ -402,7 +404,6 @@ class Analysis(Target):
         # Initialize analyzer and analyze scripts
         analyzer = mf.ImportTracker(dirs.keys() + self.pathex, self.hookspath,
                                     self.excludes)
-        #print analyzer.path
         PyInstaller.__pathex__ = self.pathex[:]
         scripts = []  # will contain scripts to bundle
         for i in range(len(self.inputs)):
@@ -606,8 +607,14 @@ def cacheDigest(fnm):
 
 
 def checkCache(fnm, strip, upx):
+    """
+    Cache prevents preprocessing binary files again and again.
+    """
     # On darwin a cache is required anyway to keep the libaries
-    # with relative install names
+    # with relative install names. Caching on darwin does not work
+    # since we need to modify binary headers to use relative paths
+    # to dll depencies and starting with '@executable_path'.
+
     if ((not strip and not upx and not is_darwin and not is_win)
         or fnm.lower().endswith(".manifest")):
         return fnm
@@ -639,6 +646,10 @@ def checkCache(fnm, strip, upx):
         if digest != cache_index[basenm]:
             os.remove(cachedfile)
         else:
+            # On Mac OS X we need relative paths to dll dependencies
+            # starting with @executable_path
+            if is_darwin:
+                dylib.mac_set_relative_dylib_deps(cachedfile)
             return cachedfile
     if upx:
         if strip:
@@ -723,6 +734,10 @@ def checkCache(fnm, strip, upx):
     cache_index[basenm] = digest
     _save_data(cacheindexfn, cache_index)
 
+    # On Mac OS X we need relative paths to dll dependencies
+    # starting with @executable_path
+    if is_darwin:
+        dylib.mac_set_relative_dylib_deps(cachedfile)
     return cachedfile
 
 

@@ -32,10 +32,14 @@ import os
 import re
 
 from PyInstaller import is_win, is_unix, is_darwin
+from PyInstaller.compat import set
 
 
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.bindepend')
+
+
+_BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])
 
 
 # Regex excludes
@@ -151,7 +155,7 @@ def include_library(libname):
         return True
 
 
-def _mac_set_relative_dylib_deps(libname):
+def mac_set_relative_dylib_deps(libname):
     """
     On Mac OS X set relative paths to dynamic library dependencies of `libname`.
 
@@ -165,6 +169,11 @@ def _mac_set_relative_dylib_deps(libname):
 
     from PyInstaller.lib.macholib import util
     from PyInstaller.lib.macholib.MachO import MachO
+
+    # Ignore bootloader otherwise PyInstaller fails with exception like
+    # 'ValueError: total_size > low_offset (288 > 0)'
+    if os.path.basename(libname) in _BOOTLOADER_FNAMES:
+        return
 
     def match_func(pth):
         """For system libraries is still used absolute path. It is unchanged."""
