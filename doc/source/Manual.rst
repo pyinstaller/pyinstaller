@@ -21,6 +21,8 @@ Requirements
 Windows
 -------
 
+Windows XP or newer.
+
 PyWin32_
     Python extensions for Windows is only necessary for users of Python 2.6+.
 
@@ -41,7 +43,7 @@ objdump
 Mac OS X
 --------
 
-No dependency on other modules or software.
+Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).
 
 |GOBACK|_
 
