@@ -100,19 +100,35 @@ int append2enviroment(const char *name, const char *value)
     return 0;
 }
 
-int set_enviroment(const ARCHIVE_STATUS *status)
+int set_environment(const ARCHIVE_STATUS *status)
 {
     int rc = 0;
     char buf[PATH_MAX+2];
     char *p;
 
+#ifdef __APPLE__
+    /* On Mac OS X we do not use environment variables DYLD_LIBRARY_PATH
+     * or LD_LIBRARY_PATH to tell OS where to look for dynamic libraries.
+     * There were some issues with this approach. In some cases some
+     * system libraries were trying to load incompatible libraries from
+     * the dist directory. For instance this was experienced with macprots
+     * and PyQt4 applications.
+     *
+     * To tell the OS where to look for dynamic libraries we modify
+     * .so/.dylib files to use relative paths to other dependend
+     * libraries starting with @loader_path.
+     *
+     * For more information see:
+     * http://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
+     * http://developer.apple.com/library/mac/#documentation/DeveloperTools/  \
+     *     Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
+	unsetenv("LD_LIBRARY_PATH");
+	unsetenv("DYLD_LIBRARY_PATH");
+
+#else
     /* add temppath to LD_LIBRARY_PATH */
     if (status->temppath[0] != 0){
         rc = append2enviroment("LD_LIBRARY_PATH", status->temppath);
-#ifdef __APPLE__
-        /* add temppath to DYLD_LIBRARY_PATH */
-        rc = append2enviroment("DYLD_LIBRARY_PATH", status->temppath);
-#endif
     }
     /* make homepath absolute
      * homepath contains ./ which breaks some modules when changing the CWD.
@@ -127,9 +143,6 @@ int set_enviroment(const ARCHIVE_STATUS *status)
     /* path must end with slash / */
     strcat(buf, "/");
     rc = append2enviroment("LD_LIBRARY_PATH", buf);
-#ifdef __APPLE__
-        /* add homepath to DYLD_LIBRARY_PATH */
-    rc = append2enviroment("DYLD_LIBRARY_PATH", buf);
 #endif
 
     return rc;

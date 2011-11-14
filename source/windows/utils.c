@@ -188,7 +188,7 @@ void get_archivefile(char *archivefile, const char *thisfile)
 	strcpy(archivefile + strlen(archivefile) - 3, "pkg");
 }
 
-int set_enviroment(const ARCHIVE_STATUS *status)
+int set_environment(const ARCHIVE_STATUS *status)
 {
 	return 0;
 }

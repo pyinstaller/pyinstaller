@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
         strcat(MEIPASS2, status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
         putenv(MEIPASS2);
 
-        if (set_enviroment(status_list[SELF]) == -1)
+        if (set_environment(status_list[SELF]) == -1)
             return -1;
 
 #ifndef WIN32
