@@ -34,14 +34,15 @@ try:
 except ImportError:
     # if importing PyInstaller fails, try to load from parent
     # directory to support running without installation
-    import imp, os
+    import imp
+    import os
     if not hasattr(os, "getuid") or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
             [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
 
 
 from PyInstaller import HOMEPATH
-from PyInstaller import is_py23, is_py25, is_py26, is_win
+from PyInstaller import is_py23, is_py25, is_py26, is_win, is_darwin
 
 
 MIN_VERSION_OR_OS = {
@@ -50,7 +51,8 @@ MIN_VERSION_OR_OS = {
     'import/test_relative_import3': is_py25,
     'basic/test_celementtree': is_py25,
     'basic/test_9': is_py23,
-    'basic/test_absolute_ld_library_path': not is_win,
+    # On Mac DYLD_LIBRARY_PATH is not used.
+    'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
     'libraries/test_enchant': is_win,
 }
 
