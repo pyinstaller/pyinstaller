@@ -18,34 +18,21 @@ PyInstaller Manual
 Requirements
 ++++++++++++
 
-Windows
--------
-
-Windows XP or newer.
-
-PyWin32_
+**Windows**
+  * Windows XP or newer.
+  * PyWin32_
     Python extensions for Windows is only necessary for users of Python 2.6+.
 
-|GOBACK|_
-
-Linux
------
-
-ldd
+**Linux**
+  ldd
     Console application to print the shared libraries required by each program
     or shared library.
 
-objdump
+  objdump
     Console application to display information from object files.
 
-|GOBACK|_
-
-Mac OS X
---------
-
-Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).
-
-|GOBACK|_
+**Mac OS X**
+  + Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).
 
 
 Getting Started
