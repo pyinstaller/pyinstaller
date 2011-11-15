@@ -1129,7 +1129,10 @@ Listing Hidden Imports
 Hidden imports are fairly common. These can occur when the code is using
 ``__import__`` (or, perhaps ``exec`` or ``eval``), in which case you will see a warning in
 the ``warnproject.txt`` file. They can also occur when an extension module uses the
-Python/C API to do an import, in which case Analysis can't detect anything. You
+Python/C API to do an import, in which case Analysis can't detect
+anything.
+
+You
 can verify that hidden import is the problem by using Python's verbose imports
 flag. If the import messages say "module not found", but the ``warnproject.txt``
 file has no "no module named..." message for the same module, then the problem
@@ -1143,22 +1146,35 @@ is a hidden import.
     hidden imports for the most common packages out there. For instance,
     PIL_, PyWin32_, PyQt_ are already taken care of.
 
-Hidden imports are handled by hooking the module (the one doing the hidden
-imports) at ``Analysis`` time. Do this by creating a file named ``hook-module.py``
-(where module is the fully-qualified Python name, eg, ``hook-xml.dom.py``), and
-placing it in the ``PyInstaller.hooks`` package under |PyInstaller|'s root directory,
-(alternatively, you can save it elsewhere, and then use the ``hookspath`` arg to
-``Analysis`` so your private hooks directory will be searched). Normally, it will
-have only one line::
+Hidden imports are handled by hooking the module (the one doing the
+hidden imports) at ``Analysis`` time. Do this as follows:
+
+ 1. Create a file named ``hook-module.py`` (where `module` is the
+    fully-qualified Python name, eg, ``hook-xml.dom.py``) and place it
+    somewhere. Remember the place as `your private hooks directory`.
+
+ 2. In the .spec file, pass `your private hooks directory` as
+    ``hookspath`` argument to ``Analysis`` so will be searched.
+    Example::
+
+       a = Analysis(['myscript.py'], hookspath='/my/priv/hooks')
+
+In most cases the hook module will have only one line::
 
       hiddenimports = ['module1', 'module2']
 
-When the ``Analysis`` finds this file, it will proceed exactly as though the module
-explicitly imported ``module1`` and ``module2``. (Full details on the analysis-time
-hook mechanism is in the `Hooks`_ section).
+When the ``Analysis`` finds this file, it will proceed exactly as
+though the module explicitly imported ``module1`` and ``module2``. 
 
-If you successfully hook a publicly distributed module in this way, please send
-us the hook so we can make it available to others.
+If you successfully hook a publicly distributed module in this way,
+please send us the hook so we can make it available to others. 
+
+You may want to have a look at already existing hooks in the
+``PyInstaller.hooks`` package under |PyInstaller|'s root directory.
+For full details on the analysis-time hook mechanism is in the `Hooks`_
+section.
+
+
 
 |GOBACK|_
 
@@ -1673,41 +1689,69 @@ whether the import is inside a condition (conditional imports).
 Hooks
 *****
 
-In modulefinder, scanning the code takes the place of executing the code
-object. ``mf`` goes further and allows a module to be hooked (after it has been
+In modulefinder, scanning the code takes the place of executing the
+code object. ``ExtensionModules``, of course, don't get scanned, so
+there need to be a way of recording any imports they do.
+
+Please read `Listing Hidden Imports`_ for more information.
+
+``mf`` goes further and allows a module to be hooked (after it has been
 scanned, but before analyze_one is done with it). A hook is a module named
-``hook-fullyqualifiedname`` in the ``PyInstaller.hooks`` package.
+``hook-fully.qualified.name`` in the ``PyInstaller.hooks`` package.
+
 These modules should have one or more of the following three global
 names defined:
 
+
 ``hiddenimports``
-    a list of modules names (relative or absolute) that the module
-    imports in some untrackable way.
+    A list of modules names (relative or absolute) the
+    module imports in some untrackable way.
+
+    This extends the list of modules to be imported which is created
+    by scanning the code.
+
+    Example::
+
+      hiddenimports = ['_proxy', 'utils', 'defs']
 
 ``attrs``
-    a list of ``(name, value)`` pairs (where value is normally meaningless).
+    A list of ``(name, value)`` pairs (where value is normally
+    meaningless).
+
+    This will set the module-attribute ``name`` to ``value`` for each
+    pait in the list. The value is meaningless normally, since the
+    modules are not executed.
+
+    This exists mainly so that ImportTracker won't issue spurious
+    warnings when the rightmost node in a dotted name turns out to be
+    an attribute in a package, instead of a missing submodule.
+
+    Example: See ``PyInstaller/hooks/hook-xml.dom.ext.py``.
+
 
 ``hook(mod)``
-    a function taking a ``Module`` instance and returning a ``Module`` 
-    instance (so it can modify or replace).
+    A function expecting a ``Module`` instance and
+    returning a ``Module`` instance (so it can modify or replace).
+
+    This exists for things like dynamic modification of a
+    package's ``__path__`` or perverse situations, like
+    ``xml.__init__`` replacing itself in ``sys.modules`` with
+    ``_xmlplus.__init__``. (It takes nine hook modules to properly
+    trace through PyXML-using code, and I can't believe that it's any
+    easier for the poor programmer using that package). 
+
+    The ``hook(mod)`` (if it exists) is called before looking at the
+    others - that way it can, for example, test ``sys.version`` and
+    adjust what's in ``hiddenimports``.
 
 
-The first hook (``hiddenimports``) extends the list created by
-scanning the code. ``ExtensionModules``, of course, don't get scanned,
-so this is the only way of recording any imports they do.
+Advanced Hook Usage
+~~~~~~~~~~~~~~~~~~~
 
-The second hook (``attrs``) exists mainly so that ImportTracker won't issue
-spurious warnings when the rightmost node in a dotted name turns out to be an
-attribute in a package module, instead of a missing submodule.
-
-The callable hook exists for things like dynamic modification of a package's
-``__path__`` or perverse situations, like ``xml.__init__`` replacing itself in
-``sys.modules`` with ``_xmlplus.__init__``. (It takes nine hook modules to
-properly trace through PyXML-using code, and I can't believe that it's
-any easier for the poor programmer using that package). The
-``hook(mod)`` (if it exists) is called before looking at the others -
-that way it can, for example, test ``sys.version`` and adjust what's
-in ``hiddenimports``.
+Since the hook module is imported like any other
+module, you can use any Python code we need. For example for
+colletiong additional data or files. See the existing hooks in
+``PyInstaller/hooks`` for some examples, esp. the ``django`` hooks.
 
 |GOBACK|_
 
