@@ -67,8 +67,8 @@ to these scripts short (don't install in a deeply nested subdirectory).
 Build your project
 ------------------
 
-[For building a Windows COM server, please see section `Windows COM
-Server Support`_ below.]
+For building a Windows COM server, please see section `Windows COM
+Server Support`_ below.
 
 In the |install_path| directory, run::
 
@@ -229,8 +229,8 @@ Windows specific options:
     omitted or specified as wildcard \*.Multiple resources
     are allowed, using this option multiple times.
 
-[For building with optimization on (like ``Python -O``), see section
-`Building Optimized`_]
+For building with optimization on (like ``Python -O``), see section
+`Building Optimized`_.
 
 |GOBACK|_
 
@@ -949,7 +949,7 @@ With the MERGE function we can create a group of interdependent packages.
     the second one is the script name without extension and the third one is the final name.
 
 
-``MERGE`` function filters the analysis to avoid duplication of libraries and modules.
+The ``MERGE`` function filters the analysis to avoid duplication of libraries and modules.
 As a result the packages generated will be connected. Furthermore, to ensure the consistency
 of dependencies, it replaces the temporary names with the actual names.
 MERGE is used after the analysis phase and before ``EXE`` and ``COLLECT``.
