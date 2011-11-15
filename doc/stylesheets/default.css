@@ -143,7 +143,7 @@ div.sidebar {
 	margin-bottom: 1em;
 	font-size: smaller;
 	border: medium outset;
-	padding: 1em 0em;  /* needed by IE */
+	padding: 0.5em 1em;  /* needed by IE */
 	background-color: #ffffee;
 	width: 35%;
 	float: right;
