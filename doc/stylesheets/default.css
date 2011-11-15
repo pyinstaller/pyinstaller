@@ -41,6 +41,9 @@ div#contents p.topic-title.first {
 a:link, a:visited { color: #006699; }
 a:hover { background-color:#006699; color:white; }
 
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+	text-decoration: inherit;
+}
 table.docutils {
     border: 0 solid #DDCCEE;
     border-collapse: collapse;
