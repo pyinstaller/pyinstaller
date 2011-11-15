@@ -48,9 +48,21 @@ div#contents p.topic-title.first {
 a:link, a:visited { color: #006699; }
 a:hover { background-color:#006699; color:white; }
 
-h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a,
+h1 a:hover, h2 a:hover, h3 a:hover, h4 a:hover, h5 a:hover, h6 a:hover,
+h1 a:visited, h2 a:visited, h3 a:visited, h4 a:visited, h5 a:visited, h6 a:visited {
 	text-decoration: inherit;
+	background-color: inherit;
+	color:inherit;
 }
+h2 a:hover::after, h3 a:hover::after {
+	color: red;
+	content: " back to contents";
+	text-decoration: unterline;
+	font-size: x-small;
+	margin-left: 1em;
+}
+
 table.docutils {
     border: 0 solid #DDCCEE;
     border-collapse: collapse;
