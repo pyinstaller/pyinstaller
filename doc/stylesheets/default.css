@@ -8,6 +8,13 @@ body {
 	background-color: white;
 }
 
+tt, span.literal {
+	font-family: monospace;
+	font-size: 0.95em;
+	background-color: #ECF0F3;
+	padding: 0 1px;
+}
+
 div.document {
 	padding-left: 2em;
 	padding-right: 2em;
@@ -137,6 +144,8 @@ pre {
   padding: 0.5em;
   margin-left: 4em;
   margin-right: 4em;
+  font-family: monospace;
+  font-size: 0.95em;
 }
 
 /*--- sidebar --- */
