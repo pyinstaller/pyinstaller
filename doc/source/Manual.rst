@@ -201,7 +201,7 @@ Windows and Mac OS X specific options:
     **This option is mandatory when creating .app bundle on
     Mac OS X**.
 
--i FILE.ICO or FILE.EXE,ID or FILE.ICNS, --icon=FILE.ICO or FILE.EXE,ID or FILE.ICNS
+-i FILE.ICO, -i FILE.EXE,ID, -i FILE.ICNS, --icon=FILE.ICO, --icon=FILE.EXE,ID, --icon=FILE.ICNS
     If FILE is an .ico file, add the icon to the final
     executable. Otherwise, the syntax 'file.exe,id' to
     extract the icon with the specified id from file.exe
@@ -214,7 +214,7 @@ Windows specific options:
 --version-file=FILE
     add a version resource from FILE to the exe
 
--m FILE or XML, --manifest=FILE or XML
+-m FILE, -m XML, --manifest=FILE, --manifest=XML
     add manifest FILE or XML to the exe
 
 -r FILE[,TYPE[,NAME[,LANGUAGE]]], --resource=FILE[,TYPE[,NAME[,LANGUAGE]]]
@@ -777,7 +777,7 @@ An Analysis has five outputs, all ``TOCs`` accessed as attributes of the ``Analy
 |GOBACK|_
 
 PYZ
-***
+*******
 
 ::
 
@@ -797,7 +797,7 @@ PYZ
 |GOBACK|_
 
 PKG
-***
+*******
 
 Generally, you will not need to create your own ``PKGs``, as the ``EXE`` will do it for
 you. This is one way to include read-only data in a single-file deployment,
@@ -826,7 +826,7 @@ however. A single-file deployment including TK support will use this technique.
 |GOBACK|_
 
 EXE
-***
+*******
 
 ::
 
@@ -876,7 +876,7 @@ EXE
 |GOBACK|_
 
 DLL
-***
+*******
 
 On Windows, this provides support for doing in-process COM servers. It is not
 generalized. However, embedders can follow the same model to build a special
@@ -906,7 +906,7 @@ COLLECT
 |GOBACK|_
 
 Tree
-****
+*******
 
 ::
 
@@ -935,7 +935,7 @@ in the section on ``TOCs``.
 |GOBACK|_
 
 MERGE
-*****
+*******
 
 With the MERGE function we can create a group of interdependent packages.
 
@@ -1687,7 +1687,7 @@ whether the import is inside a condition (conditional imports).
 |GOBACK|_
 
 Hooks
-*****
+*******
 
 In modulefinder, scanning the code takes the place of executing the
 code object. ``ExtensionModules``, of course, don't get scanned, so
