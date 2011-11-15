@@ -2,41 +2,121 @@
  * CSS for PyInstaller Documentation
  */
 
-body, th, td {
-	font-family: verdana, Arial, sans-serif;
+body {
+	font-family: Verdana, Arial, sans-serif;
 	font-size: 10pt;
 	background-color: white;
 }
 
-p, dl, table {
+div.document {
+	padding-left: 2em;
+	padding-right: 2em;
+	padding: 0 20px 30px;
+}
+dl, table {
 	margin-left: 2em;
 	margin-right: 2em;
 }
 
 h1, h2, h3, h4, h5, h6 {
-	color: #006699;
+    background-color: #F2F2F2;
+    border-bottom: 1px solid #CCCCCC;
+    color: #20435C !important;
+    font-family: 'Trebuchet MS',sans-serif;
+    font-weight: normal;
+    margin: 20px -20px 10px;
+    padding: 3px 0 3px 10px;
 }
 
 h1 {
 	text-align: center;
 	font-variant: small-caps;
 }
+div#contents p.topic-title.first {
+	font-size: large;
+	font-family: 'Trebuchet MS',sans-serif;
+	font-weight: normal;
+}
 
 a:link, a:visited { color: #006699; }
+a:hover { background-color:#006699; color:white; }
 
-a:hover {background-color:#006699; color:white;}
+table.docutils {
+    border: 0 solid #DDCCEE;
+    border-collapse: collapse;
+}
+table.docutils td, table.docutils th {
+    background-color: #EEEEFF;
+    border-left: 0 none;
+    padding: 2px 5px;
+}
+table.docutils td p.last, table.docutils th p.last {
+    margin-bottom: 0;
+}
+table.field-list td, table.field-list th {
+    border: 0 none !important;
+}
+table.footnote td, table.footnote th {
+    border: 0 none !important;
+}
+table.docutils th {
+    background-color: #EEDDEE;
+    border-top: 1px solid #CCAACC;
+}
 
-table { font-size: 12pt; }
-table.option-list kbd {padding: 3px; background: #FFD596; white-space: nowrap }
+table.docinfo {
+    border: 0 solid black;
+    border-collapse: collapse;
+}
+table.docinfo th {
+    background-color: #EEDDEE;
+    border: solid thin #CCAACC;
+    border-top: 0;
+    border-left: 0;
+    padding: 2px 5px;
+}
+table.docinfo td {
+    background-color: #EEEEFF;
+    border: solid thin #EEDDFF;
+    border-width: 0 0 thin;
+    padding: 2px 5px;
+}
+
+
+table.option-list td.option-group {
+   padding-left: 0;
+   background-color: #EEDDEE;
+}
+table.option-list td.option-group[colspan="2"] {
+    background-color: #EEEEFF;
+}
+table.option-list td + td {
+    padding-bottom: 0.5em;
+}
+table.option-list kbd {
+   padding: 3px;
+   background-color: #EEDDEE;
+   white-space: nowrap;
+}
 
 th {
+	padding-right: 5px;
+	text-align: left;
   	background: #FFD596;
 	font-weight: bold;
-	font-variant: small-caps;
+}
+th.head {
+    text-align: center;
 }
 
 td {
-  	background: white;;
+	background: white;
+	text-align: left;
+}
+
+
+dl {
+    margin-bottom: 15px;
 }
 
 dt {
@@ -45,17 +125,18 @@ dt {
 }
 
 pre {
-  border: solid 1px black;
-  background: #FFD596;
-  padding: 1em;
+  background-color: #EEFFCC;
+  border-color: #AACC99;
+  border-style: solid none;
+  border-width: 1px medium;
+  color: #333333;
+  line-height: 120%;
+  padding: 0.5em;
   margin-left: 4em;
   margin-right: 4em;
 }
 
-tt, code {
-	font-family: monospace;
-	font-size: larger;
-}
+/*--- sidebar --- */
 
 div.sidebar {
 	margin-left: 1em;
