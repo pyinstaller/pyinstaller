@@ -1,13 +1,12 @@
 # Qt4 plugins are bundled as data files (see hooks/hook-PyQt4*),
 # within a "qt4_plugins" directory.
 # We add a runtime hook to tell Qt4 where to find them.
+
 import os
 import sys
+
 d = "qt4_plugins"
-if "_MEIPASS2" in os.environ:
-    d = os.path.join(os.environ["_MEIPASS2"], d)
-else:
-    d = os.path.join(os.path.dirname(sys.argv[0]), d)
+d = os.path.join(sys._MEIPASS, d)
 
 
 # We remove QT_PLUGIN_PATH variable, beasuse we want Qt4 to load

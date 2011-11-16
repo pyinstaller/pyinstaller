@@ -28,7 +28,7 @@ import os
 
 this = carchive.CArchive(sys.executable)
 tk = this.openEmbedded('tk.pkg')
-targetdir = os.environ['_MEIPASS2']
+targetdir = sys._MEIPASS
 for fnm in tk.contents():
     stuff = tk.extract(fnm)[1]
     outnm = os.path.join(targetdir, fnm)

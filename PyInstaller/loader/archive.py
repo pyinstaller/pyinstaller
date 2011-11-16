@@ -39,6 +39,7 @@ _environ = None
 
 ### **NOTE** This module is used during bootstrap.
 ### Import *ONLY* builtin modules.
+
 import marshal
 import struct
 import imp

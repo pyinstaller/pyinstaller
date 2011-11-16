@@ -23,16 +23,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os, sys, iu, imp
+import os
+import sys
+import imp
+
+import iu
+
+
 class Win32ImportDirector(iu.ImportDirector):
     def __init__(self):
-        self.path = sys.path[0] # since I run as a hook, sys.path probably hasn't been mucked with
+        self.path = sys.path[0]  # since I run as a hook, sys.path probably hasn't been mucked with
         if hasattr(sys, 'version_info'):
-            self.suffix = '%d%d'%(sys.version_info[0],sys.version_info[1])
+            self.suffix = '%d%d' % (sys.version_info[0], sys.version_info[1])
         else:
             self.suffix = '%s%s' % (sys.version[0], sys.version[2])
+
     def getmod(self, nm):
-        fnm = os.path.join(self.path, nm+self.suffix+'.dll')
+        fnm = os.path.join(self.path, nm + self.suffix + '.dll')
         try:
             fp = open(fnm, 'rb')
         except:
@@ -41,4 +48,6 @@ class Win32ImportDirector(iu.ImportDirector):
             mod = imp.load_module(nm, fp, fnm, ('.dll', 'rb', imp.C_EXTENSION))
             mod.__file__ = fnm
             return mod
+
+
 sys.importManager.metapath.insert(1, Win32ImportDirector())

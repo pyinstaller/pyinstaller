@@ -32,6 +32,7 @@
 
 __realopen__ = open
 
+
 def myopen(fn, *args):
     if isinstance(fn, basestring):
         if fn.endswith("version") and ".pyz" in fn:
