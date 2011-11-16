@@ -54,6 +54,10 @@ if not hasattr(sys, 'frozen'):
 import os
 if '_MEIPASS2' in os.environ:
     sys._MEIPASS = os.environ['_MEIPASS2']
+    # Ensure sys._MEIPASS is absolute path.
+    sys._MEIPASS = os.path.normpath(sys._MEIPASS)
+    sys._MEIPASS = os.path.abspath(sys._MEIPASS)
+    # Delete _MEIPASS2 from environment.
     del os.environ['_MEIPASS2']
 
 
