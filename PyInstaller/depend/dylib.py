@@ -181,7 +181,8 @@ def mac_set_relative_dylib_deps(libname):
         if not util.in_system_path(pth):
             # Use relative path to dependend dynamic libraries bases on
             # location of the executable.
-            return os.path.join('@loader_path', os.path.basename(pth))
+            #return os.path.join('@loader_path', os.path.basename(pth))
+            return os.path.join('@executable_path', os.path.basename(pth))
 
     # Rewrite mach headers with @loader_path.
     dll = MachO(libname)
