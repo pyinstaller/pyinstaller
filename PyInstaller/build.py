@@ -606,7 +606,7 @@ def cacheDigest(fnm):
     return digest
 
 
-def checkCache(fnm, strip, upx):
+def checkCache(fnm, strip=0, upx=0):
     """
     Cache prevents preprocessing binary files again and again.
     """
@@ -1244,6 +1244,10 @@ class BUNDLE(Target):
 
         toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
+            # Copy files from cache. This ensures that are used files with relative
+            # paths to dynamic library dependencies (@loader_path)
+            if typ in ('EXTENSION', 'BINARY'):
+                fnm = checkCache(fnm)
             tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
