@@ -1611,6 +1611,21 @@ names defined:
 
       hiddenimports = ['_proxy', 'utils', 'defs']
 
+``datas``
+   A list of globs of files or directories to bundle as datafiles. For
+   each glob, a destination directory is specified.
+
+   Example::
+
+      datas = [
+           ('/usr/share/icons/education_*.png', 'icons'),
+           ('/usr/share/libsmi/mibs/*', 'mibs'),
+	   ]
+
+   This will copy all iconfiles matching `education_*.png` into the
+   subdirectory `icons` and recursively copy the content of
+   `/usr/share/libsmi/mibs` into `mibs`.
+
 ``attrs``
     A list of ``(name, value)`` pairs (where value is normally
     meaningless).
