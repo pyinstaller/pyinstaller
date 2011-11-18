@@ -155,31 +155,6 @@ def qt4_menu_nib_dir():
     return menu_dir
 
 
-def babel_localedata_dir():
-    return exec_statement(
-        "import babel.localedata; print babel.localedata._dirname")
-
-
-def mpl_data_dir():
-    return exec_statement(
-        "import matplotlib; print matplotlib._get_data_path()")
-
-
-def qwt_numpy_support():
-    return eval_statement(
-        "from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumpy')")
-
-
-def qwt_numeric_support():
-    return eval_statement(
-        "from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumeric')")
-
-
-def qwt_numarray_support():
-    return eval_statement(
-        "from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumarray')")
-
-
 def django_dottedstring_imports(django_root_dir):
     package_name = os.path.basename(django_root_dir)
     os.environ["DJANGO_SETTINGS_MODULE"] = "%s.settings" % package_name

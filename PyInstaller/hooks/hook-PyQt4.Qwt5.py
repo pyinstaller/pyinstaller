@@ -1,10 +1,10 @@
-from PyInstaller.hooks import hookutils
+from PyInstaller.hooks.hookutils import eval_statement
 
 hiddenimports = ["PyQt4.QtCore", "PyQt4.QtGui", "PyQt4.QtSvg"]
 
-if hookutils.qwt_numpy_support():
+if eval_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumpy')"):
     hiddenimports.append("numpy")
-if hookutils.qwt_numeric_support():
+if eval_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumeric')"):
     hiddenimports.append("Numeric")
-if hookutils.qwt_numarray_support():
+if eval_statement("from PyQt4 import Qwt5; print hasattr(Qwt5, 'toNumarray')"):
     hiddenimports.append("numarray")

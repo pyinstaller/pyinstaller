@@ -1,6 +1,8 @@
-from PyInstaller.hooks.hookutils import mpl_data_dir
+from PyInstaller.hooks.hookutils import exec_statement
 
-dir = mpl_data_dir()
+mpl_data_dir = exec_statement(
+    "import matplotlib; print matplotlib._get_data_path()")
+
 datas = [
-    (dir, ""),
+    (mpl_data_dir, ""),
 ]
