@@ -36,7 +36,7 @@ from PyInstaller.compat import set
 
 
 import PyInstaller.log as logging
-logger = logging.getLogger('PyInstaller.build.bindepend')
+logger = logging.getLogger('PyInstaller.build.dylib')
 
 
 _BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])
