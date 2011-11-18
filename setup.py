@@ -18,6 +18,9 @@ supported, without having to handle plugins or external data files
 manually.
 """
 
+raise SystemExit("\nsetup.py is not yet supposed to work. "
+                 "Please Use PyInstaller without installation.\n")
+
 from setuptools import setup, find_packages
 
 import platform
