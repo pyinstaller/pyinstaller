@@ -46,7 +46,7 @@ if is_win:
 
 
 import PyInstaller.log as logging
-logger = logging.getLogger('PyInstaller.build.bindepend')
+logger = logging.getLogger('PyInstaller.build')
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
