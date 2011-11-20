@@ -420,27 +420,28 @@ class Analysis(Target):
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
         for modnm, mod in importTracker.modules.items():
-            # FIXME: why can we have a mod == None here?
-            if mod is not None:
-                rthooks.extend(_findRTHook(modnm))  # XXX
-                datas.extend(mod.datas)
-                if isinstance(mod, mf.BuiltinModule):
-                    pass
-                elif isinstance(mod, mf.ExtensionModule):
-                    binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
-                    # allows hooks to specify additional dependency
-                    # on other shared libraries loaded at runtime (by dlopen)
-                    binaries.extend(mod.binaries)
-                elif isinstance(mod, (mf.PkgInZipModule, mf.PyInZipModule)):
-                    zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
-                                     str(mod.owner), 'ZIPFILE'))
-                else:
-                    # mf.PyModule instances expose a list of binary
-                    # dependencies, most probably shared libraries accessed
-                    # via ctypes. Add them to the overall required binaries.
-                    binaries.extend(mod.binaries)
-                    if modnm != '__main__':
-                        pure.append((modnm, mod.__file__, 'PYMODULE'))
+            if mod is None:
+                # FIXME: why can we have a mod == None here?
+                continue
+            rthooks.extend(_findRTHook(modnm))  # XXX
+            datas.extend(mod.datas)
+            if isinstance(mod, mf.BuiltinModule):
+                pass
+            elif isinstance(mod, mf.ExtensionModule):
+                binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
+                # allows hooks to specify additional dependency
+                # on other shared libraries loaded at runtime (by dlopen)
+                binaries.extend(mod.binaries)
+            elif isinstance(mod, (mf.PkgInZipModule, mf.PyInZipModule)):
+                zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
+                                 str(mod.owner), 'ZIPFILE'))
+            else:
+                # mf.PyModule instances expose a list of binary
+                # dependencies, most probably shared libraries accessed
+                # via ctypes. Add them to the overall required binaries.
+                binaries.extend(mod.binaries)
+                if modnm != '__main__':
+                    pure.append((modnm, mod.__file__, 'PYMODULE'))
 
         python = config['python']
         if not is_win:
