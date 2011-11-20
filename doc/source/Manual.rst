@@ -32,7 +32,7 @@ Requirements
     Console application to display information from object files.
 
 **Mac OS X**
-  + Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).
+  + Mac OS X 10.5 (Leopard) or newer (Snow Leopard, Lion).
 
 
 Getting Started
