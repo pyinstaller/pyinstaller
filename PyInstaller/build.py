@@ -401,15 +401,15 @@ class Analysis(Target):
             dirs[d] = 1
             pynms.append(pynm)
         ###################################################
-        # Initialize analyzer and analyze scripts
-        analyzer = mf.ImportTracker(dirs.keys() + self.pathex, self.hookspath,
-                                    self.excludes)
+        # Initialize importTracker and analyze scripts
+        importTracker = mf.ImportTracker(dirs.keys() + self.pathex,
+                                         self.hookspath, self.excludes)
         PyInstaller.__pathex__ = self.pathex[:]
         scripts = []  # will contain scripts to bundle
         for i in range(len(self.inputs)):
             script = self.inputs[i]
             logger.info("Analyzing %s", script)
-            analyzer.analyze_script(script)
+            importTracker.analyze_script(script)
             scripts.append((pynms[i], script, 'PYSOURCE'))
         PyInstaller.__pathex__ = []
         ###################################################
@@ -419,7 +419,7 @@ class Analysis(Target):
         zipfiles = []  # zipfiles to bundle
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
-        for modnm, mod in analyzer.modules.items():
+        for modnm, mod in importTracker.modules.items():
             # FIXME: why can we have a mod == None here?
             if mod is not None:
                 rthooks.extend(_findRTHook(modnm))  # XXX
@@ -487,7 +487,7 @@ class Analysis(Target):
         if oldstuff != newstuff:
             _save_data(self.out, newstuff)
             wf = open(WARNFILE, 'w')
-            for ln in analyzer.getwarnings():
+            for ln in importTracker.getwarnings():
                 wf.write(ln + '\n')
             wf.close()
             logger.info("Warnings written to %s", WARNFILE)
