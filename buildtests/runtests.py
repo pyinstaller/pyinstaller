@@ -234,8 +234,8 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             command = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
                     '-b -r >> ' + newlog, prog])
             os.system(command)
-            pattern_list = eval(open(logfn, 'r').read())
-            fname_list = eval(open(newlog, 'r').read())
+            pattern_list = eval(open(logfn, 'rU').read())
+            fname_list = eval(open(newlog, 'rU').read())
             count = 0
             for pattern in pattern_list:
                 found = False

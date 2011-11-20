@@ -141,7 +141,7 @@ def analscriptname(script):
 
 def ispkgdir(path):
     try:
-        open(os.path.join(path, '__init__.py'), 'r')
+        open(os.path.join(path, '__init__.py'), 'rU')
     except IOError:
         try:
             open(os.path.join(path, '__init__.pyc'), 'rb')

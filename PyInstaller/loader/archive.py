@@ -362,7 +362,7 @@ class ZlibArchive(Archive):
         base, ext = self.os.path.splitext(self.os.path.basename(pth))
         ispkg = base == '__init__'
         try:
-            txt = open(pth[:-1], 'r').read()+'\n'
+            txt = open(pth[:-1], 'rU').read()+'\n'
         except (IOError, OSError):
             try:
                 f = open(pth, 'rb')

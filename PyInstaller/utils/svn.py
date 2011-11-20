@@ -35,7 +35,7 @@ def get_svn_revision():
     entries_path = os.path.join(path, '.svn', 'entries')
 
     try:
-        entries = open(entries_path, 'r').read()
+        entries = open(entries_path, 'rU').read()
     except IOError:
         pass
     else:

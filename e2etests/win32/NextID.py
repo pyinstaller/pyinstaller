@@ -44,7 +44,7 @@ class NextID:
             here = os.path.dirname(__file__)
         self.fnm = os.path.join(here, 'id.cfg')
         try:
-            d = eval(open(self.fnm, 'r').read()+'\n')
+            d = eval(open(self.fnm, 'rU').read()+'\n')
         except:
             d = {
                 'systemID': 0xaaaab,

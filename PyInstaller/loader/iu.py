@@ -113,7 +113,7 @@ class DirOwner(Owner):
         while 1:
             if pyc is None or py and pyc[1][8] < py[1][8]:
                 try:
-                    co = compile(open(py[0], 'r').read() + '\n', py[0], 'exec')
+                    co = compile(open(py[0], 'rU').read() + '\n', py[0], 'exec')
                     break
                 except SyntaxError, e:
                     print "Invalid syntax in %s" % py[0]

@@ -329,8 +329,8 @@ class RegistryImportDirector(ImportDirector):
                 return ExtensionModule(nm, fnm)
             elif typ == imp.PY_SOURCE:
                 try:
-                    stuff = open(fnm, 'r').read()+'\n'
-                    co = compile(stuff.replace("\r\n", "\n"), fnm, 'exec')
+                    stuff = open(fnm, 'rU').read()+'\n'
+                    co = compile(stuff, fnm, 'exec')
                 except SyntaxError, e:
                     logger.exception(e)
                     raise SystemExit(10)
@@ -582,8 +582,8 @@ class ImportTracker:
 
     def analyze_script(self, fnm):
         try:
-            stuff = open(fnm, 'r').read()+'\n'
-            co = compile(stuff.replace("\r\n", "\n"), fnm, 'exec')
+            stuff = open(fnm, 'rU').read()+'\n'
+            co = compile(stuff, fnm, 'exec')
         except SyntaxError, e:
             logger.exception(e)
             raise SystemExit(10)

@@ -498,7 +498,7 @@ class VarStruct:
         return "VarStruct('%s', %s)" % (str(self.name), repr(self.kids))
 
 def SetVersion(exenm, versionfile):
-    txt = open(versionfile, 'r').read()
+    txt = open(versionfile, 'rU').read()
     vs = eval(txt+'\n', globals())
     hdst = win32api.BeginUpdateResource(exenm, 0)
     win32api.UpdateResource(hdst, RT_VERSION, 1, vs.toRaw())

@@ -237,7 +237,7 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0,
          hookspath=None, **kwargs):
 
     try:
-        config = eval(open(configfilename, 'r').read())
+        config = eval(open(configfilename, 'rU').read())
     except IOError:
         raise SystemExit("Configfile is missing or unreadable. Please run "
                          "utils/Configure.py before building or use "

@@ -81,7 +81,7 @@ def _save_data(filename, data):
 
 
 def _load_data(filename):
-    return eval(open(filename, 'r').read().replace("\r\n", "\n"))
+    return eval(open(filename, 'rU').read())
 
 
 def setupUPXFlags():
