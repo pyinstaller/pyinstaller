@@ -426,23 +426,22 @@ class Analysis(Target):
                 datas.extend(mod.datas)
                 if isinstance(mod, mf.BuiltinModule):
                     pass
+                elif isinstance(mod, mf.ExtensionModule):
+                    binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
+                    # allows hooks to specify additional dependency
+                    # on other shared libraries loaded at runtime (by dlopen)
+                    binaries.extend(mod.binaries)
+                elif isinstance(mod, (mf.PkgInZipModule, mf.PyInZipModule)):
+                    zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
+                                     str(mod.owner), 'ZIPFILE'))
                 else:
-                    fnm = mod.__file__
-                    if isinstance(mod, mf.ExtensionModule):
-                        binaries.append((mod.__name__, fnm, 'EXTENSION'))
-                        # allows hooks to specify additional dependency
-                        # on other shared libraries loaded at runtime (by dlopen)
-                        binaries.extend(mod.binaries)
-                    elif isinstance(mod, (mf.PkgInZipModule, mf.PyInZipModule)):
-                        zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
-                                         str(mod.owner), 'ZIPFILE'))
-                    else:
-                        # mf.PyModule instances expose a list of binary
-                        # dependencies, most probably shared libraries accessed
-                        # via ctypes. Add them to the overall required binaries.
-                        binaries.extend(mod.binaries)
-                        if modnm != '__main__':
-                            pure.append((modnm, fnm, 'PYMODULE'))
+                    # mf.PyModule instances expose a list of binary
+                    # dependencies, most probably shared libraries accessed
+                    # via ctypes. Add them to the overall required binaries.
+                    binaries.extend(mod.binaries)
+                    if modnm != '__main__':
+                        pure.append((modnm, mod.__file__, 'PYMODULE'))
+
         python = config['python']
         if not is_win:
             while os.path.islink(python):
