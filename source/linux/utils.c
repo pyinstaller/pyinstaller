@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 int append2enviroment(const char *name, const char *value);
 
@@ -122,6 +123,7 @@ int set_environment(const ARCHIVE_STATUS *status)
      * http://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
      * http://developer.apple.com/library/mac/#documentation/DeveloperTools/  \
      *     Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
+     */
 	unsetenv("LD_LIBRARY_PATH");
 	unsetenv("DYLD_LIBRARY_PATH");
 
@@ -148,15 +150,54 @@ int set_environment(const ARCHIVE_STATUS *status)
     return rc;
 }
 
+/* Remember child process id. It allows sending a signal to child process.
+ * Frozen application always runs in a child process. Parent process is used
+ * to setup environment for child process and clean the environment when
+ * child exited.
+ */
+pid_t child_pid = 0;
+
+void signal_handler(int signal)
+{
+    kill(child_pid, signal);
+}
+
+
+/* Start frozen application in a subprocess. The frozen application runs
+ * in a subprocess.
+ */
 int spawn(const char *thisfile, char *const argv[])
 {
     pid_t pid = 0;
     int rc = 0;
 
     pid = fork();
+
+    /* Child code. */
     if (pid == 0)
+        /* Replace process by starting a new application. */
         execvp(thisfile, argv);
+    /* Parent code. */
+    else
+    {
+        child_pid = pid;
+
+        /* Redirect termination signals received by parent to child process. */
+        signal(SIGINT, &signal_handler);
+        signal(SIGKILL, &signal_handler);
+        signal(SIGTERM, &signal_handler);
+    }
+
     wait(&rc);
-    
+
+    /* Parent code. */
+    if(child_pid != 0 )
+    {
+        /* When child process exited, reset signal handlers to default values. */
+        signal(SIGINT, SIG_DFL);
+        signal(SIGKILL, SIG_DFL);
+        signal(SIGTERM, SIG_DFL);
+    }
+
     return WEXITSTATUS(rc);
 }
