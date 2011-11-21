@@ -61,7 +61,7 @@ DEPENDENCIES = {
     'libraries/test_enchant': ['enchant'],
     'libraries/test_numpy': ['numpy'],
     'libraries/test_pycrypto': ['Crypto'],
-    'libraries/test_sqlalchemy': ['MySQLdb', 'psycopg2'],
+    'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
     'libraries/test_wx': ['wx'],
     'import/test_ctypes_cdll_c': ['ctypes'],
     'import/test_ctypes_cdll_c2': ['ctypes'],
