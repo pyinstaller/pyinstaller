@@ -312,11 +312,11 @@ if __name__ == '__main__':
     # Change working directory to place where this script is.
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    if not is_py25:
-        parser = optparse.OptionParser(usage="%prog [options] [TEST-NAME ...]")
-    else:
+    try:
         parser = optparse.OptionParser(usage="%prog [options] [TEST-NAME ...]",
                               epilog="TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.")
+    except TypeError:
+        parser = optparse.OptionParser(usage="%prog [options] [TEST-NAME ...]")
 
     parser.add_option('-c', '--clean', action='store_true',
                       help='Clean up generated files')
