@@ -1,7 +1,7 @@
-import Image
+import PIL.Image
 
 # disable "leaking" the installed version
-Image.__file__ = '/'
+PIL.Image.__file__ = '/'
 
-im = Image.open("tinysample.tiff")
+im = PIL.Image.open("tinysample.tiff")
 im.save("tinysample.png")
