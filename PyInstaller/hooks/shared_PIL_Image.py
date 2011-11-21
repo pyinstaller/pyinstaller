@@ -15,25 +15,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+import sys
+
 hiddenimports = []
 
-def install_Image(lis):
-    # `import Image` only works if the file `PIL.pth` exists in
-    # site-packages. This is not always the case.
-    try:
-        from PIL import Image
-    except:
-        # just a backup
-        import Image
+def hook(mod):
+    global hiddenimports
+    # `PIL.Image` may be imported as `PIL.Image` or as `Image`
+    # (without the prefix). We need to use the same module name to
+    # avoid the same module under two different names.
+    __import__(mod.__name__)
+    image_mod = sys.modules[mod.__name__]
     # PIL uses lazy initialization.
-    # you candecide if you want only the
-    # default stuff:
-    Image.preinit()
-    # or just everything:
-    Image.init()
-    import sys
+    # first import the default stuff ...
+    image_mod.preinit()
+    # ... then every available plugin
+    image_mod.init()
     for name in sys.modules:
-        if name[-11:] == "ImagePlugin":
-            lis.append(name)
-
-install_Image(hiddenimports)
+        if name.endswith("ImagePlugin"):
+            hiddenimports.append(name)
+    return mod
