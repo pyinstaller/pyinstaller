@@ -11,13 +11,10 @@
 import os
 import sys
 
+# For Linux/Solaris only
 libpath = os.path.normpath(os.path.abspath(os.path.dirname(sys.executable)))
 libpath += '/'
-print('LD_LIBRARY_PATH: ' + libpath)
+
+print('LD_LIBRARY_PATH expected: ' + libpath)
+print('LD_LIBRARY_PATH  current: ' + os.environ.get('LD_LIBRARY_PATH'))
 assert libpath == os.environ.get('LD_LIBRARY_PATH')
-
-
-# for Mac OS X DYLD_LIBRARY_PATH is also set
-if sys.platform == 'darwin':
-    print('DYLD_LIBRARY_PATH: ' + libpath)
-    assert libpath == os.environ.get('DYLD_LIBRARY_PATH')
