@@ -109,7 +109,7 @@ int set_environment(const ARCHIVE_STATUS *status)
 
 #ifdef __APPLE__
     /* On Mac OS X we do not use environment variables DYLD_LIBRARY_PATH
-     * or LD_LIBRARY_PATH to tell OS where to look for dynamic libraries.
+     * or others to tell OS where to look for dynamic libraries.
      * There were some issues with this approach. In some cases some
      * system libraries were trying to load incompatible libraries from
      * the dist directory. For instance this was experienced with macprots
@@ -124,8 +124,14 @@ int set_environment(const ARCHIVE_STATUS *status)
      * http://developer.apple.com/library/mac/#documentation/DeveloperTools/  \
      *     Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
      */
-	unsetenv("LD_LIBRARY_PATH");
+    /* For environment variable details see 'man dyld'. */
+	unsetenv("DYLD_FRAMEWORK_PATH");
+	unsetenv("DYLD_FALLBACK_FRAMEWORK_PATH");
+	unsetenv("DYLD_VERSIONED_FRAMEWORK_PATH");
 	unsetenv("DYLD_LIBRARY_PATH");
+	unsetenv("DYLD_FALLBACK_LIBRARY_PATH");
+	unsetenv("DYLD_VERSIONED_LIBRARY_PATH");
+	unsetenv("DYLD_ROOT_PATH");
 
 #else
     /* add temppath to LD_LIBRARY_PATH */
