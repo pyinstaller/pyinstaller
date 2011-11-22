@@ -164,10 +164,10 @@ def mac_set_relative_dylib_deps(libname):
     more flexible mechanism.
 
     Current location of dependend libraries is derived from the location
-    of the executable (paths start with '@rpath').
+    of the executable (paths start with '@executable_path').
 
-    @rpath seems to work in most scenarios. @executable_path or @loader_path
-    fail in some situations (@loader_path - qt4 plugins, @executable_path -
+    @executable_path or @loader_path fail in some situations
+    (@loader_path - qt4 plugins, @executable_path -
     Python built-in hashlib module).
     """
 
@@ -185,9 +185,9 @@ def mac_set_relative_dylib_deps(libname):
         if not util.in_system_path(pth):
             # Use relative path to dependend dynamic libraries bases on
             # location of the executable.
-            return os.path.join('@rpath', os.path.basename(pth))
+            return os.path.join('@executable_path', os.path.basename(pth))
 
-    # Rewrite mach headers with @rpath.
+    # Rewrite mach headers with @executable_path.
     dll = MachO(libname)
     dll.rewriteLoadCommands(match_func)
 

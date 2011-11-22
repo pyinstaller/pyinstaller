@@ -117,7 +117,7 @@ int set_environment(const ARCHIVE_STATUS *status)
      *
      * To tell the OS where to look for dynamic libraries we modify
      * .so/.dylib files to use relative paths to other dependend
-     * libraries starting with @rpath.
+     * libraries starting with @executable_path.
      *
      * For more information see:
      * http://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac

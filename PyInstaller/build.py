@@ -1245,7 +1245,7 @@ class BUNDLE(Target):
         toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
             # Copy files from cache. This ensures that are used files with relative
-            # paths to dynamic library dependencies (@rpath)
+            # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm)
             tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
