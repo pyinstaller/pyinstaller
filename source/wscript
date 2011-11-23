@@ -43,11 +43,11 @@ def set_options(opt):
 
     # Option to enable static linking of Python library with bootloader.
     # This is necessary for some platforms or Python distributions where
-    # Python interpreter is linked statically (e.g. AIX).
+    # Python interpreter is linked statically.
     opt.add_option('--static-link-python',
         action = 'store_true',
         help = 'Link Python Library statically with bootloader. '
-            '(Required for some platforms or implementations e.g. AIX)',
+            '(Required for some platforms or implementations.)',
         default = False,
         dest = 'static_python')
 
@@ -64,10 +64,6 @@ def configure(conf):
     if myplatform.startswith('linux') and not opt.nolsb:
         Utils.pprint('CYAN', 'Building LSB bootloader.')
 
-    # Enable static Python linking by default for some platforms
-    # (AIX)
-    if myplatform.startswith('aix'):
-        opt.static_python = True
     if opt.static_python:
         Utils.pprint('CYAN', 'Linking libpython statically.')
 
