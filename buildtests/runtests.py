@@ -59,7 +59,9 @@ MIN_VERSION_OR_OS = {
 DEPENDENCIES = {
     'basic/test_ctypes': ['ctypes'],
     'libraries/test_enchant': ['enchant'],
+    'libraries/test_Image': ['Image'],
     'libraries/test_numpy': ['numpy'],
+    'libraries/test_PIL': ['PIL'],
     'libraries/test_pycrypto': ['Crypto'],
     'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
     'libraries/test_wx': ['wx'],
