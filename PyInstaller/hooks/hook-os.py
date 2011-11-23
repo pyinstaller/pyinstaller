@@ -18,20 +18,16 @@
 import sys
 
 def hook(mod):
-    names = sys.builtin_module_names
-    if 'posix' in names:
+    if 'posix' in sys.builtin_module_names:
         removes = ['nt', 'ntpath', 'dos', 'dospath', 'os2', 'mac', 'macpath',
                    'ce', 'riscos', 'riscospath', 'win32api', 'riscosenviron']
-    elif 'nt' in names:
+    elif 'nt' in sys.builtin_module_names:
         removes = ['dos', 'dospath', 'os2', 'mac', 'macpath', 'ce', 'riscos',
                    'riscospath', 'riscosenviron',]
 
-    for i in range(len(mod.imports)-1, -1, -1):
-        nm = mod.imports[i][0]
-        pos = nm.find('.')
-        if pos > -1:
-            nm = nm[:pos]
-        if nm in removes :
-            del mod.imports[i]
-
+    mod.imports = [m
+                   for m in mod.imports
+                   # if first part of module-name not in removes
+                   if m[0].split('.', 1)[0] not in removes
+    ]
     return mod
