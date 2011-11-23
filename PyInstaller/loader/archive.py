@@ -21,7 +21,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 # subclasses may not need marshal or struct, but since they're
 # builtin, importing is safe.
@@ -45,6 +45,12 @@ import struct
 import imp
 import sys
 
+
+def debug(msg):
+    if 0:
+        sys.stderr.write(msg + "\n")
+
+
 _c_suffixes = filter(lambda x: x[2] == imp.C_EXTENSION, imp.get_suffixes())
 
 for nm in ('nt', 'posix'):
@@ -54,31 +60,37 @@ for nm in ('nt', 'posix'):
         _environ = mod.environ
         break
 
-versuffix = '%d%d' % sys.version_info[:2] # :todo: is this still used?
+versuffix = '%d%d' % sys.version_info[:2]  # :todo: is this still used?
 
 if "-vi" in sys.argv[1:]:
     _verbose = 1
 
-class ArchiveReadError(RuntimeError): pass
+
+class ArchiveReadError(RuntimeError):
+    pass
+
 
 class Archive:
-    """ A base class for a repository of python code objects.
-        The extract method is used by imputil.ArchiveImporter
-        to get code objects by name (fully qualified name), so
-        an enduser "import a.b" would become
-          extract('a.__init__')
-          extract('a.b')
+    """
+    A base class for a repository of python code objects.
+    The extract method is used by imputil.ArchiveImporter
+    to get code objects by name (fully qualified name), so
+    an enduser "import a.b" would become
+      extract('a.__init__')
+      extract('a.b')
     """
     MAGIC = 'PYL\0'
-    HDRLEN = 12    # default is MAGIC followed by python's magic, int pos of toc
+    HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
     TOCPOS = 8
-    TRLLEN = 0     # default - no trailer
-    TOCTMPLT = {}  #
+    TRLLEN = 0  # default - no trailer
+    TOCTMPLT = {}
     os = None
     _bincache = None
 
     def __init__(self, path=None, start=0):
-        "Initialize an Archive. If path is omitted, it will be an empty Archive."
+        """
+        Initialize an Archive. If path is omitted, it will be an empty Archive.
+        """
         self.toc = None
         self.path = path
         self.start = start
@@ -91,91 +103,57 @@ class Archive:
 
     ####### Sub-methods of __init__ - override as needed #############
     def checkmagic(self):
-        """ Overridable.
-            Check to see if the file object self.lib actually has a file
-            we understand.
         """
-        self.lib.seek(self.start)       #default - magic is at start of file
+        Overridable.
+        Check to see if the file object self.lib actually has a file
+        we understand.
+        """
+        self.lib.seek(self.start)  # default - magic is at start of file
+
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
             raise ArchiveReadError("%s is not a valid %s archive file"
                                    % (self.path, self.__class__.__name__))
+
         if self.lib.read(len(self.pymagic)) != self.pymagic:
-            raise ArchiveReadError, "%s has version mismatch to dll" % (self.path)
+            raise ArchiveReadError("%s has version mismatch to dll" %
+                (self.path))
+
         self.lib.read(4)
 
     def loadtoc(self):
-        """ Overridable.
-            Default: After magic comes an int (4 byte native) giving the
-            position of the TOC within self.lib.
-            Default: The TOC is a marshal-able string.
+        """
+        Overridable.
+        Default: After magic comes an int (4 byte native) giving the
+        position of the TOC within self.lib.
+        Default: The TOC is a marshal-able string.
         """
         self.lib.seek(self.start + self.TOCPOS)
         (offset,) = struct.unpack('!i', self.lib.read(4))
         self.lib.seek(self.start + offset)
         self.toc = marshal.load(self.lib)
 
-        ######## This is what is called by FuncImporter #######
-        ## Since an Archive is flat, we ignore parent and modname.
-        #XXX obsolete - imputil only code
-        ##  def get_code(self, parent, modname, fqname):
-        ####    if _verbose:
-        ####      print "I: get_code(%s, %s, %s, %s)" % (self, parent, modname, fqname)
-        ##    iname = fqname
-        ##    if parent:
-        ##        iname = '%s.%s' % (parent.__dict__.get('__iname__', parent.__name__), modname)
-        ####        if _verbose:
-        ####            print "I: get_code: iname is %s" % iname
-        ##    rslt = self.extract(iname) # None if not found, (ispkg, code) otherwise
-        ####    if _verbose:
-        ####        print 'I: get_code: rslt', rslt
-        ##    if rslt is None:
-        ####      if _verbose:
-        ####          print 'I: get_code: importer', getattr(parent, "__importer__", None),'self',self
-        ##      # check the cache if there is no parent or self is the parents importer
-        ##      if parent is None or getattr(parent, "__importer__", None) is self:
-        ####            if _verbose:
-        ####                print 'I: get_code: cached 1',iname
-        ##            file, desc = Archive._bincache.get(iname, (None, None))
-        ####            if _verbose:
-        ####                print 'I: get_code: file',file,'desc',desc
-        ##            if file:
-        ##              try:
-        ##                fp = open(file, desc[1])
-        ##              except IOError:
-        ##                pass
-        ##              else:
-        ##                module = imp.load_module(fqname, fp, file, desc)
-        ##                if _verbose:
-        ##                    print "I: import %s found %s" % (fqname, file)
-        ##                return 0, module, {'__file__':file}
-        ##      if _verbose:
-        ##          print "I: import %s failed" % fqname
-        ##
-        ##      return None
-        ##
-        ##    ispkg, code = rslt
-        ##    values = {'__file__' : code.co_filename, '__iname__' : iname}
-        ##    if ispkg:
-        ##      values['__path__'] = [fqname]
-        ##    if _verbose:
-        ##        print "I: import %s found %s" % (fqname, iname)
-        ##    return ispkg, code, values
+    ######## This is what is called by FuncImporter #######
+    ## Since an Archive is flat, we ignore parent and modname.
+    #XXX obsolete - imputil only code
+    ##  def get_code(self, parent, modname, fqname):
+    ##      pass
 
     ####### Core method - Override as needed  #########
     def extract(self, name):
-        """ Get the object corresponding to name, or None.
-            For use with imputil ArchiveImporter, object is a python code object.
-            'name' is the name as specified in an 'import name'.
-            'import a.b' will become:
-            extract('a') (return None because 'a' is not a code object)
-            extract('a.__init__') (return a code object)
-            extract('a.b') (return a code object)
-            Default implementation:
-              self.toc is a dict
-              self.toc[name] is pos
-              self.lib has the code object marshal-ed at pos
         """
-        ispkg, pos = self.toc.get(name, (0,None))
+        Get the object corresponding to name, or None.
+        For use with imputil ArchiveImporter, object is a python code object.
+        'name' is the name as specified in an 'import name'.
+        'import a.b' will become:
+        extract('a') (return None because 'a' is not a code object)
+        extract('a.__init__') (return a code object)
+        extract('a.b') (return a code object)
+        Default implementation:
+          self.toc is a dict
+          self.toc[name] is pos
+          self.lib has the code object marshal-ed at pos
+        """
+        ispkg, pos = self.toc.get(name, (0, None))
         if pos is None:
             return None
         self.lib.seek(self.start + pos)
@@ -185,9 +163,10 @@ class Archive:
     # Informational methods
 
     def contents(self):
-        """Return a list of the contents
-           Default implementation assumes self.toc is a dict like object.
-           Not required by ArchiveImporter.
+        """
+        Return a list of the contents
+        Default implementation assumes self.toc is a dict like object.
+        Not required by ArchiveImporter.
         """
         return self.toc.keys()
 
@@ -196,16 +175,17 @@ class Archive:
 
     ####### Top level method - shouldn't need overriding #######
     def build(self, path, lTOC):
-        """Create an archive file of name 'path'.
-           lTOC is a 'logical TOC' - a list of (name, path, ...)
-           where name is the internal name, eg 'a'
-           and path is a file to get the object from, eg './a.pyc'.
+        """
+        Create an archive file of name 'path'.
+        lTOC is a 'logical TOC' - a list of (name, path, ...)
+        where name is the internal name, eg 'a'
+        and path is a file to get the object from, eg './a.pyc'.
         """
         self.path = path
         self.lib = open(path, 'wb')
         #reserve space for the header
         if self.HDRLEN:
-            self.lib.write('\0'*self.HDRLEN)
+            self.lib.write('\0' * self.HDRLEN)
 
             #create an empty toc
 
@@ -225,14 +205,14 @@ class Archive:
             self.update_headers(tocpos)
         self.lib.close()
 
-
     ####### manages keeping the internal TOC and the guts in sync #######
     def add(self, entry):
-        """Override this to influence the mechanics of the Archive.
-           Assumes entry is a seq beginning with (nm, pth, ...) where
-           nm is the key by which we'll be asked for the object.
-           pth is the name of where we find the object. Overrides of
-           get_obj_from can make use of further elements in entry.
+        """
+        Override this to influence the mechanics of the Archive.
+        Assumes entry is a seq beginning with (nm, pth, ...) where
+        nm is the key by which we'll be asked for the object.
+        pth is the name of where we find the object. Overrides of
+        get_obj_from can make use of further elements in entry.
         """
         if self.os is None:
             import os
@@ -244,40 +224,51 @@ class Archive:
         assert ext in ('.pyc', '.pyo')
         self.toc[nm] = (ispkg, self.lib.tell())
         f = open(entry[1], 'rb')
-        f.seek(8)       #skip magic and timestamp
+        f.seek(8)  # skip magic and timestamp
         self.lib.write(f.read())
 
     def save_toc(self, tocpos):
-        """Default - toc is a dict
-           Gets marshaled to self.lib
+        """
+        Default - toc is a dict
+        Gets marshaled to self.lib
         """
         marshal.dump(self.toc, self.lib)
 
     def save_trailer(self, tocpos):
-        """Default - not used"""
+        """
+        Default - not used
+        """
         pass
 
     def update_headers(self, tocpos):
-        """Default - MAGIC + Python's magic + tocpos"""
+        """
+        Default - MAGIC + Python's magic + tocpos
+        """
         self.lib.seek(self.start)
         self.lib.write(self.MAGIC)
         self.lib.write(self.pymagic)
         self.lib.write(struct.pack('!i', tocpos))
 
+
 class DummyZlib:
     def decompress(self, data):
         #raise RuntimeError, "zlib required but cannot be imported"
         return data
+
     def compress(self, data, lvl):
         #raise RuntimeError, "zlib required but cannot be imported"
         return data
 
+
+# Used by PYZOwner
 import iu
-##############################################################
-#
-# ZlibArchive - an archive with compressed entries
-#
+
+
 class ZlibArchive(Archive):
+    """
+    ZlibArchive - an archive with compressed entries. Archive is read
+    from the executable created by PyInstaller.
+    """
     MAGIC = 'PYZ\0'
     TOCPOS = 8
     HDRLEN = Archive.HDRLEN + 5
@@ -289,10 +280,10 @@ class ZlibArchive(Archive):
         if path is None:
             offset = 0
         elif offset is None:
-            for i in range(len(path)-1, -1, -1):
+            for i in range(len(path) - 1, - 1, - 1):
                 if path[i] == '?':
                     try:
-                        offset = int(path[i+1:])
+                        offset = int(path[i + 1:])
                     except ValueError:
                         # Just ignore any spurious "?" in the path
                         # (like in Windows UNC \\?\<path>).
@@ -305,7 +296,7 @@ class ZlibArchive(Archive):
         self.LEVEL = level
         if crypt is not None:
             self.crypted = 1
-            self.key = (crypt + "*"*32)[:32]
+            self.key = (crypt + "*" * 32)[:32]
         else:
             self.crypted = 0
             self.key = None
@@ -339,18 +330,18 @@ class ZlibArchive(Archive):
         obj = self.lib.read(lngth)
         if self.crypted:
             if self.key is None:
-                raise ImportError, "decryption key not found"
+                raise ImportError('decryption key not found')
             obj = AES.new(self.key, AES.MODE_CFB, self._iv(name)).decrypt(obj)
         try:
             obj = zlib.decompress(obj)
         except zlib.error:
             if not self.crypted:
                 raise
-            raise ImportError, "invalid decryption key"
+            raise ImportError('invalid decryption key')
         try:
             co = marshal.loads(obj)
         except EOFError:
-            raise ImportError, "PYZ entry '%s' failed to unmarshal" % name
+            raise ImportError("PYZ entry '%s' failed to unmarshal" % name)
         return ispkg, co
 
     def add(self, entry):
@@ -362,13 +353,13 @@ class ZlibArchive(Archive):
         base, ext = self.os.path.splitext(self.os.path.basename(pth))
         ispkg = base == '__init__'
         try:
-            txt = open(pth[:-1], 'rU').read()+'\n'
+            txt = open(pth[:-1], 'rU').read() + '\n'
         except (IOError, OSError):
             try:
                 f = open(pth, 'rb')
-                f.seek(8)       #skip magic and timestamp
+                f.seek(8)  # skip magic and timestamp
                 bytecode = f.read()
-                marshal.loads(bytecode).co_filename # to make sure it's valid
+                marshal.loads(bytecode).co_filename  # to make sure it's valid
                 obj = zlib.compress(bytecode, self.LEVEL)
             except (IOError, ValueError, EOFError, AttributeError):
                 raise ValueError("bad bytecode in %s and no source" % pth)
@@ -386,13 +377,18 @@ class ZlibArchive(Archive):
             obj = AES.new(self.key, AES.MODE_CFB, self._iv(nm)).encrypt(obj)
         self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
+
     def update_headers(self, tocpos):
-        """add level"""
+        """
+        add level
+        """
         Archive.update_headers(self, tocpos)
         self.lib.write(struct.pack('!iB', self.LEVEL, self.crypted))
+
     def checkmagic(self):
         Archive.checkmagic(self)
         self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
+
 
 class Keyfile:
     def __init__(self, fn=None):
@@ -405,6 +401,7 @@ class Keyfile:
         execfile(fn, {"__builtins__": None}, self.__dict__)
         if not hasattr(self, "key"):
             self.key = None
+
 
 class PYZOwner(iu.Owner):
     """
@@ -424,6 +421,7 @@ class PYZOwner(iu.Owner):
                 sys.keyfile = Keyfile()
             self.pyz = ZlibArchive(path, crypt=sys.keyfile.key)
         iu.Owner.__init__(self, path)
+
     def getmod(self, nm, newmod=imp.new_module):
         rslt = self.pyz.extract(nm)
         if rslt is None:
@@ -434,43 +432,44 @@ class PYZOwner(iu.Owner):
         try:
             mod.__file__ = bytecode.co_filename
         except AttributeError:
-            raise ImportError, "PYZ entry '%s' (%s) is not a valid code object" % (nm, repr(bytecode))
+            raise ImportError("PYZ entry '%s' (%s) is not a valid code object"
+                % (nm, repr(bytecode)))
 
-        # Python has modules and packages. A python package is container for several modules
-        # or packages.
+        # Python has modules and packages. A Python package is container
+        # for several modules or packages.
         # A python packages has to have __path__ attribute.
         if ispkg:
             if '_MEIPASS2' in _environ:
                 localpath = _environ['_MEIPASS2'][:-1]
             else:
                 localpath = iu._os_path_dirname(self.path)
-            mod.__path__ = [self.path, localpath, iu._os_path_dirname(mod.__file__)]
-            #print "PYZOwner setting %s's __path__: %s" % (nm, mod.__path__)
+            mod.__path__ = [self.path, localpath,
+                iu._os_path_dirname(mod.__file__)]
+            debug("PYZOwner setting %s's __path__: %s" % (nm, mod.__path__))
             importer = iu.PathImportDirector(mod.__path__,
-                                              {self.path:PkgInPYZImporter(nm, self),
-                                               localpath:ExtInPkgImporter(localpath, nm)},
-                                              [iu.DirOwner])
+                {self.path: PkgInPYZImporter(nm, self),
+                localpath: ExtInPkgImporter(localpath, nm)},
+                [iu.DirOwner])
             mod.__importsub__ = importer.getmod
 
         mod.__co__ = bytecode
         return mod
 
+
 class PkgInPYZImporter:
     def __init__(self, name, owner):
         self.name = name
         self.owner = owner
+
     def getmod(self, nm):
-        #print "PkgInPYZImporter.getmod %s -> %s" % (nm, self.name+'.'+nm)
-        return self.owner.getmod(self.name+'.'+nm)
+        debug("PkgInPYZImporter.getmod %s -> %s" % (nm, self.name + '.' + nm))
+        return self.owner.getmod(self.name + '.' + nm)
 
 
 class ExtInPkgImporter(iu.DirOwner):
     def __init__(self, path, prefix):
         iu.DirOwner.__init__(self, path)
         self.prefix = prefix
-    def getmod(self, nm):
-        return iu.DirOwner.getmod(self, self.prefix+'.'+nm)
 
-        #XXX this should also get moved out
-        ##iu._globalownertypes.insert(0, PYZOwner)
-        ##iu.ImportManager().install()
+    def getmod(self, nm):
+        return iu.DirOwner.getmod(self, self.prefix + '.' + nm)

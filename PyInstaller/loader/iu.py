@@ -23,7 +23,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 
 
@@ -39,6 +39,7 @@ import zipimport
 def debug(msg):
     if 0:
         sys.stderr.write(msg + "\n")
+
 
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
@@ -184,12 +185,18 @@ class ZipOwner(Owner):
             debug('zipimport not found %s' % nm)
             return None
 
-# _mountzlib.py will insert archive.PYZOwner in front later
+
+# Define order where to look for Python modules first.
+# 1. look in executable created by PyInstaller.
+#    (_mountzlib.py will insert it (archive.PYZOwner) in front later.)
+# 2. zip files (.egg files)
+# 3. file system
 _globalownertypes = [
     ZipOwner,
     DirOwner,
     Owner,
 ]
+
 
 #===================Import Directors====================================#
 # ImportDirectors live on the metapath

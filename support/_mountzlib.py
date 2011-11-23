@@ -21,7 +21,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 
 ### Start bootstrap process
@@ -30,17 +30,25 @@
 import archive
 import iu
 import sys
+
+# Force Python to look first for modules bundled in the executable created
+# PyInstaller.
 iu._globalownertypes.insert(0, archive.PYZOwner)
+
+# Override default import manager in Python
 sys.importManager = iu.ImportManager()
 sys.importManager.install()
+
 
 ### Bootstrap process is complete.
 # We can use other python modules (e.g. os)
 
+import os
+
 
 # Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, 'frozen'):
-    sys.frozen = 1
+    sys.frozen = True
 
 
 # Now that the startup is complete, we can reset the _MEIPASS2 env
@@ -51,7 +59,6 @@ if not hasattr(sys, 'frozen'):
 # But we need to preserve _MEIPASS2 value for cases where reseting it
 # causes some issues (e.g. multiprocess module on Windows).
 # set  sys._MEIPASS
-import os
 if '_MEIPASS2' in os.environ:
     sys._MEIPASS = os.environ['_MEIPASS2']
     # Ensure sys._MEIPASS is absolute path.
@@ -62,7 +69,7 @@ if '_MEIPASS2' in os.environ:
 
 
 # Implement workaround for prints in non-console mode. In non-console mode
-# (with "pythonw"), print randomically fails with "[errno 9] Bad file descriptor"
+# (with "pythonw"), print randomly fails with "[errno 9] Bad file descriptor"
 # when the printed text is flushed (eg: buffer full); this is because the
 # sys.stdout object is bound to an invalid file descriptor.
 # Python 3000 has a fix for it (http://bugs.python.org/issue1415), but we
