@@ -407,8 +407,14 @@ class Keyfile:
             self.key = None
 
 class PYZOwner(iu.Owner):
+    """
+    Load bytecode of Python modules from the executable created by PyInstaller.
+
+    Python bytecode is zipped and appended to the executable.
+    """
     def __init__(self, path):
         try:
+            # Unzip zip archive bundled with the executable.
             self.pyz = ZlibArchive(path)
             self.pyz.checkmagic()
         except (IOError, ArchiveReadError), e:
@@ -422,12 +428,17 @@ class PYZOwner(iu.Owner):
         rslt = self.pyz.extract(nm)
         if rslt is None:
             return None
-        ispkg, co = rslt
+        ispkg, bytecode = rslt
         mod = newmod(nm)
+
         try:
-            mod.__file__ = co.co_filename
+            mod.__file__ = bytecode.co_filename
         except AttributeError:
-            raise ImportError, "PYZ entry '%s' (%s) is not a valid code object" % (nm, repr(co))
+            raise ImportError, "PYZ entry '%s' (%s) is not a valid code object" % (nm, repr(bytecode))
+
+        # Python has modules and packages. A python package is container for several modules
+        # or packages.
+        # A python packages has to have __path__ attribute.
         if ispkg:
             if '_MEIPASS2' in _environ:
                 localpath = _environ['_MEIPASS2'][:-1]
@@ -440,7 +451,8 @@ class PYZOwner(iu.Owner):
                                                localpath:ExtInPkgImporter(localpath, nm)},
                                               [iu.DirOwner])
             mod.__importsub__ = importer.getmod
-        mod.__co__ = co
+
+        mod.__co__ = bytecode
         return mod
 
 class PkgInPYZImporter:

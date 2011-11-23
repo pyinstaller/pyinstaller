@@ -56,6 +56,9 @@ class OwnerError(IOError):
 
 
 class Owner:
+    """
+    Base class for loading Python bytecode from different places.
+    """
     def __init__(self, path):
         self.path = path
 
@@ -67,6 +70,9 @@ class Owner:
 
 
 class DirOwner(Owner):
+    """
+    Load bytecode of Python modules from file system.
+    """
     def __init__(self, path):
         if path == '':
             path = _os_getcwd()
@@ -113,7 +119,7 @@ class DirOwner(Owner):
         while 1:
             if pyc is None or py and pyc[1][8] < py[1][8]:
                 try:
-                    co = compile(open(py[0], 'rU').read() + '\n', py[0], 'exec')
+                    bytecode = compile(open(py[0], 'rU').read() + '\n', py[0], 'exec')
                     break
                 except SyntaxError, e:
                     print "Invalid syntax in %s" % py[0]
@@ -122,23 +128,26 @@ class DirOwner(Owner):
             elif pyc:
                 stuff = open(pyc[0], 'rb').read()
                 try:
-                    co = loadco(stuff[8:])
+                    bytecode = loadco(stuff[8:])
                     break
                 except (ValueError, EOFError):
                     pyc = None
             else:
                 return None
         mod = newmod(nm)
-        mod.__file__ = co.co_filename
+        mod.__file__ = bytecode.co_filename
         if ispkg:
             mod.__path__ = [pkgpth]
             subimporter = PathImportDirector(mod.__path__)
             mod.__importsub__ = subimporter.getmod
-        mod.__co__ = co
+        mod.__co__ = bytecode
         return mod
 
 
 class ZipOwner(Owner):
+    """
+    Load bytecode of Python modules from .egg files.
+    """
     def __init__(self, path):
         try:
             self.__zip = zipimport.zipimporter(path)
@@ -154,9 +163,9 @@ class ZipOwner(Owner):
         # Note that imp.load_module() does the right thing, instead.
         debug('zipimport try: %s within %s' % (nm, self.__zip))
         try:
-            co = self.__zip.get_code(nm)
+            bytecode = self.__zip.get_code(nm)
             mod = newmod(nm)
-            mod.__file__ = co.co_filename
+            mod.__file__ = bytecode.co_filename
             if self.__zip.is_package(nm):
                 mod.__path__ = [_os_path_join(self.path, nm)]
                 subimporter = PathImportDirector(mod.__path__)
@@ -169,7 +178,7 @@ class ZipOwner(Owner):
                 mod.__file__ = _os_path_join(
                     _os_path_join(self.path, nm), "__init__.py")
                 mod.__loader__ = self.__zip
-            mod.__co__ = co
+            mod.__co__ = bytecode
             return mod
         except zipimport.ZipImportError:
             debug('zipimport not found %s' % nm)
@@ -607,9 +616,9 @@ def namesplit(s):
 
 
 def getpathext(fnm):
-    i = s.rfind('.')
+    i = fnm.rfind('.')
     if i >= 0:
-        return s[i:]
+        return fnm[i:]
     else:
         return ''
 
