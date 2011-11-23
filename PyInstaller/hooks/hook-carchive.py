@@ -18,9 +18,8 @@
 import sys
 
 def hook(mod):
-    if sys.version[0] > '1':
-        for i, m in enumerate(mod.imports):
-            if m[0] == 'strop':
-                del mod.imports[i]
-                break
+    for i, m in enumerate(mod.imports):
+        if m[0] == 'strop':
+            del mod.imports[i]
+            break
     return mod
