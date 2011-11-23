@@ -318,8 +318,7 @@ class Target:
         if len(data) != len(self.GUTS):
             logger.info("building because %s is bad", self.outnm)
             return None
-        for i in range(len(self.GUTS)):
-            attr, func = self.GUTS[i]
+        for i, (attr, func) in enumerate(self.GUTS):
             if func is None:
                 # no check for this value
                 continue
@@ -406,8 +405,7 @@ class Analysis(Target):
                                          self.hookspath, self.excludes)
         PyInstaller.__pathex__ = self.pathex[:]
         scripts = []  # will contain scripts to bundle
-        for i in range(len(self.inputs)):
-            script = self.inputs[i]
+        for i, script in enumerate(self.inputs):
             logger.info("Analyzing %s", script)
             importTracker.analyze_script(script)
             scripts.append((pynms[i], script, 'PYSOURCE'))
@@ -1460,8 +1458,7 @@ def set_dependencies(analysis, dependencies, path):
     """
 
     for toc in (analysis.binaries, analysis.datas):
-        for i in range(len(toc)):
-            tpl = toc[i]
+        for i, tpl in enumerate(toc):
             if not tpl[1] in dependencies.keys():
                 logger.info("Adding dependency %s located in %s" % (tpl[1], path))
                 dependencies[tpl[1]] = path

@@ -535,8 +535,7 @@ class ImportTracker:
         nms = []
         for context in contexts:
             ctx = context
-            for i in range(len(nmparts)):
-                nm = nmparts[i]
+            for i, nm in enumerate(nmparts):
                 if ctx:
                     fqname = ctx + '.' + nm
                 else:
@@ -915,8 +914,7 @@ def scan_code(co, m=None, w=None, b=None, nested=0):
     all = []
     lastname = None
     level = -1 # import-level, same behaviour as up to Python 2.4
-    for i in range(len(instrs)):
-        op, oparg, conditional, curline = instrs[i]
+    for i, (op, oparg, conditional, curline) in enumerate(instrs):
         if op == IMPORT_NAME:
             if level <= 0:
                 name = lastname = co.co_names[oparg]

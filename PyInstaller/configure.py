@@ -306,8 +306,7 @@ def find_PYZ_dependencies(config):
     a.analyze_r('archive')
     mod = a.modules['archive']
     toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
-    for i in range(len(toc)):
-        nm, fnm, typ = toc[i]
+    for i, (nm, fnm, typ) in enumerate(toc):
         mod = a.modules[nm]
         tmp = []
         for importednm, isdelayed, isconditional, level in mod.imports:

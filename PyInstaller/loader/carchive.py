@@ -112,8 +112,8 @@ class CTOC:
         """Return the index of the toc entry with name NAME.
 
            Return -1 for failure."""
-        for i in range(len(self.data)):
-            if self.data[i][-1] == name:
+        for i, nm in enumerate(self.data):
+            if nm[-1] == name:
                 return i
         return -1
 

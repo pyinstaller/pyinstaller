@@ -38,8 +38,8 @@ class Structure:
         size = self._sizeInBytes = struct.calcsize(self._format_)
         self._fields_ = list(struct.unpack(self._format_, '\000' * size))
         indexes = self._indexes_ = {}
-        for i in range(len(self._names_)):
-            indexes[self._names_[i]] = i
+        for i, nm in enumerate(self._names_):
+            indexes[nm] = i
 
     def dump(self):
         logger.info("DUMP of %s", self)
@@ -128,8 +128,7 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
     hdst = win32api.BeginUpdateResource(dstpath, 0)
 
     iconid = 1
-    for i in range(len(icons)):
-        f = icons[i]
+    for i, f in enumerate(icons):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
         win32api.UpdateResource(hdst, RT_GROUP_ICON, i, data)

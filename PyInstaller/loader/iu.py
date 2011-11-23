@@ -434,8 +434,7 @@ class ImportManager:
         for context in contexts:
             ctx = context
             i = 0
-            for i in range(len(nmparts)):
-                nm = nmparts[i]
+            for i, nm in enumerate(nmparts):
                 debug(" importHook trying %s in %s" % (nm, ctx))
                 if ctx:
                     fqname = ctx + '.' + nm
