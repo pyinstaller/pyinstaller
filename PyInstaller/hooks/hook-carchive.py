@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 import sys
 
 def hook(mod):
     if sys.version[0] > '1':
-        for i in range(len(mod.imports)-1, -1, -1):
-            if mod.imports[i][0] == 'strop':
+        for i, m in enumerate(mod.imports):
+            if m[0] == 'strop':
                 del mod.imports[i]
+                break
     return mod

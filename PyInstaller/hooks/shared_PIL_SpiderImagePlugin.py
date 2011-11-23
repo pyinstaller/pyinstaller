@@ -1,4 +1,4 @@
-# Copyright (C) 2005, Giovanni Bajo
+# Copyright (C) 2006, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -15,7 +15,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-# Forward to shared code for PIL. PIL can be imported either as a top-level package
-# (from PIL import Image), or not (import Image), because it installs a
-# PIL.pth.
-from shared_PIL_SpiderImagePlugin import *
+# PIL's SpiderImagePlugin features a tkPhotoImage() method which imports
+# ImageTk (and thus brings the whole Tcl/Tk library in).
+# We cheat a little and remove the ImageTk import: I assume that if people
+# are really using ImageTk in their application, they will also import it
+# directly.
+
+def hook(mod):
+    for i, m in enumerate(mod.imports):
+        if m[0] == "ImageTk":
+            del mod.imports[i]
+            break
+    return mod
