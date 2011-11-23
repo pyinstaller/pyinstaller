@@ -43,6 +43,7 @@ sys.importManager.install()
 ### Bootstrap process is complete.
 # We can use other python modules (e.g. os)
 
+
 import os
 
 
@@ -66,6 +67,13 @@ if '_MEIPASS2' in os.environ:
     sys._MEIPASS = os.path.abspath(sys._MEIPASS)
     # Delete _MEIPASS2 from environment.
     del os.environ['_MEIPASS2']
+
+
+# Ensure PYTHONPATH contains absolute paths.
+python_path = []
+for pth in sys.path:
+    python_path.append(os.path.normpath(os.path.abspath(pth)))
+    sys.path = python_path
 
 
 # Implement workaround for prints in non-console mode. In non-console mode
