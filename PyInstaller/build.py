@@ -969,9 +969,9 @@ class EXE(Target):
                 versioninfo.SetVersion(tmpnm, self.versrsrc)
             for res in self.resources:
                 res = res.split(",")
-                for i in range(len(res[1:])):
+                for i in range(1, len(res)):
                     try:
-                        res[i + 1] = int(res[i + 1])
+                        res[i] = int(res[i])
                     except ValueError:
                         pass
                 resfile = res[0]
