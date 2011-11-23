@@ -975,18 +975,13 @@ class EXE(Target):
                     except ValueError:
                         pass
                 resfile = res[0]
+                restype = resname = reslang = None
                 if len(res) > 1:
                     restype = res[1]
-                else:
-                    restype = None
                 if len(res) > 2:
                     resname = res[2]
-                else:
-                    restype = None
                 if len(res) > 3:
                     reslang = res[3]
-                else:
-                    restype = None
                 try:
                     winresource.UpdateResourcesFromResFile(tmpnm, resfile,
                                                         [restype or "*"],
