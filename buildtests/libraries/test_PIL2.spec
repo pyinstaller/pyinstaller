@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-__testname__ = 'test_11'
+__testname__ = 'test_PIL2'
 
 a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
               os.path.join(CONFIGDIR,'support', 'useUnicode.py'),

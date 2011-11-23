@@ -46,13 +46,14 @@ from PyInstaller import is_py23, is_py25, is_py26, is_win, is_darwin
 
 
 MIN_VERSION_OR_OS = {
+    'basic/test_9': is_py23,
+    'basic/test_celementtree': is_py25,
+    'basic/test_email2': is_py23,
+    # On Mac DYLD_LIBRARY_PATH is not used.
+    'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
     'import/test_relative_import': is_py25,
     'import/test_relative_import2': is_py26,
     'import/test_relative_import3': is_py25,
-    'basic/test_celementtree': is_py25,
-    'basic/test_9': is_py23,
-    # On Mac DYLD_LIBRARY_PATH is not used.
-    'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
     'libraries/test_enchant': is_win,
 }
 
@@ -62,6 +63,7 @@ DEPENDENCIES = {
     'libraries/test_Image': ['Image'],
     'libraries/test_numpy': ['numpy'],
     'libraries/test_PIL': ['PIL'],
+    'libraries/test_PIL2': ['PIL'],
     'libraries/test_pycrypto': ['Crypto'],
     'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
     'libraries/test_wx': ['wx'],
