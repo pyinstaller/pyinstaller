@@ -61,7 +61,32 @@
     typedef vartyp __VAR__##name;\
     extern __VAR__##name *PI_##name;
 
+#elif defined(USE_STATIC_PYTHON_LIB)
+
+/* On platforms where we link statically to Python, the symbols from the Python library
+ * are directly available.
+ * However, the rest of the bootloader code uses the PI_ pointers to the Python symbols, so
+ * we keep these and simply assign them the addresses of the Python symbols in the macros
+ * 'GETPROC', 'GETPROCOPT' and 'GETVAR' later in this file.
+ *
+ * - The type '__PROC_PTR__<funcName>' is a pointer to a function and is used for the PI_<name>
+ *   symbols declared by the bootloader.
+ * - The type '__PROC_STAT__<funcName>' is the function type for the static symbol we wish
+ *   to bind to.
+ */
+#define EXTDECLPROC(result, name, args)\
+    typedef result (*__PROC_PTR__##name) args;\
+    typedef result (__PROC_STAT__##name) args;\
+    extern __PROC_PTR__##name PI_##name;\
+    extern __PROC_STAT__##name name;
+
+#define EXTDECLVAR(vartyp, name)\
+    typedef vartyp __VAR__##name;\
+    extern __VAR__##name *PI_##name;\
+    extern __VAR__##name name;
+
 #else
+/* Non-Windows platforms where we link dynamically to Python. */
 
 #define EXTDECLPROC(result, name, args)\
     typedef result (*__PROC__##name) args;\
@@ -172,7 +197,26 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
         return -1;\
     }
 
+#elif defined(USE_STATIC_PYTHON_LIB)
+/* On platforms where we link statically to Python, the symbols from the Python library
+ * are directly available.
+ *
+ * The 'GETPROC', 'GETPROCOPT' and 'GETVAR' macros below assign the statically linked symbols
+ * to the 'PI_' prefixed pointers used by the rest of the bootloader code.
+ */
+#define DECLPROC(name)\
+    __PROC_PTR__##name PI_##name = NULL;
+#define GETPROCOPT(dll, name)\
+    PI_##name = &name
+#define GETPROC(dll, name)\
+    GETPROCOPT(dll, name);
+#define DECLVAR(name)\
+    __VAR__##name *PI_##name = NULL;
+#define GETVAR(dll, name)\
+    PI_##name = &name
+
 #else
+/* Non-Windows platforms where we link dynamically to Python. */
 
 #define DECLPROC(name)\
     __PROC__##name PI_##name = NULL;

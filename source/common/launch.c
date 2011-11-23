@@ -503,9 +503,16 @@ int loadPython()
 			dllpath, GetLastError());
 		return -1;
 	}
-
-	mapNames(dll);
+#elif defined(USE_STATIC_PYTHON_LIB)
+    /* On certains platforms we link statically with libpython so don't try to load any
+     * shared library.
+     *
+     * Calling 'mapNames' below will assign statically linked symbols to the 'PI_' prefixed pointers
+     * used by the rest of the bootloader code.
+     * This way the code in the rest of the bootloader need not to be changed. */
+     dll = NULL;
 #else
+    /* Neither WIN32 nor a platform using static Python library. */
 
     uint32_t pyvers_major;
     uint32_t pyvers_minor;
@@ -564,11 +571,9 @@ int loadPython()
 			dllpath, dlerror());
 		return -1;
 	}
-
-	mapNames(dll);
-
 #endif
 
+	mapNames(dll);
 	return 0;
 }
 
