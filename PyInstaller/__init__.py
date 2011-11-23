@@ -26,19 +26,24 @@ import os
 import sys
 
 # Fail hard if Python does not have minimum required version
-if sys.version_info < (2,3):
+if sys.version_info < (2, 3):
     raise SystemExit('PyInstaller requires at least Python 2.3, sorry.')
+
+# Extend PYTHONPATH with 3rd party libraries bundled with PyInstaller.
+# (otherwise e.g. macholib won't work on Mac OS X)
+from PyInstaller import lib
+sys.path.insert(0, lib.__path__[0])
 
 from PyInstaller import compat
 from PyInstaller.utils import svn
 
 VERSION = (1, 6, 0, 'dev', svn.get_svn_revision())
 
-is_py23 = sys.version_info >= (2,3)
-is_py24 = sys.version_info >= (2,4)
-is_py25 = sys.version_info >= (2,5)
-is_py26 = sys.version_info >= (2,6)
-is_py27 = sys.version_info >= (2,7)
+is_py23 = sys.version_info >= (2, 3)
+is_py24 = sys.version_info >= (2, 4)
+is_py25 = sys.version_info >= (2, 5)
+is_py26 = sys.version_info >= (2, 6)
+is_py27 = sys.version_info >= (2, 7)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
@@ -78,6 +83,7 @@ PLATFORM = compat.system() + '-' + compat.architecture()
 # path extensions for module seach
 # :fixme: this should not be a global variable
 __pathex__ = []
+
 
 def get_version():
     version = '%s.%s' % (VERSION[0], VERSION[1])
