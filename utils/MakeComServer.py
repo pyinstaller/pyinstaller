@@ -94,13 +94,10 @@ def create(scripts, debug, verbose, workdir, ascii=0):
     paths = []
     for path, module, klasses in infos:
         if path:
-            paths.append(path)
+            paths.append(win32api.GetShortPathName(os.path.normpath(path)))
         modimports.append("import %s" % (module,))
         for klass in klasses:
             klassspecs.append("%s.%s" % (module, klass))
-    for i in range(len(paths)):
-        path = paths[i]
-        paths[i] = win32api.GetShortPathName(os.path.normpath(path))
     modimports = '\n'.join(modimports)
     klassspecs = ', '.join(klassspecs)
     d = { 'modules':modimports,
