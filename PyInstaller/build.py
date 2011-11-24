@@ -1443,11 +1443,10 @@ def build(spec, buildpath):
 
 def get_relative_path(startpath, topath):
     start = startpath.split(os.sep)[:-1]
-    for i in range(len(start)):
-        start[i] = ".."
-    result = os.sep.join(start)
-    if len(result) > 0:
-        return result + os.sep + topath
+    start = ['..'] * len(start)
+    if start:
+        start.append(topath)
+        return os.sep.join(start)
     else:
         return topath
 
