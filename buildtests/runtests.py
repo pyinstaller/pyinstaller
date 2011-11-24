@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 # This program will execute any file with name test*<digit>.py. If your test
 # need an aditional dependency name it test*<digit><letter>.py to be ignored
@@ -59,6 +59,8 @@ MIN_VERSION_OR_OS = {
 
 DEPENDENCIES = {
     'basic/test_ctypes': ['ctypes'],
+    'basic/test_ctypes': ['ctypes'],
+    'basic/test_nestedlaunch1': ['ctypes'],
     'libraries/test_enchant': ['enchant'],
     'libraries/test_Image': ['Image'],
     'libraries/test_numpy': ['numpy'],
@@ -212,8 +214,8 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             # .spec file does not exist and it has to be generated
             # for main script
             testfile_spec = testfile + '.py'
-        prog = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'pyinstaller.py'),
-            OPTS, testfile_spec])
+        prog = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH,
+            'pyinstaller.py'), OPTS, testfile_spec])
 
         res = os.system(prog)
 
@@ -235,8 +237,8 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             prog = find_exepath(tmpname)
             if prog is None:
                 prog = find_exepath(tmpname, os.path.join('dist', testfile))
-            command = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
-                    '-b -r >> ' + newlog, prog])
+            command = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'utils',
+                'ArchiveViewer.py'), '-b -r >> ' + newlog, prog])
             os.system(command)
             pattern_list = eval(open(logfn, 'rU').read())
             fname_list = eval(open(newlog, 'rU').read())
@@ -318,7 +320,7 @@ if __name__ == '__main__':
 
     try:
         parser = optparse.OptionParser(usage="%prog [options] [TEST-NAME ...]",
-                              epilog="TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.")
+              epilog="TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.")
     except TypeError:
         parser = optparse.OptionParser(usage="%prog [options] [TEST-NAME ...]")
 
