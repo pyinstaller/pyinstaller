@@ -72,9 +72,7 @@ class VSVersionInfo:
 
     def __init__(self, ffi=None, kids=None):
         self.ffi = ffi
-        self.kids = kids
-        if kids is None:
-            self.kids = []
+        self.kids = kids or []
 
     def fromRaw(self, data):
         i, (sublen, vallen, wType, nm) = parseCommon(data)
@@ -135,10 +133,7 @@ class VSVersionInfo:
         pad2 = ''
         if sublen % 4:
             pad2 = '\000\000'
-        tmp = []
-        for kid in self.kids:
-            tmp.append(kid.toRaw())
-        tmp = "".join(tmp)
+        tmp = "".join([kid.toRaw() for kid in self.kids ])
         sublen = sublen + len(pad2) + len(tmp)
         return (struct.pack('hhh', sublen, vallen, typ)
                 + getRaw(nm) + '\000\000' + pad + rawffi + pad2 + tmp)
@@ -167,9 +162,9 @@ def parseUString(data, start, limit):
     while i < limit:
         if data[i:i+2] == '\000\000':
             break
-        i = i + 2
+        i += 2
     szKey = pywintypes.UnicodeFromRaw(data[start:i])
-    i = i + 2
+    i += 2
     #print "szKey:", repr(szKey), "(consumed", i-start, "bytes - to", i, ")"
     return i, szKey
 
@@ -281,10 +276,7 @@ class StringFileInfo:
     """
     def __init__(self, kids=None):
         self.name = "StringFileInfo"
-        if kids is None:
-            self.kids = []
-        else:
-            self.kids = kids
+        self.kids = kids or []
 
     def fromRaw(self, sublen, vallen, name, data, i, limit):
         self.name = name
@@ -318,10 +310,7 @@ class StringFileInfo:
         pad = ''
         if sublen % 4:
             pad = '\000\000'
-        tmp = []
-        for kid in self.kids:
-            tmp.append(kid.toRaw())
-        tmp = ''.join(tmp)
+        tmp = ''.join([kid.toRaw() for kid in self.kids])
         sublen = sublen + len(pad) + len(tmp)
         if tmp[-2:] == '\000\000':
             sublen = sublen - 2
@@ -346,12 +335,8 @@ class StringTable:
     String Children[];    // list of zero or more String structures.
     """
     def __init__(self, name=None, kids=None):
-        self.name = name
-        self.kids = kids
-        if name is None:
-            self.name = ''
-        if kids is None:
-            self.kids = []
+        self.name = name or ''
+        self.kids = kids or []
 
     def fromRaw(self, data, i, limit):
         #print "Parsing StringTable"
@@ -381,9 +366,9 @@ class StringTable:
                 raw = raw + '\000\000'
             tmp.append(raw)
         tmp = ''.join(tmp)
-        sublen = sublen + len(tmp)
+        sublen += len(tmp)
         if tmp[-2:] == '\000\000':
-            sublen = sublen - 2
+            sublen -= 2
         return (struct.pack('hhh', sublen, vallen, typ)
                 + getRaw(self.name) + '\000\000' + tmp)
 
@@ -405,12 +390,8 @@ class StringStruct:
     String Value[];
     """
     def __init__(self, name=None, val=None):
-        self.name = name
-        self.val = val
-        if name is None:
-            self.name = ''
-        if val is None:
-            self.val = ''
+        self.name = name or ''
+        self.val = val or ''
 
     def fromRaw(self, data, i, limit):
         i, (sublen, vallen, typ, self.name) = parseCommon(data, i)
@@ -457,10 +438,7 @@ class VarFileInfo:
     Var   Children[];     // list of zero or more Var structures
     """
     def __init__(self, kids=None):
-        if kids is None:
-            self.kids = []
-        else:
-            self.kids = kids
+        self.kids = kids or []
 
     def fromRaw(self, sublen, vallen, name, data, i, limit):
         self.sublen = sublen
@@ -485,10 +463,7 @@ class VarFileInfo:
         pad = ''
         if sublen % 4:
             pad = '\000\000'
-        tmp = []
-        for kid in self.kids:
-            tmp.append(kid.toRaw())
-        tmp = ''.join(tmp)
+        tmp = ''.join([kid.toRaw() for kid in self.kids])
         self.sublen = sublen + len(pad) + len(tmp)
         return (struct.pack('hhh', self.sublen, self.vallen, self.wType)
                 + getRaw(self.name) + '\000\000' + pad + tmp)
@@ -513,12 +488,8 @@ class VarStruct:
                           // and code-page identifiers
     """
     def __init__(self, name=None, kids=None):
-        self.name = name
-        self.kids = kids
-        if name is None:
-            self.name = ''
-        if kids is None:
-            self.kids = []
+        self.name = name or ''
+        self.kids = kids or []
 
     def fromRaw(self, data, i, limit):
         i, (self.sublen, self.wValueLength, self.wType, self.name) = parseCommon(data, i)
@@ -526,7 +497,7 @@ class VarStruct:
         for j in range(self.wValueLength/2):
             kid = struct.unpack('h', data[i:i+2])[0]
             self.kids.append(kid)
-            i = i + 2
+            i += 2
         return i
 
     def toRaw(self):
@@ -539,10 +510,7 @@ class VarStruct:
         if sublen % 4:
             pad = '\000\000'
         self.sublen = sublen + len(pad) + self.wValueLength
-        tmp = []
-        for kid in self.kids:
-            tmp.append(struct.pack('h', kid))
-        tmp = ''.join(tmp)
+        tmp = ''.join([struct.pack('h', kid) for kid in self.kids])
         return (struct.pack('hhh', self.sublen, self.wValueLength, self.wType)
                 + getRaw(self.name) + '\000\000' + pad + tmp)
 
