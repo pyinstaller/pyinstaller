@@ -38,16 +38,16 @@ def decode(pathnm):
         print vs
         if data[:j] != vs.toRaw():
             print "AAAAAGGHHHH"
-        txt = repr(vs)
-        glbls = {}
-        glbls['VSVersionInfo'] = VSVersionInfo
-        glbls['FixedFileInfo'] = FixedFileInfo
-        glbls['StringFileInfo'] = StringFileInfo
-        glbls['StringTable'] = StringTable
-        glbls['StringStruct'] = StringStruct
-        glbls['VarFileInfo'] = VarFileInfo
-        glbls['VarStruct'] = VarStruct
-        vs2 = eval(txt+'\n', glbls)
+        glbls = {
+            'VSVersionInfo': VSVersionInfo,
+            'FixedFileInfo': FixedFileInfo,
+            'StringFileInfo': StringFileInfo,
+            'StringTable': StringTable,
+            'StringStruct': StringStruct,
+            'VarFileInfo': VarFileInfo,
+            'VarStruct': VarStruct,
+            }
+        vs2 = eval(repr(vs), glbls)
         if vs.toRaw() != vs2.toRaw():
             print
             print 'reconstruction not the same!'
@@ -84,10 +84,9 @@ class VSVersionInfo:
         self.ffi = FixedFileInfo()
         j = self.ffi.fromRaw(data, i)
         #print ffi
-        if TEST:
-            if data[i:j] != self.ffi.toRaw():
-                print "raw:", `data[i:j]`
-                print "ffi:", `self.ffi.toRaw()`
+        if TEST and data[i:j] != self.ffi.toRaw():
+            print "raw:", `data[i:j]`
+            print "ffi:", `self.ffi.toRaw()`
         i = j
         while i < sublen:
             j = i
@@ -95,29 +94,29 @@ class VSVersionInfo:
             if str(nm).strip() == "StringFileInfo":
                 sfi = StringFileInfo()
                 k = sfi.fromRaw(csublen, cvallen, nm, data, i, j+csublen)
-                if TEST:
-                    if data[j:k] != sfi.toRaw():
-                        rd = data[j:k]
-                        sd = sfi.toRaw()
-                        for x in range(0, len(rd), 16):
-                            rds = rd[x:x+16]
-                            sds = sd[x:x+16]
-                            if rds != sds:
-                                print "rd[%s:%s+16]: %s" % (x, x, `rds`)
-                                print "sd[%s:%s+16]: %s" % (x, x, `sds`)
-                                print
-                        print "raw: len %d, wLength %d" % (len(rd), struct.unpack('h', rd[:2])[0])
-                        print "sfi: len %d, wLength %d" % (len(sd), struct.unpack('h', sd[:2])[0])
+                if TEST and data[j:k] != sfi.toRaw():
+                    rd = data[j:k]
+                    sd = sfi.toRaw()
+                    for x in range(0, len(rd), 16):
+                        rds = rd[x:x+16]
+                        sds = sd[x:x+16]
+                        if rds != sds:
+                            print "rd[%s:%s+16]: %r" % (x, x, rds)
+                            print "sd[%s:%s+16]: %r" % (x, x, sds)
+                            print
+                    print ("raw: len %d, wLength %d"
+                           % (len(rd), struct.unpack('h', rd[:2])[0]))
+                    print ("sfi: len %d, wLength %d"
+                           % (len(sd), struct.unpack('h', sd[:2])[0]))
                 self.kids.append(sfi)
                 i = k
             else:
                 vfi = VarFileInfo()
                 k = vfi.fromRaw(csublen, cvallen, nm, data, i, j+csublen)
                 self.kids.append(vfi)
-                if TEST:
-                    if data[j:k] != vfi.toRaw():
-                        print "raw:", `data[j:k]`
-                        print "vfi:", `vfi.toRaw()`
+                if TEST and data[j:k] != vfi.toRaw():
+                    print "raw:", `data[j:k]`
+                    print "vfi:", `vfi.toRaw()`
                 i = k
             i = j + csublen
             i = ((i + 3) / 4) * 4
@@ -145,14 +144,13 @@ class VSVersionInfo:
                 + getRaw(nm) + '\000\000' + pad + rawffi + pad2 + tmp)
 
     def __repr__(self, indent=''):
-        tmp = []
-        newindent = indent + '  '
-        for kid in self.kids:
-            tmp.append(kid.__repr__(newindent+'  '))
+        indent = indent + '  '
+        tmp = [kid.__repr__(indent+'  ')
+               for kid in self.kids]
         tmp = ', \n'.join(tmp)
         return ("VSVersionInfo(\n%sffi=%s,\n%skids=[\n%s\n%s]\n)"
-                % (newindent, self.ffi.__repr__(newindent), newindent,
-                   tmp, newindent))
+                % (indent, self.ffi.__repr__(indent), indent,
+                   tmp, indent))
 
 
 def parseCommon(data, start=0):
@@ -255,14 +253,14 @@ class FixedFileInfo:
               self.productVersionLS >> 16, self.productVersionLS & 0xFFFF)
         fd = (self.fileDateMS, self.fileDateLS)
         tmp = ["FixedFileInfo(",
-               "filevers=%s," % (fv,),
-               "prodvers=%s," % (pv,),
+               "filevers=%s," % fv,
+               "prodvers=%s," % pv,
                "mask=%s," % hex(self.fileFlagsMask),
                "flags=%s," % hex(self.fileFlags),
                "OS=%s," % hex(self.fileOS),
                "fileType=%s," % hex(self.fileType),
                "subtype=%s," % hex(self.fileSubtype),
-               "date=%s" % (fd,),
+               "date=%s" % fd,
                ")"
               ]
         return ('\n'+indent+'  ').join(tmp)
@@ -293,21 +291,20 @@ class StringFileInfo:
         while i < limit:
             st = StringTable()
             j = st.fromRaw(data, i, limit)
-            if TEST:
-                if data[i:j] != st.toRaw():
-                    rd = data[i:j]
-                    sd = st.toRaw()
-                    for x in range(0, len(rd), 16):
-                        rds = rd[x:x+16]
-                        sds = sd[x:x+16]
-                        if rds != sds:
-                            print "rd[%s:%s+16]: %s" % (x, x, `rds`)
-                            print "sd[%s:%s+16]: %s" % (x, x, `sds`)
-                            print
-                    print ("raw: len %d, wLength %d"
-                           % (len(rd), struct.unpack('h', rd[:2])[0]))
-                    print (" st: len %d, wLength %d"
-                           % (len(sd), struct.unpack('h', sd[:2])[0]))
+            if TEST and data[i:j] != st.toRaw():
+                rd = data[i:j]
+                sd = st.toRaw()
+                for x in range(0, len(rd), 16):
+                    rds = rd[x:x+16]
+                    sds = sd[x:x+16]
+                    if rds != sds:
+                        print "rd[%s:%s+16]: %r" % (x, x, rds)
+                        print "sd[%s:%s+16]: %r" % (x, x, sds)
+                        print
+                print ("raw: len %d, wLength %d"
+                       % (len(rd), struct.unpack('h', rd[:2])[0]))
+                print (" st: len %d, wLength %d"
+                       % (len(sd), struct.unpack('h', sd[:2])[0]))
             self.kids.append(st)
             i = j
         return i
@@ -332,10 +329,9 @@ class StringFileInfo:
                 + getRaw(self.name) + '\000\000' + pad + tmp)
 
     def __repr__(self, indent=''):
-        tmp = []
         newindent = indent + '  '
-        for kid in self.kids:
-            tmp.append(kid.__repr__(newindent))
+        tmp = [kid.__repr__(newindent)
+               for kid in self.kids]
         tmp = ', \n'.join(tmp)
         return ("%sStringFileInfo(\n%s[\n%s\n%s])"
                 % (indent, newindent, tmp, newindent))
@@ -364,10 +360,9 @@ class StringTable:
         while i < limit:
             ss = StringStruct()
             j = ss.fromRaw(data, i, limit)
-            if TEST:
-                if data[i:j] != ss.toRaw():
-                    print "raw:", `data[i:j]`
-                    print " ss:", `ss.toRaw()`
+            if TEST and data[i:j] != ss.toRaw():
+                print "raw:", `data[i:j]`
+                print " ss:", `ss.toRaw()`
             i = j
             self.kids.append(ss)
             i = ((i + 3) / 4) * 4
@@ -393,13 +388,11 @@ class StringTable:
                 + getRaw(self.name) + '\000\000' + tmp)
 
     def __repr__(self, indent=''):
-        tmp = []
         newindent = indent + '  '
-        for kid in self.kids:
-            tmp.append(repr(kid))
+        tmp = map(repr, self.kids)
         tmp = (',\n%s' % newindent).join(tmp)
-        return ("%sStringTable(\n%s'%s', \n%s[%s])"
-                % (indent, newindent, str(self.name), newindent, tmp))
+        return ("%sStringTable(\n%s%r,\n%s[%s])"
+                % (indent, newindent, self.name, newindent, tmp))
 
 
 class StringStruct:
@@ -443,7 +436,7 @@ class StringStruct:
                 + getRaw(self.val) + '\000\000')
 
     def __repr__(self, indent=''):
-        return "StringStruct('%s', '%s')" % (self.name, self.val)
+        return "StringStruct(%r, %r)" % (self.name, self.val)
 
 
 def parseCodePage(data, i, limit):
@@ -478,10 +471,9 @@ class VarFileInfo:
             vs = VarStruct()
             j = vs.fromRaw(data, i, limit)
             self.kids.append(vs)
-            if TEST:
-                if data[i:j] != vs.toRaw():
-                    print "raw:", `data[i:j]`
-                    print "cmp:", `vs.toRaw()`
+            if TEST and data[i:j] != vs.toRaw():
+                print "raw:", `data[i:j]`
+                print "cmp:", `vs.toRaw()`
             i = j
         return i
 
@@ -555,12 +547,12 @@ class VarStruct:
                 + getRaw(self.name) + '\000\000' + pad + tmp)
 
     def __repr__(self, indent=''):
-        return "VarStruct('%s', %s)" % (str(self.name), repr(self.kids))
+        return "VarStruct(%r, %r)" % (self.name, self.kids)
 
 
 def SetVersion(exenm, versionfile):
     txt = open(versionfile, 'rU').read()
-    vs = eval(txt+'\n', globals())
+    vs = eval(txt)
     hdst = win32api.BeginUpdateResource(exenm, 0)
     win32api.UpdateResource(hdst, RT_VERSION, 1, vs.toRaw())
     win32api.EndUpdateResource (hdst, 0)
