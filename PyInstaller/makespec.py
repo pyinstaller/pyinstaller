@@ -278,14 +278,11 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0,
             # Assume filename
             exe_options = "%s, manifest='%s'" % (exe_options, quote_win_filepath(manifest))
     if resources:
-        for i in range(len(resources)):
-            resources[i] = quote_win_filepath(resources[i])
+        resources = map(quote_win_filepath, resources)
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
     if not ascii and config['hasUnicode']:
         scripts.insert(0, os.path.join(CONFIGDIR, 'support', 'useUnicode.py'))
-    for i in range(len(scripts)):
-        scripts[i] = Path(scripts[i]) # Use relative path in specfiles
-
+    scripts = map(Path, scripts)
     d = {'tktree':'',
          'tkpkg' :'',
          'scripts':scripts,
