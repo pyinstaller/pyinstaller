@@ -32,8 +32,6 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-int append2enviroment(const char *name, const char *value);
-
 void init_launcher(void)
 {
 }
@@ -70,7 +68,7 @@ void get_archivefile(char *archivefile, const char *thisfile)
     strcat(archivefile, ".pkg");
 }
 
-int append2enviroment(const char *name, const char *value)
+static int prepend2enviroment(const char *name, const char *value)
 {
     char *envvar;
     char *old_envvar;
@@ -99,6 +97,21 @@ int append2enviroment(const char *name, const char *value)
     VS("%s\n", envvar);
     
     return 0;
+}
+
+static int prependToDynamicLibraryPath(const char* path)
+{
+    int rc = 0;
+
+#ifdef AIX
+    /* LIBPATH is used to look up dynamic libraries on AIX. */
+    rc = prepend2enviroment("LIBPATH", path);
+#else
+    /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
+    rc = prepend2enviroment("LD_LIBRARY_PATH", path);
+#endif /* AIX */
+
+    return rc;
 }
 
 int set_environment(const ARCHIVE_STATUS *status)
@@ -134,9 +147,9 @@ int set_environment(const ARCHIVE_STATUS *status)
 	unsetenv("DYLD_ROOT_PATH");
 
 #else
-    /* add temppath to LD_LIBRARY_PATH */
-    if (status->temppath[0] != 0){
-        rc = append2enviroment("LD_LIBRARY_PATH", status->temppath);
+    /* add temppath to library path */
+    if (status->temppath[0] != 0) {
+        rc = prependToDynamicLibraryPath(status->temppath);
     }
     /* make homepath absolute
      * homepath contains ./ which breaks some modules when changing the CWD.
@@ -150,7 +163,7 @@ int set_environment(const ARCHIVE_STATUS *status)
 
     /* path must end with slash / */
     strcat(buf, "/");
-    rc = append2enviroment("LD_LIBRARY_PATH", buf);
+    rc = prependToDynamicLibraryPath(buf);
 #endif
 
     return rc;

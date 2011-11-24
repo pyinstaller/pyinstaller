@@ -165,9 +165,11 @@ def configure(conf):
         conf.env.append_value('CCDEFINES', 'WIN32')
         conf.env.append_value('CPPPATH', '../zlib')
 
-    # Enable Solaris specific code for bootloader
     if myplatform.startswith('sun'):
         conf.env.append_value('CCDEFINES', 'SUNOS')
+
+    if myplatform.startswith('aix'):
+        conf.env.append_value('CCDEFINES', 'AIX')
 
     conf.env.append_value('CPPPATH', '../common')
 
@@ -209,7 +211,7 @@ def configure(conf):
     
     # Compile with 64bit gcc 32bit binaries
     if conf.env.CC_NAME == 'gcc':
-        if myarch == '32bit':
+        if myarch == '32bit' and conf.check_cc(ccflags='-m32', msg='Checking for flags -m32'):
             conf.env.append_value('CCFLAGS', '-m32')
             if myplatform.startswith('darwin'):
 	        conf.env.append_value('LINKFLAGS', '-arch')

@@ -36,7 +36,7 @@ from PyInstaller.loader import archive, carchive, iu
 
 import PyInstaller
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
-from PyInstaller import is_win, is_unix, is_darwin, is_cygwin
+from PyInstaller import is_win, is_unix, is_aix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
 from PyInstaller.compat import hashlib, set
 from PyInstaller.depend import dylib
@@ -504,7 +504,11 @@ class Analysis(Target):
         so this method also checks for that variant as well.
         """
 
-        if is_unix:
+        if is_aix:
+            # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
+            names = ('libpython%d.%d.a' % sys.version_info[:2],) 
+        elif is_unix:
+            # Other *nix platforms.
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
         elif is_darwin:
             names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])

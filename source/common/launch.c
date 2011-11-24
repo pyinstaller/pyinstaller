@@ -50,8 +50,13 @@
 #define vsnprintf _vsnprintf
 #endif
 
-/* On Solaris is missing function 'mkdtemp'. */
-#ifdef SUNOS
+/*
+ * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms: 
+ * - On Solaris function 'mkdtemp' is missing.
+ * - On AIX 5.2 function 'mkdtemp' is missing. It is there in version 6.1 but we don't know
+ *   the runtime platform at compile time, so we always include our own implementation on AIX.
+ */
+#if defined(SUNOS) || defined(AIX)
 #include "mkdtemp.h"
 #endif
 
@@ -511,36 +516,73 @@ int loadPython(ARCHIVE_STATUS *status)
 	mapNames(dll, pyvers);
 #else
 
+    uint32_t pyvers_major;
+    uint32_t pyvers_minor;
+    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
+
+    pyvers_major = pyvers / 10;
+    pyvers_minor = pyvers % 10;
+
 	/* Determine the path */
 #ifdef __APPLE__
 
     /* Try to load python library both from temppath and homepath */
-	if (checkFile(dllpath, "%sPython", status->temppath) != 0) {
-        if (checkFile(dllpath, "%sPython", status->homepath) != 0) {
-            if (checkFile(dllpath, "%s.Python", status->temppath) != 0){
-                if (checkFile(dllpath, "%s.Python", status->homepath) != 0){
-                    /* Python might be compiled as a .dylib (using --enable-shared) so lets try that one */
-                    if (checkFile(dllpath, "%slibpython%01d.%01d.dylib", status->temppath, pyvers / 10, pyvers % 10) != 0) {
-                        if (checkFile(dllpath, "%slibpython%01d.%01d.dylib", status->homepath, pyvers / 10, pyvers % 10) != 0) {
-                            FATALERROR("Python library not found.\n");
-                            return -1;
-                        }
-                    }
-                }
-            }
-        }
+    /* First try with plain "Python" lib, then "Python" lib and finally "libpython*.dylib". */
+    #define pylibTemplate "%sPython"
+    #define dotPylibTemplate "%s.Python"
+    #define dyPylibTemplate "%slibpython%01d.%01d.dylib"
+    if (    checkFile(dllpath, pylibTemplate, status->temppath) != 0
+         && checkFile(dllpath, pylibTemplate, status->homepath) != 0
+         && checkFile(dllpath, dotPylibTemplate, status->temppath) != 0
+         && checkFile(dllpath, dotPylibTemplate, status->homepath) != 0
+            /* Python might be compiled as a .dylib (using --enable-shared) so lets try that one */
+         && checkFile(dllpath, dyPylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
+         && checkFile(dllpath, dyPylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0 )
+    {
+        FATALERROR("Python library not found.\n");
+        return -1;
     }
 #else
-    if (checkFile(dllpath, "%slibpython%01d.%01d.so.1.0", status->temppath, pyvers / 10, pyvers % 10) != 0) {
-        if (checkFile(dllpath, "%slibpython%01d.%01d.so.1.0", status->homepath, pyvers / 10, pyvers % 10) != 0) {
-            FATALERROR("Python library not found.\n");
-            return -1;
-        }
+
+#ifdef AIX
+    /* On AIX 'ar' archives are used for both static and shared object.
+     * To load a shared object from a library, it should be loaded like this:
+     *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
+     */
+
+    /* Search for Python library archive: e.g. 'libpython2.6.a' */
+    #define pylibTemplate "%slibpython%01d.%01d.a"
+    if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
+         && checkFile(dllpath, pylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0)
+    {
+        FATALERROR("Python library not found.\n");
+        return -1;
     }
+    
+    /* Append the shared object member to the library path
+     * to make it look like this:
+     *   libpython2.6.a(libpython2.6.so)
+     */
+    sprintf(dllpath + strlen(dllpath), "(libpython%01d.%01d.so)", pyvers_major, pyvers_minor);
+    
+    /* Append the RTLD_MEMBER to the open mode for 'dlopen()'
+     * in order to load shared object member from library.
+     */
+    dlopenMode |= RTLD_MEMBER;
+#else
+    #define pylibTemplate "%slibpython%01d.%01d.so.1.0"
+    if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
+         && checkFile(dllpath, pylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0)
+    {
+        FATALERROR("Python library not found.\n");
+        return -1;
+    }
+#endif /* AIX */
+
 #endif
 
 	/* Load the DLL */
-	dll = dlopen(dllpath, RTLD_NOW|RTLD_GLOBAL);
+	dll = dlopen(dllpath, dlopenMode);
 	if (dll) {
 		VS("%s\n", dllpath);
 	}

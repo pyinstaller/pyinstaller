@@ -89,9 +89,6 @@ def test_TCL_TK(config):
 
     # TCL_root, TK_root and support/useTK.py
     logger.info("Finding TCL/TK...")
-    if not (is_win):
-        save_exclude = dylib.exclude_list
-        dylib.exclude_list = None
 
     if is_win:
         pattern = r'(?i)tcl(\d\d)\.dll'
@@ -99,6 +96,14 @@ def test_TCL_TK(config):
         pattern = r'libtcl(\d\.\d)?\.so'
     elif is_darwin:
         pattern = r'_tkinter'
+    else:
+        # If no pattern is in place for this platform, skip TCL/TK detection.
+        logger.info("... skipping TCL/TK detection on this target platform (%s)"
+                    % sys.platform)
+
+    if not (is_win):
+        save_exclude = dylib.exclude_list
+        dylib.exclude_list = None
 
     a = mf.ImportTracker()
     a.analyze_r('Tkinter')

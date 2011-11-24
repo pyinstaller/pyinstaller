@@ -31,7 +31,7 @@ __all__ = ['exclude_list', 'include_list', 'include_library']
 import os
 import re
 
-from PyInstaller import is_win, is_unix, is_darwin
+from PyInstaller import is_win, is_unix, is_aix, is_darwin
 from PyInstaller.compat import set
 
 
@@ -84,6 +84,19 @@ _unix_excludes = {
     r'/libGL\..*': 1,
 }
 
+_aix_excludes = {
+    r'/libbz2\.a':1,
+    r'/libc\.a':1,
+    r'/libC\.a':1,
+    r'/libcrypt\.a':1,
+    r'/libdl\.a':1,
+    r'/libintl\.a':1,
+    r'/libpthreads\.a':1,
+    r'/librt\\.a':1,
+    r'/librtl\.a':1,
+    r'/libz\.a':1,
+}
+
 
 if is_win:
     _excludes = _win_excludes
@@ -95,7 +108,11 @@ if is_win:
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     _includes[r'%spy(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll$' % sep] = 1
 
+elif is_aix:
+    # The exclude list for AIX differs from other *nix platforms.
+    _excludes = _aix_excludes
 elif is_unix:
+    # Common excludes for *nix platforms -- except AIX.
     _excludes = _unix_excludes
 
 

@@ -27,7 +27,7 @@ import subprocess
 # Required for extracting eggs.
 import zipfile
 
-from PyInstaller import is_win, is_unix, is_cygwin, is_darwin, is_py26
+from PyInstaller import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 from PyInstaller.compat import set
@@ -385,17 +385,32 @@ def _getImports_ldd(pth):
 
         This implementation is for ldd platforms"""
     rslt = []
+    if is_aix:
+        # Match libs of the form 'archive.a(sharedobject.so)'
+        # Will not match the fake lib '/unix'
+        lddPattern = re.compile(r"\s+(.*?)(\(.*\))")
+    else:
+        lddPattern = re.compile(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)")
+
     for line in __popen('ldd', pth).strip().splitlines():
-        m = re.search(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)", line)
+        m = lddPattern.search(line)
         if m:
-            name, lib = m.group(1), m.group(2)
+            if is_aix:
+                lib = m.group(1)
+                name = os.path.basename(lib) + m.group(2)
+            else:
+                name, lib = m.group(1), m.group(2)
             if name[:10] in ('linux-gate', 'linux-vdso'):
                 # linux-gate is a fake library which does not exist and
                 # should be ignored. See also:
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
                 continue
+
             if os.path.exists(lib):
-                rslt.append(lib)
+                # Add lib if it is not already found.
+                # (Should use set() instead of list but that is not in Python 2.2.)
+                if lib not in rslt:
+                    rslt.append(lib)
             else:
                 logger.error('Can not find %s in path %s (needed by %s)',
                              name, lib, pth)
@@ -531,7 +546,10 @@ def findLibrary(name):
 
     # Look in the known safe paths
     if lib is None:
-        for path in ['/lib', '/usr/lib']:
+        paths = ['/lib', '/usr/lib']
+        if is_aix:
+          paths.append('/opt/freeware/lib')
+        for path in paths:
             libs = glob(os.path.join(path, name + '*'))
             if libs:
                 lib = libs[0]
