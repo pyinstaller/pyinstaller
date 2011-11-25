@@ -417,12 +417,16 @@ class Analysis(Target):
         zipfiles = []  # zipfiles to bundle
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
+
         for modnm, mod in importTracker.modules.items():
+
+            # FIXME: why can we have a mod == None here?
             if mod is None:
-                # FIXME: why can we have a mod == None here?
                 continue
+
             rthooks.extend(_findRTHook(modnm))  # XXX
             datas.extend(mod.datas)
+
             if isinstance(mod, mf.BuiltinModule):
                 pass
             elif isinstance(mod, mf.ExtensionModule):
