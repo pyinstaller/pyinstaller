@@ -429,23 +429,36 @@ class PYZOwner(iu.Owner):
         ispkg, bytecode = rslt
         mod = newmod(nm)
 
+        # Replace bytecode.co_filename by something more meaningful:
+        # e.g. /absolute/path/frozen_executable?12345/os/path.pyc
+        # Paths from developer machine are masked.
         try:
-            mod.__file__ = bytecode.co_filename
+            # Python packages points to files  __init__.pyc.
+            if ispkg:
+                mod.__file__ = iu._os_path_join(iu._os_path_join(self.path,
+                    nm.replace('.', iu._os_sep)), '__init__.pyc')
+            else:
+                mod.__file__ = iu._os_path_join(self.path,
+                    nm.replace('.', iu._os_sep) + '.pyc')
         except AttributeError:
             raise ImportError("PYZ entry '%s' (%s) is not a valid code object"
                 % (nm, repr(bytecode)))
 
         # Python has modules and packages. A Python package is container
         # for several modules or packages.
-        # A python packages has to have __path__ attribute.
         if ispkg:
+
             if '_MEIPASS2' in _environ:
                 localpath = _environ['_MEIPASS2'][:-1]
             else:
                 localpath = iu._os_path_dirname(self.path)
-            mod.__path__ = [self.path, localpath,
-                iu._os_path_dirname(mod.__file__)]
+
+            # A python packages has to have __path__ attribute.
+            mod.__path__ = [iu._os_path_dirname(mod.__file__), self.path, localpath,
+                ]
+
             debug("PYZOwner setting %s's __path__: %s" % (nm, mod.__path__))
+
             importer = iu.PathImportDirector(mod.__path__,
                 {self.path: PkgInPYZImporter(nm, self),
                 localpath: ExtInPkgImporter(localpath, nm)},

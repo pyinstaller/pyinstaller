@@ -638,7 +638,9 @@ def pathisdir(pathname):
     return (s[0] & 0170000) == 0040000
 
 
-_os_stat = _os_path_join = _os_getcwd = _os_path_dirname = _os_environ = _os_listdir = _os_path_basename = None
+_os_stat = _os_path_join = _os_getcwd = _os_path_dirname = None
+_os_environ = _os_listdir = _os_path_basename = None
+_os_sep = None
 
 
 def _os_bootstrap():
@@ -648,6 +650,7 @@ def _os_bootstrap():
 
     global _os_stat, _os_getcwd, _os_environ, _os_listdir
     global _os_path_join, _os_path_dirname, _os_path_basename
+    global _os_sep
 
     names = sys.builtin_module_names
 
@@ -657,11 +660,11 @@ def _os_bootstrap():
     # 'dos', 'os2' and 'mac' (MacOS 9) are not supported.
     if 'posix' in names:
         from posix import stat, getcwd, environ, listdir
-        sep = '/'
+        sep = _os_sep = '/'
         mindirlen = 1
     elif 'nt' in names:
         from nt import stat, getcwd, environ, listdir
-        sep = '\\'
+        sep = _os_sep = '\\'
         mindirlen = 3
     else:
         raise ImportError('no os specific module found')
