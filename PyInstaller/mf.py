@@ -634,7 +634,7 @@ class ImportTracker:
             except AttributeError:
                 pass
             else:
-                self.handle_hook(mod, hook)
+                mod = self._handle_hook(mod, hook)
                 if fqname != mod.__name__:
                     logger.warn("%s is changing it's name to %s",
                                 fqname, mod.__name__)
@@ -648,7 +648,7 @@ class ImportTracker:
         return mod
 
 
-    def handle_hook(self, mod, hook):
+    def _handle_hook(self, mod, hook):
         if hasattr(hook, 'hook'):
             mod = hook.hook(mod)
         if hasattr(hook, 'hiddenimports'):
@@ -676,6 +676,7 @@ class ImportTracker:
                     else:
                         os.path.walk(fn, _visit,
                                      (os.path.dirname(fn), dest_dir, datas))
+        return mod
         
 
     def getwarnings(self):
