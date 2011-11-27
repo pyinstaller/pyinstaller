@@ -2,8 +2,8 @@
 
 import os
 import sys
-import subprocess
 import PyInstaller
+import PyInstaller.compat as compat
 from PyInstaller.compat import set
 from PyInstaller.utils import misc
 
@@ -25,7 +25,7 @@ def __exec_python_cmd(cmd):
     os.environ["PYTHONPATH"] = pp
     try:
         try:
-            txt = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
+            txt = compat.exec_command(*cmd)
         except OSError, e:
             raise SystemExit("Execution failed: %s" % e)
     finally:

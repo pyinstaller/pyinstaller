@@ -23,13 +23,13 @@ import os
 import sys
 import re
 from glob import glob
-import subprocess
 # Required for extracting eggs.
 import zipfile
 
 from PyInstaller import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
+import PyInstaller.compat as compat
 from PyInstaller.compat import set
 
 
@@ -388,9 +388,6 @@ def selectImports(pth, xtrapath=None):
     return rv
 
 
-def __popen(*cmd):
-    return subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-
 
 def _getImports_ldd(pth):
     """
@@ -406,7 +403,7 @@ def _getImports_ldd(pth):
     else:
         lddPattern = re.compile(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
-    for line in __popen('ldd', pth).strip().splitlines():
+    for line in compat.exec_command('ldd', pth).strip().splitlines():
         m = lddPattern.search(line)
         if m:
             if is_aix:
@@ -514,7 +511,7 @@ def findLibrary(name):
     # Look in /etc/ld.so.cache
     if lib is None:
         expr = r'/[^\(\)\s]*%s\.[^\(\)\s]*' % re.escape(name)
-        m = re.search(expr, __popen('/sbin/ldconfig', '-p'))
+        m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-p'))
         if m:
             lib = m.group(0)
 
@@ -543,6 +540,6 @@ def getSoname(filename):
     Return the soname of a library.
     """
     cmd = ["objdump", "-p", "-j", ".dynamic", filename]
-    m = re.search(r'\s+SONAME\s+([^\s]+)', __popen(*cmd))
+    m = re.search(r'\s+SONAME\s+([^\s]+)', compat.exec_command(*cmd))
     if m:
         return m.group(1)

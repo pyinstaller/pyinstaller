@@ -30,7 +30,6 @@ import UserList
 import mf
 import bindepend
 import traceback
-import subprocess
 
 from PyInstaller.loader import archive, carchive, iu
 
@@ -38,6 +37,7 @@ import PyInstaller
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
 from PyInstaller import is_win, is_unix, is_aix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
+import PyInstaller.compat as compat
 from PyInstaller.compat import hashlib, set
 from PyInstaller.depend import dylib
 
@@ -62,13 +62,6 @@ WARNFILE = None
 NOCONFIRM = None
 
 rthooks = {}
-
-
-def _system(cmd):
-    try:
-        subprocess.call(cmd)
-    except OSError, e:
-        raise SystemExit("Execution failed: %s" % e)
 
 
 def _save_data(filename, data):
@@ -734,7 +727,10 @@ def checkCache(fnm, strip=0, upx=0):
                                     raise
 
     if cmd:
-        _system(cmd)
+        try:
+            compat.exec_command(cmd)
+        except OSError, e:
+            raise SystemExit("Execution failed: %s" % e)
 
     # update cache index
     cache_index[basenm] = digest

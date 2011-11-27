@@ -24,7 +24,6 @@ import sys
 import shutil
 import re
 import time
-import subprocess
 import inspect
 
 from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE, PLATFORM
@@ -283,8 +282,7 @@ def test_UPX(config, upx_dir):
 
     hasUPX = 0
     try:
-        vers = subprocess.Popen([cmd, '-V'], stdout=subprocess.PIPE).communicate()[0]
-        vers = vers.strip().splitlines()
+        vers = compat.exec_command(cmd, '-V').strip().splitlines()
         if vers:
             v = vers[0].split()[1]
             hasUPX = tuple(map(int, v.split(".")))

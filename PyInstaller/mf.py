@@ -24,10 +24,10 @@ import imp
 import marshal
 import dircache
 import glob
-import subprocess
 import zipimport
 
 from PyInstaller.loader import archive
+import PyInstaller.compat as compat
 from PyInstaller.compat import set
 
 
@@ -1123,8 +1123,7 @@ def _resolveCtypesImports(cbinaries):
                     cpath = os.path.join(d, cpath)
                     break
             else:
-                text = subprocess.Popen(["/sbin/ldconfig", "-p"],
-                    stdout=subprocess.PIPE).communicate()[0]
+                text = compat.exec_command("/sbin/ldconfig", "-p")
                 for L in text.strip().splitlines():
                     if cpath in L:
                         cpath = L.split("=>", 1)[1].strip()
