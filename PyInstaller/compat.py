@@ -21,6 +21,7 @@
 
 import os
 import sys
+import subprocess
 
 
 # Obsolete command line options (do not exist anymore)
@@ -100,12 +101,12 @@ def setenv(name, value):
     pass
 
 
-# Wrap creating subprocesses
-# We might decide to use subprocess module instead os.system()
-
-
-def exec_command(cmd):
-    pass
+def exec_command(*cmdargs):
+    """
+    Wrap creating subprocesses
+    Todo: Use module `subprocess` if available, else `os.system()`
+    """
+    return subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
 
 
 # Obsolete command line options
