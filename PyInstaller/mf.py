@@ -52,14 +52,11 @@ else:
     def caseOk(filename):
         return True
 
-def pyco():
-    """
-    Returns correct extension ending: 'c' or 'o'
-    """
-    if __debug__:
-        return 'c'
-    else:
-        return 'o'
+# correct extension ending: 'c' or 'o'
+if __debug__:
+    PYCO = 'c'
+else:
+    PYCO = 'o'
 
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
@@ -119,7 +116,7 @@ class BaseDirOwner(Owner):
                 try:
                     stuff = self._read(py[0])+'\n'
                     co = compile(stuff.replace("\r\n", "\n"), py[0], 'exec')
-                    pth = py[0] + pyco()
+                    pth = py[0] + PYCO
                     break
                 except SyntaxError, e:
                     logger.exception(e)
@@ -750,7 +747,7 @@ class PyModule(Module):
         self.co = co
         self.__file__ = pth
         if os.path.splitext(self.__file__)[1] == '.py':
-            self.__file__ = self.__file__ + pyco()
+            self.__file__ = self.__file__ + PYCO
         self.scancode()
 
     def scancode(self):
