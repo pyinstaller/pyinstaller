@@ -90,7 +90,7 @@ def getenv(name):
     """
     Returns unicode string containing value of environment variable 'name'.
     """
-    pass
+    raise NotImplementedError
 
 
 def setenv(name, value):
@@ -98,7 +98,7 @@ def setenv(name, value):
     Accepts unicode string and set it as environment variable 'name' containing
     value 'value'.
     """
-    pass
+    raise NotImplementedError
 
 
 def exec_command(*cmdargs):
