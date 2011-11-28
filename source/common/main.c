@@ -75,6 +75,22 @@ int main(int argc, char* argv[])
     get_homepath(homepath, thisfile);
 
     extractionpath = getenv( "_MEIPASS2" );
+
+    /* If the Python program we are about to run invokes another PyInstaller
+     * one-file program as subprocess, this subprocess must not be fooled into
+     * thinking that it is already unpacked. Therefore, PyInstaller deletes
+     * the _MEIPASS2 variable from the environment in _mountzlib.py.
+     *
+     * However, on some platforms (e.g. AIX) the Python function 'os.unsetenv()'
+     * does not always exist. In these cases we cannot delete the _MEIPASS2
+     * environment variable from Python but only set it to the empty string.
+     * The code below takes into account that _MEIPASS2 may exist while its
+     * value is only the empty string.
+     */
+    if (extractionpath && *extractionpath == 0) {
+        extractionpath = NULL;
+    }
+
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
     if (init(status_list[SELF], homepath, &thisfile[strlen(homepath)])) {

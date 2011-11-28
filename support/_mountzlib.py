@@ -60,13 +60,24 @@ if not hasattr(sys, 'frozen'):
 # But we need to preserve _MEIPASS2 value for cases where reseting it
 # causes some issues (e.g. multiprocess module on Windows).
 # set  sys._MEIPASS
-if '_MEIPASS2' in os.environ:
-    sys._MEIPASS = os.environ['_MEIPASS2']
+MEIPASS2 = '_MEIPASS2'
+if MEIPASS2 in os.environ:
+    meipass2_value = os.environ[MEIPASS2]
+
     # Ensure sys._MEIPASS is absolute path.
-    sys._MEIPASS = os.path.normpath(sys._MEIPASS)
-    sys._MEIPASS = os.path.abspath(sys._MEIPASS)
+    meipass2_value = os.path.normpath(meipass2_value)
+    meipass2_value = os.path.abspath(meipass2_value)
+    sys._MEIPASS = meipass2_value
+
     # Delete _MEIPASS2 from environment.
-    del os.environ['_MEIPASS2']
+    del os.environ[MEIPASS2]
+
+    # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
+    # deleting the var from os.environ does not delete it from the environment.
+    # In those cases we cannot delete the variable but only set it to the
+    # empty string.
+    if not hasattr(os, 'unsetenv'):
+        os.putenv(MEIPASS2, '')
 
 
 # Ensure PYTHONPATH contains absolute paths.

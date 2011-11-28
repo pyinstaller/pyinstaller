@@ -15,12 +15,19 @@ class _Popen(multiprocessing.forking.Popen):
             # We have to get original _MEIPASS2 value from PYTHONPATH
             # to get --onefile and --onedir mode working.
             # Last character is stripped in C-loader.
-            os.putenv('_MEIPASS2', sys._MEIPASS) 
+            os.putenv('_MEIPASS2', sys._MEIPASS)
         try:
             super(_Popen, self).__init__(*args, **kw)
         finally:
             if hasattr(sys, 'frozen'):
-                os.unsetenv('_MEIPASS2')
+                # On some platforms (e.g. AIX) 'os.unsetenv()' is not
+                # available. In those cases we cannot delete the variable
+                # but only set it to the empty string. The bootloader
+                # can handle this case.
+                if hasattr(os, 'unsetenv'):
+                    os.unsetenv('_MEIPASS2')
+                else:
+                    os.putenv('_MEIPASS2', '')
 
 
 class Process(multiprocessing.Process):

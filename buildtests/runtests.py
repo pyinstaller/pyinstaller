@@ -59,7 +59,6 @@ MIN_VERSION_OR_OS = {
 
 DEPENDENCIES = {
     'basic/test_ctypes': ['ctypes'],
-    'basic/test_ctypes': ['ctypes'],
     'basic/test_nestedlaunch1': ['ctypes'],
     'libraries/test_enchant': ['enchant'],
     'libraries/test_Image': ['Image'],
