@@ -76,7 +76,7 @@ DEPENDENCIES = {
 
 NO_SPEC_FILE = [
     'basic/test_absolute_ld_library_path',
-    'basic/test_absolute_ld_library_path_onedir',
+    'basic/test_absolute_python_path',
     'libraries/test_enchant',
     'libraries/test_sqlalchemy',
 ]

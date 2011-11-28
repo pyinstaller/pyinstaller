@@ -65,7 +65,6 @@ if MEIPASS2 in os.environ:
     meipass2_value = os.environ[MEIPASS2]
 
     # Ensure sys._MEIPASS is absolute path.
-    meipass2_value = os.path.normpath(meipass2_value)
     meipass2_value = os.path.abspath(meipass2_value)
     sys._MEIPASS = meipass2_value
 
@@ -80,10 +79,12 @@ if MEIPASS2 in os.environ:
         os.putenv(MEIPASS2, '')
 
 
-# Ensure PYTHONPATH contains absolute paths.
+# Ensure PYTHONPATH contains absolute paths. Otherwise import of other python
+# modules will fail when current working directory is changed by frozen
+# application.
 python_path = []
 for pth in sys.path:
-    python_path.append(os.path.normpath(os.path.abspath(pth)))
+    python_path.append(os.path.abspath(pth))
     sys.path = python_path
 
 
