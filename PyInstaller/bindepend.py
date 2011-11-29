@@ -138,7 +138,7 @@ def pkg_resouces_get_default_cache():
     """
     # This function borrowed from setuptools/pkg_resources
     egg_cache = compat.getenv('PYTHON_EGG_CACHE')
-    if egg_cache not is None:
+    if egg_cache is not None:
         return egg_cache
 
     if os.name != 'nt':
