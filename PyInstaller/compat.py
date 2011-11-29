@@ -17,7 +17,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
 import sys
@@ -88,9 +88,8 @@ def system():
 def getenv(name, default=None):
     """
     Returns unicode string containing value of environment variable 'name'.
-    """    
-    return os.getenv(name, default)
-
+    """
+    return os.environ.get(name, default)
 
 
 def setenv(name, value):
@@ -98,14 +97,19 @@ def setenv(name, value):
     Accepts unicode string and set it as environment variable 'name' containing
     value 'value'.
     """
-    os.putenv(name, value)
+    os.environ[name] = value
 
 
 def unsetenv(name):
     """
     Delete the environment variable 'name'.
     """
-    os.unsetenv(name)
+    del os.environ[name]
+
+    # The variable is not deleted from the environment unless function
+    # 'os.unsetenv()' exists. If it does not, we set it to the empty string.
+    if not hasattr(os, 'unsetenv') and hasattr(os, 'putenv'):
+        os.putenv(name, '')
 
 
 def exec_command(*cmdargs):
