@@ -112,18 +112,18 @@ dist/
 """.split()
 
 
-def exec_command(*cmdargs):
+def exec_command(*cmdargs, **kwargs):
     """
     Wrap creating subprocesses
     Todo: Use module `subprocess` if available, else `os.system()`
     """
-    return subprocess.call(cmdargs)
+    return subprocess.call(cmdargs, **kwargs)
 
-def exec_python(*args):
+def exec_python(*args, **kwargs):
     if PYOPTS:
-        return exec_command(PYTHON, PYTINS, *args)
+        return exec_command(PYTHON, PYTINS, *args, **kwargs)
     else:
-        return exec_command(PYTHON, *args)
+        return exec_command(PYTHON, *args, **kwargs)
 
 
 def clean():
@@ -170,7 +170,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     print info
     print "*" * min(80, len(info))
 
-    OPTS = '--skip-configure --debug'
+    OPTS = ['--skip-configure', '--debug']
 
     build_python = open('basic/python_exe.build', 'w')
     build_python.write(sys.executable + "\n")
@@ -226,9 +226,9 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             # .spec file does not exist and it has to be generated
             # for main script
             testfile_spec = testfile + '.py'
-        res = exec_python(os.path.join(HOMEPATH, 'pyinstaller.py'),
-                          OPTS, testfile_spec)
 
+        res = exec_python(os.path.join(HOMEPATH, 'pyinstaller.py'),
+                          testfile_spec, *OPTS)
         if res == 0 and run_executable:
             files = glob.glob(os.path.join('dist', testfile + '*'))
             for exe in files:
@@ -243,14 +243,15 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         for logfn in logsfn:
             _msg("EXECUTING MATCHING", logfn)
             tmpname = os.path.splitext(logfn)[0]
-            newlog = os.path.join('dist', logfn)
             prog = find_exepath(tmpname)
             if prog is None:
                 prog = find_exepath(tmpname, os.path.join('dist', testfile))
+            newlog = open(os.path.join('dist', logfn), 'w')
             exec_python(os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
-                        '-b -r >> ' + newlog, prog)
+                        '-b', '-r', prog, stdout=newlog)
+            newlog.close()
             pattern_list = eval(open(logfn, 'rU').read())
-            fname_list = eval(open(newlog, 'rU').read())
+            fname_list = eval(open(newlog.name, 'rU').read())
             count = 0
             for pattern in pattern_list:
                 found = False
@@ -318,7 +319,7 @@ def find_exepath(test, parent_dir='dist'):
 def detect_tests(folders):
     tests = []
     for f in folders:
-        tests += glob.glob(f + '/test_*.py')
+        tests += glob.glob(os.path.join(f, 'test_*.py'))
     return tests
 
 
