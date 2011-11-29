@@ -89,7 +89,7 @@ def getenv(name, default=None):
     """
     Returns unicode string containing value of environment variable 'name'.
     """    
-    os.getenv(name, default)
+    return os.getenv(name, default)
 
 
 
