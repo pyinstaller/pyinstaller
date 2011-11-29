@@ -85,12 +85,12 @@ def system():
 # Set and get environment variables does not handle unicode strings correctly
 # on Windows.
 
-
-def getenv(name):
+def getenv(name, default=None):
     """
     Returns unicode string containing value of environment variable 'name'.
-    """
-    raise NotImplementedError
+    """    
+    os.getenv(name, default)
+
 
 
 def setenv(name, value):
@@ -98,7 +98,14 @@ def setenv(name, value):
     Accepts unicode string and set it as environment variable 'name' containing
     value 'value'.
     """
-    raise NotImplementedError
+    os.setenv(name, value)
+
+
+def unsetenv(name):
+    """
+    Delete the environment variable 'name'.
+    """
+    os.unsetenv(name)
 
 
 def exec_command(*cmdargs):
