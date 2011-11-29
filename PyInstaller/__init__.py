@@ -72,7 +72,7 @@ else:
     # According to XDG specification
     # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
     CONFIGDIR = compat.getenv('XDG_DATA_HOME')
-    if CONFIGDIR is None:
+    if not CONFIGDIR:
         CONFIGDIR = os.path.expanduser('~/.local/share')
 CONFIGDIR = os.path.join(CONFIGDIR, 'pyinstaller')
 
