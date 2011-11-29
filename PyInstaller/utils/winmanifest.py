@@ -348,7 +348,7 @@ class Manifest(object):
                 languages.append("en")
         languages.append(self.getlanguage("*"))
         
-        winsxs = os.path.join(os.getenv("SystemRoot"), "WinSxS")
+        winsxs = os.path.join(compat.getenv("SystemRoot"), "WinSxS")
         if not os.path.isdir(winsxs):
             logger.warn("No such dir %s", winsxs)
         manifests = os.path.join(winsxs, "Manifests")

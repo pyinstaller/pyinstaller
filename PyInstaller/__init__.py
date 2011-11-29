@@ -63,7 +63,7 @@ is_unix = is_linux or is_solar or is_aix
 HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 if is_win:
-    CONFIGDIR = os.environ['APPDATA']
+    CONFIGDIR = compat.getenv('APPDATA')
     if not CONFIGDIR:
         CONFIGDIR = os.path.expanduser('~\\Application Data')
 elif is_darwin:
@@ -71,7 +71,7 @@ elif is_darwin:
 else:
     # According to XDG specification
     # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
-    CONFIGDIR = os.environ.get('XDG_DATA_HOME', None)
+    CONFIGDIR = compat.getenv('XDG_DATA_HOME')
     if CONFIGDIR is None:
         CONFIGDIR = os.path.expanduser('~/.local/share')
 CONFIGDIR = os.path.join(CONFIGDIR, 'pyinstaller')

@@ -78,7 +78,7 @@ def _load_data(filename):
 
 
 def setupUPXFlags():
-    f = os.environ.get("UPX", "")
+    f = compat.getenv("UPX", "")
     if is_win and is_py24:
         # Binaries built with Visual Studio 7.1 require --strip-loadconf
         # or they won't compress. Configure.py makes sure that UPX is new
@@ -88,7 +88,7 @@ def setupUPXFlags():
     # can still be externally bound
     f = "--compress-icons=0 " + f
     f = "--best " + f
-    os.environ["UPX"] = f
+    compat.setenv("UPX", f)
 
 
 def mtime(fnm):

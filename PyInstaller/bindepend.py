@@ -137,10 +137,9 @@ def pkg_resouces_get_default_cache():
     'Application Data' directory.  On all other systems, it's '~/.python-eggs'.
     """
     # This function borrowed from setuptools/pkg_resources
-    try:
-        return os.environ['PYTHON_EGG_CACHE']
-    except KeyError:
-        pass
+    egg_cache = compat.getenv('PYTHON_EGG_CACHE')
+    if egg_cache not is None:
+        return egg_cache
 
     if os.name != 'nt':
         return os.path.expanduser('~/.python-eggs')
@@ -159,7 +158,7 @@ def pkg_resouces_get_default_cache():
         dirname = ''
         for key in keys:
             if key in os.environ:
-                dirname = os.path.join(dirname, os.environ[key])
+                dirname = os.path.join(dirname, compat.getenv(key))
             else:
                 break
         else:
@@ -500,7 +499,7 @@ def findLibrary(name):
     lib = None
 
     # Look in the LD_LIBRARY_PATH
-    lp = os.environ.get('LD_LIBRARY_PATH')
+    lp = compat.getenv('LD_LIBRARY_PATH')
     if lp:
         for path in lp.split(os.pathsep):
             libs = glob(os.path.join(path, name + '*'))

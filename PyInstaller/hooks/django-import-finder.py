@@ -17,10 +17,11 @@
 
 import os
 
+import PyInstaller.compat as compat
 from hookutils import logger
 
-if not os.environ.get("DJANGO_SETTINGS_MODULE"):
-    os.environ["DJANGO_SETTINGS_MODULE"] = "settings"
+if not compat.getenv("DJANGO_SETTINGS_MODULE"):
+    compat.setenv("DJANGO_SETTINGS_MODULE", "settings")
 
 from django.conf import settings
 
@@ -45,7 +46,7 @@ def find_url_callbacks(urls_module):
 
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
-base_module_name = ".".join(os.environ.get("DJANGO_SETTINGS_MODULE", "settings").split(".")[:-1])
+base_module_name = ".".join(compat.getenv("DJANGO_SETTINGS_MODULE", "settings").split(".")[:-1])
 if base_module_name:
     base_module = __import__(base_module_name, {}, {}, ["urls"])
     urls = base_module.urls

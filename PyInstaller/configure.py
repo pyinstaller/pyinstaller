@@ -230,7 +230,7 @@ def test_RsrcUpdate(config):
 
     # The test_exe may be read-only
     # make a writable copy and test using that
-    rw_test_exe = os.path.join(os.environ['TEMP'], 'me_test_exe.tmp')
+    rw_test_exe = os.path.join(compat.getenv('TEMP'), 'me_test_exe.tmp')
     shutil.copyfile(test_exe, rw_test_exe)
     try:
         hexe = win32api.BeginUpdateResource(rw_test_exe, 0)

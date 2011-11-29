@@ -18,10 +18,11 @@
 import glob
 import os
 import PyInstaller
+import PyInstaller.compat as compat
 
 from hookutils import django_dottedstring_imports, find_django_root
 
-python_path = os.environ.get("PYTHONPATH")
+python_path = compat.getenv("PYTHONPATH")
 
 if python_path:
     python_path = os.pathsep.join([python_path] + PyInstaller.__pathex__)
@@ -40,7 +41,7 @@ if django_root_dirs[0] in PyInstaller.__pathex__:
                        "You have to define the parent directory instead of "
                        "the django root directory.")
 
-os.environ["PYTHONPATH"] = python_path
+compat.setenv("PYTHONPATH", python_path)
 
 hiddenimports = [django_dottedstring_imports(root_dir)
                  for root_dir in django_root_dirs]

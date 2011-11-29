@@ -36,7 +36,7 @@ def get_windows_dir():
     try:
         import win32api
     except ImportError:
-        windir = os.getenv('SystemRoot', os.getenv('WINDIR'))
+        windir = compat.getenv('SystemRoot', compat.getenv('WINDIR'))
     else:
         windir = win32api.GetWindowsDirectory()
     if not windir:
@@ -59,5 +59,5 @@ def get_system_path():
             sysdir2 = os.path.normpath(os.path.join(sysdir, '..', 'SYSTEM'))
             windir = win32api.GetWindowsDirectory()
             _bpath = [sysdir, sysdir2, windir]
-    _bpath.extend(os.environ.get('PATH', '').split(os.pathsep))
+    _bpath.extend(compat.getenv('PATH', '').split(os.pathsep))
     return _bpath

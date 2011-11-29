@@ -19,10 +19,10 @@ def __exec_python_cmd(cmd):
     """
     # Prepend PYTHONPATH with pathex
     pp = os.pathsep.join(PyInstaller.__pathex__)
-    old_pp = os.environ.get('PYTHONPATH', '')
+    old_pp = compat.getenv('PYTHONPATH')
     if old_pp:
         pp = os.pathsep.join([pp, old_pp])
-    os.environ["PYTHONPATH"] = pp
+    compat.setenv("PYTHONPATH", pp)
     try:
         try:
             txt = compat.exec_command(*cmd)
@@ -30,9 +30,9 @@ def __exec_python_cmd(cmd):
             raise SystemExit("Execution failed: %s" % e)
     finally:
         if old_pp:
-            os.environ["PYTHONPATH"] = old_pp
+            compat.setenv("PYTHONPATH", old_pp)
         else:
-            del os.environ["PYTHONPATH"]
+            compat.unsetenv("PYTHONPATH")
     return txt.strip()
 
 
@@ -157,7 +157,7 @@ def qt4_menu_nib_dir():
 
 def django_dottedstring_imports(django_root_dir):
     package_name = os.path.basename(django_root_dir)
-    os.environ["DJANGO_SETTINGS_MODULE"] = "%s.settings" % package_name
+    compat.setenv("DJANGO_SETTINGS_MODULE", "%s.settings" % package_name)
     return eval_script("django-import-finder.py")
 
 

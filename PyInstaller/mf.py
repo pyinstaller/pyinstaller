@@ -1078,17 +1078,17 @@ def _resolveCtypesImports(cbinaries):
 
     def _setPaths():
         path = os.pathsep.join(PyInstaller.__pathex__)
-        old = os.environ.get(envvar, None)
+        old = compat.getenv(envvar)
         if old is not None:
             path = os.pathsep.join((path, old))
-        os.environ[envvar] = path
+        compat.setenv(envvar, path)
         return old
 
     def _restorePaths(old):
         if old is None:
-            del os.environ[envvar]
+            compat.unsetenv(envvar)
         else:
-            os.environ[envvar] = old
+            compat.setenv(envvar, old)
 
     ret = []
 
@@ -1117,7 +1117,7 @@ def _resolveCtypesImports(cbinaries):
                 cpath = cbin
             # "man ld.so" says that we should first search LD_LIBRARY_PATH
             # and then the ldcache
-            for d in os.environ[envvar].split(os.pathsep):
+            for d in compat.getenv(envvar, '').split(os.pathsep):
                 if os.path.isfile(os.path.join(d, cpath)):
                     cpath = os.path.join(d, cpath)
                     break
