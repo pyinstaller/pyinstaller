@@ -29,7 +29,7 @@ def __exec_python_cmd(cmd):
         except OSError, e:
             raise SystemExit("Execution failed: %s" % e)
     finally:
-        if old_pp:
+        if old_pp is not None:
             compat.setenv("PYTHONPATH", old_pp)
         else:
             compat.unsetenv("PYTHONPATH")
