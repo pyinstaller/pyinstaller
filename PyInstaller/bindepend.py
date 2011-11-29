@@ -499,13 +499,12 @@ def findLibrary(name):
     lib = None
 
     # Look in the LD_LIBRARY_PATH
-    lp = compat.getenv('LD_LIBRARY_PATH')
-    if lp:
-        for path in lp.split(os.pathsep):
-            libs = glob(os.path.join(path, name + '*'))
-            if libs:
-                lib = libs[0]
-                break
+    lp = compat.getenv('LD_LIBRARY_PATH', '')
+    for path in lp.split(os.pathsep):
+        libs = glob(os.path.join(path, name + '*'))
+        if libs:
+            lib = libs[0]
+            break
 
     # Look in /etc/ld.so.cache
     if lib is None:
