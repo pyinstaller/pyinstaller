@@ -6,12 +6,14 @@ Requirements
 ============
 
 Python:
-    2.2+ (Python 3 not supported)
+    2.3+ (Python 3 not supported)
 
 Operating-System:
     Windows (32bit/64bit)
     Linux (32bit/64bit)
-    Mac OS X (32bit)
+    Mac OS X (32/64bit)
+    Solaris (experimental)
+    AIX (experimental)
 
 Usage
 =========
@@ -26,7 +28,7 @@ Installation in brief
 
 1) Unpack the archive.
 
-2) For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32bit)
+2) For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32/64bit)
    precompiled boot-loaders are available. So the installation is
    complete.
 
