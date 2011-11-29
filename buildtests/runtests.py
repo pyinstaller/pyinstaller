@@ -28,6 +28,7 @@ import re
 import pprint
 import shutil
 import optparse
+import subprocess
 
 try:
     import PyInstaller
@@ -111,6 +112,14 @@ dist/
 """.split()
 
 
+def exec_command(*cmdargs):
+    """
+    Wrap creating subprocesses
+    Todo: Use module `subprocess` if available, else `os.system()`
+    """
+    return subprocess.call(cmdargs)
+
+
 def clean():
     for d in TEST_DIRS + INTERACT_TEST_DIRS:
         os.chdir(d)
@@ -174,9 +183,8 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     counter = {"passed": [], "failed": [], "skipped": []}
 
     # run configure phase only once
-    prog_conf = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'utils',
-        'Configure.py')])
-    os.system(prog_conf)
+    exec_command(PYTHON, PYOPTS,
+                 os.path.join(HOMEPATH, 'utils', 'Configure.py'))
 
     # execute tests
     testbasedir = os.getcwdu()
@@ -195,7 +203,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         if test in DEPENDENCIES:
             failed = False
             for mod in DEPENDENCIES[test]:
-                res = os.system(PYTHON + ' -c "import %s"' % mod)
+                res = exec_command(PYTHON, '-c', "import %s" % mod)
                 if res != 0:
                     failed = True
                     break
@@ -213,10 +221,9 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             # .spec file does not exist and it has to be generated
             # for main script
             testfile_spec = testfile + '.py'
-        prog = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH,
-            'pyinstaller.py'), OPTS, testfile_spec])
-
-        res = os.system(prog)
+        res = exec_command(PYTHON, PYOPTS,
+                           os.path.join(HOMEPATH, 'pyinstaller.py'),
+                           OPTS, testfile_spec)
 
         if res == 0 and run_executable:
             files = glob.glob(os.path.join('dist', testfile + '*'))
@@ -236,9 +243,9 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             prog = find_exepath(tmpname)
             if prog is None:
                 prog = find_exepath(tmpname, os.path.join('dist', testfile))
-            command = ' '.join([PYTHON, PYOPTS, os.path.join(HOMEPATH, 'utils',
-                'ArchiveViewer.py'), '-b -r >> ' + newlog, prog])
-            os.system(command)
+            exec_command(PYTHON, PYOPTS,
+                         os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
+                         '-b -r >> ' + newlog, prog)
             pattern_list = eval(open(logfn, 'rU').read())
             fname_list = eval(open(newlog, 'rU').read())
             count = 0
@@ -283,7 +290,7 @@ def test_exe(test, testdir=None):
         return 1
     else:
         print "RUNNING:", prog
-        tmp = os.system(prog)
+        tmp = exec_command(prog)
         compat.setenv("PATH", path)
         return tmp
 
