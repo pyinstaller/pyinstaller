@@ -98,7 +98,7 @@ def setenv(name, value):
     Accepts unicode string and set it as environment variable 'name' containing
     value 'value'.
     """
-    os.setenv(name, value)
+    os.putenv(name, value)
 
 
 def unsetenv(name):
