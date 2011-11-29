@@ -1077,15 +1077,17 @@ def _resolveCtypesImports(cbinaries):
         envvar = "PATH"
 
     def _setPaths():
+        path = os.pathsep.join(PyInstaller.__pathex__)
         old = os.environ.get(envvar, None)
-        os.environ[envvar] = os.pathsep.join(PyInstaller.__pathex__)
         if old is not None:
-            os.environ[envvar] = os.pathsep.join([os.environ[envvar], old])
+            path = os.pathsep.join((path, old))
+        os.environ[envvar] = path
         return old
 
     def _restorePaths(old):
-        del os.environ[envvar]
-        if old is not None:
+        if old is None:
+            del os.environ[envvar]
+        else:
             os.environ[envvar] = old
 
     ret = []
