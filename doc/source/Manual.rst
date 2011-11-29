@@ -24,15 +24,27 @@ Requirements
     Python extensions for Windows is only necessary for users of Python 2.6+.
 
 **Linux**
-  ldd
-    Console application to print the shared libraries required by each program
+  * ldd
+    - Console application to print the shared libraries required by each program
     or shared library.
 
-  objdump
-    Console application to display information from object files.
+  * objdump
+    - Console application to display information from object files.
 
 **Mac OS X**
-  + Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).
+  * Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).
+
+**Solaris**
+  * ldd
+  * objdump
+
+**AIX**
+  * AIX 6.1 or newer.
+    Python executables created using PyInstaller on AIX 6.1 should work
+    on AIX 5.2/5.3. PyInstaller will not work with statically linked Python
+    libraries which has been encountered in Python 2.2 installations on AIX 5.x.
+  * ldd
+  * objdump
 
 
 Getting Started
@@ -1412,6 +1424,8 @@ On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
 for developing software for Mac OS X. It can be also installed from your
 ``Mac OS X Install DVD``. It is not necessary to install the version 4 of Xcode.
 
+On Solaris and AIX the bootloader is tested with gcc.
+
 On Windows you can use MinGW (gcc for Windows) and Visual Studio C++ (msvc)
 compilers. Python development libraries are usually installed together with
 Python.
@@ -1457,6 +1471,8 @@ On Windows this will produce in the ``support/loader/YOUR_OS`` directory:
 *Note:* If you have multiple versions of Python, the Python you use to run
 ``waf`` is the one whose configuration is used.
 
+*Note:* On AIX the bootloader builds with gcc and is tested with gcc 4.2.0
+on AIX 6.1.
 
 Linux Standard Base (LSB) binary
 ********************************
