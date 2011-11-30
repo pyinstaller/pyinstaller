@@ -136,12 +136,11 @@ def unsetenv(name):
     """
     Delete the environment variable 'name'.
     """
+    # Some platforms (e.g. AIX) do not support `os.unsetenv()` and
+    # thus `del os.environ[name]` has no effect onto the real
+    # environment. For this case we set the value to the empty string.
+    os.environ[name] = ""
     del os.environ[name]
-
-    # The variable is not deleted from the environment unless function
-    # 'os.unsetenv()' exists. If it does not, we set it to the empty string.
-    if not hasattr(os, 'unsetenv') and hasattr(os, 'putenv'):
-        os.putenv(name, '')
 
 
 # Exec commands in subprocesses.
