@@ -728,7 +728,7 @@ def checkCache(fnm, strip=0, upx=0):
 
     if cmd:
         try:
-            compat.exec_command(cmd)
+            compat.exec_command(*cmd)
         except OSError, e:
             raise SystemExit("Execution failed: %s" % e)
 
