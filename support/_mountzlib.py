@@ -69,14 +69,12 @@ if MEIPASS2 in os.environ:
     sys._MEIPASS = meipass2_value
 
     # Delete _MEIPASS2 from environment.
-    del os.environ[MEIPASS2]
-
     # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
     # deleting the var from os.environ does not delete it from the environment.
     # In those cases we cannot delete the variable but only set it to the
     # empty string.
-    if not hasattr(os, 'unsetenv'):
-        os.putenv(MEIPASS2, '')
+    os.environ[MEIPASS2] = ''
+    del os.environ[MEIPASS2]
 
 
 # Ensure PYTHONPATH contains absolute paths. Otherwise import of other python
