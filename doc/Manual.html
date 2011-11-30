@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.8: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
 <title>PyInstaller Manual</title>
 <meta name="author" content="Giovanni Bajo &amp; William Caban (based on Gordon McMillan's manual)" />
 <meta name="copyright" content="This document has been placed in the public domain." />
@@ -25,7 +25,7 @@
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference external" href="mailto:rasky&#64;develer.com">rasky&#64;develer.com</a></td></tr>
 <tr><th class="docinfo-name">Revision:</th>
-<td>1772</td></tr>
+<td>1823</td></tr>
 <tr class="field"><th class="docinfo-name">Source URL:</th><td class="field-body">$HeadURL: <a class="reference external" href="https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst">https://src.develer.com/svnoss/pyinstaller/trunk/doc/source/Manual.rst</a> $</td>
 </tr>
 <tr><th class="docinfo-name">Copyright:</th>
@@ -37,10 +37,10 @@
 <p class="topic-title first">Contents</p>
 <ul class="simple">
 <li><a class="reference internal" href="#requirements" id="id1">Requirements</a></li>
-<li><a class="reference internal" href="#getting-started" id="id2">Getting Started</a><ul>
-<li><a class="reference internal" href="#installing-pyinstaller" id="id3">Installing PyInstaller</a></li>
+<li><a class="reference internal" href="#installing-pyinstaller" id="id2">Installing <cite>PyInstaller</cite></a></li>
+<li><a class="reference internal" href="#getting-started" id="id3">Getting Started</a><ul>
 <li><a class="reference internal" href="#build-your-project" id="id4">Build your project</a></li>
-<li><a class="reference internal" href="#allowed-options" id="id5">Allowed OPTIONS</a></li>
+<li><a class="reference internal" href="#allowed-options" id="id5">Allowed Options</a></li>
 <li><a class="reference internal" href="#a-spec-file-for-your-project" id="id6">A spec file for your project</a></li>
 <li><a class="reference internal" href="#windows-com-server-support" id="id7">Windows COM Server support</a></li>
 <li><a class="reference internal" href="#building-optimized" id="id8">Building Optimized</a></li>
@@ -187,17 +187,34 @@ libraries which has been encountered in Python 2.2 installations on AIX 5.x.</li
 </dd>
 </dl>
 </div>
-<div class="section" id="getting-started">
-<h1><a class="toc-backref" href="#id2">Getting Started</a></h1>
 <div class="section" id="installing-pyinstaller">
-<h2><a class="toc-backref" href="#id3">Installing PyInstaller</a></h2>
-<p>First, unpack the archive on you path of choice. Installer is <strong>not</strong> a Python
-package, so it doesn't need to go in site-packages, or have a .pth file. For
-the purpose of this documentation we will assume /your/path/to/pyinstaller/. You will be
-using a couple of scripts in the /your/path/to/pyinstaller/ directory, and these will find
-everything they need from their own location. For convenience, keep the paths
-to these scripts short (don't install in a deeply nested subdirectory).</p>
+<h1><a class="toc-backref" href="#id2">Installing <cite>PyInstaller</cite></a></h1>
+<ol class="arabic">
+<li><p class="first">Unpack the archive on you path of choice. For the purpose of this
+documentation we will assume /your/path/to/pyinstaller/.</p>
+<p>You will be using a couple of scripts in the /your/path/to/pyinstaller/
+directory, and these will find everything they need from their own
+location. For convenience, keep the paths to these scripts short
+(don't install in a deeply nested subdirectory).</p>
+<p><strong>Please note:</strong> Installer is <cite>not</cite> a Python package, so it
+doesn't need to go in site-packages, or have a .pth file.</p>
+</li>
+<li><p class="first">For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32/64bit)
+precompiled boot-loaders are available. So the installation is
+complete now.</p>
+<p>For other platforms, users should first try to build the
+boot-loader:</p>
+<blockquote>
+<p>cd source
+python ./waf configure build install</p>
+</blockquote>
+</li>
+</ol>
 </div>
+<div class="section" id="getting-started">
+<h1><a class="toc-backref" href="#id3">Getting Started</a></h1>
+<p>For the purpose of this documentation we will assume <cite>PyInstaller</cite> as
+installed into /your/path/to/pyinstaller/.</p>
 <div class="section" id="build-your-project">
 <h2><a class="toc-backref" href="#id4">Build your project</a></h2>
 <p>For building a Windows COM server, please see section <a class="reference internal" href="#windows-com-server-support">Windows COM
@@ -230,7 +247,7 @@ things go wrong</a> and be sure to read the introduction to <a class="reference 
 Files</a>.</p>
 </div>
 <div class="section" id="allowed-options">
-<h2><a class="toc-backref" href="#id5">Allowed OPTIONS</a></h2>
+<h2><a class="toc-backref" href="#id5">Allowed Options</a></h2>
 <p>By default, <tt class="docutils literal">pyinstaller.py</tt> creates a distribution directory containing the main
 executable and the dynamic libraries. The option <tt class="docutils literal"><span class="pre">--onefile</span></tt> specifies that you want
 PyInstaller to build a single file with everything inside.</p>
@@ -885,7 +902,8 @@ Analysis(scripts, pathex=None, hookspath=None, excludes=None)
 <dt><tt class="docutils literal">pathex</tt></dt>
 <dd>an optional list of paths to be searched before sys.path.</dd>
 <dt><tt class="docutils literal">hookspath</tt></dt>
-<dd>an optional list of paths used to extend the hooks package.</dd>
+<dd>an optional list of additional paths to search for hooks
+(hook-modules). Please refer to <a class="reference internal" href="#listing-hidden-imports">Listing Hidden Imports</a> for details.</dd>
 <dt><tt class="docutils literal">excludes</tt></dt>
 <dd>an optional list of module or package names (their Python names, not path
 names) that will be ignored (as though they were not found).</dd>
@@ -1949,7 +1967,7 @@ were easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2011-11-29 15:12 UTC.
+Generated on: 2011-11-30 09:22 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

@@ -47,18 +47,37 @@ Requirements
   * objdump
 
 
+Installing |PyInstaller|
+++++++++++++++++++++++++
+
+1) Unpack the archive on you path of choice. For the purpose of this
+   documentation we will assume |install_path|.
+
+   You will be using a couple of scripts in the |install_path|
+   directory, and these will find everything they need from their own
+   location. For convenience, keep the paths to these scripts short
+   (don't install in a deeply nested subdirectory).
+
+   **Please note:** Installer is `not` a Python package, so it
+   doesn't need to go in site-packages, or have a .pth file.
+
+2) For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32/64bit)
+   precompiled boot-loaders are available. So the installation is
+   complete now.
+
+   For other platforms, users should first try to build the
+   boot-loader:
+
+     cd source
+     python ./waf configure build install
+
+
 Getting Started
 +++++++++++++++
 
-Installing PyInstaller
-----------------------
 
-First, unpack the archive on you path of choice. Installer is **not** a Python
-package, so it doesn't need to go in site-packages, or have a .pth file. For
-the purpose of this documentation we will assume |install_path|. You will be
-using a couple of scripts in the |install_path| directory, and these will find
-everything they need from their own location. For convenience, keep the paths
-to these scripts short (don't install in a deeply nested subdirectory).
+For the purpose of this documentation we will assume |PyInstaller| as
+installed into |install_path|.
 
 
 Build your project
@@ -99,7 +118,7 @@ things go wrong`_ and be sure to read the introduction to `Spec
 Files`_.
 
 
-Allowed OPTIONS
+Allowed Options
 ---------------
 
 By default, ``pyinstaller.py`` creates a distribution directory containing the main
@@ -716,7 +735,8 @@ Analysis
     an optional list of paths to be searched before sys.path.
 
 ``hookspath``
-    an optional list of paths used to extend the hooks package.
+    an optional list of additional paths to search for hooks
+    (hook-modules). Please refer to `Listing Hidden Imports`_ for details.
 
 ``excludes``
     an optional list of module or package names (their Python names, not path
