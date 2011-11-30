@@ -49,14 +49,14 @@ if is_linux:
     import tempfile
     out_pattern = os.path.join(tempfile.gettempdir(), 'hanoi', out_pattern)
 dist_pattern_dir = os.path.join(out_pattern, 'dist', 'hanoi', 'hanoi')
-dist_pattern_file = os.path.join(out_pattern, 'hanoi')
+dist_pattern_file = os.path.join(out_pattern, 'dist', 'hanoi')
 
 script_name = os.path.abspath(os.path.join(__file__, '..', 'hanoi.py'))
 
-def build_test(cnt, *options):
+def build_test(cnt, bldconfig, *options):
     options = filter(None, options)
     compat.exec_python(makespec, script_name, '--tk',
-                       '--out', out_pattern % cnt, *options)
+                       '--out', out_pattern % cnt, bldconfig, *options)
     compat.exec_python(build, os.path.join(out_pattern % cnt, 'hanoi.spec'),
                        '--noconfirm')
     if is_linux:
