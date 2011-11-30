@@ -26,7 +26,7 @@ For more details see doc/Manual.html
 Installation in brief
 =====================
 
-1) Unpack the archive.
+1) Unpack the archive on you path of choice.
 
 2) For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32/64bit)
    precompiled boot-loaders are available. So the installation is
