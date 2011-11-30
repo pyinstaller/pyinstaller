@@ -24,8 +24,35 @@ import sys
 import subprocess
 
 
+is_py23 = sys.version_info >= (2, 3)
+is_py24 = sys.version_info >= (2, 4)
+is_py25 = sys.version_info >= (2, 5)
+is_py26 = sys.version_info >= (2, 6)
+is_py27 = sys.version_info >= (2, 7)
+
+is_win = sys.platform.startswith('win')
+is_cygwin = sys.platform == 'cygwin'
+is_darwin = sys.platform == 'darwin'  # Mac OS X
+
+# Unix platforms
+is_linux = sys.platform == 'linux2'
+is_solar = sys.platform.startswith('sun')  # Solaris
+is_aix = sys.platform.startswith('aix')
+
+# Some code parts are similar to several unix platforms
+# (e.g. Linux, Solaris, AIX)
+# Mac OS X is not considered as unix since there are many
+# platform specific details for Mac in PyInstaller.
+is_unix = is_linux or is_solar or is_aix
+
+
 # Obsolete command line options (do not exist anymore)
-OLD_OPTIONS = ['--upx', '-X']
+_OLD_OPTIONS = ['--upx', '-X']
+
+
+# Options for python interpreter when invoked in a subprocess.
+_PYOPTS = '' if __debug__ else '-O'
+
 
 try:
     # Python 2.5+
@@ -53,7 +80,7 @@ def architecture():
     try:
         # Python 2.3+
         import platform
-        if sys.platform == 'darwin':
+        if is_darwin:
             # Darwin's platform.architecture() is buggy and always
             # returns "64bit" event for the 32bit version of Python's
             # universal binary. So we roll out our own (that works
@@ -112,15 +139,50 @@ def unsetenv(name):
         os.putenv(name, '')
 
 
+# Exec commands in subprocesses.
+
+
 def exec_command(*cmdargs):
     """
     Wrap creating subprocesses
+
+    Return stdout of the invoked command.
     Todo: Use module `subprocess` if available, else `os.system()`
     """
     return subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
 
 
-# Obsolete command line options
+def exec_command_retcode(*cmdargs, **kwargs):
+    """
+    Wrap creating subprocesses.
+
+    Return exit code of the invoked command.
+    Todo: Use module `subprocess` if available, else `os.system()`
+    """
+    return subprocess.call(cmdargs, **kwargs)
+
+
+def exec_python(*args, **kwargs):
+    """
+    Wrap running python script in a subprocess.
+
+    Return exit code of the invoked command.
+    """
+    python = sys.executable
+
+    # Add quotation should be necessary only when using os.system().
+    #if is_win:
+        ## Add quotation marks if path contain spaces.
+        #if ' ' in python:
+            #python = '"%s"' % python
+
+    if _PYOPTS:
+        return exec_command_retcode(python, _PYOPTS, *args, **kwargs)
+    else:
+        return exec_command_retcode(python, *args, **kwargs)
+
+
+# Obsolete command line options.
 
 
 def __obsolete_option(option, opt, value, parser):
@@ -133,7 +195,7 @@ def __add_obsolete_options(parser):
     print error message when they are present.
     """
     g = parser.add_option_group('Obsolete options (not used anymore)')
-    g.add_option(*OLD_OPTIONS,
+    g.add_option(*_OLD_OPTIONS,
                  **{'action': 'callback',
                     'callback': __obsolete_option,
                     'help': 'This option does not exist anymore.'})

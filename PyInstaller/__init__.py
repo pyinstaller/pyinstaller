@@ -39,26 +39,23 @@ from PyInstaller.utils import svn
 
 VERSION = (1, 6, 0, 'dev', svn.get_svn_revision())
 
-is_py23 = sys.version_info >= (2, 3)
-is_py24 = sys.version_info >= (2, 4)
-is_py25 = sys.version_info >= (2, 5)
-is_py26 = sys.version_info >= (2, 6)
-is_py27 = sys.version_info >= (2, 7)
 
-is_win = sys.platform.startswith('win')
-is_cygwin = sys.platform == 'cygwin'
-is_darwin = sys.platform == 'darwin'  # Mac OS X
+is_py23 = compat.is_py23
+is_py24 = compat.is_py24
+is_py25 = compat.is_py25
+is_py26 = compat.is_py26
+is_py27 = compat.is_py27
 
-# Unix platforms
-is_linux = sys.platform == 'linux2'
-is_solar = sys.platform.startswith('sun')  # Solaris
-is_aix = sys.platform.startswith('aix')
+is_win = compat.is_win
+is_cygwin = compat.is_cygwin
+is_darwin = compat.is_darwin
 
-# Some code parts are similar to several unix platforms
-# (e.g. Linux, Solaris, AIX)
-# Mac OS X is not considered as unix since there are many
-# platform specific details for Mac in PyInstaller.
-is_unix = is_linux or is_solar or is_aix
+is_linux = compat.is_linux
+is_solar = compat.is_solar
+is_aix = compat.is_aix
+
+is_unix = compat.is_unix
+
 
 HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 

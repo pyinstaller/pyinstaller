@@ -28,7 +28,6 @@ import re
 import pprint
 import shutil
 import optparse
-import subprocess
 
 try:
     import PyInstaller
@@ -44,7 +43,7 @@ except ImportError:
 
 from PyInstaller import HOMEPATH
 from PyInstaller import is_py23, is_py25, is_py26, is_win, is_darwin
-import PyInstaller.compat as compat
+from PyInstaller import compat
 
 MIN_VERSION_OR_OS = {
     'basic/test_9': is_py23,
@@ -86,17 +85,6 @@ NO_SPEC_FILE = [
 TEST_DIRS = ['basic', 'import', 'libraries', 'multipackage']
 INTERACT_TEST_DIRS = ['interactive']
 
-PYTHON = sys.executable
-
-if is_win:
-    # add quotation marks if path contain spaces
-    if ' ' in PYTHON:
-        PYTHON = '"%s"' % PYTHON
-
-if __debug__:
-    PYOPTS = ""
-else:
-    PYOPTS = "-O"
 
 # files/globs to clean up
 CLEANUP = """python_exe.build
@@ -110,20 +98,6 @@ warn*.txt
 build/
 dist/
 """.split()
-
-
-def exec_command(*cmdargs, **kwargs):
-    """
-    Wrap creating subprocesses
-    Todo: Use module `subprocess` if available, else `os.system()`
-    """
-    return subprocess.call(cmdargs, **kwargs)
-
-def exec_python(*args, **kwargs):
-    if PYOPTS:
-        return exec_command(PYTHON, PYTINS, *args, **kwargs)
-    else:
-        return exec_command(PYTHON, *args, **kwargs)
 
 
 def clean():
@@ -189,7 +163,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     counter = {"passed": [], "failed": [], "skipped": []}
 
     # run configure phase only once
-    exec_python(os.path.join(HOMEPATH, 'utils', 'Configure.py'))
+    compat.exec_python(os.path.join(HOMEPATH, 'utils', 'Configure.py'))
 
     # execute tests
     testbasedir = os.getcwdu()
@@ -208,7 +182,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         if test in DEPENDENCIES:
             failed = False
             for mod in DEPENDENCIES[test]:
-                res = exec_python('-c', "import %s" % mod)
+                res = compat.exec_python('-c', "import %s" % mod)
                 if res != 0:
                     failed = True
                     break
@@ -227,7 +201,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             # for main script
             testfile_spec = testfile + '.py'
 
-        res = exec_python(os.path.join(HOMEPATH, 'pyinstaller.py'),
+        res = compat.exec_python(os.path.join(HOMEPATH, 'pyinstaller.py'),
                           testfile_spec, *OPTS)
         if res == 0 and run_executable:
             files = glob.glob(os.path.join('dist', testfile + '*'))
@@ -247,8 +221,8 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             if prog is None:
                 prog = find_exepath(tmpname, os.path.join('dist', testfile))
             newlog = open(os.path.join('dist', logfn), 'w')
-            exec_python(os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
-                        '-b', '-r', prog, stdout=newlog)
+            compat.exec_python(os.path.join(HOMEPATH, 'utils',
+                'ArchiveViewer.py'), '-b', '-r', prog, stdout=newlog)
             newlog.close()
             pattern_list = eval(open(logfn, 'rU').read())
             fname_list = eval(open(newlog.name, 'rU').read())
@@ -294,7 +268,7 @@ def test_exe(test, testdir=None):
         return 1
     else:
         print "RUNNING:", prog
-        tmp = exec_command(prog)
+        tmp = compat.exec_command_retcode(prog)
         compat.setenv("PATH", path)
         return tmp
 
@@ -329,10 +303,10 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     try:
-        parser = optparse.OptionParser(usage="%prog [options] [TEST-NAME ...]",
-              epilog="TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.")
+        parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]',
+              epilog='TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.')
     except TypeError:
-        parser = optparse.OptionParser(usage="%prog [options] [TEST-NAME ...]")
+        parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]')
 
     parser.add_option('-c', '--clean', action='store_true',
                       help='Clean up generated files')
