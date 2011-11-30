@@ -112,6 +112,11 @@ def system():
 # Set and get environment variables does not handle unicode strings correctly
 # on Windows.
 
+# Acting on os.environ instead of using getenv()/setenv()/unsetenv(),
+# as suggested in <http://docs.python.org/library/os.html#os.environ>:
+# "Calling putenv() directly does not change os.environ, so it’s
+# better to modify os.environ." (Same for unsetenv.)
+
 def getenv(name, default=None):
     """
     Returns unicode string containing value of environment variable 'name'.
