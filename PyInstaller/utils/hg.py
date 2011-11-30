@@ -34,7 +34,9 @@ def _findrepo():
 
 def get_hg_revision():
     '''
-    Returns mercurial revision string.
+    Returns mercurial revision string somelike `hg identify` does.
+
+    Format is rev1:short-id1+;rev2:short-id2+
 
     Returns an empty string if anything goes wrong, such as missing
     .hg files or an unexpected format of internal HG files or no
@@ -48,14 +50,14 @@ def get_hg_revision():
         import mercurial.hg, mercurial.ui, mercurial.scmutil
         from mercurial.node import short as hexfunc
     except ImportError:
-        
         pass
     else:
         ui = mercurial.ui.ui()
-        repo = mercurial.hg.peer(ui, {}, repopath)
-        ctx = mercurial.scmutil.revsingle(repo, 'tip')
+        repo = mercurial.hg.repository(ui, repopath)
+        parents = repo[None].parents()
         changed = filter(None, repo.status()) and "+" or ""
-        return '%s:%s%s' % (ctx.rev(), hexfunc(ctx.node()), changed)
+        return ';'.join(['%s:%s%s' % (p.rev(), hexfunc(p.node()), changed)
+                         for p in parents])
 
     # todo: mercurial not found, try to retrieve the information
     # ourselves
