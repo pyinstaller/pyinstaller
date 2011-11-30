@@ -114,7 +114,7 @@ def system():
 
 # Acting on os.environ instead of using getenv()/setenv()/unsetenv(),
 # as suggested in <http://docs.python.org/library/os.html#os.environ>:
-# "Calling putenv() directly does not change os.environ, so it’s
+# "Calling putenv() directly does not change os.environ, so it's
 # better to modify os.environ." (Same for unsetenv.)
 
 def getenv(name, default=None):
