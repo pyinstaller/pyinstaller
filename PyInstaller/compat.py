@@ -165,7 +165,7 @@ def exec_command_retcode(*cmdargs, **kwargs):
     return subprocess.call(cmdargs, **kwargs)
 
 
-def exec_python(*args, **kwargs):
+def exec_python_rc(*args, **kwargs):
     """
     Wrap running python script in a subprocess.
 

@@ -166,7 +166,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     counter = {"passed": [], "failed": [], "skipped": []}
 
     # run configure phase only once
-    compat.exec_python(os.path.join(HOMEPATH, 'utils', 'Configure.py'))
+    compat.exec_python_rc(os.path.join(HOMEPATH, 'utils', 'Configure.py'))
 
     # execute tests
     testbasedir = os.getcwdu()
@@ -185,7 +185,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         if test in DEPENDENCIES:
             failed = False
             for mod in DEPENDENCIES[test]:
-                res = compat.exec_python('-c', "import %s" % mod)
+                res = compat.exec_python_rc('-c', "import %s" % mod)
                 if res != 0:
                     failed = True
                     break
@@ -204,7 +204,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             # for main script
             testfile_spec = testfile + '.py'
 
-        res = compat.exec_python(os.path.join(HOMEPATH, 'pyinstaller.py'),
+        res = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
                           testfile_spec, *OPTS)
         if res == 0 and run_executable:
             files = glob.glob(os.path.join('dist', testfile + '*'))
@@ -224,7 +224,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             if prog is None:
                 prog = find_exepath(tmpname, os.path.join('dist', testfile))
             newlog = open(os.path.join('dist', logfn), 'w')
-            compat.exec_python(os.path.join(HOMEPATH, 'utils',
+            compat.exec_python_rc(os.path.join(HOMEPATH, 'utils',
                 'ArchiveViewer.py'), '-b', '-r', prog, stdout=newlog)
             newlog.close()
             pattern_list = eval(open(logfn, 'rU').read())

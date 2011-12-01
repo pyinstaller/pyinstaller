@@ -55,10 +55,10 @@ script_name = os.path.abspath(os.path.join(__file__, '..', 'hanoi.py'))
 
 def build_test(cnt, bldconfig, *options):
     options = filter(None, options)
-    compat.exec_python(makespec, script_name, '--tk',
-                       '--out', out_pattern % cnt, bldconfig, *options)
-    compat.exec_python(build, os.path.join(out_pattern % cnt, 'hanoi.spec'),
-                       '--noconfirm')
+    compat.exec_python_rc(makespec, script_name, '--tk',
+                          '--out', out_pattern % cnt, bldconfig, *options)
+    compat.exec_python_rc(build, os.path.join(out_pattern % cnt, 'hanoi.spec'),
+                          '--noconfirm')
     if is_linux:
         # create symlinks
         if os.path.islink('hanoi%d' % cnt):
