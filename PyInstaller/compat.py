@@ -51,7 +51,7 @@ _OLD_OPTIONS = ['--upx', '-X']
 
 
 # Options for python interpreter when invoked in a subprocess.
-_PYOPTS = '' if __debug__ else '-O'
+_PYOPTS = [] if __debug__ else ['-O']
 
 
 try:
@@ -172,7 +172,7 @@ def exec_python(*args, **kwargs):
 
     Return exit code of the invoked command.
     """
-    python = sys.executable
+    python = [sys.executable]
 
     # Add quotation should be necessary only when using os.system().
     #if is_win:
@@ -180,10 +180,21 @@ def exec_python(*args, **kwargs):
         #if ' ' in python:
             #python = '"%s"' % python
 
+    # Mac OS X supports universal binaries (binary for multiple architectures.
+    # We need to ensure that subprocess binaries are running for the same
+    # architecture as python executable.
+    # It is necessary to run binaries with 'arch' command.
+    if is_darwin:
+        mapping = {'32bit': '-i386', '64bit': '-x86_64'}
+        py_prefix = ['arch', mapping[architecture()]]
+        python = py_prefix + python
+
     if _PYOPTS:
-        return exec_command_retcode(python, _PYOPTS, *args, **kwargs)
-    else:
-        return exec_command_retcode(python, *args, **kwargs)
+        python += _PYOPTS
+
+    args = python + list(args)
+
+    return exec_command_retcode(*args, **kwargs)
 
 
 # Obsolete command line options.
