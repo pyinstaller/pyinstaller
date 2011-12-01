@@ -226,6 +226,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             fname_list = compat.exec_python(
                 os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
                 '-b', '-r', prog)
+            fname_list = eval(fname_list)
             pattern_list = eval(open(logfn, 'rU').read())
             count = 0
             for pattern in pattern_list:
