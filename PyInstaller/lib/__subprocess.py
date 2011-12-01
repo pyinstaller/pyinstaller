@@ -1,3 +1,13 @@
+####
+#### This is a plain checkout from
+####   http://hg.python.org/cpython/raw-file/v2.6.5/Lib/subprocess.py
+#### with a single change at the place marked
+####   "change this to use pywin32 instead of the _subprocess driver"
+#### So for Windows, pywin32 is used.
+####
+#### When up/downgrading this module, please keep this header updated.
+####
+
 # subprocess - Subprocesses with accessible I/O streams
 #
 # For more information about this module, see PEP 324.
@@ -400,7 +410,7 @@ class CalledProcessError(Exception):
 if mswindows:
     import threading
     import msvcrt
-    if 0: # <-- change this to use pywin32 instead of the _subprocess driver
+    if 1: # <-- change this to use pywin32 instead of the _subprocess driver
         import pywintypes
         from win32api import GetStdHandle, STD_INPUT_HANDLE, \
                              STD_OUTPUT_HANDLE, STD_ERROR_HANDLE
