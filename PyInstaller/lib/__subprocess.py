@@ -398,18 +398,31 @@ class CalledProcessError(Exception):
 
 
 if mswindows:
-    from _subprocess import CREATE_NEW_CONSOLE
     import threading
     import msvcrt
-    import _subprocess
-    class STARTUPINFO:
-        dwFlags = 0
-        hStdInput = None
-        hStdOutput = None
-        hStdError = None
-        wShowWindow = 0
-    class pywintypes:
-        error = IOError
+    if 0: # <-- change this to use pywin32 instead of the _subprocess driver
+        import pywintypes
+        from win32api import GetStdHandle, STD_INPUT_HANDLE, \
+                             STD_OUTPUT_HANDLE, STD_ERROR_HANDLE
+        from win32api import GetCurrentProcess, DuplicateHandle, \
+                             GetModuleFileName, GetVersion
+        from win32con import DUPLICATE_SAME_ACCESS, SW_HIDE
+        from win32pipe import CreatePipe
+        from win32process import CreateProcess, STARTUPINFO, \
+                                 GetExitCodeProcess, STARTF_USESTDHANDLES, \
+                                 STARTF_USESHOWWINDOW, CREATE_NEW_CONSOLE
+        from win32process import TerminateProcess
+        from win32event import WaitForSingleObject, INFINITE, WAIT_OBJECT_0
+    else:
+        from _subprocess import *
+        class STARTUPINFO:
+            dwFlags = 0
+            hStdInput = None
+            hStdOutput = None
+            hStdError = None
+            wShowWindow = 0
+        class pywintypes:
+            error = IOError
 else:
     import select
     import errno
@@ -418,8 +431,6 @@ else:
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "CalledProcessError"]
 
-if mswindows:
-    __all__.append("CREATE_NEW_CONSOLE")
 try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
 except:
@@ -436,8 +447,7 @@ _active = []
 
 def _cleanup():
     for inst in _active[:]:
-        res = inst._internal_poll(_deadstate=sys.maxint)
-        if res is not None and res >= 0:
+        if inst._internal_poll(_deadstate=sys.maxint) >= 0:
             try:
                 _active.remove(inst)
             except ValueError:
@@ -499,8 +509,8 @@ def list2cmdline(seq):
 
     2) A string surrounded by double quotation marks is
        interpreted as a single argument, regardless of white space
-       contained within.  A quoted string can be embedded in an
-       argument.
+       or pipe characters contained within.  A quoted string can be
+       embedded in an argument.
 
     3) A double quotation mark preceded by a backslash is
        interpreted as a literal double quotation mark.
@@ -528,7 +538,7 @@ def list2cmdline(seq):
         if result:
             result.append(' ')
 
-        needquote = (" " in arg) or ("\t" in arg) or not arg
+        needquote = (" " in arg) or ("\t" in arg) or ("|" in arg) or not arg
         if needquote:
             result.append('"')
 
@@ -650,12 +660,12 @@ class Popen(object):
         return data
 
 
-    def __del__(self, _maxint=sys.maxint, _active=_active):
+    def __del__(self, sys=sys):
         if not self._child_created:
             # We didn't get to successfully create a child process.
             return
         # In case the child hasn't been waited on, check if it's done.
-        self._internal_poll(_deadstate=_maxint)
+        self._internal_poll(_deadstate=sys.maxint)
         if self.returncode is None and _active is not None:
             # Child is still running, keep us alive until we can wait on it.
             _active.append(self)
@@ -711,11 +721,11 @@ class Popen(object):
             errread, errwrite = None, None
 
             if stdin is None:
-                p2cread = _subprocess.GetStdHandle(_subprocess.STD_INPUT_HANDLE)
+                p2cread = GetStdHandle(STD_INPUT_HANDLE)
                 if p2cread is None:
-                    p2cread, _ = _subprocess.CreatePipe(None, 0)
+                    p2cread, _ = CreatePipe(None, 0)
             elif stdin == PIPE:
-                p2cread, p2cwrite = _subprocess.CreatePipe(None, 0)
+                p2cread, p2cwrite = CreatePipe(None, 0)
             elif isinstance(stdin, int):
                 p2cread = msvcrt.get_osfhandle(stdin)
             else:
@@ -724,11 +734,11 @@ class Popen(object):
             p2cread = self._make_inheritable(p2cread)
 
             if stdout is None:
-                c2pwrite = _subprocess.GetStdHandle(_subprocess.STD_OUTPUT_HANDLE)
+                c2pwrite = GetStdHandle(STD_OUTPUT_HANDLE)
                 if c2pwrite is None:
-                    _, c2pwrite = _subprocess.CreatePipe(None, 0)
+                    _, c2pwrite = CreatePipe(None, 0)
             elif stdout == PIPE:
-                c2pread, c2pwrite = _subprocess.CreatePipe(None, 0)
+                c2pread, c2pwrite = CreatePipe(None, 0)
             elif isinstance(stdout, int):
                 c2pwrite = msvcrt.get_osfhandle(stdout)
             else:
@@ -737,11 +747,11 @@ class Popen(object):
             c2pwrite = self._make_inheritable(c2pwrite)
 
             if stderr is None:
-                errwrite = _subprocess.GetStdHandle(_subprocess.STD_ERROR_HANDLE)
+                errwrite = GetStdHandle(STD_ERROR_HANDLE)
                 if errwrite is None:
-                    _, errwrite = _subprocess.CreatePipe(None, 0)
+                    _, errwrite = CreatePipe(None, 0)
             elif stderr == PIPE:
-                errread, errwrite = _subprocess.CreatePipe(None, 0)
+                errread, errwrite = CreatePipe(None, 0)
             elif stderr == STDOUT:
                 errwrite = c2pwrite
             elif isinstance(stderr, int):
@@ -758,15 +768,14 @@ class Popen(object):
 
         def _make_inheritable(self, handle):
             """Return a duplicate of handle, which is inheritable"""
-            return _subprocess.DuplicateHandle(_subprocess.GetCurrentProcess(),
-                                handle, _subprocess.GetCurrentProcess(), 0, 1,
-                                _subprocess.DUPLICATE_SAME_ACCESS)
+            return DuplicateHandle(GetCurrentProcess(), handle,
+                                   GetCurrentProcess(), 0, 1,
+                                   DUPLICATE_SAME_ACCESS)
 
 
         def _find_w9xpopen(self):
             """Find and return absolut path to w9xpopen.exe"""
-            w9xpopen = os.path.join(
-                            os.path.dirname(_subprocess.GetModuleFileName(0)),
+            w9xpopen = os.path.join(os.path.dirname(GetModuleFileName(0)),
                                     "w9xpopen.exe")
             if not os.path.exists(w9xpopen):
                 # Eeek - file-not-found - possibly an embedding
@@ -795,17 +804,17 @@ class Popen(object):
             if startupinfo is None:
                 startupinfo = STARTUPINFO()
             if None not in (p2cread, c2pwrite, errwrite):
-                startupinfo.dwFlags |= _subprocess.STARTF_USESTDHANDLES
+                startupinfo.dwFlags |= STARTF_USESTDHANDLES
                 startupinfo.hStdInput = p2cread
                 startupinfo.hStdOutput = c2pwrite
                 startupinfo.hStdError = errwrite
 
             if shell:
-                startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = _subprocess.SW_HIDE
+                startupinfo.dwFlags |= STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = SW_HIDE
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = comspec + " /c " + args
-                if (_subprocess.GetVersion() >= 0x80000000L or
+                if (GetVersion() >= 0x80000000L or
                         os.path.basename(comspec).lower() == "command.com"):
                     # Win9x, or using command.com on NT. We need to
                     # use the w9xpopen intermediate program. For more
@@ -819,11 +828,11 @@ class Popen(object):
                     # use at xxx" and a hopeful warning about the
                     # stability of your system.  Cost is Ctrl+C wont
                     # kill children.
-                    creationflags |= _subprocess.CREATE_NEW_CONSOLE
+                    creationflags |= CREATE_NEW_CONSOLE
 
             # Start the process
             try:
-                hp, ht, pid, tid = _subprocess.CreateProcess(executable, args,
+                hp, ht, pid, tid = CreateProcess(executable, args,
                                          # no special security
                                          None, None,
                                          int(not close_fds),
@@ -858,20 +867,12 @@ class Popen(object):
                 errwrite.Close()
 
 
-        def _internal_poll(self, _deadstate=None,
-                _WaitForSingleObject=_subprocess.WaitForSingleObject,
-                _WAIT_OBJECT_0=_subprocess.WAIT_OBJECT_0,
-                _GetExitCodeProcess=_subprocess.GetExitCodeProcess):
+        def _internal_poll(self, _deadstate=None):
             """Check if child process has terminated.  Returns returncode
-            attribute.
-
-            This method is called by __del__, so it can only refer to objects
-            in its local scope.
-
-            """
+            attribute."""
             if self.returncode is None:
-                if _WaitForSingleObject(self._handle, 0) == _WAIT_OBJECT_0:
-                    self.returncode = _GetExitCodeProcess(self._handle)
+                if WaitForSingleObject(self._handle, 0) == WAIT_OBJECT_0:
+                    self.returncode = GetExitCodeProcess(self._handle)
             return self.returncode
 
 
@@ -879,9 +880,8 @@ class Popen(object):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
             if self.returncode is None:
-                _subprocess.WaitForSingleObject(self._handle,
-                                                _subprocess.INFINITE)
-                self.returncode = _subprocess.GetExitCodeProcess(self._handle)
+                obj = WaitForSingleObject(self._handle, INFINITE)
+                self.returncode = GetExitCodeProcess(self._handle)
             return self.returncode
 
 
@@ -946,7 +946,7 @@ class Popen(object):
         def terminate(self):
             """Terminates the process
             """
-            _subprocess.TerminateProcess(self._handle, 1)
+            TerminateProcess(self._handle, 1)
 
         kill = terminate
 
@@ -1029,8 +1029,6 @@ class Popen(object):
 
             if shell:
                 args = ["/bin/sh", "-c"] + args
-                if executable:
-                    args[0] = executable
 
             if executable is None:
                 executable = args[0]
@@ -1141,35 +1139,25 @@ class Popen(object):
                 raise child_exception
 
 
-        def _handle_exitstatus(self, sts, _WIFSIGNALED=os.WIFSIGNALED,
-                _WTERMSIG=os.WTERMSIG, _WIFEXITED=os.WIFEXITED,
-                _WEXITSTATUS=os.WEXITSTATUS):
-            # This method is called (indirectly) by __del__, so it cannot
-            # refer to anything outside of its local scope."""
-            if _WIFSIGNALED(sts):
-                self.returncode = -_WTERMSIG(sts)
-            elif _WIFEXITED(sts):
-                self.returncode = _WEXITSTATUS(sts)
+        def _handle_exitstatus(self, sts):
+            if os.WIFSIGNALED(sts):
+                self.returncode = -os.WTERMSIG(sts)
+            elif os.WIFEXITED(sts):
+                self.returncode = os.WEXITSTATUS(sts)
             else:
                 # Should never happen
                 raise RuntimeError("Unknown child exit status!")
 
 
-        def _internal_poll(self, _deadstate=None, _waitpid=os.waitpid,
-                _WNOHANG=os.WNOHANG, _os_error=os.error):
+        def _internal_poll(self, _deadstate=None):
             """Check if child process has terminated.  Returns returncode
-            attribute.
-
-            This method is called by __del__, so it cannot reference anything
-            outside of the local scope (nor can any methods it calls).
-
-            """
+            attribute."""
             if self.returncode is None:
                 try:
-                    pid, sts = _waitpid(self.pid, _WNOHANG)
+                    pid, sts = os.waitpid(self.pid, os.WNOHANG)
                     if pid == self.pid:
                         self._handle_exitstatus(sts)
-                except _os_error:
+                except os.error:
                     if _deadstate is not None:
                         self.returncode = _deadstate
             return self.returncode
