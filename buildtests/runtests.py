@@ -97,6 +97,9 @@ warn*.txt
 */*/*.py[co]
 build/
 dist/
+*/*.dll
+*/*.so
+*/*.dylib
 """.split()
 
 
