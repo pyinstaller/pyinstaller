@@ -223,12 +223,10 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
             prog = find_exepath(tmpname)
             if prog is None:
                 prog = find_exepath(tmpname, os.path.join('dist', testfile))
-            newlog = open(os.path.join('dist', logfn), 'w')
-            compat.exec_python_rc(os.path.join(HOMEPATH, 'utils',
-                'ArchiveViewer.py'), '-b', '-r', prog, stdout=newlog)
-            newlog.close()
+            fname_list = compat.exec_python(
+                os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
+                '-b', '-r', prog)
             pattern_list = eval(open(logfn, 'rU').read())
-            fname_list = eval(open(newlog.name, 'rU').read())
             count = 0
             for pattern in pattern_list:
                 found = False
