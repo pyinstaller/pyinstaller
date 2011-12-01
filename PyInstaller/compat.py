@@ -178,7 +178,7 @@ def exec_python(*args, **kwargs):
 
     Return exit code of the invoked command.
     """
-    python = [sys.executable]
+    cmdargs = [sys.executable]
 
     # Mac OS X supports universal binaries (binary for multiple architectures.
     # We need to ensure that subprocess binaries are running for the same
@@ -187,14 +187,14 @@ def exec_python(*args, **kwargs):
     if is_darwin:
         mapping = {'32bit': '-i386', '64bit': '-x86_64'}
         py_prefix = ['arch', mapping[architecture()]]
-        python = py_prefix + python
+        cmdargs = py_prefix + cmdargs
 
     if _PYOPTS:
-        python.append(_PYOPTS)
+        cmdargs.append(_PYOPTS)
 
-    args = python + list(args)
+    cmdargs.extend(args)
 
-    return exec_command_retcode(*args, **kwargs)
+    return exec_command_retcode(*cmdargs, **kwargs)
 
 
 # Obsolete command line options.
