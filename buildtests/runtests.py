@@ -271,7 +271,7 @@ def test_exe(test, testdir=None):
         return 1
     else:
         print "RUNNING:", prog
-        tmp = compat.exec_command_retcode(prog)
+        tmp = compat.exec_command_rc(prog)
         compat.setenv("PATH", path)
         return tmp
 

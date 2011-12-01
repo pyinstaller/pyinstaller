@@ -155,7 +155,7 @@ def exec_command(*cmdargs):
     return subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
 
 
-def exec_command_retcode(*cmdargs, **kwargs):
+def exec_command_rc(*cmdargs, **kwargs):
     """
     Wrap creating subprocesses.
 
@@ -187,7 +187,7 @@ def exec_python_rc(*args, **kwargs):
 
     cmdargs.extend(args)
 
-    return exec_command_retcode(*cmdargs, **kwargs)
+    return exec_command_rc(*cmdargs, **kwargs)
 
 
 # Obsolete command line options.
