@@ -27,7 +27,7 @@ try:
 except ImportError:
     # :todo: remove when dropping Python 2.3 compatibility
     # fall back to out version of `subprocess`
-    import __subprocess as subprocess
+    import PyInstaller.lib.__subprocess as subprocess
 
 
 is_py23 = sys.version_info >= (2, 3)
@@ -179,12 +179,6 @@ def exec_python(*args, **kwargs):
     Return exit code of the invoked command.
     """
     python = [sys.executable]
-
-    # Add quotation should be necessary only when using os.system().
-    #if is_win:
-        ## Add quotation marks if path contain spaces.
-        #if ' ' in python:
-            #python = '"%s"' % python
 
     # Mac OS X supports universal binaries (binary for multiple architectures.
     # We need to ensure that subprocess binaries are running for the same
