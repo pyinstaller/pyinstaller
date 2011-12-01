@@ -83,36 +83,27 @@ def architecture():
     a string ('32bit' or '64bit'). Similar to platform.architecture(),
     but with fixes for universal binaries on MacOS.
     """
-    try:
-        # Python 2.3+
-        import platform
-        if is_darwin:
-            # Darwin's platform.architecture() is buggy and always
-            # returns "64bit" event for the 32bit version of Python's
-            # universal binary. So we roll out our own (that works
-            # on Darwin).
-            if sys.maxint > 2L ** 32:
-                return '64bit'
-            else:
-                return '32bit'
+    import platform
+    if is_darwin:
+        # Darwin's platform.architecture() is buggy and always
+        # returns "64bit" event for the 32bit version of Python's
+        # universal binary. So we roll out our own (that works
+        # on Darwin).
+        if sys.maxint > 2L ** 32:
+            return '64bit'
         else:
-            return platform.architecture()[0]
-    except ImportError:
-        return '32bit'
+            return '32bit'
+    else:
+        return platform.architecture()[0]
 
 
 def system():
-    try:
-        # Python 2.3+
-        import platform
-        # On some Windows installation (Python 2.4) platform.system() is
-        # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
-        # http://mail.python.org/pipermail/patches/2007-June/022947.html
-        syst = platform.system()
-        return {'Microsoft': 'Windows'}.get(syst, syst)
-    except ImportError:
-        n = {'nt': 'Windows', 'linux2': 'Linux', 'darwin': 'Darwin'}
-        return n[os.name]
+    import platform
+    # On some Windows installation (Python 2.4) platform.system() is
+    # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
+    # http://mail.python.org/pipermail/patches/2007-June/022947.html
+    syst = platform.system()
+    return {'Microsoft': 'Windows'}.get(syst, syst)
 
 
 # Set and get environment variables does not handle unicode strings correctly
