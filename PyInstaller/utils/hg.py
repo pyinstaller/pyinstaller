@@ -32,7 +32,7 @@ def _findrepo():
     return p
 
 
-def get_hg_revision():
+def get_repo_revision():
     '''
     Returns mercurial revision string somelike `hg identify` does.
 
@@ -64,4 +64,4 @@ def get_hg_revision():
     return ''
 
 if __name__ == '__main__':
-    print get_hg_revision()
+    print get_repo_revision()

@@ -20,7 +20,7 @@ import os.path
 import re
 
 
-def get_svn_revision():
+def get_repo_revision():
     '''
     Returns SVN revision number.
 
