@@ -103,7 +103,9 @@ def system():
     # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
     # http://mail.python.org/pipermail/patches/2007-June/022947.html
     syst = platform.system()
-    return {'Microsoft': 'Windows'}.get(syst, syst)
+    if syst == 'Microsoft':
+        return 'Windows'
+    return syst
 
 
 # Set and get environment variables does not handle unicode strings correctly
