@@ -165,12 +165,7 @@ def exec_command_rc(*cmdargs, **kwargs):
     return subprocess.call(cmdargs, **kwargs)
 
 
-def exec_python_rc(*args, **kwargs):
-    """
-    Wrap running python script in a subprocess.
-
-    Return exit code of the invoked command.
-    """
+def __wrap_python(args, kwargs):
     cmdargs = [sys.executable]
 
     # Mac OS X supports universal binaries (binary for multiple architectures.
@@ -186,7 +181,26 @@ def exec_python_rc(*args, **kwargs):
         cmdargs.append(_PYOPTS)
 
     cmdargs.extend(args)
+    return cmdargs, kwargs
 
+
+def exec_python(*args, **kwargs):
+    """
+    Wrap running python script in a subprocess.
+
+    Return stdout of the invoked command.
+    """
+    cmdargs, kwargs = __wrap_python(args, kwargs)
+    return exec_command(*cmdargs, **kwargs)
+
+
+def exec_python_rc(*args, **kwargs):
+    """
+    Wrap running python script in a subprocess.
+
+    Return exit code of the invoked command.
+    """
+    cmdargs, kwargs = __wrap_python(args, kwargs)
     return exec_command_rc(*cmdargs, **kwargs)
 
 
