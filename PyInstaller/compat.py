@@ -57,7 +57,7 @@ _OLD_OPTIONS = ['--upx', '-X']
 
 
 # Options for python interpreter when invoked in a subprocess.
-_PYOPTS = [] if __debug__ else ['-O']
+_PYOPTS = __debug__ and '-O' or ''
 
 
 try:
@@ -190,7 +190,7 @@ def exec_python(*args, **kwargs):
         python = py_prefix + python
 
     if _PYOPTS:
-        python += _PYOPTS
+        python.append(_PYOPTS)
 
     args = python + list(args)
 
