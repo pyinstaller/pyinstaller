@@ -25,7 +25,7 @@ def __exec_python_cmd(cmd):
     compat.setenv("PYTHONPATH", pp)
     try:
         try:
-            txt = compat.exec_command(*cmd)
+            txt = compat.exec_python(*cmd)
         except OSError, e:
             raise SystemExit("Execution failed: %s" % e)
     finally:
@@ -40,7 +40,7 @@ def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
     """
-    cmd = [sys.executable, '-c', statement]
+    cmd = ['-c', statement]
     return __exec_python_cmd(cmd)
 
 
@@ -59,8 +59,7 @@ def exec_script(scriptfilename, *args):
                           "hookutils.exec-script must be located in "
                           "the `hooks` directory.")
 
-    cmd = [sys.executable, os.path.join(os.path.dirname(__file__),
-        scriptfilename)]
+    cmd = [os.path.join(os.path.dirname(__file__), scriptfilename)]
     cmd.extend(args)
     return __exec_python_cmd(cmd)
 
