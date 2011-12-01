@@ -21,7 +21,13 @@
 
 import os
 import sys
-import subprocess
+
+try:
+    import subprocess
+except ImportError:
+    # :todo: remove when dropping Python 2.3 compatibility
+    # fall back to out version of `subprocess`
+    import __subprocess as subprocess
 
 
 is_py23 = sys.version_info >= (2, 3)
