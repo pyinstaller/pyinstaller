@@ -100,6 +100,7 @@ import xml
 from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
+from PyInstaller import compat
 from PyInstaller.compat import hashlib, architecture
 from PyInstaller import log as logging
 logger = logging.getLogger('PyInstaller.build.winmanifest')
