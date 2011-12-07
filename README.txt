@@ -6,14 +6,36 @@ Requirements
 ============
 
 Python:
-    2.3+ (Python 3 not supported)
+    2.3 - 2.7 (Python 3 is not supported)
 
-Operating-System:
-    Windows (32bit/64bit)
-    Linux (32bit/64bit)
-    Mac OS X (32/64bit)
-    Solaris (experimental)
-    AIX (experimental)
+Windows (32bit/64bit):
+  * Windows XP or newer.
+  * pywin32 when using Python 2.6+
+    http://sourceforge.net/projects/pywin32/
+
+Linux (32bit/64bit)
+  * ldd
+    - Console application to print the shared libraries required 
+      by each program or shared library.
+  * objdump
+    - Console application to display information from object files.
+
+Mac OS X (32/64bit):
+  * Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).
+
+Solaris (experimental)
+  * ldd
+  * objdump
+
+AIX (experimental)
+  * AIX 6.1 or newer.
+    Python executables created using PyInstaller on AIX 6.1 should
+    work on AIX 5.2/5.3. PyInstaller will not work with statically
+    linked Python libraries which has been encountered in Python 2.2
+    installations on AIX 5.x.
+  * ldd
+  * objdump
+
 
 Usage
 =========
