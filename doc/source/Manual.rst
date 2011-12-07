@@ -18,6 +18,8 @@ PyInstaller Manual
 Requirements
 ++++++++++++
 
+.. Keep this list in sync with the README.txt
+
 **Windows**
   * Windows XP or newer.
   * PyWin32_
