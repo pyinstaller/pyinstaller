@@ -446,8 +446,14 @@ def _getImports_macholib(pth):
             # Sometimes some libraries are present multiple times.
             if lib not in seen:
                 seen.add(lib)
-    # Try to find files in file system.
-    exec_path = os.path.abspath('.')
+
+    ## Try to find files in file system.
+
+    # In cases with @loader_path or @executable_path
+    # try to look in the same directory as the checked binary is.
+    # This seems to work in most cases.
+    exec_path = os.path.abspath(os.path.dirname(pth))
+
     for lib in seen:
         if lib.startswith('@loader_path'):
             # macholib can't handle @loader_path. It has to be
