@@ -25,7 +25,7 @@ from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE
 from PyInstaller import is_win, is_cygwin, is_darwin
 
 
-freezetmplt = """# -*- mode: python -*-
+onefiletmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hookspath=%(hookspath)r)
@@ -42,7 +42,7 @@ exe = EXE(%(tkpkg)s pyz,
           console=%(console)s %(exe_options)s)
 """ # pathex scripts exename tkpkg debug console distdir
 
-collecttmplt = """# -*- mode: python -*-
+onedirtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hookspath=%(hookspath)r)
@@ -147,10 +147,10 @@ def __add_options(parser):
     option group.
     """
     g = parser.add_option_group('What to generate')
-    g.add_option("-F", "--onefile", dest="freeze",
+    g.add_option("-F", "--onefile", dest="onefile",
                  action="store_true", default=False,
                  help="create a single file deployment")
-    g.add_option("-D", "--onedir", dest="freeze",
+    g.add_option("-D", "--onedir", dest="onefile",
                  action="store_false",
                  help="create a single directory deployment (default)")
     g.add_option("-o", "--out",
@@ -230,7 +230,7 @@ def __add_options(parser):
                       "multiple times.")
 
 
-def main(scripts, configfilename=None, name=None, tk=0, freeze=0,
+def main(scripts, configfilename=None, name=None, tk=0, onefile=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
          ascii=0, workdir=None, pathex=[], version_file=None,
          icon_file=None, manifest=None, resources=[], crypt=None,
@@ -301,7 +301,7 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0,
          'exe_options': exe_options}
     if tk:
         d['tktree'] = "TkTree(),"
-        if freeze:
+        if onefile:
             scripts.insert(0, Path(CONFIGDIR, 'support', 'useTK.py'))
             scripts.insert(0, Path(HOMEPATH, 'support', 'unpackTK.py'))
             scripts.append(Path(HOMEPATH, 'support', 'removeTK.py'))
@@ -322,8 +322,8 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0,
 
     specfnm = os.path.join(workdir, name+'.spec')
     specfile = open(specfnm, 'w')
-    if freeze:
-        specfile.write(freezetmplt % d)
+    if onefile:
+        specfile.write(onefiletmplt % d)
         if not console:
             specfile.write(bundleexetmplt % d)
     elif comserver:
@@ -331,7 +331,7 @@ def main(scripts, configfilename=None, name=None, tk=0, freeze=0,
         if not console:
             specfile.write(bundletmplt % d)
     else:
-        specfile.write(collecttmplt % d)
+        specfile.write(ondirtmplt % d)
         if not console:
             specfile.write(bundletmplt % d)
     specfile.close()
