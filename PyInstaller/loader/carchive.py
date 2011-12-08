@@ -18,6 +18,7 @@
 
 import archive
 import struct
+import sys
 try:
     import zlib
 except ImportError:
