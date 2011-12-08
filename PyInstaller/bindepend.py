@@ -44,8 +44,8 @@ if is_win:
             import win32api
             import pywintypes
         except ImportError:
-            raise SystemExit("Error: Python 2.6+ on Windows support needs "
-                 "pywin32.\r\nPlease install from "
+            raise SystemExit("Error: PyInstaller for Python 2.6+ on Windows "
+                 "needs pywin32.\r\nPlease install from "
                  "http://sourceforge.net/projects/pywin32/")
 
     from PyInstaller.utils.winmanifest import RT_MANIFEST
