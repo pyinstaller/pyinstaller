@@ -29,6 +29,10 @@ class Tkhanoi:
     def __init__(self, n, bitmap = None):
         self.n = n
         self.tk = tk = Tk()
+
+        Label(text="Press <ESC> to exit").pack()
+        tk.bind("<Escape>", lambda x: tk.destroy()) #quit())
+        
         self.canvas = c = Canvas(tk)
         c.pack()
         width, height = tk.getint(c['width']), tk.getint(c['height'])
@@ -74,15 +78,18 @@ class Tkhanoi:
             self.tk.update()
             self.tk.after(25)
 
-    # Run -- never returns
+    # Run -- never returns - press esc or close window to exit
     def run(self):
-        while 1:
-            hanoi(self.n, 0, 1, 2, self.report)
-            hanoi(self.n, 1, 2, 0, self.report)
-            hanoi(self.n, 2, 0, 1, self.report)
-            hanoi(self.n, 0, 2, 1, self.report)
-            hanoi(self.n, 2, 1, 0, self.report)
-            hanoi(self.n, 1, 0, 2, self.report)
+        try:
+            while 1:
+                hanoi(self.n, 0, 1, 2, self.report)
+                hanoi(self.n, 1, 2, 0, self.report)
+                hanoi(self.n, 2, 0, 1, self.report)
+                hanoi(self.n, 0, 2, 1, self.report)
+                hanoi(self.n, 2, 1, 0, self.report)
+                hanoi(self.n, 1, 0, 2, self.report)
+        except TclError:
+            pass
 
     # Reporting callback for the actual hanoi function
     def report(self, i, a, b):
