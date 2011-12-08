@@ -17,12 +17,7 @@
 
 def hook(mod):
     import sys
-    if hasattr(sys, 'version_info'):
-        vers = '%d%d' % (sys.version_info[0], sys.version_info[1])
-    else:
-        toks = sys.version[:3].split('.')
-        vers = '%s%s' % (toks[0], toks[1])
-    newname = 'PyWinTypes%s' % vers
+    newname = 'PyWinTypes%d%d' % sys.version_info[:2]
     if mod.typ == 'EXTENSION':
         mod.__name__ = newname
     else:
