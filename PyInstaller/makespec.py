@@ -331,7 +331,7 @@ def main(scripts, configfilename=None, name=None, tk=0, onefile=0,
         if not console:
             specfile.write(bundletmplt % d)
     else:
-        specfile.write(ondirtmplt % d)
+        specfile.write(onedirtmplt % d)
         if not console:
             specfile.write(bundletmplt % d)
     specfile.close()

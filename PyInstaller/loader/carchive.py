@@ -22,16 +22,6 @@ try:
     import zlib
 except ImportError:
     zlib = archive.DummyZlib()
-import sys
-if sys.version[0] == '1':
-    import strop
-    find = strop.find
-    split = strop.split
-else:
-    def find(s, sub):
-        return s.find(sub)
-    def split(s, delim, count):
-        return s.split(delim, count)
 
 class CTOC:
     """A class encapsulating the table of contents of a CArchive.
@@ -58,7 +48,7 @@ class CTOC:
             # self.data.append((dpos, dlen, ulen, flag, typcd, nm[:-1]))
             # version 5
             # nm may have up to 15 bytes of padding
-            pos = find(nm, '\0')
+            pos = nm.find('\0')
             if pos < 0:
                 self.data.append((dpos, dlen, ulen, flag, typcd, nm))
             else:
@@ -248,7 +238,7 @@ class CArchive(archive.Archive):
         dlen = len(s)
         where = self.lib.tell()
         if typcd == 'm':
-            if find(pathnm, '.__init__.py') > -1:
+            if pathnm.find('.__init__.py') > -1:
                 typcd = 'M'
         self.toc.add(where, dlen, ulen, flag, typcd, nm)
         self.lib.write(s)
