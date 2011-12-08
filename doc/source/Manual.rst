@@ -988,10 +988,12 @@ Here is spec file example with ``MERGE`` function::
 When Things Go Wrong
 ++++++++++++++++++++
 
-Recipes
--------
+Recipes and Instructions for special Modules
+---------------------------------------------
 
-For some common issues there are available some code examples on our Recipe_ page.
+Code examples for some modules needing special care and some common
+issues are available on our Recipe_ web-page.
+
 
 Finding out What Went Wrong
 ---------------------------
