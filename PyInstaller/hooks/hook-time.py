@@ -15,9 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import sys
-
 # Since Python 2.3, builtin module "time" imports Python module _strptime
 # to implement "time.strptime".
-if hasattr(sys, "version_info") and sys.version_info >= (2,3):
-    hiddenimports = ['_strptime']
+hiddenimports = ['_strptime']
