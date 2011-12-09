@@ -172,6 +172,10 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     testbasedir = os.getcwdu()
     for _, test in tests:
         test = os.path.splitext(test)[0]
+        if not os.path.exists(test + '.py'):
+            _msg("Testfile not found:", test + '.py', short=1)
+            counter["failed"].append(test)
+            continue
         testdir, testfile = os.path.split(test)
         if not testdir:
             testdir = '.'
