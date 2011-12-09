@@ -72,6 +72,7 @@ DEPENDENCIES = {
     'import/test_ctypes_cdll_c2': ['ctypes'],
     'import/test_zipimport1': ['pkg_resources'],
     'import/test_zipimport2': ['pkg_resources', 'setuptools'],
+    'interactive/test_pygame': ['pygame'],
 }
 
 NO_SPEC_FILE = [
