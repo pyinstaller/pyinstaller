@@ -1089,7 +1089,7 @@ def _resolveCtypesImports(cbinaries):
                     cpath = d + "/" + cpath
                     break
             else:
-                for L in os.popen("ldconfig -p").read().splitlines():
+                for L in os.popen("/sbin/ldconfig -p").read().splitlines():
                     if cpath in L:
                         cpath = L.split("=>", 1)[1].strip()
                         assert os.path.isfile(cpath)
