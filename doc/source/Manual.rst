@@ -859,6 +859,12 @@ in the section on ``TOCs``.
 When Things Go Wrong
 ++++++++++++++++++++
 
+Recipes and Instructions for special Modules
+---------------------------------------------
+
+Code examples for some modules needing special care and some common
+issues are available on our Recipe_ web-page.
+
 Finding out What Went Wrong
 ---------------------------
 
@@ -1815,6 +1821,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _Xcode: http://developer.apple.com/xcode
 .. _`GPL License`: http://www.pyinstaller.org/browser/trunk/doc/LICENSE.GPL?rev=latest
 .. _FAQ: http://www.pyinstaller.org/wiki/FAQ
+.. _Recipe: http://www.pyinstaller.org/wiki/Recipe
 .. _MinGW: http://sourceforge.net/downloads/mingw/
 .. _MinGW-w64: http://mingw-w64.sourceforge.net/
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
