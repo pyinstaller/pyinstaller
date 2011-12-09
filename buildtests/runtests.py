@@ -46,7 +46,7 @@ from PyInstaller import is_py23, is_py25, is_py26, is_win, is_darwin
 from PyInstaller import compat
 
 MIN_VERSION_OR_OS = {
-    'basic/test_9': is_py23,
+    'basic/test_time': is_py23,
     'basic/test_celementtree': is_py25,
     'basic/test_email2': is_py23,
     # On Mac DYLD_LIBRARY_PATH is not used.
