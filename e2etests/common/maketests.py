@@ -77,4 +77,3 @@ for bldconfig in ('--onedir', '--onefile'):
                 for upxopt in ('', '--upx'):
                     build_test(i, bldconfig, console, dbg, stripopt)
                     i += 1
-                    raise SystemExit()
