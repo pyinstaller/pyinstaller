@@ -539,6 +539,7 @@ class ImportTracker:
                     fqname = nm
                 mod = self.modules.get(fqname, UNTRIED)
                 if mod is UNTRIED:
+                    logger.debug('Analyzing %s', fqname)
                     mod = self.doimport(nm, ctx, fqname)
                 if mod:
                     nms.append(mod.__name__)
