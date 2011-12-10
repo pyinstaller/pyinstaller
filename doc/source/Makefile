@@ -16,7 +16,7 @@ html: ../Manual.html
 pdf: ../Manual.pdf
 
 ../Manual.html: Manual.rst docutils.conf _definitions.txt
-	rst2html --config=docutils.conf $< $@
+	rst2html.py --config=docutils.conf $< $@
 
 ../Manual.pdf: srcdir=$(dir $(abspath $<))
 ../Manual.pdf: Manual.rst _definitions.txt

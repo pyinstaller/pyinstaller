@@ -26,11 +26,11 @@ Requirements
 
 **Linux**
   * ldd
-    - Console application to print the shared libraries required by
-      each program or shared library.
+    Console application to print the shared libraries required by
+    each program or shared library.
 
   * objdump
-    - Console application to display information from object files.
+    Console application to display information from object files.
 
 **Mac OS X**
   * Xcode_ is a suite of tools for developing software for Mac OS X.
