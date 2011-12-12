@@ -37,7 +37,7 @@ sys.path.insert(0, lib.__path__[0])
 from PyInstaller import compat
 from PyInstaller.utils import svn
 
-VERSION = (1, 6, 0, 'dev', svn.get_repo_revision())
+VERSION = (2, 0, 0, 'dev', svn.get_repo_revision())
 
 
 is_py23 = compat.is_py23
