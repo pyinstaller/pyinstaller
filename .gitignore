@@ -12,7 +12,6 @@
 /config.dat
 /*.log
 /*.patch
-/.hgignore
 
 # /buildtests/
 /buildtests/build*
