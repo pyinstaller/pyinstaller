@@ -35,9 +35,9 @@ from PyInstaller import lib
 sys.path.insert(0, lib.__path__[0])
 
 from PyInstaller import compat
-from PyInstaller.utils import svn
+from PyInstaller.utils import git
 
-VERSION = (2, 0, 0, 'dev', svn.get_repo_revision())
+VERSION = (2, 0, 0, 'dev', git.get_repo_revision())
 
 
 is_py23 = compat.is_py23
@@ -88,7 +88,7 @@ def get_version():
         version = '%s.%s' % (version, VERSION[2])
     if VERSION[3]:
         version = '%s%s' % (version, VERSION[3])
-    # include svn revision in version string
+    # include git revision in version string
     if VERSION[3] == 'dev' and VERSION[4] > 0:
-        version = '%s%s' % (version, VERSION[4])
+        version = '%s-%s' % (version, VERSION[4])
     return version

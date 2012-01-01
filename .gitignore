@@ -1,0 +1,56 @@
+*.py[co]
+*~
+.#*
+*.egg-info
+
+# /
+/AES.pyd
+/AES.so
+/*.bak
+/bincache*
+/build
+/config.dat
+/*.log
+/*.patch
+
+# /buildtests/
+/buildtests/build*
+/buildtests/dist*
+/buildtests/logdict*.log
+/buildtests/test*.exe
+/buildtests/warn*.txt
+/buildtests/python_exe.build
+
+/buildtests/*/build
+/buildtests/*/dist
+
+# /buildtests/basic/
+/buildtests/basic/python_exe.build
+
+# /buildtests/basic/ctypes/
+/buildtests/basic/ctypes/testctypes.dylib
+/buildtests/basic/ctypes/testctypes.dll
+/buildtests/basic/ctypes/testctypes.so
+
+# /buildtests/libraries/
+/buildtests/libraries/tinysample.png
+/buildtests/libraries/test_xml.spec
+
+# /doc/
+/doc/*.1
+
+# /source/
+/source/.lock-wscript
+/source/build
+/source/waf-*
+/source/.waf-*
+
+# /source/crypto/
+/source/crypto/build
+
+# /source/linux/
+/source/linux/Makefile
+
+# /support/loader/
+/support/loader/run
+/support/loader/run_d
