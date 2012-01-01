@@ -1,0 +1,18 @@
+*	text=auto
+README	text=auto
+Makefile	text=auto
+
+# image files and such
+*.pdf	-text
+*.ico	-text
+*.icns	-text
+*.tiff	-text
+*.png	-text
+
+# excutables
+run	-text
+run_d	-text
+runw	-text
+runw_d	-text
+*.exe	-text
+*.dll	-text
