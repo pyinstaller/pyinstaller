@@ -503,7 +503,7 @@ class Analysis(Target):
 
         if is_aix:
             # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
-            names = ('libpython%d.%d.a' % sys.version_info[:2],) 
+            names = ('libpython%d.%d.a' % sys.version_info[:2],)
         elif is_unix:
             # Other *nix platforms.
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
@@ -524,7 +524,7 @@ class Analysis(Target):
         if is_unix:
             lib = bindepend.findLibrary(name)
             if lib is None:
-                raise IOError("Python library not found!")
+                raise IOError("Python library [%s] not found!" % name)
 
         elif is_darwin:
             # On MacPython, Analysis.assemble is able to find the libpython with

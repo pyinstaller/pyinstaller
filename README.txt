@@ -36,6 +36,11 @@ AIX (experimental)
   * ldd
   * objdump
 
+FreeBSD (experimental)
+  * ldd
+  * objdump
+  * Build your own loader:
+    $ cd source; python waf configure build install
 
 Usage
 =========
