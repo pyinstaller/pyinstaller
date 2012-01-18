@@ -13,6 +13,9 @@
 /*.log
 /*.patch
 
+# Temporary vim files
+*.swp
+
 # /buildtests/
 /buildtests/build*
 /buildtests/dist*
