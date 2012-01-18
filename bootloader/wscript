@@ -229,7 +229,8 @@ def configure(conf):
         conf.check_cc(lib='ws2_32', mandatory=True)
 
     else:
-        conf.check_cc(lib='dl', mandatory=True)
+        if not sys.platform.startswith('freebsd'):  # FreeBSD (posix) doesn't need libdl
+            conf.check_cc(lib='dl', mandatory=True)
         conf.check_cc(lib='z', mandatory=True)
         if conf.check_cc(function_name='readlink', header_name='unistd.h'):
             conf.env.append_value('CCFLAGS', '-DHAVE_READLINK')
@@ -466,9 +467,11 @@ def build(bld):
                 includes = ['common', 'windows', 'zlib'],
             )
 
-    else: # linux, darwin (MacOSX)
+    else: # linux, darwin (MacOSX), freebsd
 
         libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
+        if sys.platform.startswith('freebsd'):
+            libs = ['z', 'm']  # freebsd doesn't need libdl
         if opt.boehmgc:
             libs.append('gc')
 
