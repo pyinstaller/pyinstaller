@@ -28,6 +28,7 @@ import re
 import pprint
 import shutil
 import optparse
+import functools
 
 try:
     import PyInstaller
@@ -35,7 +36,6 @@ except ImportError:
     # if importing PyInstaller fails, try to load from parent
     # directory to support running without installation
     import imp
-    import os
     if not hasattr(os, "getuid") or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
             [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
@@ -44,6 +44,7 @@ except ImportError:
 from PyInstaller import HOMEPATH
 from PyInstaller import is_py23, is_py25, is_py26, is_win, is_darwin
 from PyInstaller import compat
+from PyInstaller.lib import unittest2 as unittest
 
 MIN_VERSION_OR_OS = {
     'basic/test_time': is_py23,
@@ -304,8 +305,7 @@ def detect_tests(folders):
     return tests
 
 
-if __name__ == '__main__':
-
+def main():
     # Change working directory to place where this script is.
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -354,3 +354,22 @@ if __name__ == '__main__':
 
     clean()
     runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)
+
+
+class BasicTestCase(unittest.TestCase):
+    pass
+
+
+def test_build(test_name):
+    print test_name
+    assert False
+
+
+if __name__ == '__main__':
+    #main()
+    for case in ['case1', 'case2']:
+        testname = 'test_' + case
+        testfunc = functools.partial(test_build, case)
+        testfunc.__doc__ = testname
+        setattr(BasicTestCase, testname, testfunc)
+    unittest.main(verbosity=2)
