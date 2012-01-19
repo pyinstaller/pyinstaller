@@ -12,7 +12,7 @@ except ImportError:
 import datetime
 import re
 import sys
-import unittest
+import unittest2 as unittest
 import xml.dom.minidom
 
 import junitxml

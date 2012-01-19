@@ -4,7 +4,7 @@
 #
 #  Copying permitted under the LGPL-3 licence, included with this library.
 
-import unittest
+import unittest as unittest2
 
 from junitxml.tests import (
     test_junitxml,

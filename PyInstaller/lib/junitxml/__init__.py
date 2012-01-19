@@ -10,7 +10,7 @@
 import datetime
 import re
 import time
-import unittest
+import unittest2 as unittest
 
 # same format as sys.version_info: "A tuple containing the five components of
 # the version number: major, minor, micro, releaselevel, and serial. All
