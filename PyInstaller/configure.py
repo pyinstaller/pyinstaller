@@ -30,11 +30,8 @@ from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE, PLATFORM
 from PyInstaller import is_win, is_unix, is_darwin, is_py24, get_version
 
 import PyInstaller.mf as mf
-import PyInstaller.bindepend as bindepend
 import PyInstaller.build as build
 import PyInstaller.compat as compat
-
-from PyInstaller.depend import dylib
 
 import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.configure')
@@ -58,85 +55,6 @@ def find_EXE_dependencies(config):
     python = sys.executable
     config['python'] = python
     config['target_platform'] = sys.platform
-
-
-def test_TCL_TK(config):
-
-    # TCL_root, TK_root and support/useTK.py
-    logger.info("Finding TCL/TK...")
-
-    if is_win:
-        pattern = r'(?i)tcl(\d\d)\.dll'
-    elif is_unix:
-        pattern = r'libtcl(\d\.\d)?\.so'
-    elif is_darwin:
-        pattern = r'_tkinter'
-    else:
-        # If no pattern is in place for this platform, skip TCL/TK detection.
-        logger.info("... skipping TCL/TK detection on this target platform (%s)"
-                    % sys.platform)
-
-    if not (is_win):
-        save_exclude = dylib.exclude_list
-        dylib.exclude_list = None
-
-    a = mf.ImportTracker()
-    a.analyze_r('Tkinter')
-    binaries = []
-    for modnm, mod in a.modules.items():
-        if isinstance(mod, mf.ExtensionModule):
-            binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
-    # Always add python's dependencies first
-    # This ensures that assembly depencies under Windows get pulled in
-    # first and we do not need to add assembly DLLs to the exclude list
-    # explicitly
-    binaries.extend(bindepend.Dependencies([('', sys.executable, '')]))
-    binaries.extend(bindepend.Dependencies(binaries))
-    for nm, fnm, typ in binaries:
-        mo = re.match(pattern, nm)
-        if not mo:
-            continue
-        if not is_darwin:
-            ver = mo.group(1)
-            tclbindir = os.path.dirname(fnm)
-            if is_win:
-                ver = ver[0] + '.' + ver[1:]
-            elif ver is None:
-                # we found "libtcl.so.0" so we need to get the version from the lib directory
-                for name in os.listdir(tclbindir):
-                    mo = re.match(r'tcl(\d.\d)', name)
-                    if mo:
-                        ver = mo.group(1)
-            logger.info("found TCL/TK version %s", ver)
-            tclnm = 'tcl%s' % ver
-            tknm = 'tk%s' % ver
-            # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3 and /usr/lib/tk8.3
-            # Windows: Python21/DLLs with the .tcl files in Python21/tcl/tcl8.3 and Python21/tcl/tk8.3
-            #      or  D:/Programs/Tcl/bin with the .tcl files in D:/Programs/Tcl/lib/tcl8.0 and D:/Programs/Tcl/lib/tk8.0
-            if is_win:
-                for attempt in ['../tcl', '../lib']:
-                    if os.path.exists(os.path.join(tclbindir, attempt, tclnm)):
-                        config['TCL_root'] = os.path.join(tclbindir, attempt, tclnm)
-                        config['TK_root'] = os.path.join(tclbindir, attempt, tknm)
-                        break  # for attempt ...
-                break  # for nm, ...
-            else:
-                config['TCL_root'] = os.path.join(tclbindir, tclnm)
-                config['TK_root'] = os.path.join(tclbindir, tknm)
-                break
-        else:
-            # is_darwin
-            tclbindir = os.path.dirname(fnm)
-            logger.info("found TCL/TK")
-            tcldir = "Tcl.framework/Resources/Scripts"
-            tkdir = "Tk.framework/Resources/Scripts"
-            config['TCL_root'] = "/System/Library/Frameworks/Tcl.framework/Versions/Current"
-            config['TK_root'] = "/System/Library/Frameworks/Tk.framework/Versions/Current"
-            break
-    else:
-        logger.info("could not find TCL/TK")
-    if not is_win:
-        dylib.exclude_list = save_exclude
 
 
 def test_Crypt(config):
@@ -335,7 +253,6 @@ def main(configfilename, upx_dir, **kw):
     config["pyinstaller_homepath"] = HOMEPATH
 
     find_EXE_dependencies(config)
-    test_TCL_TK(config)
     test_Zlib(config)
     test_Crypt(config)
     test_RsrcUpdate(config)
