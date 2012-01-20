@@ -1407,11 +1407,13 @@ class Tree(Target, TOC):
 
 def TkTree():
     raise SystemExit('TkTree has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file.')
+                     'Please update your spec-file. See '
+                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
 
 def TkPKG():
     raise SystemExit('TkPKG has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file.')
+                     'Please update your spec-file. See '
+                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
 
 
 def build(spec, buildpath):
