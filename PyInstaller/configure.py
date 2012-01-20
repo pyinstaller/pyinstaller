@@ -132,7 +132,7 @@ def test_TCL_TK(config):
                     if mo:
                         ver = mo.group(1)
             logger.info("found TCL/TK version %s", ver)
-            _write_textfile(_useTkFN, _useTK % ("tcl%s" % ver, "tk%s" % ver))
+            _write_textfile(_useTkFN, _useTK % ("tcl", "tk" ))
             tclnm = 'tcl%s' % ver
             tknm = 'tk%s' % ver
             # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3 and /usr/lib/tk8.3
@@ -143,15 +143,15 @@ def test_TCL_TK(config):
                     if os.path.exists(os.path.join(tclbindir, attempt, tclnm)):
                         config['TCL_root'] = os.path.join(tclbindir, attempt, tclnm)
                         config['TK_root'] = os.path.join(tclbindir, attempt, tknm)
-                        config['TCL_dirname'] = os.path.basename(config['TCL_root'])
-                        config['TK_dirname'] = os.path.basename(config['TK_root'])
+                        config['TCL_dirname'] = 'tcl'
+                        config['TK_dirname'] = 'tk'
                         break  # for attempt ...
                 break  # for nm, ...
             else:
                 config['TCL_root'] = os.path.join(tclbindir, tclnm)
                 config['TK_root'] = os.path.join(tclbindir, tknm)
-                config['TCL_dirname'] = os.path.basename(config['TCL_root'])
-                config['TK_dirname'] = os.path.basename(config['TK_root'])
+                config['TCL_dirname'] = 'tcl'
+                config['TK_dirname'] = 'tk'
                 break
         else:
             # is_darwin
