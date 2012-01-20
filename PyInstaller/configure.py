@@ -118,15 +118,11 @@ def test_TCL_TK(config):
                     if os.path.exists(os.path.join(tclbindir, attempt, tclnm)):
                         config['TCL_root'] = os.path.join(tclbindir, attempt, tclnm)
                         config['TK_root'] = os.path.join(tclbindir, attempt, tknm)
-                        config['TCL_dirname'] = 'tcl'
-                        config['TK_dirname'] = 'tk'
                         break  # for attempt ...
                 break  # for nm, ...
             else:
                 config['TCL_root'] = os.path.join(tclbindir, tclnm)
                 config['TK_root'] = os.path.join(tclbindir, tknm)
-                config['TCL_dirname'] = 'tcl'
-                config['TK_dirname'] = 'tk'
                 break
         else:
             # is_darwin
@@ -136,8 +132,6 @@ def test_TCL_TK(config):
             tkdir = "Tk.framework/Resources/Scripts"
             config['TCL_root'] = "/System/Library/Frameworks/Tcl.framework/Versions/Current"
             config['TK_root'] = "/System/Library/Frameworks/Tk.framework/Versions/Current"
-            config['TCL_dirname'] = "Tcl.framework"
-            config['TK_dirname'] = "Tk.framework"
             break
     else:
         logger.info("could not find TCL/TK")
