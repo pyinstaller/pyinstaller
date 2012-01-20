@@ -296,9 +296,6 @@ def main(scripts, configfilename=None, name=None, tk=0, onefile=0,
          'crypted': crypt is not None,
          'console': console or debug,
          'exe_options': exe_options}
-    if tk and onefile:
-        scripts.insert(0, Path(HOMEPATH, 'support', 'unpackTK.py'))
-        scripts.append(Path(HOMEPATH, 'support', 'removeTK.py'))
     scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
 
     if is_win or is_cygwin:
