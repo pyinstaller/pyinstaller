@@ -9,4 +9,5 @@
     'django':     ['support/rthooks/pyi_rth_django.py'],
     'Image':      ['support/rthooks/pyi_rth_Image.py'],
     'PIL.Image':  ['support/rthooks/pyi_rth_PIL_Image.py'],
+    'Tkinter':    ['support/rthooks/pyi_rth_Tkinter.py'],
 }

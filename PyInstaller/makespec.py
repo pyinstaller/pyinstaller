@@ -111,9 +111,8 @@ def quote_win_filepath( path ):
 # Same thing could be done for other paths too.
 path_conversions = (
     (HOMEPATH, "HOMEPATH"),
-    # For useUnicode.py and useTk.py
+    # For useUnicode.py
     (CONFIGDIR, "CONFIGDIR"),
-    # Add Tk etc?
     )
 
 def make_variable_path(filename, conversions = path_conversions):
@@ -302,12 +301,9 @@ def main(scripts, configfilename=None, name=None, tk=0, onefile=0,
     if tk:
         d['tktree'] = "TkTree(),"
         if onefile:
-            scripts.insert(0, Path(CONFIGDIR, 'support', 'useTK.py'))
             scripts.insert(0, Path(HOMEPATH, 'support', 'unpackTK.py'))
             scripts.append(Path(HOMEPATH, 'support', 'removeTK.py'))
             d['tkpkg'] = "TkPKG(),"
-        else:
-            scripts.insert(0, Path(CONFIGDIR, 'support', 'useTK.py'))
     scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
 
     if is_win or is_cygwin:
