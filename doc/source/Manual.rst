@@ -186,9 +186,6 @@ What to bundle, where to search:
     the `hookspath`, see `Analysis`_ below. This option may be given
     several times.
 
--K, --tk
-    include TCL/TK in the deployment
-
 -a, --ascii
     do NOT include unicode encodings (default: included if
     available)
@@ -788,7 +785,7 @@ PKG
 
 Generally, you will not need to create your own ``PKGs``, as the ``EXE`` will do it for
 you. This is one way to include read-only data in a single-file deployment,
-however. A single-file deployment including TK support will use this technique.
+however.
 
 ::
 

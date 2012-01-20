@@ -170,8 +170,6 @@ def __add_options(parser):
     g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
                  help="additional path to search for hooks "
                       "(may be given several times)")    
-    g.add_option("-K", "--tk", action="store_true",
-                 help="include TCL/TK in the deployment")
     g.add_option("-a", "--ascii", action="store_true",
                  help="do NOT include unicode encodings "
                       "(default: included if available)")
@@ -229,7 +227,7 @@ def __add_options(parser):
                       "multiple times.")
 
 
-def main(scripts, configfilename=None, name=None, tk=0, onefile=0,
+def main(scripts, configfilename=None, name=None, onefile=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
          ascii=0, workdir=None, pathex=[], version_file=None,
          icon_file=None, manifest=None, resources=[], crypt=None,
