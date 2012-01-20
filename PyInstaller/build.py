@@ -1406,26 +1406,12 @@ class Tree(Target, TOC):
 
 
 def TkTree():
-    if is_darwin:
-        tcldir = "Tcl.framework"
-        tkdir = "Tk.framework"
-    else:
-        tcldir = "tcl"
-        tkdir = "tk"
-
-    tclroot = config['TCL_root']
-    tclnm = os.path.join('_MEI', tcldir)
-    tkroot = config['TK_root']
-    tknm = os.path.join('_MEI', tkdir)
-    tcltree = Tree(tclroot, tclnm,
-                   excludes=['demos', 'encoding', '*.lib', 'tclConfig.sh'])
-    tktree = Tree(tkroot, tknm,
-                  excludes=['demos', 'encoding', '*.lib', 'tkConfig.sh'])
-    return tcltree + tktree
-
+    raise SystemExit('TkTree has been removed in PyInstaller 2.0. '
+                     'Please update your spec-file.')
 
 def TkPKG():
-    return PKG(TkTree(), name='tk.pkg')
+    raise SystemExit('TkPKG has been removed in PyInstaller 2.0. '
+                     'Please update your spec-file.')
 
 
 def build(spec, buildpath):
