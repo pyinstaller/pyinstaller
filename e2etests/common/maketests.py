@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
+import optparse
+import shutil
 
 try:
     import PyInstaller
@@ -53,8 +55,11 @@ dist_pattern_file = os.path.join(out_pattern, 'dist', 'hanoi')
 
 script_name = os.path.abspath(os.path.join(__file__, '..', 'hanoi.py'))
 
-def build_test(cnt, bldconfig, *options):
+def build_test(cnt, bldconfig, *options, **kwopts):
     options = filter(None, options)
+    if kwopts['clean'] and os.path.isdir(out_pattern % cnt):
+        # remove/clean the working directory
+        shutil.rmtree(out_pattern % cnt)
     compat.exec_python_rc(makespec, script_name,
                           '--out', out_pattern % cnt, bldconfig, *options)
     compat.exec_python_rc(build, os.path.join(out_pattern % cnt, 'hanoi.spec'),
@@ -68,10 +73,17 @@ def build_test(cnt, bldconfig, *options):
         else:
             os.symlink(dist_pattern_file % cnt, 'hanoi%d' % cnt)
 
+parser = optparse.OptionParser('%prog [NUM ...]')
+parser.add_option('--clean', action='store_true',
+                  help=('Perform clean builds '
+                        '(remove target dirs prior to building).'))
+opts, args = parser.parse_args()
+args = map(int, args)
 i = 1
 for bldconfig in ('--onedir', '--onefile'):
     for console in consoleopts:
         for dbg in ('--debug', ''):
             for stripopt in stripopts:
-                build_test(i, bldconfig, console, dbg, stripopt)
+                if not args or i in args:
+                    build_test(i, bldconfig, console, dbg, stripopt, **opts.__dict__)
                 i += 1

@@ -39,6 +39,8 @@
 /buildtests/libraries/tinysample.png
 /buildtests/libraries/test_xml.spec
 
+/e2etests/common/hanoi[1-9]
+
 # /doc/
 /doc/*.1
 
