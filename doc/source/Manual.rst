@@ -733,6 +733,10 @@ Analysis
 ``pathex``
     an optional list of paths to be searched before sys.path.
 
+``hiddenimports``
+    an optional list of additional (hidden) modules to include. Please
+    refer to `Listing Hidden Imports`_ for details.
+
 ``hookspath``
     an optional list of additional paths to search for hooks
     (hook-modules). Please refer to `Listing Hidden Imports`_ for details.
