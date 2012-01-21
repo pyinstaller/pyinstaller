@@ -41,7 +41,7 @@ exe = EXE(pyz,
           strip=%(strip)s,
           upx=%(upx)s,
           console=%(console)s %(exe_options)s)
-""" # pathex scripts exename debug console distdir
+"""
 
 onedirtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
@@ -64,7 +64,7 @@ coll = COLLECT(exe,
                strip=%(strip)s,
                upx=%(upx)s,
                name=os.path.join(%(distdir)s, '%(name)s'))
-""" # scripts pathex, exename, debug, console distdir name
+"""
 
 comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
@@ -92,15 +92,15 @@ coll = COLLECT(exe, dll,
                strip=%(strip)s,
                upx=%(upx)s,
                name=os.path.join(%(distdir)s, '%(name)s'))
-""" # scripts pathex, exename, debug, console distdir name
+"""
 
 bundleexetmplt = """app = BUNDLE(exe,
              name=os.path.join(%(distdir)s, '%(exename)s.app'))
-""" # distdir exename
+"""
 
 bundletmplt = """app = BUNDLE(coll,
              name=os.path.join(%(distdir)s, '%(name)s.app'))
-""" # distdir name
+"""
 
 
 def quote_win_filepath( path ):
