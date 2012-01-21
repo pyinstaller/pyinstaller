@@ -30,7 +30,7 @@ a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hookspath=%(hookspath)r)
 pyz = PYZ(a.pure)
-exe = EXE(%(tkpkg)s pyz,
+exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
@@ -40,7 +40,7 @@ exe = EXE(%(tkpkg)s pyz,
           strip=%(strip)s,
           upx=%(upx)s,
           console=%(console)s %(exe_options)s)
-""" # pathex scripts exename tkpkg debug console distdir
+""" # pathex scripts exename debug console distdir
 
 onedirtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
@@ -55,14 +55,14 @@ exe = EXE(pyz,
           strip=%(strip)s,
           upx=%(upx)s,
           console=%(console)s %(exe_options)s)
-coll = COLLECT(%(tktree)s exe,
+coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
                a.datas,
                strip=%(strip)s,
                upx=%(upx)s,
                name=os.path.join(%(distdir)s, '%(name)s'))
-""" # scripts pathex, exename, debug, console tktree distdir name
+""" # scripts pathex, exename, debug, console distdir name
 
 comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
@@ -89,7 +89,7 @@ coll = COLLECT(exe, dll,
                strip=%(strip)s,
                upx=%(upx)s,
                name=os.path.join(%(distdir)s, '%(name)s'))
-""" # scripts pathex, exename, debug, console tktree distdir name
+""" # scripts pathex, exename, debug, console distdir name
 
 bundleexetmplt = """app = BUNDLE(exe,
              name=os.path.join(%(distdir)s, '%(exename)s.app'))
@@ -111,9 +111,8 @@ def quote_win_filepath( path ):
 # Same thing could be done for other paths too.
 path_conversions = (
     (HOMEPATH, "HOMEPATH"),
-    # For useUnicode.py and useTk.py
+    # For useUnicode.py
     (CONFIGDIR, "CONFIGDIR"),
-    # Add Tk etc?
     )
 
 def make_variable_path(filename, conversions = path_conversions):
@@ -171,8 +170,6 @@ def __add_options(parser):
     g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
                  help="additional path to search for hooks "
                       "(may be given several times)")    
-    g.add_option("-K", "--tk", action="store_true",
-                 help="include TCL/TK in the deployment")
     g.add_option("-a", "--ascii", action="store_true",
                  help="do NOT include unicode encodings "
                       "(default: included if available)")
@@ -230,7 +227,7 @@ def __add_options(parser):
                       "multiple times.")
 
 
-def main(scripts, configfilename=None, name=None, tk=0, onefile=0,
+def main(scripts, configfilename=None, name=None, onefile=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
          ascii=0, workdir=None, pathex=[], version_file=None,
          icon_file=None, manifest=None, resources=[], crypt=None,
@@ -283,9 +280,7 @@ def main(scripts, configfilename=None, name=None, tk=0, onefile=0,
     if not ascii and config['hasUnicode']:
         scripts.insert(0, os.path.join(CONFIGDIR, 'support', 'useUnicode.py'))
     scripts = map(Path, scripts)
-    d = {'tktree':'',
-         'tkpkg' :'',
-         'scripts':scripts,
+    d = {'scripts':scripts,
          'pathex' :pathex,
          'hookspath': hookspath,
          #'exename': '',
@@ -299,15 +294,6 @@ def main(scripts, configfilename=None, name=None, tk=0, onefile=0,
          'crypted': crypt is not None,
          'console': console or debug,
          'exe_options': exe_options}
-    if tk:
-        d['tktree'] = "TkTree(),"
-        if onefile:
-            scripts.insert(0, Path(CONFIGDIR, 'support', 'useTK.py'))
-            scripts.insert(0, Path(HOMEPATH, 'support', 'unpackTK.py'))
-            scripts.append(Path(HOMEPATH, 'support', 'removeTK.py'))
-            d['tkpkg'] = "TkPKG(),"
-        else:
-            scripts.insert(0, Path(CONFIGDIR, 'support', 'useTK.py'))
     scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
 
     if is_win or is_cygwin:

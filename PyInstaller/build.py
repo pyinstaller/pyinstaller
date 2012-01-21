@@ -1406,19 +1406,14 @@ class Tree(Target, TOC):
 
 
 def TkTree():
-    tclroot = config['TCL_root']
-    tclnm = os.path.join('_MEI', config['TCL_dirname'])
-    tkroot = config['TK_root']
-    tknm = os.path.join('_MEI', config['TK_dirname'])
-    tcltree = Tree(tclroot, tclnm,
-                   excludes=['demos', 'encoding', '*.lib', 'tclConfig.sh'])
-    tktree = Tree(tkroot, tknm,
-                  excludes=['demos', 'encoding', '*.lib', 'tkConfig.sh'])
-    return tcltree + tktree
-
+    raise SystemExit('TkTree has been removed in PyInstaller 2.0. '
+                     'Please update your spec-file. See '
+                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
 
 def TkPKG():
-    return PKG(TkTree(), name='tk.pkg')
+    raise SystemExit('TkPKG has been removed in PyInstaller 2.0. '
+                     'Please update your spec-file. See '
+                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
 
 
 def build(spec, buildpath):

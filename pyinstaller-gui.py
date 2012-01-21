@@ -40,11 +40,6 @@ class PyInstallerGUI:
         self.filetype = IntVar()
         self.filetypecheck["variable"] = self.filetype
         self.filetypecheck.pack()
-        self.tkcheck = Checkbutton(fr2)
-        self.tkcheck["text"] = "Include Tcl/Tk                         "
-        self.tk = IntVar()
-        self.tkcheck["variable"] = self.tk
-        self.tkcheck.pack()
         self.asciicheck = Checkbutton(fr2)
         self.asciicheck["text"] = "Do NOT include decodings"
         self.ascii = IntVar()
@@ -79,8 +74,6 @@ class PyInstallerGUI:
         commands = ['python', 'pyinstaller.py']
         if self.filetype.get():
             commands.append('--onefile')
-        if self.tk.get():
-            commands.append('--tk')
         if self.ascii.get():
             commands.append('--ascii')
         if self.debug.get():

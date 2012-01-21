@@ -55,7 +55,7 @@ script_name = os.path.abspath(os.path.join(__file__, '..', 'hanoi.py'))
 
 def build_test(cnt, bldconfig, *options):
     options = filter(None, options)
-    compat.exec_python_rc(makespec, script_name, '--tk',
+    compat.exec_python_rc(makespec, script_name,
                           '--out', out_pattern % cnt, bldconfig, *options)
     compat.exec_python_rc(build, os.path.join(out_pattern % cnt, 'hanoi.spec'),
                           '--noconfirm')
