@@ -29,7 +29,10 @@ def hook(mod):
     if txt.find('_xmlplus') > -1:
         if txt.endswith(".py"):
             txt = txt + 'c'
-        co = marshal.loads(open(txt, 'rb').read()[8:])
+        try:
+            co = marshal.loads(open(txt, 'rb').read()[8:])
+        except IOError:
+            co = compile(open(txt[:-1], 'rU').read(), txt, 'exec')
         old_pth = mod.__path__[:]
         mod.__init__('xml', txt, co)
         mod.__path__.extend(old_pth)
