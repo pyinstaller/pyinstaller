@@ -37,19 +37,6 @@ import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.configure')
 
 
-def _write_textfile(filename, text):
-    """
-    Write `text` into file `filename`. If the target directory does
-    not exist, create it.
-    """
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-    outf = open(filename, 'w')
-    outf.write(text)
-    outf.close()
-
-
 def find_EXE_dependencies(config):
     logger.info("Computing EXE_dependencies")
     python = sys.executable
