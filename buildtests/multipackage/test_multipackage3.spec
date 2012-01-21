@@ -5,9 +5,11 @@ print "TESTING MULTIPROCESS FEATURE: file A (onedir pack) depends on file B (one
 __testname__ = 'test_multipackage3'
 __testdep__ = 'multipackage3_B'
 
-a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(CONFIGDIR,'support', 'useUnicode.py'), __testname__ + '.py'],
+a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
+              __testname__ + '.py'],
              pathex=['.'])
-b = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(CONFIGDIR,'support', 'useUnicode.py'), __testdep__ + '.py'],
+b = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
+              __testdep__ + '.py'],
              pathex=['.'])
 
 MERGE((b, __testdep__, os.path.join(__testdep__ + '.exe')),

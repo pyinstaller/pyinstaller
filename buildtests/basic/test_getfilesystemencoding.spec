@@ -3,7 +3,6 @@
 __testname__ = 'test_getfilesystemencoding'
 
 a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'),
-              os.path.join(CONFIGDIR, 'support/useUnicode.py'),
               __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)

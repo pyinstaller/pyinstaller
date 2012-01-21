@@ -3,7 +3,6 @@
 __testname__ = 'test_pycrypto'
 
 a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), 
-              os.path.join(CONFIGDIR,'support', 'useUnicode.py'), 
               __testname__ + '.py'])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
