@@ -206,99 +206,82 @@ def runtests(tests, verbose=False):
     tests.sort()
     counter = {"passed": [], "failed": [], "skipped": []}
 
-    # run configure phase only once
+    # run configure phase.
     compat.exec_python_rc(os.path.join(HOMEPATH, 'utils', 'Configure.py'))
 
-    # execute tests
+    # execute test
     testbasedir = os.getcwdu()
-    for _, test in tests:
-        test = os.path.splitext(test)[0]
-        if not os.path.exists(test + '.py'):
-            _msg("Testfile not found:", test + '.py', short=1)
-            counter["failed"].append(test)
-            continue
-        testdir, testfile = os.path.split(test)
-        if not testdir:
-            testdir = '.'
-        elif not os.path.exists(testdir):
-            os.makedirs(testdir)
-        os.chdir(testdir)  # go to testdir
-        if test in SkipChecker.MIN_VERSION_OR_OS and not SkipChecker.MIN_VERSION_OR_OS[test]:
-            counter["skipped"].append(test)
-            os.chdir(testbasedir)  # go back from testdir
-            continue
-        if test in SkipChecker.DEPENDENCIES:
-            failed = False
-            for mod in SkipChecker.DEPENDENCIES[test]:
-                res = compat.exec_python_rc('-c', "import %s" % mod)
-                if res != 0:
-                    failed = True
-                    break
-            if failed:
-                if verbose:
-                    print "Skipping test because module %s is missing" % mod
-                counter["skipped"].append(test)
-                os.chdir(testbasedir)  # go back from testdir
-                continue
-        _msg("BUILDING TEST", test)
 
-        # use pyinstaller.py for building tests
-        testfile_spec = testfile + '.spec'
-        if not os.path.exists(testfile + '.spec'):
-            # .spec file does not exist and it has to be generated
-            # for main script
-            testfile_spec = testfile + '.py'
+    test = os.path.splitext(tests[0][1])[0]
+    if not os.path.exists(test + '.py'):
+        _msg("Testfile not found:", test + '.py', short=1)
+        counter["failed"].append(test)
+        return False
+    testdir, testfile = os.path.split(test)
+    if not testdir:
+        testdir = '.'
+    elif not os.path.exists(testdir):
+        os.makedirs(testdir)
+    os.chdir(testdir)  # go to testdir
+    _msg("BUILDING TEST", test)
 
-        res = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
-                          testfile_spec, *OPTS)
-        if res == 0:
-            files = glob.glob(os.path.join('dist', testfile + '*'))
-            for exe in files:
-                exe = os.path.splitext(exe)[0]
-                res_tmp = test_exe(exe[5:], testdir)
-                res = res or res_tmp
+    # use pyinstaller.py for building tests
+    testfile_spec = testfile + '.spec'
+    if not os.path.exists(testfile + '.spec'):
+        # .spec file does not exist and it has to be generated
+        # for main script
+        testfile_spec = testfile + '.py'
 
-        # compare log files (now used only by multipackage tests)
-        logsfn = glob.glob(testfile + '.toc')
-        # other main scritps do not start with 'test_'
-        logsfn += glob.glob(testfile.split('_', 1)[1] + '_?.toc')
-        for logfn in logsfn:
-            _msg("EXECUTING MATCHING", logfn)
-            tmpname = os.path.splitext(logfn)[0]
-            prog = find_exepath(tmpname)
-            if prog is None:
-                prog = find_exepath(tmpname, os.path.join('dist', testfile))
-            fname_list = compat.exec_python(
-                os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
-                '-b', '-r', prog)
-            fname_list = eval(fname_list)
-            pattern_list = eval(open(logfn, 'rU').read())
-            count = 0
-            for pattern in pattern_list:
-                found = False
-                for fname in fname_list:
-                    if re.match(pattern, fname):
-                        count += 1
-                        found = True
-                        if verbose:
-                            print "MATCH: %s --> %s" % (pattern, fname)
-                        break
-                if not found:
+    res = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
+                      testfile_spec, *OPTS)
+    if res == 0:
+        files = glob.glob(os.path.join('dist', testfile + '*'))
+        for exe in files:
+            exe = os.path.splitext(exe)[0]
+            res_tmp = test_exe(exe[5:], testdir)
+            res = res or res_tmp
+
+    # compare log files (now used only by multipackage tests)
+    logsfn = glob.glob(testfile + '.toc')
+    # other main scritps do not start with 'test_'
+    logsfn += glob.glob(testfile.split('_', 1)[1] + '_?.toc')
+    for logfn in logsfn:
+        _msg("EXECUTING MATCHING", logfn)
+        tmpname = os.path.splitext(logfn)[0]
+        prog = find_exepath(tmpname)
+        if prog is None:
+            prog = find_exepath(tmpname, os.path.join('dist', testfile))
+        fname_list = compat.exec_python(
+            os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
+            '-b', '-r', prog)
+        fname_list = eval(fname_list)
+        pattern_list = eval(open(logfn, 'rU').read())
+        count = 0
+        for pattern in pattern_list:
+            found = False
+            for fname in fname_list:
+                if re.match(pattern, fname):
+                    count += 1
+                    found = True
                     if verbose:
-                        print "MISSING: %s" % pattern
-            if count < len(pattern_list):
-                res = 1
-                print "Matching FAILED!"
-            else:
-                print "Matching SUCCESS!"
-
-        if res == 0:
-            _msg("FINISHING TEST", test, short=1)
-            counter["passed"].append(test)
+                        print "MATCH: %s --> %s" % (pattern, fname)
+                    break
+            if not found:
+                if verbose:
+                    print "MISSING: %s" % pattern
+        if count < len(pattern_list):
+            res = 1
+            print "Matching FAILED!"
         else:
-            _msg("TEST", test, "FAILED", short=1, sep="!!")
-            counter["failed"].append(test)
-        os.chdir(testbasedir)  # go back from testdir
+            print "Matching SUCCESS!"
+
+    if res == 0:
+        _msg("FINISHING TEST", test, short=1)
+        counter["passed"].append(test)
+    else:
+        _msg("TEST", test, "FAILED", short=1, sep="!!")
+        counter["failed"].append(test)
+    os.chdir(testbasedir)  # go back from testdir
     pprint.pprint(counter)
 
 
