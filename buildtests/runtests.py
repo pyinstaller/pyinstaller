@@ -46,35 +46,81 @@ from PyInstaller import is_py23, is_py25, is_py26, is_win, is_darwin
 from PyInstaller import compat
 from PyInstaller.lib import unittest2 as unittest
 
-MIN_VERSION_OR_OS = {
-    'basic/test_time': is_py23,
-    'basic/test_celementtree': is_py25,
-    'basic/test_email2': is_py23,
-    # On Mac DYLD_LIBRARY_PATH is not used.
-    'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
-    'import/test_relative_import': is_py25,
-    'import/test_relative_import2': is_py26,
-    'import/test_relative_import3': is_py25,
-    'libraries/test_enchant': is_win,
-}
 
-DEPENDENCIES = {
-    'basic/test_ctypes': ['ctypes'],
-    'basic/test_nestedlaunch1': ['ctypes'],
-    'libraries/test_enchant': ['enchant'],
-    'libraries/test_Image': ['Image'],
-    'libraries/test_numpy': ['numpy'],
-    'libraries/test_PIL': ['PIL'],
-    'libraries/test_PIL2': ['PIL'],
-    'libraries/test_pycrypto': ['Crypto'],
-    'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
-    'libraries/test_wx': ['wx'],
-    'import/test_ctypes_cdll_c': ['ctypes'],
-    'import/test_ctypes_cdll_c2': ['ctypes'],
-    'import/test_zipimport1': ['pkg_resources'],
-    'import/test_zipimport2': ['pkg_resources', 'setuptools'],
-    'interactive/test_pygame': ['pygame'],
-}
+class SkipChecker(object):
+    """
+    Check conditions if a test case should be skipped.
+    """
+    MIN_VERSION_OR_OS = {
+        'basic/test_time': is_py23,
+        'basic/test_celementtree': is_py25,
+        'basic/test_email2': is_py23,
+        # On Mac DYLD_LIBRARY_PATH is not used.
+        'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
+        'import/test_relative_import': is_py25,
+        'import/test_relative_import2': is_py26,
+        'import/test_relative_import3': is_py25,
+        'libraries/test_enchant': is_win,
+    }
+
+    DEPENDENCIES = {
+        'basic/test_ctypes': ['ctypes'],
+        'basic/test_nestedlaunch1': ['ctypes'],
+        'libraries/test_enchant': ['enchant'],
+        'libraries/test_Image': ['Image'],
+        'libraries/test_numpy': ['numpy'],
+        'libraries/test_PIL': ['PIL'],
+        'libraries/test_PIL2': ['PIL'],
+        'libraries/test_pycrypto': ['Crypto'],
+        'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
+        'libraries/test_wx': ['wx'],
+        'import/test_ctypes_cdll_c': ['ctypes'],
+        'import/test_ctypes_cdll_c2': ['ctypes'],
+        'import/test_zipimport1': ['pkg_resources'],
+        'import/test_zipimport2': ['pkg_resources', 'setuptools'],
+        'interactive/test_pygame': ['pygame'],
+    }
+
+    def _check_python_and_os(self, test_name):
+        """
+        Return True if test name is not in the list or Python or OS
+        version is not met.
+        """
+        if (test_name in SkipChecker.MIN_VERSION_OR_OS and
+                not SkipChecker.MIN_VERSION_OR_OS[test_name]):
+            return False
+        return True
+
+    def _check_dependencies(self, test_name):
+        """
+        Return name of missing required module, if any. None means
+        no module is missing.
+        """
+        if test_name in SkipChecker.DEPENDENCIES:
+            for mod_name in SkipChecker.DEPENDENCIES[test_name]:
+                retcode = compat.exec_python_rc('-c', "import %s" % mod_name)
+                if retcode != 0:
+                    return mod_name
+        return None
+
+    def check(self, test_name):
+        """
+        Check test requirements if they are any specified.
+        
+        Return tupple (True/False, 'Reason for skipping.').
+        True if all requirements are met. Then test case may
+        be executed.
+        """
+        if not self._check_python_and_os(test_name):
+            return (False, 'Required another Python version or OS.') 
+
+        required_module = self._check_dependencies(test_name)
+
+        if required_module is not None:
+            return (False, "Module %s is missing." % required_module)
+        else:
+            return (True, 'Requirements met.')
+
 
 NO_SPEC_FILE = [
     'basic/test_absolute_ld_library_path',
@@ -184,13 +230,13 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
         elif not os.path.exists(testdir):
             os.makedirs(testdir)
         os.chdir(testdir)  # go to testdir
-        if test in MIN_VERSION_OR_OS and not MIN_VERSION_OR_OS[test]:
+        if test in SkipChecker.MIN_VERSION_OR_OS and not SkipChecker.MIN_VERSION_OR_OS[test]:
             counter["skipped"].append(test)
             os.chdir(testbasedir)  # go back from testdir
             continue
-        if test in DEPENDENCIES:
+        if test in SkipChecker.DEPENDENCIES:
             failed = False
-            for mod in DEPENDENCIES[test]:
+            for mod in SkipChecker.DEPENDENCIES[test]:
                 res = compat.exec_python_rc('-c', "import %s" % mod)
                 if res != 0:
                     failed = True
@@ -367,17 +413,21 @@ class BasicTestCase(GenericTestCase):
     pass
 
 
-@unittest.skip('Skip reason')
-def generic_test_function(test_file):
-    runtests([test_file], run_executable=True, verbose=True)
+def generic_test_function(test_name):
+    # Skip test case if test requirement are not met.
+    s = SkipChecker()
+    req_met, msg = s.check(test_name)
+    if not req_met:
+        raise unittest.SkipTest(msg)
+    runtests([test_name + '.py'], run_executable=True, verbose=True)
 
 
 if __name__ == '__main__':
     #main()
-    for case in ['test_1']:
+    for case in ['test_pygame']:
         testname = case
         testfunc = functools.partial(generic_test_function,
-            os.path.join('basic', case + '.py'))
+            os.path.join('interactive', case))
         testfunc.__doc__ = testname
         setattr(BasicTestCase, testname, testfunc)
     unittest.main(verbosity=2)
