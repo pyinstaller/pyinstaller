@@ -321,7 +321,8 @@ class Target:
 
 
 class Analysis(Target):
-    def __init__(self, scripts=None, pathex=None, hookspath=None, excludes=None):
+    def __init__(self, scripts=None, pathex=None, hiddenimports=None,
+                 hookspath=None, excludes=None):
         Target.__init__(self)
         self.inputs = scripts
         for script in scripts:
@@ -330,6 +331,7 @@ class Analysis(Target):
         self.pathex = []
         if pathex:
             self.pathex = [absnormpath(path) for path in pathex]
+        self.hiddenimports = hiddenimports or []
         self.hookspath = hookspath
         self.excludes = excludes
         self.scripts = TOC()
@@ -350,6 +352,7 @@ class Analysis(Target):
             ('binaries', _check_guts_toc_mtime),
             ('zipfiles', _check_guts_toc_mtime),
             ('datas', _check_guts_toc_mtime),
+            ('hiddenimports', _check_guts_eq),
             )
 
     def check_guts(self, last_build):
@@ -364,12 +367,13 @@ class Analysis(Target):
         data = Target.get_guts(self, last_build)
         if not data:
             return True
-        scripts, pure, binaries, zipfiles, datas = data[-5:]
+        scripts, pure, binaries, zipfiles, datas, hiddenimports = data[-6:]
         self.scripts = TOC(scripts)
         self.pure = TOC(pure)
         self.binaries = TOC(binaries)
         self.zipfiles = TOC(zipfiles)
         self.datas = TOC(datas)
+        self.hiddenimports = hiddenimports
         return False
 
     def assemble(self):
@@ -403,6 +407,17 @@ class Analysis(Target):
             importTracker.analyze_script(script)
             scripts.append((pynms[i], script, 'PYSOURCE'))
         PyInstaller.__pathex__ = []
+
+        # analyze the script's hidden imports
+        for modnm in self.hiddenimports:
+            if modnm in importTracker.modules:
+                logger.info("Hidden import %r has been found otherwise", modnm)
+                continue
+            logger.info("Analyzing hidden import %r", modnm)
+            importTracker.analyze_one(modnm)
+            if not importTracker.modules.has_key(modnm):
+                logger.error("Hidden import %r not found", modnm)
+
         ###################################################
         # Fills pure, binaries and rthookcs lists to TOC
         pure = []     # pure python modules
@@ -412,7 +427,6 @@ class Analysis(Target):
         rthooks = []  # rthooks if needed
 
         for modnm, mod in importTracker.modules.items():
-
             # FIXME: why can we have a mod == None here?
             if mod is None:
                 continue

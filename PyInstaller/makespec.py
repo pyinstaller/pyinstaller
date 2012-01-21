@@ -28,6 +28,7 @@ from PyInstaller import is_win, is_cygwin, is_darwin
 onefiletmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
+             hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
@@ -40,11 +41,12 @@ exe = EXE(pyz,
           strip=%(strip)s,
           upx=%(upx)s,
           console=%(console)s %(exe_options)s)
-""" # pathex scripts exename debug console distdir
+"""
 
 onedirtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
+             hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
@@ -62,11 +64,12 @@ coll = COLLECT(exe,
                strip=%(strip)s,
                upx=%(upx)s,
                name=os.path.join(%(distdir)s, '%(name)s'))
-""" # scripts pathex, exename, debug, console distdir name
+"""
 
 comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
+             hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
@@ -89,15 +92,15 @@ coll = COLLECT(exe, dll,
                strip=%(strip)s,
                upx=%(upx)s,
                name=os.path.join(%(distdir)s, '%(name)s'))
-""" # scripts pathex, exename, debug, console distdir name
+"""
 
 bundleexetmplt = """app = BUNDLE(exe,
              name=os.path.join(%(distdir)s, '%(exename)s.app'))
-""" # distdir exename
+"""
 
 bundletmplt = """app = BUNDLE(coll,
              name=os.path.join(%(distdir)s, '%(name)s.app'))
-""" # distdir name
+"""
 
 
 def quote_win_filepath( path ):
@@ -167,6 +170,11 @@ def __add_options(parser):
                       "Multiple directories are allowed, separating them "
                       "with %s, or using this option multiple times"
                       % repr(os.pathsep))
+    g.add_option('--hidden-import',
+                 action='append',
+                 metavar="MODULENAME", dest='hiddenimports',
+                 help='import hidden in the script(s). This option can '
+                 'be used multiple times.')
     g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
                  help="additional path to search for hooks "
                       "(may be given several times)")    
@@ -231,7 +239,7 @@ def main(scripts, configfilename=None, name=None, onefile=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
          ascii=0, workdir=None, pathex=[], version_file=None,
          icon_file=None, manifest=None, resources=[], crypt=None,
-         hookspath=None, **kwargs):
+         hiddenimports=None, hookspath=None, **kwargs):
 
     try:
         config = eval(open(configfilename, 'rU').read())
@@ -277,11 +285,13 @@ def main(scripts, configfilename=None, name=None, onefile=0,
     if resources:
         resources = map(quote_win_filepath, resources)
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
+    hiddenimports = hiddenimports or []
     if not ascii and config['hasUnicode']:
         scripts.insert(0, os.path.join(CONFIGDIR, 'support', 'useUnicode.py'))
     scripts = map(Path, scripts)
     d = {'scripts':scripts,
          'pathex' :pathex,
+         'hiddenimports': hiddenimports,
          'hookspath': hookspath,
          #'exename': '',
          'name': name,
