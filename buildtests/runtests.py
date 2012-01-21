@@ -185,10 +185,10 @@ def _msg(*args, **kw):
         print
 
 
-def runtests(alltests, filters=None, run_executable=1, verbose=False):
+def runtests(tests, verbose=False):
     # Use path separator '/' even on windows for test names.
     if is_win:
-        alltests = [x.replace('\\', '/') for x in alltests]
+        tests = [x.replace('\\', '/') for x in tests]
 
     info = "Executing PyInstaller tests in: %s" % os.getcwd()
     print "*" * min(80, len(info))
@@ -201,13 +201,6 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     build_python.write(sys.executable + "\n")
     build_python.write('debug=%s' % __debug__ + '\n')
     build_python.close()
-
-    if not filters:
-        tests = alltests
-    else:
-        tests = []
-        for part in filters:
-            tests += [t for t in alltests if part in t and t not in tests]
 
     tests = [(len(x), x) for x in tests]
     tests.sort()
@@ -258,7 +251,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
 
         res = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
                           testfile_spec, *OPTS)
-        if res == 0 and run_executable:
+        if res == 0:
             files = glob.glob(os.path.join('dist', testfile + '*'))
             for exe in files:
                 exe = os.path.splitext(exe)[0]
@@ -365,12 +358,6 @@ def main():
                       help='Clean up generated files')
     parser.add_option('-i', '--interactive-tests', action='store_true',
                       help='Run interactive tests (default: run normal tests)')
-    parser.add_option('-n', '--no-run', action='store_true',
-                      help='Do not run the built executables. '
-                           'Useful for cross builds.')
-    #parser.add_option('-C', '--configfile',
-                      #default=DEFAULT_CONFIGFILE,
-                      #help='Name of generated configfile (default: %default)')
     parser.add_option('-v', '--verbose',
                       action='store_true',
                       default=False,
@@ -399,7 +386,7 @@ def main():
         tests = detect_tests(TEST_DIRS)
 
     clean()
-    runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)
+    runtests(tests, verbose=opts.verbose)
 
 
 class GenericTestCase(unittest.TestCase):
@@ -419,15 +406,16 @@ def generic_test_function(test_name):
     req_met, msg = s.check(test_name)
     if not req_met:
         raise unittest.SkipTest(msg)
-    runtests([test_name + '.py'], run_executable=True, verbose=True)
+    # Create a build and run it.
+    runtests([test_name + '.py'], verbose=True)
 
 
 if __name__ == '__main__':
     #main()
-    for case in ['test_pygame']:
+    for case in ['test_1']:
         testname = case
         testfunc = functools.partial(generic_test_function,
-            os.path.join('interactive', case))
+            os.path.join('basic', case))
         testfunc.__doc__ = testname
         setattr(BasicTestCase, testname, testfunc)
     unittest.main(verbosity=2)
