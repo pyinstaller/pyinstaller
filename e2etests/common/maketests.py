@@ -18,6 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
+import optparse
 
 try:
     import PyInstaller
@@ -68,10 +69,14 @@ def build_test(cnt, bldconfig, *options):
         else:
             os.symlink(dist_pattern_file % cnt, 'hanoi%d' % cnt)
 
+parser = optparse.OptionParser('%prog [NUM ...]')
+opts, args = parser.parse_args()
+args = map(int, args)
 i = 1
 for bldconfig in ('--onedir', '--onefile'):
     for console in consoleopts:
         for dbg in ('--debug', ''):
             for stripopt in stripopts:
-                build_test(i, bldconfig, console, dbg, stripopt)
+                if not args or i in args:
+                    build_test(i, bldconfig, console, dbg, stripopt, **opts.__dict__)
                 i += 1
