@@ -185,12 +185,23 @@ def _msg(*args, **kw):
         print
 
 
-def runtests(tests, verbose=False):
+def run_configure(verbose=False):
+    """
+    Run configure phase. The same configuration can be used
+    for all tests and tests take then less time.
+    """
+    log_level = 'DEBUG' if verbose else 'WARN'
+    # run configure phase.
+    compat.exec_python_rc(os.path.join(HOMEPATH, 'utils', 'Configure.py'),
+            '--log-level=%s' % log_level)
+
+
+def runtests(test_name, verbose=False):
     # Use path separator '/' even on windows for test names.
     if is_win:
-        tests = [x.replace('\\', '/') for x in tests]
+        test_name = [x.replace('\\', '/') for x in test_name]
 
-    info = "Executing PyInstaller tests in: %s" % os.getcwd()
+    info = "Executing PyInstaller test_name in: %s" % os.getcwd()
     print "*" * min(80, len(info))
     print info
     print "*" * min(80, len(info))
@@ -202,17 +213,14 @@ def runtests(tests, verbose=False):
     build_python.write('debug=%s' % __debug__ + '\n')
     build_python.close()
 
-    tests = [(len(x), x) for x in tests]
-    tests.sort()
+    test_name = [(len(x), x) for x in test_name]
+    test_name.sort()
     counter = {"passed": [], "failed": [], "skipped": []}
-
-    # run configure phase.
-    compat.exec_python_rc(os.path.join(HOMEPATH, 'utils', 'Configure.py'))
 
     # execute test
     testbasedir = os.getcwdu()
 
-    test = os.path.splitext(tests[0][1])[0]
+    test = os.path.splitext(test_name[0][1])[0]
     if not os.path.exists(test + '.py'):
         _msg("Testfile not found:", test + '.py', short=1)
         counter["failed"].append(test)
@@ -225,7 +233,7 @@ def runtests(tests, verbose=False):
     os.chdir(testdir)  # go to testdir
     _msg("BUILDING TEST", test)
 
-    # use pyinstaller.py for building tests
+    # use pyinstaller.py for building test_name
     testfile_spec = testfile + '.spec'
     if not os.path.exists(testfile + '.spec'):
         # .spec file does not exist and it has to be generated
@@ -241,7 +249,7 @@ def runtests(tests, verbose=False):
             res_tmp = test_exe(exe[5:], testdir)
             res = res or res_tmp
 
-    # compare log files (now used only by multipackage tests)
+    # compare log files (now used only by multipackage test_name)
     logsfn = glob.glob(testfile + '.toc')
     # other main scritps do not start with 'test_'
     logsfn += glob.glob(testfile.split('_', 1)[1] + '_?.toc')
@@ -395,6 +403,7 @@ def generic_test_function(test_name):
 
 if __name__ == '__main__':
     #main()
+    run_configure()
     for case in ['test_1']:
         testname = case
         testfunc = functools.partial(generic_test_function,
