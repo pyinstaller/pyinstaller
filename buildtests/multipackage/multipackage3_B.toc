@@ -188,7 +188,6 @@
     'struct',
     'archive',
     '_mountzlib',
-    'useUnicode',
     'multipackage3_B',
     '.*ssl.*',
     '.*bz2.*',

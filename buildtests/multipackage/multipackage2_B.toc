@@ -188,6 +188,5 @@
     'struct',
     'archive',
     '_mountzlib',
-    'useUnicode',
     'multipackage2_B',
 ]

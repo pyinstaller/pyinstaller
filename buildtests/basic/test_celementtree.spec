@@ -3,7 +3,7 @@
 __testname__ = 'test_celementtree'
 
 a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
-              os.path.join(CONFIGDIR,'support/useUnicode.py'), __testname__ + '.py'],
+              __testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

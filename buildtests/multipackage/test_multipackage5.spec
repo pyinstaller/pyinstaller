@@ -6,11 +6,14 @@ __testname__ = 'test_multipackage5'
 __testdep__ = 'multipackage5_B'
 __testdep2__ = 'multipackage5_C'
 
-a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(CONFIGDIR,'support', 'useUnicode.py'), __testname__ + '.py'],
+a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
+              __testname__ + '.py'],
              pathex=['.'])
-b = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(CONFIGDIR,'support', 'useUnicode.py'), __testdep__ + '.py'],
+b = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
+              __testdep__ + '.py'],
              pathex=['.'])
-c = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), os.path.join(CONFIGDIR,'support', 'useUnicode.py'), __testdep2__ + '.py'],
+c = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
+              __testdep2__ + '.py'],
              pathex=['.'])
 
 

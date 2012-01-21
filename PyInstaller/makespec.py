@@ -21,7 +21,7 @@
 
 import sys, os
 
-from PyInstaller import HOMEPATH, CONFIGDIR, DEFAULT_CONFIGFILE
+from PyInstaller import HOMEPATH
 from PyInstaller import is_win, is_cygwin, is_darwin
 
 
@@ -114,8 +114,6 @@ def quote_win_filepath( path ):
 # Same thing could be done for other paths too.
 path_conversions = (
     (HOMEPATH, "HOMEPATH"),
-    # For useUnicode.py
-    (CONFIGDIR, "CONFIGDIR"),
     )
 
 def make_variable_path(filename, conversions = path_conversions):
@@ -142,6 +140,17 @@ class Path:
             return repr(self.path)
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
+def get_unicode_modules():
+    modules = []
+    try:
+        import codecs
+        modules = ['codecs']
+        import encodings
+        # `encodings` imprts `codecs`, so only the first is required
+        modules = ['encodings']
+    except ImportError:
+        pass
+    return modules
 
 def __add_options(parser):
     """
@@ -286,8 +295,8 @@ def main(scripts, configfilename=None, name=None, onefile=0,
         resources = map(quote_win_filepath, resources)
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
     hiddenimports = hiddenimports or []
-    if not ascii and config['hasUnicode']:
-        scripts.insert(0, os.path.join(CONFIGDIR, 'support', 'useUnicode.py'))
+    if not ascii:
+        hiddenimports.extend(get_unicode_modules())
     scripts = map(Path, scripts)
     d = {'scripts':scripts,
          'pathex' :pathex,

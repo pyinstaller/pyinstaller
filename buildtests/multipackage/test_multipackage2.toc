@@ -188,7 +188,6 @@
     'struct',
     'archive',
     '_mountzlib',
-    'useUnicode',
     'test_multipackage2',
     '.*multipackage2_B.multipackage2_B\.exe:.*bz2.*',
     '.*multipackage2_B.multipackage2_B\.exe:.*ssl.*',
