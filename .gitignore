@@ -7,10 +7,7 @@
 /AES.pyd
 /AES.so
 /*.bak
-/bincache*
 /build
-/config.dat
-/*.log
 /*.patch
 
 # Temporary vim files
