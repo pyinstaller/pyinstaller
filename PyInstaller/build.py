@@ -283,8 +283,8 @@ class Target:
         # Get a unique number to avoid conflicts between toc objects
         self.invcnum = Target.invcnum
         Target.invcnum += 1
-        self.out = os.path.join(BUILDPATH, 'out%s%d.toc' % (self.__class__.__name__,
-                                                            self.invcnum))
+        self.out = os.path.join(BUILDPATH, 'out%02d-%s.toc' %
+                                (self.invcnum, self.__class__.__name__))
         self.outnm = os.path.basename(self.out)
         self.dependencies = TOC()
 
