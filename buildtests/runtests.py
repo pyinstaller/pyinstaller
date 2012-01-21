@@ -356,20 +356,28 @@ def main():
     runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)
 
 
-class BasicTestCase(unittest.TestCase):
+class GenericTestCase(unittest.TestCase):
+    
+    def setUp(self):
+        # Remove temporary files from previous runs.
+        clean()
+
+
+class BasicTestCase(GenericTestCase):
     pass
 
 
-def test_build(test_name):
-    print test_name
-    assert False
+@unittest.skip('Skip reason')
+def generic_test_function(test_file):
+    runtests([test_file], run_executable=True, verbose=True)
 
 
 if __name__ == '__main__':
     #main()
-    for case in ['case1', 'case2']:
-        testname = 'test_' + case
-        testfunc = functools.partial(test_build, case)
+    for case in ['test_1']:
+        testname = case
+        testfunc = functools.partial(generic_test_function,
+            os.path.join('basic', case + '.py'))
         testfunc.__doc__ = testname
         setattr(BasicTestCase, testname, testfunc)
     unittest.main(verbosity=2)
