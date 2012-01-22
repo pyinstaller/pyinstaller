@@ -166,17 +166,6 @@ def find_PYZ_dependencies(config):
     config['PYZ_dependencies'] = toc.data
 
 
-def __add_options(parser):
-    """
-    Add the `Configure` options to a option-parser instance or a
-    option group.
-    """
-    parser.add_option('-C', '--configfile',
-                      default=DEFAULT_CONFIGFILE,
-                      dest='configfilename',
-                      help='Name of generated configfile (default: %default)')
-
-
 def get_config(upx_dir, **kw):
     if is_darwin and compat.architecture() == '64bit':
         logger.warn('You are running 64-bit Python. Created binary will not'
