@@ -107,7 +107,7 @@ def test_RsrcUpdate(config):
 
 
 def test_UPX(config, upx_dir):
-    logger.info('testing for UPX...')
+    logger.debug('Testing for UPX ...')
     cmd = "upx"
     if upx_dir:
         cmd = os.path.normpath(os.path.join(upx_dir, cmd))
@@ -121,10 +121,14 @@ def test_UPX(config, upx_dir):
             if is_win and is_py24 and hasUPX < (1, 92):
                 logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
                 hasUPX = 0
-        logger.info('...UPX %s', ('unavailable', 'available')[hasUPX != 0])
     except Exception, e:
-        logger.info('...exception result in testing for UPX')
-        logger.info('  %r %r', e, e.args)
+        if isinstance(e, OSError) and e.errno == 2:
+            # No such file or directory
+            pass
+        else:
+            logger.info('An exception occured when testing for UPX:')
+            logger.info('  %r', e)
+    logger.info('UPX is %savailable.', hasUPX and '' or 'not ')
     config['hasUPX'] = hasUPX
     config['upx_dir'] = upx_dir
 
