@@ -14,7 +14,7 @@ from hookutils import logger
 if os.name == 'nt':
     hiddenimports = ['OpenGL.platform.win32']
 else:
-    if sys.platform == 'linux2':
+    if sys.platform.startswith('linux'):
         hiddenimports = ['OpenGL.platform.glx']
     elif sys.platform[:6] == 'darwin':
         hiddenimports = ['OpenGL.platform.darwin']
