@@ -47,7 +47,6 @@ OPTIONS
 --target-platform=TARGET_PLATFORM
                       Target platform, required for cross-bundling
                       (default: current platform).
---upx-dir=UPX_DIR     Directory containing UPX.
 --executable=EXECUTABLE
                       Python executable to use. Required for cross-bundling.
 -C CONFIGFILE, --configfile=CONFIGFILE

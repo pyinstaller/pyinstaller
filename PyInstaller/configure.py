@@ -171,8 +171,6 @@ def __add_options(parser):
     Add the `Configure` options to a option-parser instance or a
     option group.
     """
-    parser.add_option('--upx-dir', default=None,
-                      help='Directory containing UPX.')
     parser.add_option('-C', '--configfile',
                       default=DEFAULT_CONFIGFILE,
                       dest='configfilename',

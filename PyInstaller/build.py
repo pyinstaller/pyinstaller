@@ -1515,6 +1515,8 @@ def __add_options(parser):
                       action="store_true", default=False,
                       help='Remove output directory (default: %s) without '
                       'confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'))
+    parser.add_option('--upx-dir', default=None,
+                      help='Directory containing UPX (default: search in path)')
 
 
 def main(specfile, buildpath, noconfirm, **kw):
