@@ -3,7 +3,7 @@ import sys
 from ctypes import *
 
 def dummy(arg):
-    if sys.platform == "linux2" or sys.platform.startswith('sun') or \
+    if sys.platform.startswith("linux") or sys.platform.startswith('sun') or \
         sys.platform.startswith('aix'):
         tct = CDLL("ctypes/testctypes.so")
     elif sys.platform[:6] == "darwin":
