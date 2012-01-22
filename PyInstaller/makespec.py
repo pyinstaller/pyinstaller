@@ -300,7 +300,6 @@ def main(scripts, name=None, onefile=0,
          'crypted': crypt is not None,
          'console': console or debug,
          'exe_options': exe_options}
-    scripts.insert(0, Path(HOMEPATH, 'support', '_mountzlib.py'))
 
     if is_win or is_cygwin:
         d['exename'] = name+'.exe'

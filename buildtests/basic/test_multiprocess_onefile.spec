@@ -2,10 +2,9 @@
 
 __testname__ = 'test_multiprocess_onefile'
 
-a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'), __testname__ + '.py'],
+a = Analysis([__testname__ + '.py'],
              pathex=[])
-a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
-              __testname__ + '.py'],
+a = Analysis([__testname__ + '.py'],
              pathex=[],
              hookspath=None)
 pyz = PYZ(a.pure)

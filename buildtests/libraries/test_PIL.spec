@@ -2,8 +2,7 @@
 
 __testname__ = 'test_PIL'
 
-a = Analysis([os.path.join(HOMEPATH,'support/_mountzlib.py'),
-              __testname__ + '.py'],
+a = Analysis([__testname__ + '.py'],
              pathex=[])
 pyz = PYZ(a.pure)
 

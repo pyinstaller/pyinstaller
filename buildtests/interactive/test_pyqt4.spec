@@ -2,8 +2,7 @@
 
 __testname__ = 'test_pyqt4'
 
-a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), 
-              __testname__ + '.py'])
+a = Analysis([__testname__ + '.py'])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
