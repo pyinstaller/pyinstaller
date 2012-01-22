@@ -14,7 +14,7 @@ all:
 doc: html pdf man cleanlogs
 	@echo "Documentation generated: Please see ../*.html, ../*.pdf and ../*.1 for files"
 
-manpages := pyinstaller pyi-configure pyi-makespec pyi-build pyi-makeCOMServer
+manpages := pyinstaller pyi-makespec pyi-build pyi-makeCOMServer
 
 html: ../Manual.html $(foreach manpage,${manpages},../${manpage}.html)
 pdf: ../Manual.pdf
