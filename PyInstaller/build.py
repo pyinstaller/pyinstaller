@@ -211,45 +211,55 @@ def _rmdir(path):
     Remove dirname(os.path.abspath(path)) and all its contents, but only if:
 
     1. It doesn't start with BUILDPATH
-    2. It is a directory and not empty (otherwise continue without removing
+    2. BUILDPATH and SPECPATH don't start with it
+    3. It is a file.
+    4. It is a directory and not empty (otherwise continue without removing
        the directory)
-    3. BUILDPATH and SPECPATH don't start with it
-    4. The --noconfirm option is set, or sys.stdout is a tty and the user
+    5. The --noconfirm option is set, or sys.stdout is a tty and the user
        confirms directory removal
 
     Otherwise, error out.
     """
     if not os.path.abspath(path):
         path = os.path.abspath(path)
-    if not path.startswith(BUILDPATH) and os.path.isdir(path) and os.listdir(path):
-        specerr = 0
-        if BUILDPATH.startswith(path):
-            logger.error('specfile error: The output path "%s" contains '
-                         'BUILDPATH (%s)', path, BUILDPATH)
-            specerr += 1
-        if SPECPATH.startswith(path):
-            logger.error('Specfile error: The output path "%s" contains '
-                         'SPECPATH (%s)', path, SPECPATH)
-            specerr += 1
-        if specerr:
-            raise SystemExit('Error: Please edit/recreate the specfile (%s) '
-                             'and set a different output name (e.g. "dist").'
-                             % SPEC)
-        if NOCONFIRM:
-            choice = 'y'
-        elif sys.stdout.isatty():
-            choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
-                               'CONTENTS will be REMOVED! Continue? (y/n)' % path)
-        else:
-            raise SystemExit('Error: The output directory "%s" is not empty. '
-                             'Please remove all its contents or use the '
-                             '-y option (remove output directory without '
-                             'confirmation).' % path)
-        if choice.strip().lower() == 'y':
-            logger.info('Removing %s', path)
-            shutil.rmtree(path)
-        else:
-            raise SystemExit('User aborted')
+    if path.startswith(BUILDPATH):
+        return
+    if not (os.path.isfile(path)
+            or (os.path.isdir(path) and os.listdir(path))):
+        return
+    specerr = 0
+    if BUILDPATH.startswith(path):
+        logger.error('specfile error: The output path "%s" contains '
+                     'BUILDPATH (%s)', path, BUILDPATH)
+        specerr += 1
+    if SPECPATH.startswith(path):
+        logger.error('Specfile error: The output path "%s" contains '
+                     'SPECPATH (%s)', path, SPECPATH)
+        specerr += 1
+    if specerr:
+        raise SystemExit('Error: Please edit/recreate the specfile (%s) '
+                         'and set a different output name (e.g. "dist").'
+                         % SPEC)
+    if os.path.isfile(path):
+        logger.info('Removing file %s', path)
+        os.remove(path)
+        return
+
+    if NOCONFIRM :
+        choice = 'y'
+    elif sys.stdout.isatty():
+        choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
+                           'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+    else:
+        raise SystemExit('Error: The output directory "%s" is not empty. '
+                         'Please remove all its contents or use the '
+                         '-y option (remove output directory without '
+                         'confirmation).' % path)
+    if choice.strip().lower() == 'y':
+        logger.info('Removing dir %s', path)
+        shutil.rmtree(path)
+    else:
+        raise SystemExit('User aborted')
 
 
 def check_egg(pth):
