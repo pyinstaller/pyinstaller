@@ -22,7 +22,6 @@
 import os
 import optparse
 
-import PyInstaller.configure
 import PyInstaller.makespec
 import PyInstaller.build
 import PyInstaller.compat
@@ -32,10 +31,6 @@ import PyInstaller.log
 # Warn when old command line option is used
 
 from PyInstaller import get_version
-
-
-def run_configure(opts, args):
-    PyInstaller.configure.main(**opts.__dict__)
 
 
 def run_makespec(opts, args):
@@ -57,10 +52,6 @@ def run_build(opts, spec_file):
 def __add_options(parser):
     parser.add_option('-v', '--version', default=False, action='store_true',
                       help='show program version')
-    parser.add_option('--skip-configure', default=False, action='store_true',
-                      help='Skip configure phase.'
-                      'Configure phase can be skipped to speed up pyinstaller '
-                      'if running multiple times with the same configuration.')
 
 
 def main():
@@ -68,7 +59,6 @@ def main():
         usage='python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
         )
     __add_options(parser)
-    PyInstaller.configure.__add_options(parser)
     PyInstaller.makespec.__add_options(parser)
     PyInstaller.build.__add_options(parser)
     PyInstaller.log.__add_options(parser)
@@ -85,10 +75,6 @@ def main():
     if not args:
         parser.error('Requires at least one scriptname file '
                      'or exactly one .spec-file')
-
-    # Skip configure when --skip-configure option present
-    if not opts.skip_configure:
-        run_configure(opts, args)
 
     # Skip creating .spec when .spec file is supplied
     if args[0].endswith('.spec'):

@@ -51,9 +51,6 @@ General Options
 
 -h, --help          show this help message and exit
 
--C CONFIGFILE, --configfile=CONFIGFILE
-                    Name of configfile to use (default: |config.dat|)
-
 --log-level=LOGLEVEL  Log level for MakeSpec.py (default: INFO, choose
                       one of DEBUG, INFO, WARN, ERROR, CRITICAL)
 
@@ -131,8 +128,7 @@ Windows specific options
 SEE ALSO
 =============
 
-``pyi-configure``\(1), ``pyi-build``\(1), The PyInstaller Manual,
-``pyinstaller``\(1)
+``pyi-build``\(1), The PyInstaller Manual, ``pyinstaller``\(1)
 
 Project Homepage |Homepage|
 

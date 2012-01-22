@@ -452,7 +452,7 @@ class Analysis(Target):
                 if modnm != '__main__':
                     pure.append((modnm, mod.__file__, 'PYMODULE'))
 
-        python = config['python']
+        python = sys.executable
         if not is_win:
             while os.path.islink(python):
                 python = os.path.join(os.path.split(python)[0], os.readlink(python))
@@ -542,7 +542,7 @@ class Analysis(Target):
 
         elif is_darwin:
             # On MacPython, Analysis.assemble is able to find the libpython with
-            # no additional help, asking for config['python'] dependencies.
+            # no additional help, asking for sys.executable dependencies.
             # However, this fails on system python, because the shared library
             # is not listed as a dependency of the binary (most probably it's
             # opened at runtime using some dlopen trickery).
@@ -1515,31 +1515,23 @@ def __add_options(parser):
                       action="store_true", default=False,
                       help='Remove output directory (default: %s) without '
                       'confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'))
+    parser.add_option('--upx-dir', default=None,
+                      help='Directory containing UPX (default: search in path)')
 
 
-def main(specfile, configfilename, buildpath, noconfirm, **kw):
+def main(specfile, buildpath, noconfirm, **kw):
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm
     global NOCONFIRM
     NOCONFIRM = noconfirm
 
-    try:
-        config = _load_data(configfilename)
-    except IOError:
-        raise SystemExit("You must run utils/Configure.py before building "
-                         "or use pyinstaller.py!")
-
-    if config['pythonVersion'] != sys.version:
-        print "The current version of Python is not the same with which PyInstaller was configured."
-        print "Please re-run utils/Configure.py or use pyinstaller.py with this version."
-        raise SystemExit(1)
-
-    if config.setdefault('pythonDebug', None) != __debug__:
-        raise SystemExit("Python optimization flags have changed: rerun `python -O utils/Configure.py`")
+    # :fixme: this should be a global import, but can't due to recursive imports
+    import PyInstaller.configure as configure
+    config = configure.get_config(kw.get('upx_dir'))
 
     if config['hasRsrcUpdate']:
         from PyInstaller.utils import icon, versioninfo, winresource
-        pyasm = bindepend.getAssemblies(config['python'])
+        pyasm = bindepend.getAssemblies(sys.executable)
     else:
         pyasm = None
 

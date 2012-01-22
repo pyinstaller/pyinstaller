@@ -39,10 +39,6 @@ import os
 p = optparse.OptionParser(
     usage='python %prog [opts] <scriptname> [<scriptname> ...]'
 )
-p.add_option('-C', '--configfile',
-             default=PyInstaller.DEFAULT_CONFIGFILE,
-             dest='configfilename',
-             help='Name of configfile (default: %default)')
 PyInstaller.makespec.__add_options(p)
 PyInstaller.log.__add_options(p)
 PyInstaller.compat.__add_obsolete_options(p)

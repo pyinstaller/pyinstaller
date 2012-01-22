@@ -37,13 +37,6 @@ import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.configure')
 
 
-def find_EXE_dependencies(config):
-    logger.info("Computing EXE_dependencies")
-    python = sys.executable
-    config['python'] = python
-    config['target_platform'] = sys.platform
-
-
 def test_Crypt(config):
     # TODO: disabled for now
     config["useCrypt"] = 0
@@ -71,15 +64,12 @@ def test_Crypt(config):
 
 
 def test_Zlib(config):
-    #useZLIB
-    logger.info("testing for Zlib...")
     try:
         import zlib
         config['useZLIB'] = 1
-        logger.info('... Zlib available')
     except ImportError:
         config['useZLIB'] = 0
-        logger.info('... Zlib unavailable')
+        logger.warning('zlib is not available')
 
 
 def test_RsrcUpdate(config):
@@ -117,7 +107,7 @@ def test_RsrcUpdate(config):
 
 
 def test_UPX(config, upx_dir):
-    logger.info('testing for UPX...')
+    logger.debug('Testing for UPX ...')
     cmd = "upx"
     if upx_dir:
         cmd = os.path.normpath(os.path.join(upx_dir, cmd))
@@ -131,16 +121,20 @@ def test_UPX(config, upx_dir):
             if is_win and is_py24 and hasUPX < (1, 92):
                 logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
                 hasUPX = 0
-        logger.info('...UPX %s', ('unavailable', 'available')[hasUPX != 0])
     except Exception, e:
-        logger.info('...exception result in testing for UPX')
-        logger.info('  %r %r', e, e.args)
+        if isinstance(e, OSError) and e.errno == 2:
+            # No such file or directory
+            pass
+        else:
+            logger.info('An exception occured when testing for UPX:')
+            logger.info('  %r', e)
+    logger.info('UPX is %savailable.', hasUPX and '' or 'not ')
     config['hasUPX'] = hasUPX
     config['upx_dir'] = upx_dir
 
 
 def find_PYZ_dependencies(config):
-    logger.info("computing PYZ dependencies...")
+    logger.debug("Computing PYZ dependencies")
     # We need to import `archive` from `PyInstaller` directory, but
     # not from package `PyInstaller`
     import PyInstaller.loader
@@ -166,21 +160,7 @@ def find_PYZ_dependencies(config):
     config['PYZ_dependencies'] = toc.data
 
 
-def __add_options(parser):
-    """
-    Add the `Configure` options to a option-parser instance or a
-    option group.
-    """
-    parser.add_option('--upx-dir', default=None,
-                      help='Directory containing UPX.')
-    parser.add_option('-C', '--configfile',
-                      default=DEFAULT_CONFIGFILE,
-                      dest='configfilename',
-                      help='Name of generated configfile (default: %default)')
-
-
-def main(configfilename, upx_dir, **kw):
-
+def get_config(upx_dir, **kw):
     if is_darwin and compat.architecture() == '64bit':
         logger.warn('You are running 64-bit Python. Created binary will not'
             ' work on Mac OS X 10.4 or 10.5. For this version it is necessary'
@@ -191,29 +171,11 @@ def main(configfilename, upx_dir, **kw):
         # wait several seconds for user to see this message
         time.sleep(4)
 
-    try:
-        config = build._load_data(configfilename)
-        logger.info('read old config from %s', configfilename)
-    except (IOError, SyntaxError):
-        # IOerror: file not present/readable
-        # SyntaxError: invalid file (platform change?)
-        # if not set by Make.py we can assume Windows
-        config = {'useELFEXE': 1}
-
-    # Save Python version, to detect and avoid conflicts
-    config["pythonVersion"] = sys.version
-    config["pythonDebug"] = __debug__
-
-    # Save PyInstaller path and version
-    config["pyinstaller_version"] = get_version()
-    config["pyinstaller_homepath"] = HOMEPATH
-
-    find_EXE_dependencies(config)
+    # if not set by Make.py we can assume Windows
+    config = {'useELFEXE': 1}
     test_Zlib(config)
     test_Crypt(config)
     test_RsrcUpdate(config)
     test_UPX(config, upx_dir)
     find_PYZ_dependencies(config)
-
-    build._save_data(configfilename, config)
-    logger.info("done generating %s", configfilename)
+    return config

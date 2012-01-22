@@ -50,6 +50,7 @@ OPTIONS
                       SPECPATH/build/pyi.TARGET_PLATFORM/SPECNAME)
 -y, --noconfirm       Remove output directory (default: SPECPATH/dist)
                       without confirmation
+--upx-dir=UPX_DIR     Directory containing UPX (default: search in path).
 --log-level=LOGLEVEL  Log level for Build.py (default: INFO, choose one 
                       of DEBUG, INFO, WARN, ERROR, CRITICAL)
 
