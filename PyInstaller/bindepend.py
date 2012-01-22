@@ -118,7 +118,7 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
     for nm, pth, typ in lTOC:
         if seen.get(nm.upper(), 0):
             continue
-        logger.info("Analyzing %s", pth)
+        logger.debug("Analyzing %s", pth)
         seen[nm.upper()] = 1
         if is_win:
             for ftocnm, fn in selectAssemblies(pth, manifest):
