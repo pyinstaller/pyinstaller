@@ -83,7 +83,7 @@ def hook(mod):
         tcl_tk = find_tk_win(binaries)
     elif is_darwin:
         tcl_tk = find_tk_darwin(binaries)
-    elif not is_unix:
+    elif is_unix:
         tcl_tk = find_tk_unix(binaries)
     else:
         # If no pattern is in place for this platform, skip TCL/TK detection.
