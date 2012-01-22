@@ -148,7 +148,7 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     print info
     print "*" * min(80, len(info))
 
-    OPTS = ['--skip-configure', '--debug']
+    OPTS = ['--debug']
 
     build_python = open('basic/python_exe.build', 'w')
     build_python.write(sys.executable + "\n")
@@ -165,9 +165,6 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
     tests = [(len(x), x) for x in tests]
     tests.sort()
     counter = {"passed": [], "failed": [], "skipped": []}
-
-    # run configure phase only once
-    compat.exec_python_rc(os.path.join(HOMEPATH, 'utils', 'Configure.py'))
 
     # execute tests
     testbasedir = os.getcwdu()
@@ -322,9 +319,6 @@ if __name__ == '__main__':
     parser.add_option('-n', '--no-run', action='store_true',
                       help='Do not run the built executables. '
                            'Useful for cross builds.')
-    #parser.add_option('-C', '--configfile',
-                      #default=DEFAULT_CONFIGFILE,
-                      #help='Name of generated configfile (default: %default)')
     parser.add_option('-v', '--verbose',
                       action='store_true',
                       default=False,
