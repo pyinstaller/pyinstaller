@@ -64,15 +64,12 @@ def test_Crypt(config):
 
 
 def test_Zlib(config):
-    #useZLIB
-    logger.info("testing for Zlib...")
     try:
         import zlib
         config['useZLIB'] = 1
-        logger.info('... Zlib available')
     except ImportError:
         config['useZLIB'] = 0
-        logger.info('... Zlib unavailable')
+        logger.warning('zlib is not available')
 
 
 def test_RsrcUpdate(config):
