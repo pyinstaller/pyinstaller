@@ -13,8 +13,7 @@ if sys.platform == 'win32' and sys.version_info[:2] >= (2, 6):
 else:
     manifest = None
 
-a = Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'), 
-              __testname__ + '.py'])
+a = Analysis([__testname__ + '.py'])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
