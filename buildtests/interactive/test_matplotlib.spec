@@ -2,7 +2,7 @@
 
 __testname__ = 'test_matplotlib'
 
-if config['target_platform'] == 'win32' and sys.version_info[:2] >= (2, 6):
+if sys.platform == 'win32' and sys.version_info[:2] >= (2, 6):
     manifest = '''<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <dependency>
     <dependentAssembly>
@@ -19,7 +19,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('build', 'pyi.' + config['target_platform'], __testname__, 
+          name=os.path.join('build', 'pyi.'+sys.platform, __testname__, 
                             __testname__ + '.exe'),
           debug=False,
           strip=False,
