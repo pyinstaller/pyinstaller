@@ -322,6 +322,7 @@ class Target:
 
 class Analysis(Target):
     _old_scripts = set((
+        absnormpath(os.path.join(HOMEPATH, "support","_mountzlib.py")),
         absnormpath(os.path.join(CONFIGDIR, "support", "useUnicode.py")),
         absnormpath(os.path.join(CONFIGDIR, "support", "useTK.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useUnicode.py")),
@@ -333,7 +334,9 @@ class Analysis(Target):
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
                  hookspath=None, excludes=None):
         Target.__init__(self)
-        self.inputs = []
+        self.inputs = [
+            os.path.join(HOMEPATH, "support","_mountzlib.py"),
+            ]
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
                 logger.warn('Ignoring obsolete auto-added script %s', script)
