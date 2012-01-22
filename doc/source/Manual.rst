@@ -142,10 +142,6 @@ Allowed OPTIONS are:
 --upx-dir=UPX_DIR
     Directory containing UPX.
 
--C CONFIGFILENAME, --configfile=CONFIGFILENAME
-    Name of generated configfile (default:
-    /home/martin/.local/share/pyinstaller/config.dat)
-
 --buildpath=BUILDPATH
     Buildpath (default:
     SPECPATH/build/pyi.TARGET_PLATFORM/SPECNAME)
