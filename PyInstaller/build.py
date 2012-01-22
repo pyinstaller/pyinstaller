@@ -321,13 +321,26 @@ class Target:
 
 
 class Analysis(Target):
+    _old_scripts = set((
+        absnormpath(os.path.join(CONFIGDIR, "support", "useUnicode.py")),
+        absnormpath(os.path.join(CONFIGDIR, "support", "useTK.py")),
+        absnormpath(os.path.join(HOMEPATH, "support", "useUnicode.py")),
+        absnormpath(os.path.join(HOMEPATH, "support", "useTK.py")),
+        absnormpath(os.path.join(HOMEPATH, "support", "unpackTK.py")),
+        absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py")),
+        ))
+
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
                  hookspath=None, excludes=None):
         Target.__init__(self)
-        self.inputs = scripts
+        self.inputs = []
         for script in scripts:
+            if absnormpath(script) in self._old_scripts:
+                logger.warn('Ignoring obsolete auto-added script %s', script)
+                continue
             if not os.path.exists(script):
                 raise ValueError("script '%s' not found" % script)
+            self.inputs.append(script)
         self.pathex = []
         if pathex:
             self.pathex = [absnormpath(path) for path in pathex]
