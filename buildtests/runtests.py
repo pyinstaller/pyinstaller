@@ -405,4 +405,14 @@ if __name__ == '__main__':
             os.path.join('basic', case))
         testfunc.__doc__ = testname
         setattr(BasicTestCase, testname, testfunc)
-    unittest.main(verbosity=0)
+    suite = unittest.TestLoader().loadTestsFromTestCase(BasicTestCase)
+    #unittest.main(verbosity=0)
+    # JUnit XML to standard output.
+    import junitxml
+    fp = open('report.xml', 'w')
+    result = junitxml.JUnitXmlResult(fp)
+    result.startTestRun()
+    suite.run(result)
+    result.stopTestRun()
+    fp.close()
+    
