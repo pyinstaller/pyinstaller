@@ -134,7 +134,7 @@ def test_UPX(config, upx_dir):
 
 
 def find_PYZ_dependencies(config):
-    logger.info("computing PYZ dependencies...")
+    logger.debug("Computing PYZ dependencies")
     # We need to import `archive` from `PyInstaller` directory, but
     # not from package `PyInstaller`
     import PyInstaller.loader
