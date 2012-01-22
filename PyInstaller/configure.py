@@ -37,13 +37,6 @@ import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.configure')
 
 
-def find_EXE_dependencies(config):
-    logger.info("Computing EXE_dependencies")
-    python = sys.executable
-    config['python'] = python
-    config['target_platform'] = sys.platform
-
-
 def test_Crypt(config):
     # TODO: disabled for now
     config["useCrypt"] = 0
@@ -179,7 +172,6 @@ def get_config(upx_dir, **kw):
 
     # if not set by Make.py we can assume Windows
     config = {'useELFEXE': 1}
-    find_EXE_dependencies(config)
     test_Zlib(config)
     test_Crypt(config)
     test_RsrcUpdate(config)
