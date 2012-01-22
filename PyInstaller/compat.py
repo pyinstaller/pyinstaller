@@ -53,7 +53,12 @@ is_unix = is_linux or is_solar or is_aix
 
 
 # Obsolete command line options (do not exist anymore)
-_OLD_OPTIONS = ['--upx', '-X']
+_OLD_OPTIONS = [
+    '--upx', '-X',
+    '-K', '--tk',
+    '-C', '--configfile',
+    '--skip-configure',
+    ]
 
 
 # Options for python interpreter when invoked in a subprocess.
