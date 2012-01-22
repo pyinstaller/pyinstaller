@@ -943,14 +943,12 @@ Here is spec file example with ``MERGE`` function::
       
       ## Build MERGE arguments (analysis object, script base name, final exe path)
       #  Start with the dummy package
-      Analyses = [(Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
-                             os.path.join('dummy','dummy.py')]),
+      Analyses = [(Analysis([os.path.join('dummy','dummy.py')]),
                    'dummy', os.path.join('dummy','dummy.exe'))
                   ]
       
       #  NOTE: this assumes that the main script in each is appname.pyw in the appname folder
-      Analyses += [(Analysis([os.path.join(HOMEPATH,'support', '_mountzlib.py'),
-                              os.path.join(appname, appname + '.pyw')]),
+      Analyses += [(Analysis([os.path.join(appname, appname + '.pyw')]),
                     appname, os.path.join(appname,appname+'.exe'))
                    for appname in AppNames]
       
