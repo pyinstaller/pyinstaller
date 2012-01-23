@@ -375,12 +375,15 @@ def main():
 
 
 class GenericTestCase(unittest.TestCase):
-    #def __init__(self, argument):
+    def __init__(self, test_func):
+        setattr(self, test_func, self.test_generic_test_function)
+        super(unittest.TestCase, self).__init__(test_func)
         #pass
         #testfunc = functools.partial(self.generic_test_function,
             #'basic/test_1')
         #testfunc.__doc__ = 'test_1'
-        #setattr(self, 'test_1', testfunc)
+        #setattr(self, 'test_1', self.test_genric_test_function)
+
     
     def setUp(self):
         # Remove temporary files from previous runs.
@@ -434,7 +437,8 @@ if __name__ == '__main__':
     '''
     #suite = unittest.TestLoader().loadTestsFromTestCase(GenericTestCase('abc'))
     suite = unittest.TestSuite()
-    suite.addTest(GenericTestCase('test_generic_test_function'))
+    #suite.addTest(GenericTestCase('test_generic_test_function'))
+    suite.addTest(GenericTestCase('test_1'))
     #unittest.main(verbosity=0)
     #exit(0)
     # JUnit XML to standard output.
