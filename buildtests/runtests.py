@@ -375,38 +375,68 @@ def main():
 
 
 class GenericTestCase(unittest.TestCase):
+    #def __init__(self, argument):
+        #pass
+        #testfunc = functools.partial(self.generic_test_function,
+            #'basic/test_1')
+        #testfunc.__doc__ = 'test_1'
+        #setattr(self, 'test_1', testfunc)
     
     def setUp(self):
         # Remove temporary files from previous runs.
         clean()
+
+    #def test_generic_test_function(self, test_name):
+    def test_generic_test_function(self):
+        test_name = 'basic/test_1'
+        # Skip test case if test requirement are not met.
+        s = SkipChecker()
+        req_met, msg = s.check(test_name)
+        if not req_met:
+            raise unittest.SkipTest(msg)
+        # Create a build and run it.
+        b = BuildTestRunner()
+        b.run(test_name, verbose=False)
+
+
 
 
 class BasicTestCase(GenericTestCase):
     pass
 
 
-def generic_test_function(test_name):
-    # Skip test case if test requirement are not met.
-    s = SkipChecker()
-    req_met, msg = s.check(test_name)
-    if not req_met:
-        raise unittest.SkipTest(msg)
-    # Create a build and run it.
-    b = BuildTestRunner()
-    b.run(test_name, verbose=False)
+class ImportTestCase(GenericTestCase):
+    pass
+
+
+class LibrariesTestCase(GenericTestCase):
+    pass
+
+
+class MultipackageTestCase(GenericTestCase):
+    pass
+
+
+class InteractiveTestCase(GenericTestCase):
+    pass
 
 
 if __name__ == '__main__':
     #main()
+    '''
     run_configure()
     for case in ['test_1']:
         testname = case
-        testfunc = functools.partial(generic_test_function,
+        testfunc = functools.partial(getattr(GenericTestCase, 'generic_test_function'),
             os.path.join('basic', case))
         testfunc.__doc__ = testname
         setattr(BasicTestCase, testname, testfunc)
-    suite = unittest.TestLoader().loadTestsFromTestCase(BasicTestCase)
+    '''
+    #suite = unittest.TestLoader().loadTestsFromTestCase(GenericTestCase('abc'))
+    suite = unittest.TestSuite()
+    suite.addTest(GenericTestCase('test_generic_test_function'))
     #unittest.main(verbosity=0)
+    #exit(0)
     # JUnit XML to standard output.
     import junitxml
     fp = open('report.xml', 'w')
