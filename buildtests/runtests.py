@@ -28,7 +28,6 @@ import re
 import pprint
 import shutil
 import optparse
-import functools
 
 try:
     import PyInstaller
@@ -375,70 +374,76 @@ def main():
 
 
 class GenericTestCase(unittest.TestCase):
-    def __init__(self, test_func):
-        setattr(self, test_func, self.test_generic_test_function)
-        super(unittest.TestCase, self).__init__(test_func)
-        #pass
-        #testfunc = functools.partial(self.generic_test_function,
-            #'basic/test_1')
-        #testfunc.__doc__ = 'test_1'
-        #setattr(self, 'test_1', self.test_genric_test_function)
+    def __init__(self, test_dir, func_name):
+        """
+        test_dir    Directory containing testing python scripts.
+        func_name   Name of test function to create.
+        """
+        self.test_name = test_dir + '/' + func_name
 
-    
+        # Create new test fuction. This has to be done before super().
+        setattr(self, func_name, self._generic_test_function)
+        super(GenericTestCase, self).__init__(func_name)
+
     def setUp(self):
         # Remove temporary files from previous runs.
         clean()
 
-    #def test_generic_test_function(self, test_name):
-    def test_generic_test_function(self):
-        test_name = 'basic/test_1'
+    def _generic_test_function(self):
         # Skip test case if test requirement are not met.
         s = SkipChecker()
-        req_met, msg = s.check(test_name)
+        req_met, msg = s.check(self.test_name)
         if not req_met:
             raise unittest.SkipTest(msg)
         # Create a build and run it.
         b = BuildTestRunner()
-        b.run(test_name, verbose=False)
-
-
+        b.run(self.test_name, verbose=False)
 
 
 class BasicTestCase(GenericTestCase):
-    pass
+    test_dir = 'basic' 
+    def __init__(self, func_name):
+        super(BasicTestCase, self).__init__(self.test_dir, func_name)
 
 
 class ImportTestCase(GenericTestCase):
-    pass
+    test_dir = 'import' 
+    def __init__(self, func_name):
+        super(ImportTestCase, self).__init__(self.test_dir, func_name)
 
 
 class LibrariesTestCase(GenericTestCase):
-    pass
+    test_dir = 'libraries' 
+    def __init__(self, func_name):
+        super(LibrariesTestCase, self).__init__(self.test_dir, func_name)
 
 
 class MultipackageTestCase(GenericTestCase):
-    pass
+    test_dir = 'multipackage' 
+    def __init__(self, func_name):
+        super(MultipackageTestCase, self).__init__(self.test_dir, func_name)
 
 
 class InteractiveTestCase(GenericTestCase):
-    pass
+    """
+    Interactive tests require user interaction mostly GUI.
+
+    Interactive tests have to be run directly by user.
+    They can't be run by any continuous integration system.
+    """
+    test_dir = 'interactive' 
+    def __init__(self, func_name):
+        super(InteractiveTestCase, self).__init__(self.test_dir, func_name)
+
+
 
 
 if __name__ == '__main__':
     #main()
-    '''
     run_configure()
-    for case in ['test_1']:
-        testname = case
-        testfunc = functools.partial(getattr(GenericTestCase, 'generic_test_function'),
-            os.path.join('basic', case))
-        testfunc.__doc__ = testname
-        setattr(BasicTestCase, testname, testfunc)
-    '''
-    #suite = unittest.TestLoader().loadTestsFromTestCase(GenericTestCase('abc'))
     suite = unittest.TestSuite()
-    #suite.addTest(GenericTestCase('test_generic_test_function'))
-    suite.addTest(GenericTestCase('test_1'))
+    suite.addTest(BasicTestCase('test_1'))
+    suite.addTest(BasicTestCase('test_2'))
     #unittest.main(verbosity=0)
     #exit(0)
     # JUnit XML to standard output.
