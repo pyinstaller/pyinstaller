@@ -225,7 +225,7 @@ class BuildTestRunner(object):
             return 1
         else:
             #print "RUNNING:", prog
-            tmp = compat.exec_command_rc(prog)
+            tmp, out, err = compat.exec_command_all(prog)
             compat.setenv("PATH", path)
             return tmp
 
@@ -251,7 +251,6 @@ class BuildTestRunner(object):
 
         if not os.path.exists(test_name + '.py'):
             self._msg("Testfile not found:", test_name + '.py', short=1)
-            #counter["failed"].append(test_name)
             return False
         testdir, testfile = os.path.split(test_name)
         if not testdir:
@@ -316,13 +315,9 @@ class BuildTestRunner(object):
 
         if res == 0:
             self._msg("FINISHING TEST", test_name, short=1)
-            #counter["passed"].append(test_name)
         else:
             self._msg("TEST", test_name, "FAILED", short=1, sep="!!")
-            #counter["failed"].append(test_name)
         os.chdir(test_basedir)  # go back from testdir
-        #pprint.pprint(counter)
-
 
 
 class GenericTestCase(unittest.TestCase):
@@ -462,7 +457,7 @@ def main():
     else:
         if opts.interactive_tests:
             print "Running interactive tests"
-            test_classes = [InteractiveTestCase] 
+            test_classes = [InteractiveTestCase]
         else:
             print "Running normal tests (-i for interactive tests)"
             test_classes = [BasicTestCase, ImportTestCase,
@@ -474,13 +469,13 @@ def main():
 
     # Run created test suite.
     run_configure()
+    unittest.TextTestRunner(verbosity=2).run(suite)
 
     #unittest.main(verbosity=0)
     # JUnit XML to standard output.
     #import junitxml
     #fp = open('report.xml', 'w')
     #result = junitxml.JUnitXmlResult(fp)
-    unittest.TextTestRunner(verbosity=2).run(suite)
     #unittest.main(verbosity=2)
     #result = r.run(suite)
     #result.startTestRun()
@@ -491,4 +486,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

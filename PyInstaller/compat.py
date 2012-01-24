@@ -165,6 +165,20 @@ def exec_command_rc(*cmdargs, **kwargs):
     return subprocess.call(cmdargs, **kwargs)
 
 
+def exec_command_all(*cmdargs):
+    """
+    Wrap creating subprocesses
+
+    Return tuple (exit_code, stdout, stderr) of the invoked command.
+    """
+    proc = subprocess.Popen(cmdargs, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, shell=False)
+    # Waits for subprocess to complete.
+    out, err = proc.communicate()
+
+    return proc.returncode, out, err
+
+
 def __wrap_python(args, kwargs):
     cmdargs = [sys.executable]
 
