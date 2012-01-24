@@ -175,7 +175,7 @@ def run_configure(verbose=False):
     Run configure phase. The same configuration can be used
     for all tests and tests take then less time.
     """
-    log_level = 'DEBUG' if verbose else 'WARN'
+    log_level = 'DEBUG' if verbose else 'ERROR'
     # run configure phase.
     compat.exec_python_rc(os.path.join(HOMEPATH, 'utils', 'Configure.py'),
             '--log-level=%s' % log_level)
@@ -239,7 +239,7 @@ class BuildTestRunner(object):
         if verbose:
             OPTS.extend(['--debug', '--log-level=DEBUG'])
         else:
-            OPTS.append('--log-level=WARN')
+            OPTS.append('--log-level=ERROR')
 
         build_python = open('basic/python_exe.build', 'w')
         build_python.write(sys.executable + "\n")
@@ -396,6 +396,7 @@ class TestCaseGenerator(object):
         files = glob.glob(os.path.join(directory, 'test_*.py'))
         # Test name is a file name without extension.
         tests = [os.path.splitext(os.path.basename(x))[0] for x in files]
+        tests.sort()
         return tests
 
     def create_suite(self, test_types):
