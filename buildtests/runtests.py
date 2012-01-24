@@ -43,6 +43,7 @@ from PyInstaller import HOMEPATH
 from PyInstaller import is_py23, is_py25, is_py26, is_win, is_darwin
 from PyInstaller import compat
 from PyInstaller.lib import unittest2 as unittest
+from PyInstaller.lib import junitxml
 
 
 class SkipChecker(object):
@@ -418,6 +419,22 @@ class TestCaseGenerator(object):
         return suite
 
 
+def run_tests(test_suite, xml_file):
+    """
+    Run test suite and save output to junit xml file if requested.
+    """
+    if xml_file:
+        print 'Writting test results to: %s' % xml_file
+        fp = open('report.xml', 'w')
+        result = junitxml.JUnitXmlResult(fp)
+        result.startTestRun()
+        test_suite.run(result)
+        result.stopTestRun()
+        fp.close()
+    else:
+        unittest.TextTestRunner(verbosity=2).run(test_suite)
+
+
 def main():
     # Change working directory to place where this script is.
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -437,6 +454,8 @@ def main():
                       action='store_true',
                       default=False,
                       help='Verbose mode (default: %default)')
+    parser.add_option('--junitxml', action='store', default=None,
+            metavar='FILE', help='Create junit-xml style test report file')
 
     opts, args = parser.parse_args()
 
@@ -453,14 +472,15 @@ def main():
         test_script = os.path.basename(os.path.splitext(args[0])[0])
         suite = unittest.TestSuite()
         suite.addTest(GenericTestCase(test_dir, test_script))
+        print 'Runnint single test:  %s' % (test_dir + '/' + test_script)
 
     # Run all tests or all interactive tests.
     else:
         if opts.interactive_tests:
-            print "Running interactive tests"
+            print 'Running interactive tests...'
             test_classes = [InteractiveTestCase]
         else:
-            print "Running normal tests (-i for interactive tests)"
+            print 'Running normal tests (-i for interactive tests)...'
             test_classes = [BasicTestCase, ImportTestCase,
                     LibrariesTestCase, MultipackageTestCase]
 
@@ -470,19 +490,7 @@ def main():
 
     # Run created test suite.
     run_configure()
-    unittest.TextTestRunner(verbosity=2).run(suite)
-
-    #unittest.main(verbosity=0)
-    # JUnit XML to standard output.
-    #import junitxml
-    #fp = open('report.xml', 'w')
-    #result = junitxml.JUnitXmlResult(fp)
-    #unittest.main(verbosity=2)
-    #result = r.run(suite)
-    #result.startTestRun()
-    #suite.run(result)
-    #result.stopTestRun()
-    #fp.close()
+    run_tests(suite, opts.junitxml)
 
 
 if __name__ == '__main__':
