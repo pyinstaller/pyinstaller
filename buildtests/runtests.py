@@ -25,7 +25,6 @@ import os
 import sys
 import glob
 import re
-import pprint
 import shutil
 import optparse
 
@@ -105,13 +104,13 @@ class SkipChecker(object):
     def check(self, test_name):
         """
         Check test requirements if they are any specified.
-        
+
         Return tupple (True/False, 'Reason for skipping.').
         True if all requirements are met. Then test case may
         be executed.
         """
         if not self._check_python_and_os(test_name):
-            return (False, 'Required another Python version or OS.') 
+            return (False, 'Required another Python version or OS.')
 
         required_module = self._check_dependencies(test_name)
 
@@ -321,13 +320,6 @@ class BuildTestRunner(object):
         #pprint.pprint(counter)
 
 
-def detect_tests(folders):
-    tests = []
-    for f in folders:
-        tests += glob.glob(os.path.join(f, 'test_*.py'))
-    return tests
-
-
 def main():
     # Change working directory to place where this script is.
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -357,17 +349,17 @@ def main():
         if opts.interactive_tests:
             parser.error('Must not specify -i/--interactive-tests when passing test names.')
         # run all tests in specified dir
-        if args[0] in TEST_DIRS:
-            tests = detect_tests(args)
+        #if args[0] in TEST_DIRS:
+            #tests = detect_tests(args)
         # run only single specified tests
         else:
             tests = args
     elif opts.interactive_tests:
         print "Running interactive tests"
-        tests = detect_tests(INTERACT_TEST_DIRS)
+        #tests = detect_tests(INTERACT_TEST_DIRS)
     else:
         print "Running normal tests (-i for interactive tests)"
-        tests = detect_tests(TEST_DIRS)
+        #tests = detect_tests(TEST_DIRS)
 
     clean()
     #run_test(tests, verbose=opts.verbose)
@@ -401,25 +393,29 @@ class GenericTestCase(unittest.TestCase):
 
 
 class BasicTestCase(GenericTestCase):
-    test_dir = 'basic' 
+    test_dir = 'basic'
+
     def __init__(self, func_name):
         super(BasicTestCase, self).__init__(self.test_dir, func_name)
 
 
 class ImportTestCase(GenericTestCase):
-    test_dir = 'import' 
+    test_dir = 'import'
+
     def __init__(self, func_name):
         super(ImportTestCase, self).__init__(self.test_dir, func_name)
 
 
 class LibrariesTestCase(GenericTestCase):
-    test_dir = 'libraries' 
+    test_dir = 'libraries'
+
     def __init__(self, func_name):
         super(LibrariesTestCase, self).__init__(self.test_dir, func_name)
 
 
 class MultipackageTestCase(GenericTestCase):
-    test_dir = 'multipackage' 
+    test_dir = 'multipackage'
+
     def __init__(self, func_name):
         super(MultipackageTestCase, self).__init__(self.test_dir, func_name)
 
@@ -431,21 +427,50 @@ class InteractiveTestCase(GenericTestCase):
     Interactive tests have to be run directly by user.
     They can't be run by any continuous integration system.
     """
-    test_dir = 'interactive' 
+    test_dir = 'interactive'
+
     def __init__(self, func_name):
         super(InteractiveTestCase, self).__init__(self.test_dir, func_name)
 
 
+class TestCaseGenerator(object):
+    """
+    Generate test cases.
+    """
+    def _detect_tests(self, directory):
+        files = glob.glob(os.path.join(directory, 'test_*.py'))
+        # Test name is a file name without extension.
+        tests = [os.path.splitext(os.path.basename(x))[0] for x in files]
+        return tests
+
+    def create_suite(self, test_types):
+        """
+        Create test suite and add test cases to it.
+
+        test_types      Test classes to create test cases from.
+
+        Return test suite with tests.
+        """
+        suite = unittest.TestSuite()
+
+        for _type in test_types:
+            tests = self._detect_tests(_type.test_dir)
+            print tests
+            # Create test cases for a specific type.
+            for test_name in tests:
+                suite.addTest(_type(test_name))
+
+        return suite
 
 
 if __name__ == '__main__':
-    #main()
     run_configure()
-    suite = unittest.TestSuite()
-    suite.addTest(BasicTestCase('test_1'))
-    suite.addTest(BasicTestCase('test_2'))
+
+    generator = TestCaseGenerator()
+    suite = generator.create_suite([BasicTestCase, ImportTestCase,
+        LibrariesTestCase, MultipackageTestCase])
+
     #unittest.main(verbosity=0)
-    #exit(0)
     # JUnit XML to standard output.
     import junitxml
     fp = open('report.xml', 'w')
@@ -454,4 +479,3 @@ if __name__ == '__main__':
     suite.run(result)
     result.stopTestRun()
     fp.close()
-    
