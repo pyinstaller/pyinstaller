@@ -217,6 +217,11 @@ int spawn(const char *thisfile, char *const argv[])
         signal(SIGKILL, SIG_DFL);
         signal(SIGTERM, SIG_DFL);
     }
-
-    return WEXITSTATUS(rc);
+    if (WIFEXITED(rc))
+        return WEXITSTATUS(rc);
+    /* Process ended abnormally */
+    if (WIFSIGNALED(rc))
+        /* Mimick the signal the child received */
+        raise(WTERMSIG(rc));
+    return 1;
 }
