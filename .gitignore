@@ -1,7 +1,11 @@
-*.py[co]
 *~
-.#*
-*.egg-info
+.\#*
+\#*#
+
+*.py[co]
+/*.egg
+/*.egg-info
+/*.egg-link
 
 # /
 /AES.pyd
