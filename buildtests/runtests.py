@@ -129,28 +129,26 @@ NO_SPEC_FILE = [
 ]
 
 
-TEST_DIRS = ['basic', 'import', 'libraries', 'multipackage']
-INTERACT_TEST_DIRS = ['interactive']
-
-
-# files/globs to clean up
-CLEANUP = """python_exe.build
-logdict*.log
-disttest*
-buildtest*
-warn*.txt
-*.py[co]
-*/*.py[co]
-*/*/*.py[co]
-build/
-dist/
-*/*.dll
-*/*.so
-*/*.dylib
-""".split()
-
-
 def clean():
+    # Files/globs to clean up.
+    CLEANUP = """python_exe.build
+    logdict*.log
+    disttest*
+    buildtest*
+    warn*.txt
+    *.py[co]
+    */*.py[co]
+    */*/*.py[co]
+    build/
+    dist/
+    */*.dll
+    */*.so
+    */*.dylib
+    """.split()
+
+    TEST_DIRS = ['basic', 'import', 'libraries', 'multipackage']
+    INTERACT_TEST_DIRS = ['interactive']
+
     for d in TEST_DIRS + INTERACT_TEST_DIRS:
         os.chdir(d)
         for clean in CLEANUP:
@@ -333,10 +331,6 @@ class GenericTestCase(unittest.TestCase):
         setattr(self, func_name, self._generic_test_function)
         super(GenericTestCase, self).__init__(func_name)
 
-    def setUp(self):
-        # Remove temporary files from previous runs.
-        clean()
-
     def _generic_test_function(self):
         # Skip test case if test requirement are not met.
         s = SkipChecker()
@@ -489,6 +483,7 @@ def main():
         suite = generator.create_suite(test_classes)
 
     # Run created test suite.
+    clean()
     run_configure()
     run_tests(suite, opts.junitxml)
 
