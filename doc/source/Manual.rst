@@ -460,20 +460,30 @@ Improved support for ``eggs`` is planned for a future release of |PyInstaller|.
 Multipackage function
 ---------------------
 
-With Pyinstaller you can create a collection of packages to avoid library duplication.
-You can establish links between packages using the function `MERGE`_ in your spec file. 
+Some applications are made of several different binaries, that might rely on the same
+third-party libraries and/or share lots of code. When packaging such applications, it
+would be a pity to treat each application binary separately and repackage all its
+dependencies, potentially duplicating lots of code and libraries.
 
-For example, you might wish to deploy your application with an updater utility and a configurator,
-both sharing libraries with main application. In such a case you could use `MERGE`_ function
-in order to create a main, big, package, with all libraries and dependencies inside,
-and two small packages next to the first one. In this case, you'd pass a list of three tuples
-to `MERGE`_: the first one for the main application, and two for the updater and duplicator;
-the result will be three package directories.
+With Pyinstaller, you can use the multipackage feature to create multiple binaries that
+might share libraries among themselves: each dependency is packaged only once in one of
+the binaries, while the others simply have an "external reference" to it, that tells them
+to go finding that dependency in the binary contains it.
 
-Note that all common dependency files will be created  in the first package,
-and referenced there by the other executables.  For this reason, all packages linked this way
-must be placed in the same parent directory, and changing directory structure after the merge
-will result in failure of the executables.
+The easiest way to access this function is to simply pass multiple script files to 
+``pyinstaller.py`` (or ``utils/Makespec.py```). It will generate a spec file that contains 
+a call to the `MERGE`_ function to basically merge dependencies across the different scripts.
+
+The order of the scripts on the command line (and within the `MERGE`_ 
+function) matters: given each library, PyInstaller will package common dependencies on the
+leftmost script that first needs that dependency. You might want to tweak the order of
+the script files accordingly.
+
+Notice that the external references between binaries are hard-coded with respect to the
+paths on the disk in which they are created in the output directory, and cannot be rearranged:
+thus, if you use a one-file deploy, you will need to place all binaries in the same directory
+when you install your application. Similarly, if you use one-dir deploy, you will need to
+install all the binary directories within the same parent directory.
 
 There are multipackage examples in the ``buildtests/multipackage`` directory.
 
