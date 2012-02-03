@@ -47,6 +47,8 @@ from PyInstaller.lib import junitxml
 
 
 VERBOSE = False
+# Directory with this script (runtests.py).
+BASEDIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class SkipChecker(object):
@@ -130,46 +132,6 @@ NO_SPEC_FILE = [
     'libraries/test_enchant',
     'libraries/test_sqlalchemy',
 ]
-
-
-def clean():
-    # Files/globs to clean up.
-    CLEANUP = """python_exe.build
-    logdict*.log
-    disttest*
-    buildtest*
-    warn*.txt
-    *.py[co]
-    */*.py[co]
-    */*/*.py[co]
-    build/
-    dist/
-    */*.dll
-    */*.so
-    */*.dylib
-    """.split()
-
-    TEST_DIRS = ['basic', 'import', 'libraries', 'multipackage']
-    INTERACT_TEST_DIRS = ['interactive']
-
-    for d in TEST_DIRS + INTERACT_TEST_DIRS:
-        os.chdir(d)
-        for clean in CLEANUP:
-            clean = glob.glob(clean)
-            for path in clean:
-                try:
-                    if os.path.isdir(path):
-                        shutil.rmtree(path)
-                    else:
-                        os.remove(path)
-                except OSError, e:
-                    print e
-        os.chdir('..')
-    # delete *.spec files for tests without spec
-    for path in NO_SPEC_FILE:
-        path += '.spec'
-        if os.path.exists(path):
-            os.remove(path)
 
 
 def run_configure(verbose=False):
@@ -430,6 +392,48 @@ class TestCaseGenerator(object):
         return suite
 
 
+def clean():
+    """
+    Remove temporary files created while running tests.
+    """
+    # Files/globs to clean up.
+    patterns = """python_exe.build
+    logdict*.log
+    disttest*
+    buildtest*
+    warn*.txt
+    *.py[co]
+    */*.py[co]
+    */*/*.py[co]
+    build/
+    dist/
+    */*.dll
+    */*.so
+    */*.dylib
+    """.split()
+
+    # Remove temporary files in all subdirectories.
+    for directory in os.listdir(BASEDIR):
+        if not os.path.isdir(directory):
+            continue
+        for pattern in patterns:
+            file_list = glob.glob(os.path.join(directory, pattern))
+            for pth in file_list:
+                try:
+                    if os.path.isdir(pth):
+                        shutil.rmtree(pth)
+                    else:
+                        os.remove(pth)
+                except OSError, e:
+                    print e
+
+    # Delete *.spec files for tests without spec file.
+    for pth in NO_SPEC_FILE:
+        pth = os.path.join(BASEDIR, pth + '.spec')
+        if os.path.exists(pth):
+            os.remove(pth)
+
+
 def run_tests(test_suite, xml_file):
     """
     Run test suite and save output to junit xml file if requested.
@@ -448,7 +452,7 @@ def run_tests(test_suite, xml_file):
 
 def main():
     # Change working directory to place where this script is.
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(BASEDIR)
 
     try:
         parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]',
