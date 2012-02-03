@@ -26,7 +26,8 @@ from glob import glob
 # Required for extracting eggs.
 import zipfile
 
-from PyInstaller import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26
+from PyInstaller import (is_win, is_unix, is_freebsd, is_aix, is_cygwin,
+                         is_darwin, is_py26)
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
@@ -503,7 +504,8 @@ def findLibrary(name):
     Emulate the algorithm used by dlopen.
     `name`must include the prefix, e.g. ``libpython2.4.so``
     """
-    assert is_unix, "Current implementation for Unix only (Linux, Solaris, AIX)"
+    assert is_unix, ("Current implementation for Unix only (Linux, Solaris, "
+                     "AIX, FreeBSD)")
 
     lib = None
 
@@ -518,7 +520,13 @@ def findLibrary(name):
     # Look in /etc/ld.so.cache
     if lib is None:
         expr = r'/[^\(\)\s]*%s\.[^\(\)\s]*' % re.escape(name)
-        m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-p'))
+        if is_freebsd:
+            # This has a slightly different format than on linux, but the
+            # regex still works.
+            m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-r'))
+        else:
+            m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-p'))
+
         if m:
             lib = m.group(0)
 
@@ -527,6 +535,8 @@ def findLibrary(name):
         paths = ['/lib', '/usr/lib']
         if is_aix:
             paths.append('/opt/freeware/lib')
+        if is_freebsd:
+            paths.append('/usr/local/lib')
         for path in paths:
             libs = glob(os.path.join(path, name + '*'))
             if libs:
@@ -538,8 +548,13 @@ def findLibrary(name):
         return None
 
     # Resolve the file name into the soname
-    dir, file = os.path.split(lib)
-    return os.path.join(dir, getSoname(lib))
+    if is_freebsd:
+        # On FreeBSD objdump doesn't show SONAME, so we just return the lib
+        # we've found
+        return lib
+    else:
+        dir, file = os.path.split(lib)
+        return os.path.join(dir, getSoname(lib))
 
 
 def getSoname(filename):

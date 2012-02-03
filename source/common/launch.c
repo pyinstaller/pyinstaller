@@ -51,7 +51,7 @@
 #endif
 
 /*
- * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms: 
+ * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms:
  * - On Solaris function 'mkdtemp' is missing.
  * - On AIX 5.2 function 'mkdtemp' is missing. It is there in version 6.1 but we don't know
  *   the runtime platform at compile time, so we always include our own implementation on AIX.
@@ -558,19 +558,25 @@ int loadPython(ARCHIVE_STATUS *status)
         FATALERROR("Python library not found.\n");
         return -1;
     }
-    
+
     /* Append the shared object member to the library path
      * to make it look like this:
      *   libpython2.6.a(libpython2.6.so)
      */
     sprintf(dllpath + strlen(dllpath), "(libpython%01d.%01d.so)", pyvers_major, pyvers_minor);
-    
+
     /* Append the RTLD_MEMBER to the open mode for 'dlopen()'
      * in order to load shared object member from library.
      */
     dlopenMode |= RTLD_MEMBER;
 #else
+
+#ifdef __FreeBSD__
+    #define pylibTemplate "%slibpython%01d.%01d.so.1"
+#else
     #define pylibTemplate "%slibpython%01d.%01d.so.1.0"
+#endif /* FreeBSD */
+
     if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
          && checkFile(dllpath, pylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0)
     {
