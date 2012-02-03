@@ -186,7 +186,8 @@ def run_configure(verbose=False):
 class BuildTestRunner(object):
 
     def __init__(self, test_name, verbose=False):
-        self.test_name = test_name
+        # Use path separator '/' even on windows for test_name name.
+        self.test_name = test_name.replace('\\', '/')
         self.verbose = verbose
 
     def _msg(self, *args, **kw):
@@ -252,10 +253,7 @@ class BuildTestRunner(object):
             compat.setenv("PATH", path)
             return tmp
 
-    def run(self, test_name):
-        # Use path separator '/' even on windows for test_name name.
-        if is_win:
-            test_name = test_name.replace('\\', '/')
+    def run(self):
 
         OPTS = ['--skip-configure', '--debug']
 
@@ -272,13 +270,13 @@ class BuildTestRunner(object):
         # execute test_name
         test_basedir = os.getcwdu()
 
-        testdir, testfile = os.path.split(test_name)
+        testdir, testfile = os.path.split(self.test_name)
         if not testdir:
             testdir = '.'
         elif not os.path.exists(testdir):
             os.makedirs(testdir)
         os.chdir(testdir)  # go to testdir
-        self._msg("BUILDING TEST", test_name)
+        self._msg("BUILDING TEST", self.test_name)
 
         # use pyinstaller.py for building test_name
         testfile_spec = testfile + '.spec'
@@ -330,9 +328,9 @@ class BuildTestRunner(object):
                 self._plain_msg('Matching SUCCESS!')
 
         if res == 0:
-            self._msg("FINISHING TEST", test_name, short=1)
+            self._msg("FINISHING TEST", self.test_name, short=1)
         else:
-            self._msg("TEST", test_name, "FAILED", short=1, sep="!!")
+            self._msg("TEST", self.test_name, "FAILED", short=1, sep="!!")
         os.chdir(test_basedir)  # go back from testdir
 
 
@@ -358,7 +356,7 @@ class GenericTestCase(unittest.TestCase):
         b = BuildTestRunner(self.test_name, verbose=VERBOSE)
         self.assertTrue(b.test_exists(),
                 msg='Test %s not found.' % self.test_name)
-        b.run(self.test_name)
+        b.run()
 
 
 class BasicTestCase(GenericTestCase):
