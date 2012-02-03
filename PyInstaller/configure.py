@@ -26,7 +26,7 @@ import re
 import time
 import inspect
 
-from PyInstaller import HOMEPATH, DEFAULT_CONFIGFILE, PLATFORM
+from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller import is_win, is_unix, is_darwin, is_py24, get_version
 
 import PyInstaller.mf as mf
