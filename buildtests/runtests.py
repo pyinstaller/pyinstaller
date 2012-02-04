@@ -192,7 +192,7 @@ class BuildTestRunner(object):
         return prog
 
     def test_exists(self):
-        return os.path.exists(self.test_name + '.py')
+        return os.path.exists(os.path.join(BASEDIR, self.test_name + '.py'))
 
     def _test_exe(self, test, testdir=None):
         self._msg('EXECUTING TEST', testdir + '/' + test)
@@ -224,20 +224,8 @@ class BuildTestRunner(object):
         else:
             OPTS.append('--log-level=ERROR')
 
-        build_python = open('basic/python_exe.build', 'w')
-        build_python.write(sys.executable + "\n")
-        build_python.write('debug=%s' % __debug__ + '\n')
-        build_python.close()
-
-        # execute test_name
-        test_basedir = os.getcwdu()
-
         testdir, testfile = os.path.split(self.test_name)
-        if not testdir:
-            testdir = '.'
-        elif not os.path.exists(testdir):
-            os.makedirs(testdir)
-        os.chdir(testdir)  # go to testdir
+
         self._msg("BUILDING TEST", self.test_name)
 
         # use pyinstaller.py for building test_name
@@ -293,7 +281,6 @@ class BuildTestRunner(object):
             self._msg("FINISHING TEST", self.test_name, short=1)
         else:
             self._msg("TEST", self.test_name, "FAILED", short=1, sep="!!")
-        os.chdir(test_basedir)  # go back from testdir
 
 
 class GenericTestCase(unittest.TestCase):
@@ -307,6 +294,23 @@ class GenericTestCase(unittest.TestCase):
         # Create new test fuction. This has to be done before super().
         setattr(self, func_name, self._generic_test_function)
         super(GenericTestCase, self).__init__(func_name)
+
+        # For tests current working directory has to be changed temporaly.
+        self.curr_workdir = os.getcwdu()
+
+    def setUp(self):
+        testdir = os.path.dirname(self.test_name)
+        os.chdir(testdir)  # go to testdir
+        # For some 'basic' tests we need create file with path to python
+        # executable and if it is running in debug mode.
+        build_python = open(os.path.join(BASEDIR, 'basic', 'python_exe.build'),
+                'w')
+        build_python.write(sys.executable + "\n")
+        build_python.write('debug=%s' % __debug__ + '\n')
+        build_python.close()
+
+    def tearDown(self):
+        os.chdir(self.curr_workdir)  # go back from testdir
 
     def _generic_test_function(self):
         # Skip test case if test requirement are not met.
@@ -451,9 +455,6 @@ def run_tests(test_suite, xml_file):
 
 
 def main():
-    # Change working directory to place where this script is.
-    os.chdir(BASEDIR)
-
     try:
         parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]',
               epilog='TEST-NAME can be the name of the .py-file, '
