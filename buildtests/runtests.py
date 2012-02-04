@@ -151,6 +151,7 @@ class BuildTestRunner(object):
         # Use path separator '/' even on windows for test_name name.
         self.test_name = test_name.replace('\\', '/')
         self.verbose = verbose
+        self.test_dir, self.test_file = os.path.split(self.test_name)
 
     def _msg(self, *args, **kw):
         """
@@ -191,11 +192,11 @@ class BuildTestRunner(object):
                 prog = od_prog + ".exe"
         return prog
 
-    def test_exists(self):
-        return os.path.exists(os.path.join(BASEDIR, self.test_name + '.py'))
-
-    def _test_exe(self, test, testdir=None):
-        self._msg('EXECUTING TEST', testdir + '/' + test)
+    def _run_created_exe(self, test, testdir=None):
+        """
+        Run executable created by PyInstaller.
+        """
+        self._msg('EXECUTING TEST', self.test_name)
         # Run the test in a clean environment to make sure they're
         # really self-contained
         path = compat.getenv('PATH')
@@ -207,16 +208,26 @@ class BuildTestRunner(object):
             return 1
         else:
             self._plain_msg("RUNNING: " + prog)
-            tmp, out, err = compat.exec_command_all(prog)
+            retcode, out, err = compat.exec_command_all(prog)
             self._msg('STDOUT')
             self._plain_msg(out)
             self._msg('STDERR')
             self._plain_msg(err)
             compat.setenv("PATH", path)
-            return tmp
+            return retcode
 
-    def run(self):
+    def test_exists(self):
+        """
+        Return True if test file exists.
+        """
+        return os.path.exists(os.path.join(BASEDIR, self.test_name + '.py'))
 
+    def test_building(self):
+        """
+        Run building of test script.
+
+        Return True if build succeded False otherwise.
+        """
         OPTS = ['--skip-configure', '--debug']
 
         if self.verbose:
@@ -224,36 +235,49 @@ class BuildTestRunner(object):
         else:
             OPTS.append('--log-level=ERROR')
 
-        testdir, testfile = os.path.split(self.test_name)
-
         self._msg("BUILDING TEST", self.test_name)
 
         # use pyinstaller.py for building test_name
-        testfile_spec = testfile + '.spec'
-        if not os.path.exists(testfile + '.spec'):
+        testfile_spec = self.test_file + '.spec'
+        if not os.path.exists(self.test_file + '.spec'):
             # .spec file does not exist and it has to be generated
             # for main script
-            testfile_spec = testfile + '.py'
+            testfile_spec = self.test_file + '.py'
 
-        res = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
-                          testfile_spec, *OPTS)
-        if res == 0:
-            files = glob.glob(os.path.join('dist', testfile + '*'))
-            for exe in files:
-                exe = os.path.splitext(exe)[0]
-                res_tmp = self._test_exe(exe[5:], testdir)
-                res = res or res_tmp
+        retcode = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
+                  testfile_spec, *OPTS)
 
-        # compare log files (now used only by multipackage test_name)
-        logsfn = glob.glob(testfile + '.toc')
+        return retcode == 0
+
+    def test_exe(self):
+        """
+        Test running of all created executables.
+        """
+        files = glob.glob(os.path.join('dist', self.test_file + '*'))
+        retcode = 0
+        for exe in files:
+            exe = os.path.splitext(exe)[0]
+            retcode_tmp = self._run_created_exe(exe[5:], self.test_dir)
+            retcode = retcode or retcode_tmp
+        return retcode == 0
+
+    def test_logs(self):
+        """
+        Compare log files (now used only by multipackage test_name).
+
+        Return True if .toc files match or when .toc patters
+        are not defined.
+        """
+        logsfn = glob.glob(self.test_file + '.toc')
         # other main scritps do not start with 'test_'
-        logsfn += glob.glob(testfile.split('_', 1)[1] + '_?.toc')
+        logsfn += glob.glob(self.test_file.split('_', 1)[1] + '_?.toc')
         for logfn in logsfn:
             self._msg("EXECUTING MATCHING", logfn)
             tmpname = os.path.splitext(logfn)[0]
             prog = self._find_exepath(tmpname)
             if prog is None:
-                prog = self._find_exepath(tmpname, os.path.join('dist', testfile))
+                prog = self._find_exepath(tmpname,
+                        os.path.join('dist', self.test_file))
             fname_list = compat.exec_python(
                 os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
                 '-b', '-r', prog)
@@ -270,17 +294,10 @@ class BuildTestRunner(object):
                         break
                 if not found:
                     self._plain_msg('MISSING: %s' % pattern)
-            if count < len(pattern_list):
-                res = 1
-                self._plain_msg('Matching FAILED!')
-            else:
-                pass
-                self._plain_msg('Matching SUCCESS!')
 
-        if res == 0:
-            self._msg("FINISHING TEST", self.test_name, short=1)
-        else:
-            self._msg("TEST", self.test_name, "FAILED", short=1, sep="!!")
+            return not count < len(pattern_list)
+
+        return True
 
 
 class GenericTestCase(unittest.TestCase):
@@ -318,11 +335,16 @@ class GenericTestCase(unittest.TestCase):
         req_met, msg = s.check(self.test_name)
         if not req_met:
             raise unittest.SkipTest(msg)
-        # Create a build and run it.
+        # Create a build and test it.
         b = BuildTestRunner(self.test_name, verbose=VERBOSE)
         self.assertTrue(b.test_exists(),
                 msg='Test %s not found.' % self.test_name)
-        b.run()
+        self.assertTrue(b.test_building(),
+                msg='Build of %s failed.' % self.test_name)
+        self.assertTrue(b.test_exe(),
+                msg='Running exe of %s failed.' % self.test_name)
+        self.assertTrue(b.test_logs(),
+                msg='Matching .toc of %s failed.' % self.test_name)
 
 
 class BasicTestCase(GenericTestCase):
