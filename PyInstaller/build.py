@@ -345,7 +345,7 @@ class Analysis(Target):
                  hookspath=None, excludes=None):
         Target.__init__(self)
         self.inputs = [
-            os.path.join(HOMEPATH, "support","_mountzlib.py"),
+            os.path.join(HOMEPATH, "support","_pyi_bootstrap.py"),
             ]
         for script in scripts:
             if absnormpath(script) in self._old_scripts:

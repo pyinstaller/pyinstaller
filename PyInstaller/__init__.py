@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
 
-__all__ = ('HOMEPATH', 'CONFIGDIR', 'DEFAULT_CONFIGFILE', 'PLATFORM',
+__all__ = ('HOMEPATH', 'CONFIGDIR', 'PLATFORM',
            'VERSION', 'get_version',
            'is_py23', 'is_py24', 'is_py25', 'is_py26', 'is_py27',
            'is_win', 'is_cygwin', 'is_darwin', 'is_unix', 'is_linux',
@@ -72,8 +72,6 @@ else:
     if not CONFIGDIR:
         CONFIGDIR = os.path.expanduser('~/.local/share')
 CONFIGDIR = os.path.join(CONFIGDIR, 'pyinstaller')
-
-DEFAULT_CONFIGFILE = os.path.join(CONFIGDIR, 'config.dat')
 
 PLATFORM = compat.system() + '-' + compat.architecture()
 

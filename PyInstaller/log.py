@@ -46,7 +46,7 @@ def __add_options(parser):
                       choices=levels,
                       default='INFO',
                       dest='loglevel',
-                      help=('Log level for %%prog '
+                      help=('Log level '
                             '(default: %%default, choose one of %s)'
                             % ', '.join(levels))
                       )

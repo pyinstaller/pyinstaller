@@ -1,5 +1,6 @@
 =============
 PyInstaller
+http://www.pyinstaller.org
 =============
 
 Requirements

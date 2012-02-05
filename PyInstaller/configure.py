@@ -26,7 +26,7 @@ import re
 import time
 import inspect
 
-from PyInstaller import HOMEPATH, DEFAULT_CONFIGFILE, PLATFORM
+from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller import is_win, is_unix, is_darwin, is_py24, get_version
 
 import PyInstaller.mf as mf
@@ -162,12 +162,10 @@ def find_PYZ_dependencies(config):
 
 def get_config(upx_dir, **kw):
     if is_darwin and compat.architecture() == '64bit':
-        logger.warn('You are running 64-bit Python. Created binary will not'
-            ' work on Mac OS X 10.4 or 10.5. For this version it is necessary'
-            ' to create 32-bit binaries.'
-            ' If you need 32-bit version of Python, run Python as 32-bit binary'
-            ' by command:\n\n'
-            '    arch -i386 python\n')
+        logger.warn('You are running 64-bit Python: created binaries will only'
+            ' work on Mac OS X 10.6+.\nIf you need 10.4-10.5 compatibility,'
+            ' run Python as a 32-bit binary with this command:\n\n'
+            '    VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 %s\n' % sys.executable)
         # wait several seconds for user to see this message
         time.sleep(4)
 

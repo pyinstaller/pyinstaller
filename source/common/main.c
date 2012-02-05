@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
     /* If the Python program we are about to run invokes another PyInstaller
      * one-file program as subprocess, this subprocess must not be fooled into
      * thinking that it is already unpacked. Therefore, PyInstaller deletes
-     * the _MEIPASS2 variable from the environment in _mountzlib.py.
+     * the _MEIPASS2 variable from the environment in _pyi_bootstrap.py.
      *
      * However, on some platforms (e.g. AIX) the Python function 'os.unsetenv()'
      * does not always exist. In these cases we cannot delete the _MEIPASS2
