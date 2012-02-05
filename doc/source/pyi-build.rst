@@ -43,8 +43,6 @@ OPTIONS
 ========
 
 -h, --help            show this help message and exit
--C CONFIGFILE, --configfile=CONFIGFILE
-                      Name of configfile to use (default: |config.dat|)
 --buildpath=BUILDPATH
                       Buildpath (default:
                       SPECPATH/build/pyi.TARGET_PLATFORM/SPECNAME)
