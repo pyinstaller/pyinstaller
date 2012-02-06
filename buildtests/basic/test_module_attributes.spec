@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-__testname__ = 'test_14'
+__testname__ = 'test_module_attributes'
 
 a = Analysis([__testname__ + '.py'],
              pathex=[])
