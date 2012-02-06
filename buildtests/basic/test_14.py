@@ -15,23 +15,26 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-print "test14 - Used to fail if _xmlplus is installed"
+
+# Compare attributes of cElementTree module from frozen executable
+# with cElementTree module from standard python.
+
+print "Used to fail if _xmlplus is installed"
+
 
 import sys
-if sys.version_info[:2] >= (2, 5):
-    import subprocess
-    import xml.etree.ElementTree as ET
-    print "#"*50
-    print "xml.etree.ElementTree", dir(ET)
-    print "#"*50
-    import xml.etree.cElementTree as cET
+import subprocess
+import xml.etree.ElementTree as ET
 
-    pyexe = open("python_exe.build").readline().strip()
+print "#" * 50
+print "xml.etree.ElementTree", dir(ET)
+print "#" * 50
+import xml.etree.cElementTree as cET
 
-    out = subprocess.Popen(pyexe + ' -c "import xml.etree.cElementTree as cET; print dir(cET)"',
-                           stdout=subprocess.PIPE, shell=True).stdout.read().strip()
-    assert str(dir(cET)) == out, (str(dir(cET)), out)
+pyexe = open("python_exe.build").readline().strip()
 
-    print "test14 DONE"
-else:
-    print "Python 2.5 test14 skipped"
+out = subprocess.Popen([pyexe, '-c',
+        'import xml.etree.cElementTree as cET; print dir(cET)'],
+        stdout=subprocess.PIPE, shell=False).stdout.read().strip()
+
+assert str(dir(cET)) == out, (str(dir(cET)), out)
