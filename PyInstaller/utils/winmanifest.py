@@ -1027,7 +1027,10 @@ def processor_architecture():
     'x86' - 32bit Windows
     'amd64' - 64bit Windows
     """
-    return 'x86' if architecture() == '32bit' else 'amd64'
+    if architecture() == '32bit':
+        return 'x86'
+    else:
+        return 'amd64'
 
 
 if __name__ == "__main__":    
