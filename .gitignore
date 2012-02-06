@@ -17,6 +17,9 @@
 # Temporary vim files
 *.swp
 
+# Temporary rope files
+.ropeproject
+
 # /buildtests/
 /buildtests/build*
 /buildtests/dist*
@@ -24,6 +27,7 @@
 /buildtests/test*.exe
 /buildtests/warn*.txt
 /buildtests/python_exe.build
+/buildtests/report.xml
 
 /buildtests/*/build
 /buildtests/*/dist

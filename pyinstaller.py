@@ -31,6 +31,7 @@ import PyInstaller.log
 # Warn when old command line option is used
 
 from PyInstaller import get_version
+from PyInstaller.log import logger
 
 
 def run_makespec(opts, args):
@@ -41,7 +42,7 @@ def run_makespec(opts, args):
         opts.pathex.extend(p.split(os.pathsep))
 
     spec_file = PyInstaller.makespec.main(args, **opts.__dict__)
-    print 'wrote %s' % spec_file
+    logger.info('wrote %s' % spec_file)
     return spec_file
 
 

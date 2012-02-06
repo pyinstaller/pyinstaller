@@ -25,7 +25,6 @@ import os
 import sys
 import glob
 import re
-import pprint
 import shutil
 import optparse
 
@@ -35,7 +34,6 @@ except ImportError:
     # if importing PyInstaller fails, try to load from parent
     # directory to support running without installation
     import imp
-    import os
     if not hasattr(os, "getuid") or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
             [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
@@ -44,37 +42,91 @@ except ImportError:
 from PyInstaller import HOMEPATH
 from PyInstaller import is_py23, is_py25, is_py26, is_win, is_darwin
 from PyInstaller import compat
+from PyInstaller.lib import unittest2 as unittest
+from PyInstaller.lib import junitxml
 
-MIN_VERSION_OR_OS = {
-    'basic/test_time': is_py23,
-    'basic/test_celementtree': is_py25,
-    'basic/test_email2': is_py23,
-    # On Mac DYLD_LIBRARY_PATH is not used.
-    'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
-    'import/test_relative_import': is_py25,
-    'import/test_relative_import2': is_py26,
-    'import/test_relative_import3': is_py25,
-    'libraries/test_enchant': is_win,
-}
 
-DEPENDENCIES = {
-    'basic/test_ctypes': ['ctypes'],
-    'basic/test_module_attributes': ['xml.etree.cElementTree'],
-    'basic/test_nestedlaunch1': ['ctypes'],
-    'libraries/test_enchant': ['enchant'],
-    'libraries/test_Image': ['Image'],
-    'libraries/test_numpy': ['numpy'],
-    'libraries/test_PIL': ['PIL'],
-    'libraries/test_PIL2': ['PIL'],
-    'libraries/test_pycrypto': ['Crypto'],
-    'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
-    'libraries/test_wx': ['wx'],
-    'import/test_ctypes_cdll_c': ['ctypes'],
-    'import/test_ctypes_cdll_c2': ['ctypes'],
-    'import/test_zipimport1': ['pkg_resources'],
-    'import/test_zipimport2': ['pkg_resources', 'setuptools'],
-    'interactive/test_pygame': ['pygame'],
-}
+VERBOSE = False
+# Directory with this script (runtests.py).
+BASEDIR = os.path.dirname(os.path.abspath(__file__))
+
+
+class SkipChecker(object):
+    """
+    Check conditions if a test case should be skipped.
+    """
+
+    MIN_VERSION_OR_OS = {
+        'basic/test_time': is_py23,
+        'basic/test_celementtree': is_py25,
+        'basic/test_email2': is_py23,
+        # On Mac DYLD_LIBRARY_PATH is not used.
+        'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
+        'import/test_relative_import': is_py25,
+        'import/test_relative_import2': is_py26,
+        'import/test_relative_import3': is_py25,
+        'libraries/test_enchant': is_win,
+    }
+
+    DEPENDENCIES = {
+        'basic/test_ctypes': ['ctypes'],
+        'basic/test_module_attributes': ['xml.etree.cElementTree'],
+        'basic/test_nestedlaunch1': ['ctypes'],
+        'libraries/test_enchant': ['enchant'],
+        'libraries/test_Image': ['Image'],
+        'libraries/test_numpy': ['numpy'],
+        'libraries/test_PIL': ['PIL'],
+        'libraries/test_PIL2': ['PIL'],
+        'libraries/test_pycrypto': ['Crypto'],
+        'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
+        'libraries/test_wx': ['wx'],
+        'import/test_ctypes_cdll_c': ['ctypes'],
+        'import/test_ctypes_cdll_c2': ['ctypes'],
+        'import/test_zipimport1': ['pkg_resources'],
+        'import/test_zipimport2': ['pkg_resources', 'setuptools'],
+        'interactive/test_pygame': ['pygame'],
+    }
+
+    def _check_python_and_os(self, test_name):
+        """
+        Return True if test name is not in the list or Python or OS
+        version is not met.
+        """
+        if (test_name in SkipChecker.MIN_VERSION_OR_OS and
+                not SkipChecker.MIN_VERSION_OR_OS[test_name]):
+            return False
+        return True
+
+    def _check_dependencies(self, test_name):
+        """
+        Return name of missing required module, if any. None means
+        no module is missing.
+        """
+        if test_name in SkipChecker.DEPENDENCIES:
+            for mod_name in SkipChecker.DEPENDENCIES[test_name]:
+                retcode = compat.exec_python_rc('-c', "import %s" % mod_name)
+                if retcode != 0:
+                    return mod_name
+        return None
+
+    def check(self, test_name):
+        """
+        Check test requirements if they are any specified.
+
+        Return tupple (True/False, 'Reason for skipping.').
+        True if all requirements are met. Then test case may
+        be executed.
+        """
+        if not self._check_python_and_os(test_name):
+            return (False, 'Required another Python version or OS.')
+
+        required_module = self._check_dependencies(test_name)
+
+        if required_module is not None:
+            return (False, "Module %s is missing." % required_module)
+        else:
+            return (True, 'Requirements met.')
+
 
 NO_SPEC_FILE = [
     'basic/test_absolute_ld_library_path',
@@ -84,148 +136,150 @@ NO_SPEC_FILE = [
 ]
 
 
-TEST_DIRS = ['basic', 'import', 'libraries', 'multipackage']
-INTERACT_TEST_DIRS = ['interactive']
+def run_configure(verbose=False):
+    """
+    Run configure phase. The same configuration can be used
+    for all tests and tests take then less time.
+    """
+    log_level = 'INFO' if verbose else 'ERROR'
+    # run configure phase.
+    compat.exec_python_rc(os.path.join(HOMEPATH, 'utils', 'Configure.py'),
+            '--log-level=%s' % log_level)
 
 
-# files/globs to clean up
-CLEANUP = """python_exe.build
-logdict*.log
-disttest*
-buildtest*
-warn*.txt
-*.py[co]
-*/*.py[co]
-*/*/*.py[co]
-build/
-dist/
-*/*.dll
-*/*.so
-*/*.dylib
-""".split()
+class BuildTestRunner(object):
 
+    def __init__(self, test_name, verbose=False):
+        # Use path separator '/' even on windows for test_name name.
+        self.test_name = test_name.replace('\\', '/')
+        self.verbose = verbose
+        self.test_dir, self.test_file = os.path.split(self.test_name)
 
-def clean():
-    for d in TEST_DIRS + INTERACT_TEST_DIRS:
-        os.chdir(d)
-        for clean in CLEANUP:
-            clean = glob.glob(clean)
-            for path in clean:
-                try:
-                    if os.path.isdir(path):
-                        shutil.rmtree(path)
-                    else:
-                        os.remove(path)
-                except OSError, e:
-                    print e
-        os.chdir('..')
-    # delete *.spec files for tests without spec
-    for path in NO_SPEC_FILE:
-        path += '.spec'
-        if os.path.exists(path):
-            os.remove(path)
+    def _msg(self, *args, **kw):
+        """
+        Important text. Print it to console only in verbose mode.
+        """
+        if self.verbose:
+            short = kw.get('short', 0)
+            sep = kw.get('sep', '#')
+            if not short:
+                print
+            print sep * 20,
+            for a in args:
+                print a,
+            print sep * 20
+            if not short:
+                print
 
+    def _plain_msg(self, text):
+        """
+        Print text to console only in verbose mode.
+        """
+        if self.verbose:
+            print(text)
 
-def _msg(*args, **kw):
-    short = kw.get('short', 0)
-    sep = kw.get('sep', '#')
-    if not short:
-        print
-    print sep * 20,
-    for a in args:
-        print a,
-    print sep * 20
-    if not short:
-        print
+    def _find_exepath(self, test, parent_dir='dist'):
+        of_prog = os.path.join(parent_dir, test)  # one-file deploy filename
+        od_prog = os.path.join(parent_dir, test, test)  # one-dir deploy filename
 
+        prog = None
+        if os.path.isfile(of_prog):
+            prog = of_prog
+        elif os.path.isfile(of_prog + ".exe"):
+            prog = of_prog + ".exe"
+        elif os.path.isdir(of_prog):
+            if os.path.isfile(od_prog):
+                prog = od_prog
+            elif os.path.isfile(od_prog + ".exe"):
+                prog = od_prog + ".exe"
+        return prog
 
-def runtests(alltests, filters=None, run_executable=1, verbose=False):
-    # Use path separator '/' even on windows for test names.
-    if is_win:
-        alltests = [x.replace('\\', '/') for x in alltests]
+    def _run_created_exe(self, test, testdir=None):
+        """
+        Run executable created by PyInstaller.
+        """
+        self._msg('EXECUTING TEST', self.test_name)
+        # Run the test in a clean environment to make sure they're
+        # really self-contained
+        path = compat.getenv('PATH')
+        compat.unsetenv('PATH')
+        prog = self._find_exepath(test, 'dist')
+        if prog is None:
+            self._plain_msg('ERROR: no file generated by PyInstaller found!')
+            compat.setenv("PATH", path)
+            return 1
+        else:
+            self._plain_msg("RUNNING: " + prog)
+            retcode, out, err = compat.exec_command_all(prog)
+            self._msg('STDOUT')
+            self._plain_msg(out)
+            self._msg('STDERR')
+            self._plain_msg(err)
+            compat.setenv("PATH", path)
+            return retcode
 
-    info = "Executing PyInstaller tests in: %s" % os.getcwd()
-    print "*" * min(80, len(info))
-    print info
-    print "*" * min(80, len(info))
+    def test_exists(self):
+        """
+        Return True if test file exists.
+        """
+        return os.path.exists(os.path.join(BASEDIR, self.test_name + '.py'))
 
-    OPTS = ['--debug']
+    def test_building(self):
+        """
+        Run building of test script.
 
-    build_python = open('basic/python_exe.build', 'w')
-    build_python.write(sys.executable + "\n")
-    build_python.write('debug=%s' % __debug__ + '\n')
-    build_python.close()
+        Return True if build succeded False otherwise.
+        """
+        OPTS = ['--skip-configure', '--debug']
 
-    if not filters:
-        tests = alltests
-    else:
-        tests = []
-        for part in filters:
-            tests += [t for t in alltests if part in t and t not in tests]
+        if self.verbose:
+            OPTS.extend(['--debug', '--log-level=INFO'])
+        else:
+            OPTS.append('--log-level=ERROR')
 
-    tests = [(len(x), x) for x in tests]
-    tests.sort()
-    counter = {"passed": [], "failed": [], "skipped": []}
+        self._msg("BUILDING TEST", self.test_name)
 
-    # execute tests
-    testbasedir = os.getcwdu()
-    for _, test in tests:
-        test = os.path.splitext(test)[0]
-        if not os.path.exists(test + '.py'):
-            _msg("Testfile not found:", test + '.py', short=1)
-            counter["failed"].append(test)
-            continue
-        testdir, testfile = os.path.split(test)
-        if not testdir:
-            testdir = '.'
-        elif not os.path.exists(testdir):
-            os.makedirs(testdir)
-        os.chdir(testdir)  # go to testdir
-        if test in MIN_VERSION_OR_OS and not MIN_VERSION_OR_OS[test]:
-            counter["skipped"].append(test)
-            os.chdir(testbasedir)  # go back from testdir
-            continue
-        if test in DEPENDENCIES:
-            failed = False
-            for mod in DEPENDENCIES[test]:
-                res = compat.exec_python_rc('-c', "import %s" % mod)
-                if res != 0:
-                    failed = True
-                    break
-            if failed:
-                if verbose:
-                    print "Skipping test because module %s is missing" % mod
-                counter["skipped"].append(test)
-                os.chdir(testbasedir)  # go back from testdir
-                continue
-        _msg("BUILDING TEST", test)
-
-        # use pyinstaller.py for building tests
-        testfile_spec = testfile + '.spec'
-        if not os.path.exists(testfile + '.spec'):
+        # use pyinstaller.py for building test_name
+        testfile_spec = self.test_file + '.spec'
+        if not os.path.exists(self.test_file + '.spec'):
             # .spec file does not exist and it has to be generated
             # for main script
-            testfile_spec = testfile + '.py'
+            testfile_spec = self.test_file + '.py'
 
-        res = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
-                          testfile_spec, *OPTS)
-        if res == 0 and run_executable:
-            files = glob.glob(os.path.join('dist', testfile + '*'))
-            for exe in files:
-                exe = os.path.splitext(exe)[0]
-                res_tmp = test_exe(exe[5:], testdir)
-                res = res or res_tmp
+        retcode = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
+                  testfile_spec, *OPTS)
 
-        # compare log files (now used only by multipackage tests)
-        logsfn = glob.glob(testfile + '.toc')
+        return retcode == 0
+
+    def test_exe(self):
+        """
+        Test running of all created executables.
+        """
+        files = glob.glob(os.path.join('dist', self.test_file + '*'))
+        retcode = 0
+        for exe in files:
+            exe = os.path.splitext(exe)[0]
+            retcode_tmp = self._run_created_exe(exe[5:], self.test_dir)
+            retcode = retcode or retcode_tmp
+        return retcode == 0
+
+    def test_logs(self):
+        """
+        Compare log files (now used only by multipackage test_name).
+
+        Return True if .toc files match or when .toc patters
+        are not defined.
+        """
+        logsfn = glob.glob(self.test_file + '.toc')
         # other main scritps do not start with 'test_'
-        logsfn += glob.glob(testfile.split('_', 1)[1] + '_?.toc')
+        logsfn += glob.glob(self.test_file.split('_', 1)[1] + '_?.toc')
         for logfn in logsfn:
-            _msg("EXECUTING MATCHING", logfn)
+            self._msg("EXECUTING MATCHING", logfn)
             tmpname = os.path.splitext(logfn)[0]
-            prog = find_exepath(tmpname)
+            prog = self._find_exepath(tmpname)
             if prog is None:
-                prog = find_exepath(tmpname, os.path.join('dist', testfile))
+                prog = self._find_exepath(tmpname,
+                        os.path.join('dist', self.test_file))
             fname_list = compat.exec_python(
                 os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
                 '-b', '-r', prog)
@@ -240,78 +294,197 @@ def runtests(alltests, filters=None, run_executable=1, verbose=False):
                     if re.match(pattern, fname):
                         count += 1
                         found = True
-                        if verbose:
-                            print "MATCH: %s --> %s" % (pattern, fname)
+                        self._plain_msg('MATCH: %s --> %s' % (pattern, fname))
                         break
                 if not found:
-                    if verbose:
-                        print "MISSING: %s" % pattern
-            if count < len(pattern_list):
-                res = 1
-                print "Matching FAILED!"
-            else:
-                print "Matching SUCCESS!"
+                    self._plain_msg('MISSING: %s' % pattern)
 
-        if res == 0:
-            _msg("FINISHING TEST", test, short=1)
-            counter["passed"].append(test)
-        else:
-            _msg("TEST", test, "FAILED", short=1, sep="!!")
-            counter["failed"].append(test)
-        os.chdir(testbasedir)  # go back from testdir
-    pprint.pprint(counter)
+            return not count < len(pattern_list)
+
+        return True
 
 
-def test_exe(test, testdir=None):
-    _msg("EXECUTING TEST", testdir + '/' + test)
-    # Run the test in a clean environment to make sure they're
-    # really self-contained
-    path = compat.getenv("PATH")
-    compat.unsetenv("PATH")
-    prog = find_exepath(test, 'dist')
-    if prog is None:
-        print "ERROR: no file generated by PyInstaller found!"
-        compat.setenv("PATH", path)
-        return 1
+class GenericTestCase(unittest.TestCase):
+    def __init__(self, test_dir, func_name):
+        """
+        test_dir    Directory containing testing python scripts.
+        func_name   Name of test function to create.
+        """
+        self.test_name = test_dir + '/' + func_name
+
+        # Create new test fuction. This has to be done before super().
+        setattr(self, func_name, self._generic_test_function)
+        super(GenericTestCase, self).__init__(func_name)
+
+        # For tests current working directory has to be changed temporaly.
+        self.curr_workdir = os.getcwdu()
+
+    def setUp(self):
+        testdir = os.path.dirname(self.test_name)
+        os.chdir(testdir)  # go to testdir
+        # For some 'basic' tests we need create file with path to python
+        # executable and if it is running in debug mode.
+        build_python = open(os.path.join(BASEDIR, 'basic', 'python_exe.build'),
+                'w')
+        build_python.write(sys.executable + "\n")
+        build_python.write('debug=%s' % __debug__ + '\n')
+        build_python.close()
+
+    def tearDown(self):
+        os.chdir(self.curr_workdir)  # go back from testdir
+
+    def _generic_test_function(self):
+        # Skip test case if test requirement are not met.
+        s = SkipChecker()
+        req_met, msg = s.check(self.test_name)
+        if not req_met:
+            raise unittest.SkipTest(msg)
+        # Create a build and test it.
+        b = BuildTestRunner(self.test_name, verbose=VERBOSE)
+        self.assertTrue(b.test_exists(),
+                msg='Test %s not found.' % self.test_name)
+        self.assertTrue(b.test_building(),
+                msg='Build of %s failed.' % self.test_name)
+        self.assertTrue(b.test_exe(),
+                msg='Running exe of %s failed.' % self.test_name)
+        self.assertTrue(b.test_logs(),
+                msg='Matching .toc of %s failed.' % self.test_name)
+
+
+class BasicTestCase(GenericTestCase):
+    test_dir = 'basic'
+
+    def __init__(self, func_name):
+        super(BasicTestCase, self).__init__(self.test_dir, func_name)
+
+
+class ImportTestCase(GenericTestCase):
+    test_dir = 'import'
+
+    def __init__(self, func_name):
+        super(ImportTestCase, self).__init__(self.test_dir, func_name)
+
+
+class LibrariesTestCase(GenericTestCase):
+    test_dir = 'libraries'
+
+    def __init__(self, func_name):
+        super(LibrariesTestCase, self).__init__(self.test_dir, func_name)
+
+
+class MultipackageTestCase(GenericTestCase):
+    test_dir = 'multipackage'
+
+    def __init__(self, func_name):
+        super(MultipackageTestCase, self).__init__(self.test_dir, func_name)
+
+
+class InteractiveTestCase(GenericTestCase):
+    """
+    Interactive tests require user interaction mostly GUI.
+
+    Interactive tests have to be run directly by user.
+    They can't be run by any continuous integration system.
+    """
+    test_dir = 'interactive'
+
+    def __init__(self, func_name):
+        super(InteractiveTestCase, self).__init__(self.test_dir, func_name)
+
+
+class TestCaseGenerator(object):
+    """
+    Generate test cases.
+    """
+    def _detect_tests(self, directory):
+        files = glob.glob(os.path.join(directory, 'test_*.py'))
+        # Test name is a file name without extension.
+        tests = [os.path.splitext(os.path.basename(x))[0] for x in files]
+        tests.sort()
+        return tests
+
+    def create_suite(self, test_types):
+        """
+        Create test suite and add test cases to it.
+
+        test_types      Test classes to create test cases from.
+
+        Return test suite with tests.
+        """
+        suite = unittest.TestSuite()
+
+        for _type in test_types:
+            tests = self._detect_tests(_type.test_dir)
+            # Create test cases for a specific type.
+            for test_name in tests:
+                suite.addTest(_type(test_name))
+
+        return suite
+
+
+def clean():
+    """
+    Remove temporary files created while running tests.
+    """
+    # Files/globs to clean up.
+    patterns = """python_exe.build
+    logdict*.log
+    disttest*
+    buildtest*
+    warn*.txt
+    *.py[co]
+    */*.py[co]
+    */*/*.py[co]
+    build/
+    dist/
+    */*.dll
+    */*.so
+    */*.dylib
+    """.split()
+
+    # Remove temporary files in all subdirectories.
+    for directory in os.listdir(BASEDIR):
+        if not os.path.isdir(directory):
+            continue
+        for pattern in patterns:
+            file_list = glob.glob(os.path.join(directory, pattern))
+            for pth in file_list:
+                try:
+                    if os.path.isdir(pth):
+                        shutil.rmtree(pth)
+                    else:
+                        os.remove(pth)
+                except OSError, e:
+                    print e
+
+    # Delete *.spec files for tests without spec file.
+    for pth in NO_SPEC_FILE:
+        pth = os.path.join(BASEDIR, pth + '.spec')
+        if os.path.exists(pth):
+            os.remove(pth)
+
+
+def run_tests(test_suite, xml_file):
+    """
+    Run test suite and save output to junit xml file if requested.
+    """
+    if xml_file:
+        print 'Writting test results to: %s' % xml_file
+        fp = open('report.xml', 'w')
+        result = junitxml.JUnitXmlResult(fp)
+        result.startTestRun()
+        test_suite.run(result)
+        result.stopTestRun()
+        fp.close()
     else:
-        print "RUNNING:", prog
-        tmp = compat.exec_command_rc(prog)
-        compat.setenv("PATH", path)
-        return tmp
+        unittest.TextTestRunner(verbosity=2).run(test_suite)
 
 
-def find_exepath(test, parent_dir='dist'):
-    of_prog = os.path.join(parent_dir, test)  # one-file deploy filename
-    od_prog = os.path.join(parent_dir, test, test)  # one-dir deploy filename
-
-    prog = None
-    if os.path.isfile(of_prog):
-        prog = of_prog
-    elif os.path.isfile(of_prog + ".exe"):
-        prog = of_prog + ".exe"
-    elif os.path.isdir(of_prog):
-        if os.path.isfile(od_prog):
-            prog = od_prog
-        elif os.path.isfile(od_prog + ".exe"):
-            prog = od_prog + ".exe"
-    return prog
-
-
-def detect_tests(folders):
-    tests = []
-    for f in folders:
-        tests += glob.glob(os.path.join(f, 'test_*.py'))
-    return tests
-
-
-if __name__ == '__main__':
-
-    # Change working directory to place where this script is.
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
+def main():
     try:
         parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]',
-              epilog='TEST-NAME can be the name of the .py-file, the .spec-file or only the basename.')
+              epilog='TEST-NAME can be the name of the .py-file, '
+              'the .spec-file or only the basename.')
     except TypeError:
         parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]')
 
@@ -319,35 +492,52 @@ if __name__ == '__main__':
                       help='Clean up generated files')
     parser.add_option('-i', '--interactive-tests', action='store_true',
                       help='Run interactive tests (default: run normal tests)')
-    parser.add_option('-n', '--no-run', action='store_true',
-                      help='Do not run the built executables. '
-                           'Useful for cross builds.')
     parser.add_option('-v', '--verbose',
                       action='store_true',
                       default=False,
                       help='Verbose mode (default: %default)')
+    parser.add_option('--junitxml', action='store', default=None,
+            metavar='FILE', help='Create junit-xml style test report file')
 
     opts, args = parser.parse_args()
 
+    global VERBOSE
+    VERBOSE = opts.verbose
+
+    # Do only cleanup.
     if opts.clean:
         clean()
         raise SystemExit()
 
+    # Run only single specified tests.
     if args:
         if opts.interactive_tests:
             parser.error('Must not specify -i/--interactive-tests when passing test names.')
-        # run all tests in specified dir
-        if args[0] in TEST_DIRS:
-            tests = detect_tests(args)
-        # run only single specified tests
-        else:
-            tests = args
-    elif opts.interactive_tests:
-        print "Running interactive tests"
-        tests = detect_tests(INTERACT_TEST_DIRS)
-    else:
-        print "Running normal tests (-i for interactive tests)"
-        tests = detect_tests(TEST_DIRS)
+        test_dir = os.path.dirname(args[0])
+        test_script = os.path.basename(os.path.splitext(args[0])[0])
+        suite = unittest.TestSuite()
+        suite.addTest(GenericTestCase(test_dir, test_script))
+        print 'Runnint single test:  %s' % (test_dir + '/' + test_script)
 
+    # Run all tests or all interactive tests.
+    else:
+        if opts.interactive_tests:
+            print 'Running interactive tests...'
+            test_classes = [InteractiveTestCase]
+        else:
+            print 'Running normal tests (-i for interactive tests)...'
+            test_classes = [BasicTestCase, ImportTestCase,
+                    LibrariesTestCase, MultipackageTestCase]
+
+        # Create test suite.
+        generator = TestCaseGenerator()
+        suite = generator.create_suite(test_classes)
+
+    # Run created test suite.
     clean()
-    runtests(tests, run_executable=not opts.no_run, verbose=opts.verbose)
+    run_configure(opts.verbose)
+    run_tests(suite, opts.junitxml)
+
+
+if __name__ == '__main__':
+    main()

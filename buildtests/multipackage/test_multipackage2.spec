@@ -1,6 +1,8 @@
 # -*- mode: python -*-
 
-print "TESTING MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onedir pack)."
+'''
+MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onedir pack)
+'''
 
 __testname__ = 'test_multipackage2'
 __testdep__ = 'multipackage2_B'
