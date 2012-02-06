@@ -187,6 +187,6 @@
     'iu',
     'struct',
     'archive',
-    '_mountzlib',
+    '_pyi_bootstrap',
     'multipackage2_B',
 ]

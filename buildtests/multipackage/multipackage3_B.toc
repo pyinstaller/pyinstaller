@@ -187,7 +187,7 @@
     'iu',
     'struct',
     'archive',
-    '_mountzlib',
+    '_pyi_bootstrap',
     'multipackage3_B',
     '.*ssl.*',
     '.*bz2.*',
