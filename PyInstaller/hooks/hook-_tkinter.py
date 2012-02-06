@@ -7,7 +7,7 @@ from PyInstaller import bindepend
 from PyInstaller.build import Tree
 from PyInstaller.hooks.hookutils import logger
 
-def find_tk_win():
+def find_tk_win(binaries):
     pattern = re.compile(r'(?i)tcl(\d)(\d)\.dll')
     for nm, fnm in binaries:
         mo = pattern.match(nm)
