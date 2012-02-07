@@ -14,6 +14,8 @@ Changes since PyInstaller 1.5
  + Added option --log-level to all scripts to adjust level of output
    (thanks to Hartmut Goebel).
  + rthooks.dat moved to support/rthooks.dat
+ + Packaged executable now returns the same return-code as the
+   unpackaged script (thanks to Brandyn White).
  * Drop dependency on otool from Xcode on Mac OSX.
  * Removed compatibility code for old platforms (dos, os2, MacOS 9).
  * Fix missing qt_menu.nib in dist directory on Mac OSX when using PyQt4.
