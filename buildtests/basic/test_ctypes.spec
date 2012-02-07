@@ -53,10 +53,7 @@ os.chdir(CTYPES_DIR)
 if is_win:
     ret = os.system('cl /LD testctypes-win.c')
     if ret != 0:
-        ret = os.system('gcc -shared testctypes-win.c -o testctypes.dll')
-        if ret != 0:
-            raise NotImplementedError('Cannot find either MinGW or '
-                'Visual Studio in PATH')
+        os.system('gcc -shared testctypes-win.c -o testctypes.dll')
 elif is_darwin:
     # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
     cmd = ('gcc -arch ' + mac_gcc_architecture() + ' -Wall -dynamiclib '

@@ -24,6 +24,8 @@ import glob
 import os
 import sys
 
+from PyInstaller.compat import is_win
+
 
 def dlls_in_subdirs(directory):
     """Returns *.dll, *.so, *.dylib in given directories and subdirectories."""
@@ -56,7 +58,7 @@ def find_executable(executable, path=None):
     paths = path.split(os.pathsep)
     extlist = ['']
 
-    if sys.platform == 'win32':
+    if is_win:
         (base, ext) = os.path.splitext(executable)
         # Executable files on windows have an arbitrary extension, but
         # .exe is automatically appended if not present in the name.

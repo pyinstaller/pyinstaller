@@ -44,6 +44,7 @@ from PyInstaller import is_py23, is_py25, is_py26, is_win, is_darwin
 from PyInstaller import compat
 from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml
+from PyInstaller.utils import misc
 
 
 VERBOSE = False
@@ -51,62 +52,103 @@ VERBOSE = False
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 
 
+class MiscDependencies(object):
+    """
+    Place holder for special requirements of some tests.
+
+    e.g. basic/test_ctypes needs C compiler.
+
+    Every method returns None when successful or a string containing
+    error message to be displayed on console.
+    """
+    def c_compiler(self):
+        """
+        Check availability of C compiler.
+        """
+        compiler = None
+        msg = 'Cannot find GCC, MinGW or Visual Studio in PATH.'
+        if is_win:
+            # Try MSVC.
+            compiler = misc.find_executable('cl')
+        if compiler is None:
+            # Try GCC.
+            compiler = misc.find_executable('gcc')
+            if compiler is None:
+                return msg
+        return None  # C compiler was found.
+
+
 class SkipChecker(object):
     """
     Check conditions if a test case should be skipped.
     """
-
-    MIN_VERSION_OR_OS = {
-        'basic/test_time': is_py23,
-        'basic/test_celementtree': is_py25,
-        'basic/test_email2': is_py23,
-        # On Mac DYLD_LIBRARY_PATH is not used.
-        'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
-        'import/test_relative_import': is_py25,
-        'import/test_relative_import2': is_py26,
-        'import/test_relative_import3': is_py25,
-        'libraries/test_enchant': is_win,
-    }
-
-    DEPENDENCIES = {
-        'basic/test_ctypes': ['ctypes'],
-        'basic/test_module_attributes': ['xml.etree.cElementTree'],
-        'basic/test_nestedlaunch1': ['ctypes'],
-        'libraries/test_enchant': ['enchant'],
-        'libraries/test_Image': ['Image'],
-        'libraries/test_numpy': ['numpy'],
-        'libraries/test_PIL': ['PIL'],
-        'libraries/test_PIL2': ['PIL'],
-        'libraries/test_pycrypto': ['Crypto'],
-        'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
-        'libraries/test_wx': ['wx'],
-        'import/test_ctypes_cdll_c': ['ctypes'],
-        'import/test_ctypes_cdll_c2': ['ctypes'],
-        'import/test_zipimport': ['pkg_resources'],
-        'import/test_zipimport2': ['pkg_resources', 'setuptools'],
-        'interactive/test_pygame': ['pygame'],
-    }
+    def __init__(self):
+        depend = MiscDependencies()
+        # Required Python or OS version for some tests.
+        self.MIN_VERSION_OR_OS = {
+            'basic/test_time': is_py23,
+            'basic/test_celementtree': is_py25,
+            'basic/test_email2': is_py23,
+            # On Mac DYLD_LIBRARY_PATH is not used.
+            'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
+            'import/test_relative_import': is_py25,
+            'import/test_relative_import2': is_py26,
+            'import/test_relative_import3': is_py25,
+            'libraries/test_enchant': is_win,
+            }
+        # Required Python modules for some tests.
+        self.MODULES = {
+            'basic/test_ctypes': ['ctypes'],
+            'basic/test_module_attributes': ['xml.etree.cElementTree'],
+            'basic/test_nestedlaunch1': ['ctypes'],
+            'libraries/test_enchant': ['enchant'],
+            'libraries/test_Image': ['Image'],
+            'libraries/test_numpy': ['numpy'],
+            'libraries/test_PIL': ['PIL'],
+            'libraries/test_PIL2': ['PIL'],
+            'libraries/test_pycrypto': ['Crypto'],
+            'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
+            'libraries/test_wx': ['wx'],
+            'import/test_ctypes_cdll_c': ['ctypes'],
+            'import/test_ctypes_cdll_c2': ['ctypes'],
+            'import/test_zipimport': ['pkg_resources'],
+            'import/test_zipimport2': ['pkg_resources', 'setuptools'],
+            'interactive/test_pygame': ['pygame'],
+            }
+        # Other dependecies of some tests.
+        self.DEPENDENCIES = {
+            'basic/test_ctypes': [depend.c_compiler()]}
 
     def _check_python_and_os(self, test_name):
         """
         Return True if test name is not in the list or Python or OS
         version is not met.
         """
-        if (test_name in SkipChecker.MIN_VERSION_OR_OS and
-                not SkipChecker.MIN_VERSION_OR_OS[test_name]):
+        if (test_name in self.MIN_VERSION_OR_OS and
+                not self.MIN_VERSION_OR_OS[test_name]):
             return False
         return True
 
-    def _check_dependencies(self, test_name):
+    def _check_modules(self, test_name):
         """
         Return name of missing required module, if any. None means
         no module is missing.
         """
-        if test_name in SkipChecker.DEPENDENCIES:
-            for mod_name in SkipChecker.DEPENDENCIES[test_name]:
+        if test_name in self.MODULES:
+            for mod_name in self.MODULES[test_name]:
                 retcode = compat.exec_python_rc('-c', "import %s" % mod_name)
                 if retcode != 0:
                     return mod_name
+        return None
+
+    def _check_dependencies(self, test_name):
+        """
+        Return error message when a requirement is not met, None otherwise.
+        """
+        if test_name in self.DEPENDENCIES:
+            for dep in self.DEPENDENCIES[test_name]:
+                if dep is not None:
+                    return dep
         return None
 
     def check(self, test_name):
@@ -120,12 +162,15 @@ class SkipChecker(object):
         if not self._check_python_and_os(test_name):
             return (False, 'Required another Python version or OS.')
 
-        required_module = self._check_dependencies(test_name)
-
+        required_module = self._check_modules(test_name)
         if required_module is not None:
             return (False, "Module %s is missing." % required_module)
-        else:
-            return (True, 'Requirements met.')
+
+        dependency = self._check_dependencies(test_name)
+        if dependency is not None:
+            return (False, dependency)
+
+        return (True, 'Requirements met.')
 
 
 NO_SPEC_FILE = [
