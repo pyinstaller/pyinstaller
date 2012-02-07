@@ -136,17 +136,6 @@ NO_SPEC_FILE = [
 ]
 
 
-def run_configure(verbose=False):
-    """
-    Run configure phase. The same configuration can be used
-    for all tests and tests take then less time.
-    """
-    log_level = 'INFO' if verbose else 'ERROR'
-    # run configure phase.
-    compat.exec_python_rc(os.path.join(HOMEPATH, 'utils', 'Configure.py'),
-            '--log-level=%s' % log_level)
-
-
 class BuildTestRunner(object):
 
     def __init__(self, test_name, verbose=False):
@@ -230,7 +219,7 @@ class BuildTestRunner(object):
 
         Return True if build succeded False otherwise.
         """
-        OPTS = ['--skip-configure', '--debug']
+        OPTS = ['--debug']
 
         if self.verbose:
             OPTS.extend(['--debug', '--log-level=INFO'])
@@ -535,7 +524,6 @@ def main():
 
     # Run created test suite.
     clean()
-    run_configure(opts.verbose)
     run_tests(suite, opts.junitxml)
 
 
