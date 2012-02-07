@@ -43,6 +43,9 @@
 # /buildtests/libraries/
 /buildtests/libraries/tinysample.png
 /buildtests/libraries/test_xml.spec
+/buildtests/basic/test_absolute_ld_library_path.spec
+/buildtests/basic/test_absolute_python_path.spec
+/buildtests/libraries/test_sqlalchemy.spec
 
 /e2etests/common/hanoi[1-9]
 
