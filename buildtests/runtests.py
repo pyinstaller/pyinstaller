@@ -310,7 +310,7 @@ class GenericTestCase(unittest.TestCase):
 
     def setUp(self):
         testdir = os.path.dirname(self.test_name)
-        os.chdir(testdir)  # go to testdir
+        os.chdir(os.path.join(BASEDIR, testdir))  # go to testdir
         # For some 'basic' tests we need create file with path to python
         # executable and if it is running in debug mode.
         build_python = open(os.path.join(BASEDIR, 'basic', 'python_exe.build'),
