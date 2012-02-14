@@ -24,7 +24,8 @@
 import os
 
 from PyInstaller.compat import PYCO
-from PyInstaller.mf import _resolveCtypesImports, ctypes, scan_code, PathImportDirector
+from PyInstaller.depend.utils import _resolveCtypesImports, ctypes, scan_code
+from PyInstaller.mf import PathImportDirector
 
 
 class Module:
