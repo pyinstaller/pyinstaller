@@ -25,19 +25,12 @@ import dis
 import os
 
 from PyInstaller import compat
-from PyInstaller.compat import set
+from PyInstaller.compat import set, ctypes
 
 from PyInstaller import is_unix, is_darwin, is_py25, is_py27
 
 import PyInstaller.depend.utils
 import PyInstaller.log as logging
-
-try:
-    # if ctypes is present, we can enable specific dependency discovery
-    import ctypes
-    from ctypes.util import find_library
-except ImportError:
-    ctypes = None
 
 
 logger = logging.getLogger('PyInstaller.build.mf')
@@ -290,6 +283,8 @@ def scan_code_for_ctypes(co, instrs, i):
 def _resolveCtypesImports(cbinaries):
     """Completes ctypes BINARY entries for modules with their full path.
     """
+    from ctypes.util import find_library
+
     if is_unix:
         envvar = "LD_LIBRARY_PATH"
     elif is_darwin:

@@ -59,7 +59,14 @@ else:
     PYCO = 'o'
 
 
-# Obsolete command line options (do not exist anymore)
+# If ctypes is present, specific dependency discovery can be enabled.
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
+
+
+# Obsolete command line options (do not exist anymore).
 _OLD_OPTIONS = [
     '--upx', '-X',
     '-K', '--tk',
