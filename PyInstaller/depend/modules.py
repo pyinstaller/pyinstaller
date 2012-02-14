@@ -22,7 +22,9 @@
 # If we were importing, these would be hooked to the real module objects
 
 import os
-from PyInstaller.mf import PYCO, _resolveCtypesImports, ctypes, scan_code, PathImportDirector
+
+from PyInstaller.compat import PYCO
+from PyInstaller.mf import _resolveCtypesImports, ctypes, scan_code, PathImportDirector
 
 
 class Module:

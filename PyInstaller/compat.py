@@ -52,6 +52,13 @@ is_aix = sys.platform.startswith('aix')
 is_unix = is_linux or is_solar or is_aix
 
 
+# Correct extension ending: 'c' or 'o'
+if __debug__:
+    PYCO = 'c'
+else:
+    PYCO = 'o'
+
+
 # Obsolete command line options (do not exist anymore)
 _OLD_OPTIONS = [
     '--upx', '-X',

@@ -27,7 +27,7 @@ import glob
 import zipimport
 
 from PyInstaller import compat, depend, hooks
-from PyInstaller.compat import set
+from PyInstaller.compat import PYCO, set
 from PyInstaller.loader import archive
 
 from PyInstaller import is_unix, is_darwin, is_py25, is_py27
@@ -52,12 +52,6 @@ if 'PYTHONCASEOK' not in os.environ:
 else:
     def caseOk(filename):
         return True
-
-# correct extension ending: 'c' or 'o'
-if __debug__:
-    PYCO = 'c'
-else:
-    PYCO = 'o'
 
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf
