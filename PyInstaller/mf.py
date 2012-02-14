@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-
+import dis
 import sys
 import os
 import imp
@@ -26,10 +26,14 @@ import dircache
 import glob
 import zipimport
 
-from PyInstaller.loader import archive
-import PyInstaller.compat as compat
+from PyInstaller import compat, depend, hooks
 from PyInstaller.compat import set
+from PyInstaller.loader import archive
 
+from PyInstaller import is_unix, is_darwin, is_py25, is_py27
+
+import PyInstaller
+import PyInstaller.log as logging
 
 try:
     # if ctypes is present, we can enable specific dependency discovery
@@ -38,10 +42,7 @@ try:
 except ImportError:
     ctypes = None
 
-import PyInstaller
-from PyInstaller import is_unix, is_darwin, is_py25, is_py27
 
-import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build.mf')
 
 if 'PYTHONCASEOK' not in os.environ:
@@ -100,7 +101,7 @@ class BaseDirOwner(Owner):
                         continue
                     if typ == imp.C_EXTENSION:
                         #print "DirOwner.getmod -> ExtensionModule(%s, %s)" % (nm, attempt)
-                        return ExtensionModule(nm, os.path.join(self.path,attempt))
+                        return depend.modules.ExtensionModule(nm, os.path.join(self.path,attempt))
                     elif typ == imp.PY_SOURCE:
                         py = (attempt, modtime)
                     else:
@@ -172,10 +173,10 @@ class DirOwner(BaseDirOwner):
         return open(os.path.join(self.path, fn), 'rb').read()
 
     def _pkgclass(self):
-        return PkgModule
+        return depend.modules.PkgModule
 
     def _modclass(self):
-        return PyModule
+        return depend.modules.PyModule
 
     def _caseok(self, fn):
         return caseOk(os.path.join(self.path, fn))
@@ -191,8 +192,8 @@ class PYZOwner(Owner):
             return None
         ispkg, co = rslt
         if ispkg:
-            return PkgInPYZModule(nm, co, self)
-        return PyModule(nm, self.path, co)
+            return depend.modules.PkgInPYZModule(nm, co, self)
+        return depend.modules.PyModule(nm, self.path, co)
 
 
 ZipOwner = None
@@ -244,10 +245,10 @@ if zipimport:
             return self.zf.read(fn)
 
         def _pkgclass(self):
-            return lambda *args: PkgInZipModule(self, *args)
+            return lambda *args: modules.PkgInZipModule(self, *args)
 
         def _modclass(self):
-            return lambda *args: PyInZipModule(self, *args)
+            return lambda *args: modules.PyInZipModule(self, *args)
 
 _globalownertypes = filter(None, [
     DirOwner,
@@ -273,7 +274,7 @@ class BuiltinImportDirector(ImportDirector):
 
     def getmod(self, nm, isbuiltin=imp.is_builtin):
         if isbuiltin(nm):
-            return BuiltinModule(nm)
+            return depend.modules.BuiltinModule(nm)
         return None
 
 class FrozenImportDirector(ImportDirector):
@@ -323,7 +324,7 @@ class RegistryImportDirector(ImportDirector):
         if stuff:
             fnm, (suffix, mode, typ) = stuff
             if typ == imp.C_EXTENSION:
-                return ExtensionModule(nm, fnm)
+                return depend.modules.ExtensionModule(nm, fnm)
             elif typ == imp.PY_SOURCE:
                 try:
                     stuff = open(fnm, 'rU').read()+'\n'
@@ -334,7 +335,7 @@ class RegistryImportDirector(ImportDirector):
             else:
                 stuff = open(fnm, 'rb').read()
                 co = loadco(stuff[8:])
-            return PyModule(nm, fnm, co)
+            return depend.modules.PyModule(nm, fnm, co)
         return None
 
 class PathImportDirector(ImportDirector):
@@ -407,7 +408,6 @@ def getDescr(fnm):
 UNTRIED = -1
 
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
-import PyInstaller.hooks as hooks
 
 if __debug__:
     import sys
@@ -584,7 +584,7 @@ class ImportTracker:
         except SyntaxError, e:
             logger.exception(e)
             raise SystemExit(10)
-        mod = PyScript(fnm, co)
+        mod = depend.modules.PyScript(fnm, co)
         self.modules['__main__'] = mod
         return self.analyze_r('__main__')
 
@@ -593,8 +593,20 @@ class ImportTracker:
         return self.modules[nm].ispackage()
 
     def doimport(self, nm, ctx, fqname):
+        """
+
+        nm      name
+                e.g.:
+        ctx     context
+                e.g.:
+        fqname  fully qualified name
+                e.g.:
+
+        Return dict containing collected information about module (
+        """
+
         #print "doimport", nm, ctx, fqname
-        # Not that nm is NEVER a dotted name at this point
+        # NOTE that nm is NEVER a dotted name at this point
         assert ("." not in nm), nm
         if fqname in self.excludes:
             return None
@@ -696,134 +708,10 @@ class ImportTracker:
                 rslt.append((nm, importers))
         return rslt
 
-#====================Modules============================#
-# All we're doing here is tracking, not importing
-# If we were importing, these would be hooked to the real module objects
-
-class Module:
-    _ispkg = 0
-    typ = 'UNKNOWN'
-
-    def __init__(self, nm):
-        self.__name__ = nm
-        self.__file__ = None
-        self._all = []
-        self.imports = []
-        self.warnings = []
-        self.binaries = []
-        self.datas = []
-        self._xref = {}
-
-    def ispackage(self):
-        return self._ispkg
-
-    def doimport(self, nm):
-        pass
-
-    def xref(self, nm):
-        self._xref[nm] = 1
-
-    def __str__(self):
-        return ("<Module %s %s imports=%s binaries=%s datas=%s>" %
-                (self.__name__, self.__file__, self.imports, self.binaries, self.datas))
-
-class BuiltinModule(Module):
-    typ = 'BUILTIN'
-
-    def __init__(self, nm):
-        Module.__init__(self, nm)
-
-class ExtensionModule(Module):
-    typ = 'EXTENSION'
-
-    def __init__(self, nm, pth):
-        Module.__init__(self, nm)
-        self.__file__ = pth
-
-class PyModule(Module):
-    typ = 'PYMODULE'
-
-    def __init__(self, nm, pth, co):
-        Module.__init__(self, nm)
-        self.co = co
-        self.__file__ = pth
-        if os.path.splitext(self.__file__)[1] == '.py':
-            self.__file__ = self.__file__ + PYCO
-        self.scancode()
-
-    def scancode(self):
-        self.imports, self.warnings, self.binaries, allnms = scan_code(self.co)
-        if allnms:
-            self._all = allnms
-        if ctypes and self.binaries:
-            self.binaries = _resolveCtypesImports(self.binaries)
-
-
-class PyScript(PyModule):
-    typ = 'PYSOURCE'
-
-    def __init__(self, pth, co):
-        Module.__init__(self, '__main__')
-        self.co = co
-        self.__file__ = pth
-        self.scancode()
-
-
-class PkgModule(PyModule):
-    typ = 'PYMODULE'
-
-    def __init__(self, nm, pth, co):
-        PyModule.__init__(self, nm, pth, co)
-        self._ispkg = 1
-        pth = os.path.dirname(pth)
-        self.__path__ = [ pth ]
-        self._update_director(force=True)
-
-    def _update_director(self, force=False):
-        if force or self.subimporter.path != self.__path__:
-            self.subimporter = PathImportDirector(self.__path__)
-
-    def doimport(self, nm):
-        self._update_director()
-        mod = self.subimporter.getmod(nm)
-        if mod:
-            mod.__name__ = self.__name__ + '.' + mod.__name__
-        return mod
-
-class PkgInPYZModule(PyModule):
-    def __init__(self, nm, co, pyzowner):
-        PyModule.__init__(self, nm, co.co_filename, co)
-        self._ispkg = 1
-        self.__path__ = [ str(pyzowner) ]
-        self.owner = pyzowner
-
-    def doimport(self, nm):
-        mod = self.owner.getmod(self.__name__ + '.' + nm)
-        return mod
-
-class PyInZipModule(PyModule):
-    typ = 'ZIPFILE'
-    def __init__(self, zipowner, nm, pth, co):
-        PyModule.__init__(self, nm, co.co_filename, co)
-        self.owner = zipowner
-
-class PkgInZipModule(PyModule):
-    typ = 'ZIPFILE'
-    def __init__(self, zipowner, nm, pth, co):
-        PyModule.__init__(self, nm, co.co_filename, co)
-        self._ispkg = 1
-        self.__path__ = [ str(zipowner) ]
-        self.owner = zipowner
-
-    def doimport(self, nm):
-        mod = self.owner.getmod(self.__name__ + '.' + nm)
-        return mod
-
 
 #======================== Utility ================================#
 # Scan the code object for imports, __all__ and wierd stuff
 
-import dis
 IMPORT_NAME = dis.opname.index('IMPORT_NAME')
 IMPORT_FROM = dis.opname.index('IMPORT_FROM')
 try:

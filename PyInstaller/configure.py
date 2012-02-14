@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-
 import os
 import sys
 import shutil
@@ -34,6 +33,7 @@ import PyInstaller.build as build
 import PyInstaller.compat as compat
 
 import PyInstaller.log as logging
+import PyInstaller.depend.modules
 logger = logging.getLogger('PyInstaller.configure')
 
 
@@ -153,7 +153,7 @@ def find_PYZ_dependencies(config):
                 realnms = a.analyze_one(importednm, nm)
                 for realnm in realnms:
                     imported = a.modules[realnm]
-                    if not isinstance(imported, mf.BuiltinModule):
+                    if not isinstance(imported, PyInstaller.depend.modules.BuiltinModule):
                         tmp.append((imported.__name__, imported.__file__, imported.typ))
         toc.extend(tmp)
     toc.reverse()

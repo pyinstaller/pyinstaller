@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-
 import sys
 import os
 import shutil
@@ -33,7 +32,7 @@ import traceback
 
 from PyInstaller.loader import archive, carchive, iu
 
-import PyInstaller
+import PyInstaller.depend.modules
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
 from PyInstaller import is_win, is_unix, is_aix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
@@ -41,11 +40,12 @@ import PyInstaller.compat as compat
 from PyInstaller.compat import hashlib, set
 from PyInstaller.depend import dylib
 
+
+import PyInstaller.log as logging
 if is_win:
     from PyInstaller.utils import winmanifest
 
 
-import PyInstaller.log as logging
 logger = logging.getLogger('PyInstaller.build')
 
 STRINGTYPE = type('')
@@ -460,14 +460,14 @@ class Analysis(Target):
             rthooks.extend(_findRTHook(modnm))  # XXX
             datas.extend(mod.datas)
 
-            if isinstance(mod, mf.BuiltinModule):
+            if isinstance(mod, PyInstaller.depend.modules.BuiltinModule):
                 pass
-            elif isinstance(mod, mf.ExtensionModule):
+            elif isinstance(mod, PyInstaller.depend.modules.ExtensionModule):
                 binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
                 # allows hooks to specify additional dependency
                 # on other shared libraries loaded at runtime (by dlopen)
                 binaries.extend(mod.binaries)
-            elif isinstance(mod, (mf.PkgInZipModule, mf.PyInZipModule)):
+            elif isinstance(mod, (PyInstaller.depend.modules.PkgInZipModule, PyInstaller.depend.modules.PyInZipModule)):
                 zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
                                  str(mod.owner), 'ZIPFILE'))
             else:

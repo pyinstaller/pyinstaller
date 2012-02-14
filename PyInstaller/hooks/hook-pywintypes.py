@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-
+import PyInstaller.depend.modules
 def hook(mod):
     import sys
     newname = 'PyWinTypes%d%d' % sys.version_info[:2]
@@ -26,5 +26,5 @@ def hook(mod):
         pth = win32api.GetModuleFileName(h)
         #win32api.FreeLibrary(h)
         import PyInstaller.mf as mf
-        mod = mf.ExtensionModule(newname, pth)
+        mod = PyInstaller.depend.modules.ExtensionModule(newname, pth)
     return mod
