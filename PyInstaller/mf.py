@@ -21,25 +21,16 @@ import sys
 import os
 import imp
 import marshal
-import dircache
 import glob
 import zipimport
 
 from PyInstaller import depend, hooks
-from PyInstaller.compat import PYCO, set
+from PyInstaller.compat import caseOk, PYCO, set
 from PyInstaller.loader import archive
 
 import PyInstaller.log as logging
 
 logger = logging.getLogger('PyInstaller.build.mf')
-
-if 'PYTHONCASEOK' not in os.environ:
-    def caseOk(filename):
-        files = dircache.listdir(os.path.dirname(filename))
-        return os.path.basename(filename) in files
-else:
-    def caseOk(filename):
-        return True
 
 #=======================Owners==========================#
 # An Owner does imports from a particular piece of turf

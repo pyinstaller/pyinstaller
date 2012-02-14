@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 #
 # Various classes and functions to provide some backwards-compatibility
 # with previous versions of Python from 2.3 onward.
@@ -19,6 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
+import dircache  # Module removed in Python 3
 import os
 import sys
 
@@ -64,6 +64,15 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+
+
+if 'PYTHONCASEOK' not in os.environ:
+    def caseOk(filename):
+        files = dircache.listdir(os.path.dirname(filename))
+        return os.path.basename(filename) in files
+else:
+    def caseOk(filename):
+        return True
 
 
 # Obsolete command line options (do not exist anymore).
