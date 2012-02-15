@@ -40,7 +40,7 @@ int get_thisfile(char *thisfile, const char *programname)
 {
     /* fill in thisfile */
 #ifdef __CYGWIN__
-    if (strncasecmp(&programname[strlen(argv[0])-4], ".exe", 4)) {
+    if (strncasecmp(&programname[strlen(thisfile-4], ".exe", 4)) {
         strcpy(thisfile, programname);
         strcat(thisfile, ".exe");
         PI_SetProgramName(thisfile);
