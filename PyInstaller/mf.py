@@ -25,7 +25,7 @@ import glob
 import zipimport
 
 from PyInstaller import depend, hooks
-from PyInstaller.compat import caseOk, PYCO, set
+from PyInstaller.compat import caseOk, is_win, PYCO, set
 from PyInstaller.loader import archive
 
 import PyInstaller.log as logging
@@ -425,11 +425,20 @@ class ImportTracker:
             self.path = xpath
         self.path.extend(sys.path)
         self.modules = LogDict()
-        self.metapath = [
-            BuiltinImportDirector(),
-            RegistryImportDirector(),
-            PathImportDirector(self.path)
-        ]
+
+        # RegistryImportDirector is necessary only on Windows.
+        if is_win:
+            self.metapath = [
+                BuiltinImportDirector(),
+                RegistryImportDirector(),
+                PathImportDirector(self.path)
+            ]
+        else:
+            self.metapath = [
+                BuiltinImportDirector(),
+                PathImportDirector(self.path)
+            ]
+
         if hookspath:
             hooks.__path__.extend(hookspath)
         if excludes is None:
