@@ -95,11 +95,11 @@ def pass1(code):
         if i >= out:
             incondition = 0
         c = code[i]
-        i = i+1
+        i = i + 1
         op = ord(c)
         if op >= dis.HAVE_ARGUMENT:
-            oparg = ord(code[i]) + ord(code[i+1])*256
-            i = i+2
+            oparg = ord(code[i]) + ord(code[i + 1]) * 256
+            i = i + 2
         else:
             oparg = None
         if not incondition and op in COND_OPS:
@@ -115,6 +115,7 @@ def pass1(code):
             instrs.append((op, oparg, incondition, curline))
     return instrs
 
+
 def scan_code(co, m=None, w=None, b=None, nested=0):
     instrs = pass1(co.co_code)
     if m is None:
@@ -125,7 +126,7 @@ def scan_code(co, m=None, w=None, b=None, nested=0):
         b = []
     all = []
     lastname = None
-    level = -1 # import-level, same behaviour as up to Python 2.4
+    level = -1  # import-level, same behaviour as up to Python 2.4
     for i, (op, oparg, conditional, curline) in enumerate(instrs):
         if op == IMPORT_NAME:
             if level <= 0:
@@ -144,9 +145,9 @@ def scan_code(co, m=None, w=None, b=None, nested=0):
             #print name
             m.append((name, nested, conditional, level))
             assert lastname is not None
-        elif op == IMPORT_STAR:           
+        elif op == IMPORT_STAR:
             assert lastname is not None
-            m.append((lastname+'.*', nested, conditional, level))
+            m.append((lastname + '.*', nested, conditional, level))
         elif op == STORE_NAME:
             if co.co_names[oparg] == "__all__":
                 j = i - 1
@@ -174,13 +175,13 @@ def scan_code(co, m=None, w=None, b=None, nested=0):
             cndtl = ['', 'conditional'][conditional]
             lvl = ['top-level', 'delayed'][nested]
             if name == "__import__":
-                w.append("W: %s %s __import__ hack detected at line %s"  % (lvl, cndtl, curline))
+                w.append("W: %s %s __import__ hack detected at line %s" % (lvl, cndtl, curline))
             elif name == "eval":
-                w.append("W: %s %s eval hack detected at line %s"  % (lvl, cndtl, curline))
+                w.append("W: %s %s eval hack detected at line %s" % (lvl, cndtl, curline))
         elif op == EXEC_STMT:
             cndtl = ['', 'conditional'][conditional]
             lvl = ['top-level', 'delayed'][nested]
-            w.append("W: %s %s exec statement detected at line %s"  % (lvl, cndtl, curline))
+            w.append("W: %s %s exec statement detected at line %s" % (lvl, cndtl, curline))
         else:
             lastname = None
 
@@ -199,8 +200,10 @@ def scan_code(co, m=None, w=None, b=None, nested=0):
             all.extend(all_nested)
     return m, w, b, all
 
+
 def scan_code_for_ctypes(co, instrs, i):
-    """Detects ctypes dependencies, using reasonable heuristics that should
+    """
+    Detects ctypes dependencies, using reasonable heuristics that should
     cover most common ctypes usages; returns a tuple of two lists, one
     containing names of binaries detected as dependencies, the other containing
     warnings.
@@ -228,7 +231,7 @@ def scan_code_for_ctypes(co, instrs, i):
             # LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
             # LOAD_CONST 1 ('library.so')
 
-            _libFromConst(i+1)
+            _libFromConst(i + 1)
 
         elif name == "ctypes":
             # Guesses ctypes imports of this type: ctypes.DLL("library.so")
@@ -237,11 +240,11 @@ def scan_code_for_ctypes(co, instrs, i):
             # LOAD_ATTR 1 (CDLL)
             # LOAD_CONST 1 ('library.so')
 
-            op2, oparg2, conditional2, curline2 = instrs[i+1]
+            op2, oparg2, conditional2, curline2 = instrs[i + 1]
             if op2 == LOAD_ATTR:
                 if co.co_names[oparg2] in ("CDLL", "WinDLL"):
                     # Fetch next, and finally get the library name
-                    _libFromConst(i+2)
+                    _libFromConst(i + 2)
 
         elif name in ("cdll", "windll"):
             # Guesses ctypes imports of these types:
@@ -257,7 +260,7 @@ def scan_code_for_ctypes(co, instrs, i):
             #     LOAD_ATTR                1 (LoadLibrary)
             #     LOAD_CONST               1 ('library.so')
 
-            op2, oparg2, conditional2, curline2 = instrs[i+1]
+            op2, oparg2, conditional2, curline2 = instrs[i + 1]
             if op2 == LOAD_ATTR:
                 if co.co_names[oparg2] != "LoadLibrary":
                     # First type
@@ -265,7 +268,7 @@ def scan_code_for_ctypes(co, instrs, i):
                     b.append(soname)
                 else:
                     # Second type, needs to fetch one more instruction
-                    _libFromConst(i+2)
+                    _libFromConst(i + 2)
 
     # If any of the libraries has been requested with anything different from
     # the bare filename, drop that entry and warn the user - pyinstaller would

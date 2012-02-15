@@ -40,10 +40,15 @@ logger = logging.getLogger('PyInstaller.build.mf')
 # Note that they replace the string in sys.path,
 # but str(sys.path[n]) should yield the original string.
 
+
 class OwnerError(Exception):
     pass
 
+
 class Owner:
+    """
+    Base class for loading Python bytecode from different places.
+    """
     def __init__(self, path):
         self.path = path
 
@@ -53,7 +58,11 @@ class Owner:
     def getmod(self, nm):
         return None
 
+
 class BaseDirOwner(Owner):
+    """
+    Base class for loading bytecode of Python modules from file system.
+    """
     def _getsuffixes(self):
         return imp.get_suffixes()
 
@@ -66,7 +75,7 @@ class BaseDirOwner(Owner):
         py = pyc = None
         for pth, ispkg, pkgpth in possibles:
             for ext, mode, typ in getsuffixes():
-                attempt = pth+ext
+                attempt = pth + ext
                 modtime = self._modtime(attempt)
                 if modtime is not None:
                     # Check case
@@ -74,7 +83,7 @@ class BaseDirOwner(Owner):
                         continue
                     if typ == imp.C_EXTENSION:
                         #print "DirOwner.getmod -> ExtensionModule(%s, %s)" % (nm, attempt)
-                        return depend.modules.ExtensionModule(nm, os.path.join(self.path,attempt))
+                        return depend.modules.ExtensionModule(nm, os.path.join(self.path, attempt))
                     elif typ == imp.PY_SOURCE:
                         py = (attempt, modtime)
                     else:
@@ -88,7 +97,7 @@ class BaseDirOwner(Owner):
             # If we have no pyc or py is newer
             if pyc is None or py and pyc[1] < py[1]:
                 try:
-                    stuff = self._read(py[0])+'\n'
+                    stuff = self._read(py[0]) + '\n'
                     co = compile(stuff.replace("\r\n", "\n"), py[0], 'exec')
                     pth = py[0] + PYCO
                     break
@@ -125,6 +134,7 @@ class BaseDirOwner(Owner):
         #print "DirOwner.getmod -> %s" % mod
         return mod
 
+
 class DirOwner(BaseDirOwner):
     def __init__(self, path):
         if path == '':
@@ -154,6 +164,7 @@ class DirOwner(BaseDirOwner):
     def _caseok(self, fn):
         return caseOk(os.path.join(self.path, fn))
 
+
 class PYZOwner(Owner):
     def __init__(self, path):
         self.pyz = archive.ZlibArchive(path)
@@ -180,7 +191,9 @@ if zipimport:
     # Instead, we'll reuse the BaseDirOwner logic, simply changing
     # the template methods.
     class ZipOwner(BaseDirOwner):
-
+        """
+        Load bytecode of Python modules from .egg files.
+        """
         def __init__(self, path):
             import zipfile
             try:
@@ -195,7 +208,7 @@ if zipimport:
 
         def _modtime(self, fn):
             # zipfiles always use forward slashes
-            fn = fn.replace("\\","/")
+            fn = fn.replace("\\", "/")
             try:
                 dt = self.zf.getinfo(fn).date_time
                 return dt
@@ -214,7 +227,7 @@ if zipimport:
 
         def _read(self, fn):
             # zipfiles always use forward slashes
-            fn = fn.replace("\\","/")
+            fn = fn.replace("\\", "/")
             return self.zf.read(fn)
 
         def _pkgclass(self):
@@ -238,8 +251,10 @@ _globalownertypes = filter(None, [
 # Mac would have them for PY_RESOURCE modules etc.
 # A generalization of Owner - their concept of "turf" is broader
 
+
 class ImportDirector(Owner):
     pass
+
 
 class BuiltinImportDirector(ImportDirector):
     def __init__(self):
@@ -292,7 +307,7 @@ class RegistryImportDirector(ImportDirector):
                 return depend.modules.ExtensionModule(nm, fnm)
             elif typ == imp.PY_SOURCE:
                 try:
-                    stuff = open(fnm, 'rU').read()+'\n'
+                    stuff = open(fnm, 'rU').read() + '\n'
                     co = compile(stuff, fnm, 'exec')
                 except SyntaxError, e:
                     logger.exception(e)
@@ -302,6 +317,7 @@ class RegistryImportDirector(ImportDirector):
                 co = loadco(stuff[8:])
             return depend.modules.PyModule(nm, fnm, co)
         return None
+
 
 class PathImportDirector(ImportDirector):
     def __init__(self, pathlist=None, importers=None, ownertypes=None):
@@ -375,10 +391,11 @@ UNTRIED = -1
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
 
 if __debug__:
-    import sys
     import UserDict
+
     class LogDict(UserDict.UserDict):
         count = 0
+
         def __init__(self, *args):
             UserDict.UserDict.__init__(self, *args)
             LogDict.count += 1
@@ -391,6 +408,7 @@ if __debug__:
         def __setitem__(self, key, value):
             self.logfile.write("%s: %s -> %s\n" % (key, self.data.get(key), value))
             UserDict.UserDict.__setitem__(self, key, value)
+
         def __delitem__(self, key):
             self.logfile.write("  DEL %s\n" % key)
             UserDict.UserDict.__delitem__(self, key)
@@ -425,11 +443,11 @@ class ImportTracker:
             importer = '__main__'
         seen = {}
         nms = self.analyze_one(nm, importernm)
-        nms = map(None, nms, [importer]*len(nms))
+        nms = map(None, nms, [importer] * len(nms))
         i = 0
         while i < len(nms):
             nm, importer = nms[i]
-            if seen.get(nm,0):
+            if seen.get(nm, 0):
                 del nms[i]
                 mod = self.modules[nm]
                 if mod:
@@ -444,7 +462,7 @@ class ImportTracker:
                     for name, isdelayed, isconditional, level in mod.imports:
                         imptyp = isdelayed * 2 + isconditional
                         newnms = self.analyze_one(name, nm, imptyp, level)
-                        newnms = map(None, newnms, [nm]*len(newnms))
+                        newnms = map(None, newnms, [nm] * len(newnms))
                         nms[j:j] = newnms
                         j = j + len(newnms)
         return map(lambda a: a[0], nms)
@@ -518,7 +536,7 @@ class ImportTracker:
         # now nms is the list of modules that went into sys.modules
         # just as result of the structure of the name being imported
         # however, each mod has been scanned and that list is in mod.imports
-        if i<len(nmparts):
+        if i < len(nmparts):
             if ctx:
                 if hasattr(self.modules[ctx], nmparts[i]):
                     return nms
@@ -534,7 +552,7 @@ class ImportTracker:
         if bottommod.ispackage():
             for nm in bottommod._all:
                 if not hasattr(bottommod, nm):
-                    mod = self.doimport(nm, ctx, ctx+'.'+nm)
+                    mod = self.doimport(nm, ctx, ctx + '.' + nm)
                     if mod:
                         nms.append(mod.__name__)
                     else:
@@ -543,7 +561,7 @@ class ImportTracker:
 
     def analyze_script(self, fnm):
         try:
-            stuff = open(fnm, 'rU').read()+'\n'
+            stuff = open(fnm, 'rU').read() + '\n'
             co = compile(stuff, fnm, 'exec')
         except SyntaxError, e:
             logger.exception(e)
@@ -551,7 +569,6 @@ class ImportTracker:
         mod = depend.modules.PyScript(fnm, co)
         self.modules['__main__'] = mod
         return self.analyze_r('__main__')
-
 
     def ispackage(self, nm):
         return self.modules[nm].ispackage()
@@ -602,7 +619,7 @@ class ImportTracker:
             # now look for hooks
             # this (and scan_code) are instead of doing "exec co in mod.__dict__"
             try:
-                hookmodnm = 'hook-'+fqname
+                hookmodnm = 'hook-' + fqname
                 hooks = __import__('PyInstaller.hooks', globals(), locals(), [hookmodnm])
                 hook = getattr(hooks, hookmodnm)
             except AttributeError:
@@ -621,7 +638,6 @@ class ImportTracker:
         # here
         return mod
 
-
     def _handle_hook(self, mod, hook):
         if hasattr(hook, 'hook'):
             mod = hook.hook(mod)
@@ -639,11 +655,12 @@ class ImportTracker:
                 for fn in names:
                     fn = os.path.join(dirname, fn)
                     if os.path.isfile(fn):
-                        datas.append((dest_dir + fn[len(base)+1:], fn, 'DATA'))
+                        datas.append((dest_dir + fn[len(base) + 1:], fn, 'DATA'))
 
-            datas = mod.datas # shortcut
+            datas = mod.datas  # shortcut
             for g, dest_dir in hook.datas:
-                if dest_dir: dest_dir += os.sep
+                if dest_dir:
+                    dest_dir += os.sep
                 for fn in glob.glob(g):
                     if os.path.isfile(fn):
                         datas.append((dest_dir + os.path.basename(fn), fn, 'DATA'))
@@ -651,18 +668,17 @@ class ImportTracker:
                         os.path.walk(fn, _visit,
                                      (os.path.dirname(fn), dest_dir, datas))
         return mod
-        
 
     def getwarnings(self):
         warnings = self.warnings.keys()
-        for nm,mod in self.modules.items():
+        for nm, mod in self.modules.items():
             if mod:
                 for w in mod.warnings:
-                    warnings.append(w+' - %s (%s)' % (mod.__name__, mod.__file__))
+                    warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
         return warnings
 
     def getxref(self):
-        mods = self.modules.items() # (nm, mod)
+        mods = self.modules.items()  # (nm, mod)
         mods.sort()
         rslt = []
         for nm, mod in mods:

@@ -187,10 +187,11 @@ class ZipOwner(Owner):
 
 
 # Define order where to look for Python modules first.
-# 1. look in executable created by PyInstaller.
+# 1. PYZOwner: look in executable created by PyInstaller.
 #    (_pyi_bootstrap.py will insert it (archive.PYZOwner) in front later.)
-# 2. zip files (.egg files)
-# 3. file system
+# 2. ZipOwner: zip files (.egg files)
+# 3. DirOwner: file system
+# 4. Owner:    module not found
 _globalownertypes = [
     ZipOwner,
     DirOwner,

@@ -250,7 +250,7 @@ def _rmdir(path):
         os.remove(path)
         return
 
-    if NOCONFIRM :
+    if NOCONFIRM:
         choice = 'y'
     elif sys.stdout.isatty():
         choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
@@ -337,7 +337,7 @@ class Target:
 
 class Analysis(Target):
     _old_scripts = set((
-        absnormpath(os.path.join(HOMEPATH, "support","_mountzlib.py")),
+        absnormpath(os.path.join(HOMEPATH, "support", "_mountzlib.py")),
         absnormpath(os.path.join(CONFIGDIR, "support", "useUnicode.py")),
         absnormpath(os.path.join(CONFIGDIR, "support", "useTK.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useUnicode.py")),
@@ -350,7 +350,7 @@ class Analysis(Target):
                  hookspath=None, excludes=None):
         Target.__init__(self)
         self.inputs = [
-            os.path.join(HOMEPATH, "support","_pyi_bootstrap.py"),
+            os.path.join(HOMEPATH, "support", "_pyi_bootstrap.py"),
             ]
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
@@ -450,7 +450,7 @@ class Analysis(Target):
                 continue
             logger.info("Analyzing hidden import %r", modnm)
             importTracker.analyze_one(modnm)
-            if not importTracker.modules.has_key(modnm):
+            if not modnm in importTracker.modules:
                 logger.error("Hidden import %r not found", modnm)
 
         ###################################################
@@ -552,7 +552,7 @@ class Analysis(Target):
 
         if is_aix:
             # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
-            names = ('libpython%d.%d.a' % sys.version_info[:2],) 
+            names = ('libpython%d.%d.a' % sys.version_info[:2],)
         elif is_unix:
             # Other *nix platforms.
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
@@ -1458,6 +1458,7 @@ def TkTree():
     raise SystemExit('TkTree has been removed in PyInstaller 2.0. '
                      'Please update your spec-file. See '
                      'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
+
 
 def TkPKG():
     raise SystemExit('TkPKG has been removed in PyInstaller 2.0. '

@@ -85,16 +85,16 @@ _unix_excludes = {
 }
 
 _aix_excludes = {
-    r'/libbz2\.a':1,
-    r'/libc\.a':1,
-    r'/libC\.a':1,
-    r'/libcrypt\.a':1,
-    r'/libdl\.a':1,
-    r'/libintl\.a':1,
-    r'/libpthreads\.a':1,
-    r'/librt\\.a':1,
-    r'/librtl\.a':1,
-    r'/libz\.a':1,
+    r'/libbz2\.a': 1,
+    r'/libc\.a': 1,
+    r'/libC\.a': 1,
+    r'/libcrypt\.a': 1,
+    r'/libdl\.a': 1,
+    r'/libintl\.a': 1,
+    r'/libpthreads\.a': 1,
+    r'/librt\\.a': 1,
+    r'/librtl\.a': 1,
+    r'/libz\.a': 1,
 }
 
 
