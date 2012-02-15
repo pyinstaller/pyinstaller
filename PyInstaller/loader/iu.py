@@ -221,19 +221,6 @@ class BuiltinImportDirector(ImportDirector):
         return None
 
 
-class FrozenImportDirector(ImportDirector):
-    def __init__(self):
-        self.path = 'FrozenModules'
-
-    def getmod(self, nm, isfrozen=imp.is_frozen):
-        if isfrozen(nm):
-            mod = imp.load_module(nm, None, nm, ('', '', imp.PY_FROZEN))
-            if hasattr(mod, '__path__'):
-                mod.__importsub__ = lambda name, pname=nm, owner=self: owner.getmod(pname + '.' + name)
-            return mod
-        return None
-
-
 class RegistryImportDirector(ImportDirector):
     # for Windows only
     def __init__(self):
@@ -357,7 +344,6 @@ class ImportManager:
     def __init__(self):
         self.metapath = [
             BuiltinImportDirector(),
-            FrozenImportDirector(),
             RegistryImportDirector(),
             PathImportDirector()
         ]

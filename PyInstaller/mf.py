@@ -231,8 +231,8 @@ _globalownertypes = filter(None, [
 ])
 
 #===================Import Directors====================================#
-# ImportDirectors live on the metapath
-# There's one for builtins, one for frozen modules, and one for sys.path
+# ImportDirectors live on the metapath.
+# There's one for builtins and one for sys.path.
 # Windows gets one for modules gotten from the Registry
 # There should be one for Frozen modules
 # Mac would have them for PY_RESOURCE modules etc.
@@ -250,14 +250,6 @@ class BuiltinImportDirector(ImportDirector):
             return depend.modules.BuiltinModule(nm)
         return None
 
-class FrozenImportDirector(ImportDirector):
-    def __init__(self):
-        self.path = 'FrozenModules'
-
-    def getmod(self, nm, isfrozen=imp.is_frozen):
-        if isfrozen(nm):
-            return FrozenModule(nm)
-        return None
 
 class RegistryImportDirector(ImportDirector):
     # for Windows only
@@ -417,7 +409,6 @@ class ImportTracker:
         self.modules = LogDict()
         self.metapath = [
             BuiltinImportDirector(),
-            FrozenImportDirector(),
             RegistryImportDirector(),
             PathImportDirector(self.path)
         ]
