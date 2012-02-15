@@ -140,18 +140,6 @@ class Path:
             return repr(self.path)
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
-def get_unicode_modules():
-    modules = []
-    try:
-        import codecs
-        modules = ['codecs']
-        import encodings
-        # `encodings` imprts `codecs`, so only the first is required
-        modules = ['encodings']
-    except ImportError:
-        pass
-    return modules
-
 def __add_options(parser):
     """
     Add the `Makespec` options to a option-parser instance or a
@@ -187,9 +175,6 @@ def __add_options(parser):
     g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
                  help="additional path to search for hooks "
                       "(may be given several times)")    
-    g.add_option("-a", "--ascii", action="store_true",
-                 help="do NOT include unicode encodings "
-                      "(default: included if available)")
 
     g = parser.add_option_group('How to generate')
     g.add_option("-d", "--debug", action="store_true", default=False,
@@ -246,7 +231,7 @@ def __add_options(parser):
 
 def main(scripts, name=None, onefile=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
-         ascii=0, workdir=None, pathex=[], version_file=None,
+         workdir=None, pathex=[], version_file=None,
          icon_file=None, manifest=None, resources=[], crypt=None,
          hiddenimports=None, hookspath=None, **kwargs):
 
@@ -281,10 +266,10 @@ def main(scripts, name=None, onefile=0,
     if resources:
         resources = map(quote_win_filepath, resources)
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
+
     hiddenimports = hiddenimports or []
-    if not ascii:
-        hiddenimports.extend(get_unicode_modules())
     scripts = map(Path, scripts)
+
     d = {'scripts':scripts,
          'pathex' :pathex,
          'hiddenimports': hiddenimports,

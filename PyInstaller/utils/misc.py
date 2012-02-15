@@ -22,7 +22,6 @@ This module is for the miscellaneous routines which do not fit somewhere else.
 
 import glob
 import os
-import sys
 
 from PyInstaller.compat import is_win
 
@@ -80,3 +79,20 @@ def find_executable(executable, path=None):
                     return f
     else:
         return None
+
+
+def get_unicode_modules():
+    """
+    Try importing codecs and encodings to include unicode support
+    in created binary.
+    """
+    modules = []
+    try:
+        import codecs
+        modules = ['codecs']
+        import encodings
+        # `encodings` imports `codecs`, so only the first is required.
+        modules = ['encodings']
+    except ImportError:
+        pass
+    return modules

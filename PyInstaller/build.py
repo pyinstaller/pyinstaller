@@ -39,6 +39,7 @@ from PyInstaller import is_py23, is_py24
 import PyInstaller.compat as compat
 from PyInstaller.compat import hashlib, set
 from PyInstaller.depend import dylib
+from PyInstaller.utils import misc
 
 
 import PyInstaller.log as logging
@@ -60,6 +61,10 @@ SPECPATH = None
 BUILDPATH = None
 WARNFILE = None
 NOCONFIRM = None
+
+# Some modules are included if they are detected at build-time or
+# if a command-line argument is specified. (e.g. --ascii)
+HIDDENIMPORTS = []
 
 rthooks = {}
 
@@ -357,7 +362,11 @@ class Analysis(Target):
         self.pathex = []
         if pathex:
             self.pathex = [absnormpath(path) for path in pathex]
+
         self.hiddenimports = hiddenimports or []
+        # Include modules detected at build time. Like 'codecs' and encodings.
+        self.hiddenimports.extend(HIDDENIMPORTS)
+
         self.hookspath = hookspath
         self.excludes = excludes
         self.scripts = TOC()
@@ -1543,15 +1552,22 @@ def __add_options(parser):
                       'confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'))
     parser.add_option('--upx-dir', default=None,
                       help='Directory containing UPX (default: search in path)')
+    parser.add_option("-a", "--ascii", action="store_true",
+                 help="do NOT include unicode encodings "
+                      "(default: included if available)")
 
 
-def main(specfile, buildpath, noconfirm, **kw):
+def main(specfile, buildpath, noconfirm, ascii=False, **kw):
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm
-    global NOCONFIRM
+    global HIDDENIMPORTS, NOCONFIRM
     NOCONFIRM = noconfirm
 
-    # :fixme: this should be a global import, but can't due to recursive imports
+    # Test unicode support.
+    if not ascii:
+        HIDDENIMPORTS.extend(misc.get_unicode_modules())
+
+    # FIXME: this should be a global import, but can't due to recursive imports
     import PyInstaller.configure as configure
     config = configure.get_config(kw.get('upx_dir'))
 
