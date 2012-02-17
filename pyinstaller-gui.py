@@ -62,6 +62,13 @@ class PyInstallerGUI:
         cancelbutton.pack(side="right")
         self.fin = ''
         self.fout = ''
+
+        ws = root.winfo_screenwidth()
+        hs = root.winfo_screenheight()
+        x = (ws/2) - (400/2)
+        y = (hs/2) - (250/2)
+        root.geometry('%dx%d+%d+%d' % (400, 250, x, y))
+
         root.mainloop()
 
     def killapp(self, event):
