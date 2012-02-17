@@ -15,8 +15,4 @@ setup(name='unzipped_egg',
       packages=['unzipped_egg'],
       package_data={'unzipped_egg': ['data/datafile.txt']},
       zip_safe = False,
-      entry_points = """
-      [pyinstaller.buildtests.plugin]
-      unzipped = unzipped_egg:main
-      """
      )
