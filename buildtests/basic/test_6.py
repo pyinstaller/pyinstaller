@@ -1,3 +1,4 @@
+# Copyright (C) 2012, Hartmut Goebel
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
@@ -14,15 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 import sys, os
 import data6
+
 print "data6.x is", data6.x
+
 txt = """\
 x = %d
 """ % (data6.x + 1)
+
 if hasattr(sys, 'frozen'):
-    open(os.path.join(os.path.dirname(sys.executable), 'data6.py'), 'w').write(txt)
+    data6_filename = os.path.join(sys._MEIPASS, 'data6.py')
 else:
-    open(data6.__file__, 'w').write(txt)
+    data6_filename = data6.__file__
+
+open(data6_filename, 'w').write(txt)
+
 reload(data6)
 print "data6.x is now", data6.x
