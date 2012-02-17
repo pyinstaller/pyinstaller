@@ -368,6 +368,50 @@ for CGI's executed by Apache. Otherwise, you can ignore the warnings in the UPX
 docs, since what PyInstaller opens is the executable Installer created, not the
 temporary upx-created executable.
 
+
+Accessing Data Files
+-----------------------
+
+If your application needs to access data files, e.g configuration
+files or icons images, you need some minor changes to you application
+and you need to collect the file into distribution directory tree (in
+`--onedir` mode) resp. into the executable (in `--onefile` mode).
+
+Adopt your application
+************************
+
+Instead of::
+
+      basedir = os.path.dirname(__file__)
+
+use::
+
+      if getattr(sys, 'frozen', None):
+           basedir = sys._MEIPASS
+      else:
+           basedir = os.path.dirname(__file__)
+
+Collect your data files
+************************
+
+Collecting the data-files is easy: pass a list of your data files (in
+``TOC`` format) to the ``COLLECT``. The ``name`` in the ``(name, path,
+'DATA')`` tuple can be a relative path name.
+
+Then, at runtime, you can use code like this to find the file::
+
+       os.path.join(basedir, relativename)
+
+In a ``--onedir`` distribution, the files will listed in the
+``COLLECT`` will show up in the distribution directory tree, so you
+can simply pack them into your isntaller or distribution archive.
+
+In a ``--onefile`` distribution, data files are bundled within the
+executable and then at runtime extracted into the work directory. This
+is done by the C code which is also able to reconstruct directory
+trees.
+
+
 How one-file mode works
 -----------------------
 
@@ -419,6 +463,7 @@ library is extracted into the temporary directory and when it gets loaded
 by the execvp'd process. So maybe you shouldn't do setuid root programs
 using ``--onefile``. **In fact, we do not recomend the use of --onefile
 on setuid programs.**
+
 
 .egg files and setuptools
 -------------------------
@@ -1220,23 +1265,6 @@ embedding DLL sets ``sys.frozen='dll'``).
 For really advanced users, you can access the ``iu.ImportManager`` as
 ``sys.importManager``. See `iu.py`_ for how you might make use of this fact.
 
-Accessing Data Files
-********************
-
-In a ``--onedir`` distribution, this is easy: pass a list of your data files
-(in ``TOC`` format) to the ``COLLECT``, and they will show up in the
-distribution directory tree. The name in the ``(name, path, 'DATA')``
-tuple can be a relative path name. Then, at runtime, you can use code
-like this to find the file::
-
-       os.path.join(os.path.dirname(sys.executable), relativename))
-
-In a ``--onefile`` distribution, data files are bundled within the executable
-and then extracted at runtime into the work directory by the C code (which is
-also able to reconstruct directory trees). The work directory is best found by
-``sys._MEIPASS``. So, you can access those files through::
-
-       os.path.join(sys._MEIPASS, relativename))
 
 Miscellaneous
 +++++++++++++
