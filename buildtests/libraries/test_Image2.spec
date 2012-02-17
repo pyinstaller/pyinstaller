@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-__testname__ = 'test_10'
+__testname__ = 'test_Image2'
 
 a = Analysis([__testname__ + '.py'],
              pathex=['.'])
