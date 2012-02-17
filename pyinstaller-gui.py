@@ -15,6 +15,7 @@ import FileDialog
 class PyInstallerGUI:
     def __init__(self):
         root = Tk()
+        root.title("PyInstaller GUI")
         fr1 = Frame(root)
         fr1["width"] = 200
         fr1["height"] = 100
