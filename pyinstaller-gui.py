@@ -46,7 +46,10 @@ class PyInstallerGUI:
         self.filetype = self.make_checkbutton(fr2, "One File Package")
         self.ascii = self.make_checkbutton(fr2, "Do NOT include decodings")
         self.debug = self.make_checkbutton(fr2, "Use debug versions")
-        self.noconsole = self.make_checkbutton(fr2, "No console (Windows only)")
+        if sys.platform.startswith('win'):
+            self.noconsole = self.make_checkbutton(fr2, "No console (Windows only)")
+        else:
+            self.noconsole = IntVar()
 
         okaybutton = Button(fr4, text="Okay   ")
         okaybutton.bind("<Button>", self.makePackage)
