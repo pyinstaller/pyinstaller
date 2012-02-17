@@ -35,8 +35,6 @@ rm -rf ../../import/zipped.egg ../../import/unzipped.egg
 mv lib/python2.7/site-packages/zipped_egg-*.egg ../../import/zipped.egg
 mv lib/python2.7/site-packages/unzipped_egg-*.egg ../../import/unzipped.egg
 cd ..
-echo >  ../import/test_eggs1.pth ./zipped.egg
-echo >> ../import/test_eggs1.pth ./unzipped.egg
 
 deactivate
 
