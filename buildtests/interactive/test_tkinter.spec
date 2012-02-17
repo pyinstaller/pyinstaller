@@ -16,6 +16,7 @@ exe = EXE(pyz,
 coll = COLLECT( exe,
                a.binaries,
                a.zipfiles,
+               a.datas,
                strip=False,
                upx=False,
                name=os.path.join('dist', __testname__))
