@@ -9,7 +9,7 @@
 
 export PYTHONDONTWRITEBYTECODE=1
 
-rm -rf build/ dist/
+rm -rf build/ dist/ *.egg-info
 
 python setup-zipped.py bdist_egg
 # nedd to clean up build-dir, otherwise stuff from `zipped_egg`
