@@ -23,11 +23,12 @@ virtualenv venv --distribute
 . venv/bin/activate
 easy_install --zip-ok dist/zipped_egg*.egg
 easy_install --always-unzip dist/unzipped_egg*.egg
-cp ../import/test_eggs1.py venv
+cp ../import/test_eggs*.py venv
 
 # see if the unpackaged test-case still works
 cd venv
 python test_eggs1.py
+python test_eggs2.py
 cd ..
 
 cd venv
