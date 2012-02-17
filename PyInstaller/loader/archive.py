@@ -49,6 +49,7 @@ import sys
 def debug(msg):
     if 0:
         sys.stderr.write(msg + "\n")
+        sys.stderr.flush()
 
 
 _c_suffixes = filter(lambda x: x[2] == imp.C_EXTENSION, imp.get_suffixes())

@@ -39,6 +39,7 @@ import zipimport
 def debug(msg):
     if 0:
         sys.stderr.write(msg + "\n")
+        sys.stderr.flush()
 
 
 #=======================Owners==========================#
