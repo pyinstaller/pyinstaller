@@ -2,7 +2,8 @@
 
 __testname__ = 'test_eggs1'
 
-a = Analysis([__testname__ + '.py'])
+a = Analysis([__testname__ + '.py'],
+             pathex=['unzipped.egg', 'zipped.egg'])
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
