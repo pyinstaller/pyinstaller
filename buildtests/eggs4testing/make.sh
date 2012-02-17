@@ -31,9 +31,9 @@ python test_eggs1.py
 cd ..
 
 cd venv
-rm -rf ../../import/zipped.egg ../../import/unzipped.egg
-mv lib/python2.7/site-packages/zipped_egg-*.egg ../../import/zipped.egg
-mv lib/python2.7/site-packages/unzipped_egg-*.egg ../../import/unzipped.egg
+rm -rfv ../../import/zipped.egg ../../import/unzipped.egg
+mv -v lib/python2.7/site-packages/zipped_egg-*.egg ../../import/zipped.egg
+mv -v lib/python2.7/site-packages/unzipped_egg-*.egg ../../import/unzipped.egg
 cd ..
 
 deactivate
