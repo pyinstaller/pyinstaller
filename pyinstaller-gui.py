@@ -23,20 +23,14 @@ class PyInstallerGUI:
     def __init__(self):
         root = Tk()
         root.title("PyInstaller GUI")
-        fr1 = Frame(root)
-        fr1["width"] = 200
-        fr1["height"] = 100
+        fr1 = Frame(root, width=300, height=100)
         fr1.pack(side="top")
-        fr2 = Frame(root)
-        fr2["width"] = 200
-        fr2["height"] = 300
-        fr2["borderwidth"] = 2
-        fr2["relief"] = "ridge"
-        fr2.pack()
-        fr4 = Frame(root)
-        fr4["width"] = 200
-        fr4["height"] = 100
-        fr4.pack(side="bottom")
+
+        fr2 = Frame(root, width=300, height=300,
+                    borderwidth=2, relief="ridge")
+        fr2.pack(ipadx=10, ipady=10)
+        fr4 = Frame(root, width=300, height=100)
+        fr4.pack(side="bottom", pady=10)
 
         getFileButton = Button(fr1, text="Script to bundle ...")
         getFileButton.bind("<Button>", self.GetFile)
