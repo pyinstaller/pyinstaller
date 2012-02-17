@@ -50,6 +50,8 @@ class PyInstallerGUI:
             self.noconsole = self.make_checkbutton(fr2, "No console (Windows only)")
         else:
             self.noconsole = IntVar()
+        if not sys.platform.startswith('win'):
+            self.strip = self.make_checkbutton(fr2, "Strip the exe and shared libs")
 
         okaybutton = Button(fr4, text="Okay   ")
         okaybutton.bind("<Button>", self.makePackage)
@@ -75,6 +77,8 @@ class PyInstallerGUI:
             commands.append('--debug')
         if self.noconsole.get():
             commands.append('--noconsole')
+        if self.strip.get():
+            commands.append('--strip')
         commands.append(self.fin)
         retcode = subprocess.call(commands)
         sys.exit(retcode)
