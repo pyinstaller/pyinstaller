@@ -551,7 +551,7 @@ def main():
         test_script = os.path.basename(os.path.splitext(args[0])[0])
         suite = unittest.TestSuite()
         suite.addTest(GenericTestCase(test_dir, test_script))
-        print 'Runnint single test:  %s' % (test_dir + '/' + test_script)
+        print 'Running single test:  %s' % (test_dir + '/' + test_script)
 
     # Run all tests or all interactive tests.
     else:
