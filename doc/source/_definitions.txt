@@ -7,4 +7,3 @@
 .. |Version| replace:: v2.0dev
 .. |PyInstallerVersion| replace:: PyInstaller |Version|
 .. |install_path| replace:: /your/path/to/pyinstaller/
-.. |config.dat| replace:: /etc/pyinstaller.conf
