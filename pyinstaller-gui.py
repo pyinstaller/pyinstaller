@@ -13,6 +13,13 @@ import tkFileDialog
 import FileDialog
 
 class PyInstallerGUI:
+
+    def make_checkbutton(self, frame, text):
+        var = IntVar()
+        widget = Checkbutton(frame, text=text, variable=var)
+        widget.grid(sticky="NW")
+        return var
+
     def __init__(self):
         root = Tk()
         root.title("PyInstaller GUI")
@@ -36,26 +43,10 @@ class PyInstallerGUI:
         getFileButton.pack(side="left")
         self.filein = Entry(fr1)
         self.filein.pack(side="right")
-        self.filetypecheck = Checkbutton(fr2)
-        self.filetypecheck["text"] = "One File Package                 "
-        self.filetype = IntVar()
-        self.filetypecheck["variable"] = self.filetype
-        self.filetypecheck.pack()
-        self.asciicheck = Checkbutton(fr2)
-        self.asciicheck["text"] = "Do NOT include decodings"
-        self.ascii = IntVar()
-        self.asciicheck["variable"] = self.ascii
-        self.asciicheck.pack()
-        self.debugcheck = Checkbutton(fr2)
-        self.debugcheck["text"] = "Use debug versions             "
-        self.debug = IntVar()
-        self.debugcheck["variable"] = self.debug
-        self.debugcheck.pack()
-        self.noconsolecheck = Checkbutton(fr2)
-        self.noconsolecheck["text"] = "No console (Windows only)"
-        self.noconsole = IntVar()
-        self.noconsolecheck["variable"] = self.noconsole
-        self.noconsolecheck.pack()
+        self.filetype = self.make_checkbutton(fr2, "One File Package")
+        self.ascii = self.make_checkbutton(fr2, "Do NOT include decodings")
+        self.debug = self.make_checkbutton(fr2, "Use debug versions")
+        self.noconsole = self.make_checkbutton(fr2, "No console (Windows only)")
         okaybutton = Button(fr4)
         okaybutton["text"] = "Okay   "
         okaybutton.bind("<Button>", self.makePackage)
