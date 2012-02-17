@@ -37,8 +37,8 @@ class PyInstallerGUI:
         fr4["width"] = 200
         fr4["height"] = 100
         fr4.pack(side="bottom")
-        getFileButton = Button(fr1)
-        getFileButton["text"] = "Script..."
+
+        getFileButton = Button(fr1, text="Script to bundle ...")
         getFileButton.bind("<Button>", self.GetFile)
         getFileButton.pack(side="left")
         self.filein = Entry(fr1)
@@ -47,12 +47,12 @@ class PyInstallerGUI:
         self.ascii = self.make_checkbutton(fr2, "Do NOT include decodings")
         self.debug = self.make_checkbutton(fr2, "Use debug versions")
         self.noconsole = self.make_checkbutton(fr2, "No console (Windows only)")
-        okaybutton = Button(fr4)
-        okaybutton["text"] = "Okay   "
+
+        okaybutton = Button(fr4, text="Okay   ")
         okaybutton.bind("<Button>", self.makePackage)
         okaybutton.pack(side="left")
-        cancelbutton = Button(fr4)
-        cancelbutton["text"] = "Cancel"
+
+        cancelbutton = Button(fr4, text="Cancel")
         cancelbutton.bind("<Button>", self.killapp)
         cancelbutton.pack(side="right")
         self.fin = ''
