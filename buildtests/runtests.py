@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#
+# Copyright (C) 2011-2012 Martin Zibricky
+# Copyright (C) 2011-2012 Hartmut Goebel
 # Copyright (C) 2005-2011 Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
