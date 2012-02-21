@@ -741,10 +741,12 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 
 	putenv(pypath);
 	VS("%s\n", pypath);
+
 	/* Clear out PYTHONHOME to avoid clashing with any installation */
-#ifdef WIN32
-	putenv("PYTHONHOME=");
-#endif
+	strcpy(pypath, "PYTHONHOME=");
+	strcat(pypath, status->homepath);
+	putenv(pypath);
+	VS("%s\n", pypath);
 
 	/* Start python. */
 	/* VS("Loading python\n"); */
