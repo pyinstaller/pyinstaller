@@ -542,9 +542,7 @@ int loadPython(ARCHIVE_STATUS *status)
         FATALERROR("Python library not found.\n");
         return -1;
     }
-#else
-
-#ifdef AIX
+#elif AIX
     /* On AIX 'ar' archives are used for both static and shared object.
      * To load a shared object from a library, it should be loaded like this:
      *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
@@ -569,6 +567,17 @@ int loadPython(ARCHIVE_STATUS *status)
      * in order to load shared object member from library.
      */
     dlopenMode |= RTLD_MEMBER;
+ #elif __CYGWIN__
+     #define pylibTemplate "%slibpython%01d.%01d.dll"
+     printf( "status->temppath=%s\n",status->temppath);
+     printf( "status->homepath=%s\n",status->homepath);
+     if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
+          && checkFile(dllpath, pylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0)
+
+     {
+         FATALERROR("Python library not found.\n");
+         return -1;
+     }
 #else
     #define pylibTemplate "%slibpython%01d.%01d.so.1.0"
     if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
@@ -577,8 +586,6 @@ int loadPython(ARCHIVE_STATUS *status)
         FATALERROR("Python library not found.\n");
         return -1;
     }
-#endif /* AIX */
-
 #endif
 
 	/* Load the DLL */
