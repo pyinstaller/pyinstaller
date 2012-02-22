@@ -1308,6 +1308,25 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
     return 0;
 }
 
+
+/*
+ * check if binaries need to be extracted. If not, this is probably a onedir solution,
+ * and a child process will not be required on windows.
+ */
+int needToExtractBinaries(ARCHIVE_STATUS *status_list[])
+{
+	TOC * ptoc = status_list[SELF]->tocbuff;
+	while (ptoc < status_list[SELF]->tocend) {
+		if (ptoc->typcd == 'b' || ptoc->typcd == 'x' || ptoc->typcd == 'Z')
+            return 1;
+        if (ptoc->typcd == 'd') {
+            return 1;
+        }
+		ptoc = incrementTocPtr(status_list[SELF], ptoc);
+	}
+	return 0;
+}
+
 /*
  * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  * and checks for dependencies (type 'd'). If dependencies are found, extract them.

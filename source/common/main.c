@@ -101,6 +101,14 @@ int main(int argc, char* argv[])
         }
     }
 
+#ifdef WIN32
+    if (!extractionpath && !needToExtractBinaries(status_list)) {
+        VS("No need to extract files to run; setting extractionpath to homepath\n");
+        extractionpath = homepath;
+        strcat(MEIPASS2, homepath);
+        putenv(MEIPASS2); //Bootstrap sets sys._MEIPASS, plugins rely on it
+    }
+#endif
     if (extractionpath) {
         VS("Already in the child - running!\n");
         /*  If binaries were extracted to temppath,
