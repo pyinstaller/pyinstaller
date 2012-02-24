@@ -262,4 +262,4 @@ def __add_obsolete_options(parser):
     g.add_option(*_OLD_OPTIONS,
                  **{'action': 'callback',
                     'callback': __obsolete_option,
-                    'help': 'This option does not exist anymore.'})
+                    'help': 'These options do not exist anymore.'})
