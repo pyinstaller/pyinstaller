@@ -26,7 +26,6 @@ import zipimport
 
 from PyInstaller import depend, hooks
 from PyInstaller.compat import caseOk, is_win, PYCO, set
-from PyInstaller.loader import archive
 
 import PyInstaller.log as logging
 
@@ -165,21 +164,6 @@ class DirOwner(BaseDirOwner):
         return caseOk(os.path.join(self.path, fn))
 
 
-class PYZOwner(Owner):
-    def __init__(self, path):
-        self.pyz = archive.ZlibArchive(path)
-        Owner.__init__(self, path)
-
-    def getmod(self, nm):
-        rslt = self.pyz.extract(nm)
-        if not rslt:
-            return None
-        ispkg, co = rslt
-        if ispkg:
-            return depend.modules.PkgInPYZModule(nm, co, self)
-        return depend.modules.PyModule(nm, self.path, co)
-
-
 ZipOwner = None
 if zipimport:
     # We cannot use zipimporter here because it has a stupid bug:
@@ -235,13 +219,6 @@ if zipimport:
 
         def _modclass(self):
             return lambda *args: depend.modules.PyInZipModule(self, *args)
-
-_globalownertypes = filter(None, [
-    DirOwner,
-    ZipOwner,
-    PYZOwner,
-    Owner,
-])
 
 #===================Import Directors====================================#
 # ImportDirectors live on the metapath.
@@ -320,15 +297,18 @@ class RegistryImportDirector(ImportDirector):
 
 
 class PathImportDirector(ImportDirector):
-    def __init__(self, pathlist=None, importers=None, ownertypes=None):
+    def __init__(self, pathlist=None, importers=None):
         if pathlist is None:
             self.path = sys.path
         else:
             self.path = pathlist
-        if ownertypes == None:
-            self.ownertypes = _globalownertypes
-        else:
-            self.ownertypes = ownertypes
+
+        self.ownertypes = filter(None, [
+            DirOwner,
+            ZipOwner,
+            Owner,
+        ])
+
         if importers:
             self.shadowpath = importers
         else:
