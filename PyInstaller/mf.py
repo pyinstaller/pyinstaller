@@ -276,7 +276,7 @@ class RegistryImportDirector(ImportDirector):
                     hkey.Close()
                     break
 
-    def getmod(self, nm):
+    def getmod(self, nm, loadco=marshal.loads):
         stuff = self.map.get(nm)
         if stuff:
             fnm, (suffix, mode, typ) = stuff
