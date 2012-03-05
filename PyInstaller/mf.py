@@ -92,37 +92,41 @@ class BaseDirOwner(Owner):
         if py is None and pyc is None:
             #print "DirOwner.getmod -> (py == pyc == None)"
             return None
-        while 1:
-            # If we have no pyc or py is newer
-            if pyc is None or py and pyc[1] < py[1]:
-                try:
-                    stuff = self._read(py[0]) + '\n'
-                    co = compile(stuff.replace("\r\n", "\n"), py[0], 'exec')
-                    pth = py[0] + PYCO
-                    break
-                except SyntaxError, e:
-                    logger.exception(e)
-                    raise SystemExit(10)
-            elif pyc:
-                stuff = self._read(pyc[0])
-                # If this file was not generated for this version of
-                # Python, we need to regenerate it.
-                if stuff[:4] != imp.get_magic():
-                    logger.warn("wrong version .pyc found (%s), will use .py",
-                                pyc[0])
-                    pyc = None
-                    continue
+
+        co = None
+        ## if nm == 'archive':
+        ##     import pdb ; pdb.set_trace()
+        if pyc:
+            stuff = self._read(pyc[0])
+            # If this file was not generated for this version of
+            # Python, we need to regenerate it.
+            if stuff[:4] != imp.get_magic():
+                logger.warn("wrong version .pyc found (%s), will use .py",
+                            pyc[0])
+            else:
                 try:
                     co = loadco(stuff[8:])
                     pth = pyc[0]
-                    break
                 except (ValueError, EOFError):
+                    pyc = None
                     logger.warn("bad .pyc found (%s), will use .py",
                                 pyc[0])
-                    pyc = None
-            else:
-                #print "DirOwner.getmod while 1 -> None"
-                return None
+
+        if co is None or py and pyc[1] < py[1]:
+            # If we have no pyc or py is newer
+            try:
+                stuff = self._read(py[0]) + '\n'
+                co = compile(stuff.replace("\r\n", "\n"), py[0], 'exec')
+                pth = py[0] + PYCO
+                logger.warn("compiled %s", pth)
+            except SyntaxError, e:
+                logger.exception(e)
+                raise SystemExit(10)
+
+        if co is None:
+            #print "DirOwner.getmod -> None"
+            return None
+
         pth = os.path.join(self.path, pth)
         if not os.path.isabs(pth):
             pth = os.path.abspath(pth)
