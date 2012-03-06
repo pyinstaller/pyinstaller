@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-#
+
 import sys
 import os
 import glob
 
 from PyInstaller import depend, hooks
-from PyInstaller.compat import is_win, set
+from PyInstaller.compat import is_win, LogDict, set
 
 import PyInstaller.log as logging
 import PyInstaller.depend.owner
@@ -39,31 +39,6 @@ logger = logging.getLogger('PyInstaller.build.mf')
 UNTRIED = -1
 
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
-
-if __debug__:
-    import UserDict
-
-    class LogDict(UserDict.UserDict):
-        count = 0
-
-        def __init__(self, *args):
-            UserDict.UserDict.__init__(self, *args)
-            LogDict.count += 1
-            logfile = "logdict%s-%d.log" % (".".join(map(str, sys.version_info)),
-                                            LogDict.count)
-            if os.path.isdir("build"):
-                logfile = os.path.join("build", logfile)
-            self.logfile = open(logfile, "w")
-
-        def __setitem__(self, key, value):
-            self.logfile.write("%s: %s -> %s\n" % (key, self.data.get(key), value))
-            UserDict.UserDict.__setitem__(self, key, value)
-
-        def __delitem__(self, key):
-            self.logfile.write("  DEL %s\n" % key)
-            UserDict.UserDict.__delitem__(self, key)
-else:
-    LogDict = dict
 
 
 class ImportTracker:
