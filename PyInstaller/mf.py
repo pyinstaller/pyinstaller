@@ -171,7 +171,22 @@ class DirOwner(BaseDirOwner):
 
 
 class PYZOwner(Owner):
+    """
+    Class for loading bytecode of Python modules from PYZ files.
 
+    PYZ file is internal PyInstaller format embedded into final executable.
+
+    It is possible to have a custom .spec file which packs a subset of Python
+    files into a PYZ file, and then drop it on the disk somewhere. When the PYZ
+    file is added to sys.path, PYZOwner will parse it and make the modules
+    within it available at import time.
+
+    NOTE: PYZ format cannot be replaced by zipimport module.
+
+    The problem is that we have no control over zipimport; for instance,
+    it doesn't work if the zip file is embedded into a PKG appended
+    to an executable, like we create in one-file.
+    """
     def __init__(self, path):
         self.pyz = archive.ZlibArchive(path)
         Owner.__init__(self, path)
