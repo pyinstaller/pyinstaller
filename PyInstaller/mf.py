@@ -140,6 +140,7 @@ class BaseDirOwner(Owner):
 
 
 class DirOwner(BaseDirOwner):
+
     def __init__(self, path):
         if path == '':
             path = os.getcwd()
@@ -327,6 +328,7 @@ class PathImportDirector(ImportDirector):
         self.ownertypes = filter(None, [
             DirOwner,
             ZipOwner,
+            PYZOwner,
             Owner,
         ])
 
