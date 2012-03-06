@@ -22,7 +22,6 @@ import os
 import imp
 import marshal
 import glob
-import zipimport
 
 from PyInstaller import depend, hooks
 from PyInstaller.compat import caseOk, is_win, PYCO, set
@@ -201,61 +200,60 @@ class PYZOwner(Owner):
         return depend.modules.PyModule(nm, self.path, co)
 
 
-ZipOwner = None
-if zipimport:
-    # We cannot use zipimporter here because it has a stupid bug:
-    #
-    # >>> z.find_module("setuptools.setuptools.setuptools.setuptools.setuptools") is not None
-    # True
-    #
-    # So mf will go into infinite recursion.
-    # Instead, we'll reuse the BaseDirOwner logic, simply changing
-    # the template methods.
-    class ZipOwner(BaseDirOwner):
-        """
-        Load bytecode of Python modules from .egg files.
-        """
-        def __init__(self, path):
-            import zipfile
-            try:
-                self.zf = zipfile.ZipFile(path, "r")
-            except IOError:
-                raise OwnerError("%s is not a zipfile" % path)
-            Owner.__init__(self, path)
+class ZipOwner(BaseDirOwner):
+    """
+    Load bytecode of Python modules from .egg files.
 
-        def getmod(self, fn):
-            fn = fn.replace(".", "/")
-            return BaseDirOwner.getmod(self, fn)
+    zipimporter cannot be used here because it has a stupid bug:
 
-        def _modtime(self, fn):
-            # zipfiles always use forward slashes
-            fn = fn.replace("\\", "/")
-            try:
-                dt = self.zf.getinfo(fn).date_time
-                return dt
-            except KeyError:
-                return None
+      >>> z.find_module("setuptools.setuptools.setuptools.setuptools.setuptools") is not None
+      True
 
-        def _isdir(self, fn):
-            # No way to find out if "fn" is a directory
-            # so just always look into it in case it is.
-            return True
+    So mf will go into infinite recursion. Instead, we'll reuse
+    the BaseDirOwner logic, simply changing the template methods.
+    """
+    def __init__(self, path):
+        import zipfile
+        try:
+            self.zf = zipfile.ZipFile(path, "r")
+        except IOError:
+            raise OwnerError("%s is not a zipfile" % path)
+        Owner.__init__(self, path)
 
-        def _caseok(self, fn):
-            # zipfile is always case-sensitive, so surely
-            # there is no case mismatch.
-            return True
+    def getmod(self, fn):
+        fn = fn.replace(".", "/")
+        return BaseDirOwner.getmod(self, fn)
 
-        def _read(self, fn):
-            # zipfiles always use forward slashes
-            fn = fn.replace("\\", "/")
-            return self.zf.read(fn)
+    def _modtime(self, fn):
+        # zipfiles always use forward slashes
+        fn = fn.replace("\\", "/")
+        try:
+            dt = self.zf.getinfo(fn).date_time
+            return dt
+        except KeyError:
+            return None
 
-        def _pkgclass(self):
-            return lambda *args: depend.modules.PkgInZipModule(self, *args)
+    def _isdir(self, fn):
+        # No way to find out if "fn" is a directory
+        # so just always look into it in case it is.
+        return True
 
-        def _modclass(self):
-            return lambda *args: depend.modules.PyInZipModule(self, *args)
+    def _caseok(self, fn):
+        # zipfile is always case-sensitive, so surely
+        # there is no case mismatch.
+        return True
+
+    def _read(self, fn):
+        # zipfiles always use forward slashes
+        fn = fn.replace("\\", "/")
+        return self.zf.read(fn)
+
+    def _pkgclass(self):
+        return lambda *args: depend.modules.PkgInZipModule(self, *args)
+
+    def _modclass(self):
+        return lambda *args: depend.modules.PyInZipModule(self, *args)
+
 
 #===================Import Directors====================================#
 # ImportDirectors live on the metapath.
