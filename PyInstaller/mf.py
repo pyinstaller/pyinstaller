@@ -26,6 +26,7 @@ import zipimport
 
 from PyInstaller import depend, hooks
 from PyInstaller.compat import caseOk, is_win, PYCO, set
+from PyInstaller.loader import archive
 
 import PyInstaller.log as logging
 
@@ -166,6 +167,22 @@ class DirOwner(BaseDirOwner):
 
     def _caseok(self, fn):
         return caseOk(os.path.join(self.path, fn))
+
+
+class PYZOwner(Owner):
+
+    def __init__(self, path):
+        self.pyz = archive.ZlibArchive(path)
+        Owner.__init__(self, path)
+
+    def getmod(self, nm):
+        rslt = self.pyz.extract(nm)
+        if not rslt:
+            return None
+        ispkg, co = rslt
+        if ispkg:
+            return depend.modules.PkgInPYZModule(nm, co, self)
+        return depend.modules.PyModule(nm, self.path, co)
 
 
 ZipOwner = None

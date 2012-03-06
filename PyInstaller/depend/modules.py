@@ -122,6 +122,18 @@ class PkgModule(PyModule):
         return mod
 
 
+class PkgInPYZModule(PyModule):
+    def __init__(self, nm, co, pyzowner):
+        PyModule.__init__(self, nm, co.co_filename, co)
+        self._ispkg = 1
+        self.__path__ = [str(pyzowner)]
+        self.owner = pyzowner
+
+    def doimport(self, nm):
+        mod = self.owner.getmod(self.__name__ + '.' + nm)
+        return mod
+
+
 class PyInZipModule(PyModule):
     typ = 'ZIPFILE'
 
