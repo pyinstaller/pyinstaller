@@ -409,6 +409,12 @@ class PYZOwner(iu.Owner):
     Load bytecode of Python modules from the executable created by PyInstaller.
 
     Python bytecode is zipped and appended to the executable.
+
+    NOTE: PYZ format cannot be replaced by zipimport module.
+
+    The problem is that we have no control over zipimport; for instance,
+    it doesn't work if the zip file is embedded into a PKG appended
+    to an executable, like we create in one-file.
     """
     def __init__(self, path):
         try:
