@@ -77,6 +77,12 @@ if MEIPASS2 in os.environ:
     del os.environ[MEIPASS2]
 
 
+# Ensure PYTHONHOME environment variable is absolute path. Setting PYTHONPATH
+# makes sure that no python modules from host OS are used. PYTHONPATH should
+# point to the same directory as _MEIPASS2.
+os.environ['PYTHONHOME'] = sys._MEIPASS
+
+
 # Ensure PYTHONPATH contains absolute paths. Otherwise import of other python
 # modules will fail when current working directory is changed by frozen
 # application.
