@@ -492,7 +492,7 @@ class Analysis(Target):
         python = sys.executable
         if not is_win:
             while os.path.islink(python):
-                python = os.path.join(os.path.split(python)[0], os.readlink(python))
+                python = os.path.join(os.path.dirname(python), os.readlink(python))
             depmanifest = None
         else:
             depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
@@ -587,7 +587,7 @@ class Analysis(Target):
             if not os.path.exists(lib):
                 raise IOError("Python library not found!")
 
-        binaries.append((os.path.split(lib)[1], lib, 'BINARY'))
+        binaries.append((os.path.basename(lib), lib, 'BINARY'))
 
 
 def _findRTHook(modnm):
