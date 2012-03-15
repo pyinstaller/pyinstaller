@@ -20,7 +20,6 @@
 # with cElementTree module from standard python.
 
 
-import copy
 import os
 import sys
 import subprocess
@@ -43,15 +42,10 @@ else:
 pyexe = open(pyexe_file).readline().strip()
 
 
-# Unset PYTHONHOME for Python interpreter running in a subprocess.
-env = copy.deepcopy(os.environ)
-del env['PYTHONHOME']
-
-
 frozen_attribs = str(dir(cET))
 attribs = subprocess.Popen([pyexe, '-c',
         'import xml.etree.cElementTree as cET; print dir(cET)'],
-        stdout=subprocess.PIPE, env=env, shell=False).stdout.read().strip()
+        stdout=subprocess.PIPE, shell=False).stdout.read().strip()
 
 
 # Compare attributes of frozen module with unfronzen module.

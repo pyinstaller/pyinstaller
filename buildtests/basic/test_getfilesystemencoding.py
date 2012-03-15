@@ -20,7 +20,6 @@
 print "test_getfilesystemencoding"
 
 
-import copy
 import os
 import sys
 import subprocess
@@ -41,14 +40,9 @@ else:
 pyexe = open(pyexe_file).readline().strip()
 
 
-# Unset PYTHONHOME for Python interpreter running in a subprocess.
-env = copy.deepcopy(os.environ)
-del env['PYTHONHOME']
-
-
 frozen_encoding = str(sys.getfilesystemencoding())
 encoding = subprocess.Popen([pyexe, '-c', 'import sys; print sys.getfilesystemencoding()'],
-        env=env, stdout=subprocess.PIPE).stdout.read().strip()
+        stdout=subprocess.PIPE).stdout.read().strip()
 
 
 if not frozen_encoding == encoding:
