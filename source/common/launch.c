@@ -323,7 +323,7 @@ int openArchive(ARCHIVE_STATUS *status)
 	int i;
 #endif
 	int filelen;
-
+    VS("archivename is %s\n", status->archivename);
 	/* Physically open the file */
 	status->fp = fopen(status->archivename, "rb");
 	if (status->fp == NULL) {

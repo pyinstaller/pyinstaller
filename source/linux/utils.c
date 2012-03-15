@@ -38,6 +38,9 @@ void init_launcher(void)
 
 int get_thisfile(char *thisfile, const char *programname)
 {
+    char buf[_MAX_PATH];
+    char *p;
+
     /* fill in thisfile */
 #ifdef __CYGWIN__
     if (strncasecmp(&programname[strlen(programname)-4], ".exe", 4)) {
@@ -48,7 +51,18 @@ int get_thisfile(char *thisfile, const char *programname)
     else
 #endif
     PI_SetProgramName(programname);
-    strcpy(thisfile, PI_GetProgramFullPath());
+
+    strcpy(buf, PI_GetProgramFullPath());
+
+    /* Make homepath absolute.
+     * 'thisfile' starts ./ which breaks some modules when changing the CWD.
+     */
+    p = realpath(buf, thisfile);
+    if(p == NULL) {
+        FATALERROR("Error in making thisfile absolute.\n");
+        return -1;
+    }
+
     VS("thisfile is %s\n", thisfile);
     
     return 0;
@@ -56,9 +70,26 @@ int get_thisfile(char *thisfile, const char *programname)
 
 void get_homepath(char *homepath, const char *thisfile)
 {
+    char buf[_MAX_PATH];
+    char *p;
+
     /* fill in here (directory of thisfile) */
-    strcpy(homepath, PI_GetPrefix());
+    strcpy(buf, PI_GetPrefix());
+
+    /* Make homepath absolute.
+     * 'homepath' contains ./ which breaks some modules when changing the CWD.
+     * Relative LD_LIBRARY_PATH is a security problem.
+     */
+    p = realpath(buf, homepath);
+    if(p == NULL) {
+        FATALERROR("Error in making homepath absolute.\n");
+        /* Fallback to relative path. */
+        strcpy(homepath, buf);
+    }
+
+    /* path must end with slash / */
     strcat(homepath, "/");
+
     VS("homepath is %s\n", homepath);
 }
 
@@ -117,8 +148,8 @@ static int prependToDynamicLibraryPath(const char* path)
 int set_environment(const ARCHIVE_STATUS *status)
 {
     int rc = 0;
-    char buf[PATH_MAX+2];
-    char *p;
+    // char buf[PATH_MAX+2];
+    // char *p;
 
 #ifdef __APPLE__
     /* On Mac OS X we do not use environment variables DYLD_LIBRARY_PATH
@@ -154,16 +185,17 @@ int set_environment(const ARCHIVE_STATUS *status)
     /* make homepath absolute
      * homepath contains ./ which breaks some modules when changing the CWD.
      * Relative LD_LIBRARY_PATH is also a security problem.
-     */
     p = realpath(status->homepath, buf);
     if(p == NULL) {
         FATALERROR("Error in making homepath absolute.\n");
         return -1;
     }
 
-    /* path must end with slash / */
+     */
+    /* path must end with slash /
     strcat(buf, "/");
-    rc = prependToDynamicLibraryPath(buf);
+     */
+    rc = prependToDynamicLibraryPath(status->homepath);
 #endif
 
     return rc;
