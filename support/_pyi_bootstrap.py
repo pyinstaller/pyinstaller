@@ -77,7 +77,7 @@ if MEIPASS2 in os.environ:
     del os.environ[MEIPASS2]
 
 
-# Ensure PYTHONHOME environment variable is unset. PYTHONPATH
+# Ensure PYTHONHOME environment variable is unset. PYTHONHOME
 # makes sure that no python modules from host OS are used. Startup is
 # By deleting it we ensure that invoked standard Python interpreter
 # is not affected by PYTHONHOME from bootloader.
