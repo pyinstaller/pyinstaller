@@ -77,10 +77,17 @@ if MEIPASS2 in os.environ:
     del os.environ[MEIPASS2]
 
 
-# Ensure PYTHONHOME environment variable is absolute path. Setting PYTHONPATH
-# makes sure that no python modules from host OS are used. PYTHONPATH should
-# point to the same directory as _MEIPASS2.
-os.environ['PYTHONHOME'] = sys._MEIPASS
+# Ensure PYTHONHOME environment variable is unset. PYTHONPATH
+# makes sure that no python modules from host OS are used. Startup is
+# By deleting it we ensure that invoked standard Python interpreter
+# is not affected by PYTHONHOME from bootloader.
+if 'PYTHONHOME' is os.environ:
+    # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
+    # deleting the var from os.environ does not delete it from the environment.
+    # In those cases we cannot delete the variable but only set it to the
+    # empty string.
+    os.environ['PYTHONHOME'] = ''
+    del os.environ['PYTHONHOME']
 
 
 # Ensure PYTHONPATH contains absolute paths. Otherwise import of other python
