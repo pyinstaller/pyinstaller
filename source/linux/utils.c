@@ -148,8 +148,6 @@ static int prependToDynamicLibraryPath(const char* path)
 int set_environment(const ARCHIVE_STATUS *status)
 {
     int rc = 0;
-    // char buf[PATH_MAX+2];
-    // char *p;
 
 #ifdef __APPLE__
     /* On Mac OS X we do not use environment variables DYLD_LIBRARY_PATH
@@ -182,19 +180,7 @@ int set_environment(const ARCHIVE_STATUS *status)
     if (status->temppath[0] != 0) {
         rc = prependToDynamicLibraryPath(status->temppath);
     }
-    /* make homepath absolute
-     * homepath contains ./ which breaks some modules when changing the CWD.
-     * Relative LD_LIBRARY_PATH is also a security problem.
-    p = realpath(status->homepath, buf);
-    if(p == NULL) {
-        FATALERROR("Error in making homepath absolute.\n");
-        return -1;
-    }
 
-     */
-    /* path must end with slash /
-    strcat(buf, "/");
-     */
     rc = prependToDynamicLibraryPath(status->homepath);
 #endif
 
