@@ -81,7 +81,7 @@ if MEIPASS2 in os.environ:
 # makes sure that no python modules from host OS are used. Startup is
 # By deleting it we ensure that invoked standard Python interpreter
 # is not affected by PYTHONHOME from bootloader.
-if 'PYTHONHOME' is os.environ:
+if 'PYTHONHOME' in os.environ:
     # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
     # deleting the var from os.environ does not delete it from the environment.
     # In those cases we cannot delete the variable but only set it to the
