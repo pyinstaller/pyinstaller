@@ -14,8 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 import PyInstaller.depend.modules
+
 hiddenimports = ['win32com.server.policy']
+
 
 def hook(mod):
     import sys
@@ -24,9 +27,8 @@ def hook(mod):
         mod.__name__ = newname
     else:
         import win32api
-        h = win32api.LoadLibrary(newname+'.dll')
+        h = win32api.LoadLibrary(newname + '.dll')
         pth = win32api.GetModuleFileName(h)
         #win32api.FreeLibrary(h)
-        import PyInstaller.mf as mf
         mod = PyInstaller.depend.modules.ExtensionModule(newname, pth)
     return mod
