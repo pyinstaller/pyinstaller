@@ -47,6 +47,11 @@ sys.importManager.install()
 import os
 
 
+# Forces PyInstaller to include fake 'site' module. Fake 'site' module
+# is dummy and does not do any search for additional Python modules.
+import site
+
+
 # Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, 'frozen'):
     sys.frozen = True
