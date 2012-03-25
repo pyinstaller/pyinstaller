@@ -249,7 +249,6 @@ class ImportTracker:
         #   mod = director.getmod(nm)
         if mod:
             mod.__name__ = fqname
-            self.modules[fqname] = mod
             # now look for hooks
             # this (and scan_code) are instead of doing "exec co in mod.__dict__"
             try:
@@ -264,6 +263,9 @@ class ImportTracker:
                     logger.warn("%s is changing it's name to %s",
                                 fqname, mod.__name__)
                     self.modules[mod.__name__] = mod
+            # The following line has to be at the end of if statement because
+            # 'mod' is in hook replaced by a new object it would not work.
+            self.modules[fqname] = mod
         else:
             assert (mod == None), mod
             self.modules[fqname] = None

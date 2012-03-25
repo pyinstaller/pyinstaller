@@ -23,7 +23,10 @@ This module is for the miscellaneous routines which do not fit somewhere else.
 import glob
 import os
 
+from PyInstaller import log as logging
 from PyInstaller.compat import is_win
+
+logger = logging.getLogger(__name__)
 
 
 def dlls_in_subdirs(directory):
@@ -96,3 +99,16 @@ def get_unicode_modules():
     except ImportError:
         pass
     return modules
+
+
+def get_code_object(filename):
+    """
+    Convert source code from Python source file to code object.
+    """
+    try:
+        source_code_string = open(filename, 'rU').read() + '\n'
+        code_object = compile(source_code_string, filename, 'exec')
+        return code_object
+    except SyntaxError, e:
+        logger.exception(e)
+        raise SystemExit(10)
