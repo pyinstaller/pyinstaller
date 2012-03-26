@@ -19,22 +19,35 @@
 # Compare attributes of cElementTree module from frozen executable
 # with cElementTree module from standard python.
 
-print "Used to fail if _xmlplus is installed"
 
-
+import os
 import sys
 import subprocess
 import xml.etree.ElementTree as ET
+import xml.etree.cElementTree as cET
+
 
 print "#" * 50
 print "xml.etree.ElementTree", dir(ET)
 print "#" * 50
-import xml.etree.cElementTree as cET
 
-pyexe = open("python_exe.build").readline().strip()
 
-out = subprocess.Popen([pyexe, '-c',
+if hasattr(sys, 'frozen'):
+    # In frozen mode current working directory is the path with final executable.
+    pyexe_file = os.path.join('..', '..', 'python_exe.build')
+else:
+    pyexe_file = 'python_exe.build'
+
+
+pyexe = open(pyexe_file).readline().strip()
+
+
+frozen_attribs = str(dir(cET))
+attribs = subprocess.Popen([pyexe, '-c',
         'import xml.etree.cElementTree as cET; print dir(cET)'],
         stdout=subprocess.PIPE, shell=False).stdout.read().strip()
 
-assert str(dir(cET)) == out, (str(dir(cET)), out)
+
+# Compare attributes of frozen module with unfronzen module.
+if not frozen_attribs == attribs:
+    raise SystemExit()

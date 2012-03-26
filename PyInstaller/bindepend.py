@@ -357,7 +357,7 @@ def selectImports(pth, xtrapath=None):
         if not is_win and not is_cygwin:
             # all other platforms
             npth = lib
-            dir, lib = os.path.split(lib)
+            lib = os.path.basename(lib)
         else:
             # plain win case
             npth = getfullnameof(lib, xtrapath)
@@ -538,7 +538,7 @@ def findLibrary(name):
         return None
 
     # Resolve the file name into the soname
-    dir, file = os.path.split(lib)
+    dir = os.path.dirname(lib)
     return os.path.join(dir, getSoname(lib))
 
 

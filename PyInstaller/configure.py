@@ -28,12 +28,13 @@ import inspect
 from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller import is_win, is_unix, is_darwin, is_py24, get_version
 
-import PyInstaller.mf as mf
 import PyInstaller.build as build
 import PyInstaller.compat as compat
 
 import PyInstaller.log as logging
 import PyInstaller.depend.modules
+import PyInstaller.depend.imptracker
+
 logger = logging.getLogger('PyInstaller.configure')
 
 
@@ -138,7 +139,7 @@ def find_PYZ_dependencies(config):
     # We need to import `archive` from `PyInstaller` directory, but
     # not from package `PyInstaller`
     import PyInstaller.loader
-    a = mf.ImportTracker([
+    a = PyInstaller.depend.imptracker.ImportTracker([
         os.path.dirname(inspect.getsourcefile(PyInstaller.loader)),
         os.path.join(HOMEPATH, 'support')])
 

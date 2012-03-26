@@ -66,8 +66,8 @@ def configure(conf):
 
     if myplatform == 'darwin' and myarch == '64bit':
         Utils.pprint('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
-        Utils.pprint('CYAN', 'For 32b-bit bootloader try setting')
-        Utils.pprint('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes in the environment')
+        Utils.pprint('CYAN', 'For 32b-bit bootloader prepend the python command with:')
+        Utils.pprint('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
 
     if myplatform.startswith('linux') and not opt.nolsb:
         Utils.pprint('CYAN', 'Building LSB bootloader.')
@@ -209,15 +209,26 @@ def configure(conf):
         # We use SEH exceptions in winmain.c; make sure they are activated.
         conf.env.append_value('CCFLAGS', '/EHa')
     
-    # Compile with 64bit gcc 32bit binaries
+    # Compile with 64bit gcc 32bit binaries or vice versa.
     if conf.env.CC_NAME == 'gcc':
         if myarch == '32bit' and conf.check_cc(ccflags='-m32', msg='Checking for flags -m32'):
             conf.env.append_value('CCFLAGS', '-m32')
-            if myplatform.startswith('darwin'):
-	        conf.env.append_value('LINKFLAGS', '-arch')
-	        conf.env.append_value('LINKFLAGS', 'i386')
         elif myarch == '64bit':
             conf.env.append_value('CCFLAGS', '-m64')
+
+    # Ensure proper architecture flags on Mac OS X.
+    # TODO Add support for universal binaries.
+    if myplatform.startswith('darwin'):
+
+        available_archs = {'32bit': 'i386', '64bit': 'x86_64'}
+        mac_arch = available_archs[myarch]
+
+        conf.env.append_value('CCFLAGS', '-arch')
+        conf.env.append_value('CCFLAGS', mac_arch)
+        conf.env.append_value('CXXFLAGS', '-arch')
+        conf.env.append_value('CXXFLAGS', mac_arch)
+        conf.env.append_value('LINKFLAGS', '-arch')
+        conf.env.append_value('LINKFLAGS', mac_arch)
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but

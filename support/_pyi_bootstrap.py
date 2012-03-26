@@ -47,6 +47,11 @@ sys.importManager.install()
 import os
 
 
+# Forces PyInstaller to include fake 'site' module. Fake 'site' module
+# is dummy and does not do any search for additional Python modules.
+import site
+
+
 # Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, 'frozen'):
     sys.frozen = True
@@ -75,6 +80,19 @@ if MEIPASS2 in os.environ:
     # empty string.
     os.environ[MEIPASS2] = ''
     del os.environ[MEIPASS2]
+
+
+# Ensure PYTHONHOME environment variable is unset. PYTHONHOME
+# makes sure that no python modules from host OS are used. Startup is
+# By deleting it we ensure that invoked standard Python interpreter
+# is not affected by PYTHONHOME from bootloader.
+if 'PYTHONHOME' in os.environ:
+    # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
+    # deleting the var from os.environ does not delete it from the environment.
+    # In those cases we cannot delete the variable but only set it to the
+    # empty string.
+    os.environ['PYTHONHOME'] = ''
+    del os.environ['PYTHONHOME']
 
 
 # Ensure PYTHONPATH contains absolute paths. Otherwise import of other python

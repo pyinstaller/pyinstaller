@@ -26,17 +26,19 @@ import time
 import py_compile
 import tempfile
 import UserList
-import mf
 import bindepend
 import traceback
 
 from PyInstaller.loader import archive, carchive, iu
 
+import PyInstaller.depend.imptracker
 import PyInstaller.depend.modules
+
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
 from PyInstaller import is_win, is_unix, is_aix, is_darwin, is_cygwin
 from PyInstaller import is_py23, is_py24
 import PyInstaller.compat as compat
+
 from PyInstaller.compat import hashlib, set
 from PyInstaller.depend import dylib
 from PyInstaller.utils import misc
@@ -433,8 +435,8 @@ class Analysis(Target):
             pynms.append(pynm)
         ###################################################
         # Initialize importTracker and analyze scripts
-        importTracker = mf.ImportTracker(dirs.keys() + self.pathex,
-                                         self.hookspath, self.excludes)
+        importTracker = PyInstaller.depend.imptracker.ImportTracker(
+                dirs.keys() + self.pathex, self.hookspath, self.excludes)
         PyInstaller.__pathex__ = self.pathex[:]
         scripts = []  # will contain scripts to bundle
         for i, script in enumerate(self.inputs):
@@ -490,7 +492,7 @@ class Analysis(Target):
         python = sys.executable
         if not is_win:
             while os.path.islink(python):
-                python = os.path.join(os.path.split(python)[0], os.readlink(python))
+                python = os.path.join(os.path.dirname(python), os.readlink(python))
             depmanifest = None
         else:
             depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
@@ -585,7 +587,7 @@ class Analysis(Target):
             if not os.path.exists(lib):
                 raise IOError("Python library not found!")
 
-        binaries.append((os.path.split(lib)[1], lib, 'BINARY'))
+        binaries.append((os.path.basename(lib), lib, 'BINARY'))
 
 
 def _findRTHook(modnm):

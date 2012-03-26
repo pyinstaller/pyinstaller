@@ -33,7 +33,7 @@ import PyInstaller.depend.utils
 import PyInstaller.log as logging
 
 
-logger = logging.getLogger('PyInstaller.build.mf')
+logger = logging.getLogger(__name__)
 
 
 IMPORT_NAME = dis.opname.index('IMPORT_NAME')

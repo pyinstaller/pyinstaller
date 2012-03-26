@@ -20,12 +20,11 @@
 
 # All we're doing here is tracking, not importing
 # If we were importing, these would be hooked to the real module objects
-
 import os
 
 from PyInstaller.compat import ctypes, PYCO
 from PyInstaller.depend.utils import _resolveCtypesImports, scan_code
-from PyInstaller.mf import PathImportDirector
+import PyInstaller.depend.impdirector
 
 
 class Module:
@@ -112,7 +111,7 @@ class PkgModule(PyModule):
 
     def _update_director(self, force=False):
         if force or self.subimporter.path != self.__path__:
-            self.subimporter = PathImportDirector(self.__path__)
+            self.subimporter = PyInstaller.depend.impdirector.PathImportDirector(self.__path__)
 
     def doimport(self, nm):
         self._update_director()

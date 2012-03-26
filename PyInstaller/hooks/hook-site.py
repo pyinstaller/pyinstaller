@@ -1,5 +1,5 @@
-# Copyright (C) 2005, Giovanni Bajo
-# Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
+#
+# Copyright (C) 2012, Martin Zibricky
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,20 +15,25 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import PyInstaller.depend.modules
 
-hiddenimports = ['win32com.server.policy']
+# Replace the code of real 'site' module by fake code doing nothing.
+#
+# The real 'site' does some magic to find paths to other possible
+# Python modules. We do not want this behaviour for frozen applications.
+#
+# Fake 'site' makes PyInstaller to work with distutils and to work inside
+# virtualenv environment.
+
+
+import os
+
+import PyInstaller
 
 
 def hook(mod):
-    import sys
-    newname = 'pythoncom%d%d' % sys.version_info[:2]
-    if mod.typ == 'EXTENSION':
-        mod.__name__ = newname
-    else:
-        import win32api
-        h = win32api.LoadLibrary(newname + '.dll')
-        pth = win32api.GetModuleFileName(h)
-        #win32api.FreeLibrary(h)
-        mod = PyInstaller.depend.modules.ExtensionModule(newname, pth)
+    # Replace mod by fake 'site' module.
+    pyi_dir = os.path.abspath(os.path.dirname(PyInstaller.__file__))
+    fake_file = os.path.join(pyi_dir, 'fake', 'fake-site.py')
+    new_code_object = PyInstaller.utils.misc.get_code_object(fake_file)
+    mod = PyInstaller.depend.modules.PyModule('site', fake_file, new_code_object)
     return mod
