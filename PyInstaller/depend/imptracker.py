@@ -264,7 +264,7 @@ class ImportTracker:
                                 fqname, mod.__name__)
                     self.modules[mod.__name__] = mod
             # The following line has to be at the end of if statement because
-            # 'mod' is in hook replaced by a new object it would not work.
+            # 'mod' might be replaced by a new object within a hook.
             self.modules[fqname] = mod
         else:
             assert (mod == None), mod
