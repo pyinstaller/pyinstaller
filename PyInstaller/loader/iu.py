@@ -230,18 +230,15 @@ class RegistryImportDirector(ImportDirector):
         self.map = {}
         try:
             import win32api
-##            import win32con
         except ImportError:
             pass
         else:
             HKEY_CURRENT_USER = -2147483647
             HKEY_LOCAL_MACHINE = -2147483646
-            KEY_ALL_ACCESS = 983103
             KEY_READ = 131097
             subkey = r"Software\Python\PythonCore\%s\Modules" % sys.winver
             for root in (HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE):
                 try:
-                    #hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_ALL_ACCESS)
                     hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_READ)
                 except Exception:
                     # If the key does not exist, simply try the next one.
@@ -250,7 +247,6 @@ class RegistryImportDirector(ImportDirector):
                     numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
                     for i in range(numsubkeys):
                         subkeyname = win32api.RegEnumKey(hkey, i)
-                        #hskey = win32api.RegOpenKeyEx(hkey, subkeyname, 0, KEY_ALL_ACCESS)
                         hskey = win32api.RegOpenKeyEx(hkey, subkeyname, 0, KEY_READ)
                         val = win32api.RegQueryValueEx(hskey, '')
                         desc = getDescr(val[0])
