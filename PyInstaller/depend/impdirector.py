@@ -74,7 +74,6 @@ class RegistryImportDirector(ImportDirector):
             subkey = r"Software\Python\PythonCore\%s\Modules" % sys.winver
             for root in (win32con.HKEY_CURRENT_USER, win32con.HKEY_LOCAL_MACHINE):
                 try:
-                    #hkey = win32api.RegOpenKeyEx(root, subkey, 0, win32con.KEY_ALL_ACCESS)
                     hkey = win32api.RegOpenKeyEx(root, subkey, 0, win32con.KEY_READ)
                 except Exception, e:
                     logger.debug('RegistryImportDirector: %s' % e)
@@ -82,7 +81,6 @@ class RegistryImportDirector(ImportDirector):
                     numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
                     for i in range(numsubkeys):
                         subkeyname = win32api.RegEnumKey(hkey, i)
-                        #hskey = win32api.RegOpenKeyEx(hkey, subkeyname, 0, win32con.KEY_ALL_ACCESS)
                         hskey = win32api.RegOpenKeyEx(hkey, subkeyname, 0, win32con.KEY_READ)
                         val = win32api.RegQueryValueEx(hskey, '')
                         desc = getDescr(val[0])
