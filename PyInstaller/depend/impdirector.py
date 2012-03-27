@@ -142,7 +142,7 @@ class PathImportDirector(ImportDirector):
             if isinstance(thing, basestring):
                 owner = self.shadowpath.get(thing, -1)
                 if owner == -1:
-                    owner = self.shadowpath[thing] = self.makeOwner(thing)
+                    owner = self.shadowpath[thing] = self.__makeOwner(thing)
                 if owner:
                     mod = owner.getmod(nm)
             else:
@@ -151,7 +151,7 @@ class PathImportDirector(ImportDirector):
                 break
         return mod
 
-    def makeOwner(self, path):
+    def __makeOwner(self, path):
         if path in self.building:
             return None
         self.building.add(path)
