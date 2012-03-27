@@ -100,16 +100,16 @@ class BaseDirOwner(Owner):
             # If this file was not generated for this version of
             # Python, we need to regenerate it.
             if stuff[:4] != imp.get_magic():
-                logger.warn("wrong version .pyc found (%s), will use .py",
-                            pyc[0])
+                logger.warn("wrong version .py%s found (%s), will use .py",
+                            PYCO, pyc[0])
             else:
                 try:
                     co = loadco(stuff[8:])
                     pth = pyc[0]
                 except (ValueError, EOFError):
                     pyc = None
-                    logger.warn("bad .pyc found (%s), will use .py",
-                                pyc[0])
+                    logger.warn("bad .py%s found (%s), will use .py",
+                                PYCO, pyc[0])
 
         if co is None or py and pyc[1] < py[1]:
             # If we have no pyc or py is newer
