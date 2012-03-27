@@ -31,6 +31,7 @@ import imp
 import marshal
 
 from PyInstaller import depend
+from PyInstaller.compat import set
 
 import PyInstaller.depend.owner
 import PyInstaller.log as logging
@@ -130,7 +131,7 @@ class PathImportDirector(ImportDirector):
         else:
             self.shadowpath = {}
         self.inMakeOwner = 0
-        self.building = {}
+        self.building = set()
 
     def __str__(self):
         return str(self.path)
@@ -151,9 +152,9 @@ class PathImportDirector(ImportDirector):
         return mod
 
     def makeOwner(self, path):
-        if self.building.get(path):
+        if path in self.building:
             return None
-        self.building[path] = 1
+        self.building.add(path)
         owner = None
         for klass in self.ownertypes:
             try:
@@ -167,5 +168,5 @@ class PathImportDirector(ImportDirector):
                 pass
             else:
                 break
-        del self.building[path]
+        self.building.remove(path)
         return owner
