@@ -80,7 +80,7 @@ class BaseDirOwner(Owner):
                     if not self._caseok(attempt):
                         continue
                     if typ == imp.C_EXTENSION:
-                        #print "DirOwner.getmod -> ExtensionModule(%s, %s)" % (nm, attempt)
+                        #logger.debug("%s.getmod -> ExtensionModule(%s, %s)", self.__class__.__name__, nm, attempt)
                         return depend.modules.ExtensionModule(nm, os.path.join(self.path, attempt))
                     elif typ == imp.PY_SOURCE:
                         py = (attempt, modtime)
@@ -89,7 +89,7 @@ class BaseDirOwner(Owner):
             if py or pyc:
                 break
         if py is None and pyc is None:
-            #print "DirOwner.getmod -> (py == pyc == None)"
+            #logger.debug("%s.getmod -> (py == pyc == None)", self.__class__.__name__)
             return None
 
         co = None
@@ -123,7 +123,7 @@ class BaseDirOwner(Owner):
                 raise SystemExit(10)
 
         if co is None:
-            #print "DirOwner.getmod -> None"
+            #logger.debug("%s.getmod -> None", self.__class__.__name__)
             return None
 
         pth = os.path.join(self.path, pth)
@@ -133,7 +133,7 @@ class BaseDirOwner(Owner):
             mod = self._pkgclass()(nm, pth, co)
         else:
             mod = self._modclass()(nm, pth, co)
-        #print "DirOwner.getmod -> %s" % mod
+        #logger.debug("%s.getmod -> %s", self.__class__.__name__, mod)
         return mod
 
 
