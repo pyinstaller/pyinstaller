@@ -18,12 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 import sys
 import os
 import shutil
 import pprint
 import time
 import py_compile
+import imp
 import tempfile
 import UserList
 import bindepend
@@ -129,9 +131,13 @@ def compile_pycos(toc):
         # Trim the terminal "c" or "o"
         source_fnm = fnm[:-1]
 
-        # If the source is newer than the compiled, or the compiled doesn't
-        # exist, we need to perform a build ourselves.
-        if mtime(source_fnm) > mtime(fnm):
+        # We need to perform a build ourselves if the source is newer
+        # than the compiled, or the compiled doesn't exist, or if it
+        # has been written by a different Python version.
+        needs_compile = (mtime(source_fnm) > mtime(fnm)
+                         or
+                         open(source_fnm, 'rb').read()[:4] != imp.get_magic())
+        if needs_compile:
             try:
                 py_compile.compile(source_fnm)
             except IOError:
