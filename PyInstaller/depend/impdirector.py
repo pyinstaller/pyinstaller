@@ -128,7 +128,6 @@ class PathImportDirector(ImportDirector):
             self.shadowpath = importers
         else:
             self.shadowpath = {}
-        self.inMakeOwner = 0
         self.building = set()
 
     def __str__(self):
