@@ -69,26 +69,27 @@ class RegistryImportDirector(ImportDirector):
             import win32api
             import win32con
         except ImportError:
-            pass
-        else:
-            subkey = r"Software\Python\PythonCore\%s\Modules" % sys.winver
-            for root in (win32con.HKEY_CURRENT_USER, win32con.HKEY_LOCAL_MACHINE):
-                try:
-                    hkey = win32api.RegOpenKeyEx(root, subkey, 0, win32con.KEY_READ)
-                except Exception, e:
-                    logger.debug('RegistryImportDirector: %s' % e)
-                else:
-                    numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
-                    for i in range(numsubkeys):
-                        subkeyname = win32api.RegEnumKey(hkey, i)
-                        hskey = win32api.RegOpenKeyEx(hkey, subkeyname, 0, win32con.KEY_READ)
-                        val = win32api.RegQueryValueEx(hskey, '')
-                        desc = getDescr(val[0])
-                        #print " RegistryImportDirector got %s %s" % (val[0], desc)  #XXX
-                        self.map[subkeyname] = (val[0], desc)
-                        hskey.Close()
-                    hkey.Close()
-                    break
+            return
+
+        subkey = r"Software\Python\PythonCore\%s\Modules" % sys.winver
+        for root in (win32con.HKEY_CURRENT_USER, win32con.HKEY_LOCAL_MACHINE):
+            try:
+                hkey = win32api.RegOpenKeyEx(root, subkey, 0, win32con.KEY_READ)
+            except Exception, e:
+                logger.debug('RegistryImportDirector: %s' % e)
+                continue
+
+            numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
+            for i in range(numsubkeys):
+                subkeyname = win32api.RegEnumKey(hkey, i)
+                hskey = win32api.RegOpenKeyEx(hkey, subkeyname, 0, win32con.KEY_READ)
+                val = win32api.RegQueryValueEx(hskey, '')
+                desc = getDescr(val[0])
+                #print " RegistryImportDirector got %s %s" % (val[0], desc)  #XXX
+                self.map[subkeyname] = (val[0], desc)
+                hskey.Close()
+            hkey.Close()
+            break
 
     def getmod(self, nm, loadco=marshal.loads):
         stuff = self.map.get(nm)
