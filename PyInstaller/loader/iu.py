@@ -302,7 +302,7 @@ class PathImportDirector(ImportDirector):
         return mod
 
     def __makeOwner(self, path):
-        if self.building.get(path):
+        if path in self.building:
             return None
         self.building[path] = 1
         owner = None
