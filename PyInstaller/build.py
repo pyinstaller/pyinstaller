@@ -122,6 +122,9 @@ def compile_pycos(toc):
 
     new_toc = []
     for (nm, fnm, typ) in toc:
+        if typ != 'PYMODULE':
+            new_toc.append((nm, fnm, typ))
+            continue
 
         # Trim the terminal "c" or "o"
         source_fnm = fnm[:-1]
