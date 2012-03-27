@@ -156,6 +156,7 @@ def compile_pycos(toc):
 
                 fnm = os.path.join(leading, mod_name + ext)
                 py_compile.compile(source_fnm, fnm)
+            logger.debug("compiled %s", source_fnm)
 
         new_toc.append((nm, fnm, typ))
 
