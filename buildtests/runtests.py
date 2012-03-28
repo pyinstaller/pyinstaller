@@ -120,7 +120,11 @@ class SkipChecker(object):
             }
         # Other dependecies of some tests.
         self.DEPENDENCIES = {
-            'basic/test_ctypes': [depend.c_compiler()]}
+            'basic/test_ctypes': [depend.c_compiler()],
+            # Support for unzipped eggs is not yet implemented.
+            # http://www.pyinstaller.org/ticket/541
+            'import/test_eggs1': ['Unzipped eggs not yet implemented.'],
+            }
 
     def _check_python_and_os(self, test_name):
         """
