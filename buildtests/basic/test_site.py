@@ -24,9 +24,9 @@ import site
 # Default values in fake 'site' module should be False, None or empty list.
 
 if not site.ENABLE_USER_SITE == False:
-    raise SystemExit()
+    raise SystemExit('ENABLE_USER_SITE not False.')
 if not site.PREFIXES == []:
-    raise SystemExit()
+    raise SystemExit('PREFIXES not empty list.')
 
 if site.USER_SITE is not None and site.USER_BASE is not None:
-    raise SystemExit()
+    raise SystemExit('USER_SITE or USER_BASE not None.')

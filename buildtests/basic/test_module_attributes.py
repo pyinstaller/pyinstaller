@@ -50,4 +50,4 @@ attribs = subprocess.Popen([pyexe, '-c',
 
 # Compare attributes of frozen module with unfronzen module.
 if not frozen_attribs == attribs:
-    raise SystemExit()
+    raise SystemExit('Frozen module has no same attribuses as unfrozen.')

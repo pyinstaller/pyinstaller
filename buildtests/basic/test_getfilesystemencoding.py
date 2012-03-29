@@ -27,7 +27,7 @@ import email
 
 
 if not type(email.Header) == email.LazyImporter:
-    raise SystemExit()
+    raise SystemExit('email.Header does not match.')
 
 
 if hasattr(sys, 'frozen'):
@@ -46,4 +46,4 @@ encoding = subprocess.Popen([pyexe, '-c', 'import sys; print sys.getfilesystemen
 
 
 if not frozen_encoding == encoding:
-    raise SystemExit()
+    raise SystemExit('Frozen encoding is not the same as unfrozen.')

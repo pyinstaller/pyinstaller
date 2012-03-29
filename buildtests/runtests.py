@@ -552,7 +552,7 @@ def main():
     # Do only cleanup.
     if opts.clean:
         clean()
-        raise SystemExit()
+        raise SystemExit()  # Exit code is 0 in this case.
 
     # Run only single specified tests.
     if args:
