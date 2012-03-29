@@ -13,6 +13,8 @@
 import os
 import sys
 
+# Bootloader should override set LD_LIBRARY_PATH.
+
 # For Linux, Solaris, AIX only
 
 libpath = os.path.normpath(os.path.abspath(os.path.dirname(sys.executable)))
@@ -29,4 +31,6 @@ print('LD_LIBRARY_PATH expected: ' + libpath)
 
 libpath_from_env = os.environ.get(libpath_var_name)
 print('LD_LIBRARY_PATH  current: ' + libpath_from_env)
-assert libpath == libpath_from_env
+
+if not libpath == libpath_from_env:
+    raise SystemExit("Expected LD_LIBRARY_PATH doesn't match.")
