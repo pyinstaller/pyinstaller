@@ -45,5 +45,9 @@ encoding = subprocess.Popen([pyexe, '-c', 'import sys; print sys.getfilesystemen
         stdout=subprocess.PIPE).stdout.read().strip()
 
 
+print('Encoding expected: ' + encoding)
+print('Encoding current: ' + frozen_encoding)
+
+
 if not frozen_encoding == encoding:
     raise SystemExit('Frozen encoding is not the same as unfrozen.')
