@@ -41,8 +41,20 @@ pyexe = open(pyexe_file).readline().strip()
 
 
 frozen_encoding = str(sys.getfilesystemencoding())
-encoding = subprocess.Popen([pyexe, '-c', 'import sys; print sys.getfilesystemencoding()'],
-        stdout=subprocess.PIPE).stdout.read().strip()
+
+
+# For various OS is encoding different.
+if sys.platform.startswith('win'):
+    encoding = subprocess.Popen([pyexe, '-c', 'import sys; print sys.getfilesystemencoding()'],
+            stdout=subprocess.PIPE).stdout.read().strip()
+# On Mac OS X the value should be still the same.
+elif sys.platform.startswith('win'):
+    encoding = 'utf-8'
+# On Linux and other unixes it should be None.
+# Please note that on Linux the value differs from the value
+# in interactive shell.
+else:
+    encoding = 'None'
 
 
 print('Encoding expected: ' + encoding)
