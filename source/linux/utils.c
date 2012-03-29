@@ -41,7 +41,7 @@ int get_thisfile(char *thisfile, const char *programname)
     char buf[_MAX_PATH];
     char *p;
 
-    /* fill in thisfile */
+    /* Fill in thisfile. */
 #ifdef __CYGWIN__
     if (strncasecmp(&programname[strlen(programname)-4], ".exe", 4)) {
         strcpy(thisfile, programname);
@@ -73,7 +73,7 @@ void get_homepath(char *homepath, const char *thisfile)
     char buf[_MAX_PATH];
     char *p;
 
-    /* fill in here (directory of thisfile) */
+    /* Fill in here (directory of thisfile). */
     strcpy(buf, PI_GetPrefix());
 
     /* Make homepath absolute.
@@ -87,7 +87,7 @@ void get_homepath(char *homepath, const char *thisfile)
         strcpy(homepath, buf);
     }
 
-    /* path must end with slash / */
+    /* Path must end with slash. / */
     strcat(homepath, "/");
 
     VS("homepath is %s\n", homepath);
@@ -99,6 +99,7 @@ void get_archivefile(char *archivefile, const char *thisfile)
     strcat(archivefile, ".pkg");
 }
 
+/*
 static int prepend2enviroment(const char *name, const char *value)
 {
     char *envvar;
@@ -111,7 +112,9 @@ static int prepend2enviroment(const char *name, const char *value)
     if (old_envvar)
         nchars += strlen(old_envvar) + 1;
 
+*/
     /* at process exit: no need to free */
+/*
     envvar = (char*)malloc((nchars+1)*sizeof(char));
     if (envvar==NULL) {
             fprintf(stderr,"Cannot allocate memory for %s "
@@ -124,22 +127,25 @@ static int prepend2enviroment(const char *name, const char *value)
         strcat(envvar, ":");
         strcat(envvar, old_envvar);
     }
-    setenv(name, envvar, 1);
-    VS("%s\n", envvar);
     
     return 0;
 }
+*/
 
-static int prependToDynamicLibraryPath(const char* path)
+static int set_dynamic_library_path(const char* path)
 {
     int rc = 0;
 
 #ifdef AIX
     /* LIBPATH is used to look up dynamic libraries on AIX. */
-    rc = prepend2enviroment("LIBPATH", path);
+    // rc = prepend2enviroment("LIBPATH", path);
+    setenv("LIBPATH", path, 1);
+    VS("%s\n", path);
 #else
     /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
-    rc = prepend2enviroment("LD_LIBRARY_PATH", path);
+    // c = prepend2enviroment();
+    rc = setenv("LD_LIBRARY_PATH", path, 1);
+    VS("%s\n", path);
 #endif /* AIX */
 
     return rc;
@@ -176,12 +182,14 @@ int set_environment(const ARCHIVE_STATUS *status)
 	unsetenv("DYLD_ROOT_PATH");
 
 #else
-    /* add temppath to library path */
+    /* Set library path to temppath. This is only for onefile mode.*/
     if (status->temppath[0] != 0) {
-        rc = prependToDynamicLibraryPath(status->temppath);
+        rc = set_dynamic_library_path(status->temppath);
     }
-
-    rc = prependToDynamicLibraryPath(status->homepath);
+    /* Set library path to homepath. This is for default onedir mode.*/
+    else {
+        rc = set_dynamic_library_path(status->homepath);
+    }
 #endif
 
     return rc;
