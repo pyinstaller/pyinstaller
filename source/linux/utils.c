@@ -99,51 +99,16 @@ void get_archivefile(char *archivefile, const char *thisfile)
     strcat(archivefile, ".pkg");
 }
 
-/*
-static int prepend2enviroment(const char *name, const char *value)
-{
-    char *envvar;
-    char *old_envvar;
-    int nchars;
-
-    old_envvar = getenv(name);
-
-    nchars = strlen(value);
-    if (old_envvar)
-        nchars += strlen(old_envvar) + 1;
-
-*/
-    /* at process exit: no need to free */
-/*
-    envvar = (char*)malloc((nchars+1)*sizeof(char));
-    if (envvar==NULL) {
-            fprintf(stderr,"Cannot allocate memory for %s "
-                           "environment variable\n", name);
-            return -1;
-    }
-
-    strcpy(envvar, value);
-    if (old_envvar) {
-        strcat(envvar, ":");
-        strcat(envvar, old_envvar);
-    }
-    
-    return 0;
-}
-*/
-
 static int set_dynamic_library_path(const char* path)
 {
     int rc = 0;
 
 #ifdef AIX
     /* LIBPATH is used to look up dynamic libraries on AIX. */
-    // rc = prepend2enviroment("LIBPATH", path);
     setenv("LIBPATH", path, 1);
     VS("%s\n", path);
 #else
     /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
-    // c = prepend2enviroment();
     rc = setenv("LD_LIBRARY_PATH", path, 1);
     VS("%s\n", path);
 #endif /* AIX */
