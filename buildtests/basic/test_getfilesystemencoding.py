@@ -48,7 +48,7 @@ if sys.platform.startswith('win'):
     encoding = subprocess.Popen([pyexe, '-c', 'import sys; print sys.getfilesystemencoding()'],
             stdout=subprocess.PIPE).stdout.read().strip()
 # On Mac OS X the value should be still the same.
-elif sys.platform.startswith('win'):
+elif sys.platform.startswith('darwin'):
     encoding = 'utf-8'
 # On Linux and other unixes it should be None.
 # Please note that on Linux the value differs from the value
