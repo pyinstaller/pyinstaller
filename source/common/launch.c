@@ -743,8 +743,18 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	VS("%s\n", pypath);
 
 	/* Clear out PYTHONHOME to avoid clashing with any installation */
+
 	strcpy(pypath, "PYTHONHOME=");
-	strcat(pypath, status->homepath);
+
+    /* Set PYTHONHOME to temppath. This is only for onefile mode.*/
+    if (status->temppath[0] != '\0') {
+        strcat(pypath, status->temppath);
+    }
+    /* Set PYTHONHOME to homepath. This is for default onedir mode.*/
+    else {
+        strcat(pypath, status->homepath);
+    }
+
 	putenv(pypath);
 	VS("%s\n", pypath);
 
