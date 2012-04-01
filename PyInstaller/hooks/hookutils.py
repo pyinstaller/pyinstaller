@@ -8,7 +8,7 @@ from PyInstaller.compat import set
 from PyInstaller.utils import misc
 
 import PyInstaller.log as logging
-logger = logging.getLogger('PyInstaller.build.hooks')
+logger = logging.getLogger(__name__)
 
 
 def __exec_python_cmd(cmd):
