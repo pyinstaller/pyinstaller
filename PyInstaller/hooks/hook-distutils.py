@@ -28,9 +28,17 @@ import sys
 _CONFIG_H = distutils.sysconfig.get_config_h_filename()
 _MAKEFILE = distutils.sysconfig.get_makefile_filename()
 
+
+# In virtualenv sys.prefix is overridden.
+if hasattr(sys, 'real_prefix'):
+    sys_prefix = sys.real_prefix
+else:
+    sys_prefix = sys.prefix
+
+
 datas = [
-    (_CONFIG_H, os.path.relpath(os.path.dirname(_CONFIG_H), sys.prefix)),
-    (_MAKEFILE, os.path.relpath(os.path.dirname(_MAKEFILE), sys.prefix)),
+    (_CONFIG_H, os.path.relpath(os.path.dirname(_CONFIG_H), sys_prefix)),
+    (_MAKEFILE, os.path.relpath(os.path.dirname(_MAKEFILE), sys_prefix)),
 ]  # data files in PyInstaller hook format
 
 
