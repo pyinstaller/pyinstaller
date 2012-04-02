@@ -19,6 +19,19 @@
 import distutils
 import marshal
 import os
+import sys
+
+
+# distutils module requires Makefile and pyconfig.h files from Python
+# installation. 'distutils.sysconfig' parses these files to get some
+# information from them.
+_CONFIG_H = distutils.sysconfig.get_config_h_filename()
+_MAKEFILE = distutils.sysconfig.get_makefile_filename()
+
+datas = [
+    (_CONFIG_H, os.path.relpath(os.path.dirname(_CONFIG_H), sys.prefix)),
+    (_MAKEFILE, os.path.relpath(os.path.dirname(_MAKEFILE), sys.prefix)),
+]  # data files in PyInstaller hook format
 
 
 def hook(mod):
