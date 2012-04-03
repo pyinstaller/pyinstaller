@@ -129,7 +129,11 @@ def test_UPX(config, upx_dir):
         else:
             logger.info('An exception occured when testing for UPX:')
             logger.info('  %r', e)
-    logger.info('UPX is %savailable.', hasUPX and '' or 'not ')
+    if hasUPX:
+        is_available = 'available'
+    else:
+        is_available = 'not available'
+    logger.info('UPX is %s.', is_available)
     config['hasUPX'] = hasUPX
     config['upx_dir'] = upx_dir
 
