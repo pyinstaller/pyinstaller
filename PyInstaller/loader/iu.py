@@ -448,8 +448,10 @@ class ImportManager:
                 debug("importHook done with %s %s %s (case 1)" % (name, __globals_name, fromlist))
                 return sys.modules[nmparts[0]]
             # Some executables may fail if 'fqname' is not in sys.modules.
-            if fqname in sys.modules:
+            try:
                 del sys.modules[fqname]
+            except KeyError:
+                pass
             raise ImportError("No module named %s" % fqname)
         if not fromlist:
             debug("importHook done with %s %s %s (case 2)" % (name, __globals_name, fromlist))
