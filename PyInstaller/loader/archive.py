@@ -454,11 +454,11 @@ class PYZOwner(iu.Owner):
         # Python has modules and packages. A Python package is container
         # for several modules or packages.
         if ispkg:
-
-            if '_MEIPASS2' in _environ:
-                localpath = _environ['_MEIPASS2'][:-1]
-            else:
-                localpath = iu._os_path_dirname(self.path)
+            # Since PYTHONHOME is set in bootloader, 'sys.prefix' points to the
+            # correct path where PyInstaller should find bundled dynamic
+            # libraries. In one-file mode it points to the tmp directory where
+            # bundled files are extracted at execution time.
+            localpath = sys.prefix
 
             # A python packages has to have __path__ attribute.
             mod.__path__ = [iu._os_path_dirname(mod.__file__), self.path, localpath,
