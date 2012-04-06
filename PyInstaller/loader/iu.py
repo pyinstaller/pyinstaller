@@ -203,7 +203,6 @@ _globalownertypes = [
 #===================Import Directors====================================#
 # ImportDirectors live on the metapath
 # There's one for builtins, one for frozen modules, and one for sys.path
-# Windows gets one for modules gotten from the Registry
 # Mac would have them for PY_RESOURCE modules etc.
 # A generalization of Owner - their concept of "turf" is broader
 
@@ -219,49 +218,6 @@ class BuiltinImportDirector(ImportDirector):
     def getmod(self, nm, isbuiltin=imp.is_builtin):
         if isbuiltin(nm):
             mod = imp.load_module(nm, None, nm, ('', '', imp.C_BUILTIN))
-            return mod
-        return None
-
-
-class RegistryImportDirector(ImportDirector):
-    # for Windows only
-    def __init__(self):
-        self.path = "WindowsRegistry"
-        self.map = {}
-        try:
-            import win32api
-        except ImportError:
-            return
-
-        HKEY_CURRENT_USER = -2147483647
-        HKEY_LOCAL_MACHINE = -2147483646
-        KEY_READ = 131097
-        subkey = r"Software\Python\PythonCore\%s\Modules" % sys.winver
-        for root in (HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE):
-            try:
-                hkey = win32api.RegOpenKeyEx(root, subkey, 0, KEY_READ)
-            except Exception:
-                # If the key does not exist, simply try the next one.
-                continue
-
-            numsubkeys, numvalues, lastmodified = win32api.RegQueryInfoKey(hkey)
-            for i in range(numsubkeys):
-                subkeyname = win32api.RegEnumKey(hkey, i)
-                hskey = win32api.RegOpenKeyEx(hkey, subkeyname, 0, KEY_READ)
-                val = win32api.RegQueryValueEx(hskey, '')
-                desc = getDescr(val[0])
-                self.map[subkeyname] = (val[0], desc)
-                hskey.Close()
-            hkey.Close()
-            break
-
-    def getmod(self, nm):
-        stuff = self.map.get(nm)
-        if stuff:
-            fnm, desc = stuff
-            fp = open(fnm, 'rb')
-            mod = imp.load_module(nm, fp, fnm, desc)
-            mod.__file__ = fnm
             return mod
         return None
 
@@ -341,7 +297,6 @@ class ImportManager:
     def __init__(self):
         self.metapath = [
             BuiltinImportDirector(),
-            RegistryImportDirector(),
             PathImportDirector()
         ]
         self.threaded = 0
