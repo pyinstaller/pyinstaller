@@ -34,16 +34,21 @@ def pywin32_architecture():
     return mapping[arch]
 
 
-_PACKAGES = [
-        'http://downloads.sourceforge.net/project/pywin32/pywin32/Build%%20217/pywin32-217.%s-py%d.%d.exe' %
+_PACKAGES = {
+    'win32api': 'http://downloads.sourceforge.net/project/pywin32/pywin32/Build%%20217/pywin32-217.%s-py%d.%d.exe' %
         (pywin32_architecture(), sys.version_info[0], sys.version_info[1]),
-]
+}
 
 
 def main():
     # Install packages.
-    for p in _PACKAGES:
-        easy_install.main([p])
+    for k, v in _PACKAGES.items():
+        try:
+            __import__(k)
+            print 'Skipping module... %s' % k
+        # Module is not available - install it.
+        except ImportError:
+            easy_install.main([v])
 
 
 if __name__ == '__main__':
