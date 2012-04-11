@@ -6,7 +6,7 @@ from ctypes import *
 
 def dummy(arg):
     if sys.platform == "win32":
-        tct = CDLL("..\\..\\ctypes\\testctypes.dll")
+        tct = CDLL("..\\..\\ctypes\\testctypes-win.dll")
     elif sys.platform.startswith("darwin"):
         tct = CDLL("../../ctypes/testctypes.dylib")
     else:
