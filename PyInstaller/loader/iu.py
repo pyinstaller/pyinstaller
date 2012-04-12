@@ -216,10 +216,9 @@ class BuiltinImportDirector(ImportDirector):
         self.path = 'Builtins'
 
     def getmod(self, nm, isbuiltin=imp.is_builtin):
-        if isbuiltin(nm):
-            mod = imp.load_module(nm, None, nm, ('', '', imp.C_BUILTIN))
-            return mod
-        return None
+        # Return initialized built-in module object or None
+        # if there is no built-in module with that name.
+        return imp.init_builtin(nm)
 
 
 class PathImportDirector(ImportDirector):
