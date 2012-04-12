@@ -95,6 +95,9 @@ def configure(conf):
                 # Do not embed manifest file.
                 # Manifest file will be added in the phase of packaging python application.
                 conf.env.MSVC_MANIFEST = False
+                # Path to Python development file pythonXY.lib is not detected correctly
+                # by waf 1.5 on Windows in virtualenv.
+                conf.env.append_value('LINKFLAGS', '/LIBPATH:' + _sysconfig.get_config_var('LIBDIR'))
             except:
                 Utils.pprint('RED', 'GCC (MinGW) or MSVC compiler not found.')
                 exit(1)
@@ -103,10 +106,6 @@ def configure(conf):
             # (not supported by Visual Studio)
             conf.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
             conf.env.append_value('CCFLAGS', '-Werror')
-        # In virtualenv path to Python development headers might not be
-        # detected properly.
-        conf.env.append_value('CPPPATH_PYEMBED', _sysconfig.get_python_inc())
-        conf.env.append_value('CPPPATH_PYEXT', _sysconfig.get_python_inc())
 
     else:
         conf.check_tool('compiler_cc')
