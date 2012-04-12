@@ -114,6 +114,7 @@ class SkipChecker(object):
             'libraries/test_wx': ['wx'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_ctypes_cdll_c2': ['ctypes'],
+            'import/test_eggs2': ['pkg_resources'],
             'import/test_zipimport': ['pkg_resources'],
             'import/test_zipimport2': ['pkg_resources', 'setuptools'],
             'interactive/test_pygame': ['pygame'],
