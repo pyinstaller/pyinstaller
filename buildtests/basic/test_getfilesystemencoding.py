@@ -22,7 +22,6 @@ print "test_getfilesystemencoding"
 
 import os
 import sys
-import subprocess
 import email
 
 
@@ -44,9 +43,9 @@ frozen_encoding = str(sys.getfilesystemencoding())
 
 
 # For various OS is encoding different.
+# On Windows it should be still mbcs.
 if sys.platform.startswith('win'):
-    encoding = subprocess.Popen([pyexe, '-c', 'import sys; print sys.getfilesystemencoding()'],
-            stdout=subprocess.PIPE).stdout.read().strip()
+    encoding = 'mbcs'
 # On Mac OS X the value should be still the same.
 elif sys.platform.startswith('darwin'):
     encoding = 'utf-8'
