@@ -37,8 +37,11 @@
 
 # /buildtests/basic/ctypes/
 /buildtests/basic/ctypes/testctypes.dylib
-/buildtests/basic/ctypes/testctypes.dll
 /buildtests/basic/ctypes/testctypes.so
+/buildtests/basic/ctypes/testctypes-win.dll
+/buildtests/basic/ctypes/testctypes-win.exp
+/buildtests/basic/ctypes/testctypes-win.obj
+/buildtests/basic/ctypes/testctypes-win.lib
 
 # /buildtests/libraries/
 /buildtests/libraries/tinysample.png
