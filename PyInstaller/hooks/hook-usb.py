@@ -3,6 +3,9 @@ import ctypes.util
 import sys
 import os
 
+# include glob for library lookup used in run-time hook
+hiddenimports = ['glob']
+
 # This method will try to resolve your libusb libraries in the
 # following orders:
 #
