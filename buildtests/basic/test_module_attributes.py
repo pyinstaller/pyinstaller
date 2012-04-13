@@ -16,38 +16,63 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-# Compare attributes of cElementTree module from frozen executable
-# with cElementTree module from standard python.
+# Compare attributes of ElementTree (cElementTree) module from frozen executable
+# with ElementTree (cElementTree) module from standard python.
 
 
+import copy
 import os
-import sys
 import subprocess
+import sys
 import xml.etree.ElementTree as ET
 import xml.etree.cElementTree as cET
 
 
-print "#" * 50
-print "xml.etree.ElementTree", dir(ET)
-print "#" * 50
-
-
 if hasattr(sys, 'frozen'):
-    # In frozen mode current working directory is the path with final executable.
-    pyexe_file = os.path.join('..', '..', 'python_exe.build')
+    # In frozen mode current working dir is the path with final executable.
+    _pyexe_file = os.path.join('..', '..', 'python_exe.build')
 else:
-    pyexe_file = 'python_exe.build'
+    _pyexe_file = 'python_exe.build'
+
+_lines = open(_pyexe_file).readlines()
+_pyexe = _lines[0].strip()
+_env_path = _lines[2].strip()
 
 
-pyexe = open(pyexe_file).readline().strip()
+def exec_python(pycode):
+    """
+    Wrap running python script in a subprocess.
+
+    Return stdout of the invoked command.
+    """
+    # Environment variable 'PATH' has to be defined on Windows.
+    # Otherwise dynamic library pythonXY.dll cannot be found by
+    # Python executable.
+    env = copy.deepcopy(os.environ)
+    env['PATH'] = _env_path
+    out = subprocess.Popen([_pyexe, '-c', pycode], env=env,
+        stdout=subprocess.PIPE, shell=False).stdout.read()
+
+    return out.strip()
 
 
-frozen_attribs = str(dir(cET))
-attribs = subprocess.Popen([pyexe, '-c',
-        'import xml.etree.cElementTree as cET; print dir(cET)'],
-        stdout=subprocess.PIPE, shell=False).stdout.read().strip()
+def compare(test_name, expect, frozen):
+    print(test_name)
+    print('  Attributes expected: ' + expect)
+    print('  Attributes current: ' + frozen)
+    print('')
+    # Compare attributes of frozen module with unfronzen module.
+    if not frozen == expect:
+        raise SystemExit('Frozen module has no same attribuses as unfrozen.')
 
 
-# Compare attributes of frozen module with unfronzen module.
-if not frozen_attribs == attribs:
-    raise SystemExit('Frozen module has no same attribuses as unfrozen.')
+# Pure Python module.
+_expect = exec_python('import xml.etree.ElementTree as ET; print dir(ET)')
+_frozen = str(dir(ET))
+compare('ElementTree', _expect, _frozen)
+
+
+# C-extension Python module.
+_expect = exec_python('import xml.etree.cElementTree as cET; print dir(cET)')
+_frozen = str(dir(cET))
+compare('cElementTree', _expect, _frozen)

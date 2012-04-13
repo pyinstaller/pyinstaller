@@ -374,6 +374,8 @@ class GenericTestCase(unittest.TestCase):
                 'w')
         build_python.write(sys.executable + "\n")
         build_python.write('debug=%s' % __debug__ + '\n')
+        # On Windows we need to preserve systme PATH for subprocesses in tests.
+        build_python.write(os.environ.get('PATH') + '\n')
         build_python.close()
 
     def tearDown(self):
