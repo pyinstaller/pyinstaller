@@ -15,28 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-# Requires Python 2.5+
 
-print "test_getfilesystemencoding"
-
-
-import os
 import sys
-import email
-
-
-if not type(email.Header) == email.LazyImporter:
-    raise SystemExit('email.Header does not match.')
-
-
-if hasattr(sys, 'frozen'):
-    # In frozen mode current working directory is the path with final executable.
-    pyexe_file = os.path.join('..', '..', 'python_exe.build')
-else:
-    pyexe_file = 'python_exe.build'
-
-
-pyexe = open(pyexe_file).readline().strip()
 
 
 frozen_encoding = str(sys.getfilesystemencoding())
