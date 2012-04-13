@@ -484,6 +484,9 @@ def clean():
     build/
     dist/
     */*.dll
+    */*.lib
+    */*.obj
+    */*.exp
     */*.so
     */*.dylib
     """.split()
