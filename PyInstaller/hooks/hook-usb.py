@@ -3,7 +3,7 @@ import ctypes.util
 import sys
 import os
 
-# include glob for library lookup used in run-time hook
+# Include glob for library lookup in run-time hook.
 hiddenimports = ['glob']
 
 # This method will try to resolve your libusb libraries in the
@@ -11,7 +11,7 @@ hiddenimports = ['glob']
 #
 #   libusb-1.0, libusb-0.1, openusb
 #
-# NOTE: mind updating run-time hook when adding further libs
+# NOTE: Mind updating run-time hook when adding further libs.
 libusb_candidates = (
   # libusb10
   'usb-1.0', 'usb', 'libusb-1.0',
@@ -26,8 +26,8 @@ def hook(mod):
     if libname is not None: break
 
   if libname is not None:
-    # use basename here coz OSX python returns full library path
-    # from ctypes.util.find_library.
+    # Use basename here because Python returns full library path
+    # on Mac OSX when using ctypes.util.find_library.
     bins = [os.path.basename(libname)]
     mod.binaries.extend(_resolveCtypesImports(bins))
   elif sys.platform == 'cygwin':

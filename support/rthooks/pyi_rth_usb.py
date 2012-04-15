@@ -12,7 +12,7 @@ def get_load_func(type, candidates):
 
     l = None
     for candidate in candidates:
-      # doing linker's path lookup work to force load bundled copy
+      # Do linker's path lookup work to force load bundled copy.
       if os.name == "posix" and sys.platform == "darwin":
         libs = glob.glob("%s/%s*.dylib*" % (exec_path, candidate))
       elif sys.platform == 'win32':
@@ -21,7 +21,8 @@ def get_load_func(type, candidates):
         libs = glob.glob("%s/%s*.so*" % (exec_path, candidate))
       for libname in libs:
         try:
-          # libusb01 is using CDLL under win32 (see usb.backends.libusb01)
+          # NOTE: libusb01 is using CDLL under win32.
+          # (see usb.backends.libusb01)
           if sys.platform == 'win32' and type != 'libusb01':
             l = WinDLL(libname)
           else:
@@ -34,16 +35,12 @@ def get_load_func(type, candidates):
       raise OSError('USB library could not be found')
 
     if type == 'libusb10':
-      # Windows backend uses stdcall calling convention
-      # On FreeBSD 8/9, libusb 1.0 and libusb 0.1 are in the same shared
-      # object libusb.so, so if we found libusb library name, we must assure
-      # it is 1.0 version. We just try to get some symbol from 1.0 version
       if not hasattr(l, 'libusb_init'):
         raise OSError('USB library could not be found')
     return l
   return _load_library
 
-# NOTE: need to keep in sync with future PyUSB updates
+# NOTE: Need to keep in sync with future PyUSB updates.
 libusb10._load_library = get_load_func('libusb10', ('usb-1.0', 'libusb-1.0', 'usb'))
 libusb01._load_library = get_load_func('libusb01', ('usb-0.1', 'usb', 'libusb0'))
 openusb._load_library  = get_load_func('openusb', ('openusb', ))
