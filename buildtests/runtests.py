@@ -112,7 +112,7 @@ class SkipChecker(object):
             'libraries/test_pycrypto': ['Crypto'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
             'libraries/test_wx': ['wx'],
-            'libraries/test_usb': ['usb'],
+            'libraries/test_usb': ['ctypes', 'usb'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_ctypes_cdll_c2': ['ctypes'],
             'import/test_eggs2': ['pkg_resources'],
@@ -187,6 +187,7 @@ NO_SPEC_FILE = [
     'basic/test_absolute_python_path',
     'libraries/test_enchant',
     'libraries/test_sqlalchemy',
+    'libraries/test_usb',
 ]
 
 
