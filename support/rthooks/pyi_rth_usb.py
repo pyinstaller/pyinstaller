@@ -8,10 +8,7 @@ import glob
 
 def get_load_func(type, candidates):
   def _load_library():
-    if sys._MEIPASS is not None:
-      exec_path = sys._MEIPASS
-    else:
-      exec_path = os.dir.realpath(os.path.dirname(sys.argv[0]))
+    exec_path = sys._MEIPASS
 
     l = None
     for candidate in candidates:
