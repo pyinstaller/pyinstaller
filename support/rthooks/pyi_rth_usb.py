@@ -47,6 +47,11 @@ def get_load_func(type, candidates):
   return _load_library
 
 # NOTE: need to keep in sync with future PyUSB updates
-libusb10._load_library = get_load_func('libusb10', ('usb-1.0', 'libusb-1.0', 'usb'))
-libusb01._load_library = get_load_func('libusb01', ('usb-0.1', 'usb', 'libusb0'))
-openusb._load_library  = get_load_func('openusb', ('openusb', ))
+if sys.platform == 'cygwin':
+  libusb10._load_library = get_load_func('libusb10', ('cygusb-1.0', ))
+  libusb01._load_library = get_load_func('libusb01', ('cygusb0', ))
+  openusb._load_library  = get_load_func('openusb',  ('openusb', ))
+else:
+  libusb10._load_library = get_load_func('libusb10', ('usb-1.0', 'libusb-1.0', 'usb'))
+  libusb01._load_library = get_load_func('libusb01', ('usb-0.1', 'usb', 'libusb0'))
+  openusb._load_library  = get_load_func('openusb',  ('openusb', ))
