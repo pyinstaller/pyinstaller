@@ -97,7 +97,8 @@ def configure(conf):
                 conf.env.MSVC_MANIFEST = False
                 # Path to Python development file pythonXY.lib is not detected correctly
                 # by waf 1.5 on Windows in virtualenv.
-                conf.env.append_value('LINKFLAGS', '/LIBPATH:' + _sysconfig.get_config_var('LIBDIR'))
+                if _sysconfig.get_config_var('LIBDIR'):
+                    conf.env.append_value('LINKFLAGS', '/LIBPATH:' + _sysconfig.get_config_var('LIBDIR'))
             except:
                 Utils.pprint('RED', 'GCC (MinGW) or MSVC compiler not found.')
                 exit(1)
