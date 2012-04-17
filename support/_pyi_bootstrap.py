@@ -47,11 +47,6 @@ sys.importManager.install()
 import os
 
 
-# Forces PyInstaller to include fake 'site' module. Fake 'site' module
-# is dummy and does not do any search for additional Python modules.
-import site
-
-
 # Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, 'frozen'):
     sys.frozen = True
@@ -93,6 +88,18 @@ if 'PYTHONHOME' in os.environ:
     # empty string.
     os.environ['PYTHONHOME'] = ''
     del os.environ['PYTHONHOME']
+# FIXME On Windows setting environment variable PYTHONHOME does not work.
+# This is a workaround for that. PYTHONHOME should be fixed for Windows
+# in bootloader.
+# http://www.pyinstaller.org/ticket/549
+else:
+    sys.prefix = sys._MEIPASS
+    sys.exec_prefix = sys._MEIPASS
+
+
+# Forces PyInstaller to include fake 'site' module. Fake 'site' module
+# is dummy and does not do any search for additional Python modules.
+import site
 
 
 # Ensure PYTHONPATH contains absolute paths. Otherwise import of other python
