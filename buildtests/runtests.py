@@ -185,6 +185,7 @@ class SkipChecker(object):
 NO_SPEC_FILE = [
     'basic/test_absolute_ld_library_path',
     'basic/test_absolute_python_path',
+    'basic/test_python_home',
     'libraries/test_enchant',
     'libraries/test_sqlalchemy',
     'libraries/test_usb',
