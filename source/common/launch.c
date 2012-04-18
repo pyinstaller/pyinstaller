@@ -292,7 +292,7 @@ int findDigitalSignature(ARCHIVE_STATUS * const status)
 #ifdef WIN32
 	/* There might be a digital signature attached. Let's see. */
 	char buf[2];
-	int offset = 0;
+	int offset = 0, signature_offset = 0;
 	fseek(status->fp, 0, SEEK_SET);
 	fread(buf, 1, 2, status->fp);
 	if (!(buf[0] == 'M' && buf[1] == 'Z'))
@@ -301,8 +301,24 @@ int findDigitalSignature(ARCHIVE_STATUS * const status)
 	fseek(status->fp, 60, SEEK_SET);
 	/* Read offset to PE header */
 	fread(&offset, 4, 1, status->fp);
+	fseek(status->fp, offset+24, SEEK_SET);
+        fread(buf, 2, 1, status->fp);
+        if (buf[0] == 0x0b && buf[1] == 0x01) {
+          /* 32 bit binary */
+          signature_offset = 152;
+        }
+        else if (buf[0] == 0x0b && buf[1] == 0x02) {
+          /* 64 bit binary */
+          signature_offset = 168;
+        }
+        else {
+          /* Invalid magic value */
+          VS("Could not find a valid magic value (was %x %x).\n", (unsigned int) buf[0], (unsigned int) buf[1]);
+          return -1;
+        }
+
 	/* Jump to the fields that contain digital signature info */
-	fseek(status->fp, offset+152, SEEK_SET);
+	fseek(status->fp, offset+signature_offset, SEEK_SET);
 	fread(&offset, 4, 1, status->fp);
 	if (offset == 0)
 		return -1;
