@@ -1,23 +1,23 @@
-hiddenimports = [
-	"backend_agg",
-	"backend_cairo",
-	"backend_cocoaagg",
-	"backend_emf",
-	"backend_fltkagg",
-	"backend_gdk",
-	"backend_gtkagg",
-	"backend_gtkcairo",
-	"backend_macosx",
-	"backend_mixed",
-	"backend_pdf",
-	"backend_ps",
-	"backend_qt4agg",
-	"backend_qt4",
-	"backend_qtagg",
-	"backend_qt",
-	"backend_svg",
-	"backend_template",
-	"backend_tkagg",
-	"backend_wxagg",
-	"backend_wx",
-]
+#
+# Copyright (C) 2012, Martin Zibricky
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+
+from PyInstaller.hooks.hookutils import matplotlib_backends
+
+
+# Include only available matplotlib backends.
+hiddenimports = matplotlib_backends()

@@ -4,7 +4,7 @@ import os
 import sys
 import PyInstaller
 import PyInstaller.compat as compat
-from PyInstaller.compat import set
+from PyInstaller.compat import is_darwin, set
 from PyInstaller.utils import misc
 
 import PyInstaller.log as logging
@@ -177,3 +177,36 @@ def find_django_root(dir):
                 if "manage.py" in dir_entities and "settings.py" in dir_entities and "urls.py" in dir_entities:
                     django_root_directories.append(path_to_analyze)
         return django_root_directories
+
+
+def matplotlib_backends():
+    """
+    Return matplotlib backends availabe in current Python installation.
+
+    All matplotlib backends are hardcoded. We have to try import them
+    and return the list of successfully imported backends.
+    """
+    all_bk = eval_statement('import matplotlib; print matplotlib.rcsetup.all_backends')
+    avail_bk = []
+    import_statement = """
+try:
+    __import__('matplotlib.backends.backend_%s')
+except ImportError as e:
+    print str(e)
+"""
+
+    # CocoaAgg backend causes subprocess to exit and thus detection
+    # is not reliable. This backend is meaningful only on Mac OS X.
+    if not is_darwin and 'CocoaAgg' in all_bk:
+        all_bk.remove('CocoaAgg')
+
+    # Try to import every backend in a subprocess.
+    for bk in all_bk:
+        stdout = exec_statement(import_statement % bk.lower())
+        # Backend import is successfull if there is no text in stdout.
+        if not stdout:
+            avail_bk.append(bk)
+
+    # Convert backend name to module name.
+    # e.g. GTKAgg -> backend_gtkagg
+    return ['backend_' + x.lower() for x in avail_bk]
