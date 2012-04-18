@@ -17,6 +17,7 @@ Changes since PyInstaller 1.5.1
  + Packaged executable now returns the same return-code as the
    unpackaged script (thanks to Brandyn White).
  + Add import hook for PyUSB (thanks to Chien-An "Zero" Cho).
+ + Add support for running PyInstaller in virtualenv.
  * Drop dependency on otool from Xcode on Mac OSX.
  * Removed compatibility code for old platforms (dos, os2, MacOS 9).
  * Fix missing qt_menu.nib in dist directory on Mac OSX when using PyQt4.
