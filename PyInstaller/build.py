@@ -821,7 +821,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0, crypt=0):
+                 strip_binaries=0, upx_binaries=0, crypt=0, use_system_library=False):
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -830,6 +830,7 @@ class PKG(Target):
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
         self.crypt = crypt
+        self.use_system_libarry = use_system_library
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
