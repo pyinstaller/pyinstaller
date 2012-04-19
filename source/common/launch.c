@@ -489,7 +489,8 @@ int loadPython(ARCHIVE_STATUS *status)
 {
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
-    int pyvers = ntohl(status->cookie.pyvers);
+    int pyvers = abs(ntohl(status->cookie.pyvers));
+
 
 #ifdef WIN32
 	/* Determine the path */
@@ -616,7 +617,7 @@ int attachPython(ARCHIVE_STATUS *status, int *loadedNew)
 #ifdef WIN32
 	HMODULE dll;
 	char nm[_MAX_PATH + 1];
-    int pyvers = ntohl(status->cookie.pyvers);
+    int pyvers = abs(ntohl(status->cookie.pyvers));
 
 	/* Get python's name */
 	sprintf(nm, "python%02d.dll", pyvers);
@@ -1593,7 +1594,7 @@ void cleanUp(ARCHIVE_STATUS *status)
  */
 int getPyVersion(ARCHIVE_STATUS *status)
 {
-	return ntohl(status->cookie.pyvers);
+	return abs(ntohl(status->cookie.pyvers));
 }
 void finalizePython(void)
 {
