@@ -511,7 +511,7 @@ class Analysis(Target):
             depmanifest.filename = os.path.join(BUILDPATH,
                                                 specnm + ".exe.manifest")
         # Always add python's dependencies first
-        # This ensures that assembly depencies under Windows get pulled in
+        # This ensures that assembly dependencies under Windows get pulled in
         # first and we do not need to add assembly DLLs to the exclude list
         # explicitly
         binaries.extend(bindepend.Dependencies([('', python, '')],
@@ -521,6 +521,7 @@ class Analysis(Target):
         if is_win:
             depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
+        
         if zipfiles:
             scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
         # Add realtime hooks just before the last script (which is
@@ -599,7 +600,6 @@ class Analysis(Target):
 
         binaries.append((os.path.basename(lib), lib, 'BINARY'))
 
-
 def _findRTHook(modnm):
     rslt = []
     for script in rthooks.get(modnm) or []:
@@ -636,7 +636,7 @@ class PYZ(Target):
     GUTS = (('name', _check_guts_eq),
             ('level', _check_guts_eq),
             ('crypt', _check_guts_eq),
-            ('toc', _check_guts_toc),  # todo: pyc=1
+            ('toc', _check_guts_toc), # todo: pyc=1
             )
 
     def check_guts(self, last_build):
@@ -821,7 +821,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0, crypt=0):
+                 strip_binaries=0, upx_binaries=0, crypt=0, use_system_library=False):
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -830,6 +830,7 @@ class PKG(Target):
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
         self.crypt = crypt
+        self.use_system_libarry = use_system_library
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -967,7 +968,7 @@ class EXE(Target):
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
             ('crypt', _check_guts_eq),
-            ('mtm', None,),  # checked bellow
+            ('mtm', None,), # checked bellow
             )
 
     def check_guts(self, last_build):
@@ -1144,7 +1145,7 @@ class COLLECT(Target):
     GUTS = (('name', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
-            ('toc', _check_guts_eq),  # additional check below
+            ('toc', _check_guts_eq), # additional check below
             )
 
     def check_guts(self, last_build):
@@ -1234,7 +1235,7 @@ class BUNDLE(Target):
                 break
         self.__postinit__()
 
-    GUTS = (('toc', _check_guts_eq),  # additional check below
+    GUTS = (('toc', _check_guts_eq), # additional check below
             )
 
     def check_guts(self, last_build):
