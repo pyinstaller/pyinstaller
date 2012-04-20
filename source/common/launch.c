@@ -491,7 +491,6 @@ int loadPython(ARCHIVE_STATUS *status)
 	char dllpath[_MAX_PATH + 1];
     int pyvers = abs(ntohl(status->cookie.pyvers));
 
-
 #ifdef WIN32
 	/* Determine the path */
 	sprintf(dllpath, "%spython%02d.dll", status->homepathraw, pyvers);
@@ -516,11 +515,11 @@ int loadPython(ARCHIVE_STATUS *status)
 
 	mapNames(dll, pyvers);
 #else
-
+	/*the value is 1 if we want to use the system library, 0 otherwise*/
+    unsigned int usesystemlibrary = (((int)ntohl((uint32_t)status->cookie.pyvers))<0)?1:0;
     uint32_t pyvers_major;
     uint32_t pyvers_minor;
     int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
-
     pyvers_major = pyvers / 10;
     pyvers_minor = pyvers % 10;
 
@@ -580,12 +579,20 @@ int loadPython(ARCHIVE_STATUS *status)
          return -1;
      }
 #else
-    #define pylibTemplate "%slibpython%01d.%01d.so.1.0"
-    if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
-         && checkFile(dllpath, pylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0)
+    if (usesystemlibrary == 0)
     {
-        FATALERROR("Python library not found.\n");
-        return -1;
+		#define pylibTemplate "%slibpython%01d.%01d.so.1.0"
+		if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
+			 && checkFile(dllpath, pylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0)
+		{
+			FATALERROR("Python library not found.\n");
+			return -1;
+		}
+    }
+    else
+    {
+        #define syspylib "libpython%01d.%01d.so.1.0"
+        sprintf(dllpath, syspylib, pyvers_major, pyvers_minor);
     }
 #endif
 

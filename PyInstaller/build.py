@@ -359,7 +359,7 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
-                 hookspath=None, excludes=None):
+                 hookspath=None, excludes=None, use_system_library=False):
         Target.__init__(self)
         self.inputs = [
             os.path.join(HOMEPATH, "support", "_pyi_bootstrap.py"),
@@ -387,6 +387,7 @@ class Analysis(Target):
         self.zipfiles = TOC()
         self.datas = TOC()
         self.dependencies = TOC()
+        self.use_system_library = use_system_library
         self.__postinit__()
 
     GUTS = (('inputs', _check_guts_eq),
@@ -522,6 +523,9 @@ class Analysis(Target):
             depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
         
+        if self.use_system_library and is_unix:
+            self.removePythonLibrary(binaries)
+        
         if zipfiles:
             scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
         # Add realtime hooks just before the last script (which is
@@ -599,6 +603,23 @@ class Analysis(Target):
                 raise IOError("Python library not found!")
 
         binaries.append((os.path.basename(lib), lib, 'BINARY'))
+
+    def removePythonLibrary(self, binaries):
+        """Remove the Python library from the binaries if the system is linux.
+        """
+        
+        names = ('libpython%d.%d.so' % sys.version_info[:2],)
+        index = 0
+        library_found = False
+        for (nm, fnm, typ) in binaries:
+            for name in names:
+                if typ == 'BINARY' and nm.startswith(name):
+                    library_found = True
+                    break
+            if library_found:
+                break
+            index += 1
+        binaries.pop(index)
 
 def _findRTHook(modnm):
     rslt = []
@@ -830,7 +851,8 @@ class PKG(Target):
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
         self.crypt = crypt
-        self.use_system_libarry = use_system_library
+        self.use_system_libary = use_system_library
+        print self.use_system_libary
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -899,7 +921,7 @@ class PKG(Target):
                 mytoc.append((inm, '', 0, 'o'))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
-        archive = carchive.CArchive()
+        archive = carchive.CArchive(usesystemlibrary=self.use_system_libary)
         archive.build(self.name, mytoc)
         _save_data(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
@@ -928,6 +950,8 @@ class EXE(Target):
         self.crypt = kws.get('crypt', 0)
         self.exclude_binaries = kws.get('exclude_binaries', 0)
         self.append_pkg = kws.get('append_pkg', self.append_pkg)
+        self.use_system_library = kws.get('use_system_library', False)
+        print self.use_system_library
         if self.name is None:
             self.name = self.out[:-3] + 'exe'
         if not os.path.isabs(self.name):
@@ -954,7 +978,7 @@ class EXE(Target):
         self.pkg = PKG(self.toc, cdict=kws.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
-                       crypt=self.crypt)
+                       crypt=self.crypt, use_system_library=self.use_system_library)
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
