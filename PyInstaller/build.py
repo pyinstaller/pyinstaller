@@ -523,7 +523,7 @@ class Analysis(Target):
             depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
         
-        if self.use_system_library and is_unix:
+        if self.use_system_library and (is_unix or is_darwin):
             self.removePythonLibrary(binaries)
         
         if zipfiles:
@@ -578,11 +578,8 @@ class Analysis(Target):
         else:
             return
 
-        for (nm, fnm, typ) in binaries:
-            for name in names:
-                if typ == 'BINARY' and name in fnm:
-                    # lib found
-                    return
+        if self.findLibraryInBinaries(binaries, names) is not None:
+            return
 
         # resume search using the first item in names
         name = names[0]
@@ -607,19 +604,30 @@ class Analysis(Target):
     def removePythonLibrary(self, binaries):
         """Remove the Python library from the binaries if the system is linux.
         """
-        
-        names = ('libpython%d.%d.so' % sys.version_info[:2],)
-        index = 0
-        library_found = False
+        if is_unix:
+            names = ('libpython%d.%d.so' % sys.version_info[:2],)
+            
+        el = self.findLibraryInBinaries(binaries, names)
+        if el is None:
+            name = names[0]
+            if is_unix:
+                lib = bindepend.findLibrary(name)
+            el = (os.path.basename(lib), lib, 'BINARY')
+
+        binaries.remove(el)
+
+    def findLibraryInBinaries(self, binaries, names):
+        """function to check the presence of a library in binaries.
+           The function take the list of binaries and the names that the 
+           library may have. If the function found the library return the
+           element in binaries, otherwise return None
+        """
         for (nm, fnm, typ) in binaries:
             for name in names:
-                if typ == 'BINARY' and nm.startswith(name):
-                    library_found = True
-                    break
-            if library_found:
-                break
-            index += 1
-        binaries.pop(index)
+                if typ == 'BINARY' and name in fnm:
+                    # lib found
+                    return (nm, fnm, typ)
+        return None
 
 def _findRTHook(modnm):
     rslt = []
@@ -852,7 +860,6 @@ class PKG(Target):
         self.upx_binaries = upx_binaries
         self.crypt = crypt
         self.use_system_libary = use_system_library
-        print self.use_system_libary
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -951,7 +958,6 @@ class EXE(Target):
         self.exclude_binaries = kws.get('exclude_binaries', 0)
         self.append_pkg = kws.get('append_pkg', self.append_pkg)
         self.use_system_library = kws.get('use_system_library', False)
-        print self.use_system_library
         if self.name is None:
             self.name = self.out[:-3] + 'exe'
         if not os.path.isabs(self.name):
