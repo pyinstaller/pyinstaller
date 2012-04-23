@@ -523,7 +523,7 @@ class Analysis(Target):
             depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
         
-        if self.use_system_library and (is_unix or is_darwin):
+        if self.use_system_library and (is_unix or is_win):
             self.removePythonLibrary(binaries)
         
         if zipfiles:
@@ -606,15 +606,21 @@ class Analysis(Target):
         """
         if is_unix:
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
-            
+        elif is_win:
+            names = ('python%d%d.dll' % sys.version_info[:2],)
         el = self.findLibraryInBinaries(binaries, names)
         if el is None:
             name = names[0]
             if is_unix:
                 lib = bindepend.findLibrary(name)
             el = (os.path.basename(lib), lib, 'BINARY')
-
-        binaries.remove(el)
+        
+        #search all libpython in binearies
+        
+        number_of_el = binaries.count(el)
+        while number_of_el:
+            binaries.remove(el)
+            number_of_el -= 1
 
     def findLibraryInBinaries(self, binaries, names):
         """function to check the presence of a library in binaries.
@@ -624,6 +630,7 @@ class Analysis(Target):
         """
         for (nm, fnm, typ) in binaries:
             for name in names:
+                print name, fnm
                 if typ == 'BINARY' and name in fnm:
                     # lib found
                     return (nm, fnm, typ)
