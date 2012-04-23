@@ -489,7 +489,15 @@ int loadPython(ARCHIVE_STATUS *status)
 {
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
+	int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
+
     int pyvers = abs(ntohl(status->cookie.pyvers));
+    /*the value is 1 if we want to use the system library, 0 otherwise*/
+    unsigned int usesystemlibrary = ((int)ntohl(status->cookie.pyvers)<0)?1:0;
+    uint32_t pyvers_major;
+    uint32_t pyvers_minor;
+    pyvers_major = pyvers / 10;
+    pyvers_minor = pyvers % 10;
 
 #ifdef WIN32
 	/* Determine the path */
@@ -515,13 +523,6 @@ int loadPython(ARCHIVE_STATUS *status)
 
 	mapNames(dll, pyvers);
 #else
-	/*the value is 1 if we want to use the system library, 0 otherwise*/
-    unsigned int usesystemlibrary = (((int)ntohl((uint32_t)status->cookie.pyvers))<0)?1:0;
-    uint32_t pyvers_major;
-    uint32_t pyvers_minor;
-    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
-    pyvers_major = pyvers / 10;
-    pyvers_minor = pyvers % 10;
 
 	/* Determine the path */
 #ifdef __APPLE__
