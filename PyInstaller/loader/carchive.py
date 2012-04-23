@@ -259,6 +259,8 @@ class CArchive(archive.Archive):
            back to the start. """
         totallen = tocpos + self.toclen + self.TRLLEN
         pyvers = sys.version_info[0]*10 + sys.version_info[1]
+        ##if the user wants to use the system library save this information
+        #change pyvers to negative
         if self.usesystemlibrary:
             pyvers = -pyvers
         trl = struct.pack(self.TRLSTRUCT, self.MAGIC, totallen,
