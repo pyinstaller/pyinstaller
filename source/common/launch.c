@@ -489,31 +489,36 @@ int loadPython(ARCHIVE_STATUS *status)
 {
 	HINSTANCE dll;
 	char dllpath[_MAX_PATH + 1];
-	int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
+	
 
     int pyvers = abs(ntohl(status->cookie.pyvers));
     /*the value is 1 if we want to use the system library, 0 otherwise*/
     unsigned int usesystemlibrary = ((int)ntohl(status->cookie.pyvers)<0)?1:0;
-    uint32_t pyvers_major;
-    uint32_t pyvers_minor;
-    pyvers_major = pyvers / 10;
-    pyvers_minor = pyvers % 10;
+    
 
 #ifdef WIN32
-	/* Determine the path */
-	sprintf(dllpath, "%spython%02d.dll", status->homepathraw, pyvers);
+	if (usesystemlibrary == 0)
+	{
+		/* Determine the path */
+		sprintf(dllpath, "%spython%02d.dll", status->homepathraw, pyvers);
 
-	/* Load the DLL */
-	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-	if (dll) {
-		VS("%s\n", dllpath);
-	}
-	else {
-		sprintf(dllpath, "%spython%02d.dll", status->temppathraw, pyvers);
-		dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
+		/* Load the DLL */
+		dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 		if (dll) {
 			VS("%s\n", dllpath);
 		}
+		else {
+			sprintf(dllpath, "%spython%02d.dll", status->temppathraw, pyvers);
+			dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
+			if (dll) {
+				VS("%s\n", dllpath);
+			}
+		}
+	}
+	else
+	{
+		sprintf(dllpath, "python%02d.dll", pyvers);
+		dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 	}
 	if (dll == 0) {
 		FATALERROR("Error loading Python DLL: %s (error code %d)\n",
@@ -523,7 +528,11 @@ int loadPython(ARCHIVE_STATUS *status)
 
 	mapNames(dll, pyvers);
 #else
-
+	int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
+	uint32_t pyvers_major;
+    uint32_t pyvers_minor;
+    pyvers_major = pyvers / 10;
+    pyvers_minor = pyvers % 10;
 	/* Determine the path */
 #ifdef __APPLE__
 
