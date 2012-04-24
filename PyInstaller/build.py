@@ -867,7 +867,7 @@ class PKG(Target):
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
         self.crypt = crypt
-        self.use_system_libary = use_system_library
+        self.use_system_library = use_system_library
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -936,7 +936,7 @@ class PKG(Target):
                 mytoc.append((inm, '', 0, 'o'))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
-        archive = carchive.CArchive(usesystemlibrary=self.use_system_libary)
+        archive = carchive.CArchive(usesystemlibrary=self.use_system_library)
         archive.build(self.name, mytoc)
         _save_data(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
