@@ -602,7 +602,7 @@ class Analysis(Target):
         binaries.append((os.path.basename(lib), lib, 'BINARY'))
 
     def removePythonLibrary(self, binaries):
-        """Remove the Python library from the binaries if the system is linux.
+        """Remove the Python library from the binaries.
         """
         if is_unix:
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
