@@ -118,13 +118,13 @@ class CArchive(archive.Archive):
     TRLSTRUCT = '!8siiii'
     TRLLEN = 24
     LEVEL = 9
-    def __init__(self, path=None, start=0, len=0, usesystemlibrary=False):
+    def __init__(self, path=None, start=0, len=0, use_system_library=False):
         """Constructor.
 
            PATH is path name of file (create an empty CArchive if path is None).
            START is the seekposition within PATH.
            LEN is the length of the CArchive (if 0, then read till EOF). """
-        self.usesystemlibrary = usesystemlibrary
+        self.usesystemlibrary = use_system_library
         self.len = len
         archive.Archive.__init__(self, path, start)
 
