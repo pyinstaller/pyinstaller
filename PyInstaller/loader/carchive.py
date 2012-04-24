@@ -124,7 +124,7 @@ class CArchive(archive.Archive):
            PATH is path name of file (create an empty CArchive if path is None).
            START is the seekposition within PATH.
            LEN is the length of the CArchive (if 0, then read till EOF). """
-        self.usesystemlibrary = use_system_library
+        self.use_system_library = use_system_library
         self.len = len
         archive.Archive.__init__(self, path, start)
 
@@ -261,7 +261,7 @@ class CArchive(archive.Archive):
         pyvers = sys.version_info[0]*10 + sys.version_info[1]
         ##if the user wants to use the system library save this information
         #change pyvers to negative
-        if self.usesystemlibrary:
+        if self.use_system_library:
             pyvers = -pyvers
         trl = struct.pack(self.TRLSTRUCT, self.MAGIC, totallen,
                           tocpos, self.toclen, pyvers)
