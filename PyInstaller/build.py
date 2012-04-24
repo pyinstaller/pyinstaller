@@ -630,7 +630,6 @@ class Analysis(Target):
         """
         for (nm, fnm, typ) in binaries:
             for name in names:
-                print name, fnm
                 if typ == 'BINARY' and name in fnm:
                     # lib found
                     return (nm, fnm, typ)
