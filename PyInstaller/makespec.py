@@ -29,7 +29,8 @@ onefiletmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
-             hookspath=%(hookspath)r)
+             hookspath=%(hookspath)r,
+             use_system_library=%(usesystemlibrary)s)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -40,14 +41,16 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
-          console=%(console)s %(exe_options)s)
+          console=%(console)s %(exe_options)s,
+          use_system_library=%(usesystemlibrary)s)
 """
 
 onedirtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
-             hookspath=%(hookspath)r)
+             hookspath=%(hookspath)r,
+             use_system_library=%(usesystemlibrary)s)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -56,7 +59,8 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
-          console=%(console)s %(exe_options)s)
+          console=%(console)s %(exe_options)s,
+          use_system_library=%(usesystemlibrary)s)
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
@@ -70,7 +74,8 @@ comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
-             hookspath=%(hookspath)r)
+             hookspath=%(hookspath)r,
+             use_system_library=%(usesystemlibrary)s)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -79,7 +84,8 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
-          console=%(console)s %(exe_options)s)
+          console=%(console)s %(exe_options)s,
+          use_system_library=%(usesystemlibrary)s)
 dll = DLL(pyz,
           a.scripts,
           exclude_binaries=1,
@@ -174,7 +180,11 @@ def __add_options(parser):
                  'be used multiple times.')
     g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
                  help="additional path to search for hooks "
-                      "(may be given several times)")    
+                      "(may be given several times)")
+    g.add_option("-u", "--use-system-library", dest="usesystemlibrary",
+                 action="store_true", default=False,
+                 help="use the system libpython instead add it to the"
+                 "application")    
 
     g = parser.add_option_group('How to generate')
     g.add_option("-d", "--debug", action="store_true", default=False,
@@ -233,7 +243,7 @@ def main(scripts, name=None, onefile=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
          workdir=None, pathex=[], version_file=None,
          icon_file=None, manifest=None, resources=[], crypt=None,
-         hiddenimports=None, hookspath=None, **kwargs):
+         hiddenimports=None, hookspath=None, usesystemlibrary=False, **kwargs):
 
     if not name:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -284,7 +294,8 @@ def main(scripts, name=None, onefile=0,
          'crypt' : repr(crypt),
          'crypted': crypt is not None,
          'console': console or debug,
-         'exe_options': exe_options}
+         'exe_options': exe_options,
+         'usesystemlibrary': usesystemlibrary}
 
     if is_win or is_cygwin:
         d['exename'] = name+'.exe'
