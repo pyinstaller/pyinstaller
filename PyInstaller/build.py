@@ -604,7 +604,7 @@ class Analysis(Target):
     def removePythonLibrary(self, binaries):
         """Remove the Python library from the binaries.
         """
-        if not is_unix or not is_win:
+        if not is_unix and not is_win:
             return
         if is_unix:
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
@@ -938,7 +938,7 @@ class PKG(Target):
                 mytoc.append((inm, '', 0, 'o'))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
-        archive = carchive.CArchive(usesystemlibrary=self.use_system_library)
+        archive = carchive.CArchive(use_system_library=self.use_system_library)
         archive.build(self.name, mytoc)
         _save_data(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
