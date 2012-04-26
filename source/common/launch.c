@@ -493,7 +493,7 @@ int loadPython(ARCHIVE_STATUS *status)
 
     int pyvers = abs(ntohl(status->cookie.pyvers));
     /*the value is 1 if we want to use the system library, 0 otherwise*/
-    unsigned int usesystemlibrary = ((int)ntohl(status->cookie.pyvers)<0)?1:0;
+    unsigned int usesystemlibrary = (int)ntohl(status->cookie.pyvers)<0;
     
 
 #ifdef WIN32
