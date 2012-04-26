@@ -604,6 +604,8 @@ class Analysis(Target):
     def removePythonLibrary(self, binaries):
         """Remove the Python library from the binaries.
         """
+        if not is_unix or not is_win:
+            return
         if is_unix:
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
         elif is_win:
