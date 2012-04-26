@@ -611,7 +611,7 @@ class Analysis(Target):
         elif is_win:
             names = ('python%d%d.dll' % sys.version_info[:2],)
         el = self.findLibraryInBinaries(binaries, names)
-        if el:
+        if el is None:
             name = names[0]
             if is_unix:
                 lib = bindepend.findLibrary(name)
