@@ -523,7 +523,7 @@ class Analysis(Target):
             depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
         
-        if self.use_system_library and (is_unix or is_win):
+        if self.use_system_library:
             self.removePythonLibrary(binaries)
         
         if zipfiles:
