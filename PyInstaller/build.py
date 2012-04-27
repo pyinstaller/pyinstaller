@@ -617,7 +617,7 @@ class Analysis(Target):
                 lib = bindepend.findLibrary(name)
             el = (os.path.basename(lib), lib, 'BINARY')
         
-        # Search all libpython in binearies. This loop is necessary because
+        # Search all libpython in binaries. This loop is necessary because
         # the function to search the binaries' dependencies returns, at least,
         # the list of binaries, so an element can be found twice
         
