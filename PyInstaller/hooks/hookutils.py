@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import glob
 import os
 import sys
 import PyInstaller
@@ -210,3 +211,25 @@ except ImportError as e:
     # Convert backend name to module name.
     # e.g. GTKAgg -> backend_gtkagg
     return ['backend_' + x.lower() for x in avail_bk]
+
+
+def opengl_arrays_modules():
+    """
+    Return list of array modules for OpenGL module.
+
+    e.g. 'OpenGL.arrays.vbo'
+    """
+    statement = 'import OpenGL; print OpenGL.__path__[0]'
+    opengl_mod_path = PyInstaller.hooks.hookutils.exec_statement(statement)
+    arrays_mod_path = os.path.join(opengl_mod_path, 'arrays')
+    files = glob.glob(arrays_mod_path + '/*.py')
+    modules = []
+
+    for f in files:
+        mod = os.path.splitext(os.path.basename(f))[0]
+        # Skip __init__ module.
+        if mod == '__init__':
+            continue
+        modules.append('OpenGL.arrays.' + mod)
+
+    return modules

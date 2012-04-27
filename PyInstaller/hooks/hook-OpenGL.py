@@ -1,42 +1,41 @@
-## Hook for PyOpenGL 3.x versions from 3.0.0b6 up. Previous versions have a
-## plugin system based on pkg_resources which is problematic to handle correctly
-## under pyinstaller; 2.x versions used to run fine without hooks, so this one
-## shouldn't hurt.
+#
+# Copyright (C) 2009, Lorenzo Mancini
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os
-import sys
 
-from hookutils import logger
+# Hook for PyOpenGL 3.x versions from 3.0.0b6 up. Previous versions have a
+# plugin system based on pkg_resources which is problematic to handle correctly
+# under pyinstaller; 2.x versions used to run fine without hooks, so this one
+# shouldn't hurt.
 
-## PlatformPlugin performs a conditional import based on os.name and
-## sys.platform. pyinstaller misses this so let's add it ourselves...
 
-if os.name == 'nt':
+from PyInstaller.compat import is_win, is_darwin
+from PyInstaller.hooks.hookutils import opengl_arrays_modules
+
+
+# PlatformPlugin performs a conditional import based on os.name and
+# sys.platform. PyInstaller misses this so let's add it ourselves...
+if is_win:
     hiddenimports = ['OpenGL.platform.win32']
+elif is_darwin:
+    hiddenimports = ['OpenGL.platform.darwin']
+# Use glx for other platforms (Linux, ...)
 else:
-    if sys.platform.startswith('linux'):
-        hiddenimports = ['OpenGL.platform.glx']
-    elif sys.platform[:6] == 'darwin':
-        hiddenimports = ['OpenGL.platform.darwin']
-    else:
-        logger.error('hook-OpenGL: Unrecognised combo (os.name: %s, sys.platform: %s)',
-                     os.name, sys.platform)
+    hiddenimports = ['OpenGL.platform.glx']
 
 
-## arrays modules are needed too
-
-hiddenimports += ['OpenGL.arrays.ctypesparameters',
-                  'OpenGL.arrays.numarrays',
-                  'OpenGL.arrays._numeric',
-                  'OpenGL.arrays._strings',
-                  'OpenGL.arrays.ctypespointers',
-                  'OpenGL.arrays.lists',
-                  'OpenGL.arrays.numbers',
-                  'OpenGL.arrays.numeric',
-                  'OpenGL.arrays.strings',
-                  'OpenGL.arrays.ctypesarrays',
-                  'OpenGL.arrays.nones',
-                  'OpenGL.arrays.numericnames',
-                  'OpenGL.arrays.numpymodule',
-                  'OpenGL.arrays.vbo',
-                  ]
+# Arrays modules are needed too.
+hiddenimports += opengl_arrays_modules()
