@@ -429,6 +429,28 @@ class Analysis(Target):
         # if there are multiple Analysis in a single specfile.
         bindepend.seen = {}
 
+        python = sys.executable
+        if not is_win:
+            while os.path.islink(python):
+                python = os.path.join(os.path.dirname(python), os.readlink(python))
+            depmanifest = None
+        else:
+            depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
+                                               processorArchitecture=winmanifest.processor_architecture(),
+                                               version=(1, 0, 0, 0))
+            depmanifest.filename = os.path.join(BUILDPATH,
+                                                specnm + ".exe.manifest")
+
+        binaries = []  # binaries to bundle
+
+        # Always add Python's dependencies first
+        # This ensures that its assembly depencies under Windows get pulled in
+        # first, so that .pyd files analyzed later which may not have their own
+        # manifest and may depend on DLLs which are part of an assembly
+        # referenced by Python's manifest, don't cause 'lib not found' messages
+        binaries.extend(bindepend.Dependencies([('', python, '')],
+                                               manifest=depmanifest)[1:])
+
         ###################################################
         # Scan inputs and prepare:
         dirs = {}  # input directories
@@ -468,7 +490,6 @@ class Analysis(Target):
         ###################################################
         # Fills pure, binaries and rthookcs lists to TOC
         pure = []     # pure python modules
-        binaries = []  # binaries to bundle
         zipfiles = []  # zipfiles to bundle
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
@@ -499,23 +520,7 @@ class Analysis(Target):
                 if modnm != '__main__':
                     pure.append((modnm, mod.__file__, 'PYMODULE'))
 
-        python = sys.executable
-        if not is_win:
-            while os.path.islink(python):
-                python = os.path.join(os.path.dirname(python), os.readlink(python))
-            depmanifest = None
-        else:
-            depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
-                                               processorArchitecture=winmanifest.processor_architecture(),
-                                               version=(1, 0, 0, 0))
-            depmanifest.filename = os.path.join(BUILDPATH,
-                                                specnm + ".exe.manifest")
-        # Always add python's dependencies first
-        # This ensures that assembly depencies under Windows get pulled in
-        # first and we do not need to add assembly DLLs to the exclude list
-        # explicitly
-        binaries.extend(bindepend.Dependencies([('', python, '')],
-                                               manifest=depmanifest)[1:])
+        # Add remaining binary dependencies
         binaries.extend(bindepend.Dependencies(binaries,
                                                manifest=depmanifest))
         if is_win:
