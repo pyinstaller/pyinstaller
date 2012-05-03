@@ -122,6 +122,7 @@ class SkipChecker(object):
             }
         # Other dependecies of some tests.
         self.DEPENDENCIES = {
+            'basic/test_2': ['Making zlib module optional will be dropped.'],
             'basic/test_ctypes': [depend.c_compiler()],
             # Support for unzipped eggs is not yet implemented.
             # http://www.pyinstaller.org/ticket/541
