@@ -612,8 +612,13 @@ int loadPython(ARCHIVE_STATUS *status)
 		VS("%s\n", dllpath);
 	}
 	if (dll == 0) {
-		FATALERROR("Error loading Python lib '%s': %s\n",
-			dllpath, dlerror());
+		if (usesystemlibrary == 0){
+			FATALERROR("Error loading Python lib '%s': %s\n",
+				dllpath, dlerror());
+		}
+		else {
+			FATALERROR("Unable to find system libpython %01d.%01d\n", pyvers_major, pyvers_minor);
+		}
 		return -1;
 	}
 
