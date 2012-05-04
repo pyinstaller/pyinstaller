@@ -1311,7 +1311,6 @@ class BUNDLE(Target):
 
         toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
-            print inm, fnm, typ
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
