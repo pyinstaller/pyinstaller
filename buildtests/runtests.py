@@ -191,6 +191,8 @@ NO_SPEC_FILE = [
     'basic/test_absolute_ld_library_path',
     'basic/test_absolute_python_path',
     'basic/test_python_home',
+    'import/test_c_extension',
+    'import/test_onefile_c_extension',
     'libraries/test_enchant',
     'libraries/test_sqlalchemy',
     'libraries/test_usb',
@@ -291,13 +293,19 @@ class BuildTestRunner(object):
         else:
             OPTS.append('--log-level=ERROR')
 
+        # Build executable in onefile mode.
+        if self.test_file.startswith('test_onefile'):
+            OPTS.append('--onefile')
+        else:
+            OPTS.append('--onedir')
+
         self._msg("BUILDING TEST", self.test_name)
 
-        # use pyinstaller.py for building test_name
+        # Use pyinstaller.py for building test_name.
         testfile_spec = self.test_file + '.spec'
         if not os.path.exists(self.test_file + '.spec'):
             # .spec file does not exist and it has to be generated
-            # for main script
+            # for main script.
             testfile_spec = self.test_file + '.py'
 
         retcode = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
