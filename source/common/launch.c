@@ -521,8 +521,13 @@ int loadPython(ARCHIVE_STATUS *status)
 		dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 	}
 	if (dll == 0) {
-		FATALERROR("Error loading Python DLL: %s (error code %d)\n",
-			dllpath, GetLastError());
+		if (usesystemlibrary == 0) {
+			FATALERROR("Error loading Python DLL: %s (error code %d)\n",
+					dllpath, GetLastError());
+		}
+		else {
+			FATALERROR("Error loading system Python DLL: python%02d.dll\n", pyvers);
+		}
 		return -1;
 	}
 
