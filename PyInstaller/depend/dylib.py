@@ -184,11 +184,7 @@ def mac_set_relative_dylib_deps(libname, distname):
     more flexible mechanism.
 
     Current location of dependend libraries is derived from the location
-    of the executable (paths start with '@executable_path').
-
-    @executable_path or @loader_path fail in some situations
-    (@loader_path - qt4 plugins, @executable_path -
-    Python built-in hashlib module).
+    of the library path (paths start with '@loader_path').
 
     'distname'  path of the library relative to dist directory of frozen
                 executable. We need this to determine the level of directory
@@ -228,7 +224,7 @@ def mac_set_relative_dylib_deps(libname, distname):
             return os.path.join('@loader_path', parent_dir,
                 os.path.basename(pth))
 
-    # Rewrite mach headers with @executable_path.
+    # Rewrite mach headers with @loader_path.
     dll = MachO(libname)
     dll.rewriteLoadCommands(match_func)
 

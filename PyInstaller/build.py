@@ -682,7 +682,7 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names. Caching on darwin does not work
     # since we need to modify binary headers to use relative paths
-    # to dll depencies and starting with '@executable_path'.
+    # to dll depencies and starting with '@loader_path'.
 
     if ((not strip and not upx and not is_darwin and not is_win)
         or fnm.lower().endswith(".manifest")):
