@@ -671,9 +671,13 @@ def cacheDigest(fnm):
     return digest
 
 
-def checkCache(fnm, strip=0, upx=0):
+def checkCache(fnm, strip=0, upx=0, dist_nm=None):
     """
     Cache prevents preprocessing binary files again and again.
+
+    'dist_nm'  Filename relative to dist directory. We need it on Mac
+               to determine level of paths for @loader_path like
+               '@loader_path/../../' for qt4 plugins.
     """
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names. Caching on darwin does not work
@@ -714,7 +718,7 @@ def checkCache(fnm, strip=0, upx=0):
             # On Mac OS X we need relative paths to dll dependencies
             # starting with @executable_path
             if is_darwin:
-                dylib.mac_set_relative_dylib_deps(cachedfile)
+                dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
             return cachedfile
     if upx:
         if strip:
@@ -805,7 +809,7 @@ def checkCache(fnm, strip=0, upx=0):
     # On Mac OS X we need relative paths to dll dependencies
     # starting with @executable_path
     if is_darwin:
-        dylib.mac_set_relative_dylib_deps(cachedfile)
+        dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
     return cachedfile
 
 
@@ -890,7 +894,7 @@ class PKG(Target):
                 else:
                     fnm = checkCache(fnm, self.strip_binaries,
                                      self.upx_binaries and (is_win or is_cygwin)
-                                     and config['hasUPX'])
+                                     and config['hasUPX'], dist_nm=inm)
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
@@ -998,7 +1002,7 @@ class EXE(Target):
         mtm = data[-1]
         crypt = data[-2]
         if crypt != self.crypt:
-            logger.info("rebuilding %s because crypt option changed", outnm)
+            logger.info("rebuilding %s because crypt option changed", self.outnm)
             return 1
         if mtm != mtime(self.name):
             logger.info("rebuilding %s because mtimes don't match", self.outnm)
@@ -1188,7 +1192,7 @@ class COLLECT(Target):
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, self.strip_binaries,
                                  self.upx_binaries and (is_win or is_cygwin)
-                                 and config['hasUPX'])
+                                 and config['hasUPX'], dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
@@ -1307,10 +1311,11 @@ class BUNDLE(Target):
 
         toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
+            print inm, fnm, typ
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm)
+                fnm = checkCache(fnm, dist_nm=inm)
             tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):

@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 # Note also that you should check the results to make sure that the
 # dlls are redistributable. I've listed most of the common MS dlls
@@ -156,7 +156,9 @@ if is_darwin:
 
 
 def include_library(libname):
-    """Check if a dynamic library should be included with application or not."""
+    """
+    Check if a dynamic library should be included with application or not.
+    """
     # For configuration phase we need to have exclude / include lists None
     # so these checking is skipped and library gets included.
     if exclude_list:
@@ -172,9 +174,10 @@ def include_library(libname):
         return True
 
 
-def mac_set_relative_dylib_deps(libname):
+def mac_set_relative_dylib_deps(libname, distname):
     """
-    On Mac OS X set relative paths to dynamic library dependencies of `libname`.
+    On Mac OS X set relative paths to dynamic library dependencies
+    of `libname`.
 
     Relative paths allow to avoid using environment variable DYLD_LIBRARY_PATH.
     There are known some issues with DYLD_LIBRARY_PATH. Relative paths is
@@ -186,6 +189,15 @@ def mac_set_relative_dylib_deps(libname):
     @executable_path or @loader_path fail in some situations
     (@loader_path - qt4 plugins, @executable_path -
     Python built-in hashlib module).
+
+    'distname'  path of the library relative to dist directory of frozen
+                executable. We need this to determine the level of directory
+                level for @loader_path of binaries not found in dist directory.
+
+                E.g. qt4 plugins are not in the same directory as Qt*.dylib
+                files. Without using '@loader_path/../..' for qt plugins
+                Mac OS X would not be able to resolve shared library
+                dependencies and qt plugins will not be loaded.
     """
 
     from PyInstaller.lib.macholib import util
@@ -196,13 +208,25 @@ def mac_set_relative_dylib_deps(libname):
     if os.path.basename(libname) in _BOOTLOADER_FNAMES:
         return
 
+    # Determine how many directories up is the directory with shared
+    # dynamic libraries. '../'
+    # E.g.  ./qt4_plugins/images/ -> ./../../
+    parent_dir = ''
+    # Check if distname is not only base filename.
+    if os.path.dirname(distname):
+        parent_level = len(os.path.dirname(distname).split(os.sep))
+        parent_dir = parent_level * (os.pardir + os.sep)
+
     def match_func(pth):
-        """For system libraries is still used absolute path. It is unchanged."""
+        """
+        For system libraries is still used absolute path. It is unchanged.
+        """
         # Match non system dynamic libraries.
         if not util.in_system_path(pth):
             # Use relative path to dependend dynamic libraries bases on
             # location of the executable.
-            return os.path.join('@executable_path', os.path.basename(pth))
+            return os.path.join('@loader_path', parent_dir,
+                os.path.basename(pth))
 
     # Rewrite mach headers with @executable_path.
     dll = MachO(libname)
