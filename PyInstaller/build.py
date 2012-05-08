@@ -297,9 +297,10 @@ class Target:
     invcnum = 0
 
     def __init__(self):
-        # Get a unique number to avoid conflicts between toc objects
-        self.invcnum = Target.invcnum
-        Target.invcnum += 1
+        # Get a (per class) unique number to avoid conflicts between
+        # toc objects
+        self.invcnum = self.__class__.invcnum
+        self.__class__.invcnum += 1
         self.out = os.path.join(BUILDPATH, 'out%02d-%s.toc' %
                                 (self.invcnum, self.__class__.__name__))
         self.outnm = os.path.basename(self.out)
