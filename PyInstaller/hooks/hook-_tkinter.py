@@ -15,7 +15,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+
 
 import os
 import re
@@ -29,7 +30,9 @@ from PyInstaller.hooks.hookutils import logger
 
 
 def _find_tk_win(binaries):
+    tcl_root = tk_root = None
     pattern = re.compile(r'(?i)tcl(\d)(\d)\.dll')
+
     for nm, fnm in binaries:
         mo = pattern.match(nm)
         if not mo:
@@ -44,9 +47,10 @@ def _find_tk_win(binaries):
         tknm = 'tk%s' % ver
         for attempt in ['../tcl', '../lib']:
             if os.path.exists(os.path.join(tclbindir, attempt, tclnm)):
-                TCL_root = os.path.join(tclbindir, attempt, tclnm)
-                TK_root = os.path.join(tclbindir, attempt, tknm)
-                return TCL_root, TK_root
+                tcl_root = os.path.join(tclbindir, attempt, tclnm)
+                tk_root = os.path.join(tclbindir, attempt, tknm)
+
+    return tcl_root, tk_root
 
 
 def _find_tk_darwin_frameworks(binaries):
@@ -63,8 +67,13 @@ def _find_tk_darwin_frameworks(binaries):
 
 
 def _find_tk_unix(binaries):
+    """
+    Tcl and Tk are installed to a specific prefix e.g. '/usr' on Linux or
+    as not Frameworks on Mac OS X.
+    """
     tcl_root = tk_root = None
-    pattern = re.compile(r'libtcl(\d\.\d)?\.so')
+    # Match .so and .dylib files.
+    pattern = re.compile(r'libtcl(\d\.\d)?\.(so|dylib)')
     for nm, fnm in binaries:
         mo = pattern.match(nm)
         if not mo:
@@ -81,9 +90,9 @@ def _find_tk_unix(binaries):
                     break
         # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3
         #        and /usr/lib/tk8.3
-        TCL_root = os.path.join(tclbindir, 'tcl%s' % ver)
-        TK_root = os.path.join(tclbindir, 'tk%s' % ver)
-        return TCL_root, TK_root
+        tcl_root = os.path.join(tclbindir, 'tcl%s' % ver)
+        tk_root = os.path.join(tclbindir, 'tk%s' % ver)
+    return tcl_root, tk_root
 
 
 def _find_tk(mod):
@@ -94,10 +103,7 @@ def _find_tk(mod):
         tcl_root  path to Tcl data files.
         tk_root   path to Tk data files.
     """
-    bins = mod.binaries
-    print 10 * '#'
-    print 'bins', bins
-    print 10 * '#'
+    bins = PyInstaller.bindepend.selectImports(mod.__file__)
 
     if is_win:
         tcl_tk = _find_tk_win(bins)
@@ -121,9 +127,6 @@ def _find_tk(mod):
                 ('Tk', mapping['Tk']),
             ]
 
-        print 10 * '#'
-        print 'bins', bins
-        print 10 * '#'
         # _tkinter depends on Tcl/Tk compiled as frameworks.
         path_to_tcl = bins[0][1]
         if 'Library/Frameworks' in path_to_tcl:
@@ -160,11 +163,10 @@ def hook(mod):
         return mod
 
     # Get the Tcl/Tk data files for bundling with executable.
-    #try:
-    tk_files = _collect_tkfiles(mod)
-    mod.datas.extend(tk_files)
-    #except Exception as e:
-    #    print str(e)
-    logger.error("could not find TCL/TK")
+    try:
+        tk_files = _collect_tkfiles(mod)
+        mod.datas.extend(tk_files)
+    except:
+        logger.error("could not find TCL/TK")
 
     return mod
