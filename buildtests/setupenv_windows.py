@@ -35,8 +35,11 @@ def pywin32_architecture():
 
 
 _PACKAGES = {
+    # 'modulename': 'pypi_name_or_url'
     'win32api': 'http://downloads.sourceforge.net/project/pywin32/pywin32/Build%%20217/pywin32-217.%s-py%d.%d.exe' %
         (pywin32_architecture(), sys.version_info[0], sys.version_info[1]),
+    'simplejson': 'simplejson',
+    'sqlalchemy': 'sqlalchemy',
 }
 
 
