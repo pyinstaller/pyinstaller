@@ -543,8 +543,7 @@ class Analysis(Target):
 
         self.pure = TOC(compile_pycos(self.pure))
 
-        newstuff = (self.inputs, self.pathex, self.hookspath, self.excludes,
-                    self.scripts, self.pure, self.binaries, self.zipfiles, self.datas)
+        newstuff = tuple([getattr(self, g[0]) for g in self.GUTS])
         if oldstuff != newstuff:
             _save_data(self.out, newstuff)
             wf = open(WARNFILE, 'w')
