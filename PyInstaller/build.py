@@ -1140,23 +1140,7 @@ class COLLECT(Target):
 
     def check_guts(self, last_build):
         _rmtree(self.name)
-        data = Target.get_guts(self, last_build)
-        if not data:
-            return True
-        toc = data[-1]
-        for inm, fnm, typ in self.toc:
-            if typ == 'EXTENSION':
-                ext = os.path.splitext(fnm)[1]
-                test = os.path.join(self.name, inm + ext)
-            else:
-                test = os.path.join(self.name, os.path.basename(fnm))
-            if not os.path.exists(test):
-                logger.info("building %s because %s is missing", self.outnm, test)
-                return 1
-            if mtime(fnm) > mtime(test):
-                logger.info("building %s because %s is more recent", self.outnm, fnm)
-                return 1
-        return 0
+        return 1
 
     def assemble(self):
         logger.info("building COLLECT %s", os.path.basename(self.out))
@@ -1230,19 +1214,7 @@ class BUNDLE(Target):
 
     def check_guts(self, last_build):
         _rmtree(self.name)
-        data = Target.get_guts(self, last_build)
-        if not data:
-            return True
-        toc = data[-1]
-        for inm, fnm, typ in self.toc:
-            test = os.path.join(self.name, os.path.basename(fnm))
-            if not os.path.exists(test):
-                logger.info("building %s because %s is missing", self.outnm, test)
-                return 1
-            if mtime(fnm) > mtime(test):
-                logger.info("building %s because %s is more recent", self.outnm, fnm)
-                return 1
-        return 0
+        return 1
 
     def assemble(self):
         logger.info("building BUNDLE %s", os.path.basename(self.out))
