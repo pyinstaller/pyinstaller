@@ -223,26 +223,16 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
             or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc))
 
 
-def _rmdir(path):
+def _rmtree(path):
     """
-    Remove dirname(os.path.abspath(path)) and all its contents, but only if:
-
-    1. It doesn't start with BUILDPATH
-    2. BUILDPATH and SPECPATH don't start with it
-    3. It is a file.
-    4. It is a directory and not empty (otherwise continue without removing
-       the directory)
-    5. The --noconfirm option is set, or sys.stdout is a tty and the user
-       confirms directory removal
-
-    Otherwise, error out.
+    Remove path if it is a non-empty directory (will remove all its contents
+    too, but only after user confirmation, or if the -y option is set)
+    
+    If path is not a directory or empty, do nothing.
     """
-    if not os.path.abspath(path):
+    if path != os.path.abspath(path):
         path = os.path.abspath(path)
-    if path.startswith(BUILDPATH):
-        return
-    if not (os.path.isfile(path)
-            or (os.path.isdir(path) and os.listdir(path))):
+    if not os.path.isdir(path) or not os.listdir(path):
         return
     specerr = 0
     if BUILDPATH.startswith(path):
@@ -257,10 +247,6 @@ def _rmdir(path):
         raise SystemExit('Error: Please edit/recreate the specfile (%s) '
                          'and set a different output name (e.g. "dist").'
                          % SPEC)
-    if os.path.isfile(path):
-        logger.info('Removing file %s', path)
-        os.remove(path)
-        return
 
     if NOCONFIRM:
         choice = 'y'
@@ -644,7 +630,6 @@ class PYZ(Target):
             )
 
     def check_guts(self, last_build):
-        _rmdir(self.name)
         if not os.path.exists(self.name):
             logger.info("rebuilding %s because %s is missing",
                         self.outnm, os.path.basename(self.name))
@@ -865,7 +850,6 @@ class PKG(Target):
             )
 
     def check_guts(self, last_build):
-        _rmdir(self.name)
         if not os.path.exists(self.name):
             logger.info("rebuilding %s because %s is missing",
                         self.outnm, os.path.basename(self.name))
@@ -979,7 +963,6 @@ class EXE(Target):
             )
 
     def check_guts(self, last_build):
-        _rmdir(self.name)
         if not os.path.exists(self.name):
             logger.info("rebuilding %s because %s missing",
                         self.outnm, os.path.basename(self.name))
@@ -1156,24 +1139,8 @@ class COLLECT(Target):
             )
 
     def check_guts(self, last_build):
-        _rmdir(self.name)
-        data = Target.get_guts(self, last_build)
-        if not data:
-            return True
-        toc = data[-1]
-        for inm, fnm, typ in self.toc:
-            if typ == 'EXTENSION':
-                ext = os.path.splitext(fnm)[1]
-                test = os.path.join(self.name, inm + ext)
-            else:
-                test = os.path.join(self.name, os.path.basename(fnm))
-            if not os.path.exists(test):
-                logger.info("building %s because %s is missing", self.outnm, test)
-                return 1
-            if mtime(fnm) > mtime(test):
-                logger.info("building %s because %s is more recent", self.outnm, fnm)
-                return 1
-        return 0
+        _rmtree(self.name)
+        return 1
 
     def assemble(self):
         logger.info("building COLLECT %s", os.path.basename(self.out))
@@ -1246,20 +1213,8 @@ class BUNDLE(Target):
             )
 
     def check_guts(self, last_build):
-        _rmdir(self.name)
-        data = Target.get_guts(self, last_build)
-        if not data:
-            return True
-        toc = data[-1]
-        for inm, fnm, typ in self.toc:
-            test = os.path.join(self.name, os.path.basename(fnm))
-            if not os.path.exists(test):
-                logger.info("building %s because %s is missing", self.outnm, test)
-                return 1
-            if mtime(fnm) > mtime(test):
-                logger.info("building %s because %s is more recent", self.outnm, fnm)
-                return 1
-        return 0
+        _rmtree(self.name)
+        return 1
 
     def assemble(self):
         logger.info("building BUNDLE %s", os.path.basename(self.out))
