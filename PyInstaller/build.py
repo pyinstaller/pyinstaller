@@ -223,20 +223,17 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
             or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc))
 
 
-def _rmtree(path):
+def _check_path_overlap(path):
     """
-    Remove path if it is a non-empty directory (will remove all its contents
-    too, but only after user confirmation, or if the -y option is set)
+    Check that path does not overlap with BUILDPATH or SPECPATH (i.e.
+    BUILDPATH and SPECPATH may not start with path, which could be
+    caused by a faulty hand-edited specfile)
     
-    If path is not a directory or empty, do nothing.
+    Raise SystemExit if there is overlap, return True otherwise
     """
-    if path != os.path.abspath(path):
-        path = os.path.abspath(path)
-    if not os.path.isdir(path) or not os.listdir(path):
-        return
     specerr = 0
     if BUILDPATH.startswith(path):
-        logger.error('specfile error: The output path "%s" contains '
+        logger.error('Specfile error: The output path "%s" contains '
                      'BUILDPATH (%s)', path, BUILDPATH)
         specerr += 1
     if SPECPATH.startswith(path):
@@ -247,7 +244,14 @@ def _rmtree(path):
         raise SystemExit('Error: Please edit/recreate the specfile (%s) '
                          'and set a different output name (e.g. "dist").'
                          % SPEC)
+    return True
 
+
+def _rmtree(path):
+    """
+    Remove directory and all its contents, but only after user confirmation,
+    or if the -y option is set
+    """
     if NOCONFIRM:
         choice = 'y'
     elif sys.stdout.isatty():
@@ -1139,13 +1143,15 @@ class COLLECT(Target):
             )
 
     def check_guts(self, last_build):
-        _rmtree(self.name)
+        # COLLECT always needs to be executed, since it will clean the output
+        # directory anyway to make sure there is no existing cruft accumulating
         return 1
 
     def assemble(self):
+        if _check_path_overlap(self.name) and os.path.isdir(self.name):
+            _rmtree(self.name)
         logger.info("building COLLECT %s", os.path.basename(self.out))
-        if not os.path.exists(self.name):
-            os.makedirs(self.name)
+        os.makedirs(self.name)
         toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
             if not os.path.isfile(fnm) and check_egg(fnm):
@@ -1213,14 +1219,15 @@ class BUNDLE(Target):
             )
 
     def check_guts(self, last_build):
-        _rmtree(self.name)
+        # BUNDLE always needs to be executed, since it will clean the output
+        # directory anyway to make sure there is no existing cruft accumulating
         return 1
 
     def assemble(self):
+        if _check_path_overlap(self.name) and os.path.isdir(self.name):
+            _rmtree(self.name)
         logger.info("building BUNDLE %s", os.path.basename(self.out))
 
-        if os.path.exists(self.name):
-            shutil.rmtree(self.name)
         # Create a minimal Mac bundle structure
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
