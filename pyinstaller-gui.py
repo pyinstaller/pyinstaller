@@ -46,6 +46,8 @@ class PyInstallerGUI:
             self.noconsole = IntVar()
         if not sys.platform.startswith('win'):
             self.strip = self.make_checkbutton(fr2, "Strip the exe and shared libs")
+        else:
+            self.strip = IntVar()
 
         okaybutton = Button(fr4, text="Okay   ")
         okaybutton.bind("<Button>", self.makePackage)
