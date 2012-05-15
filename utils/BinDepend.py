@@ -52,7 +52,7 @@ try:
         for fn in glob.glob(a):
             imports = PyInstaller.bindepend.getImports(fn)
             if is_win:
-                imports.extend([a.getid() for a in PyInstaller.bindepend.getAssemblies(fn)])
+                imports.update([a.getid() for a in PyInstaller.bindepend.getAssemblies(fn)])
             print fn, imports
 except KeyboardInterrupt:
     raise SystemExit("Aborted by user request.")
