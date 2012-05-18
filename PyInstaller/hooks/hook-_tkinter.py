@@ -80,12 +80,9 @@ def _find_tk_tclshell():
     code = 'from Tkinter import Tcl; t = Tcl(); print t.eval("info library")'
 
     tcl_root = exec_statement(code)
-    print 10 * 'A'
-    print tcl_root
     tk_version = exec_statement('from _tkinter import TK_VERSION as v; print v')
-    tk_root = os.path.dirname(tcl_root, 'tk%s' % tk_version)
-    print 10 * 'A'
-    print tk_root
+    # TK_LIBRARY is in the same prefix as Tcl.
+    tk_root = os.path.join(os.path.dirname(tcl_root), 'tk%s' % tk_version)
     return tcl_root, tk_root
 
 
@@ -130,10 +127,7 @@ def _find_tk(mod):
     """
     bins = PyInstaller.bindepend.selectImports(mod.__file__)
 
-    if is_win:
-        tcl_tk = _find_tk_win(bins)
-
-    elif is_darwin:
+    if is_darwin:
         # _tkinter depends on system Tcl/Tk frameworks.
         if not bins:
             # 'mod.binaries' can't be used because on Mac OS X _tkinter.so
@@ -159,10 +153,10 @@ def _find_tk(mod):
         # Tcl/Tk compiled as on Linux other Unices.
         # For example this is the case of Tcl/Tk from macports.
         else:
-            tcl_tk = _find_tk_unix(bins)
+            tcl_tk = _find_tk_tclshell()
 
     else:
-        tcl_tk = _find_tk_unix(bins)
+        tcl_tk = _find_tk_tclshell()
 
     return tcl_tk
 
