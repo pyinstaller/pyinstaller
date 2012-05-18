@@ -19,7 +19,6 @@
 
 
 import os
-import re
 import sys
 
 import PyInstaller.bindepend
@@ -27,30 +26,6 @@ import PyInstaller.bindepend
 from PyInstaller.compat import is_win, is_darwin, is_unix
 from PyInstaller.build import Tree
 from PyInstaller.hooks.hookutils import exec_statement, logger
-
-
-def _find_tk_win(binaries):
-    tcl_root = tk_root = None
-    pattern = re.compile(r'(?i)tcl(\d)(\d)\.dll')
-
-    for nm, fnm in binaries:
-        mo = pattern.match(nm)
-        if not mo:
-            continue
-        tclbindir = os.path.dirname(fnm)
-        # Either Python21/DLLs with the .tcl files in
-        #        Python21/tcl/tcl8.3 and Python21/tcl/tk8.3
-        # or D:/Programs/Tcl/bin with the .tcl files in
-        #    D:/Programs/Tcl/lib/tcl8.0 and D:/Programs/Tcl/lib/tk8.0
-        ver = '.'.join(mo.groups())
-        tclnm = 'tcl%s' % ver
-        tknm = 'tk%s' % ver
-        for attempt in ['../tcl', '../lib']:
-            if os.path.exists(os.path.join(tclbindir, attempt, tclnm)):
-                tcl_root = os.path.join(tclbindir, attempt, tclnm)
-                tk_root = os.path.join(tclbindir, attempt, tknm)
-
-    return tcl_root, tk_root
 
 
 def _find_tk_darwin_frameworks(binaries):
@@ -83,37 +58,6 @@ def _find_tk_tclshell():
     tk_version = exec_statement('from _tkinter import TK_VERSION as v; print v')
     # TK_LIBRARY is in the same prefix as Tcl.
     tk_root = os.path.join(os.path.dirname(tcl_root), 'tk%s' % tk_version)
-    return tcl_root, tk_root
-
-
-def _find_tk_unix(binaries):
-    """
-    Tcl and Tk are installed to a specific prefix e.g. '/usr' on Linux or
-    as not Frameworks on Mac OS X.
-    """
-    tcl_root = tk_root = None
-    # Match .so and .dylib files.
-    pattern = re.compile(r'libtcl(\d\.\d)?\.(so|dylib)')
-    for nm, fnm in binaries:
-        mo = pattern.match(nm)
-        if not mo:
-            continue
-        tclbindir = os.path.dirname(fnm)
-        ver = mo.group(1)
-        if ver is None:
-            # We found "libtcl.so.0" so we need to get the version
-            # from the lib directory.
-            for name in os.listdir(tclbindir):
-                mo = re.match(r'tcl(\d.\d)', name)
-                if mo:
-                    ver = mo.group(1)
-                    break
-        # Linux: /usr/lib with the .tcl files in /usr/lib/tcl8.3
-        #        and /usr/lib/tk8.3
-        tcl_root = os.path.join(tclbindir, 'tcl%s' % ver)
-        tk_root = os.path.join(tclbindir, 'tk%s' % ver)
-        print tcl_root
-        print tk_root
     return tcl_root, tk_root
 
 
