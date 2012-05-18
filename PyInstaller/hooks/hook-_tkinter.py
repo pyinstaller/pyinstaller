@@ -26,7 +26,7 @@ import PyInstaller.bindepend
 
 from PyInstaller.compat import is_win, is_darwin, is_unix
 from PyInstaller.build import Tree
-from PyInstaller.hooks.hookutils import logger
+from PyInstaller.hooks.hookutils import exec_statement, logger
 
 
 def _find_tk_win(binaries):
@@ -66,6 +66,29 @@ def _find_tk_darwin_frameworks(binaries):
     return tcl_root, tk_root
 
 
+def _find_tk_tclshell():
+    """
+    Get paths to Tcl/Tk from the Tcl shell command 'info library'.
+
+    This command will return path to TCL_LIBRARY.
+    On most systems are Tcl and Tk libraries installed
+    in the same prefix.
+    """
+    tcl_root = tk_root = None
+
+    # Python code to get path to TCL_LIBRARY.
+    code = 'from Tkinter import Tcl; t = Tcl(); print t.eval("info library")'
+
+    tcl_root = exec_statement(code)
+    print 10 * 'A'
+    print tcl_root
+    tk_version = exec_statement('from _tkinter import TK_VERSION as v; print v')
+    tk_root = os.path.dirname(tcl_root, 'tk%s' % tk_version)
+    print 10 * 'A'
+    print tk_root
+    return tcl_root, tk_root
+
+
 def _find_tk_unix(binaries):
     """
     Tcl and Tk are installed to a specific prefix e.g. '/usr' on Linux or
@@ -92,6 +115,8 @@ def _find_tk_unix(binaries):
         #        and /usr/lib/tk8.3
         tcl_root = os.path.join(tclbindir, 'tcl%s' % ver)
         tk_root = os.path.join(tclbindir, 'tk%s' % ver)
+        print tcl_root
+        print tk_root
     return tcl_root, tk_root
 
 
