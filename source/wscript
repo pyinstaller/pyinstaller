@@ -301,9 +301,8 @@ def configure(conf):
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
             conf.env.append_value('LINKFLAGS', '-mwindows')
     elif myplatform.startswith('darwin'):
-        conf.env.append_value('CCFLAGS', '-I/Developer/Headers/FlatCarbon')
         conf.env.append_value('LINKFLAGS', '-framework')
-        conf.env.append_value('LINKFLAGS', 'Carbon')
+        conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
 
 def build(bld):
