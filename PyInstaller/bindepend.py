@@ -95,9 +95,16 @@ def _getImports_pe(pth):
     32/64bit Windows
     """
     import PyInstaller.lib.pefile as pefile
-    pe = pefile.PE(pth)
     dlls = set()
-    # Some libraries have no other binary dependencies.
+    # By default library pefile parses all PE information.
+    # We are only interested in the list of dependent dlls.
+    # Performance is improved by reading only needed information.
+    # https://code.google.com/p/pefile/wiki/UsageExamples
+    pe = pefile.PE(pth, fast_load=True)
+    pe.parse_data_directories(directories=[
+        pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT']]) 
+    # Some libraries have no other binary dependencies. Use empty list
+    # in that case. Otherwise pefile would return None.
     # e.g. C:\windows\system32\kernel32.dll on Wine
     for entry in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', []):
         dlls.add(entry.dll)
