@@ -151,7 +151,12 @@ class SkipChecker(object):
         """
         if test_name in self.MODULES:
             for mod_name in self.MODULES[test_name]:
-                retcode = compat.exec_python_rc('-c', "import %s" % mod_name)
+                # STDOUT and STDERR are discarded (devnull) to hide
+                # import exceptions.
+                trash = open(os.devnull)
+                retcode = compat.exec_python_rc('-c', "import %s" % mod_name,
+                        stdout=trash, stderr=trash)
+                trash.close()
                 if retcode != 0:
                     return mod_name
         return None
