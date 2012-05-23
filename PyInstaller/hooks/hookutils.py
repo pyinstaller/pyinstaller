@@ -143,6 +143,13 @@ def qt4_menu_nib_dir():
         '/Library/Frameworks/QtGui.framework/Versions/4/Resources',
         '/Library/Frameworks/QtGui.Framework/Versions/Current/Resources',
     ]
+
+    # Qt4 from Homebrew compiled as framework
+    import glob
+    globpath = '/usr/local/Cellar/qt/4.*/lib/QtGui.framework/Versions/4/Resources'
+    qt_homebrew_dirs = glob.glob(globpath)
+    dirs += qt_homebrew_dirs
+    
     # Check directory existence
     for d in dirs:
         d = os.path.join(d, 'qt_menu.nib')
