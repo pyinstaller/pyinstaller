@@ -136,7 +136,7 @@ def compile_pycos(toc):
         # has been written by a different Python version.
         needs_compile = (mtime(source_fnm) > mtime(fnm)
                          or
-                         open(source_fnm, 'rb').read()[:4] != imp.get_magic())
+                         open(fnm, 'rb').read()[:4] != imp.get_magic())
         if needs_compile:
             try:
                 py_compile.compile(source_fnm)
