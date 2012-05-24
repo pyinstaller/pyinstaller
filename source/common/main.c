@@ -131,6 +131,7 @@ int main(int argc, char* argv[])
 #ifdef WIN32
         ReleaseActContext();
 #endif
+	finalizePython();
     } else {
         if (extractBinaries(status_list)) {
             VS("Error extracting binaries\n");
