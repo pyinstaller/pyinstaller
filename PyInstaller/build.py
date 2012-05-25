@@ -357,8 +357,13 @@ class Analysis(Target):
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
                  hookspath=None, excludes=None):
         Target.__init__(self)
+        # Include initialization Python code in PyInstaller analysis.
+        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
             os.path.join(HOMEPATH, "support", "_pyi_bootstrap.py"),
+            os.path.join(_init_code_path, 'archive.py'),
+            os.path.join(_init_code_path, 'carchive.py'),
+            os.path.join(_init_code_path, 'iu.py'),
             ]
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
