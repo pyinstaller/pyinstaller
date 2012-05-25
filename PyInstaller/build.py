@@ -139,7 +139,8 @@ def compile_pycos(toc):
                          open(fnm, 'rb').read()[:4] != imp.get_magic())
         if needs_compile:
             try:
-                py_compile.compile(source_fnm)
+                py_compile.compile(source_fnm, fnm)
+                logger.debug("compiled %s", source_fnm)
             except IOError:
                 # If we're compiling on a system directory, probably we don't
                 # have write permissions; thus we compile to a local directory
@@ -161,8 +162,12 @@ def compile_pycos(toc):
                     os.makedirs(leading)
 
                 fnm = os.path.join(leading, mod_name + ext)
-                py_compile.compile(source_fnm, fnm)
-            logger.debug("compiled %s", source_fnm)
+                needs_compile = (mtime(source_fnm) > mtime(fnm)
+                                 or
+                                 open(fnm, 'rb').read()[:4] != imp.get_magic())
+                if needs_compile:
+                    py_compile.compile(source_fnm, fnm)
+                    logger.debug("compiled %s", source_fnm)
 
         new_toc.append((nm, fnm, typ))
 
