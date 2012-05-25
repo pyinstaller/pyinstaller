@@ -959,7 +959,6 @@ class EXE(Target):
             ('debug', _check_guts_eq),
             ('icon', _check_guts_eq),
             ('versrsrc', _check_guts_eq),
-            ('manifest', _check_guts_eq),
             ('resources', _check_guts_eq),
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
@@ -981,8 +980,8 @@ class EXE(Target):
         if not data:
             return True
 
-        icon, versrsrc, manifest, resources = data[3:7]
-        if (icon or versrsrc or manifest or resources) and not config['hasRsrcUpdate']:
+        icon, versrsrc, resources = data[3:6]
+        if (icon or versrsrc or resources) and not config['hasRsrcUpdate']:
             # todo: really ignore :-)
             logger.info("ignoring icon, version, manifest and resources = platform not capable")
 
@@ -1078,9 +1077,11 @@ class EXE(Target):
             shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
         os.chmod(self.name, 0755)
-        _save_data(self.out,
-                   (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.resources, self.strip, self.upx, self.crypt, mtime(self.name)))
+        guts = (self.name, self.console, self.debug, self.icon,
+                self.versrsrc, self.resources, self.strip, self.upx,
+                self.crypt, mtime(self.name))
+        assert len(guts) == len(self.GUTS)
+        _save_data(self.out, guts)
         for item in trash:
             os.remove(item)
         return 1
