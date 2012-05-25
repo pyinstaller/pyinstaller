@@ -495,12 +495,26 @@ class Analysis(Target):
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
 
+
+        # Find rthooks.
+        logger.info("Looking for run-time hooks")
+        for modnm, mod in importTracker.modules.items():
+            rthooks.extend(_findRTHook(modnm))
+
+        # Analyze rthooks. Runtime hooks has to be also analyzed.
+        # Otherwise some dependencies could be missing.
+        # Data structure in format:
+        # ('rt_hook_mod_name', '/rt/hook/file/name.py', 'PYSOURCE')
+        for hook_mod, hook_file, mod_type in rthooks:
+            logger.info("Analyzing rthook %s", hook_file)
+            importTracker.analyze_script(hook_file)
+
+
         for modnm, mod in importTracker.modules.items():
             # FIXME: why can we have a mod == None here?
             if mod is None:
                 continue
 
-            rthooks.extend(_findRTHook(modnm))  # XXX
             datas.extend(mod.datas)
 
             if isinstance(mod, PyInstaller.depend.modules.BuiltinModule):
