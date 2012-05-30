@@ -199,7 +199,7 @@ def matplotlib_backends():
     import_statement = """
 try:
     __import__('matplotlib.backends.backend_%s')
-except ImportError as e:
+except ImportError, e:
     print str(e)
 """
 

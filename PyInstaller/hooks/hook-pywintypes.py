@@ -20,7 +20,7 @@ import PyInstaller.depend.modules
 
 def hook(mod):
     import sys
-    newname = 'PyWinTypes%d%d' % sys.version_info[:2]
+    newname = 'pywintypes%d%d' % sys.version_info[:2]
     if mod.typ == 'EXTENSION':
         mod.__name__ = newname
     else:

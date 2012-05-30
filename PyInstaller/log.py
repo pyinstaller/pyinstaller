@@ -24,7 +24,7 @@ __all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'ERROR', 'FATAL']
 import logging
 from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
 
-FORMAT = '%(levelname)s: %(message)s'
+FORMAT = '%(relativeCreated)d %(levelname)s: %(message)s'
 
 try:
     logging.basicConfig(format=FORMAT, level=logging.INFO)
