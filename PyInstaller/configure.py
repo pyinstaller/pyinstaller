@@ -64,15 +64,6 @@ def test_Crypt(config):
         sys.argv = args
 
 
-def test_Zlib(config):
-    try:
-        import zlib
-        config['useZLIB'] = 1
-    except ImportError:
-        config['useZLIB'] = 0
-        logger.warning('zlib is not available')
-
-
 def test_RsrcUpdate(config):
     config['hasRsrcUpdate'] = 0
     if not is_win:
@@ -176,7 +167,6 @@ def get_config(upx_dir, **kw):
 
     # if not set by Make.py we can assume Windows
     config = {'useELFEXE': 1}
-    test_Zlib(config)
     test_Crypt(config)
     test_RsrcUpdate(config)
     test_UPX(config, upx_dir)

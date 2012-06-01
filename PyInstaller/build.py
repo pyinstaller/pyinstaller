@@ -641,10 +641,8 @@ class PYZ(Target):
         self.name = name
         if name is None:
             self.name = self.out[:-3] + 'pyz'
-        if config['useZLIB']:
-            self.level = level
-        else:
-            self.level = 0
+        # Level of zlib compression.
+        self.level = level
         if config['useCrypt'] and crypt is not None:
             self.crypt = archive.Keyfile(crypt).key
         else:
@@ -855,18 +853,15 @@ class PKG(Target):
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
-            if config['useZLIB']:
-                self.cdict = {'EXTENSION': COMPRESSED,
-                              'DATA': COMPRESSED,
-                              'BINARY': COMPRESSED,
-                              'EXECUTABLE': COMPRESSED,
-                              'PYSOURCE': COMPRESSED,
-                              'PYMODULE': COMPRESSED}
-                if self.crypt:
-                    self.cdict['PYSOURCE'] = ENCRYPTED
-                    self.cdict['PYMODULE'] = ENCRYPTED
-            else:
-                self.cdict = {'PYSOURCE': UNCOMPRESSED}
+            self.cdict = {'EXTENSION': COMPRESSED,
+                          'DATA': COMPRESSED,
+                          'BINARY': COMPRESSED,
+                          'EXECUTABLE': COMPRESSED,
+                          'PYSOURCE': COMPRESSED,
+                          'PYMODULE': COMPRESSED}
+            if self.crypt:
+                self.cdict['PYSOURCE'] = ENCRYPTED
+                self.cdict['PYMODULE'] = ENCRYPTED
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
