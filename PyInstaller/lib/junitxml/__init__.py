@@ -163,9 +163,9 @@ class JUnitXmlResult(unittest.TestResult):
         """
         duration = self._duration(self._run_start)
         self._stream.write('<testsuite errors="%d" failures="%d" name="" '
-            'tests="%d" time="%0.3f">\n' % (len(self.errors),
+            'skips="%d" tests="%d" time="%0.3f">\n' % (len(self.errors),
             len(self.failures) + len(getattr(self, "unexpectedSuccesses", ())),
-            self.testsRun, duration))
+            len(self.skipped), self.testsRun, duration))
         self._stream.write(''.join(self._results))
         self._stream.write('</testsuite>\n')
 
@@ -198,7 +198,7 @@ class JUnitXmlResult(unittest.TestResult):
             pass
         self._test_case_string(test)
         self._results.append('>\n')
-        self._results.append('<skip>%s</skip>\n</testcase>\n'% _escape_attr(reason))
+        self._results.append('<skipped message="%s"></skipped>\n</testcase>\n'% _escape_attr(reason))
 
     def addUnexpectedSuccess(self, test):
         try:
