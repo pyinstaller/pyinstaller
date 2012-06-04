@@ -1,3 +1,5 @@
+#
+# Copyright (C) 2012, Martin Zibricky
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
@@ -17,7 +19,19 @@
 
 import os
 
+
+hiddenimports = [
+    # win32com client and server util
+    # modules could be hidden imports
+    # of some modules using win32com.
+    # Included for completeness.
+    'win32com.client.util',
+    'win32com.server.util',
+]
+
+
 def hook(mod):
+    # win32com module changes sys.path and wrapps win32comext modules.
     pth = str(mod.__path__[0])
     if os.path.isdir(pth):
         mod.__path__.append(
