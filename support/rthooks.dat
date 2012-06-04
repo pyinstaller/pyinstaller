@@ -1,7 +1,7 @@
 {
-    'pythoncom':  ['support/rthooks/versioneddll.py'],
-    'pywintypes': ['support/rthooks/versioneddll.py'],
-    'win32com':   ['support/rthooks/win32comgenpy.py'],
+    'pythoncom':  ['support/rthooks/pyi_rth_versioneddll.py'],
+    'pywintypes': ['support/rthooks/pyi_rth_versioneddll.py'],
+    'win32com':   ['support/rthooks/pyi_rth_win32comgenpy.py'],
     'OpenGL':     ['support/rthooks/pyi_rth_opengl.py'],
     'PyQt4':      ['support/rthooks/pyi_rth_qt4plugins.py'],
     'matplotlib': ['support/rthooks/pyi_rth_mpldata.py'],
