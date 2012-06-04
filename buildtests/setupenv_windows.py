@@ -40,6 +40,7 @@ _PACKAGES = {
         (pywin32_architecture(), sys.version_info[0], sys.version_info[1]),
     'simplejson': 'simplejson',
     'sqlalchemy': 'sqlalchemy',
+    'pyttsx': 'pyttsx',
 }
 
 
