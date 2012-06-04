@@ -113,6 +113,7 @@ class SkipChecker(object):
             'libraries/test_PIL': ['PIL'],
             'libraries/test_PIL2': ['PIL'],
             'libraries/test_pycrypto': ['Crypto'],
+            'libraries/test_pyttsx': ['pyttsx'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
             'libraries/test_usb': ['ctypes', 'usb'],
             'libraries/test_wx': ['wx'],
@@ -201,6 +202,7 @@ NO_SPEC_FILE = [
     'libraries/test_enchant',
     'libraries/test_onefile_tkinter',
     'libraries/test_sqlalchemy',
+    'libraries/test_pyttsx',
     'libraries/test_usb',
 ]
 
