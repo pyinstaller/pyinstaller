@@ -1,3 +1,5 @@
+#
+# Copyright (C) 2012, Martin Zibricky
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -23,23 +25,49 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+
+# The win32.client.gencache code must be allowed to create the cache in %temp%
+# (user's temp). It is necessary to get the gencache code to use a suitable
+# directory other than the default in lib\site-packages\win32com\client\gen_py.
+# PyInstaller does not provide this directory structure and the frozen
+# executable could be placed in a non-writable directory like 'C:\Program Files.
+# That's the reason for %temp% directory.
+#
+# http://www.py2exe.org/index.cgi/UsingEnsureDispatch
+
+
+import atexit
 import os
-import sys
+import shutil
+import tempfile
 
-supportdir = os.path.join(sys.path[0], 'support')
+
+# Put gen_py cache in temp directory.
+supportdir = tempfile.mkdtemp()
+# gen_py has to be put into directory 'gen_py'.
 genpydir = os.path.join(supportdir, 'gen_py')
-initmod = os.path.join(genpydir, '__init__.py')
 
-if not os.path.exists(genpydir):
+
+# Create 'gen_py' directory. This directory does not need
+# to contain '__init__.py' file.
+try:
     os.makedirs(genpydir)
-if not os.path.exists(initmod):
-    open(initmod, 'w')
+    # Remove temp directory at application exit and ignore any errors.
+    atexit.register(shutil.rmtree, supportdir, ignore_errors=True)
+except OSError:
+    pass
 
 
+# Override the default path to gen_py cache.
 import win32com
-
 win32com.__gen_path__ = genpydir
-win32com.__path__.insert(0, supportdir)
 
-# for older Pythons
+
+# Ensure genpydir is in 'gen_py' module paths.
+import win32com.gen_py
+win32com.gen_py.__path__.insert(0, genpydir)
+
+
+# For older Python versions.
+# FIXME Is this import still necessary?
 import copy_reg
