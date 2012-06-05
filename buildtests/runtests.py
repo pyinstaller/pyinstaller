@@ -349,7 +349,7 @@ class BuildTestRunner(object):
         are not defined.
         """
         logsfn = glob.glob(self.test_file + '.toc')
-        # other main scritps do not start with 'test_'
+        # Other main scritps do not start with 'test_'.
         logsfn += glob.glob(self.test_file.split('_', 1)[1] + '_?.toc')
         for logfn in logsfn:
             self._msg("EXECUTING MATCHING " + logfn)
@@ -361,7 +361,7 @@ class BuildTestRunner(object):
             fname_list = compat.exec_python(
                 os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
                 '-b', '-r', prog)
-            # fix line-endings so eval() does not fail
+            # Fix line-endings so eval() does not fail.
             fname_list = fname_list.replace('\r\n', '\n').replace('\n\r', '\n')
             fname_list = eval(fname_list)
             pattern_list = eval(open(logfn, 'rU').read())
@@ -377,7 +377,10 @@ class BuildTestRunner(object):
                 if not found:
                     self._plain_msg('MISSING: %s' % pattern)
 
-            return not count < len(pattern_list)
+            # Not all modules matched.
+            # Stop comparing other .toc files and fail the test.
+            if count < len(pattern_list):
+                return False
 
         return True
 
