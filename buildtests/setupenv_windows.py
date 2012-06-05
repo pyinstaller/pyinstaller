@@ -28,6 +28,9 @@ import sys
 from setuptools.command import easy_install
 
 
+PYVER = (sys.version_info[0], sys.version_info[1])
+
+
 def pywin32_architecture():
     mapping = {'32bit': 'win32', '64bit': 'win-amd64'}
     arch = platform.architecture()[0]
@@ -42,10 +45,20 @@ _PACKAGES = {
     'sqlalchemy': 'sqlalchemy',
 }
 
+_PY_VERSION = {
+    'simplejson': (2, 5),
+    'sqlalchemy': (2, 4),
+}
+
 
 def main():
     # Install packages.
     for k, v in _PACKAGES.items():
+        # Test python version for module.
+        if k in _PY_VERSION:
+            # Python version too old, skip module.
+            if PYVER < _PY_VERSION[k]:
+                continue
         try:
             __import__(k)
             print 'Skipping module... %s' % k
