@@ -220,14 +220,14 @@ def exec_command_rc(*cmdargs, **kwargs):
     return subprocess.call(cmdargs, **kwargs)
 
 
-def exec_command_all(*cmdargs):
+def exec_command_all(*cmdargs, **kwargs):
     """
     Wrap creating subprocesses
 
     Return tuple (exit_code, stdout, stderr) of the invoked command.
     """
-    proc = subprocess.Popen(cmdargs, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, shell=False)
+    proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
     out, err = proc.communicate()
 
@@ -271,6 +271,16 @@ def exec_python_rc(*args, **kwargs):
     """
     cmdargs, kwargs = __wrap_python(args, kwargs)
     return exec_command_rc(*cmdargs, **kwargs)
+
+
+def exec_python_all(*args, **kwargs):
+    """
+    Wrap running python script in a subprocess.
+
+    Return tuple (exit_code, stdout, stderr) of the invoked command.
+    """
+    cmdargs, kwargs = __wrap_python(args, kwargs)
+    return exec_command_all(*cmdargs, **kwargs)
 
 
 # Obsolete command line options.

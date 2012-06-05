@@ -51,6 +51,7 @@ from PyInstaller.utils import misc
 
 
 VERBOSE = False
+REPORT = False
 # Directory with this script (runtests.py).
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -209,34 +210,31 @@ NO_SPEC_FILE = [
 
 class BuildTestRunner(object):
 
-    def __init__(self, test_name, verbose=False):
+    def __init__(self, test_name, verbose=False, report=False):
         # Use path separator '/' even on windows for test_name name.
         self.test_name = test_name.replace('\\', '/')
         self.verbose = verbose
         self.test_dir, self.test_file = os.path.split(self.test_name)
+        # For junit xml report some behavior is changed.
+        # Especially redirecting sys.stdout.
+        self.report = report  
 
-    def _msg(self, *args, **kw):
+    def _msg(self, text):
         """
         Important text. Print it to console only in verbose mode.
         """
-        if self.verbose:
-            short = kw.get('short', 0)
-            sep = kw.get('sep', '#')
-            if not short:
-                print
-            print sep * 20,
-            for a in args:
-                print a,
-            print sep * 20
-            if not short:
-                print
+        # This allows to redirect stdout to junit xml report.
+        sys.stdout.write('\n' + 10 * '#' + ' ' + text + ' ' + 10 * '#' + '\n\n')
+        sys.stdout.flush()
+            
 
     def _plain_msg(self, text):
         """
         Print text to console only in verbose mode.
         """
         if self.verbose:
-            print(text)
+            sys.stdout.write(text + '\n')
+            sys.stdout.flush()
 
     def _find_exepath(self, test, parent_dir='dist'):
         of_prog = os.path.join(parent_dir, test)  # one-file deploy filename
@@ -258,7 +256,7 @@ class BuildTestRunner(object):
         """
         Run executable created by PyInstaller.
         """
-        self._msg('EXECUTING TEST', self.test_name)
+        self._msg('EXECUTING TEST ' + self.test_name)
         # Run the test in a clean environment to make sure they're
         # really self-contained
         path = compat.getenv('PATH')
@@ -275,9 +273,9 @@ class BuildTestRunner(object):
             prog = os.path.join(os.curdir, os.path.basename(prog))
             retcode, out, err = compat.exec_command_all(prog)
             os.chdir(old_wd)
-            self._msg('STDOUT')
+            self._msg('STDOUT %s' % self.test_name)
             self._plain_msg(out)
-            self._msg('STDERR')
+            self._msg('STDERR %s' % self.test_name)
             self._plain_msg(err)
             compat.setenv("PATH", path)
             return retcode
@@ -307,7 +305,7 @@ class BuildTestRunner(object):
         else:
             OPTS.append('--onedir')
 
-        self._msg("BUILDING TEST", self.test_name)
+        self._msg("BUILDING TEST" + self.test_name)
 
         # Use pyinstaller.py for building test_name.
         testfile_spec = self.test_file + '.spec'
@@ -316,7 +314,17 @@ class BuildTestRunner(object):
             # for main script.
             testfile_spec = self.test_file + '.py'
 
-        retcode = compat.exec_python_rc(os.path.join(HOMEPATH, 'pyinstaller.py'),
+        pyinst_script = os.path.join(HOMEPATH, 'pyinstaller.py')
+
+        # In report mode is stdout and sys.stderr redirected.
+        if self.report:
+            # Write output from subprocess to stdout/err.
+            retcode, out, err = compat.exec_python_all(pyinst_script,
+                  testfile_spec, *OPTS)
+            sys.stdout.write(out)
+            sys.stdout.write(err)
+        else:
+            retcode = compat.exec_python_rc(pyinst_script,
                   testfile_spec, *OPTS)
 
         return retcode == 0
@@ -344,7 +352,7 @@ class BuildTestRunner(object):
         # other main scritps do not start with 'test_'
         logsfn += glob.glob(self.test_file.split('_', 1)[1] + '_?.toc')
         for logfn in logsfn:
-            self._msg("EXECUTING MATCHING", logfn)
+            self._msg("EXECUTING MATCHING " + logfn)
             tmpname = os.path.splitext(logfn)[0]
             prog = self._find_exepath(tmpname)
             if prog is None:
@@ -412,7 +420,7 @@ class GenericTestCase(unittest.TestCase):
         if not req_met:
             raise unittest.SkipTest(msg)
         # Create a build and test it.
-        b = BuildTestRunner(self.test_name, verbose=VERBOSE)
+        b = BuildTestRunner(self.test_name, verbose=VERBOSE, report=REPORT)
         self.assertTrue(b.test_exists(),
                 msg='Test %s not found.' % self.test_name)
         self.assertTrue(b.test_building(),
@@ -547,6 +555,8 @@ def run_tests(test_suite, xml_file):
         print 'Writting test results to: %s' % xml_file
         fp = open('report.xml', 'w')
         result = junitxml.JUnitXmlResult(fp)
+        # Text from stdout/stderr should be added to failed test cases.
+        result.buffer = True
         result.startTestRun()
         test_suite.run(result)
         result.stopTestRun()
@@ -576,8 +586,9 @@ def main():
 
     opts, args = parser.parse_args()
 
-    global VERBOSE
+    global VERBOSE, REPORT
     VERBOSE = opts.verbose
+    REPORT = opts.junitxml is not None
 
     # Do only cleanup.
     if opts.clean:
