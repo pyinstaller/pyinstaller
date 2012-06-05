@@ -69,8 +69,3 @@ win32com.__gen_path__ = genpydir
 # Ensure genpydir is in 'gen_py' module paths.
 import win32com.gen_py
 win32com.gen_py.__path__.insert(0, genpydir)
-
-
-# For older Python versions.
-# FIXME Is this import still necessary?
-import copy_reg
