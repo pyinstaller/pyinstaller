@@ -51,6 +51,9 @@ genpydir = os.path.join(supportdir, 'gen_py')
 # Create 'gen_py' directory. This directory does not need
 # to contain '__init__.py' file.
 try:
+    # win32com gencache cannot be put directly to 'supportdir' with any
+    # random name. It has to be put in a directory called 'gen_py'.
+    # This is the reason why to create this directory in supportdir'.
     os.makedirs(genpydir)
     # Remove temp directory at application exit and ignore any errors.
     atexit.register(shutil.rmtree, supportdir, ignore_errors=True)
