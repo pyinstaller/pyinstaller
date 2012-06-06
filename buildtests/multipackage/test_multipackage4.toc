@@ -150,7 +150,6 @@
     'gzip',
     'encodings\.mac_greek',
     'iu',
-    'struct',
     'archive',
     '_pyi_bootstrap',
     'test_multipackage4',
