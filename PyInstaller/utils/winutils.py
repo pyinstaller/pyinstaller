@@ -16,24 +16,24 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-"""
-Utils for Windows platform.
-"""
+
+# Utils for Windows platform.
 
 
 __all__ = ['get_windows_dir']
 
 import os
 
-from PyInstaller import is_win
 from PyInstaller import compat
 
 import PyInstaller.log as logging
-logger = logging.getLogger('PyInstaller.build.bindepend')
+logger = logging.getLogger(__name__)
 
 
 def get_windows_dir():
-    """Return the Windows directory e.g. C:\\Windows"""
+    """
+    Return the Windows directory e.g. C:\\Windows.
+    """
     try:
         import win32api
     except ImportError:
@@ -46,19 +46,20 @@ def get_windows_dir():
 
 
 def get_system_path():
-    """Return the path that Windows will search for dlls."""
+    """
+    Return the path that Windows will search for dlls.
+    """
     _bpath = []
-    if is_win:
-        try:
-            import win32api
-        except ImportError:
-            logger.warn("Cannot determine your Windows or System directories")
-            logger.warn("Please add them to your PATH if .dlls are not found")
-            logger.warn("or install http://sourceforge.net/projects/pywin32/")
-        else:
-            sysdir = win32api.GetSystemDirectory()
-            sysdir2 = os.path.normpath(os.path.join(sysdir, '..', 'SYSTEM'))
-            windir = win32api.GetWindowsDirectory()
-            _bpath = [sysdir, sysdir2, windir]
+    try:
+        import win32api
+        sys_dir = win32api.GetSystemDirectory()
+    except ImportError:
+        sys_dir = os.path.normpath(os.path.join(get_windows_dir(), 'system32'))
+    # Ensure C:\Windows\system32  and C:\Windows directories are
+    # always present in PATH variable.
+    # C:\Windows\system32 is valid even for 64bit Windows. Access do DLLs are
+    # transparently redirected to C:\Windows\syswow64 for 64bit applactions.
+    # http://msdn.microsoft.com/en-us/library/aa384187(v=vs.85).aspx
+    _bpath = [sys_dir, get_windows_dir()]
     _bpath.extend(compat.getenv('PATH', '').split(os.pathsep))
     return _bpath
