@@ -16,45 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os
 from PyInstaller import compat
 
-def _findrepo():
-    p = os.path.abspath(os.path.dirname(__file__))
-    while not os.path.isdir(os.path.join(p, ".git")):
-        oldp, p = p, os.path.dirname(p)
-        if p == oldp:
-            return None
-    return os.path.join(p, ".git")
-
 def get_repo_revision():
-    '''
-    Returns git revision string somelike `git rev-parse --short HEAD`
-    does.
-
-    Returns an empty string if anything goes wrong, such as missing
-    .hg files or an unexpected format of internal HG files or no
-    mercurial repository found.
-    '''
-    repopath = _findrepo()
-    if not repopath:
-        return ''
-    try:
-        head = open(os.path.join(repopath, 'HEAD'), 'rU').read()
-        for l in head.splitlines():
-            l = l.split()
-            if l[0] == 'ref:':
-                ref = l[1]
-                break
-        else:
-            ref = None
-        if ref:
-            rev = open(os.path.join(repopath, ref), 'rU').read()
-            rev = rev[:7]
-            if rev:
-                return rev
-    except IOError:
-        pass
     try:
         rev = compat.exec_command('git', 'rev-parse', '--short', 'HEAD').strip()
         if rev:
