@@ -107,6 +107,7 @@ class SkipChecker(object):
             'basic/test_ctypes': ['ctypes'],
             'basic/test_module_attributes': ['xml.etree.cElementTree'],
             'basic/test_nestedlaunch1': ['ctypes'],
+            'basic/test_onefile_multiprocess': ['multiprocessing'],
             'libraries/test_enchant': ['enchant'],
             'libraries/test_Image': ['Image'],
             'libraries/test_numpy': ['numpy'],
@@ -197,6 +198,7 @@ class SkipChecker(object):
 NO_SPEC_FILE = [
     'basic/test_absolute_ld_library_path',
     'basic/test_absolute_python_path',
+    'basic/test_onefile_multiprocess',
     'basic/test_python_home',
     'import/test_c_extension',
     'import/test_onefile_c_extension',
