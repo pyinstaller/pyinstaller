@@ -554,20 +554,6 @@ def run_tests(test_suite, xml_file):
     Run test suite and save output to junit xml file if requested.
     """
     if xml_file:
-        # Workaround to allow using pywin32 on Python 2.4/2.5 in virtualenv
-        # on continuous integration server (jenkins).
-        # Virtualenv on windows is not allowed to use global site-packages.
-        # By removing the following file we force virtualenv to use global
-        # site-packages.
-        if is_win and hasattr(sys, 'real_prefix'):  # Running inside virtualenv.
-            if is_py24 or is_py25:
-                site_dir = os.path.join(sys.real_prefix, 'Lib', 'site-packages')
-                sys.path.append(site_dir)
-                # Content of .pth file for the PyWin32 extension.
-                sys.path.append(os.path.join(site_dir, 'win32'))
-                sys.path.append(os.path.join(site_dir, 'win32', 'lib'))
-                sys.path.append(os.path.join(site_dir, 'Pythonwin'))
-
         print 'Writting test results to: %s' % xml_file
         fp = open('report.xml', 'w')
         result = junitxml.JUnitXmlResult(fp)
