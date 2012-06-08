@@ -260,7 +260,7 @@ class ImportTracker:
             else:
                 mod = self._handle_hook(mod, hook)
                 if fqname != mod.__name__:
-                    logger.warn("%s is changing it's name to %s",
+                    logger.warn("%s is changing its name to %s",
                                 fqname, mod.__name__)
                     self.modules[mod.__name__] = mod
             # The following line has to be at the end of if statement because
