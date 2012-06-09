@@ -17,10 +17,12 @@
 
 
 import distutils
+import distutils.sysconfig
 import marshal
 import os
 import sys
 
+from PyInstaller import compat
 from PyInstaller.compat import is_win
 
 
@@ -38,14 +40,18 @@ else:
     sys_prefix = sys.prefix
 
 
+# Relative path to config_h in the dist directory.
+_frozen_config_h = compat.relpath(os.path.dirname(_CONFIG_H), sys_prefix)
+# Data files in PyInstaller hook format.
 datas = [
-    (_CONFIG_H, os.path.relpath(os.path.dirname(_CONFIG_H), sys_prefix)),
-]  # Data files in PyInstaller hook format.
+    (_CONFIG_H, _frozen_config_h),
+]
+
 
 # On Windows Makefile does not exist.
 if not is_win:
-    datas.append((_MAKEFILE, os.path.relpath(os.path.dirname(_MAKEFILE),
-        sys_prefix)))
+    _frozen_makefile = compat.relpath(os.path.dirname(_MAKEFILE), sys_prefix)
+    datas.append((_MAKEFILE, _frozen_makefile))
 
 
 def hook(mod):

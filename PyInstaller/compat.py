@@ -132,6 +132,25 @@ except ImportError:
     from sets import Set as set
 
 
+# Function os.path.relpath() available in Python 2.6+.
+if hasattr(os.path, 'relpath'):
+    from os.path import relpath
+# Own implementation of relpath function.
+else:
+    def relpath(path, start=os.curdir):
+        """
+        Return a relative version of a path.
+        """
+        if not path:
+            raise ValueError("no path specified")
+        # Normalize paths.
+        path = os.path.normpath(path)
+        start = os.path.abspath(start) + os.sep  # os.sep has to be here.
+        # Get substring.
+        relative = path[len(start):len(path)]
+        return relative
+
+
 def architecture():
     """
     Returns the bit depth of the python interpreter's architecture as
