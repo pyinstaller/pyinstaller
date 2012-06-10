@@ -1,3 +1,4 @@
+#
 # Copyright (C) 2011, Martin Zibricky
 #
 # This program is free software; you can redistribute it and/or
@@ -16,6 +17,7 @@
 
 
 from PyInstaller import is_py25
+
 
 # These modules must be included with 'email' module for
 # lazy loading to provide name mapping from new-style (lower case) names

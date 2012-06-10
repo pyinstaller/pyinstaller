@@ -92,7 +92,7 @@ class SkipChecker(object):
         self.MIN_VERSION_OR_OS = {
             'basic/test_time': is_py23,
             'basic/test_celementtree': is_py25,
-            'basic/test_email2': is_py23,
+            'basic/test_email': is_py25,
             # On Mac DYLD_LIBRARY_PATH is not used.
             'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
             'import/test_c_extension': is_py25,
@@ -198,6 +198,8 @@ class SkipChecker(object):
 NO_SPEC_FILE = [
     'basic/test_absolute_ld_library_path',
     'basic/test_absolute_python_path',
+    'basic/test_email',
+    'basic/test_email_oldstyle',
     'basic/test_onefile_multiprocess',
     'basic/test_python_home',
     'import/test_c_extension',

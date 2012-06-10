@@ -14,10 +14,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-# Test import of new-style email module names.
-# This should work on Python 2.5+
-from email import utils
-from email.header import Header
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.nonmultipart import MIMENonMultipart
+# Since Python 2.5 email modules were renamed.
+# Test that old-style email naming still works
+# in Python 2.5+
+from email.MIMEMultipart import MIMEMultipart
