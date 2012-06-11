@@ -151,6 +151,10 @@ else:
         return relative
 
 
+# Some code parts needs to behave different when running in virtualenv.
+is_virtualenv = hasattr(sys, 'real_prefix')
+
+
 def architecture():
     """
     Returns the bit depth of the python interpreter's architecture as
