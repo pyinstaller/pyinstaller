@@ -23,7 +23,7 @@ import sys
 
 import PyInstaller.bindepend
 
-from PyInstaller.compat import is_win, is_darwin, is_unix
+from PyInstaller.compat import is_win, is_darwin, is_unix, is_virtualenv
 from PyInstaller.build import Tree
 from PyInstaller.hooks.hookutils import exec_statement, logger
 
@@ -106,6 +106,26 @@ def _find_tk(mod):
 
 
 def _collect_tkfiles(mod):
+    # Workaround for broken Tcl/Tk detection in virtualenv on Windows.
+    if is_virtualenv:
+        tk_version = ''
+        #tk_version = exec_statement('from _tkinter import TK_VERSION as v; print v')
+        # Import of _tkinter module is not working in virtualenv.
+        if not tk_version:
+            base_dir = os.path.join(sys.real_prefix, 'tcl')
+            dirs = os.listdir(base_dir)
+            env = os.environ
+            for d in dirs:
+                if d.startswith('tcl') and os.path.isdir(os.path.join(base_dir, d)):
+                    env['TCL_LIBRARY'] = os.path.join(base_dir, d)
+                if d.startswith('tk') and os.path.isdir(os.path.join(base_dir, d)):
+                    env['TK_LIBRARY'] = os.path.join(base_dir, d)
+                if d.startswith('tix') and os.path.isdir(os.path.join(base_dir, d)):
+                    env['TIX_LIBRARY'] = os.path.join(base_dir, d)
+    print os.environ['TCL_LIBRARY']
+    print os.environ['TK_LIBRARY']
+    print os.environ['TIX_LIBRARY']
+
     tcl_root, tk_root = _find_tk(mod)
 
     tcldir = "tcl"
