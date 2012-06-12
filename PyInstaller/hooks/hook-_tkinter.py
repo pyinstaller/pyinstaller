@@ -28,6 +28,36 @@ from PyInstaller.build import Tree
 from PyInstaller.hooks.hookutils import exec_statement, logger
 
 
+def _handle_broken_tk():
+    """
+    Workaround for broken Tcl/Tk detection in virtualenv on Windows.
+
+    There is a bug in older versions of virtualenv in setting paths
+    to Tcl/Tk properly. PyInstaller running in virtualenv is then
+    not able to find Tcl/Tk.
+
+    This issue has been experienced in virtualenv with Python 2.4 on Win7.
+
+    https://github.com/pypa/virtualenv/issues/93
+    """
+    # Empty string means Tcl/Tk is broken.
+    is_tk_broken = not exec_statement('from _tkinter import TK_VERSION as v; print v')
+
+    if is_win and is_virtualenv and is_tk_broken:
+        basedir = os.path.join(sys.real_prefix, 'tcl')
+        files = os.listdir(basedir)
+        v = os.environ
+        # Detect Tcl/Tk paths.
+        for f in files:
+            abs_path = os.path.join(basedir, f)
+            if f.startswith('tcl') and os.path.isdir(abs_path):
+                v['TCL_LIBRARY'] = abs_path
+            if f.startswith('tk') and os.path.isdir(abs_path):
+                v['TK_LIBRARY'] = abs_path
+            if f.startswith('tix') and os.path.isdir(abs_path):
+                v['TIX_LIBRARY'] = abs_path
+
+
 def _find_tk_darwin_frameworks(binaries):
     """
     Tcl and Tk are installed as Mac OS X Frameworks.
@@ -107,24 +137,7 @@ def _find_tk(mod):
 
 def _collect_tkfiles(mod):
     # Workaround for broken Tcl/Tk detection in virtualenv on Windows.
-    if is_virtualenv:
-        tk_version = ''
-        #tk_version = exec_statement('from _tkinter import TK_VERSION as v; print v')
-        # Import of _tkinter module is not working in virtualenv.
-        if not tk_version:
-            base_dir = os.path.join(sys.real_prefix, 'tcl')
-            dirs = os.listdir(base_dir)
-            env = os.environ
-            for d in dirs:
-                if d.startswith('tcl') and os.path.isdir(os.path.join(base_dir, d)):
-                    env['TCL_LIBRARY'] = os.path.join(base_dir, d)
-                if d.startswith('tk') and os.path.isdir(os.path.join(base_dir, d)):
-                    env['TK_LIBRARY'] = os.path.join(base_dir, d)
-                if d.startswith('tix') and os.path.isdir(os.path.join(base_dir, d)):
-                    env['TIX_LIBRARY'] = os.path.join(base_dir, d)
-    print os.environ['TCL_LIBRARY']
-    print os.environ['TK_LIBRARY']
-    print os.environ['TIX_LIBRARY']
+    _handle_broken_tk()
 
     tcl_root, tk_root = _find_tk(mod)
 
@@ -146,10 +159,10 @@ def hook(mod):
         return mod
 
     # Get the Tcl/Tk data files for bundling with executable.
-    try:
-        tk_files = _collect_tkfiles(mod)
-        mod.datas.extend(tk_files)
-    except:
-        logger.error("could not find TCL/TK")
+    #try:
+    tk_files = _collect_tkfiles(mod)
+    mod.datas.extend(tk_files)
+    #except:
+    #logger.error("could not find TCL/TK")
 
     return mod
