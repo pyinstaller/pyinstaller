@@ -183,8 +183,9 @@ def __add_options(parser):
                       "(may be given several times)")
     g.add_option("-u", "--use-system-library", dest="usesystemlibrary",
                  action="store_true", default=False,
-                 help="use the system libpython instead add it to the"
-                 "application")    
+                 help="Do not include libpython in the generated package; to "
+                 "be run, it will require an installed Python interpreter in "
+                 "the target system")    
 
     g = parser.add_option_group('How to generate')
     g.add_option("-d", "--debug", action="store_true", default=False,
