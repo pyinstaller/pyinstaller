@@ -541,22 +541,28 @@ int loadPython(ARCHIVE_STATUS *status)
 	/* Determine the path */
 #ifdef __APPLE__
 
-    /* Try to load python library both from temppath and homepath */
-    /* First try with plain "Python" lib, then "Python" lib and finally "libpython*.dylib". */
-    #define pylibTemplate "%sPython"
-    #define dotPylibTemplate "%s.Python"
-    #define dyPylibTemplate "%slibpython%01d.%01d.dylib"
-    if (    checkFile(dllpath, pylibTemplate, status->temppath) != 0
-         && checkFile(dllpath, pylibTemplate, status->homepath) != 0
-         && checkFile(dllpath, dotPylibTemplate, status->temppath) != 0
-         && checkFile(dllpath, dotPylibTemplate, status->homepath) != 0
-            /* Python might be compiled as a .dylib (using --enable-shared) so lets try that one */
-         && checkFile(dllpath, dyPylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
-         && checkFile(dllpath, dyPylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0 )
-    {
-        FATALERROR("Python library not found.\n");
-        return -1;
-    }
+	if (usesystemlibrary == 0) {
+		/* Try to load python library both from temppath and homepath */
+		/* First try with plain "Python" lib, then "Python" lib and finally "libpython*.dylib". */
+		#define pylibTemplate "%sPython"
+		#define dotPylibTemplate "%s.Python"
+		#define dyPylibTemplate "%slibpython%01d.%01d.dylib"
+		if (    checkFile(dllpath, pylibTemplate, status->temppath) != 0
+			 && checkFile(dllpath, pylibTemplate, status->homepath) != 0
+			 && checkFile(dllpath, dotPylibTemplate, status->temppath) != 0
+			 && checkFile(dllpath, dotPylibTemplate, status->homepath) != 0
+				/* Python might be compiled as a .dylib (using --enable-shared) so lets try that one */
+			 && checkFile(dllpath, dyPylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
+			 && checkFile(dllpath, dyPylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0 )
+		{
+			FATALERROR("Python library not found.\n");
+			return -1;
+		}
+	}
+	else {
+		#define libpython "libpython%01d.%01d.dylib"
+		sprintf(dllpath, libpython, pyvers_major, pyvers_minor);
+	}
 #elif AIX
     /* On AIX 'ar' archives are used for both static and shared object.
      * To load a shared object from a library, it should be loaded like this:

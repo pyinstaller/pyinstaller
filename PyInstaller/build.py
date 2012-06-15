@@ -525,7 +525,7 @@ class Analysis(Target):
         
         if not self.bundle_libpython:
             binaries = self.removePythonLibrary(binaries)
-        
+
         if zipfiles:
             scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
         # Add realtime hooks just before the last script (which is
@@ -604,19 +604,21 @@ class Analysis(Target):
     def removePythonLibrary(self, binaries):
         """Remove the Python library from the binaries.
         """
-        if not is_unix and not is_win:
+        if not is_unix and not is_win and not is_darwin:
             return
         if is_unix:
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
         elif is_win:
             names = ('python%d%d.dll' % sys.version_info[:2],)
+        elif is_darwin:
+            names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
         el = self.findLibraryInBinaries(binaries, names)
         if el is None:
             name = names[0]
             if is_unix:
                 lib = bindepend.findLibrary(name)
             el = (os.path.basename(lib), lib, 'BINARY')
-        
+
         binaries = [b for b in binaries if b != el]
         return binaries
 
