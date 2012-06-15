@@ -38,12 +38,12 @@ class CTOC:
             S is a binary string."""
         entrylen = struct.calcsize(self.ENTRYSTRUCT)
         p = 0
-        while p<len(s):
+        while p < len(s):
             (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT,
-                                                        s[p:p+entrylen])
+                                                        s[p:p + entrylen])
             nmlen = slen - entrylen
             p = p + entrylen
-            (nm,) = struct.unpack(`nmlen`+'s', s[p:p+nmlen])
+            (nm,) = struct.unpack(`nmlen` + 's', s[p:p + nmlen])
             p = p + nmlen
             # version 4
             # self.data.append((dpos, dlen, ulen, flag, typcd, nm[:-1]))
@@ -73,10 +73,10 @@ class CTOC:
                 pad = '\0'
             else:
                 padlen = 16 - (toclen % 16)
-                pad = '\0'*padlen
+                pad = '\0' * padlen
                 nmlen = nmlen + padlen
-            rslt.append(struct.pack(self.ENTRYSTRUCT+`nmlen`+'s',
-                            nmlen+entrylen, dpos, dlen, ulen, flag, typcd, nm+pad))
+            rslt.append(struct.pack(self.ENTRYSTRUCT + `nmlen` + 's',
+                            nmlen + entrylen, dpos, dlen, ulen, flag, typcd, nm + pad))
             # end version 5
 
         return ''.join(rslt)
@@ -109,7 +109,7 @@ class CTOC:
         return -1
 
 class CArchive(archive.Archive):
-    """An Archive subclass that an hold arbitrary data.
+    """An Archive subclass that can hold arbitrary data.
 
        Easily handled from C or from Python."""
     MAGIC = 'MEI\014\013\012\013\016'
@@ -134,12 +134,12 @@ class CArchive(archive.Archive):
             Magic signature is at end of the archive."""
         #magic is at EOF; if we're embedded, we need to figure where that is
         if self.len:
-            self.lib.seek(self.start+self.len, 0)
+            self.lib.seek(self.start + self.len, 0)
         else:
             self.lib.seek(0, 2)
         filelen = self.lib.tell()
         if self.len:
-            self.lib.seek(self.start+self.len-self.TRLLEN, 0)
+            self.lib.seek(self.start + self.len - self.TRLLEN, 0)
         else:
             self.lib.seek(-self.TRLLEN, 2)
         (magic, totallen, tocpos, toclen, pyvers) = struct.unpack(self.TRLSTRUCT,
@@ -156,7 +156,7 @@ class CArchive(archive.Archive):
     def loadtoc(self):
         """Load the table of contents into memory."""
         self.toc = self.TOCTMPLT()
-        self.lib.seek(self.pkgstart+self.tocpos)
+        self.lib.seek(self.pkgstart + self.tocpos)
         tocstr = self.lib.read(self.toclen)
         self.toc.frombinary(tocstr)
 
@@ -174,7 +174,7 @@ class CArchive(archive.Archive):
         else:
             ndx = name
         (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
-        self.lib.seek(self.pkgstart+dpos)
+        self.lib.seek(self.pkgstart + dpos)
         rslt = self.lib.read(dlen)
         if flag == 2:
             global AES
@@ -275,4 +275,4 @@ class CArchive(archive.Archive):
         (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
         if flag:
             raise ValueError, "Cannot open compressed archive %s in place"
-        return CArchive(self.path, self.pkgstart+dpos, dlen)
+        return CArchive(self.path, self.pkgstart + dpos, dlen)

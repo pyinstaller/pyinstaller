@@ -512,7 +512,7 @@ class Analysis(Target):
             depmanifest.filename = os.path.join(BUILDPATH,
                                                 specnm + ".exe.manifest")
         # Always add python's dependencies first
-        # This ensures that assembly depencies under Windows get pulled in
+        # This ensures that assembly dependencies under Windows get pulled in
         # first and we do not need to add assembly DLLs to the exclude list
         # explicitly
         binaries.extend(bindepend.Dependencies([('', python, '')],
@@ -675,7 +675,7 @@ class PYZ(Target):
     GUTS = (('name', _check_guts_eq),
             ('level', _check_guts_eq),
             ('crypt', _check_guts_eq),
-            ('toc', _check_guts_toc),  # todo: pyc=1
+            ('toc', _check_guts_toc), # todo: pyc=1
             )
 
     def check_guts(self, last_build):
@@ -1008,7 +1008,7 @@ class EXE(Target):
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
             ('crypt', _check_guts_eq),
-            ('mtm', None,),  # checked bellow
+            ('mtm', None,), # checked bellow
             )
 
     def check_guts(self, last_build):
@@ -1185,7 +1185,7 @@ class COLLECT(Target):
     GUTS = (('name', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
-            ('toc', _check_guts_eq),  # additional check below
+            ('toc', _check_guts_eq), # additional check below
             )
 
     def check_guts(self, last_build):
@@ -1275,7 +1275,7 @@ class BUNDLE(Target):
                 break
         self.__postinit__()
 
-    GUTS = (('toc', _check_guts_eq),  # additional check below
+    GUTS = (('toc', _check_guts_eq), # additional check below
             )
 
     def check_guts(self, last_build):
