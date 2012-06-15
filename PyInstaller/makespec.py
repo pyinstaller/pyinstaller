@@ -30,7 +30,7 @@ a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r,
-             use_system_library=%(usesystemlibrary)s)
+             bundle_libpython=%(bundlelibpython)s)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -42,7 +42,7 @@ exe = EXE(pyz,
           strip=%(strip)s,
           upx=%(upx)s,
           console=%(console)s %(exe_options)s,
-          use_system_library=%(usesystemlibrary)s)
+          bundle_libpython=%(bundlelibpython)s)
 """
 
 onedirtmplt = """# -*- mode: python -*-
@@ -50,7 +50,7 @@ a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r,
-             use_system_library=%(usesystemlibrary)s)
+             bundle_libpython=%(bundlelibpython)s)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -60,7 +60,7 @@ exe = EXE(pyz,
           strip=%(strip)s,
           upx=%(upx)s,
           console=%(console)s %(exe_options)s,
-          use_system_library=%(usesystemlibrary)s)
+          bundle_libpython=%(bundlelibpython)s)
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
@@ -75,7 +75,7 @@ a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r,
-             use_system_library=%(usesystemlibrary)s)
+             bundle_libpython=%(bundlelibpython)s)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -85,7 +85,7 @@ exe = EXE(pyz,
           strip=%(strip)s,
           upx=%(upx)s,
           console=%(console)s %(exe_options)s,
-          use_system_library=%(usesystemlibrary)s)
+          bundle_libpython=%(bundlelibpython)s)
 dll = DLL(pyz,
           a.scripts,
           exclude_binaries=1,
@@ -181,8 +181,8 @@ def __add_options(parser):
     g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
                  help="additional path to search for hooks "
                       "(may be given several times)")
-    g.add_option("-u", "--use-system-library", dest="usesystemlibrary",
-                 action="store_true", default=False,
+    g.add_option("-u", "--unbundle-libpython", dest="bundlelibpython",
+                 action="store_false", default=True,
                  help="Do not include libpython in the generated package; to "
                  "be run, it will require an installed Python interpreter in "
                  "the target system")    
@@ -244,7 +244,7 @@ def main(scripts, name=None, onefile=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
          workdir=None, pathex=[], version_file=None,
          icon_file=None, manifest=None, resources=[], crypt=None,
-         hiddenimports=None, hookspath=None, usesystemlibrary=False, **kwargs):
+         hiddenimports=None, hookspath=None, bundlelibpython=True, **kwargs):
 
     if not name:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -296,7 +296,7 @@ def main(scripts, name=None, onefile=0,
          'crypted': crypt is not None,
          'console': console or debug,
          'exe_options': exe_options,
-         'usesystemlibrary': usesystemlibrary}
+         'bundlelibpython': bundlelibpython}
 
     if is_win or is_cygwin:
         d['exename'] = name+'.exe'

@@ -359,7 +359,7 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
-                 hookspath=None, excludes=None, use_system_library=False):
+                 hookspath=None, excludes=None, bundle_libpython=True):
         Target.__init__(self)
         self.inputs = [
             os.path.join(HOMEPATH, "support", "_pyi_bootstrap.py"),
@@ -387,7 +387,7 @@ class Analysis(Target):
         self.zipfiles = TOC()
         self.datas = TOC()
         self.dependencies = TOC()
-        self.use_system_library = use_system_library
+        self.bundle_libpython = bundle_libpython
         self.__postinit__()
 
     GUTS = (('inputs', _check_guts_eq),
@@ -523,7 +523,7 @@ class Analysis(Target):
             depmanifest.writeprettyxml()
         self.fixMissingPythonLib(binaries)
         
-        if self.use_system_library:
+        if not self.bundle_libpython:
             binaries = self.removePythonLibrary(binaries)
         
         if zipfiles:
@@ -854,7 +854,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0, crypt=0, use_system_library=False):
+                 strip_binaries=0, upx_binaries=0, crypt=0, bundle_libpython=True):
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -863,7 +863,7 @@ class PKG(Target):
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
         self.crypt = crypt
-        self.use_system_library = use_system_library
+        self.bundle_libpython = bundle_libpython
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -932,7 +932,7 @@ class PKG(Target):
                 mytoc.append((inm, '', 0, 'o'))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
-        archive = carchive.CArchive(use_system_library=self.use_system_library)
+        archive = carchive.CArchive(bundle_libpython=self.bundle_libpython)
         archive.build(self.name, mytoc)
         _save_data(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
@@ -961,7 +961,7 @@ class EXE(Target):
         self.crypt = kws.get('crypt', 0)
         self.exclude_binaries = kws.get('exclude_binaries', 0)
         self.append_pkg = kws.get('append_pkg', self.append_pkg)
-        self.use_system_library = kws.get('use_system_library', False)
+        self.bundle_libpython = kws.get('bundle_libpython', True)
         if self.name is None:
             self.name = self.out[:-3] + 'exe'
         if not os.path.isabs(self.name):
@@ -988,7 +988,7 @@ class EXE(Target):
         self.pkg = PKG(self.toc, cdict=kws.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
-                       crypt=self.crypt, use_system_library=self.use_system_library)
+                       crypt=self.crypt, bundle_libpython=self.bundle_libpython)
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
