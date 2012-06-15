@@ -524,7 +524,7 @@ class Analysis(Target):
         self.fixMissingPythonLib(binaries)
         
         if self.use_system_library:
-            self.removePythonLibrary(binaries)
+            binaries = self.removePythonLibrary(binaries)
         
         if zipfiles:
             scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
@@ -617,14 +617,8 @@ class Analysis(Target):
                 lib = bindepend.findLibrary(name)
             el = (os.path.basename(lib), lib, 'BINARY')
         
-        # Search all libpython in binaries. This loop is necessary because
-        # the function to search the binaries' dependencies returns, at least,
-        # the list of binaries, so an element can be found twice
-        
-        number_of_el = binaries.count(el)
-        while number_of_el:
-            binaries.remove(el)
-            number_of_el -= 1
+        binaries = [b for b in binaries if b != el]
+        return binaries
 
     def findLibraryInBinaries(self, binaries, names):
         """function to check the presence of a library in binaries.
