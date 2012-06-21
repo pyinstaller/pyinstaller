@@ -641,9 +641,18 @@ def _os_bootstrap():
         # since this function is only used by caseOk, it's fine to cache the
         # results and avoid reading the whole contents of a directory each time
         # we just want to check the case of a filename.
-        if not dir in cache:
-            cache[dir] = listdir(dir)
-        return cache[dir]
+       
+        # actually it's not.  If this is allowed, programs that dynamically add python modules to be reimported by
+        # that same program (i.e., plugins) will not work, because the cache is only built once at the beginning, and never updated.  So,
+        # we must really list the directory again.
+        #
+        # We could get fancy here and cache the directory's modification time to see if there is something new there and therefore re-cache, 
+        # but that adds complexity and failure modes to a performance enhancement that might not add that much performance anyway.
+        return listdir(dir) 
+ 
+        #if not dir in cache:
+        #    cache[dir] = listdir(dir)
+        #return cache[dir]
 
     _os_stat = stat
     _os_getcwd = getcwd
