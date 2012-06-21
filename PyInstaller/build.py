@@ -708,7 +708,11 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
         upx = 0
 
     # Load cache index
-    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d' % (strip, upx))
+    # Make cachedir per Python major/minor version.
+    # This allows parallel building of executables with different
+    # Python versions as one user.
+    pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1]) 
+    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d_%s' % (strip, upx, pyver))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
