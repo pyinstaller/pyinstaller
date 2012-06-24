@@ -6,10 +6,9 @@ from wx.lib.pubsub import pub as Publisher
 def OnMessage(message):
   print ("In the handler")
   if message.data == 762:
-     print("pubsub success.")
      sys.exit(0)
-  print("pubsub fail.")
-  sys.exit(1)
+  else:
+     raise SystemExit('wx_pubsub_arg1 failed.')
 
 Publisher.subscribe(OnMessage,"topic.subtopic")
 
