@@ -22,7 +22,7 @@
 # This program will execute any file with name test*<digit>.py. If your test
 # need an aditional dependency name it test*<digit><letter>.py to be ignored
 # by this program but be recognizable by any one as a dependency of that
-# particual test.
+# particular test.
 
 import glob
 import optparse
@@ -601,15 +601,22 @@ def main():
         clean()
         raise SystemExit()  # Exit code is 0 in this case.
 
-    # Run only single specified tests.
+    # Run only specified tests.
     if args:
         if opts.interactive_tests:
             parser.error('Must not specify -i/--interactive-tests when passing test names.')
-        test_dir = os.path.dirname(args[0])
-        test_script = os.path.basename(os.path.splitext(args[0])[0])
         suite = unittest.TestSuite()
-        suite.addTest(GenericTestCase(test_dir, test_script))
-        print 'Running single test:  %s' % (test_dir + '/' + test_script)
+        for arg in args:
+           test_list = glob.glob(arg)
+           if not test_list: 
+               test_list = [arg]
+           else:
+               test_list = [x for x in test_list if os.path.splitext(x)[1] == ".py"]
+           for t in test_list: 
+              test_dir = os.path.dirname(t)
+              test_script = os.path.basename(os.path.splitext(t)[0])
+              suite.addTest(GenericTestCase(test_dir, test_script))
+              print 'Running test:  %s' % (test_dir + '/' + test_script)
 
     # Run all tests or all interactive tests.
     else:
