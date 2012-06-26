@@ -2,9 +2,6 @@
 Utilities for reading and writing Mach-O headers
 """
 
-from pkg_resources import require
-require("altgraph")
-
 import os
 import sys
 
