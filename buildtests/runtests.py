@@ -227,9 +227,10 @@ class BuildTestRunner(object):
         """
         Important text. Print it to console only in verbose mode.
         """
+        if self.verbose:
         # This allows to redirect stdout to junit xml report.
-        sys.stdout.write('\n' + 10 * '#' + ' ' + text + ' ' + 10 * '#' + '\n\n')
-        sys.stdout.flush()
+            sys.stdout.write('\n' + 10 * '#' + ' ' + text + ' ' + 10 * '#' + '\n\n')
+            sys.stdout.flush()
 
     def _plain_msg(self, text):
         """
