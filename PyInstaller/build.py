@@ -601,6 +601,8 @@ class Analysis(Target):
         # resume search using the first item in names
         name = names[0]
 
+        logger.info('Looking for Python library %s', name)
+
         if is_unix:
             lib = bindepend.findLibrary(name)
             if lib is None:
@@ -612,6 +614,7 @@ class Analysis(Target):
             # However, this fails on system python, because the shared library
             # is not listed as a dependency of the binary (most probably it's
             # opened at runtime using some dlopen trickery).
+            logger.info('Looking for Python library in %s', sys.exec_prefix)
             lib = os.path.join(sys.exec_prefix, 'Python')
             if not os.path.exists(lib):
                 raise IOError("Python library not found!")
