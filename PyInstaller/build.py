@@ -598,7 +598,7 @@ class Analysis(Target):
                     # lib found
                     return
 
-        # resume search using the first item in names
+        # Resume search using the first item in names.
         name = names[0]
 
         logger.info('Looking for Python library %s', name)
@@ -614,8 +614,20 @@ class Analysis(Target):
             # However, this fails on system python, because the shared library
             # is not listed as a dependency of the binary (most probably it's
             # opened at runtime using some dlopen trickery).
-            logger.info('Looking for Python library in %s', sys.exec_prefix)
-            lib = os.path.join(sys.exec_prefix, 'Python')
+            # This happens on Mac OS X when Python is compiled as Framework.
+
+            # Python compiled as Framework contains same values in sys.prefix
+            # and exec_prefix. That's why we can use just sys.prefix.
+            # In virtualenv PyInstaller is not able to find Python library.
+            # We need special care for this case.
+            if compat.is_virtualenv:
+                py_prefix = sys.real_prefix
+            else:
+                py_prefix = sys.prefix
+
+            logger.info('Looking for Python library in %s', py_prefix)
+
+            lib = os.path.join(py_prefix, name)
             if not os.path.exists(lib):
                 raise IOError("Python library not found!")
 
