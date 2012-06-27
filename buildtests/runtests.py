@@ -124,8 +124,8 @@ class SkipChecker(object):
             'import/test_ctypes_cdll_c2': ['ctypes'],
             'import/test_eggs2': ['pkg_resources'],
             'import/test_onefile_c_extension': ['simplejson'],
-            'import/test_zipimport': ['pkg_resources'],
-            'import/test_zipimport2': ['pkg_resources', 'setuptools'],
+            'import/test_onefile_zipimport': ['pkg_resources'],
+            'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
             'interactive/test_pygame': ['pygame'],
             }
         # Other dependecies of some tests.
@@ -204,6 +204,8 @@ NO_SPEC_FILE = [
     'basic/test_python_home',
     'import/test_c_extension',
     'import/test_onefile_c_extension',
+    'import/test_onefile_zipimport',
+    'import/test_onefile_zipimport2',
     'libraries/test_enchant',
     'libraries/test_onefile_tkinter',
     'libraries/test_sqlalchemy',
