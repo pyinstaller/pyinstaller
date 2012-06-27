@@ -3,6 +3,7 @@
 
 import os
 import sys
+import time
 from distutils import sysconfig
 
 
@@ -13,9 +14,10 @@ files = [config_h]
 # On Windows Makefile does not exist.
 if not sys.platform.startswith('win'):
     makefile = sysconfig.get_makefile_filename()
-    print('Makefile: ' + config_h)
+    print('Makefile: ' + makefile)
     files.append(makefile)
 
+time.sleep(30)
 
 for f in files:
     if not os.path.exists(f):

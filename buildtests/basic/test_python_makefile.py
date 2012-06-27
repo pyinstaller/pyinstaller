@@ -13,7 +13,7 @@ files = [config_h]
 # On Windows Makefile does not exist.
 if not sys.platform.startswith('win'):
     makefile = sysconfig.get_makefile_filename()
-    print('Makefile: ' + config_h)
+    print('Makefile: ' + makefile)
     files.append(makefile)
 
 
