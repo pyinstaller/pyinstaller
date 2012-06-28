@@ -119,6 +119,9 @@ class SkipChecker(object):
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
             'libraries/test_usb': ['ctypes', 'usb'],
             'libraries/test_wx': ['wx'],
+            'libraries/test_wx_pubsub': ['wx'],
+            'libraries/test_wx_pubsub_arg1': ['wx'],
+            'libraries/test_wx_pubsub_kwargs': ['wx'],
             'import/test_c_extension': ['simplejson'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_ctypes_cdll_c2': ['ctypes'],
@@ -211,6 +214,9 @@ NO_SPEC_FILE = [
     'libraries/test_sqlalchemy',
     'libraries/test_pyttsx',
     'libraries/test_usb',
+    'libraries/test_wx_pubsub',
+    'libraries/test_wx_pubsub_kwargs',
+    'libraries/test_wx_pubsub_arg1'
 ]
 
 
