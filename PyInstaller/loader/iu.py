@@ -262,7 +262,7 @@ class PathImportDirector(ImportDirector):
                 # this may cause an import, which may cause recursion
                 # hence the protection
                 owner = klass(path)
-            except OwnerError, e:
+            except OwnerError:
                 pass
             else:
                 break
@@ -638,11 +638,12 @@ def _os_bootstrap():
                 return p[i + len(sep):]
 
     def _listdir(dir, cache=None):
-        # the cache is not used.  It was found to cause problems with programs that dynamically add python modules to be reimported by
-        # that same program (i.e., plugins), because the cache is only built once at the beginning, and never updated.  So,
-        # we must really list the directory again.
-        return listdir(dir) 
- 
+        # The cache is not used. It was found to cause problems
+        # with programs that dynamically add python modules to be
+        # reimported by that same program (i.e., plugins), because
+        # the cache is only built once at the beginning, and never
+        # updated. So, we must really list the directory again.
+        return listdir(dir)
 
     _os_stat = stat
     _os_getcwd = getcwd
