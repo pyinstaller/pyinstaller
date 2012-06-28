@@ -35,10 +35,9 @@ except ImportError:
 
 plugin_contents = """
 print('DYNAMIC PLUGIN IMPORTED.')
-print('This is some user-generated plugin that does not come into existence')
-print('until the application starts, and other modules in the directory')
-print('it will reside in happen to have been imported (like the')
-print('static_plugin)')
+print('This is some user-generated plugin that does not exist until')
+print('  the application starts and other modules in the directory')
+print('  are imported (like the static_plugin).')
 """
 
 
