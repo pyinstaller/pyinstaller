@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012, Martin Zibricky
+# Copyright (C) 2012, Daniel Hyams
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,10 +16,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 
-import os
-import sys
 import PyInstaller.hooks.hookutils
 
-# if the user imports setuparg1, we just set an attribute in PyInstaller.hooks.hookutils that allows us to later find out
-# about this.
-PyInstaller.hooks.hookutils.wxpubsub = "arg1"
+
+# If the user imports setuparg1, we just set an attribute
+# in PyInstaller.hooks.hookutils that allows us to later
+# find out about this.
+PyInstaller.hooks.hookutils.wxpubsub = 'arg1'
