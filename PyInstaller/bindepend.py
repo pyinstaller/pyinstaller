@@ -460,8 +460,10 @@ def _getImports_macholib(pth):
     # Walk through mach binary headers and look for LC_RPATH.
     # macholib can't handle @rpath. LC_RPATH has to be read
     # from the MachO header.
-    # FIXME PyInstaller should probably handle multiple @rpath
-    #       items not only one.
+    # TODO Do we need to remove LC_RPATH from MachO load commands?
+    #      Will it cause any harm to leave them untouched?
+    #      Removing LC_RPATH should be implemented when getting
+    #      files from the bincache if it is necessary.
     run_paths = set()
     for header in m.headers:
         for command in header.commands:
@@ -485,7 +487,7 @@ def _getImports_macholib(pth):
     # In cases with @loader_path or @executable_path
     # try to look in the same directory as the checked binary is.
     # This seems to work in most cases.
-    exec_paths = os.path.abspath(os.path.dirname(pth))
+    exec_path = os.path.abspath(os.path.dirname(pth))
 
     for lib in seen:
 
@@ -497,8 +499,13 @@ def _getImports_macholib(pth):
             final_lib = None  # Absolute path to existing lib on disk.
             # Try multiple locations.
             for run_path in run_paths:
+                # @rpath may contain relative value. Use exec_path as
+                # base path.
+                if not os.path.isabs(run_path):
+                    run_path = os.path.join(exec_path, run_path)
+                # Stop looking for lib when found in first location.
                 if os.path.exists(os.path.join(run_path, lib)):
-                    final_lib = os.path.join(run_path, lib)
+                    final_lib = os.path.abspath(os.path.join(run_path, lib))
                     rslt.add(final_lib)
                     break
             # Log error if no existing file found.
@@ -513,7 +520,7 @@ def _getImports_macholib(pth):
             if lib.startswith('@loader_path'):
                 lib = lib.replace('@loader_path', '@executable_path')
             try:
-                lib = dyld_find(lib, executable_path=exec_paths)
+                lib = dyld_find(lib, executable_path=exec_path)
                 rslt.add(lib)
             except ValueError:
                 logger.error('Can not find path %s (needed by %s)', lib, pth)
