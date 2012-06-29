@@ -42,7 +42,10 @@ print('  are imported (like the static_plugin).')
 
 
 # Create the dynamic plugin in the same directory as the executable.
-program_dir = os.path.abspath(sys.prefix)
+if hasattr(sys, 'frozen'):
+    program_dir = os.path.abspath(sys.prefix)
+else:
+    program_dir = os.path.dirname(os.path.abspath(__file__))
 plugin_filename = os.path.join(program_dir, 'dynamic_plugin.py')
 fp = open(plugin_filename, 'w')
 fp.write(plugin_contents)
@@ -50,18 +53,23 @@ fp.close()
 
 
 # Try import dynamic plugin.
+is_error = False
 try:
     print('Attempting to import dynamic_plugin...')
     mdl = __import__('dynamic_plugin')
 except ImportError:
-    raise SystemExit('Failed to import the dynamic plugin.')
-finally:
-    # Clean up. Remove files dynamic_plugin.py[c]
+    is_error = True
+
+
+# Clean up. Remove files dynamic_plugin.py[c]
+for f in (plugin_filename, plugin_filename + 'c'):
     try:
         os.remove(plugin_filename)
     except OSError:
         pass
-    try:
-        os.remove(plugin_filename + 'c')
-    except OSError:
-        pass
+
+
+# Statement 'try except finally' is available since Python 2.5+.
+if is_error:
+    # Raise exeption.
+    raise SystemExit('Failed to import the dynamic plugin.')
