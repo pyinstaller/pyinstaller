@@ -317,7 +317,7 @@ class BuildTestRunner(object):
         else:
             OPTS.append('--onedir')
 
-        self._msg("BUILDING TEST" + self.test_name)
+        self._msg("BUILDING TEST " + self.test_name)
 
         # Use pyinstaller.py for building test_name.
         testfile_spec = self.test_file + '.spec'
