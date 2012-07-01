@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 
 # Test bootloader behaviour for threading code.
@@ -23,7 +23,6 @@
 
 
 import os
-import subprocess
 import sys
 import threading
 
@@ -51,11 +50,19 @@ else:
     # Differenciate subprocess code.
     itself = sys.argv[0]
     # Run subprocess.
-    proc = subprocess.Popen([itself], stdout=subprocess.PIPE,
-            env={'PYI_THREAD_TEST_CASE': 'any_string'},
-            stderr=subprocess.PIPE, shell=False)
-    # Waits for subprocess to complete.
-    out, err = proc.communicate()
+    try:
+        import subprocess
+        proc = subprocess.Popen([itself], stdout=subprocess.PIPE,
+                env={'PYI_THREAD_TEST_CASE': 'any_string'},
+                stderr=subprocess.PIPE, shell=False)
+        # Waits for subprocess to complete.
+        out, err = proc.communicate()
+    except ImportError:
+        # Python 2.3 does not have subprocess module.
+        command = 'PYI_THREAD_TEST_CASE=any_string ' + itself
+        pipe = os.popen(command)
+        out = pipe.read()
+        pipe.close()
 
     # Make output from subprocess visible.
     print out
