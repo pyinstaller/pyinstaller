@@ -86,6 +86,16 @@ else:
     PYCO = 'o'
 
 
+# os.devnull is available since Python 2.4+.
+if hasattr(os, 'devnull'):
+    devnull = os.devnull
+else:
+    if is_win:
+        devnull = 'nul'
+    else:
+        devnull = '/dev/null'
+
+
 # If ctypes is present, specific dependency discovery can be enabled.
 try:
     import ctypes
