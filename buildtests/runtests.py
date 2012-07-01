@@ -377,6 +377,8 @@ class BuildTestRunner(object):
             fname_list = fname_list.replace('\r\n', '\n').replace('\n\r', '\n')
             fname_list = eval(fname_list)
             pattern_list = eval(open(logfn, 'rU').read())
+            # Alphabetical order of patterns.
+            pattern_list.sort()
             count = 0
             for pattern in pattern_list:
                 found = False
