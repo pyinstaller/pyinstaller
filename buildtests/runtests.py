@@ -110,6 +110,7 @@ class SkipChecker(object):
             'basic/test_onefile_multiprocess': ['multiprocessing'],
             'libraries/test_enchant': ['enchant'],
             'libraries/test_Image': ['Image'],
+            'libraries/test_Image2': ['Image'],
             'libraries/test_numpy': ['numpy'],
             'libraries/test_onefile_tkinter': ['Tkinter'],
             'libraries/test_PIL': ['PIL'],
