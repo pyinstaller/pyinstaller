@@ -23,15 +23,13 @@ import sys
 import os
 import shutil
 import pprint
-import time
 import py_compile
 import imp
 import tempfile
 import UserList
 import bindepend
-import traceback
 
-from PyInstaller.loader import archive, carchive, iu
+from PyInstaller.loader import archive, carchive
 
 import PyInstaller.depend.imptracker
 import PyInstaller.depend.modules
@@ -233,7 +231,7 @@ def _check_path_overlap(path):
     Check that path does not overlap with BUILDPATH or SPECPATH (i.e.
     BUILDPATH and SPECPATH may not start with path, which could be
     caused by a faulty hand-edited specfile)
-    
+
     Raise SystemExit if there is overlap, return True otherwise
     """
     specerr = 0
@@ -495,7 +493,6 @@ class Analysis(Target):
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
 
-
         # Find rthooks.
         logger.info("Looking for run-time hooks")
         for modnm, mod in importTracker.modules.items():
@@ -508,7 +505,6 @@ class Analysis(Target):
         for hook_mod, hook_file, mod_type in rthooks:
             logger.info("Analyzing rthook %s", hook_file)
             importTracker.analyze_script(hook_file)
-
 
         for modnm, mod in importTracker.modules.items():
             # FIXME: why can we have a mod == None here?
@@ -726,7 +722,7 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
     # Make cachedir per Python major/minor version.
     # This allows parallel building of executables with different
     # Python versions as one user.
-    pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1]) 
+    pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
     cachedir = os.path.join(CONFIGDIR, 'bincache%d%d_%s' % (strip, upx, pyver))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
@@ -1476,43 +1472,6 @@ class Tree(Target, TOC):
         return 0
 
 
-def TkTree():
-    raise SystemExit('TkTree has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file. See '
-                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
-
-
-def TkPKG():
-    raise SystemExit('TkPKG has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file. See '
-                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
-
-
-def build(spec, buildpath):
-    global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
-    rthooks = _load_data(os.path.join(HOMEPATH, 'support', 'rthooks.dat'))
-    SPEC = spec
-    SPECPATH, specnm = os.path.split(spec)
-    specnm = os.path.splitext(specnm)[0]
-    if SPECPATH == '':
-        SPECPATH = os.getcwd()
-    BUILDPATH = os.path.join(SPECPATH, 'build',
-                             "pyi." + sys.platform, specnm)
-    # Check and adjustment for build path
-    if buildpath != DEFAULT_BUILDPATH:
-        bpath = buildpath
-        if os.path.isabs(bpath):
-            BUILDPATH = bpath
-        else:
-            BUILDPATH = os.path.join(SPECPATH, bpath)
-    WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
-    if not os.path.exists(BUILDPATH):
-        os.makedirs(BUILDPATH)
-    # Executing the specfile (it's a valid python file)
-    execfile(spec)
-
-
-
 class MERGE(object):
     """
     Merge repeated dependencies from other executables into the first
@@ -1565,11 +1524,11 @@ class MERGE(object):
         for toc in (analysis.binaries, analysis.datas):
             for i, tpl in enumerate(toc):
                 if not tpl[1] in self._dependencies.keys():
-                    logger.info("Adding dependency %s located in %s" % (tpl[1], path))
+                    logger.debug("Adding dependency %s located in %s" % (tpl[1], path))
                     self._dependencies[tpl[1]] = path
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
-                    logger.info("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
+                    logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
                     analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
                     toc[i] = (None, None, None)
             # Clean the list
@@ -1585,6 +1544,42 @@ class MERGE(object):
             return os.sep.join(start)
         else:
             return topath
+
+
+def TkTree():
+    raise SystemExit('TkTree has been removed in PyInstaller 2.0. '
+                     'Please update your spec-file. See '
+                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
+
+
+def TkPKG():
+    raise SystemExit('TkPKG has been removed in PyInstaller 2.0. '
+                     'Please update your spec-file. See '
+                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
+
+
+def build(spec, buildpath):
+    global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
+    rthooks = _load_data(os.path.join(HOMEPATH, 'support', 'rthooks.dat'))
+    SPEC = spec
+    SPECPATH, specnm = os.path.split(spec)
+    specnm = os.path.splitext(specnm)[0]
+    if SPECPATH == '':
+        SPECPATH = os.getcwd()
+    BUILDPATH = os.path.join(SPECPATH, 'build',
+                             "pyi." + sys.platform, specnm)
+    # Check and adjustment for build path
+    if buildpath != DEFAULT_BUILDPATH:
+        bpath = buildpath
+        if os.path.isabs(bpath):
+            BUILDPATH = bpath
+        else:
+            BUILDPATH = os.path.join(SPECPATH, bpath)
+    WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
+    if not os.path.exists(BUILDPATH):
+        os.makedirs(BUILDPATH)
+    # Executing the specfile (it's a valid python file)
+    execfile(spec)
 
 
 def __add_options(parser):
