@@ -111,6 +111,27 @@ def _getImports_pe(pth):
     return dlls
 
 
+def _extract_from_egg(toc):
+    """
+    Ensure all binary modules in zipped eggs get extracted and
+    included with the frozen executable.
+
+    The supplied toc is directly modified to make changes effective.
+
+    return  modified table of content
+    """
+    for item in toc:
+        # Item is a tupple
+        #  (mod_name, path, type)
+        modname, pth, typ = item
+        if not os.path.isfile(pth):
+            pth = check_extract_from_egg(pth)[0][0]
+            # Replace value in original data structure.
+            toc.remove(item)
+            toc.append((modname, pth, typ))
+    return toc
+
+
 def Dependencies(lTOC, xtrapath=None, manifest=None):
     """
     Expand LTOC to include all the closure of binary dependencies.
@@ -122,6 +143,10 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
     manifest should be a winmanifest.Manifest instance on Windows, so
     that all dependent assemblies can be added
     """
+    # Extract all necessary binary modules from Python eggs to be included
+    # directly with PyInstaller.
+    lTOC = _extract_from_egg(lTOC)
+
     for nm, pth, typ in lTOC:
         if seen.get(nm.upper(), 0):
             continue
