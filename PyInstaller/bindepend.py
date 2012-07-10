@@ -264,8 +264,6 @@ def getAssemblies(pth):
     """
     Return the dependent assemblies of a binary.
     """
-    if not os.path.isfile(pth):
-        pth = check_extract_from_egg(pth)[0][0]
     if pth.lower().endswith(".manifest"):
         return []
     # check for manifest file
@@ -319,8 +317,6 @@ def selectAssemblies(pth, manifest=None):
     Return a list of pairs (name, fullpath)
     """
     rv = []
-    if not os.path.isfile(pth):
-        pth = check_extract_from_egg(pth)[0][0]
     if manifest:
         _depNames = set([dep.name for dep in manifest.dependentAssemblies])
     for assembly in getAssemblies(pth):
@@ -554,10 +550,9 @@ def _getImports_macholib(pth):
 
 
 def getImports(pth):
-    """Forwards to the correct getImports implementation for the platform.
     """
-    if not os.path.isfile(pth):
-        pth = check_extract_from_egg(pth)[0][0]
+    Forwards to the correct getImports implementation for the platform.
+    """
     if is_win or is_cygwin:
         if pth.lower().endswith(".manifest"):
             return []
