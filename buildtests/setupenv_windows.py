@@ -65,6 +65,7 @@ _PACKAGES = {
     'PIL': ['PIL-*%s-py%s.exe' % (py_arch(), PYVER)],
     'psycopg2': ['psycopg2-*%s-py%s.exe' % (py_arch(), PYVER)],
     'pycrypto': ['pycrypto'],
+    'pyodbc': ['pyodbc'],
     'simplejson': ['simplejson'],
     'sqlalchemy': ['SQLAlchemy-*%s-py%s.exe' % (py_arch(), PYVER)],
     'wx': ['wxPython-common-*%s-py%s.exe' % (py_arch(), PYVER),
