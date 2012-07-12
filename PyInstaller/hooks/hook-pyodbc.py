@@ -1,3 +1,5 @@
+#
+# Copyright (C) 2012, Martin Zibricky
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
@@ -13,15 +15,15 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+
 
 # Contributed by Don Dwiggins
-hiddenimports = ['datetime', 'decimal', 'locale']
+from PyInstaller.hooks.hookutils import get_pyextension_imports
 
-try:
-    import hashlib
-    hiddenimports.append('hashlib')
-    del hashlib
-except ImportError:
-    hiddenimports.append('sha')
 
+# It's hard to detect imports of binary Python module without importing it.
+# Let's try importing that module in a subprocess.
+# TODO function get_pyextension_imports() is experimental and we need
+#      to evaluate its usage here and its suitability for other hooks.
+hiddenimports = get_pyextension_imports('pyodbc')
