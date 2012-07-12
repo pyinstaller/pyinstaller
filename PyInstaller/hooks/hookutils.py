@@ -81,6 +81,45 @@ def eval_script(scriptfilename, *args):
     return eval(txt)
 
 
+def get_pyextension_imports(modname):
+    """
+    Return list of modules required by binary (C/C++) Python extension.
+
+    Python extension files ends with .so (Unix) or .pyd (Windows).
+    It's almost impossible to analyze binary extension and its dependencies.
+
+    Module cannot be imported directly.
+
+    Let's at least try import it in a subprocess and get the diffrence
+    in module list from sys.modules.
+
+    This function could be used for 'hiddenimports' in PyInstaller hooks files.
+    """
+
+    statement = """
+import sys
+# Importing distutils filters common modules, especiall in virtualenv.
+import distutils
+original_modlist = sys.modules.keys()
+# When importing this module - sys.modules gets updated.
+import %(modname)s
+all_modlist = sys.modules.keys()
+diff = set(all_modlist) - set(original_modlist)
+# Module list contain original modname. We do not need it there.
+diff.discard('%(modname)s')
+# Print module list to stdout.
+print list(diff)
+""" % {'modname': modname}
+    module_imports = eval_statement(statement)
+    
+
+    if not module_imports:
+        logger.error('Cannot find imports for module %s' % modname)
+        return []  # Means no imports found or looking for imports failed.
+    #module_imports = filter(lambda x: not x.startswith('distutils'), module_imports)
+    return module_imports
+
+
 def qt4_plugins_dir():
     qt4_plugin_dirs = eval_statement(
         "from PyQt4.QtCore import QCoreApplication;"
@@ -149,7 +188,7 @@ def qt4_menu_nib_dir():
     globpath = '/usr/local/Cellar/qt/4.*/lib/QtGui.framework/Versions/4/Resources'
     qt_homebrew_dirs = glob.glob(globpath)
     dirs += qt_homebrew_dirs
-    
+
     # Check directory existence
     for d in dirs:
         d = os.path.join(d, 'qt_menu.nib')
