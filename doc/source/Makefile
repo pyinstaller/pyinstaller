@@ -39,6 +39,19 @@ Manual.tex: Manual.rst _definitions.txt
 	   --default-dpi=75 
 	rm ../_definitions.txt
 
+_definitions.txt:
+	# _definitions.txt is overwritten.
+	echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > _definitions.txt
+	echo '' >> _definitions.txt  # Empty line.
+	# Append other lines.
+	echo '.. _PyInstaller: http://www.pyinstaller.org' >> _definitions.txt
+	echo '' >> _definitions.txt
+	echo '.. |Homepage| replace:: http://www.pyinstaller.org' >> _definitions.txt
+	echo '.. |PyInstaller| replace:: `PyInstaller`' >> _definitions.txt
+	echo '.. |Version| replace:: '`python ../../pyinstaller.py -v` >> _definitions.txt
+	echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> _definitions.txt
+	echo '.. |install_path| replace:: /your/path/to/pyinstaller/' >> _definitions.txt
+
 clean:
 	@echo "make cleanall  ===> To clean everything"
 	@echo "make cleanlogs ===> To clean *.log, *.aux, etc. but not the .html or .pdf"
@@ -46,6 +59,7 @@ clean:
 
 cleanall: cleanlogs
 	rm -f ../*.pdf ../*.html ../*.1
+	rm _definitions.txt
 	@echo "All logs and documentation removed."
 
 
