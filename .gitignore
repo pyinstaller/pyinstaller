@@ -54,6 +54,7 @@
 
 # /doc/
 /doc/*.1
+/doc/source/_definitions.txt
 
 # /source/
 /source/.lock-wscript

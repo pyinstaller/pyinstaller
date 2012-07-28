@@ -1,9 +1,0 @@
-.. -*- mode: rst ; ispell-local-dictionary: "american" -*-
-
-.. _PyInstaller: http://www.pyinstaller.org
-
-.. |Homepage| replace:: http://www.pyinstaller.org
-.. |PyInstaller| replace:: `PyInstaller`
-.. |Version| replace:: v2.0dev
-.. |PyInstallerVersion| replace:: PyInstaller |Version|
-.. |install_path| replace:: /your/path/to/pyinstaller/
