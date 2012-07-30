@@ -5,7 +5,11 @@ XXX: need to rewrite this based on altgraph.Dot
 """
 
 from collections import deque
-from itertools import imap
+
+try:
+    from itertools import imap
+except ImportError:
+    imap = map
 
 __all__ = ['itergraphreport']
 

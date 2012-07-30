@@ -5,7 +5,6 @@ See the relevant header files in /usr/include/mach-o
 
 And also Apple's documentation.
 """
-# For PyInstaller/lib/ define the version here, since there is no
-# package-resource.
+import pkg_resources
+__version__ = pkg_resources.require('macholib')[0].version
 
-__version__ = '1.4.2'

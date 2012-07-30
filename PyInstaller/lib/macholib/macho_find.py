@@ -1,10 +1,13 @@
 #!/usr/bin/env python
-
-from macholib._cmdline import main
+from __future__ import print_function
+from macholib._cmdline import main as _main
 
 
 def print_file(fp, path):
-    print >>fp, path
+    print(path, file=fp)
+
+def main():
+    _main(print_file)
 
 if __name__ == '__main__':
     try:

@@ -127,13 +127,12 @@ class MachOStandalone(object):
             if rewroteAny:
                 old_mode = flipwritable(fn)
                 try:
-                    f = open(fn, 'rb+')
-                    for header in node.headers:
-                        f.seek(0)
-                        node.write(f)
-                    f.seek(0, 2)
-                    f.flush()
-                    f.close()
+                    with open(fn, 'rb+') as f:
+                        for header in node.headers:
+                            f.seek(0)
+                            node.write(f)
+                        f.seek(0, 2)
+                        f.flush()
                 finally:
                     flipwritable(fn, old_mode)
 

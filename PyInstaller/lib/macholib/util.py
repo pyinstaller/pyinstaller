@@ -1,10 +1,11 @@
-
 import os
 import sys
 import stat
 import operator
 import struct
 import shutil
+
+from modulegraph.util import *
 
 from macholib import mach_o
 
@@ -89,7 +90,7 @@ class fileview(object):
         self._checkwindow(here + len(bytes), 'write')
         self._fileobj.write(bytes)
 
-    def read(self, size=sys.maxint):
+    def read(self, size=sys.maxsize):
         assert size >= 0
         here = self._fileobj.tell()
         self._checkwindow(here, 'read')
@@ -134,7 +135,7 @@ def mergetree(src, dst, condition=None, copyfn=mergecopy, srcbase=None):
                     condition=condition, copyfn=copyfn, srcbase=srcbase)
             else:
                 copyfn(srcname, dstname)
-        except (IOError, os.error), why:
+        except (IOError, os.error) as why:
             errors.append((srcname, dstname, why))
     if errors:
         raise IOError(errors)
@@ -150,6 +151,8 @@ def sdk_normalize(filename):
         filename = '/'.join(pathcomp)
     return filename
 
+NOT_SYSTEM_FILES=[]
+
 def in_system_path(filename):
     """
     Return True if the file is in a system path
@@ -158,6 +161,8 @@ def in_system_path(filename):
     if fn.startswith('/usr/local/'):
         return False
     elif fn.startswith('/System/') or fn.startswith('/usr/'):
+        if fn in NOT_SYSTEM_FILES:
+            return False
         return True
     else:
         return False
@@ -181,20 +186,19 @@ def is_platform_file(path):
     if not os.path.exists(path) or os.path.islink(path):
         return False
     # If the header is fat, we need to read into the first arch
-    fileobj = open(path, 'rb')
-    bytes = fileobj.read(MAGIC_LEN)
-    if bytes == FAT_MAGIC_BYTES:
-        # Read in the fat header
-        fileobj.seek(0)
-        header = mach_o.fat_header.from_fileobj(fileobj, _endian_='>')
-        if header.nfat_arch < 1:
-            return False
-        # Read in the first fat arch header
-        arch = mach_o.fat_arch.from_fileobj(fileobj, _endian_='>')
-        fileobj.seek(arch.offset)
-        # Read magic off the first header
+    with open(path, 'rb') as fileobj:
         bytes = fileobj.read(MAGIC_LEN)
-    fileobj.close()
+        if bytes == FAT_MAGIC_BYTES:
+            # Read in the fat header
+            fileobj.seek(0)
+            header = mach_o.fat_header.from_fileobj(fileobj, _endian_='>')
+            if header.nfat_arch < 1:
+                return False
+            # Read in the first fat arch header
+            arch = mach_o.fat_arch.from_fileobj(fileobj, _endian_='>')
+            fileobj.seek(arch.offset)
+            # Read magic off the first header
+            bytes = fileobj.read(MAGIC_LEN)
     for magic in MAGIC:
         if bytes == magic:
             return True
@@ -218,7 +222,7 @@ def strip_files(files, argv_max=(256 * 1024)):
     while tostrip:
         cmd = list(STRIPCMD)
         flips = []
-        pathlen = reduce(operator.add, [len(s) + 1 for s in cmd])
+        pathlen = sum([len(s) + 1 for s in cmd])
         while pathlen < argv_max:
             if not tostrip:
                 break

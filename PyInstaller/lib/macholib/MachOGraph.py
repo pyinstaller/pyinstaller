@@ -15,6 +15,11 @@ from macholib.itergraphreport import itergraphreport
 
 __all__ = ['MachOGraph']
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 class MissingMachO(object):
     def __init__(self, filename):
         self.graphident = filename

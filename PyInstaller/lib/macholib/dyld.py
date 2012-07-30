@@ -39,7 +39,7 @@ if sys.version_info[0] == 2:
         return s
 else:
     def _ensure_utf8(s):
-        if s is not None and not isinstance(s, unicode):
+        if s is not None and not isinstance(s, str):
             raise ValueError(s)
         return s
 
@@ -145,7 +145,7 @@ def dyld_find(name, executable_path=None, env=None):
             ), env):
         if os.path.isfile(path):
             return path
-    raise ValueError, "dylib %s could not be found" % (name,)
+    raise ValueError("dylib %s could not be found" % (name,))
 
 def framework_find(fn, executable_path=None, env=None):
     """

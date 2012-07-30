@@ -13,14 +13,16 @@ See /usr/include/mach-o and friends.
 import time
 
 from macholib.ptypes import *
-from macholib._compat import bytes
 
+
+_CPU_ARCH_ABI64  = 0x01000000
 
 CPU_TYPE_NAMES = {
     -1:     'ANY',
     1:      'VAX',
     6:      'MC680x0',
     7:      'i386',
+    _CPU_ARCH_ABI64  | 7:    'x86_64',
     8:      'MIPS',
     10:     'MC98000',
     11:     'HPPA',
@@ -30,6 +32,7 @@ CPU_TYPE_NAMES = {
     15:     'i860',
     16:     'Alpha',
     18:     'PowerPC',
+    _CPU_ARCH_ABI64  | 18:    'PowerPC64',
 }
 
 _MH_EXECUTE_SYM = "__mh_execute_header"
@@ -52,10 +55,10 @@ MH_DYLINKER_SYM = "_mh_dylinker_header"
     MH_NOFIXPREBINDING
 ) = map((1).__lshift__, range(11))
 
-MH_MAGIC = 0xfeedfaceL
-MH_CIGAM = 0xcefaedfeL
-MH_MAGIC_64 = 0xfeedfacfL
-MH_CIGAM_64 = 0xcffaedfeL
+MH_MAGIC = 0xfeedface
+MH_CIGAM = 0xcefaedfe
+MH_MAGIC_64 = 0xfeedfacf
+MH_CIGAM_64 = 0xcffaedfe
 
 integer_t = p_int32
 cpu_type_t = integer_t
@@ -128,14 +131,14 @@ class mach_header(Structure):
         ('flags', p_uint32),
     )
     def _describe(self):
-        bit = 1L
+        bit = 1
         flags = self.flags
         dflags = []
-        while flags and bit < (1<<32L):
+        while flags and bit < (1<<32):
             if flags & bit:
                 dflags.append(MH_FLAGS_NAMES.get(bit, str(bit)))
                 flags = flags ^ bit
-            bit <<= 1L
+            bit <<= 1
         return (
             ('magic', '0x%08X' % self.magic),
             ('cputype', CPU_TYPE_NAMES.get(self.cputype, self.cputype)),
@@ -155,7 +158,7 @@ class load_command(Structure):
         ('cmdsize', p_uint32),
     )
 
-LC_REQ_DYLD = 0x80000000L
+LC_REQ_DYLD = 0x80000000
 
 (
     LC_SEGMENT, LC_SYMTAB, LC_SYMSEG, LC_THREAD, LC_UNIXTHREAD, LC_LOADFVMLIB,
@@ -182,6 +185,11 @@ LC_LOAD_UPWARD_DYLIB = 0x23 | LC_REQ_DYLD
 LC_VERSION_MIN_MACOSX = 0x24
 LC_VERSION_MIN_IPHONEOS = 0x25
 LC_FUNCTION_STARTS = 0x26
+LC_DYLD_ENVIRONMENT = 0x27
+LC_MAIN = 0x28 | LC_REQ_DYLD
+LC_DATA_IN_CODE = 0x29
+LC_SOURCE_VERSION = 0x2a
+LC_DYLIB_CODE_SIGN_DRS = 0x2b
 
 # this is really a union.. but whatever
 class lc_str(p_uint32):
@@ -251,8 +259,8 @@ class section_64(Structure):
         ('reserved3', p_uint32),
     )
 
-SECTION_TYPE = 0xffL
-SECTION_ATTRIBUTES = 0xffffff00L
+SECTION_TYPE = 0xff
+SECTION_ATTRIBUTES = 0xffffff00
 S_REGULAR = 0x0
 S_ZEROFILL = 0x1
 S_CSTRING_LITERALS = 0x2
@@ -266,14 +274,14 @@ S_MOD_INIT_FUNC_POINTERS = 0x9
 S_MOD_TERM_FUNC_POINTERS = 0xa
 S_COALESCED = 0xb
 
-SECTION_ATTRIBUTES_USR = 0xff000000L
-S_ATTR_PURE_INSTRUCTIONS = 0x80000000L
-S_ATTR_NO_TOC = 0x40000000L
-S_ATTR_STRIP_STATIC_SYMS = 0x20000000L
-SECTION_ATTRIBUTES_SYS = 0x00ffff00L
-S_ATTR_SOME_INSTRUCTIONS = 0x00000400L
-S_ATTR_EXT_RELOC = 0x00000200L
-S_ATTR_LOC_RELOC = 0x00000100L
+SECTION_ATTRIBUTES_USR = 0xff000000
+S_ATTR_PURE_INSTRUCTIONS = 0x80000000
+S_ATTR_NO_TOC = 0x40000000
+S_ATTR_STRIP_STATIC_SYMS = 0x20000000
+SECTION_ATTRIBUTES_SYS = 0x00ffff00
+S_ATTR_SOME_INSTRUCTIONS = 0x00000400
+S_ATTR_EXT_RELOC = 0x00000200
+S_ATTR_LOC_RELOC = 0x00000100
 
 
 SEG_PAGEZERO =    "__PAGEZERO"
@@ -360,6 +368,12 @@ class thread_command(Structure):
     _fields_ = (
     )
 
+class entry_point_command(Structure):
+    _fields_ = (
+	('entryoff', 	p_uint64),
+	('stacksize', 	p_uint64),
+    )
+
 class routines_command(Structure):
     _fields_ = (
         ('init_address', p_uint32),
@@ -414,8 +428,8 @@ class dysymtab_command(Structure):
         ('nlocrel', p_uint32),
     )
 
-INDIRECT_SYMBOL_LOCAL = 0x80000000L
-INDIRECT_SYMBOL_ABS = 0x40000000L
+INDIRECT_SYMBOL_LOCAL = 0x80000000
+INDIRECT_SYMBOL_ABS = 0x40000000
 
 class dylib_table_of_contents(Structure):
     _fields_ = (
@@ -522,6 +536,10 @@ class version_min_command (Structure):
         ('reserved', p_uint32),
     )
 
+class source_version_command (Structure):
+    _fields_ = (
+        ('version',   p_uint64),
+    )
 
 LC_REGISTRY = {
     LC_SEGMENT:         segment_command,
@@ -562,6 +580,11 @@ LC_REGISTRY = {
     LC_VERSION_MIN_MACOSX: version_min_command,
     LC_VERSION_MIN_IPHONEOS: version_min_command,
     LC_FUNCTION_STARTS:  linkedit_data_command,
+    LC_DYLD_ENVIRONMENT: dylinker_command, 
+    LC_MAIN: 		entry_point_command, 
+    LC_DATA_IN_CODE:	dylib_command,
+    LC_SOURCE_VERSION:	source_version_command,
+    LC_DYLIB_CODE_SIGN_DRS:  linkedit_data_command,
 }
 
 #this is another union.
@@ -626,7 +649,7 @@ N_WEAK_REF = 0x0040
 N_WEAK_DEF = 0x0080
 
 # /usr/include/mach-o/fat.h
-FAT_MAGIC = 0xcafebabeL
+FAT_MAGIC = 0xcafebabe
 class fat_header(Structure):
     _fields_ = (
         ('magic', p_uint32),
