@@ -91,6 +91,7 @@ class PyInstallerGUI:
         self.filein.insert(0, self.fin)
 
 if __name__ == "__main__":
+    raise SystemExit("Please use just 'pyinstaller.py'. Gui is not maintained.")
     try:
         app = PyInstallerGUI()
     except KeyboardInterrupt:
