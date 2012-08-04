@@ -48,7 +48,8 @@ _definitions.txt:
 	echo '' >> _definitions.txt
 	echo '.. |Homepage| replace:: http://www.pyinstaller.org' >> _definitions.txt
 	echo '.. |PyInstaller| replace:: `PyInstaller`' >> _definitions.txt
-	echo '.. |Version| replace:: '`python ../../pyinstaller.py -v` >> _definitions.txt
+	# run `pyinstaller.py -v` to get the version
+	echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> _definitions.txt
 	echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> _definitions.txt
 	echo '.. |install_path| replace:: /your/path/to/pyinstaller/' >> _definitions.txt
 
