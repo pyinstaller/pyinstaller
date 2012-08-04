@@ -41,17 +41,17 @@ Manual.tex: Manual.rst _definitions.txt
 
 _definitions.txt:
 	# _definitions.txt is overwritten.
-	echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > _definitions.txt
-	echo '' >> _definitions.txt  # Empty line.
+	echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > $@
+	echo '' >> $@  # Empty line.
 	# Append other lines.
-	echo '.. _PyInstaller: http://www.pyinstaller.org' >> _definitions.txt
-	echo '' >> _definitions.txt
-	echo '.. |Homepage| replace:: http://www.pyinstaller.org' >> _definitions.txt
-	echo '.. |PyInstaller| replace:: `PyInstaller`' >> _definitions.txt
+	echo '.. _PyInstaller: http://www.pyinstaller.org' >> $@
+	echo '' >> $@
+	echo '.. |Homepage| replace:: http://www.pyinstaller.org' >> $@
+	echo '.. |PyInstaller| replace:: `PyInstaller`' >> $@
 	# run `pyinstaller.py -v` to get the version
-	echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> _definitions.txt
-	echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> _definitions.txt
-	echo '.. |install_path| replace:: /your/path/to/pyinstaller/' >> _definitions.txt
+	echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> $@
+	echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
+	echo '.. |install_path| replace:: /your/path/to/pyinstaller/' >> $@
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
