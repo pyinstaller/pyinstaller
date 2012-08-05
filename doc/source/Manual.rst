@@ -391,6 +391,10 @@ use::
       else:
            basedir = os.path.dirname(__file__)
 
+``sys._MEIPASS`` points in `--onedir` mode to the directory containing
+the created executable and in `--onefile` mode to the temporary directory
+where binaries get extracted.
+
 Collect your data files
 ------------------------
 
