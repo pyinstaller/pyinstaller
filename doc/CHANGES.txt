@@ -30,7 +30,7 @@ Changes since PyInstaller 1.5.1
  * Remove compatibility code for old platforms (dos, os2, MacOS 9).
  * Use Python logging system for message output (thanks to Hartmut
    Goebel).
- * Environment variable MEIPASS2 is accessible by  sys._MEIPASS
+ * Environment variable MEIPASS2 is accessible as sys._MEIPASS.
  * Bootloader now overrides PYTHONHOME and PYTHONPATH.
    PYTHONHOME and PYTHONPATH is set to the value of MEIPASS2 variable.
  * Bootloader uses absolute paths.
@@ -49,6 +49,8 @@ Changes since PyInstaller 1.5.1
  * Include runtime hooks (rthooks) in code analysis.
  * Source code hosting moved to github:
    https://github.com/pyinstaller/pyinstaller
+ * Hosting for running tests daily:
+   https://jenkins.shiningpanda-ci.com/pyinstaller/
 
 Changes since PyInstaller 1.5
 -----------------------------
