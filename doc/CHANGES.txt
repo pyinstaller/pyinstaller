@@ -27,6 +27,8 @@ Changes since PyInstaller 1.5.1
  + Improve import hook for win32com.
  + Improve support for running PyInstaller in virtualenv.
  + Add cli options --additional-hooks-dir and --hidden-import.
+ + Remove cli options -X, -K, -C, --upx, --tk, --configfile, --skip-configure.
+ + UPX is used by default if available in the PATH variable.
  * Remove compatibility code for old platforms (dos, os2, MacOS 9).
  * Use Python logging system for message output (thanks to Hartmut
    Goebel).

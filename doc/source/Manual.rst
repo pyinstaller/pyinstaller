@@ -34,7 +34,7 @@ Requirements
     - Console application to display information from object files.
 
 **Mac OS X**
-  * Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).
+  * Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion, Mountain Lion).
 
 **Solaris**
   * ldd
@@ -67,7 +67,7 @@ Installing |PyInstaller|
    precompiled boot-loaders are available. So the installation is
    complete now.
 
-   For other platforms, users should first try to build the
+   For other platforms (Solaris, AIX, etc.), users should first try to build the
    boot-loader:
 
      cd source
@@ -114,7 +114,7 @@ the |install_path| directory run::
 If your current working directory is not |install_path|, this works
 analogously.
 
-If everything is working and you are happy with the defaults settings,
+If everything is working and you are happy with the default settings,
 this will be all you have to do. If not, see `Allowed OPTIONS`_, `When
 things go wrong`_ and be sure to read the introduction to `Spec
 Files`_.
@@ -124,7 +124,7 @@ Allowed Options
 ~~~~~~~~~~~~~~~
 
 By default, ``pyinstaller.py`` creates a distribution directory containing the main
-executable and the dynamic libraries. The option ``--onefile`` specifies that you want
+executable and the dynamic libraries. The option ``--onefile`` (specifies that you want
 PyInstaller to build a single file with everything inside.
 
 The syntax to use ``pyinstaller.py`` is the following::
@@ -141,6 +141,10 @@ Allowed OPTIONS are:
 
 --upx-dir=UPX_DIR
     Directory containing UPX.
+
+-a, --ascii
+    do NOT include unicode encodings (default: included if
+    available)
 
 --buildpath=BUILDPATH
     Buildpath (default:
@@ -177,14 +181,14 @@ What to bundle, where to search:
     allowed, separating them with the path separator (';' under Windows, ':'
     under Linux), or using this option multiple times.
 
+--hidden-import=MODULENAME
+    import hidden in the script(s). This option can be
+    used multiple times.
+
 --additional-hooks-dir=HOOKSPATH
     Additional path to search for hooks. This will go into the extend
     the `hookspath`, see `Analysis`_ below. This option may be given
     several times.
-
--a, --ascii
-    do NOT include unicode encodings (default: included if
-    available)
 
 How to generate:
 
@@ -195,7 +199,7 @@ How to generate:
     the executable and all shared libraries will be run through strip. Note
     that cygwin's strip tends to render normal Win32 dlls unusable.
 
--X, --noupx
+--noupx
     do not use UPX even if available (works differently
     between Windows and \*nix)
 
@@ -207,8 +211,10 @@ Windows and Mac OS X specific options:
 -w, --windowed, --noconsole
     use a windowed subsystem executable, which on Windows
     does not open the console when the program is launched.
-    **This option is mandatory when creating .app bundle on
-    Mac OS X**.
+    On Mac OS X it allows running gui applications and also
+    creates also .app bundle.
+    **This option is mandatory when freezing an gui application on Mac OS X.
+    Otherwise the application will not start.**.
 
 -i FILE.ICO, -i FILE.EXE,ID, -i FILE.ICNS, --icon=FILE.ICO, --icon=FILE.EXE,ID, --icon=FILE.ICNS
     If FILE is an .ico file, add the icon to the final

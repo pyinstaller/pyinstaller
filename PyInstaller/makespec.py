@@ -198,7 +198,9 @@ def __add_options(parser):
                  action="store_false",
                  help="use a windowed subsystem executable, which on Windows "
                       "does not open the console when the program is launched."
-                      'Mandatory whe creating .app bundle on Mac OS X')
+                      'On Mac OS X it allows running gui applications and also'
+                      'creates an .app bundle.'
+                      'Mandatory for gui applications on Mac OS X')
     g.add_option("-i", "--icon", dest="icon_file",
                  metavar="FILE.ICO or FILE.EXE,ID or FILE.ICNS",
                  help="If FILE is an .ico file, add the icon to the final "
