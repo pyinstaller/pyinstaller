@@ -1,0 +1,2 @@
+
+hiddenimports = ['default']

@@ -32,8 +32,8 @@
 #ifndef PI_GETPATH_H
 #define PI_GETPATH_H
 
-void PI_SetProgramName(char *pn);
-char *PI_GetProgramName(void);
+void PI_SetProgramName(const char *pn);
+const char *PI_GetProgramName(void);
 char *PI_GetPath(void);
 char *PI_GetPrefix(void);
 char *PI_GetExecPrefix(void);

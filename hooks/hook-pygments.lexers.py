@@ -1,2 +1,0 @@
-
-hiddenimports = ['agile', 'dotnet']

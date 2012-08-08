@@ -1,5 +1,59 @@
 (+ user visible changes, * internal stuff)
 
+Changes since PyInstaller 1.5.1
+-------------------------------
+ + Minimum suported Python version is 2.3.
+ + (OSX) Add support for Mac OS X 64-bit
+ + (OSX) Add support Mac OS X 10.7 (Lion) and 10.8 (Mountain Lion).
+ + (OSX) With argument --windowed PyInstaller creates application bundle (.app)
+   automatically.
+ + Add experimental support for AIX (thanks to Martin Gamwell Dawids).
+ + Add experimental support for Solaris (thanks to Hywel Richards).
+ + Add Multipackage function to create a collection of packages to avoid
+   library duplication. See documentation for more details.
+ + New symplified command line interface. Configure.py/Makespec.py/Build.py
+   replaced by pyinstaller.py. See documentation for more details.
+ + Removed cross-building/bundling feature which was never really finished.
+ + Added option --log-level to all scripts to adjust level of output
+   (thanks to Hartmut Goebel).
+ + rthooks.dat moved to support/rthooks.dat
+ + Packaged executable now returns the same return-code as the
+   unpackaged script (thanks to Brandyn White).
+ + Add import hook for PyUSB (thanks to Chien-An "Zero" Cho).
+ + Add import hook for wx.lib.pubsub (thanks to Daniel Hyams).
+ + Add import hook for pyttsx.
+ + Improve import hook for Tkinter.
+ + Improve import hook for PyQt4.
+ + Improve import hook for win32com.
+ + Improve support for running PyInstaller in virtualenv.
+ + Add cli options --additional-hooks-dir and --hidden-import.
+ + Remove cli options -X, -K, -C, --upx, --tk, --configfile, --skip-configure.
+ + UPX is used by default if available in the PATH variable.
+ * Remove compatibility code for old platforms (dos, os2, MacOS 9).
+ * Use Python logging system for message output (thanks to Hartmut
+   Goebel).
+ * Environment variable MEIPASS2 is accessible as sys._MEIPASS.
+ * Bootloader now overrides PYTHONHOME and PYTHONPATH.
+   PYTHONHOME and PYTHONPATH is set to the value of MEIPASS2 variable.
+ * Bootloader uses absolute paths.
+ * (OSX) Drop dependency on otool from Xcode on Mac OSX.
+ * (OSX) Fix missing qt_menu.nib in dist directory when using PyQt4.
+ * (OSX) Bootloader does not use DYLD_LIBRARY_PATH on Mac OS X anymore.
+   @loader_path is used instead.
+ * (OSX) Add support to detect *.dylib dependencies on Mac OS X containing
+   @executable_path, @loader_path and @rpath.
+ * (OSX) Use macholib to detect dependencies on dynamic libraries.
+ * Improve test suite.
+ * Improve source code structure.
+ * Replace os.system() calls by suprocess module.
+ * Bundle fake 'site' module with frozen applications to prevent loading
+   any user's Python modules from host OS.
+ * Include runtime hooks (rthooks) in code analysis.
+ * Source code hosting moved to github:
+   https://github.com/pyinstaller/pyinstaller
+ * Hosting for running tests daily:
+   https://jenkins.shiningpanda-ci.com/pyinstaller/
+
 Changes since PyInstaller 1.5
 -----------------------------
  + New default PyInstaller icon for generated executables on Windows.

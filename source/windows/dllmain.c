@@ -28,6 +28,8 @@
 #include "launch.h"
 #include <windows.h>
 #include <olectl.h>
+#include <memory.h>
+#include <string.h>
 
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
 __PROC__DllCanUnloadNow Pyc_DllCanUnloadNow = NULL;
@@ -42,12 +44,12 @@ __PROC__PyCom_CoUninitialize PyCom_CoUninitialize = NULL;
 
 HINSTANCE gPythoncom = 0;
 char here[_MAX_PATH + 1];
-int LoadPythonCom(void);
+int LoadPythonCom(ARCHIVE_STATUS *status);
 void releasePythonCom(void);
 HINSTANCE gInstance;
 PyThreadState *thisthread = NULL;
 
-int launch(char const * archivePath, char  const * archiveName)
+int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
 {
 	PyObject *obHandle;
 	int loadedNew = 0;
@@ -57,21 +59,21 @@ int launch(char const * archivePath, char  const * archiveName)
 	strcpy(pathnm, archivePath);
 	strcat(pathnm, archiveName);
     /* Set up paths */
-    if (setPaths(archivePath, archiveName))
+    if (setPaths(status, archivePath, archiveName))
         return -1;
 	VS("Got Paths");
     /* Open the archive */
-    if (openArchive())
+    if (openArchive(status))
         return -1;
 	VS("Opened Archive");
     /* Load Python DLL */
-    if (attachPython(&loadedNew))
+    if (attachPython(status, &loadedNew))
         return -1;
 
 	if (loadedNew) {
 		/* Start Python with silly command line */
 		PI_PyEval_InitThreads();
-		if (startPython(1, (char**)&pathnm))
+		if (startPython(status, 1, (char**)&pathnm))
 			return -1;
 		VS("Started new Python");
 		thisthread = PI_PyThreadState_Swap(NULL);
@@ -102,15 +104,15 @@ int launch(char const * archivePath, char  const * archiveName)
 	PI_PySys_SetObject("frozendllhandle", obHandle);
 	Py_XDECREF(obHandle);
     /* Import modules from archive - this is to bootstrap */
-    if (importModules())
+    if (importModules(status))
         return -1;
 	VS("Imported Modules");
     /* Install zlibs - now import hooks are in place */
-    if (installZlibs())
+    if (installZlibs(status))
         return -1;
 	VS("Installed Zlibs");
     /* Run scripts */
-    if (runScripts())
+    if (runScripts(status))
         return -1;
 	VS("All scripts run");
     if (PI_PyErr_Occurred()) {
@@ -126,10 +128,12 @@ int launch(char const * archivePath, char  const * archiveName)
 }
 void startUp()
 {
+	ARCHIVE_STATUS *status_list[20];
 	char thisfile[_MAX_PATH + 1];
 	char *p;
 	int len;
-
+	memset(status_list, 0, 20 * sizeof(ARCHIVE_STATUS *));
+	
 	if (!GetModuleFileNameA(gInstance, thisfile, _MAX_PATH)) {
 		FATALERROR("System error - unable to load!");
 		return;
@@ -142,8 +146,8 @@ void startUp()
 	len = p - here;
 	//VS(here);
 	//VS(&thisfile[len]);
-	launch(here, &thisfile[len]);
-	LoadPythonCom();
+	launch(status_list[SELF], here, &thisfile[len]);
+	LoadPythonCom(status_list[SELF]);
 	// Now Python is up and running (any scripts have run)
 }
 
@@ -163,15 +167,15 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 	return TRUE; 
 }
 
-int LoadPythonCom()
+int LoadPythonCom(ARCHIVE_STATUS *status)
 {
 	char dllpath[_MAX_PATH+1];
 	VS("Loading Pythoncom");
 	// see if pythoncom is already loaded
-	sprintf(dllpath, "pythoncom%02d.dll", getPyVersion());
+	sprintf(dllpath, "pythoncom%02d.dll", getPyVersion(status));
 	gPythoncom = GetModuleHandleA(dllpath);
 	if (gPythoncom == NULL) {
-		sprintf(dllpath, "%spythoncom%02d.dll", here, getPyVersion());
+		sprintf(dllpath, "%spythoncom%02d.dll", here, getPyVersion(status));
 		//VS(dllpath);
 		gPythoncom = LoadLibraryExA( dllpath, // points to name of executable module 
 					   NULL, // HANDLE hFile, // reserved, must be NULL 

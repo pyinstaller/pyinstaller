@@ -29,14 +29,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import os
+import sys
 
 d = "eggs"
-if "_MEIPASS2" in os.environ:
-    d = os.path.join(os.environ["_MEIPASS2"], d)
-else:
-    d = os.path.join(os.path.dirname(sys.argv[0]), d)
+d = os.path.join(sys._MEIPASS, d)
 
 for fn in os.listdir(d):
     sys.path.append(os.path.join(d, fn))
-
-

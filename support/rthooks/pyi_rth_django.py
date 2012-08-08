@@ -18,13 +18,11 @@
 import os
 import sys
 
-if "_MEIPASS2" in os.environ:
-    d = os.environ["_MEIPASS2"]
-else:
-    d = os.path.dirname(sys.argv[0])
+d = sys._MEIPASS
 
 import django.core.management
 import django.utils.autoreload
+
 
 def _setup_environ(settings_mod, original_settings_path=None):
     project_name = settings_mod.__name__.split(".")[0]
@@ -36,10 +34,13 @@ def _setup_environ(settings_mod, original_settings_path=None):
     project_module = __import__(project_name, {}, {}, [''])
     return d
 
+
 def _find_commands(_):
     return """cleanup compilemessages createcachetable dbshell shell runfcgi runserver startproject""".split()
 
 old_restart_with_reloader = django.utils.autoreload.restart_with_reloader
+
+
 def _restart_with_reloader(*args):
     import sys
     a0 = sys.argv.pop(0)
@@ -47,7 +48,7 @@ def _restart_with_reloader(*args):
         return old_restart_with_reloader(*args)
     finally:
         sys.argv.insert(0, a0)
-    
+
 
 django.core.management.setup_environ = _setup_environ
 django.core.management.find_commands = _find_commands

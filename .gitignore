@@ -1,0 +1,73 @@
+*~
+.\#*
+\#*#
+
+*.py[co]
+/*.egg
+/*.egg-info
+/*.egg-link
+
+# /
+/AES.pyd
+/AES.so
+/*.bak
+/build
+/*.patch
+
+# Temporary vim files
+*.swp
+
+# Temporary rope files
+.ropeproject
+
+# /buildtests/
+/buildtests/build*
+/buildtests/dist*
+/buildtests/logdict*.log
+/buildtests/test*.exe
+/buildtests/warn*.txt
+/buildtests/python_exe.build
+/buildtests/report.xml
+
+/buildtests/*/build
+/buildtests/*/dist
+
+# /buildtests/basic/
+/buildtests/basic/python_exe.build
+
+# /buildtests/basic/ctypes/
+/buildtests/basic/ctypes/testctypes.dylib
+/buildtests/basic/ctypes/testctypes.so
+/buildtests/basic/ctypes/testctypes-win.dll
+/buildtests/basic/ctypes/testctypes-win.exp
+/buildtests/basic/ctypes/testctypes-win.obj
+/buildtests/basic/ctypes/testctypes-win.lib
+
+# /buildtests/libraries/
+/buildtests/libraries/tinysample.png
+/buildtests/libraries/test_xml.spec
+/buildtests/basic/test_absolute_ld_library_path.spec
+/buildtests/basic/test_absolute_python_path.spec
+/buildtests/libraries/test_sqlalchemy.spec
+
+/e2etests/common/hanoi[1-9]
+
+# /doc/
+/doc/*.1
+/doc/source/_definitions.txt
+
+# /source/
+/source/.lock-wscript
+/source/build
+/source/waf-*
+/source/.waf-*
+
+# /source/crypto/
+/source/crypto/build
+
+# /source/linux/
+/source/linux/Makefile
+
+# /support/loader/
+/support/loader/run
+/support/loader/run_d
