@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
 <title>PyInstaller Manual</title>
 <meta name="author" content="Giovanni Bajo &amp; William Caban (based on Gordon McMillan's manual)" />
 <meta name="copyright" content="This document has been placed in the public domain." />
@@ -17,7 +17,7 @@
 <col class="docinfo-content" />
 <tbody valign="top">
 <tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller 2.0dev-c6d550c</td></tr>
+<td>PyInstaller 2.0</td></tr>
 <tr class="field"><th class="docinfo-name">Homepage:</th><td class="field-body"><a class="reference external" href="http://www.pyinstaller.org">http://www.pyinstaller.org</a></td>
 </tr>
 <tr><th class="docinfo-name">Author:</th>
@@ -169,7 +169,7 @@ or shared library.</li>
 </dd>
 <dt><strong>Mac OS X</strong></dt>
 <dd><ul class="first last simple">
-<li>Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).</li>
+<li>Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion, Mountain Lion).</li>
 </ul>
 </dd>
 <dt><strong>Solaris</strong></dt>
@@ -205,7 +205,7 @@ doesn't need to go in site-packages, or have a .pth file.</p>
 <li><p class="first">For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32/64bit)
 precompiled boot-loaders are available. So the installation is
 complete now.</p>
-<p>For other platforms, users should first try to build the
+<p>For other platforms (Solaris, AIX, etc.), users should first try to build the
 boot-loader:</p>
 <blockquote>
 <p>cd source
@@ -244,7 +244,7 @@ python pyinstaller.py [opts] your-program.spec
 </pre>
 <p>If your current working directory is not /your/path/to/pyinstaller/, this works
 analogously.</p>
-<p>If everything is working and you are happy with the defaults settings,
+<p>If everything is working and you are happy with the default settings,
 this will be all you have to do. If not, see <a class="reference internal" href="#allowed-options">Allowed OPTIONS</a>, <a class="reference internal" href="#when-things-go-wrong">When
 things go wrong</a> and be sure to read the introduction to <a class="reference internal" href="#spec-files">Spec
 Files</a>.</p>
@@ -252,7 +252,7 @@ Files</a>.</p>
 <div class="section" id="allowed-options">
 <h2><a class="toc-backref" href="#id5">Allowed Options</a></h2>
 <p>By default, <tt class="docutils literal">pyinstaller.py</tt> creates a distribution directory containing the main
-executable and the dynamic libraries. The option <tt class="docutils literal"><span class="pre">--onefile</span></tt> specifies that you want
+executable and the dynamic libraries. The option <tt class="docutils literal"><span class="pre">--onefile</span></tt> (specifies that you want
 PyInstaller to build a single file with everything inside.</p>
 <p>The syntax to use <tt class="docutils literal">pyinstaller.py</tt> is the following:</p>
 <pre class="literal-block">
@@ -273,6 +273,10 @@ python pyinstaller.py [opts] &lt;scriptname&gt; [ &lt;scriptname&gt; ...] | &lt;
 <kbd><span class="option">--upx-dir=<var>UPX_DIR</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Directory containing UPX.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-a</span>, <span class="option">--ascii</span></kbd></td>
+<td>do NOT include unicode encodings (default: included if
+available)</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--buildpath=<var>BUILDPATH</var></span></kbd></td>
 </tr>
@@ -326,15 +330,16 @@ generated). If omitted, the basename of the (first) script is used.</td></tr>
 allowed, separating them with the path separator (';' under Windows, ':'
 under Linux), or using this option multiple times.</td></tr>
 <tr><td class="option-group" colspan="2">
+<kbd><span class="option">--hidden-import=<var>MODULENAME</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>import hidden in the script(s). This option can be
+used multiple times.</td></tr>
+<tr><td class="option-group" colspan="2">
 <kbd><span class="option">--additional-hooks-dir=<var>HOOKSPATH</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Additional path to search for hooks. This will go into the extend
 the <cite>hookspath</cite>, see <a class="reference internal" href="#analysis">Analysis</a> below. This option may be given
 several times.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-a</span>, <span class="option">--ascii</span></kbd></td>
-<td>do NOT include unicode encodings (default: included if
-available)</td></tr>
 </tbody>
 </table>
 <p>How to generate:</p>
@@ -350,7 +355,7 @@ available)</td></tr>
 <td>the executable and all shared libraries will be run through strip. Note
 that cygwin's strip tends to render normal Win32 dlls unusable.</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">-X</span>, <span class="option">--noupx</span></kbd></td>
+<kbd><span class="option">--noupx</span></kbd></td>
 <td>do not use UPX even if available (works differently
 between Windows and *nix)</td></tr>
 </tbody>
@@ -369,8 +374,10 @@ between Windows and *nix)</td></tr>
 </tr>
 <tr><td>&nbsp;</td><td>use a windowed subsystem executable, which on Windows
 does not open the console when the program is launched.
-<strong>This option is mandatory when creating .app bundle on
-Mac OS X</strong>.</td></tr>
+On Mac OS X it allows running gui applications and also
+creates also .app bundle.
+<strong>This option is mandatory when freezing an gui application on Mac OS X.
+Otherwise the application will not start.</strong>.</td></tr>
 </tbody>
 </table>
 <dl class="docutils">
@@ -546,6 +553,9 @@ if getattr(sys, 'frozen', None):
 else:
      basedir = os.path.dirname(__file__)
 </pre>
+<p><tt class="docutils literal">sys._MEIPASS</tt> points in <cite>--onedir</cite> mode to the directory containing
+the created executable and in <cite>--onefile</cite> mode to the temporary directory
+where binaries get extracted.</p>
 </div>
 <div class="section" id="collect-your-data-files">
 <h3><a class="toc-backref" href="#id12">Collect your data files</a></h3>
@@ -579,7 +589,7 @@ attached to the bootloader executable (or next to the executable in a non-elf
 configuration). When first started, it finds that it needs to extract these
 files before it can run &quot;for real&quot;. That's because locating and loading a
 shared lib or linked-in dll is a system level action, not user-level. With
-PyInstaller 2.0dev-c6d550c it always uses a temporary directory (<tt class="docutils literal">_MEIXXXXX</tt>,
+PyInstaller 2.0 it always uses a temporary directory (<tt class="docutils literal">_MEIXXXXX</tt>,
 where <tt class="docutils literal">XXXXX</tt> is a random number to avoid conflicts) in the
 user's temp directory. It then executes itself again, setting things up so
 the system will be able to load the shared libs / dlls. When execution is
@@ -1407,7 +1417,7 @@ extension modules, but modules the extensions are linked to).</li>
 <p>The first pass:</p>
 <ul class="simple">
 <li>opens the archive</li>
-<li>extracts all the binaries in the archive (in PyInstaller 2.0dev-c6d550c,
+<li>extracts all the binaries in the archive (in PyInstaller 2.0,
 this is always to a temporary directory).</li>
 <li>sets a magic environment variable</li>
 <li>sets <tt class="docutils literal">LD_LIBRARY_PATH</tt> (non-Windows)</li>
@@ -1989,7 +1999,7 @@ were easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2012-07-28 18:47 UTC.
+Generated on: 2012-08-08 18:25 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
