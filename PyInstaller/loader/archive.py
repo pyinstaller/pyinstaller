@@ -472,6 +472,14 @@ class PYZOwner(iu.Owner):
                 [iu.DirOwner])
             mod.__importsub__ = importer.getmod
 
+        # RPW 05/25/2011: patch to set __file__ attribute of a module relative to 
+        # sys.executable so that data files can be found. This really shouldn't use 
+        # "/" as the path separator always, but it works on Windows/Unix for now. Patching
+        # iu.py to expose _os_sep would probably be better. 
+        mod_pathed = nm.replace(".","/");
+        mod.__file__ = iu._os_path_join(iu._os_path_dirname(sys.executable),mod_pathed);
+        mod.__file__ += "/";
+        
         mod.__co__ = bytecode
         return mod
 

@@ -184,7 +184,6 @@ def qt4_menu_nib_dir():
     ]
 
     # Qt4 from Homebrew compiled as framework
-    import glob
     globpath = '/usr/local/Cellar/qt/4.*/lib/QtGui.framework/Versions/4/Resources'
     qt_homebrew_dirs = glob.glob(globpath)
     dirs += qt_homebrew_dirs
@@ -279,3 +278,63 @@ def opengl_arrays_modules():
         modules.append('OpenGL.arrays.' + mod)
 
     return modules
+
+# The following two functions were originally written by Ryan Welsh (welchr AT umich.edu).
+#
+# This produces a list of strings which specify all the modules in the package named mod_str.  Its results can be directly assigned to ``hiddenimports`` in a hook script; see, for example, hook-sphinx.py.
+def get_mods(mod_str):
+  mod = __import__(mod_str);
+  
+  mods = set();
+  mods.add(mod_str);
+
+  mod_dir = os.path.dirname(mod.__file__);
+  for dirpath, dirnames, filenames in os.walk(mod_dir):
+    mod_path = dirpath.replace(mod_dir,"").replace(os.sep, ".");
+   
+    if mod_path == "":
+      mod_path = mod_str;
+    else:
+      mod_path = mod_path[1:];
+      mod_path = mod_str + "." + mod_path;
+
+    if '__init__.py' in os.listdir(dirpath):
+      mods.add(mod_path);
+
+    for f in filenames:
+      if f[-3:] == ".py" and '__init__' not in f:
+        mods.add( mod_path + "." + f.replace(".py", "") );
+
+  return list(mods)
+
+# This routine produces a list of (source, dest) non-Python (i.e. data) files which reside in the module named by mod_str. Its results can be directly assigned to ``datas`` in a hook script; see, for example, hook-sphinx.py.
+def get_data_files(mod_str):
+  mod = __import__(mod_str)
+  
+  if hasattr(mod, '__file__'):
+    mod_dir = os.path.dirname(mod.__file__)
+  else:
+    return
+
+  data_files = []
+  for dir, dirnames, files in os.walk(mod_dir):
+    for f in files:
+      fpath = os.path.join(dir, f)
+      if '.py' not in f and not os.path.isdir(fpath):
+        data_files.append(fpath)
+
+  datas = []
+  for f in data_files:
+    orig_file = f
+
+    f = f.replace(mod_dir, "")
+    f = f.replace(os.path.split(f)[1], "")
+
+    if f[0] == os.sep:
+      f = f[1:]
+    
+    f = mod_str + os.sep + f 
+
+    datas.append((orig_file, f))
+
+  return datas
