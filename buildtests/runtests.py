@@ -286,7 +286,6 @@ class BuildTestRunner(object):
             self._plain_msg("RUNNING: " + prog)
             old_wd = os.getcwd()
             os.chdir(os.path.dirname(prog))
-            print(os.getcwd())
             prog = os.path.join(os.curdir, os.path.basename(prog))
             retcode, out, err = compat.exec_command_all(prog)
             os.chdir(old_wd)
