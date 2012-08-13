@@ -15,7 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
-from hookutils import get_mods, get_data_files
-package_name = 'sphinx'
-hiddenimports = get_mods(package_name)
-datas = get_data_files(package_name)
+
+from hookutils import collect_submodules, collect_data_files
+
+def hook(mod):
+    global hiddenimports, datas
+    hiddenimports = collect_submodules(mod)
+    datas = collect_data_files(mod)
+    return mod

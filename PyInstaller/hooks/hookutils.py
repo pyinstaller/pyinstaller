@@ -279,42 +279,50 @@ def opengl_arrays_modules():
 
     return modules
 
-# The following two functions were originally written by Ryan Welsh (welchr AT umich.edu).
-#
-# This produces a list of strings which specify all the modules in the package named mod_str.  Its results can be directly assigned to ``hiddenimports`` in a hook script; see, for example, hook-sphinx.py.
-def get_mods(mod_str):
-  mod = __import__(mod_str);
+def collect_submodules(mod):
+  """
+  The following two functions were originally written by Ryan Welsh (welchr AT
+  umich.edu).
   
-  mods = set();
-  mods.add(mod_str);
+  This produces a list of strings which specify all the modules in the package
+  named mod_str.  Its results can be directly assigned to ``hiddenimports`` in
+  a hook script; see, for example, hook-sphinx.py.
+  
+  This function is used only for hook scripts, but not by the body of
+  PyInstaller.
+  """
+  mods = set()
+  mods.add(mod.__name__)
 
-  mod_dir = os.path.dirname(mod.__file__);
+  mod_dir = os.path.dirname(mod.__file__)
   for dirpath, dirnames, filenames in os.walk(mod_dir):
-    mod_path = dirpath.replace(mod_dir,"").replace(os.sep, ".");
+    mod_path = dirpath.replace(mod_dir,"").replace(os.sep, ".")
    
     if mod_path == "":
-      mod_path = mod_str;
+      mod_path = mod.__name__
     else:
-      mod_path = mod_path[1:];
-      mod_path = mod_str + "." + mod_path;
+      mod_path = mod_path[1:]
+      mod_path = mod.__name__ + "." + mod_path
 
     if '__init__.py' in os.listdir(dirpath):
-      mods.add(mod_path);
+      mods.add(mod_path)
 
     for f in filenames:
       if f[-3:] == ".py" and '__init__' not in f:
-        mods.add( mod_path + "." + f.replace(".py", "") );
+        mods.add( mod_path + "." + f.replace(".py", "") )
 
   return list(mods)
 
-# This routine produces a list of (source, dest) non-Python (i.e. data) files which reside in the module named by mod_str. Its results can be directly assigned to ``datas`` in a hook script; see, for example, hook-sphinx.py.
-def get_data_files(mod_str):
-  mod = __import__(mod_str)
-  
-  if hasattr(mod, '__file__'):
-    mod_dir = os.path.dirname(mod.__file__)
-  else:
-    return
+def collect_data_files(mod):
+  """
+  This routine produces a list of (source, dest) non-Python (i.e. data) files
+  which reside in the module named by mod_str. Its results can be directly
+  assigned to ``datas`` in a hook script; see, for example, hook-sphinx.py.
+
+  This function is used only for hook scripts, but not by the body of
+  PyInstaller.
+  """
+  mod_dir = os.path.dirname(mod.__file__)
 
   data_files = []
   for dir, dirnames, files in os.walk(mod_dir):
@@ -333,7 +341,7 @@ def get_data_files(mod_str):
     if f[0] == os.sep:
       f = f[1:]
     
-    f = mod_str + os.sep + f 
+    f = mod.__name__ + os.sep + f 
 
     datas.append((orig_file, f))
 
