@@ -83,5 +83,33 @@ class TestRemoveSuffix(unittest.TestCase):
     def test_4(self):
         self.assertEqual("testa", remove_suffix("testa", "test"))
 
+# The function to test
+from PyInstaller.hooks.hookutils import collect_submodules
+class TestCollectSubmodules(unittest.TestCase):
+    # Use the os module as a test case; all that collect_* functions need
+    # is __name__ and __file__ attributes.
+    def setUp(self):
+        self.mod_list = collect_submodules(__import__('hookutils_test_files'))
+
+    # An error should be thrown if a module, not a package, was passed.
+    def test_0(self):
+        # os is a module, not a package.
+        with self.assertRaises(AttributeError):
+            collect_submodules(__import__('os'))
+
+    # The package name itself should be in the returned list
+    def test_1(self):
+        self.assertTrue('hookutils_test_files' in self.mod_list)
+
+    # Subpackages without an __init__.py should not be included
+    def test_2(self):
+        self.assertTrue('hookutils_test_files.py_files_not_in_package.sub_pkg.three' not in self.mod_list)
+#        print(mod_list)
+
+    # Check that all packages get included
+    def test_3(self):
+        self.assertItemsEqual(self.mod_list, ['hookutils_test_files', 'hookutils_test_files.two'])
+
+
 if __name__ == '__main__':
     unittest.main()
