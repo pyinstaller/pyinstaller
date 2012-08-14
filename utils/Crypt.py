@@ -1,62 +1,49 @@
 #!/usr/bin/env python
+#
 # Crypt support routines
+#
 # Copyright (C) 2005, Giovanni Bajo
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 
 import os
-import sys
-
-
-try:
-    import PyInstaller
-except ImportError:
-    # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation.
-    import imp
-    # Prevent running as superuser (root).
-    if not hasattr(os, "getuid") or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
 
 
 class ArgsError(Exception):
     pass
 
+
 def gen_random_key(size=32):
     """
     Generate a cryptographically-secure random key. This is done by using
-    Python 2.4's os.urandom, or PyCrypto.
+    Python 2.4's os.urandom.
     """
-    import os
-    if hasattr(os, "urandom"): # Python 2.4+
-        return os.urandom(size)
+    return os.urandom(size)
 
-    # Try using PyCrypto if available
-    try:
-        from Crypto.Util.randpool import RandomPool
-        from Crypto.Hash import SHA256
-        return RandomPool(hash=SHA256).get_bytes(size)
-
-    except ImportError:
-        print >>sys.stderr, "WARNING: The generated key will not be cryptographically-secure key. Consider using Python 2.4+ to generate the key, or install PyCrypto."
-
-        # Stupid random generation
-        import random
-        L = []
-        for i in range(size):
-            L.append(chr(random.randint(0, 255)))
-        return "".join(L)
 
 def cmd_genkey(args):
-    import pprint
     if len(args) != 1:
-        raise ArgsError, "invalid number of arguments"
+        raise ArgsError('Invalid number of arguments.')
 
     key_file = args[0]
     key = gen_random_key()
     f = open(key_file, "w")
     print >>f, "key = %s" % repr(key)
     return 0
+
 
 def main():
     global global_opts
@@ -70,7 +57,7 @@ def main():
                     "random-generated encryption key. ")
     cmds["genkey"] = p
 
-    for c,p in cmds.items():
+    for c, p in cmds.items():
         p.prog = p.get_prog_name() + " " + c
 
     cmdnames = cmds.keys()
@@ -79,11 +66,12 @@ def main():
         usage="%prog cmd [opts]\n\n" +
               "Available Commands:\n  " +
               "\n  ".join(cmdnames),
-        description="This tool is a helper of crypt-related tasks with PyInstaller."
+        description='This tool is a helper of crypt-related tasks '
+        'with PyInstaller.'
     )
 
     p.disable_interspersed_args()
-    global_opts,args = p.parse_args()
+    global_opts, args = p.parse_args()
     if not args:
         p.print_usage()
         return -1
