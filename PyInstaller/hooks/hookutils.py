@@ -291,7 +291,9 @@ def remove_suffix(string, suffix):
     This funtion removes the given suffix from a string, if the string does
     indeed end with the prefix; otherwise, it returns the string unmodified.
     """
-    return string[:-len(suffix)] if string.endswith(suffix) else string
+    # Special case: if suffix is empty, string[:0] returns ''! So, test
+    # for a non-empty suffix.
+    return string[:-len(suffix)] if suffix and string.endswith(suffix) else string
 
 def collect_submodules(mod):
     """
@@ -308,10 +310,16 @@ def collect_submodules(mod):
     mods = set()
     mods.add(mod.__name__)
     
+    # Walk through all file in the given module, looking for submodules.
     mod_dir = os.path.dirname(mod.__file__)
     for dirpath, dirnames, filenames in os.walk(mod_dir):
+        # Change from OS separators to a dotted Python module path,
+        # removing mod's name from the beginning of the path.
+        # For example, "docutils/parsers/rst" becomes ".parsers.rst"; likewise,
+        # "docutils" becomes "".
         mod_path = remove_prefix(dirpath, mod_dir).replace(os.sep, ".")
-       
+
+        # 
         if mod_path == "":
             mod_path = mod.__name__
         else:
