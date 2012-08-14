@@ -440,13 +440,16 @@ class PYZOwner(iu.Owner):
         # e.g. /absolute/path/frozen_executable?12345/os/path.pyc
         # Paths from developer machine are masked.
         try:
-            # Python packages points to files  __init__.pyc.
-            if ispkg:
-                mod.__file__ = iu._os_path_join(iu._os_path_join(self.path,
-                    nm.replace('.', iu._os_sep)), '__init__.pyc')
-            else:
-                mod.__file__ = iu._os_path_join(self.path,
-                    nm.replace('.', iu._os_sep) + '.pyc')
+            # Set __file__ attribute of a module relative to  sys.executable so
+            # that data files can be found. This really shouldn't use "/" as the
+            # path separator always, but it works on Windows/Unix for now. Patching
+            # iu.py to expose _os_sep would probably be better.
+            mod_pathed = nm.replace(".", "/")
+            mod.__file__ = iu._os_path_join(iu._os_path_dirname(sys.executable), mod_pathed)
+            # In order to support typical use cases, end the "file" name with
+            # a slash, so that os.path.dirname(__file__) reports the correct
+            # directory.
+            mod.__file__ += "/"
         except AttributeError:
             raise ImportError("PYZ entry '%s' (%s) is not a valid code object"
                 % (nm, repr(bytecode)))
@@ -471,14 +474,6 @@ class PYZOwner(iu.Owner):
                 localpath: ExtInPkgImporter(localpath, nm)},
                 [iu.DirOwner])
             mod.__importsub__ = importer.getmod
-
-        # Set __file__ attribute of a module relative to  sys.executable so
-        # that data files can be found. This really shouldn't use "/" as the
-        # path separator always, but it works on Windows/Unix for now. Patching
-        # iu.py to expose _os_sep would probably be better. 
-        mod_pathed = nm.replace(".","/")
-        mod.__file__ = iu._os_path_join(iu._os_path_dirname(sys.executable), mod_pathed)
-        mod.__file__ += "/"
         
         mod.__co__ = bytecode
         return mod
