@@ -19,20 +19,27 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
 
+
+import optparse
+import os
+
+
 try:
     import PyInstaller
 except ImportError:
     # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation
-    import imp, os
-    if not hasattr(os, 'getuid') or os.getuid() != 0:
+    # directory to support running without installation.
+    import imp
+    # Prevent running as superuser (root).
+    if not hasattr(os, "getuid") or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.dirname(os.path.dirname(__file__))]))
+            [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
+
 
 import PyInstaller.build
 import PyInstaller.compat
 import PyInstaller.log
-import optparse
+
 
 parser = optparse.OptionParser(usage='%prog [options] specfile')
 PyInstaller.build.__add_options(parser)

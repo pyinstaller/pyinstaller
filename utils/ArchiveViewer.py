@@ -1,5 +1,7 @@
 #! /usr/bin/env python
+#
 # Viewer for archives packaged by archive.py
+#
 # Copyright (C) 2005-2011, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -15,28 +17,36 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+
+
+import optparse
+import os
+import pprint
+import tempfile
+
 
 try:
     import PyInstaller
 except ImportError:
     # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation
-    import imp, os
+    # directory to support running without installation.
+    import imp
+    # Prevent running as superuser (root).
     if not hasattr(os, "getuid") or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.dirname(os.path.dirname(__file__))]))
+            [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
+
 
 from PyInstaller.loader import archive, carchive
 import PyInstaller.log
 
-import tempfile, os
+
 try:
     import zlib
 except ImportError:
     zlib = archive.DummyZlib()
-import pprint
-import optparse
+
 
 stack = []
 cleanup = []
@@ -44,6 +54,7 @@ name = None
 debug = False
 rec_debug = False
 brief = False
+
 
 def main(opts, args):
     global stack
@@ -58,7 +69,7 @@ def main(opts, args):
     if not os.path.isfile(name):
         print "%s is an invalid file name!" % name
         return 1
-        
+
     arch = getArchive(name)
     stack.append((name, arch))
     if debug or brief:

@@ -19,22 +19,28 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
 
+
+import glob
+import optparse
+import os
+import sys
+
+
 try:
     import PyInstaller
 except ImportError:
     # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation
-    import imp, os
+    # directory to support running without installation.
+    import imp
+    # Prevent running as superuser (root).
     if not hasattr(os, "getuid") or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.dirname(os.path.dirname(__file__))]))
+            [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
+
 
 import PyInstaller.bindepend
 from PyInstaller import is_win
 import PyInstaller.log
-import optparse
-
-import glob, sys
 
 parser = optparse.OptionParser(usage="python %prog <executable_or_dynamic_library> [ <executable_or_dynamic_library> ... ]")
 PyInstaller.log.__add_options(parser)
