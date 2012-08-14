@@ -295,45 +295,40 @@ def remove_suffix(string, suffix):
     # for a non-empty suffix.
     return string[:-len(suffix)] if suffix and string.endswith(suffix) else string
 
-def collect_submodules(mod):
+def collect_submodules(package):
     """
-    The following two functions were originally written by Ryan Welsh (welchr AT
-    umich.edu).
+    The following two functions were originally written by Ryan Welsh
+    (welchr AT umich.edu).
 
-    This produces a list of strings which specify all the modules in the package
-    named mod_str.  Its results can be directly assigned to ``hiddenimports`` in
-    a hook script; see, for example, hook-sphinx.py.
+    This produces a list of strings which specify all the modules in
+    package.  Its results can be directly assigned to ``hiddenimports``
+    in a hook script; see, for example, hook-sphinx.py.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
-    mods = set()
-    mods.add(mod.__name__)
-    
-    # Walk through all file in the given module, looking for submodules.
-    mod_dir = os.path.dirname(mod.__file__)
+    # A package must have a path -- check for this, in case the package parameter is actually a module.
+    assert package.__path__
+
+    # Walk through all file in the given package, looking for submodules.
+    mod_dir = os.path.dirname(package.__file__)
+    mods = []
     for dirpath, dirnames, filenames in os.walk(mod_dir):
         # Change from OS separators to a dotted Python module path,
-        # removing mod's name from the beginning of the path.
-        # For example, "docutils/parsers/rst" becomes ".parsers.rst"; likewise,
-        # "docutils" becomes "".
-        mod_path = remove_prefix(dirpath, mod_dir).replace(os.sep, ".")
+        # removing the path up to the package's name. For example, '/long/path/to/desired_package/sub_package' becomes 'desired_package.sub_package'
+        mod_path = remove_prefix(dirpath, os.path.dirname(mod_dir) + os.sep).replace(os.sep, ".")
 
-        # 
-        if mod_path == "":
-            mod_path = mod.__name__
+        # If this subdirectory is a package, add it and all other .py files in this subdirectory to the list of modules.
+        if '__init__.py' in filenames:
+            mods.append(mod_path)
+            for f in filenames:
+                if (f != '__init__.py') and f.endswith(".py"):
+                    mods.append( mod_path + "." + remove_suffix(f, ".py") )
         else:
-            mod_path = mod_path[1:]
-            mod_path = mod.__name__ + "." + mod_path
-    
-        if '__init__.py' in os.listdir(dirpath):
-            mods.add(mod_path)
+        # If not, nothing here is part of the package; don't visit any of these subdirs.
+            del dirnames[:]
 
-        for f in filenames:
-            if f[-3:] == ".py" and '__init__' not in f:
-                mods.add( mod_path + "." + remove_suffix(f, ".py") )
-
-    return list(mods)
+    return mods
 
 def collect_data_files(mod):
     """
@@ -347,9 +342,9 @@ def collect_data_files(mod):
     mod_dir = os.path.dirname(mod.__file__)
 
     data_files = []
-    for dir, dirnames, files in os.walk(mod_dir):
+    for dirpath, dirnames, files in os.walk(mod_dir):
         for f in files:
-            fpath = os.path.join(dir, f)
+            fpath = os.path.join(dirpath, f)
             if '.py' not in f and not os.path.isdir(fpath):
                 data_files.append(fpath)
     
