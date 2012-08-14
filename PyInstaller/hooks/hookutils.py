@@ -278,71 +278,83 @@ def opengl_arrays_modules():
         modules.append('OpenGL.arrays.' + mod)
 
     return modules
+    
+def remove_prefix(string, prefix):
+    """
+    This funtion removes the given prefix from a string, if the string does
+    indeed begin with the prefix; otherwise, it returns the string unmodified.
+    """
+    return string[len(prefix):] if string.startswith(prefix) else string
+    
+def remove_suffix(string, suffix):
+    """
+    This funtion removes the given suffix from a string, if the string does
+    indeed end with the prefix; otherwise, it returns the string unmodified.
+    """
+    return string[:-len(suffix)] if string.endswith(suffix) else string
 
 def collect_submodules(mod):
-  """
-  The following two functions were originally written by Ryan Welsh (welchr AT
-  umich.edu).
-  
-  This produces a list of strings which specify all the modules in the package
-  named mod_str.  Its results can be directly assigned to ``hiddenimports`` in
-  a hook script; see, for example, hook-sphinx.py.
-  
-  This function is used only for hook scripts, but not by the body of
-  PyInstaller.
-  """
-  mods = set()
-  mods.add(mod.__name__)
+    """
+    The following two functions were originally written by Ryan Welsh (welchr AT
+    umich.edu).
 
-  mod_dir = os.path.dirname(mod.__file__)
-  for dirpath, dirnames, filenames in os.walk(mod_dir):
-    mod_path = dirpath.replace(mod_dir,"").replace(os.sep, ".")
-   
-    if mod_path == "":
-      mod_path = mod.__name__
-    else:
-      mod_path = mod_path[1:]
-      mod_path = mod.__name__ + "." + mod_path
+    This produces a list of strings which specify all the modules in the package
+    named mod_str.  Its results can be directly assigned to ``hiddenimports`` in
+    a hook script; see, for example, hook-sphinx.py.
 
-    if '__init__.py' in os.listdir(dirpath):
-      mods.add(mod_path)
+    This function is used only for hook scripts, but not by the body of
+    PyInstaller.
+    """
+    mods = set()
+    mods.add(mod.__name__)
+    
+    mod_dir = os.path.dirname(mod.__file__)
+    for dirpath, dirnames, filenames in os.walk(mod_dir):
+        mod_path = remove_prefix(dirpath, mod_dir).replace(os.sep, ".")
+       
+        if mod_path == "":
+            mod_path = mod.__name__
+        else:
+            mod_path = mod_path[1:]
+            mod_path = mod.__name__ + "." + mod_path
+    
+        if '__init__.py' in os.listdir(dirpath):
+            mods.add(mod_path)
 
-    for f in filenames:
-      if f[-3:] == ".py" and '__init__' not in f:
-        mods.add( mod_path + "." + f.replace(".py", "") )
+        for f in filenames:
+            if f[-3:] == ".py" and '__init__' not in f:
+                mods.add( mod_path + "." + remove_suffix(f, ".py") )
 
-  return list(mods)
+    return list(mods)
 
 def collect_data_files(mod):
-  """
-  This routine produces a list of (source, dest) non-Python (i.e. data) files
-  which reside in the module named by mod_str. Its results can be directly
-  assigned to ``datas`` in a hook script; see, for example, hook-sphinx.py.
+    """
+    This routine produces a list of (source, dest) non-Python (i.e. data) files
+    which reside in the module named by mod_str. Its results can be directly
+    assigned to ``datas`` in a hook script; see, for example, hook-sphinx.py.
 
-  This function is used only for hook scripts, but not by the body of
-  PyInstaller.
-  """
-  mod_dir = os.path.dirname(mod.__file__)
+    This function is used only for hook scripts, but not by the body of
+    PyInstaller.
+    """
+    mod_dir = os.path.dirname(mod.__file__)
 
-  data_files = []
-  for dir, dirnames, files in os.walk(mod_dir):
-    for f in files:
-      fpath = os.path.join(dir, f)
-      if '.py' not in f and not os.path.isdir(fpath):
-        data_files.append(fpath)
-
-  datas = []
-  for f in data_files:
-    orig_file = f
-
-    f = f.replace(mod_dir, "")
-    f = f.replace(os.path.split(f)[1], "")
-
-    if f[0] == os.sep:
-      f = f[1:]
+    data_files = []
+    for dir, dirnames, files in os.walk(mod_dir):
+        for f in files:
+            fpath = os.path.join(dir, f)
+            if '.py' not in f and not os.path.isdir(fpath):
+                data_files.append(fpath)
     
-    f = mod.__name__ + os.sep + f 
+    datas = []
+    for f in data_files:
+        orig_file = f
+    
+        f = f.replace(mod_dir, "")
+        f = f.replace(os.path.split(f)[1], "")
 
-    datas.append((orig_file, f))
-
-  return datas
+        if f[0] == os.sep:
+            f = f[1:]        
+            f = mod.__name__ + os.sep + f     
+            datas.append((orig_file, f))
+    
+    return datas
