@@ -35,8 +35,9 @@ try:
     import PyInstaller
 except ImportError:
     # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation
+    # directory to support running without installation.
     import imp
+    # Prevent running as superuser (root).
     if not hasattr(os, "getuid") or os.getuid() != 0:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
             [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))

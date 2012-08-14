@@ -1,4 +1,5 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -14,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 
 import os
@@ -33,7 +34,7 @@ except ImportError:
             [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
 
 
-from PyInstaller.utils import versioninfo
+import PyInstaller.utils
 
 if len(sys.argv) < 2:
     print 'Usage: >python GrabVersion.py <exe>'
@@ -44,7 +45,7 @@ if len(sys.argv) < 2:
     print ' Note that only NT / Win2K can set version resources.'
 else:
     try:
-        vs  = versioninfo.decode(sys.argv[1])
+        vs = PyInstaller.utils.versioninfo.decode(sys.argv[1])
         print vs
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

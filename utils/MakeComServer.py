@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 #
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 
 import optparse
@@ -36,7 +36,7 @@ except ImportError:
             [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
 
 
-import PyInstaller.makespec as makespec
+import PyInstaller.makespec
 
 
 tmplt = '''\
@@ -87,6 +87,7 @@ if sys.frozen != "dll":
                             "COM Object")
 '''
 
+
 def create(scripts, debug, verbose, workdir, ascii=0):
     infos = []  # (path, module, klasses)
     for script in scripts:
@@ -108,16 +109,15 @@ def create(scripts, debug, verbose, workdir, ascii=0):
             klassspecs.append("%s.%s" % (module, klass))
     modimports = '\n'.join(modimports)
     klassspecs = ', '.join(klassspecs)
-    d = { 'modules':modimports,
-          'klasses':klassspecs,
-          }
-    outf.write( tmplt % d )
+    d = {'modules': modimports, 'klasses': klassspecs}
+    outf.write(tmplt % d)
     outf.close()
     print "**********************************"
     print "Driver script %s created" % outfnm
-    specfnm = makespec.main([outfnm], console=debug, debug=debug,
-                            workdir=workdir, pathex=paths, comserver=1, ascii=ascii)
+    specfnm = PyInstaller.makespec.main([outfnm], console=debug, debug=debug,
+            workdir=workdir, pathex=paths, comserver=1, ascii=ascii)
     print "Spec file %s created" % specfnm
+
 
 def analscriptname(script):
     # return (path, module, klasses)
@@ -144,6 +144,7 @@ def analscriptname(script):
             klasses.append(nm)
     return (path, module, klasses)
 
+
 def ispkgdir(path):
     try:
         open(os.path.join(path, '__init__.py'), 'rU')
@@ -164,7 +165,7 @@ if __name__ == '__main__':
                "spec file. See doc/Tutorial.html for details."
         )
     parser.add_option('--debug', default=False, action='store_true',
-                      help='use debug console build and register COM servers with debug')
+            help='use debug console build and register COM servers with debug')
     parser.add_option('--verbose', default=False, action='store_true',
                       help='use verbose flag in COM server registration')
     parser.add_option('--out', default='.',

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 #
 # Build packages using spec files
 #
@@ -45,6 +45,7 @@ parser = optparse.OptionParser(usage='%prog [options] specfile')
 PyInstaller.build.__add_options(parser)
 PyInstaller.log.__add_options(parser)
 PyInstaller.compat.__add_obsolete_options(parser)
+
 
 opts, args = parser.parse_args()
 PyInstaller.log.__process_options(parser, opts)
