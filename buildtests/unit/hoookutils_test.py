@@ -33,9 +33,10 @@ except ImportError:
         imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
             [os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))]))
 
-# Use unittest2 with PyInstaller tweaks. See http://www.voidspace.org.uk/python/articles/unittest2.shtml for some documentation.
+# Use unittest2 with PyInstaller tweaks. See
+# http://www.voidspace.org.uk/python/articles/unittest2.shtml for some
+# documentation.
 import PyInstaller.lib.unittest2 as unittest
-#import unittest
 
 # The function to test
 from PyInstaller.hooks.hookutils import remove_prefix
@@ -63,7 +64,8 @@ class TestRemovePrefix(unittest.TestCase):
 # The function to test
 from PyInstaller.hooks.hookutils import remove_extension
 class TestRemoveExtension(unittest.TestCase):
-    # Removing a suffix from a filename with no extension returns the filename.
+    # Removing a suffix from a filename with no extension returns the
+    # filename.
     def test_0(self):
         self.assertEqual("file", remove_extension("file"))
         
@@ -96,7 +98,8 @@ class TestCollectSubmodules(unittest.TestCase):
     # Use the os module as a test case; all that collect_* functions need
     # is __name__ and __file__ attributes.
     def setUp(self):
-        self.mod_list = collect_submodules(__import__(HOOKUTILS_TEST_FILES))
+        self.mod_list = collect_submodules(
+          __import__(HOOKUTILS_TEST_FILES))
 
     # An error should be thrown if a module, not a package, was passed.
     def test_0(self):
@@ -129,7 +132,8 @@ class TestCollectDataFiles(unittest.TestCase):
     # Use the os module as a test case; all that collect_* functions need
     # is __name__ and __file__ attributes.
     def setUp(self):
-        self.data_list = collect_data_files(__import__('hookutils_test_files'))
+        self.data_list = collect_data_files(
+          __import__('hookutils_test_files'))
         # Break list of (source, dest) inst source and dest lists
         self.source_list = [item[0] for item in self.data_list]
         self.dest_list = [item[1] for item in self.data_list]
@@ -149,7 +153,8 @@ class TestCollectDataFiles(unittest.TestCase):
                     join('py_files_not_in_package', 'ten.dat'),
                     join('py_files_not_in_package', 'data', 'eleven.dat'),
                    )
-        self.assertSequenceEqual(self.source_list, [join(basepath, subpath) for subpath in subfiles])
+        self.assertSequenceEqual(self.source_list, 
+          [join(basepath, subpath) for subpath in subfiles])
 
 if __name__ == '__main__':
     unittest.main()
