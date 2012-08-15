@@ -125,6 +125,7 @@ class SkipChecker(object):
             'libraries/test_wx_pubsub': ['wx'],
             'libraries/test_wx_pubsub_arg1': ['wx'],
             'libraries/test_wx_pubsub_kwargs': ['wx'],
+            'libraries/test_sphinx' : ['sphinx', 'docutils', 'jinja2'],
             'import/test_c_extension': ['simplejson'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_ctypes_cdll_c2': ['ctypes'],

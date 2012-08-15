@@ -437,15 +437,20 @@ class PYZOwner(iu.Owner):
         mod = newmod(nm)
 
         # Replace bytecode.co_filename by something more meaningful:
-        # e.g. /absolute/path/frozen_executable?12345/os/path.pyc
+        # e.g. /absolute/path/frozen_executable/path/to/module/module_name.pyc
         # Paths from developer machine are masked.
         try:
-            # Python packages points to files  __init__.pyc.
+            # Set __file__ attribute of a module relative to the executable
+            # so that data files can be found. Specifically, take off
+            # executable_name?xxxx suffix in self.path to get absolute
+            # path to the executable.
+            abspath = iu._os_path_dirname(self.path)
+            # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
             if ispkg:
-                mod.__file__ = iu._os_path_join(iu._os_path_join(self.path,
+                mod.__file__ = iu._os_path_join(iu._os_path_join(abspath,
                     nm.replace('.', iu._os_sep)), '__init__.pyc')
             else:
-                mod.__file__ = iu._os_path_join(self.path,
+                mod.__file__ = iu._os_path_join(abspath,
                     nm.replace('.', iu._os_sep) + '.pyc')
         except AttributeError:
             raise ImportError("PYZ entry '%s' (%s) is not a valid code object"
@@ -471,7 +476,7 @@ class PYZOwner(iu.Owner):
                 localpath: ExtInPkgImporter(localpath, nm)},
                 [iu.DirOwner])
             mod.__importsub__ = importer.getmod
-
+        
         mod.__co__ = bytecode
         return mod
 

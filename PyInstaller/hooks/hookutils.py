@@ -184,7 +184,6 @@ def qt4_menu_nib_dir():
     ]
 
     # Qt4 from Homebrew compiled as framework
-    import glob
     globpath = '/usr/local/Cellar/qt/4.*/lib/QtGui.framework/Versions/4/Resources'
     qt_homebrew_dirs = glob.glob(globpath)
     dirs += qt_homebrew_dirs
@@ -279,3 +278,97 @@ def opengl_arrays_modules():
         modules.append('OpenGL.arrays.' + mod)
 
     return modules
+    
+def remove_prefix(string, prefix):
+    """
+    This funtion removes the given prefix from a string, if the string does
+    indeed begin with the prefix; otherwise, it returns the string
+    unmodified.
+    """
+    return string[len(prefix):] if string.startswith(prefix) else string
+    
+def remove_extension(filename):
+    """
+    This funtion returns filename without its extension.
+    """
+    # Special case: if suffix is empty, string[:0] returns ''! So, test
+    # for a non-empty suffix.
+    return os.path.splitext(filename)[0]
+
+# All these extension represent Python modules or extension modules
+PY_EXECUTABLE_EXTENSIONS = ('.py', '.pyc', '.pyd', '.pyo', '.so')
+
+def collect_submodules(package):
+    """
+    The following two functions were originally written by Ryan Welsh
+    (welchr AT umich.edu).
+
+    This produces a list of strings which specify all the modules in
+    package.  Its results can be directly assigned to ``hiddenimports``
+    in a hook script; see, for example, hook-sphinx.py.
+
+    This function is used only for hook scripts, but not by the body of
+    PyInstaller.
+    """
+    # A package must have a path -- check for this, in case the package
+    # parameter is actually a module.
+    assert package.__path__
+
+    # Walk through all file in the given package, looking for submodules.
+    mod_dir = os.path.dirname(package.__file__)
+    mods = set()
+    for dirpath, dirnames, filenames in os.walk(mod_dir):
+        # Change from OS separators to a dotted Python module path,
+        # removing the path up to the package's name. For example,
+        # '/long/path/to/desired_package/sub_package' becomes
+        # 'desired_package.sub_package'
+        mod_path = remove_prefix(dirpath, os.path.dirname(mod_dir) +
+                                          os.sep).replace(os.sep, ".")
+
+        # If this subdirectory is a package, add it and all other .py
+        # files in this subdirectory to the list of modules.
+        if '__init__.py' in filenames:
+            mods.add(mod_path)
+            for f in filenames:
+                if ((remove_extension(f) != '__init__') and
+                    f.endswith(PY_EXECUTABLE_EXTENSIONS)):
+                    mods.add( mod_path + "." + remove_extension(f) )
+        else:
+        # If not, nothing here is part of the package; don't visit any of
+        # these subdirs.
+            del dirnames[:]
+
+    return list(mods)
+
+# These extensions represent Python executables and should therefore be
+# ignored.
+PY_IGNORE_EXTENSIONS = ('.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib')
+
+def collect_data_files(package):
+    """
+    This routine produces a list of (source, dest) non-Python (i.e. data)
+    files which reside in package. Its results can be directly assigned to
+    ``datas`` in a hook script; see, for example, hook-sphinx.py.
+
+    This function is used only for hook scripts, but not by the body of
+    PyInstaller.
+    """
+    # A package must have a path -- check for this, in case the package
+    # parameter is actually a module.
+    assert package.__path__
+
+    mod_dir = os.path.dirname(package.__file__)
+
+    # Walk through all file in the given package, looking for data files.
+    datas = []
+    for dirpath, dirnames, files in os.walk(mod_dir):
+        for f in files:
+            if not f.endswith(PY_IGNORE_EXTENSIONS):
+                # Produce the tuple
+                # (/abs/path/to/source/mod/submod/file.dat,
+                #  mod/submod/file.dat)
+                source = os.path.join(dirpath, f)
+                dest = remove_prefix(f, os.path.dirname(mod_dir) + os.sep)
+                datas.append((source, dest))
+
+    return datas
