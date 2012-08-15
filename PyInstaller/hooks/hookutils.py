@@ -285,7 +285,10 @@ def remove_prefix(string, prefix):
     indeed begin with the prefix; otherwise, it returns the string
     unmodified.
     """
-    return string[len(prefix):] if string.startswith(prefix) else string
+    if string.startswith(prefix):
+        return string[len(prefix):]
+    else:
+        return string
     
 def remove_extension(filename):
     """
