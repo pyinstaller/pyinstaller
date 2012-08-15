@@ -99,7 +99,13 @@ def configure(conf):
                 # by waf 1.5 on Windows in virtualenv.
                 if _sysconfig.get_config_var('LIBDIR'):
                     conf.env.append_value('LINKFLAGS', '/LIBPATH:' + _sysconfig.get_config_var('LIBDIR'))
-            except:
+                # Detecting Python headers might fail in some cases (like running in virtualenv).
+                if _sysconfig.get_config_var('INCLUDEPY'):
+                    conf.env.append_value('CPPPATH_PYEMBED', _sysconfig.get_config_var('INCLUDEPY'))
+                    conf.env.append_value('CPPPATH_PYEXT', _sysconfig.get_config_var('INCLUDEPY'))
+            except Exception, e:
+                print e
+                Utils.pprint('RED', str(e))
                 Utils.pprint('RED', 'GCC (MinGW) or MSVC compiler not found.')
                 exit(1)
         else:
