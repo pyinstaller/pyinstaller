@@ -332,34 +332,31 @@ def collect_submodules(package):
 
     return list(mods)
 
-def collect_data_files(mod):
+# These extensions represent Python executables and should therefore be ignored.
+PY_IGNORE_EXTENSIONS = ('.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib')
+
+def collect_data_files(package):
     """
     This routine produces a list of (source, dest) non-Python (i.e. data) files
-    which reside in the module named by mod_str. Its results can be directly
-    assigned to ``datas`` in a hook script; see, for example, hook-sphinx.py.
+    which reside in package. Its results can be directly assigned to
+    ``datas`` in a hook script; see, for example, hook-sphinx.py.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
-    mod_dir = os.path.dirname(mod.__file__)
+    # A package must have a path -- check for this, in case the package parameter is actually a module.
+    assert package.__path__
 
-    data_files = []
+    mod_dir = os.path.dirname(package.__file__)
+
+    # Walk through all file in the given package, looking for data files.
+    datas = []
     for dirpath, dirnames, files in os.walk(mod_dir):
         for f in files:
-            fpath = os.path.join(dirpath, f)
-            if '.py' not in f and not os.path.isdir(fpath):
-                data_files.append(fpath)
-    
-    datas = []
-    for f in data_files:
-        orig_file = f
-    
-        f = f.replace(mod_dir, "")
-        f = f.replace(os.path.split(f)[1], "")
+            if not f.endswith(PY_IGNORE_EXTENSIONS):
+                # Produce the tuple (/abs/path/to/source/mod/submod/file.dat, mod/submod/file.dat)
+                source = os.path.join(dirpath, f)
+                dest = remove_prefix(f, os.path.dirname(mod_dir) + os.sep)
+                datas.append((source, dest))
 
-        if f[0] == os.sep:
-            f = f[1:]        
-            f = mod.__name__ + os.sep + f     
-            datas.append((orig_file, f))
-    
     return datas
