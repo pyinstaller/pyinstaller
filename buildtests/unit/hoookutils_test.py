@@ -61,27 +61,31 @@ class TestRemovePrefix(unittest.TestCase):
         self.assertEqual("atest", remove_prefix("atest", "test"))
 
 # The function to test
-from PyInstaller.hooks.hookutils import remove_suffix
-class TestRemoveSuffix(unittest.TestCase):
-    # Verify that removing a suffix from an empty string is OK.
+from PyInstaller.hooks.hookutils import remove_extension
+class TestRemoveExtension(unittest.TestCase):
+    # Removing a suffix from a filename with no extension returns the filename.
     def test_0(self):
-        self.assertEqual("", remove_suffix("", "suffix"))
+        self.assertEqual("file", remove_extension("file"))
         
-    # An empty suffix should pass the string through unmodified.
+    # A filename with two extensions should have only the first removed.
     def test_1(self):
-        self.assertEqual("test", remove_suffix("test", ""))
+        self.assertEqual("file.1", remove_extension("file.1.2"))
         
-    # If the string is the suffix, it should be empty at exit.
+    # Standard case - remove an extension
     def test_2(self):
-        self.assertEqual("", remove_suffix("test", "test"))
+        self.assertEqual("file", remove_extension("file.1"))
         
-    # Just the suffix should be removed.
+    # Unix-style .files are not treated as extensions
     def test_3(self):
-        self.assertEqual("test", remove_suffix("testing", "ing"))
+        self.assertEqual(".file", remove_extension(".file"))
         
-    # A matching string not as suffix should produce no modifications
+    # Unix-style .file.ext works
     def test_4(self):
-        self.assertEqual("testa", remove_suffix("testa", "test"))
+        self.assertEqual(".file", remove_extension(".file.1"))
+
+    # Unix-style .file.ext works
+    def test_5(self):
+        self.assertEqual("/a/b/c", remove_extension("/a/b/c.1"))
 
 # The function to test
 from PyInstaller.hooks.hookutils import collect_submodules
@@ -108,7 +112,13 @@ class TestCollectSubmodules(unittest.TestCase):
 
     # Check that all packages get included
     def test_3(self):
-        self.assertItemsEqual(self.mod_list, ['hookutils_test_files', 'hookutils_test_files.two'])
+        self.assertItemsEqual(self.mod_list, 
+                              ['hookutils_test_files', 
+                               'hookutils_test_files.two',
+                               'hookutils_test_files.four',
+                               'hookutils_test_files.five',
+                               'hookutils_test_files.eight',
+                              ])
 
 
 if __name__ == '__main__':
