@@ -126,7 +126,10 @@ def main():
                 # because easy_install tries to install the same module from
                 # PYPI from source code and if fails because of C code that
                 # that needs to be compiled.
-                easy_install.main(['--no-deps', '--always-unzip', f])
+                try:
+                    easy_install.main(['--no-deps', '--always-unzip', f])
+                except Exception:
+                    print '  %s installation failed' % k
 
 
 if __name__ == '__main__':
