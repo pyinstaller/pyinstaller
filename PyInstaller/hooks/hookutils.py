@@ -286,14 +286,16 @@ def remove_prefix(string, prefix):
     """
     return string[len(prefix):] if string.startswith(prefix) else string
     
-def remove_suffix(string, suffix):
+def remove_extension(filename):
     """
-    This funtion removes the given suffix from a string, if the string does
-    indeed end with the prefix; otherwise, it returns the string unmodified.
+    This funtion returns filename without its extension.
     """
     # Special case: if suffix is empty, string[:0] returns ''! So, test
     # for a non-empty suffix.
-    return string[:-len(suffix)] if suffix and string.endswith(suffix) else string
+    return os.path.splitext(filename)[0]
+
+# All these extension represent Python modules or extension modules
+PY_EXECUTABLE_EXTENSIONS = ('.py', '.pyc', '.pyd', '.pyo', '.so')
 
 def collect_submodules(package):
     """
@@ -312,7 +314,7 @@ def collect_submodules(package):
 
     # Walk through all file in the given package, looking for submodules.
     mod_dir = os.path.dirname(package.__file__)
-    mods = []
+    mods = set()
     for dirpath, dirnames, filenames in os.walk(mod_dir):
         # Change from OS separators to a dotted Python module path,
         # removing the path up to the package's name. For example, '/long/path/to/desired_package/sub_package' becomes 'desired_package.sub_package'
@@ -320,15 +322,15 @@ def collect_submodules(package):
 
         # If this subdirectory is a package, add it and all other .py files in this subdirectory to the list of modules.
         if '__init__.py' in filenames:
-            mods.append(mod_path)
+            mods.add(mod_path)
             for f in filenames:
-                if (f != '__init__.py') and f.endswith(".py"):
-                    mods.append( mod_path + "." + remove_suffix(f, ".py") )
+                if (remove_extension(f) != '__init__') and f.endswith(PY_EXECUTABLE_EXTENSIONS):
+                    mods.add( mod_path + "." + remove_extension(f) )
         else:
         # If not, nothing here is part of the package; don't visit any of these subdirs.
             del dirnames[:]
 
-    return mods
+    return list(mods)
 
 def collect_data_files(mod):
     """
