@@ -87,13 +87,16 @@ class TestRemoveExtension(unittest.TestCase):
     def test_5(self):
         self.assertEqual("/a/b/c", remove_extension("/a/b/c.1"))
 
+# The name of the hookutils test files directory
+HOOKUTILS_TEST_FILES = 'hookutils_test_files'
+
 # The function to test
 from PyInstaller.hooks.hookutils import collect_submodules
 class TestCollectSubmodules(unittest.TestCase):
     # Use the os module as a test case; all that collect_* functions need
     # is __name__ and __file__ attributes.
     def setUp(self):
-        self.mod_list = collect_submodules(__import__('hookutils_test_files'))
+        self.mod_list = collect_submodules(__import__(HOOKUTILS_TEST_FILES))
 
     # An error should be thrown if a module, not a package, was passed.
     def test_0(self):
@@ -103,23 +106,50 @@ class TestCollectSubmodules(unittest.TestCase):
 
     # The package name itself should be in the returned list
     def test_1(self):
-        self.assertTrue('hookutils_test_files' in self.mod_list)
+        self.assertTrue(HOOKUTILS_TEST_FILES in self.mod_list)
 
     # Subpackages without an __init__.py should not be included
     def test_2(self):
-        self.assertTrue('hookutils_test_files.py_files_not_in_package.sub_pkg.three' not in self.mod_list)
-#        print(mod_list)
+        self.assertTrue(HOOKUTILS_TEST_FILES + '.py_files_not_in_package.sub_pkg.three' not in self.mod_list)
 
     # Check that all packages get included
     def test_3(self):
         self.assertItemsEqual(self.mod_list, 
-                              ['hookutils_test_files', 
-                               'hookutils_test_files.two',
-                               'hookutils_test_files.four',
-                               'hookutils_test_files.five',
-                               'hookutils_test_files.eight',
+                              [HOOKUTILS_TEST_FILES,
+                               HOOKUTILS_TEST_FILES + '.two',
+                               HOOKUTILS_TEST_FILES + '.four',
+                               HOOKUTILS_TEST_FILES + '.five',
+                               HOOKUTILS_TEST_FILES + '.eight',
                               ])
 
+# The function to test
+from PyInstaller.hooks.hookutils import collect_data_files
+from os.path import join
+class TestCollectDataFiles(unittest.TestCase):
+    # Use the os module as a test case; all that collect_* functions need
+    # is __name__ and __file__ attributes.
+    def setUp(self):
+        self.data_list = collect_data_files(__import__('hookutils_test_files'))
+        # Break list of (source, dest) inst source and dest lists
+        self.source_list = [item[0] for item in self.data_list]
+        self.dest_list = [item[1] for item in self.data_list]
+
+    # An error should be thrown if a module, not a package, was passed.
+    def test_0(self):
+        # os is a module, not a package.
+        with self.assertRaises(AttributeError):
+            collect_data_files(__import__('os'))
+
+    # Make sure only data files are found
+    def test_1(self):
+#        print(self.data_list)
+        basepath = join(os.getcwd(), HOOKUTILS_TEST_FILES)
+        subfiles = ('nine.dat',
+                    'six.dll',
+                    join('py_files_not_in_package', 'ten.dat'),
+                    join('py_files_not_in_package', 'data', 'eleven.dat'),
+                   )
+        self.assertSequenceEqual(self.source_list, [join(basepath, subpath) for subpath in subfiles])
 
 if __name__ == '__main__':
     unittest.main()
