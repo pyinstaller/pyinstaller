@@ -290,6 +290,19 @@ def remove_prefix(string, prefix):
     else:
         return string
     
+def remove_suffix(string, suffix):
+    """
+    This funtion removes the given suffix from a string, if the string
+    does indeed end with the prefix; otherwise, it returns the string
+    unmodified.
+    """
+    # Special case: if suffix is empty, string[:0] returns ''. So, test
+    # for a non-empty suffix.
+    if suffix and string.endswith(suffix):
+        return string[:-len(suffix)]
+    else:
+        return string
+
 def remove_extension(filename):
     """
     This funtion returns filename without its extension.
@@ -317,16 +330,19 @@ def collect_submodules(package):
     # parameter is actually a module.
     assert package.__path__
 
+    # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
+    # Search for Python files in /abs/path/to/package/subpackage; pkg_dir stores this path.
+    pkg_dir = os.path.dirname(package.__file__)
+    # When found, remove /abs/path/to/ from the filename; mod_base stores this path to be removed.
+    pkg_base = remove_suffix(pkg_dir, package.__name__.replace('.', os.sep))
     # Walk through all file in the given package, looking for submodules.
-    mod_dir = os.path.dirname(package.__file__)
     mods = set()
-    for dirpath, dirnames, filenames in os.walk(mod_dir):
+    for dirpath, dirnames, filenames in os.walk(pkg_dir):
         # Change from OS separators to a dotted Python module path,
         # removing the path up to the package's name. For example,
-        # '/long/path/to/desired_package/sub_package' becomes
+        # '/abs/path/to/desired_package/sub_package' becomes
         # 'desired_package.sub_package'
-        mod_path = remove_prefix(dirpath, os.path.dirname(mod_dir) +
-                                          os.sep).replace(os.sep, ".")
+        mod_path = remove_prefix(dirpath, pkg_base).replace(os.sep, ".")
 
         # If this subdirectory is a package, add it and all other .py
         # files in this subdirectory to the list of modules.
