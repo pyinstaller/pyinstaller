@@ -131,13 +131,27 @@ class TestCollectSubmodules(unittest.TestCase):
                                HOOKUTILS_TEST_FILES + '.subpkg.twelve',
                               ])
 
-    # Test with a subpackage
-    def test_4(self):
-        self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
+    def assert_subpackge_equal(self):
         self.assertItemsEqual(self.mod_list,
                               [HOOKUTILS_TEST_FILES + '.subpkg',
                                HOOKUTILS_TEST_FILES + '.subpkg.twelve',
                               ])
+
+    # Test with a subpackage
+    def test_4(self):
+        self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
+        self.assert_subpackge_equal()
+
+    # Test with a string for the package name
+    def test_5(self):
+        self.mod_list = collect_submodules(HOOKUTILS_TEST_FILES)
+        self.test_3()
+
+    # Test with a string for the subpackage name
+    def test_6(self):
+        self.mod_list = collect_submodules(HOOKUTILS_TEST_FILES +
+                                           '.subpkg')
+        self.assert_subpackge_equal()
 
 # The function to test
 from PyInstaller.hooks.hookutils import collect_data_files
@@ -152,7 +166,10 @@ class TestCollectDataFiles(unittest.TestCase):
         # <http://docs.python.org/library/functions.html#__import__>`_.
         self.data_list = collect_data_files(__import__(package,
                                                       fromlist = ['']))
-        # Break list of (source, dest) inst source and dest lists
+        self.split_data_list()
+
+    # Break list of (source, dest) inst source and dest lists
+    def split_data_list(self):
         self.source_list = [item[0] for item in self.data_list]
         self.dest_list = [item[1] for item in self.data_list]
 
@@ -172,20 +189,33 @@ class TestCollectDataFiles(unittest.TestCase):
           for subpath in subfiles])
 
     # Make sure only data files are found
-    def test_1(self):
-        subfiles = ('nine.dat',
+    all_subfiles = ('nine.dat',
                     'six.dll',
                     join('py_files_not_in_package', 'ten.dat'),
                     join('py_files_not_in_package', 'data', 'eleven.dat'),
                     join('subpkg', 'thirteen.txt'),
                    )
-        self.assert_data_list_equal(subfiles)
+    def test_1(self):
+        self.assert_data_list_equal(self.all_subfiles)
 
     # Test with a subpackage
+    subpkg_subfiles = (join('subpkg', 'thirteen.txt'), )
     def test_2(self):
         self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
-        subfiles = (join('subpkg', 'thirteen.txt'), )
-        self.assert_data_list_equal(subfiles)
+        self.assert_data_list_equal(self.subpkg_subfiles)
+
+    # Test with a string package name
+    def test_3(self):
+        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES)
+        self.split_data_list()
+        self.assert_data_list_equal(self.all_subfiles)
+
+    # Test with a string package name
+    def test_4(self):
+        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES + '.subpkg')
+        self.split_data_list()
+        self.assert_data_list_equal(self.subpkg_subfiles)
+
 
 # Provide an easy way to run just one test for debug purposes
 def one_test():
