@@ -98,8 +98,12 @@ class TestCollectSubmodules(unittest.TestCase):
     # Use the os module as a test case; all that collect_* functions need
     # is __name__ and __file__ attributes.
     def setUp(self, package = HOOKUTILS_TEST_FILES):
-        # Fun Python behavior: __import__('mod.submod') returns mod, where as __import__('mod.submod', fromlist = [a non-empty list]) returns mod.submod. See the docs on `__import__ <http://docs.python.org/library/functions.html#__import__>`_.
-        self.mod_list = collect_submodules(__import__(package, fromlist = ['']))
+        # Fun Python behavior: __import__('mod.submod') returns mod,
+        # where as __import__('mod.submod', fromlist = [a non-empty list])
+        # returns mod.submod. See the docs on `__import__
+        # <http://docs.python.org/library/functions.html#__import__>`_.
+        self.mod_list = collect_submodules(__import__(package,
+                                                      fromlist = ['']))
 
     # An error should be thrown if a module, not a package, was passed.
     def test_0(self):
@@ -113,7 +117,8 @@ class TestCollectSubmodules(unittest.TestCase):
 
     # Subpackages without an __init__.py should not be included
     def test_2(self):
-        self.assertTrue(HOOKUTILS_TEST_FILES + '.py_files_not_in_package.sub_pkg.three' not in self.mod_list)
+        self.assertTrue(HOOKUTILS_TEST_FILES +
+          '.py_files_not_in_package.sub_pkg.three' not in self.mod_list)
 
     # Check that all packages get included
     def test_3(self):
