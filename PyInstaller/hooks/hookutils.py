@@ -319,6 +319,13 @@ def get_package_paths(package):
     returns (/abs/path/to/python/libs,
              /abs/path/to/python/libs/pkg/subpkg).
     """
+    # If passed a string, import it as a module.
+    if isinstance(package, str):
+        # Fun Python behavior: __import__('mod.submod') returns mod,
+        # where as __import__('mod.submod', fromlist = [a non-empty list])
+        # returns mod.submod. See the docs on `__import__
+        # <http://docs.python.org/library/functions.html#__import__>`_.
+        package = __import__(package, fromlist = [''])
     # A package must have a path -- check for this, in case the package
     # parameter is actually a module.
     assert package.__path__
@@ -343,7 +350,11 @@ def collect_submodules(package):
 
     This produces a list of strings which specify all the modules in
     package.  Its results can be directly assigned to ``hiddenimports``
-    in a hook script; see, for example, hook-sphinx.py.
+    in a hook script; see, for example, hook-sphinx.py. The
+    package parameter may be either a package or a string which names
+    the package.
+
+    This function does not work on zipped Python eggs.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
@@ -381,7 +392,11 @@ def collect_data_files(package):
     """
     This routine produces a list of (source, dest) non-Python (i.e. data)
     files which reside in package. Its results can be directly assigned to
-    ``datas`` in a hook script; see, for example, hook-sphinx.py.
+    ``datas`` in a hook script; see, for example, hook-sphinx.py. The
+    package parameter may be either a package or a string which names
+    the package.
+
+    This function does not work on zipped Python eggs.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
