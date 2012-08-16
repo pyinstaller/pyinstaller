@@ -555,9 +555,17 @@ def clean():
     */*.dylib
     """.split()
 
+    # By some directories we do not need to clean files.
+    # E.g. for unit tests.
+    IGNORE_DIRS = set([
+        'unit',
+    ])
+
     # Remove temporary files in all subdirectories.
     for directory in os.listdir(BASEDIR):
         if not os.path.isdir(directory):
+            continue
+        if directory in IGNORE_DIRS:
             continue
         for pattern in patterns:
             file_list = glob.glob(os.path.join(directory, pattern))
