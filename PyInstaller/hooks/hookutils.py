@@ -311,6 +311,28 @@ def remove_extension(filename):
     # for a non-empty suffix.
     return os.path.splitext(filename)[0]
 
+def get_package_paths(package):
+    """
+    Given a package, return the path to packages stored on this machine
+    and also returns the path to this particular package. For example,
+    if pkg.subpkg lives in /abs/path/to/python/libs, then this function
+    returns (/abs/path/to/python/libs,
+             /abs/path/to/python/libs/pkg/subpkg).
+    """
+    # A package must have a path -- check for this, in case the package
+    # parameter is actually a module.
+    assert package.__path__
+
+    # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
+    # Search for Python files in /abs/path/to/package/subpackage; pkg_dir
+    # stores this path.
+    pkg_dir = os.path.dirname(package.__file__)
+    # When found, remove /abs/path/to/ from the filename; mod_base stores
+    # this path to be removed.
+    pkg_base = remove_suffix(pkg_dir,
+                             package.__name__.replace('.', os.sep))
+    return pkg_base, pkg_dir
+
 # All these extension represent Python modules or extension modules
 PY_EXECUTABLE_EXTENSIONS = ('.py', '.pyc', '.pyd', '.pyo', '.so')
 
@@ -326,15 +348,7 @@ def collect_submodules(package):
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
-    # A package must have a path -- check for this, in case the package
-    # parameter is actually a module.
-    assert package.__path__
-
-    # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
-    # Search for Python files in /abs/path/to/package/subpackage; pkg_dir stores this path.
-    pkg_dir = os.path.dirname(package.__file__)
-    # When found, remove /abs/path/to/ from the filename; mod_base stores this path to be removed.
-    pkg_base = remove_suffix(pkg_dir, package.__name__.replace('.', os.sep))
+    pkg_base, pkg_dir = get_package_paths(package)
     # Walk through all file in the given package, looking for submodules.
     mods = set()
     for dirpath, dirnames, filenames in os.walk(pkg_dir):
@@ -372,22 +386,18 @@ def collect_data_files(package):
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
-    # A package must have a path -- check for this, in case the package
-    # parameter is actually a module.
-    assert package.__path__
-
-    mod_dir = os.path.dirname(package.__file__)
-
+    pkg_base, pkg_dir = get_package_paths(package)
     # Walk through all file in the given package, looking for data files.
     datas = []
-    for dirpath, dirnames, files in os.walk(mod_dir):
+    for dirpath, dirnames, files in os.walk(pkg_dir):
         for f in files:
             if not f.endswith(PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/file.dat)
                 source = os.path.join(dirpath, f)
-                dest = remove_prefix(source, os.path.dirname(mod_dir) + os.sep)
+                dest = remove_prefix(source,
+                                     os.path.dirname(pkg_base) + os.sep)
                 datas.append((source, dest))
 
     return datas
