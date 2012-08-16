@@ -146,8 +146,14 @@ from os.path import join
 class TestCollectDataFiles(unittest.TestCase):
     # Use the os module as a test case; all that collect_* functions need
     # is __name__ and __file__ attributes.
-    def setUp(self, package = 'hookutils_test_files'):
-        self.data_list = collect_data_files(__import__(package))
+    def setUp(self, package = HOOKUTILS_TEST_FILES):
+        self.basepath = join(os.getcwd(), HOOKUTILS_TEST_FILES)
+        # Fun Python behavior: __import__('mod.submod') returns mod,
+        # where as __import__('mod.submod', fromlist = [a non-empty list])
+        # returns mod.submod. See the docs on `__import__
+        # <http://docs.python.org/library/functions.html#__import__>`_.
+        self.data_list = collect_data_files(__import__(package,
+                                                      fromlist = ['']))
         # Break list of (source, dest) inst source and dest lists
         self.source_list = [item[0] for item in self.data_list]
         self.dest_list = [item[1] for item in self.data_list]
@@ -160,17 +166,25 @@ class TestCollectDataFiles(unittest.TestCase):
 
     # Make sure only data files are found
     def test_1(self):
-        basepath = join(os.getcwd(), HOOKUTILS_TEST_FILES)
         subfiles = ('nine.dat',
                     'six.dll',
                     join('py_files_not_in_package', 'ten.dat'),
                     join('py_files_not_in_package', 'data', 'eleven.dat'),
+                    join('subpkg', 'thirteen.txt'),
                    )
         self.assertSequenceEqual(self.source_list, 
-          [join(basepath, subpath) for subpath in subfiles])
+          [join(self.basepath, subpath) for subpath in subfiles])
         self.assertSequenceEqual(self.dest_list,
           [join(HOOKUTILS_TEST_FILES, subpath) for subpath in subfiles])
 
+    # Test with a subpackage
+    def test_2(self):
+        self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
+        subfiles = (join('subpkg', 'thirteen.txt'), )
+        self.assertSequenceEqual(self.source_list,
+          [join(self.basepath, subpath) for subpath in subfiles])
+        self.assertSequenceEqual(self.dest_list,
+          [join(HOOKUTILS_TEST_FILES, subpath) for subpath in subfiles])
 
 # Provide an easy way to run just one test for debug purposes
 def one_test():
