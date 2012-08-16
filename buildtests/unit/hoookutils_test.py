@@ -146,7 +146,6 @@ class TestCollectDataFiles(unittest.TestCase):
 
     # Make sure only data files are found
     def test_1(self):
-#        print(self.data_list)
         basepath = join(os.getcwd(), HOOKUTILS_TEST_FILES)
         subfiles = ('nine.dat',
                     'six.dll',
@@ -155,6 +154,9 @@ class TestCollectDataFiles(unittest.TestCase):
                    )
         self.assertSequenceEqual(self.source_list, 
           [join(basepath, subpath) for subpath in subfiles])
+        self.assertSequenceEqual(self.dest_list,
+          [join(HOOKUTILS_TEST_FILES, subpath) for subpath in subfiles])
+
 
 if __name__ == '__main__':
     unittest.main()
