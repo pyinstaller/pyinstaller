@@ -290,6 +290,19 @@ def remove_prefix(string, prefix):
     else:
         return string
     
+def remove_suffix(string, suffix):
+    """
+    This funtion removes the given suffix from a string, if the string
+    does indeed end with the prefix; otherwise, it returns the string
+    unmodified.
+    """
+    # Special case: if suffix is empty, string[:0] returns ''. So, test
+    # for a non-empty suffix.
+    if suffix and string.endswith(suffix):
+        return string[:-len(suffix)]
+    else:
+        return string
+
 def remove_extension(filename):
     """
     This funtion returns filename without its extension.
@@ -297,6 +310,35 @@ def remove_extension(filename):
     # Special case: if suffix is empty, string[:0] returns ''! So, test
     # for a non-empty suffix.
     return os.path.splitext(filename)[0]
+
+def get_package_paths(package):
+    """
+    Given a package, return the path to packages stored on this machine
+    and also returns the path to this particular package. For example,
+    if pkg.subpkg lives in /abs/path/to/python/libs, then this function
+    returns (/abs/path/to/python/libs,
+             /abs/path/to/python/libs/pkg/subpkg).
+    """
+    # If passed a string, import it as a module.
+    if isinstance(package, str):
+        # Fun Python behavior: __import__('mod.submod') returns mod,
+        # where as __import__('mod.submod', fromlist = [a non-empty list])
+        # returns mod.submod. See the docs on `__import__
+        # <http://docs.python.org/library/functions.html#__import__>`_.
+        package = __import__(package, fromlist = [''])
+    # A package must have a path -- check for this, in case the package
+    # parameter is actually a module.
+    assert package.__path__
+
+    # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
+    # Search for Python files in /abs/path/to/package/subpackage; pkg_dir
+    # stores this path.
+    pkg_dir = os.path.dirname(package.__file__)
+    # When found, remove /abs/path/to/ from the filename; mod_base stores
+    # this path to be removed.
+    pkg_base = remove_suffix(pkg_dir,
+                             package.__name__.replace('.', os.sep))
+    return pkg_base, pkg_dir
 
 # All these extension represent Python modules or extension modules
 PY_EXECUTABLE_EXTENSIONS = ('.py', '.pyc', '.pyd', '.pyo', '.so')
@@ -308,25 +350,24 @@ def collect_submodules(package):
 
     This produces a list of strings which specify all the modules in
     package.  Its results can be directly assigned to ``hiddenimports``
-    in a hook script; see, for example, hook-sphinx.py.
+    in a hook script; see, for example, hook-sphinx.py. The
+    package parameter may be either a package or a string which names
+    the package.
+
+    This function does not work on zipped Python eggs.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
-    # A package must have a path -- check for this, in case the package
-    # parameter is actually a module.
-    assert package.__path__
-
+    pkg_base, pkg_dir = get_package_paths(package)
     # Walk through all file in the given package, looking for submodules.
-    mod_dir = os.path.dirname(package.__file__)
     mods = set()
-    for dirpath, dirnames, filenames in os.walk(mod_dir):
+    for dirpath, dirnames, filenames in os.walk(pkg_dir):
         # Change from OS separators to a dotted Python module path,
         # removing the path up to the package's name. For example,
-        # '/long/path/to/desired_package/sub_package' becomes
+        # '/abs/path/to/desired_package/sub_package' becomes
         # 'desired_package.sub_package'
-        mod_path = remove_prefix(dirpath, os.path.dirname(mod_dir) +
-                                          os.sep).replace(os.sep, ".")
+        mod_path = remove_prefix(dirpath, pkg_base).replace(os.sep, ".")
 
         # If this subdirectory is a package, add it and all other .py
         # files in this subdirectory to the list of modules.
@@ -351,27 +392,27 @@ def collect_data_files(package):
     """
     This routine produces a list of (source, dest) non-Python (i.e. data)
     files which reside in package. Its results can be directly assigned to
-    ``datas`` in a hook script; see, for example, hook-sphinx.py.
+    ``datas`` in a hook script; see, for example, hook-sphinx.py. The
+    package parameter may be either a package or a string which names
+    the package.
+
+    This function does not work on zipped Python eggs.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
-    # A package must have a path -- check for this, in case the package
-    # parameter is actually a module.
-    assert package.__path__
-
-    mod_dir = os.path.dirname(package.__file__)
-
+    pkg_base, pkg_dir = get_package_paths(package)
     # Walk through all file in the given package, looking for data files.
     datas = []
-    for dirpath, dirnames, files in os.walk(mod_dir):
+    for dirpath, dirnames, files in os.walk(pkg_dir):
         for f in files:
             if not f.endswith(PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/file.dat)
                 source = os.path.join(dirpath, f)
-                dest = remove_prefix(f, os.path.dirname(mod_dir) + os.sep)
+                dest = remove_prefix(dirpath,
+                                     os.path.dirname(pkg_base) + os.sep)
                 datas.append((source, dest))
 
     return datas
