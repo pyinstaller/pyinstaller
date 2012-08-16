@@ -95,8 +95,7 @@ HOOKUTILS_TEST_FILES = 'hookutils_test_files'
 # The function to test
 from PyInstaller.hooks.hookutils import collect_submodules
 class TestCollectSubmodules(unittest.TestCase):
-    # Use the os module as a test case; all that collect_* functions need
-    # is __name__ and __file__ attributes.
+    # Use the hookutils_test_files package for testing.
     def setUp(self, package = HOOKUTILS_TEST_FILES):
         # Fun Python behavior: __import__('mod.submod') returns mod,
         # where as __import__('mod.submod', fromlist = [a non-empty list])
@@ -144,8 +143,7 @@ class TestCollectSubmodules(unittest.TestCase):
 from PyInstaller.hooks.hookutils import collect_data_files
 from os.path import join
 class TestCollectDataFiles(unittest.TestCase):
-    # Use the os module as a test case; all that collect_* functions need
-    # is __name__ and __file__ attributes.
+    # Use the hookutils_test_files package for testing.
     def setUp(self, package = HOOKUTILS_TEST_FILES):
         self.basepath = join(os.getcwd(), HOOKUTILS_TEST_FILES)
         # Fun Python behavior: __import__('mod.submod') returns mod,
@@ -164,6 +162,15 @@ class TestCollectDataFiles(unittest.TestCase):
         with self.assertRaises(AttributeError):
             collect_data_files(__import__('os'))
 
+    # Check the source and dest lists against the correct values in
+    # subfiles.
+    def assert_data_list_equal(self, subfiles):
+        self.assertSequenceEqual(self.source_list,
+          [join(self.basepath, subpath) for subpath in subfiles])
+        self.assertSequenceEqual(self.dest_list,
+          [os.path.dirname(join(HOOKUTILS_TEST_FILES, subpath))
+          for subpath in subfiles])
+
     # Make sure only data files are found
     def test_1(self):
         subfiles = ('nine.dat',
@@ -172,19 +179,13 @@ class TestCollectDataFiles(unittest.TestCase):
                     join('py_files_not_in_package', 'data', 'eleven.dat'),
                     join('subpkg', 'thirteen.txt'),
                    )
-        self.assertSequenceEqual(self.source_list, 
-          [join(self.basepath, subpath) for subpath in subfiles])
-        self.assertSequenceEqual(self.dest_list,
-          [join(HOOKUTILS_TEST_FILES, subpath) for subpath in subfiles])
+        self.assert_data_list_equal(subfiles)
 
     # Test with a subpackage
     def test_2(self):
         self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
         subfiles = (join('subpkg', 'thirteen.txt'), )
-        self.assertSequenceEqual(self.source_list,
-          [join(self.basepath, subpath) for subpath in subfiles])
-        self.assertSequenceEqual(self.dest_list,
-          [join(HOOKUTILS_TEST_FILES, subpath) for subpath in subfiles])
+        self.assert_data_list_equal(subfiles)
 
 # Provide an easy way to run just one test for debug purposes
 def one_test():
