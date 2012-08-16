@@ -371,7 +371,7 @@ def collect_data_files(package):
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/file.dat)
                 source = os.path.join(dirpath, f)
-                dest = remove_prefix(f, os.path.dirname(mod_dir) + os.sep)
+                dest = remove_prefix(source, os.path.dirname(mod_dir) + os.sep)
                 datas.append((source, dest))
 
     return datas
