@@ -97,9 +97,9 @@ from PyInstaller.hooks.hookutils import collect_submodules
 class TestCollectSubmodules(unittest.TestCase):
     # Use the os module as a test case; all that collect_* functions need
     # is __name__ and __file__ attributes.
-    def setUp(self):
-        self.mod_list = collect_submodules(
-          __import__(HOOKUTILS_TEST_FILES))
+    def setUp(self, package = HOOKUTILS_TEST_FILES):
+        # Fun Python behavior: __import__('mod.submod') returns mod, where as __import__('mod.submod', fromlist = [a non-empty list]) returns mod.submod. See the docs on `__import__ <http://docs.python.org/library/functions.html#__import__>`_.
+        self.mod_list = collect_submodules(__import__(package, fromlist = ['']))
 
     # An error should be thrown if a module, not a package, was passed.
     def test_0(self):
@@ -123,6 +123,16 @@ class TestCollectSubmodules(unittest.TestCase):
                                HOOKUTILS_TEST_FILES + '.four',
                                HOOKUTILS_TEST_FILES + '.five',
                                HOOKUTILS_TEST_FILES + '.eight',
+                               HOOKUTILS_TEST_FILES + '.subpkg',
+                               HOOKUTILS_TEST_FILES + '.subpkg.twelve',
+                              ])
+
+    # Test with a subpackage
+    def test_4(self):
+        self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
+        self.assertItemsEqual(self.mod_list,
+                              [HOOKUTILS_TEST_FILES + '.subpkg',
+                               HOOKUTILS_TEST_FILES + '.subpkg.twelve',
                               ])
 
 # The function to test
@@ -131,9 +141,8 @@ from os.path import join
 class TestCollectDataFiles(unittest.TestCase):
     # Use the os module as a test case; all that collect_* functions need
     # is __name__ and __file__ attributes.
-    def setUp(self):
-        self.data_list = collect_data_files(
-          __import__('hookutils_test_files'))
+    def setUp(self, package = 'hookutils_test_files'):
+        self.data_list = collect_data_files(__import__(package))
         # Break list of (source, dest) inst source and dest lists
         self.source_list = [item[0] for item in self.data_list]
         self.dest_list = [item[1] for item in self.data_list]
@@ -158,5 +167,12 @@ class TestCollectDataFiles(unittest.TestCase):
           [join(HOOKUTILS_TEST_FILES, subpath) for subpath in subfiles])
 
 
+# Provide an easy way to run just one test for debug purposes
+def one_test():
+    suite = unittest.TestSuite()
+    suite.addTest(TestCollectSubmodules('test_4'))
+    unittest.TextTestRunner().run(suite)
+
 if __name__ == '__main__':
     unittest.main()
+    #one_test()
