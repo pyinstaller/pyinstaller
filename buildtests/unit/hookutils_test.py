@@ -44,50 +44,73 @@ class TestRemovePrefix(unittest.TestCase):
     # Verify that removing a prefix from an empty string is OK.
     def test_0(self):
         self.assertEqual("", remove_prefix("", "prefix"))
-        
+
     # An empty prefix should pass the string through unmodified.
     def test_1(self):
         self.assertEqual("test", remove_prefix("test", ""))
-        
+
     # If the string is the prefix, it should be empty at exit.
     def test_2(self):
         self.assertEqual("", remove_prefix("test", "test"))
-        
+
     # Just the prefix should be removed.
     def test_3(self):
         self.assertEqual("ing", remove_prefix("testing", "test"))
-        
+
     # A matching string not as prefix should produce no modifications
     def test_4(self):
         self.assertEqual("atest", remove_prefix("atest", "test"))
 
 # The function to test
-from PyInstaller.hooks.hookutils import remove_extension
+from PyInstaller.hooks.hookutils import remove_suffix
+class TestRemoveSuffix(unittest.TestCase):
+    # Verify that removing a suffix from an empty string is OK.
+    def test_0(self):
+        self.assertEqual("", remove_suffix("", "suffix"))
+
+    # An empty suffix should pass the string through unmodified.
+    def test_1(self):
+        self.assertEqual("test", remove_suffix("test", ""))
+
+    # If the string is the suffix, it should be empty at exit.
+    def test_2(self):
+        self.assertEqual("", remove_suffix("test", "test"))
+
+    # Just the suffix should be removed.
+    def test_3(self):
+        self.assertEqual("test", remove_suffix("testing", "ing"))
+
+    # A matching string not as suffix should produce no modifications
+    def test_4(self):
+        self.assertEqual("testa", remove_suffix("testa", "test"))
+
+# The function to test
+from PyInstaller.hooks.hookutils import remove_file_extension
 class TestRemoveExtension(unittest.TestCase):
     # Removing a suffix from a filename with no extension returns the
     # filename.
     def test_0(self):
-        self.assertEqual("file", remove_extension("file"))
+        self.assertEqual("file", remove_file_extension("file"))
         
     # A filename with two extensions should have only the first removed.
     def test_1(self):
-        self.assertEqual("file.1", remove_extension("file.1.2"))
+        self.assertEqual("file.1", remove_file_extension("file.1.2"))
         
     # Standard case - remove an extension
     def test_2(self):
-        self.assertEqual("file", remove_extension("file.1"))
+        self.assertEqual("file", remove_file_extension("file.1"))
         
     # Unix-style .files are not treated as extensions
     def test_3(self):
-        self.assertEqual(".file", remove_extension(".file"))
+        self.assertEqual(".file", remove_file_extension(".file"))
         
     # Unix-style .file.ext works
     def test_4(self):
-        self.assertEqual(".file", remove_extension(".file.1"))
+        self.assertEqual(".file", remove_file_extension(".file.1"))
 
     # Unix-style .file.ext works
     def test_5(self):
-        self.assertEqual("/a/b/c", remove_extension("/a/b/c.1"))
+        self.assertEqual("/a/b/c", remove_file_extension("/a/b/c.1"))
 
 # The name of the hookutils test files directory
 HOOKUTILS_TEST_FILES = 'hookutils_test_files'
@@ -212,7 +235,8 @@ class TestCollectDataFiles(unittest.TestCase):
 
     # Test with a string package name
     def test_4(self):
-        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES + '.subpkg')
+        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES +
+                                            '.subpkg')
         self.split_data_list()
         self.assert_data_list_equal(self.subpkg_subfiles)
 
