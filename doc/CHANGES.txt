@@ -1,5 +1,11 @@
 (+ user visible changes, * internal stuff)
 
+Changes since PyInstaller 2.0
+-------------------------------
+ + Minimum suported Python version is 2.4.
+ + Add import hooks for docutils, jinja2, sphinx, pytz, idlelib.
+   (thanks to Bryan A. Jones)
+
 Changes since PyInstaller 1.5.1
 -------------------------------
  + Minimum suported Python version is 2.3.
