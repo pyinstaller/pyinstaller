@@ -16,5 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
+
 from hookutils import collect_data_files
+
+
+# On Linux pytz installed from distribution repository uses zoneinfo
+# fron /usr/share/zoneinfo/ and no data files might be collected.
 datas = collect_data_files('pytz')
