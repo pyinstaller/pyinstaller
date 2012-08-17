@@ -441,10 +441,10 @@ class PYZOwner(iu.Owner):
         # Paths from developer machine are masked.
         try:
             # Set __file__ attribute of a module relative to the executable
-            # so that data files can be found. Specifically, take off
-            # executable_name?xxxx suffix in self.path to get absolute
-            # path to the executable.
-            abspath = iu._os_path_dirname(self.path)
+            # so that data files can be found. The absolute absolute path
+            # to the executable is taken from sys.prefix. In onefile mode it
+            # points to the temp directory where files are unpacked by PyInstaller.
+            abspath = sys.prefix
             # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
             if ispkg:
                 mod.__file__ = iu._os_path_join(iu._os_path_join(abspath,
