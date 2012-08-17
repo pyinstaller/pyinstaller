@@ -307,8 +307,6 @@ def remove_extension(filename):
     """
     This funtion returns filename without its extension.
     """
-    # Special case: if suffix is empty, string[:0] returns ''! So, test
-    # for a non-empty suffix.
     return os.path.splitext(filename)[0]
 
 def get_package_paths(package):
