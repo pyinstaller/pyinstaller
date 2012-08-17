@@ -62,32 +62,32 @@ class TestRemovePrefix(unittest.TestCase):
         self.assertEqual("atest", remove_prefix("atest", "test"))
 
 # The function to test
-from PyInstaller.hooks.hookutils import remove_extension
+from PyInstaller.hooks.hookutils import remove_file_extension
 class TestRemoveExtension(unittest.TestCase):
     # Removing a suffix from a filename with no extension returns the
     # filename.
     def test_0(self):
-        self.assertEqual("file", remove_extension("file"))
+        self.assertEqual("file", remove_file_extension("file"))
         
     # A filename with two extensions should have only the first removed.
     def test_1(self):
-        self.assertEqual("file.1", remove_extension("file.1.2"))
+        self.assertEqual("file.1", remove_file_extension("file.1.2"))
         
     # Standard case - remove an extension
     def test_2(self):
-        self.assertEqual("file", remove_extension("file.1"))
+        self.assertEqual("file", remove_file_extension("file.1"))
         
     # Unix-style .files are not treated as extensions
     def test_3(self):
-        self.assertEqual(".file", remove_extension(".file"))
+        self.assertEqual(".file", remove_file_extension(".file"))
         
     # Unix-style .file.ext works
     def test_4(self):
-        self.assertEqual(".file", remove_extension(".file.1"))
+        self.assertEqual(".file", remove_file_extension(".file.1"))
 
     # Unix-style .file.ext works
     def test_5(self):
-        self.assertEqual("/a/b/c", remove_extension("/a/b/c.1"))
+        self.assertEqual("/a/b/c", remove_file_extension("/a/b/c.1"))
 
 # The name of the hookutils test files directory
 HOOKUTILS_TEST_FILES = 'hookutils_test_files'
