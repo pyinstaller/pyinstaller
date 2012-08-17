@@ -95,11 +95,14 @@ HOOKUTILS_TEST_FILES = 'hookutils_test_files'
 # The function to test
 from PyInstaller.hooks.hookutils import collect_submodules
 class TestCollectSubmodules(unittest.TestCase):
-    # Use the os module as a test case; all that collect_* functions need
-    # is __name__ and __file__ attributes.
-    def setUp(self):
-        self.mod_list = collect_submodules(
-          __import__(HOOKUTILS_TEST_FILES))
+    # Use the hookutils_test_files package for testing.
+    def setUp(self, package = HOOKUTILS_TEST_FILES):
+        # Fun Python behavior: __import__('mod.submod') returns mod,
+        # where as __import__('mod.submod', fromlist = [a non-empty list])
+        # returns mod.submod. See the docs on `__import__
+        # <http://docs.python.org/library/functions.html#__import__>`_.
+        self.mod_list = collect_submodules(__import__(package,
+                                                      fromlist = ['']))
 
     # An error should be thrown if a module, not a package, was passed.
     def test_0(self):
@@ -113,7 +116,8 @@ class TestCollectSubmodules(unittest.TestCase):
 
     # Subpackages without an __init__.py should not be included
     def test_2(self):
-        self.assertTrue(HOOKUTILS_TEST_FILES + '.py_files_not_in_package.sub_pkg.three' not in self.mod_list)
+        self.assertTrue(HOOKUTILS_TEST_FILES +
+          '.py_files_not_in_package.sub_pkg.three' not in self.mod_list)
 
     # Check that all packages get included
     def test_3(self):
@@ -123,18 +127,49 @@ class TestCollectSubmodules(unittest.TestCase):
                                HOOKUTILS_TEST_FILES + '.four',
                                HOOKUTILS_TEST_FILES + '.five',
                                HOOKUTILS_TEST_FILES + '.eight',
+                               HOOKUTILS_TEST_FILES + '.subpkg',
+                               HOOKUTILS_TEST_FILES + '.subpkg.twelve',
                               ])
+
+    def assert_subpackge_equal(self):
+        self.assertItemsEqual(self.mod_list,
+                              [HOOKUTILS_TEST_FILES + '.subpkg',
+                               HOOKUTILS_TEST_FILES + '.subpkg.twelve',
+                              ])
+
+    # Test with a subpackage
+    def test_4(self):
+        self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
+        self.assert_subpackge_equal()
+
+    # Test with a string for the package name
+    def test_5(self):
+        self.mod_list = collect_submodules(HOOKUTILS_TEST_FILES)
+        self.test_3()
+
+    # Test with a string for the subpackage name
+    def test_6(self):
+        self.mod_list = collect_submodules(HOOKUTILS_TEST_FILES +
+                                           '.subpkg')
+        self.assert_subpackge_equal()
 
 # The function to test
 from PyInstaller.hooks.hookutils import collect_data_files
 from os.path import join
 class TestCollectDataFiles(unittest.TestCase):
-    # Use the os module as a test case; all that collect_* functions need
-    # is __name__ and __file__ attributes.
-    def setUp(self):
-        self.data_list = collect_data_files(
-          __import__('hookutils_test_files'))
-        # Break list of (source, dest) inst source and dest lists
+    # Use the hookutils_test_files package for testing.
+    def setUp(self, package = HOOKUTILS_TEST_FILES):
+        self.basepath = join(os.getcwd(), HOOKUTILS_TEST_FILES)
+        # Fun Python behavior: __import__('mod.submod') returns mod,
+        # where as __import__('mod.submod', fromlist = [a non-empty list])
+        # returns mod.submod. See the docs on `__import__
+        # <http://docs.python.org/library/functions.html#__import__>`_.
+        self.data_list = collect_data_files(__import__(package,
+                                                      fromlist = ['']))
+        self.split_data_list()
+
+    # Break list of (source, dest) inst source and dest lists
+    def split_data_list(self):
         self.source_list = [item[0] for item in self.data_list]
         self.dest_list = [item[1] for item in self.data_list]
 
@@ -144,17 +179,50 @@ class TestCollectDataFiles(unittest.TestCase):
         with self.assertRaises(AttributeError):
             collect_data_files(__import__('os'))
 
+    # Check the source and dest lists against the correct values in
+    # subfiles.
+    def assert_data_list_equal(self, subfiles):
+        self.assertSequenceEqual(self.source_list,
+          [join(self.basepath, subpath) for subpath in subfiles])
+        self.assertSequenceEqual(self.dest_list,
+          [os.path.dirname(join(HOOKUTILS_TEST_FILES, subpath))
+          for subpath in subfiles])
+
     # Make sure only data files are found
-    def test_1(self):
-#        print(self.data_list)
-        basepath = join(os.getcwd(), HOOKUTILS_TEST_FILES)
-        subfiles = ('nine.dat',
+    all_subfiles = ('nine.dat',
                     'six.dll',
                     join('py_files_not_in_package', 'ten.dat'),
                     join('py_files_not_in_package', 'data', 'eleven.dat'),
+                    join('subpkg', 'thirteen.txt'),
                    )
-        self.assertSequenceEqual(self.source_list, 
-          [join(basepath, subpath) for subpath in subfiles])
+    def test_1(self):
+        self.assert_data_list_equal(self.all_subfiles)
+
+    # Test with a subpackage
+    subpkg_subfiles = (join('subpkg', 'thirteen.txt'), )
+    def test_2(self):
+        self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
+        self.assert_data_list_equal(self.subpkg_subfiles)
+
+    # Test with a string package name
+    def test_3(self):
+        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES)
+        self.split_data_list()
+        self.assert_data_list_equal(self.all_subfiles)
+
+    # Test with a string package name
+    def test_4(self):
+        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES + '.subpkg')
+        self.split_data_list()
+        self.assert_data_list_equal(self.subpkg_subfiles)
+
+
+# Provide an easy way to run just one test for debug purposes
+def one_test():
+    suite = unittest.TestSuite()
+    suite.addTest(TestCollectSubmodules('test_4'))
+    unittest.TextTestRunner().run(suite)
 
 if __name__ == '__main__':
     unittest.main()
+    #one_test()
