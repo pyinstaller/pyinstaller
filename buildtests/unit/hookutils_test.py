@@ -44,19 +44,19 @@ class TestRemovePrefix(unittest.TestCase):
     # Verify that removing a prefix from an empty string is OK.
     def test_0(self):
         self.assertEqual("", remove_prefix("", "prefix"))
-        
+
     # An empty prefix should pass the string through unmodified.
     def test_1(self):
         self.assertEqual("test", remove_prefix("test", ""))
-        
+
     # If the string is the prefix, it should be empty at exit.
     def test_2(self):
         self.assertEqual("", remove_prefix("test", "test"))
-        
+
     # Just the prefix should be removed.
     def test_3(self):
         self.assertEqual("ing", remove_prefix("testing", "test"))
-        
+
     # A matching string not as prefix should produce no modifications
     def test_4(self):
         self.assertEqual("atest", remove_prefix("atest", "test"))
@@ -235,7 +235,8 @@ class TestCollectDataFiles(unittest.TestCase):
 
     # Test with a string package name
     def test_4(self):
-        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES + '.subpkg')
+        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES +
+                                            '.subpkg')
         self.split_data_list()
         self.assert_data_list_equal(self.subpkg_subfiles)
 
