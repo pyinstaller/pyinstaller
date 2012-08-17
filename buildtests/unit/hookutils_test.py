@@ -62,6 +62,29 @@ class TestRemovePrefix(unittest.TestCase):
         self.assertEqual("atest", remove_prefix("atest", "test"))
 
 # The function to test
+from PyInstaller.hooks.hookutils import remove_suffix
+class TestRemoveSuffix(unittest.TestCase):
+    # Verify that removing a suffix from an empty string is OK.
+    def test_0(self):
+        self.assertEqual("", remove_suffix("", "suffix"))
+
+    # An empty suffix should pass the string through unmodified.
+    def test_1(self):
+        self.assertEqual("test", remove_suffix("test", ""))
+
+    # If the string is the suffix, it should be empty at exit.
+    def test_2(self):
+        self.assertEqual("", remove_suffix("test", "test"))
+
+    # Just the suffix should be removed.
+    def test_3(self):
+        self.assertEqual("test", remove_suffix("testing", "ing"))
+
+    # A matching string not as suffix should produce no modifications
+    def test_4(self):
+        self.assertEqual("testa", remove_suffix("testa", "test"))
+
+# The function to test
 from PyInstaller.hooks.hookutils import remove_file_extension
 class TestRemoveExtension(unittest.TestCase):
     # Removing a suffix from a filename with no extension returns the
