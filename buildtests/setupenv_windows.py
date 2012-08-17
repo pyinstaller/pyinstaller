@@ -62,6 +62,7 @@ _PACKAGES = {
     'docutils': ['docutils'],
     'jinja2': ['jinja2'],
     'sphinx': ['sphinx'],
+    'pytz': ['pytz'],
     # 'modulename': 'pypi_name_or_url_or_path'
     'MySQLdb': ['MySQL-python-*%s-py%s.exe' % (py_arch(), PYVER)],
     'numpy': ['numpy-unoptimized-*%s-py%s.exe' % (py_arch(), PYVER)],

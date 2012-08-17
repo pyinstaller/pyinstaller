@@ -48,6 +48,7 @@ _PACKAGES = [
     'pycrypto',
     #'pyenchant',
     'pyodbc',
+    'pytz',
     'sphinx',
     'simplejson',
     'SQLAlchemy',
