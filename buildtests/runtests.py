@@ -126,6 +126,7 @@ class SkipChecker(object):
             'libraries/test_pycrypto': ['Crypto'],
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
+            'libraries/test_pytz' : ['pytz'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
             'libraries/test_usb': ['ctypes', 'usb'],
             'libraries/test_wx': ['wx'],
