@@ -303,7 +303,7 @@ def remove_suffix(string, suffix):
     else:
         return string
 
-def remove_extension(filename):
+def remove_file_extension(filename):
     """
     This funtion returns filename without its extension.
     """
@@ -372,9 +372,9 @@ def collect_submodules(package):
         if '__init__.py' in filenames:
             mods.add(mod_path)
             for f in filenames:
-                if ((remove_extension(f) != '__init__') and
+                if ((remove_file_extension(f) != '__init__') and
                     f.endswith(PY_EXECUTABLE_EXTENSIONS)):
-                    mods.add( mod_path + "." + remove_extension(f) )
+                    mods.add( mod_path + "." + remove_file_extension(f) )
         else:
         # If not, nothing here is part of the package; don't visit any of
         # these subdirs.
