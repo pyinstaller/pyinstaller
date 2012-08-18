@@ -1,11 +1,10 @@
-#!/usr/bin/env python
 
 import glob
 import os
 import sys
 import PyInstaller
 import PyInstaller.compat as compat
-from PyInstaller.compat import is_darwin, set
+from PyInstaller.compat import is_darwin
 from PyInstaller.utils import misc
 
 import PyInstaller.log as logging

@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-#
-# Automatically build spec files containing a description of the project
 #
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
@@ -19,10 +16,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import sys, os
+
+# Automatically build spec files containing a description of the project
+
+
+import os
+import sys
+
 
 from PyInstaller import HOMEPATH
-from PyInstaller import is_win, is_cygwin, is_darwin
+from PyInstaller.compat import is_win, is_cygwin, is_darwin
 
 
 onefiletmplt = """# -*- mode: python -*-
@@ -103,9 +106,10 @@ bundletmplt = """app = BUNDLE(coll,
 """
 
 
-def quote_win_filepath( path ):
+def quote_win_filepath(path):
     # quote all \ with another \ after using normpath to clean up the path
     return os.path.normpath(path).replace('\\', '\\\\')
+
 
 # Support for trying to avoid hard-coded paths in the .spec files.
 # Eg, all files rooted in the Installer directory tree will be
@@ -116,9 +120,10 @@ path_conversions = (
     (HOMEPATH, "HOMEPATH"),
     )
 
-def make_variable_path(filename, conversions = path_conversions):
+
+def make_variable_path(filename, conversions=path_conversions):
     for (from_path, to_name) in conversions:
-        assert os.path.abspath(from_path)==from_path, (
+        assert os.path.abspath(from_path) == from_path, (
             "path '%s' should already be absolute" % from_path)
         if filename[:len(from_path)] == from_path:
             rest = filename[len(from_path):]
@@ -127,18 +132,21 @@ def make_variable_path(filename, conversions = path_conversions):
             return to_name, rest
     return None, filename
 
+
 # An object used in place of a "path string" which knows how to repr()
 # itself using variable names instead of hard-coded paths.
 class Path:
     def __init__(self, *parts):
         self.path = apply(os.path.join, parts)
         self.variable_prefix = self.filename_suffix = None
+
     def __repr__(self):
         if self.filename_suffix is None:
             self.variable_prefix, self.filename_suffix = make_variable_path(self.path)
         if self.variable_prefix is None:
             return repr(self.path)
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
+
 
 def __add_options(parser):
     """
@@ -174,7 +182,7 @@ def __add_options(parser):
                  'be used multiple times.')
     g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
                  help="additional path to search for hooks "
-                      "(may be given several times)")    
+                      "(may be given several times)")
 
     g = parser.add_option_group('How to generate')
     g.add_option("-d", "--debug", action="store_true", default=False,
@@ -272,8 +280,8 @@ def main(scripts, name=None, onefile=0,
     hiddenimports = hiddenimports or []
     scripts = map(Path, scripts)
 
-    d = {'scripts':scripts,
-         'pathex' :pathex,
+    d = {'scripts': scripts,
+         'pathex': pathex,
          'hiddenimports': hiddenimports,
          'hookspath': hookspath,
          #'exename': '',
@@ -282,15 +290,15 @@ def main(scripts, name=None, onefile=0,
          'builddir': repr(builddir),
          'debug': debug,
          'strip': strip,
-         'upx' : not noupx,
-         'crypt' : repr(crypt),
+         'upx': not noupx,
+         'crypt': repr(crypt),
          'crypted': crypt is not None,
          'console': console or debug,
          'exe_options': exe_options}
 
     if is_win or is_cygwin:
-        d['exename'] = name+'.exe'
-        d['dllname'] = name+'.dll'
+        d['exename'] = name + '.exe'
+        d['dllname'] = name + '.dll'
     else:
         d['exename'] = name
 
@@ -298,7 +306,7 @@ def main(scripts, name=None, onefile=0,
     if not is_win and not is_darwin:
         d['console'] = True
 
-    specfnm = os.path.join(workdir, name+'.spec')
+    specfnm = os.path.join(workdir, name + '.spec')
     specfile = open(specfnm, 'w')
     if onefile:
         specfile.write(onefiletmplt % d)
@@ -314,4 +322,3 @@ def main(scripts, name=None, onefile=0,
             specfile.write(bundletmplt % d)
     specfile.close()
     return specfnm
-

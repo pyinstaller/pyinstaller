@@ -22,7 +22,7 @@ import os
 import glob
 
 from PyInstaller import depend, hooks
-from PyInstaller.compat import is_win, LogDict, set
+from PyInstaller.compat import is_win, LogDict
 
 import PyInstaller.log as logging
 import PyInstaller.depend.owner
