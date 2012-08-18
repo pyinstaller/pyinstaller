@@ -109,7 +109,7 @@ class SkipChecker(object):
             # Docutils doesn't expect this and throws an assertion.
             # Untested on Mac, but this shouldn't be a problem, since
             # Macs return 'utf-8'.
-            'libraries/test_sphinx' : is_win or is_darwin,
+            'libraries/test_sphinx': is_win or is_darwin,
             }
         # Required Python modules for some tests.
         self.MODULES = {
@@ -127,14 +127,14 @@ class SkipChecker(object):
             'libraries/test_pycrypto': ['Crypto'],
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
-            'libraries/test_pytz' : ['pytz'],
+            'libraries/test_pytz': ['pytz'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
             'libraries/test_usb': ['ctypes', 'usb'],
             'libraries/test_wx': ['wx'],
             'libraries/test_wx_pubsub': ['wx'],
             'libraries/test_wx_pubsub_arg1': ['wx'],
             'libraries/test_wx_pubsub_kwargs': ['wx'],
-            'libraries/test_sphinx' : ['sphinx', 'docutils', 'jinja2'],
+            'libraries/test_sphinx': ['sphinx', 'docutils', 'jinja2'],
             'import/test_c_extension': ['simplejson'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_ctypes_cdll_c2': ['ctypes'],
@@ -645,16 +645,16 @@ def main():
             parser.error('Must not specify -i/--interactive-tests when passing test names.')
         suite = unittest.TestSuite()
         for arg in args:
-           test_list = glob.glob(arg)
-           if not test_list: 
-               test_list = [arg]
-           else:
-               test_list = [x for x in test_list if os.path.splitext(x)[1] == ".py"]
-           for t in test_list: 
-              test_dir = os.path.dirname(t)
-              test_script = os.path.basename(os.path.splitext(t)[0])
-              suite.addTest(GenericTestCase(test_dir, test_script))
-              print 'Running test:  %s' % (test_dir + '/' + test_script)
+            test_list = glob.glob(arg)
+            if not test_list:
+                test_list = [arg]
+            else:
+                test_list = [x for x in test_list if os.path.splitext(x)[1] == ".py"]
+            for t in test_list:
+                test_dir = os.path.dirname(t)
+                test_script = os.path.basename(os.path.splitext(t)[0])
+                suite.addTest(GenericTestCase(test_dir, test_script))
+                print 'Running test:  %s' % (test_dir + '/' + test_script)
 
     # Run all tests or all interactive tests.
     else:
