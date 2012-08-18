@@ -482,17 +482,16 @@ class ImportManager:
                     # In Python 2.4 and above, sys.modules is left clean
                     # after a broken import. We need to do the same to
                     # achieve perfect compatibility (see ticket #32).
-                    if sys.version_info >= (2, 4):
-                        # FIXME: how can we recover from a broken reload()?
-                        # Should we save the mod dict and restore it in case
-                        # of failure?
-                        if not reload:
-                            # Some modules (eg: dbhash.py) cleanup
-                            # sys.modules themselves. We should then
-                            # be lenient and avoid errors.
-                            sys.modules.pop(fqname, None)
-                            if hasattr(parent, nm):
-                                delattr(parent, nm)
+                    # FIXME: how can we recover from a broken reload()?
+                    # Should we save the mod dict and restore it in case
+                    # of failure?
+                    if not reload:
+                        # Some modules (eg: dbhash.py) cleanup
+                        # sys.modules themselves. We should then
+                        # be lenient and avoid errors.
+                        sys.modules.pop(fqname, None)
+                        if hasattr(parent, nm):
+                            delattr(parent, nm)
                     raise
             if fqname == 'thread' and not self.threaded:
                 #debug("thread detected!")

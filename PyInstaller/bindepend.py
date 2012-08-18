@@ -1,6 +1,3 @@
-#! /usr/bin/env python
-#
-# Find external dependencies of binary libraries.
 #
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
@@ -19,18 +16,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
+
+# Find external dependencies of binary libraries.
+
+
 import os
 import sys
 import re
 from glob import glob
+
 # Required for extracting eggs.
 import zipfile
 
-from PyInstaller import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26
+
+from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
-from PyInstaller.compat import set
 
 
 import PyInstaller.log as logging

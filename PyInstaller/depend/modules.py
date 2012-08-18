@@ -20,10 +20,13 @@
 
 # All we're doing here is tracking, not importing
 # If we were importing, these would be hooked to the real module objects
+
+
 import os
 
 from PyInstaller.compat import ctypes, PYCO
 from PyInstaller.depend.utils import _resolveCtypesImports, scan_code
+
 import PyInstaller.depend.impdirector
 
 

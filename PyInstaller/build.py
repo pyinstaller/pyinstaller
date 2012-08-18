@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-#
-# Build packages using spec files
 #
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
@@ -19,6 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+
+# Build packages using spec files.
+
+
 import sys
 import os
 import shutil
@@ -35,11 +36,10 @@ import PyInstaller.depend.imptracker
 import PyInstaller.depend.modules
 
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
-from PyInstaller import is_win, is_unix, is_aix, is_darwin, is_cygwin
-from PyInstaller import is_py23, is_py24
+from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin, is_cygwin
 import PyInstaller.compat as compat
 
-from PyInstaller.compat import hashlib, set
+from PyInstaller.compat import hashlib
 from PyInstaller.depend import dylib
 from PyInstaller.utils import misc
 
@@ -49,7 +49,8 @@ if is_win:
     from PyInstaller.utils import winmanifest
 
 
-logger = logging.getLogger('PyInstaller.build')
+logger = logging.getLogger(__name__)
+
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
@@ -86,7 +87,7 @@ def _load_data(filename):
 
 def setupUPXFlags():
     f = compat.getenv("UPX", "")
-    if is_win and is_py24:
+    if is_win:
         # Binaries built with Visual Studio 7.1 require --strip-loadconf
         # or they won't compress. Configure.py makes sure that UPX is new
         # enough to support --strip-loadconf.
@@ -275,16 +276,11 @@ def _rmtree(path):
 def check_egg(pth):
     """Check if path points to a file inside a python egg file (or to an egg
        directly)."""
-    if is_py23:
-        if os.path.altsep:
-            pth = pth.replace(os.path.altsep, os.path.sep)
-        components = pth.split(os.path.sep)
-        sep = os.path.sep
-    else:
-        components = pth.replace("\\", "/").split("/")
-        sep = "/"
-        if is_win:
-            sep = "\\"
+    if os.path.altsep:
+        pth = pth.replace(os.path.altsep, os.path.sep)
+    components = pth.split(os.path.sep)
+    sep = os.path.sep
+
     for i, name in zip(range(0, len(components)), components):
         if name.lower().endswith(".egg"):
             eggpth = sep.join(components[:i + 1])

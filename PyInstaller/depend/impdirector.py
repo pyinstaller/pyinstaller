@@ -25,18 +25,20 @@
 # Mac would have them for PY_RESOURCE modules etc.
 # A generalization of Owner - their concept of "turf" is broader
 
+
 import os
 import sys
 import imp
 import marshal
 
 from PyInstaller import depend
-from PyInstaller.compat import set
+
 
 import PyInstaller.depend.owner
 import PyInstaller.log as logging
 
-logger = logging.getLogger('PyInstaller.build.mf')
+
+logger = logging.getLogger(__name__)
 
 
 def getDescr(fnm):

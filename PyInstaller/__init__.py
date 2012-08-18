@@ -18,21 +18,24 @@
 
 __all__ = ('HOMEPATH', 'CONFIGDIR', 'PLATFORM',
            'VERSION', 'get_version',
-           'is_py23', 'is_py24', 'is_py25', 'is_py26', 'is_py27',
+           'is_py25', 'is_py26', 'is_py27',
            'is_win', 'is_cygwin', 'is_darwin', 'is_unix', 'is_linux',
            'is_solar', 'is_aix')
 
 import os
 import sys
 
+
 # Fail hard if Python does not have minimum required version
-if sys.version_info < (2, 3):
-    raise SystemExit('PyInstaller requires at least Python 2.3, sorry.')
+if sys.version_info < (2, 4):
+    raise SystemExit('PyInstaller requires at least Python 2.4, sorry.')
+
 
 # Extend PYTHONPATH with 3rd party libraries bundled with PyInstaller.
 # (otherwise e.g. macholib won't work on Mac OS X)
 from PyInstaller import lib
 sys.path.insert(0, lib.__path__[0])
+
 
 from PyInstaller import compat
 from PyInstaller.utils import git
@@ -40,8 +43,6 @@ from PyInstaller.utils import git
 VERSION = (2, 1, 0, 'dev', git.get_repo_revision())
 
 
-is_py23 = compat.is_py23
-is_py24 = compat.is_py24
 is_py25 = compat.is_py25
 is_py26 = compat.is_py26
 is_py27 = compat.is_py27

@@ -25,9 +25,9 @@ import dis
 import os
 
 from PyInstaller import compat
-from PyInstaller.compat import set, ctypes
+from PyInstaller.compat import ctypes
 
-from PyInstaller import is_unix, is_darwin, is_py25, is_py27
+from PyInstaller.compat import is_unix, is_darwin, is_py25, is_py27
 
 import PyInstaller.depend.utils
 import PyInstaller.log as logging

@@ -1,6 +1,3 @@
-#! /usr/bin/env python
-#
-# Configure PyInstaller for the current Python installation.
 #
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
@@ -18,15 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+
+# Configure PyInstaller for the current Python installation.
+
+
 import os
 import sys
 import shutil
-import re
 import time
 import inspect
 
 from PyInstaller import HOMEPATH, PLATFORM
-from PyInstaller import is_win, is_unix, is_darwin, is_py24, get_version
+from PyInstaller.compat import is_win, is_darwin
 
 import PyInstaller.build as build
 import PyInstaller.compat as compat
@@ -35,7 +36,7 @@ import PyInstaller.log as logging
 import PyInstaller.depend.modules
 import PyInstaller.depend.imptracker
 
-logger = logging.getLogger('PyInstaller.configure')
+logger = logging.getLogger(__name__)
 
 
 def test_Crypt(config):
@@ -110,7 +111,7 @@ def test_UPX(config, upx_dir):
         if vers:
             v = vers[0].split()[1]
             hasUPX = tuple(map(int, v.split(".")))
-            if is_win and is_py24 and hasUPX < (1, 92):
+            if is_win and hasUPX < (1, 92):
                 logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
                 hasUPX = 0
     except Exception, e:

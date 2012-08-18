@@ -1,3 +1,4 @@
+#
 # Copyright (C) 2009, Lorenzo Berni
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
@@ -15,7 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os
 
 import PyInstaller.compat as compat
 from hookutils import logger
@@ -33,6 +33,7 @@ hiddenimports = (list(settings.AUTHENTICATION_BACKENDS) +
                  list(settings.TEMPLATE_CONTEXT_PROCESSORS) +
                  list(settings.TEMPLATE_LOADERS) +
                  [settings.ROOT_URLCONF])
+
 
 def find_url_callbacks(urls_module):
     urlpatterns = urls_module.urlpatterns
@@ -54,5 +55,5 @@ else:
     import urls
 hiddenimports += find_url_callbacks(urls)
 
-logger.debug('%r', sorted(set(hiddenimports)))
 
+logger.debug('%r', sorted(set(hiddenimports)))

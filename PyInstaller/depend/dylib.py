@@ -21,22 +21,22 @@
 # under "excludes" below; add to this list as necessary (or use the
 # "excludes" option in the INSTALL section of the config file).
 
-"""
-Manipulating with dynamic libraries.
-"""
+
+# Manipulating with dynamic libraries.
 
 
 __all__ = ['exclude_list', 'include_list', 'include_library']
 
+
 import os
 import re
 
-from PyInstaller import is_win, is_unix, is_aix, is_darwin
-from PyInstaller.compat import set
+
+from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin
 
 
 import PyInstaller.log as logging
-logger = logging.getLogger('PyInstaller.build.dylib')
+logger = logging.getLogger(__name__)
 
 
 _BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])

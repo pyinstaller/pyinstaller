@@ -171,7 +171,7 @@ class SkipChecker(object):
             for mod_name in self.MODULES[test_name]:
                 # STDOUT and STDERR are discarded (devnull) to hide
                 # import exceptions.
-                trash = open(compat.devnull)
+                trash = open(os.devnull)
                 retcode = compat.exec_python_rc('-c', "import %s" % mod_name,
                         stdout=trash, stderr=trash)
                 trash.close()

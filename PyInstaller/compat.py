@@ -20,18 +20,10 @@
 
 import dircache  # Module removed in Python 3
 import os
+import subprocess
 import sys
 
-try:
-    import subprocess
-except ImportError:
-    # :todo: remove when dropping Python 2.3 compatibility
-    # fall back to out version of `subprocess`
-    import PyInstaller.lib.__subprocess as subprocess
 
-
-is_py23 = sys.version_info >= (2, 3)
-is_py24 = sys.version_info >= (2, 4)
 is_py25 = sys.version_info >= (2, 5)
 is_py26 = sys.version_info >= (2, 6)
 is_py27 = sys.version_info >= (2, 7)
@@ -86,16 +78,6 @@ else:
     PYCO = 'o'
 
 
-# os.devnull is available since Python 2.4+.
-if hasattr(os, 'devnull'):
-    devnull = os.devnull
-else:
-    if is_win:
-        devnull = 'nul'
-    else:
-        devnull = '/dev/null'
-
-
 # If ctypes is present, specific dependency discovery can be enabled.
 try:
     import ctypes
@@ -132,14 +114,6 @@ except ImportError:
     class hashlib(object):
         from md5 import new as md5
         from sha import new as sha
-
-
-# In Python 2.4+ there is a builtin type set(). In Python 2.3
-# it is class Set in module sets.
-try:
-    from __builtin__ import set
-except ImportError:
-    from sets import Set as set
 
 
 # Function os.path.relpath() available in Python 2.6+.
