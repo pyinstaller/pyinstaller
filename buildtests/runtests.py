@@ -24,12 +24,14 @@
 # by this program but be recognizable by any one as a dependency of that
 # particular test.
 
+
 import glob
 import optparse
 import os
 import re
 import shutil
 import sys
+
 
 try:
     import PyInstaller
@@ -44,8 +46,8 @@ except ImportError:
 
 
 from PyInstaller import HOMEPATH
-from PyInstaller import is_py23, is_py24, is_py25, is_py26, is_win, is_darwin
 from PyInstaller import compat
+from PyInstaller.compat import is_py25, is_py26, is_win, is_darwin
 from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc
@@ -91,7 +93,6 @@ class SkipChecker(object):
         depend = MiscDependencies()
         # Required Python or OS version for some tests.
         self.MIN_VERSION_OR_OS = {
-            'basic/test_time': is_py23,
             'basic/test_celementtree': is_py25,
             'basic/test_email': is_py25,
             # On Mac DYLD_LIBRARY_PATH is not used.

@@ -43,7 +43,7 @@ except ImportError:
             [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
 
 
-from PyInstaller.compat import is_py24, is_py25, is_py26
+from PyInstaller.compat import is_py25, is_py26
 
 
 PYVER = '.'.join([str(x) for x in sys.version_info[0:2]])
@@ -84,7 +84,6 @@ _PY_VERSION = {
     'PIL': is_py26,
     'psycopg2': is_py26,
     'simplejson': is_py25,
-    'sqlalchemy': is_py24,
     # Installers are available only for Python 2.6/2.7.
     'wx': is_py26,
 }
