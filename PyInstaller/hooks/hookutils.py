@@ -110,7 +110,6 @@ diff.discard('%(modname)s')
 print list(diff)
 """ % {'modname': modname}
     module_imports = eval_statement(statement)
-    
 
     if not module_imports:
         logger.error('Cannot find imports for module %s' % modname)
@@ -277,7 +276,8 @@ def opengl_arrays_modules():
         modules.append('OpenGL.arrays.' + mod)
 
     return modules
-    
+
+
 def remove_prefix(string, prefix):
     """
     This funtion removes the given prefix from a string, if the string does
@@ -288,7 +288,8 @@ def remove_prefix(string, prefix):
         return string[len(prefix):]
     else:
         return string
-    
+
+
 def remove_suffix(string, suffix):
     """
     This funtion removes the given suffix from a string, if the string
@@ -302,11 +303,13 @@ def remove_suffix(string, suffix):
     else:
         return string
 
+
 def remove_file_extension(filename):
     """
     This funtion returns filename without its extension.
     """
     return os.path.splitext(filename)[0]
+
 
 def get_package_paths(package):
     """
@@ -345,6 +348,7 @@ def get_package_paths(package):
 # All these extension represent Python modules or extension modules
 PY_EXECUTABLE_EXTENSIONS = ('.py', '.pyc', '.pyd', '.pyo', '.so')
 
+
 def collect_submodules(package):
     """
     The following two functions were originally written by Ryan Welsh
@@ -378,7 +382,7 @@ def collect_submodules(package):
             for f in filenames:
                 if ((remove_file_extension(f) != '__init__') and
                     f.endswith(PY_EXECUTABLE_EXTENSIONS)):
-                    mods.add( mod_path + "." + remove_file_extension(f) )
+                    mods.add(mod_path + "." + remove_file_extension(f))
         else:
         # If not, nothing here is part of the package; don't visit any of
         # these subdirs.
@@ -386,9 +390,11 @@ def collect_submodules(package):
 
     return list(mods)
 
+
 # These extensions represent Python executables and should therefore be
 # ignored.
 PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
+
 
 def collect_data_files(package):
     """
