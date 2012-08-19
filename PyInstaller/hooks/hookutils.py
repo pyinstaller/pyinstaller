@@ -322,7 +322,12 @@ def get_package_paths(package):
         # where as __import__('mod.submod', fromlist = [a non-empty list])
         # returns mod.submod. See the docs on `__import__
         # <http://docs.python.org/library/functions.html#__import__>`_.
-        package = __import__(package, fromlist = [''])
+        # Keyworded arguments in __import__ function are available
+        # in Python 2.5+. Compatibility with Python 2.4 is preserved.
+        _fromlist = ['']
+        _globals = {}
+        _locals = {}
+        package = __import__(package, _globals, _locals, _fromlist)
     # A package must have a path -- check for this, in case the package
     # parameter is actually a module.
     assert package.__path__
@@ -383,7 +388,7 @@ def collect_submodules(package):
 
 # These extensions represent Python executables and should therefore be
 # ignored.
-PY_IGNORE_EXTENSIONS = ('.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib')
+PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
 
 def collect_data_files(package):
     """
@@ -403,7 +408,8 @@ def collect_data_files(package):
     datas = []
     for dirpath, dirnames, files in os.walk(pkg_dir):
         for f in files:
-            if not f.endswith(PY_IGNORE_EXTENSIONS):
+            extension = os.path.splitext(f)[1]
+            if not extension in PY_IGNORE_EXTENSIONS:
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/file.dat)
