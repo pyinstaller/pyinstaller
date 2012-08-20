@@ -22,5 +22,5 @@ def hook(mod):
     global hiddenimports, datas
     hiddenimports = (collect_submodules('docutils.languages') +
                      collect_submodules('docutils.writers'))
-    datas = collect_data_files(mod)
+    datas = collect_data_files('docutils')
     return mod

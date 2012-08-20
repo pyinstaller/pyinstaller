@@ -319,31 +319,39 @@ def get_package_paths(package):
     returns (/abs/path/to/python/libs,
              /abs/path/to/python/libs/pkg/subpkg).
     """
-    # If passed a string, import it as a module.
-    if isinstance(package, str):
-        # Fun Python behavior: __import__('mod.submod') returns mod,
-        # where as __import__('mod.submod', fromlist = [a non-empty list])
-        # returns mod.submod. See the docs on `__import__
-        # <http://docs.python.org/library/functions.html#__import__>`_.
-        # Keyworded arguments in __import__ function are available
-        # in Python 2.5+. Compatibility with Python 2.4 is preserved.
-        _fromlist = ['']
-        _globals = {}
-        _locals = {}
-        package = __import__(package, _globals, _locals, _fromlist)
     # A package must have a path -- check for this, in case the package
     # parameter is actually a module.
-    assert package.__path__
+    is_pkg_statement = 'import %s as p; print hasattr(p, "__path__")'
+    is_package = eval_statement(is_pkg_statement % package)
+    assert is_package
+
+    # Statement to return __file__ attribute of a package.
+    # In PyInstaller process we cannot import directly analyzed modules.
+    __file__statement = """
+# Fun Python behavior: __import__('mod.submod') returns mod,
+# where as __import__('mod.submod', fromlist = [a non-empty list])
+# returns mod.submod. See the docs on `__import__
+# <http://docs.python.org/library/functions.html#__import__>`_.
+# Keyworded arguments in __import__ function are available
+# in Python 2.5+. Compatibility with Python 2.4 is preserved.
+_fromlist = ['']
+_globals = {}
+_locals = {}
+package = __import__('%s', _globals, _locals, _fromlist)
+print package.__file__
+"""
+    file_attr = exec_statement(__file__statement % package)
 
     # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
     # Search for Python files in /abs/path/to/package/subpackage; pkg_dir
     # stores this path.
-    pkg_dir = os.path.dirname(package.__file__)
+    pkg_dir = os.path.dirname(file_attr)
     # When found, remove /abs/path/to/ from the filename; mod_base stores
     # this path to be removed.
-    pkg_base = remove_suffix(pkg_dir,
-                             package.__name__.replace('.', os.sep))
+    pkg_base = remove_suffix(pkg_dir, package.replace('.', os.sep))
+
     return pkg_base, pkg_dir
+
 
 # All these extension represent Python modules or extension modules
 PY_EXECUTABLE_EXTENSIONS = ('.py', '.pyc', '.pyd', '.pyo', '.so')
@@ -357,8 +365,7 @@ def collect_submodules(package):
     This produces a list of strings which specify all the modules in
     package.  Its results can be directly assigned to ``hiddenimports``
     in a hook script; see, for example, hook-sphinx.py. The
-    package parameter may be either a package or a string which names
-    the package.
+    package parameter must be a string which names the package.
 
     This function does not work on zipped Python eggs.
 
@@ -401,8 +408,7 @@ def collect_data_files(package):
     This routine produces a list of (source, dest) non-Python (i.e. data)
     files which reside in package. Its results can be directly assigned to
     ``datas`` in a hook script; see, for example, hook-sphinx.py. The
-    package parameter may be either a package or a string which names
-    the package.
+    package parameter must be a string which names the package.
 
     This function does not work on zipped Python eggs.
 
