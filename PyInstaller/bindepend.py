@@ -43,8 +43,11 @@ seen = {}
 if is_win:
     if is_py26:
         try:
-            import win32api
+            # For Portable Python it is required to import pywintypes before
+            # win32api module. See for details:
+            # http://www.voidspace.org.uk/python/movpy/reference/win32ext.html#problems-with-win32api
             import pywintypes
+            import win32api
         except ImportError:
             raise SystemExit("Error: PyInstaller for Python 2.6+ on Windows "
                  "needs pywin32.\r\nPlease install from "
