@@ -1,5 +1,5 @@
-# Copyright (C) 2005, Giovanni Bajo
-# Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
+#
+# Copyright (C) 2012, Martin Zibricky
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,20 +15,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import PyInstaller.depend.modules
 
-hiddenimports = ['win32com.server.policy']
+# pywin32 module supports frozen mode. In frozen mode it is looking
+# in sys.path for file pythoncomXX.dll. Include the pythoncomXX.dll
+# as a data file. The path to this dll is contained in __file__
+# attribute.
 
 
-def hook(mod):
-    import sys
-    newname = 'pythoncom%d%d' % sys.version_info[:2]
-    if mod.typ == 'EXTENSION':
-        mod.__name__ = newname
-    else:
-        import win32api
-        h = win32api.LoadLibrary(newname + '.dll')
-        pth = win32api.GetModuleFileName(h)
-        #win32api.FreeLibrary(h)
-        mod = PyInstaller.depend.modules.ExtensionModule(newname, pth)
-    return mod
+from PyInstaller.hooks.hookutils import get_module_file_attribute
+
+
+datas = [(get_module_file_attribute('pythoncom'), '.')]
