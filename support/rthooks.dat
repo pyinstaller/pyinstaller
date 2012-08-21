@@ -1,6 +1,4 @@
 {
-    'pythoncom':  ['support/rthooks/pyi_rth_versioneddll.py'],
-    'pywintypes': ['support/rthooks/pyi_rth_versioneddll.py'],
     'win32com':   ['support/rthooks/pyi_rth_win32comgenpy.py'],
     'OpenGL':     ['support/rthooks/pyi_rth_opengl.py'],
     'PyQt4':      ['support/rthooks/pyi_rth_qt4plugins.py'],
