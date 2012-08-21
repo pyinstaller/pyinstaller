@@ -311,6 +311,29 @@ def remove_file_extension(filename):
     return os.path.splitext(filename)[0]
 
 
+def get_module_file_attribute(package):
+    """
+    Given a pacage name, return the value of __file__ attribute.
+
+    In PyInstaller process we cannot import directly analyzed modules.
+    """
+    # Statement to return __file__ attribute of a package.
+    __file__statement = """
+# Fun Python behavior: __import__('mod.submod') returns mod,
+# where as __import__('mod.submod', fromlist = [a non-empty list])
+# returns mod.submod. See the docs on `__import__
+# <http://docs.python.org/library/functions.html#__import__>`_.
+# Keyworded arguments in __import__ function are available
+# in Python 2.5+. Compatibility with Python 2.4 is preserved.
+_fromlist = ['']
+_globals = {}
+_locals = {}
+package = __import__('%s', _globals, _locals, _fromlist)
+print package.__file__
+"""
+    return exec_statement(__file__statement % package)
+
+
 def get_package_paths(package):
     """
     Given a package, return the path to packages stored on this machine
@@ -325,22 +348,7 @@ def get_package_paths(package):
     is_package = eval_statement(is_pkg_statement % package)
     assert is_package
 
-    # Statement to return __file__ attribute of a package.
-    # In PyInstaller process we cannot import directly analyzed modules.
-    __file__statement = """
-# Fun Python behavior: __import__('mod.submod') returns mod,
-# where as __import__('mod.submod', fromlist = [a non-empty list])
-# returns mod.submod. See the docs on `__import__
-# <http://docs.python.org/library/functions.html#__import__>`_.
-# Keyworded arguments in __import__ function are available
-# in Python 2.5+. Compatibility with Python 2.4 is preserved.
-_fromlist = ['']
-_globals = {}
-_locals = {}
-package = __import__('%s', _globals, _locals, _fromlist)
-print package.__file__
-"""
-    file_attr = exec_statement(__file__statement % package)
+    file_attr = get_module_file_attribute(package)
 
     # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
     # Search for Python files in /abs/path/to/package/subpackage; pkg_dir
