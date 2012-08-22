@@ -132,15 +132,15 @@ def test_UPX(config, upx_dir):
 
 def find_PYZ_dependencies(config):
     logger.debug("Computing PYZ dependencies")
-    # We need to import `archive` from `PyInstaller` directory, but
+    # We need to import `pyi_archive` from `PyInstaller` directory, but
     # not from package `PyInstaller`
     import PyInstaller.loader
     a = PyInstaller.depend.imptracker.ImportTracker([
         os.path.dirname(inspect.getsourcefile(PyInstaller.loader)),
         os.path.join(HOMEPATH, 'support')])
 
-    a.analyze_r('archive')
-    mod = a.modules['archive']
+    a.analyze_r('pyi_archive')
+    mod = a.modules['pyi_archive']
     toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
     for i, (nm, fnm, typ) in enumerate(toc):
         mod = a.modules[nm]

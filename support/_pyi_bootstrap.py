@@ -27,16 +27,17 @@
 ### Start bootstrap process
 # Only python built-in modules can be used.
 
-import archive
-import iu
 import sys
+
+import pyi_archive
+import pyi_iu
 
 # Force Python to look first for modules bundled in the executable created
 # PyInstaller.
-iu._globalownertypes.insert(0, archive.PYZOwner)
+pyi_iu._globalownertypes.insert(0, pyi_archive.PYZOwner)
 
 # Override default import manager in Python
-sys.importManager = iu.ImportManager()
+sys.importManager = pyi_iu.ImportManager()
 sys.importManager.install()
 
 

@@ -33,7 +33,7 @@
 # This assumes it contains python code objects, indexed by the
 # the internal name (ie, no '.py').
 #
-# See carchive.py for a more general archive (contains anything)
+# See pyi_carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
 
 
@@ -282,7 +282,7 @@ class Archive(object):
 
 
 # Used by PYZOwner
-import iu
+import pyi_iu
 
 
 class ZlibArchive(Archive):
@@ -425,7 +425,7 @@ class Keyfile(object):
             self.key = None
 
 
-class PYZOwner(iu.Owner):
+class PYZOwner(pyi_iu.Owner):
     """
     Load bytecode of Python modules from the executable created by PyInstaller.
 
@@ -443,12 +443,12 @@ class PYZOwner(iu.Owner):
             self.pyz = ZlibArchive(path)
             self.pyz.checkmagic()
         except (IOError, ArchiveReadError), e:
-            raise iu.OwnerError(e)
+            raise pyi_iu.OwnerError(e)
         if self.pyz.crypted:
             if not hasattr(sys, "keyfile"):
                 sys.keyfile = Keyfile()
             self.pyz = ZlibArchive(path, crypt=sys.keyfile.key)
-        iu.Owner.__init__(self, path)
+        pyi_iu.Owner.__init__(self, path)
 
     def getmod(self, nm, newmod=imp.new_module):
         rslt = self.pyz.extract(nm)
@@ -468,11 +468,11 @@ class PYZOwner(iu.Owner):
             abspath = sys.prefix
             # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
             if ispkg:
-                mod.__file__ = iu._os_path_join(iu._os_path_join(abspath,
-                    nm.replace('.', iu._os_sep)), '__init__.pyc')
+                mod.__file__ = pyi_iu._os_path_join(pyi_iu._os_path_join(abspath,
+                    nm.replace('.', pyi_iu._os_sep)), '__init__.pyc')
             else:
-                mod.__file__ = iu._os_path_join(abspath,
-                    nm.replace('.', iu._os_sep) + '.pyc')
+                mod.__file__ = pyi_iu._os_path_join(abspath,
+                    nm.replace('.', pyi_iu._os_sep) + '.pyc')
         except AttributeError:
             raise ImportError("PYZ entry '%s' (%s) is not a valid code object"
                 % (nm, repr(bytecode)))
@@ -487,15 +487,15 @@ class PYZOwner(iu.Owner):
             localpath = sys.prefix
 
             # A python packages has to have __path__ attribute.
-            mod.__path__ = [iu._os_path_dirname(mod.__file__), self.path, localpath,
+            mod.__path__ = [pyi_iu._os_path_dirname(mod.__file__), self.path, localpath,
                 ]
 
             debug("PYZOwner setting %s's __path__: %s" % (nm, mod.__path__))
 
-            importer = iu.PathImportDirector(mod.__path__,
+            importer = pyi_iu.PathImportDirector(mod.__path__,
                 {self.path: PkgInPYZImporter(nm, self),
                 localpath: ExtInPkgImporter(localpath, nm)},
-                [iu.DirOwner])
+                [pyi_iu.DirOwner])
             mod.__importsub__ = importer.getmod
 
         mod.__co__ = bytecode
@@ -512,10 +512,10 @@ class PkgInPYZImporter(object):
         return self.owner.getmod(self.name + '.' + nm)
 
 
-class ExtInPkgImporter(iu.DirOwner):
+class ExtInPkgImporter(pyi_iu.DirOwner):
     def __init__(self, path, prefix):
-        iu.DirOwner.__init__(self, path)
+        pyi_iu.DirOwner.__init__(self, path)
         self.prefix = prefix
 
     def getmod(self, nm):
-        return iu.DirOwner.getmod(self, self.prefix + '.' + nm)
+        return pyi_iu.DirOwner.getmod(self, self.prefix + '.' + nm)

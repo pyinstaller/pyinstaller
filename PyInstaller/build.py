@@ -30,7 +30,7 @@ import tempfile
 import UserList
 import bindepend
 
-from PyInstaller.loader import archive, carchive
+from PyInstaller.loader import pyi_archive, pyi_carchive
 
 import PyInstaller.depend.imptracker
 import PyInstaller.depend.modules
@@ -355,9 +355,9 @@ class Analysis(Target):
         _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
             os.path.join(HOMEPATH, "support", "_pyi_bootstrap.py"),
-            os.path.join(_init_code_path, 'archive.py'),
-            os.path.join(_init_code_path, 'carchive.py'),
-            os.path.join(_init_code_path, 'iu.py'),
+            os.path.join(_init_code_path, 'pyi_archive.py'),
+            os.path.join(_init_code_path, 'pyi_carchive.py'),
+            os.path.join(_init_code_path, 'pyi_iu.py'),
             ]
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
@@ -651,7 +651,7 @@ class PYZ(Target):
         # Level of zlib compression.
         self.level = level
         if config['useCrypt'] and crypt is not None:
-            self.crypt = archive.Keyfile(crypt).key
+            self.crypt = pyi_archive.Keyfile(crypt).key
         else:
             self.crypt = None
         self.dependencies = compile_pycos(config['PYZ_dependencies'])
@@ -676,7 +676,7 @@ class PYZ(Target):
 
     def assemble(self):
         logger.info("building PYZ %s", os.path.basename(self.out))
-        pyz = archive.ZlibArchive(level=self.level, crypt=self.crypt)
+        pyz = pyi_archive.ZlibArchive(level=self.level, crypt=self.crypt)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
         _save_data(self.out, (self.name, self.level, self.crypt, self.toc))
@@ -925,7 +925,7 @@ class PKG(Target):
                 mytoc.append((inm, '', 0, 'o'))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
-        archive = carchive.CArchive()
+        archive = pyi_carchive.CArchive()
         archive.build(self.name, mytoc)
         _save_data(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,

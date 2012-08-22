@@ -36,7 +36,7 @@ import PyInstaller.compat as compat
 
 
 import PyInstaller.log as logging
-logger = logging.getLogger('PyInstaller.build.bindepend')
+logger = logging.getLogger(__file__)
 
 seen = {}
 

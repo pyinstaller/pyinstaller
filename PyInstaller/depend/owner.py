@@ -32,7 +32,7 @@ import os
 
 from PyInstaller import depend
 from PyInstaller.compat import PYCO, caseOk
-from PyInstaller.loader import archive
+from PyInstaller.loader import pyi_archive
 
 
 import PyInstaller.log as logging
@@ -241,7 +241,7 @@ class PYZOwner(Owner):
     to an executable, like we create in one-file.
     """
     def __init__(self, path):
-        self.pyz = archive.ZlibArchive(path)
+        self.pyz = pyi_archive.ZlibArchive(path)
         Owner.__init__(self, path)
 
     def getmod(self, nm):

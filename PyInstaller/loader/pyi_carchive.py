@@ -21,10 +21,12 @@
 # Subclass of Archive that can be understood by a C program (see launch.c).
 
 
-import archive
 import struct
 import sys
 import zlib
+
+
+import pyi_archive
 
 
 class CTOC(object):
@@ -127,7 +129,7 @@ class CTOC(object):
         return -1
 
 
-class CArchive(archive.Archive):
+class CArchive(pyi_archive.Archive):
     """
     An Archive subclass that can hold arbitrary data.
 

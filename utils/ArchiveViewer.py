@@ -39,7 +39,7 @@ except ImportError:
             [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
 
 
-from PyInstaller.loader import archive, carchive
+from PyInstaller.loader import pyi_archive, pyi_carchive
 import PyInstaller.log
 
 
@@ -144,7 +144,7 @@ def get_archive(nm):
     if not stack:
         if nm[-4:].lower() == '.pyz':
             return ZlibArchive(nm)
-        return carchive.CArchive(nm)
+        return pyi_carchive.CArchive(nm)
     parent = stack[-1][1]
     try:
         return parent.openEmbedded(nm)
@@ -160,7 +160,7 @@ def get_archive(nm):
         if typcd == 'z':
             return ZlibArchive(tfnm)
         else:
-            return carchive.CArchive(tfnm)
+            return pyi_carchive.CArchive(tfnm)
 
 
 def get_data(nm, arch):
@@ -208,7 +208,7 @@ def show_log(nm, arch, output=[]):
         pprint.pprint(output)
 
 
-class ZlibArchive(archive.ZlibArchive):
+class ZlibArchive(pyi_archive.ZlibArchive):
 
     def checkmagic(self):
         """ Overridable.
