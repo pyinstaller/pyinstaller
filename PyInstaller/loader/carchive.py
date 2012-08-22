@@ -1,5 +1,6 @@
-# Subclass of Archive that can be understood by a C program (see launch.c).
+#
 # Copyright (C) 2005, Giovanni Bajo
+#
 # Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -16,6 +17,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+
+# Subclass of Archive that can be understood by a C program (see launch.c).
+
+
 import archive
 import struct
 import sys
@@ -24,7 +29,8 @@ try:
 except ImportError:
     zlib = archive.DummyZlib()
 
-class CTOC:
+
+class CTOC(object):
     """A class encapsulating the table of contents of a CArchive.
 
        When written to disk, it is easily read from C."""

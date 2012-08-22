@@ -57,7 +57,7 @@ class OwnerError(IOError):
         return "<OwnerError %s>" % self.message
 
 
-class Owner:
+class Owner(object):
     """
     Base class for loading Python bytecode from different places.
     """
@@ -291,7 +291,7 @@ class ImportManagerException(Exception):
         return "<%s: %s>" % (self.__name__, self.args)
 
 
-class ImportManager:
+class ImportManager(object):
     # really the equivalent of builtin import
     def __init__(self):
         self.metapath = [

@@ -75,7 +75,7 @@ class ArchiveReadError(RuntimeError):
     pass
 
 
-class Archive:
+class Archive(object):
     """
     A base class for a repository of python code objects.
     The extract method is used by imputil.ArchiveImporter
@@ -421,7 +421,7 @@ class ZlibArchive(Archive):
         self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
 
 
-class Keyfile:
+class Keyfile(object):
     def __init__(self, fn=None):
         if fn is None:
             fn = sys.argv[0]
@@ -511,7 +511,7 @@ class PYZOwner(iu.Owner):
         return mod
 
 
-class PkgInPYZImporter:
+class PkgInPYZImporter(object):
     def __init__(self, name, owner):
         self.name = name
         self.owner = owner
