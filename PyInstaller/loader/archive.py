@@ -1,3 +1,4 @@
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -23,15 +24,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-# subclasses may not need marshal or struct, but since they're
+
+# Subclasses may not need marshal or struct, but since they're
 # builtin, importing is safe.
 #
 # While an Archive is really an abstraction for any "filesystem
 # within a file", it is tuned for use with imputil.FuncImporter.
 # This assumes it contains python code objects, indexed by the
 # the internal name (ie, no '.py').
+#
 # See carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
+
 
 _verbose = 0
 _listdir = None
@@ -175,36 +179,62 @@ class Archive:
     # Building
 
     ####### Top level method - shouldn't need overriding #######
-    def build(self, path, lTOC):
+
+    def _start_add_entries(self, path):
         """
-        Create an archive file of name 'path'.
-        lTOC is a 'logical TOC' - a list of (name, path, ...)
-        where name is the internal name, eg 'a'
-        and path is a file to get the object from, eg './a.pyc'.
+        Open an empty archive for addition of entries.
         """
+        assert(self.path is None)
+
         self.path = path
         self.lib = open(path, 'wb')
-        #reserve space for the header
+        # Reserve space for the header.
         if self.HDRLEN:
             self.lib.write('\0' * self.HDRLEN)
 
-            #create an empty toc
-
+        # Create an empty table of contents.
         if type(self.TOCTMPLT) == type({}):
             self.toc = {}
-        else:       # assume callable
-            self.toc = self.TOCTMPLT()
+        else:
+            # FIXME Why do we need to assume callables and
+            # why not use @property decorator.
+            self.toc = self.TOCTMPLT()  # Assume callable.
 
-        for tocentry in lTOC:
-            self.add(tocentry)   # the guts of the archive
+    def _add_from_table_of_contents(self, toc):
+        """
+        Add entries from a logical TOC (without absolute positioning info).
+        An entry is an entry in a logical TOC is a tuple,
+          entry[0] is name (under which it will be saved).
+          entry[1] is fullpathname of the file.
+          entry[2] is a flag for it's storage format (True or 1 if compressed)
+          entry[3] is the entry's type code.
+        """
+        for toc_entry in toc:
+            self.add(toc_entry)  # The guts of the archive.
 
-        tocpos = self.lib.tell()
-        self.save_toc(tocpos)
+    def _finalize(self):
+        """
+        Finalize an archive which has been opened using _start_add_entries(),
+        writing any needed padding and the table of contents.
+        """
+        toc_pos = self.lib.tell()
+        self.save_toc(toc_pos)
         if self.TRLLEN:
-            self.save_trailer(tocpos)
+            self.save_trailer(toc_pos)
         if self.HDRLEN:
-            self.update_headers(tocpos)
+            self.update_headers(toc_pos)
         self.lib.close()
+
+    def build(self, archive_path, logical_toc):
+        """
+        Create an archive file of name 'archive_path'.
+        logical_toc is a 'logical TOC' - a list of (name, path, ...)
+        where name is the internal name, eg 'a'
+        and path is a file to get the object from, eg './a.pyc'.
+        """
+        self._start_add_entries(archive_path)
+        self._add_from_table_of_contents(logical_toc)
+        self._finalize()
 
     ####### manages keeping the internal TOC and the guts in sync #######
     def add(self, entry):
@@ -255,10 +285,10 @@ class DummyZlib:
     error = RuntimeError
 
     def decompress(self, data):
-        raise RuntimeError, "zlib required but cannot be imported"
+        raise RuntimeError('zlib required but cannot be imported')
 
     def compress(self, data, lvl):
-        raise RuntimeError, "zlib required but cannot be imported"
+        raise RuntimeError('zlib required but cannot be imported')
 
 
 # Used by PYZOwner
@@ -476,7 +506,7 @@ class PYZOwner(iu.Owner):
                 localpath: ExtInPkgImporter(localpath, nm)},
                 [iu.DirOwner])
             mod.__importsub__ = importer.getmod
-        
+
         mod.__co__ = bytecode
         return mod
 
