@@ -281,16 +281,6 @@ class Archive(object):
         self.lib.write(struct.pack('!i', tocpos))
 
 
-class DummyZlib:
-    error = RuntimeError
-
-    def decompress(self, data):
-        raise RuntimeError('zlib required but cannot be imported')
-
-    def compress(self, data, lvl):
-        raise RuntimeError('zlib required but cannot be imported')
-
-
 # Used by PYZOwner
 import iu
 
@@ -306,6 +296,7 @@ class ZlibArchive(Archive):
     TRLLEN = 0
     TOCTMPLT = {}
     LEVEL = 9
+    NO_COMPRESSION_LEVEL = 0
 
     def __init__(self, path=None, offset=None, level=9, crypt=None):
         if path is None:
@@ -324,6 +315,7 @@ class ZlibArchive(Archive):
             else:
                 offset = 0
 
+        # Zlib compression level.
         self.LEVEL = level
         if crypt is not None:
             self.crypted = 1
@@ -335,23 +327,22 @@ class ZlibArchive(Archive):
         Archive.__init__(self, path, offset)
 
         # dynamic import so not imported if not needed
-        global zlib
-        if self.LEVEL:
-            try:
-                import zlib
-            except ImportError:
-                zlib = DummyZlib()
-        else:
-            print "WARNING: compression level=0!!!"
-            zlib = DummyZlib()
+        self._mod_zlib = None
+        self._mod_aes = None
 
-        global AES
+        if self.LEVEL > self.NO_COMPRESSION_LEVEL:
+            try:
+                self._mod_zlib = __import__('zlib')
+            except ImportError:
+                raise RuntimeError('zlib required but cannot be imported')
+
+        # FIXME Cryptography is broken in PyInstaller.
         if self.crypted:
-            import AES
+            self._mod_aes = __import__('AES')
 
     def _iv(self, nm):
-        IV = nm * ((AES.block_size + len(nm) - 1) // len(nm))
-        return IV[:AES.block_size]
+        IV = nm * ((self._mod_aes.block_size + len(nm) - 1) // len(nm))
+        return IV[:self._mod_aes.block_size]
 
     def extract(self, name):
         (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
@@ -362,10 +353,10 @@ class ZlibArchive(Archive):
         if self.crypted:
             if self.key is None:
                 raise ImportError('decryption key not found')
-            obj = AES.new(self.key, AES.MODE_CFB, self._iv(name)).decrypt(obj)
+            obj = self._mod_aes.new(self.key, self._mod_aes.MODE_CFB, self._iv(name)).decrypt(obj)
         try:
-            obj = zlib.decompress(obj)
-        except zlib.error:
+            obj = self._mod_zlib.decompress(obj)
+        except self._mod_zlib.error:
             if not self.crypted:
                 raise
             raise ImportError('invalid decryption key')
@@ -391,7 +382,7 @@ class ZlibArchive(Archive):
                 f.seek(8)  # skip magic and timestamp
                 bytecode = f.read()
                 marshal.loads(bytecode).co_filename  # to make sure it's valid
-                obj = zlib.compress(bytecode, self.LEVEL)
+                obj = self._mod_zlib.compress(bytecode, self.LEVEL)
             except (IOError, ValueError, EOFError, AttributeError):
                 raise ValueError("bad bytecode in %s and no source" % pth)
         else:
@@ -403,9 +394,9 @@ class ZlibArchive(Archive):
                 print "Syntax error in", pth[:-1]
                 print e.args
                 raise
-            obj = zlib.compress(marshal.dumps(co), self.LEVEL)
+            obj = self._mod_zlib.compress(marshal.dumps(co), self.LEVEL)
         if self.crypted:
-            obj = AES.new(self.key, AES.MODE_CFB, self._iv(nm)).encrypt(obj)
+            obj = self._mod_aes.new(self.key, self._mod_aes.MODE_CFB, self._iv(nm)).encrypt(obj)
         self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
 

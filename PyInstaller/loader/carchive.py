@@ -24,10 +24,7 @@
 import archive
 import struct
 import sys
-try:
-    import zlib
-except ImportError:
-    zlib = archive.DummyZlib()
+import zlib
 
 
 class CTOC(object):
@@ -247,7 +244,6 @@ class CArchive(archive.Archive):
         self.lib.seek(self.pkg_start + dpos)
         rslt = self.lib.read(dlen)
         if flag == 2:
-            global AES
             import AES
             key = rslt[:32]
             # Note: keep this in sync with bootloader's code.
