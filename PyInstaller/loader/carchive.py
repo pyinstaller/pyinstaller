@@ -143,7 +143,7 @@ class CArchive(archive.Archive):
     TRLLEN = 24
     LEVEL = 9
 
-    def __init__(self, path=None, start=0, len=0):
+    def __init__(self, archive_path=None, start=0, length=0):
         """
         Constructor.
 
@@ -151,8 +151,43 @@ class CArchive(archive.Archive):
         START is the seekposition within PATH.
         LEN is the length of the CArchive (if 0, then read till EOF).
         """
-        self.len = len
-        archive.Archive.__init__(self, path, start)
+        self.length = length
+        # A CArchive created from scratch starts at 0, no leading bootloader.
+        self.pkg_start = 0
+        super(CArchive, self).__init__(archive_path, start)
+
+    def _finalize(self):
+        """
+        Finalize an archive which has been opened using _start_add_entries(),
+        writing any needed padding and the table of contents.
+        """
+        toc_pos = self.lib.tell() - self.pkg_start
+        self.save_toc(toc_pos)
+        if self.TRLLEN:
+            self.save_trailer(toc_pos)
+        if self.HDRLEN:
+            self.update_headers(toc_pos)
+        self.lib.close()
+
+    # TODO Verify usefulness of this method.
+    def copy_from(self, arch):
+        """
+        Copy an entire archive into the current archive, updating TOC but
+        NOT writing it, to allow additions of files to end of archive.
+        Must be first action after _start_add_entries() since bootloader is
+        first.
+        """
+        self.pkg_start = arch.pkg_start
+        size = arch.pkg_start + arch.TOCPOS
+        blksize = 4096
+        arch.lib.seek(0)
+        # copy the whole file with some blocking for reads
+        while (size > 0):
+            self.lib.write(arch.lib.read(min(blksize, size)))
+            size -= blksize
+
+        for tocentry in arch.toc:
+            self.toc.add(*tocentry)
 
     def checkmagic(self):
         """
@@ -161,13 +196,13 @@ class CArchive(archive.Archive):
         Magic signature is at end of the archive.
         """
         # Magic is at EOF; if we're embedded, we need to figure where that is.
-        if self.len:
-            self.lib.seek(self.start + self.len, 0)
+        if self.length:
+            self.lib.seek(self.start + self.length, 0)
         else:
             self.lib.seek(0, 2)
         filelen = self.lib.tell()
-        if self.len:
-            self.lib.seek(self.start + self.len - self.TRLLEN, 0)
+        if self.length:
+            self.lib.seek(self.start + self.length - self.TRLLEN, 0)
         else:
             self.lib.seek(-self.TRLLEN, 2)
         (magic, totallen, tocpos, toclen, pyvers) = struct.unpack(self.TRLSTRUCT,
@@ -175,9 +210,9 @@ class CArchive(archive.Archive):
         if magic != self.MAGIC:
             raise RuntimeError("%s is not a valid %s archive file" %
                     (self.path, self.__class__.__name__))
-        self.pkgstart = filelen - totallen
-        if self.len:
-            if totallen != self.len or self.pkgstart != self.start:
+        self.pkg_start = filelen - totallen
+        if self.length:
+            if totallen != self.length or self.pkg_start != self.start:
                 raise RuntimeError('Problem with embedded archive in %s' %
                         self.path)
         self.tocpos, self.toclen = tocpos, toclen
@@ -187,7 +222,7 @@ class CArchive(archive.Archive):
         Load the table of contents into memory.
         """
         self.toc = self.TOCTMPLT()
-        self.lib.seek(self.pkgstart + self.tocpos)
+        self.lib.seek(self.pkg_start + self.tocpos)
         tocstr = self.lib.read(self.toclen)
         self.toc.frombinary(tocstr)
 
@@ -195,7 +230,7 @@ class CArchive(archive.Archive):
         """
         Get the contents of an entry.
 
-        NAME is an entry name.
+        NAME is an entry name OR the index to the TOC.
 
         Return the tuple (ispkg, contents).
         For non-Python resoures, ispkg is meaningless (and 0).
@@ -208,19 +243,21 @@ class CArchive(archive.Archive):
         else:
             ndx = name
         (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
-        self.lib.seek(self.pkgstart + dpos)
+
+        self.lib.seek(self.pkg_start + dpos)
         rslt = self.lib.read(dlen)
         if flag == 2:
             global AES
             import AES
             key = rslt[:32]
-            # Note: keep this in sync with bootloader's code
+            # Note: keep this in sync with bootloader's code.
             rslt = AES.new(key, AES.MODE_CFB, "\0" * AES.block_size).decrypt(rslt[32:])
         if flag == 1 or flag == 2:
             rslt = zlib.decompress(rslt)
         if typcd == 'M':
             return (1, rslt)
-        return (0, rslt)
+
+        return (typcd == 'M', rslt)
 
     def contents(self):
         """
@@ -320,4 +357,4 @@ class CArchive(archive.Archive):
         if flag:
             raise ValueError('Cannot open compressed archive %s in place' %
                     name)
-        return CArchive(self.path, self.pkgstart + dpos, dlen)
+        return CArchive(self.path, self.pkg_start + dpos, dlen)
