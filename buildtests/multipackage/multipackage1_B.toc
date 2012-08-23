@@ -113,7 +113,6 @@
  '_strptime',
  'gzip',
  'encodings\.mac_greek',
- 'iu',
  '_pyi_bootstrap',
  'multipackage1_B',
  '.*ssl.*',
