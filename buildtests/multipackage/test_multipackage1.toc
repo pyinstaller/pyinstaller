@@ -114,7 +114,6 @@
     'gzip',
     'encodings\.mac_greek',
     'iu',
-    'archive',
     '_pyi_bootstrap',
     'test_multipackage1',
     '.*multipackage1_B\.exe:.*ssl.*',
