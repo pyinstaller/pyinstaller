@@ -2,6 +2,7 @@
 
 Changes since PyInstaller 2.0
 -------------------------------
+ + Add experimental support for Linux arm (thanks to Shane Hansen).
  + Minimum suported Python version is 2.4.
  + Add import hooks for docutils, jinja2, sphinx, pytz, idlelib.
    (thanks to Bryan A. Jones)

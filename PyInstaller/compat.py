@@ -20,6 +20,7 @@
 
 import dircache  # Module removed in Python 3
 import os
+import platform
 import subprocess
 import sys
 
@@ -145,7 +146,6 @@ def architecture():
     a string ('32bit' or '64bit'). Similar to platform.architecture(),
     but with fixes for universal binaries on MacOS.
     """
-    import platform
     if is_darwin:
         # Darwin's platform.architecture() is buggy and always
         # returns "64bit" event for the 32bit version of Python's
@@ -160,7 +160,6 @@ def architecture():
 
 
 def system():
-    import platform
     # On some Windows installation (Python 2.4) platform.system() is
     # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
     # http://mail.python.org/pipermail/patches/2007-June/022947.html
@@ -168,6 +167,25 @@ def system():
     if syst == 'Microsoft':
         return 'Windows'
     return syst
+
+
+def machine():
+    """
+    Return machine suffix to use in directory name when looking
+    for bootloader.
+
+    PyInstaller is reported to work even on ARM architecture. For that
+    case functions system() and architecture() are not enough. 
+    Path to bootloader has to be composed from system(), architecture()
+    and machine() like:
+        'Linux-32bit-arm'
+    """
+    mach = platform.machine()
+    if mach.startswith('arm'):
+        return 'arm'
+    else:
+        # Assume x86/x86_64 machine.
+        return None
 
 
 # Set and get environment variables does not handle unicode strings correctly
