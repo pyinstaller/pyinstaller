@@ -34,12 +34,22 @@
 #include "pyi_archive.h"
 
 
+/* Environment variables. */
+
 char *pyi_getenv(const char *variable);
 int pyi_setenv(const char *variable, const char *value);
 int pyi_unsetenv(const char *variable);
 
+/* Temporary files. */
+
 int pyi_create_temp_path(ARCHIVE_STATUS *status);
 void pyi_remove_temp_path(const char *dir);
+
+/* File and path manipulation. */
+
+char *pyi_dirname(const char *fullpath);
+FILE *pyi_open_target(const char *path, const char* name_);
+int pyi_copy_file(const char *src, const char *dst, const char *filename);
 
 
 #endif /* HEADER_PY_UTILS_H */

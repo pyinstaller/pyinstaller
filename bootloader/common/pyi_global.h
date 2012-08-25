@@ -51,6 +51,7 @@ typedef int bool;
 /*
  * Debug and error macros.
  */
+
 #if defined(WIN32) && defined(WINDOWED)
     #define FATALERROR mbfatalerror
     #define OTHERERROR mbothererror
@@ -59,5 +60,27 @@ typedef int bool;
     #define OTHERERROR printf
 #endif
 
+#ifdef LAUNCH_DEBUG
+# if defined(WIN32) && defined(WINDOWED)
+#  define VS mbvs
+# else
+#  define VS printf
+# endif
+#else
+# ifdef WIN32
+#  define VS
+# else
+#  define VS(...)
+# endif
+#endif
+
+
+#ifdef WIN32
+    #define PATHSEP ";"
+    #define SEP '\\'
+#else
+    #define PATHSEP ":"
+    #define SEP '/'
+#endif
 
 #endif /* HEADER_PYI_GLOBAL_H */

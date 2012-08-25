@@ -309,3 +309,106 @@ void cleanUp(ARCHIVE_STATUS *status)
 }
 
 
+
+/*
+ * helper for extract2fs
+ * which may try multiple places
+ */
+//TODO find better name for function.
+FILE *pyi_open_target(const char *path, const char* name_)
+{
+	struct stat sbuf;
+	char fnm[PATH_MAX+1];
+	char name[PATH_MAX+1];
+	char *dir;
+
+	strcpy(fnm, path);
+	strcpy(name, name_);
+	fnm[strlen(fnm)-1] = '\0';
+
+	dir = strtok(name, "/\\");
+	while (dir != NULL)
+	{
+#ifdef WIN32
+		strcat(fnm, "\\");
+#else
+		strcat(fnm, "/");
+#endif
+		strcat(fnm, dir);
+		dir = strtok(NULL, "/\\");
+		if (!dir)
+			break;
+		if (stat(fnm, &sbuf) < 0)
+    {
+#ifdef WIN32
+			mkdir(fnm);
+#else
+			mkdir(fnm, 0700);
+#endif
+    }
+	}
+
+	if (stat(fnm, &sbuf) == 0) {
+		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
+    }
+	return fopen(fnm, "wb");
+}
+
+/* Copy the file src to dst 4KB per time */
+int pyi_copy_file(const char *src, const char *dst, const char *filename)
+{
+    FILE *in = fopen(src, "rb");
+    FILE *out = pyi_open_target(dst, filename);
+    char buf[4096];
+    int error = 0;
+
+    if (in == NULL || out == NULL)
+        return -1;
+
+    while (!feof(in)) {
+        if (fread(buf, 4096, 1, in) == -1) {
+            if (ferror(in)) {
+                clearerr(in);
+                error = -1;
+                break;
+            }
+        } else {
+            fwrite(buf, 4096, 1, out);
+            if (ferror(out)) {
+                clearerr(out);
+                error = -1;
+                break;
+            }
+        }
+    }
+#ifndef WIN32
+    fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
+#endif
+    fclose(in);
+    fclose(out);
+
+    return error;
+}
+
+
+/*
+ * Giving a fullpath, returns a newly allocated string
+ * which contains the directory name.
+ * The returned string must be freed after use.
+ */
+// TODO use for unix function dirname()
+char *pyi_dirname(const char *fullpath)
+{
+    char *match = strrchr(fullpath, SEP);
+    char *pathname = (char *) calloc(PATH_MAX, sizeof(char));
+    VS("Calculating dirname from fullpath\n");
+    if (match != NULL)
+        strncpy(pathname, fullpath, match - fullpath + 1);
+    else
+        strcpy(pathname, fullpath);
+
+    VS("Pathname: %s\n", pathname);
+    return pathname;
+}
+
+

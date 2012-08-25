@@ -215,20 +215,6 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
  */
 #define MAGIC "MEI\014\013\012\013\016"
 
-#ifdef LAUNCH_DEBUG
-# if defined(WIN32) && defined(WINDOWED)
-#  define VS mbvs
-# else
-#  define VS printf
-# endif
-#else
-# ifdef WIN32
-#  define VS
-# else
-#  define VS(...)
-# endif
-#endif
-
 
 #define SELF 0
 
