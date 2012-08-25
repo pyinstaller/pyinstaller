@@ -217,10 +217,6 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 # endif
 #endif
 
-/* _MAX_PATH for non-Windows */
-#ifndef _MAX_PATH
-#define _MAX_PATH 256
-#endif
 
 #define SELF 0
 

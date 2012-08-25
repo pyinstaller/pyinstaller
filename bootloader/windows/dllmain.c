@@ -25,11 +25,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#include "launch.h"
 #include <windows.h>
 #include <olectl.h>
 #include <memory.h>
 #include <string.h>
+
+#include "launch.h"
+#include "pyi_global.h"
+#include "pyi_utils.h"
 
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
 __PROC__DllCanUnloadNow Pyc_DllCanUnloadNow = NULL;
@@ -43,7 +46,7 @@ typedef void (__cdecl *__PROC__PyCom_CoUninitialize) (void);
 __PROC__PyCom_CoUninitialize PyCom_CoUninitialize = NULL;
 
 HINSTANCE gPythoncom = 0;
-char here[_MAX_PATH + 1];
+char here[PATH_MAX + 1];
 int LoadPythonCom(ARCHIVE_STATUS *status);
 void releasePythonCom(void);
 HINSTANCE gInstance;
@@ -53,7 +56,7 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
 {
 	PyObject *obHandle;
 	int loadedNew = 0;
-	char pathnm[_MAX_PATH];
+	char pathnm[PATH_MAX];
 
     VS("START");
 	strcpy(pathnm, archivePath);
@@ -129,12 +132,12 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
 void startUp()
 {
 	ARCHIVE_STATUS *status_list[20];
-	char thisfile[_MAX_PATH + 1];
+	char thisfile[PATH_MAX + 1];
 	char *p;
 	int len;
 	memset(status_list, 0, 20 * sizeof(ARCHIVE_STATUS *));
 	
-	if (!GetModuleFileNameA(gInstance, thisfile, _MAX_PATH)) {
+	if (!GetModuleFileNameA(gInstance, thisfile, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
 		return;
 	}
@@ -169,7 +172,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 
 int LoadPythonCom(ARCHIVE_STATUS *status)
 {
-	char dllpath[_MAX_PATH+1];
+	char dllpath[PATH_MAX+1];
 	VS("Loading Pythoncom");
 	// see if pythoncom is already loaded
 	sprintf(dllpath, "pythoncom%02d.dll", getPyVersion(status));
@@ -187,7 +190,7 @@ int LoadPythonCom(ARCHIVE_STATUS *status)
 		return -1;
 	}
 	// debugging
-	GetModuleFileNameA(gPythoncom, dllpath, _MAX_PATH);
+	GetModuleFileNameA(gPythoncom, dllpath, PATH_MAX);
 	VS(dllpath);
 
 	Pyc_DllCanUnloadNow = (__PROC__DllCanUnloadNow)GetProcAddress(gPythoncom, "DllCanUnloadNow");

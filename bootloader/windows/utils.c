@@ -26,12 +26,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #define _WIN32_WINNT 0x0500
-#include "utils.h"
 #include <windows.h>
 #include <commctrl.h> // InitCommonControls
 #include <signal.h>
 #include <memory.h>
 #include <string.h>
+
+#include "utils.h"
+#include "pyi_global.h"
 
 char* basename (char *path)
 {
@@ -66,7 +68,7 @@ int IsXPOrLater(void)
 
 int CreateActContext(char *workpath, char *thisfile)
 {
-    char manifestpath[_MAX_PATH + 1];
+    char manifestpath[PATH_MAX + 1];
     ACTCTX ctx;
     BOOL activated;
     HANDLE k32;
@@ -155,7 +157,7 @@ void init_launcher(void)
 
 int get_thisfile(char *thisfile, const char *programname)
 {
-	if (!GetModuleFileNameA(NULL, thisfile, _MAX_PATH)) {
+	if (!GetModuleFileNameA(NULL, thisfile, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
 		return -1;
 	}
@@ -165,7 +167,7 @@ int get_thisfile(char *thisfile, const char *programname)
 
 int get_thisfilew(LPWSTR thisfilew)
 {
-	if (!GetModuleFileNameW(NULL, thisfilew, _MAX_PATH)) {
+	if (!GetModuleFileNameW(NULL, thisfilew, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
 		return -1;
 	}

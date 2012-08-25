@@ -43,6 +43,8 @@
 #include "launch.h"
 #include <string.h>
 #include "zlib.h"
+
+#include "pyi_global.h"
 #include "pyi_utils.h"
 
 #ifdef WIN32
@@ -164,7 +166,7 @@ static int checkFile(char *buf, const char *fmt, ...)
     struct stat tmp;
 
     va_start(args, fmt);
-    vsnprintf(buf, _MAX_PATH, fmt, args);
+    vsnprintf(buf, PATH_MAX, fmt, args);
     va_end(args);
 
     return stat(buf, &tmp);
@@ -426,7 +428,7 @@ int mapNames(HMODULE dll, int pyvers)
 int loadPython(ARCHIVE_STATUS *status)
 {
 	HINSTANCE dll;
-	char dllpath[_MAX_PATH + 1];
+	char dllpath[PATH_MAX + 1];
     int pyvers = ntohl(status->cookie.pyvers);
 
 #ifdef WIN32
@@ -553,7 +555,7 @@ int attachPython(ARCHIVE_STATUS *status, int *loadedNew)
 {
 #ifdef WIN32
 	HMODULE dll;
-	char nm[_MAX_PATH + 1];
+	char nm[PATH_MAX + 1];
     int pyvers = ntohl(status->cookie.pyvers);
 
 	/* Get python's name */
@@ -650,11 +652,11 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
     /* Set PYTHONPATH so dynamic libs will load */
-	static char pypath[2*_MAX_PATH + 14];
+	static char pypath[2*PATH_MAX + 14];
 	int pathlen = 1;
 	int i;
-	char cmd[_MAX_PATH+1+80];
-	char tmp[_MAX_PATH+1];
+	char cmd[PATH_MAX+1+80];
+	char tmp[PATH_MAX+1];
 	PyObject *py_argv;
 	PyObject *val;
 	PyObject *sys;
@@ -953,8 +955,8 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
 FILE *openTarget(const char *path, const char* name_)
 {
 	struct stat sbuf;
-	char fnm[_MAX_PATH+1];
-	char name[_MAX_PATH+1];
+	char fnm[PATH_MAX+1];
+	char name[PATH_MAX+1];
 	char *dir;
 
 	strcpy(fnm, path);
@@ -1024,7 +1026,7 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 /* Splits the item in the form path:filename */
 static int splitName(char *path, char *filename, const char *item)
 {
-    char name[_MAX_PATH + 1];
+    char name[PATH_MAX + 1];
 
     VS("Splitting item into path and filename\n");
     strcpy(name, item);
@@ -1079,7 +1081,7 @@ static int copyFile(const char *src, const char *dst, const char *filename)
 static char *dirName(const char *fullpath)
 {
     char *match = strrchr(fullpath, SEP);
-    char *pathname = (char *) calloc(_MAX_PATH, sizeof(char));
+    char *pathname = (char *) calloc(PATH_MAX, sizeof(char));
     VS("Calculating dirname from fullpath\n");
     if (match != NULL)
         strncpy(pathname, fullpath, match - fullpath + 1);
@@ -1170,10 +1172,10 @@ static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *file
 static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
 {
     ARCHIVE_STATUS *status = NULL;
-    char path[_MAX_PATH + 1];
-    char filename[_MAX_PATH + 1];
-    char srcpath[_MAX_PATH + 1];
-    char archive_path[_MAX_PATH + 1];
+    char path[PATH_MAX + 1];
+    char filename[PATH_MAX + 1];
+    char srcpath[PATH_MAX + 1];
+    char archive_path[PATH_MAX + 1];
 
     char *dirname = NULL;
 
@@ -1279,7 +1281,7 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
 int runScripts(ARCHIVE_STATUS *status)
 {
 	unsigned char *data;
-	char buf[_MAX_PATH];
+	char buf[PATH_MAX];
 	int rc = 0;
 	TOC * ptoc = status->tocbuff;
 	PyObject *__main__ = PI_PyImport_AddModule("__main__");
@@ -1430,7 +1432,7 @@ void removeOne(char *fnm, int pos, struct _finddata_t finfo)
 }
 void clear(const char *dir)
 {
-	char fnm[_MAX_PATH+1];
+	char fnm[PATH_MAX+1];
 	struct _finddata_t finfo;
 	long h;
 	int dirnmlen;
@@ -1467,7 +1469,7 @@ void removeOne(char *pnm, int pos, const char *fnm)
 }
 void clear(const char *dir)
 {
-	char fnm[_MAX_PATH+1];
+	char fnm[PATH_MAX+1];
 	DIR *ds;
 	struct dirent *finfo;
 	int dirnmlen;

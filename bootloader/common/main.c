@@ -25,8 +25,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#include "utils.h"
-#include "pyi_utils.h"
 #ifndef WIN32
 #include <sys/wait.h>
 #endif
@@ -35,6 +33,10 @@
 #if defined(__APPLE__) && defined(WINDOWED)
 #include <Carbon/Carbon.h>
 #endif
+
+#include "utils.h"
+#include "pyi_global.h"
+#include "pyi_utils.h"
 
 #define MAX_STATUS_LIST 20
 
@@ -47,13 +49,13 @@ int main(int argc, char* argv[])
 {
     /*  status_list[0] is reserved for the main process, the others for dependencies. */
     ARCHIVE_STATUS *status_list[MAX_STATUS_LIST];
-    char thisfile[_MAX_PATH];
+    char thisfile[PATH_MAX];
 #ifdef WIN32
-    WCHAR thisfilew[_MAX_PATH + 1];
+    WCHAR thisfilew[PATH_MAX + 1];
 #endif
-    char homepath[_MAX_PATH];
-    char archivefile[_MAX_PATH + 5];
-    char MEIPASS2[_MAX_PATH + 1];
+    char homepath[PATH_MAX];
+    char archivefile[PATH_MAX + 5];
+    char MEIPASS2[PATH_MAX + 1];
     int rc = 0;
     char *extractionpath = NULL;
 #if defined(WIN32) && defined(WINDOWED)

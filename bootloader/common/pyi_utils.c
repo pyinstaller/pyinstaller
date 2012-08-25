@@ -113,7 +113,7 @@ int pyi_get_temp_path(char *buff)
     char *ret;
     char prefix[16];
 
-    GetTempPath(MAX_PATH, buff);
+    GetTempPath(PATH_MAX, buff);
     sprintf(prefix, "_MEI%d", getpid());
 
     // Windows does not have a race-free function to create a temporary

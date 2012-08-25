@@ -25,12 +25,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#include "utils.h"
-#include "getpath.h"
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/wait.h>
 #include <signal.h>
+
+#include "utils.h"
+#include "getpath.h"
+#include "pyi_global.h"
 
 void init_launcher(void)
 {
@@ -38,7 +40,7 @@ void init_launcher(void)
 
 int get_thisfile(char *thisfile, const char *programname)
 {
-    char buf[_MAX_PATH];
+    char buf[PATH_MAX];
     char *p;
 
     /* Fill in thisfile. */
@@ -70,7 +72,7 @@ int get_thisfile(char *thisfile, const char *programname)
 
 void get_homepath(char *homepath, const char *thisfile)
 {
-    char buf[_MAX_PATH];
+    char buf[PATH_MAX];
     char *p;
 
     /* Fill in here (directory of thisfile). */

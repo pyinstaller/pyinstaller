@@ -383,7 +383,7 @@ def build(bld):
         for key, value in dict(release='inprocsrvr', debug='inprocsrvr_d').items():
             bld(
                 features = 'cc cshlib',
-                source = bld.path.ant_glob('common/launch.c windows/dllmain.c'),
+                source = bld.path.ant_glob('common/launch.c common/pyi_utils.c windows/dllmain.c'),
                 target = value,
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',
@@ -397,7 +397,7 @@ def build(bld):
         for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d').items():
             bld(
                 features = 'cc cshlib',
-                source = bld.path.ant_glob('common/launch.c windows/dllmain.c'),
+                source = bld.path.ant_glob('common/launch.c common/pyi_utils.c windows/dllmain.c'),
                 target = value,
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',
