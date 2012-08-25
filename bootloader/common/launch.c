@@ -51,16 +51,6 @@
 #endif
 
 /*
- * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms: 
- * - On Solaris function 'mkdtemp' is missing.
- * - On AIX 5.2 function 'mkdtemp' is missing. It is there in version 6.1 but we don't know
- *   the runtime platform at compile time, so we always include our own implementation on AIX.
- */
-#if defined(SUNOS) || defined(AIX)
-#include "mkdtemp.h"
-#endif
-
-/*
  * Python Entry point declarations (see macros in launch.h).
  */
 DECLVAR(Py_FrozenFlag);
@@ -167,74 +157,6 @@ void mbvs(const char *fmt, ...)
 
 #endif /* WIN32 and WINDOWED */
 
-
-#ifdef WIN32
-
-int getTempPath(char *buff)
-{
-    int i;
-    char *ret;
-    char prefix[16];
-
-    GetTempPath(MAX_PATH, buff);
-    sprintf(prefix, "_MEI%d", getpid());
-
-    // Windows does not have a race-free function to create a temporary
-    // directory. Thus, we rely on _tempnam, and simply try several times
-    // to avoid stupid race conditions.
-    for (i=0;i<5;i++) {
-        ret = _tempnam(buff, prefix);
-        if (mkdir(ret) == 0) {
-            strcpy(buff, ret);
-            strcat(buff, "\\");
-            free(ret);
-            return 1;
-        }
-        free(ret);
-    }
-    return 0;
-}
-
-#else
-
-int testTempPath(char *buff)
-{
-	strcat(buff, "/_MEIXXXXXX");
-    if (mkdtemp(buff))
-    {
-        strcat(buff, "/");
-        return 1;
-    }
-    return 0;
-}
-
-int getTempPath(char *buff)
-{
-	static const char *envname[] = {
-		"TMPDIR", "TEMP", "TMP", 0
-	};
-	static const char *dirname[] = {
-		"/tmp", "/var/tmp", "/usr/tmp", 0
-	};
-	int i;
-	char *p;
-	for ( i=0; envname[i]; i++ ) {
-		p = pyi_getenv(envname[i]);
-		if (p) {
-			strcpy(buff, p);
-			if (testTempPath(buff))
-				return 1;
-		}
-	}
-	for ( i=0; dirname[i]; i++ ) {
-		strcpy(buff, dirname[i]);
-		if (testTempPath(buff))
-			return 1;
-	}
-    return 0;
-}
-
-#endif
 
 static int checkFile(char *buf, const char *fmt, ...)
 {
@@ -1067,30 +989,6 @@ FILE *openTarget(const char *path, const char* name_)
 	return fopen(fnm, "wb");
 }
 
-/* Function that creates a temporany directory if it doesn't exists
- *  and properly sets the ARCHIVE_STATUS members.
- */
-static int createTempPath(ARCHIVE_STATUS *status)
-{
-#ifdef WIN32
-	char *p;
-#endif
-
-	if (status->temppath[0] == '\0') {
-		if (!getTempPath(status->temppath))
-		{
-            FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
-            return -1;
-		}
-#ifdef WIN32
-		strcpy(status->temppathraw, status->temppath);
-		for ( p=status->temppath; *p; p++ )
-			if (*p == '\\')
-				*p = '/';
-#endif
-	}
-    return 0;
-}
 
 /*
  * extract from the archive
@@ -1102,7 +1000,7 @@ int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 	FILE *out;
 	unsigned char *data = extract(status, ptoc);
 
-    if (createTempPath(status) == -1){
+    if (pyi_create_temp_path(status) == -1){
         return -1;
     }
 
@@ -1195,7 +1093,7 @@ static char *dirName(const char *fullpath)
 /* Copy the dependencies file from a directory to the tempdir */
 static int copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, const char *filename)
 {
-    if (createTempPath(status) == -1){
+    if (pyi_create_temp_path(status) == -1){
         return -1;
     }
 
@@ -1217,7 +1115,7 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
     int i = 0;
 
     VS("Getting file from archive.\n");
-    if (createTempPath(status_list[SELF]) == -1){
+    if (pyi_create_temp_path(status_list[SELF]) == -1){
         return NULL;
     }
 

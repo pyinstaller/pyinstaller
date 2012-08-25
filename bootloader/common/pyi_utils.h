@@ -1,8 +1,8 @@
 #ifndef HEADER_PYI_UTILS_H
 #define HEADER_PYI_UTILS_H
 /*
- * Portable wrapper for some utility functions like getenv/setenv
- * and file path manipulation.
+ * Portable wrapper for some utility functions like getenv/setenv,
+ * file path manipulation and other shared data types or functions.
  *
  * Copyright (C) 2012, Martin Zibricky
  *
@@ -31,10 +31,24 @@
 
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef WIN32
 #include <windows.h>
 #endif
+
+/*
+ * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms: 
+ * - On Solaris function 'mkdtemp' is missing.
+ * - On AIX 5.2 function 'mkdtemp' is missing. It is there in version 6.1 but we don't know
+ *   the runtime platform at compile time, so we always include our own implementation on AIX.
+ */
+#if defined(SUNOS) || defined(AIX)
+#include "mkdtemp.h"
+#endif
+
+
+#include "launch.h"  /* ARCHIVE_STATUS struct */
 
 
 /* Definition of type boolean. */
@@ -43,7 +57,8 @@ typedef int bool;
 #define true  1
 
 
-/* On Windows PATH_MAX does not exist but MAX_PATH does.
+/*
+ * On Windows PATH_MAX does not exist but MAX_PATH does.
  * WinAPI MAX_PATH limit is only 256. MSVCR fuctions does not have this limit.
  * Redefine PATH_MAX for Windows to support longer path names.
  */
@@ -51,6 +66,7 @@ typedef int bool;
 #ifdef WIN32
 #define PATH_MAX 4096  /* Default value on Linux. */
 #endif
+
 
 
 /* Return string copy of environment variable. */
@@ -106,6 +122,108 @@ static int pyi_unsetenv(const char *variable)
     rc = unsetenv(variable);
 #endif
     return rc;
+}
+
+
+#ifdef WIN32
+
+// TODO rename fuction and revisit
+int pyi_get_temp_path(char *buff)
+{
+    int i;
+    char *ret;
+    char prefix[16];
+
+    GetTempPath(MAX_PATH, buff);
+    sprintf(prefix, "_MEI%d", getpid());
+
+    // Windows does not have a race-free function to create a temporary
+    // directory. Thus, we rely on _tempnam, and simply try several times
+    // to avoid stupid race conditions.
+    for (i=0;i<5;i++) {
+        // TODO use race-free fuction - if any exists?
+        ret = _tempnam(buff, prefix);
+        if (mkdir(ret) == 0) {
+            strcpy(buff, ret);
+            strcat(buff, "\\");
+            free(ret);
+            return 1;
+        }
+        free(ret);
+    }
+    return 0;
+}
+
+#else
+
+// TODO merge this function with windows version.
+int pyi_get_temp_path(char *buff)
+{
+    // TODO Do we need to check on unix for common variables paths to temp dirs?
+	static const char *envname[] = {
+		"TMPDIR", "TEMP", "TMP", 0
+	};
+	static const char *dirname[] = {
+		"/tmp", "/var/tmp", "/usr/tmp", 0
+	};
+	int i;
+	char *p;
+	for ( i=0; envname[i]; i++ ) {
+		p = pyi_getenv(envname[i]);
+		if (p) {
+			strcpy(buff, p);
+			if (pyi_test_temp_path(buff))
+				return 1;
+		}
+	}
+	for ( i=0; dirname[i]; i++ ) {
+		strcpy(buff, dirname[i]);
+		if (pyi_test_temp_path(buff))
+			return 1;
+	}
+    return 0;
+}
+
+// TODO Is this really necessary to test for temp path? Why not just use mkdtemp()?
+int pyi_test_temp_path(char *buff)
+{
+	strcat(buff, "/_MEIXXXXXX");
+    if (mkdtemp(buff))
+    {
+        strcat(buff, "/");
+        return 1;
+    }
+    return 0;
+}
+
+
+#endif
+
+
+/*
+ * Creates a temporany directory if it doesn't exists
+ * and properly sets the ARCHIVE_STATUS members.
+ */
+static int pyi_create_temp_path(ARCHIVE_STATUS *status)
+{
+#ifdef WIN32
+	char *p;
+#endif
+
+	if (status->temppath[0] == '\0') {
+		if (!pyi_get_temp_path(status->temppath))
+		{
+            FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
+            return -1;
+		}
+#ifdef WIN32
+		strcpy(status->temppathraw, status->temppath);
+		for ( p=status->temppath; *p; p++ )
+			if (*p == '\\')
+				*p = '/';
+#endif
+	}
+    return 0;
 }
 
 
