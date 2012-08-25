@@ -39,6 +39,7 @@ int pyi_setenv(const char *variable, const char *value);
 int pyi_unsetenv(const char *variable);
 
 int pyi_create_temp_path(ARCHIVE_STATUS *status);
+void pyi_remove_temp_path(const char *dir);
 
 
 #endif /* HEADER_PY_UTILS_H */

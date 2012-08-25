@@ -310,6 +310,5 @@ int installZlibs(ARCHIVE_STATUS *status);
 int runScripts(ARCHIVE_STATUS *status);
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
-void clear(const char *dir);
 #endif
 

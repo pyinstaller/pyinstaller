@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 
         VS("Back to parent...\n");
         if (status_list[SELF]->temppath[0] != 0)
-            clear(status_list[SELF]->temppath);
+            pyi_remove_temp_path(status_list[SELF]->temppath);
 
         for (i = SELF; status_list[i] != NULL; i++) {
             VS("Freeing status for %s\n", status_list[i]->archivename);

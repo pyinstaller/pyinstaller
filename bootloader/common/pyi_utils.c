@@ -27,12 +27,20 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #ifdef WIN32
     #include <windows.h>
     #include <direct.h>
     #include <process.h>
     #include <io.h>
+#else
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <dlfcn.h>
+    #include <dirent.h>
+    #include <stdarg.h>
 #endif
 
 /*
@@ -203,3 +211,101 @@ int pyi_create_temp_path(ARCHIVE_STATUS *status)
 	}
     return 0;
 }
+
+
+// TODO merge unix/win versions of remove_one() and pyi_remove_temp_path()
+#ifdef WIN32
+static void remove_one(char *fnm, int pos, struct _finddata_t finfo)
+{
+	if ( strcmp(finfo.name, ".")==0  || strcmp(finfo.name, "..") == 0 )
+		return;
+	fnm[pos] = '\0';
+	strcat(fnm, finfo.name);
+	if ( finfo.attrib & _A_SUBDIR )
+        /* Use recursion to remove subdirectories. */
+		pyi_remove_temp_path(fnm);
+	else if (remove(fnm)) {
+        /* HACK: Possible concurrency issue... spin a little while */
+        Sleep(100);
+        remove(fnm);
+    }
+}
+
+//TODO Find easier and more portable implementation of removing directory recursively.
+//     e.g.
+void pyi_remove_temp_path(const char *dir)
+{
+	char fnm[PATH_MAX+1];
+	struct _finddata_t finfo;
+	long h;
+	int dirnmlen;
+	strcpy(fnm, dir);
+	dirnmlen = strlen(fnm);
+	if ( fnm[dirnmlen-1] != '/' && fnm[dirnmlen-1] != '\\' ) {
+		strcat(fnm, "\\");
+		dirnmlen++;
+	}
+	strcat(fnm, "*");
+	h = _findfirst(fnm, &finfo);
+	if (h != -1) {
+		remove_one(fnm, dirnmlen, finfo);
+		while ( _findnext(h, &finfo) == 0 )
+			remove_one(fnm, dirnmlen, finfo);
+		_findclose(h);
+	}
+	rmdir(dir);
+}
+#else
+static void remove_one(char *pnm, int pos, const char *fnm)
+{
+	struct stat sbuf;
+	if ( strcmp(fnm, ".")==0  || strcmp(fnm, "..") == 0 )
+		return;
+	pnm[pos] = '\0';
+	strcat(pnm, fnm);
+	if ( stat(pnm, &sbuf) == 0 ) {
+		if ( S_ISDIR(sbuf.st_mode) )
+            /* Use recursion to remove subdirectories. */
+			pyi_remove_temp_path(pnm);
+		else
+			unlink(pnm);
+	}
+}
+
+void pyi_remove_temp_path(const char *dir)
+{
+	char fnm[PATH_MAX+1];
+	DIR *ds;
+	struct dirent *finfo;
+	int dirnmlen;
+
+	strcpy(fnm, dir);
+	dirnmlen = strlen(fnm);
+	if ( fnm[dirnmlen-1] != '/' ) {
+		strcat(fnm, "/");
+		dirnmlen++;
+	}
+	ds = opendir(dir);
+	finfo = readdir(ds);
+	while (finfo) {
+		remove_one(fnm, dirnmlen, finfo->d_name);
+		finfo = readdir(ds);
+	}
+	closedir(ds);
+	rmdir(dir);
+}
+#endif
+
+
+// TODO is this function still used? Could it be removed?
+/*
+ * If binaries were extracted, this should be called
+ * to remove them
+ */
+void cleanUp(ARCHIVE_STATUS *status)
+{
+	if (status->temppath[0])
+		pyi_remove_temp_path(status->temppath);
+}
+
+
