@@ -1,8 +1,9 @@
 /*
- * Portable wrapper for some utility functions like getenv/setenv,
- * file path manipulation and other shared data types or functions.
+ * Glogal shared declarations used in many bootloader files.
  *
  * Copyright (C) 2012, Martin Zibricky
+ * Copyright (C) 2005, Giovanni Bajo
+ * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,19 +27,37 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#ifndef HEADER_PYI_UTILS_H
-#define HEADER_PYI_UTILS_H
+#ifndef HEADER_PYI_GLOBAL_H
+#define HEADER_PYI_GLOBAL_H
+
+/* Definition of type boolean. */
+typedef int bool;
+#define false 0
+#define true  1
 
 
-#include "pyi_global.h"
-#include "pyi_archive.h"
+/*
+ * On Windows PATH_MAX does not exist but MAX_PATH does.
+ * WinAPI MAX_PATH limit is only 256. MSVCR fuctions does not have this limit.
+ * Redefine PATH_MAX for Windows to support longer path names.
+ */
+// TODO use MSVCR function for file path handling.
+#ifdef WIN32
+    #define PATH_MAX 4096  /* Default value on Linux. */
+#else
+    #include <limits.h>  /* PATH_MAX available in this header. */
+#endif
+
+/*
+ * Debug and error macros.
+ */
+#if defined(WIN32) && defined(WINDOWED)
+    #define FATALERROR mbfatalerror
+    #define OTHERERROR mbothererror
+#else
+    #define FATALERROR printf
+    #define OTHERERROR printf
+#endif
 
 
-char *pyi_getenv(const char *variable);
-int pyi_setenv(const char *variable, const char *value);
-int pyi_unsetenv(const char *variable);
-
-int pyi_create_temp_path(ARCHIVE_STATUS *status);
-
-
-#endif /* HEADER_PY_UTILS_H */
+#endif /* HEADER_PYI_GLOBAL_H */

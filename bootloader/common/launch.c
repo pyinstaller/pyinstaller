@@ -1299,7 +1299,7 @@ int runScripts(ARCHIVE_STATUS *status)
             PI_PyObject_SetAttrString(__main__, "__file__", __file__);
             Py_DECREF(__file__);
 			/* Run it */
-			rc = PI_PyRun_SimpleString(data);
+			rc = PI_PyRun_SimpleString((char *) data);
 			/* log errors and abort */
 			if (rc != 0) {
 				VS("RC: %d from %s\n", rc, ptoc->name);

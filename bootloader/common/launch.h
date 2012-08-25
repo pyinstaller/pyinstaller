@@ -42,6 +42,9 @@
 #include <netinet/in.h>
 #endif
 
+#include "pyi_archive.h"
+#include "pyi_global.h"
+
 /* We use dynamic loading so one binary
    can be used with (nearly) any Python version.
    This is the cruft necessary to do dynamic loading
@@ -200,14 +203,6 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
  */
 #define MAGIC "MEI\014\013\012\013\016"
 
-#if defined(WIN32) && defined(WINDOWED)
-# define FATALERROR mbfatalerror
-# define OTHERERROR mbothererror
-#else
-# define FATALERROR printf
-# define OTHERERROR printf
-#endif
-
 #ifdef LAUNCH_DEBUG
 # if defined(WIN32) && defined(WINDOWED)
 #  define VS mbvs
@@ -228,43 +223,6 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 #endif
 
 #define SELF 0
-
-/* TOC entry for a CArchive */
-typedef struct _toc {
-    int structlen;    /*len of this one - including full len of name */
-    int pos;          /* pos rel to start of concatenation */
-    int len;          /* len of the data (compressed) */
-    int ulen;         /* len of data (uncompressed) */
-    char cflag;       /* is it compressed (really a byte) */
-    char typcd;       /* 'b' binary, 'z' zlib, 'm' module, 's' script (v3),
-					     'x' data, 'o' runtime option  */
-    char name[1];    /* the name to save it as */
-	/* starting in v5, we stretch this out to a mult of 16 */
-} TOC;
-
-/* The CArchive Cookie, from end of the archive. */
-typedef struct _cookie {
-    char magic[8]; /* 'MEI\014\013\012\013\016' */
-    int  len;      /* len of entire package */
-    int  TOC;      /* pos (rel to start) of TableOfContents */
-    int  TOClen;   /* length of TableOfContents */
-    int  pyvers;   /* new in v4 */
-} COOKIE;
-
-typedef struct _archive_status {
-    FILE    *fp;
-    int     pkgstart;
-    TOC     *tocbuff;
-    TOC     *tocend;
-    COOKIE  cookie;
-    char    archivename[_MAX_PATH + 1];
-    char    homepath[_MAX_PATH + 1];
-    char    temppath[_MAX_PATH + 1];
-#ifdef WIN32
-    char    homepathraw[_MAX_PATH + 1];
-    char    temppathraw[_MAX_PATH + 1];
-#endif
-} ARCHIVE_STATUS;
 
 /*****************************************************************
  * The following 4 entries are for applications which may need to
