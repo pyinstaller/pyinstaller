@@ -333,47 +333,6 @@ int openArchive(ARCHIVE_STATUS *status)
 #define HINSTANCE void *
 #endif
 
-/*
- * Python versions before 2.4 do not export IncRef/DecRef as a binary API,
- * but only as macros in header files. Since we do not want to depend on
- * Python.h for many reasons (including the fact that we would like to
- * have a single binary for all Python versions), we provide an emulated
- * incref/decref here, that work on the binary layout of the PyObject
- * structure as it was defined in Python 2.3 and older versions.
- */
-struct _old_typeobject;
-typedef struct _old_object {
-    int ob_refcnt;
-    struct _old_typeobject *ob_type;
-} OldPyObject;
-typedef void (*destructor)(PyObject *);
-typedef struct _old_typeobject {
-    int ob_refcnt;
-    struct _old_typeobject *ob_type;
-    int ob_size;
-    char *tp_name; /* For printing */
-    int tp_basicsize, tp_itemsize; /* For allocation */
-    destructor tp_dealloc;
-    /* ignore the rest.... */
-} OldPyTypeObject;
-
-static void _EmulatedIncRef(PyObject *o)
-{
-    OldPyObject *oo = (OldPyObject*)o;
-    if (oo)
-        oo->ob_refcnt++;
-}
-
-static void _EmulatedDecRef(PyObject *o)
-{
-    #define _Py_Dealloc(op) \
-        (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
-
-    OldPyObject *oo = (OldPyObject*)o;
-    if (--(oo)->ob_refcnt == 0)
-        _Py_Dealloc(oo);
-}
-
 int mapNames(HMODULE dll, int pyvers)
 {
     /* Get all of the entry points that we are interested in */
@@ -415,9 +374,6 @@ int mapNames(HMODULE dll, int pyvers)
     GETPROC(dll, Py_EndInterpreter);
     GETPROC(dll, PyInt_AsLong);
     GETPROC(dll, PySys_SetObject);
-
-    if (!PI_Py_IncRef) PI_Py_IncRef = _EmulatedIncRef;
-    if (!PI_Py_DecRef) PI_Py_DecRef = _EmulatedDecRef;
 
     return 0;
 }

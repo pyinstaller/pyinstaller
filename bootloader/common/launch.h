@@ -1,5 +1,6 @@
 /*
  * Launch a python module from an archive.
+ *
  * Copyright (C) 2005, Giovanni Bajo
  * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
  *
@@ -27,6 +28,7 @@
  */
 #ifndef LAUNCH_H
 #define LAUNCH_H
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -141,11 +143,21 @@ EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(long, PyInt_AsLong, (PyObject *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
-/* Macros for reference counting through exported functions
+
+/* 
+ * Macros for reference counting through exported functions
  * (that is: without binding to the binary structure of a PyObject.
- * These rely on the Py_IncRef/Py_DecRef API functions on Pyhton 2.4+,
- * or the emulated version for older versions (see launch.c).
+ * These rely on the Py_IncRef/Py_DecRef API functions on Pyhton 2.4+.
+ *
+ * Python versions before 2.4 do not export IncRef/DecRef as a binary API,
+ * but only as macros in header files. Since we support Python 2.4+ we do not
+ * need to provide an emulated incref/decref as it was with older Python
+ * versions.
+ *
+ * We do not want to depend on Python.h for many reasons (including the fact
+ * that we would like to have a single binary for all Python versions).
  */
+
 #define Py_XINCREF(o)    PI_Py_IncRef(o)
 #define Py_XDECREF(o)    PI_Py_DecRef(o)
 #define Py_DECREF(o)     Py_XDECREF(o)
