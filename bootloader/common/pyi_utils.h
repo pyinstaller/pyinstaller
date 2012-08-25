@@ -29,6 +29,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <limits.h>
 #include <stdlib.h>
 
 #ifdef WIN32
@@ -39,7 +40,17 @@
 /* Definition of type boolean. */
 typedef int bool;
 #define false 0
-#define true 1
+#define true  1
+
+
+/* On Windows PATH_MAX does not exist but MAX_PATH does.
+ * WinAPI MAX_PATH limit is only 256. MSVCR fuctions does not have this limit.
+ * Redefine PATH_MAX for Windows to support longer path names.
+ */
+// TODO use MSVCR function for file path handling.
+#ifdef WIN32
+#define PATH_MAX 4096  /* Default value on Linux. */
+#endif
 
 
 /* Return string copy of environment variable. */
@@ -49,7 +60,7 @@ static char *pyi_getenv(const char *variable)
     char *env = NULL;
 
 #ifdef WIN32
-    char  buf1[MAX_CHAR], buf2[MAX_CHAR];
+    char  buf1[PATH_MAX], buf2[PATH_MAX];
     DWORD rc;
 
     rc = GetEnvironmentVariableA(variable, buf1, sizeof(buf1));
@@ -76,7 +87,7 @@ static int pyi_setenv(const char *variable, const char *value)
 {
     int rc;
 #ifdef WIN32
-    rc = SetEnvironmentVariableA(variable, value)
+    rc = SetEnvironmentVariableA(variable, value);
 #else
     rc = setenv(variable, value, true);
 #endif
@@ -90,7 +101,7 @@ static int pyi_unsetenv(const char *variable)
 {
     int rc;
 #ifdef WIN32
-    rc = SetEnvironmentVariableA(variable, NULL)
+    rc = SetEnvironmentVariableA(variable, NULL);
 #else
     rc = unsetenv(variable);
 #endif
