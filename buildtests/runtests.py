@@ -365,6 +365,7 @@ class BuildTestRunner(object):
         Test running of all created executables.
         """
         files = glob.glob(os.path.join('dist', self.test_file + '*'))
+        files.sort()
         retcode = 0
         for exe in files:
             exe = os.path.splitext(exe)[0]
@@ -650,6 +651,10 @@ def main():
                 test_list = [arg]
             else:
                 test_list = [x for x in test_list if os.path.splitext(x)[1] == ".py"]
+            # Sort tests aplhabetically. For example test
+            # basic/test_nested_launch1 depends on basic/test_nested_launch0.
+            # Otherwise it would fail.
+            test_list.sort()
             for t in test_list:
                 test_dir = os.path.dirname(t)
                 test_script = os.path.basename(os.path.splitext(t)[0])
