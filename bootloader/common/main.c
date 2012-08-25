@@ -26,6 +26,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #include "utils.h"
+#include "pyi_utils.h"
 #ifndef WIN32
 #include <sys/wait.h>
 #endif
@@ -52,7 +53,7 @@ int main(int argc, char* argv[])
 #endif
     char homepath[_MAX_PATH];
     char archivefile[_MAX_PATH + 5];
-    char MEIPASS2[_MAX_PATH + 11] = "_MEIPASS2=";
+    char MEIPASS2[_MAX_PATH + 1];
     int rc = 0;
     char *extractionpath = NULL;
 #if defined(WIN32) && defined(WINDOWED)
@@ -74,7 +75,7 @@ int main(int argc, char* argv[])
     get_archivefile(archivefile, thisfile);
     get_homepath(homepath, thisfile);
 
-    extractionpath = getenv( "_MEIPASS2" );
+    extractionpath = pyi_getenv("_MEIPASS2");
 
     /* If the Python program we are about to run invokes another PyInstaller
      * one-file program as subprocess, this subprocess must not be fooled into
@@ -105,8 +106,8 @@ int main(int argc, char* argv[])
     if (!extractionpath && !needToExtractBinaries(status_list)) {
         VS("No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
-        strcat(MEIPASS2, homepath);
-        putenv(MEIPASS2); //Bootstrap sets sys._MEIPASS, plugins rely on it
+        //strcat(MEIPASS2, homepath);
+        pyi_setenv("_MEIPASS2", MEIPASS2); //Bootstrap sets sys._MEIPASS, plugins rely on it
     }
 #endif
     if (extractionpath) {
@@ -140,8 +141,7 @@ int main(int argc, char* argv[])
 
         VS("Executing self as child with ");
         /* run the "child" process, then clean up */
-        strcat(MEIPASS2, status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
-        putenv(MEIPASS2);
+        pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
 
         if (set_environment(status_list[SELF]) == -1)
             return -1;

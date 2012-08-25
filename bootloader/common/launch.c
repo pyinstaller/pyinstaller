@@ -31,7 +31,6 @@
  #include <direct.h>
  #include <process.h>
  #include <io.h>
- #define unsetenv(x) _putenv(x "=")
 #else
  #include <unistd.h>
  #include <fcntl.h>
@@ -44,6 +43,7 @@
 #include "launch.h"
 #include <string.h>
 #include "zlib.h"
+#include "pyi_utils.h"
 
 #ifdef WIN32
 #define snprintf _snprintf
@@ -219,7 +219,7 @@ int getTempPath(char *buff)
 	int i;
 	char *p;
 	for ( i=0; envname[i]; i++ ) {
-		p = getenv(envname[i]);
+		p = pyi_getenv(envname[i]);
 		if (p) {
 			strcpy(buff, p);
 			if (testTempPath(buff))
@@ -739,7 +739,6 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 
     /* Set the PYTHONPATH */
 	VS("Manipulating evironment\n");
-	strcpy(pypath, "PYTHONPATH=");
     if (status->temppath[0] != '\0') { /* Temppath is setted */
 	    strcat(pypath, status->temppath);
 	    pypath[strlen(pypath)-1] = '\0';
@@ -755,12 +754,10 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 #endif
 		pypath[strlen(pypath)-1] = '\0';
 
-	putenv(pypath);
-	VS("%s\n", pypath);
+	pyi_setenv("PYTHONPATH", pypath);
+	VS("PYTHONPATH=%s\n", pypath);
 
-	/* Clear out PYTHONHOME to avoid clashing with any installation */
-
-	strcpy(pypath, "PYTHONHOME=");
+	// TODO Clear out PYTHONHOME after python initialization to avoid clashing with any installation.
 
     /* Set PYTHONHOME to temppath. This is only for onefile mode.*/
     if (status->temppath[0] != '\0') {
@@ -771,8 +768,8 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
         strcat(pypath, status->homepath);
     }
 
-	putenv(pypath);
-	VS("%s\n", pypath);
+	pyi_setenv("PYTHONHOME", pypath);
+	VS("PYTHONHOME=%s\n", pypath);
 
 	/* Start python. */
 	/* VS("Loading python\n"); */
