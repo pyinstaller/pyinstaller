@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
     if (!extractionpath && !needToExtractBinaries(status_list)) {
         VS("No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
-        //strcat(MEIPASS2, homepath);
+        strcpy(MEIPASS2, homepath);
         pyi_setenv("_MEIPASS2", MEIPASS2); //Bootstrap sets sys._MEIPASS, plugins rely on it
     }
 #endif

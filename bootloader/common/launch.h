@@ -112,6 +112,7 @@ EXTDECLPROC(int, Py_Initialize, (void));
 EXTDECLPROC(int, Py_Finalize, (void));
 EXTDECLPROC(void, Py_IncRef, (PyObject *));
 EXTDECLPROC(void, Py_DecRef, (PyObject *));
+EXTDECLPROC(void, Py_SetPythonHome, (char *));
 EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
 EXTDECLPROC(int, PyRun_SimpleString, (char *));
 EXTDECLPROC(int, PySys_SetArgv, (int, char **));

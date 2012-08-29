@@ -63,6 +63,7 @@ DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
 DECLPROC(Py_IncRef);
 DECLPROC(Py_DecRef);
+DECLPROC(Py_SetPythonHome);
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
 DECLPROC(PySys_SetArgv);
@@ -337,6 +338,7 @@ int mapNames(HMODULE dll, int pyvers)
     GETPROC(dll, Py_Finalize);
     GETPROCOPT(dll, Py_IncRef);
     GETPROCOPT(dll, Py_DecRef);
+    GETPROC(dll, Py_SetPythonHome);
     GETPROC(dll, PyImport_ExecCodeModule);
     GETPROC(dll, PyRun_SimpleString);
     GETPROC(dll, PyString_FromStringAndSize);
@@ -600,7 +602,9 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
  */
 int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
-    /* Set PYTHONPATH so dynamic libs will load */
+    /* Set PYTHONPATH so dynamic libs will load.
+     * PYTHONPATH for function Py_SetPythonHome() should point
+     * to a zero-terminated character string in static storage. */
 	static char pypath[2*PATH_MAX + 14];
 	int pathlen = 1;
 	int i;
@@ -609,6 +613,9 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	PyObject *py_argv;
 	PyObject *val;
 	PyObject *sys;
+    #ifdef WIN32
+    size_t pyhome_len = 0;
+    #endif
 
     /* Set the PYTHONPATH */
 	VS("Manipulating evironment\n");
@@ -630,19 +637,38 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	pyi_setenv("PYTHONPATH", pypath);
 	VS("PYTHONPATH=%s\n", pypath);
 
-	// TODO Clear out PYTHONHOME after python initialization to avoid clashing with any installation.
 
-    /* Set PYTHONHOME to temppath. This is only for onefile mode.*/
+	/* Clear out PYTHONHOME to avoid clashing with any Python installation. */
+	pyi_unsetenv("PYTHONHOME");
+
+    /* Set PYTHONHOME by using function from Python C API. */
     if (status->temppath[0] != '\0') {
-        strcat(pypath, status->temppath);
+        /* Use temppath as home. This is only for onefile mode. */
+        #ifdef WIN32
+        /* On Windows pass path containing back slashes. */
+        strcpy(pypath, status->temppathraw);
+        #else
+        strcpy(pypath, status->temppath);
+        #endif
     }
-    /* Set PYTHONHOME to homepath. This is for default onedir mode.*/
     else {
-        strcat(pypath, status->homepath);
+        /* Use temppath as home. This is for default onedir mode.*/
+        #ifdef WIN32
+        /* On Windows pass path containing back slashes. */
+        strcpy(pypath, status->homepathraw);
+        #else
+        strcpy(pypath, status->homepath);
+        #endif
     }
-
-	pyi_setenv("PYTHONHOME", pypath);
+    /* On Windows remove back slash '\\' from the end. */
+    // TODO remove this hook when path handling is fixed in bootloader.
+    #ifdef WIN32
+    pyhome_len = strlen(pypath);
+    pypath[pyhome_len - 1] = '\0';
+    #endif
+    PI_Py_SetPythonHome(pypath);
 	VS("PYTHONHOME=%s\n", pypath);
+
 
 	/* Start python. */
 	/* VS("Loading python\n"); */

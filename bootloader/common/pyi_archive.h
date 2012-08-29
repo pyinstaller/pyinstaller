@@ -84,7 +84,7 @@ typedef struct _archive_status {
      * Flag if running in onefile mode. Bootloader has to behave differently
      * in this mode.
      */
-    int    is_onefile_mode;
+    bool    is_onefile_mode;
 } ARCHIVE_STATUS;
 
 
