@@ -629,12 +629,35 @@ def _os_bootstrap():
             return ''
 
     if basename is None:
-        def basename(p):
-            i = p.rfind(sep)
-            if i == -1:
-                return p
-            else:
-                return p[i + len(sep):]
+        if sys.platform.startswith('win'):
+            # Implementation from ntpath.py module
+            # from standard Python 2.7 Library.
+            def basename(pth):
+                ## Implementation of os.path.splitdrive()
+                if pth[1:2] == ':':
+                    d = pth[0:2]
+                    p = pth[2:]
+                else:
+                    d = ''
+                    p = pth
+                ## Implementation of os.path.split()
+                # set i to index beyond p's last slash
+                i = len(p)
+                while i and p[i - 1] not in '/\\':
+                    i = i - 1
+                head, tail = p[:i], p[i:]  # now tail has no slashes
+                # remove trailing slashes from head, unless it's all slashes
+                head2 = head
+                while head2 and head2[-1] in '/\\':
+                    head2 = head2[:-1]
+                head = head2 or head
+                return d + head, tail
+        else:
+            # Implementation from ntpath.py module
+            # from standard Python 2.7 Library.
+            def basename(pth):
+                i = pth.rfind('/') + 1
+                return pth[i:]
 
     def _listdir(dir, cache=None):
         # The cache is not used. It was found to cause problems
