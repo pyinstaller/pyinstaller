@@ -558,7 +558,7 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 	int unbuffered = 0;
 	TOC *ptoc = status->tocbuff;
 	while (ptoc < status->tocend) {
-		if (ptoc->typcd == 'o') {
+		if (ptoc->typcd == ARCHIVE_ITEM_RUNTIME_OPTION) {
 			VS("%s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
@@ -717,7 +717,7 @@ int importModules(ARCHIVE_STATUS *status)
 		*/
 	ptoc = status->tocbuff;
 	while (ptoc < status->tocend) {
-		if (ptoc->typcd == 'm' || ptoc->typcd == 'M')
+		if (ptoc->typcd == ARCHIVE_ITEM_PYMODULE || ptoc->typcd == ARCHIVE_ITEM_PYPACKAGE)
 		{
 			unsigned char *modbuf = extract(status, ptoc);
 
@@ -784,7 +784,7 @@ int installZlibs(ARCHIVE_STATUS *status)
 	/* Iterate through toc looking for zlibs (type 'z') */
 	ptoc = status->tocbuff;
 	while (ptoc < status->tocend) {
-		if (ptoc->typcd == 'z')
+		if (ptoc->typcd == ARCHIVE_ITEM_PYZ)
 		{
 			VS("%s\n", ptoc->name);
 			installZlib(status, ptoc);
@@ -1094,14 +1094,15 @@ int needToExtractBinaries(ARCHIVE_STATUS *status_list[])
 {
 	TOC * ptoc = status_list[SELF]->tocbuff;
 	while (ptoc < status_list[SELF]->tocend) {
-		if (ptoc->typcd == 'b' || ptoc->typcd == 'x' || ptoc->typcd == 'Z')
-            return 1;
-        if (ptoc->typcd == 'd') {
-            return 1;
+		if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
+                ptoc->typcd == ARCHIVE_ITEM_ZIPFILE)
+            return true;
+        if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
+            return true;
         }
 		ptoc = incrementTocPtr(status_list[SELF], ptoc);
 	}
-	return 0;
+	return false;
 }
 
 /*
@@ -1113,11 +1114,12 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
 	TOC * ptoc = status_list[SELF]->tocbuff;
 	VS("Extracting binaries\n");
 	while (ptoc < status_list[SELF]->tocend) {
-		if (ptoc->typcd == 'b' || ptoc->typcd == 'x' || ptoc->typcd == 'Z')
+		if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
+                ptoc->typcd == ARCHIVE_ITEM_ZIPFILE)
 			if (extract2fs(status_list[SELF], ptoc))
 				return -1;
 
-        if (ptoc->typcd == 'd') {
+        if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
             if (extractDependency(status_list, ptoc->name) == -1)
                 return -1;
         }
@@ -1142,7 +1144,7 @@ int runScripts(ARCHIVE_STATUS *status)
 
 	/* Iterate through toc looking for scripts (type 's') */
 	while (ptoc < status->tocend) {
-		if (ptoc->typcd == 's') {
+		if (ptoc->typcd == ARCHIVE_ITEM_PYSOURCE) {
 			/* Get data out of the archive.  */
 			data = extract(status, ptoc);
 			/* Set the __file__ attribute within the __main__ module,

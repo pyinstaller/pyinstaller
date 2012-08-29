@@ -34,6 +34,17 @@
 #include "pyi_global.h"
 
 
+/* Types of CArchive items. */
+#define ARCHIVE_ITEM_BINARY           'b'  /* binary */
+#define ARCHIVE_ITEM_DEPENDENCY       'd'  /* runtime option */
+#define ARCHIVE_ITEM_PYZ              'z'  /* zlib (pyz) - frozen Python code */
+#define ARCHIVE_ITEM_ZIPFILE          'Z'  /* zlib (pyz) - frozen Python code */
+#define ARCHIVE_ITEM_PYPACKAGE        'M'  /* Python package (__init__.py) */
+#define ARCHIVE_ITEM_PYMODULE         'm'  /* Python module */
+#define ARCHIVE_ITEM_PYSOURCE         's'  /* Python script (v3) */
+#define ARCHIVE_ITEM_DATA             'x'  /* data */
+#define ARCHIVE_ITEM_RUNTIME_OPTION   'o'  /* runtime option */
+
 /* TOC entry for a CArchive */
 typedef struct _toc {
     int structlen;    /*len of this one - including full len of name */
@@ -41,8 +52,8 @@ typedef struct _toc {
     int len;          /* len of the data (compressed) */
     int ulen;         /* len of data (uncompressed) */
     char cflag;       /* is it compressed (really a byte) */
-    char typcd;       /* 'b' binary, 'z' zlib, 'm' module, 's' script (v3),
-					     'x' data, 'o' runtime option  */
+    char typcd;       /* type code -'b' binary, 'z' zlib, 'm' module,
+                       * 's' script (v3),'x' data, 'o' runtime option  */
     char name[1];    /* the name to save it as */
 	/* starting in v5, we stretch this out to a mult of 16 */
 } TOC;
@@ -69,6 +80,11 @@ typedef struct _archive_status {
     char    homepathraw[PATH_MAX + 1];
     char    temppathraw[PATH_MAX + 1];
 #endif
+    /* 
+     * Flag if running in onefile mode. Bootloader has to behave differently
+     * in this mode.
+     */
+    int    is_onefile_mode;
 } ARCHIVE_STATUS;
 
 
