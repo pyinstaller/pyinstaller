@@ -78,6 +78,7 @@ if MEIPASS2 in os.environ:
     del os.environ[MEIPASS2]
 
 
+# TODO Remove PYTHONHOME workaround when bootloaders are recompiled for all OS.
 # Ensure PYTHONHOME environment variable is unset. PYTHONHOME
 # makes sure that no python modules from host OS are used. Startup is
 # By deleting it we ensure that invoked standard Python interpreter
