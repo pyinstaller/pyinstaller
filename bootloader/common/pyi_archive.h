@@ -65,6 +65,7 @@ typedef struct _cookie {
     int  TOC;      /* pos (rel to start) of TableOfContents */
     int  TOClen;   /* length of TableOfContents */
     int  pyvers;   /* new in v4 */
+    char pylibname[64];    /* Filename of Python dynamic library e.g. python2.7.dll. */
 } COOKIE;
 
 typedef struct _archive_status {

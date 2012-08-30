@@ -380,7 +380,11 @@ int loadPython(ARCHIVE_STATUS *status)
 {
 	HINSTANCE dll;
 	char dllpath[PATH_MAX + 1];
+    char dllname[64];
     int pyvers = ntohl(status->cookie.pyvers);
+
+    strcpy(dllname, status->cookie.pylibname);
+    VS("Python library name: %s\n", dllname);
 
 #ifdef WIN32
 	/* Determine the path */
