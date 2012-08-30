@@ -4,6 +4,8 @@
 # But on Windows we need to overcome missing fork() fuction.
 #
 # See http://www.pyinstaller.org/wiki/Recipe/Multiprocessing
+
+
 import multiprocessing.forking
 import os
 import sys
@@ -12,10 +14,11 @@ import sys
 class _Popen(multiprocessing.forking.Popen):
     def __init__(self, *args, **kw):
         if hasattr(sys, 'frozen'):
-            # We have to get original _MEIPASS2 value from PYTHONPATH
-            # to get --onefile and --onedir mode working.
-            # Last character is stripped in C-loader.
-            os.putenv('_MEIPASS2', sys._MEIPASS)
+            # We have to set original _MEIPASS2 value from sys._MEIPASS
+            # to get --onefile mode working.
+            # Last character is stripped in C-loader. We have to add
+            # '/' or '\\' at the end.
+            os.putenv('_MEIPASS2', sys._MEIPASS + os.sep)
         try:
             super(_Popen, self).__init__(*args, **kw)
         finally:
@@ -48,13 +51,10 @@ class SendeventProcess(Process):
 
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
+    # On Windows calling this function is necessary.
+    if sys.platform.startswith('win'):
+        multiprocessing.freeze_support()
     print 'main'
     resultQueue = multiprocessing.Queue()
     SendeventProcess(resultQueue)
     print 'main'
-    if hasattr(sys, 'frozen'):
-        # We need to wait for all child processes otherwise
-        # --onefile mode won't work.
-        while multiprocessing.active_children():
-            multiprocessing.active_children()[0].join()

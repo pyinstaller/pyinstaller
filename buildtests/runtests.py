@@ -115,6 +115,7 @@ class SkipChecker(object):
         self.MODULES = {
             'basic/test_ctypes': ['ctypes'],
             'basic/test_module_attributes': ['xml.etree.cElementTree'],
+            'basic/test_multiprocess': ['multiprocessing'],
             'basic/test_nestedlaunch1': ['ctypes'],
             'basic/test_onefile_multiprocess': ['multiprocessing'],
             'libraries/test_enchant': ['enchant'],
@@ -217,6 +218,7 @@ NO_SPEC_FILE = [
     'basic/test_email',
     'basic/test_email_oldstyle',
     'basic/test_module__file__attribute',
+    'basic/test_multiprocess',
     'basic/test_onefile_multiprocess',
     'basic/test_onefile_module__file__attribute',
     'basic/test_python_home',
