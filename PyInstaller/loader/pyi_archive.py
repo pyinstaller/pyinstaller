@@ -87,7 +87,6 @@ class Archive(object):
     MAGIC = 'PYL\0'
     HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
     TOCPOS = 8
-    TRLLEN = 0  # default - no trailer
     TOCTMPLT = {}
     os = None
     _bincache = None
@@ -219,8 +218,6 @@ class Archive(object):
         """
         toc_pos = self.lib.tell()
         self.save_toc(toc_pos)
-        if self.TRLLEN:
-            self.save_trailer(toc_pos)
         if self.HDRLEN:
             self.update_headers(toc_pos)
         self.lib.close()
@@ -265,12 +262,6 @@ class Archive(object):
         """
         marshal.dump(self.toc, self.lib)
 
-    def save_trailer(self, tocpos):
-        """
-        Default - not used
-        """
-        pass
-
     def update_headers(self, tocpos):
         """
         Default - MAGIC + Python's magic + tocpos
@@ -293,7 +284,6 @@ class ZlibArchive(Archive):
     MAGIC = 'PYZ\0'
     TOCPOS = 8
     HDRLEN = Archive.HDRLEN + 5
-    TRLLEN = 0
     TOCTMPLT = {}
     LEVEL = 9
     NO_COMPRESSION_LEVEL = 0

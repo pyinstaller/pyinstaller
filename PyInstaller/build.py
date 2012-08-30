@@ -72,6 +72,7 @@ HIDDENIMPORTS = []
 rthooks = {}
 
 
+
 def _save_data(filename, data):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
@@ -532,7 +533,7 @@ class Analysis(Target):
                                                manifest=depmanifest))
         if is_win:
             depmanifest.writeprettyxml()
-        self.fixMissingPythonLib(binaries)
+        self._fix_missing_python_lib(binaries)
         if zipfiles:
             scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
         # Add realtime hooks just before the last script (which is
@@ -562,7 +563,7 @@ class Analysis(Target):
         logger.info("%s no change!", self.out)
         return 0
 
-    def fixMissingPythonLib(self, binaries):
+    def _fix_missing_python_lib(self, binaries):
         """Add the Python library if missing from the binaries.
 
         Some linux distributions (e.g. debian-based) statically build the
@@ -581,14 +582,18 @@ class Analysis(Target):
             names = ('libpython%d.%d.so' % sys.version_info[:2],)
         elif is_darwin:
             names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
+        elif is_win:
+            names = ('python%d%d.dll' % sys.version_info[:2],)
         else:
             return
 
         for (nm, fnm, typ) in binaries:
             for name in names:
                 if typ == 'BINARY' and name in fnm:
-                    # lib found
-                    return
+                    # Python library found.
+                    # FIXME Find a different way how to pass python libname to CArchive.
+                    os.environ['PYI_PYTHON_LIBRARY_NAME'] = name
+                    return  # Stop fuction.
 
         # Resume search using the first item in names.
         name = names[0]
@@ -623,6 +628,11 @@ class Analysis(Target):
             if not os.path.exists(lib):
                 raise IOError("Python library not found!")
 
+        # Python library found.
+        # FIXME Find a different way how to pass python libname to CArchive.
+        os.environ['PYI_PYTHON_LIBRARY_NAME'] = name
+
+        # Include Python library as binary dependency.
         binaries.append((os.path.basename(lib), lib, 'BINARY'))
 
 
@@ -925,7 +935,12 @@ class PKG(Target):
                 mytoc.append((inm, '', 0, 'o'))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
-        archive = pyi_carchive.CArchive()
+
+        # Bootloader has to know the name of Python library.
+        # FIXME Find a different way how to pass python libname to CArchive.
+        archive = pyi_carchive.CArchive(
+                pylib_name=os.environ['PYI_PYTHON_LIBRARY_NAME'])
+
         archive.build(self.name, mytoc)
         _save_data(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
