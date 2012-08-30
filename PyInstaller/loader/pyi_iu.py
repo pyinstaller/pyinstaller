@@ -646,12 +646,9 @@ def _os_bootstrap():
                 while i and p[i - 1] not in '/\\':
                     i = i - 1
                 head, tail = p[:i], p[i:]  # now tail has no slashes
-                # remove trailing slashes from head, unless it's all slashes
-                head2 = head
-                while head2 and head2[-1] in '/\\':
-                    head2 = head2[:-1]
-                head = head2 or head
-                return d + head, tail
+                # Windows implementation is based on split(). We need
+                # to return only tail.
+                return tail
         else:
             # Implementation from ntpath.py module
             # from standard Python 2.7 Library.
