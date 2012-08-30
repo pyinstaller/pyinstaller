@@ -217,6 +217,7 @@ NO_SPEC_FILE = [
     'basic/test_absolute_python_path',
     'basic/test_email',
     'basic/test_email_oldstyle',
+    'basic/test_helloworld',
     'basic/test_module__file__attribute',
     'basic/test_multiprocess',
     'basic/test_onefile_multiprocess',
