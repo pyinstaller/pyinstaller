@@ -168,7 +168,10 @@ class CArchive(pyi_archive.Archive):
         #       char pylibname[64];    /* Filename of Python dynamic library. */
         #   } COOKIE;
         #
-        self._cookie_format = '!8siiii64s'  
+        # TODO Enable new cookie_format with pylib_name support when bootloaders
+        #      are recompiled.
+        #self._cookie_format = '!8siiii64s'  
+        self._cookie_format = '!8siiii'  
         self._cookie_size = struct.calcsize(self._cookie_format)
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
@@ -368,8 +371,11 @@ class CArchive(pyi_archive.Archive):
         pyvers = sys.version_info[0] * 10 + sys.version_info[1]
         # Before saving cookie we need to convert it to corresponding
         # C representation.
+        # TODO Enable pylib_name when bootloaders are recompiled.
+        #cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
+                #tocpos, self.toclen, pyvers, self._pylib_name)
         cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
-                tocpos, self.toclen, pyvers, self._pylib_name)
+                tocpos, self.toclen, pyvers)
         self.lib.write(cookie)
 
     def openEmbedded(self, name):
