@@ -592,7 +592,10 @@ def findLibrary(name):
     lib = None
 
     # Look in the LD_LIBRARY_PATH
-    lp = compat.getenv('LD_LIBRARY_PATH', '')
+    if is_aix:
+        lp = compat.getenv('LIBPATH', '')
+    else:
+        lp = compat.getenv('LD_LIBRARY_PATH', '')
     for path in lp.split(os.pathsep):
         libs = glob(os.path.join(path, name + '*'))
         if libs:
