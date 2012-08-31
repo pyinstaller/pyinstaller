@@ -232,7 +232,10 @@ class CArchive(pyi_archive.Archive):
             self.lib.seek(self.start + self.length - self._cookie_size, 0)
         else:
             self.lib.seek(-self._cookie_size, 2)
-        (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
+        # TODO Enable pylib_name when bootloaders are recompiled.
+        #(magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
+                #self._cookie_format, self.lib.read(self._cookie_size))
+        (magic, totallen, tocpos, toclen, pyvers) = struct.unpack(
                 self._cookie_format, self.lib.read(self._cookie_size))
         if magic != self.MAGIC:
             raise RuntimeError("%s is not a valid %s archive file" %
@@ -242,9 +245,10 @@ class CArchive(pyi_archive.Archive):
             if totallen != self.length or self.pkg_start != self.start:
                 raise RuntimeError('Problem with embedded archive in %s' %
                         self.path)
+        # TODO Enable pylib_name when bootloaders are recompiled.
         # Verify presence of Python library name.
-        if not pylib_name:
-            raise RuntimeError('Python library filename not defined in archive.')
+        #if not pylib_name:
+            #raise RuntimeError('Python library filename not defined in archive.')
         self.tocpos, self.toclen = tocpos, toclen
 
     def loadtoc(self):
