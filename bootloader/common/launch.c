@@ -406,7 +406,7 @@ int loadPython(ARCHIVE_STATUS *status)
     }
 
     /* Append Python library name to dllpath. */
-    strcpy(dllpath, dllname);
+    strcat(dllpath, dllname);
     VS("Python library: %s\n", dllpath);
 
 
