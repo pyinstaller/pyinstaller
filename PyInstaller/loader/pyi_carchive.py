@@ -170,8 +170,10 @@ class CArchive(pyi_archive.Archive):
         #
         # TODO Enable new cookie_format with pylib_name support when bootloaders
         #      are recompiled.
-        #self._cookie_format = '!8siiii64s'  
-        self._cookie_format = '!8siiii'  
+        if sys.platform.startswith('darwin'):
+            self._cookie_format = '!8siiii'  
+        else:
+            self._cookie_format = '!8siiii64s'  
         self._cookie_size = struct.calcsize(self._cookie_format)
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
@@ -233,10 +235,12 @@ class CArchive(pyi_archive.Archive):
         else:
             self.lib.seek(-self._cookie_size, 2)
         # TODO Enable pylib_name when bootloaders are recompiled.
-        #(magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
-                #self._cookie_format, self.lib.read(self._cookie_size))
-        (magic, totallen, tocpos, toclen, pyvers) = struct.unpack(
-                self._cookie_format, self.lib.read(self._cookie_size))
+        if sys.platform.startswith('darwin'):
+            (magic, totallen, tocpos, toclen, pyvers) = struct.unpack(
+                    self._cookie_format, self.lib.read(self._cookie_size))
+        else:
+            (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
+                    self._cookie_format, self.lib.read(self._cookie_size))
         if magic != self.MAGIC:
             raise RuntimeError("%s is not a valid %s archive file" %
                     (self.path, self.__class__.__name__))
@@ -247,8 +251,9 @@ class CArchive(pyi_archive.Archive):
                         self.path)
         # TODO Enable pylib_name when bootloaders are recompiled.
         # Verify presence of Python library name.
-        #if not pylib_name:
-            #raise RuntimeError('Python library filename not defined in archive.')
+        if not sys.platform.startswith('darwin'):
+            if not pylib_name:
+                raise RuntimeError('Python library filename not defined in archive.')
         self.tocpos, self.toclen = tocpos, toclen
 
     def loadtoc(self):
@@ -376,10 +381,12 @@ class CArchive(pyi_archive.Archive):
         # Before saving cookie we need to convert it to corresponding
         # C representation.
         # TODO Enable pylib_name when bootloaders are recompiled.
-        #cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
-                #tocpos, self.toclen, pyvers, self._pylib_name)
-        cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
-                tocpos, self.toclen, pyvers)
+        if sys.platform.startswith('darwin'):
+            cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
+                    tocpos, self.toclen, pyvers)
+        else:
+            cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
+                    tocpos, self.toclen, pyvers, self._pylib_name)
         self.lib.write(cookie)
 
     def openEmbedded(self, name):
