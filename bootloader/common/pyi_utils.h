@@ -51,5 +51,8 @@ char *pyi_dirname(const char *fullpath);
 FILE *pyi_open_target(const char *path, const char* name_);
 int pyi_copy_file(const char *src, const char *dst, const char *filename);
 
+/* Other routines. */
+dylib_t pyi_dlopen(const char *dllpath);
+
 
 #endif /* HEADER_PY_UTILS_H */

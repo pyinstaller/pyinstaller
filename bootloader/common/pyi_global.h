@@ -36,6 +36,20 @@ typedef int bool;
 #define true  1
 
 
+
+/* Type type for dynamic library. */
+#ifdef WIN32
+#define dylib_t   HINSTANCE
+#else
+#define dylib_t   void *
+#endif
+
+/* Wrap some windows specific declarations for Unix. */
+#ifndef WIN32
+#define HMODULE void *
+#endif
+
+
 /*
  * On Windows PATH_MAX does not exist but MAX_PATH does.
  * WinAPI MAX_PATH limit is only 256. MSVCR fuctions does not have this limit.

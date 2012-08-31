@@ -412,3 +412,24 @@ char *pyi_dirname(const char *fullpath)
 }
 
 
+/* Load the shared dynamic library (DLL) */
+dylib_t pyi_dlopen(const char *dllpath)
+{
+#ifndef WIN32
+    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
+#endif
+
+#ifdef AIX
+    /* Append the RTLD_MEMBER to the open mode for 'dlopen()'
+     * in order to load shared object member from library.
+     */
+    dlopenMode |= RTLD_MEMBER;
+#endif
+
+#ifdef WIN32
+	return LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+#else
+	return dlopen(dllpath, dlopenMode);
+#endif
+
+}

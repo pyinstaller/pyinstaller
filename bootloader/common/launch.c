@@ -322,11 +322,6 @@ int openArchive(ARCHIVE_STATUS *status)
 	}
 	return 0;
 }
-#ifndef WIN32
-#define HMODULE void *
-#define HINSTANCE void *
-#endif
-
 int mapNames(HMODULE dll, int pyvers)
 {
     /* Get all of the entry points that we are interested in */
@@ -378,10 +373,20 @@ int mapNames(HMODULE dll, int pyvers)
  */
 int loadPython(ARCHIVE_STATUS *status)
 {
-	HINSTANCE dll;
+	dylib_t dll;
 	char dllpath[PATH_MAX + 1];
     char dllname[64];
     int pyvers = ntohl(status->cookie.pyvers);
+
+#ifdef AIX
+    /*
+     * On AIX 'ar' archives are used for both static and shared object.
+     * To load a shared object from a library, it should be loaded like this:
+     *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
+     */
+    uint32_t pyvers_major;
+    uint32_t pyvers_minor;
+#endif
 
     strcpy(dllname, status->cookie.pylibname);
 
@@ -405,25 +410,7 @@ int loadPython(ARCHIVE_STATUS *status)
         #endif
     }
 
-    /* Append Python library name to dllpath. */
-    strcat(dllpath, dllname);
-    VS("Python library: %s\n", dllpath);
-
-
-#ifndef WIN32
-    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
-#endif
-
-
 #ifdef AIX
-    /*
-     * On AIX 'ar' archives are used for both static and shared object.
-     * To load a shared object from a library, it should be loaded like this:
-     *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
-     */
-    uint32_t pyvers_major;
-    uint32_t pyvers_minor;
-
     pyvers_major = pyvers / 10;
     pyvers_minor = pyvers % 10;
 
@@ -432,21 +419,14 @@ int loadPython(ARCHIVE_STATUS *status)
      *   libpython2.6.a(libpython2.6.so)
      */
     sprintf(dllpath + strlen(dllpath), "(libpython%01d.%01d.so)", pyvers_major, pyvers_minor);
-    
-    /* Append the RTLD_MEMBER to the open mode for 'dlopen()'
-     * in order to load shared object member from library.
-     */
-    dlopenMode |= RTLD_MEMBER;
 #endif
 
+    /* Append Python library name to dllpath. */
+    strcat(dllpath, dllname);
+    VS("Python library: %s\n", dllpath);
 
 	/* Load the DLL */
-#ifdef WIN32
-	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-#else
-	dll = dlopen(dllpath, dlopenMode);
-#endif
-
+    dll = pyi_dlopen(dllpath);
 
     /* Check success of loading Python library. */
 	if (dll == 0) {
