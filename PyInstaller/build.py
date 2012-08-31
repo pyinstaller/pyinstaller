@@ -72,7 +72,6 @@ HIDDENIMPORTS = []
 rthooks = {}
 
 
-
 def _save_data(filename, data):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
@@ -533,7 +532,7 @@ class Analysis(Target):
                                                manifest=depmanifest))
         if is_win:
             depmanifest.writeprettyxml()
-        self._fix_missing_python_lib(binaries)
+        self._check_python_library(binaries)
         if zipfiles:
             scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
         # Add realtime hooks just before the last script (which is
@@ -563,8 +562,11 @@ class Analysis(Target):
         logger.info("%s no change!", self.out)
         return 0
 
-    def _fix_missing_python_lib(self, binaries):
-        """Add the Python library if missing from the binaries.
+    def _check_python_library(self, binaries):
+        """
+        Verify presence of the Python dynamic library. If missing
+        from the binaries try to find the Python library. Set
+        the library name for the bootloader.
 
         Some linux distributions (e.g. debian-based) statically build the
         Python executable to the libpython, so bindepend doesn't include
@@ -573,23 +575,26 @@ class Analysis(Target):
         Darwin custom builds could possibly also have non-framework style libraries,
         so this method also checks for that variant as well.
         """
+        pyver = sys.version_info[:2]
 
-        if is_aix:
+        if is_win:
+            names = ('python%d%d.dll' % pyver,)
+        elif is_cygwin:
+            names = ('libpython%d%d.dll' % pyver,)
+        elif is_darwin:
+            names = ('Python', '.Python', 'libpython%d.%d.dylib' % pyver)
+        elif is_aix:
             # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
-            names = ('libpython%d.%d.a' % sys.version_info[:2],)
+            names = ('libpython%d.%d.a' % pyver,)
         elif is_unix:
             # Other *nix platforms.
-            names = ('libpython%d.%d.so' % sys.version_info[:2],)
-        elif is_darwin:
-            names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
-        elif is_win:
-            names = ('python%d%d.dll' % sys.version_info[:2],)
+            names = ('libpython%d.%d.so.1.0' % pyver,)
         else:
-            return
+            raise SystemExit('Your platform is not yet supported.')
 
         for (nm, fnm, typ) in binaries:
             for name in names:
-                if typ == 'BINARY' and name in fnm:
+                if typ == 'BINARY' and fnm.endswith(name):
                     # Python library found.
                     # FIXME Find a different way how to pass python libname to CArchive.
                     os.environ['PYI_PYTHON_LIBRARY_NAME'] = name
