@@ -384,74 +384,49 @@ int loadPython(ARCHIVE_STATUS *status)
     int pyvers = ntohl(status->cookie.pyvers);
 
     strcpy(dllname, status->cookie.pylibname);
-    VS("Python library name: %s\n", dllname);
 
-#ifdef WIN32
-	/* Determine the path */
-	sprintf(dllpath, "%spython%02d.dll", status->homepathraw, pyvers);
+    if (status->temppath[0] != '\0') {
+        /* Look for Python library in temppath - onefile mode. */
+        #ifdef WIN32
+        /* On Windows pass path containing back slashes. */
+        strcpy(dllpath, status->temppathraw);
+        #else
+        strcpy(dllpath, status->temppath);
+        #endif
+    }
+    else {
+        /* Look for Python library in homepath - onedir mode. */
+        /* Use temppath as home. This is for default onedir mode.*/
+        #ifdef WIN32
+        /* On Windows pass path containing back slashes. */
+        strcpy(dllpath, status->homepathraw);
+        #else
+        strcpy(dllpath, status->homepath);
+        #endif
+    }
 
-	/* Load the DLL */
-	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-	if (dll) {
-		VS("%s\n", dllpath);
-	}
-	else {
-		sprintf(dllpath, "%spython%02d.dll", status->temppathraw, pyvers);
-		dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
-		if (dll) {
-			VS("%s\n", dllpath);
-		}
-	}
-	if (dll == 0) {
-		FATALERROR("Error loading Python DLL: %s (error code %d)\n",
-			dllpath, GetLastError());
-		return -1;
-	}
+    /* Append Python library name to dllpath. */
+    strcpy(dllpath, dllname);
+    VS("Python library: %s\n", dllpath);
 
-	mapNames(dll, pyvers);
-#else
 
+#ifndef WIN32
+    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
+#endif
+
+
+#ifdef AIX
+    /*
+     * On AIX 'ar' archives are used for both static and shared object.
+     * To load a shared object from a library, it should be loaded like this:
+     *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
+     */
     uint32_t pyvers_major;
     uint32_t pyvers_minor;
-    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
 
     pyvers_major = pyvers / 10;
     pyvers_minor = pyvers % 10;
 
-	/* Determine the path */
-#ifdef __APPLE__
-
-    /* Try to load python library both from temppath and homepath */
-    /* First try with plain "Python" lib, then "Python" lib and finally "libpython*.dylib". */
-    #define pylibTemplate "%sPython"
-    #define dotPylibTemplate "%s.Python"
-    #define dyPylibTemplate "%slibpython%01d.%01d.dylib"
-    if (    checkFile(dllpath, pylibTemplate, status->temppath) != 0
-         && checkFile(dllpath, pylibTemplate, status->homepath) != 0
-         && checkFile(dllpath, dotPylibTemplate, status->temppath) != 0
-         && checkFile(dllpath, dotPylibTemplate, status->homepath) != 0
-            /* Python might be compiled as a .dylib (using --enable-shared) so lets try that one */
-         && checkFile(dllpath, dyPylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
-         && checkFile(dllpath, dyPylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0 )
-    {
-        FATALERROR("Python library not found.\n");
-        return -1;
-    }
-#elif AIX
-    /* On AIX 'ar' archives are used for both static and shared object.
-     * To load a shared object from a library, it should be loaded like this:
-     *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
-     */
-
-    /* Search for Python library archive: e.g. 'libpython2.6.a' */
-    #define pylibTemplate "%slibpython%01d.%01d.a"
-    if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
-         && checkFile(dllpath, pylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0)
-    {
-        FATALERROR("Python library not found.\n");
-        return -1;
-    }
-    
     /* Append the shared object member to the library path
      * to make it look like this:
      *   libpython2.6.a(libpython2.6.so)
@@ -462,42 +437,30 @@ int loadPython(ARCHIVE_STATUS *status)
      * in order to load shared object member from library.
      */
     dlopenMode |= RTLD_MEMBER;
- #elif __CYGWIN__
-     #define pylibTemplate "%slibpython%01d.%01d.dll"
-     printf( "status->temppath=%s\n",status->temppath);
-     printf( "status->homepath=%s\n",status->homepath);
-     if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
-          && checkFile(dllpath, pylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0)
-
-     {
-         FATALERROR("Python library not found.\n");
-         return -1;
-     }
-#else
-    #define pylibTemplate "%slibpython%01d.%01d.so.1.0"
-    if (    checkFile(dllpath, pylibTemplate, status->temppath, pyvers_major, pyvers_minor) != 0
-         && checkFile(dllpath, pylibTemplate, status->homepath, pyvers_major, pyvers_minor) != 0)
-    {
-        FATALERROR("Python library not found.\n");
-        return -1;
-    }
 #endif
 
+
 	/* Load the DLL */
+#ifdef WIN32
+	dll = LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+#else
 	dll = dlopen(dllpath, dlopenMode);
-	if (dll) {
-		VS("%s\n", dllpath);
-	}
+#endif
+
+
+    /* Check success of loading Python library. */
 	if (dll == 0) {
+#ifdef WIN32
+		FATALERROR("Error loading Python DLL: %s (error code %d)\n",
+			dllpath, GetLastError());
+#else
 		FATALERROR("Error loading Python lib '%s': %s\n",
 			dllpath, dlerror());
+#endif
 		return -1;
 	}
 
 	mapNames(dll, pyvers);
-
-#endif
-
 	return 0;
 }
 
