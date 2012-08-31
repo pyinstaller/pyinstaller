@@ -143,7 +143,11 @@ int main(int argc, char* argv[])
 
         VS("Executing self as child with ");
         /* run the "child" process, then clean up */
+#ifdef WIN32
+        pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppathraw : status_list[SELF]->homepathraw);
+#else
         pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
+#endif
 
         if (set_environment(status_list[SELF]) == -1)
             return -1;

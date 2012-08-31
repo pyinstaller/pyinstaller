@@ -550,7 +550,7 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
     /* Set PYTHONPATH so dynamic libs will load.
-     * PYTHONPATH for function Py_SetPythonHome() should point
+     * PYTHONHOME for function Py_SetPythonHome() should point
      * to a zero-terminated character string in static storage. */
 	static char pypath[2*PATH_MAX + 14];
 	int pathlen = 1;
@@ -560,18 +560,25 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 	PyObject *py_argv;
 	PyObject *val;
 	PyObject *sys;
-    #ifdef WIN32
-    size_t pyhome_len = 0;
-    #endif
 
     /* Set the PYTHONPATH */
 	VS("Manipulating evironment\n");
     if (status->temppath[0] != '\0') { /* Temppath is setted */
-	    strcat(pypath, status->temppath);
-	    pypath[strlen(pypath)-1] = '\0';
-	    strcat(pypath, PATHSEP);
+        #ifdef WIN32
+        /* On Windows pass path containing back slashes. */
+        strcpy(pypath, status->temppathraw);
+        #else
+        strcpy(pypath, status->temppath);
+        #endif
     }
-	strcat(pypath, status->homepath);
+    else {
+        #ifdef WIN32
+        /* On Windows pass path containing back slashes. */
+        strcpy(pypath, status->homepathraw);
+        #else
+        strcpy(pypath, status->homepath);
+        #endif
+    }
 
 	/* don't chop off SEP if root directory */
 #ifdef WIN32
@@ -610,8 +617,8 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
     /* On Windows remove back slash '\\' from the end. */
     // TODO remove this hook when path handling is fixed in bootloader.
     #ifdef WIN32
-    pyhome_len = strlen(pypath);
-    pypath[pyhome_len - 1] = '\0';
+    /* Remove trailing slash in directory path. */
+    pypath[strlen(pypath)-1] = '\0';
     #endif
     PI_Py_SetPythonHome(pypath);
 	VS("PYTHONHOME=%s\n", pypath);
