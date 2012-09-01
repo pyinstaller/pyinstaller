@@ -67,6 +67,11 @@ else:
     # Make output from subprocess visible.
     print out
 
+    # Remove empty lines from output.
+    out = out.strip().splitlines()
+    for line in out:
+        if not line.strip():  # Empty line detected.
+            out.remove(line)
     # Check output.
-    if out.splitlines() != _OUT_EXPECTED:
+    if out != _OUT_EXPECTED:
         raise SystemExit('Subprocess did not print ONE, TWO, THREE in correct order.')
