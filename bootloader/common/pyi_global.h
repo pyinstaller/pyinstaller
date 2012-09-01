@@ -30,11 +30,13 @@
 #ifndef HEADER_PYI_GLOBAL_H
 #define HEADER_PYI_GLOBAL_H
 
-/* Definition of type boolean. */
-typedef int bool;
+/*
+ * Definition of type boolean. On OSX boolean type is available.
+ */
+typedef int bool_t;
+
 #define false 0
 #define true  1
-
 
 
 /* Type type for dynamic library. */

@@ -181,6 +181,16 @@ def configure(conf):
         # make sure we don't use declarations after statement (break Visual Studio)
         conf.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
         conf.env.append_value('CCFLAGS', '-Werror')
+    else:
+        # Defines common for Unix and Unix-like platforms.
+        # For details see:
+        #   http://man.he.net/man7/feature_test_macros
+        #
+        # Without these definitions compiling maight fail on OSX.
+        conf.env.append_value('CCDEFINES', '_POSIX_C_SOURCE=200112L')
+        # SUS v2 (UNIX 98) definitions.
+        #   Mac OS X 10.5 is UNIX 03 compliant.
+        conf.env.append_value('CCDEFINES', '_XOPEN_SOURCE=500')
 
     if myplatform.startswith('win'):
         conf.env.append_value('CCDEFINES', 'WIN32')
@@ -262,7 +272,7 @@ def configure(conf):
     ### Other stuff
 
     if myplatform.startswith('darwin'):
-        conf.env.MACOSX_DEPLOYMENT_TARGET = '10.4'
+        conf.env.MACOSX_DEPLOYMENT_TARGET = '10.5'
 
     if myplatform.startswith('win'):
         # RC file - icon
