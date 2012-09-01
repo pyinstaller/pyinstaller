@@ -191,6 +191,8 @@ def configure(conf):
         # SUS v2 (UNIX 98) definitions.
         #   Mac OS X 10.5 is UNIX 03 compliant.
         conf.env.append_value('CCDEFINES', '_XOPEN_SOURCE=500')
+        conf.env.append_value('CCDEFINES', '_REENTRANT')
+        
 
     if myplatform.startswith('win'):
         conf.env.append_value('CCDEFINES', 'WIN32')
