@@ -1,3 +1,4 @@
+#
 # Copyright (C) 2005-2011, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -76,27 +77,6 @@ if MEIPASS2 in os.environ:
     # empty string.
     os.environ[MEIPASS2] = ''
     del os.environ[MEIPASS2]
-
-
-# TODO Remove PYTHONHOME workaround when bootloaders are recompiled for all OS.
-# Ensure PYTHONHOME environment variable is unset. PYTHONHOME
-# makes sure that no python modules from host OS are used. Startup is
-# By deleting it we ensure that invoked standard Python interpreter
-# is not affected by PYTHONHOME from bootloader.
-if 'PYTHONHOME' in os.environ:
-    # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
-    # deleting the var from os.environ does not delete it from the environment.
-    # In those cases we cannot delete the variable but only set it to the
-    # empty string.
-    os.environ['PYTHONHOME'] = ''
-    del os.environ['PYTHONHOME']
-# FIXME On Windows setting environment variable PYTHONHOME does not work.
-# This is a workaround for that. PYTHONHOME should be fixed for Windows
-# in bootloader.
-# http://www.pyinstaller.org/ticket/549
-else:
-    sys.prefix = sys._MEIPASS
-    sys.exec_prefix = sys._MEIPASS
 
 
 # Forces PyInstaller to include fake 'site' module. Fake 'site' module
