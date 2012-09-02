@@ -35,17 +35,6 @@
 #include "utils.h"
 #include "pyi_global.h"
 
-char* basename (char *path)
-{
-  /* Search for the last directory separator in PATH.  */
-  char *basename = strrchr (path, '\\');
-  if (!basename) basename = strrchr (path, '/');
-  
-  /* If found, return the address of the following character,
-     or the start of the parameter passed in.  */
-  return basename ? ++basename : (char*)path;
-}
-
 static HANDLE hCtx = INVALID_HANDLE_VALUE;
 static ULONG_PTR actToken;
 

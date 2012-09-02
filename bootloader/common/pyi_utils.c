@@ -411,6 +411,20 @@ char *pyi_dirname(const char *fullpath)
     return pathname;
 }
 
+/* Returns the last component of the path in filename. */
+// TODO use for unix function basename()
+// TODO For now it is win32 implementation only!
+char *pyi_basename (const char *path)
+{
+  /* Search for the last directory separator in PATH.  */
+  char *basename = strrchr (path, '\\');
+  if (!basename) basename = strrchr (path, '/');
+  
+  /* If found, return the address of the following character,
+     or the start of the parameter passed in.  */
+  return basename ? ++basename : (char*)path;
+}
+
 
 /* Load the shared dynamic library (DLL) */
 dylib_t pyi_dlopen(const char *dllpath)

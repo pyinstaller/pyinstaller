@@ -47,6 +47,7 @@ void pyi_remove_temp_path(const char *dir);
 
 /* File and path manipulation. */
 
+char *pyi_basename(const char *path);
 char *pyi_dirname(const char *fullpath);
 FILE *pyi_open_target(const char *path, const char* name_);
 int pyi_copy_file(const char *src, const char *dst, const char *filename);
