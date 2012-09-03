@@ -428,11 +428,32 @@ char *pyi_path_basename(const char *path)
   return basename ? ++basename : (char*)path;
 }
 
-/* Join two path components. Return result in new buffer. */
-// TODO implement this function
+/*
+ * Join two path components. Return result in new buffer.
+ * Joined path is returned without slash at the end.
+ */
 char *pyi_path_join(const char *path1, const char *path2)
 { 
-    return NULL;
+    char *joined = strdup(path1, PATH_MAX);
+    size_t len = 0;
+    /* Append trailing slash if missing. */
+    len = strlen(joined);
+    if (joined[len-1] != SEP) {
+        strcat(joined, SEP);
+    }
+    /* Append second component to path1 without trailing slash. */
+    strcat(joined, path2);
+    /* Remove trailing slash if present. */
+    len = strlen(path2);
+    if (path2[len-1] == SEP) {
+        /* Append path2 without slash. */
+        strncat(joined, path2, len-2);
+    }
+    else {
+        /* path2 does not end with slash. */
+        strcat(joined, path2);
+    }
+    return joined;
 }
 
 /* Normalize a pathname. Return result in new buffer. */
