@@ -434,7 +434,7 @@ char *pyi_path_basename(const char *path)
  */
 char *pyi_path_join(const char *path1, const char *path2)
 { 
-    char *joined = strdup(path1, PATH_MAX);
+    char *joined = strdup(path1);
     size_t len = 0;
     /* Append trailing slash if missing. */
     len = strlen(joined);
