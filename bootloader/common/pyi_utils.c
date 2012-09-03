@@ -397,7 +397,7 @@ int pyi_copy_file(const char *src, const char *dst, const char *filename)
  * The returned string must be freed after use.
  */
 // TODO use for unix function dirname()
-char *pyi_dirname(const char *fullpath)
+char *pyi_path_dirname(const char *fullpath)
 {
     char *match = strrchr(fullpath, SEP);
     char *pathname = (char *) calloc(PATH_MAX, sizeof(char));
@@ -411,10 +411,13 @@ char *pyi_dirname(const char *fullpath)
     return pathname;
 }
 
-/* Returns the last component of the path in filename. */
+/*
+ * Returns the last component of the path in filename. Return result
+ * in new buffer.
+ */
 // TODO use for unix function basename()
 // TODO For now it is win32 implementation only!
-char *pyi_basename (const char *path)
+char *pyi_path_basename(const char *path)
 {
   /* Search for the last directory separator in PATH.  */
   char *basename = strrchr (path, '\\');
@@ -423,6 +426,20 @@ char *pyi_basename (const char *path)
   /* If found, return the address of the following character,
      or the start of the parameter passed in.  */
   return basename ? ++basename : (char*)path;
+}
+
+/* Join two path components. Return result in new buffer. */
+// TODO implement this function
+char *pyi_path_join(const char *path1, const char *path2)
+{ 
+    return NULL;
+}
+
+/* Normalize a pathname. Return result in new buffer. */
+// TODO implement this function
+char *pyi_path_normalize(const char *path)
+{
+    return NULL;
 }
 
 

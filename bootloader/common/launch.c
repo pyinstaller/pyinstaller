@@ -1015,7 +1015,7 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
     if (splitName(path, filename, item) == -1)
         return -1;
 
-    dirname = pyi_dirname(path);
+    dirname = pyi_path_dirname(path);
     if (dirname[0] == 0) {
         free(dirname);
         return -1;

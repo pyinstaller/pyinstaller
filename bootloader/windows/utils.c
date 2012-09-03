@@ -70,7 +70,7 @@ int CreateActContext(char *workpath, char *thisfile)
        
     /* Setup activation context */
     strcpy(manifestpath, workpath);
-    strcat(manifestpath, basename(thisfile));
+    strcat(manifestpath, pyi_path_basename(thisfile));
     strcat(manifestpath, ".manifest");
     VS("manifestpath: %s\n", manifestpath);
     
