@@ -170,7 +170,7 @@ static int checkFile(char *buf, const char *fmt, ...)
  * Set up paths required by rest of this module
  * Sets f_archivename, f_homepath
  */
-int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
+int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
 {
 #ifdef WIN32
 	char *p;
@@ -191,7 +191,7 @@ int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * arch
 	return 0;
 }
 
-int checkCookie(ARCHIVE_STATUS *status, int filelen)
+int pyi_arch_check_cookie(ARCHIVE_STATUS *status, int filelen)
 {
 	if (fseek(status->fp, filelen-(int)sizeof(COOKIE), SEEK_SET))
 		return -1;
@@ -251,7 +251,7 @@ int findDigitalSignature(ARCHIVE_STATUS * const status)
  * Open the archive
  * Sets f_archiveFile, f_pkgstart, f_tocbuff and f_cookie.
  */
-int openArchive(ARCHIVE_STATUS *status)
+int pyi_arch_open(ARCHIVE_STATUS *status)
 {
 #ifdef WIN32
 	int i;
@@ -269,7 +269,7 @@ int openArchive(ARCHIVE_STATUS *status)
 	fseek(status->fp, 0, SEEK_END);
 	filelen = ftell(status->fp);
 
-	if (checkCookie(status, filelen) < 0)
+	if (pyi_arch_check_cookie(status, filelen) < 0)
 	{
 		VS("%s does not contain an embedded package\n", status->archivename);
 #ifndef WIN32
@@ -283,7 +283,7 @@ int openArchive(ARCHIVE_STATUS *status)
 		   padding. */
 		for (i = 0; i < 8; ++i)
 		{
-			if (checkCookie(status, filelen) >= 0)
+			if (pyi_arch_check_cookie(status, filelen) >= 0)
 				break;
 			--filelen;
 		}
@@ -371,7 +371,7 @@ int mapNames(HMODULE dll, int pyvers)
 /*
  * Load the Python DLL, and get all of the necessary entry points
  */
-int loadPython(ARCHIVE_STATUS *status)
+int pyi_pylib_load(ARCHIVE_STATUS *status)
 {
 	dylib_t dll;
 	char dllpath[PATH_MAX + 1];
@@ -445,11 +445,11 @@ int loadPython(ARCHIVE_STATUS *status)
 }
 
 /*
- * use this from a dll instead of loadPython()
+ * use this from a dll instead of pyi_pylib_load()
  * it will attach to an existing pythonXX.dll,
  * or load one if needed.
  */
-int attachPython(ARCHIVE_STATUS *status, int *loadedNew)
+int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew)
 {
 #ifdef WIN32
 	HMODULE dll;
@@ -463,7 +463,7 @@ int attachPython(ARCHIVE_STATUS *status, int *loadedNew)
 	dll = GetModuleHandleA(nm);
 	if (dll == 0) {
 		*loadedNew = 1;
-		return loadPython(status);
+		return pyi_pylib_load(status);
 	}
 	mapNames(dll, pyvers);
 	*loadedNew = 0;
@@ -547,7 +547,7 @@ int setRuntimeOptions(ARCHIVE_STATUS *status)
 /*
  * Start python - return 0 on success
  */
-int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
+int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
     /* Set PYTHONPATH so dynamic libs will load.
      * PYTHONHOME for function Py_SetPythonHome() should point
@@ -673,7 +673,7 @@ int startPython(ARCHIVE_STATUS *status, int argc, char *argv[])
 /*
  * Import modules embedded in the archive - return 0 on success
  */
-int importModules(ARCHIVE_STATUS *status)
+int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 {
 	PyObject *marshal;
 	PyObject *marshaldict;
@@ -731,7 +731,7 @@ int importModules(ARCHIVE_STATUS *status)
 /* Install a zlib from a toc entry
  * Return non zero on failure
  */
-int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
+int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	int rc;
 	int zlibpos = status->pkgstart + ntohl(ptoc->pos);
@@ -756,7 +756,7 @@ int installZlib(ARCHIVE_STATUS *status, TOC *ptoc)
  * Install zlibs
  * Return non zero on failure
  */
-int installZlibs(ARCHIVE_STATUS *status)
+int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 {
 	TOC * ptoc;
 	VS("Installing import hooks\n");
@@ -767,7 +767,7 @@ int installZlibs(ARCHIVE_STATUS *status)
 		if (ptoc->typcd == ARCHIVE_ITEM_PYZ)
 		{
 			VS("%s\n", ptoc->name);
-			installZlib(status, ptoc);
+			pyi_pylib_install_zlib(status, ptoc);
 		}
 
 		ptoc = incrementTocPtr(status, ptoc);
@@ -974,7 +974,7 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
     strcpy(status->temppathraw, status_list[SELF]->temppathraw);
 #endif
 
-    if (openArchive(status)) {
+    if (pyi_arch_open(status)) {
         FATALERROR("Error openning archive %s\n", path);
         free(status);
         return NULL;
@@ -1112,7 +1112,7 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
  * Run scripts
  * Return non zero on failure
  */
-int runScripts(ARCHIVE_STATUS *status)
+int pyi_pylib_run_scripts(ARCHIVE_STATUS *status)
 {
 	unsigned char *data;
 	char buf[PATH_MAX];
@@ -1205,11 +1205,11 @@ done:
 int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
 {
 	/* Set up paths */
-	if (setPaths(status, archivePath, archiveName))
+	if (pyi_arch_set_paths(status, archivePath, archiveName))
 		return -1;
 
 	/* Open the archive */
-	if (openArchive(status))
+	if (pyi_arch_open(status))
 		return -1;
 
 	return 0;
@@ -1225,23 +1225,23 @@ int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
 	int rc = 0;
 	/* Load Python DLL */
-	if (loadPython(status))
+	if (pyi_pylib_load(status))
 		return -1;
 
 	/* Start Python. */
-	if (startPython(status, argc, argv))
+	if (pyi_pylib_start_python(status, argc, argv))
 		return -1;
 
 	/* Import modules from archive - bootstrap */
-	if (importModules(status))
+	if (pyi_pylib_import_modules(status))
 		return -1;
 
 	/* Install zlibs  - now all hooks in place */
-	if (installZlibs(status))
+	if (pyi_lib_install_zlibs(status))
 		return -1;
 
 	/* Run scripts */
-	rc = runScripts(status);
+	rc = pyi_pylib_run_scripts(status);
 
 	VS("OK.\n");
 
@@ -1251,11 +1251,12 @@ int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 /*
  * Helpers for embedders
  */
-int getPyVersion(ARCHIVE_STATUS *status)
+int pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
 {
 	return ntohl(status->cookie.pyvers);
 }
-void finalizePython(void)
+
+void pyi_pylib_finalize(void)
 {
 	PI_Py_Finalize();
 }

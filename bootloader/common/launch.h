@@ -281,20 +281,20 @@ void cleanUp(ARCHIVE_STATUS *status);
 /**
  * Helpers for embedders
  */
-int getPyVersion(ARCHIVE_STATUS *status);
-void finalizePython(void);
+int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
+void pyi_pylib_finalize(void);
 
 /**
  * The gory detail level
  */
-int setPaths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
-int openArchive(ARCHIVE_STATUS *status);
-int attachPython(ARCHIVE_STATUS *status, int *loadedNew);
-int loadPython(ARCHIVE_STATUS *status); /* note - attachPython will call this if not already loaded */
-int startPython(ARCHIVE_STATUS *status, int argc, char *argv[]);
-int importModules(ARCHIVE_STATUS *status);
-int installZlibs(ARCHIVE_STATUS *status);
-int runScripts(ARCHIVE_STATUS *status);
+int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
+int pyi_arch_open(ARCHIVE_STATUS *status);
+int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew);
+int pyi_pylib_load(ARCHIVE_STATUS *status); /* note - pyi_pylib_attach will call this if not already loaded */
+int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[]);
+int pyi_pylib_import_modules(ARCHIVE_STATUS *status);
+int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status);
+int pyi_pylib_run_scripts(ARCHIVE_STATUS *status);
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 #endif

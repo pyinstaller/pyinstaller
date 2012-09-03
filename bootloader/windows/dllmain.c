@@ -62,21 +62,21 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
 	strcpy(pathnm, archivePath);
 	strcat(pathnm, archiveName);
     /* Set up paths */
-    if (setPaths(status, archivePath, archiveName))
+    if (pyi_arch_set_paths(status, archivePath, archiveName))
         return -1;
 	VS("Got Paths");
     /* Open the archive */
-    if (openArchive(status))
+    if (pyi_arch_open(status))
         return -1;
 	VS("Opened Archive");
     /* Load Python DLL */
-    if (attachPython(status, &loadedNew))
+    if (pyi_pylib_attach(status, &loadedNew))
         return -1;
 
 	if (loadedNew) {
 		/* Start Python with silly command line */
 		PI_PyEval_InitThreads();
-		if (startPython(status, 1, (char**)&pathnm))
+		if (pyi_pylib_start_python(status, 1, (char**)&pathnm))
 			return -1;
 		VS("Started new Python");
 		thisthread = PI_PyThreadState_Swap(NULL);
@@ -111,11 +111,11 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
         return -1;
 	VS("Imported Modules");
     /* Install zlibs - now import hooks are in place */
-    if (installZlibs(status))
+    if (pyi_pylib_install_zlibs(status))
         return -1;
 	VS("Installed Zlibs");
     /* Run scripts */
-    if (runScripts(status))
+    if (pyi_pylib_run_scripts(status))
         return -1;
 	VS("All scripts run");
     if (PI_PyErr_Occurred()) {
@@ -164,7 +164,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		VS("Process Detach");
 		//if (gPythoncom)
 		//	releasePythonCom();
-		//finalizePython();
+		//pyi_pylib_finalize();
 	}
 
 	return TRUE; 
@@ -175,10 +175,10 @@ int LoadPythonCom(ARCHIVE_STATUS *status)
 	char dllpath[PATH_MAX+1];
 	VS("Loading Pythoncom");
 	// see if pythoncom is already loaded
-	sprintf(dllpath, "pythoncom%02d.dll", getPyVersion(status));
+	sprintf(dllpath, "pythoncom%02d.dll", pyi_arch_get_pyversion(status));
 	gPythoncom = GetModuleHandleA(dllpath);
 	if (gPythoncom == NULL) {
-		sprintf(dllpath, "%spythoncom%02d.dll", here, getPyVersion(status));
+		sprintf(dllpath, "%spythoncom%02d.dll", here, pyi_arch_get_pyversion(status));
 		//VS(dllpath);
 		gPythoncom = LoadLibraryExA( dllpath, // points to name of executable module 
 					   NULL, // HANDLE hFile, // reserved, must be NULL 
