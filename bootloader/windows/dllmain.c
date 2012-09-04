@@ -107,7 +107,7 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
 	PI_PySys_SetObject("frozendllhandle", obHandle);
 	Py_XDECREF(obHandle);
     /* Import modules from archive - this is to bootstrap */
-    if (importModules(status))
+    if (pyi_pylib_import_modules(status))
         return -1;
 	VS("Imported Modules");
     /* Install zlibs - now import hooks are in place */

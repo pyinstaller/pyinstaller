@@ -1237,7 +1237,7 @@ int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 		return -1;
 
 	/* Install zlibs  - now all hooks in place */
-	if (pyi_lib_install_zlibs(status))
+	if (pyi_pylib_install_zlibs(status))
 		return -1;
 
 	/* Run scripts */

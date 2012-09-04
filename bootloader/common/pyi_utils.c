@@ -439,7 +439,8 @@ char *pyi_path_join(const char *path1, const char *path2)
     /* Append trailing slash if missing. */
     len = strlen(joined);
     if (joined[len-1] != SEP) {
-        strcat(joined, SEP);
+        joined[len] = SEP;
+        joined[len+1] = '\0';
     }
     /* Append second component to path1 without trailing slash. */
     strcat(joined, path2);
