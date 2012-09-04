@@ -6,6 +6,12 @@ Changes since PyInstaller 2.0
  + Minimum suported Python version is 2.4.
  + Add import hooks for docutils, jinja2, sphinx, pytz, idlelib.
    (thanks to Bryan A. Jones)
+ * Environment variable PYTHONHOME is now unset and path to python home
+   is set in bootloader by function Py_SetPythonHome().This overrides
+   sys.prefix and sys.exec_prefix for frozen application.
+ * Python library filename (e.g. python27.dll, libpython2.7.so.1.0, etc)
+   is embedded to the created exe file. Bootloader is not trying several
+   filenames anymore.
 
 Changes since PyInstaller 1.5.1
 -------------------------------
