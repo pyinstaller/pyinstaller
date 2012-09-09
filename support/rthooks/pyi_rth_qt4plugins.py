@@ -9,7 +9,7 @@ d = "qt4_plugins"
 d = os.path.join(sys._MEIPASS, d)
 
 
-# We remove QT_PLUGIN_PATH variable, beasuse we want Qt4 to load
+# We remove QT_PLUGIN_PATH variable, because we want Qt4 to load
 # plugins only from one path.
 if 'QT_PLUGIN_PATH' in os.environ:
     del os.environ['QT_PLUGIN_PATH']
