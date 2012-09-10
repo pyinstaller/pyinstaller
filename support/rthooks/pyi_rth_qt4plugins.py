@@ -14,6 +14,20 @@ d = os.path.join(sys._MEIPASS, d)
 if 'QT_PLUGIN_PATH' in os.environ:
     del os.environ['QT_PLUGIN_PATH']
 
+# Check if the user has a 'pyi_rth_user_config' module with a valid
+# 'PYQT_API_VERSION' constant defined to override the default PyQt API version.
+try:
+    from pyi_rth_user_config import PYQT_API_VERSION
+    if PYQT_API_VERSION in [1, 2]:
+        import sip
+        for class_name in [
+            'QDate', 'QDateTime', 'QString', 'QTextStream', 'QTime', 'QUrl',
+            'QVariant',
+        ]:
+            sip.setapi(class_name, PYQT_API_VERSION)
+except ImportError:
+    # 'pyi_rth_user_config.PYQT_API_VERSION' doesn't exist: default behaviour
+    pass
 
 # We cannot use QT_PLUGIN_PATH here, because it would not work when
 # PyQt4 is compiled with a different CRT from Python (eg: it happens
