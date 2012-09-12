@@ -81,11 +81,19 @@ typedef struct _archive_status {
     char    homepathraw[PATH_MAX + 1];
     char    temppathraw[PATH_MAX + 1];
 #endif
+    /*
+     * Main path could be homepath or temppath. It will be temppath
+     * if temppath is available. Sometimes we do not need to know if temppath
+     * or homepath should be used. We only need to know the path. This variable
+     * is used for example to set PYTHONPATH or PYTHONHOME.
+     */
+    char    mainpath[PATH_MAX + 1];
     /* 
-     * Flag if running in onefile mode. Bootloader has to behave differently
+     * Flag if temporary directory is available. This usually means running
+     * executable in onefile mode. Bootloader has to behave differently
      * in this mode.
      */
-    bool_t  is_onefile_mode;
+    bool_t  has_temp_directory;
 } ARCHIVE_STATUS;
 
 

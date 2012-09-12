@@ -122,7 +122,20 @@ int main(int argc, char* argv[])
 #ifdef WIN32
             strcpy(status_list[SELF]->temppathraw, extractionpath);
 #endif
+            /*
+             * Temp path exits - set appropriate flags and change
+             * status->mainpath to point to temppath.
+             */
+            status_list[SELF]->has_temp_directory = true;
+#ifdef WIN32
+            strcpy(status_list[SELF]->mainpath, status_list[SELF]->temppathraw);
+#else
+            strcpy(status_list[SELF]->mainpath, status_list[SELF]->temppath);
+#endif
         }
+        else {
+        }
+
 #if defined(__APPLE__) && defined(WINDOWED)
         ProcessSerialNumber psn = { 0, kCurrentProcess };
         OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
