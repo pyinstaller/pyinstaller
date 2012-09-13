@@ -15,7 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import glob
 import os
 import PyInstaller
 import PyInstaller.compat as compat
@@ -29,8 +28,9 @@ if python_path:
 else:
     python_path = os.pathsep.join(PyInstaller.__pathex__)
 
-django_root_dirs = [find_django_root(path)
-                    for path in python_path.split(os.pathsep)]
+django_root_dirs = []
+for path in python_path.split(os.pathsep):
+    django_root_dirs.extend(find_django_root(path))
 
 if not django_root_dirs:
     raise RuntimeError("No django root directory found. Please check your "
@@ -45,5 +45,3 @@ compat.setenv("PYTHONPATH", python_path)
 
 hiddenimports = [django_dottedstring_imports(root_dir)
                  for root_dir in django_root_dirs]
-
-
