@@ -1,3 +1,4 @@
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
@@ -15,13 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-# FIXME: for a strange bug in Python's import machinery, we need to adjust
-# the module name before proceeding to the PIL import. The name would
-# otherwise be "hooks.hook-PIL.Image", which will then produce this
-# monstruosity:
-#   <module 'hooks.hook-PIL.PIL.Image' from 'C:\python24\lib\site-packages\PIL\Image.pyc'>
-#
-__name__ = "hook-image"
 
 # Forward to shared code for PIL. PIL can be imported either as a top-level package
 # (from PIL import Image), or not (import Image), because it installs a

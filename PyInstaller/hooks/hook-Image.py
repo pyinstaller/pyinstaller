@@ -1,3 +1,4 @@
+#
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
 #
@@ -14,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 
 # Forward to shared code for PIL. PIL can be imported either as a top-level package
 # (from PIL import Image), or not (import Image), because it installs a
