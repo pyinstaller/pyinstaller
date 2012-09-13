@@ -195,13 +195,15 @@ int pyi_create_temp_path(ARCHIVE_STATUS *status)
 #ifdef WIN32
 	char *p;
 #endif
-
-	if (status->temppath[0] == '\0') {
+  
+	if (status->has_temp_directory != true) {
 		if (!pyi_get_temp_path(status->temppath))
 		{
             FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
             return -1;
 		}
+        /* Set flag that temp directory is created and available. */
+        status_list[SELF]->has_temp_directory = true;
 #ifdef WIN32
 		strcpy(status->temppathraw, status->temppath);
 		for ( p=status->temppath; *p; p++ )

@@ -403,25 +403,11 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
 
     strcpy(dllname, status->cookie.pylibname);
 
-    if (status->temppath[0] != '\0') {
-        /* Look for Python library in temppath - onefile mode. */
-        #ifdef WIN32
-        /* On Windows pass path containing back slashes. */
-        strcpy(dllpath, status->temppathraw);
-        #else
-        strcpy(dllpath, status->temppath);
-        #endif
-    }
-    else {
-        /* Look for Python library in homepath - onedir mode. */
-        /* Use temppath as home. This is for default onedir mode.*/
-        #ifdef WIN32
-        /* On Windows pass path containing back slashes. */
-        strcpy(dllpath, status->homepathraw);
-        #else
-        strcpy(dllpath, status->homepath);
-        #endif
-    }
+    /*
+     * Look for Python library in homepath or temppath.
+     * It depends on the value of mainpath.
+     */
+    strcpy(dllpath, status->mainpath);
 
 #ifdef AIX
     pyvers_major = pyvers / 10;
@@ -576,23 +562,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 
     /* Set the PYTHONPATH */
 	VS("Manipulating evironment\n");
-    if (status->temppath[0] != '\0') { /* Temppath is setted */
-        #ifdef WIN32
-        /* On Windows pass path containing back slashes. */
-        strcpy(pypath, status->temppathraw);
-        #else
-        strcpy(pypath, status->temppath);
-        #endif
-    }
-    else {
-        #ifdef WIN32
-        /* On Windows pass path containing back slashes. */
-        strcpy(pypath, status->homepathraw);
-        #else
-        strcpy(pypath, status->homepath);
-        #endif
-    }
-
+    strcpy(pypath, status->mainpath);
 	/* don't chop off SEP if root directory */
 #ifdef WIN32
 	if (strlen(pypath) > 14)
@@ -609,24 +579,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	pyi_unsetenv("PYTHONHOME");
 
     /* Set PYTHONHOME by using function from Python C API. */
-    if (status->temppath[0] != '\0') {
-        /* Use temppath as home. This is only for onefile mode. */
-        #ifdef WIN32
-        /* On Windows pass path containing back slashes. */
-        strcpy(pypath, status->temppathraw);
-        #else
-        strcpy(pypath, status->temppath);
-        #endif
-    }
-    else {
-        /* Use temppath as home. This is for default onedir mode.*/
-        #ifdef WIN32
-        /* On Windows pass path containing back slashes. */
-        strcpy(pypath, status->homepathraw);
-        #else
-        strcpy(pypath, status->homepath);
-        #endif
-    }
+    strcpy(pypath, status->mainpath);
     /* On Windows remove back slash '\\' from the end. */
     // TODO remove this hook when path handling is fixed in bootloader.
     #ifdef WIN32
@@ -1228,11 +1181,12 @@ int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archive
 	return 0;
 }
 
-/* once init'ed, you might want to extractBinaries()
+/*
+ * Once init'ed, you might want to extractBinaries()
  * If you do, what comes after is very platform specific.
  * Once you've taken care of the platform specific details,
  * or if there are no binaries to extract, you go on
- * to doIt(), which is the important part
+ * to doIt(), which is the important part.
  */
 int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
