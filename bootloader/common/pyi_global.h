@@ -99,4 +99,8 @@ typedef int bool_t;
     #define SEP '/'
 #endif
 
+
+/* Refers to 1st item in the archive status_list. */
+#define SELF 0
+
 #endif /* HEADER_PYI_GLOBAL_H */

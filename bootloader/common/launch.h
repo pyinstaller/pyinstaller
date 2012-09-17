@@ -217,7 +217,6 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 #define MAGIC "MEI\014\013\012\013\016"
 
 
-#define SELF 0
 
 /*****************************************************************
  * The following 4 entries are for applications which may need to

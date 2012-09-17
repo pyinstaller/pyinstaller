@@ -203,7 +203,7 @@ int pyi_create_temp_path(ARCHIVE_STATUS *status)
             return -1;
 		}
         /* Set flag that temp directory is created and available. */
-        status_list[SELF]->has_temp_directory = true;
+        status->has_temp_directory = true;
 #ifdef WIN32
 		strcpy(status->temppathraw, status->temppath);
 		for ( p=status->temppath; *p; p++ )
