@@ -37,6 +37,7 @@
 #include "utils.h"
 #include "pyi_global.h"
 #include "pyi_utils.h"
+#include "pyi_pythonlib.h"
 
 #define MAX_STATUS_LIST 20
 

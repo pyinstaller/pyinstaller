@@ -29,6 +29,7 @@
  */
 
 
+// TODO leave only necessary header includes.
 #include <stdio.h>
 #ifdef WIN32
  #include <windows.h>
@@ -49,12 +50,14 @@
 #include "zlib.h"
 
 #include "pyi_global.h"
+#include "pyi_python.h"
 #include "pyi_utils.h"
+#include "pyi_archive.h"
 #include "pyi_pythonlib.h"
 
 
 /*
- * Python Entry point declarations (see macros in launch.h).
+ * Python Entry point declarations (see macros in pyi_python.h).
  */
 DECLVAR(Py_FrozenFlag);
 DECLVAR(Py_NoSiteFlag);
@@ -143,18 +146,7 @@ int mapNames(HMODULE dll, int pyvers)
     return 0;
 }
 
-/*
- * Return pointer to next toc entry.
- */
-TOC *incrementTocPtr(ARCHIVE_STATUS *status, TOC* ptoc)
-{
-	TOC *result = (TOC*)((char *)ptoc + ntohl(ptoc->structlen));
-	if (result < status->tocbuff) {
-		FATALERROR("Cannot read Table of Contents.\n");
-		return status->tocend;
-	}
-	return result;
-}
+
 /*
  * Set up paths required by rest of this module
  * Sets f_archivename, f_homepath

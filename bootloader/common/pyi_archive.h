@@ -97,4 +97,10 @@ typedef struct _archive_status {
 } ARCHIVE_STATUS;
 
 
+TOC *incrementTocPtr(ARCHIVE_STATUS *status, TOC* ptoc);
+
+unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
+int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc);
+
+
 #endif /* HEADER_PYI_ARCHIVE_H */

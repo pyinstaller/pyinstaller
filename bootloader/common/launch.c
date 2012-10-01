@@ -25,6 +25,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+
+// TODO leave only necessary header includes.
 #include <stdio.h>
 #ifdef WIN32
  #include <windows.h>
@@ -45,6 +47,7 @@
 #include "zlib.h"
 
 #include "pyi_global.h"
+#include "pyi_python.h"
 #include "pyi_utils.h"
 #include "pyi_pythonlib.h"
 
@@ -53,8 +56,6 @@
 #define vsnprintf _vsnprintf
 #endif
 
-
-unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
 
 /*
  * The functions in this file defined in reverse order so that forward
@@ -273,141 +274,6 @@ TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry)
 	return rslt;
 }
 
-
-/* decompress data in buff, described by ptoc
- * return in malloc'ed buffer (needs to be freed)
- */
-unsigned char *decompress(unsigned char * buff, TOC *ptoc)
-{
-	const char *ver;
-	unsigned char *out;
-	z_stream zstream;
-	int rc;
-
-	ver = (zlibVersion)();
-	out = (unsigned char *)malloc(ntohl(ptoc->ulen));
-	if (out == NULL) {
-		OTHERERROR("Error allocating decompression buffer\n");
-		return NULL;
-	}
-
-	zstream.zalloc = NULL;
-	zstream.zfree = NULL;
-	zstream.opaque = NULL;
-	zstream.next_in = buff;
-	zstream.avail_in = ntohl(ptoc->len);
-	zstream.next_out = out;
-	zstream.avail_out = ntohl(ptoc->ulen);
-	rc = inflateInit(&zstream);
-	if (rc >= 0) {
-		rc = (inflate)(&zstream, Z_FINISH);
-		if (rc >= 0) {
-			rc = (inflateEnd)(&zstream);
-		}
-		else {
-			OTHERERROR("Error %d from inflate: %s\n", rc, zstream.msg);
-			return NULL;
-		}
-	}
-	else {
-		OTHERERROR("Error %d from inflateInit: %s\n", rc, zstream.msg);
-		return NULL;
-	}
-
-	return out;
-}
-
-
-/*
- * extract an archive entry
- * returns pointer to the data (must be freed)
- */
-unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
-{
-	unsigned char *data;
-	unsigned char *tmp;
-
-	fseek(status->fp, status->pkgstart + ntohl(ptoc->pos), SEEK_SET);
-	data = (unsigned char *)malloc(ntohl(ptoc->len));
-	if (data == NULL) {
-		OTHERERROR("Could not allocate read buffer\n");
-		return NULL;
-	}
-	if (fread(data, ntohl(ptoc->len), 1, status->fp) < 1) {
-	    OTHERERROR("Could not read from file\n");
-	    return NULL;
-	}
-	if (ptoc->cflag == '\2') {
-        static PyObject *AES = NULL;
-		PyObject *func_new;
-		PyObject *aes_dict;
-		PyObject *aes_obj;
-		PyObject *ddata;
-		long block_size;
-		char *iv;
-
-		if (!AES)
-			AES = PI_PyImport_ImportModule("AES");
-		aes_dict = PI_PyModule_GetDict(AES);
-		func_new = PI_PyDict_GetItemString(aes_dict, "new");
-		block_size = PI_PyInt_AsLong(PI_PyDict_GetItemString(aes_dict, "block_size"));
-		iv = malloc(block_size);
-		memset(iv, 0, block_size);
-
-		aes_obj = PI_PyObject_CallFunction(func_new, "s#Os#",
-			data, 32,
-			PI_PyDict_GetItemString(aes_dict, "MODE_CFB"),
-			iv, block_size);
-
-		ddata = PI_PyObject_CallMethod(aes_obj, "decrypt", "s#", data+32, ntohl(ptoc->len)-32);
-		memcpy(data, PI_PyString_AsString(ddata), ntohl(ptoc->len)-32);
-		Py_DECREF(aes_obj);
-		Py_DECREF(ddata);
-		VS("decrypted %s\n", ptoc->name);
-	}
-	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
-		tmp = decompress(data, ptoc);
-		free(data);
-		data = tmp;
-		if (data == NULL) {
-			OTHERERROR("Error decompressing %s\n", ptoc->name);
-			return NULL;
-		}
-	}
-	return data;
-}
-
-
-/*
- * extract from the archive
- * and copy to the filesystem
- * relative to the directory the archive's in
- */
-int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
-{
-	FILE *out;
-	unsigned char *data = extract(status, ptoc);
-
-    if (pyi_create_temp_path(status) == -1){
-        return -1;
-    }
-
-	out = pyi_open_target(status->temppath, ptoc->name);
-
-	if (out == NULL)  {
-		FATALERROR("%s could not be extracted!\n", ptoc->name);
-		return -1;
-	}
-	else {
-		fwrite(data, ntohl(ptoc->ulen), 1, out);
-#ifndef WIN32
-		fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
-#endif
-		fclose(out);
-	}
-	free(data);
-	return 0;
-}
 
 /* Splits the item in the form path:filename */
 static int splitName(char *path, char *filename, const char *item)
