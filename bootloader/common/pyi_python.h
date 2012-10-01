@@ -33,7 +33,6 @@
 #ifndef PYI_PYTHON_H
 #define PYI_PYTHON_H
 
-// TODO leave only necessary header includes.
 
 /*
  * These macros used to define variables to hold dynamically accessed entry
@@ -193,6 +192,9 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
     }
 
 #endif /* WIN32 */
+
+
+int pyi_python_map_names(HMODULE dll, int pyvers);
 
 
 #endif /* PYI_PYTHON_H */
