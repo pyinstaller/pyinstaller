@@ -112,18 +112,6 @@ int callSimpleEntryPoint(char *name, int *presult);
  */
 void cleanUp(ARCHIVE_STATUS *status);
 
-/**
- * Helpers for embedders
- */
-int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
 
-/**
- * The gory detail level
- */
-int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
-int pyi_arch_open(ARCHIVE_STATUS *status);
-
-TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
-TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 #endif
 

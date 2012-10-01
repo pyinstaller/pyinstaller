@@ -98,11 +98,23 @@ typedef struct _archive_status {
 
 
 
-int pyi_arch_open(ARCHIVE_STATUS *status);
-TOC *incrementTocPtr(ARCHIVE_STATUS *status, TOC* ptoc);
+TOC *pyi_arch_increment_toc_ptr(ARCHIVE_STATUS *status, TOC* ptoc);
 
 unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
 int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc);
 
+/**
+ * Helpers for embedders
+ */
+int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
+
+/**
+ * The gory detail level
+ */
+int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
+int pyi_arch_open(ARCHIVE_STATUS *status);
+
+TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
+TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 
 #endif /* HEADER_PYI_ARCHIVE_H */

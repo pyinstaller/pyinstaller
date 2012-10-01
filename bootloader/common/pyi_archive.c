@@ -56,7 +56,7 @@
 /*
  * Return pointer to next toc entry.
  */
-TOC *incrementTocPtr(ARCHIVE_STATUS *status, TOC* ptoc)
+TOC *pyi_arch_increment_toc_ptr(ARCHIVE_STATUS *status, TOC* ptoc)
 {
 	TOC *result = (TOC*)((char *)ptoc + ntohl(ptoc->structlen));
 	if (result < status->tocbuff) {

@@ -305,7 +305,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 			break;
 			}
 		}
-		ptoc = incrementTocPtr(status, ptoc);
+		ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
 	}
 	if (unbuffered) {
 #ifdef WIN32
@@ -467,7 +467,7 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 
 			free(modbuf);
 		}
-		ptoc = incrementTocPtr(status, ptoc);
+		ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
 	}
 
 	return 0;
@@ -516,7 +516,7 @@ int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 			pyi_pylib_install_zlib(status, ptoc);
 		}
 
-		ptoc = incrementTocPtr(status, ptoc);
+		ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
 	}
 	return 0;
 }

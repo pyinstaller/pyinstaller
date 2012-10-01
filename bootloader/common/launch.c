@@ -254,7 +254,7 @@ static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *file
 		if (strcmp(ptoc->name, filename) == 0)
 			if (extract2fs(status, ptoc))
 				return -1;
-		ptoc = incrementTocPtr(status, ptoc);
+		ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
 	}
 	return 0;
 }
@@ -341,7 +341,7 @@ int needToExtractBinaries(ARCHIVE_STATUS *status_list[])
         if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
             return true;
         }
-		ptoc = incrementTocPtr(status_list[SELF], ptoc);
+		ptoc = pyi_arch_increment_toc_ptr(status_list[SELF], ptoc);
 	}
 	return false;
 }
@@ -364,7 +364,7 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
             if (extractDependency(status_list, ptoc->name) == -1)
                 return -1;
         }
-		ptoc = incrementTocPtr(status_list[SELF], ptoc);
+		ptoc = pyi_arch_increment_toc_ptr(status_list[SELF], ptoc);
 	}
 	return 0;
 }
@@ -405,7 +405,7 @@ int pyi_pylib_run_scripts(ARCHIVE_STATUS *status)
 			free(data);
 		}
 
-		ptoc = incrementTocPtr(status, ptoc);
+		ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
 	}
 	return 0;
 }
