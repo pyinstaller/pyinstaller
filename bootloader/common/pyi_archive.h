@@ -97,6 +97,8 @@ typedef struct _archive_status {
 } ARCHIVE_STATUS;
 
 
+
+int pyi_arch_open(ARCHIVE_STATUS *status);
 TOC *incrementTocPtr(ARCHIVE_STATUS *status, TOC* ptoc);
 
 unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);

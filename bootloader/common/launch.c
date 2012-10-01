@@ -49,6 +49,7 @@
 #include "pyi_global.h"
 #include "pyi_python.h"
 #include "pyi_utils.h"
+#include "pyi_archive.h"
 #include "pyi_pythonlib.h"
 
 #ifdef WIN32
@@ -125,20 +126,6 @@ static int checkFile(char *buf, const char *fmt, ...)
     return stat(buf, &tmp);
 }
 
-int pyi_arch_check_cookie(ARCHIVE_STATUS *status, int filelen)
-{
-	if (fseek(status->fp, filelen-(int)sizeof(COOKIE), SEEK_SET))
-		return -1;
-
-	/* Read the Cookie, and check its MAGIC bytes */
-	if (fread(&(status->cookie), sizeof(COOKIE), 1, status->fp) < 1)
-	    return -1;
-	if (strncmp(status->cookie.magic, MAGIC, strlen(MAGIC)))
-		return -1;
-
-  return 0;
-}
-
 int findDigitalSignature(ARCHIVE_STATUS * const status)
 {
 #ifdef WIN32
@@ -181,98 +168,6 @@ int findDigitalSignature(ARCHIVE_STATUS * const status)
 #endif
 }
 
-/*
- * Open the archive
- * Sets f_archiveFile, f_pkgstart, f_tocbuff and f_cookie.
- */
-int pyi_arch_open(ARCHIVE_STATUS *status)
-{
-#ifdef WIN32
-	int i;
-#endif
-	int filelen;
-    VS("archivename is %s\n", status->archivename);
-	/* Physically open the file */
-	status->fp = fopen(status->archivename, "rb");
-	if (status->fp == NULL) {
-		VS("Cannot open archive: %s\n", status->archivename);
-		return -1;
-	}
-
-	/* Seek to the Cookie at the end of the file. */
-	fseek(status->fp, 0, SEEK_END);
-	filelen = ftell(status->fp);
-
-	if (pyi_arch_check_cookie(status, filelen) < 0)
-	{
-		VS("%s does not contain an embedded package\n", status->archivename);
-#ifndef WIN32
-    return -1;
-#else
-		filelen = findDigitalSignature(status);
-		if (filelen < 1)
-			return -1;
-		/* The digital signature has been aligned to 8-bytes boundary.
-		   We need to look for our cookie taking into account some
-		   padding. */
-		for (i = 0; i < 8; ++i)
-		{
-			if (pyi_arch_check_cookie(status, filelen) >= 0)
-				break;
-			--filelen;
-		}
-		if (i == 8)
-		{
-			VS("%s does not contain an embedded package, even skipping the signature\n", status->archivename);
-			return -1;
-		}
-		VS("package found skipping digital signature in %s\n", status->archivename);
-#endif
-	}
-
-	/* From the cookie, calculate the archive start */
-	status->pkgstart = filelen - ntohl(status->cookie.len);
-
-	/* Read in in the table of contents */
-	fseek(status->fp, status->pkgstart + ntohl(status->cookie.TOC), SEEK_SET);
-	status->tocbuff = (TOC *) malloc(ntohl(status->cookie.TOClen));
-	if (status->tocbuff == NULL)
-	{
-		FATALERROR("Could not allocate buffer for TOC.");
-		return -1;
-	}
-	if (fread(status->tocbuff, ntohl(status->cookie.TOClen), 1, status->fp) < 1)
-	{
-	    FATALERROR("Could not read from file.");
-	    return -1;
-	}
-	status->tocend = (TOC *) (((char *)status->tocbuff) + ntohl(status->cookie.TOClen));
-
-	/* Check input file is still ok (should be). */
-	if (ferror(status->fp))
-	{
-		FATALERROR("Error on file");
-		return -1;
-	}
-	return 0;
-}
-
-
-
-/*
- * external API for iterating TOCs
- */
-TOC *getFirstTocEntry(ARCHIVE_STATUS *status)
-{
-	return status->tocbuff;
-}
-TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry)
-{
-	TOC *rslt = (TOC*)((char *)entry + ntohl(entry->structlen));
-	if (rslt >= status->tocend)
-		return NULL;
-	return rslt;
-}
 
 
 /* Splits the item in the form path:filename */
@@ -613,12 +508,4 @@ int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
 	VS("OK.\n");
 
 	return rc;
-}
-
-/*
- * Helpers for embedders
- */
-int pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
-{
-	return ntohl(status->cookie.pyvers);
 }
