@@ -100,8 +100,8 @@ typedef struct _archive_status {
 
 TOC *pyi_arch_increment_toc_ptr(ARCHIVE_STATUS *status, TOC* ptoc);
 
-unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc);
-int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc);
+unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc);
+int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc);
 
 /**
  * Helpers for embedders

@@ -252,7 +252,7 @@ static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *file
 	VS("Extracting dependencies from archive\n");
 	while (ptoc < status->tocend) {
 		if (strcmp(ptoc->name, filename) == 0)
-			if (extract2fs(status, ptoc))
+			if (pyi_arch_extract2fs(status, ptoc))
 				return -1;
 		ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
 	}
@@ -357,7 +357,7 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
 	while (ptoc < status_list[SELF]->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
                 ptoc->typcd == ARCHIVE_ITEM_ZIPFILE)
-			if (extract2fs(status_list[SELF], ptoc))
+			if (pyi_arch_extract2fs(status_list[SELF], ptoc))
 				return -1;
 
         if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
@@ -387,7 +387,7 @@ int pyi_pylib_run_scripts(ARCHIVE_STATUS *status)
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_PYSOURCE) {
 			/* Get data out of the archive.  */
-			data = extract(status, ptoc);
+			data = pyi_arch_extract(status, ptoc);
 			/* Set the __file__ attribute within the __main__ module,
 			   for full compatibility with normal execution. */
 			strcpy(buf, ptoc->name);

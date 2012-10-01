@@ -147,44 +147,6 @@ int mapNames(HMODULE dll, int pyvers)
 }
 
 
-/*
- * Set up paths required by rest of this module
- * Sets f_archivename, f_homepath
- */
-int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
-{
-#ifdef WIN32
-	char *p;
-#endif
-	/* Get the archive Path */
-	strcpy(status->archivename, archivePath);
-	strcat(status->archivename, archiveName);
-
-	/* Set homepath to where the archive is */
-	strcpy(status->homepath, archivePath);
-#ifdef WIN32
-    /* Replace backslashes with forward slashes. */
-    // TODO eliminate the need for this conversion and homepathraw and temppathraw
-	strcpy(status->homepathraw, archivePath);
-	for ( p = status->homepath; *p; p++ )
-		if (*p == '\\')
-			*p = '/';
-#endif
-
-    /*
-     * Initial value of mainpath is homepath. It might be overriden
-     * by temppath if it is available.
-     */
-    status->has_temp_directory = false;
-#ifdef WIN32
-	strcpy(status->mainpath, status->homepathraw);
-#else
-	strcpy(status->mainpath, status->homepath);
-#endif
-
-	return 0;
-}
-
 
 /*
  * Load the Python DLL, and get all of the necessary entry points
@@ -445,7 +407,7 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_PYMODULE || ptoc->typcd == ARCHIVE_ITEM_PYPACKAGE)
 		{
-			unsigned char *modbuf = extract(status, ptoc);
+			unsigned char *modbuf = pyi_arch_extract(status, ptoc);
 
 			VS("extracted %s\n", ptoc->name);
 

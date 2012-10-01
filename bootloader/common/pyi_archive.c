@@ -116,7 +116,7 @@ static unsigned char *decompress(unsigned char * buff, TOC *ptoc)
  * Extract an archive entry.
  * Returns pointer to the data (must be freed).
  */
-unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
+unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	unsigned char *data;
 	unsigned char *tmp;
@@ -176,10 +176,10 @@ unsigned char *extract(ARCHIVE_STATUS *status, TOC *ptoc)
  * Extract from the archive and copy to the filesystem.
  * The path is relative to the directory the archive is in.
  */
-int extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
+int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	FILE *out;
-	unsigned char *data = extract(status, ptoc);
+	unsigned char *data = pyi_arch_extract(status, ptoc);
 
     if (pyi_create_temp_path(status) == -1){
         return -1;
@@ -300,6 +300,46 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 	}
 	return 0;
 }
+
+
+/*
+ * Set up paths required by rest of this module.
+ * Sets f_archivename, f_homepath, f_mainpath
+ */
+int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
+{
+#ifdef WIN32
+	char *p;
+#endif
+	/* Get the archive Path */
+	strcpy(status->archivename, archivePath);
+	strcat(status->archivename, archiveName);
+
+	/* Set homepath to where the archive is */
+	strcpy(status->homepath, archivePath);
+#ifdef WIN32
+    /* Replace backslashes with forward slashes. */
+    // TODO eliminate the need for this conversion and homepathraw and temppathraw
+	strcpy(status->homepathraw, archivePath);
+	for ( p = status->homepath; *p; p++ )
+		if (*p == '\\')
+			*p = '/';
+#endif
+
+    /*
+     * Initial value of mainpath is homepath. It might be overriden
+     * by temppath if it is available.
+     */
+    status->has_temp_directory = false;
+#ifdef WIN32
+	strcpy(status->mainpath, status->homepathraw);
+#else
+	strcpy(status->mainpath, status->homepath);
+#endif
+
+	return 0;
+}
+
 
 
 /*
