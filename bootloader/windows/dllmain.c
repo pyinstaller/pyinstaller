@@ -25,14 +25,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+
+// TODO leave only necessary header includes.
 #include <windows.h>
 #include <olectl.h>
 #include <memory.h>
 #include <string.h>
 
-#include "launch.h"
 #include "pyi_global.h"
 #include "pyi_utils.h"
+#include "pyi_python.h"
+#include "pyi_pythonlib.h"
 
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
 __PROC__DllCanUnloadNow Pyc_DllCanUnloadNow = NULL;
