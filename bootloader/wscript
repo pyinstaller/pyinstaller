@@ -1,5 +1,24 @@
 #! /usr/bin/env python
 # encoding: utf-8
+#
+# Bootloader building script.
+#
+# Copyright (C) 2010-2012, Martin Zibricky
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+
 
 import platform
 import sys
@@ -41,7 +60,6 @@ def set_options(opt):
                 dest = 'lsb_version')
 
     opt.tool_options('compiler_cc')
-    opt.tool_options('python')
 
 
 
@@ -105,14 +123,6 @@ def configure(conf):
                 # Do not embed manifest file.
                 # Manifest file will be added in the phase of packaging python application.
                 conf.env.MSVC_MANIFEST = False
-                # Path to Python development file pythonXY.lib is not detected correctly
-                # by waf 1.5 on Windows in virtualenv.
-                if _sysconfig.get_config_var('LIBDIR'):
-                    conf.env.append_value('LINKFLAGS', '/LIBPATH:' + _sysconfig.get_config_var('LIBDIR'))
-                # Detecting Python headers might fail in some cases (like running in virtualenv).
-                if _sysconfig.get_config_var('INCLUDEPY'):
-                    conf.env.append_value('CPPPATH_PYEMBED', _sysconfig.get_config_var('INCLUDEPY'))
-                    conf.env.append_value('CPPPATH_PYEXT', _sysconfig.get_config_var('INCLUDEPY'))
             except Exception, e:
                 print e
                 Utils.pprint('RED', str(e))
@@ -126,15 +136,6 @@ def configure(conf):
 
     else:
         conf.check_tool('compiler_cc')
-
-
-    conf.check_tool('python')
-    conf.check_python_headers()
-
-    # Do not link with libpython and libpthread.
-    for lib in conf.env.LIB_PYEMBED:
-        if lib.startswith('python') or lib.startswith('pthread'):
-            conf.env.LIB_PYEMBED.remove(lib)
 
 
     ### build LSB (Linux Standard Base) boot loader
@@ -216,6 +217,7 @@ def configure(conf):
         conf.check_cc(lib='ws2_32', mandatory=True)
 
     else:
+        conf.check_cc(lib='dl', mandatory=True)
         conf.check_cc(lib='z', mandatory=True)
         if conf.check_cc(function_name='readlink', header_name='unistd.h'):
             conf.env.append_value('CCFLAGS', '-DHAVE_READLINK')
@@ -361,7 +363,7 @@ def build(bld):
 
         for key in ('release', 'debug'):
             bld(
-                features = 'cc cprogram pyembed',
+                features = 'cc cprogram',
                 source = bld.path.ant_glob('windows/utils.c windows/run.rc common/*.c'),
                 target = targets[key],
                 install_path = install_path,
@@ -374,7 +376,7 @@ def build(bld):
 
         for key in ('releasew', 'debugw'):
             bld(
-                features = 'cc cprogram pyembed',
+                features = 'cc cprogram',
                 source = bld.path.ant_glob('windows/utils.c windows/runw.rc common/*.c'), # uses different RC file (icon)
                 target = targets[key],
                 install_path = install_path,
@@ -422,10 +424,10 @@ def build(bld):
 
         for key, value in targets.items():
             bld(
-                features = 'cc cprogram pyembed',
+                features = 'cc cprogram',
                 source = bld.path.ant_glob('linux/*.c common/*.c'),
                 target = value,
                 install_path = install_path,
-                uselib = 'Z', # zlib
+                uselib = 'DL Z', # 'z' - zlib
                 env = bld.env_of_name(key).copy(),
             )
