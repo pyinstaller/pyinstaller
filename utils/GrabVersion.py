@@ -34,7 +34,7 @@ except ImportError:
             [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
 
 
-import PyInstaller.utils
+import PyInstaller.utils.versioninfo
 
 if len(sys.argv) < 2:
     print 'Usage: >python GrabVersion.py <exe>'
