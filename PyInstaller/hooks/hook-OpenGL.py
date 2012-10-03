@@ -23,6 +23,7 @@
 
 
 from PyInstaller.compat import is_win, is_darwin
+from PyInstaller.hooks.hookutils import collect_data_files
 from PyInstaller.hooks.hookutils import opengl_arrays_modules
 
 
@@ -39,3 +40,12 @@ else:
 
 # Arrays modules are needed too.
 hiddenimports += opengl_arrays_modules()
+
+
+# PyOpenGL 3.x uses ctypes to load DLL libraries. PyOpenGL windows installer
+# adds necessary dll files to 
+#   DLL_DIRECTORY = os.path.join( os.path.dirname( OpenGL.__file__ ), 'DLLS')
+# PyInstaller is not able to find these dlls. Just include them all as data
+# files.
+if is_win:
+    datas = collect_data_files('OpenGL')
