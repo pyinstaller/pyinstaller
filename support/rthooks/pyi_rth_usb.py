@@ -20,8 +20,15 @@ import ctypes
 import glob
 import os
 import sys
-import usb.backend.libusb10 as libusb10
-import usb.backend.libusb01 as libusb01
+# Pyusb changed these libusb module names in commit 2082e7.
+try:
+    import usb.backend.libusb10 as libusb10
+except:
+    import usb.backend.libusb1 as libusb10
+try:
+    import usb.backend.libusb01 as libusb01
+except:
+    import usb.backend.libusb0 as libusb01 
 import usb.backend.openusb as openusb
 
 
