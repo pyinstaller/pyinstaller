@@ -434,11 +434,11 @@ def _getImports_ldd(pth):
     if is_aix:
         # Match libs of the form 'archive.a(sharedobject.so)'
         # Will not match the fake lib '/unix'
-        lddPattern = re.compile(r"\s+(.*?)(\(.*\))")
+        lddPattern = re.compile(r"\s*(.*?)(\(.*\))")
     else:
-        lddPattern = re.compile(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)")
+        lddPattern = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
-    for line in compat.exec_command('ldd', pth).strip().splitlines():
+    for line in compat.exec_command('ldd', pth).splitlines():
         m = lddPattern.search(line)
         if m:
             if is_aix:
