@@ -41,6 +41,60 @@ UNTRIED = -1
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
 
 
+# TODO convert output from 'modulegraph' to PyInstaller format - self.modules.
+# TODO handle hooks properly.
+
+class ImportTrackerModulegraph:
+    """
+    New import tracker based on module 'modulegraph' for resolving
+    dependencies on Python modules.
+
+    PyInstaller is not able to handle some cases of resolving dependencies.
+    Rather try use a module for that than trying to fix current implementation.
+
+    Public api:
+
+        self.modules
+        self.analyze_one()
+        self.analyze_script()
+        self.getwarnings
+    """
+    def __init__(self, xpath=None, hookspath=None, excludes=None):
+        self.warnings = {}
+        if xpath:
+            self.path = xpath
+        self.path.extend(sys.path)
+        self.modules = LogDict()
+
+        if hookspath:
+            hooks.__path__.extend(hookspath)
+        if excludes is None:
+            self.excludes = set()
+        else:
+            self.excludes = set(excludes)
+
+    def analyze_one(self, nm, importernm=None, imptyp=0, level=-1):
+        """
+        break the name being imported up so we get:
+        a.b.c -> [a, b, c] ; ..z -> ['', '', z]
+        """
+        pass
+
+    def analyze_script(self, filename):
+        """
+        Analyze given script and get dependencies on other Python modules.
+        """
+        pass
+
+    def getwarnings(self):
+        warnings = self.warnings.keys()
+        for nm, mod in self.modules.items():
+            if mod:
+                for w in mod.warnings:
+                    warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
+        return warnings
+
+
 class ImportTracker:
     # really the equivalent of builtin import
     def __init__(self, xpath=None, hookspath=None, excludes=None):
