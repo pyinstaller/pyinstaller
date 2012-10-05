@@ -1235,7 +1235,7 @@ class BUNDLE(Target):
 
         # icns icon for app bundle.
         self.icon = kws.get('icon', os.path.join(os.path.dirname(__file__),
-            '..', 'source', 'images', 'icon-windowed.icns'))
+            '..', 'bootloader', 'images', 'icon-windowed.icns'))
 
         Target.__init__(self)
         self.name = kws.get('name', None)
