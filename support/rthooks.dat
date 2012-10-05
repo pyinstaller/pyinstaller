@@ -9,4 +9,5 @@
     'Tkinter':    ['support/rthooks/pyi_rth_Tkinter.py'],
     'encodings':  ['support/rthooks/pyi_rth_encodings.py'],
     'usb':        ['support/rthooks/pyi_rth_usb.py'],
+    'ctypes':	  ['support/rthooks/pyi_rth_ctypes.py'],
 }
