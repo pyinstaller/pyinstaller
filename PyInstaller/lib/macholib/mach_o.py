@@ -541,6 +541,28 @@ class source_version_command (Structure):
         ('version',   p_uint64),
     )
 
+class encryption_info_command (Structure):
+    _fields_ = (
+        ('cryptoff',    p_uint32),
+        ('cryptsize',   p_uint32),
+        ('cryptid',     p_uint32),
+    )
+
+class dyld_info_command (Structure):
+    _fields_ = (
+        ('rebase_off',     p_uint32),
+        ('rebase_size',    p_uint32),
+        ('bind_off',       p_uint32),
+        ('bind_size',      p_uint32),
+        ('weak_bind_off',  p_uint32),
+        ('weak_bind_size', p_uint32),
+        ('lazy_bind_off',  p_uint32),
+        ('lazy_bind_size', p_uint32),
+        ('export_off',     p_uint32),
+        ('export_size',    p_uint32),
+    )
+
+
 LC_REGISTRY = {
     LC_SEGMENT:         segment_command,
     LC_IDFVMLIB:        fvmlib_command,
@@ -573,16 +595,16 @@ LC_REGISTRY = {
     LC_CODE_SEGMENT_SPLIT_INFO:  linkedit_data_command,
     LC_REEXPORT_DYLIB:  dylib_command,
     LC_LAZY_LOAD_DYLIB: dylib_command,
-    LC_ENCRYPTION_INFO: dylib_command,
-    LC_DYLD_INFO:       dylib_command,
-    LC_DYLD_INFO_ONLY:  dylib_command,
+    LC_ENCRYPTION_INFO: encryption_info_command,
+    LC_DYLD_INFO:       dyld_info_command,
+    LC_DYLD_INFO_ONLY:  dyld_info_command,
     LC_LOAD_UPWARD_DYLIB: dylib_command, 
     LC_VERSION_MIN_MACOSX: version_min_command,
     LC_VERSION_MIN_IPHONEOS: version_min_command,
     LC_FUNCTION_STARTS:  linkedit_data_command,
     LC_DYLD_ENVIRONMENT: dylinker_command, 
     LC_MAIN: 		entry_point_command, 
-    LC_DATA_IN_CODE:	dylib_command,
+    LC_DATA_IN_CODE:	linkedit_data_command,
     LC_SOURCE_VERSION:	source_version_command,
     LC_DYLIB_CODE_SIGN_DRS:  linkedit_data_command,
 }

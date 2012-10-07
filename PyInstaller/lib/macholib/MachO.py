@@ -318,15 +318,27 @@ class MachOHeader(object):
             lc.to_fileobj(fileobj)
             cmd.to_fileobj(fileobj)
 
-            if isinstance(data, unicode):
-                fileobj.write(data.encode(sys.getfilesystemencoding()))
-            
-            elif isinstance(data, (bytes, str)):
-                fileobj.write(data)
+            if sys.version_info[0] == 2:
+                if isinstance(data, unicode):
+                    fileobj.write(data.encode(sys.getfilesystemencoding()))
+                
+                elif isinstance(data, (bytes, str)):
+                    fileobj.write(data)
+                else:
+                    # segments..
+                    for obj in data:
+                        obj.to_fileobj(fileobj)
             else:
-                # segments..
-                for obj in data:
-                    obj.to_fileobj(fileobj)
+                if isinstance(data, str):
+                    fileobj.write(data.encode(sys.getfilesystemencoding()))
+                
+                elif isinstance(data, bytes):
+                    fileobj.write(data)
+
+                else:
+                    # segments..
+                    for obj in data:
+                        obj.to_fileobj(fileobj)
 
         # zero out the unused space, doubt this is strictly necessary
         # and is generally probably already the case
