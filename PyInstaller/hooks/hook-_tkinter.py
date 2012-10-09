@@ -142,9 +142,9 @@ def _collect_tkfiles(mod):
     tkdir = "tk"
 
     tcltree = Tree(tcl_root, os.path.join('_MEI', tcldir),
-                   excludes=['demos', 'encoding', '*.lib', 'tclConfig.sh'])
+                   excludes=['demos', '*.lib', 'tclConfig.sh'])
     tktree = Tree(tk_root, os.path.join('_MEI', tkdir),
-                  excludes=['demos', 'encoding', '*.lib', 'tkConfig.sh'])
+                  excludes=['demos', '*.lib', 'tkConfig.sh'])
     return (tcltree + tktree)
 
 
