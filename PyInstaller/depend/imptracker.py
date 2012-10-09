@@ -54,10 +54,8 @@ class ImportTrackerModulegraph:
 
     Public api:
 
-        self.modules
-        self.analyze_one()
-        self.analyze_script()
-        self.getwarnings
+        self.analyze_scripts()
+        self.getwarnings()
     """
     def __init__(self, xpath=None, hookspath=None, excludes=None):
         self.warnings = {}
@@ -73,18 +71,18 @@ class ImportTrackerModulegraph:
         else:
             self.excludes = set(excludes)
 
-    def analyze_one(self, nm, importernm=None, imptyp=0, level=-1):
+    def analyze_script(self, filenames):
         """
-        break the name being imported up so we get:
-        a.b.c -> [a, b, c] ; ..z -> ['', '', z]
-        """
-        pass
+        Analyze given scripts and get dependencies on other Python modules.
 
-    def analyze_script(self, filename):
+        return two lists - python modules and python extensions
         """
-        Analyze given script and get dependencies on other Python modules.
-        """
-        pass
+        from modulegraph.find_modules import find_modules, parse_mf_results
+
+        mf = find_modules(filenames, excludes=self.excludes)
+        py_files, extensions = parse_mf_results(mf)
+
+        return py_files, extensions
 
     def getwarnings(self):
         warnings = self.warnings.keys()

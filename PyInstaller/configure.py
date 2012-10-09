@@ -130,6 +130,8 @@ def test_UPX(config, upx_dir):
     config['upx_dir'] = upx_dir
 
 
+# TODO Drop this function when new module system based on 'modulegraph'
+#      is in place.
 def find_PYZ_dependencies(config):
     logger.debug("Computing PYZ dependencies")
     # We need to import `pyi_archive` from `PyInstaller` directory, but

@@ -418,6 +418,33 @@ class Analysis(Target):
         self.hiddenimports = hiddenimports
         return False
 
+    # TODO implement same functionality as 'assemble()'
+    def assemble_modulegraph(self):
+        """
+        New assemble function based on module 'modulegraph' for resolving
+        dependencies on Python modules.
+ 
+        PyInstaller is not able to handle some cases of resolving dependencies.
+        Rather try use a module for that than trying to fix current implementation.
+        """
+        # Python scripts for analysis.
+
+        tracker = PyInstaller.depend.imptracker.ImportTrackerModulegraph(
+                dirs.keys() + self.pathex, self.hookspath, self.excludes)
+
+        # TODO implement the following to get python modules and extension lists:
+        #      process all hooks to get hidden imports and create mapping:
+        #        {'PyQt4.QtGui': ['PyQt4.QtCore', 'sip'], 'another_Mod' ['hidden_import1', 'hidden_import2'], ...}
+        #      supply this mapping as 'implies' keyword to
+        #        modulegraph.modulegraph.ModuleGraph()
+        #      do analysis of scripts - user scripts, pyi_archive, pyi_ui, pyi_carchive, _pyi_bootstrap
+        #      find necessary rthooks
+        #      do analysis of rthooks and add it to modulegraph object 
+        #      analyze python modules for ctype imports - modulegraph does not do that
+
+        # TODO process other attribute from used pyinstaller hooks.
+        # TODO resolve DLL/so/dylib dependencies.
+
     def assemble(self):
         logger.info("running Analysis %s", os.path.basename(self.out))
         # Reset seen variable to correctly discover dependencies
@@ -485,7 +512,7 @@ class Analysis(Target):
         ###################################################
         # Fills pure, binaries and rthookcs lists to TOC
         pure = []     # pure python modules
-        zipfiles = []  # zipfiles to bundle
+        zipfiles = []  # zipfiles to bundle - zipped Python .egg files.
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
 
