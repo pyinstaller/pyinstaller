@@ -20,15 +20,15 @@
 # Build packages using spec files.
 
 
-import sys
+import glob
+import imp
 import os
-import shutil
 import pprint
 import py_compile
-import imp
+import shutil
+import sys
 import tempfile
 import UserList
-import bindepend
 
 from PyInstaller.loader import pyi_archive, pyi_carchive
 
@@ -38,6 +38,7 @@ import PyInstaller.depend.modules
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
 from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin, is_cygwin
 import PyInstaller.compat as compat
+import PyInstaller.bindepend as bindepend
 
 from PyInstaller.compat import hashlib
 from PyInstaller.depend import dylib
@@ -419,31 +420,71 @@ class Analysis(Target):
         return False
 
     # TODO implement same functionality as 'assemble()'
+    # TODO convert output from 'modulegraph' to PyInstaller format - self.modules.
+    # TODO handle hooks properly.
+    #def assemble(self):
     def assemble_modulegraph(self):
         """
         New assemble function based on module 'modulegraph' for resolving
         dependencies on Python modules.
- 
+
         PyInstaller is not able to handle some cases of resolving dependencies.
         Rather try use a module for that than trying to fix current implementation.
         """
-        # Python scripts for analysis.
+        from modulegraph.modulegraph import ModuleGraph
+        from modulegraph.find_modules import get_implies, find_needed_modules
+        from PyInstaller import hooks
 
-        tracker = PyInstaller.depend.imptracker.ImportTrackerModulegraph(
-                dirs.keys() + self.pathex, self.hookspath, self.excludes)
+        # Python scripts for analysis.
+        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+        scripts = [
+            os.path.join(HOMEPATH, 'support', '_pyi_bootstrap.py'),
+        ]
+
+        #tracker = PyInstaller.depend.imptracker.ImportTrackerModulegraph(
+                #dirs.keys() + self.pathex, self.hookspath, self.excludes)
 
         # TODO implement the following to get python modules and extension lists:
         #      process all hooks to get hidden imports and create mapping:
+        def collect_implies():
+            """
+            Collect all hiddenimports from hooks and from modulegraph.
+            """
+            # Dictionary like
+            #   {'mod_name': ['dependent_mod1', dependent_mod2', ...]}
+            implies = get_implies()
+            # TODO implement getting through hooks
+            # TODO use also hook_dir supplied by user
+            hook_dir = os.path.dirname(os.path.abspath(hooks.__file__))
+            files = glob.glob(hook_dir + os.sep + 'hook-*.py')
+            for f in files:
+                # Name of the module this hook is for.
+                mod_name = os.path.basename(f).lstrip('hook-').rstrip('.py')
+                hook_mod_name = 'PyInstaller.hooks.hook-%s' % mod_name
+                # Loaded and initialized hook module.
+                hook_mod = imp.load_source(hook_mod_name, f)
+                if hasattr(hook_mod, 'hiddenimports'):
+                    # Extend the list of implies.
+                    implies[mod_name] = hook_mod.hiddenimports
+            return implies
+
         #        {'PyQt4.QtGui': ['PyQt4.QtCore', 'sip'], 'another_Mod' ['hidden_import1', 'hidden_import2'], ...}
         #      supply this mapping as 'implies' keyword to
         #        modulegraph.modulegraph.ModuleGraph()
         #      do analysis of scripts - user scripts, pyi_archive, pyi_ui, pyi_carchive, _pyi_bootstrap
         #      find necessary rthooks
-        #      do analysis of rthooks and add it to modulegraph object 
+        #      do analysis of rthooks and add it to modulegraph object
         #      analyze python modules for ctype imports - modulegraph does not do that
 
         # TODO process other attribute from used pyinstaller hooks.
         # TODO resolve DLL/so/dylib dependencies.
+        graph = ModuleGraph(
+            path=[_init_code_path] + sys.path,
+            implies=collect_implies(),
+            debug=0)
+        graph = find_needed_modules(graph, scripts=scripts)
+        graph.report()
+
 
     def assemble(self):
         logger.info("running Analysis %s", os.path.basename(self.out))

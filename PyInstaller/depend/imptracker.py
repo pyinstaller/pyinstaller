@@ -41,9 +41,8 @@ UNTRIED = -1
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
 
 
-# TODO convert output from 'modulegraph' to PyInstaller format - self.modules.
-# TODO handle hooks properly.
-
+# TODO Probably just use modulegraph directly in 'assemble()' in build.py
+#      without ImportTracker or with a different api.
 class ImportTrackerModulegraph:
     """
     New import tracker based on module 'modulegraph' for resolving
