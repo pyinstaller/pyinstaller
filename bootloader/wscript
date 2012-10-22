@@ -243,6 +243,7 @@ def configure(conf):
             conf.env.append_value('CCFLAGS', '/Wp64')
         # We use SEH exceptions in winmain.c; make sure they are activated.
         conf.env.append_value('CCFLAGS', '/EHa')
+        conf.env.append_value('CCDEFINES', '_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1')
     
     # Compile with 64bit gcc 32bit binaries or vice versa.
     if conf.env.CC_NAME == 'gcc':
@@ -397,7 +398,7 @@ def build(bld):
         for key, value in dict(release='inprocsrvr', debug='inprocsrvr_d').items():
             bld(
                 features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_utils.c common/pyi_python.c common/pyi_archive.c common/pyi_pythonlib.c common/launch.c windows/dllmain.c'),
+                source = bld.path.ant_glob('common/pyi_global.c common/pyi_utils.c common/pyi_python.c common/pyi_archive.c common/pyi_pythonlib.c common/launch.c windows/dllmain.c'),
                 target = value,
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',
@@ -411,7 +412,7 @@ def build(bld):
         for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d').items():
             bld(
                 features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_utils.c common/pyi_python.c common/pyi_archive.c common/pyi_pythonlib.c common/launch.c windows/dllmain.c'),
+                source = bld.path.ant_glob('common/pyi_global.c common/pyi_utils.c common/pyi_python.c common/pyi_archive.c common/pyi_pythonlib.c common/launch.c windows/dllmain.c'),
                 target = value,
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',

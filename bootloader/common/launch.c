@@ -52,66 +52,11 @@
 #include "pyi_archive.h"
 #include "pyi_pythonlib.h"
 
-#ifdef WIN32
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
-#endif
-
 
 /*
  * The functions in this file defined in reverse order so that forward
  * declarations are not necessary.
  */
-
-
-#if defined(WIN32) && defined(WINDOWED)
-/* The code duplication in the functions below are because
- * standard macros with variable numer of arguments (variadic macros) are
- * supported by Microsoft only starting from Visual C++ 2005.
- */
-
-#define MBTXTLEN 200
-
-void mbfatalerror(const char *fmt, ...)
-{
-	char msg[MBTXTLEN];
-	va_list args;
-
-	va_start(args, fmt);
-	vsnprintf(msg, MBTXTLEN, fmt, args);
-	msg[MBTXTLEN-1] = '\0';
-	va_end(args);
-
-	MessageBox(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
-}
-
-void mbothererror(const char *fmt, ...)
-{
-	char msg[MBTXTLEN];
-	va_list args;
-
-	va_start(args, fmt);
-	vsnprintf(msg, MBTXTLEN, fmt, args);
-	msg[MBTXTLEN-1] = '\0';
-	va_end(args);
-
-	MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
-}
-
-void mbvs(const char *fmt, ...)
-{
-	char msg[MBTXTLEN];
-	va_list args;
-
-	va_start(args, fmt);
-	vsnprintf(msg, MBTXTLEN, fmt, args);
-	msg[MBTXTLEN-1] = '\0';
-	va_end(args);
-
-	MessageBox(NULL, msg, "Tracing", MB_OK);
-}
-
-#endif /* WIN32 and WINDOWED */
 
 
 static int checkFile(char *buf, const char *fmt, ...)

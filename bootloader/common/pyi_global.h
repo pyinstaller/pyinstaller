@@ -30,6 +30,7 @@
 #ifndef HEADER_PYI_GLOBAL_H
 #define HEADER_PYI_GLOBAL_H
 
+
 /*
  * Definition of type boolean. On OSX boolean type is available.
  */
@@ -64,32 +65,50 @@ typedef int bool_t;
     #include <limits.h>  /* PATH_MAX available in this header. */
 #endif
 
+
 /*
  * Debug and error macros.
  */
 
+#define MBTXTLEN 200
+
+
+/*
+ * On Windows and with windowed mode (no console) show error messages
+ * in message boxes. In windowed mode nothing might be written to console.
+ */
+
 #if defined(WIN32) && defined(WINDOWED)
+    void mbfatalerror(const char *fmt, ...);
     #define FATALERROR mbfatalerror
+
+    void mbothererror(const char *fmt, ...);
     #define OTHERERROR mbothererror
 #else
     #define FATALERROR printf
     #define OTHERERROR printf
-#endif
+#endif /* WIN32 and WINDOWED */
+
+
+/* Enable or disable debug output. */
 
 #ifdef LAUNCH_DEBUG
-# if defined(WIN32) && defined(WINDOWED)
-#  define VS mbvs
-# else
-#  define VS printf
-# endif
+    #if defined(WIN32) && defined(WINDOWED)
+        #define VS mbvs
+        void mbvs(const char *fmt, ...);
+    #else
+        #define VS printf
+    #endif
 #else
-# ifdef WIN32
-#  define VS
-# else
-#  define VS(...)
-# endif
+    #ifdef WIN32
+        #define VS
+    #else
+        #define VS(...)
+    #endif
 #endif
 
+
+/* Path separator. */
 
 #ifdef WIN32
     #define PATHSEP ";"
@@ -98,6 +117,17 @@ typedef int bool_t;
     #define PATHSEP ":"
     #define SEP '/'
 #endif
+
+
+/* Rewrite ANSI/POSIX functions to Win32 equivalents. */
+#ifdef WIN32
+    #include <stdio.h>
+    #include <stdarg.h>
+    #define snprintf         _snprintf
+    #define vsnprintf        _vsnprintf
+#endif
+
+
 
 
 /* Refers to 1st item in the archive status_list. */

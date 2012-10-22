@@ -48,6 +48,7 @@
 #include <string.h>
 #include "zlib.h"
 
+#include "pyi_global.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
 #include "pyi_archive.h"

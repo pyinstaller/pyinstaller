@@ -30,7 +30,6 @@
 #define HEADER_PYI_UTILS_H
 
 
-#include "pyi_global.h"
 #include "pyi_archive.h"
 
 
