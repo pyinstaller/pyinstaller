@@ -250,6 +250,7 @@ Parenthesized items have since been removed.
    #endif
    #include <sys/types.h> // stat()/_stat()
    #include <sys/stat.h>  // stat()/_stat()
+   #include <stdint.h>  // intptr_t/uintptr_t type
 #endif
 
 #define stb_min(a,b)   ((a) < (b) ? (a) : (b))
@@ -1267,7 +1268,7 @@ void stb_newell_normal(float *normal, int num_vert, float **vert, int normalize)
 
 int stb_box_face_vertex_axis_side(int face_number, int vertex_number, int axis)
 {
-   static box_vertices[6][4][3] =
+   static int box_vertices[6][4][3] =
    {
       { { 1,1,1 }, { 1,0,1 }, { 1,0,0 }, { 1,1,0 } },
       { { 0,0,0 }, { 0,0,1 }, { 0,1,1 }, { 0,1,0 } },
@@ -3268,9 +3269,9 @@ void stb__arr_deleten_(void **pp, int size, int i, int n  STB__PARAMS)
 
 
 STB_EXTERN unsigned int stb_hash(char *str);
-STB_EXTERN unsigned int stb_hashptr(void *p);
+STB_EXTERN uintptr_t stb_hashptr(void *p);
 STB_EXTERN unsigned int stb_hashlen(char *str, int len);
-STB_EXTERN unsigned int stb_rehash_improved(unsigned int v);
+STB_EXTERN uintptr_t stb_rehash_improved(uintptr_t v);
 STB_EXTERN unsigned int stb_hash_fast(void *p, int len);
 STB_EXTERN unsigned int stb_hash2(char *str, unsigned int *hash2_ptr);
 STB_EXTERN unsigned int stb_hash_number(unsigned int hash);
@@ -3294,9 +3295,9 @@ unsigned int stb_hashlen(char *str, int len)
    return hash + (hash >> 16);
 }
 
-unsigned int stb_hashptr(void *p)
+uintptr_t stb_hashptr(void *p)
 {
-   unsigned int x = (unsigned int) p;
+   uintptr_t x = (uintptr_t) p;
 
    // typically lacking in low bits and high bits
    x = stb_rehash(x);
@@ -3311,7 +3312,7 @@ unsigned int stb_hashptr(void *p)
    return stb_rehash(x);
 }
 
-unsigned int stb_rehash_improved(unsigned int v)
+uintptr_t stb_rehash_improved(uintptr_t v)
 {
    return stb_hashptr((void *) v);
 }
@@ -3345,7 +3346,7 @@ unsigned int stb_hash_fast(void *p, int len)
    if (len <= 0 || q == NULL) return 0;
 
    /* Main loop */
-   if (((int) q & 1) == 0) {
+   if (((intptr_t) q & 1) == 0) {
       for (;len > 3; len -= 4) {
          unsigned int val;
          hash +=  stb__get16(q);
@@ -3671,7 +3672,7 @@ int stb_ischar(char c, char *set)
    static unsigned char (*tables)[256];
    static char ** sets = NULL;
 
-   int z = stb_perfect_hash(&p, (int) set);
+   int z = stb_perfect_hash(&p, (intptr_t) set);
    if (z < 0) {
       int i,k,n,j,f;
       // special code that means free all existing data
@@ -3690,7 +3691,7 @@ int stb_ischar(char c, char *set)
       tables = (unsigned char (*)[256]) realloc(tables, sizeof(*tables) * k);
       memset(tables, 0, sizeof(*tables) * k);
       for (i=0; i < stb_arr_len(sets); ++i) {
-         k = stb_perfect_hash(&p, (int) sets[i]);
+         k = stb_perfect_hash(&p, (intptr_t) sets[i]);
          assert(k >= 0);
          n = k >> 3;
          f = bit[k&7];
@@ -3698,7 +3699,7 @@ int stb_ischar(char c, char *set)
             tables[n][(unsigned char) sets[i][j]] |= f;
          }
       }
-      z = stb_perfect_hash(&p, (int) set);
+      z = stb_perfect_hash(&p, (intptr_t) set);
    }
    return tables[z >> 3][(unsigned char) c] & bit[z & 7];
 }
@@ -7353,7 +7354,7 @@ STB_EXTERN void ** stb_ps_fastlist(stb_ps *ps, int *count);
 //     but some entries of the list may be invalid;
 //     test with 'stb_ps_fastlist_valid(x)'
 
-#define stb_ps_fastlist_valid(x)   ((unsigned int) (x) > 1)
+#define stb_ps_fastlist_valid(x)   ((uintptr_t) (x) > 1)
 
 #ifdef STB_DEFINE
 
@@ -7426,7 +7427,7 @@ typedef struct
 #define GetHash(p)      ((stb_ps_hash *) ((char *) (p) - STB_ps_hash))
 #define EncodeHash(p)   ((stb_ps *) ((char *) (p) + STB_ps_hash))
 
-#define stb_ps_empty(v)   (((stb_uint32) v) <= 1)
+#define stb_ps_empty(v)   (((uintptr_t) v) <= 1)
 
 static stb_ps_hash *stb_ps_makehash(int size, int old_size, void **old_data)
 {
@@ -7450,7 +7451,7 @@ static stb_ps_hash *stb_ps_makehash(int size, int old_size, void **old_data)
 
 void stb_ps_delete(stb_ps *ps)
 {
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct: break;
       case STB_ps_bucket: stb_bucket_free(GetBucket(ps)); break;
       case STB_ps_array : free(GetArray(ps)); break;
@@ -7462,7 +7463,7 @@ stb_ps *stb_ps_copy(stb_ps *ps)
 {
    int i;
    // not a switch: order based on expected performance/power-law distribution
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct: return ps;
       case STB_ps_bucket: {
          stb_ps_bucket *n = (stb_ps_bucket *) malloc(sizeof(*n));
@@ -7489,8 +7490,8 @@ stb_ps *stb_ps_copy(stb_ps *ps)
 
 int stb_ps_find(stb_ps *ps, void *value)
 {
-   int i, code = 3 & (int) ps;
-    assert((3 & (int) value) == STB_ps_direct);
+   int i, code = 3 & (intptr_t) ps;
+   assert((3 & (intptr_t) value) == STB_ps_direct);
    assert(stb_ps_fastlist_valid(value));
    // not a switch: order based on expected performance/power-law distribution
    if (code == STB_ps_direct)
@@ -7531,11 +7532,11 @@ stb_ps *  stb_ps_add   (stb_ps *ps, void *value)
    assert(!stb_ps_find(ps,value));
    #endif
    if (value == NULL) return ps; // ignore NULL adds to avoid bad breakage
-   assert((3 & (int) value) == STB_ps_direct);
+   assert((3 & (intptr_t) value) == STB_ps_direct);
    assert(stb_ps_fastlist_valid(value));
    assert(value != STB_DEL);     // STB_DEL is less likely
 
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct:
          if (ps == NULL) return (stb_ps *) value;
          return EncodeBucket(stb_bucket_create2(ps,value));
@@ -7615,9 +7616,9 @@ stb_ps *stb_ps_remove(stb_ps *ps, void *value)
    #ifdef STB_DEBUG
    assert(stb_ps_find(ps, value));
    #endif
-   assert((3 & (int) value) == STB_ps_direct);
+   assert((3 & (intptr_t) value) == STB_ps_direct);
    if (value == NULL) return ps; // ignore NULL removes to avoid bad breakage
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct:
          return ps == value ? NULL : ps;
       case STB_ps_bucket: {
@@ -7698,7 +7699,7 @@ stb_ps *stb_ps_remove(stb_ps *ps, void *value)
 stb_ps *stb_ps_remove_any(stb_ps *ps, void **value)
 {
    assert(ps != NULL);
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct:
          *value = ps;
          return NULL;
@@ -7752,7 +7753,7 @@ void ** stb_ps_getlist(stb_ps *ps, int *count)
 {
    int i,n=0;
    void **p;
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct:
          if (ps == NULL) { *count = 0; return NULL; }
          p = (void **) malloc(sizeof(*p) * 1);
@@ -7790,7 +7791,7 @@ void ** stb_ps_getlist(stb_ps *ps, int *count)
 int stb_ps_writelist(stb_ps *ps, void **list, int size )
 {
    int i,n=0;
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct:
          if (ps == NULL || size <= 0) return 0;
          list[0] = ps;
@@ -7826,7 +7827,7 @@ int stb_ps_writelist(stb_ps *ps, void **list, int size )
 int stb_ps_enum(stb_ps *ps, void *data, int (*func)(void *value, void *data))
 {
    int i;
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct:
          if (ps == NULL) return STB_TRUE;
          return func(ps, data);
@@ -7859,7 +7860,7 @@ int stb_ps_enum(stb_ps *ps, void *data, int (*func)(void *value, void *data))
 
 int stb_ps_count (stb_ps *ps)
 {
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct:
          return ps != NULL;
       case STB_ps_bucket: {
@@ -7883,7 +7884,7 @@ void ** stb_ps_fastlist(stb_ps *ps, int *count)
 {
    static void *storage;
 
-   switch (3 & (int) ps) {
+   switch (3 & (intptr_t) ps) {
       case STB_ps_direct:
          if (ps == NULL) { *count = 0; return NULL; }
          storage = ps;
@@ -9644,7 +9645,7 @@ int stb_regex(char *regex, char *str)
    static char        ** regexps;
    static char        ** regexp_cache;
    static unsigned short *mapping;
-   int z = stb_perfect_hash(&p, (int) regex);
+   int z = stb_perfect_hash(&p, (intptr_t) regex);
    size_t sssz = 0;
    if (z >= 0) {
       if (strcmp(regex, regexp_cache[(int) mapping[z]])) {
@@ -9682,8 +9683,8 @@ int stb_regex(char *regex, char *str)
       mapping = (unsigned short *) realloc(mapping, sssz);
       stbprint("CCCCCCCCCCCCCCCCC\n");
       for (i=0; i < stb_arr_len(regexps); ++i)
-         mapping[stb_perfect_hash(&p, (int) regexps[i])] = i;
-      z = stb_perfect_hash(&p, (int) regex);
+         mapping[stb_perfect_hash(&p, (intptr_t) regexps[i])] = i;
+      z = stb_perfect_hash(&p, (intptr_t) regex);
    }
    return stb_matcher_find(matchers[(int) mapping[z]], str);
 }
@@ -10433,12 +10434,12 @@ int stb_compress_intofile(FILE *f, char *input, unsigned int length)
 static stb_uint stb_out_backpatch_id(void)
 {
    if (stb__out)
-      return (stb_uint) stb__out;
+      return (uintptr_t) stb__out;
    else
       return ftell(stb__outfile);
 }
 
-static void stb_out_backpatch(stb_uint id, stb_uint value)
+static void stb_out_backpatch(uintptr_t id, stb_uint value)
 {
    stb_uchar data[4] = { value >> 24, value >> 16, value >> 8, value };
    if (stb__out) {
@@ -11079,7 +11080,7 @@ stb_arith_symstate *stb_arith_state_create(int num_sym)
    return s;
 }
 
-static stb_arith_state_rescale(stb_arith_symstate *s)
+static void stb_arith_state_rescale(stb_arith_symstate *s)
 {
    if (s->pow2 < POW2_LIMIT) {
       int pcf, cf, cf_next, next, i;
