@@ -212,6 +212,7 @@ Parenthesized items have since been removed.
 #include <stdio.h>      // need FILE
 #include <string.h>     // stb_define_hash needs memcpy/memset
 #include <time.h>       // stb_dirtree
+#include <stdint.h>  // intptr_t/uintptr_t types
 
 #ifdef STB_PERSONAL
    typedef int Bool;
@@ -250,7 +251,6 @@ Parenthesized items have since been removed.
    #endif
    #include <sys/types.h> // stat()/_stat()
    #include <sys/stat.h>  // stat()/_stat()
-   #include <stdint.h>  // intptr_t/uintptr_t type
 #endif
 
 #define stb_min(a,b)   ((a) < (b) ? (a) : (b))
@@ -360,15 +360,6 @@ typedef stb_uint32 stb_uinta;
 typedef stb_int32  stb_inta;
 #endif
 typedef char stb__testsize2_uinta[sizeof(stb_uinta)==sizeof(char*) ? 1 : -1];
-
-// if so, we should define an int type that is the pointer size. until then,
-// we'll have to make do with this (which is not the same at all!)
-
-typedef union
-{
-   unsigned int i;
-   void * p;
-} stb_uintptr;
 
 
 #ifdef __cplusplus
@@ -2787,7 +2778,7 @@ static void * malloc_base(void *context, size_t size, stb__alloc_type t, int ali
 
       case STB__chunked: {
          stb__chunked *s;
-         if (align < sizeof(stb_uintptr)) align = sizeof(stb_uintptr);
+         if (align < sizeof(uintptr_t)) align = sizeof(uintptr_t);
          s = (stb__chunked *) stb__alloc_chunk(src, size, align, sizeof(*s));
          if (s == NULL) return NULL;
          stb__setparent(s, src);
@@ -9678,7 +9669,6 @@ int stb_regex(char *regex, char *str)
          stb_arr_free(regexp_cache);
          stb_perfect_destroy(&p);
          free(mapping); mapping = NULL;
-         stbprint("GGGGG\n");
          return -1;
       }
       stb_arr_push(regexps, regex);
@@ -9686,12 +9676,8 @@ int stb_regex(char *regex, char *str)
       stb_arr_push(matchers, stb_regex_matcher(regex));
       stb_perfect_destroy(&p);
       n = stb_perfect_create(&p, (unsigned int *) (char **) regexps, stb_arr_len(regexps));
-      stbprint("CCCCCCCCC  %d CCCCCCCC\n", n);
       sssz = n * sizeof(*mapping);
-      stbprint("DDDDDDDDD  %d CCCCCCCC\n", sssz);
-      stbprint("EEEEEEEEE  %X CCCCCCCC\n", mapping);
       mapping = (unsigned short *) realloc(mapping, sssz);
-      stbprint("CCCCCCCCCCCCCCCCC\n");
       for (i=0; i < stb_arr_len(regexps); ++i)
          mapping[stb_perfect_hash(&p, (intptr_t) regexps[i])] = i;
       z = stb_perfect_hash(&p, (intptr_t) regex);
