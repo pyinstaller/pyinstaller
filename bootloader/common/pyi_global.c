@@ -28,7 +28,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <stdarg.h>  /* va_list, va_start(), va_end() */
 #include <stdio.h>
+
+// TODO verify what headers are really needed.
 #ifdef WIN32
  #include <windows.h>
  #include <direct.h>
@@ -36,12 +39,23 @@
  #include <io.h>
 #endif
 
-#include "pyi_global.h"
+/* 
+ * Enable use of Sean's Tool Box -- public domain -- http://nothings.org/stb.h.
+ * All functions starting with 'stb_' prefix are from this toolbox.
+ *
+ * This define has to be only in one C source file!
+ */
+#define STB_DEFINE  /* */                                                   
+#define STB_NO_REGISTRY  /* No need for Windows registry functions. */
+#include "stb.h"
 
+
+/* Text length of MessageBox(). */
+#define MBTXTLEN 1024
 
 /*
  * On Windows and with windowed mode (no console) show error messages
- * in message boxes. In windowed mode nothing might be written to console.
+ * in message boxes. In windowed mode nothing is written to console.
  */
 
 #if defined(WIN32) && defined(WINDOWED)
@@ -51,8 +65,8 @@
         va_list args;
 
         va_start(args, fmt);
-        vsnprintf(msg, MBTXTLEN, fmt, args);
-        msg[MBTXTLEN-1] = '\0';
+        _vsnprintf_s(msg, MBTXTLEN, MBTXTLEN, fmt, args);
+        //vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
 
         MessageBox(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
@@ -64,8 +78,8 @@
         va_list args;
 
         va_start(args, fmt);
-        vsnprintf(msg, MBTXTLEN, fmt, args);
-        msg[MBTXTLEN-1] = '\0';
+        _vsnprintf_s(msg, MBTXTLEN, MBTXTLEN, fmt, args);
+        //vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
 
         MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
@@ -83,8 +97,10 @@
             va_list args;
 
             va_start(args, fmt);
-            vsnprintf(msg, MBTXTLEN, fmt, args);
-            msg[MBTXTLEN-1] = '\0';
+            _vsnprintf_s(msg, MBTXTLEN, MBTXTLEN, fmt, args);
+            //vsnprintf(msg, MBTXTLEN, fmt, args);
+            /* Ensure message is timmed to fit the buffer. */
+            //msg[MBTXTLEN-1] = '\0';
             va_end(args);
 
             MessageBox(NULL, msg, "Tracing", MB_OK);

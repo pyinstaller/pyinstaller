@@ -31,6 +31,18 @@
 #define HEADER_PYI_GLOBAL_H
 
 
+/* 
+ * Use Sean's Tool Box -- public domain -- http://nothings.org/stb.h. 
+ * 
+ * This toolbox wraps some standard functions in a portable way and
+ * contains some additional utility fuctions.
+ * (string, file, utf8, etc.)
+ *
+ * All functions starting with 'stb_' prefix are from this toolbox.
+ */
+#include "stb.h"
+
+
 /*
  * Definition of type boolean. On OSX boolean type is available.
  */
@@ -70,8 +82,6 @@ typedef int bool_t;
  * Debug and error macros.
  */
 
-#define MBTXTLEN 200
-
 
 /*
  * On Windows and with windowed mode (no console) show error messages
@@ -85,8 +95,8 @@ typedef int bool_t;
     void mbothererror(const char *fmt, ...);
     #define OTHERERROR mbothererror
 #else
-    #define FATALERROR printf
-    #define OTHERERROR printf
+    #define FATALERROR stbprint
+    #define OTHERERROR stbprint
 #endif /* WIN32 and WINDOWED */
 
 
@@ -97,7 +107,7 @@ typedef int bool_t;
         #define VS mbvs
         void mbvs(const char *fmt, ...);
     #else
-        #define VS printf
+        #define VS stbprint
     #endif
 #else
     #ifdef WIN32

@@ -239,11 +239,10 @@ def configure(conf):
             conf.env.append_value('LINKFLAGS', '/MACHINE:X86')
         elif myarch == '64bit':
             conf.env.append_value('LINKFLAGS', '/MACHINE:X64')
-            # enable 64bit porting warnings
-            conf.env.append_value('CCFLAGS', '/Wp64')
+        # Enable 64bit porting warnings and other warnings too.
+        conf.env.append_value('CCFLAGS', '/W3')
         # We use SEH exceptions in winmain.c; make sure they are activated.
         conf.env.append_value('CCFLAGS', '/EHa')
-        conf.env.append_value('CCDEFINES', '_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1')
     
     # Compile with 64bit gcc 32bit binaries or vice versa.
     if conf.env.CC_NAME == 'gcc':
@@ -429,6 +428,6 @@ def build(bld):
                 source = bld.path.ant_glob('linux/*.c common/*.c'),
                 target = value,
                 install_path = install_path,
-                uselib = 'DL Z', # 'z' - zlib
+                uselib = 'DL Z M', # 'z' - zlib, 'm' - math,
                 env = bld.env_of_name(key).copy(),
             )

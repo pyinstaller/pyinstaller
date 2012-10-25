@@ -42,8 +42,9 @@
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "launch.h"
 #include <string.h>
+
+#include "launch.h"
 #include "zlib.h"
 
 #include "pyi_global.h"
