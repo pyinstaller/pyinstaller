@@ -6529,7 +6529,7 @@ STB_EXTERN void stb_cfg_set_directory(char *dir)
 
 STB_EXTERN stb_cfg * stb_cfg_open(char *config, char *mode)
 {
-   unsigned int len;
+   uintptr_t len;
    stb_cfg *z;
    char file[512];
    if (mode[0] != 'r' && mode[0] != 'w') return NULL;
@@ -14117,4 +14117,3 @@ void stua_run_script(char *s)
 
 #undef STB_EXTERN
 #endif // STB_INCLUDE_STB_H
-
