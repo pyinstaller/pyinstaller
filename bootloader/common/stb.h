@@ -5366,6 +5366,9 @@ FILE *  stb_fopen(char *filename, char *mode)
    char name_full[4096];
    char temp_full[sizeof(name_full) + 12];
    int j,p;
+   #ifndef _MSC_VER
+   int fd;
+   #endif
    if (mode[0] != 'w' && !strchr(mode, '+'))
       return stb__fopen(filename, mode);
 
@@ -5399,7 +5402,7 @@ FILE *  stb_fopen(char *filename, char *mode)
    #else
    {
       strcpy(temp_full+p, "stmpXXXXXX");
-      int fd = mkstemp(temp_full);
+      fd = mkstemp(temp_full);
       if (fd == -1) return NULL;
       f = fdopen(fd, mode);
       if (f == NULL) {
@@ -5848,6 +5851,14 @@ static char **readdir_raw(char *dir, int return_subdirs, char *mask)
       DIR *z;
    #endif
 
+   int nonempty = STB_TRUE;
+   int is_subdir;
+   char *name;
+   #ifndef _MSC_VER
+   struct dirent *data;
+   DIR *y;
+   #endif
+
    strcpy(buffer,dir);
    stb_fixpath(buffer);
    n = strlen(buffer);
@@ -5868,27 +5879,26 @@ static char **readdir_raw(char *dir, int return_subdirs, char *mask)
 
 
    if (z != none) {
-      int nonempty = STB_TRUE;
       #ifndef _MSC_VER
-      struct dirent *data = readdir(z);
+      data = readdir(z);
       nonempty = (data != NULL);
       #endif
 
       if (nonempty) {
 
          do {
-            int is_subdir;
+            
             #ifdef _MSC_VER
-            char *name = stb__to_utf8(data.name);
+            name = stb__to_utf8(data.name);
             if (name == NULL) {
                fprintf(stderr, "%s to convert '%S' to %s!\n", "Unable", data.name, "utf8");
                continue;
             }
             is_subdir = !!(data.attrib & _A_SUBDIR);
             #else
-            char *name = data->d_name;
+            name = data->d_name;
             strcpy(buffer+n,name);
-            DIR *y = opendir(buffer);
+            y = opendir(buffer);
             is_subdir = (y != NULL);
             if (y != NULL) closedir(y);
             #endif
