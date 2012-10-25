@@ -17,6 +17,7 @@
  *
  */
 
+
 /* stb-2.23 - Sean's Tool Box -- public domain -- http://nothings.org/stb.h
           no warranty is offered or implied; use this code at your own risk
 
@@ -3242,6 +3243,467 @@ void stb__arr_deleten_(void **pp, int size, int i, int n  STB__PARAMS)
 
 #endif
 
+//////////////////////////////////////////////////////////////////////////////
+//
+//                               Hashing
+//
+//      typical use for this is to make a power-of-two hash table.
+//
+//      let N = size of table (2^n)
+//      let H = stb_hash(str)
+//      let S = stb_rehash(H) | 1
+//
+//      then hash probe sequence P(i) for i=0..N-1
+//         P(i) = (H + S*i) & (N-1)
+//
+//      the idea is that H has 32 bits of hash information, but the
+//      table has only, say, 2^20 entries so only uses 20 of the bits.
+//      then by rehashing the original H we get 2^12 different probe
+//      sequences for a given initial probe location. (So it's optimal
+//      for 64K tables and its optimality decreases past that.)
+//
+//      ok, so I've added something that generates _two separate_
+//      32-bit hashes simultaneously which should scale better to
+//      very large tables.
+
+
+STB_EXTERN unsigned int stb_hash(char *str);
+STB_EXTERN unsigned int stb_hashptr(void *p);
+STB_EXTERN unsigned int stb_hashlen(char *str, int len);
+STB_EXTERN unsigned int stb_rehash_improved(unsigned int v);
+STB_EXTERN unsigned int stb_hash_fast(void *p, int len);
+STB_EXTERN unsigned int stb_hash2(char *str, unsigned int *hash2_ptr);
+STB_EXTERN unsigned int stb_hash_number(unsigned int hash);
+
+#define stb_rehash(x)  ((x) + ((x) >> 6) + ((x) >> 19))
+
+#ifdef STB_DEFINE
+unsigned int stb_hash(char *str)
+{
+   unsigned int hash = 0;
+   while (*str)
+      hash = (hash << 7) + (hash >> 25) + *str++;
+   return hash + (hash >> 16);
+}
+
+unsigned int stb_hashlen(char *str, int len)
+{
+   unsigned int hash = 0;
+   while (len-- > 0 && *str)
+      hash = (hash << 7) + (hash >> 25) + *str++;
+   return hash + (hash >> 16);
+}
+
+unsigned int stb_hashptr(void *p)
+{
+   unsigned int x = (unsigned int) p;
+
+   // typically lacking in low bits and high bits
+   x = stb_rehash(x);
+   x += x << 16;
+
+   // pearson's shuffle
+   x ^= x << 3;
+   x += x >> 5;
+   x ^= x << 2;
+   x += x >> 15;
+   x ^= x << 10;
+   return stb_rehash(x);
+}
+
+unsigned int stb_rehash_improved(unsigned int v)
+{
+   return stb_hashptr((void *) v);
+}
+
+unsigned int stb_hash2(char *str, unsigned int *hash2_ptr)
+{
+   unsigned int hash1 = 0x3141592c;
+   unsigned int hash2 = 0x77f044ed;
+   while (*str) {
+      hash1 = (hash1 << 7) + (hash1 >> 25) + *str;
+      hash2 = (hash2 << 11) + (hash2 >> 21) + *str;
+      ++str;
+   }
+   *hash2_ptr = hash2 + (hash1 >> 16);
+   return       hash1 + (hash2 >> 16);
+}
+
+// Paul Hsieh hash
+#define stb__get16_slow(p) ((p)[0] + ((p)[1] << 8))
+#if defined(_MSC_VER)
+   #define stb__get16(p) (*((unsigned short *) (p)))
+#else
+   #define stb__get16(p) stb__get16_slow(p)
+#endif
+
+unsigned int stb_hash_fast(void *p, int len)
+{
+   unsigned char *q = (unsigned char *) p;
+   unsigned int hash = len;
+
+   if (len <= 0 || q == NULL) return 0;
+
+   /* Main loop */
+   if (((int) q & 1) == 0) {
+      for (;len > 3; len -= 4) {
+         unsigned int val;
+         hash +=  stb__get16(q);
+         val   = (stb__get16(q+2) << 11);
+         hash  = (hash << 16) ^ hash ^ val;
+         q    += 4;
+         hash += hash >> 11;
+      }
+   } else {
+      for (;len > 3; len -= 4) {
+         unsigned int val;
+         hash +=  stb__get16_slow(q);
+         val   = (stb__get16_slow(q+2) << 11);
+         hash  = (hash << 16) ^ hash ^ val;
+         q    += 4;
+         hash += hash >> 11;
+      }
+   }
+
+   /* Handle end cases */
+   switch (len) {
+      case 3: hash += stb__get16_slow(q);
+              hash ^= hash << 16;
+              hash ^= q[2] << 18;
+              hash += hash >> 11;
+              break;
+      case 2: hash += stb__get16_slow(q);
+              hash ^= hash << 11;
+              hash += hash >> 17;
+              break;
+      case 1: hash += q[0];
+              hash ^= hash << 10;
+              hash += hash >> 1;
+              break;
+      case 0: break;
+   }
+
+   /* Force "avalanching" of final 127 bits */
+   hash ^= hash << 3;
+   hash += hash >> 5;
+   hash ^= hash << 4;
+   hash += hash >> 17;
+   hash ^= hash << 25;
+   hash += hash >> 6;
+
+   return hash;
+}
+
+unsigned int stb_hash_number(unsigned int hash)
+{
+   hash ^= hash << 3;
+   hash += hash >> 5;
+   hash ^= hash << 4;
+   hash += hash >> 17;
+   hash ^= hash << 25;
+   hash += hash >> 6;
+   return hash;
+}
+
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//                     Perfect hashing for ints/pointers
+//
+//   This is mainly useful for making faster pointer-indexed tables
+//   that don't change frequently. E.g. for stb_ischar().
+//
+
+typedef struct
+{
+   stb_uint32  addend;
+   stb_uint    multiplicand;
+   stb_uint    b_mask;
+   stb_uint8   small_bmap[16];
+   stb_uint16  *large_bmap;
+
+   stb_uint table_mask;
+   stb_uint32 *table;
+} stb_perfect;
+
+STB_EXTERN int stb_perfect_create(stb_perfect *,unsigned int*,int n);
+STB_EXTERN void stb_perfect_destroy(stb_perfect *);
+STB_EXTERN int stb_perfect_hash(stb_perfect *, unsigned int x);
+extern int stb_perfect_hash_max_failures;
+
+#ifdef STB_DEFINE
+
+int stb_perfect_hash_max_failures;
+
+int stb_perfect_hash(stb_perfect *p, unsigned int x)
+{
+   stb_uint m = x * p->multiplicand;
+   stb_uint y = x >> 16;
+   stb_uint bv = (m >> 24) + y;
+   stb_uint av = (m + y) >> 12;
+   if (p->table == NULL) return -1;  // uninitialized table fails
+   bv &= p->b_mask;
+   av &= p->table_mask;
+   if (p->large_bmap)
+      av ^= p->large_bmap[bv];
+   else
+      av ^= p->small_bmap[bv];
+   return p->table[av] == x ? av : -1;
+}
+
+static void stb__perfect_prehash(stb_perfect *p, stb_uint x, stb_uint16 *a, stb_uint16 *b)
+{
+   stb_uint m = x * p->multiplicand;
+   stb_uint y = x >> 16;
+   stb_uint bv = (m >> 24) + y;
+   stb_uint av = (m + y) >> 12;
+   bv &= p->b_mask;
+   av &= p->table_mask;
+   *b = bv;
+   *a = av;
+}
+
+static unsigned long stb__perfect_rand(void)
+{
+   static unsigned long stb__rand;
+   stb__rand = stb__rand * 2147001325 + 715136305;
+   return 0x31415926 ^ ((stb__rand >> 16) + (stb__rand << 16));
+}
+
+typedef struct {
+   unsigned short count;
+   unsigned short b;
+   unsigned short map;
+   unsigned short *entries;
+} stb__slot;
+
+static int stb__slot_compare(const void *p, const void *q)
+{
+   stb__slot *a = (stb__slot *) p;
+   stb__slot *b = (stb__slot *) q;
+   return a->count > b->count ? -1 : a->count < b->count;  // sort large to small
+}
+
+int stb_perfect_create(stb_perfect *p, unsigned int *v, int n)
+{
+   unsigned int buffer1[64], buffer2[64], buffer3[64], buffer4[64], buffer5[32];
+   unsigned short *as = (unsigned short *) stb_temp(buffer1, sizeof(*v)*n);
+   unsigned short *bs = (unsigned short *) stb_temp(buffer2, sizeof(*v)*n);
+   unsigned short *entries = (unsigned short *) stb_temp(buffer4, sizeof(*entries) * n);
+   int size = 1 << stb_log2_ceil(n), bsize=8;
+   int failure = 0,i,j,k;
+
+   assert(n <= 32768);
+   p->large_bmap = NULL;
+
+   for(;;) {
+      stb__slot *bcount = (stb__slot *) stb_temp(buffer3, sizeof(*bcount) * bsize);
+      unsigned short *bloc = (unsigned short *) stb_temp(buffer5, sizeof(*bloc) * bsize);
+      unsigned short *e;
+      int bad=0;
+
+      p->addend = stb__perfect_rand();
+      p->multiplicand = stb__perfect_rand() | 1;
+      p->table_mask = size-1;
+      p->b_mask = bsize-1;
+      p->table = (stb_uint32 *) malloc(size * sizeof(*p->table));
+
+      for (i=0; i < bsize; ++i) {
+         bcount[i].b     = i;
+         bcount[i].count = 0;
+         bcount[i].map   = 0;
+      }
+      for (i=0; i < n; ++i) {
+         stb__perfect_prehash(p, v[i], as+i, bs+i);
+         ++bcount[bs[i]].count;
+      }
+      qsort(bcount, bsize, sizeof(*bcount), stb__slot_compare);
+      e = entries; // now setup up their entries index
+      for (i=0; i < bsize; ++i) {
+         bcount[i].entries = e;
+         e += bcount[i].count;
+         bcount[i].count = 0;
+         bloc[bcount[i].b] = i;
+      }
+      // now fill them out
+      for (i=0; i < n; ++i) {
+         int b = bs[i];
+         int w = bloc[b];
+         bcount[w].entries[bcount[w].count++] = i;
+      }
+      stb_tempfree(buffer5,bloc);
+      // verify
+      for (i=0; i < bsize; ++i)
+         for (j=0; j < bcount[i].count; ++j)
+            assert(bs[bcount[i].entries[j]] == bcount[i].b);
+      memset(p->table, 0, size*sizeof(*p->table));
+
+      // check if any b has duplicate a
+      for (i=0; i < bsize; ++i) {
+         if (bcount[i].count > 1) {
+            for (j=0; j < bcount[i].count; ++j) {
+               if (p->table[as[bcount[i].entries[j]]])
+                  bad = 1;
+               p->table[as[bcount[i].entries[j]]] = 1;
+            }
+            for (j=0; j < bcount[i].count; ++j) {
+               p->table[as[bcount[i].entries[j]]] = 0;
+            }
+            if (bad) break;
+         }
+      }
+
+      if (!bad) {
+         // go through the bs and populate the table, first fit
+         for (i=0; i < bsize; ++i) {
+            if (bcount[i].count) {
+               // go through the candidate table[b] values
+               for (j=0; j < size; ++j) {
+                  // go through the a values and see if they fit
+                  for (k=0; k < bcount[i].count; ++k) {
+                     int a = as[bcount[i].entries[k]];
+                     if (p->table[(a^j)&p->table_mask]) {
+                        break; // fails
+                     }
+                  }
+                  // if succeeded, accept
+                  if (k == bcount[i].count) {
+                     bcount[i].map = j;
+                     for (k=0; k < bcount[i].count; ++k) {
+                        int a = as[bcount[i].entries[k]];
+                        p->table[(a^j)&p->table_mask] = 1;
+                     }
+                     break;
+                  }
+               }
+               if (j == size)
+                  break; // no match for i'th entry, so break out in failure
+            }
+         }
+         if (i == bsize) {
+            // success... fill out map
+            if (bsize <= 16 && size <= 256) {
+               p->large_bmap = NULL;
+               for (i=0; i < bsize; ++i)
+                  p->small_bmap[bcount[i].b] = (stb_uint8) bcount[i].map;
+            } else {
+               p->large_bmap = (unsigned short *) malloc(sizeof(*p->large_bmap) * bsize);
+               for (i=0; i < bsize; ++i)
+                  p->large_bmap[bcount[i].b] = bcount[i].map;
+            }
+
+            // initialize table to v[0], so empty slots will fail
+            for (i=0; i < size; ++i)
+               p->table[i] = v[0];
+
+            for (i=0; i < n; ++i)
+               if (p->large_bmap)
+                  p->table[as[i] ^ p->large_bmap[bs[i]]] = v[i];
+               else
+                  p->table[as[i] ^ p->small_bmap[bs[i]]] = v[i];
+
+            // and now validate that none of them collided
+            for (i=0; i < n; ++i)
+               assert(stb_perfect_hash(p, v[i]) >= 0);
+
+            stb_tempfree(buffer3, bcount);
+            break;
+         }
+      }
+      free(p->table);
+      p->table = NULL;
+      stb_tempfree(buffer3, bcount);
+
+      ++failure;
+      if (failure >= 4 && bsize < size) bsize *= 2;
+      if (failure >= 8 && (failure & 3) == 0 && size < 4*n) {
+         size *= 2;
+         bsize *= 2;
+      }
+      if (failure == 6) {
+         // make sure the input data is unique, so we don't infinite loop
+         unsigned int *data = (unsigned int *) stb_temp(buffer3, n * sizeof(*data));
+         memcpy(data, v, sizeof(*data) * n);
+         qsort(data, n, sizeof(*data), stb_intcmp(0));
+         for (i=1; i < n; ++i) {
+            if (data[i] == data[i-1])
+               size = 0; // size is return value, so 0 it
+         }
+         stb_tempfree(buffer3, data);
+         if (!size) break;
+      }
+   }
+
+   if (failure > stb_perfect_hash_max_failures)
+      stb_perfect_hash_max_failures = failure;
+
+   stb_tempfree(buffer1, as);
+   stb_tempfree(buffer2, bs);
+   stb_tempfree(buffer4, entries);
+
+   return size;
+}
+
+void stb_perfect_destroy(stb_perfect *p)
+{
+   if (p->large_bmap) free(p->large_bmap);
+   if (p->table     ) free(p->table);
+   p->large_bmap = NULL;
+   p->table      = NULL;
+   p->b_mask     = 0;
+   p->table_mask = 0;
+}
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//                     Perfect hash clients
+
+STB_EXTERN int    stb_ischar(char s, char *set);
+
+#ifdef STB_DEFINE
+
+int stb_ischar(char c, char *set)
+{
+   static unsigned char bit[8] = { 1,2,4,8,16,32,64,128 };
+   static stb_perfect p;
+   static unsigned char (*tables)[256];
+   static char ** sets = NULL;
+
+   int z = stb_perfect_hash(&p, (int) set);
+   if (z < 0) {
+      int i,k,n,j,f;
+      // special code that means free all existing data
+      if (set == NULL) {
+         stb_arr_free(sets);
+         free(tables);
+         tables = NULL;
+         stb_perfect_destroy(&p);
+         return 0;
+      }
+      stb_arr_push(sets, set);
+      stb_perfect_destroy(&p);
+      n = stb_perfect_create(&p, (unsigned int *) (char **) sets, stb_arr_len(sets));
+      assert(n != 0);
+      k = (n+7) >> 3;
+      tables = (unsigned char (*)[256]) realloc(tables, sizeof(*tables) * k);
+      memset(tables, 0, sizeof(*tables) * k);
+      for (i=0; i < stb_arr_len(sets); ++i) {
+         k = stb_perfect_hash(&p, (int) sets[i]);
+         assert(k >= 0);
+         n = k >> 3;
+         f = bit[k&7];
+         for (j=0; !j || sets[i][j]; ++j) {
+            tables[n][(unsigned char) sets[i][j]] |= f;
+         }
+      }
+      z = stb_perfect_hash(&p, (int) set);
+   }
+   return tables[z >> 3][(unsigned char) c] & bit[z & 7];
+}
+
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -5906,6 +6368,111 @@ void stb_sha1_readable(char display[27], unsigned char sha[20])
 
 #endif // STB_DEFINE
 
+///////////////////////////////////////////////////////////
+//
+// simplified WINDOWS registry interface... hopefully
+// we'll never actually use this?
+
+#if defined(_WIN32)
+
+STB_EXTERN void * stb_reg_open(char *mode, char *where); // mode: "rHKLM" or "rHKCU" or "w.."
+STB_EXTERN void   stb_reg_close(void *reg);
+STB_EXTERN int    stb_reg_read(void *zreg, char *str, void *data, unsigned long len);
+STB_EXTERN int    stb_reg_read_string(void *zreg, char *str, char *data, int len);
+STB_EXTERN void   stb_reg_write(void *zreg, char *str, void *data, unsigned long len);
+STB_EXTERN void   stb_reg_write_string(void *zreg, char *str, char *data);
+
+#if defined(STB_DEFINE) && !defined(STB_NO_REGISTRY)
+
+#define STB_HAS_REGISTRY
+
+#ifndef _WINDOWS_
+
+#define HKEY void *
+
+STB_EXTERN __declspec(dllimport) long __stdcall RegCloseKey ( HKEY hKey );
+STB_EXTERN __declspec(dllimport) long __stdcall RegCreateKeyExA ( HKEY hKey, const char * lpSubKey,
+    int  Reserved, char * lpClass, int  dwOptions, 
+    int samDesired, void *lpSecurityAttributes,     HKEY * phkResult,     int * lpdwDisposition );
+STB_EXTERN __declspec(dllimport) long __stdcall RegDeleteKeyA ( HKEY hKey, const char * lpSubKey );
+STB_EXTERN __declspec(dllimport) long __stdcall RegQueryValueExA ( HKEY hKey, const char * lpValueName,
+    int * lpReserved, unsigned long * lpType, unsigned char * lpData, unsigned long * lpcbData );
+STB_EXTERN __declspec(dllimport) long __stdcall RegSetValueExA ( HKEY hKey, const char * lpValueName,
+    int  Reserved, int  dwType, const unsigned char* lpData, int  cbData );
+STB_EXTERN __declspec(dllimport) long __stdcall  RegOpenKeyExA ( HKEY hKey, const char * lpSubKey,
+    int ulOptions, int samDesired, HKEY * phkResult );
+
+#endif // _WINDOWS_
+
+#define STB__REG_OPTION_NON_VOLATILE  0
+#define STB__REG_KEY_ALL_ACCESS       0x000f003f
+#define STB__REG_KEY_READ             0x00020019
+
+void *stb_reg_open(char *mode, char *where)
+{
+   long res;
+   HKEY base;
+   HKEY zreg;
+   if (!stb_stricmp(mode+1, "cu") || !stb_stricmp(mode+1, "hkcu"))
+      base = (HKEY) 0x80000001; // HKCU
+   else if (!stb_stricmp(mode+1, "lm") || !stb_stricmp(mode+1, "hklm"))
+      base = (HKEY) 0x80000002; // HKLM
+   else
+      return NULL;
+
+   if (mode[0] == 'r')
+      res = RegOpenKeyExA(base, where, 0, STB__REG_KEY_READ, &zreg);
+   else if (mode[0] == 'w')
+      res = RegCreateKeyExA(base, where,  0, NULL, STB__REG_OPTION_NON_VOLATILE, STB__REG_KEY_ALL_ACCESS, NULL, &zreg, NULL);
+   else
+      return NULL;
+
+   return res ? NULL : zreg;
+}
+
+void stb_reg_close(void *reg)
+{
+   RegCloseKey((HKEY) reg);
+}
+
+#define STB__REG_SZ         1
+#define STB__REG_BINARY     3
+#define STB__REG_DWORD      4
+
+int stb_reg_read(void *zreg, char *str, void *data, unsigned long len)
+{
+   unsigned long type;
+   unsigned long alen = len;
+   if (0 == RegQueryValueExA((HKEY) zreg, str, 0, &type, (unsigned char *) data, &len))
+      if (type == STB__REG_BINARY || type == STB__REG_SZ || type == STB__REG_DWORD) {
+         if (len < alen)
+            *((char *) data + len) = 0;
+         return 1;
+      }
+   return 0;
+}
+
+void stb_reg_write(void *zreg, char *str, void *data, unsigned long len)
+{
+   if (zreg)
+      RegSetValueExA((HKEY) zreg, str, 0, STB__REG_BINARY, (const unsigned char *) data, len);
+}
+
+int stb_reg_read_string(void *zreg, char *str, char *data, int len)
+{
+   if (!stb_reg_read(zreg, str, data, len)) return 0;
+   data[len-1] = 0; // force a 0 at the end of the string no matter what
+   return 1;
+}
+
+void stb_reg_write_string(void *zreg, char *str, char *data)
+{
+   if (zreg)
+      RegSetValueExA((HKEY) zreg, str, 0, STB__REG_SZ, (const unsigned char *)  data, strlen(data)+1);
+}
+#endif  // STB_DEFINE
+#endif  // _WIN32
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -8084,6 +8651,1044 @@ int *stb_wordwrapalloc(int count, char *str)
    return z;
 }
 #endif
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//         stb_match:    wildcards and regexping
+//
+
+STB_EXTERN int stb_wildmatch (char *expr, char *candidate);
+STB_EXTERN int stb_wildmatchi(char *expr, char *candidate);
+STB_EXTERN int stb_wildfind  (char *expr, char *candidate);
+STB_EXTERN int stb_wildfindi (char *expr, char *candidate);
+
+STB_EXTERN int stb_regex(char *regex, char *candidate);
+
+typedef struct stb_matcher stb_matcher;
+
+STB_EXTERN stb_matcher *stb_regex_matcher(char *regex);
+STB_EXTERN int stb_matcher_match(stb_matcher *m, char *str);
+STB_EXTERN int stb_matcher_find(stb_matcher *m, char *str);
+STB_EXTERN void stb_matcher_free(stb_matcher *f);
+
+STB_EXTERN stb_matcher *stb_lex_matcher(void);
+STB_EXTERN int stb_lex_item(stb_matcher *m, char *str, int result);
+STB_EXTERN int stb_lex_item_wild(stb_matcher *matcher, char *regex, int result);
+STB_EXTERN int stb_lex(stb_matcher *m, char *str, int *len);
+
+
+
+#ifdef STB_DEFINE
+
+static int stb__match_qstring(char *candidate, char *qstring, int qlen, int insensitive)
+{
+   int i;
+   if (insensitive) {
+      for (i=0; i < qlen; ++i)
+         if (qstring[i] == '?') {
+            if (!candidate[i]) return 0;
+         } else
+            if (tolower(qstring[i]) != tolower(candidate[i]))
+               return 0;
+   } else {
+      for (i=0; i < qlen; ++i)
+         if (qstring[i] == '?') {
+            if (!candidate[i]) return 0;
+         } else
+            if (qstring[i] != candidate[i])
+               return 0;
+   }
+   return 1;
+}
+
+static int stb__find_qstring(char *candidate, char *qstring, int qlen, int insensitive)
+{
+   char c;
+
+   int offset=0;
+   while (*qstring == '?') {
+      ++qstring;
+      --qlen;
+      ++candidate;
+      if (qlen == 0) return 0;
+      if (*candidate == 0) return -1;
+   }
+
+   c = *qstring++;
+   --qlen;
+   if (insensitive) c = tolower(c);
+
+   while (candidate[offset]) {
+      if (c == (insensitive ? tolower(candidate[offset]) : candidate[offset]))
+         if (stb__match_qstring(candidate+offset+1, qstring, qlen, insensitive))
+            return offset;
+      ++offset;
+   }
+
+   return -1;
+}
+
+int stb__wildmatch_raw2(char *expr, char *candidate, int search, int insensitive)
+{
+   int where=0;
+   int start = -1;
+   
+   if (!search) {
+      // parse to first '*'
+      if (*expr != '*')
+         start = 0;
+      while (*expr != '*') {
+         if (!*expr)
+            return *candidate == 0 ? 0 : -1;
+         if (*expr == '?') {
+            if (!*candidate) return -1;
+         } else {
+            if (insensitive) {
+               if (tolower(*candidate) != tolower(*expr))
+                  return -1;
+            } else 
+               if (*candidate != *expr)
+                  return -1;
+         }
+         ++candidate, ++expr, ++where;
+      }
+   } else {
+      // 0-length search string
+      if (!*expr)
+         return 0;
+   }
+
+   assert(search || *expr == '*');
+   if (!search)
+      ++expr;
+
+   // implicit '*' at this point
+      
+   while (*expr) {
+      int o=0;
+      // combine redundant * characters
+      while (expr[0] == '*') ++expr;
+
+      // ok, at this point, expr[-1] == '*',
+      // and expr[0] != '*'
+
+      if (!expr[0]) return start >= 0 ? start : 0;
+
+      // now find next '*'
+      o = 0;
+      while (expr[o] != '*') {
+         if (expr[o] == 0)
+            break;
+         ++o;
+      }
+      // if no '*', scan to end, then match at end
+      if (expr[o] == 0 && !search) {
+         int z;
+         for (z=0; z < o; ++z)
+            if (candidate[z] == 0)
+               return -1;
+         while (candidate[z])
+            ++z;
+         // ok, now check if they match
+         if (stb__match_qstring(candidate+z-o, expr, o, insensitive))
+            return start >= 0 ? start : 0;
+         return -1; 
+      } else {
+         // if yes '*', then do stb__find_qmatch on the intervening chars
+         int n = stb__find_qstring(candidate, expr, o, insensitive);
+         if (n < 0)
+            return -1;
+         if (start < 0)
+            start = where + n;
+         expr += o;
+         candidate += n+o;
+      }
+
+      if (*expr == 0) {
+         assert(search);
+         return start;
+      }
+
+      assert(*expr == '*');
+      ++expr;
+   }
+
+   return start >= 0 ? start : 0;
+}
+
+int stb__wildmatch_raw(char *expr, char *candidate, int search, int insensitive)
+{
+   char buffer[256];
+   // handle multiple search strings
+   char *s = strchr(expr, ';');
+   char *last = expr;
+   while (s) {
+      int z;
+      // need to allow for non-writeable strings... assume they're small
+      if (s - last < 256) {
+         stb_strncpy(buffer, last, s-last+1);
+         z = stb__wildmatch_raw2(buffer, candidate, search, insensitive);
+      } else {
+         *s = 0;
+         z = stb__wildmatch_raw2(last, candidate, search, insensitive);
+         *s = ';';
+      }
+      if (z >= 0) return z;
+      last = s+1;
+      s = strchr(last, ';');
+   }
+   return stb__wildmatch_raw2(last, candidate, search, insensitive);
+}
+
+int stb_wildmatch(char *expr, char *candidate)
+{
+   return stb__wildmatch_raw(expr, candidate, 0,0) >= 0;
+}
+
+int stb_wildmatchi(char *expr, char *candidate)
+{
+   return stb__wildmatch_raw(expr, candidate, 0,1) >= 0;
+}
+
+int stb_wildfind(char *expr, char *candidate)
+{
+   return stb__wildmatch_raw(expr, candidate, 1,0);
+}
+
+int stb_wildfindi(char *expr, char *candidate)
+{
+   return stb__wildmatch_raw(expr, candidate, 1,1);
+}
+
+typedef struct
+{
+   stb_int16 transition[256];
+} stb_dfa;
+
+// an NFA node represents a state you're in; it then has
+// an arbitrary number of edges dangling off of it
+// note this isn't utf8-y
+typedef struct
+{
+   stb_int16  match; // character/set to match
+   stb_uint16 node;  // output node to go to
+} stb_nfa_edge;
+
+typedef struct
+{
+   stb_int16 goal;   // does reaching this win the prize?
+   stb_uint8 active; // is this in the active list
+   stb_nfa_edge *out;
+   stb_uint16 *eps;  // list of epsilon closures
+} stb_nfa_node;
+
+#define STB__DFA_UNDEF  -1
+#define STB__DFA_GOAL   -2
+#define STB__DFA_END    -3
+#define STB__DFA_MGOAL  -4
+#define STB__DFA_VALID  0
+
+#define STB__NFA_STOP_GOAL -1
+
+// compiled regexp
+struct stb_matcher
+{
+   stb_uint16 start_node;
+   stb_int16 dfa_start;
+   stb_uint32 *charset;
+   int num_charset;
+   int match_start;
+   stb_nfa_node *nodes;
+   int does_lex;
+
+   // dfa matcher
+   stb_dfa    * dfa;
+   stb_uint32 * dfa_mapping;
+   stb_int16  * dfa_result;
+   int num_words_per_dfa;
+};
+
+static int stb__add_node(stb_matcher *matcher)
+{
+   stb_nfa_node z;
+   z.active = 0;
+   z.eps    = 0;
+   z.goal   = 0;
+   z.out    = 0;
+   stb_arr_push(matcher->nodes, z);
+   return stb_arr_len(matcher->nodes)-1;
+}
+
+static void stb__add_epsilon(stb_matcher *matcher, int from, int to)
+{
+   assert(from != to);
+   if (matcher->nodes[from].eps == NULL)
+      stb_arr_malloc((void **) &matcher->nodes[from].eps, matcher);
+   stb_arr_push(matcher->nodes[from].eps, to);
+}
+
+static void stb__add_edge(stb_matcher *matcher, int from, int to, int type)
+{
+   stb_nfa_edge z = { type, to };
+   if (matcher->nodes[from].out == NULL)
+      stb_arr_malloc((void **) &matcher->nodes[from].out, matcher);
+   stb_arr_push(matcher->nodes[from].out, z);
+}
+
+static char *stb__reg_parse_alt(stb_matcher *m, int s, char *r, stb_uint16 *e);
+static char *stb__reg_parse(stb_matcher *matcher, int start, char *regex, stb_uint16 *end)
+{
+   int n;
+   int last_start = -1;
+   stb_uint16 last_end = start;
+
+   while (*regex) {
+      switch (*regex) {
+         case '(':
+            last_start = last_end;
+            regex = stb__reg_parse_alt(matcher, last_end, regex+1, &last_end);
+            if (regex == NULL || *regex != ')')
+               return NULL;
+            ++regex;
+            break;
+
+         case '|':
+         case ')':
+            *end = last_end;
+            return regex;
+
+         case '?':
+            if (last_start < 0) return NULL;
+            stb__add_epsilon(matcher, last_start, last_end);
+            ++regex;
+            break;
+
+         case '*':
+            if (last_start < 0) return NULL;
+            stb__add_epsilon(matcher, last_start, last_end);
+
+            // fall through
+
+         case '+':
+            if (last_start < 0) return NULL;
+            stb__add_epsilon(matcher, last_end, last_start);
+            // prevent links back to last_end from chaining to last_start
+            n = stb__add_node(matcher);
+            stb__add_epsilon(matcher, last_end, n);
+            last_end = n;
+            ++regex;
+            break;
+
+         case '{':   // not supported!
+            // @TODO: given {n,m}, clone last_start to last_end m times,
+            // and include epsilons from start to first m-n blocks
+            return NULL; 
+
+         case '\\':
+            ++regex;
+            if (!*regex) return NULL;
+
+            // fallthrough
+         default: // match exactly this character
+            n = stb__add_node(matcher);
+            stb__add_edge(matcher, last_end, n, *regex);
+            last_start = last_end;
+            last_end = n;
+            ++regex;
+            break;
+
+         case '$':
+            n = stb__add_node(matcher);
+            stb__add_edge(matcher, last_end, n, '\n');
+            last_start = last_end;
+            last_end = n;
+            ++regex;
+            break;
+
+         case '.':
+            n = stb__add_node(matcher);
+            stb__add_edge(matcher, last_end, n, -1);
+            last_start = last_end;
+            last_end = n;
+            ++regex;
+            break;
+
+         case '[': {
+            stb_uint8 flags[256];
+            int invert = 0,z;
+            ++regex;
+            if (matcher->num_charset == 0) {
+               matcher->charset = (stb_uint *) stb_malloc(matcher, sizeof(*matcher->charset) * 256);
+               memset(matcher->charset, 0, sizeof(*matcher->charset) * 256);
+            }
+
+            memset(flags,0,sizeof(flags));
+
+            // leading ^ is special
+            if (*regex == '^')
+               ++regex, invert = 1;
+
+            // leading ] is special
+            if (*regex == ']') {
+               flags[']'] = 1;
+               ++regex;
+            }
+            while (*regex != ']') {
+               stb_uint a;
+               if (!*regex) return NULL;
+               a = *regex++;
+               if (regex[0] == '-' && regex[1] != ']') {
+                  stb_uint i,b = regex[1];
+                  regex += 2;
+                  if (b == 0) return NULL;
+                  if (a > b) return NULL;
+                  for (i=a; i <= b; ++i)
+                     flags[i] = 1;
+               } else
+                  flags[a] = 1;
+            }
+            ++regex;
+            if (invert) {
+               int i;
+               for (i=0; i < 256; ++i)
+                  flags[i] = 1-flags[i];
+            }
+
+            // now check if any existing charset matches
+            for (z=0; z < matcher->num_charset; ++z) {
+               int i, k[2] = { 0, 1 << z};
+               for (i=0; i < 256; ++i) {
+                  unsigned int f = k[flags[i]];
+                  if ((matcher->charset[i] & k[1]) != f)
+                     break;
+               }
+               if (i == 256) break;
+            }
+
+            if (z == matcher->num_charset) {
+               int i;
+               ++matcher->num_charset;
+               if (matcher->num_charset > 32) {
+                  assert(0); /* NOTREACHED */
+                  return NULL; // too many charsets, oops
+               }
+               for (i=0; i < 256; ++i)
+                  if (flags[i])
+                     matcher->charset[i] |= (1 << z);
+            }
+
+            n = stb__add_node(matcher);
+            stb__add_edge(matcher, last_end, n, -2 - z);
+            last_start = last_end;
+            last_end = n;
+            break;
+         }
+      }
+   }
+   *end = last_end;
+   return regex;
+}
+
+static char *stb__reg_parse_alt(stb_matcher *matcher, int start, char *regex, stb_uint16 *end)
+{
+   stb_uint16 last_end = start;
+   stb_uint16 main_end;
+
+   int head, tail;
+
+   head = stb__add_node(matcher);
+   stb__add_epsilon(matcher, start, head);
+
+   regex = stb__reg_parse(matcher, head, regex, &last_end);
+   if (regex == NULL) return NULL;
+   if (*regex == 0 || *regex == ')') {
+      *end = last_end;
+      return regex;
+   }
+
+   main_end = last_end;
+   tail = stb__add_node(matcher);
+
+   stb__add_epsilon(matcher, last_end, tail);
+
+   // start alternatives from the same starting node; use epsilon
+   // transitions to combine their endings
+   while(*regex && *regex != ')') {
+      assert(*regex == '|');
+      head = stb__add_node(matcher);
+      stb__add_epsilon(matcher, start, head);
+      regex = stb__reg_parse(matcher, head, regex+1, &last_end);
+      if (regex == NULL)
+         return NULL;
+      stb__add_epsilon(matcher, last_end, tail);
+   }
+
+   *end = tail;
+   return regex;
+}
+
+static char *stb__wild_parse(stb_matcher *matcher, int start, char *str, stb_uint16 *end)
+{
+   int n;
+   stb_uint16 last_end;
+
+   last_end = stb__add_node(matcher);
+   stb__add_epsilon(matcher, start, last_end);
+
+   while (*str) {
+      switch (*str) {
+            // fallthrough
+         default: // match exactly this character
+            n = stb__add_node(matcher);
+            if (toupper(*str) == tolower(*str)) {
+               stb__add_edge(matcher, last_end, n, *str);
+            } else {
+               stb__add_edge(matcher, last_end, n, tolower(*str));
+               stb__add_edge(matcher, last_end, n, toupper(*str));
+            }
+            last_end = n;
+            ++str;
+            break;
+
+         case '?':
+            n = stb__add_node(matcher);
+            stb__add_edge(matcher, last_end, n, -1);
+            last_end = n;
+            ++str;
+            break;
+
+         case '*':
+            n = stb__add_node(matcher);
+            stb__add_edge(matcher, last_end, n, -1);
+            stb__add_epsilon(matcher, last_end, n);
+            stb__add_epsilon(matcher, n, last_end);
+            last_end = n;
+            ++str;
+            break;
+      }
+   }
+
+   // now require end of string to match
+   n = stb__add_node(matcher);
+   stb__add_edge(matcher, last_end, n, 0);
+   last_end = n;
+
+   *end = last_end;
+   return str;
+}
+
+static int stb__opt(stb_matcher *m, int n)
+{
+   for(;;) {
+      stb_nfa_node *p = &m->nodes[n];
+      if (p->goal)                  return n;
+      if (stb_arr_len(p->out))      return n;
+      if (stb_arr_len(p->eps) != 1) return n;
+      n = p->eps[0];
+   }
+}
+
+static void stb__optimize(stb_matcher *m)
+{
+   // if the target of any edge is a node with exactly
+   // one out-epsilon, shorten it
+   int i,j;
+   for (i=0; i < stb_arr_len(m->nodes); ++i) {
+      stb_nfa_node *p = &m->nodes[i];
+      for (j=0; j < stb_arr_len(p->out); ++j)
+         p->out[j].node = stb__opt(m,p->out[j].node);
+      for (j=0; j < stb_arr_len(p->eps); ++j)
+         p->eps[j]      = stb__opt(m,p->eps[j]     );
+   }
+   m->start_node = stb__opt(m,m->start_node);
+}
+
+void stb_matcher_free(stb_matcher *f)
+{
+   stb_free(f);
+}
+
+static stb_matcher *stb__alloc_matcher(void)
+{
+   stb_matcher *matcher = (stb_matcher *) stb_malloc(0,sizeof(*matcher));
+
+   matcher->start_node  = 0;
+   stb_arr_malloc((void **) &matcher->nodes, matcher);
+   matcher->num_charset = 0;
+   matcher->match_start = 0;
+   matcher->does_lex    = 0;
+
+   matcher->dfa_start   = STB__DFA_UNDEF;
+   stb_arr_malloc((void **) &matcher->dfa, matcher);
+   stb_arr_malloc((void **) &matcher->dfa_mapping, matcher);
+   stb_arr_malloc((void **) &matcher->dfa_result, matcher);
+
+   stb__add_node(matcher);
+
+   return matcher;
+}
+
+static void stb__lex_reset(stb_matcher *matcher)
+{
+   // flush cached dfa data
+   stb_arr_setlen(matcher->dfa, 0);
+   stb_arr_setlen(matcher->dfa_mapping, 0);
+   stb_arr_setlen(matcher->dfa_result, 0);
+   matcher->dfa_start = STB__DFA_UNDEF;
+}
+
+stb_matcher *stb_regex_matcher(char *regex)
+{
+   void *c = stb__arr_context;
+   char *z;
+   stb_uint16 end;
+   stb_matcher *matcher = stb__alloc_matcher();
+   if (*regex == '^') {
+      matcher->match_start = 1;
+      ++regex;
+   }
+
+   z = stb__reg_parse_alt(matcher, matcher->start_node, regex, &end);
+
+   if (!z || *z) {
+      stb_free(matcher);
+      return NULL;
+   }
+
+   ((matcher->nodes)[(int) end]).goal = STB__NFA_STOP_GOAL;
+
+   return matcher;
+}
+
+stb_matcher *stb_lex_matcher(void)
+{
+   stb_matcher *matcher = stb__alloc_matcher();
+
+   matcher->match_start = 1;
+   matcher->does_lex    = 1;
+
+   return matcher;
+}
+
+int stb_lex_item(stb_matcher *matcher, char *regex, int result)
+{
+   char *z;
+   stb_uint16 end;
+
+   z = stb__reg_parse_alt(matcher, matcher->start_node, regex, &end);
+
+   if (z == NULL)
+      return 0;
+
+   stb__lex_reset(matcher);
+
+   matcher->nodes[(int) end].goal = result;
+   return 1;
+}
+
+int stb_lex_item_wild(stb_matcher *matcher, char *regex, int result)
+{
+   char *z;
+   stb_uint16 end;
+
+   z = stb__wild_parse(matcher, matcher->start_node, regex, &end);
+
+   if (z == NULL)
+      return 0;
+
+   stb__lex_reset(matcher);
+
+   matcher->nodes[(int) end].goal = result;
+   return 1;
+}
+
+static void stb__clear(stb_matcher *m, stb_uint16 *list)
+{
+   int i;
+   for (i=0; i < stb_arr_len(list); ++i)
+      m->nodes[(int) list[i]].active = 0;
+}
+
+static int stb__clear_goalcheck(stb_matcher *m, stb_uint16 *list)
+{
+   int i, t=0;
+   for (i=0; i < stb_arr_len(list); ++i) {
+      t += m->nodes[(int) list[i]].goal;
+      m->nodes[(int) list[i]].active = 0;
+   }
+   return t;
+}
+
+static stb_uint16 * stb__add_if_inactive(stb_matcher *m, stb_uint16 *list, int n)
+{
+   if (!m->nodes[n].active) {
+      stb_arr_push(list, n);
+      m->nodes[n].active = 1;
+   }
+   return list;
+}
+
+static stb_uint16 * stb__eps_closure(stb_matcher *m, stb_uint16 *list)
+{
+   int i,n = stb_arr_len(list);
+
+   for(i=0; i < n; ++i) {
+      stb_uint16 *e = m->nodes[(int) list[i]].eps;
+      if (e) {
+         int j,k = stb_arr_len(e);
+         for (j=0; j < k; ++j)
+            list = stb__add_if_inactive(m, list, e[j]);
+         n = stb_arr_len(list);
+      }
+   }
+
+   return list;
+}
+
+int stb_matcher_match(stb_matcher *m, char *str)
+{
+   int result = 0;
+   int i,j,y,z;
+   stb_uint16 *previous = NULL;
+   stb_uint16 *current = NULL;
+   stb_uint16 *temp;
+
+   stb_arr_setsize(previous, 4);
+   stb_arr_setsize(current, 4);
+
+   previous = stb__add_if_inactive(m, previous, m->start_node);
+   previous = stb__eps_closure(m,previous);
+   stb__clear(m, previous);
+
+   while (*str && stb_arr_len(previous)) {
+      y = stb_arr_len(previous);
+      for (i=0; i < y; ++i) {
+         stb_nfa_node *n = &m->nodes[(int) previous[i]];
+         z = stb_arr_len(n->out);
+         for (j=0; j < z; ++j) {
+            if (n->out[j].match >= 0) {
+               if (n->out[j].match == *str)
+                  current = stb__add_if_inactive(m, current, n->out[j].node);
+            } else if (n->out[j].match == -1) {
+               if (*str != '\n')
+                  current = stb__add_if_inactive(m, current, n->out[j].node);
+            } else if (n->out[j].match < -1) {
+               int z = -n->out[j].match - 2;
+               if (m->charset[(stb_uint8) *str] & (1 << z))
+                  current = stb__add_if_inactive(m, current, n->out[j].node);
+            }
+         }
+      }
+      stb_arr_setlen(previous, 0);
+
+      temp = previous;
+      previous = current;
+      current = temp;
+
+      previous = stb__eps_closure(m,previous);
+      stb__clear(m, previous);
+
+      ++str;
+   }
+
+   // transition to pick up a '$' at the end
+   y = stb_arr_len(previous);
+   for (i=0; i < y; ++i)
+      m->nodes[(int) previous[i]].active = 1;
+
+   for (i=0; i < y; ++i) {
+      stb_nfa_node *n = &m->nodes[(int) previous[i]];
+      z = stb_arr_len(n->out);
+      for (j=0; j < z; ++j) {
+         if (n->out[j].match == '\n')
+            current = stb__add_if_inactive(m, current, n->out[j].node);
+      }
+   }
+
+   previous = stb__eps_closure(m,previous);
+   stb__clear(m, previous);
+
+   y = stb_arr_len(previous);
+   for (i=0; i < y; ++i)
+      if (m->nodes[(int) previous[i]].goal)
+         result = 1;
+
+   stb_arr_free(previous);
+   stb_arr_free(current);
+
+   return result && *str == 0;
+}
+
+stb_int16 stb__get_dfa_node(stb_matcher *m, stb_uint16 *list)
+{
+   stb_uint16 node;
+   stb_uint32 data[8], *state, *newstate;
+   int i,j,n;
+
+   state = (stb_uint32 *) stb_temp(data, m->num_words_per_dfa * 4);
+   memset(state, 0, m->num_words_per_dfa*4);
+
+   n = stb_arr_len(list);
+   for (i=0; i < n; ++i) {
+      int x = list[i];
+      state[x >> 5] |= 1 << (x & 31);
+   }
+
+   // @TODO use a hash table
+   n = stb_arr_len(m->dfa_mapping);
+   i=j=0;
+   for(; j < n; ++i, j += m->num_words_per_dfa) {
+      // @TODO special case for <= 32
+      if (!memcmp(state, m->dfa_mapping + j, m->num_words_per_dfa*4)) {
+         node = i;
+         goto done;
+      }
+   }
+
+   assert(stb_arr_len(m->dfa) == i);
+   node = i;
+
+   newstate = stb_arr_addn(m->dfa_mapping, m->num_words_per_dfa);
+   memcpy(newstate, state, m->num_words_per_dfa*4);
+
+   // set all transitions to 'unknown'
+   stb_arr_add(m->dfa);
+   memset(m->dfa[i].transition, -1, sizeof(m->dfa[i].transition));
+
+   if (m->does_lex) {
+      int result = -1;
+      n = stb_arr_len(list);
+      for (i=0; i < n; ++i) {
+         if (m->nodes[(int) list[i]].goal > result)
+            result = m->nodes[(int) list[i]].goal;
+      }
+
+      stb_arr_push(m->dfa_result, result);
+   }
+
+done:
+   stb_tempfree(data, state);
+   return node;
+}
+
+static int stb__matcher_dfa(stb_matcher *m, char *str_c, int *len)
+{
+   stb_uint8 *str = (stb_uint8 *) str_c;
+   stb_int16 node,prevnode;
+   stb_dfa *trans;
+   int match_length = 0;
+   stb_int16 match_result=0;
+
+   if (m->dfa_start == STB__DFA_UNDEF) {
+      stb_uint16 *list;
+
+      m->num_words_per_dfa = (stb_arr_len(m->nodes)+31) >> 5;
+      stb__optimize(m);
+
+      list = stb__add_if_inactive(m, NULL, m->start_node);
+      list = stb__eps_closure(m,list);
+      if (m->does_lex) {
+         m->dfa_start = stb__get_dfa_node(m,list);
+         stb__clear(m, list);
+         // DON'T allow start state to be a goal state!
+         // this allows people to specify regexes that can match 0
+         // characters without them actually matching (also we don't
+         // check _before_ advancing anyway
+         if (m->dfa_start <= STB__DFA_MGOAL)
+            m->dfa_start = -(m->dfa_start - STB__DFA_MGOAL);
+      } else {
+         if (stb__clear_goalcheck(m, list))
+            m->dfa_start = STB__DFA_GOAL;
+         else
+            m->dfa_start = stb__get_dfa_node(m,list);
+      }
+      stb_arr_free(list);
+   }
+
+   prevnode = STB__DFA_UNDEF;
+   node = m->dfa_start;
+   trans = m->dfa;
+
+   if (m->dfa_start == STB__DFA_GOAL)
+      return 1;
+
+   for(;;) {
+      assert(node >= STB__DFA_VALID);
+
+      // fast inner DFA loop; especially if STB__DFA_VALID is 0
+
+      do {
+         prevnode = node;
+         node = trans[node].transition[*str++];
+      } while (node >= STB__DFA_VALID);
+
+      assert(node >= STB__DFA_MGOAL - stb_arr_len(m->dfa));
+      assert(node < stb_arr_len(m->dfa));
+
+      // special case for lex: need _longest_ match, so notice goal
+      // state without stopping
+      if (node <= STB__DFA_MGOAL) {
+         match_length = str - (stb_uint8 *) str_c;
+         node = -(node - STB__DFA_MGOAL);
+         match_result = node;
+         continue;
+      }
+
+      // slow NFA->DFA conversion
+
+      // or we hit the goal or the end of the string, but those
+      // can only happen once per search...
+
+      if (node == STB__DFA_UNDEF) {
+         // build a list  -- @TODO special case <= 32 states
+         // heck, use a more compact data structure for <= 16 and <= 8 ?!
+
+         // @TODO keep states/newstates around instead of reallocating them
+         stb_uint16 *states = NULL;
+         stb_uint16 *newstates = NULL;
+         int i,j,y,z;
+         stb_uint32 *flags = &m->dfa_mapping[prevnode * m->num_words_per_dfa];
+         assert(prevnode != STB__DFA_UNDEF);
+         stb_arr_setsize(states, 4);
+         stb_arr_setsize(newstates,4);
+         for (j=0; j < m->num_words_per_dfa; ++j) {
+            for (i=0; i < 32; ++i) {
+               if (*flags & (1 << i))
+                  stb_arr_push(states, j*32+i);
+            }
+            ++flags;
+         }
+         // states is now the states we were in in the previous node;
+         // so now we can compute what node it transitions to on str[-1]
+
+         y = stb_arr_len(states);
+         for (i=0; i < y; ++i) {
+            stb_nfa_node *n = &m->nodes[(int) states[i]];
+            z = stb_arr_len(n->out);
+            for (j=0; j < z; ++j) {
+               if (n->out[j].match >= 0) {
+                  if (n->out[j].match == str[-1] || (str[-1] == 0 && n->out[j].match == '\n'))
+                     newstates = stb__add_if_inactive(m, newstates, n->out[j].node);
+               } else if (n->out[j].match == -1) {
+                  if (str[-1] != '\n' && str[-1])
+                     newstates = stb__add_if_inactive(m, newstates, n->out[j].node);
+               } else if (n->out[j].match < -1) {
+                  int z = -n->out[j].match - 2;
+                  if (m->charset[str[-1]] & (1 << z))
+                     newstates = stb__add_if_inactive(m, newstates, n->out[j].node);
+               }
+            }
+         }
+         // AND add in the start state!
+         if (!m->match_start || (str[-1] == '\n' && !m->does_lex))
+            newstates = stb__add_if_inactive(m, newstates, m->start_node);
+         // AND epsilon close it
+         newstates = stb__eps_closure(m, newstates);
+         // if it's a goal state, then that's all there is to it
+         if (stb__clear_goalcheck(m, newstates)) {
+            if (m->does_lex) {
+               match_length = str - (stb_uint8 *) str_c;
+               node = stb__get_dfa_node(m,newstates);
+               match_result = node;
+               node = -node + STB__DFA_MGOAL;
+               trans = m->dfa; // could have gotten realloc()ed
+            } else
+               node = STB__DFA_GOAL;
+         } else if (str[-1] == 0 || stb_arr_len(newstates) == 0) {
+            node = STB__DFA_END;
+         } else {
+            node = stb__get_dfa_node(m,newstates);
+            trans = m->dfa; // could have gotten realloc()ed
+         }
+         trans[prevnode].transition[str[-1]] = node;
+         if (node <= STB__DFA_MGOAL)
+            node = -(node - STB__DFA_MGOAL);
+         stb_arr_free(newstates);
+         stb_arr_free(states);
+      }
+
+      if (node == STB__DFA_GOAL) {
+         return 1;
+      }
+      if (node == STB__DFA_END) {
+         if (m->does_lex) {
+            if (match_result) {
+               if (len) *len = match_length;
+               return m->dfa_result[(int) match_result];
+            }
+         }
+         return 0;
+      }
+
+      assert(node != STB__DFA_UNDEF);
+   }
+}
+
+int stb_matcher_find(stb_matcher *m, char *str)
+{
+   assert(m->does_lex == 0);
+   return stb__matcher_dfa(m, str, NULL);
+}
+
+int stb_lex(stb_matcher *m, char *str, int *len)
+{
+   assert(m->does_lex);
+   return stb__matcher_dfa(m, str, len);
+}
+
+int stb_regex(char *regex, char *str)
+{
+   static stb_perfect p;
+   static stb_matcher ** matchers;
+   static char        ** regexps;
+   static char        ** regexp_cache;
+   static unsigned short *mapping;
+   int z = stb_perfect_hash(&p, (int) regex);
+   size_t sssz = 0;
+   if (z >= 0) {
+      if (strcmp(regex, regexp_cache[(int) mapping[z]])) {
+         int i = mapping[z];
+         stb_matcher_free(matchers[i]);
+         free(regexp_cache[i]);
+         regexps[i] = regex;
+         regexp_cache[i] = strdup(regex);
+         matchers[i] = stb_regex_matcher(regex);
+      }
+   } else {
+      int i,n;
+      if (regex == NULL) {
+         for (i=0; i < stb_arr_len(matchers); ++i) {
+            stb_matcher_free(matchers[i]);
+            free(regexp_cache[i]);
+         }
+         stb_arr_free(matchers);
+         stb_arr_free(regexps);
+         stb_arr_free(regexp_cache);
+         stb_perfect_destroy(&p);
+         free(mapping); mapping = NULL;
+         stbprint("GGGGG\n");
+         return -1;
+      }
+      stb_arr_push(regexps, regex);
+      stb_arr_push(regexp_cache, strdup(regex));
+      stb_arr_push(matchers, stb_regex_matcher(regex));
+      stb_perfect_destroy(&p);
+      n = stb_perfect_create(&p, (unsigned int *) (char **) regexps, stb_arr_len(regexps));
+      stbprint("CCCCCCCCC  %d CCCCCCCC\n", n);
+      sssz = n * sizeof(*mapping);
+      stbprint("DDDDDDDDD  %d CCCCCCCC\n", sssz);
+      stbprint("EEEEEEEEE  %X CCCCCCCC\n", mapping);
+      mapping = (unsigned short *) realloc(mapping, sssz);
+      stbprint("CCCCCCCCCCCCCCCCC\n");
+      for (i=0; i < stb_arr_len(regexps); ++i)
+         mapping[stb_perfect_hash(&p, (int) regexps[i])] = i;
+      z = stb_perfect_hash(&p, (int) regex);
+   }
+   return stb_matcher_find(matchers[(int) mapping[z]], str);
+}
+
+#endif // STB_DEFINE
 
 
 #if 0
@@ -11147,6 +12752,1356 @@ char * stb__string_constant(char *file, int line, char *x)
 
 #endif // STB_DEFINE
 #endif // !STB_DEBUG && !STB_ALWAYS_H
+
+
+#ifdef STB_STUA
+//////////////////////////////////////////////////////////////////////////
+//
+//  stua: little scripting language
+//
+//     define STB_STUA to compile it
+//
+//     see http://nothings.org/stb/stb_stua.html for documentation
+//
+//  basic parsing model:
+//
+//   lexical analysis
+//      use stb_lex() to parse tokens; keywords get their own tokens
+//
+//   parsing:
+//      recursive descent parser. too much of a hassle to make an unambiguous
+//      LR(1) grammar, and one-pass generation is clumsier (recursive descent
+//      makes it easier to e.g. compile nested functions). on the other hand,
+//      dictionary syntax required hackery to get extra lookahead.
+//
+//   codegen:
+//      output into an evaluation tree, using array indices as 'pointers'
+//
+//   run:
+//      traverse the tree; support for 'break/continue/return' is tricky
+//
+//   garbage collection:
+//      stu__mark and sweep; explicit stack with non-stu__compile_global_scope roots
+
+typedef stb_int32 stua_obj;
+
+typedef stb_idict stua_dict;
+
+STB_EXTERN void stua_run_script(char *s);
+STB_EXTERN void stua_uninit(void);
+
+extern stua_obj stua_globals;
+
+STB_EXTERN double   stua_number(stua_obj z);
+
+STB_EXTERN stua_obj stua_getnil(void);
+STB_EXTERN stua_obj stua_getfalse(void);
+STB_EXTERN stua_obj stua_gettrue(void);
+STB_EXTERN stua_obj stua_string(char *z);
+STB_EXTERN stua_obj stua_make_number(double d);
+STB_EXTERN stua_obj stua_box(int type, void *data, int size);
+
+enum
+{
+   STUA_op_negate=129,
+   STUA_op_shl,   STUA_op_ge,
+   STUA_op_shr,   STUA_op_le,
+   STUA_op_shru,
+   STUA_op_last
+};
+
+#define STUA_NO_VALUE   2     // equivalent to a tagged NULL
+STB_EXTERN stua_obj (*stua_overload)(int op, stua_obj a, stua_obj b, stua_obj c);
+
+STB_EXTERN stua_obj stua_error(char *err, ...);
+
+STB_EXTERN stua_obj stua_pushroot(stua_obj o);
+STB_EXTERN void     stua_poproot (   void   );
+
+
+#ifdef STB_DEFINE
+// INTERPRETER
+
+// 31-bit floating point implementation
+//   force the (1 << 30) bit (2nd highest bit) to be zero by re-biasing the exponent;
+//   then shift and set the bottom bit
+
+static stua_obj stu__floatp(float *f)
+{
+   unsigned int n = *(unsigned int *) f;
+   unsigned int e = n & (0xff << 23);
+
+   assert(sizeof(int) == 4 && sizeof(float) == 4);
+
+   if (!e)                    // zero?
+      n = n;                  //   no change
+   else if (e < (64 << 23))   // underflow of the packed encoding?
+      n = (n & 0x80000000);   //   signed 0
+   else if (e > (190 << 23))  // overflow of the encoding? (or INF or NAN)
+      n = (n & 0x80000000) + (127 << 23); // new INF encoding
+   else
+      n -= 0x20000000;
+
+   // now we need to shuffle the bits so that the spare bit is at the bottom
+   assert((n & 0x40000000) == 0);
+   return (n & 0x80000000) + (n << 1) + 1;
+}
+
+static unsigned char stu__getfloat_addend[256];
+static float stu__getfloat(stua_obj v)
+{
+   unsigned int n;
+   unsigned int e = ((unsigned int) v) >> 24;
+
+   n = (int) v >> 1;  // preserve high bit
+   n += stu__getfloat_addend[e] << 24;
+   return *(float *) &n;
+}
+
+stua_obj stua_float(float f) 
+{
+   return stu__floatp(&f);
+}
+
+static void stu__float_init(void)
+{
+   int i;
+   stu__getfloat_addend[0]    = 0;   // do nothing to biased exponent of 0
+   for (i=1; i < 127; ++i)
+      stu__getfloat_addend[i] = 32;  // undo the -0x20000000
+   stu__getfloat_addend[127]  = 64;  // convert packed INF to INF (0x3f -> 0x7f)
+
+   for (i=0; i < 128; ++i) // for signed floats, remove the bit we just shifted down
+      stu__getfloat_addend[128+i] = stu__getfloat_addend[i] - 64;
+}
+
+// Tagged data type implementation
+
+                                                 // TAGS:
+#define stu__int_tag          0  // of 2 bits    //   00   int
+#define stu__float_tag        1  // of 1 bit     //   01   float
+#define stu__ptr_tag          2  // of 2 bits    //   10   boxed
+                                                 //   11   float
+
+#define stu__tag(x)           ((x) & 3)
+#define stu__number(x)        (stu__tag(x) != stu__ptr_tag)
+#define stu__isint(x)         (stu__tag(x) == stu__int_tag)
+
+#define stu__int(x)           ((x) >> 2)
+#define stu__float(x)         (stu__getfloat(x))
+
+#define stu__makeint(v)       ((v)*4+stu__int_tag)
+
+// boxed data, and tag support for boxed data
+
+enum
+{
+   STU___float    = 1,   STU___int      = 2,
+   STU___number   = 3,   STU___string   = 4,
+   STU___function = 5,   STU___dict     = 6,
+   STU___boolean  = 7,   STU___error    = 8,
+};
+
+// boxed data
+#define STU__BOX  short type, stua_gc
+typedef struct stu__box { STU__BOX; } stu__box;
+
+stu__box stu__nil   = { 0, 1 };
+stu__box stu__true  = { STU___boolean, 1, };
+stu__box stu__false = { STU___boolean, 1, };
+
+#define stu__makeptr(v)  ((stua_obj)     (v) + stu__ptr_tag)
+
+#define stua_nil    stu__makeptr(&stu__nil)
+#define stua_true   stu__makeptr(&stu__true)
+#define stua_false  stu__makeptr(&stu__false)
+
+stua_obj stua_getnil(void)   { return stua_nil; }
+stua_obj stua_getfalse(void) { return stua_false; }
+stua_obj stua_gettrue(void)  { return stua_true; }
+
+#define stu__ptr(x)      ((stu__box *) ((x) - stu__ptr_tag))
+
+#define stu__checkt(t,x) ((t) == STU___float  ? ((x) & 1) == stu__float_tag : \
+                          (t) == STU___int    ? stu__isint(x)               : \
+                          (t) == STU___number ? stu__number(x)              : \
+                          stu__tag(x) == stu__ptr_tag && stu__ptr(x)->type == (t))
+
+typedef struct
+{
+   STU__BOX;
+   void *ptr;
+} stu__wrapper;
+
+// implementation of a 'function' or function + closure
+
+typedef struct stu__func
+{
+   STU__BOX;
+   stua_obj closure_source;  // 0 - regular function; 4 - C function
+                             // if closure, pointer to source function
+   union {
+      stua_obj closure_data; // partial-application data
+      void *store;           // pointer to free that holds 'code'
+      stua_obj (*func)(stua_dict *context);
+   } f;
+   // closure ends here
+   short *code;
+   int num_param;
+   stua_obj *param;  // list of parameter strings
+} stu__func;
+
+// apply this to 'short *code' to get at data
+#define stu__const(f)  ((stua_obj *) (f))
+
+static void stu__free_func(stu__func *f)
+{
+   if (f->closure_source == 0)          free(f->f.store);
+   if ((stb_uint) f->closure_source <= 4)   free(f->param);
+   free(f);
+}
+
+#define stu__pd(x)       ((stua_dict *)    stu__ptr(x))
+#define stu__pw(x)       ((stu__wrapper *) stu__ptr(x))
+#define stu__pf(x)       ((stu__func *)    stu__ptr(x))
+
+
+// garbage-collection
+
+
+static stu__box ** stu__gc_ptrlist;
+static stua_obj * stu__gc_root_stack;
+
+stua_obj stua_pushroot(stua_obj o) { stb_arr_push(stu__gc_root_stack, o); return o; }
+void     stua_poproot (   void   ) { stb_arr_pop(stu__gc_root_stack); }
+
+static stb_sdict *stu__strings;
+static void stu__mark(stua_obj z)
+{
+   int i;
+   stu__box *p = stu__ptr(z);
+   if (p->stua_gc == 1) return; // already marked
+   assert(p->stua_gc == 0);
+   p->stua_gc = 1;
+   switch(p->type) {
+      case STU___function: {
+         stu__func *f = (stu__func *) p;
+         if ((stb_uint) f->closure_source <= 4) {
+            if (f->closure_source == 0) {
+               for (i=1; i <= f->code[0]; ++i)
+                  if (!stu__number(((stua_obj *) f->code)[-i]))
+                     stu__mark(((stua_obj *) f->code)[-i]);
+            }
+            for (i=0; i < f->num_param; ++i)
+               stu__mark(f->param[i]);
+         } else {
+            stu__mark(f->closure_source);
+            stu__mark(f->f.closure_data);
+         }
+         break;
+      }
+      case STU___dict: {
+         stua_dict *e = (stua_dict *) p;
+         for (i=0; i < e->limit; ++i)
+            if (e->table[i].k != STB_IEMPTY && e->table[i].k != STB_IDEL) {
+               if (!stu__number(e->table[i].k)) stu__mark((int) e->table[i].k);
+               if (!stu__number(e->table[i].v)) stu__mark((int) e->table[i].v);
+            }
+         break;
+      }
+   }
+}
+
+static int stu__num_allocs, stu__size_allocs;
+static stua_obj stu__flow_val = stua_nil; // used for break & return
+
+static void stua_gc(int force)
+{
+   int i;
+   if (!force && stu__num_allocs == 0 && stu__size_allocs == 0) return;
+   stu__num_allocs = stu__size_allocs = 0;
+   //printf("[gc]\n");
+
+   // clear marks
+   for (i=0; i < stb_arr_len(stu__gc_ptrlist); ++i)
+       stu__gc_ptrlist[i]->stua_gc = 0;
+
+   // stu__mark everything reachable
+   stu__nil.stua_gc = stu__true.stua_gc = stu__false.stua_gc = 1;
+   stu__mark(stua_globals);
+   if (!stu__number(stu__flow_val)) 
+      stu__mark(stu__flow_val);
+   for (i=0; i < stb_arr_len(stu__gc_root_stack); ++i)
+      if (!stu__number(stu__gc_root_stack[i]))
+         stu__mark(stu__gc_root_stack[i]);
+
+   // sweep unreachables
+   for (i=0; i < stb_arr_len(stu__gc_ptrlist);) {
+      stu__box *z = stu__gc_ptrlist[i];         
+      if (!z->stua_gc) {
+         switch (z->type) {
+            case STU___dict:        stb_idict_destroy((stua_dict *) z); break;
+            case STU___error:       free(((stu__wrapper *) z)->ptr); break;
+            case STU___string:      stb_sdict_remove(stu__strings, (char*) ((stu__wrapper *) z)->ptr, NULL); free(z); break;
+            case STU___function:    stu__free_func((stu__func *) z); break;
+         }
+         // swap in the last item over this, and repeat
+         z = stb_arr_pop(stu__gc_ptrlist);
+         stu__gc_ptrlist[i] = z;         
+      } else
+         ++i;
+   }
+}
+
+static void stu__consider_gc(stua_obj x)
+{
+   if (stu__size_allocs < 100000) return;
+   if (stu__num_allocs < 10 && stu__size_allocs < 1000000) return;
+   stb_arr_push(stu__gc_root_stack, x);
+   stua_gc(0);
+   stb_arr_pop(stu__gc_root_stack);
+}
+
+static stua_obj stu__makeobj(int type, void *data, int size, int safe_to_gc)
+{
+   stua_obj x = stu__makeptr(data);
+   ((stu__box *) data)->type = type;
+   stb_arr_push(stu__gc_ptrlist, (stu__box *) data);
+   stu__num_allocs  += 1;
+   stu__size_allocs += size;
+   if (safe_to_gc) stu__consider_gc(x);
+   return x;
+}
+
+stua_obj stua_box(int type, void *data, int size)
+{
+   stu__wrapper *p = (stu__wrapper *) malloc(sizeof(*p));
+   p->ptr = data;
+   return stu__makeobj(type, p, size, 0);
+}
+
+// a stu string can be directly compared for equality, because
+// they go into a hash table
+stua_obj stua_string(char *z)
+{
+   stu__wrapper *b = (stu__wrapper *) stb_sdict_get(stu__strings, z);
+   if (b == NULL) {
+      int o = stua_box(STU___string, NULL, strlen(z) + sizeof(*b));
+      b = stu__pw(o);
+      stb_sdict_add(stu__strings, z, b);
+      stb_sdict_getkey(stu__strings, z, (char **) &b->ptr);
+   }
+   return stu__makeptr(b);
+}
+
+// stb_obj dictionary is just an stb_idict
+static void     stu__set(stua_dict *d, stua_obj k, stua_obj v)
+{ if (stb_idict_set(d, k, v)) stu__size_allocs += 8; }
+
+static stua_obj stu__get(stua_dict *d, stua_obj k, stua_obj res)
+{
+   stb_idict_get_flag(d, k, &res);
+   return res;
+}
+
+static stua_obj make_string(char *z, int len)
+{
+   stua_obj s;
+   char temp[256], *q = (char *) stb_temp(temp, len+1), *p = q;
+   while (len > 0) {
+      if (*z == '\\') {
+              if (z[1] == 'n') *p = '\n';
+         else if (z[1] == 'r') *p = '\r';
+         else if (z[1] == 't') *p = '\t';
+         else                  *p = z[1];
+         p += 1; z += 2; len -= 2;
+      } else {
+         *p++ = *z++; len -= 1;
+      }
+   }
+   *p = 0;
+   s = stua_string(q);
+   stb_tempfree(temp, q);
+   return s;
+}
+
+enum token_names
+{
+   T__none=128,
+   ST_shl = STUA_op_shl,    ST_ge  = STUA_op_ge,
+   ST_shr = STUA_op_shr,    ST_le = STUA_op_le,
+   ST_shru = STUA_op_shru,  STU__negate = STUA_op_negate,
+   ST__reset_numbering = STUA_op_last,
+   ST_white,
+   ST_id, ST_float, ST_decimal, ST_hex, ST_char,ST_string, ST_number,
+   // make sure the keywords come _AFTER_ ST_id, so stb_lex prefer them
+   ST_if,      ST_while,    ST_for,     ST_eq,  ST_nil,
+   ST_then,    ST_do,       ST_in,      ST_ne,  ST_true,
+   ST_else,    ST_break,    ST_let,     ST_and, ST_false,
+   ST_elseif,  ST_continue, ST_into,    ST_or,  ST_repeat,
+   ST_end,     ST_as,       ST_return,  ST_var, ST_func,
+   ST_catch,   ST__frame,
+   ST__max_terminals,
+
+   STU__defaultparm, STU__seq,
+};
+
+static stua_dict  * stu__globaldict;
+       stua_obj     stua_globals;
+
+static enum
+{
+   FLOW_normal,  FLOW_continue,   FLOW_break,  FLOW_return,  FLOW_error,
+} stu__flow;
+
+stua_obj stua_error(char *z, ...)
+{
+   stua_obj a;
+   char temp[4096], *x;
+   va_list v; va_start(v,z); vsprintf(temp, z, v); va_end(v);
+   x = strdup(temp);
+   a = stua_box(STU___error, x, strlen(x));
+   stu__flow = FLOW_error;
+   stu__flow_val = a;
+   return stua_nil;
+}
+
+double stua_number(stua_obj z)
+{
+   return stu__tag(z) == stu__int_tag ? stu__int(z) : stu__float(z);
+}
+
+stua_obj stua_make_number(double d)
+{
+   double e = floor(d);
+   if (e == d && e < (1 << 29) && e >= -(1 << 29))
+      return stu__makeint((int) e);
+   else
+      return stua_float((float) d);
+}
+
+stua_obj (*stua_overload)(int op, stua_obj a, stua_obj b, stua_obj c) = NULL;
+
+static stua_obj stu__op(int op, stua_obj a, stua_obj b, stua_obj c)
+{
+   stua_obj r = STUA_NO_VALUE;
+   if (op == '+') {
+      if (stu__checkt(STU___string, a) && stu__checkt(STU___string, b)) {
+         ;// @TODO: string concatenation
+      } else if (stu__checkt(STU___function, a) && stu__checkt(STU___dict, b)) {
+         stu__func *f = (stu__func *) malloc(12);
+         assert(offsetof(stu__func, code)==12);
+         f->closure_source = a;
+         f->f.closure_data = b;
+         return stu__makeobj(STU___function, f, 16, 1);
+      }
+   }
+   if (stua_overload) r = stua_overload(op,a,b,c);
+   if (stu__flow != FLOW_error && r == STUA_NO_VALUE)
+      stua_error("Typecheck for operator %d", op), r=stua_nil;
+   return r;
+}
+
+#define STU__EVAL2(a,b)             \
+          a = stu__eval(stu__f[n+1]);  if (stu__flow) break; stua_pushroot(a); \
+          b = stu__eval(stu__f[n+2]);  stua_poproot(); if (stu__flow) break;
+
+#define STU__FB(op)              \
+          STU__EVAL2(a,b)           \
+          if (stu__tag(a) == stu__int_tag && stu__tag(b) == stu__int_tag) \
+             return ((a) op (b));                 \
+          if (stu__number(a) && stu__number(b)) \
+             return stua_make_number(stua_number(a) op stua_number(b)); \
+          return stu__op(stu__f[n], a,b, stua_nil)
+
+#define STU__F(op)              \
+          STU__EVAL2(a,b)           \
+          if (stu__number(a) && stu__number(b)) \
+             return stua_make_number(stua_number(a) op stua_number(b)); \
+          return stu__op(stu__f[n], a,b, stua_nil)
+
+#define STU__I(op)               \
+          STU__EVAL2(a,b)           \
+          if (stu__tag(a) == stu__int_tag && stu__tag(b) == stu__int_tag) \
+             return stu__makeint(stu__int(a) op stu__int(b));                 \
+          return stu__op(stu__f[n], a,b, stua_nil)
+
+#define STU__C(op)               \
+          STU__EVAL2(a,b)           \
+          if (stu__number(a) && stu__number(b)) \
+             return (stua_number(a) op stua_number(b)) ? stua_true : stua_false; \
+          return stu__op(stu__f[n], a,b, stua_nil)
+
+#define STU__CE(op)              \
+          STU__EVAL2(a,b)           \
+          return (a op b) ? stua_true : stua_false
+
+static short *stu__f;
+static stua_obj  stu__f_obj;
+static stua_dict       *stu__c;
+static stua_obj stu__funceval(stua_obj fo, stua_obj co);
+
+static int stu__cond(stua_obj x)
+{
+   if (stu__flow) return 0;
+   if (!stu__checkt(STU___boolean, x))
+      x = stu__op('!', x, stua_nil, stua_nil);
+   if (x == stua_true ) return 1;
+   if (x == stua_false) return 0;
+   stu__flow = FLOW_error;
+   return 0;
+}
+
+// had to manually eliminate tailcall recursion for debugging complex stuff
+#define TAILCALL(x)   n = (x); goto top;
+static stua_obj stu__eval(int n)
+{
+top:
+   if (stu__flow >= FLOW_return) return stua_nil; // is this needed?
+   if (n < 0) return stu__const(stu__f)[n];
+   assert(n != 0 && n != 1);
+   switch (stu__f[n]) {
+      stua_obj a,b,c;
+      case ST_catch:   a = stu__eval(stu__f[n+1]);
+                       if (stu__flow == FLOW_error) { a=stu__flow_val; stu__flow = FLOW_normal; }
+                       return a;
+      case ST_var:     b = stu__eval(stu__f[n+2]); if (stu__flow) break;
+                       stu__set(stu__c, stu__const(stu__f)[stu__f[n+1]], b);
+                       return b;
+      case STU__seq:   stu__eval(stu__f[n+1]); if (stu__flow) break;
+                       TAILCALL(stu__f[n+2]);
+      case ST_if:      if (!stu__cond(stu__eval(stu__f[n+1]))) return stua_nil;
+                       TAILCALL(stu__f[n+2]);
+      case ST_else:    a = stu__cond(stu__eval(stu__f[n+1]));
+                       TAILCALL(stu__f[n + 2 + !a]);
+                       #define STU__HANDLE_BREAK            \
+                          if (stu__flow >= FLOW_break) {    \
+                             if (stu__flow == FLOW_break) { \
+                                a = stu__flow_val;          \
+                                stu__flow = FLOW_normal;    \
+                                stu__flow_val = stua_nil;   \
+                                return a;                   \
+                             }                              \
+                             return stua_nil;               \
+                          }
+      case ST_as:      stu__eval(stu__f[n+3]);
+                       STU__HANDLE_BREAK
+                       // fallthrough!
+      case ST_while:   a = stua_nil; stua_pushroot(a);
+                       while (stu__cond(stu__eval(stu__f[n+1]))) {
+                          stua_poproot();
+                          a = stu__eval(stu__f[n+2]);
+                          STU__HANDLE_BREAK
+                          stu__flow = FLOW_normal;  // clear 'continue' flag
+                          stua_pushroot(a);
+                          if (stu__f[n+3]) stu__eval(stu__f[n+3]);
+                          STU__HANDLE_BREAK
+                          stu__flow = FLOW_normal;  // clear 'continue' flag
+                       }
+                       stua_poproot();
+                       return a;
+      case ST_break:   stu__flow = FLOW_break;  stu__flow_val = stu__eval(stu__f[n+1]); break;
+      case ST_continue:stu__flow = FLOW_continue; break;
+      case ST_return:  stu__flow = FLOW_return; stu__flow_val = stu__eval(stu__f[n+1]); break;
+      case ST__frame:  return stu__f_obj;
+      case '[':        STU__EVAL2(a,b);
+                       if (stu__checkt(STU___dict, a))
+                          return stu__get(stu__pd(a), b, stua_nil);
+                       return stu__op(stu__f[n], a, b, stua_nil);
+      case '=':        a = stu__eval(stu__f[n+2]); if (stu__flow) break;
+                       n = stu__f[n+1];
+                       if (stu__f[n] == ST_id) {
+                          if (!stb_idict_update(stu__c, stu__const(stu__f)[stu__f[n+1]], a))
+                             if (!stb_idict_update(stu__globaldict, stu__const(stu__f)[stu__f[n+1]], a))
+                                return stua_error("Assignment to undefined variable");
+                       } else if (stu__f[n] == '[') {
+                          stua_pushroot(a);
+                          b = stu__eval(stu__f[n+1]); if (stu__flow) { stua_poproot(); break; }
+                          stua_pushroot(b);
+                          c = stu__eval(stu__f[n+2]); stua_poproot(); stua_poproot();
+                          if (stu__flow) break;
+                          if (!stu__checkt(STU___dict, b)) return stua_nil;
+                          stu__set(stu__pd(b), c, a);
+                       } else {
+                          return stu__op(stu__f[n], stu__eval(n), a, stua_nil);
+                       }
+                       return a;
+      case STU__defaultparm:
+                       a = stu__eval(stu__f[n+2]);
+                       stu__flow = FLOW_normal;
+                       if (stb_idict_add(stu__c, stu__const(stu__f)[stu__f[n+1]], a))
+                          stu__size_allocs += 8;
+                       return stua_nil;
+      case ST_id:      a = stu__get(stu__c, stu__const(stu__f)[stu__f[n+1]], STUA_NO_VALUE); // try local variable
+                       return a != STUA_NO_VALUE       // else try stu__compile_global_scope variable
+                            ? a : stu__get(stu__globaldict, stu__const(stu__f)[stu__f[n+1]], stua_nil);
+      case STU__negate:a = stu__eval(stu__f[n+1]); if (stu__flow) break;
+                       return stu__isint(a) ? -a : stu__op(stu__f[n], a, stua_nil, stua_nil);
+      case '~':        a = stu__eval(stu__f[n+1]); if (stu__flow) break;
+                       return stu__isint(a) ? (~a)&~3 : stu__op(stu__f[n], a, stua_nil, stua_nil);
+      case '!':        a = stu__eval(stu__f[n+1]); if (stu__flow) break;
+                       a = stu__cond(a); if (stu__flow) break;
+                       return a ? stua_true : stua_false;
+      case ST_eq: STU__CE(==); case ST_le: STU__C(<=); case '<': STU__C(<);
+      case ST_ne: STU__CE(!=); case ST_ge: STU__C(>=); case '>': STU__C(>);
+      case '+' : STU__FB(+);  case '*': STU__F(*);  case '&': STU__I(&); case ST_shl: STU__I(<<);
+      case '-' : STU__FB(-);  case '/': STU__F(/);  case '|': STU__I(|); case ST_shr: STU__I(>>);
+                             case '%': STU__I(%);  case '^': STU__I(^);
+      case ST_shru:    STU__EVAL2(a,b);
+                       if (stu__tag(a) == stu__int_tag && stu__tag(b) == stu__int_tag)
+                          return stu__makeint((unsigned) stu__int(a) >> stu__int(b));
+                       return stu__op(stu__f[n], a,b, stua_nil);
+      case ST_and:      a = stu__eval(stu__f[n+1]); b = stu__cond(a); if (stu__flow) break;
+                       return a ? stu__eval(stu__f[n+2]) : a;
+      case ST_or :      a = stu__eval(stu__f[n+1]); b = stu__cond(a); if (stu__flow) break;
+                       return a ? b : stu__eval(stu__f[n+2]);
+      case'(':case':': STU__EVAL2(a,b);
+                       if (!stu__checkt(STU___function, a))
+                           return stu__op(stu__f[n], a,b, stua_nil);
+                       if (!stu__checkt(STU___dict, b))
+                           return stua_nil;
+                       if (stu__f[n] == ':')
+                          b = stu__makeobj(STU___dict, stb_idict_copy(stu__pd(b)), stb_idict_memory_usage(stu__pd(b)), 0);
+                       a = stu__funceval(a,b);
+                       return a;
+      case '{' :    {
+                       stua_dict *d;
+                       d = stb_idict_new_size(stu__f[n+1] > 40 ? 64 : 16);
+                       if (d == NULL)
+                          return stua_nil; // breakpoint fodder
+                       c = stu__makeobj(STU___dict, d, 32, 1);
+                       stua_pushroot(c);
+                       a = stu__f[n+1];
+                       for (b=0; b < a; ++b) {
+                          stua_obj x = stua_pushroot(stu__eval(stu__f[n+2 + b*2 + 0]));
+                          stua_obj y = stu__eval(stu__f[n+2 + b*2 + 1]);
+                          stua_poproot();
+                          if (stu__flow) { stua_poproot(); return stua_nil; }
+                          stu__set(d, x, y);
+                       }
+                       stua_poproot();
+                       return c;
+                    }
+      default:         if (stu__f[n] < 0) return stu__const(stu__f)[stu__f[n]];
+                       assert(0); /* NOTREACHED */ // internal error!
+   }
+   return stua_nil;
+}
+
+int stb__stua_nesting;
+static stua_obj stu__funceval(stua_obj fo, stua_obj co)
+{
+   stu__func *f = stu__pf(fo);
+   stua_dict *context = stu__pd(co);
+   int i,j;
+   stua_obj p;
+   short *tf = stu__f;     // save previous function
+   stua_dict *tc = stu__c;
+
+   if (stu__flow == FLOW_error) return stua_nil;
+   assert(stu__flow == FLOW_normal);
+
+   stua_pushroot(fo);
+   stua_pushroot(co);
+   stu__consider_gc(stua_nil);
+
+   while ((stb_uint) f->closure_source > 4) {
+      // add data from closure to context
+      stua_dict *e = (stua_dict *) stu__pd(f->f.closure_data);
+      for (i=0; i < e->limit; ++i)
+         if (e->table[i].k != STB_IEMPTY && e->table[i].k != STB_IDEL)
+            if (stb_idict_add(context, e->table[i].k, e->table[i].v))
+               stu__size_allocs += 8;
+            // use add so if it's already defined, we don't override it; that way
+            // explicit parameters win over applied ones, and most recent applications
+            // win over previous ones
+      f = stu__pf(f->closure_source);
+   }
+
+   for (j=0, i=0; i < f->num_param; ++i)
+      // if it doesn't already exist, add it from the numbered parameters
+      if (stb_idict_add(context, f->param[i], stu__get(context, stu__int(j), stua_nil)))
+         ++j;
+
+   // @TODO: if (stu__get(context, stu__int(f->num_param+1)) != STUA_NO_VALUE) // error: too many parameters
+   // @TODO: ditto too few parameters
+
+   if (f->closure_source == 4)
+      p = f->f.func(context);
+   else {
+      stu__f = f->code, stu__c = context;
+      stu__f_obj = co;
+      ++stb__stua_nesting;
+      if (stu__f[1]) 
+         p = stu__eval(stu__f[1]);
+      else
+         p = stua_nil;
+      --stb__stua_nesting;
+      stu__f = tf, stu__c = tc;  // restore previous function
+      if (stu__flow == FLOW_return) {
+         stu__flow = FLOW_normal;
+         p = stu__flow_val;
+         stu__flow_val = stua_nil;
+      }
+   }
+
+   stua_poproot();
+   stua_poproot();
+
+   return p;
+}
+
+// Parser
+
+static int stu__tok;
+static stua_obj stu__tokval;
+
+static char *stu__curbuf, *stu__bufstart;
+
+static stb_matcher *stu__lex_matcher;
+
+static unsigned char stu__prec[ST__max_terminals], stu__end[ST__max_terminals];
+
+static void stu__nexttoken(void)
+{
+   int len;
+
+retry:
+   stu__tok = stb_lex(stu__lex_matcher, stu__curbuf, &len);
+   if (stu__tok == 0)
+      return;
+   switch(stu__tok) {
+      case ST_white  : stu__curbuf += len; goto retry;
+      case T__none  : stu__tok = *stu__curbuf; break;
+      case ST_string:  stu__tokval = make_string(stu__curbuf+1, len-2); break;
+      case ST_id    :  stu__tokval = make_string(stu__curbuf, len); break;
+      case ST_hex    : stu__tokval = stu__makeint(strtol(stu__curbuf+2,NULL,16)); stu__tok = ST_number; break;
+      case ST_decimal: stu__tokval = stu__makeint(strtol(stu__curbuf  ,NULL,10)); stu__tok = ST_number; break;
+      case ST_float  : stu__tokval = stua_float((float) atof(stu__curbuf))       ; stu__tok = ST_number; break;
+      case ST_char   : stu__tokval = stu__curbuf[2] == '\\' ? stu__curbuf[3] : stu__curbuf[2];
+                      if (stu__curbuf[3] == 't') stu__tokval = '\t';
+                      if (stu__curbuf[3] == 'n') stu__tokval = '\n';
+                      if (stu__curbuf[3] == 'r') stu__tokval = '\r';
+                      stu__tokval = stu__makeint(stu__tokval);
+                      stu__tok  = ST_number;
+                      break;
+   }
+   stu__curbuf += len;
+}
+
+static struct { int stu__tok; char *regex; } stu__lexemes[] =
+{
+   ST_white  , "([ \t\n\r]|/\\*(.|\n)*\\*/|//[^\r\n]*([\r\n]|$))+",
+   ST_id     , "[_a-zA-Z][_a-zA-Z0-9]*",
+   ST_hex    , "0x[0-9a-fA-F]+",
+   ST_decimal, "[0-9]+[0-9]*",
+   ST_float  , "[0-9]+\\.?[0-9]*([eE][-+]?[0-9]+)?",
+   ST_float  , "\\.[0-9]+([eE][-+]?[0-9]+)?",
+   ST_char   , "c'(\\\\.|[^\\'])'",
+   ST_string , "\"(\\\\.|[^\\\"\n\r])*\"",
+   ST_string , "\'(\\\\.|[^\\\'\n\r])*\'",
+
+   #define stua_key4(a,b,c,d)  ST_##a, #a, ST_##b, #b, ST_##c, #c, ST_##d, #d,
+   stua_key4(if,then,else,elseif)    stua_key4(while,do,for,in)
+   stua_key4(func,var,let,break)     stua_key4(nil,true,false,end)
+   stua_key4(return,continue,as,repeat) stua_key4(_frame,catch,catch,catch)
+
+   ST_shl, "<<",   ST_and, "&&",  ST_eq,  "==",  ST_ge, ">=", 
+   ST_shr, ">>",   ST_or , "||",  ST_ne,  "!=",  ST_le, "<=",
+   ST_shru,">>>",  ST_into, "=>",
+   T__none, ".",
+};
+
+typedef struct
+{
+   stua_obj  *data;    // constants being compiled
+   short     *code;    // code being compiled
+   stua_dict *locals;
+   short     *non_local_refs;
+} stu__comp_func;
+
+static stu__comp_func stu__pfunc;
+static stu__comp_func *func_stack = NULL;
+static void stu__push_func_comp(void)
+{
+   stb_arr_push(func_stack, stu__pfunc);
+   stu__pfunc.data = NULL;
+   stu__pfunc.code = NULL;
+   stu__pfunc.locals = stb_idict_new_size(16);
+   stu__pfunc.non_local_refs = NULL;
+   stb_arr_push(stu__pfunc.code, 0); // number of data items
+   stb_arr_push(stu__pfunc.code, 1); // starting execution address
+}
+
+static void stu__pop_func_comp(void)
+{
+   stb_arr_free(stu__pfunc.code);
+   stb_arr_free(stu__pfunc.data);   
+   stb_idict_destroy(stu__pfunc.locals);
+   stb_arr_free(stu__pfunc.non_local_refs);
+   stu__pfunc = stb_arr_pop(func_stack);
+}
+
+// if an id is a reference to an outer lexical scope, this
+// function returns the "name" of it, and updates the stack
+// structures to make sure the names are propogated in.
+static int stu__nonlocal_id(stua_obj var_obj)
+{
+   stua_obj dummy, var = var_obj;
+   int i, n = stb_arr_len(func_stack), j,k;
+   if (stb_idict_get_flag(stu__pfunc.locals, var, &dummy)) return 0;
+   for (i=n-1; i > 1; --i) {
+      if (stb_idict_get_flag(func_stack[i].locals, var, &dummy))
+         break;
+   }
+   if (i <= 1) return 0; // stu__compile_global_scope
+   j = i; // need to access variable from j'th frame
+   for (i=0; i < stb_arr_len(stu__pfunc.non_local_refs); ++i)
+      if (stu__pfunc.non_local_refs[i] == j) return j-n;
+   stb_arr_push(stu__pfunc.non_local_refs, j-n);
+   // now make sure all the parents propogate it down
+   for (k=n-1; k > 1; --k) {
+      if (j-k >= 0) return j-n; // comes direct from this parent
+      for(i=0; i < stb_arr_len(func_stack[k].non_local_refs); ++i)
+         if (func_stack[k].non_local_refs[i] == j-k)
+            return j-n;
+      stb_arr_push(func_stack[k].non_local_refs, j-k);
+   }
+   assert (k != 1);
+
+   return j-n;
+}
+
+static int stu__off(void)                { return stb_arr_len(stu__pfunc.code); }
+static void stu__cc(int a)
+{
+   assert(a >= -2000 && a < 5000);
+   stb_arr_push(stu__pfunc.code, a);
+}
+static int stu__cc1(int a)                      { stu__cc(a); return stu__off()-1; }
+static int stu__cc2(int a, int b)               { stu__cc(a); stu__cc(b); return stu__off()-2; }
+static int stu__cc3(int a, int b, int c)        {
+ if (a == '=') assert(c != 0);
+ stu__cc(a); stu__cc(b); stu__cc(c); return stu__off()-3; }
+static int stu__cc4(int a, int b, int c, int d) { stu__cc(a); stu__cc(b); stu__cc(c); stu__cc(d); return stu__off()-4; }
+
+static int stu__cdv(stua_obj p)
+{
+   int i;
+   assert(p != STUA_NO_VALUE);
+   for (i=0; i < stb_arr_len(stu__pfunc.data); ++i)
+      if (stu__pfunc.data[i] == p)
+         break;
+   if (i == stb_arr_len(stu__pfunc.data))
+      stb_arr_push(stu__pfunc.data, p);
+   return ~i;
+}
+
+static int stu__cdt(void)
+{
+   int z = stu__cdv(stu__tokval);
+   stu__nexttoken();
+   return z;
+}
+
+static int stu__seq(int a, int b)
+{
+   return !a ? b : !b ? a : stu__cc3(STU__seq, a,b);
+}
+
+static char stu__comp_err_str[1024];
+static int stu__comp_err_line;
+static int stu__err(char *str, ...)
+{
+   va_list v;
+   char *s = stu__bufstart;
+   stu__comp_err_line = 1;
+   while (s < stu__curbuf) {
+      if (s[0] == '\n' || s[0] == '\r') {
+         if (s[0]+s[1] == '\n' + '\r') ++s;
+         ++stu__comp_err_line;
+      }
+      ++s;
+   }
+   va_start(v, str);
+   vsprintf(stu__comp_err_str, str, v);
+   va_end(v);
+   return 0;
+}
+
+static int stu__accept(int p)
+{
+   if (stu__tok != p) return 0;
+   stu__nexttoken();
+   return 1;
+}
+
+static int stu__demand(int p)
+{
+   if (stu__accept(p)) return 1;
+   return stu__err("Didn't find expected stu__tok");
+}
+
+static int stu__demandv(int p, stua_obj *val)
+{
+   if (stu__tok == p || p==0) {
+      *val = stu__tokval;
+      stu__nexttoken();
+      return 1;
+   } else
+      return 0;
+}
+
+static int stu__expr(int p);
+int stu__nexpr(int p) { stu__nexttoken(); return stu__expr(p); }
+static int stu__statements(int once, int as);
+
+static int stu__parse_if(void)      // parse both ST_if and ST_elseif
+{
+   int b,c,a;
+   a = stu__nexpr(1);               if (!a) return 0;
+   if (!stu__demand(ST_then))       return stu__err("expecting THEN");
+   b = stu__statements(0,0);        if (!b) return 0;
+   if (b == 1) b = -1;
+
+   if (stu__tok == ST_elseif) {
+      return stu__parse_if();
+   } else if (stu__accept(ST_else)) {
+      c = stu__statements(0,0); if (!c) return 0;
+      if (!stu__demand(ST_end)) return stu__err("expecting END after else clause");
+      return stu__cc4(ST_else, a, b, c);
+   } else {
+      if (!stu__demand(ST_end)) return stu__err("expecting END in if statement");
+      return stu__cc3(ST_if, a, b);
+   }
+}
+
+int stu__varinit(int z, int in_globals)
+{
+   int a,b;
+   stu__nexttoken();
+   while (stu__demandv(ST_id, &b)) {
+      if (!stb_idict_add(stu__pfunc.locals, b, 1))
+         if (!in_globals) return stu__err("Redefined variable %s.", stu__pw(b)->ptr);
+      if (stu__accept('=')) {
+         a = stu__expr(1);       if (!a) return 0;
+      } else
+         a = stu__cdv(stua_nil);
+      z = stu__seq(z, stu__cc3(ST_var, stu__cdv(b), a));
+      if (!stu__accept(',')) break;
+   }
+   return z;
+}
+
+static int stu__compile_unary(int z, int outparm, int require_inparm)
+{
+   int op = stu__tok, a, b;
+   stu__nexttoken();
+   if (outparm) {
+      if (require_inparm || (stu__tok && stu__tok != ST_end && stu__tok != ST_else && stu__tok != ST_elseif && stu__tok !=';')) {
+         a = stu__expr(1); if (!a) return 0;
+      } else
+         a = stu__cdv(stua_nil);
+      b = stu__cc2(op, a);
+   } else
+      b = stu__cc1(op);
+   return stu__seq(z,b);
+}
+
+static int stu__assign(void)
+{
+   int z;
+   stu__accept(ST_let);
+   z = stu__expr(1); if (!z) return 0;
+   if (stu__accept('=')) {
+      int y,p = (z >= 0 ? stu__pfunc.code[z] : 0);
+      if (z < 0 || (p != ST_id && p != '[')) return stu__err("Invalid lvalue in assignment");
+      y = stu__assign();         if (!y) return 0;
+      z = stu__cc3('=', z, y);
+   }
+   return z;
+}
+
+static int stu__statements(int once, int stop_while)
+{
+   int a,b, c, z=0;
+   for(;;) {
+      switch (stu__tok) {
+         case ST_if     : a = stu__parse_if(); if (!a) return 0;
+                          z = stu__seq(z, a);
+                          break;
+         case ST_while  : if (stop_while) return (z ? z:1);
+                          a = stu__nexpr(1); if (!a) return 0;
+                          if (stu__accept(ST_as)) c = stu__statements(0,0); else c = 0;
+                          if (!stu__demand(ST_do)) return stu__err("expecting DO");
+                          b = stu__statements(0,0); if (!b) return 0;
+                          if (!stu__demand(ST_end)) return stu__err("expecting END");
+                          if (b == 1) b = -1;
+                          z = stu__seq(z, stu__cc4(ST_while, a, b, c));
+                          break;
+         case ST_repeat : stu__nexttoken();
+                          c = stu__statements(0,1); if (!c) return 0;
+                          if (!stu__demand(ST_while)) return stu__err("expecting WHILE");
+                          a = stu__expr(1); if (!a) return 0;
+                          if (!stu__demand(ST_do)) return stu__err("expecting DO");
+                          b = stu__statements(0,0); if (!b) return 0;
+                          if (!stu__demand(ST_end)) return stu__err("expecting END");
+                          if (b == 1) b = -1;
+                          z = stu__seq(z, stu__cc4(ST_as, a, b, c));
+                          break;
+         case ST_catch  : a = stu__nexpr(1); if (!a) return 0;
+                          z = stu__seq(z, stu__cc2(ST_catch, a));
+                          break;
+         case ST_var    : z = stu__varinit(z,0); break;
+         case ST_return : z = stu__compile_unary(z,1,1); break;
+         case ST_continue:z = stu__compile_unary(z,0,0); break;
+         case ST_break  : z = stu__compile_unary(z,1,0); break;
+         case ST_into   : if (z == 0 && !once) return stu__err("=> cannot be first statement in block");
+                          a = stu__nexpr(99);
+                          b = (a >= 0? stu__pfunc.code[a] : 0);
+                          if (a < 0 || (b != ST_id && b != '[')) return stu__err("Invalid lvalue on right side of =>");
+                          z = stu__cc3('=', a, z);
+                          break;
+         default        : if (stu__end[stu__tok]) return once ? 0 : (z ? z:1);
+                          a = stu__assign(); if (!a) return 0;
+                          stu__accept(';');
+                          if (stu__tok && !stu__end[stu__tok]) {
+                             if (a < 0)
+                                return stu__err("Constant has no effect");
+                             if (stu__pfunc.code[a] != '(' && stu__pfunc.code[a] != '=')
+                                return stu__err("Expression has no effect");
+                          }
+                          z = stu__seq(z, a);
+                          break;
+      }
+      if (!z) return 0;
+      stu__accept(';');
+      if (once && stu__tok != ST_into) return z;
+   }
+}
+
+static int stu__postexpr(int z, int p);
+static int stu__dictdef(int end, int *count)
+{
+   int z,n=0,i,flags=0;
+   short *dict=NULL;
+   stu__nexttoken();
+   while (stu__tok != end) {
+      if (stu__tok == ST_id) {
+         stua_obj id = stu__tokval;
+         stu__nexttoken();
+         if (stu__tok == '=') {
+            flags |= 1;
+            stb_arr_push(dict, stu__cdv(id));
+            z = stu__nexpr(1); if (!z) return 0;
+         } else {
+            z = stu__cc2(ST_id, stu__cdv(id));
+            z = stu__postexpr(z,1); if (!z) return 0;
+            flags |= 2;
+            stb_arr_push(dict, stu__cdv(stu__makeint(n++)));
+         }
+      } else {
+         z = stu__expr(1); if (!z) return 0;
+         flags |= 2;
+         stb_arr_push(dict, stu__cdv(stu__makeint(n++)));
+      }
+      if (end != ')' && flags == 3) { z=stu__err("can't mix initialized and uninitialized defs"); goto done;}
+      stb_arr_push(dict, z);
+      if (!stu__accept(',')) break;
+   }
+   if (!stu__demand(end))
+      return stu__err(end == ')' ? "Expecting ) at end of function call" 
+                                 : "Expecting } at end of dictionary definition");
+   z = stu__cc2('{', stb_arr_len(dict)/2);
+   for (i=0; i < stb_arr_len(dict); ++i)
+      stu__cc(dict[i]);
+   if (count) *count = n;
+done:
+   stb_arr_free(dict);
+   return z;
+}
+
+static int stu__comp_id(void)
+{
+   int z,d;
+   d = stu__nonlocal_id(stu__tokval);
+   if (d == 0)
+      return z = stu__cc2(ST_id, stu__cdt());
+   // access a non-local frame by naming it with the appropriate int
+   assert(d < 0);
+   z = stu__cdv(d);            // relative frame # is the 'variable' in our local frame
+   z = stu__cc2(ST_id, z);     // now access that dictionary
+   return stu__cc3('[', z, stu__cdt()); // now access the variable from that dir
+}
+
+static stua_obj stu__funcdef(stua_obj *id, stua_obj *func);
+static int stu__expr(int p)
+{
+   int z;
+   // unary
+   switch (stu__tok) {
+      case ST_number: z = stu__cdt(); break;
+      case ST_string: z = stu__cdt(); break;  // @TODO - string concatenation like C
+      case ST_id    : z = stu__comp_id(); break;
+      case ST__frame: z = stu__cc1(ST__frame); stu__nexttoken(); break;
+      case ST_func  : z = stu__funcdef(NULL,NULL); break;
+      case ST_if    : z = stu__parse_if(); break;
+      case ST_nil   : z = stu__cdv(stua_nil); stu__nexttoken(); break;
+      case ST_true  : z = stu__cdv(stua_true); stu__nexttoken(); break;
+      case ST_false : z = stu__cdv(stua_false); stu__nexttoken(); break;
+      case '-'      : z = stu__nexpr(99); if (z) z=stu__cc2(STU__negate,z); else return z; break;
+      case '!'      : z = stu__nexpr(99); if (z) z=stu__cc2('!',z); else return z; break;
+      case '~'      : z = stu__nexpr(99); if (z) z=stu__cc2('~',z); else return z; break;
+      case '{'      : z = stu__dictdef('}', NULL); break;
+      default       : return stu__err("Unexpected token");
+      case '('      : stu__nexttoken(); z = stu__statements(0,0); if (!stu__demand(')')) return stu__err("Expecting )");
+   }
+   return stu__postexpr(z,p);
+}
+
+static int stu__postexpr(int z, int p)
+{
+   int q;
+   // postfix
+   while (stu__tok == '(' || stu__tok == '[' || stu__tok == '.') {
+      if (stu__accept('.')) {
+         // MUST be followed by a plain identifier! use [] for other stuff
+         if (stu__tok != ST_id) return stu__err("Must follow . with plain name; try [] instead");
+         z = stu__cc3('[', z, stu__cdv(stu__tokval));
+         stu__nexttoken();
+      } else if (stu__accept('[')) {
+         while (stu__tok != ']') {
+            int r = stu__expr(1); if (!r) return 0;
+            z = stu__cc3('[', z, r);
+            if (!stu__accept(',')) break;
+         }
+         if (!stu__demand(']')) return stu__err("Expecting ]");
+      } else {
+         int n, p = stu__dictdef(')', &n); if (!p) return 0;
+         #if 0 // this is incorrect!
+         if (z > 0 && stu__pfunc.code[z] == ST_id) {
+            stua_obj q = stu__get(stu__globaldict, stu__pfunc.data[-stu__pfunc.code[z+1]-1], stua_nil);
+            if (stu__checkt(STU___function, q))
+               if ((stu__pf(q))->num_param != n)
+                  return stu__err("Incorrect number of parameters");
+         }
+         #endif
+         z = stu__cc3('(', z, p);
+      }
+   }
+   // binop - this implementation taken from lcc
+   for (q=stu__prec[stu__tok]; q >= p; --q) {
+      while (stu__prec[stu__tok] == q) {
+         int o = stu__tok, y = stu__nexpr(p+1); if (!y) return 0;
+         z = stu__cc3(o,z,y);
+      }
+   }
+   return z;
+}
+
+static stua_obj stu__finish_func(stua_obj *param, int start)
+{
+   int n, size;
+   stu__func *f = (stu__func *) malloc(sizeof(*f));
+   f->closure_source = 0;
+   f->num_param = stb_arr_len(param);
+   f->param = (int *) stb_copy(param, f->num_param * sizeof(*f->param));
+   size = stb_arr_storage(stu__pfunc.code) + stb_arr_storage(stu__pfunc.data) + sizeof(*f) + 8;
+   f->f.store = malloc(stb_arr_storage(stu__pfunc.code) + stb_arr_storage(stu__pfunc.data));
+   f->code = (short *) ((char *) f->f.store + stb_arr_storage(stu__pfunc.data));
+   memcpy(f->code, stu__pfunc.code, stb_arr_storage(stu__pfunc.code));
+   f->code[1] = start;
+   f->code[0] = stb_arr_len(stu__pfunc.data);
+   for (n=0; n < f->code[0]; ++n)
+      ((stua_obj *) f->code)[-1-n] = stu__pfunc.data[n];
+   return stu__makeobj(STU___function, f, size, 0);
+}
+
+static int stu__funcdef(stua_obj *id, stua_obj *result)
+{
+   int n,z=0,i,q;
+   stua_obj *param = NULL;
+   short *nonlocal;
+   stua_obj v,f=stua_nil;
+   assert(stu__tok == ST_func);
+   stu__nexttoken();
+   if (id) { 
+      if (!stu__demandv(ST_id, id)) return stu__err("Expecting function name");
+   } else
+      stu__accept(ST_id);
+   if (!stu__demand('(')) return stu__err("Expecting ( for function parameter");
+   stu__push_func_comp();
+   while (stu__tok != ')') {
+      if (!stu__demandv(ST_id, &v)) { z=stu__err("Expecting parameter name"); goto done; }
+      stb_idict_add(stu__pfunc.locals, v, 1);
+      if (stu__tok == '=') {
+         n = stu__nexpr(1); if (!n) { z=0; goto done; }
+         z = stu__seq(z, stu__cc3(STU__defaultparm, stu__cdv(v), n));
+      } else
+         stb_arr_push(param, v);
+      if (!stu__accept(',')) break;
+   }
+   if (!stu__demand(')'))   { z=stu__err("Expecting ) at end of parameter list"); goto done; }
+   n = stu__statements(0,0);   if (!n) { z=0; goto done; }
+   if (!stu__demand(ST_end)) { z=stu__err("Expecting END at end of function"); goto done; }
+   if (n == 1) n = 0;
+   n = stu__seq(z,n);
+   f = stu__finish_func(param, n);
+   if (result) { *result = f; z=1; stu__pop_func_comp(); }
+   else {
+      nonlocal = stu__pfunc.non_local_refs;
+      stu__pfunc.non_local_refs = NULL;
+      stu__pop_func_comp();
+      z = stu__cdv(f);
+      if (nonlocal) {  // build a closure with references to the needed frames
+         short *initcode = NULL;
+         for (i=0; i < stb_arr_len(nonlocal); ++i) {
+            int k = nonlocal[i], p;
+            stb_arr_push(initcode, stu__cdv(k));
+            if (k == -1) p = stu__cc1(ST__frame);
+            else { p = stu__cdv(stu__makeint(k+1)); p = stu__cc2(ST_id, p); }
+            stb_arr_push(initcode, p);
+         }
+         q = stu__cc2('{', stb_arr_len(nonlocal));
+         for (i=0; i < stb_arr_len(initcode); ++i)
+            stu__cc(initcode[i]);
+         z = stu__cc3('+', z, q);
+         stb_arr_free(initcode);
+      }
+      stb_arr_free(nonlocal);
+   }
+done:
+   stb_arr_free(param);
+   if (!z) stu__pop_func_comp();
+   return z;
+}
+
+static int stu__compile_global_scope(void)
+{
+   stua_obj o;
+   int z=0;
+
+   stu__push_func_comp();
+   while (stu__tok != 0) {
+      if (stu__tok == ST_func) {
+         stua_obj id, f;
+         if (!stu__funcdef(&id,&f))
+            goto error;
+         stu__set(stu__globaldict, id, f);
+      } else if (stu__tok == ST_var) {
+         z = stu__varinit(z,1); if (!z) goto error;
+      } else {
+         int y = stu__statements(1,0); if (!y) goto error;
+         z = stu__seq(z,y);
+      }
+      stu__accept(';');
+   }
+   o = stu__finish_func(NULL, z);
+   stu__pop_func_comp();
+
+   o = stu__funceval(o, stua_globals); // initialize stu__globaldict
+   if (stu__flow == FLOW_error)
+      printf("Error: %s\n", ((stu__wrapper *) stu__ptr(stu__flow_val))->ptr);
+   return 1;
+error:
+   stu__pop_func_comp();
+   return 0;
+}
+
+stua_obj stu__myprint(stua_dict *context)
+{
+   stua_obj x = stu__get(context, stua_string("x"), stua_nil);
+   if ((x & 1) == stu__float_tag) printf("%f", stu__getfloat(x));
+   else if (stu__tag(x) == stu__int_tag) printf("%d", stu__int(x));
+   else {
+       stu__wrapper *s = stu__pw(x);
+       if (s->type == STU___string || s->type == STU___error)
+          printf("%s", s->ptr);
+       else if (s->type == STU___dict) printf("{{dictionary}}");
+       else if (s->type == STU___function) printf("[[function]]");
+       else
+          printf("[[ERROR:%s]]", s->ptr);
+   }
+   return x;
+}
+
+void stua_init(void)
+{
+   if (!stu__globaldict) {
+      int i;
+      stua_obj s;
+      stu__func *f;
+
+      stu__prec[ST_and] = stu__prec[ST_or] =                     1;
+      stu__prec[ST_eq ] = stu__prec[ST_ne] = stu__prec[ST_le] =
+       stu__prec[ST_ge] = stu__prec['>' ]  = stu__prec['<'] =    2;
+      stu__prec[':']    =                                        3;
+      stu__prec['&']    = stu__prec['|']   = stu__prec['^'] =    4;
+      stu__prec['+']    = stu__prec['-']   =                     5;
+      stu__prec['*']    = stu__prec['/']   = stu__prec['%'] =
+       stu__prec[ST_shl]= stu__prec[ST_shr]= stu__prec[ST_shru]= 6;
+
+      stu__end[')']   = stu__end[ST_end] = stu__end[ST_else] = 1;
+      stu__end[ST_do] = stu__end[ST_elseif] = 1;
+
+      stu__float_init();
+      stu__lex_matcher = stb_lex_matcher();
+      for (i=0; i < sizeof(stu__lexemes)/sizeof(stu__lexemes[0]); ++i)
+         stb_lex_item(stu__lex_matcher, stu__lexemes[i].regex, stu__lexemes[i].stu__tok);
+
+      stu__globaldict = stb_idict_new_size(64);
+      stua_globals    = stu__makeobj(STU___dict, stu__globaldict, 0,0);
+      stu__strings    = stb_sdict_new(0);
+
+      stu__curbuf = stu__bufstart = "func _print(x) end\n"
+      "func print()\n  var x=0 while _frame[x] != nil as x=x+1 do _print(_frame[x]) end end\n";
+      stu__nexttoken();
+      if (!stu__compile_global_scope())
+         printf("Compile error in line %d: %s\n", stu__comp_err_line, stu__comp_err_str);
+
+      s = stu__get(stu__globaldict, stua_string("_print"), stua_nil);
+      if (stu__tag(s) == stu__ptr_tag && stu__ptr(s)->type == STU___function) {
+         f = stu__pf(s);
+         free(f->f.store);
+         f->closure_source = 4;
+         f->f.func = stu__myprint;
+         f->code = NULL;
+      }
+   }
+}
+
+void stua_uninit(void)
+{
+   if (stu__globaldict) {
+      stb_idict_remove_all(stu__globaldict);
+      stb_arr_setlen(stu__gc_root_stack, 0);
+      stua_gc(1);
+      stb_idict_destroy(stu__globaldict);
+      stb_sdict_delete(stu__strings);
+      stb_matcher_free(stu__lex_matcher);
+      stb_arr_free(stu__gc_ptrlist);
+      stb_arr_free(func_stack);
+      stb_arr_free(stu__gc_root_stack);
+      stu__globaldict = NULL;
+   }
+}
+
+void stua_run_script(char *s)
+{
+   stua_init();
+
+   stu__curbuf = stu__bufstart = s;
+   stu__nexttoken();
+
+   stu__flow = FLOW_normal;
+
+   if (!stu__compile_global_scope())
+      printf("Compile error in line %d: %s\n", stu__comp_err_line, stu__comp_err_str);
+   stua_gc(1);
+}
+#endif // STB_DEFINE
+
+#endif // STB_STUA
 
 
 #undef STB_EXTERN
