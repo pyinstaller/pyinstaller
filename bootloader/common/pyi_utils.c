@@ -53,6 +53,8 @@
     #include "mkdtemp.h"
 #endif
 
+#define STB_DEFINE 1
+#include "pyi_global.h"
 #include "pyi_utils.h"
 
 
@@ -353,13 +355,13 @@ FILE *pyi_open_target(const char *path, const char* name_)
 	if (stat(fnm, &sbuf) == 0) {
 		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
     }
-	return fopen(fnm, "wb");
+	return stb_fopen(fnm, "wb");
 }
 
 /* Copy the file src to dst 4KB per time */
 int pyi_copy_file(const char *src, const char *dst, const char *filename)
 {
-    FILE *in = fopen(src, "rb");
+    FILE *in = stb_fopen(src, "rb");
     FILE *out = pyi_open_target(dst, filename);
     char buf[4096];
     int error = 0;
@@ -470,7 +472,9 @@ char *pyi_path_normalize(const char *path)
 /* Load the shared dynamic library (DLL) */
 dylib_t pyi_dlopen(const char *dllpath)
 {
-#ifndef WIN32
+#ifdef WIN32
+    stb__wchar buff[PATH_MAX+1] = NULL;
+#else
     int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
 #endif
 
@@ -482,7 +486,9 @@ dylib_t pyi_dlopen(const char *dllpath)
 #endif
 
 #ifdef WIN32
-	return LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    /* Use unicode version of function to load  dll file. */
+	return LoadLibraryExW(stb_to_utf8(buff, dllpath, sizeof(buff)), NULL,
+            LOAD_WITH_ALTERED_SEARCH_PATH);
 #else
 	return dlopen(dllpath, dlopenMode);
 #endif

@@ -238,7 +238,7 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 	int filelen;
     VS("archivename is %s\n", status->archivename);
 	/* Physically open the file */
-	status->fp = fopen(status->archivename, "rb");
+	status->fp = stb_fopen(status->archivename, "rb");
 	if (status->fp == NULL) {
 		VS("Cannot open archive: %s\n", status->archivename);
 		return -1;

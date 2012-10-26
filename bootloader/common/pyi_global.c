@@ -47,7 +47,7 @@
  */
 #define STB_DEFINE  /* */                                                   
 #define STB_NO_REGISTRY  /* No need for Windows registry functions. */
-#include "stb.h"
+//#include "stb.h"
 
 
 /* Text length of MessageBox(). */
