@@ -212,7 +212,14 @@ Parenthesized items have since been removed.
 #include <stdio.h>      // need FILE
 #include <string.h>     // stb_define_hash needs memcpy/memset
 #include <time.h>       // stb_dirtree
-#include <stdint.h>  // intptr_t/uintptr_t types
+
+
+// MSVC 2008 and earlier does not contain header <stdint.h>
+#ifdef _MSC_VER
+   #include "msvc_stdint.h"  // intptr_t/uintptr_t types
+#else
+   #include <stdint.h>  // intptr_t/uintptr_t types
+#endif
 
 #ifdef STB_PERSONAL
    typedef int Bool;
