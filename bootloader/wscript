@@ -20,6 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 
+import os
 import platform
 import sys
 from distutils import sysconfig as _sysconfig
@@ -182,7 +183,8 @@ def configure(conf):
         # make sure we don't use declarations after statement (break Visual Studio)
         conf.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
         conf.env.append_value('CCFLAGS', '-Werror')
-    else:
+
+    if not myplatform.startswith('win'):
         # Defines common for Unix and Unix-like platforms.
         # For details see:
         #   http://man.he.net/man7/feature_test_macros
@@ -205,7 +207,7 @@ def configure(conf):
     if myplatform.startswith('aix'):
         conf.env.append_value('CCDEFINES', 'AIX')
 
-    conf.env.append_value('CPPPATH', '../common')
+    conf.env.append_value('CPPPATH', os.path.join('..', 'common'))
 
 
     ### Libraries
@@ -397,7 +399,7 @@ def build(bld):
         for key, value in dict(release='inprocsrvr', debug='inprocsrvr_d').items():
             bld(
                 features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_global.c common/pyi_utils.c common/pyi_python.c common/pyi_archive.c common/pyi_pythonlib.c common/launch.c windows/dllmain.c'),
+                source = bld.path.ant_glob('common/pyi_*.c common/launch.c windows/dllmain.c'),
                 target = value,
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',
@@ -411,7 +413,7 @@ def build(bld):
         for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d').items():
             bld(
                 features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_global.c common/pyi_utils.c common/pyi_python.c common/pyi_archive.c common/pyi_pythonlib.c common/launch.c windows/dllmain.c'),
+                source = bld.path.ant_glob('common/pyi_*.c common/launch.c windows/dllmain.c'),
                 target = value,
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',
