@@ -30,10 +30,6 @@
 #include <sys/stat.h>
 
 #ifdef WIN32
-    #include <windows.h>
-    #include <direct.h>
-    #include <process.h>
-    #include <io.h>
 #else
     #include <unistd.h>
     #include <fcntl.h>
@@ -43,15 +39,19 @@
 
 #ifdef WIN32
 // TODO verify imports on windows
+    #include <windows.h>
+    #include <direct.h>  // _mkdir, _rmdir
+    #include <io.h>  // _finddata_t
+    #include <process.h>  // getpid
 #else
     #include <dirent.h>
     #include <dlfcn.h>
     #include <limits.h>  // PATH_MAX
-    #include <sys/stat.h>  // struct stat
 #endif
 #include <stdio.h>  // FILE
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>  // struct stat
 
 /*
  * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms: 
@@ -487,8 +487,9 @@ char *pyi_path_normalize(const char *path)
 /* Load the shared dynamic library (DLL) */
 dylib_t pyi_dlopen(const char *dllpath)
 {
+
 #ifdef WIN32
-    stb__wchar buff[PATH_MAX+1] = NULL;
+    //char buff[PATH_MAX] = NULL;
 #else
     int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
 #endif
@@ -502,8 +503,9 @@ dylib_t pyi_dlopen(const char *dllpath)
 
 #ifdef WIN32
     /* Use unicode version of function to load  dll file. */
-	return LoadLibraryExW(stb_to_utf8(buff, dllpath, sizeof(buff)), NULL,
-            LOAD_WITH_ALTERED_SEARCH_PATH);
+	//return LoadLibraryExW(stb_to_utf8(buff, dllpath, sizeof(buff)), NULL,
+            //LOAD_WITH_ALTERED_SEARCH_PATH);
+	return LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 #else
 	return dlopen(dllpath, dlopenMode);
 #endif

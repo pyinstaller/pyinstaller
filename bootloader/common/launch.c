@@ -28,7 +28,9 @@
 
 // TODO leave only necessary header includes.
 // TODO verify imports on windows
-#ifndef WIN32
+#ifdef WIN32
+    #include <windows.h>
+#else
     #include <limits.h>  // PATH_MAX
 #endif
 #include <stdarg.h>
@@ -37,7 +39,6 @@
 /*
 #include <stdio.h>
 #ifdef WIN32
- #include <windows.h>
  #include <direct.h>
  #include <process.h>
  #include <io.h>
@@ -79,48 +80,6 @@ static int checkFile(char *buf, const char *fmt, ...)
     va_end(args);
 
     return stat(buf, &tmp);
-}
-
-int findDigitalSignature(ARCHIVE_STATUS * const status)
-{
-#ifdef WIN32
-	/* There might be a digital signature attached. Let's see. */
-	char buf[2];
-	int offset = 0, signature_offset = 0;
-	fseek(status->fp, 0, SEEK_SET);
-	fread(buf, 1, 2, status->fp);
-	if (!(buf[0] == 'M' && buf[1] == 'Z'))
-		return -1;
-	/* Skip MSDOS header */
-	fseek(status->fp, 60, SEEK_SET);
-	/* Read offset to PE header */
-	fread(&offset, 4, 1, status->fp);
-	fseek(status->fp, offset+24, SEEK_SET);
-        fread(buf, 2, 1, status->fp);
-        if (buf[0] == 0x0b && buf[1] == 0x01) {
-          /* 32 bit binary */
-          signature_offset = 152;
-        }
-        else if (buf[0] == 0x0b && buf[1] == 0x02) {
-          /* 64 bit binary */
-          signature_offset = 168;
-        }
-        else {
-          /* Invalid magic value */
-          VS("Could not find a valid magic value (was %x %x).\n", (unsigned int) buf[0], (unsigned int) buf[1]);
-          return -1;
-        }
-
-	/* Jump to the fields that contain digital signature info */
-	fseek(status->fp, offset+signature_offset, SEEK_SET);
-	fread(&offset, 4, 1, status->fp);
-	if (offset == 0)
-		return -1;
-  VS("%s contains a digital signature\n", status->archivename);
-	return offset;
-#else
-	return -1;
-#endif
 }
 
 

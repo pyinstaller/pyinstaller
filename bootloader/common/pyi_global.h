@@ -117,9 +117,13 @@ typedef int bool_t;
 
 /* Rewrite ANSI/POSIX functions to Win32 equivalents. */
 #ifdef WIN32
-    //#include <stdio.h>
-    //#include <stdarg.h>
+    #define fileno           _fileno
+    #define getpid           _getpid
+    #define mkdir            _mkdir
+    #define rmdir            _rmdir
     #define snprintf         _snprintf
+    #define stat             _stat
+    #define strdup           _strdup
     #define vsnprintf        _vsnprintf
 #endif
 

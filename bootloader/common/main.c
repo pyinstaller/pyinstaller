@@ -40,7 +40,8 @@
  * #include "stb.h"
  */
 #define STB_DEFINE 1
-#define STB_NO_REGISTRY 1
+#define STB_NO_REGISTRY 1  // Disable registry functions.
+#define STB_NO_STB_STRINGS 1  // Disable config read/write functions.
 
 
 /*
@@ -56,6 +57,8 @@
 #endif
 
 #ifdef WIN32
+    #include <windows.h>
+    #include <wchar.h>
 #else
     #include <limits.h>  // PATH_MAX
 #endif
@@ -64,14 +67,13 @@
 #include <string.h>  // memset
 
 /* PyInstaller headers. */
-/*
-#include "utils.h"
-#include "pyi_pythonlib.h"
-*/
 #include "stb.h"
 #include "pyi_global.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
+#include "pyi_pythonlib.h"
+#include "utils.h"
+#include "launch.h"
 
 
 #define MAX_STATUS_LIST 20
@@ -88,7 +90,7 @@ int main(int argc, char* argv[])
     ARCHIVE_STATUS *status_list[MAX_STATUS_LIST];
     char thisfile[PATH_MAX];
 #ifdef WIN32
-    WCHAR thisfilew[PATH_MAX + 1];
+    wchar_t thisfilew[PATH_MAX + 1];
 #endif
     char homepath[PATH_MAX];
     char archivefile[PATH_MAX + 5];

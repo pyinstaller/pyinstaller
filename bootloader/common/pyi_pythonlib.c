@@ -32,13 +32,10 @@
 // TODO leave only necessary header includes.
 /*
 #ifdef WIN32
- #include <windows.h>
  #include <direct.h>
  #include <process.h>
- #include <io.h>
 #else
  #include <unistd.h>
- #include <fcntl.h>
  #include <dlfcn.h>
  #include <dirent.h>
  #include <stdarg.h>
@@ -54,6 +51,9 @@
 
 #ifdef WIN32
 // TODO verify windows includes
+    #include <windows.h>
+    #include <fcntl.h>  // O_BINARY
+    #include <io.h>  // _setmode
     #include <winsock.h>  // ntohl
 #else
     #include <dlfcn.h>  // dlopen
@@ -193,8 +193,8 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 	}
 	if (unbuffered) {
 #ifdef WIN32
-		_setmode(fileno(stdin), O_BINARY);
-		_setmode(fileno(stdout), O_BINARY);
+		_setmode(fileno(stdin), _O_BINARY);
+		_setmode(fileno(stdout), _O_BINARY);
 #else
 		fflush(stdout);
 		fflush(stderr);

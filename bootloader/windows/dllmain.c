@@ -26,16 +26,33 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-// TODO leave only necessary header includes.
+
+/*
+
+#include "pyi_utils.h"
+#include "pyi_pythonlib.h"
+*/
 #include <windows.h>
-#include <olectl.h>
+#include <olectl.h>  // callSimpleEntryPoint
 #include <memory.h>
+#include <stdio.h>  // FILE
 #include <string.h>
 
+/* 
+ * Use Sean's Tool Box -- public domain -- http://nothings.org/stb.h. 
+ */
+#define STB_DEFINE 1
+#define STB_NO_REGISTRY 1  // Disable registry functions.
+#define STB_NO_STB_STRINGS 1  // Disable config read/write functions.
+
+/* PyInstaller headers. */
+#include "stb.h"
 #include "pyi_global.h"
-#include "pyi_utils.h"
+#include "pyi_archive.h"
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
+#include "launch.h"  // callSimpleEntryPoint
+
 
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
 __PROC__DllCanUnloadNow Pyc_DllCanUnloadNow = NULL;
