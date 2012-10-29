@@ -27,6 +27,14 @@
  */
 
 // TODO leave only necessary header includes.
+// TODO verify imports on windows
+#ifndef WIN32
+    #include <limits.h>  // PATH_MAX
+#endif
+#include <stdarg.h>
+#include <stdio.h>  // vsnprintf
+#include <sys/stat.h>  // struct stat
+/*
 #include <stdio.h>
 #ifdef WIN32
  #include <windows.h>
@@ -38,19 +46,20 @@
  #include <fcntl.h>
  #include <dlfcn.h>
  #include <dirent.h>
- #include <stdarg.h>
 #endif
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <string.h>
+*/
 
-#include "launch.h"
-#include "zlib.h"
+
+/* PyInstaller headers. */
+#include "stb.h"
+//#include "zlib.h"
 
 #include "pyi_global.h"
-#include "pyi_python.h"
-#include "pyi_utils.h"
 #include "pyi_archive.h"
+#include "pyi_utils.h"
+#include "pyi_python.h"
 #include "pyi_pythonlib.h"
 
 

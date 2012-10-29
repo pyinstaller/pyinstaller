@@ -29,6 +29,7 @@
 #ifndef LAUNCH_H
 #define LAUNCH_H
 
+/*
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -39,18 +40,19 @@
 #endif
 #include <fcntl.h>
 #ifdef WIN32
-#include <winsock.h> /* for ntohl */
+*/
+//#include <winsock.h> /* for ntohl */
+/*
 #else
 #include <netinet/in.h>
 #endif
 
 #include "pyi_archive.h"
+*/
 
 /*
  * #defines
  */
-#define MAGIC "MEI\014\013\012\013\016"
-
 
 
 /*****************************************************************

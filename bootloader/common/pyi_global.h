@@ -31,18 +31,6 @@
 #define HEADER_PYI_GLOBAL_H
 
 
-/* 
- * Use Sean's Tool Box -- public domain -- http://nothings.org/stb.h. 
- * 
- * This toolbox wraps some standard functions in a portable way and
- * contains some additional utility fuctions.
- * (string, file, utf8, etc.)
- *
- * All functions starting with 'stb_' prefix are from this toolbox.
- */
-#include "stb.h"
-
-
 /*
  * Definition of type boolean. On OSX boolean type is available.
  */
@@ -73,8 +61,6 @@ typedef int bool_t;
 // TODO use MSVCR function for file path handling.
 #ifdef WIN32
     #define PATH_MAX 4096  /* Default value on Linux. */
-#else
-    #include <limits.h>  /* PATH_MAX available in this header. */
 #endif
 
 
@@ -131,8 +117,8 @@ typedef int bool_t;
 
 /* Rewrite ANSI/POSIX functions to Win32 equivalents. */
 #ifdef WIN32
-    #include <stdio.h>
-    #include <stdarg.h>
+    //#include <stdio.h>
+    //#include <stdarg.h>
     #define snprintf         _snprintf
     #define vsnprintf        _vsnprintf
 #endif

@@ -32,8 +32,10 @@
 #include <memory.h>
 #include <string.h>
 
+#include "stb.h"
 #include "utils.h"
 #include "pyi_global.h"
+#include "pyi_utils.h"
 
 static HANDLE hCtx = INVALID_HANDLE_VALUE;
 static ULONG_PTR actToken;

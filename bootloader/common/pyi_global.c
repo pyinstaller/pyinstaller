@@ -28,6 +28,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+
+/* 
+ * Enable use of Sean's Tool Box -- public domain -- http://nothings.org/stb.h.
+ * File stb.h.
+ * All functions starting with 'stb_' prefix are from this toolbox.
+ *
+ * This define has to be only in one C source file!
+ */
+#define STB_DEFINE  1/* */                                                   
+#define STB_NO_REGISTRY 1 /* No need for Windows registry functions in stb.h. */
+
+
 #include <stdarg.h>  /* va_list, va_start(), va_end() */
 #include <stdio.h>
 
@@ -38,16 +50,6 @@
  #include <process.h>
  #include <io.h>
 #endif
-
-/* 
- * Enable use of Sean's Tool Box -- public domain -- http://nothings.org/stb.h.
- * All functions starting with 'stb_' prefix are from this toolbox.
- *
- * This define has to be only in one C source file!
- */
-#define STB_DEFINE  /* */                                                   
-#define STB_NO_REGISTRY  /* No need for Windows registry functions. */
-//#include "stb.h"
 
 
 /* Text length of MessageBox(). */

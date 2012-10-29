@@ -1,6 +1,9 @@
 /*
- * Bootloader for a packed executable.
+ * Some Linux/Unix utility functions.
+ *
+ * Copyright (C) 2012, Martin Zibricky
  * Copyright (C) 2009, Lorenzo Masini
+ * Copyright (C) 2005, Giovanni Bajo
  * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
  *
  * This program is free software; you can redistribute it and/or
@@ -25,14 +28,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#include <stdlib.h>
-#include <limits.h>
-#include <sys/wait.h>
-#include <signal.h>
 
-#include "utils.h"
-#include "getpath.h"
+
+#include <limits.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+
+/* PyInstaller headers. */
+#include "stb.h"
 #include "pyi_global.h"
+#include "pyi_archive.h"
+// TODO Eliminate getpath.c/.h and replace it with functions from stb.h.
+#include "getpath.h"
+
 
 void init_launcher(void)
 {

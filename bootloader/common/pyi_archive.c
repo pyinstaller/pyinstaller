@@ -29,7 +29,7 @@
  */
 
 // TODO leave only necessary header includes.
-#include <stdio.h>
+/*
 #ifdef WIN32
  #include <windows.h>
  #include <direct.h>
@@ -43,15 +43,32 @@
  #include <stdarg.h>
 #endif
 #include <sys/types.h>
-#include <sys/stat.h>
 #include "launch.h"
 #include <string.h>
-#include "zlib.h"
 
+*/
+
+#ifdef WIN32
+// TODO verify windows includes
+    #include <winsock.h>  // ntohl
+#else
+    #include <limits.h>  // PATH_MAX - not available on windows.
+    #include <netinet/in.h>  // ntohl
+    #include <sys/stat.h>  // fchmod
+#endif
+#include <stdio.h>
+
+/* PyInstaller headers. */
+#include "zlib.h"
+#include "stb.h"
 #include "pyi_global.h"
+#include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
-#include "pyi_archive.h"
+
+
+/* Magic number to verify archive data are bundled correctly. */
+#define MAGIC "MEI\014\013\012\013\016"
 
 
 /*

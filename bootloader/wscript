@@ -23,7 +23,6 @@
 import os
 import platform
 import sys
-from distutils import sysconfig as _sysconfig
 
 import Utils
 import Options
@@ -38,7 +37,9 @@ APPNAME=''
 top = '.'
 out = 'build'
 
-# TODO extensive testing with different configuration (should work with Python >= 2.3)
+
+# TODO strip created binaries.
+
 
 def set_options(opt):
     myplatform = Utils.detect_platform()
@@ -359,6 +360,7 @@ def build(bld):
                 source = bld.path.ant_glob('zlib/*.c'),
                 target = 'staticlib_zlib',
                 env = bld.env_of_name(key),
+                includes = ['zlib'],
             )
 
         # console
@@ -372,6 +374,7 @@ def build(bld):
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
                 env = bld.env_of_name(key).copy(),
+                includes = ['common', 'windows', 'zlib'],
             )
 
         # windowed
@@ -385,6 +388,7 @@ def build(bld):
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
                 env = bld.env_of_name(key).copy(),
+                includes = ['common', 'windows', 'zlib'],
             )
 
         ## inprocsrvr console
@@ -405,7 +409,8 @@ def build(bld):
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
                 env = bld.env_of_name(key).copy(),
-                linkflags = linkflags_c
+                linkflags = linkflags_c,
+                includes = ['common', 'windows', 'zlib'],
             )
 
         ## inprocsrvr windowed
@@ -419,7 +424,8 @@ def build(bld):
                 uselib_local = 'staticlib_zlib',
                 uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
                 env = bld.env_of_name(key).copy(),
-                linkflags = linkflags_w
+                linkflags = linkflags_w,
+                includes = ['common', 'windows', 'zlib'],
             )
 
     else: # linux, darwin (MacOSX)
@@ -430,6 +436,7 @@ def build(bld):
                 source = bld.path.ant_glob('linux/*.c common/*.c'),
                 target = value,
                 install_path = install_path,
-                uselib = 'DL Z M', # 'z' - zlib, 'm' - math,
+                lib = ['dl', 'z', 'm'],  # 'z' - zlib, 'm' - math,
                 env = bld.env_of_name(key).copy(),
+                includes = ['common', 'linux'],
             )

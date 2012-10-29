@@ -25,21 +25,57 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+
+
+/* 
+ * Use Sean's Tool Box -- public domain -- http://nothings.org/stb.h. 
+ * 
+ * This toolbox wraps some standard functions in a portable way and
+ * contains some additional utility fuctions.
+ * (string, file, utf8, etc.)
+ *
+ * All functions starting with 'stb_' prefix are from this toolbox.
+ * To use this toolbox just do:
+ *
+ * #include "stb.h"
+ */
+#define STB_DEFINE 1
+#define STB_NO_REGISTRY 1
+
+
+/*
 #ifndef WIN32
 #include <sys/wait.h>
 #endif
+*/
 
-// To call TransformProcessType in the child process
+
+/* To call TransformProcessType in the child process. */
 #if defined(__APPLE__) && defined(WINDOWED)
 #include <Carbon/Carbon.h>
 #endif
 
+#ifdef WIN32
+#else
+    #include <limits.h>  // PATH_MAX
+#endif
+#include <stdio.h>  // FILE
+#include <stdlib.h>  // calloc
+#include <string.h>  // memset
+
+/* PyInstaller headers. */
+/*
 #include "utils.h"
-#include "pyi_global.h"
-#include "pyi_utils.h"
 #include "pyi_pythonlib.h"
+*/
+#include "stb.h"
+#include "pyi_global.h"
+#include "pyi_archive.h"
+#include "pyi_utils.h"
+
 
 #define MAX_STATUS_LIST 20
+
 
 #if defined(WIN32) && defined(WINDOWED)
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,

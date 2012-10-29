@@ -33,16 +33,15 @@
 
 
 // TODO leave only necessary header includes.
+/*
 #include <stdio.h>
 #ifdef WIN32
- #include <windows.h>
  #include <direct.h>
  #include <process.h>
  #include <io.h>
 #else
  #include <unistd.h>
  #include <fcntl.h>
- #include <dlfcn.h>
  #include <dirent.h>
  #include <stdarg.h>
 #endif
@@ -51,6 +50,19 @@
 #include "launch.h"
 #include <string.h>
 
+*/
+
+#ifdef WIN32
+// TODO verify windows includes
+    #include <windows.h>
+    #include <winsock.h>  // ntohl
+#else
+    #include <dlfcn.h>  // dlsym
+#endif
+#include <stdlib.h>
+
+/* PyInstaller headers. */
+#include "stb.h"
 #include "pyi_global.h"
 #include "pyi_python.h"
 

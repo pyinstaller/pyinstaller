@@ -24,10 +24,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+
+/*
 #include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #ifdef WIN32
@@ -38,10 +37,21 @@
 #else
     #include <unistd.h>
     #include <fcntl.h>
-    #include <dlfcn.h>
-    #include <dirent.h>
     #include <stdarg.h>
 #endif
+*/
+
+#ifdef WIN32
+// TODO verify imports on windows
+#else
+    #include <dirent.h>
+    #include <dlfcn.h>
+    #include <limits.h>  // PATH_MAX
+    #include <sys/stat.h>  // struct stat
+#endif
+#include <stdio.h>  // FILE
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms: 
@@ -53,9 +63,13 @@
     #include "mkdtemp.h"
 #endif
 
-#define STB_DEFINE 1
+/* PyInstaller headers. */
+#include "stb.h"
 #include "pyi_global.h"
+#include "pyi_archive.h"
 #include "pyi_utils.h"
+/*
+*/
 
 
 /* Return string copy of environment variable. */
@@ -469,6 +483,7 @@ char *pyi_path_normalize(const char *path)
 }
 
 
+// TODO use dlclose() when exiting.
 /* Load the shared dynamic library (DLL) */
 dylib_t pyi_dlopen(const char *dllpath)
 {

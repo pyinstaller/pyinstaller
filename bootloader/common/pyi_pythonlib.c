@@ -30,7 +30,7 @@
 
 
 // TODO leave only necessary header includes.
-#include <stdio.h>
+/*
 #ifdef WIN32
  #include <windows.h>
  #include <direct.h>
@@ -49,11 +49,26 @@
 #include "zlib.h"
 
 #include "pyi_global.h"
+#include "pyi_pythonlib.h"
+*/
+
+#ifdef WIN32
+// TODO verify windows includes
+    #include <winsock.h>  // ntohl
+#else
+    #include <dlfcn.h>  // dlopen
+    #include <limits.h>  // PATH_MAX
+    #include <netinet/in.h>  // ntohl
+#endif
+#include <stdio.h>
+#include <string.h>
+
+/* PyInstaller headers. */
+#include "stb.h"
+#include "pyi_global.h"
+#include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
-#include "pyi_archive.h"
-#include "pyi_pythonlib.h"
-
 
 
 /*

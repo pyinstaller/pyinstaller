@@ -32,6 +32,7 @@
 
 
 // TODO leave only necessary header includes.
+/*
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -42,13 +43,15 @@
 #endif
 #include <fcntl.h>
 #ifdef WIN32
-#include <winsock.h> /* for ntohl */
-#else
+*/
+//#include <winsock.h> /* for ntohl */
+/*#else
 #include <netinet/in.h>
 #endif
 
 #include "pyi_archive.h"
 #include "pyi_global.h"
+*/
 
 
 int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew);
