@@ -10653,15 +10653,15 @@ void stb_compress_stream_end(int close)
 typedef struct stbfile
 {
    int (*getbyte)(struct stbfile *);  // -1 on EOF
-   unsigned int (*getdata)(struct stbfile *, void *block, unsigned int len);
+   size_t (*getdata)(struct stbfile *, void *block, size_t len);
 
    int (*putbyte)(struct stbfile *, int byte);
-   unsigned int (*putdata)(struct stbfile *, void *block, unsigned int len);
+   size_t (*putdata)(struct stbfile *, void *block, size_t len);
 
-   unsigned int (*size)(struct stbfile *);
+   size_t (*size)(struct stbfile *);
 
-   unsigned int (*tell)(struct stbfile *);
-   void (*backpatch)(struct stbfile *, unsigned int tell, void *block, unsigned int len);
+   long (*tell)(struct stbfile *);
+   void (*backpatch)(struct stbfile *, unsigned int tell, void *block, size_t len);
 
    void (*close)(struct stbfile *);
 
@@ -10680,7 +10680,7 @@ STB_EXTERN unsigned int stb_getdata(stbfile *f, void *buffer, unsigned int len);
 STB_EXTERN unsigned int stb_putdata(stbfile *f, void *buffer, unsigned int len); // write
 STB_EXTERN unsigned int stb_tell(stbfile *f); // read
 STB_EXTERN unsigned int stb_size(stbfile *f); // read/write
-STB_EXTERN void stb_backpatch(stbfile *f, unsigned int tell, void *buffer, unsigned int len); // write
+STB_EXTERN void stb_backpatch(stbfile *f, unsigned int tell, void *buffer, size_t len); // write
 
 #ifdef STB_DEFINE
 
@@ -10713,8 +10713,8 @@ static int stb__fputbyte(stbfile *f, int ch) { return fputc(ch, f->f)==0; }
 static size_t stb__fgetdata(stbfile *f, void *buffer, size_t len) { return fread(buffer,1,len,f->f); }
 static size_t stb__fputdata(stbfile *f, void *buffer, size_t len) { return fwrite(buffer,1,len,f->f); }
 static size_t stb__fsize(stbfile *f) { return stb_filelen(f->f); }
-static unsigned int stb__ftell(stbfile *f) { return ftell(f->f); }
-static void stb__fbackpatch(stbfile *f, unsigned int where, void *buffer, unsigned int len)
+static long stb__ftell(stbfile *f) { return ftell(f->f); }
+static void stb__fbackpatch(stbfile *f, unsigned int where, void *buffer, size_t len)
 {
    fseek(f->f, where, SEEK_SET);
    fwrite(buffer, 1, len, f->f);
