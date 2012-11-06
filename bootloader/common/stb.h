@@ -10660,7 +10660,7 @@ typedef struct stbfile
 
    size_t (*size)(struct stbfile *);
 
-   long (*tell)(struct stbfile *);
+   intptr_t (*tell)(struct stbfile *);  // 32 or 64bit signed type needed.
    void (*backpatch)(struct stbfile *, unsigned int tell, void *block, size_t len);
 
    void (*close)(struct stbfile *);
@@ -10674,24 +10674,24 @@ typedef struct stbfile
    };
 } stbfile;
 
-STB_EXTERN unsigned int stb_getc(stbfile *f); // read
+STB_EXTERN int stb_getc(stbfile *f); // read
 STB_EXTERN int stb_putc(stbfile *f, int ch); // write
-STB_EXTERN unsigned int stb_getdata(stbfile *f, void *buffer, unsigned int len); // read
-STB_EXTERN unsigned int stb_putdata(stbfile *f, void *buffer, unsigned int len); // write
-STB_EXTERN unsigned int stb_tell(stbfile *f); // read
-STB_EXTERN unsigned int stb_size(stbfile *f); // read/write
+STB_EXTERN size_t stb_getdata(stbfile *f, void *buffer, size_t len); // read
+STB_EXTERN size_t stb_putdata(stbfile *f, void *buffer, size_t len); // write
+STB_EXTERN intptr_t stb_tell(stbfile *f); // read
+STB_EXTERN size_t stb_size(stbfile *f); // read/write
 STB_EXTERN void stb_backpatch(stbfile *f, unsigned int tell, void *buffer, size_t len); // write
 
 #ifdef STB_DEFINE
 
-unsigned int stb_getc(stbfile *f) { return f->getbyte(f); }
+int stb_getc(stbfile *f) { return f->getbyte(f); }
 int stb_putc(stbfile *f, int ch)  { return f->putbyte(f, ch); }
 
-unsigned int stb_getdata(stbfile *f, void *buffer, unsigned int len)
+size_t stb_getdata(stbfile *f, void *buffer, size_t len)
 {
    return f->getdata(f, buffer, len);
 }
-unsigned int stb_putdata(stbfile *f, void *buffer, unsigned int len)
+size_t stb_putdata(stbfile *f, void *buffer, size_t len)
 {
    return f->putdata(f, buffer, len);
 }
@@ -10700,8 +10700,8 @@ void stb_close(stbfile *f)
    f->close(f);
    free(f);
 }
-unsigned int stb_tell(stbfile *f) { return f->tell(f); }
-unsigned int stb_size(stbfile *f) { return f->size(f); }
+intptr_t stb_tell(stbfile *f) { return f->tell(f); }
+size_t stb_size(stbfile *f) { return f->size(f); }
 void stb_backpatch(stbfile *f, unsigned int tell, void *buffer, size_t len)
 {
    f->backpatch(f,tell,buffer,len);
@@ -10713,7 +10713,7 @@ static int stb__fputbyte(stbfile *f, int ch) { return fputc(ch, f->f)==0; }
 static size_t stb__fgetdata(stbfile *f, void *buffer, size_t len) { return fread(buffer,1,len,f->f); }
 static size_t stb__fputdata(stbfile *f, void *buffer, size_t len) { return fwrite(buffer,1,len,f->f); }
 static size_t stb__fsize(stbfile *f) { return stb_filelen(f->f); }
-static long stb__ftell(stbfile *f) { return ftell(f->f); }
+static intptr_t stb__ftell(stbfile *f) { return (intptr_t) ftell(f->f); }
 static void stb__fbackpatch(stbfile *f, unsigned int where, void *buffer, size_t len)
 {
    fseek(f->f, where, SEEK_SET);
@@ -10759,7 +10759,7 @@ static size_t stb__bgetdata(stbfile *s, void *buffer, size_t len)
    return len;
 }
 static size_t stb__bsize(stbfile *s) { return s->inend - s->buffer; }
-static long stb__btell(stbfile *s) { return s->indata - s->buffer; }
+static intptr_t stb__btell(stbfile *s) { return s->indata - s->buffer; }
 
 static void stb__bclose(stbfile *s)
 {
@@ -10840,7 +10840,7 @@ static size_t stb__aputdata(stbfile *f, void *data, size_t len)
    return len;
 }
 static size_t stb__asize(stbfile *f) { return stb_arr_len(f->buffer); }
-static long stb__atell(stbfile *f) { return stb_arr_len(f->buffer); }
+static intptr_t stb__atell(stbfile *f) { return stb_arr_len(f->buffer); }
 static void stb__abackpatch(stbfile *f, unsigned int where, void *data, size_t len)
 {
    memcpy(f->buffer+where, data, len);
