@@ -87,6 +87,12 @@ int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archive
  */
 int extractBinaries(ARCHIVE_STATUS *status_list[]);
 
+/*
+ * Check if binaries need to be extracted. If not, this is probably a onedir
+ * solution, and a child process will not be required on windows.
+ */
+int needToExtractBinaries(ARCHIVE_STATUS *status_list[]);
+
 /**
  * Load Python and execute all scripts in the archive
  *
