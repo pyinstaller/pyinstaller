@@ -10702,7 +10702,7 @@ void stb_close(stbfile *f)
 }
 unsigned int stb_tell(stbfile *f) { return f->tell(f); }
 unsigned int stb_size(stbfile *f) { return f->size(f); }
-void stb_backpatch(stbfile *f, unsigned int tell, void *buffer, unsigned int len)
+void stb_backpatch(stbfile *f, unsigned int tell, void *buffer, size_t len)
 {
    f->backpatch(f,tell,buffer,len);
 }
@@ -10737,10 +10737,10 @@ stbfile *stb_openf(FILE *f)
 }
 
 static int stb__nogetbyte(stbfile *f) { assert(0); return -1; }
-static unsigned int stb__nogetdata(stbfile *f, void *buffer, unsigned int len) { assert(0); return 0; }
+static size_t stb__nogetdata(stbfile *f, void *buffer, size_t len) { assert(0); return 0; }
 static int stb__noputbyte(stbfile *f, int ch) { assert(0); return 0; }
-static unsigned int stb__noputdata(stbfile *f, void *buffer, unsigned int len) { assert(0); return 0; }
-static void stb__nobackpatch(stbfile *f, unsigned int where, void *buffer, unsigned int len) { assert(0); }
+static size_t stb__noputdata(stbfile *f, void *buffer, size_t len) { assert(0); return 0; }
+static void stb__nobackpatch(stbfile *f, unsigned int where, void *buffer, size_t len) { assert(0); }
 
 static int stb__bgetbyte(stbfile *s)
 {
@@ -10750,7 +10750,7 @@ static int stb__bgetbyte(stbfile *s)
       return -1;
 }
 
-static unsigned int stb__bgetdata(stbfile *s, void *buffer, unsigned int len)
+static size_t stb__bgetdata(stbfile *s, void *buffer, size_t len)
 {
    if (s->indata + len > s->inend)
       len = s->inend - s->indata;
@@ -10758,8 +10758,8 @@ static unsigned int stb__bgetdata(stbfile *s, void *buffer, unsigned int len)
    s->indata += len;
    return len;
 }
-static unsigned int stb__bsize(stbfile *s) { return s->inend - s->buffer; }
-static unsigned int stb__btell(stbfile *s) { return s->indata - s->buffer; }
+static size_t stb__bsize(stbfile *s) { return s->inend - s->buffer; }
+static long stb__btell(stbfile *s) { return s->indata - s->buffer; }
 
 static void stb__bclose(stbfile *s)
 {
@@ -10834,13 +10834,14 @@ static int stb__aputbyte(stbfile *f, int ch)
    stb_arr_push(f->buffer, ch);
    return 1;
 }
-static unsigned int stb__aputdata(stbfile *f, void *data, unsigned int len)
+static size_t stb__aputdata(stbfile *f, void *data, size_t len)
 {
    memcpy(stb_arr_addn(f->buffer, (int) len), data, len);
    return len;
 }
-static unsigned int stb__asize(stbfile *f) { return stb_arr_len(f->buffer); }
-static void stb__abackpatch(stbfile *f, unsigned int where, void *data, unsigned int len)
+static size_t stb__asize(stbfile *f) { return stb_arr_len(f->buffer); }
+static long stb__atell(stbfile *f) { return stb_arr_len(f->buffer); }
+static void stb__abackpatch(stbfile *f, unsigned int where, void *data, size_t len)
 {
    memcpy(f->buffer+where, data, len);
 }
@@ -10853,7 +10854,7 @@ stbfile *stb_open_outbuffer(unsigned char **update_on_close)
 {
    stbfile m = { stb__nogetbyte, stb__nogetdata,
                  stb__aputbyte, stb__aputdata,
-                 stb__asize, stb__asize, stb__abackpatch, stb__aclose };
+                 stb__asize, stb__atell, stb__abackpatch, stb__aclose };
    stbfile *z = (stbfile *) malloc(sizeof(*z));
    if (z) {
       z->ptr = update_on_close;
