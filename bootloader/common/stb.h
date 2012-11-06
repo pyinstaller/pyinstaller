@@ -5099,12 +5099,17 @@ time_t stb_ftimestamp(char *filename)
    }
 }
 
+/*
+ * Return length of file stream.
+ */
 size_t  stb_filelen(FILE *f)
 {
-   size_t len, pos;
+   size_t len;
+   long pos;
    pos = ftell(f);
    fseek(f, 0, SEEK_END);
-   len = ftell(f);
+   // Cast from int to size_t is ok. Only positive values are expected.
+   len = (size_t) ftell(f);
    fseek(f, pos, SEEK_SET);
    return len;
 }
@@ -5688,7 +5693,7 @@ int     stb_size_ranged(int b, stb_uint n)
 
 void stb_fput_string(FILE *f, char *s)
 {
-   int len = strlen(s);
+   size_t len = strlen(s);
    stb_fput_varlenu(f, len);
    fwrite(s, 1, len, f);
 }
