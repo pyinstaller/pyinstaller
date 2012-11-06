@@ -5304,7 +5304,8 @@ int stb_fullpath(char *abs, size_t abs_size, const char *rel)
 static int stb_fcmp_core(FILE *f, FILE *g)
 {
    char buf1[1024],buf2[1024];
-   int n1,n2, res=0;
+   size_t n1,n2;
+   int res=0;
 
    while (1) {
       n1 = fread(buf1, 1, sizeof(buf1), f);
@@ -5702,7 +5703,7 @@ void stb_fput_string(FILE *f, char *s)
 char *stb_fget_string(FILE *f, void *p)
 {
    char *s;
-   int len = stb_fget_varlenu(f);
+   size_t len = stb_fget_varlenu(f);
    if (len > 4096) return NULL;
    s = p ? stb_malloc_string(p, len+1) : (char *) malloc(len+1);
    fread(s, 1, len, f);
@@ -10709,9 +10710,9 @@ void stb_backpatch(stbfile *f, unsigned int tell, void *buffer, unsigned int len
 // FILE * implementation
 static int stb__fgetbyte(stbfile *f) { return fgetc(f->f); }
 static int stb__fputbyte(stbfile *f, int ch) { return fputc(ch, f->f)==0; }
-static unsigned int stb__fgetdata(stbfile *f, void *buffer, unsigned int len) { return fread(buffer,1,len,f->f); }
-static unsigned int stb__fputdata(stbfile *f, void *buffer, unsigned int len) { return fwrite(buffer,1,len,f->f); }
-static unsigned int stb__fsize(stbfile *f) { return stb_filelen(f->f); }
+static size_t stb__fgetdata(stbfile *f, void *buffer, size_t len) { return fread(buffer,1,len,f->f); }
+static size_t stb__fputdata(stbfile *f, void *buffer, size_t len) { return fwrite(buffer,1,len,f->f); }
+static size_t stb__fsize(stbfile *f) { return stb_filelen(f->f); }
 static unsigned int stb__ftell(stbfile *f) { return ftell(f->f); }
 static void stb__fbackpatch(stbfile *f, unsigned int where, void *buffer, unsigned int len)
 {
