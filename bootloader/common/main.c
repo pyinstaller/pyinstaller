@@ -39,6 +39,7 @@
  *
  * #include "stb.h"
  */
+#define STB_FASTMALLOC 0
 #define STB_DEFINE 1
 #define STB_NO_REGISTRY 1  // Disable registry functions.
 #define STB_NO_STB_STRINGS 1  // Disable config read/write functions.

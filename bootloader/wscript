@@ -190,12 +190,14 @@ def configure(conf):
         # For details see:
         #   http://man.he.net/man7/feature_test_macros
         #
-        # Without these definitions compiling maight fail on OSX.
+        ## Without these definitions compiling maight fail on OSX.
         conf.env.append_value('CCDEFINES', '_POSIX_C_SOURCE=200112L')
         # SUS v2 (UNIX 98) definitions.
         #   Mac OS X 10.5 is UNIX 03 compliant.
         conf.env.append_value('CCDEFINES', '_XOPEN_SOURCE=500')
         conf.env.append_value('CCDEFINES', '_REENTRANT')
+        # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
+        conf.env.append_value('CCDEFINES', '_BSD_SOURCE')
         
 
     if myplatform.startswith('win'):

@@ -47,6 +47,7 @@
     #include <dirent.h>
     #include <dlfcn.h>
     #include <limits.h>  // PATH_MAX
+    #include <unistd.h>  // rmdir, unlink
 #endif
 #include <stdio.h>  // FILE
 #include <stdlib.h>

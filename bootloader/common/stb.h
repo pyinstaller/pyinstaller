@@ -743,7 +743,7 @@ STB_EXTERN __declspec(dllimport) void * __stdcall GetStdHandle(unsigned int);
 STB_EXTERN __declspec(dllimport) int __stdcall SetConsoleTextAttribute(void *, unsigned short);
 #endif
 
-static void stb__print_one(void *handle, char *s, int len)
+static void stb__print_one(void *handle, char *s, intptr_t len)
 {
    if (len)
       if (WriteConsoleA(handle, s, len, NULL,NULL))
@@ -1366,24 +1366,26 @@ double stb_linear_remap(double x, double x_min, double x_max,
 //                         bit operations
 //
 
+// TODO Ensure these fuctions work on 64bit OS.
+
 #define stb_big32(c)    (((c)[0]<<24) + (c)[1]*65536 + (c)[2]*256 + (c)[3])
 #define stb_little32(c) (((c)[3]<<24) + (c)[2]*65536 + (c)[1]*256 + (c)[0])
 #define stb_big16(c)    ((c)[0]*256 + (c)[1])
 #define stb_little16(c) ((c)[1]*256 + (c)[0])
 
-STB_EXTERN          int stb_bitcount(unsigned int a);
-STB_EXTERN unsigned int stb_bitreverse8(unsigned char n);
-STB_EXTERN unsigned int stb_bitreverse(unsigned int n);
+STB_EXTERN          intptr_t stb_bitcount(size_t a);
+STB_EXTERN          size_t stb_bitreverse8(unsigned char n);
+STB_EXTERN          size_t stb_bitreverse(size_t n);
 
-STB_EXTERN          int stb_is_pow2(unsigned int n);
-STB_EXTERN          int stb_log2_ceil(unsigned int n);
-STB_EXTERN          int stb_log2_floor(unsigned int n);
+STB_EXTERN          intptr_t stb_is_pow2(size_t n);
+STB_EXTERN          intptr_t stb_log2_ceil(size_t n);
+STB_EXTERN          int stb_log2_floor(size_t n);
 
-STB_EXTERN          int stb_lowbit8(unsigned int n);
-STB_EXTERN          int stb_highbit8(unsigned int n);
+STB_EXTERN          intptr_t stb_lowbit8(size_t n);
+STB_EXTERN          intptr_t stb_highbit8(size_t n);
 
 #ifdef STB_DEFINE
-int stb_bitcount(unsigned int a)
+intptr_t stb_bitcount(size_t a)
 {
    a = (a & 0x55555555) + ((a >>  1) & 0x55555555); // max 2
    a = (a & 0x33333333) + ((a >>  2) & 0x33333333); // max 4
@@ -1393,14 +1395,14 @@ int stb_bitcount(unsigned int a)
    return a & 0xff;
 }
 
-unsigned int stb_bitreverse8(unsigned char n)
+size_t stb_bitreverse8(unsigned char n)
 {
    n = ((n & 0xAA) >> 1) + ((n & 0x55) << 1);
    n = ((n & 0xCC) >> 2) + ((n & 0x33) << 2);
    return (unsigned char) ((n >> 4) + (n << 4));
 }
 
-unsigned int stb_bitreverse(unsigned int n)
+size_t stb_bitreverse(size_t n)
 {
   n = ((n & 0xAAAAAAAA) >>  1) | ((n & 0x55555555) << 1);
   n = ((n & 0xCCCCCCCC) >>  2) | ((n & 0x33333333) << 2);
@@ -1409,7 +1411,7 @@ unsigned int stb_bitreverse(unsigned int n)
   return (n >> 16) | (n << 16);
 }
 
-int stb_is_pow2(unsigned int n)
+intptr_t stb_is_pow2(size_t n)
 {
    return (n & (n-1)) == 0;
 }
@@ -1419,7 +1421,7 @@ int stb_is_pow2(unsigned int n)
 #ifdef _WIN32
 #pragma warning(push)
 #pragma warning(disable: 4035)  // disable warning about no return value
-int stb_log2_floor(unsigned int n)
+int stb_log2_floor(size_t n)
 {
    __asm {
       bsr eax,n
@@ -1430,7 +1432,7 @@ int stb_log2_floor(unsigned int n)
 }
 #pragma warning(pop)
 #else
-int stb_log2_floor(unsigned int n)
+int stb_log2_floor(size_t n)
 {
    static signed char log2_4[16] = { -1,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3 };
 
@@ -1448,21 +1450,21 @@ int stb_log2_floor(unsigned int n)
 #endif
 
 // define ceil from floor
-int stb_log2_ceil(unsigned int n)
+intptr_t stb_log2_ceil(size_t n)
 {
    if (stb_is_pow2(n))  return     stb_log2_floor(n);
    else                 return 1 + stb_log2_floor(n);
 }
 
-int stb_highbit8(unsigned int n)
+intptr_t stb_highbit8(size_t n)
 {
    return stb_log2_ceil(n&255);
 }
 
-int stb_lowbit8(unsigned int n)
+intptr_t stb_lowbit8(size_t n)
 {
    static signed char lowbit4[16] = { -1,0,1,0, 2,0,1,0, 3,0,1,0, 2,0,1,0 };
-   int k = lowbit4[n & 15];
+   intptr_t k = lowbit4[n & 15];
    if (k >= 0) return k;
    k = lowbit4[(n >> 4) & 15];
    if (k >= 0) return k+4;
@@ -1734,7 +1736,7 @@ STB_EXTERN char * stb_splitpathdup(char *src, int flag);
 STB_EXTERN char * stb_replacedir(char *output, char *src, char *dir);
 STB_EXTERN char * stb_replaceext(char *output, char *src, char *ext);
 STB_EXTERN void   stb_fixpath(char *path);
-STB_EXTERN char * stb_shorten_path_readable(char *path, int max_len);
+STB_EXTERN char * stb_shorten_path_readable(char *path, size_t max_len);
 STB_EXTERN int    stb_suffix (char *s, char *t);
 STB_EXTERN int    stb_suffixi(char *s, char *t);
 STB_EXTERN int    stb_prefix (char *s, char *t);
@@ -2161,7 +2163,7 @@ void stb_replaceinplace(char *src, char *find, char *replace)
 {
    size_t len_find = strlen(find);
    size_t len_replace = strlen(replace);
-   int count = 0, delta;
+   size_t count = 0, delta;
 
    char *s,*p,*q;
 
@@ -2193,10 +2195,10 @@ void stb_fixpath(char *path)
          *path = '/';
 }
 
-void stb__add_section(char *buffer, char *data, int curlen, int newlen)
+void stb__add_section(char *buffer, char *data, size_t curlen, size_t newlen)
 {
    if (newlen < curlen) {
-      int z1 = newlen >> 1, z2 = newlen-z1;
+      size_t z1 = newlen >> 1, z2 = newlen-z1;
       memcpy(buffer, data, z1-1);
       buffer[z1-1] = '.';
       buffer[z1-0] = '.';
@@ -2205,10 +2207,10 @@ void stb__add_section(char *buffer, char *data, int curlen, int newlen)
       memcpy(buffer, data, curlen);
 }
 
-char * stb_shorten_path_readable(char *path, int len)
+char * stb_shorten_path_readable(char *path, size_t len)
 {
    static char buffer[1024];
-   int n = strlen(path),n1,n2,r1,r2;
+   size_t n = strlen(path),n1,n2,r1,r2;
    char *s;
    if (n <= len) return path;
    if (len > 1024) return path;
@@ -2245,7 +2247,7 @@ char * stb_shorten_path_readable(char *path, int len)
 
 static char *stb__splitpath_raw(char *buffer, char *path, int flag)
 {
-   int len=0,x,y, n = (int) strlen(path), f1,f2;
+   size_t len=0,x,y, n = (size_t) strlen(path), f1,f2;
    char *s = stb_strrchr2(path, '/', '\\');
    char *t = strrchr(path, '.');
    if (s && t && t < s) t = NULL;
@@ -2388,23 +2390,23 @@ STB_EXTERN void *stb_realloc(void *ptr, size_t newsize);
 STB_EXTERN void stb_reassign(void *new_context, void *ptr);
 STB_EXTERN void stb_malloc_validate(void *p, void *parent);
 
-extern int stb_alloc_chunk_size ;
-extern int stb_alloc_count_free ;
-extern int stb_alloc_count_alloc;
-extern int stb_alloc_alignment  ;
+extern size_t stb_alloc_chunk_size ;
+extern size_t stb_alloc_count_free ;
+extern size_t stb_alloc_count_alloc;
+extern size_t stb_alloc_alignment  ;
 
 #ifdef STB_DEFINE
 
-int stb_alloc_chunk_size  = 65536;
-int stb_alloc_count_free  = 0;
-int stb_alloc_count_alloc = 0;
-int stb_alloc_alignment   = -16;
+size_t stb_alloc_chunk_size  = 65536;
+size_t stb_alloc_count_free  = 0;
+size_t stb_alloc_count_alloc = 0;
+size_t stb_alloc_alignment   = -16;
 
 typedef struct stb__chunk
 {
    struct stb__chunk *next;
-   int                data_left;
-   int                alloc;
+   size_t                data_left;
+   size_t                alloc;
 } stb__chunk;
 
 typedef struct
@@ -2459,7 +2461,7 @@ static stb__alloc stb__alloc_global =
 static stb__alloc_type stb__identify(void *p)
 {
    void **q = (void **) p;
-   return (stb__alloc_type) ((stb_uinta) q[-1] & 3);
+   return (stb__alloc_type) ((size_t) q[-1] & 3);
 }
 
 static void *** stb__prevn(void *p)
@@ -2573,10 +2575,10 @@ void stb_malloc_validate(void *p, void *parent)
    }
 }
 
-static void * stb__try_chunk(stb__chunk *c, int size, int align, int pre_align)
+static void * stb__try_chunk(stb__chunk *c, size_t size, size_t align, size_t pre_align)
 {
    char *memblock = (char *) (c+1), *q;
-   int  iq, start_offset;
+   size_t  iq, start_offset;
 
    // we going to allocate at the end of the chunk, not the start. confusing,
    // but it means we don't need both a 'limit' and a 'cur', just a 'cur'.
@@ -2594,7 +2596,7 @@ static void * stb__try_chunk(stb__chunk *c, int size, int align, int pre_align)
    // to get (iq & (align-1)) = 0 requires subtracting (iq & (align-1))
 
    start_offset -= iq & (align-1);
-   assert(((stb_uinta) (memblock+start_offset) & (align-1)) == 0);
+   assert(((size_t) (memblock+start_offset) & (align-1)) == 0);
 
    // now, if that + pre_align works, go for it!
    start_offset -= pre_align;
@@ -2621,7 +2623,7 @@ static void stb__sort_chunks(stb__alloc *src)
    stb__setchunks(src, d);
 }
 
-static void * stb__alloc_chunk(stb__alloc *src, int size, int align, int pre_align)
+static void * stb__alloc_chunk(stb__alloc *src, size_t size, size_t align, size_t pre_align)
 {
    void *p;
    stb__chunk *c = stb__chunks(src);
@@ -2649,7 +2651,7 @@ static void * stb__alloc_chunk(stb__alloc *src, int size, int align, int pre_ali
    {
       stb__chunk *n;
 
-      int chunk_size = stb_alloc_chunk_size;
+      size_t chunk_size = stb_alloc_chunk_size;
       // we're going to allocate a new chunk to put this in
       if (size > chunk_size)
          chunk_size = size;
@@ -2719,7 +2721,7 @@ static void stb__insert_nochild(stb__alloc *src, stb__nochildren *s)
       *stb__prevn(s->next) = &s->next;
 }
 
-static void * malloc_base(void *context, size_t size, stb__alloc_type t, int align)
+static void * malloc_base(void *context, size_t size, stb__alloc_type t, size_t align)
 {
    void *p;
 
@@ -2728,7 +2730,14 @@ static void * malloc_base(void *context, size_t size, stb__alloc_type t, int ali
    if (align <= 0) {
       // compute worst-case C packed alignment
       // e.g. a 24-byte struct is 8-aligned
-      int align_proposed = 1 << stb_lowbit8(size);
+      // TODO Should this shift be 64bit on 64bit OS?
+      #if defined(_WIN64) && defined(_MSC_VER)
+          // On 64bit Windows MSVC uses suffix 'i64' for 64bit shift operation.
+          // http://msdn.microsoft.com/en-us/library/ke55d167(v=vs.80).aspx 
+          size_t align_proposed = 1i64 << stb_lowbit8(size);
+      #else
+          size_t align_proposed = 1 << stb_lowbit8(size);
+      #endif
 
       if (align_proposed < 0)
          align_proposed = 4;
@@ -4953,14 +4962,14 @@ STB_EXTERN int     stb_filewrite(char *filename, void *data, size_t length);
 STB_EXTERN int     stb_filewritestr(char *filename, char *data);
 STB_EXTERN char ** stb_stringfile(char *filename, int *len);
 STB_EXTERN char ** stb_stringfile_trimmed(char *name, int *len, char comm);
-STB_EXTERN char *  stb_fgets(char *buffer, int buflen, FILE *f);
+STB_EXTERN char *  stb_fgets(char *buffer, size_t buflen, FILE *f);
 STB_EXTERN char *  stb_fgets_malloc(FILE *f);
 STB_EXTERN int     stb_fexists(char *filename);
 STB_EXTERN int     stb_fcmp(char *s1, char *s2);
 STB_EXTERN int     stb_feq(char *s1, char *s2);
 STB_EXTERN time_t  stb_ftimestamp(char *filename);
 
-STB_EXTERN int     stb_fullpath(char *abs, int abs_size, const char *rel);
+STB_EXTERN int     stb_fullpath(char *abs, size_t abs_size, const char *rel);
 STB_EXTERN FILE *  stb_fopen(const char *filename, const char *mode);
 STB_EXTERN int     stb_fclose(FILE *f, int keep);
 
@@ -5211,13 +5220,13 @@ char ** stb_stringfile_trimmed(char *name, int *len, char comment)
    return s;
 }
 
-char * stb_fgets(char *buffer, int buflen, FILE *f)
+char * stb_fgets(char *buffer, size_t buflen, FILE *f)
 {
    char *p;
    buffer[0] = 0;
    p = fgets(buffer, buflen, f);
    if (p) {
-      int n = strlen(p)-1;
+      size_t n = strlen(p)-1;
       if (n >= 0)
          if (p[n] == '\n')
             p[n] = 0;
@@ -5234,14 +5243,14 @@ char * stb_fgets_malloc(FILE *f)
       return NULL;
 
    if (quick_buffer[sizeof(quick_buffer)-2] == 0) {
-      int n = strlen(quick_buffer);
+      size_t n = strlen(quick_buffer);
       if (n > 0 && quick_buffer[n-1] == '\n')
          quick_buffer[n-1] = 0;
       return strdup(quick_buffer);
    } else {
       char *p;
       char *a = strdup(quick_buffer);
-      int len = sizeof(quick_buffer)-1;
+      size_t len = sizeof(quick_buffer)-1;
 
       while (!feof(f)) {
          if (a[len-1] == '\n') break;
@@ -5262,21 +5271,21 @@ char * stb_fgets_malloc(FILE *f)
    }
 }
 
-int stb_fullpath(char *abs, int abs_size, const char *rel)
+int stb_fullpath(char *abs, size_t abs_size, const char *rel)
 {
    #ifdef _MSC_VER
    return _fullpath(abs, rel, abs_size) != NULL;
    #else
    if (abs[0] == '/' || abs[0] == '~') {
-      if ((int) strlen(rel) >= abs_size)
+      if ((size_t) strlen(rel) >= abs_size)
          return 0;
       strcpy(abs,rel);
       return STB_TRUE;
    } else {
-      int n;
+      size_t n;
       getcwd(abs, abs_size);
       n = strlen(abs);
-      if (n+(int) strlen(rel)+2 <= abs_size) {
+      if (n+(size_t) strlen(rel)+2 <= abs_size) {
          abs[n] = '/';
          strcpy(abs+n+1, rel);
          return STB_TRUE;
@@ -5478,7 +5487,7 @@ int stb_copyfile(char *src, char *dest)
 {
    char raw_buffer[1024];
    char *buffer;
-   int buf_size = 65536;
+   size_t buf_size = 65536;
 
    FILE *f, *g;
 
@@ -5503,7 +5512,7 @@ int stb_copyfile(char *src, char *dest)
    }
 
    while (!feof(f)) {
-      int n = fread(buffer, 1, buf_size, f);
+      size_t n = fread(buffer, 1, buf_size, f);
       if (n != 0)
          fwrite(buffer, 1, n, g);
    }
@@ -5760,13 +5769,13 @@ char **stb_getopt_param(int *argc, char **argv, char *param)
                argv[j++] = argv[i++];
             break;
          } else {
-            int k;
+            size_t k;
             char *q = argv[i];  // traverse options list
             for (k=1; q[k]; ++k) {
                char *s;
                if (strchr(param, q[k])) {  // does it take a parameter?
                   char *t = &q[k+1], z = q[k];
-                  int len=0;
+                  size_t len=0;
                   if (*t == 0) {
                      if (i == *argc-1) { // takes a parameter, but none found
                         *argc = 0;
@@ -5837,13 +5846,13 @@ static char **readdir_raw(char *dir, int return_subdirs, char *mask)
 {
    char **results = NULL;
    char buffer[512], with_slash[512];
-   int n;
+   size_t n;
 
    #ifdef _MSC_VER
       stb__wchar *ws;
       struct _wfinddata_t data;
       const long none = -1;
-      long z;
+      intptr_t z;
    #else
       const DIR *none = NULL;
       DIR *z;
@@ -5940,7 +5949,7 @@ char **stb_readdir_subdirs_mask(char *dir, char *wild) { return readdir_raw(dir,
 int stb__rec_max=0x7fffffff;
 static char **stb_readdir_rec(char **sofar, char *dir, char *filespec)
 {
-   int n = strcmp(dir, ".") ? strlen(dir)+1 : 0;
+   size_t n = strcmp(dir, ".") ? strlen(dir)+1 : 0;
    char **files;
    char ** dirs;
    char **p;
@@ -6028,7 +6037,7 @@ stb_dirtree2 *stb_dirtree2_from_files_relative(char *src, char **filelist, int c
 {
    char buffer1[1024];
    int i;
-   int dlen = strlen(src), elen;
+   size_t dlen = strlen(src), elen;
    stb_dirtree2 *d;
    char ** descendents = NULL;
    char ** files = NULL;
@@ -6286,7 +6295,7 @@ void stb_sha1(stb_uchar output[20], stb_uchar *buffer, stb_uint len)
 #ifdef _MSC_VER
 int stb_sha1_file(stb_uchar output[20], char *file)
 {
-   int i;
+   size_t i;
    stb_uint64 length=0;
    unsigned char buffer[128];
 
@@ -6302,12 +6311,12 @@ int stb_sha1_file(stb_uchar output[20], char *file)
    h[4] = 0xc3d2e1f0;
 
    for(;;) {
-      int n = fread(buffer, 1, 64, f);
+      size_t n = fread(buffer, 1, 64, f);
       if (n == 64) {
          stb__sha1(buffer, h);
          length += n;
       } else {
-         int block = 64;
+         size_t block = 64;
 
          length += n;
 
@@ -7498,7 +7507,7 @@ stb_ps *stb_ps_copy(stb_ps *ps)
 
 int stb_ps_find(stb_ps *ps, void *value)
 {
-   int i, code = 3 & (intptr_t) ps;
+   intptr_t i, code = 3 & (intptr_t) ps;
    assert((3 & (intptr_t) value) == STB_ps_direct);
    assert(stb_ps_fastlist_valid(value));
    // not a switch: order based on expected performance/power-law distribution
@@ -7520,8 +7529,8 @@ int stb_ps_find(stb_ps *ps, void *value)
       return STB_FALSE;
    } else {
       stb_ps_hash *h = GetHash(ps);
-      stb_uint32 hash = stb_hashptr(value);
-      stb_uint32 s, n = hash & h->mask;
+      uintptr_t hash = stb_hashptr(value);
+      uintptr_t s, n = hash & h->mask;
       void **t = h->table;
       if (t[n] == value) return STB_TRUE;
       if (t[n] == NULL) return STB_FALSE;
@@ -7589,12 +7598,12 @@ stb_ps *  stb_ps_add   (stb_ps *ps, void *value)
       }
       case STB_ps_hash: {
          stb_ps_hash *h = GetHash(ps);
-         stb_uint32 hash = stb_hashptr(value);
-         stb_uint32 n = hash & h->mask;
+         uintptr_t hash = stb_hashptr(value);
+         uintptr_t n = hash & h->mask;
          void **t = h->table;
          // find first NULL or STB_DEL entry
          if (!stb_ps_empty(t[n])) {
-            stb_uint32 s = stb_rehash(hash) | 1;
+            uintptr_t s = stb_rehash(hash) | 1;
             do {
                n = (n + s) & h->mask;
             } while (!stb_ps_empty(t[n]));
@@ -7666,8 +7675,8 @@ stb_ps *stb_ps_remove(stb_ps *ps, void *value)
       }
       case STB_ps_hash: {
          stb_ps_hash *h = GetHash(ps);
-         stb_uint32 hash = stb_hashptr(value);
-         stb_uint32 s, n = hash & h->mask;
+         uintptr_t hash = stb_hashptr(value);
+         uintptr_t s, n = hash & h->mask;
          void **t = h->table;
          if (t[n] != value) {
             s = stb_rehash(hash) | 1;
@@ -10247,7 +10256,7 @@ static stb_uint32 stb__running_adler;
 static int stb_compress_chunk(stb_uchar *history,
                               stb_uchar *start,
                               stb_uchar *end,
-                              int length,
+                              size_t length,
                               int *pending_literals,
                               stb_uchar **chash,
                               stb_uint mask)
@@ -10263,10 +10272,10 @@ static int stb_compress_chunk(stb_uchar *history,
    // the hashing; this means we won't compress the last few bytes
    // unless they were part of something longer
    while (q < start+length && q+12 < end) {
-      int m;
+      size_t m;
       stb_uint h1,h2,h3,h4, h;
       stb_uchar *t;
-      int best = 2, dist=0;
+      size_t best = 2, dist=0;
 
       if (q+65536 > end)
          match_max = end-q;
@@ -12167,7 +12176,7 @@ STB_EXTERN int stb_bgio_stat    (char *filename, stb_bgstat *result)
 
 typedef struct stb__span
 {
-   int                start, len;
+   intptr_t          start, len;
    struct stb__span  *next, *prev;
    void              *first_free;
    unsigned short     list; // 1..256 free; 257..511 sizeclass; 0=large block
@@ -12240,7 +12249,7 @@ static void stb__spanlist_unlink(stb__span *s)
    s->list = 0;
 }
 
-static void stb__spanlist_add(int n, stb__span *s)
+static void stb__spanlist_add(intptr_t n, stb__span *s)
 {
    s->list = n;
    s->next = stb__spanlist[n];
@@ -12307,9 +12316,9 @@ static stb__span *stb__alloc_pages(int num)
    return s;
 }
 
-static stb__span *stb__alloc_span(int pagecount)
+static stb__span *stb__alloc_span(intptr_t pagecount)
 {
-   int i;
+   intptr_t i;
    stb__span *p = NULL;
    for(i=pagecount; i < 256; ++i)
       if (stb__spanlist[i]) {
@@ -12349,9 +12358,9 @@ static unsigned char stb__class_shift[32];
 static unsigned char stb__pages_for_class[STB__MAX_SIZE_CLASSES];
 static           int stb__size_for_class[STB__MAX_SIZE_CLASSES];
 
-stb__span *stb__get_nonempty_sizeclass(int c)
+stb__span *stb__get_nonempty_sizeclass(intptr_t c)
 {
-   int s = c + 256, i, size, tsize; // remap to span-list index
+   intptr_t s = c + 256, i, size, tsize; // remap to span-list index
    char *z;
    void *q;
    stb__span *p = stb__spanlist[s];
@@ -12385,7 +12394,7 @@ stb__span *stb__get_nonempty_sizeclass(int c)
    return p;
 }
 
-static int stb__sizeclass(size_t sz)
+static intptr_t stb__sizeclass(size_t sz)
 {
    int z = stb_log2_floor(sz); // -1 below to group e.g. 13,14,15,16 correctly
    return stb__class_base[z] + ((sz-1) >> stb__class_shift[z]);
@@ -12452,7 +12461,7 @@ void *stb_smalloc(size_t sz)
       return (void *) stb__page_address(s->start);
    } else {
       void *p;
-      int c = stb__sizeclass(sz);
+      intptr_t c = stb__sizeclass(sz);
       s = stb__spanlist[256+c];
       if (!s || !s->first_free)
          s = stb__get_nonempty_sizeclass(c);
@@ -12465,7 +12474,7 @@ void *stb_smalloc(size_t sz)
    }
 }
 
-int stb_ssize(void *p)
+intptr_t stb_ssize(void *p)
 {
    stb__span *s;
    if (p == NULL) return 0;
@@ -12527,7 +12536,7 @@ void *stb_scalloc(size_t n, size_t sz)
 
 char *stb_sstrdup(char *s)
 {
-   int n = strlen(s);
+   size_t n = strlen(s);
    char *p = (char *) stb_smalloc(n+1);
    if (p) strcpy(p,s);
    return p;
