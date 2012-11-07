@@ -662,7 +662,7 @@ class Analysis(Target):
 
         for (nm, fnm, typ) in binaries:
             for name in names:
-                if typ == 'BINARY' and fnm.endswith(name):
+                if typ == 'BINARY' and os.path.basename(fnm) == name:
                     # Python library found.
                     # FIXME Find a different way how to pass python libname to CArchive.
                     os.environ['PYI_PYTHON_LIBRARY_NAME'] = name
