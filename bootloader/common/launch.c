@@ -34,6 +34,7 @@
     #include <limits.h>  // PATH_MAX
 #endif
 #include <stdarg.h>
+#include <stddef.h>  // ptrdiff_t
 #include <stdio.h>  // vsnprintf
 #include <sys/stat.h>  // struct stat
 /*

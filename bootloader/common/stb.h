@@ -2390,17 +2390,17 @@ STB_EXTERN void *stb_realloc(void *ptr, size_t newsize);
 STB_EXTERN void stb_reassign(void *new_context, void *ptr);
 STB_EXTERN void stb_malloc_validate(void *p, void *parent);
 
-extern size_t stb_alloc_chunk_size ;
-extern size_t stb_alloc_count_free ;
-extern size_t stb_alloc_count_alloc;
-extern size_t stb_alloc_alignment  ;
+extern ptrdiff_t stb_alloc_chunk_size ;
+extern ptrdiff_t stb_alloc_count_free ;
+extern ptrdiff_t stb_alloc_count_alloc;
+extern ptrdiff_t stb_alloc_alignment  ;
 
 #ifdef STB_DEFINE
 
-size_t stb_alloc_chunk_size  = 65536;
-size_t stb_alloc_count_free  = 0;
-size_t stb_alloc_count_alloc = 0;
-size_t stb_alloc_alignment   = -16;
+ptrdiff_t stb_alloc_chunk_size  = 65536;
+ptrdiff_t stb_alloc_count_free  = 0;
+ptrdiff_t stb_alloc_count_alloc = 0;
+ptrdiff_t stb_alloc_alignment   = -16;
 
 typedef struct stb__chunk
 {
@@ -2721,7 +2721,7 @@ static void stb__insert_nochild(stb__alloc *src, stb__nochildren *s)
       *stb__prevn(s->next) = &s->next;
 }
 
-static void * malloc_base(void *context, size_t size, stb__alloc_type t, size_t align)
+static void * malloc_base(void *context, size_t size, stb__alloc_type t, intptr_t align)
 {
    void *p;
 
@@ -2734,9 +2734,9 @@ static void * malloc_base(void *context, size_t size, stb__alloc_type t, size_t 
       #if defined(_WIN64) && defined(_MSC_VER)
           // On 64bit Windows MSVC uses suffix 'i64' for 64bit shift operation.
           // http://msdn.microsoft.com/en-us/library/ke55d167(v=vs.80).aspx 
-          size_t align_proposed = 1i64 << stb_lowbit8(size);
+          intptr_t align_proposed = 1i64 << stb_lowbit8(size);
       #else
-          size_t align_proposed = 1 << stb_lowbit8(size);
+          intptr_t align_proposed = 1 << stb_lowbit8(size);
       #endif
 
       if (align_proposed < 0)

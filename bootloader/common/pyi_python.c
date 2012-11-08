@@ -59,6 +59,7 @@
 #else
     #include <dlfcn.h>  // dlsym
 #endif
+#include <stddef.h>  // ptrdiff_t
 #include <stdlib.h>
 
 /* PyInstaller headers. */

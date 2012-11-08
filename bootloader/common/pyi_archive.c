@@ -56,6 +56,7 @@
     #include <netinet/in.h>  // ntohl
     #include <sys/stat.h>  // fchmod
 #endif
+#include <stddef.h>  // ptrdiff_t
 #include <stdio.h>
 
 /* PyInstaller headers. */

@@ -49,6 +49,7 @@
     #include <limits.h>  // PATH_MAX
     #include <unistd.h>  // rmdir, unlink
 #endif
+#include <stddef.h>  // ptrdiff_t
 #include <stdio.h>  // FILE
 #include <stdlib.h>
 #include <string.h>

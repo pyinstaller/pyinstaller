@@ -60,6 +60,7 @@
     #include <limits.h>  // PATH_MAX
     #include <netinet/in.h>  // ntohl
 #endif
+#include <stddef.h>  // ptrdiff_t
 #include <stdio.h>
 #include <string.h>
 
