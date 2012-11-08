@@ -208,6 +208,7 @@ Parenthesized items have since been removed.
    #endif
 #endif
 
+#include <stddef.h>     // ptrdiff_t, size_t
 #include <stdlib.h>     // stdlib could have min/max
 #include <stdio.h>      // need FILE
 #include <string.h>     // stb_define_hash needs memcpy/memset
@@ -247,7 +248,6 @@ Parenthesized items have since been removed.
 #ifdef STB_DEFINE
    #include <assert.h>
    #include <stdarg.h>
-   #include <stddef.h>
    #include <ctype.h>
    #include <math.h>
    #ifndef _WIN32
@@ -2405,8 +2405,8 @@ ptrdiff_t stb_alloc_alignment   = -16;
 typedef struct stb__chunk
 {
    struct stb__chunk *next;
-   size_t                data_left;
-   size_t                alloc;
+   ptrdiff_t                data_left;
+   ptrdiff_t                alloc;
 } stb__chunk;
 
 typedef struct
@@ -2461,7 +2461,7 @@ static stb__alloc stb__alloc_global =
 static stb__alloc_type stb__identify(void *p)
 {
    void **q = (void **) p;
-   return (stb__alloc_type) ((size_t) q[-1] & 3);
+   return (stb__alloc_type) ((uintptr_t) q[-1] & 3);
 }
 
 static void *** stb__prevn(void *p)
@@ -2575,10 +2575,10 @@ void stb_malloc_validate(void *p, void *parent)
    }
 }
 
-static void * stb__try_chunk(stb__chunk *c, size_t size, size_t align, size_t pre_align)
+static void * stb__try_chunk(stb__chunk *c, ptrdiff_t size, ptrdiff_t align, ptrdiff_t pre_align)
 {
    char *memblock = (char *) (c+1), *q;
-   size_t  iq, start_offset;
+   ptrdiff_t  iq, start_offset;
 
    // we going to allocate at the end of the chunk, not the start. confusing,
    // but it means we don't need both a 'limit' and a 'cur', just a 'cur'.
@@ -2623,7 +2623,7 @@ static void stb__sort_chunks(stb__alloc *src)
    stb__setchunks(src, d);
 }
 
-static void * stb__alloc_chunk(stb__alloc *src, size_t size, size_t align, size_t pre_align)
+static void * stb__alloc_chunk(stb__alloc *src, ptrdiff_t size, ptrdiff_t align, ptrdiff_t pre_align)
 {
    void *p;
    stb__chunk *c = stb__chunks(src);
@@ -2651,7 +2651,7 @@ static void * stb__alloc_chunk(stb__alloc *src, size_t size, size_t align, size_
    {
       stb__chunk *n;
 
-      size_t chunk_size = stb_alloc_chunk_size;
+      ptrdiff_t chunk_size = stb_alloc_chunk_size;
       // we're going to allocate a new chunk to put this in
       if (size > chunk_size)
          chunk_size = size;
@@ -2692,7 +2692,7 @@ static stb__alloc * stb__get_context(void *context)
    if (context == NULL) {
       return &stb__alloc_global;
    } else {
-      int u = stb__identify(context);
+      ptrdiff_t u = stb__identify(context);
       // if context is chunked, grab parent
       if (u == STB__chunked) {
          stb__chunked *s = (stb__chunked *) context - 1;
@@ -2721,7 +2721,7 @@ static void stb__insert_nochild(stb__alloc *src, stb__nochildren *s)
       *stb__prevn(s->next) = &s->next;
 }
 
-static void * malloc_base(void *context, size_t size, stb__alloc_type t, intptr_t align)
+static void * malloc_base(void *context, size_t size, stb__alloc_type t, ptrdiff_t align)
 {
    void *p;
 
@@ -2734,9 +2734,9 @@ static void * malloc_base(void *context, size_t size, stb__alloc_type t, intptr_
       #if defined(_WIN64) && defined(_MSC_VER)
           // On 64bit Windows MSVC uses suffix 'i64' for 64bit shift operation.
           // http://msdn.microsoft.com/en-us/library/ke55d167(v=vs.80).aspx 
-          intptr_t align_proposed = 1i64 << stb_lowbit8(size);
+          ptrdiff_t align_proposed = 1i64 << stb_lowbit8(size);
       #else
-          intptr_t align_proposed = 1 << stb_lowbit8(size);
+          ptrdiff_t align_proposed = 1 << stb_lowbit8(size);
       #endif
 
       if (align_proposed < 0)
