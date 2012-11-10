@@ -111,6 +111,12 @@ class PkgModule(PyModule):
         self._ispkg = 1
         pth = os.path.dirname(pth)
         self.__path__ = [pth]
+        
+        # this is possible to be a namespace package, 
+        # let the pkgutil find possible path for us
+        from pkgutil import extend_path
+        self.__path__ = extend_path(self.__path__, nm)
+
         self._update_director(force=True)
 
     def _update_director(self, force=False):
