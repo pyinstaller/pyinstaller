@@ -603,7 +603,10 @@ def findLibrary(name):
             break
 
     # Look in /etc/ld.so.cache
-    if lib is None:
+    # TODO Look for ldconfig in /usr/sbin/ldconfig. /sbin is deprecated
+    #      in recent linux distributions.
+    # Solaris does not have /sbin/ldconfig. Just check if this file exists.
+    if lib is None and os.path.exists('/sbin/ldconfig'):
         expr = r'/[^\(\)\s]*%s\.[^\(\)\s]*' % re.escape(name)
         m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-p'))
         if m:
