@@ -1365,6 +1365,8 @@ double stb_linear_remap(double x, double x_min, double x_max,
 //
 //                         bit operations
 //
+// TODO All bit operations are mostly 32bit. For 64bit operations we would need to
+// add more 64bit functions.
 
 // TODO Ensure these fuctions work on 64bit OS.
 
@@ -1373,19 +1375,19 @@ double stb_linear_remap(double x, double x_min, double x_max,
 #define stb_big16(c)    ((c)[0]*256 + (c)[1])
 #define stb_little16(c) ((c)[1]*256 + (c)[0])
 
-STB_EXTERN          intptr_t stb_bitcount(size_t a);
-STB_EXTERN          size_t stb_bitreverse8(unsigned char n);
-STB_EXTERN          size_t stb_bitreverse(size_t n);
+STB_EXTERN          int32_t  stb_bitcount(uint32_t a);
+STB_EXTERN          uint32_t stb_bitreverse8(uint8_t n);
+STB_EXTERN          uint32_t stb_bitreverse(uint32_t n);
 
-STB_EXTERN          intptr_t stb_is_pow2(size_t n);
-STB_EXTERN          intptr_t stb_log2_ceil(size_t n);
-STB_EXTERN          int stb_log2_floor(size_t n);
+STB_EXTERN          int32_t  stb_is_pow2(uint32_t n);
+STB_EXTERN          int32_t  stb_log2_ceil(uint32_t n);
+STB_EXTERN          int32_t  stb_log2_floor(uint32_t n);
 
-STB_EXTERN          intptr_t stb_lowbit8(size_t n);
-STB_EXTERN          intptr_t stb_highbit8(size_t n);
+STB_EXTERN          int32_t  stb_lowbit8(uint32_t n);
+STB_EXTERN          int32_t  stb_highbit8(uint32_t n);
 
 #ifdef STB_DEFINE
-intptr_t stb_bitcount(size_t a)
+int32_t stb_bitcount(uint32_t a)
 {
    a = (a & 0x55555555) + ((a >>  1) & 0x55555555); // max 2
    a = (a & 0x33333333) + ((a >>  2) & 0x33333333); // max 4
@@ -1395,14 +1397,14 @@ intptr_t stb_bitcount(size_t a)
    return a & 0xff;
 }
 
-size_t stb_bitreverse8(unsigned char n)
+uint32_t stb_bitreverse8(uint8_t n)
 {
    n = ((n & 0xAA) >> 1) + ((n & 0x55) << 1);
    n = ((n & 0xCC) >> 2) + ((n & 0x33) << 2);
-   return (unsigned char) ((n >> 4) + (n << 4));
+   return (uint8_t) ((n >> 4) + (n << 4));
 }
 
-size_t stb_bitreverse(size_t n)
+uint32_t stb_bitreverse(uint32_t n)
 {
   n = ((n & 0xAAAAAAAA) >>  1) | ((n & 0x55555555) << 1);
   n = ((n & 0xCCCCCCCC) >>  2) | ((n & 0x33333333) << 2);
@@ -1411,7 +1413,7 @@ size_t stb_bitreverse(size_t n)
   return (n >> 16) | (n << 16);
 }
 
-intptr_t stb_is_pow2(size_t n)
+int32_t stb_is_pow2(uint32_t n)
 {
    return (n & (n-1)) == 0;
 }
@@ -1429,7 +1431,7 @@ int32_t stb_log2_floor(uint32_t n)
     uint8_t is_nonzero;
 
     is_nonzero = _BitScanReverse(&index, n);
-    if (is_nonzero) return index;
+    if (is_nonzero) return (int32_t) index;
     else return -1;
     
   /* Inline assembler does not work with 64bit MSVC. The previous code
@@ -1444,7 +1446,7 @@ int32_t stb_log2_floor(uint32_t n)
 }
 #pragma warning(pop)
 #else
-int stb_log2_floor(size_t n)
+int32_t stb_log2_floor(uint32_t n)
 {
    static signed char log2_4[16] = { -1,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3 };
 
@@ -1462,21 +1464,21 @@ int stb_log2_floor(size_t n)
 #endif
 
 // define ceil from floor
-intptr_t stb_log2_ceil(size_t n)
+int32_t stb_log2_ceil(uint32_t n)
 {
    if (stb_is_pow2(n))  return     stb_log2_floor(n);
    else                 return 1 + stb_log2_floor(n);
 }
 
-intptr_t stb_highbit8(size_t n)
+int32_t stb_highbit8(uint32_t n)
 {
    return stb_log2_ceil(n&255);
 }
 
-intptr_t stb_lowbit8(size_t n)
+int32_t stb_lowbit8(uint32_t n)
 {
    static signed char lowbit4[16] = { -1,0,1,0, 2,0,1,0, 3,0,1,0, 2,0,1,0 };
-   intptr_t k = lowbit4[n & 15];
+   int32_t k = lowbit4[n & 15];
    if (k >= 0) return k;
    k = lowbit4[(n >> 4) & 15];
    if (k >= 0) return k+4;
