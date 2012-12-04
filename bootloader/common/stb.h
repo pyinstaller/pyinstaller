@@ -387,6 +387,13 @@ typedef char stb__testsize2_uinta[sizeof(stb_uinta)==sizeof(char*) ? 1 : -1];
 #endif
 
 
+// MSVC uses different names of some standard posix functions.
+#ifdef _MSC_VER
+    #define strdup _strdup
+    #define vsnprintf _vsnprintf
+#endif
+
+
 STB_EXTERN void stb_wrapper_malloc(void *newp, int sz, char *file, int line);
 STB_EXTERN void stb_wrapper_free(void *oldp, char *file, int line);
 STB_EXTERN void stb_wrapper_realloc(void *oldp, void *newp, int sz, char *file, int line);
@@ -725,11 +732,7 @@ char *stb_mprintf(const char *fmt, ...)
    static char buffer[1024];
    va_list v;
    va_start(v,fmt);
-   #ifdef _WIN32
-   _vsnprintf(buffer, 1024, fmt, v);
-   #else
    vsnprintf(buffer, 1024, fmt, v);
-   #endif
    va_end(v);
    buffer[1023] = 0;
    return strdup(buffer);
@@ -1489,8 +1492,8 @@ int32_t stb_lowbit8(uint32_t n)
 //
 
 #ifdef _WIN32
-   #define stb_stricmp(a,b) stricmp(a,b)
-   #define stb_strnicmp(a,b,n) strnicmp(a,b,n)
+   #define stb_stricmp(a,b) _stricmp(a,b)
+   #define stb_strnicmp(a,b,n) _strnicmp(a,b,n)
 #else
    #define stb_stricmp(a,b) strcasecmp(a,b)
    #define stb_strnicmp(a,b,n) strncasecmp(a,b,n)
