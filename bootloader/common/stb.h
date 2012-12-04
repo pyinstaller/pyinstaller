@@ -1042,11 +1042,6 @@ void stb_fatal(char *s, ...)
    vfprintf(stderr, s, a);
    va_end(a);
    fputs("\n", stderr);
-   #ifdef _WIN32
-   #ifdef STB_DEBUG
-   __asm int 3;   // trap to debugger!
-   #endif
-   #endif
    exit(1);
 }
 
@@ -7411,8 +7406,6 @@ typedef struct
 } stb_ps_bucket;
 #define GetBucket(p)    ((stb_ps_bucket *) ((char *) (p) - STB_ps_bucket))
 #define EncodeBucket(p) ((stb_ps *) ((char *) (p) + STB_ps_bucket))
-
-typedef char stb__verify_bucket_heap_size[sizeof(stb_ps_bucket) == 16];
 
 static void stb_bucket_free(stb_ps_bucket *b)
 {
