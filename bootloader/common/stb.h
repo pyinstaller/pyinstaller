@@ -1419,16 +1419,28 @@ intptr_t stb_is_pow2(size_t n)
 // tricky use of 4-bit table to identify 5 bit positions (note the '-1')
 // 3-bit table would require another tree level; 5-bit table wouldn't save one
 #ifdef _WIN32
+#include <intrin.h>  // Replacement functions for inline assembler on 64bit Win
 #pragma warning(push)
 #pragma warning(disable: 4035)  // disable warning about no return value
-int stb_log2_floor(size_t n)
+#pragma intrinsic(_BitScanReverse)  // Replacement for 'bsr' instruction.
+int32_t stb_log2_floor(uint32_t n)
 {
+    uint32_t index;
+    uint8_t is_nonzero;
+
+    is_nonzero = _BitScanReverse(&index, n);
+    if (is_nonzero) return index;
+    else return -1;
+    
+  /* Inline assembler does not work with 64bit MSVC. The previous code
+   * should work on 32/64 bit Windows.
    __asm {
       bsr eax,n
       jnz done
       mov eax,-1
    }
    done:;
+   */
 }
 #pragma warning(pop)
 #else
@@ -3679,7 +3691,7 @@ int stb_ischar(char c, char *set)
    static unsigned char (*tables)[256];
    static char ** sets = NULL;
 
-   int z = stb_perfect_hash(&p, (intptr_t) set);
+   intptr_t z = stb_perfect_hash(&p, (intptr_t) set);
    if (z < 0) {
       int i,k,n,j,f;
       // special code that means free all existing data
