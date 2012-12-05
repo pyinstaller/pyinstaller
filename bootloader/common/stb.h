@@ -749,18 +749,19 @@ STB_EXTERN __declspec(dllimport) int __stdcall SetConsoleTextAttribute(void *, u
 static void stb__print_one(void *handle, char *s, intptr_t len)
 {
    if (len)
-      if (WriteConsoleA(handle, s, len, NULL,NULL))
+      // Explicitly change 'len' type to int32_t.
+      if (WriteConsoleA(handle, s, (int32_t) len, NULL,NULL))
          fwrite(s, 1, len, stdout); // if it fails, maybe redirected, so do normal
 }
 
 static void stb__print(char *s)
 {
    void *handle = GetStdHandle((unsigned int) -11); // STD_OUTPUT_HANDLE
-   int pad=0; // number of padding characters to add
+   intptr_t pad=0;  // Number of padding characters to add.
 
    char *t = s;
    while (*s) {
-      int lpad;
+      intptr_t lpad;
       while (*s && *s != '{') {
          if (pad) {
             if (*s == '\r' || *s == '\n')
@@ -2746,9 +2747,11 @@ static void * malloc_base(void *context, size_t size, stb__alloc_type t, ptrdiff
       #if defined(_WIN64) && defined(_MSC_VER)
           // On 64bit Windows MSVC uses suffix 'i64' for 64bit shift operation.
           // http://msdn.microsoft.com/en-us/library/ke55d167(v=vs.80).aspx 
-          ptrdiff_t align_proposed = 1i64 << stb_lowbit8(size);
+          // TODO Explicitly change type to 32bit. How it should be for 64bit OS?
+          ptrdiff_t align_proposed = 1i64 << stb_lowbit8((uint32_t) size);  
       #else
-          ptrdiff_t align_proposed = 1 << stb_lowbit8(size);
+          // TODO Explicitly change type to 32bit. How it should be for 64bit OS?
+          ptrdiff_t align_proposed = 1 << stb_lowbit8((uint32_t) size);
       #endif
 
       if (align_proposed < 0)
@@ -3434,6 +3437,9 @@ unsigned int stb_hash_number(unsigned int hash)
 //   This is mainly useful for making faster pointer-indexed tables
 //   that don't change frequently. E.g. for stb_ischar().
 //
+// TODO the following functions work only with 32bit numbers. But pointers
+//      on 64bit architecture are 64bit numbers. These functions has to be
+//      probably fixed for 64bit pointers.
 
 typedef struct
 {
@@ -3447,16 +3453,16 @@ typedef struct
    stb_uint32 *table;
 } stb_perfect;
 
-STB_EXTERN int stb_perfect_create(stb_perfect *,unsigned int*,int n);
+STB_EXTERN int32_t stb_perfect_create(stb_perfect *, uint32_t*, int32_t n);
 STB_EXTERN void stb_perfect_destroy(stb_perfect *);
-STB_EXTERN int stb_perfect_hash(stb_perfect *, unsigned int x);
-extern int stb_perfect_hash_max_failures;
+STB_EXTERN int32_t stb_perfect_hash(stb_perfect *, uint32_t x);
+extern int32_t stb_perfect_hash_max_failures;
 
 #ifdef STB_DEFINE
 
-int stb_perfect_hash_max_failures;
+int32_t stb_perfect_hash_max_failures;
 
-int stb_perfect_hash(stb_perfect *p, unsigned int x)
+int32_t stb_perfect_hash(stb_perfect *p, uint32_t x)
 {
    stb_uint m = x * p->multiplicand;
    stb_uint y = x >> 16;
@@ -3505,7 +3511,7 @@ static int stb__slot_compare(const void *p, const void *q)
    return a->count > b->count ? -1 : a->count < b->count;  // sort large to small
 }
 
-int stb_perfect_create(stb_perfect *p, unsigned int *v, int n)
+int32_t stb_perfect_create(stb_perfect *p, uint32_t *v, int32_t n)
 {
    unsigned int buffer1[64], buffer2[64], buffer3[64], buffer4[64], buffer5[32];
    unsigned short *as = (unsigned short *) stb_temp(buffer1, sizeof(*v)*n);
@@ -3691,7 +3697,7 @@ int stb_ischar(char c, char *set)
    static unsigned char (*tables)[256];
    static char ** sets = NULL;
 
-   intptr_t z = stb_perfect_hash(&p, (intptr_t) set);
+   int32_t z = stb_perfect_hash(&p, (int32_t) set);
    if (z < 0) {
       int i,k,n,j,f;
       // special code that means free all existing data
@@ -3710,7 +3716,8 @@ int stb_ischar(char c, char *set)
       tables = (unsigned char (*)[256]) realloc(tables, sizeof(*tables) * k);
       memset(tables, 0, sizeof(*tables) * k);
       for (i=0; i < stb_arr_len(sets); ++i) {
-         k = stb_perfect_hash(&p, (intptr_t) sets[i]);
+         // TODO Pointer retyped explicitly to 32bit type - might fail on 64bit OS.
+         k = stb_perfect_hash(&p, (int32_t) sets[i]);
          assert(k >= 0);
          n = k >> 3;
          f = bit[k&7];
@@ -3718,7 +3725,8 @@ int stb_ischar(char c, char *set)
             tables[n][(unsigned char) sets[i][j]] |= f;
          }
       }
-      z = stb_perfect_hash(&p, (intptr_t) set);
+      // TODO Pointer retyped explicitly to 32bit type - might fail on 64bit OS.
+      z = stb_perfect_hash(&p, (int32_t) set);
    }
    return tables[z >> 3][(unsigned char) c] & bit[z & 7];
 }
@@ -12545,7 +12553,8 @@ void *stb_scalloc(size_t n, size_t sz)
 {
    void *p;
    if (n == 0 || sz == 0) return NULL;
-   if (stb_log2_ceil(n) + stb_log2_ceil(n) >= 32) return NULL;
+   // TODO Pointer retyped explicitly to 32bit type - might fail on 64bit OS.
+   if (stb_log2_ceil( (uint32_t) n) + stb_log2_ceil( (uint32_t) n) >= 32) return NULL;
    p = stb_smalloc(n*sz);
    if (p) memset(p, 0, n*sz);
    return p;
