@@ -3697,7 +3697,7 @@ int stb_ischar(char c, char *set)
    static unsigned char (*tables)[256];
    static char ** sets = NULL;
 
-   int32_t z = stb_perfect_hash(&p, (int32_t) set);
+   int32_t z = stb_perfect_hash(&p, (intptr_t) set);
    if (z < 0) {
       int i,k,n,j,f;
       // special code that means free all existing data
@@ -3717,7 +3717,7 @@ int stb_ischar(char c, char *set)
       memset(tables, 0, sizeof(*tables) * k);
       for (i=0; i < stb_arr_len(sets); ++i) {
          // TODO Pointer retyped explicitly to 32bit type - might fail on 64bit OS.
-         k = stb_perfect_hash(&p, (int32_t) sets[i]);
+         k = stb_perfect_hash(&p, (intptr_t) sets[i]);
          assert(k >= 0);
          n = k >> 3;
          f = bit[k&7];
@@ -3726,7 +3726,7 @@ int stb_ischar(char c, char *set)
          }
       }
       // TODO Pointer retyped explicitly to 32bit type - might fail on 64bit OS.
-      z = stb_perfect_hash(&p, (int32_t) set);
+      z = stb_perfect_hash(&p, (intptr_t) set);
    }
    return tables[z >> 3][(unsigned char) c] & bit[z & 7];
 }
