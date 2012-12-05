@@ -29,28 +29,7 @@
  */
 
 
-// TODO leave only necessary header includes.
-/*
 #ifdef WIN32
- #include <direct.h>
- #include <process.h>
-#else
- #include <unistd.h>
- #include <dlfcn.h>
- #include <dirent.h>
- #include <stdarg.h>
-#endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <string.h>
-#include "zlib.h"
-
-#include "pyi_global.h"
-#include "pyi_pythonlib.h"
-*/
-
-#ifdef WIN32
-// TODO verify windows includes
     #include <windows.h>
     #include <fcntl.h>  // O_BINARY
     #include <io.h>  // _setmode
@@ -63,6 +42,7 @@
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>
 #include <string.h>
+
 
 /* PyInstaller headers. */
 #include "stb.h"

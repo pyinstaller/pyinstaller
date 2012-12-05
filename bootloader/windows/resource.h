@@ -25,6 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
 // Used by launchw.rc
@@ -32,6 +33,7 @@
 #define IDI_ICON1                       101
 #define IDR_MANIFEST                    1
 #define RT_MANIFEST                     24
+
 
 // Next default values for new objects
 // 

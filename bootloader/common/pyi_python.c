@@ -32,28 +32,7 @@
  */
 
 
-// TODO leave only necessary header includes.
-/*
-#include <stdio.h>
 #ifdef WIN32
- #include <direct.h>
- #include <process.h>
- #include <io.h>
-#else
- #include <unistd.h>
- #include <fcntl.h>
- #include <dirent.h>
- #include <stdarg.h>
-#endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#include "launch.h"
-#include <string.h>
-
-*/
-
-#ifdef WIN32
-// TODO verify windows includes
     #include <windows.h>
     #include <winsock.h>  // ntohl
 #else
@@ -61,6 +40,7 @@
 #endif
 #include <stddef.h>  // ptrdiff_t
 #include <stdlib.h>
+
 
 /* PyInstaller headers. */
 #include "stb.h"

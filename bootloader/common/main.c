@@ -45,12 +45,6 @@
 
 #define _CRT_SECURE_NO_WARNINGS 1
 
-/*
-#ifndef WIN32
-#include <sys/wait.h>
-#endif
-*/
-
 
 /* To call TransformProcessType in the child process. */
 #if defined(__APPLE__) && defined(WINDOWED)
@@ -66,6 +60,7 @@
 #include <stdio.h>  // FILE
 #include <stdlib.h>  // calloc
 #include <string.h>  // memset
+
 
 /* PyInstaller headers. */
 #include "stb.h"

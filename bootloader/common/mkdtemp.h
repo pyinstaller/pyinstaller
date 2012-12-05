@@ -1,4 +1,6 @@
-/* On some platforms (e.g. Solaris) mkdtemp is not available. */
+/*
+ * On some platforms (e.g. Solaris, AIX) mkdtemp is not available.
+ */
 #ifndef __MKDTEMP__
 #define __MKDTEMP__
 

@@ -27,16 +27,12 @@
  */
 
 
-/*
-
-#include "pyi_utils.h"
-#include "pyi_pythonlib.h"
-*/
 #include <windows.h>
 #include <olectl.h>  // callSimpleEntryPoint
 #include <memory.h>
 #include <stdio.h>  // FILE
 #include <string.h>
+
 
 /* 
  * Use Sean's Tool Box -- public domain -- http://nothings.org/stb.h. 
@@ -44,6 +40,7 @@
 #define STB_DEFINE 1
 #define STB_NO_REGISTRY 1  // Disable registry functions.
 #define STB_NO_STB_STRINGS 1  // Disable config read/write functions.
+
 
 /* PyInstaller headers. */
 #include "stb.h"

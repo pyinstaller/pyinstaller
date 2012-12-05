@@ -26,8 +26,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-// TODO leave only necessary header includes.
-// TODO verify imports on windows
+
 #ifdef WIN32
     #include <windows.h>
 #else
@@ -37,27 +36,10 @@
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>  // vsnprintf
 #include <sys/stat.h>  // struct stat
-/*
-#include <stdio.h>
-#ifdef WIN32
- #include <direct.h>
- #include <process.h>
- #include <io.h>
-#else
- #include <unistd.h>
- #include <fcntl.h>
- #include <dlfcn.h>
- #include <dirent.h>
-#endif
-#include <sys/types.h>
-#include <string.h>
-*/
 
 
 /* PyInstaller headers. */
 #include "stb.h"
-//#include "zlib.h"
-
 #include "pyi_global.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"

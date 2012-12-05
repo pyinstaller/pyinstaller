@@ -28,25 +28,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-// TODO leave only necessary header includes.
-/*
-#ifdef WIN32
- #include <windows.h>
- #include <direct.h>
- #include <process.h>
- #include <io.h>
-#else
- #include <unistd.h>
- #include <fcntl.h>
- #include <dlfcn.h>
- #include <dirent.h>
- #include <stdarg.h>
-#endif
-#include <sys/types.h>
-#include "launch.h"
-#include <string.h>
-
-*/
 
 #ifdef WIN32
 // TODO verify windows includes
@@ -58,6 +39,7 @@
 #endif
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>
+
 
 /* PyInstaller headers. */
 #include "zlib.h"

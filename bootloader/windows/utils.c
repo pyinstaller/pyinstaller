@@ -29,18 +29,12 @@
 #define _WIN32_WINNT 0x0500
 
 
-/*
-#include <memory.h>
-#include <string.h>
-
-#include "stb.h"
-#include "utils.h"
-*/
 #include <windows.h>
 #include <commctrl.h>  // InitCommonControls
 #include <stdio.h>  // _fileno
 #include <io.h>  // _get_osfhandle
 #include <signal.h>  // signal
+
 
 /* PyInstaller headers. */
 #include "stb.h"
@@ -55,6 +49,7 @@ static ULONG_PTR actToken;
 #ifndef STATUS_SXS_EARLY_DEACTIVATION
 #define STATUS_SXS_EARLY_DEACTIVATION 0xC015000F
 #endif
+ 	
  	
 int IsXPOrLater(void)
 {

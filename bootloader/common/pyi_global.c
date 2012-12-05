@@ -36,14 +36,14 @@
  *
  * This define has to be only in one C source file!
  */
-#define STB_DEFINE  1/* */                                                   
-#define STB_NO_REGISTRY 1 /* No need for Windows registry functions in stb.h. */
+//#define STB_DEFINE  1/* */                                                   
+//#define STB_NO_REGISTRY 1 /* No need for Windows registry functions in stb.h. */
 
 
 #include <stdarg.h>  /* va_list, va_start(), va_end() */
 #include <stdio.h>
 
-// TODO verify what headers are really needed.
+
 #ifdef WIN32
  #include <windows.h>
  #include <direct.h>

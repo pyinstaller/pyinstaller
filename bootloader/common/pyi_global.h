@@ -40,7 +40,7 @@ typedef int bool_t;
 #define true  1
 
 
-/* Type type for dynamic library. */
+/* Type for dynamic library. */
 #ifdef WIN32
 #define dylib_t   HINSTANCE
 #else

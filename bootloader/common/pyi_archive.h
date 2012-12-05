@@ -29,10 +29,6 @@
 #ifndef HEADER_PYI_ARCHIVE_H
 #define HEADER_PYI_ARCHIVE_H
 
-//#include <stdio.h>
-
-//#include "pyi_global.h"
-
 
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */

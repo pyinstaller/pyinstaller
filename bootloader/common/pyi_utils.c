@@ -25,20 +25,7 @@
  */
 
 
-/*
-#include <limits.h>
-#include <sys/stat.h>
-
 #ifdef WIN32
-#else
-    #include <unistd.h>
-    #include <fcntl.h>
-    #include <stdarg.h>
-#endif
-*/
-
-#ifdef WIN32
-// TODO verify imports on windows
     #include <windows.h>
     #include <direct.h>  // _mkdir, _rmdir
     #include <io.h>  // _finddata_t
@@ -65,13 +52,12 @@
     #include "mkdtemp.h"
 #endif
 
+
 /* PyInstaller headers. */
 #include "stb.h"
 #include "pyi_global.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
-/*
-*/
 
 
 /* Return string copy of environment variable. */

@@ -31,29 +31,6 @@
 #define PYI_PYTHONLIB_H
 
 
-// TODO leave only necessary header includes.
-/*
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#ifdef WIN32
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
-#include <fcntl.h>
-#ifdef WIN32
-*/
-//#include <winsock.h> /* for ntohl */
-/*#else
-#include <netinet/in.h>
-#endif
-
-#include "pyi_archive.h"
-#include "pyi_global.h"
-*/
-
-
 int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew);
 int pyi_pylib_load(ARCHIVE_STATUS *status); /* note - pyi_pylib_attach will call this if not already loaded */
 int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[]);
