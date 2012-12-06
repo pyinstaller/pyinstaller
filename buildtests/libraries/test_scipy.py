@@ -23,6 +23,7 @@ from scipy import *
 import scipy.io.matlab
 import scipy.sparse.csgraph
 
-# Some other scipy submodules.
+# Some other "problematic" scipy submodules.
 import scipy.lib
 import scipy.linalg
+import scipy.signal
