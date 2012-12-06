@@ -72,8 +72,12 @@ def getfullnameof(mod, xtrapath=None):
     Return the full path name of MOD.
     Will search the full Windows search path, as well as sys.path
     """
+    # SciPy/Numpy Windows builds from http://www.lfd.uci.edu/~gohlke/pythonlibs
+    # Contain some dlls in directory like C:\Python27\Lib\site-packages\numpy\core\
+    from distutils.sysconfig import get_python_lib
+    numpy_core_path = os.path.join(get_python_lib(), 'numpy', 'core')
     # Search sys.path first!
-    epath = sys.path + winutils.get_system_path()
+    epath = sys.path + [numpy_core_path] + winutils.get_system_path()
     if xtrapath is not None:
         if type(xtrapath) == type(''):
             epath.insert(0, xtrapath)
