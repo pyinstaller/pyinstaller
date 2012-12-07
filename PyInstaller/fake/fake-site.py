@@ -36,8 +36,24 @@ PREFIXES = []
 ENABLE_USER_SITE = False
 
 
-# for distutils.commands.install
+# For distutils.commands.install
 # These values are initialized by the getuserbase() and getusersitepackages()
 # functions, through the main() function when Python starts.
 USER_SITE = None
 USER_BASE = None
+
+
+# Package IPython depends on the following functionality from real site.py.
+# This code could be probably removed when the following bug is fixed:
+# https://github.com/ipython/ipython/issues/2606
+class _Helper(object):
+     """
+     Define the builtin 'help'.
+     This is a wrapper around pydoc.help (with a twist).
+     """
+     def __repr__(self):
+         return "Type help() for interactive help, " \
+                "or help(object) for help about object."
+     def __call__(self, *args, **kwds):
+         import pydoc
+         return pydoc.help(*args, **kwds)
