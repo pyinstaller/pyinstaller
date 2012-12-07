@@ -8,9 +8,12 @@ Directory Structure
 -------------------
 * common
   Shared code for Unix/Windows.
-* crypto
-  Crypto support for bootloader. This code is unmaintained.
 * linux
   Code specific to Linux/Unix/OS X.
 * windows
   Code specific to Windows.
+* zlib
+  Library to unzip Python modules. This library is included in bootloader
+  for Windows.
+* images
+  PyInstaller icons for Windows bootloaders and the .app bundle on Mac OS X.
