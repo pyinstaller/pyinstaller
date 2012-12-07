@@ -39,32 +39,6 @@ import PyInstaller.depend.imptracker
 logger = logging.getLogger(__name__)
 
 
-def test_Crypt(config):
-    # TODO: disabled for now
-    config["useCrypt"] = 0
-    return
-
-    #Crypt support. We need to build the AES module and we'll use distutils
-    # for that. FIXME: the day we'll use distutils for everything this will be
-    # a solved problem.
-    logger.info("trying to build crypt support...")
-    from distutils.core import run_setup
-    cwd = os.getcwd()
-    args = sys.argv[:]
-    try:
-        os.chdir(os.path.join(HOMEPATH, "source", "crypto"))
-        dist = run_setup("setup.py", ["install"])
-        if dist.have_run.get("install", 0):
-            config["useCrypt"] = 1
-            logger.info("... crypto support available")
-        else:
-            config["useCrypt"] = 0
-            logger.info("... error building crypto support")
-    finally:
-        os.chdir(cwd)
-        sys.argv = args
-
-
 def test_RsrcUpdate(config):
     config['hasRsrcUpdate'] = 0
     if not is_win:
@@ -170,7 +144,6 @@ def get_config(upx_dir, **kw):
 
     # if not set by Make.py we can assume Windows
     config = {'useELFEXE': 1}
-    test_Crypt(config)
     test_RsrcUpdate(config)
     test_UPX(config, upx_dir)
     find_PYZ_dependencies(config)
