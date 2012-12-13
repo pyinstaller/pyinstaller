@@ -17,9 +17,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 
+### **NOTE** This module is used during bootstrap.
+### Import *ONLY* builtin modules.
+### List of built-in modules: sys.builtin_module_names
+
+
 import sys
 
-from pyi_archive import ZlibArchive
+from pyi_archive import ArchiveReadError, ZlibArchive
 
 
 class FrozenImporter(object):
@@ -48,14 +53,28 @@ class FrozenImporter(object):
         """
         Load, unzip and initialize the Zip archive bundled with the executable.
         """
-        try:
-            # Unzip zip archive bundled with the executable.
-            self._pyz_archive = ZlibArchive(pyz_filepath)
-            # Verify the integrity of the zip archive with Python modules.
-            self._pyz_archive.checkmagic()
-        except (IOError, ArchiveReadError) as e:
-            # TODO handle properly exeptions. What exeption should be raised at this place according to PEP302?
-            raise Exception
+        # Examine all items in sys.path and the one like /path/executable_name?117568
+        # is the correct executable with bundled zip archive. Use this value
+        # for the ZlibArchive class and remove this item from sys.path.
+        # It was needed only for FrozenImporter class. Wrong path from sys.path
+        # Raises ArchiveReadError exception.
+        for pyz_filepath in sys.path:
+            try:
+                # Unzip zip archive bundled with the executable.
+                self._pyz_archive = ZlibArchive(pyz_filepath)
+                # Verify the integrity of the zip archive with Python modules.
+                self._pyz_archive.checkmagic()
+                # End this method since no Exception was raised we can assume
+                # ZlibArchive was successfully loaded. Let's remove 'pyz_filepath'
+                # from sys.path.
+                sys.path.remove(pyz_filepath)
+                return
+            except (IOError, ArchiveReadError) as e:
+                # Item from sys.path is not ZlibArchive let's try next.
+                continue
+        # sys.path does not contain filename of executable with bundled zip archive.
+        # Raise import error.
+        raise ImportError("Can't load frozen modules.")
             
     def find_module(self, fullname, path=None):
         """
@@ -115,7 +134,5 @@ def install(self):
     to sys.meta_path. It could be added to sys.path_hooks but sys.meta_path
     is processed by Python before looking at sys.path!
     """
-    # TODO how to get path to ZIP archive bundled in the executable?
-    pyz_path = None
     # Ensure Python looks first in the bundled zip archive for modules.
-    sys.meta_path.append(FrozenImporter(pyz_path))
+    sys.meta_path.append(FrozenImporter())
