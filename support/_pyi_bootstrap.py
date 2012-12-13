@@ -52,6 +52,12 @@ sys.importManager.install()
 # TODO create class ExtensionImporter to import Python C-extensions like 'package1.submodule2.pyd'.
 #      append it to sys.path_hooks
 
+### TODO enable the following code when new PEP302 import hooks are implemented.
+## New bootstrap code
+#import pyi_importers
+# Extend Python import machinery.
+#pyi_importers.install()
+
 
 ### Bootstrap process is complete.
 # We can use other python modules (e.g. os)
