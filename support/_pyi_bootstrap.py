@@ -41,6 +41,17 @@ pyi_iu._globalownertypes.insert(0, pyi_archive.PYZOwner)
 sys.importManager = pyi_iu.ImportManager()
 sys.importManager.install()
 
+# TODO create class 'FrozenImporter' from  PYZOwner and ImportManager.
+# TODO append class 'FrozenImporter' to sys.meta_path in method 'FrozenImporter.install()'
+# TODO for class 'FrozenImporter' look at
+#      zipimportx https://github.com/cloudmatrix/zipimportx/blob/master/zipimportx/__init__.py
+#      quickimport https://github.com/akruis/quickimport/blob/master/quickimport.py
+#      PEP302 import protocol
+
+# TODO ensure zipimport.zipimporter is in sys.path_hooks
+# TODO create class ExtensionImporter to import Python C-extensions like 'package1.submodule2.pyd'.
+#      append it to sys.path_hooks
+
 
 ### Bootstrap process is complete.
 # We can use other python modules (e.g. os)
