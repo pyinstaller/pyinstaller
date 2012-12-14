@@ -356,6 +356,7 @@ class Analysis(Target):
         _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
             os.path.join(HOMEPATH, "support", "_pyi_bootstrap.py"),
+            os.path.join(_init_code_path, 'pyi_importers.py'),
             os.path.join(_init_code_path, 'pyi_archive.py'),
             os.path.join(_init_code_path, 'pyi_carchive.py'),
             os.path.join(_init_code_path, 'pyi_iu.py'),
@@ -471,7 +472,7 @@ class Analysis(Target):
         #        {'PyQt4.QtGui': ['PyQt4.QtCore', 'sip'], 'another_Mod' ['hidden_import1', 'hidden_import2'], ...}
         #      supply this mapping as 'implies' keyword to
         #        modulegraph.modulegraph.ModuleGraph()
-        #      do analysis of scripts - user scripts, pyi_archive, pyi_ui, pyi_carchive, _pyi_bootstrap
+        #      do analysis of scripts - user scripts, pyi_archive, pyi_iu, pyi_carchive, _pyi_bootstrap
         #      find necessary rthooks
         #      do analysis of rthooks and add it to modulegraph object
         #      analyze python modules for ctype imports - modulegraph does not do that
@@ -725,7 +726,7 @@ def _findRTHook(modnm):
 class PYZ(Target):
     typ = 'PYZ'
 
-    def __init__(self, toc, name=None, level=9, crypt=None):
+    def __init__(self, toc, name=None, level=9):
         Target.__init__(self)
         self.toc = toc
         self.name = name
@@ -733,16 +734,11 @@ class PYZ(Target):
             self.name = self.out[:-3] + 'pyz'
         # Level of zlib compression.
         self.level = level
-        if config['useCrypt'] and crypt is not None:
-            self.crypt = pyi_archive.Keyfile(crypt).key
-        else:
-            self.crypt = None
         self.dependencies = compile_pycos(config['PYZ_dependencies'])
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
             ('level', _check_guts_eq),
-            ('crypt', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
             )
 
@@ -759,10 +755,10 @@ class PYZ(Target):
 
     def assemble(self):
         logger.info("building PYZ %s", os.path.basename(self.out))
-        pyz = pyi_archive.ZlibArchive(level=self.level, crypt=self.crypt)
+        pyz = pyi_archive.ZlibArchive(level=self.level)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
-        _save_data(self.out, (self.name, self.level, self.crypt, self.toc))
+        _save_data(self.out, (self.name, self.level, self.toc))
         return 1
 
 
@@ -918,7 +914,7 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
     return cachedfile
 
 
-UNCOMPRESSED, COMPRESSED, ENCRYPTED = range(3)
+UNCOMPRESSED, COMPRESSED = range(2)
 
 
 class PKG(Target):
@@ -935,7 +931,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0, crypt=0):
+                 strip_binaries=0, upx_binaries=0):
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -943,7 +939,6 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
-        self.crypt = crypt
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -953,9 +948,6 @@ class PKG(Target):
                           'EXECUTABLE': COMPRESSED,
                           'PYSOURCE': COMPRESSED,
                           'PYMODULE': COMPRESSED}
-            if self.crypt:
-                self.cdict['PYSOURCE'] = ENCRYPTED
-                self.cdict['PYMODULE'] = ENCRYPTED
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
@@ -964,7 +956,6 @@ class PKG(Target):
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
-            ('crypt', _check_guts_eq),
             )
 
     def check_guts(self, last_build):
@@ -1017,7 +1008,7 @@ class PKG(Target):
         archive.build(self.name, mytoc)
         _save_data(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
-                    self.strip_binaries, self.upx_binaries, self.crypt))
+                    self.strip_binaries, self.upx_binaries))
         for item in trash:
             os.remove(item)
         return 1
@@ -1039,7 +1030,6 @@ class EXE(Target):
         self.resources = kws.get('resources', [])
         self.strip = kws.get('strip', None)
         self.upx = kws.get('upx', None)
-        self.crypt = kws.get('crypt', 0)
         self.exclude_binaries = kws.get('exclude_binaries', 0)
         self.append_pkg = kws.get('append_pkg', self.append_pkg)
         if self.name is None:
@@ -1068,7 +1058,7 @@ class EXE(Target):
         self.pkg = PKG(self.toc, cdict=kws.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
-                       crypt=self.crypt)
+                       )
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
@@ -1080,7 +1070,6 @@ class EXE(Target):
             ('resources', _check_guts_eq),
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
-            ('crypt', _check_guts_eq),
             ('mtm', None,),  # checked bellow
             )
 
@@ -1104,10 +1093,6 @@ class EXE(Target):
             logger.info("ignoring icon, version, manifest and resources = platform not capable")
 
         mtm = data[-1]
-        crypt = data[-2]
-        if crypt != self.crypt:
-            logger.info("rebuilding %s because crypt option changed", self.outnm)
-            return 1
         if mtm != mtime(self.name):
             logger.info("rebuilding %s because mtimes don't match", self.outnm)
             return True
@@ -1197,7 +1182,7 @@ class EXE(Target):
         os.chmod(self.name, 0755)
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
-                self.crypt, mtime(self.name))
+                mtime(self.name))
         assert len(guts) == len(self.GUTS)
         _save_data(self.out, guts)
         for item in trash:

@@ -168,7 +168,7 @@ class CArchive(pyi_archive.Archive):
         #       char pylibname[64];    /* Filename of Python dynamic library. */
         #   } COOKIE;
         #
-        self._cookie_format = '!8siiii64s'  
+        self._cookie_format = '!8siiii64s'
         self._cookie_size = struct.calcsize(self._cookie_format)
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
@@ -273,12 +273,8 @@ class CArchive(pyi_archive.Archive):
 
         self.lib.seek(self.pkg_start + dpos)
         rslt = self.lib.read(dlen)
-        if flag == 2:
-            import AES
-            key = rslt[:32]
-            # Note: keep this in sync with bootloader's code.
-            rslt = AES.new(key, AES.MODE_CFB, "\0" * AES.block_size).decrypt(rslt[32:])
-        if flag == 1 or flag == 2:
+
+        if flag == 1:
             rslt = zlib.decompress(rslt)
         if typcd == 'M':
             return (1, rslt)
@@ -331,20 +327,15 @@ class CArchive(pyi_archive.Archive):
             raise
         ulen = len(s)
         assert flag in range(3)
-        if flag == 1 or flag == 2:
+        if flag == 1:
             s = zlib.compress(s, self.LEVEL)
-        if flag == 2:
-            global AES
-            import AES
-            import Crypt
-            key = Crypt.gen_random_key(32)
-            # Note: keep this in sync with bootloader's code
-            s = key + AES.new(key, AES.MODE_CFB, "\0" * AES.block_size).encrypt(s)
+
         dlen = len(s)
         where = self.lib.tell()
         if typcd == 'm':
             if pathnm.find('.__init__.py') > -1:
                 typcd = 'M'
+
         self.toc.add(where, dlen, ulen, flag, typcd, nm)
         self.lib.write(s)
 

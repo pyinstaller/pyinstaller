@@ -288,7 +288,7 @@ class ZlibArchive(Archive):
     LEVEL = 9
     NO_COMPRESSION_LEVEL = 0
 
-    def __init__(self, path=None, offset=None, level=9, crypt=None):
+    def __init__(self, path=None, offset=None, level=9):
         if path is None:
             offset = 0
         elif offset is None:
@@ -307,18 +307,11 @@ class ZlibArchive(Archive):
 
         # Zlib compression level.
         self.LEVEL = level
-        if crypt is not None:
-            self.crypted = 1
-            self.key = (crypt + "*" * 32)[:32]
-        else:
-            self.crypted = 0
-            self.key = None
 
         Archive.__init__(self, path, offset)
 
         # dynamic import so not imported if not needed
         self._mod_zlib = None
-        self._mod_aes = None
 
         if self.LEVEL > self.NO_COMPRESSION_LEVEL:
             try:
@@ -326,13 +319,8 @@ class ZlibArchive(Archive):
             except ImportError:
                 raise RuntimeError('zlib required but cannot be imported')
 
-        # FIXME Cryptography is broken in PyInstaller.
-        if self.crypted:
-            self._mod_aes = __import__('AES')
-
-    def _iv(self, nm):
-        IV = nm * ((self._mod_aes.block_size + len(nm) - 1) // len(nm))
-        return IV[:self._mod_aes.block_size]
+        # TODO this attribute is deprecated and not used anymore.
+        self.crypted = 0
 
     def extract(self, name):
         (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
@@ -340,16 +328,10 @@ class ZlibArchive(Archive):
             return None
         self.lib.seek(self.start + pos)
         obj = self.lib.read(lngth)
-        if self.crypted:
-            if self.key is None:
-                raise ImportError('decryption key not found')
-            obj = self._mod_aes.new(self.key, self._mod_aes.MODE_CFB, self._iv(name)).decrypt(obj)
         try:
             obj = self._mod_zlib.decompress(obj)
         except self._mod_zlib.error:
-            if not self.crypted:
-                raise
-            raise ImportError('invalid decryption key')
+            raise ImportError("PYZ entry '%s' failed to decompress" % name)
         try:
             co = marshal.loads(obj)
         except EOFError:
@@ -385,8 +367,6 @@ class ZlibArchive(Archive):
                 print e.args
                 raise
             obj = self._mod_zlib.compress(marshal.dumps(co), self.LEVEL)
-        if self.crypted:
-            obj = self._mod_aes.new(self.key, self._mod_aes.MODE_CFB, self._iv(nm)).encrypt(obj)
         self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
 
@@ -400,19 +380,6 @@ class ZlibArchive(Archive):
     def checkmagic(self):
         Archive.checkmagic(self)
         self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
-
-
-class Keyfile(object):
-    def __init__(self, fn=None):
-        if fn is None:
-            fn = sys.argv[0]
-            if fn[-4] == '.':
-                fn = fn[:-4]
-            fn += ".key"
-
-        execfile(fn, {"__builtins__": None}, self.__dict__)
-        if not hasattr(self, "key"):
-            self.key = None
 
 
 class PYZOwner(pyi_iu.Owner):
@@ -434,10 +401,6 @@ class PYZOwner(pyi_iu.Owner):
             self.pyz.checkmagic()
         except (IOError, ArchiveReadError), e:
             raise pyi_iu.OwnerError(e)
-        if self.pyz.crypted:
-            if not hasattr(sys, "keyfile"):
-                sys.keyfile = Keyfile()
-            self.pyz = ZlibArchive(path, crypt=sys.keyfile.key)
         pyi_iu.Owner.__init__(self, path)
 
     def getmod(self, nm, newmod=imp.new_module):

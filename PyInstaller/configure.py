@@ -39,32 +39,6 @@ import PyInstaller.depend.imptracker
 logger = logging.getLogger(__name__)
 
 
-def test_Crypt(config):
-    # TODO: disabled for now
-    config["useCrypt"] = 0
-    return
-
-    #Crypt support. We need to build the AES module and we'll use distutils
-    # for that. FIXME: the day we'll use distutils for everything this will be
-    # a solved problem.
-    logger.info("trying to build crypt support...")
-    from distutils.core import run_setup
-    cwd = os.getcwd()
-    args = sys.argv[:]
-    try:
-        os.chdir(os.path.join(HOMEPATH, "source", "crypto"))
-        dist = run_setup("setup.py", ["install"])
-        if dist.have_run.get("install", 0):
-            config["useCrypt"] = 1
-            logger.info("... crypto support available")
-        else:
-            config["useCrypt"] = 0
-            logger.info("... error building crypto support")
-    finally:
-        os.chdir(cwd)
-        sys.argv = args
-
-
 def test_RsrcUpdate(config):
     config['hasRsrcUpdate'] = 0
     if not is_win:
@@ -134,15 +108,19 @@ def test_UPX(config, upx_dir):
 #      is in place.
 def find_PYZ_dependencies(config):
     logger.debug("Computing PYZ dependencies")
-    # We need to import `pyi_archive` from `PyInstaller` directory, but
+    # We need to import `pyi_importers` from `PyInstaller` directory, but
     # not from package `PyInstaller`
     import PyInstaller.loader
     a = PyInstaller.depend.imptracker.ImportTracker([
         os.path.dirname(inspect.getsourcefile(PyInstaller.loader)),
         os.path.join(HOMEPATH, 'support')])
 
-    a.analyze_r('pyi_archive')
-    mod = a.modules['pyi_archive']
+    # Frozen executable needs some modules bundled as bytecode objects ('PYMODULE' type)
+    # for the bootstrap process. The following lines ensures that.
+    # It's like making those modules 'built-in'.
+    # 'pyi_importers' is the base module that should be available as bytecode (co) object.
+    a.analyze_r('pyi_importers')
+    mod = a.modules['pyi_importers']
     toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
     for i, (nm, fnm, typ) in enumerate(toc):
         mod = a.modules[nm]
@@ -170,7 +148,6 @@ def get_config(upx_dir, **kw):
 
     # if not set by Make.py we can assume Windows
     config = {'useELFEXE': 1}
-    test_Crypt(config)
     test_RsrcUpdate(config)
     test_UPX(config, upx_dir)
     find_PYZ_dependencies(config)
