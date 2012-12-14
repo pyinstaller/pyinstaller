@@ -132,35 +132,8 @@ unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
 	    OTHERERROR("Could not read from file\n");
 	    return NULL;
 	}
-	if (ptoc->cflag == '\2') {
-        static PyObject *AES = NULL;
-		PyObject *func_new;
-		PyObject *aes_dict;
-		PyObject *aes_obj;
-		PyObject *ddata;
-		long block_size;
-		char *iv;
 
-		if (!AES)
-			AES = PI_PyImport_ImportModule("AES");
-		aes_dict = PI_PyModule_GetDict(AES);
-		func_new = PI_PyDict_GetItemString(aes_dict, "new");
-		block_size = PI_PyInt_AsLong(PI_PyDict_GetItemString(aes_dict, "block_size"));
-		iv = malloc(block_size);
-		memset(iv, 0, block_size);
-
-		aes_obj = PI_PyObject_CallFunction(func_new, "s#Os#",
-			data, 32,
-			PI_PyDict_GetItemString(aes_dict, "MODE_CFB"),
-			iv, block_size);
-
-		ddata = PI_PyObject_CallMethod(aes_obj, "decrypt", "s#", data+32, ntohl(ptoc->len)-32);
-		memcpy(data, PI_PyString_AsString(ddata), ntohl(ptoc->len)-32);
-		Py_DECREF(aes_obj);
-		Py_DECREF(ddata);
-		VS("decrypted %s\n", ptoc->name);
-	}
-	if (ptoc->cflag == '\1' || ptoc->cflag == '\2') {
+	if (ptoc->cflag == '\1') {
 		tmp = decompress(data, ptoc);
 		free(data);
 		data = tmp;

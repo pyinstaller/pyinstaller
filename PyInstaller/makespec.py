@@ -195,8 +195,6 @@ def __add_options(parser):
     g.add_option("--noupx", action="store_true", default=False,
                  help="do not use UPX even if available (works differently "
                       "between Windows and *nix)")
-    #p.add_option("-Y", "--crypt", metavar="FILE",
-    #             help="encrypt pyc/pyo files")
 
     g = parser.add_option_group('Windows and Mac OS X specific options')
     g.add_option("-c", "--console", "--nowindowed", dest="console",
@@ -242,7 +240,7 @@ def __add_options(parser):
 def main(scripts, name=None, onefile=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
          workdir=None, pathex=[], version_file=None,
-         icon_file=None, manifest=None, resources=[], crypt=None,
+         icon_file=None, manifest=None, resources=[],
          hiddenimports=None, hookspath=None, **kwargs):
 
     if not name:
@@ -291,8 +289,6 @@ def main(scripts, name=None, onefile=0,
          'debug': debug,
          'strip': strip,
          'upx': not noupx,
-         'crypt': repr(crypt),
-         'crypted': crypt is not None,
          'console': console or debug,
          'exe_options': exe_options}
 
