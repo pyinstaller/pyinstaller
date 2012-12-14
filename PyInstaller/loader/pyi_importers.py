@@ -22,6 +22,7 @@
 ### List of built-in modules: sys.builtin_module_names
 
 
+import imp
 import sys
 
 from pyi_archive import ArchiveReadError, ZlibArchive
@@ -49,7 +50,7 @@ class FrozenImporter(object):
 
         FrozenImporter.install()
     """
-    def __init__(self, pyz_filepath):
+    def __init__(self):
         """
         Load, unzip and initialize the Zip archive bundled with the executable.
         """
@@ -86,37 +87,25 @@ class FrozenImporter(object):
         Return a loader object if the module was found, or None if it wasn't. If find_module() raises
         an exception, it will be propagated to the caller, aborting the import.
         """
+        # Acquire the interpreter's import lock for the current thread. Tis
+        # lock should be used by import hooks to ensure thread-safety when
+        # importing modules.
+        imp.acquire_lock()
         # TODO rewrite this method.
-        #print >> sys.stderr, "find_module (%s): %r" % (self.dir, fullname), 
-        acquire_lock()
+        module_loader = None  # None means - no module found in this importer.
         try:
-            dir = self.dir
-            try:
-                files = sys.quickimport_cache[dir]
-            except Exception, e:
-                raise ImportError("Can't import %r: No quickimport dir cache for dir %r: %s" % (fullname, dir, e) )
-            basename = fullname.rsplit('.', 1)[-1]
-            basenameNormcase = os.path.normcase(basename)
-            if not basenameNormcase in files:
-                for s in suffixes:
-                    if (basenameNormcase + s) in files:
-                        break
-                else:
-                    #print >> sys.stderr, ""
-                    return None
-            # this path is a candidate
-            importer = sys.path_importer_cache.get(dir)
-            assert importer is self
-            try:
-                #print >> sys.stderr, "testing.. ",
-                loader = ImpLoader(fullname, *find_module(basename, [dir]))
-                #print >> sys.stderr, "found"
-                return loader
-            except ImportError, e:
-                #print >> sys.stderr, e
-                return None
+            print fullname
+
+            if fullname in self._pyz_archive.toc:
+                print '... found'
+                # Tell the import machinery to use self.load_module() to load the module.
+                module_loader = self  
+            else:
+                print '... found'
         finally:
-            release_lock()
+            # Release the interpreter's import lock.
+            imp.release_lock()
+        return module_loader
 
     def load_module(self, fullname, path=None):
         """
@@ -125,7 +114,7 @@ class FrozenImporter(object):
         # TODO rewrite this method.
 
 
-def install(self):
+def install():
     """
     Install FrozenImporter class and other classes into the import machinery.
 

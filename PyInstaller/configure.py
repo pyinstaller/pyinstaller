@@ -108,15 +108,19 @@ def test_UPX(config, upx_dir):
 #      is in place.
 def find_PYZ_dependencies(config):
     logger.debug("Computing PYZ dependencies")
-    # We need to import `pyi_archive` from `PyInstaller` directory, but
+    # We need to import `pyi_importers` from `PyInstaller` directory, but
     # not from package `PyInstaller`
     import PyInstaller.loader
     a = PyInstaller.depend.imptracker.ImportTracker([
         os.path.dirname(inspect.getsourcefile(PyInstaller.loader)),
         os.path.join(HOMEPATH, 'support')])
 
-    a.analyze_r('pyi_archive')
-    mod = a.modules['pyi_archive']
+    # Frozen executable needs some modules bundled as bytecode objects ('PYMODULE' type)
+    # for the bootstrap process. The following lines ensures that.
+    # It's like making those modules 'built-in'.
+    # 'pyi_importers' is the base module that should be available as bytecode (co) object.
+    a.analyze_r('pyi_importers')
+    mod = a.modules['pyi_importers']
     toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
     for i, (nm, fnm, typ) in enumerate(toc):
         mod = a.modules[nm]
