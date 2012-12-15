@@ -35,11 +35,11 @@ import pyi_iu
 
 # Force Python to look first for modules bundled in the executable created
 # PyInstaller.
-#kpyi_iu._globalownertypes.insert(0, pyi_archive.PYZOwner)
+pyi_iu._globalownertypes.insert(0, pyi_archive.PYZOwner)
 
 # Override default import manager in Python
-#ksys.importManager = pyi_iu.ImportManager()
-#ksys.importManager.install()
+sys.importManager = pyi_iu.ImportManager()
+sys.importManager.install()
 
 # TODO create class 'FrozenImporter' from  PYZOwner and ImportManager.
 # TODO append class 'FrozenImporter' to sys.meta_path in method 'FrozenImporter.install()'
@@ -54,9 +54,9 @@ import pyi_iu
 
 ### TODO enable the following code when new PEP302 import hooks are implemented.
 ## New bootstrap code
-import pyi_importers
+#import pyi_importers
 # Extend Python import machinery.
-pyi_importers.install()
+#pyi_importers.install()
 
 
 ### Bootstrap process is complete.
