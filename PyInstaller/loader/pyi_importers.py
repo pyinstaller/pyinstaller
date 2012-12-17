@@ -24,6 +24,7 @@
 
 import imp
 import sys
+import pyi_iu
 
 from pyi_archive import ArchiveReadError, ZlibArchive
 
@@ -91,7 +92,6 @@ class FrozenImporter(object):
         # lock should be used by import hooks to ensure thread-safety when
         # importing modules.
         imp.acquire_lock()
-        # TODO rewrite this method.
         module_loader = None  # None means - no module found in this importer.
         try:
             print fullname
@@ -101,7 +101,7 @@ class FrozenImporter(object):
                 # Tell the import machinery to use self.load_module() to load the module.
                 module_loader = self  
             else:
-                print '... found'
+                print '... NOT found'
         finally:
             # Release the interpreter's import lock.
             imp.release_lock()
@@ -110,8 +110,113 @@ class FrozenImporter(object):
     def load_module(self, fullname, path=None):
         """
         PEP-302 loader.load_module() method for the ``sys.meta_path`` hook.
+
+        Return the loaded module (instance of imp.new_module()) or raises
+        an exception, preferably ImportError if an existing exception
+        is not being propagated.
         """
-        # TODO rewrite this method.
+        # Acquire the interpreter's import lock.
+        imp.acquire_lock()
+        module = None
+        try:
+            # PEP302 If there is an existing module object named 'fullname'
+            # in sys.modules, the loader must use that existing module.
+            module = sys.modules.get(fullname)
+
+            # Module not in sys.modules - load it and it to sys.modules.
+            if module is None:
+                # Load code object from the bundled ZIP archive.
+                is_pkg, bytecode = self._pyz_archive.extract(fullname)
+                # Create new empty 'module' object.
+                module = imp.new_module(fullname)
+
+                # TODO Replace bytecode.co_filename by something more meaningful:
+                # e.g. /absolute/path/frozen_executable/path/to/module/module_name.pyc
+                # Paths from developer machine are masked.
+
+                ### Set __file__ attribute of a module relative to the executable
+                # so that data files can be found. The absolute absolute path
+                # to the executable is taken from sys.prefix. In onefile mode it
+                # points to the temp directory where files are unpacked by PyInstaller.
+                abspath = sys.prefix
+                # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
+                if is_pkg:
+                    module.__file__ = pyi_iu._os_path_join(pyi_iu._os_path_join(abspath,
+                        fullname.replace('.', pyi_iu._os_sep)), '__init__.pyc')
+                else:
+                    module.__file__ = pyi_iu._os_path_join(abspath,
+                        fullname.replace('.', pyi_iu._os_sep) + '.pyc')
+
+                ### Set __path__  if 'fullname' is a package.
+                # Python has modules and packages. A Python package is container
+                # for several modules or packages.
+                if is_pkg:
+                    # If a module has a __path__ attribute, the import mechanism
+                    # will treat it as a package. Attribue can be empty list.
+                    module.__path__ = []
+
+                    ##### TODO remove the following code if mod.__path__ can be empty list.
+
+                    # Since PYTHONHOME is set in bootloader, 'sys.prefix' points to the
+                    # correct path where PyInstaller should find bundled dynamic
+                    # libraries. In one-file mode it points to the tmp directory where
+                    # bundled files are extracted at execution time.
+                    #localpath = sys.prefix
+
+                    # A python packages has to have __path__ attribute.
+                    #mod.__path__ = [pyi_iu._os_path_dirname(mod.__file__), self.path, localpath,
+                        #]
+
+                    #debug("PYZOwner setting %s's __path__: %s" % (nm, mod.__path__))
+
+                    #importer = pyi_iu.PathImportDirector(mod.__path__,
+                        #{self.path: PkgInPYZImporter(nm, self),
+                        #localpath: ExtInPkgImporter(localpath, nm)},
+                        #[pyi_iu.DirOwner])
+                    #mod.__importsub__ = importer.getmod
+
+                ### Set __loader__
+                # This is mostly for introspection and reloading, but can be
+                # used for importer-specific extras, for example getting data
+                # associated with an importer.
+                module.__loader__ = self
+
+                ### Set __package__
+                # Accoring to PEP302 this attribute must be set.
+                # When it is present, relative imports will be based on this
+                # attribute rather than the module __name__ attribute.
+                # More details can be found in PEP366.
+                # For ordinary modules this is set like:
+                #     'aa.bb.cc.dd'  ->  'aa.bb.cc'
+                if is_pkg:
+                    module.__package__ = fullname
+                else:
+                    module.__package__ = fullname.rpartition('.')[0]
+
+                ### Add module object to sys.modules dictionary.
+                # Module object must be in sys.modules before the loader
+                # executes the module code. This is crucial because the module
+                # code may (directly or indirectly) import itself; adding it
+                # to sys.modules beforehand prevents unbounded recursion in the
+                # worst case and multiple loading in the best.
+                sys.modules['fullname'] = module
+
+                # Run the module code.
+                exec(bytecode, module.__dict__)
+
+        except Exception:
+            # Remove 'fullname' from sys.modules if it was appended there.
+            if fullname in sys.modules:
+                sys.modules.pop(fullname)
+            # TODO Do we need to raise different types of Exceptions for better debugging?
+            # PEP302 requires to raise ImportError exception.
+            raise ImportError("Can't load frozen module: %s" % fullname)
+        finally:
+            # Release the interpreter's import lock.
+            imp.release_lock()
+
+        # Module returned only in case of no exception.
+        return module
 
 
 def install():
