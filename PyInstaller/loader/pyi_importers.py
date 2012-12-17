@@ -29,6 +29,27 @@ import pyi_iu
 from pyi_archive import ArchiveReadError, ZlibArchive
 
 
+class BuiltinImporter(object):
+    """
+    PEP-302 wrapper of the built-in modules for sys.meta_path.
+
+    This wrapper ensures that import machinery will not look for built-in
+    modules in the bundled ZIP archive.
+    """
+    def find_module(self, fullname, path=None):
+        # Look in the list of built-in modules.
+        if fullname in sys.builtin_module_names:
+            return self
+        else:
+            return None
+
+    def load_module(self, fullname, path=None):
+        module = sys.modules.get(fullname)
+        if module is None:
+            module = imp.init_builtin(fullname)
+        return module
+
+
 class FrozenImporter(object):
     """
     Load bytecode of Python modules from the executable created by PyInstaller.
@@ -93,18 +114,19 @@ class FrozenImporter(object):
         # importing modules.
         imp.acquire_lock()
         module_loader = None  # None means - no module found in this importer.
-        try:
-            print fullname
 
-            if fullname in self._pyz_archive.toc:
-                print '... found'
-                # Tell the import machinery to use self.load_module() to load the module.
-                module_loader = self  
-            else:
-                print '... NOT found'
-        finally:
-            # Release the interpreter's import lock.
-            imp.release_lock()
+        print fullname
+
+        if fullname in self._pyz_archive.toc:
+            print '... found'
+            # Tell the import machinery to use self.load_module() to load the module.
+            module_loader = self  
+        #else:
+            #print '... NOT found'
+
+        # Release the interpreter's import lock.
+        imp.release_lock()
+
         return module_loader
 
     def load_module(self, fullname, path=None):
@@ -125,6 +147,7 @@ class FrozenImporter(object):
 
             # Module not in sys.modules - load it and it to sys.modules.
             if module is None:
+                print 60 * 'A'
                 # Load code object from the bundled ZIP archive.
                 is_pkg, bytecode = self._pyz_archive.extract(fullname)
                 # Create new empty 'module' object.
@@ -199,7 +222,7 @@ class FrozenImporter(object):
                 # code may (directly or indirectly) import itself; adding it
                 # to sys.modules beforehand prevents unbounded recursion in the
                 # worst case and multiple loading in the best.
-                sys.modules['fullname'] = module
+                sys.modules[fullname] = module
 
                 # Run the module code.
                 exec(bytecode, module.__dict__)
@@ -210,7 +233,8 @@ class FrozenImporter(object):
                 sys.modules.pop(fullname)
             # TODO Do we need to raise different types of Exceptions for better debugging?
             # PEP302 requires to raise ImportError exception.
-            raise ImportError("Can't load frozen module: %s" % fullname)
+            #raise ImportError("Can't load frozen module: %s" % fullname)
+            raise
         finally:
             # Release the interpreter's import lock.
             imp.release_lock()
@@ -228,5 +252,8 @@ def install():
     to sys.meta_path. It could be added to sys.path_hooks but sys.meta_path
     is processed by Python before looking at sys.path!
     """
-    # Ensure Python looks first in the bundled zip archive for modules.
+    # First look in the built-in modules and not bundled ZIP archive.
+    sys.meta_path.append(BuiltinImporter())
+    # Ensure Python looks in the bundled zip archive for modules before any
+    # other places.
     sys.meta_path.append(FrozenImporter())
