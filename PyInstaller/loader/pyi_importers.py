@@ -37,13 +37,19 @@ class BuiltinImporter(object):
     modules in the bundled ZIP archive.
     """
     def find_module(self, fullname, path=None):
+        imp.acquire_lock()
+        module_loader = None  # None means - no module found by this importer.
+
         # Look in the list of built-in modules.
         if fullname in sys.builtin_module_names:
-            return self
-        else:
-            return None
+            module_loader = self
+
+        imp.release_lock()
+        return module_loader
 
     def load_module(self, fullname, path=None):
+        # PEP302 If there is an existing module object named 'fullname'
+        # in sys.modules, the loader must use that existing module.
         module = sys.modules.get(fullname)
         if module is None:
             module = imp.init_builtin(fullname)
@@ -147,7 +153,6 @@ class FrozenImporter(object):
 
             # Module not in sys.modules - load it and it to sys.modules.
             if module is None:
-                print 60 * 'A'
                 # Load code object from the bundled ZIP archive.
                 is_pkg, bytecode = self._pyz_archive.extract(fullname)
                 # Create new empty 'module' object.
@@ -243,6 +248,62 @@ class FrozenImporter(object):
         return module
 
 
+class CExtensionImporter(object):
+    """
+    PEP-302 hook for sys.meta_path to load Python C extension modules.
+
+    C extension modules are present on the sys.prefix as filenames:
+
+        full.module.name.pyd
+        full.module.name.so
+    """
+    def __init__(self):
+        # TODO cache directory content for faster module lookup without file system access.
+        # Find the platform specific suffix. On Windows it is .pyd, on Linux/Unix .so.
+        for ext, mode, typ in imp.get_suffixes():
+            if typ == imp.C_EXTENSION:
+                self._c_ext_tuple = (ext, mode, typ)
+                self._suffix = ext  # Just string like .pyd  or  .so
+                break
+        # Create hashmap of directory content for better performance.
+        files = pyi_iu._os_listdir(sys.prefix)
+        self._file_cache = set(files)
+
+    def find_module(self, fullname, path=None):
+        imp.acquire_lock()
+        module_loader = None  # None means - no module found by this importer.
+        print fullname
+
+        # Look in the file list of sys.prefix path (alias PYTHONHOME).
+        if fullname + self._suffix in self._file_cache:
+            print '... found'
+            module_loader = self
+
+        imp.release_lock()
+        return module_loader
+
+    def load_module(self, fullname, path=None):
+        # TODO reimplement
+        # TODO load by function  imp.load_dynamic()
+        # PEP302 If there is an existing module object named 'fullname'
+        # in sys.modules, the loader must use that existing module.
+        module = sys.modules.get(fullname)
+
+        if module is None:
+            filename = pyi_iu._os_path_join(sys.prefix, fullname + self._suffix)
+            fp = open(filename, 'rb')
+            module = imp.load_module(fullname, fp, filename, self._c_ext_tuple)
+            # Set __file__ attribute.
+            if hasattr(module, '__setattr__'):
+                module.__file__ = filename
+            else:
+                # Some modules (eg: Python for .NET) have no __setattr__
+                # and dict entry have to be set.
+                module.__dict__['__file__'] = filename
+
+        return module
+
+
 def install():
     """
     Install FrozenImporter class and other classes into the import machinery.
@@ -251,9 +312,17 @@ def install():
     the import machinery of the running process. The importer is added
     to sys.meta_path. It could be added to sys.path_hooks but sys.meta_path
     is processed by Python before looking at sys.path!
+
+    The order of processing import hooks in sys.meta_path:
+
+    1. built-in modules
+    2. modules from the bundled ZIP archive
+    3. C extension modules
     """
     # First look in the built-in modules and not bundled ZIP archive.
     sys.meta_path.append(BuiltinImporter())
     # Ensure Python looks in the bundled zip archive for modules before any
     # other places.
     sys.meta_path.append(FrozenImporter())
+    # Import hook for the C extension modules.
+    sys.meta_path.append(CExtensionImporter())

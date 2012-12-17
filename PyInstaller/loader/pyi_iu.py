@@ -27,6 +27,9 @@
 #
 
 
+# TODO Rename this module to  'pyi_os_path.py' Since this module will then only wrap functions from modules 'os' and 'os.path'. And all Owner classes will be removed.
+
+
 ### **NOTE** This module is used during bootstrap.
 ### Import *ONLY* builtin modules.
 ### List of built-in modules: sys.builtin_module_names
