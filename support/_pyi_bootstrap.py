@@ -1,4 +1,5 @@
 #
+# Copyright (C) 2012, Martin Zibricky
 # Copyright (C) 2005-2011, Giovanni Bajo
 # Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 #
@@ -32,31 +33,10 @@ import sys
 
 import pyi_archive
 import pyi_iu
+import pyi_importers
 
-# Force Python to look first for modules bundled in the executable created
-# PyInstaller.
-pyi_iu._globalownertypes.insert(0, pyi_archive.PYZOwner)
-
-# Override default import manager in Python
-sys.importManager = pyi_iu.ImportManager()
-sys.importManager.install()
-
-# TODO create class 'FrozenImporter' from  PYZOwner and ImportManager.
-# TODO append class 'FrozenImporter' to sys.meta_path in method 'FrozenImporter.install()'
-# TODO for class 'FrozenImporter' look at
-#      zipimportx https://github.com/cloudmatrix/zipimportx/blob/master/zipimportx/__init__.py
-#      quickimport https://github.com/akruis/quickimport/blob/master/quickimport.py
-#      PEP302 import protocol
-
-# TODO ensure zipimport.zipimporter is in sys.path_hooks
-# TODO create class ExtensionImporter to import Python C-extensions like 'package1.submodule2.pyd'.
-#      append it to sys.path_hooks
-
-### TODO enable the following code when new PEP302 import hooks are implemented.
-## New bootstrap code
-#import pyi_importers
-# Extend Python import machinery.
-#pyi_importers.install()
+# Extend Python import machinery by adding PEP302 importers to sys.meta_path.
+pyi_importers.install()
 
 
 ### Bootstrap process is complete.

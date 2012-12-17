@@ -272,10 +272,6 @@ class Archive(object):
         self.lib.write(struct.pack('!i', tocpos))
 
 
-# Used by PYZOwner
-import pyi_iu
-
-
 class ZlibArchive(Archive):
     """
     ZlibArchive - an archive with compressed entries. Archive is read
@@ -380,95 +376,3 @@ class ZlibArchive(Archive):
     def checkmagic(self):
         Archive.checkmagic(self)
         self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
-
-
-class PYZOwner(pyi_iu.Owner):
-    """
-    Load bytecode of Python modules from the executable created by PyInstaller.
-
-    Python bytecode is zipped and appended to the executable.
-
-    NOTE: PYZ format cannot be replaced by zipimport module.
-
-    The problem is that we have no control over zipimport; for instance,
-    it doesn't work if the zip file is embedded into a PKG appended
-    to an executable, like we create in one-file.
-    """
-    def __init__(self, path):
-        try:
-            # Unzip zip archive bundled with the executable.
-            self.pyz = ZlibArchive(path)
-            self.pyz.checkmagic()
-        except (IOError, ArchiveReadError), e:
-            raise pyi_iu.OwnerError(e)
-        pyi_iu.Owner.__init__(self, path)
-
-    def getmod(self, nm, newmod=imp.new_module):
-        rslt = self.pyz.extract(nm)
-        if rslt is None:
-            return None
-        ispkg, bytecode = rslt
-        mod = newmod(nm)
-
-        # Replace bytecode.co_filename by something more meaningful:
-        # e.g. /absolute/path/frozen_executable/path/to/module/module_name.pyc
-        # Paths from developer machine are masked.
-        try:
-            # Set __file__ attribute of a module relative to the executable
-            # so that data files can be found. The absolute absolute path
-            # to the executable is taken from sys.prefix. In onefile mode it
-            # points to the temp directory where files are unpacked by PyInstaller.
-            abspath = sys.prefix
-            # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
-            if ispkg:
-                mod.__file__ = pyi_iu._os_path_join(pyi_iu._os_path_join(abspath,
-                    nm.replace('.', pyi_iu._os_sep)), '__init__.pyc')
-            else:
-                mod.__file__ = pyi_iu._os_path_join(abspath,
-                    nm.replace('.', pyi_iu._os_sep) + '.pyc')
-        except AttributeError:
-            raise ImportError("PYZ entry '%s' (%s) is not a valid code object"
-                % (nm, repr(bytecode)))
-
-        # Python has modules and packages. A Python package is container
-        # for several modules or packages.
-        if ispkg:
-            # Since PYTHONHOME is set in bootloader, 'sys.prefix' points to the
-            # correct path where PyInstaller should find bundled dynamic
-            # libraries. In one-file mode it points to the tmp directory where
-            # bundled files are extracted at execution time.
-            localpath = sys.prefix
-
-            # A python packages has to have __path__ attribute.
-            mod.__path__ = [pyi_iu._os_path_dirname(mod.__file__), self.path, localpath,
-                ]
-
-            debug("PYZOwner setting %s's __path__: %s" % (nm, mod.__path__))
-
-            importer = pyi_iu.PathImportDirector(mod.__path__,
-                {self.path: PkgInPYZImporter(nm, self),
-                localpath: ExtInPkgImporter(localpath, nm)},
-                [pyi_iu.DirOwner])
-            mod.__importsub__ = importer.getmod
-
-        mod.__co__ = bytecode
-        return mod
-
-
-class PkgInPYZImporter(object):
-    def __init__(self, name, owner):
-        self.name = name
-        self.owner = owner
-
-    def getmod(self, nm):
-        debug("PkgInPYZImporter.getmod %s -> %s" % (nm, self.name + '.' + nm))
-        return self.owner.getmod(self.name + '.' + nm)
-
-
-class ExtInPkgImporter(pyi_iu.DirOwner):
-    def __init__(self, path, prefix):
-        pyi_iu.DirOwner.__init__(self, path)
-        self.prefix = prefix
-
-    def getmod(self, nm):
-        return pyi_iu.DirOwner.getmod(self, self.prefix + '.' + nm)
