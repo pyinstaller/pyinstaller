@@ -48,11 +48,24 @@ class BuiltinImporter(object):
         return module_loader
 
     def load_module(self, fullname, path=None):
-        # PEP302 If there is an existing module object named 'fullname'
-        # in sys.modules, the loader must use that existing module.
-        module = sys.modules.get(fullname)
-        if module is None:
-            module = imp.init_builtin(fullname)
+        imp.acquire_lock()
+
+        try:
+            # PEP302 If there is an existing module object named 'fullname'
+            # in sys.modules, the loader must use that existing module.
+            module = sys.modules.get(fullname)
+            if module is None:
+                module = imp.init_builtin(fullname)
+
+        except Exception:
+            # Remove 'fullname' from sys.modules if it was appended there.
+            if fullname in sys.modules:
+                sys.modules.pop(fullname)
+            raise  # Raise the same exception again.
+        finally:
+            # Release the interpreter's import lock.
+            imp.release_lock()
+
         return module
 
 
@@ -104,7 +117,7 @@ class FrozenImporter(object):
         # sys.path does not contain filename of executable with bundled zip archive.
         # Raise import error.
         raise ImportError("Can't load frozen modules.")
-            
+
     def find_module(self, fullname, path=None):
         """
         PEP-302 finder.find_module() method for the ``sys.meta_path`` hook.
@@ -121,14 +134,9 @@ class FrozenImporter(object):
         imp.acquire_lock()
         module_loader = None  # None means - no module found in this importer.
 
-        print fullname
-
         if fullname in self._pyz_archive.toc:
-            print '... found'
             # Tell the import machinery to use self.load_module() to load the module.
-            module_loader = self  
-        #else:
-            #print '... NOT found'
+            module_loader = self
 
         # Release the interpreter's import lock.
         imp.release_lock()
@@ -272,34 +280,42 @@ class CExtensionImporter(object):
     def find_module(self, fullname, path=None):
         imp.acquire_lock()
         module_loader = None  # None means - no module found by this importer.
-        print fullname
 
         # Look in the file list of sys.prefix path (alias PYTHONHOME).
         if fullname + self._suffix in self._file_cache:
-            print '... found'
             module_loader = self
 
         imp.release_lock()
         return module_loader
 
     def load_module(self, fullname, path=None):
-        # TODO reimplement
-        # TODO load by function  imp.load_dynamic()
-        # PEP302 If there is an existing module object named 'fullname'
-        # in sys.modules, the loader must use that existing module.
-        module = sys.modules.get(fullname)
+        imp.acquire_lock()
 
-        if module is None:
-            filename = pyi_iu._os_path_join(sys.prefix, fullname + self._suffix)
-            fp = open(filename, 'rb')
-            module = imp.load_module(fullname, fp, filename, self._c_ext_tuple)
-            # Set __file__ attribute.
-            if hasattr(module, '__setattr__'):
-                module.__file__ = filename
-            else:
-                # Some modules (eg: Python for .NET) have no __setattr__
-                # and dict entry have to be set.
-                module.__dict__['__file__'] = filename
+        try:
+            # PEP302 If there is an existing module object named 'fullname'
+            # in sys.modules, the loader must use that existing module.
+            module = sys.modules.get(fullname)
+
+            if module is None:
+                filename = pyi_iu._os_path_join(sys.prefix, fullname + self._suffix)
+                fp = open(filename, 'rb')
+                module = imp.load_module(fullname, fp, filename, self._c_ext_tuple)
+                # Set __file__ attribute.
+                if hasattr(module, '__setattr__'):
+                    module.__file__ = filename
+                else:
+                    # Some modules (eg: Python for .NET) have no __setattr__
+                    # and dict entry have to be set.
+                    module.__dict__['__file__'] = filename
+
+        except Exception:
+            # Remove 'fullname' from sys.modules if it was appended there.
+            if fullname in sys.modules:
+                sys.modules.pop(fullname)
+            raise  # Raise the same exception again.
+        finally:
+            # Release the interpreter's import lock.
+            imp.release_lock()
 
         return module
 
