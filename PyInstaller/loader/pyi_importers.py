@@ -110,6 +110,10 @@ class FrozenImporter(object):
                 # ZlibArchive was successfully loaded. Let's remove 'pyz_filepath'
                 # from sys.path.
                 sys.path.remove(pyz_filepath)
+                # Some runtime hook might need access to the list of available
+                # frozen module. Let's make them accessible as a set().
+                self.toc = set(self._pyz_archive.toc.keys())
+                # Return - no error was raised.
                 return
             except (IOError, ArchiveReadError) as e:
                 # Item from sys.path is not ZlibArchive let's try next.
@@ -134,7 +138,7 @@ class FrozenImporter(object):
         imp.acquire_lock()
         module_loader = None  # None means - no module found in this importer.
 
-        if fullname in self._pyz_archive.toc:
+        if fullname in self.toc:
             # Tell the import machinery to use self.load_module() to load the module.
             module_loader = self
 
