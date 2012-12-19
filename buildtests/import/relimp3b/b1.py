@@ -1,1 +1,1 @@
-string = "I hope you see this!"
+raise ValueError
