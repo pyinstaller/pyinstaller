@@ -191,29 +191,20 @@ class FrozenImporter(object):
                 # Python has modules and packages. A Python package is container
                 # for several modules or packages.
                 if is_pkg:
+
                     # If a module has a __path__ attribute, the import mechanism
-                    # will treat it as a package. Attribue can be empty list.
-                    module.__path__ = []
-
-                    ##### TODO remove the following code if mod.__path__ can be empty list.
-
+                    # will treat it as a package.
+                    #
                     # Since PYTHONHOME is set in bootloader, 'sys.prefix' points to the
                     # correct path where PyInstaller should find bundled dynamic
                     # libraries. In one-file mode it points to the tmp directory where
                     # bundled files are extracted at execution time.
-                    #localpath = sys.prefix
-
-                    # A python packages has to have __path__ attribute.
-                    #mod.__path__ = [pyi_iu._os_path_dirname(mod.__file__), self.path, localpath,
-                        #]
-
-                    #debug("PYZOwner setting %s's __path__: %s" % (nm, mod.__path__))
-
-                    #importer = pyi_iu.PathImportDirector(mod.__path__,
-                        #{self.path: PkgInPYZImporter(nm, self),
-                        #localpath: ExtInPkgImporter(localpath, nm)},
-                        #[pyi_iu.DirOwner])
-                    #mod.__importsub__ = importer.getmod
+                    #
+                    # Set __path__ to point to 'sys.prefix/package/subpackage' and sys.prefix.
+                    # TODO ensure we need __path__ to contain sys.prefix.
+                    #
+                    # __path__ cannot be empty list because wx module prepends something to it.
+                    module.__path__ = [pyi_iu._os_path_dirname(module.__file__), sys.prefix]
 
                 ### Set __loader__
                 # This is mostly for introspection and reloading, but can be
