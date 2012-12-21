@@ -208,10 +208,9 @@ class FrozenImporter(object):
                     module.__path__ = [pyi_iu._os_path_dirname(module.__file__)]
 
                 ### Set __loader__
-                # This is mostly for introspection and reloading, but can be
-                # used for importer-specific extras, for example getting data
-                # associated with an importer.
-                module.__loader__ = self
+                # We cannot set this attribute for frozen imports. Setting it
+                # could break some Python packages. On Windows it breaks
+                # pywin32 and test 'basic/test_pyttsx' will fail.
 
                 ### Set __package__
                 # Accoring to PEP302 this attribute must be set.
