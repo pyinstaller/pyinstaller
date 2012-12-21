@@ -200,11 +200,12 @@ class FrozenImporter(object):
                     # libraries. In one-file mode it points to the tmp directory where
                     # bundled files are extracted at execution time.
                     #
-                    # Set __path__ to point to 'sys.prefix/package/subpackage' and sys.prefix.
-                    # TODO ensure we need __path__ to contain sys.prefix.
+                    # __path__ cannot be empty list because 'wx' module prepends something to it.
+                    # It cannot contain value 'sys.prefix' because 'xml.etree.cElementTree' fails
+                    # Otherwise.
                     #
-                    # __path__ cannot be empty list because wx module prepends something to it.
-                    module.__path__ = [pyi_iu._os_path_dirname(module.__file__), sys.prefix]
+                    # Set __path__ to point to 'sys.prefix/package/subpackage'.
+                    module.__path__ = [pyi_iu._os_path_dirname(module.__file__)]
 
                 ### Set __loader__
                 # This is mostly for introspection and reloading, but can be
