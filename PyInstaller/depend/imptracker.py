@@ -309,6 +309,7 @@ class ImportTracker:
             except AttributeError:
                 pass
             else:
+                logger.info('Processing hook %s' % hookmodnm)
                 mod = self._handle_hook(mod, hook)
                 if fqname != mod.__name__:
                     logger.warn("%s is changing its name to %s",
