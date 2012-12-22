@@ -31,8 +31,8 @@
 
 import sys
 
+import pyi_os_path
 import pyi_archive
-import pyi_iu
 import pyi_importers
 
 # Extend Python import machinery by adding PEP302 importers to sys.meta_path.

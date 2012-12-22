@@ -359,7 +359,7 @@ class Analysis(Target):
             os.path.join(_init_code_path, 'pyi_importers.py'),
             os.path.join(_init_code_path, 'pyi_archive.py'),
             os.path.join(_init_code_path, 'pyi_carchive.py'),
-            os.path.join(_init_code_path, 'pyi_iu.py'),
+            os.path.join(_init_code_path, 'pyi_os_path.py'),
             ]
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
@@ -472,7 +472,7 @@ class Analysis(Target):
         #        {'PyQt4.QtGui': ['PyQt4.QtCore', 'sip'], 'another_Mod' ['hidden_import1', 'hidden_import2'], ...}
         #      supply this mapping as 'implies' keyword to
         #        modulegraph.modulegraph.ModuleGraph()
-        #      do analysis of scripts - user scripts, pyi_archive, pyi_iu, pyi_carchive, _pyi_bootstrap
+        #      do analysis of scripts - user scripts, pyi_archive, pyi_os_path, pyi_importers, pyi_carchive, _pyi_bootstrap
         #      find necessary rthooks
         #      do analysis of rthooks and add it to modulegraph object
         #      analyze python modules for ctype imports - modulegraph does not do that
