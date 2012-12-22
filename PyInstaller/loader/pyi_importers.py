@@ -7,6 +7,14 @@
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
 #
+# In addition to the permissions in the GNU General Public License, the
+# authors give you unlimited permission to link or embed the compiled
+# version of this file into combinations with other programs, and to
+# distribute those combinations without any restriction coming from the
+# use of this file. (The General Public License restrictions do apply in
+# other respects; for example, they cover modification of the file, and
+# distribution when not linked into a combine executable.)
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,7 +32,7 @@
 
 import imp
 import sys
-import pyi_iu
+import pyi_os_path
 
 from pyi_archive import ArchiveReadError, ZlibArchive
 
@@ -115,7 +123,10 @@ class FrozenImporter(object):
                 self.toc = set(self._pyz_archive.toc.keys())
                 # Return - no error was raised.
                 return
-            except (IOError, ArchiveReadError) as e:
+            except IOError:
+                # Item from sys.path is not ZlibArchive let's try next.
+                continue
+            except ArchiveReadError:
                 # Item from sys.path is not ZlibArchive let's try next.
                 continue
         # sys.path does not contain filename of executable with bundled zip archive.
@@ -181,11 +192,11 @@ class FrozenImporter(object):
                 abspath = sys.prefix
                 # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
                 if is_pkg:
-                    module.__file__ = pyi_iu._os_path_join(pyi_iu._os_path_join(abspath,
-                        fullname.replace('.', pyi_iu._os_sep)), '__init__.pyc')
+                    module.__file__ = pyi_os_path.os_path_join(pyi_os_path.os_path_join(abspath,
+                        fullname.replace('.', pyi_os_path.os_sep)), '__init__.pyc')
                 else:
-                    module.__file__ = pyi_iu._os_path_join(abspath,
-                        fullname.replace('.', pyi_iu._os_sep) + '.pyc')
+                    module.__file__ = pyi_os_path.os_path_join(abspath,
+                        fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
 
                 ### Set __path__  if 'fullname' is a package.
                 # Python has modules and packages. A Python package is container
@@ -205,7 +216,7 @@ class FrozenImporter(object):
                     # Otherwise.
                     #
                     # Set __path__ to point to 'sys.prefix/package/subpackage'.
-                    module.__path__ = [pyi_iu._os_path_dirname(module.__file__)]
+                    module.__path__ = [pyi_os_path.os_path_dirname(module.__file__)]
 
                 ### Set __loader__
                 # We cannot set this attribute for frozen imports. Setting it
@@ -269,7 +280,7 @@ class CExtensionImporter(object):
                 self._suffix = ext  # Just string like .pyd  or  .so
                 break
         # Create hashmap of directory content for better performance.
-        files = pyi_iu._os_listdir(sys.prefix)
+        files = pyi_os_path.os_listdir(sys.prefix)
         self._file_cache = set(files)
 
     def find_module(self, fullname, path=None):
@@ -292,7 +303,7 @@ class CExtensionImporter(object):
             module = sys.modules.get(fullname)
 
             if module is None:
-                filename = pyi_iu._os_path_join(sys.prefix, fullname + self._suffix)
+                filename = pyi_os_path.os_path_join(sys.prefix, fullname + self._suffix)
                 fp = open(filename, 'rb')
                 module = imp.load_module(fullname, fp, filename, self._c_ext_tuple)
                 # Set __file__ attribute.
