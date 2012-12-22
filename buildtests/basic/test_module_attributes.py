@@ -68,19 +68,11 @@ def compare(test_name, expect, frozen):
 
 ## Pure Python module.
 _expect = exec_python('import xml.etree.ElementTree as ET; print dir(ET)')
-# __loader__ attribute is appended by PyInstaller (PEP302 requirement).
-# Remove it for comparison.
-_frozen_list = dir(ET)
-_frozen_list.remove('__loader__')  
-_frozen = str(_frozen_list)
+_frozen = str(dir(ET))
 compare('ElementTree', _expect, _frozen)
 
 
 ## C-extension Python module.
 _expect = exec_python('import xml.etree.cElementTree as cET; print dir(cET)')
-# __loader__ attribute is appended by PyInstaller (PEP302 requirement).
-# Remove it for comparison.
-_frozen_list = dir(cET)
-_frozen_list.remove('__loader__')  
-_frozen = str(_frozen_list)
+_frozen = str(dir(cET))
 compare('cElementTree', _expect, _frozen)
