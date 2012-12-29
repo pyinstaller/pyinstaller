@@ -32,7 +32,8 @@ onefiletmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
-             hookspath=%(hookspath)r)
+             hookspath=%(hookspath)r,
+             runtime_hooks=%(runtime_hooks)r)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -50,7 +51,8 @@ onedirtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
-             hookspath=%(hookspath)r)
+             hookspath=%(hookspath)r,
+             runtime_hooks=%(runtime_hooks)r)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -73,7 +75,8 @@ comsrvrtmplt = """# -*- mode: python -*-
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
-             hookspath=%(hookspath)r)
+             hookspath=%(hookspath)r,
+             runtime_hooks=%(runtime_hooks)r)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -183,6 +186,13 @@ def __add_options(parser):
     g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
                  help="additional path to search for hooks "
                       "(may be given several times)")
+    g.add_option('--runtime-hook', action='append', dest='runtime_hooks',
+            help='path to a file with custom runtime hook. Runtime hook '
+            'contains code that is bundled with the frozen executable and its code '
+            'is executed before other code or module. This is handy for any tricky '
+            'setup of the frozen code or modules. '
+            '(may be given several times)')
+
 
     g = parser.add_option_group('How to generate')
     g.add_option("-d", "--debug", action="store_true", default=False,
@@ -241,7 +251,7 @@ def main(scripts, name=None, onefile=0,
          console=True, debug=False, strip=0, noupx=0, comserver=0,
          workdir=None, pathex=[], version_file=None,
          icon_file=None, manifest=None, resources=[],
-         hiddenimports=None, hookspath=None, **kwargs):
+         hiddenimports=None, hookspath=None, runtime_hooks=[], **kwargs):
 
     if not name:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -282,6 +292,7 @@ def main(scripts, name=None, onefile=0,
          'pathex': pathex,
          'hiddenimports': hiddenimports,
          'hookspath': hookspath,
+         'runtime_hooks': runtime_hooks,  # List with custom runtime hook files.
          #'exename': '',
          'name': name,
          'distdir': repr(distdir),

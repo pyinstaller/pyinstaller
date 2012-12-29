@@ -350,7 +350,7 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
-                 hookspath=None, excludes=None):
+                 hookspath=None, excludes=None, runtime_hooks=[]):
         Target.__init__(self)
         # Include initialization Python code in PyInstaller analysis.
         _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
@@ -377,6 +377,11 @@ class Analysis(Target):
         self.hiddenimports.extend(HIDDENIMPORTS)
 
         self.hookspath = hookspath
+
+        # Custom runtime hook files that should be included and started before
+        # any existing PyInstaller runtime hooks.
+        self.custom_runtime_hooks = runtime_hooks
+
         self.excludes = excludes
         self.scripts = TOC()
         self.pure = TOC()
@@ -558,6 +563,20 @@ class Analysis(Target):
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
 
+        # Include custom rthooks (runtime hooks).
+        # The runtime hooks are order dependent. First hooks in the list
+        # are executed first.
+        # Custom hooks are added before Pyinstaller rthooks and thus they are
+        # executed first.
+        if self.custom_runtime_hooks:
+            logger.info("Including custom run-time hooks")
+            # Data structure in format:
+            # ('rt_hook_mod_name', '/rt/hook/file/name.py', 'PYSOURCE')
+            for hook_file in self.custom_runtime_hooks:
+                hook_file = os.path.abspath(hook_file)
+                items = (os.path.splitext(os.path.basename(hook_file))[0], hook_file, 'PYSOURCE')
+                rthooks.append(items)
+
         # Find rthooks.
         logger.info("Looking for run-time hooks")
         for modnm, mod in importTracker.modules.items():
@@ -604,7 +623,7 @@ class Analysis(Target):
         self._check_python_library(binaries)
         if zipfiles:
             scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
-        # Add realtime hooks just before the last script (which is
+        # Add runtime hooks just before the last script (which is
         # the entrypoint of the application).
         scripts[-1:-1] = rthooks
         self.scripts = TOC(scripts)
