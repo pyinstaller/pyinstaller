@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2013, Martin Zibricky
+# Copyright (C) 2013, Martin Zibricky
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,12 +16,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-from PyInstaller.hooks.hookutils import qt4_menu_nib_dir
 from PyInstaller.compat import is_darwin
-
-
-# In the new consolidated mode any PyQt depends on _qt
-hiddenimports = ['sip', 'PyQt4._qt']
+from PyInstaller.hooks.hookutils import qt4_menu_nib_dir
 
 
 # For Qt to work on Mac OS X it is necessary to include directory qt_menu.nib.
