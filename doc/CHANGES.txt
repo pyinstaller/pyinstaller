@@ -6,12 +6,26 @@ Changes since PyInstaller 2.0
  + Minimum suported Python version is 2.4.
  + Add import hooks for docutils, jinja2, sphinx, pytz, idlelib.
    (thanks to Bryan A. Jones)
+ + Add import hooks for IPython, Scipy.
+ + Better support for pkg_resources (.egg manipulation) in frozen executables.
+ + Add option --runtime-hook to allow running custom code from frozen app
+   before loading other Python from the frozen app. This is usefull for some
+   specialized preprocessing just for the frozen executable. E.g. this
+   option can be used to set SIP api v2 for PyQt4.
+ * (OSX) Fix missing qt_menu.nib in dist directory when using PySide.
  * Environment variable PYTHONHOME is now unset and path to python home
    is set in bootloader by function Py_SetPythonHome().This overrides
    sys.prefix and sys.exec_prefix for frozen application.
  * Python library filename (e.g. python27.dll, libpython2.7.so.1.0, etc)
    is embedded to the created exe file. Bootloader is not trying several
    filenames anymore.
+ * Frozen executables now use PEP-302 import hooks to import frozen modules
+   and C extensions. (sys.meta_path)
+ * Drop old import machinery from iu.py.
+ * Drop own code to import modules from zip archives (.egg files) in frozen
+   executales. Native Python implementation is kept unchanged.
+ * Drop old crypto code. This feature was never completed.
+ * Drop bootloader dependency on Python headers for compilation.
 
 Changes since PyInstaller 1.5.1
 -------------------------------

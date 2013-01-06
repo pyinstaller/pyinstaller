@@ -190,6 +190,13 @@ What to bundle, where to search:
     the `hookspath`, see `Analysis`_ below. This option may be given
     several times.
 
+--runtime-hook=RUNTIME_HOOK
+    path to a file with custom runtime hook. Runtime hook
+    contains code that is bundled with the frozen
+    executable and its code is executed before other code
+    or module. This is handy for any tricky setup of the
+    frozen code or modules. (may be given several times)
+
 How to generate:
 
 -d, --debug
