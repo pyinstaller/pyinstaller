@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011-2012 Martin Zibricky
+# Copyright (C) 2011-2013 Martin Zibricky
 # Copyright (C) 2011-2012 Hartmut Goebel
 # Copyright (C) 2005-2011 Giovanni Bajo
 # Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
@@ -116,7 +116,7 @@ class SkipChecker(object):
             'basic/test_ctypes': ['ctypes'],
             'basic/test_module_attributes': ['xml.etree.cElementTree'],
             'basic/test_multiprocess': ['multiprocessing'],
-            'basic/test_nestedlaunch1': ['ctypes'],
+            'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_onefile_multiprocess': ['multiprocessing'],
             'libraries/test_enchant': ['enchant'],
             'libraries/test_Image': ['PIL'],
@@ -245,6 +245,16 @@ NO_SPEC_FILE = [
     'libraries/test_wx_pubsub_arg1'
 ]
 
+SPEC_FILE = [
+    'basic/test_5',  # TODO What is the purpose of this test case?
+    'basic/test_ctypes',
+    'basic/test_pkg_structures',
+    'multipackage/test_multipackage1',
+    'multipackage/test_multipackage2',
+    'multipackage/test_multipackage3',
+    'multipackage/test_multipackage4',
+    'multipackage/test_multipackage5',
+]
 
 class BuildTestRunner(object):
 

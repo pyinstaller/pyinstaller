@@ -3,7 +3,7 @@ import sys
 
 if __name__ == "__main__":
     fn =  os.path.join(os.path.dirname(sys.executable),
-                       "..", "test_nestedlaunch0", "test_nestedlaunch0.exe")
+                       "..", "test_onefile_nestedlaunch0", "test_onefile_nestedlaunch0.exe")
     try:
         import subprocess
     except ImportError:
