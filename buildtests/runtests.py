@@ -145,6 +145,7 @@ class SkipChecker(object):
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
             'interactive/test_pygame': ['pygame'],
+            'interactive/test_pyqt4_multiprocessing': ['multiprocessing', 'PyQt4'],
             }
         # Other dependecies of some tests.
         self.DEPENDENCIES = {
@@ -228,6 +229,7 @@ NO_SPEC_FILE = [
     'import/test_onefile_c_extension',
     'import/test_onefile_zipimport',
     'import/test_onefile_zipimport2',
+    'interactive/test_pyqt4_multiprocessing',
     'libraries/test_enchant',
     'libraries/test_idlelib',
     'libraries/test_onefile_tkinter',
