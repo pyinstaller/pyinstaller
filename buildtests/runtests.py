@@ -249,6 +249,8 @@ SPEC_FILE = [
     'basic/test_5',  # TODO What is the purpose of this test case?
     'basic/test_ctypes',
     'basic/test_pkg_structures',
+    'import/test_app_with_plugins',
+    'import/test_hiddenimport',
     'multipackage/test_multipackage1',
     'multipackage/test_multipackage2',
     'multipackage/test_multipackage3',
