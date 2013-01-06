@@ -251,6 +251,9 @@ SPEC_FILE = [
     'basic/test_pkg_structures',
     'import/test_app_with_plugins',
     'import/test_hiddenimport',
+    'interactive/test_matplotlib',  # TODO .spec for this test contain win32 specific manifest code. Do we still need it?
+    'libraries/test_Image',
+    'libraries/test_PIL',
     'multipackage/test_multipackage1',
     'multipackage/test_multipackage2',
     'multipackage/test_multipackage3',
