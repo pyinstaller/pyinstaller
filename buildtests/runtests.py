@@ -217,6 +217,7 @@ class SkipChecker(object):
 SPEC_FILE = set([
     'basic/test_5',  # TODO What is the purpose of this test case?
     'basic/test_ctypes',
+    'basic/test_threading2',
     'basic/test_pkg_structures',
     'import/test_app_with_plugins',
     'import/test_hiddenimport',
