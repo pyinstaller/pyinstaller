@@ -139,9 +139,9 @@ class SkipChecker(object):
             'libraries/test_sphinx': ['sphinx', 'docutils', 'jinja2', 'uuid'],
             'import/test_c_extension': ['simplejson'],
             'import/test_ctypes_cdll_c': ['ctypes'],
-            'import/test_ctypes_cdll_c2': ['ctypes'],
             'import/test_eggs2': ['pkg_resources'],
             'import/test_onefile_c_extension': ['simplejson'],
+            'import/test_onefile_ctypes_cdll_c': ['ctypes'],
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
             'interactive/test_pygame': ['pygame'],
@@ -214,38 +214,7 @@ class SkipChecker(object):
         return (True, 'Requirements met.')
 
 
-NO_SPEC_FILE = [
-    'basic/test_absolute_ld_library_path',
-    'basic/test_absolute_python_path',
-    'basic/test_email',
-    'basic/test_email_oldstyle',
-    'basic/test_helloworld',
-    'basic/test_module__file__attribute',
-    'basic/test_multiprocess',
-    'basic/test_onefile_multiprocess',
-    'basic/test_onefile_module__file__attribute',
-    'basic/test_python_home',
-    'import/test_c_extension',
-    'import/test_onefile_c_extension',
-    'import/test_onefile_zipimport',
-    'import/test_onefile_zipimport2',
-    'interactive/test_pyqt4_multiprocessing',
-    'libraries/test_enchant',
-    'libraries/test_idlelib',
-    'libraries/test_onefile_tkinter',
-    'libraries/test_sqlalchemy',
-    'libraries/test_pyodbc',
-    'libraries/test_pyttsx',
-    'libraries/test_scipy',
-    'libraries/test_sphinx',
-    'libraries/test_pytz',
-    'libraries/test_usb',
-    'libraries/test_wx_pubsub',
-    'libraries/test_wx_pubsub_kwargs',
-    'libraries/test_wx_pubsub_arg1'
-]
-
-SPEC_FILE = [
+SPEC_FILE = set([
     'basic/test_5',  # TODO What is the purpose of this test case?
     'basic/test_ctypes',
     'basic/test_pkg_structures',
@@ -259,7 +228,8 @@ SPEC_FILE = [
     'multipackage/test_multipackage3',
     'multipackage/test_multipackage4',
     'multipackage/test_multipackage5',
-]
+])
+
 
 class BuildTestRunner(object):
 
@@ -587,6 +557,7 @@ def clean():
     # By some directories we do not need to clean files.
     # E.g. for unit tests.
     IGNORE_DIRS = set([
+        'eggs4testing',
         'unit',
     ])
 
@@ -606,12 +577,12 @@ def clean():
                         os.remove(pth)
                 except OSError, e:
                     print e
-
-    # Delete *.spec files for tests without spec file.
-    for pth in NO_SPEC_FILE:
-        pth = os.path.join(BASEDIR, pth + '.spec')
-        if os.path.exists(pth):
-            os.remove(pth)
+        # Delete *.spec files for tests without spec file.
+        for pth in glob.glob(os.path.join(directory, '*.spec')):
+            test_name = directory + '/' + os.path.splitext(os.path.basename(pth))[0]
+            if not test_name in SPEC_FILE:
+                if os.path.exists(pth):
+                    os.remove(pth)
 
 
 def run_tests(test_suite, xml_file):
