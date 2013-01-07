@@ -220,6 +220,7 @@ SPEC_FILE = set([
     'basic/test_threading2',
     'basic/test_pkg_structures',
     'import/test_app_with_plugins',
+    'import/test_eggs2',
     'import/test_hiddenimport',
     'interactive/test_matplotlib',  # TODO .spec for this test contain win32 specific manifest code. Do we still need it?
     'libraries/test_Image',
