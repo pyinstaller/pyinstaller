@@ -683,9 +683,6 @@ class Analysis(Target):
         for (nm, fnm, typ) in binaries:
             for name in names:
                 if typ == 'BINARY' and os.path.basename(fnm) == name:
-                    # Python library found.
-                    # FIXME Find a different way how to pass python libname to CArchive.
-                    os.environ['PYI_PYTHON_LIBRARY_NAME'] = name
                     return  # Stop fuction.
 
         # Resume search using the first item in names.
@@ -720,10 +717,6 @@ class Analysis(Target):
             lib = os.path.join(py_prefix, name)
             if not os.path.exists(lib):
                 raise IOError("Python library not found!")
-
-        # Python library found.
-        # FIXME Find a different way how to pass python libname to CArchive.
-        os.environ['PYI_PYTHON_LIBRARY_NAME'] = name
 
         # Include Python library as binary dependency.
         binaries.append((os.path.basename(lib), lib, 'BINARY'))
@@ -1019,10 +1012,9 @@ class PKG(Target):
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
 
-        # Bootloader has to know the name of Python library.
-        # FIXME Find a different way how to pass python libname to CArchive.
-        archive = pyi_carchive.CArchive(
-                pylib_name=os.environ['PYI_PYTHON_LIBRARY_NAME'])
+        # Bootloader has to know the name of Python library. Pass python libname to CArchive.
+        pylib_name = bindepend.get_python_library_path()
+        archive = pyi_carchive.CArchive(pylib_name=os.path.basename(pylib_name))
 
         archive.build(self.name, mytoc)
         _save_data(self.out,
