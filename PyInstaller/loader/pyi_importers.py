@@ -76,13 +76,37 @@ class BuiltinImporter(object):
 
         return module
 
-    ### Optional Extensions to the Importer Protocol
+    ### Optional Extensions to the PEP-302 Importer Protocol
 
     def is_package(self, fullname):
         """
         Return always False since built-in modules are never packages.
         """
-        return False
+        if fullname in sys.builtin_module_names:
+            return False
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
+    def get_code(self, fullname):
+        """
+        Return None for a built-in module.
+        """
+        if fullname in sys.builtin_module_names:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
+    def get_source(self, fullname):
+        """
+        Return None for a built-in module.
+        """
+        if fullname in sys.builtin_module_names:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
 
 
 class FrozenImporter(object):
@@ -269,20 +293,49 @@ class FrozenImporter(object):
         # Module returned only in case of no exception.
         return module
 
-    ### Optional Extensions to the Importer Protocol
+    ### Optional Extensions to the PEP-302 Importer Protocol
 
     def is_package(self, fullname):
         """
         Return always False since built-in modules are never packages.
         """
-        try
-            if fullname in self.toc:
+        if fullname in self.toc:
+            try:
                 is_pkg, bytecode = self._pyz_archive.extract(fullname)
+                print 'is_pkg: ', is_pkg
                 return is_pkg == True
-            else:
+            except Exception:
                 raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
-        except Exception:
+        else:
+            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+
+    def get_code(self, fullname):
+        """
+        Get the code object associated with the module.
+
+        ImportError should be raised if module not found.
+        """
+        if fullname in self.toc:
+            try:
+                is_pkg, bytecode = self._pyz_archive.extract(fullname)
+                return bytecode
+            except Exception:
                 raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+        else:
+            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+
+    def get_source(self, fullname):
+        """
+        Method should return the source code for the module as a string.
+        But frozen modules does not contain source code.
+
+        Return None.
+        """
+        if fullname in self.toc:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
 
 
 class CExtensionImporter(object):
@@ -348,13 +401,33 @@ class CExtensionImporter(object):
 
         return module
 
-    ### Optional Extensions to the Importer Protocol
+    ### Optional Extensions to the PEP302 Importer Protocol
 
     def is_package(self, fullname):
         """
         Return always False since C extension modules are never packages.
         """
         return False
+
+    def get_code(self, fullname):
+        """
+        Return None for a C extension module.
+        """
+        if fullname + self._suffix in self._file_cache:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
+    def get_source(self, fullname):
+        """
+        Return None for a C extension module.
+        """
+        if fullname + self._suffix in self._file_cache:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
 
 
 def install():
