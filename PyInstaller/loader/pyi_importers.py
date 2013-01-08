@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012, Martin Zibricky
+# Copyright (C) 2012-2013, Martin Zibricky
 # Copyright (C) 2005-2011, Giovanni Bajo
 #
 # This program is free software; you can redistribute it and/or
@@ -75,6 +75,14 @@ class BuiltinImporter(object):
             imp.release_lock()
 
         return module
+
+    ### Optional Extensions to the Importer Protocol
+
+    def is_package(self, fullname):
+        """
+        Return always False since built-in modules are never packages.
+        """
+        return False
 
 
 class FrozenImporter(object):
@@ -261,6 +269,21 @@ class FrozenImporter(object):
         # Module returned only in case of no exception.
         return module
 
+    ### Optional Extensions to the Importer Protocol
+
+    def is_package(self, fullname):
+        """
+        Return always False since built-in modules are never packages.
+        """
+        try
+            if fullname in self.toc:
+                is_pkg, bytecode = self._pyz_archive.extract(fullname)
+                return is_pkg == True
+            else:
+                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+        except Exception:
+                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+
 
 class CExtensionImporter(object):
     """
@@ -324,6 +347,14 @@ class CExtensionImporter(object):
             imp.release_lock()
 
         return module
+
+    ### Optional Extensions to the Importer Protocol
+
+    def is_package(self, fullname):
+        """
+        Return always False since C extension modules are never packages.
+        """
+        return False
 
 
 def install():
