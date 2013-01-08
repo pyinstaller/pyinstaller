@@ -302,8 +302,7 @@ class FrozenImporter(object):
         if fullname in self.toc:
             try:
                 is_pkg, bytecode = self._pyz_archive.extract(fullname)
-                print 'is_pkg: ', is_pkg
-                return is_pkg == True
+                return is_pkg
             except Exception:
                 raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
         else:
