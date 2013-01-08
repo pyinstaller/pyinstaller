@@ -652,81 +652,22 @@ class Analysis(Target):
 
     def _check_python_library(self, binaries):
         """
-        Verify presence of the Python dynamic library. If missing
-        from the binaries try to find the Python library. Set
-        the library name for the bootloader.
-
-        Some linux distributions (e.g. debian-based) statically build the
-        Python executable to the libpython, so bindepend doesn't include
-        it in its output.
-
-        Darwin custom builds could possibly also have non-framework style libraries,
-        so this method also checks for that variant as well.
+        Verify presence of the Python dynamic library in the binary dependencies.
+        Python library is an essential piece that has to be always included.
         """
-        pyver = sys.version_info[:2]
+        python_lib = bindepend.get_python_library_path()
 
-        if is_win:
-            names = ('python%d%d.dll' % pyver,)
-        elif is_cygwin:
-            names = ('libpython%d%d.dll' % pyver,)
-        elif is_darwin:
-            names = ('Python', '.Python', 'libpython%d.%d.dylib' % pyver)
-        elif is_aix:
-            # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
-            names = ('libpython%d.%d.a' % pyver,)
-        elif is_unix:
-            # Other *nix platforms.
-            names = ('libpython%d.%d.so.1.0' % pyver,)
+        if python_lib:
+            logger.info('Using Python library %s', python_lib)
+            # Presence of library in dependencies.
+            deps = set()
+            for (nm, filename, typ) in binaries:
+                if typ == 'BINARY':
+                    deps.update([filename])
+            if python_lib not in deps:
+                logger.warn('Python dynamic library not included in dependencies!')
         else:
-            raise SystemExit('Your platform is not yet supported.')
-
-        for (nm, fnm, typ) in binaries:
-            for name in names:
-                if typ == 'BINARY' and os.path.basename(fnm) == name:
-                    # Python library found.
-                    # FIXME Find a different way how to pass python libname to CArchive.
-                    os.environ['PYI_PYTHON_LIBRARY_NAME'] = name
-                    return  # Stop fuction.
-
-        # Resume search using the first item in names.
-        name = names[0]
-
-        logger.info('Looking for Python library %s', name)
-
-        if is_unix:
-            lib = bindepend.findLibrary(name)
-            if lib is None:
-                raise IOError("Python library not found!")
-
-        elif is_darwin:
-            # On MacPython, Analysis.assemble is able to find the libpython with
-            # no additional help, asking for sys.executable dependencies.
-            # However, this fails on system python, because the shared library
-            # is not listed as a dependency of the binary (most probably it's
-            # opened at runtime using some dlopen trickery).
-            # This happens on Mac OS X when Python is compiled as Framework.
-
-            # Python compiled as Framework contains same values in sys.prefix
-            # and exec_prefix. That's why we can use just sys.prefix.
-            # In virtualenv PyInstaller is not able to find Python library.
-            # We need special care for this case.
-            if compat.is_virtualenv:
-                py_prefix = sys.real_prefix
-            else:
-                py_prefix = sys.prefix
-
-            logger.info('Looking for Python library in %s', py_prefix)
-
-            lib = os.path.join(py_prefix, name)
-            if not os.path.exists(lib):
-                raise IOError("Python library not found!")
-
-        # Python library found.
-        # FIXME Find a different way how to pass python libname to CArchive.
-        os.environ['PYI_PYTHON_LIBRARY_NAME'] = name
-
-        # Include Python library as binary dependency.
-        binaries.append((os.path.basename(lib), lib, 'BINARY'))
+            raise IOError("Python library not found!")
 
 
 def _findRTHook(modnm):
@@ -1019,10 +960,9 @@ class PKG(Target):
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
 
-        # Bootloader has to know the name of Python library.
-        # FIXME Find a different way how to pass python libname to CArchive.
-        archive = pyi_carchive.CArchive(
-                pylib_name=os.environ['PYI_PYTHON_LIBRARY_NAME'])
+        # Bootloader has to know the name of Python library. Pass python libname to CArchive.
+        pylib_name = os.path.basename(bindepend.get_python_library_path())
+        archive = pyi_carchive.CArchive(pylib_name=pylib_name)
 
         archive.build(self.name, mytoc)
         _save_data(self.out,

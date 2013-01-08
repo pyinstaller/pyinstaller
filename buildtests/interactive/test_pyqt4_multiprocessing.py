@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2013, Martin Zibricky
+# Copyright (C) 2012-2013
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,18 +16,32 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-from PyInstaller.hooks.hookutils import qt4_menu_nib_dir
-from PyInstaller.compat import is_darwin
+# Test of PyQt4 and multiprocessing.
+#
+# Running this code creates a PyQt4 window in a child process and exits when it
+# is closed. If run with the argument 'single', the window is created in the
+# same process instead.
 
 
-# In the new consolidated mode any PyQt depends on _qt
-hiddenimports = ['sip', 'PyQt4._qt']
+import multiprocessing
+import sys
 
 
-# For Qt to work on Mac OS X it is necessary to include directory qt_menu.nib.
-# This directory contains some resource files necessary to run PyQt or PySide
-# app.
-if is_darwin:
-    datas = [
-        (qt4_menu_nib_dir(), ''),
-    ]
+def run_qt(title):
+    from PyQt4 import QtGui
+
+    app = QtGui.QApplication(sys.argv)
+    w = QtGui.QWidget()
+    w.setWindowTitle(title)
+    w.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    multiprocessing.freeze_support()
+    if 'single' in sys.argv:
+        run_qt('Same process')
+    else:
+        p = multiprocessing.Process(target=run_qt, args=('Child process',))
+        p.start()
+        p.join()

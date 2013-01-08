@@ -2,15 +2,15 @@
 
 __testname__ = 'test_threading2'
 
-a = Analysis([__testname__+'.py'],
-             pathex=[],
+a = Analysis([__testname__ + '.py'],
              hiddenimports=[],
-             hookspath=None)
+             hookspath=None,
+             runtime_hooks=None)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('build', 'pyi.'+sys.platform, __testname__ + '.exe'),
+          name=os.path.join('build', 'pyi.' + sys.platform, __testname__ + '.exe'),
           debug=False,
           strip=None,
           upx=True,

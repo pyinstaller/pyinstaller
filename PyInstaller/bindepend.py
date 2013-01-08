@@ -644,3 +644,85 @@ def getSoname(filename):
     m = re.search(r'\s+SONAME\s+([^\s]+)', compat.exec_command(*cmd))
     if m:
         return m.group(1)
+
+
+def get_python_library_path():
+    """
+    Find dynamic Python library that will be bundled with frozen executable.
+
+    Return  full path to Python dynamic library or None when not found.
+
+
+    We need to know name of the Python dynamic library for the bootloader.
+    Bootloader has to know what library to load and not trying to guess.
+
+    Some linux distributions (e.g. debian-based) statically build the
+    Python executable to the libpython, so bindepend doesn't include
+    it in its output. In this situation let's try to find it.
+
+    Darwin custom builds could possibly also have non-framework style libraries,
+    so this method also checks for that variant as well.
+    """
+    pyver = sys.version_info[:2]
+
+    if is_win:
+        names = ('python%d%d.dll' % pyver,)
+    elif is_cygwin:
+        names = ('libpython%d%d.dll' % pyver,)
+    elif is_darwin:
+        names = ('Python', '.Python', 'libpython%d.%d.dylib' % pyver)
+    elif is_aix:
+        # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
+        names = ('libpython%d.%d.a' % pyver,)
+    elif is_unix:
+        # Other *nix platforms.
+        names = ('libpython%d.%d.so.1.0' % pyver,)
+    else:
+        raise SystemExit('Your platform is not yet supported.')
+
+    # Try to get Python library name from the Python executable. It assumes that Python
+    # library is not statically linked.
+    dlls = getImports(sys.executable)
+    for filename in dlls:
+        for name in names:
+            if os.path.basename(filename) == name:
+                # On Windows filename is just like 'python27.dll'. Convert it
+                # to absolute path.
+                if is_win and not os.path.isabs(filename):
+                    filename = getfullnameof(filename)
+                # Python library found. Return absolute path to it.
+                return filename
+
+    # Python library NOT found. Resume searching using alternative methods.
+    # Applies only to non Windows platforms.
+
+    if is_unix:
+        for name in names:
+            python_libname = findLibrary(name)
+            if python_libname:
+                return python_libname
+
+    elif is_darwin:
+        # On MacPython, Analysis.assemble is able to find the libpython with
+        # no additional help, asking for sys.executable dependencies.
+        # However, this fails on system python, because the shared library
+        # is not listed as a dependency of the binary (most probably it's
+        # opened at runtime using some dlopen trickery).
+        # This happens on Mac OS X when Python is compiled as Framework.
+
+        # Python compiled as Framework contains same values in sys.prefix
+        # and exec_prefix. That's why we can use just sys.prefix.
+        # In virtualenv PyInstaller is not able to find Python library.
+        # We need special care for this case.
+        if compat.is_virtualenv:
+            py_prefix = sys.real_prefix
+        else:
+            py_prefix = sys.prefix
+
+        for name in names:
+            full_path = os.path.join(py_prefix, name)
+            if os.path.exists(full_path):
+                return name
+
+    # Python library NOT found. Return just None.
+    return None
