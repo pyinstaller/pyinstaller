@@ -71,7 +71,7 @@ assert ldr.get_source(mod) is None
 
 
 # CExtensionImporter class
-print('Testing class BuiltinImporter.')
+print('Testing class CExtensionImporter.')
 mod = c_extension_mod
 ldr = pkgutil.get_loader(mod)
 assert ldr.is_package(mod) == False
