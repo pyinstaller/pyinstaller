@@ -1267,6 +1267,12 @@ free to do almost anything. One provided hook sets things up so that win32com
 can generate modules at runtime (to disk), and the generated modules can be
 found in the win32com package.
 
+It is possible to configure some aspects of the behavior of the runtime hooks
+by adding a ``pyi_rth_user_config`` module to your application::
+
+       anal = Analysis(['path/to/pyi_rth_user_config.py', 'main.py'], ...
+
+
 Adapting to being "frozen"
 --------------------------
 
