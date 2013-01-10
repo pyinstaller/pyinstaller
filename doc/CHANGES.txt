@@ -7,6 +7,7 @@ Changes since PyInstaller 2.0
  + Add import hooks for docutils, jinja2, sphinx, pytz, idlelib.
    (thanks to Bryan A. Jones)
  + Add import hooks for IPython, Scipy.
+ + Add rthook for twisted.
  + Better support for pkg_resources (.egg manipulation) in frozen executables.
  + Add option --runtime-hook to allow running custom code from frozen app
    before loading other Python from the frozen app. This is usefull for some
