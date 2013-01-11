@@ -1067,7 +1067,7 @@ class EXE(Target):
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
-        return os.path.join("support", "loader", PLATFORM, exe)
+        return os.path.join('PyInstaller', 'bootloader', PLATFORM, exe)
 
     def assemble(self):
         logger.info("building EXE from %s", os.path.basename(self.out))
