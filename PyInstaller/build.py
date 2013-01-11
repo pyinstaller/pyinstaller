@@ -355,7 +355,7 @@ class Analysis(Target):
         # Include initialization Python code in PyInstaller analysis.
         _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
-            os.path.join(HOMEPATH, "support", "_pyi_bootstrap.py"),
+            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
             os.path.join(_init_code_path, 'pyi_importers.py'),
             os.path.join(_init_code_path, 'pyi_archive.py'),
             os.path.join(_init_code_path, 'pyi_carchive.py'),
@@ -444,7 +444,7 @@ class Analysis(Target):
         # Python scripts for analysis.
         _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         scripts = [
-            os.path.join(HOMEPATH, 'support', '_pyi_bootstrap.py'),
+            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
         ]
 
         #tracker = PyInstaller.depend.imptracker.ImportTrackerModulegraph(
@@ -622,7 +622,8 @@ class Analysis(Target):
             depmanifest.writeprettyxml()
         self._check_python_library(binaries)
         if zipfiles:
-            scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
+            _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+            scripts.insert(-1, ('_pyi_egg_install.py', os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
         # Add runtime hooks just before the last script (which is
         # the entrypoint of the application).
         scripts[-1:-1] = rthooks
