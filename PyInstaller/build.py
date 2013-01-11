@@ -679,7 +679,7 @@ def _findRTHook(modnm):
         if os.path.isabs(script):
             path = script
         else:
-            path = os.path.join(HOMEPATH, script)
+            path = os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks', script)
         rslt.append((nm, path, 'PYSOURCE'))
     return rslt
 
@@ -1589,7 +1589,7 @@ def TkPKG():
 
 def build(spec, buildpath):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
-    rthooks = _load_data(os.path.join(HOMEPATH, 'support', 'rthooks.dat'))
+    rthooks = _load_data(os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks.dat'))
     SPEC = spec
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]
