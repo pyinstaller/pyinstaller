@@ -352,6 +352,10 @@ class Analysis(Target):
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
                  hookspath=None, excludes=None, runtime_hooks=[]):
         Target.__init__(self)
+
+        sys._PYI_SETTINGS = {}
+        sys._PYI_SETTINGS['scripts'] = scripts
+
         # Include initialization Python code in PyInstaller analysis.
         _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
