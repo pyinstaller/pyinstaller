@@ -21,7 +21,7 @@ def __exec_python_cmd(cmd):
     pp = os.pathsep.join(PyInstaller.__pathex__)
     old_pp = compat.getenv('PYTHONPATH')
     if old_pp:
-        pp = os.pathsep.join([pp, old_pp])
+        pp = os.pathsep.join([old_pp, pp])
     compat.setenv("PYTHONPATH", pp)
     try:
         try:
@@ -44,22 +44,27 @@ def exec_statement(statement):
     return __exec_python_cmd(cmd)
 
 
-def exec_script(scriptfilename, *args):
+def exec_script(script_filename, *args):
     """
     Executes a Python script in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a
     single string.
 
     To prevent missuse, the script passed to hookutils.exec-script
-    must be located in the `hooks` directory.
+    must be located in the `hooks/utils` directory.
     """
-
-    if scriptfilename != os.path.basename(scriptfilename):
+    script_filename = os.path.join('utils', os.path.basename(script_filename))
+    script_filename = os.path.join(os.path.dirname(__file__), script_filename)
+    if not os.path.exists(script_filename):
         raise SystemError("To prevent missuse, the script passed to "
                           "hookutils.exec-script must be located in "
-                          "the `hooks` directory.")
+                          "the `hooks/utils` directory.")
 
-    cmd = [os.path.join(os.path.dirname(__file__), scriptfilename)]
+    # Scripts might be importing some modules. Add PyInstaller code to pathex.
+    pyinstaller_root_dir = os.path.dirname(os.path.abspath(PyInstaller.__path__[0]))
+    PyInstaller.__pathex__.append(pyinstaller_root_dir)
+
+    cmd = [script_filename]
     cmd.extend(args)
     return __exec_python_cmd(cmd)
 
@@ -207,7 +212,19 @@ def django_dottedstring_imports(django_root_dir):
     """
     package_name = os.path.basename(django_root_dir)
     compat.setenv('DJANGO_SETTINGS_MODULE', '%s.settings' % package_name)
-    return eval_script(os.path.join('utils', 'django-import-finder.py'))
+
+    # Extend PYTHONPATH with parent dir of django_root_dir.
+    PyInstaller.__pathex__.append(misc.get_path_to_toplevel_modules(django_root_dir))
+    # Extend PYTHONPATH with django_root_dir.
+    # Many times Django users do not specify absolute imports in the settings module.
+    PyInstaller.__pathex__.append(django_root_dir)
+
+    ret = eval_script('django-import-finder.py')
+
+    # Unset environment variables again.
+    compat.unsetenv('DJANGO_SETTINGS_MODULE')
+
+    return ret
 
 
 def django_find_root_dir():
@@ -237,11 +254,10 @@ def django_find_root_dir():
             if os.path.isdir(f):
                 subfiles = os.listdir(os.path.join(manage_dir, f))
                 # Subdirectory contains critical files.
-                if 'settings.py' in subfiles and 'url.py' in subfiles:
+                if 'settings.py' in subfiles and 'urls.py' in subfiles:
                     settings_dir = os.path.join(manage_dir, f)
                     break  # Find the first directory.
     
-    logger.info('Using django root directory %s' % settings_dir)
     return settings_dir
 
 

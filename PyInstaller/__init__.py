@@ -83,7 +83,7 @@ if compat.machine():
 
 
 # path extensions for module seach
-# :fixme: this should not be a global variable
+# FIXME this should not be a global variable
 __pathex__ = []
 
 

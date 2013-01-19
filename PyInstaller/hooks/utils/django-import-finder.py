@@ -18,12 +18,10 @@
 
 
 import PyInstaller.compat as compat
-from hookutils import logger
-
-if not compat.getenv("DJANGO_SETTINGS_MODULE"):
-    compat.setenv("DJANGO_SETTINGS_MODULE", "settings")
+from PyInstaller.hooks.hookutils import logger
 
 from django.conf import settings
+
 
 hiddenimports = (list(settings.AUTHENTICATION_BACKENDS) +
                  [settings.DEFAULT_FILE_STORAGE] +
@@ -45,7 +43,9 @@ def find_url_callbacks(urls_module):
             hid_list += find_url_callbacks(pattern.urlconf_module)
     return hid_list
 
+
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
+
 
 base_module_name = ".".join(compat.getenv("DJANGO_SETTINGS_MODULE", "settings").split(".")[:-1])
 if base_module_name:
@@ -53,6 +53,8 @@ if base_module_name:
     urls = base_module.urls
 else:
     import urls
+
+
 hiddenimports += find_url_callbacks(urls)
 
 
