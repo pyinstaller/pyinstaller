@@ -372,9 +372,23 @@ class Analysis(Target):
             if not os.path.exists(script):
                 raise ValueError("script '%s' not found" % script)
             self.inputs.append(script)
+
         self.pathex = []
+
+        # Based on main supplied script - add top-level modules directory to PYTHONPATH.
+        # Sometimes the main app script is not top-level module but submodule like 'mymodule.mainscript.py'.
+        # In that case PyInstaller will not be able find modules in the directory containing 'mymodule'.
+        # Add this directory to PYTHONPATH so PyInstaller could find it.
+        for script in scripts:
+            script_toplevel_dir = misc.get_path_to_toplevel_modules(script)
+            if script_toplevel_dir:
+                self.pathex.append(script_toplevel_dir)
+                logger.info('Extending PYTHONPATH with %s', script_toplevel_dir)
+
+        # Normalize paths in pathex and make them absolute.
         if pathex:
             self.pathex = [absnormpath(path) for path in pathex]
+
 
         self.hiddenimports = hiddenimports or []
         # Include modules detected at build time. Like 'codecs' and encodings.

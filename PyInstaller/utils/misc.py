@@ -112,3 +112,31 @@ def get_code_object(filename):
     except SyntaxError, e:
         logger.exception(e)
         raise SystemExit(10)
+
+
+def get_path_to_toplevel_modules(filename):
+    """
+    Return the path to top-level directory that contains Python modules.
+
+    It will look in parent directories for __init__.py files. The first parent
+    directory without __init__.py is the top-level directory.
+
+    Returned directory might be used to extend the PYTHONPATH.
+    """
+    curr_dir = os.path.dirname(os.path.abspath(filename))
+    pattern = '__init__.py'
+
+    # Try max. 10 levels up.
+    try:
+        for i in range(10):
+            files = set(os.listdir(curr_dir))
+            # 'curr_dir' is still not top-leve go to parent dir.
+            if pattern in files:
+                curr_dir = os.path.dirname(curr_dir)
+            # Top-level dir found - return it.
+            else:
+                return curr_dir
+    except IOError:
+        pass
+    # No top-level directory found or any error.
+    return None
