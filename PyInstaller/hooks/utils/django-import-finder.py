@@ -57,5 +57,8 @@ else:
 
 hiddenimports += find_url_callbacks(urls)
 
+# This print statement is then parsed and evaluated as Python code.
+print hiddenimports
+
 
 logger.debug('%r', sorted(set(hiddenimports)))

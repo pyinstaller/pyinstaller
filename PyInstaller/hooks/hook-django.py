@@ -29,7 +29,6 @@ root_dir = django_find_root_dir()
 if root_dir:
     logger.info('Django root directory %s', root_dir)
     hiddenimports = django_dottedstring_imports(root_dir)
-    print hiddenimports
 else:
     logger.warn('No django root directory could be found!')
 
