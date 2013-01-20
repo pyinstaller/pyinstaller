@@ -18,6 +18,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
+# Tested with django 1.4.
+
+
 import os
 from PyInstaller import log as logging
 from PyInstaller.hooks.hookutils import django_find_root_dir, django_dottedstring_imports
@@ -31,11 +34,22 @@ if root_dir:
     logger.info('Django root directory %s', root_dir)
     hiddenimports = django_dottedstring_imports(root_dir)
     # Include main django modules - settings.py, urls.py, wsgi.py.
+    # Without them the django server won't run.
     package_name = os.path.basename(root_dir)
     hiddenimports += [
             package_name + '.settings',
             package_name + '.urls',
             package_name + '.wsgi',
+    ]
+    # Include some hidden modules that are not imported directly in django.
+    hiddenimports += [
+            'django.template.defaultfilters',
+            'django.template.defaulttags',
+            'django.template.loader_tags',
+    ]
+    # Other hidden imports to get Django example project working.
+    hiddenimports += [
+            'django.contrib.messages.storage.fallback',
     ]
 else:
     logger.warn('No django root directory could be found!')
