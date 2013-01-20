@@ -18,6 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
+import os
 from PyInstaller import log as logging
 from PyInstaller.hooks.hookutils import django_find_root_dir, django_dottedstring_imports
 
@@ -29,6 +30,13 @@ root_dir = django_find_root_dir()
 if root_dir:
     logger.info('Django root directory %s', root_dir)
     hiddenimports = django_dottedstring_imports(root_dir)
+    # Include main django modules - settings.py, urls.py, wsgi.py.
+    package_name = os.path.basename(root_dir)
+    hiddenimports += [
+            package_name + '.settings',
+            package_name + '.urls',
+            package_name + '.wsgi',
+    ]
 else:
     logger.warn('No django root directory could be found!')
 
