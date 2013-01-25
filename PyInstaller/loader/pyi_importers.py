@@ -336,6 +336,38 @@ class FrozenImporter(object):
             # ImportError should be raised if module not found.
             raise ImportError('No module named ' + fullname)
 
+    def get_data(self, path):
+        """
+        This returns the data as a string, or raise IOError if the "file"
+        wasn't found. The data is always returned as if "binary" mode was used.
+
+        The 'path' argument is a path that can be constructed by munging
+        module.__file__ (or pkg.__path__ items)
+        """
+        # Since __file__ attribute works properly just try to open and read it.
+        fp = open(path, 'rb')
+        content = fp.read()
+        fp.close()
+        return content
+
+    # TODO Do we really need to implement this method?
+    def get_filename(self, fullname):
+        """
+        This method should return the value that __file__ would be set to
+        if the named module was loaded. If the module is not found, then
+        ImportError should be raised.
+        """
+        abspath = sys.prefix
+        # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
+        # Method is_package() will raise ImportError if module not found.
+        if self.is_package(fullname):
+            filename = pyi_os_path.os_path_join(pyi_os_path.os_path_join(abspath,
+                fullname.replace('.', pyi_os_path.os_sep)), '__init__.pyc')
+        else:
+            filename = pyi_os_path.os_path_join(abspath,
+                fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
+        return filename
+
 
 class CExtensionImporter(object):
     """
@@ -427,6 +459,34 @@ class CExtensionImporter(object):
         else:
             # ImportError should be raised if module not found.
             raise ImportError('No module named ' + fullname)
+
+    def get_data(self, path):
+        """
+        This returns the data as a string, or raise IOError if the "file"
+        wasn't found. The data is always returned as if "binary" mode was used.
+
+        The 'path' argument is a path that can be constructed by munging
+        module.__file__ (or pkg.__path__ items)
+        """
+        # Since __file__ attribute works properly just try to open and read it.
+        fp = open(path, 'rb')
+        content = fp.read()
+        fp.close()
+        return content
+
+    # TODO Do we really need to implement this method?
+    def get_filename(self, fullname):
+        """
+        This method should return the value that __file__ would be set to
+        if the named module was loaded. If the module is not found, then
+        ImportError should be raised.
+        """
+        if fullname + self._suffix in self._file_cache:
+            return pyi_os_path.os_path_join(sys.prefix, fullname + self._suffix)
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
 
 
 def install():
