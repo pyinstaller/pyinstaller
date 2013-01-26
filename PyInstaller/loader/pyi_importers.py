@@ -251,9 +251,10 @@ class FrozenImporter(object):
                     module.__path__ = [pyi_os_path.os_path_dirname(module.__file__)]
 
                 ### Set __loader__
-                # We cannot set this attribute for frozen imports. Setting it
-                # could break some Python packages. On Windows it breaks
-                # pywin32 and test 'basic/test_pyttsx' will fail.
+                # The attribute __loader__ improves support for module 'pkg_resources' and
+                # with the frozen apps the following functions are working:
+                # pkg_resources.resource_string(), pkg_resources.resource_stream().
+                module.__loader__ = self
 
                 ### Set __package__
                 # Accoring to PEP302 this attribute must be set.
