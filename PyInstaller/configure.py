@@ -52,7 +52,7 @@ def test_RsrcUpdate(config):
         logger.info('... resource update unavailable - %s', detail)
         return
 
-    test_exe = os.path.join(HOMEPATH, 'support', 'loader', PLATFORM, 'runw.exe')
+    test_exe = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, 'runw.exe')
     if not os.path.exists(test_exe):
         config['hasRsrcUpdate'] = 0
         logger.error('... resource update unavailable - %s not found', test_exe)
