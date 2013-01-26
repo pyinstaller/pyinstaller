@@ -118,6 +118,7 @@ class SkipChecker(object):
             'basic/test_multiprocess': ['multiprocessing'],
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_onefile_multiprocess': ['multiprocessing'],
+            'basic/test_pkg_structures': ['pkg_resources'],
             'libraries/test_enchant': ['enchant'],
             'libraries/test_Image': ['PIL'],
             'libraries/test_Image2': ['PIL'],
@@ -220,6 +221,7 @@ SPEC_FILE = set([
     'basic/test_5',  # TODO What is the purpose of this test case?
     'basic/test_ctypes',
     'basic/test_threading2',
+    'basic/test_onefile_pkg_resources',
     'basic/test_pkg_structures',
     'import/test_app_with_plugins',
     'import/test_eggs2',
