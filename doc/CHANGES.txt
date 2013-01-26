@@ -9,6 +9,8 @@ Changes since PyInstaller 2.0
  + Add import hooks for IPython, Scipy.
  + Fix django import hook to work with Django 1.4.
  + Add rthook for twisted.
+ + Add rthook for pkg_resource. It fixes the following functions for frozen app
+   pkg_resources.resource_stream(), pkg_resources.resource_string().
  + Better support for pkg_resources (.egg manipulation) in frozen executables.
  + Add option --runtime-hook to allow running custom code from frozen app
    before loading other Python from the frozen app. This is usefull for some

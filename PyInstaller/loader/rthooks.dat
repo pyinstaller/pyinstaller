@@ -5,6 +5,7 @@
     'Image':      ['pyi_rth_Image.py'],
     'matplotlib': ['pyi_rth_mpldata.py'],
     'PIL.Image':  ['pyi_rth_PIL_Image.py'],
+    'pkg_resources':  ['pyi_rth_pkgres.py'],
     'PyQt4':      ['pyi_rth_qt4plugins.py'],
     'Tkinter':    ['pyi_rth_Tkinter.py'],
     'twisted.internet.reactor':        ['pyi_rth_twisted.py'],
