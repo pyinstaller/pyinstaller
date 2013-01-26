@@ -66,6 +66,13 @@ import win32com
 win32com.__gen_path__ = genpydir
 
 
+# The attribute __loader__ makes module 'pkg_resources' working but On Windows
+# it breaks pywin32 (win32com) and test 'basic/test_pyttsx' will fail. Just
+# removing that attribute for win32com fixes that and gencache is created properly.
+if hasattr(win32com, '__loader__'):
+    del win32com.__loader__
+
+
 # Ensure genpydir is in 'gen_py' module paths.
 import win32com.gen_py
 win32com.gen_py.__path__.insert(0, genpydir)
