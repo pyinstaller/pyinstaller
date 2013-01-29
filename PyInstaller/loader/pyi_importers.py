@@ -1,28 +1,16 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2012, Martin Zibricky
-# Copyright (C) 2005-2011, Giovanni Bajo
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# In addition to the permissions in the GNU General Public License, the
-# authors give you unlimited permission to link or embed the compiled
-# version of this file into combinations with other programs, and to
-# distribute those combinations without any restriction coming from the
-# use of this file. (The General Public License restrictions do apply in
-# other respects; for example, they cover modification of the file, and
-# distribution when not linked into a combine executable.)
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
+"""
+PEP-302 importers for frozen applications.
+"""
 
 
 ### **NOTE** This module is used during bootstrap.
@@ -75,6 +63,38 @@ class BuiltinImporter(object):
             imp.release_lock()
 
         return module
+
+    ### Optional Extensions to the PEP-302 Importer Protocol
+
+    def is_package(self, fullname):
+        """
+        Return always False since built-in modules are never packages.
+        """
+        if fullname in sys.builtin_module_names:
+            return False
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
+    def get_code(self, fullname):
+        """
+        Return None for a built-in module.
+        """
+        if fullname in sys.builtin_module_names:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
+    def get_source(self, fullname):
+        """
+        Return None for a built-in module.
+        """
+        if fullname in sys.builtin_module_names:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
 
 
 class FrozenImporter(object):
@@ -219,9 +239,10 @@ class FrozenImporter(object):
                     module.__path__ = [pyi_os_path.os_path_dirname(module.__file__)]
 
                 ### Set __loader__
-                # We cannot set this attribute for frozen imports. Setting it
-                # could break some Python packages. On Windows it breaks
-                # pywin32 and test 'basic/test_pyttsx' will fail.
+                # The attribute __loader__ improves support for module 'pkg_resources' and
+                # with the frozen apps the following functions are working:
+                # pkg_resources.resource_string(), pkg_resources.resource_stream().
+                module.__loader__ = self
 
                 ### Set __package__
                 # Accoring to PEP302 this attribute must be set.
@@ -260,6 +281,81 @@ class FrozenImporter(object):
 
         # Module returned only in case of no exception.
         return module
+
+    ### Optional Extensions to the PEP-302 Importer Protocol
+
+    def is_package(self, fullname):
+        """
+        Return always False since built-in modules are never packages.
+        """
+        if fullname in self.toc:
+            try:
+                is_pkg, bytecode = self._pyz_archive.extract(fullname)
+                return is_pkg
+            except Exception:
+                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+        else:
+            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+
+    def get_code(self, fullname):
+        """
+        Get the code object associated with the module.
+
+        ImportError should be raised if module not found.
+        """
+        if fullname in self.toc:
+            try:
+                is_pkg, bytecode = self._pyz_archive.extract(fullname)
+                return bytecode
+            except Exception:
+                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+        else:
+            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+
+    def get_source(self, fullname):
+        """
+        Method should return the source code for the module as a string.
+        But frozen modules does not contain source code.
+
+        Return None.
+        """
+        if fullname in self.toc:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
+    def get_data(self, path):
+        """
+        This returns the data as a string, or raise IOError if the "file"
+        wasn't found. The data is always returned as if "binary" mode was used.
+
+        The 'path' argument is a path that can be constructed by munging
+        module.__file__ (or pkg.__path__ items)
+        """
+        # Since __file__ attribute works properly just try to open and read it.
+        fp = open(path, 'rb')
+        content = fp.read()
+        fp.close()
+        return content
+
+    # TODO Do we really need to implement this method?
+    def get_filename(self, fullname):
+        """
+        This method should return the value that __file__ would be set to
+        if the named module was loaded. If the module is not found, then
+        ImportError should be raised.
+        """
+        abspath = sys.prefix
+        # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
+        # Method is_package() will raise ImportError if module not found.
+        if self.is_package(fullname):
+            filename = pyi_os_path.os_path_join(pyi_os_path.os_path_join(abspath,
+                fullname.replace('.', pyi_os_path.os_sep)), '__init__.pyc')
+        else:
+            filename = pyi_os_path.os_path_join(abspath,
+                fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
+        return filename
 
 
 class CExtensionImporter(object):
@@ -324,6 +420,62 @@ class CExtensionImporter(object):
             imp.release_lock()
 
         return module
+
+    ### Optional Extensions to the PEP302 Importer Protocol
+
+    def is_package(self, fullname):
+        """
+        Return always False since C extension modules are never packages.
+        """
+        return False
+
+    def get_code(self, fullname):
+        """
+        Return None for a C extension module.
+        """
+        if fullname + self._suffix in self._file_cache:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
+    def get_source(self, fullname):
+        """
+        Return None for a C extension module.
+        """
+        if fullname + self._suffix in self._file_cache:
+            return None
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
+    def get_data(self, path):
+        """
+        This returns the data as a string, or raise IOError if the "file"
+        wasn't found. The data is always returned as if "binary" mode was used.
+
+        The 'path' argument is a path that can be constructed by munging
+        module.__file__ (or pkg.__path__ items)
+        """
+        # Since __file__ attribute works properly just try to open and read it.
+        fp = open(path, 'rb')
+        content = fp.read()
+        fp.close()
+        return content
+
+    # TODO Do we really need to implement this method?
+    def get_filename(self, fullname):
+        """
+        This method should return the value that __file__ would be set to
+        if the named module was loaded. If the module is not found, then
+        ImportError should be raised.
+        """
+        if fullname + self._suffix in self._file_cache:
+            return pyi_os_path.os_path_join(sys.prefix, fullname + self._suffix)
+        else:
+            # ImportError should be raised if module not found.
+            raise ImportError('No module named ' + fullname)
+
 
 
 def install():

@@ -1,20 +1,12 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2005-2011, Giovanni Bajo
-# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
 
 """
 This module is for the miscellaneous routines which do not fit somewhere else.
@@ -112,3 +104,31 @@ def get_code_object(filename):
     except SyntaxError, e:
         logger.exception(e)
         raise SystemExit(10)
+
+
+def get_path_to_toplevel_modules(filename):
+    """
+    Return the path to top-level directory that contains Python modules.
+
+    It will look in parent directories for __init__.py files. The first parent
+    directory without __init__.py is the top-level directory.
+
+    Returned directory might be used to extend the PYTHONPATH.
+    """
+    curr_dir = os.path.dirname(os.path.abspath(filename))
+    pattern = '__init__.py'
+
+    # Try max. 10 levels up.
+    try:
+        for i in range(10):
+            files = set(os.listdir(curr_dir))
+            # 'curr_dir' is still not top-leve go to parent dir.
+            if pattern in files:
+                curr_dir = os.path.dirname(curr_dir)
+            # Top-level dir found - return it.
+            else:
+                return curr_dir
+    except IOError:
+        pass
+    # No top-level directory found or any error.
+    return None

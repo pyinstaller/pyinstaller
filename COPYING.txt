@@ -1,3 +1,87 @@
+================================
+ The PyInstaller licensing terms
+================================
+ 
+
+Copyright (c) 2010-2013, PyInstaller Development Team
+Copyright (c) 2005-2009, Giovanni Bajo
+Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
+
+
+PyInstaller is licensed under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2 of the License,
+or (at your option) any later version.
+
+
+Bootloader Exception
+--------------------
+
+In addition to the permissions in the GNU General Public License, the
+authors give you unlimited permission to link or embed compiled bootloader
+and related files into combinations with other programs, and to distribute
+those combinations without any restriction coming from the use of those
+files. (The General Public License restrictions do apply in other respects;
+for example, they cover modification of the files, and distribution when
+not linked into a combine executable.)
+ 
+ 
+Bootloader and Related Files
+----------------------------
+
+Bootloader and related files are files which are embedded within the
+final executable. This includes files in directories:
+
+./bootloader/
+./PyInstaller/loader
+
+ 
+About the PyInstaller Development Team
+--------------------------------------
+
+The PyInstaller Development Team is the set of contributors
+to the PyInstaller project. A full list with details is kept
+in the documentation directory, in the file
+``doc/credits.txt``.
+
+The core team that coordinates development on GitHub can be found here:
+https://github.com/pyinstaller/pyinstaller.  As of 2013, it consists of:
+
+* Giovanni Bajo
+* Hartmut Goebel
+* Martin Zibricky
+
+
+Our Copyright Policy
+--------------------
+
+PyInstaller uses a shared copyright model. Each contributor maintains copyright
+over their contributions to PyInstaller. But, it is important to note that these
+contributions are typically only changes to the repositories. Thus,
+the PyInstaller source code, in its entirety is not the copyright of any single
+person or institution.  Instead, it is the collective copyright of the entire
+PyInstaller Development Team.  If individual contributors want to maintain
+a record of what changes/contributions they have specific copyright on, they
+should indicate their copyright in the commit message of the change, when they
+commit the change to the PyInstaller repository.
+
+With this in mind, the following banner should be used in any source code file
+to indicate the copyright and license terms:
+
+
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
+
+GNU General Public License
+--------------------------
+
 		    GNU GENERAL PUBLIC LICENSE
 		       Version 2, June 1991
 
@@ -55,7 +139,7 @@ patent must be licensed for everyone's free use or not licensed at all.
 
   The precise terms and conditions for copying, distribution and
 modification follow.
-
+
 		    GNU GENERAL PUBLIC LICENSE
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
@@ -110,7 +194,7 @@ above, provided that you also meet all of these conditions:
     License.  (Exception: if the Program itself is interactive but
     does not normally print such an announcement, your work based on
     the Program is not required to print an announcement.)
-
+
 These requirements apply to the modified work as a whole.  If
 identifiable sections of that work are not derived from the Program,
 and can be reasonably considered independent and separate works in
@@ -168,7 +252,7 @@ access to copy from a designated place, then offering equivalent
 access to copy the source code from the same place counts as
 distribution of the source code, even though third parties are not
 compelled to copy the source along with the object code.
-
+
   4. You may not copy, modify, sublicense, or distribute the Program
 except as expressly provided under this License.  Any attempt
 otherwise to copy, modify, sublicense or distribute the Program is
@@ -225,7 +309,7 @@ impose that choice.
 
 This section is intended to make thoroughly clear what is believed to
 be a consequence of the rest of this License.
-
+
   8. If the distribution and/or use of the Program is restricted in
 certain countries either by patents or by copyrighted interfaces, the
 original copyright holder who places the Program under this License
