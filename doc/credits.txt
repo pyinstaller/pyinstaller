@@ -11,9 +11,17 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+* Vaclav Smilauer - IPython import hook.
+
 * Shane Hansen - Linux arm support.
 
 * Bryan A. Jones - docutils, jinja2, sphinx, pytz, idlelib import hooks.
+
+* Patrick Stewart <patstew at gmail dot com> - scipy import hook.
+
+* Georg Schoelly <mail at georg-schoelly dot com> - storm ORM import hook.
+
+* Vinay Sajip - zmq import hook.
 
 * Martin Gamwell Dawids - AIX support.
 
@@ -23,7 +31,7 @@ please let us know if your name is omitted by accident:
 
 * Chien-An "Zero" Cho - PyUSB import hook.
 
-* Daniel Hyams - wx.lib.pubsub import hook.
+* Daniel Hyams - h2py, wx.lib.pubsub import hooks. 
 
 * Hartmut Goebel - Python logging system for message output. Option --log-level.
 
@@ -33,6 +41,8 @@ please let us know if your name is omitted by accident:
 
 * Martin Zibricky - rewrite the build system for the bootloader using waf.
   LSB compliant precompiled bootloaders for Linux. Windows 64-bit support.
+
+* Peter Burgers - matplotlib import hook.
 
 * Nathan Weston - Python architecture detection on OS X.
 
@@ -52,17 +62,23 @@ please let us know if your name is omitted by accident:
 
 * Greg Copeland - sqlalchemy import hook.
 
-* Marco Bonifazi - PyGTK hook improvements.
+* Seth Remington - PyGTK hook improvements.
+
+* Marco Bonifazi - PyGTK hook improvements. PyOpenGL import hook.
 
 * Jamie Kirkpatrick - paste import hook.
 
 * Lorenzo Mancini - PyXML import hook fixes under Windows. OS X support. App
   bundle creation on OS X. Tkinter on OS X. Precompiled bootloaders for OS X.
 
+* Lorenzo Berni - django import hook.
+
 * Louai Al-Khanji - fixes with optparse module.
 
 * Thomas Heller - set custom icon of Windows exe files.
 
-* Eugene Prigorodov - KInterasDB import hook.
+* Eugene Prigorodov <eprigorodov at naumen dot ru> - KInterasDB import hook.
+
+* David C. Morrill - vtkpython import hook.
 
 * Alan James Salmoni - Tkinter interface to PyInstaller.

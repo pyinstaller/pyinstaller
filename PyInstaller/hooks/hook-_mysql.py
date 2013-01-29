@@ -1,6 +1,15 @@
-# Hook for _mysql, required if higher-level pure python module is not imported
-# Author: htgoebel
-# Date: 2011-11-18
-# Ticket: #323
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
+"""
+Hook for _mysql, required if higher-level pure python module is not imported
+"""
 
 hiddenimports = ['_mysql_exceptions']
