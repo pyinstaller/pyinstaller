@@ -28,7 +28,8 @@ please let us know if your name is omitted by accident:
 * Hartmut Goebel - Python logging system for message output. Option --log-level.
 
 * Florian Hoech - full Python 2.6 support on Windows including automatic
-  handling of DLLs, CRT, manifest, etc.
+  handling of DLLs, CRT, manifest, etc. Read and write resources from/to Win32
+  PE files.
 
 * Martin Zibricky - rewrite the build system for the bootloader using waf.
   LSB compliant precompiled bootloaders for Linux. Windows 64-bit support.
@@ -60,4 +61,8 @@ please let us know if your name is omitted by accident:
 
 * Louai Al-Khanji - fixes with optparse module.
 
+* Thomas Heller - set custom icon of Windows exe files.
+
 * Eugene Prigorodov - KInterasDB import hook.
+
+* Alan James Salmoni - Tkinter interface to PyInstaller.
