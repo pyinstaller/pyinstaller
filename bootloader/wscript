@@ -347,7 +347,7 @@ def build(bld):
     Options.options.jobs = 1
 
     myplatform = Utils.detect_platform()
-    install_path = '../../support/loader/' + platform.system() + "-" + bld.env.MYARCH
+    install_path = '../../PyInstaller/bootloader/' + platform.system() + "-" + bld.env.MYARCH
     if bld.env.MYMACHINE:
         install_path += '-' + bld.env.MYMACHINE
     targets = dict(release='run', debug='run_d', releasew='runw', debugw='runw_d')

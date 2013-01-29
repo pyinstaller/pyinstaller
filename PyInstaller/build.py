@@ -1,23 +1,16 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2005, Giovanni Bajo
-# Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
-# Build packages using spec files.
+"""
+Build packages using spec files.
+"""
 
 
 import glob
@@ -352,10 +345,14 @@ class Analysis(Target):
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
                  hookspath=None, excludes=None, runtime_hooks=[]):
         Target.__init__(self)
+
+        sys._PYI_SETTINGS = {}
+        sys._PYI_SETTINGS['scripts'] = scripts
+
         # Include initialization Python code in PyInstaller analysis.
         _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
-            os.path.join(HOMEPATH, "support", "_pyi_bootstrap.py"),
+            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
             os.path.join(_init_code_path, 'pyi_importers.py'),
             os.path.join(_init_code_path, 'pyi_archive.py'),
             os.path.join(_init_code_path, 'pyi_carchive.py'),
@@ -368,9 +365,23 @@ class Analysis(Target):
             if not os.path.exists(script):
                 raise ValueError("script '%s' not found" % script)
             self.inputs.append(script)
+
         self.pathex = []
+
+        # Based on main supplied script - add top-level modules directory to PYTHONPATH.
+        # Sometimes the main app script is not top-level module but submodule like 'mymodule.mainscript.py'.
+        # In that case PyInstaller will not be able find modules in the directory containing 'mymodule'.
+        # Add this directory to PYTHONPATH so PyInstaller could find it.
+        for script in scripts:
+            script_toplevel_dir = misc.get_path_to_toplevel_modules(script)
+            if script_toplevel_dir:
+                self.pathex.append(script_toplevel_dir)
+                logger.info('Extending PYTHONPATH with %s', script_toplevel_dir)
+
+        # Normalize paths in pathex and make them absolute.
         if pathex:
             self.pathex = [absnormpath(path) for path in pathex]
+
 
         self.hiddenimports = hiddenimports or []
         # Include modules detected at build time. Like 'codecs' and encodings.
@@ -444,7 +455,7 @@ class Analysis(Target):
         # Python scripts for analysis.
         _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         scripts = [
-            os.path.join(HOMEPATH, 'support', '_pyi_bootstrap.py'),
+            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
         ]
 
         #tracker = PyInstaller.depend.imptracker.ImportTrackerModulegraph(
@@ -622,7 +633,8 @@ class Analysis(Target):
             depmanifest.writeprettyxml()
         self._check_python_library(binaries)
         if zipfiles:
-            scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
+            _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+            scripts.insert(-1, ('_pyi_egg_install.py', os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
         # Add runtime hooks just before the last script (which is
         # the entrypoint of the application).
         scripts[-1:-1] = rthooks
@@ -678,7 +690,7 @@ def _findRTHook(modnm):
         if os.path.isabs(script):
             path = script
         else:
-            path = os.path.join(HOMEPATH, script)
+            path = os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks', script)
         rslt.append((nm, path, 'PYSOURCE'))
     return rslt
 
@@ -1066,7 +1078,7 @@ class EXE(Target):
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
-        return os.path.join("support", "loader", PLATFORM, exe)
+        return os.path.join('PyInstaller', 'bootloader', PLATFORM, exe)
 
     def assemble(self):
         logger.info("building EXE from %s", os.path.basename(self.out))
@@ -1588,7 +1600,7 @@ def TkPKG():
 
 def build(spec, buildpath):
     global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
-    rthooks = _load_data(os.path.join(HOMEPATH, 'support', 'rthooks.dat'))
+    rthooks = _load_data(os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks.dat'))
     SPEC = spec
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]

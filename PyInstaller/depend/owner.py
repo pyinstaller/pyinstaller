@@ -1,29 +1,21 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2005, Giovanni Bajo
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
-# An Owner does imports from a particular piece of turf
-# That is, there's an Owner for each thing on sys.path
-# There are owners for directories and .pyz files.
-# There could be owners for zip files, or even URLs.
-# Note that they replace the string in sys.path,
-# but str(sys.path[n]) should yield the original string.
+"""
+An Owner does imports from a particular piece of turf
+That is, there's an Owner for each thing on sys.path
+There are owners for directories and .pyz files.
+There could be owners for zip files, or even URLs.
+Note that they replace the string in sys.path,
+but str(sys.path[n]) should yield the original string.
+"""
 
 
 import imp

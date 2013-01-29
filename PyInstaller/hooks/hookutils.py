@@ -1,3 +1,12 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
 
 import glob
 import os
@@ -21,7 +30,7 @@ def __exec_python_cmd(cmd):
     pp = os.pathsep.join(PyInstaller.__pathex__)
     old_pp = compat.getenv('PYTHONPATH')
     if old_pp:
-        pp = os.pathsep.join([pp, old_pp])
+        pp = os.pathsep.join([old_pp, pp])
     compat.setenv("PYTHONPATH", pp)
     try:
         try:
@@ -44,22 +53,27 @@ def exec_statement(statement):
     return __exec_python_cmd(cmd)
 
 
-def exec_script(scriptfilename, *args):
+def exec_script(script_filename, *args):
     """
     Executes a Python script in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a
     single string.
 
     To prevent missuse, the script passed to hookutils.exec-script
-    must be located in the `hooks` directory.
+    must be located in the `hooks/utils` directory.
     """
-
-    if scriptfilename != os.path.basename(scriptfilename):
+    script_filename = os.path.join('utils', os.path.basename(script_filename))
+    script_filename = os.path.join(os.path.dirname(__file__), script_filename)
+    if not os.path.exists(script_filename):
         raise SystemError("To prevent missuse, the script passed to "
                           "hookutils.exec-script must be located in "
-                          "the `hooks` directory.")
+                          "the `hooks/utils` directory.")
 
-    cmd = [os.path.join(os.path.dirname(__file__), scriptfilename)]
+    # Scripts might be importing some modules. Add PyInstaller code to pathex.
+    pyinstaller_root_dir = os.path.dirname(os.path.abspath(PyInstaller.__path__[0]))
+    PyInstaller.__pathex__.append(pyinstaller_root_dir)
+
+    cmd = [script_filename]
     cmd.extend(args)
     return __exec_python_cmd(cmd)
 
@@ -199,28 +213,61 @@ def qt4_menu_nib_dir():
 
 
 def django_dottedstring_imports(django_root_dir):
+    """
+    Get all the necessary Django modules specified in settings.py.
+
+    In the settings.py the modules are specified in several variables
+    as strings.
+    """
     package_name = os.path.basename(django_root_dir)
-    compat.setenv("DJANGO_SETTINGS_MODULE", "%s.settings" % package_name)
-    return eval_script("django-import-finder.py")
+    compat.setenv('DJANGO_SETTINGS_MODULE', '%s.settings' % package_name)
+
+    # Extend PYTHONPATH with parent dir of django_root_dir.
+    PyInstaller.__pathex__.append(misc.get_path_to_toplevel_modules(django_root_dir))
+    # Extend PYTHONPATH with django_root_dir.
+    # Many times Django users do not specify absolute imports in the settings module.
+    PyInstaller.__pathex__.append(django_root_dir)
+
+    ret = eval_script('django-import-finder.py')
+
+    # Unset environment variables again.
+    compat.unsetenv('DJANGO_SETTINGS_MODULE')
+
+    return ret
 
 
-def find_django_root(dir):
-    entities = set(os.listdir(dir))
-    if "manage.py" in entities and "settings.py" in entities and "urls.py" in entities:
-        return [dir]
+def django_find_root_dir():
+    """
+    Return path to directory (top-level Python package) that contains main django
+    files. Return None if no directory was detected.
+
+    Main Django project directory contain files like '__init__.py', 'settings.py'
+    and 'url.py'.
+
+    In Django 1.4+ the script 'manage.py' is not in the directory with 'settings.py'
+    but usually one level up. We need to detect this special case too.
+    """
+    # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
+    # first main executable script.
+    manage_py = sys._PYI_SETTINGS['scripts'][0]
+    manage_dir = os.path.dirname(os.path.abspath(manage_py))
+
+    # Get the Django root directory. The directory that contains settings.py and url.py.
+    # It could be the directory containig manage.py or any of its subdirectories.
+    settings_dir = None
+    files = set(os.listdir(manage_dir))
+    if 'settings.py' in files and 'urls.py' in files:
+        settings_dir = manage_dir
     else:
-        django_root_directories = []
-        for entity in entities:
-            path_to_analyze = os.path.join(dir, entity)
-            if os.path.isdir(path_to_analyze):
-                try:
-                    dir_entities = os.listdir(path_to_analyze)
-                except (IOError, OSError):
-                    # silently skip unreadable directories
-                    continue
-                if "manage.py" in dir_entities and "settings.py" in dir_entities and "urls.py" in dir_entities:
-                    django_root_directories.append(path_to_analyze)
-        return django_root_directories
+        for f in files:
+            if os.path.isdir(f):
+                subfiles = os.listdir(os.path.join(manage_dir, f))
+                # Subdirectory contains critical files.
+                if 'settings.py' in subfiles and 'urls.py' in subfiles:
+                    settings_dir = os.path.join(manage_dir, f)
+                    break  # Find the first directory.
+    
+    return settings_dir
 
 
 def matplotlib_backends():
