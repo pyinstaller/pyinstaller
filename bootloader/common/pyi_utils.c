@@ -347,12 +347,16 @@ FILE *pyi_open_target(const char *path, const char* name_)
 	if (stat(fnm, &sbuf) == 0) {
 		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
     }
-	return stb_fopen(fnm, "wb");
+	return stb__fopen(fnm, "wb");
 }
 
 /* Copy the file src to dst 4KB per time */
 int pyi_copy_file(const char *src, const char *dst, const char *filename)
 {
+    /*
+     * stb_fopen() wraps different fopen names. On Windows it uses
+     * wide-character version of fopen.
+     */
     FILE *in = stb_fopen(src, "rb");
     FILE *out = pyi_open_target(dst, filename);
     char buf[4096];

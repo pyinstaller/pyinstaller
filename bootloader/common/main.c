@@ -169,7 +169,9 @@ int main(int argc, char* argv[])
 #endif
 	pyi_pylib_finalize();
     } else {
+        /* status->temppath is created if necessary. */
         if (extractBinaries(status_list)) {
+            VS("temppath is %s\n", status_list[SELF]->temppath);
             VS("Error extracting binaries\n");
             return -1;
         }

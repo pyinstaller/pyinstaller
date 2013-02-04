@@ -241,12 +241,15 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
 	while (ptoc < status_list[SELF]->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
                 ptoc->typcd == ARCHIVE_ITEM_ZIPFILE)
-			if (pyi_arch_extract2fs(status_list[SELF], ptoc))
+			if (pyi_arch_extract2fs(status_list[SELF], ptoc)) {
+                VS("Extracting binaries1\n");
 				return -1;
+            }
 
         if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-            if (extractDependency(status_list, ptoc->name) == -1)
+            if (extractDependency(status_list, ptoc->name) == -1) {
                 return -1;
+            }
         }
 		ptoc = pyi_arch_increment_toc_ptr(status_list[SELF], ptoc);
 	}
