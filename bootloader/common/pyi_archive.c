@@ -140,10 +140,6 @@ int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 	FILE *out;
 	unsigned char *data = pyi_arch_extract(status, ptoc);
 
-    if (pyi_create_temp_path(status) == -1){
-        return -1;
-    }
-
 	out = pyi_open_target(status->temppath, ptoc->name);
 
 	if (out == NULL)  {
