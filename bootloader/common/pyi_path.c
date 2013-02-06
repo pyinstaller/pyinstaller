@@ -44,13 +44,13 @@ int pyi_path_executable(char *execfile, const char *appname)
 {
     /* Windows has special function to obtain path to executable. */
 #ifdef WIN32
-    stb__wchar wcharfile[PATH_MAX];
-	if (!GetModuleFileNameW(NULL, (* LPWSTR) wcharfile, PATH_MAX)) {
+    stb__wchar buffer[PATH_MAX];
+	if (!GetModuleFileNameW(NULL, buffer, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
 		return -1;
 	}
     /* Convert wchar_t to utf8 just use char as usual. */
-    stb_to_utf8(execfile, wcharfile, PATH_MAX);
+    stb_to_utf8(execfile, buffer, PATH_MAX);
 
     /* Windows has special function to obtain path to executable. */
 // TODO implement 

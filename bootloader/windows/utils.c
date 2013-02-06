@@ -156,17 +156,16 @@ int set_environment(const ARCHIVE_STATUS *status)
 	return 0;
 }
 
-int spawn(const char *thisfile, char *const argv[]);
-int spawn(LPWSTR execfile)
+int spawn(const char *thisfile, char *const argv[])
 {
-    /* Convert file name to wchar_t from utf8. */
-    wchar_t buffer[PATH_MAX];
-    stb_from_utf8(buffer, thisfile, PATH_MAX);
-
 	SECURITY_ATTRIBUTES sa;
 	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	int rc = 0;
+    stb__wchar buffer[PATH_MAX];
+
+    /* Convert file name to wchar_t from utf8. */
+    stb_from_utf8(buffer, thisfile, PATH_MAX);
 
 	// the parent process should ignore all signals it can
 	signal(SIGABRT, SIG_IGN);
