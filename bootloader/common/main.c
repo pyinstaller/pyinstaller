@@ -51,7 +51,8 @@
 
 /* PyInstaller headers. */
 #include "stb.h"
-#include "pyi_global.h"
+#include "pyi_global.h" // PATH_MAX for win32
+#include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_pythonlib.h"
@@ -72,9 +73,6 @@ int main(int argc, char* argv[])
     /*  status_list[0] is reserved for the main process, the others for dependencies. */
     ARCHIVE_STATUS *status_list[MAX_STATUS_LIST];
     char thisfile[PATH_MAX];
-#ifdef WIN32
-    wchar_t thisfilew[PATH_MAX + 1];
-#endif
     char homepath[PATH_MAX];
     char archivefile[PATH_MAX + 5];
     char MEIPASS2[PATH_MAX + 1];
@@ -92,10 +90,8 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    get_thisfile(thisfile, argv[0]);
-#ifdef WIN32
-    get_thisfilew(thisfilew);
-#endif
+    pyi_path_executable(thisfile, argv[0]);
+
     get_archivefile(archivefile, thisfile);
     get_homepath(homepath, thisfile);
 
@@ -177,7 +173,7 @@ int main(int argc, char* argv[])
         }
 
         VS("Executing self as child with ");
-        /* run the "child" process, then clean up */
+        /* Run the 'child' process, then clean up. */
 #ifdef WIN32
         pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppathraw : status_list[SELF]->homepathraw);
 #else
@@ -187,11 +183,7 @@ int main(int argc, char* argv[])
         if (set_environment(status_list[SELF]) == -1)
             return -1;
 
-#ifndef WIN32
         rc = spawn(thisfile, argv);
-#else
-        rc = spawn(thisfilew);
-#endif
 
         VS("Back to parent...\n");
         if (status_list[SELF]->has_temp_directory == true)

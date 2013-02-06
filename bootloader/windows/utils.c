@@ -136,26 +136,6 @@ void init_launcher(void)
 	InitCommonControls();
 }
 
-int get_thisfile(char *thisfile, const char *programname)
-{
-	if (!GetModuleFileNameA(NULL, thisfile, PATH_MAX)) {
-		FATALERROR("System error - unable to load!");
-		return -1;
-	}
-	
-	return 0;
-}
-
-int get_thisfilew(LPWSTR thisfilew)
-{
-	if (!GetModuleFileNameW(NULL, thisfilew, PATH_MAX)) {
-		FATALERROR("System error - unable to load!");
-		return -1;
-	}
-	
-	return 0;
-}
-
 void get_homepath(char *homepath, const char *thisfile)
 {
 	char *p = NULL;
@@ -176,8 +156,13 @@ int set_environment(const ARCHIVE_STATUS *status)
 	return 0;
 }
 
-int spawn(LPWSTR thisfile)
+int spawn(const char *thisfile, char *const argv[]);
+int spawn(LPWSTR execfile)
 {
+    /* Convert file name to wchar_t from utf8. */
+    wchar_t buffer[PATH_MAX];
+    stb_from_utf8(buffer, thisfile, PATH_MAX);
+
 	SECURITY_ATTRIBUTES sa;
 	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
@@ -205,7 +190,7 @@ int spawn(LPWSTR thisfile)
 
 	VS("Creating child process\n");
 	if (CreateProcessW( 
-			thisfile, // pointer to name of executable module 
+			buffer,  // Pointer to name of executable module.
 			GetCommandLineW(),  // pointer to command line string 
 			&sa,  // pointer to process security attributes 
 			NULL,  // pointer to thread security attributes 

@@ -36,37 +36,6 @@ void init_launcher(void)
 {
 }
 
-int get_thisfile(char *thisfile, const char *programname)
-{
-    char buf[PATH_MAX];
-    char *p;
-
-    /* Fill in thisfile. */
-#ifdef __CYGWIN__
-    if (strncasecmp(&programname[strlen(programname)-4], ".exe", 4)) {
-        strcpy(thisfile, programname);
-        strcat(thisfile, ".exe");
-        PI_SetProgramName(thisfile);
-    }
-    else
-#endif
-    PI_SetProgramName(programname);
-
-    strcpy(buf, PI_GetProgramFullPath());
-
-    /* Make homepath absolute.
-     * 'thisfile' starts ./ which breaks some modules when changing the CWD.
-     */
-    p = realpath(buf, thisfile);
-    if(p == NULL) {
-        FATALERROR("Error in making thisfile absolute.\n");
-        return -1;
-    }
-
-    VS("thisfile is %s\n", thisfile);
-    
-    return 0;
-}
 
 void get_homepath(char *homepath, const char *thisfile)
 {

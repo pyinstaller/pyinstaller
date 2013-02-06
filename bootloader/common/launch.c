@@ -239,11 +239,6 @@ int extractBinaries(ARCHIVE_STATUS *status_list[])
 	TOC * ptoc = status_list[SELF]->tocbuff;
 	VS("Extracting binaries\n");
 
-    /* Create tmp dir _MEIPASSxxx. */
-    if (pyi_create_temp_path(status_list[SELF]) == -1){
-        return -1;
-    }
-
 	while (ptoc < status_list[SELF]->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
                 ptoc->typcd == ARCHIVE_ITEM_ZIPFILE)
