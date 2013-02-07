@@ -750,8 +750,10 @@ static void stb__print_one(void *handle, char *s, intptr_t len)
 {
    if (len)
       // Explicitly change 'len' type to int32_t.
-      if (WriteConsoleA(handle, s, (int32_t) len, NULL,NULL))
-         fwrite(s, 1, len, stdout); // if it fails, maybe redirected, so do normal
+      if (WriteConsoleA(handle, s, (int32_t) len, NULL,NULL) == STB_FALSE) {
+          // Writing to console failed, so do normal. Maybe stdout is redirected.
+         fwrite(s, 1, len, stdout);
+    }
 }
 
 static void stb__print(char *s)
@@ -823,6 +825,7 @@ static void stb__print(char *s)
       s=t;
       SetConsoleTextAttribute(handle, 0x07);
    }
+
    stb__print_one(handle, t, s-t);
    SetConsoleTextAttribute(handle, 0x07);
 }
