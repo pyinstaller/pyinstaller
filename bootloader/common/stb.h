@@ -891,7 +891,7 @@ void stbprint(const char *fmt, ...)
 typedef unsigned short stb__wchar;
 
 STB_EXTERN stb__wchar * stb_from_utf8(stb__wchar *buffer, char *str, int n);
-STB_EXTERN char       * stb_to_utf8  (char *buffer, stb__wchar *str, int n);
+STB_EXTERN char       * stb_to_utf8  (char *buffer, const stb__wchar *str, int n);
 
 STB_EXTERN stb__wchar *stb__from_utf8(char *str);
 STB_EXTERN stb__wchar *stb__from_utf8_alt(char *str);
