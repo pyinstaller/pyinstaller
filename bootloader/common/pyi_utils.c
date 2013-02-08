@@ -126,7 +126,7 @@ int pyi_get_temp_path(char *buff)
         ret = _tempnam(buff, prefix);
         if (mkdir(ret) == 0) {
             strcpy(buff, ret);
-            strcat(buff, "\\");
+            strcat(buff, PYI_SEPSTR);
             free(ret);
             return 1;
         }
@@ -143,7 +143,7 @@ int pyi_test_temp_path(char *buff)
 	strcat(buff, "/_MEIXXXXXX");
     if (mkdtemp(buff))
     {
-        strcat(buff, "/");
+        strcat(buff, PYI_SEPSTR);
         return 1;
     }
     return 0;
@@ -215,7 +215,7 @@ static void remove_one(char *fnm, int pos, struct _finddata_t finfo)
 {
 	if ( strcmp(finfo.name, ".")==0  || strcmp(finfo.name, "..") == 0 )
 		return;
-	fnm[pos] = '\0';
+	fnm[pos] = PYI_NULLCHAR;
 	strcat(fnm, finfo.name);
 	if ( finfo.attrib & _A_SUBDIR )
         /* Use recursion to remove subdirectories. */
@@ -257,7 +257,7 @@ static void remove_one(char *pnm, int pos, const char *fnm)
 	struct stat sbuf;
 	if ( strcmp(fnm, ".")==0  || strcmp(fnm, "..") == 0 )
 		return;
-	pnm[pos] = '\0';
+	pnm[pos] = PYI_NULLCHAR;
 	strcat(pnm, fnm);
 	if ( stat(pnm, &sbuf) == 0 ) {
 		if ( S_ISDIR(sbuf.st_mode) )
@@ -277,8 +277,8 @@ void pyi_remove_temp_path(const char *dir)
 
 	strcpy(fnm, dir);
 	dirnmlen = strlen(fnm);
-	if ( fnm[dirnmlen-1] != '/' ) {
-		strcat(fnm, "/");
+	if ( fnm[dirnmlen-1] != PYI_SEP) {
+		strcat(fnm, PYI_SEPSTR);
 		dirnmlen++;
 	}
 	ds = opendir(dir);
@@ -320,18 +320,14 @@ FILE *pyi_open_target(const char *path, const char* name_)
 
 	strcpy(fnm, path);
 	strcpy(name, name_);
-	fnm[strlen(fnm)-1] = '\0';
+	fnm[strlen(fnm)-1] = PYI_NULLCHAR;
 
-	dir = strtok(name, "/\\");
+	dir = strtok(name, PYI_SEPSTR);
 	while (dir != NULL)
 	{
-#ifdef WIN32
-		strcat(fnm, "\\");
-#else
-		strcat(fnm, "/");
-#endif
+		strcat(fnm, PYI_SEPSTR);
 		strcat(fnm, dir);
-		dir = strtok(NULL, "/\\");
+		dir = strtok(NULL, PYI_SEPSTR);
 		if (!dir)
 			break;
 		if (stat(fnm, &sbuf) < 0)
@@ -440,7 +436,7 @@ char *pyi_path_join(const char *path1, const char *path2)
     len = strlen(joined);
     if (joined[len-1] != PYI_SEP) {
         joined[len] = PYI_SEP;
-        joined[len+1] = '\0';
+        joined[len+1] = PYI_NULLCHAR;
     }
     /* Append second component to path1 without trailing slash. */
     strcat(joined, path2);

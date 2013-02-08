@@ -117,7 +117,7 @@ int set_environment(const ARCHIVE_STATUS *status)
 
 #else
     /* Set library path to temppath. This is only for onefile mode.*/
-    if (status->temppath[0] != '\0') {
+    if (status->temppath[0] != PYI_NULLCHAR) {
         rc = set_dynamic_library_path(status->temppath);
     }
     /* Set library path to homepath. This is for default onedir mode.*/

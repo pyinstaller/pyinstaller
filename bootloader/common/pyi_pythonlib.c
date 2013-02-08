@@ -199,7 +199,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 #else
 	if (strlen(pypath) > 12)
 #endif
-		pypath[strlen(pypath)-1] = '\0';
+		pypath[strlen(pypath)-1] = PYI_NULLCHAR;
 
 	pyi_setenv("PYTHONPATH", pypath);
 	VS("PYTHONPATH=%s\n", pypath);
@@ -214,7 +214,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
     // TODO remove this hook when path handling is fixed in bootloader.
     #ifdef WIN32
     /* Remove trailing slash in directory path. */
-    pypath[strlen(pypath)-1] = '\0';
+    pypath[strlen(pypath)-1] = PYI_NULLCHAR;
     #endif
     PI_Py_SetPythonHome(pypath);
 	VS("PYTHONHOME=%s\n", pypath);
@@ -232,15 +232,15 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	/* VS("Manipulating Python's sys.path\n"); */
 	PI_PyRun_SimpleString("import sys\n");
 	PI_PyRun_SimpleString("del sys.path[:]\n");
-    if (status->temppath[0] != '\0') {
+    if (status->temppath[0] != PYI_NULLCHAR) {
         strcpy(tmp, status->temppath);
-	    tmp[strlen(tmp)-1] = '\0';
+	    tmp[strlen(tmp)-1] = PYI_NULLCHAR;
 	    sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
         PI_PyRun_SimpleString(cmd);
     }
 
 	strcpy(tmp, status->homepath);
-	tmp[strlen(tmp)-1] = '\0';
+	tmp[strlen(tmp)-1] = PYI_NULLCHAR;
 	sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
 	PI_PyRun_SimpleString (cmd);
 

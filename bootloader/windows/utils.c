@@ -141,8 +141,8 @@ void get_homepath(char *homepath, const char *thisfile)
 	char *p = NULL;
 	
 	strcpy(homepath, thisfile);
-	for (p = homepath + strlen(homepath); *p != '\\' && p >= homepath + 2; --p);
-	*++p = '\0';
+	for (p = homepath + strlen(homepath); *p != PYI_SEP && p >= homepath + 2; --p);
+	*++p = PYI_NULLCHAR;
 }
 
 void get_archivefile(char *archivefile, const char *thisfile)
