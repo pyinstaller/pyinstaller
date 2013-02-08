@@ -399,7 +399,7 @@ int pyi_copy_file(const char *src, const char *dst, const char *filename)
 // TODO use for unix function dirname()
 char *pyi_path_dirname(const char *fullpath)
 {
-    char *match = strrchr(fullpath, SEP);
+    char *match = strrchr(fullpath, PYI_SEP);
     char *pathname = (char *) calloc(PATH_MAX, sizeof(char));
     VS("Calculating dirname from fullpath\n");
     if (match != NULL)
@@ -438,15 +438,15 @@ char *pyi_path_join(const char *path1, const char *path2)
     size_t len = 0;
     /* Append trailing slash if missing. */
     len = strlen(joined);
-    if (joined[len-1] != SEP) {
-        joined[len] = SEP;
+    if (joined[len-1] != PYI_SEP) {
+        joined[len] = PYI_SEP;
         joined[len+1] = '\0';
     }
     /* Append second component to path1 without trailing slash. */
     strcat(joined, path2);
     /* Remove trailing slash if present. */
     len = strlen(path2);
-    if (path2[len-1] == SEP) {
+    if (path2[len-1] == PYI_SEP) {
         /* Append path2 without slash. */
         strncat(joined, path2, len-2);
     }

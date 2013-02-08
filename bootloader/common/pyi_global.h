@@ -14,17 +14,17 @@
  */
 
 
-#ifndef HEADER_PYI_GLOBAL_H
-#define HEADER_PYI_GLOBAL_H
+#ifndef PYI_GLOBAL_H
+#define PYI_GLOBAL_H
 
 
 /*
  * Definition of type boolean. On OSX boolean type is available.
  */
-typedef int bool_t;
+typedef int bool;
 
-#define false 0
-#define true  1
+#define true    1
+#define false   0
 
 
 /* Type for dynamic library. */
@@ -91,15 +91,24 @@ typedef int bool_t;
 #endif
 
 
-/* Path separator. */
+/* Path and string macros. */
 
 #ifdef WIN32
-    #define PATHSEP ";"
-    #define SEP '\\'
+    #define PYI_PATHSEP    ';'
+    #define PYI_SEP        '\\'
+    /*
+     * For some functions like strcat() we need to pass
+     * string and not only char.
+     */
+    #define PYI_SEPSTR     "\\"
 #else
-    #define PATHSEP ":"
-    #define SEP '/'
+    #define PYI_PATHSEP    ':'
+    #define PYI_SEP        '/'
+    #define PYI_SEPSTR     "/"
 #endif
+
+/* Strings are usually terminated by this character. */
+#define PYI_NULLCHAR       '\0'
 
 
 /* Rewrite ANSI/POSIX functions to Win32 equivalents. */
@@ -120,4 +129,4 @@ typedef int bool_t;
 /* Refers to 1st item in the archive status_list. */
 #define SELF 0
 
-#endif /* HEADER_PYI_GLOBAL_H */
+#endif /* PYI_GLOBAL_H */

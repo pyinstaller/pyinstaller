@@ -77,7 +77,7 @@ typedef struct _archive_status {
      * executable in onefile mode. Bootloader has to behave differently
      * in this mode.
      */
-    bool_t  has_temp_directory;
+    bool  has_temp_directory;
 } ARCHIVE_STATUS;
 
 
