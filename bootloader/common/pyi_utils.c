@@ -51,8 +51,10 @@
 #include "pyi_global.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
-// TODO Eliminate getpath.c/.h and replace it with functions from stb.h.
-#include "getpath.h"
+#ifndef WIN32
+    // TODO Eliminate getpath.c/.h and replace it with functions from stb.h.
+    #include "getpath.h"
+#endif
 
 
 /* Return string copy of environment variable. */

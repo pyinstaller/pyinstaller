@@ -36,6 +36,7 @@
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
 #include "pyi_launch.h"  // callSimpleEntryPoint
+#include "utils.h"  // CreateActContext, ReleaseActContext
 
 
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);

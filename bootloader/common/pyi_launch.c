@@ -355,7 +355,7 @@ done:
 /* For finer grained control. */
 
 
-void pyi_launch_initialize(void)
+void pyi_launch_initialize(const char *executable, const char *extractionpath)
 {
     #if defined(__APPLE__) && defined(WINDOWED)
     /*
@@ -365,7 +365,7 @@ void pyi_launch_initialize(void)
     ProcessSerialNumber psn = { 0, kCurrentProcess };
     OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
     #elif WIN32
-    CreateActContext(extractionpath, thisfile);
+    CreateActContext(extractionpath, executable);
     #endif
 }
 

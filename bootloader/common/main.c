@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 #endif
         }
 
-        pyi_launch_initialize();
+        pyi_launch_initialize(executable, extractionpath);
         rc = pyi_launch_execute(status_list[SELF], argc, argv);
         pyi_launch_finalize();
 
