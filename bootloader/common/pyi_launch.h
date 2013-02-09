@@ -12,31 +12,14 @@
 /*
  * Launch a python module from an archive.
  */
-#ifndef LAUNCH_H
-#define LAUNCH_H
+#ifndef PYI_LAUNCH_H
+#define PYI_LAUNCH_H
 
 
 /*****************************************************************
  * The following 4 entries are for applications which may need to
  * use to 2 steps to execute
  *****************************************************************/
-
-/**
- * Initialize the paths and open the archive
- *
- * @param archivePath  The path (with trailing backslash) to the archive.
- *
- * @param archiveName  The file name of the archive, without a path.
- *
- * @param workpath     The path (with trailing backslash) to where
- *                     the binaries were extracted. If they have not
- *                     benn extracted yet, this is NULL. If they have,
- *                     this will either be archivePath, or a temp dir
- *                     where the user has write permissions.
- *
- * @return 0 on success, non-zero otherwise.
- */
-int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName);
 
 /**
  * Extract binaries in the archive
@@ -82,5 +65,5 @@ int callSimpleEntryPoint(char *name, int *presult);
 void cleanUp(ARCHIVE_STATUS *status);
 
 
-#endif
+#endif  /* PYI_LAUNCH_H */
 

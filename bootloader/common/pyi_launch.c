@@ -347,21 +347,6 @@ done:
 }
 
 /* for finer grained control */
-/*
- * initialize (this always needs to be done)
- */
-int init(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
-{
-	/* Set up paths */
-	if (pyi_arch_set_paths(status, archivePath, archiveName))
-		return -1;
-
-	/* Open the archive */
-	if (pyi_arch_open(status))
-		return -1;
-
-	return 0;
-}
 
 /*
  * Once init'ed, you might want to extractBinaries()

@@ -56,7 +56,7 @@
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_pythonlib.h"
-#include "utils.h"
+#include "utils.h"  // TODO eliminate utils.h
 #include "pyi_launch.h"
 
 
@@ -114,8 +114,8 @@ int main(int argc, char* argv[])
 
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
-    if (init(status_list[SELF], homepath, &thisfile[strlen(homepath)])) {
-        if (init(status_list[SELF], homepath, &archivefile[strlen(homepath)])) {
+    if (pyi_arch_setup(status_list[SELF], homepath, &thisfile[strlen(homepath)])) {
+        if (pyi_arch_setup(status_list[SELF], homepath, &archivefile[strlen(homepath)])) {
             FATALERROR("Cannot open self %s or archive %s\n",
                     thisfile, archivefile);
             return -1;

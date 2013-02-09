@@ -344,6 +344,21 @@ int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char co
 }
 
 
+/* Setup the archive with python modules. (this always needs to be done) */
+int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
+{
+	/* Set up paths */
+	if (pyi_arch_set_paths(status, archivePath, archiveName))
+		return -1;
+
+	/* Open the archive */
+	if (pyi_arch_open(status))
+		return -1;
+
+	return 0;
+}
+
+
 
 /*
  * external API for iterating TOCs
