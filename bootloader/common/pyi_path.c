@@ -88,3 +88,52 @@ int pyi_path_executable(char *execfile, const char *appname)
 }
 
 
+/*
+ * Return absolute path to homepath. It is the directory containing executable.
+ */
+void pyi_path_homepath(char *homepath, const char *thisfile)
+{
+    // TODO merge platform specific as much as it is possible.
+#ifdef WIN32
+	char *p = NULL;
+	
+	strcpy(homepath, thisfile);
+	for (p = homepath + strlen(homepath); *p != PYI_SEP && p >= homepath + 2; --p);
+	*++p = PYI_NULLCHAR;
+#else
+    char buf[PATH_MAX];
+    char *p;
+
+    /* Fill in here (directory of thisfile). */
+    strcpy(buf, PI_GetPrefix());
+
+    // TODO move the code to create absolute path to 'pyi_path_executable'.
+    /* Make homepath absolute.
+     * 'homepath' contains ./ which breaks some modules when changing the CWD.
+     * Relative LD_LIBRARY_PATH is a security problem.
+     */
+    p = realpath(buf, homepath);
+    if(p == NULL) {
+        FATALERROR("Error in making homepath absolute.\n");
+        /* Fallback to relative path. */
+        strcpy(homepath, buf);
+    }
+
+    /* Path must end with slash. / */
+    strcat(homepath, "/");
+
+    VS("homepath is %s\n", homepath);
+#endif
+}
+
+
+// TODO What is the purpose of this function and the variable 'archivefile'?
+void pyi_path_archivefile(char *archivefile, const char *thisfile)
+{
+	strcpy(archivefile, thisfile);
+#ifdef WIN32
+	strcpy(archivefile + strlen(archivefile) - 3, "pkg");
+#else
+    strcat(archivefile, ".pkg");
+#endif
+}

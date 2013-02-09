@@ -37,37 +37,6 @@ void init_launcher(void)
 }
 
 
-void get_homepath(char *homepath, const char *thisfile)
-{
-    char buf[PATH_MAX];
-    char *p;
-
-    /* Fill in here (directory of thisfile). */
-    strcpy(buf, PI_GetPrefix());
-
-    /* Make homepath absolute.
-     * 'homepath' contains ./ which breaks some modules when changing the CWD.
-     * Relative LD_LIBRARY_PATH is a security problem.
-     */
-    p = realpath(buf, homepath);
-    if(p == NULL) {
-        FATALERROR("Error in making homepath absolute.\n");
-        /* Fallback to relative path. */
-        strcpy(homepath, buf);
-    }
-
-    /* Path must end with slash. / */
-    strcat(homepath, "/");
-
-    VS("homepath is %s\n", homepath);
-}
-
-void get_archivefile(char *archivefile, const char *thisfile)
-{
-    strcpy(archivefile, thisfile);
-    strcat(archivefile, ".pkg");
-}
-
 static int set_dynamic_library_path(const char* path)
 {
     int rc = 0;

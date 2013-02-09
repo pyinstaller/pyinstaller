@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
 {
     /*  status_list[0] is reserved for the main process, the others for dependencies. */
     ARCHIVE_STATUS *status_list[MAX_STATUS_LIST];
-    char thisfile[PATH_MAX];
+    char executable[PATH_MAX];
     char homepath[PATH_MAX];
     char archivefile[PATH_MAX + 5];
     char MEIPASS2[PATH_MAX + 1];
@@ -85,10 +85,9 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    pyi_path_executable(thisfile, argv[0]);
-
-    get_archivefile(archivefile, thisfile);
-    get_homepath(homepath, thisfile);
+    pyi_path_executable(executable, argv[0]);
+    pyi_path_archivefile(archivefile, executable);
+    pyi_path_homepath(homepath, executable);
 
     extractionpath = pyi_getenv("_MEIPASS2");
 
@@ -109,10 +108,10 @@ int main(int argc, char* argv[])
 
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
-    if (pyi_arch_setup(status_list[SELF], homepath, &thisfile[strlen(homepath)])) {
+    if (pyi_arch_setup(status_list[SELF], homepath, &executable[strlen(homepath)])) {
         if (pyi_arch_setup(status_list[SELF], homepath, &archivefile[strlen(homepath)])) {
             FATALERROR("Cannot open self %s or archive %s\n",
-                    thisfile, archivefile);
+                    executable, archivefile);
             return -1;
         }
     }
@@ -170,7 +169,7 @@ int main(int argc, char* argv[])
         if (set_environment(status_list[SELF]) == -1)
             return -1;
 
-        rc = spawn(thisfile, argv);
+        rc = spawn(executable, argv);
 
         VS("Back to parent...\n");
         if (status_list[SELF]->has_temp_directory == true)

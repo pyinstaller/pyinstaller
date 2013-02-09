@@ -131,24 +131,11 @@ void ReleaseActContext(void)
     }
 }
 
+
+// TODO This function is not called anywhere. Do we still need to init common controls? Or is it replaced by CreateActContext() function? Or is it safe to remove that?
 void init_launcher(void)
 {
 	InitCommonControls();
-}
-
-void get_homepath(char *homepath, const char *thisfile)
-{
-	char *p = NULL;
-	
-	strcpy(homepath, thisfile);
-	for (p = homepath + strlen(homepath); *p != PYI_SEP && p >= homepath + 2; --p);
-	*++p = PYI_NULLCHAR;
-}
-
-void get_archivefile(char *archivefile, const char *thisfile)
-{
-	strcpy(archivefile, thisfile);
-	strcpy(archivefile + strlen(archivefile) - 3, "pkg");
 }
 
 int set_environment(const ARCHIVE_STATUS *status)

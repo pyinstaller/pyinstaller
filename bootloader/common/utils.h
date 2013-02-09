@@ -18,8 +18,6 @@ void init_launcher(void);
 int CreateActContext(char *workpath, char *thisfile);
 void ReleaseActContext(void);
 #endif
-void get_homepath(char *homepath, const char *thisfile);
-void get_archivefile(char *archivefile, const char *thisfile);
 int set_environment(const ARCHIVE_STATUS *status);
 int spawn(const char *thisfile, char *const argv[]);
 
