@@ -35,7 +35,7 @@
 #include "pyi_archive.h"
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
-#include "launch.h"  // callSimpleEntryPoint
+#include "pyi_launch.h"  // callSimpleEntryPoint
 
 
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
