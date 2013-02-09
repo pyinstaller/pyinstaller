@@ -119,10 +119,6 @@ static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *pa
     strcpy(status->archivename, path);
     strcpy(status->homepath, status_list[SELF]->homepath);
     strcpy(status->temppath, status_list[SELF]->temppath);
-#ifdef WIN32
-    strcpy(status->homepathraw, status_list[SELF]->homepathraw);
-    strcpy(status->temppathraw, status_list[SELF]->temppathraw);
-#endif
 
     if (pyi_arch_open(status)) {
         FATALERROR("Error openning archive %s\n", path);

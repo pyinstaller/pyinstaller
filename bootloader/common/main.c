@@ -90,21 +90,6 @@ int main(int argc, char* argv[])
 
     extractionpath = pyi_getenv("_MEIPASS2");
 
-    /* If the Python program we are about to run invokes another PyInstaller
-     * one-file program as subprocess, this subprocess must not be fooled into
-     * thinking that it is already unpacked. Therefore, PyInstaller deletes
-     * the _MEIPASS2 variable from the environment in _pyi_bootstrap.py.
-     *
-     * However, on some platforms (e.g. AIX) the Python function 'os.unsetenv()'
-     * does not always exist. In these cases we cannot delete the _MEIPASS2
-     * environment variable from Python but only set it to the empty string.
-     * The code below takes into account that _MEIPASS2 may exist while its
-     * value is only the empty string.
-     */
-    if (extractionpath && *extractionpath == 0) {
-        extractionpath = NULL;
-    }
-
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
     if (pyi_arch_setup(status_list[SELF], homepath, &executable[strlen(homepath)])) {
@@ -116,6 +101,7 @@ int main(int argc, char* argv[])
     }
 
 #ifdef WIN32
+    /* On Windows use single-process for --onedir mode. */
     if (!extractionpath && !needToExtractBinaries(status_list)) {
         VS("No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
@@ -130,19 +116,12 @@ int main(int argc, char* argv[])
          */
         if (strcmp(homepath, extractionpath) != 0) {
             strcpy(status_list[SELF]->temppath, extractionpath);
-#ifdef WIN32
-            strcpy(status_list[SELF]->temppathraw, extractionpath);
-#endif
             /*
              * Temp path exits - set appropriate flag and change
              * status->mainpath to point to temppath.
              */
             status_list[SELF]->has_temp_directory = true;
-#ifdef WIN32
-            strcpy(status_list[SELF]->mainpath, status_list[SELF]->temppathraw);
-#else
             strcpy(status_list[SELF]->mainpath, status_list[SELF]->temppath);
-#endif
         }
 
         pyi_launch_initialize(executable, extractionpath);
@@ -159,11 +138,7 @@ int main(int argc, char* argv[])
 
         VS("Executing self as child with ");
         /* Run the 'child' process, then clean up. */
-#ifdef WIN32
-        pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppathraw : status_list[SELF]->homepathraw);
-#else
         pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
-#endif
 
         if (pyi_utils_set_environment(status_list[SELF]) == -1)
             return -1;

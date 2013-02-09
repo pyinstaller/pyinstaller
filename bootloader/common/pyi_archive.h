@@ -58,20 +58,16 @@ typedef struct _archive_status {
     TOC     *tocbuff;
     TOC     *tocend;
     COOKIE  cookie;
-    char    archivename[PATH_MAX + 1];
-    char    homepath[PATH_MAX + 1];
-    char    temppath[PATH_MAX + 1];
-#ifdef WIN32
-    char    homepathraw[PATH_MAX + 1];
-    char    temppathraw[PATH_MAX + 1];
-#endif
+    char    archivename[PATH_MAX];
+    char    homepath[PATH_MAX];
+    char    temppath[PATH_MAX];
     /*
      * Main path could be homepath or temppath. It will be temppath
      * if temppath is available. Sometimes we do not need to know if temppath
      * or homepath should be used. We only need to know the path. This variable
      * is used for example to set PYTHONPATH or PYTHONHOME.
      */
-    char    mainpath[PATH_MAX + 1];
+    char    mainpath[PATH_MAX];
     /* 
      * Flag if temporary directory is available. This usually means running
      * executable in onefile mode. Bootloader has to behave differently

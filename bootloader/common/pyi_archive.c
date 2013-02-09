@@ -311,34 +311,19 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
  */
 int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
 {
-#ifdef WIN32
-	char *p;
-#endif
 	/* Get the archive Path */
 	strcpy(status->archivename, archivePath);
 	strcat(status->archivename, archiveName);
 
 	/* Set homepath to where the archive is */
 	strcpy(status->homepath, archivePath);
-#ifdef WIN32
-    /* Replace backslashes with forward slashes. */
-    // TODO eliminate the need for this conversion and homepathraw and temppathraw
-	strcpy(status->homepathraw, archivePath);
-	for ( p = status->homepath; *p; p++ )
-		if (*p == '\\')
-			*p = '/';
-#endif
 
     /*
      * Initial value of mainpath is homepath. It might be overriden
      * by temppath if it is available.
      */
     status->has_temp_directory = false;
-#ifdef WIN32
-	strcpy(status->mainpath, status->homepathraw);
-#else
 	strcpy(status->mainpath, status->homepath);
-#endif
 
 	return 0;
 }

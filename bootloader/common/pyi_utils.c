@@ -80,7 +80,20 @@ char *pyi_getenv(const char *variable)
     /* Standard POSIX function. */
     env = getenv(variable);
 #endif
-    /* Return copy of string. */
+
+    /* If the Python program we are about to run invokes another PyInstaller
+     * one-file program as subprocess, this subprocess must not be fooled into
+     * thinking that it is already unpacked. Therefore, PyInstaller deletes
+     * the _MEIPASS2 variable from the environment in _pyi_bootstrap.py.
+     *
+     * However, on some platforms (e.g. AIX) the Python function 'os.unsetenv()'
+     * does not always exist. In these cases we cannot delete the _MEIPASS2
+     * environment variable from Python but only set it to the empty string.
+     * The code below takes into account that a variable may exist while its
+     * value is only the empty string.
+     *
+     * Return copy of string to avoid modification of the process environment.
+     */
     return (env && env[0]) ? strdup(env) : NULL;
 }
 
@@ -193,10 +206,6 @@ static int pyi_get_temp_path(char *buff)
  */
 int pyi_create_temp_path(ARCHIVE_STATUS *status)
 {
-#ifdef WIN32
-	char *p;
-#endif
-  
 	if (status->has_temp_directory != true) {
 		if (!pyi_get_temp_path(status->temppath))
 		{
@@ -205,12 +214,6 @@ int pyi_create_temp_path(ARCHIVE_STATUS *status)
 		}
         /* Set flag that temp directory is created and available. */
         status->has_temp_directory = true;
-#ifdef WIN32
-		strcpy(status->temppathraw, status->temppath);
-		for ( p=status->temppath; *p; p++ )
-			if (*p == '\\')
-				*p = '/';
-#endif
 	}
     return 0;
 }
