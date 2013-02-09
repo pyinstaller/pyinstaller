@@ -14,6 +14,10 @@
  */
 
 
+#if defined(__APPLE__) && defined(WINDOWED)
+    #include <Carbon/Carbon.h>  // TransformProcessType
+#endif
+
 #ifdef WIN32
     #include <windows.h>
 #else
@@ -32,6 +36,7 @@
 #include "pyi_utils.h"
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
+#include "utils.h"  // TODO eliminate utils.h
 
 
 /*
@@ -346,7 +351,24 @@ done:
 	return rc;
 }
 
-/* for finer grained control */
+
+/* For finer grained control. */
+
+
+void pyi_launch_initialize(void)
+{
+    #if defined(__APPLE__) && defined(WINDOWED)
+    /*
+     * On OS X this ensures that the application is handled as GUI app.
+     * Call TransformProcessType() in the child process.
+     */
+    ProcessSerialNumber psn = { 0, kCurrentProcess };
+    OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+    #elif WIN32
+    CreateActContext(extractionpath, thisfile);
+    #endif
+}
+
 
 /*
  * Once init'ed, you might want to extractBinaries()
@@ -380,4 +402,13 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
 	VS("OK.\n");
 
 	return rc;
+}
+
+
+void pyi_launch_finalize(void)
+{
+    #ifdef WIN32
+    ReleaseActContext();
+    #endif
+    pyi_pylib_finalize();
 }

@@ -33,11 +33,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 
-/* To call TransformProcessType in the child process. */
-#if defined(__APPLE__) && defined(WINDOWED)
-#include <Carbon/Carbon.h>
-#endif
-
 #ifdef WIN32
     #include <windows.h>
     #include <wchar.h>
@@ -152,18 +147,10 @@ int main(int argc, char* argv[])
 #endif
         }
 
-#if defined(__APPLE__) && defined(WINDOWED)
-        ProcessSerialNumber psn = { 0, kCurrentProcess };
-        OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
-#endif
-#ifdef WIN32
-        CreateActContext(extractionpath, thisfile);
-#endif
+        pyi_launch_initialize();
         rc = pyi_launch_execute(status_list[SELF], argc, argv);
-#ifdef WIN32
-        ReleaseActContext();
-#endif
-	pyi_pylib_finalize();
+        pyi_launch_finalize();
+
     } else {
         /* status->temppath is created if necessary. */
         if (extractBinaries(status_list)) {

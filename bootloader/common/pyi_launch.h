@@ -10,7 +10,7 @@
 
 
 /*
- * Launch a python module from an archive.
+ * Launch a python module from an archive and other related stuff.
  */
 #ifndef PYI_LAUNCH_H
 #define PYI_LAUNCH_H
@@ -21,7 +21,7 @@
  * use to 2 steps to execute
  *****************************************************************/
 
-/**
+/*
  * Extract binaries in the archive
  *
  * @param workpath     (OUT) Where the binaries were extracted to. If
@@ -31,13 +31,28 @@
  */
 int extractBinaries(ARCHIVE_STATUS *status_list[]);
 
+
 /*
  * Check if binaries need to be extracted. If not, this is probably a onedir
  * solution, and a child process will not be required on windows.
  */
 int needToExtractBinaries(ARCHIVE_STATUS *status_list[]);
 
-/**
+/*
+ * Wrapped platform specific initialization before loading Python and executing
+ * all scripts in the archive.
+ */
+void pyi_pylib_initialize(void);
+
+
+/*
+ * Wrapped platform specific finalization before loading Python and executing
+ * all scripts in the archive.
+ */
+void pyi_pylib_finalize(void);
+
+
+/*
  * Load Python and execute all scripts in the archive
  *
  * @param argc			Count of "commandline" args
@@ -47,6 +62,7 @@ int needToExtractBinaries(ARCHIVE_STATUS *status_list[]);
  * @return -1 for internal failures, or the rc of the last script.
  */
 int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[]);
+
 
 /*
  * Call a simple "int func(void)" entry point.  Assumes such a function
@@ -58,6 +74,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[]);
  * @param presult	Integer return value.
  */
 int callSimpleEntryPoint(char *name, int *presult);
+
 
 /**
  * Clean up extracted binaries
