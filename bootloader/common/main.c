@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
 #ifdef WIN32
         CreateActContext(extractionpath, thisfile);
 #endif
-        rc = doIt(status_list[SELF], argc, argv);
+        rc = pyi_launch_execute(status_list[SELF], argc, argv);
 #ifdef WIN32
         ReleaseActContext();
 #endif

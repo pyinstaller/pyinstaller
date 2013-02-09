@@ -46,7 +46,7 @@ int needToExtractBinaries(ARCHIVE_STATUS *status_list[]);
  *
  * @return -1 for internal failures, or the rc of the last script.
  */
-int doIt(ARCHIVE_STATUS *status, int argc, char *argv[]);
+int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[]);
 
 /*
  * Call a simple "int func(void)" entry point.  Assumes such a function

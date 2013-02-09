@@ -353,9 +353,9 @@ done:
  * If you do, what comes after is very platform specific.
  * Once you've taken care of the platform specific details,
  * or if there are no binaries to extract, you go on
- * to doIt(), which is the important part.
+ * to pyi_launch_execute(), which is the important part.
  */
-int doIt(ARCHIVE_STATUS *status, int argc, char *argv[])
+int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
 	int rc = 0;
 	/* Load Python DLL */
