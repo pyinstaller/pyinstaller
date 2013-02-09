@@ -51,7 +51,6 @@
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_pythonlib.h"
-#include "utils.h"  // TODO eliminate utils.h
 #include "pyi_launch.h"
 
 
@@ -166,10 +165,10 @@ int main(int argc, char* argv[])
         pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
 #endif
 
-        if (set_environment(status_list[SELF]) == -1)
+        if (pyi_utils_set_environment(status_list[SELF]) == -1)
             return -1;
 
-        rc = spawn(executable, argv);
+        rc = pyi_utils_create_child(executable, argv);
 
         VS("Back to parent...\n");
         if (status_list[SELF]->has_temp_directory == true)

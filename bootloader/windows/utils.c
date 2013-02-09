@@ -9,6 +9,10 @@
  */
 
 
+
+// TODO move this code to file  pyi_win32.c.
+
+
 #define _WIN32_WINNT 0x0500
 
 
@@ -133,66 +137,9 @@ void ReleaseActContext(void)
 
 
 // TODO This function is not called anywhere. Do we still need to init common controls? Or is it replaced by CreateActContext() function? Or is it safe to remove that?
-void init_launcher(void)
+static void init_launcher(void)
 {
 	InitCommonControls();
 }
 
-int set_environment(const ARCHIVE_STATUS *status)
-{
-	return 0;
-}
 
-int spawn(const char *thisfile, char *const argv[])
-{
-	SECURITY_ATTRIBUTES sa;
-	STARTUPINFOW si;
-	PROCESS_INFORMATION pi;
-	int rc = 0;
-    stb__wchar buffer[PATH_MAX];
-
-    /* Convert file name to wchar_t from utf8. */
-    stb_from_utf8(buffer, thisfile, PATH_MAX);
-
-	// the parent process should ignore all signals it can
-	signal(SIGABRT, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGTERM, SIG_IGN);
-	signal(SIGBREAK, SIG_IGN);
-
-	VS("Setting up to run child\n");
-	sa.nLength = sizeof(sa);
-	sa.lpSecurityDescriptor = NULL;
-	sa.bInheritHandle = TRUE;
-	GetStartupInfoW(&si);
-	si.lpReserved = NULL;
-	si.lpDesktop = NULL;
-	si.lpTitle = NULL;
-	si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
-	si.wShowWindow = SW_NORMAL;
-	si.hStdInput = (void*)_get_osfhandle(fileno(stdin));
-	si.hStdOutput = (void*)_get_osfhandle(fileno(stdout));
-	si.hStdError = (void*)_get_osfhandle(fileno(stderr));
-
-	VS("Creating child process\n");
-	if (CreateProcessW( 
-			buffer,  // Pointer to name of executable module.
-			GetCommandLineW(),  // pointer to command line string 
-			&sa,  // pointer to process security attributes 
-			NULL,  // pointer to thread security attributes 
-			TRUE,  // handle inheritance flag 
-			0,  // creation flags 
-			NULL,  // pointer to new environment block 
-			NULL,  // pointer to current directory name 
-			&si,  // pointer to STARTUPINFO 
-			&pi  // pointer to PROCESS_INFORMATION 
-			)) {
-		VS("Waiting for child process to finish...\n");
-		WaitForSingleObject(pi.hProcess, INFINITE);
-		GetExitCodeProcess(pi.hProcess, (unsigned long *)&rc);
-	} else {
-		FATALERROR("Error creating child process!\n");
-		rc = -1;
-	}
-	return rc;
-}

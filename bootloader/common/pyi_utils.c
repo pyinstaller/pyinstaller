@@ -20,10 +20,13 @@
     #include <direct.h>  // _mkdir, _rmdir
     #include <io.h>  // _finddata_t
     #include <process.h>  // getpid
+    #include <signal.h>  // signal
 #else
     #include <dirent.h>
     #include <dlfcn.h>
     #include <limits.h>  // PATH_MAX
+    #include <signal.h>  // kill,
+    #include <sys/wait.h>
     #include <unistd.h>  // rmdir, unlink
 #endif
 #include <stddef.h>  // ptrdiff_t
@@ -48,6 +51,8 @@
 #include "pyi_global.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
+// TODO Eliminate getpath.c/.h and replace it with functions from stb.h.
+#include "getpath.h"
 
 
 /* Return string copy of environment variable. */
@@ -491,4 +496,194 @@ dylib_t pyi_dlopen(const char *dllpath)
 }
 
 
+////////////////////////////////////////////////////////////////////
+// TODO better merging of the following platform specific functions.
+////////////////////////////////////////////////////////////////////
 
+
+#ifdef WIN32
+
+
+int pyi_utils_set_environment(const ARCHIVE_STATUS *status)
+{
+	return 0;
+}
+
+int pyi_utils_create_child(const char *thisfile, char *const argv[])
+{
+	SECURITY_ATTRIBUTES sa;
+	STARTUPINFOW si;
+	PROCESS_INFORMATION pi;
+	int rc = 0;
+    stb__wchar buffer[PATH_MAX];
+
+    /* Convert file name to wchar_t from utf8. */
+    stb_from_utf8(buffer, thisfile, PATH_MAX);
+
+	// the parent process should ignore all signals it can
+	signal(SIGABRT, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
+	signal(SIGBREAK, SIG_IGN);
+
+	VS("Setting up to run child\n");
+	sa.nLength = sizeof(sa);
+	sa.lpSecurityDescriptor = NULL;
+	sa.bInheritHandle = TRUE;
+	GetStartupInfoW(&si);
+	si.lpReserved = NULL;
+	si.lpDesktop = NULL;
+	si.lpTitle = NULL;
+	si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_NORMAL;
+	si.hStdInput = (void*)_get_osfhandle(fileno(stdin));
+	si.hStdOutput = (void*)_get_osfhandle(fileno(stdout));
+	si.hStdError = (void*)_get_osfhandle(fileno(stderr));
+
+	VS("Creating child process\n");
+	if (CreateProcessW( 
+			buffer,  // Pointer to name of executable module.
+			GetCommandLineW(),  // pointer to command line string 
+			&sa,  // pointer to process security attributes 
+			NULL,  // pointer to thread security attributes 
+			TRUE,  // handle inheritance flag 
+			0,  // creation flags 
+			NULL,  // pointer to new environment block 
+			NULL,  // pointer to current directory name 
+			&si,  // pointer to STARTUPINFO 
+			&pi  // pointer to PROCESS_INFORMATION 
+			)) {
+		VS("Waiting for child process to finish...\n");
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		GetExitCodeProcess(pi.hProcess, (unsigned long *)&rc);
+	} else {
+		FATALERROR("Error creating child process!\n");
+		rc = -1;
+	}
+	return rc;
+}
+
+
+#else
+
+
+static int set_dynamic_library_path(const char* path)
+{
+    int rc = 0;
+
+#ifdef AIX
+    /* LIBPATH is used to look up dynamic libraries on AIX. */
+    setenv("LIBPATH", path, 1);
+    VS("%s\n", path);
+#else
+    /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
+    rc = setenv("LD_LIBRARY_PATH", path, 1);
+    VS("%s\n", path);
+#endif /* AIX */
+
+    return rc;
+}
+
+int pyi_utils_set_environment(const ARCHIVE_STATUS *status)
+{
+    int rc = 0;
+
+#ifdef __APPLE__
+    /* On Mac OS X we do not use environment variables DYLD_LIBRARY_PATH
+     * or others to tell OS where to look for dynamic libraries.
+     * There were some issues with this approach. In some cases some
+     * system libraries were trying to load incompatible libraries from
+     * the dist directory. For instance this was experienced with macprots
+     * and PyQt4 applications.
+     *
+     * To tell the OS where to look for dynamic libraries we modify
+     * .so/.dylib files to use relative paths to other dependend
+     * libraries starting with @executable_path.
+     *
+     * For more information see:
+     * http://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
+     * http://developer.apple.com/library/mac/#documentation/DeveloperTools/  \
+     *     Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
+     */
+    /* For environment variable details see 'man dyld'. */
+	unsetenv("DYLD_FRAMEWORK_PATH");
+	unsetenv("DYLD_FALLBACK_FRAMEWORK_PATH");
+	unsetenv("DYLD_VERSIONED_FRAMEWORK_PATH");
+	unsetenv("DYLD_LIBRARY_PATH");
+	unsetenv("DYLD_FALLBACK_LIBRARY_PATH");
+	unsetenv("DYLD_VERSIONED_LIBRARY_PATH");
+	unsetenv("DYLD_ROOT_PATH");
+
+#else
+    /* Set library path to temppath. This is only for onefile mode.*/
+    if (status->temppath[0] != PYI_NULLCHAR) {
+        rc = set_dynamic_library_path(status->temppath);
+    }
+    /* Set library path to homepath. This is for default onedir mode.*/
+    else {
+        rc = set_dynamic_library_path(status->homepath);
+    }
+#endif
+
+    return rc;
+}
+
+/* Remember child process id. It allows sending a signal to child process.
+ * Frozen application always runs in a child process. Parent process is used
+ * to setup environment for child process and clean the environment when
+ * child exited.
+ */
+pid_t child_pid = 0;
+
+static void _signal_handler(int signal)
+{
+    kill(child_pid, signal);
+}
+
+
+/* Start frozen application in a subprocess. The frozen application runs
+ * in a subprocess.
+ */
+int pyi_utils_create_child(const char *thisfile, char *const argv[])
+{
+    pid_t pid = 0;
+    int rc = 0;
+
+    pid = fork();
+
+    /* Child code. */
+    if (pid == 0)
+        /* Replace process by starting a new application. */
+        execvp(thisfile, argv);
+    /* Parent code. */
+    else
+    {
+        child_pid = pid;
+
+        /* Redirect termination signals received by parent to child process. */
+        signal(SIGINT, &_signal_handler);
+        signal(SIGKILL, &_signal_handler);
+        signal(SIGTERM, &_signal_handler);
+    }
+
+    wait(&rc);
+
+    /* Parent code. */
+    if(child_pid != 0 )
+    {
+        /* When child process exited, reset signal handlers to default values. */
+        signal(SIGINT, SIG_DFL);
+        signal(SIGKILL, SIG_DFL);
+        signal(SIGTERM, SIG_DFL);
+    }
+    if (WIFEXITED(rc))
+        return WEXITSTATUS(rc);
+    /* Process ended abnormally */
+    if (WIFSIGNALED(rc))
+        /* Mimick the signal the child received */
+        raise(WTERMSIG(rc));
+    return 1;
+}
+
+
+#endif  /* WIN32 */

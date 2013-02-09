@@ -13,13 +13,10 @@
 #define UTILS_H
 
 
-void init_launcher(void);
 #ifdef WIN32
 int CreateActContext(char *workpath, char *thisfile);
 void ReleaseActContext(void);
 #endif
-int set_environment(const ARCHIVE_STATUS *status);
-int spawn(const char *thisfile, char *const argv[]);
 
 
 #endif /* UTILS_H */

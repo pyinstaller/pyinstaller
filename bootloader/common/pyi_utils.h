@@ -42,6 +42,8 @@ int pyi_copy_file(const char *src, const char *dst, const char *filename);
 
 /* Other routines. */
 dylib_t pyi_dlopen(const char *dllpath);
+int pyi_utils_create_child(const char *thisfile, char *const argv[]);
+int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 
 
 #endif /* HEADER_PY_UTILS_H */
