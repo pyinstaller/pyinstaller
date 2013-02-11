@@ -335,9 +335,8 @@ class CArchive(pyi_archive.Archive):
             s = zlib.compress(s, self.LEVEL)
         if flag == 2:
             global AES
-            import AES
-            import Crypt
-            key = Crypt.gen_random_key(32)
+            import AES, os
+            key = os.urandom(32) # using python 2.4+ this is an usable key
             # Note: keep this in sync with bootloader's code
             s = key + AES.new(key, AES.MODE_CFB, "\0" * AES.block_size).encrypt(s)
         dlen = len(s)
