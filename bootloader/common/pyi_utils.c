@@ -324,8 +324,8 @@ void cleanUp(ARCHIVE_STATUS *status)
 FILE *pyi_open_target(const char *path, const char* name_)
 {
 	struct stat sbuf;
-	char fnm[PATH_MAX+1];
-	char name[PATH_MAX+1];
+	char fnm[PATH_MAX];
+	char name[PATH_MAX];
 	char *dir;
 
 	strcpy(fnm, path);
@@ -448,8 +448,6 @@ char *pyi_path_join(const char *path1, const char *path2)
         joined[len] = PYI_SEP;
         joined[len+1] = PYI_NULLCHAR;
     }
-    /* Append second component to path1 without trailing slash. */
-    strcat(joined, path2);
     /* Remove trailing slash if present. */
     len = strlen(path2);
     if (path2[len-1] == PYI_SEP) {
