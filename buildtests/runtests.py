@@ -321,7 +321,7 @@ class BuildTestRunner(object):
 
         Return True if build succeded False otherwise.
         """
-        OPTS = ['--debug']
+        OPTS = ['--debug', '--noupx']
 
         if self.verbose:
             OPTS.extend(['--debug', '--log-level=INFO'])
