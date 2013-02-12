@@ -10,11 +10,8 @@
 
 from hookutils import collect_submodules, collect_data_files
 
-def hook(mod):
-    global hiddenimports, datas
-    hiddenimports = (collect_submodules('docutils.languages') +
-                     collect_submodules('docutils.writers') +
-                     collect_submodules('docutils.parsers.rst.languages') +
-                     collect_submodules('docutils.parsers.rst.directives'))
-    datas = collect_data_files('docutils')
-    return mod
+hiddenimports = (collect_submodules('docutils.languages') +
+                 collect_submodules('docutils.writers') +
+                 collect_submodules('docutils.parsers.rst.languages') +
+                 collect_submodules('docutils.parsers.rst.directives'))
+datas = collect_data_files('docutils')
