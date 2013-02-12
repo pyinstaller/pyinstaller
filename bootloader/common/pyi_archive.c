@@ -156,9 +156,10 @@ int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 #ifndef WIN32
 		fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
 #endif
-		fclose(out);
+        fclose(out);
 	}
 	free(data);
+
 	return 0;
 }
 

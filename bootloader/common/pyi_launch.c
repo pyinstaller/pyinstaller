@@ -88,47 +88,54 @@ static int copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, co
     return 0;
 }
 
-/* Look for the archive identified by path into the ARCHIVE_STATUS pool status_list.
+
+/* 
+ * Look for the archive identified by path into the ARCHIVE_STATUS pool archive_pool.
  * If the archive is found, a pointer to the associated ARCHIVE_STATUS is returned
  * otherwise the needed archive is opened and added to the pool and then returned.
  * If an error occurs, returns NULL.
+ *
+ * Having several archives is useful for sharing binary dependencies with several
+ * executables (multipackage feature).
  */
-static ARCHIVE_STATUS *get_archive(ARCHIVE_STATUS *status_list[], const char *path)
+static ARCHIVE_STATUS *_get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
 {
-    ARCHIVE_STATUS *status = NULL;
-    int i = 0;
+    ARCHIVE_STATUS *archive = NULL;
+    int index = 0;
+    int SELF = 0;
 
     VS("Getting file from archive.\n");
-    if (pyi_create_temp_path(status_list[SELF]) == -1){
+    if (pyi_create_temp_path(archive_pool[SELF]) == -1){
         return NULL;
     }
 
-    for (i = 1; status_list[i] != NULL; i++){
-        if (strcmp(status_list[i]->archivename, path) == 0) {
+    for (index = 1; archive_pool[index] != NULL; index++){
+        if (strcmp(archive_pool[index]->archivename, path) == 0) {
             VS("Archive found: %s\n", path);
-            return status_list[i];
+            return archive_pool[index];
         }
         VS("Checking next archive in the list...\n");
     }
 
-    if ((status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL) {
+    if ((archive = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL) {
         FATALERROR("Error allocating memory for status\n");
         return NULL;
-    }
-
-    strcpy(status->archivename, path);
-    strcpy(status->homepath, status_list[SELF]->homepath);
-    strcpy(status->temppath, status_list[SELF]->temppath);
-
-    if (pyi_arch_open(status)) {
+    }   
+         
+    strcpy(archive->archivename, path);
+    strcpy(archive->homepath, archive_pool[SELF]->homepath);
+    strcpy(archive->temppath, archive_pool[SELF]->temppath);
+         
+    if (pyi_arch_open(archive)) {
         FATALERROR("Error openning archive %s\n", path);
-        free(status);
+        free(archive);
         return NULL;
-    }
-
-    status_list[i] = status;
-    return status;
+    }   
+             
+    archive_pool[index] = archive;
+    return archive;
 }
+
 
 /* Extract a file identifed by filename from the archive associated to status. */
 static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
@@ -136,9 +143,11 @@ static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *file
 	TOC * ptoc = status->tocbuff;
 	VS("Extracting dependencies from archive\n");
 	while (ptoc < status->tocend) {
-		if (strcmp(ptoc->name, filename) == 0)
-			if (pyi_arch_extract2fs(status, ptoc))
+		if (strcmp(ptoc->name, filename) == 0) {
+			if (pyi_arch_extract2fs(status, ptoc)) {
 				return -1;
+            }
+        }
 		ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
 	}
 	return 0;
@@ -147,13 +156,14 @@ static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *file
 /* Decide if the dependency identified by item is in a onedir or onfile archive
  * then call the appropriate function.
  */
-static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
+static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 {
     ARCHIVE_STATUS *status = NULL;
-    char path[PATH_MAX + 1];
-    char filename[PATH_MAX + 1];
-    char srcpath[PATH_MAX + 1];
-    char archive_path[PATH_MAX + 1];
+    ARCHIVE_STATUS *archive_status = archive_pool[0];
+    char path[PATH_MAX];
+    char filename[PATH_MAX];
+    char srcpath[PATH_MAX];
+    char archive_path[PATH_MAX];
 
     char *dirname = NULL;
 
@@ -173,30 +183,30 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
      * archive next to the current onefile archive.
      */
     VS("Checking if file exists\n");
-    if (checkFile(srcpath, "%s/%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) {
+    if (checkFile(srcpath, "%s/%s/%s", archive_status->homepath, dirname, filename) == 0) {
         VS("File %s found, assuming is onedir\n", srcpath);
-        if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
+        if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
             free(dirname);
             return -1;
         }
-    } else if (checkFile(srcpath, "%s../%s/%s", status_list[SELF]->homepath, dirname, filename) == 0) {
+    } else if (checkFile(srcpath, "%s../%s/%s", archive_status->homepath, dirname, filename) == 0) {
         VS("File %s found, assuming is onedir\n", srcpath);
-        if (copyDependencyFromDir(status_list[SELF], srcpath, filename) == -1) {
+        if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
             free(dirname);
             return -1;
         }
     } else {
         VS("File %s not found, assuming is onefile.\n", srcpath);
-        if ((checkFile(archive_path, "%s%s.pkg", status_list[SELF]->homepath, path) != 0) &&
-            (checkFile(archive_path, "%s%s.exe", status_list[SELF]->homepath, path) != 0) &&
-            (checkFile(archive_path, "%s%s", status_list[SELF]->homepath, path) != 0)) {
+        if ((checkFile(archive_path, "%s%s.pkg", archive_status->homepath, path) != 0) &&
+            (checkFile(archive_path, "%s%s.exe", archive_status->homepath, path) != 0) &&
+            (checkFile(archive_path, "%s%s", archive_status->homepath, path) != 0)) {
             FATALERROR("Archive not found: %s\n", archive_path);
             return -1;
         }
 
-        if ((status = get_archive(status_list, archive_path)) == NULL) {
+        if ((status = _get_archive(archive_pool, archive_path)) == NULL) {
             FATALERROR("Archive not found: %s\n", archive_path);
             return -1;
         }
@@ -213,48 +223,83 @@ static int extractDependency(ARCHIVE_STATUS *status_list[], const char *item)
 
 
 /*
- * check if binaries need to be extracted. If not, this is probably a onedir solution,
+ * Check if binaries need to be extracted. If not, this is probably a onedir solution,
  * and a child process will not be required on windows.
  */
-int needToExtractBinaries(ARCHIVE_STATUS *status_list[])
+int pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status)
 {
-	TOC * ptoc = status_list[SELF]->tocbuff;
-	while (ptoc < status_list[SELF]->tocend) {
+	TOC * ptoc = archive_status->tocbuff;
+	while (ptoc < archive_status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
                 ptoc->typcd == ARCHIVE_ITEM_ZIPFILE)
             return true;
         if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
             return true;
         }
-		ptoc = pyi_arch_increment_toc_ptr(status_list[SELF], ptoc);
+		ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc);
 	}
 	return false;
 }
 
 /*
- * extract all binaries (type 'b') and all data files (type 'x') to the filesystem
+ * Extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  * and checks for dependencies (type 'd'). If dependencies are found, extract them.
+ *
+ * 'Multipackage' feature includes dependencies. Dependencies are files in other
+ * .exe files. Having files in other executables allows share binary files among
+ * executables and thus reduce the final size of the executable.
  */
-int extractBinaries(ARCHIVE_STATUS *status_list[])
+int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
 {
-	TOC * ptoc = status_list[SELF]->tocbuff;
+    size_t MAX_ARCHIVE_POOL_LEN = 20;
+    int retcode = 0;
+    ptrdiff_t index = 0;
+    /*
+     * archive_pool[0] is reserved for the main process, the others for dependencies.
+     */
+    ARCHIVE_STATUS *archive_pool[MAX_ARCHIVE_POOL_LEN];
+	TOC * ptoc = archive_status->tocbuff;
+
+    /* Clean memory for archive_pool list. */
+    memset(&archive_pool, 0, MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
+
+    /* Current process is the 1st item. */
+    archive_pool[0] = archive_status;
+
 	VS("Extracting binaries\n");
 
-	while (ptoc < status_list[SELF]->tocend) {
+	while (ptoc < archive_status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
-                ptoc->typcd == ARCHIVE_ITEM_ZIPFILE)
-			if (pyi_arch_extract2fs(status_list[SELF], ptoc)) {
-				return -1;
-            }
-
-        if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-            if (extractDependency(status_list, ptoc->name) == -1) {
-                return -1;
+                ptoc->typcd == ARCHIVE_ITEM_ZIPFILE) {
+			if (pyi_arch_extract2fs(archive_status, ptoc)) {
+				retcode = -1;
+                break;  /* No need to extract other items in case of error. */
             }
         }
-		ptoc = pyi_arch_increment_toc_ptr(status_list[SELF], ptoc);
+
+        else {
+            /* 'Multipackage' feature - dependency is stored in different executables. */
+            if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
+                if (_extract_dependency(archive_pool, ptoc->name) == -1) {
+                    retcode = -1;
+                    break;  /* No need to extract other items in case of error. */
+                }
+            }
+        }
+		ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc);
 	}
-	return 0;
+
+
+    /*
+     * Free memory allocated for archive_pool data. Do not free memory
+     * of the main process - start with 2nd item.
+     */
+    for (index = 1; archive_pool[index] != NULL; index++) {
+        VS("Freeing status for %s\n", archive_pool[index]->archivename);
+        free(archive_pool[index]);
+    }
+
+	return retcode;
 }
 
 /*

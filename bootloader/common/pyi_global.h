@@ -124,9 +124,4 @@ typedef int bool;
 #endif
 
 
-
-
-/* Refers to 1st item in the archive status_list. */
-#define SELF 0
-
 #endif /* PYI_GLOBAL_H */

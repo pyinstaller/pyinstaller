@@ -54,9 +54,6 @@
 #include "pyi_launch.h"
 
 
-#define MAX_STATUS_LIST 20
-
-
 #if defined(WIN32) && defined(WINDOWED)
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						LPSTR lpCmdLine, int nCmdShow )
@@ -64,12 +61,12 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 int main(int argc, char* argv[])
 #endif
 {
-    /*  status_list[0] is reserved for the main process, the others for dependencies. */
-    ARCHIVE_STATUS *status_list[MAX_STATUS_LIST];
+    /*  archive_status contain status information of the main process. */
+    ARCHIVE_STATUS *archive_status;
     char executable[PATH_MAX];
     char homepath[PATH_MAX];
-    char archivefile[PATH_MAX + 5];
-    char MEIPASS2[PATH_MAX + 1];
+    char archivefile[PATH_MAX];
+    char MEIPASS2[PATH_MAX];
     int rc = 0;
     char *extractionpath = NULL;
 #if defined(WIN32) && defined(WINDOWED)
@@ -78,8 +75,8 @@ int main(int argc, char* argv[])
 #endif
     int i = 0;
 
-    memset(&status_list, 0, MAX_STATUS_LIST * sizeof(ARCHIVE_STATUS *));
-    if ((status_list[SELF] = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL){
+    memset(&archive_status, 0, sizeof(ARCHIVE_STATUS *));
+    if ((archive_status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL){
         FATALERROR("Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
     }
@@ -92,8 +89,8 @@ int main(int argc, char* argv[])
 
     VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
-    if (pyi_arch_setup(status_list[SELF], homepath, &executable[strlen(homepath)])) {
-        if (pyi_arch_setup(status_list[SELF], homepath, &archivefile[strlen(homepath)])) {
+    if (pyi_arch_setup(archive_status, homepath, &executable[strlen(homepath)])) {
+        if (pyi_arch_setup(archive_status, homepath, &archivefile[strlen(homepath)])) {
             FATALERROR("Cannot open self %s or archive %s\n",
                     executable, archivefile);
             return -1;
@@ -102,7 +99,7 @@ int main(int argc, char* argv[])
 
 #ifdef WIN32
     /* On Windows use single-process for --onedir mode. */
-    if (!extractionpath && !needToExtractBinaries(status_list)) {
+    if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
         VS("No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
         strcpy(MEIPASS2, homepath);
@@ -115,43 +112,43 @@ int main(int argc, char* argv[])
          *  we pass it through status variable
          */
         if (strcmp(homepath, extractionpath) != 0) {
-            strcpy(status_list[SELF]->temppath, extractionpath);
+            strcpy(archive_status->temppath, extractionpath);
             /*
              * Temp path exits - set appropriate flag and change
              * status->mainpath to point to temppath.
              */
-            status_list[SELF]->has_temp_directory = true;
-            strcpy(status_list[SELF]->mainpath, status_list[SELF]->temppath);
+            archive_status->has_temp_directory = true;
+            strcpy(archive_status->mainpath, archive_status->temppath);
         }
 
         pyi_launch_initialize(executable, extractionpath);
-        rc = pyi_launch_execute(status_list[SELF], argc, argv);
+        rc = pyi_launch_execute(archive_status, argc, argv);
         pyi_launch_finalize();
 
     } else {
         /* status->temppath is created if necessary. */
-        if (extractBinaries(status_list)) {
-            VS("temppath is %s\n", status_list[SELF]->temppath);
+        if (pyi_launch_extract_binaries(archive_status)) {
+            VS("temppath is %s\n", archive_status->temppath);
             VS("Error extracting binaries\n");
             return -1;
         }
 
         VS("Executing self as child with ");
         /* Run the 'child' process, then clean up. */
-        pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
+        pyi_setenv("_MEIPASS2", archive_status->temppath[0] != 0 ? archive_status->temppath : homepath);
 
-        if (pyi_utils_set_environment(status_list[SELF]) == -1)
+        if (pyi_utils_set_environment(archive_status) == -1)
             return -1;
 
         rc = pyi_utils_create_child(executable, argv);
 
         VS("Back to parent...\n");
-        if (status_list[SELF]->has_temp_directory == true)
-            pyi_remove_temp_path(status_list[SELF]->temppath);
+        if (archive_status->has_temp_directory == true)
+            pyi_remove_temp_path(archive_status->temppath);
 
-        for (i = SELF; status_list[i] != NULL; i++) {
-            VS("Freeing status for %s\n", status_list[i]->archivename);
-            free(status_list[i]);
+        if (archive_status != NULL) {
+            VS("Freeing status for %s\n", archive_status->archivename);
+            free(archive_status);
         }
     }
     return rc;

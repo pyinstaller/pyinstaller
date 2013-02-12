@@ -136,11 +136,11 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
 }
 void startUp()
 {
-	ARCHIVE_STATUS *status_list[20];
-	char thisfile[PATH_MAX + 1];
+	ARCHIVE_STATUS *archive_status;
+	char thisfile[PATH_MAX];
 	char *p;
 	int len;
-	memset(status_list, 0, 20 * sizeof(ARCHIVE_STATUS *));
+	memset(archive_status, 0, sizeof(ARCHIVE_STATUS *));
 	
 	if (!GetModuleFileNameA(gInstance, thisfile, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
@@ -154,8 +154,8 @@ void startUp()
 	len = p - here;
 	//VS(here);
 	//VS(&thisfile[len]);
-	launch(status_list[SELF], here, &thisfile[len]);
-	LoadPythonCom(status_list[SELF]);
+	launch(archive_status, here, &thisfile[len]);
+	LoadPythonCom(archive_status);
 	// Now Python is up and running (any scripts have run)
 }
 
