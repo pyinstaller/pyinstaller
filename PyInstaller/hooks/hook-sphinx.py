@@ -10,8 +10,5 @@
 
 from hookutils import collect_submodules, collect_data_files
 
-def hook(mod):
-    global hiddenimports, datas
-    hiddenimports = collect_submodules('sphinx.ext')
-    datas = collect_data_files('sphinx')
-    return mod
+hiddenimports = collect_submodules('sphinx.ext')
+datas = collect_data_files('sphinx')
