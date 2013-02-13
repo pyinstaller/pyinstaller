@@ -19,6 +19,18 @@
 
 
 /*
+ * Detect memory leaks.
+ *
+ * Use Boehm garbage collector to detect memory leaks.
+ * malloc(), free(), strdup() and similar functions
+ * are replaced by calls from the gc library.
+ */
+#ifdef PYI_LEAK_DETECTOR
+    #include <gc/leak_detector.h>
+#endif
+
+
+/*
  * Definition of type boolean. On OSX boolean type is available.
  */
 typedef int bool;
