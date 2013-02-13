@@ -24,7 +24,7 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status);
 int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status);
 int pyi_pylib_run_scripts(ARCHIVE_STATUS *status);
 
-void pyi_pylib_finalize(void);
+void pyi_pylib_finalize(ARCHIVE_STATUS *status);
 
 
 #endif /* PYI_PYTHONLIB_H */

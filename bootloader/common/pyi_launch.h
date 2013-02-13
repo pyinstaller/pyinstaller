@@ -49,7 +49,7 @@ void pyi_launch_initialize(const char *executable, const char *extractionpath);
  * Wrapped platform specific finalization before loading Python and executing
  * all scripts in the archive.
  */
-void pyi_pylib_finalize(void);
+void pyi_launch_finalize(ARCHIVE_STATUS *archive_status);
 
 
 /*

@@ -78,7 +78,7 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
 
     /* Append Python library name to dllpath. */
     strcat(dllpath, dllname);
-    VS("Python library: %s\n", dllpath);
+    VS("LOADER: Python library: %s\n", dllpath);
 
 	/* Load the DLL */
     dll = pyi_dlopen(dllpath);
@@ -355,7 +355,7 @@ int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 {
 	TOC * ptoc;
-	VS("Installing import hooks\n");
+	VS("LOADER: Installing import hooks\n");
 
 	/* Iterate through toc looking for zlibs (type 'z') */
 	ptoc = status->tocbuff;
@@ -371,9 +371,16 @@ int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 	return 0;
 }
 
-void pyi_pylib_finalize(void)
+void pyi_pylib_finalize(ARCHIVE_STATUS *status)
 {
-	PI_Py_Finalize();
+    /*
+     * Call this function only if Python library was initialized.
+     *
+     * Otherwise it should be NULL pointer. If Python library is not properly
+     * loaded then calling this function might cause some segmentation faults.
+     */
+    if (status->is_pylib_loaded == true) {
+        VS("LOADER: Cleaning up Python interpreter.\n");
+        PI_Py_Finalize();
+    }
 }
-
-

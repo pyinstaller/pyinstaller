@@ -74,6 +74,12 @@ typedef struct _archive_status {
      * in this mode.
      */
     bool  has_temp_directory;
+    /*
+     * Flag if Python library was loaded. This indicates if it is safe
+     * to call function PI_Py_Finalize(). If Python dll is missing 
+     * calling this function would cause segmentation fault.
+     */
+    bool  is_pylib_loaded;
 } ARCHIVE_STATUS;
 
 
@@ -93,6 +99,14 @@ int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
  */
 int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
 int pyi_arch_open(ARCHIVE_STATUS *status);
+
+
+/*
+ * Memory allocation wrappers.
+ */
+// TODO implement alloc function.
+//void pyi_arch_status_alloc_memory(ARCHIVE_STATUS *status)
+void pyi_arch_status_free_memory(ARCHIVE_STATUS *status);
 
 /*
  * Setup the paths and open the archive

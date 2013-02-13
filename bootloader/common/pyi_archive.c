@@ -160,6 +160,18 @@ int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 	}
 	free(data);
 
+        /* TODO remove this debug code.
+        filename = pyi_path_join(status->temppath, ptoc->name);
+        if (stat(filename, &sbuf) == 0) {
+            VS("LOADER: exists YES: %s\n", filename);
+        }
+        else {
+            VS("LOADER: exists NO: %s\n", filename);
+        }
+        free(filename);
+        filename = NULL;
+        */
+
 	return 0;
 }
 
@@ -278,6 +290,9 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 #endif
 	}
 
+    /* Set the flag that Python library was not loaded yet. */
+    status->is_pylib_loaded = false;
+
 	/* From the cookie, calculate the archive start */
 	status->pkgstart = filelen - ntohl(status->cookie.len);
 
@@ -369,3 +384,20 @@ int pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
 {
 	return ntohl(status->cookie.pyvers);
 }
+
+
+/*
+ * Free memory allocated for archive status.
+ */
+void pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
+{
+    if (archive_status != NULL) {
+        VS("LOADER: Freeing archive status for %s\n", archive_status->archivename);
+        /* Free the TOC memory from the archive status first. */
+        if (archive_status->tocbuff != NULL) {
+            free(archive_status->tocbuff);
+        }
+        free(archive_status);
+    }
+}
+

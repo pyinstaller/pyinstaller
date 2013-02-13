@@ -64,7 +64,7 @@ static int splitName(char *path, char *filename, const char *item)
 {
     char name[PATH_MAX + 1];
 
-    VS("Splitting item into path and filename\n");
+    VS("LOADER: Splitting item into path and filename\n");
     strcpy(name, item);
     strcpy(path, strtok(name, ":"));
     strcpy(filename, strtok(NULL, ":")) ;
@@ -81,7 +81,7 @@ static int copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, co
         return -1;
     }
 
-    VS("Coping file %s to %s\n", srcpath, status->temppath);
+    VS("LOADER: Coping file %s to %s\n", srcpath, status->temppath);
     if (pyi_copy_file(srcpath, status->temppath, filename) == -1) {
         return -1;
     }
@@ -104,20 +104,21 @@ static ARCHIVE_STATUS *_get_archive(ARCHIVE_STATUS *archive_pool[], const char *
     int index = 0;
     int SELF = 0;
 
-    VS("Getting file from archive.\n");
+    VS("LOADER: Getting file from archive.\n");
     if (pyi_create_temp_path(archive_pool[SELF]) == -1){
         return NULL;
     }
 
     for (index = 1; archive_pool[index] != NULL; index++){
         if (strcmp(archive_pool[index]->archivename, path) == 0) {
-            VS("Archive found: %s\n", path);
+            VS("LOADER: Archive found: %s\n", path);
             return archive_pool[index];
         }
-        VS("Checking next archive in the list...\n");
+        VS("LOADER: Checking next archive in the list...\n");
     }
 
-    if ((archive = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL) {
+    archive = (ARCHIVE_STATUS *) malloc(sizeof(ARCHIVE_STATUS));
+    if (archive == NULL) {
         FATALERROR("Error allocating memory for status\n");
         return NULL;
     }   
@@ -133,6 +134,7 @@ static ARCHIVE_STATUS *_get_archive(ARCHIVE_STATUS *archive_pool[], const char *
     }   
              
     archive_pool[index] = archive;
+    VS("  archive_pool index: %d\n", index);
     return archive;
 }
 
@@ -141,7 +143,7 @@ static ARCHIVE_STATUS *_get_archive(ARCHIVE_STATUS *archive_pool[], const char *
 static int extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
 {
 	TOC * ptoc = status->tocbuff;
-	VS("Extracting dependencies from archive\n");
+	VS("LOADER: Extracting dependencies from archive\n");
 	while (ptoc < status->tocend) {
 		if (strcmp(ptoc->name, filename) == 0) {
 			if (pyi_arch_extract2fs(status, ptoc)) {
@@ -167,7 +169,7 @@ static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 
     char *dirname = NULL;
 
-    VS("Extracting dependencies\n");
+    VS("LOADER: Extracting dependencies\n");
     if (splitName(path, filename, item) == -1)
         return -1;
 
@@ -182,23 +184,23 @@ static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
      * archive next to the current onedir archive, 3) dependencies are in a onefile
      * archive next to the current onefile archive.
      */
-    VS("Checking if file exists\n");
+    VS("LOADER: Checking if file exists\n");
     if (checkFile(srcpath, "%s/%s/%s", archive_status->homepath, dirname, filename) == 0) {
-        VS("File %s found, assuming is onedir\n", srcpath);
+        VS("LOADER: File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
             free(dirname);
             return -1;
         }
     } else if (checkFile(srcpath, "%s../%s/%s", archive_status->homepath, dirname, filename) == 0) {
-        VS("File %s found, assuming is onedir\n", srcpath);
+        VS("LOADER: File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
             free(dirname);
             return -1;
         }
     } else {
-        VS("File %s not found, assuming is onefile.\n", srcpath);
+        VS("LOADER: File %s not found, assuming is onefile.\n", srcpath);
         if ((checkFile(archive_path, "%s%s.pkg", archive_status->homepath, path) != 0) &&
             (checkFile(archive_path, "%s%s.exe", archive_status->homepath, path) != 0) &&
             (checkFile(archive_path, "%s%s", archive_status->homepath, path) != 0)) {
@@ -254,6 +256,7 @@ int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
     size_t MAX_ARCHIVE_POOL_LEN = 20;
     int retcode = 0;
     ptrdiff_t index = 0;
+
     /*
      * archive_pool[0] is reserved for the main process, the others for dependencies.
      */
@@ -266,7 +269,7 @@ int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
     /* Current process is the 1st item. */
     archive_pool[0] = archive_status;
 
-	VS("Extracting binaries\n");
+	VS("LOADER: Extracting binaries\n");
 
 	while (ptoc < archive_status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
@@ -284,6 +287,7 @@ int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
                     retcode = -1;
                     break;  /* No need to extract other items in case of error. */
                 }
+
             }
         }
 		ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc);
@@ -295,8 +299,7 @@ int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
      * of the main process - start with 2nd item.
      */
     for (index = 1; archive_pool[index] != NULL; index++) {
-        VS("Freeing status for %s\n", archive_pool[index]->archivename);
-        free(archive_pool[index]);
+        pyi_arch_status_free_memory(archive_pool[index]);
     }
 
 	return retcode;
@@ -314,7 +317,7 @@ int pyi_pylib_run_scripts(ARCHIVE_STATUS *status)
 	TOC * ptoc = status->tocbuff;
 	PyObject *__main__ = PI_PyImport_AddModule("__main__");
 	PyObject *__file__;
-	VS("Running scripts\n");
+	VS("LOADER: Running scripts\n");
 
 	/* Iterate through toc looking for scripts (type 's') */
 	while (ptoc < status->tocend) {
@@ -332,7 +335,7 @@ int pyi_pylib_run_scripts(ARCHIVE_STATUS *status)
 			rc = PI_PyRun_SimpleString((char *) data);
 			/* log errors and abort */
 			if (rc != 0) {
-				VS("RC: %d from %s\n", rc, ptoc->name);
+				VS("LOADER: RC: %d from %s\n", rc, ptoc->name);
 				return rc;
 			}
 			free(data);
@@ -359,17 +362,17 @@ int callSimpleEntryPoint(char *name, int *presult)
 
 	mod = PI_PyImport_AddModule("__main__"); /* NO ref added */
 	if (!mod) {
-		VS("No __main__\n");
+		VS("LOADER: No __main__\n");
 		goto done;
 	}
 	dict = PI_PyModule_GetDict(mod); /* NO ref added */
 	if (!mod) {
-		VS("No __dict__\n");
+		VS("LOADER: No __dict__\n");
 		goto done;
 	}
 	func = PI_PyDict_GetItemString(dict, name);
 	if (func == NULL) { /* should explicitly check KeyError */
-		VS("CallSimpleEntryPoint can't find the function name\n");
+		VS("LOADER: CallSimpleEntryPoint can't find the function name\n");
 		rc = -2;
 		goto done;
 	}
@@ -378,7 +381,7 @@ int callSimpleEntryPoint(char *name, int *presult)
 	PI_PyErr_Clear();
 	*presult = PI_PyInt_AsLong(pyresult);
 	rc = PI_PyErr_Occurred() ? -1 : 0;
-	VS( rc ? "Finished with failure\n" : "Finished OK\n");
+	VS( rc ? "LOADER: Finished with failure\n" : "LOADER: Finished OK\n");
 	/* all done! */
 done:
 	Py_XDECREF(func);
@@ -421,9 +424,15 @@ void pyi_launch_initialize(const char *executable, const char *extractionpath)
 int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
 {
 	int rc = 0;
+
 	/* Load Python DLL */
-	if (pyi_pylib_load(status))
+    if (pyi_pylib_load(status)) {
 		return -1;
+    }
+    else {
+        /* With this flag Python cleanup will be called. */
+        status->is_pylib_loaded = true;
+    }
 
 	/* Start Python. */
 	if (pyi_pylib_start_python(status, argc, argv))
@@ -440,16 +449,16 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
 	/* Run scripts */
 	rc = pyi_pylib_run_scripts(status);
 
-	VS("OK.\n");
+	VS("LOADER: OK.\n");
 
 	return rc;
 }
 
 
-void pyi_launch_finalize(void)
+void pyi_launch_finalize(ARCHIVE_STATUS *status)
 {
     #ifdef WIN32
     ReleaseActContext();
     #endif
-    pyi_pylib_finalize();
+    pyi_pylib_finalize(status);
 }

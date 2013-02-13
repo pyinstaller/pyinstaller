@@ -76,7 +76,8 @@ int main(int argc, char* argv[])
     int i = 0;
 
     memset(&archive_status, 0, sizeof(ARCHIVE_STATUS *));
-    if ((archive_status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL){
+    archive_status = (ARCHIVE_STATUS *) malloc(sizeof(ARCHIVE_STATUS));
+    if (archive_status == NULL) {
         FATALERROR("Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
     }
@@ -87,7 +88,7 @@ int main(int argc, char* argv[])
 
     extractionpath = pyi_getenv("_MEIPASS2");
 
-    VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
+    VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
     if (pyi_arch_setup(archive_status, homepath, &executable[strlen(homepath)])) {
         if (pyi_arch_setup(archive_status, homepath, &archivefile[strlen(homepath)])) {
@@ -100,14 +101,14 @@ int main(int argc, char* argv[])
 #ifdef WIN32
     /* On Windows use single-process for --onedir mode. */
     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
-        VS("No need to extract files to run; setting extractionpath to homepath\n");
+        VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
         strcpy(MEIPASS2, homepath);
         pyi_setenv("_MEIPASS2", MEIPASS2); //Bootstrap sets sys._MEIPASS, plugins rely on it
     }
 #endif
     if (extractionpath) {
-        VS("Already in the child - running!\n");
+        VS("LOADER: Already in the child - running user's code.\n");
         /*  If binaries were extracted to temppath,
          *  we pass it through status variable
          */
@@ -121,35 +122,36 @@ int main(int argc, char* argv[])
             strcpy(archive_status->mainpath, archive_status->temppath);
         }
 
+        /* Main code to initialize Python and run user's code. */
         pyi_launch_initialize(executable, extractionpath);
         rc = pyi_launch_execute(archive_status, argc, argv);
-        pyi_launch_finalize();
+        pyi_launch_finalize(archive_status);
 
     } else {
+
         /* status->temppath is created if necessary. */
         if (pyi_launch_extract_binaries(archive_status)) {
-            VS("temppath is %s\n", archive_status->temppath);
-            VS("Error extracting binaries\n");
+            VS("LOADER: temppath is %s\n", archive_status->temppath);
+            VS("LOADER: Error extracting binaries\n");
             return -1;
         }
 
-        VS("Executing self as child with ");
+        VS("LOADER: Executing self as child with ");
         /* Run the 'child' process, then clean up. */
         pyi_setenv("_MEIPASS2", archive_status->temppath[0] != 0 ? archive_status->temppath : homepath);
 
         if (pyi_utils_set_environment(archive_status) == -1)
             return -1;
 
+        /* Run user's code in a subprocess and pass command line argumets to it. */
         rc = pyi_utils_create_child(executable, argv);
 
-        VS("Back to parent...\n");
+        VS("LOADER: Back to parent\n");
+
+        VS("LOADER: Doing cleanup\n");
         if (archive_status->has_temp_directory == true)
             pyi_remove_temp_path(archive_status->temppath);
-
-        if (archive_status != NULL) {
-            VS("Freeing status for %s\n", archive_status->archivename);
-            free(archive_status);
-        }
+        pyi_arch_status_free_memory(archive_status);
     }
     return rc;
 }
