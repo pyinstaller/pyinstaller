@@ -160,19 +160,7 @@ int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 	}
 	free(data);
 
-        /* TODO remove this debug code.
-        filename = pyi_path_join(status->temppath, ptoc->name);
-        if (stat(filename, &sbuf) == 0) {
-            VS("LOADER: exists YES: %s\n", filename);
-        }
-        else {
-            VS("LOADER: exists NO: %s\n", filename);
-        }
-        free(filename);
-        filename = NULL;
-        */
-
-	return 0;
+    return 0;
 }
 
 

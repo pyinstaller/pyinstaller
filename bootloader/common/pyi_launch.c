@@ -126,6 +126,11 @@ static ARCHIVE_STATUS *_get_archive(ARCHIVE_STATUS *archive_pool[], const char *
     strcpy(archive->archivename, path);
     strcpy(archive->homepath, archive_pool[SELF]->homepath);
     strcpy(archive->temppath, archive_pool[SELF]->temppath);
+    /*
+     * Setting this flag prevents creating another temp directory and
+     * the directory from the main archive status is used.
+     */
+    archive->has_temp_directory = archive_pool[SELF]->has_temp_directory;
          
     if (pyi_arch_open(archive)) {
         FATALERROR("Error openning archive %s\n", path);
