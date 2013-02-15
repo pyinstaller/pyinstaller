@@ -82,7 +82,7 @@ int pyi_path_executable(char *execfile, const char *appname)
     }
 
 #endif
-    VS("executable is %s\n", execfile);
+    VS("LOADER: executable is %s\n", execfile);
  
 	return 0;
 }
@@ -122,7 +122,7 @@ void pyi_path_homepath(char *homepath, const char *thisfile)
     /* Path must end with slash. / */
     strcat(homepath, "/");
 
-    VS("homepath is %s\n", homepath);
+    VS("LOADER: homepath is %s\n", homepath);
 #endif
 }
 

@@ -212,7 +212,7 @@ static int findDigitalSignature(ARCHIVE_STATUS * const status)
         }
         else {
           /* Invalid magic value */
-          VS("Could not find a valid magic value (was %x %x).\n", (unsigned int) buf[0], (unsigned int) buf[1]);
+          VS("LOADER: Could not find a valid magic value (was %x %x).\n", (unsigned int) buf[0], (unsigned int) buf[1]);
           return -1;
         }
 
@@ -221,7 +221,7 @@ static int findDigitalSignature(ARCHIVE_STATUS * const status)
 	fread(&offset, 4, 1, status->fp);
 	if (offset == 0)
 		return -1;
-  VS("%s contains a digital signature\n", status->archivename);
+  VS("LOADER: %s contains a digital signature\n", status->archivename);
 	return offset;
 #else
 	return -1;
@@ -239,11 +239,11 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 	int i;
 #endif
 	int filelen;
-    VS("archivename is %s\n", status->archivename);
+    VS("LOADER: archivename is %s\n", status->archivename);
 	/* Physically open the file */
 	status->fp = stb_fopen(status->archivename, "rb");
 	if (status->fp == NULL) {
-		VS("Cannot open archive: %s\n", status->archivename);
+		VS("LOADER: Cannot open archive: %s\n", status->archivename);
 		return -1;
 	}
 
@@ -253,7 +253,7 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 
 	if (pyi_arch_check_cookie(status, filelen) < 0)
 	{
-		VS("%s does not contain an embedded package\n", status->archivename);
+		VS("LOADER: %s does not contain an embedded package\n", status->archivename);
 #ifndef WIN32
     return -1;
 #else
@@ -271,10 +271,10 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 		}
 		if (i == 8)
 		{
-			VS("%s does not contain an embedded package, even skipping the signature\n", status->archivename);
+			VS("LOADER: %s does not contain an embedded package, even skipping the signature\n", status->archivename);
 			return -1;
 		}
-		VS("package found skipping digital signature in %s\n", status->archivename);
+		VS("LOADER: package found skipping digital signature in %s\n", status->archivename);
 #endif
 	}
 

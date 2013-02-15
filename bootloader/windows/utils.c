@@ -68,7 +68,7 @@ int CreateActContext(char *workpath, char *thisfile)
     strcpy(manifestpath, workpath);
     strcat(manifestpath, pyi_path_basename(thisfile));
     strcat(manifestpath, ".manifest");
-    VS("manifestpath: %s\n", manifestpath);
+    VS("LOADER: manifestpath: %s\n", manifestpath);
     
     k32 = LoadLibrary("kernel32");
     CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA");
@@ -76,7 +76,7 @@ int CreateActContext(char *workpath, char *thisfile)
     
     if (!CreateActCtx || !ActivateActCtx)
     {
-        VS("Cannot find CreateActCtx/ActivateActCtx exports in kernel32.dll\n");
+        VS("LOADER: Cannot find CreateActCtx/ActivateActCtx exports in kernel32.dll\n");
         return 0;
     }
     
@@ -87,17 +87,17 @@ int CreateActContext(char *workpath, char *thisfile)
     hCtx = CreateActCtx(&ctx);
     if (hCtx != INVALID_HANDLE_VALUE)
     {
-        VS("Activation context created\n");
+        VS("LOADER: Activation context created\n");
         activated = ActivateActCtx(hCtx, &actToken);
         if (activated)
         {
-            VS("Activation context activated\n");
+            VS("LOADER: Activation context activated\n");
             return 1;
         }
     }
 
     hCtx = INVALID_HANDLE_VALUE;
-    VS("Error activating the context\n");
+    VS("LOADER: Error activating the context\n");
     return 0;
 }
 
@@ -115,23 +115,23 @@ void ReleaseActContext(void)
     DeactivateActCtx = (void*)GetProcAddress(k32, "DeactivateActCtx");
     if (!ReleaseActCtx || !DeactivateActCtx)
     {
-        VS("Cannot find ReleaseActCtx/DeactivateActCtx exports in kernel32.dll\n");
+        VS("LOADER: Cannot find ReleaseActCtx/DeactivateActCtx exports in kernel32.dll\n");
         return;
     }
     __try
     {
-        VS("Deactivating activation context\n");
+        VS("LOADER: Deactivating activation context\n");
         if (!DeactivateActCtx(0, actToken))
-            VS("Error deactivating context!\n!");
+            VS("LOADER: Error deactivating context!\n!");
         
-        VS("Releasing activation context\n");
+        VS("LOADER: Releasing activation context\n");
         if (hCtx != INVALID_HANDLE_VALUE)
             ReleaseActCtx(hCtx);
-        VS("Done\n");
+        VS("LOADER: Done\n");
     }
     __except (STATUS_SXS_EARLY_DEACTIVATION)
     {
-    	VS("XS early deactivation; somebody left the activation context dirty, let's ignore the problem\n");
+    	VS("LOADER: XS early deactivation; somebody left the activation context dirty, let's ignore the problem\n");
     }
 }
 

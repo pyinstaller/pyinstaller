@@ -136,7 +136,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 	TOC *ptoc = status->tocbuff;
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_RUNTIME_OPTION) {
-			VS("%s\n", ptoc->name);
+			VS("LOADER: %s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
 				*PI_Py_VerboseFlag = 1;
@@ -191,7 +191,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	PyObject *sys;
 
     /* Set the PYTHONPATH */
-	VS("Manipulating evironment\n");
+	VS("LOADER: Manipulating evironment\n");
     strcpy(pypath, status->mainpath);
 	/* don't chop off SEP if root directory */
 #ifdef WIN32
@@ -202,7 +202,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 		pypath[strlen(pypath)-1] = PYI_NULLCHAR;
 
 	pyi_setenv("PYTHONPATH", pypath);
-	VS("PYTHONPATH=%s\n", pypath);
+	VS("LOADER: PYTHONPATH=%s\n", pypath);
 
 
 	/* Clear out PYTHONHOME to avoid clashing with any Python installation. */
@@ -217,7 +217,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
     pypath[strlen(pypath)-1] = PYI_NULLCHAR;
     #endif
     PI_Py_SetPythonHome(pypath);
-	VS("PYTHONHOME=%s\n", pypath);
+	VS("LOADER: PYTHONHOME=%s\n", pypath);
 
 
 	/* Start python. */
@@ -278,7 +278,7 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 	PyObject *co;
 	PyObject *mod;
 
-	VS("importing modules from CArchive\n");
+	VS("LOADER: importing modules from CArchive\n");
 
 	/* Get the Python function marshall.load
 		* Here we collect some reference to PyObject that we don't dereference
@@ -297,7 +297,7 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 		{
 			unsigned char *modbuf = pyi_arch_extract(status, ptoc);
 
-			VS("extracted %s\n", ptoc->name);
+			VS("LOADER: extracted %s\n", ptoc->name);
 
 			/* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
 			 * data form the right point.
@@ -362,7 +362,7 @@ int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_PYZ)
 		{
-			VS("%s\n", ptoc->name);
+			VS("LOADER: %s\n", ptoc->name);
 			pyi_pylib_install_zlib(status, ptoc);
 		}
 

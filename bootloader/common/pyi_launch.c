@@ -139,7 +139,6 @@ static ARCHIVE_STATUS *_get_archive(ARCHIVE_STATUS *archive_pool[], const char *
     }   
              
     archive_pool[index] = archive;
-    VS("  archive_pool index: %d\n", index);
     return archive;
 }
 
@@ -190,14 +189,14 @@ static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
      * archive next to the current onefile archive.
      */
     VS("LOADER: Checking if file exists\n");
-    if (checkFile(srcpath, "%s/%s/%s", archive_status->homepath, dirname, filename) == 0) {
+    if (checkFile(srcpath, "%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR, dirname, PYI_SEPSTR, filename) == 0) {
         VS("LOADER: File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
             free(dirname);
             return -1;
         }
-    } else if (checkFile(srcpath, "%s../%s/%s", archive_status->homepath, dirname, filename) == 0) {
+    } else if (checkFile(srcpath, "%s%s%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR, "..", PYI_SEPSTR, dirname, PYI_SEPSTR, filename) == 0) {
         VS("LOADER: File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
@@ -206,9 +205,9 @@ static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
         }
     } else {
         VS("LOADER: File %s not found, assuming is onefile.\n", srcpath);
-        if ((checkFile(archive_path, "%s%s.pkg", archive_status->homepath, path) != 0) &&
-            (checkFile(archive_path, "%s%s.exe", archive_status->homepath, path) != 0) &&
-            (checkFile(archive_path, "%s%s", archive_status->homepath, path) != 0)) {
+        if ((checkFile(archive_path, "%s%s%s.pkg", archive_status->homepath, PYI_SEPSTR, path) != 0) &&
+            (checkFile(archive_path, "%s%s%s.exe", archive_status->homepath, PYI_SEPSTR, path) != 0) &&
+            (checkFile(archive_path, "%s%s%s", archive_status->homepath, PYI_SEPSTR, path) != 0)) {
             FATALERROR("Archive not found: %s\n", archive_path);
             return -1;
         }

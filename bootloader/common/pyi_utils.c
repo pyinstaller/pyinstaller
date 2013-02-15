@@ -407,13 +407,13 @@ char *pyi_path_dirname(const char *fullpath)
 {
     char *match = strrchr(fullpath, PYI_SEP);
     char *pathname = (char *) calloc(PATH_MAX, sizeof(char));
-    VS("Calculating dirname from fullpath\n");
+    VS("LOADER: Calculating dirname from fullpath\n");
     if (match != NULL)
         strncpy(pathname, fullpath, match - fullpath + 1);
     else
         strcpy(pathname, fullpath);
 
-    VS("Pathname: %s\n", pathname);
+    VS("LOADER: Pathname: %s\n", pathname);
     return pathname;
 }
 
@@ -529,7 +529,7 @@ int pyi_utils_create_child(const char *thisfile, char *const argv[])
 	signal(SIGTERM, SIG_IGN);
 	signal(SIGBREAK, SIG_IGN);
 
-	VS("Setting up to run child\n");
+	VS("LOADER: Setting up to run child\n");
 	sa.nLength = sizeof(sa);
 	sa.lpSecurityDescriptor = NULL;
 	sa.bInheritHandle = TRUE;
@@ -543,7 +543,7 @@ int pyi_utils_create_child(const char *thisfile, char *const argv[])
 	si.hStdOutput = (void*)_get_osfhandle(fileno(stdout));
 	si.hStdError = (void*)_get_osfhandle(fileno(stderr));
 
-	VS("Creating child process\n");
+	VS("LOADER: Creating child process\n");
 	if (CreateProcessW( 
 			buffer,  // Pointer to name of executable module.
 			GetCommandLineW(),  // pointer to command line string 
@@ -556,7 +556,7 @@ int pyi_utils_create_child(const char *thisfile, char *const argv[])
 			&si,  // pointer to STARTUPINFO 
 			&pi  // pointer to PROCESS_INFORMATION 
 			)) {
-		VS("Waiting for child process to finish...\n");
+		VS("LOADER: Waiting for child process to finish...\n");
 		WaitForSingleObject(pi.hProcess, INFINITE);
 		GetExitCodeProcess(pi.hProcess, (unsigned long *)&rc);
 	} else {
@@ -577,11 +577,11 @@ static int set_dynamic_library_path(const char* path)
 #ifdef AIX
     /* LIBPATH is used to look up dynamic libraries on AIX. */
     setenv("LIBPATH", path, 1);
-    VS("%s\n", path);
+    VS("LOADER: %s\n", path);
 #else
     /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
     rc = setenv("LD_LIBRARY_PATH", path, 1);
-    VS("%s\n", path);
+    VS("LOADER: %s\n", path);
 #endif /* AIX */
 
     return rc;
