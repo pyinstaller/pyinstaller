@@ -20,7 +20,6 @@
     #include <io.h>  // _setmode
     #include <winsock.h>  // ntohl
 #else
-    #include <dlfcn.h>  // dlopen
     #include <limits.h>  // PATH_MAX
     #include <netinet/in.h>  // ntohl
 #endif
@@ -43,10 +42,15 @@
 int pyi_pylib_load(ARCHIVE_STATUS *status)
 {
 	dylib_t dll;
-	char dllpath[PATH_MAX + 1];
+	char dllpath[PATH_MAX];
     char dllname[64];
     int pyvers = ntohl(status->cookie.pyvers);
 
+/*
+ * On AIX Append the shared object member to the library path
+ * to make it look like this:
+ *   libpython2.6.a(libpython2.6.so)
+ */
 #ifdef AIX
     /*
      * On AIX 'ar' archives are used for both static and shared object.
@@ -55,33 +59,26 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
      */
     uint32_t pyvers_major;
     uint32_t pyvers_minor;
-#endif
 
+    pyvers_major = pyvers / 10;
+    pyvers_minor = pyvers % 10;
+
+    sprintf(dllname, "(libpython%01d.%01d.so)", pyvers_major, pyvers_minor);
+#else
     strcpy(dllname, status->cookie.pylibname);
+#endif
 
     /*
      * Look for Python library in homepath or temppath.
      * It depends on the value of mainpath.
      */
-    strcpy(dllpath, status->mainpath);
+    pyi_path_join(dllpath, status->mainpath, dllname);
 
-#ifdef AIX
-    pyvers_major = pyvers / 10;
-    pyvers_minor = pyvers % 10;
 
-    /* Append the shared object member to the library path
-     * to make it look like this:
-     *   libpython2.6.a(libpython2.6.so)
-     */
-    sprintf(dllpath + strlen(dllpath), "(libpython%01d.%01d.so)", pyvers_major, pyvers_minor);
-#endif
-
-    /* Append Python library name to dllpath. */
-    strcat(dllpath, dllname);
     VS("LOADER: Python library: %s\n", dllpath);
 
 	/* Load the DLL */
-    dll = pyi_dlopen(dllpath);
+    dll = pyi_utils_dlopen(dllpath);
 
     /* Check success of loading Python library. */
 	if (dll == 0) {
@@ -190,34 +187,20 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	PyObject *val;
 	PyObject *sys;
 
+    // TODO set pythonpath by function from Python C API (Python 2.6+)
     /* Set the PYTHONPATH */
 	VS("LOADER: Manipulating evironment\n");
     strcpy(pypath, status->mainpath);
-	/* don't chop off SEP if root directory */
-#ifdef WIN32
-	if (strlen(pypath) > 14)
-#else
-	if (strlen(pypath) > 12)
-#endif
-		pypath[strlen(pypath)-1] = PYI_NULLCHAR;
-
-	pyi_setenv("PYTHONPATH", pypath);
 	VS("LOADER: PYTHONPATH=%s\n", pypath);
-
+	pyi_setenv("PYTHONPATH", pypath);
 
 	/* Clear out PYTHONHOME to avoid clashing with any Python installation. */
 	pyi_unsetenv("PYTHONHOME");
 
     /* Set PYTHONHOME by using function from Python C API. */
     strcpy(pypath, status->mainpath);
-    /* On Windows remove back slash '\\' from the end. */
-    // TODO remove this hook when path handling is fixed in bootloader.
-    #ifdef WIN32
-    /* Remove trailing slash in directory path. */
-    pypath[strlen(pypath)-1] = PYI_NULLCHAR;
-    #endif
-    PI_Py_SetPythonHome(pypath);
 	VS("LOADER: PYTHONHOME=%s\n", pypath);
+    PI_Py_SetPythonHome(pypath);
 
 
 	/* Start python. */
@@ -228,19 +211,18 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	PI_Py_SetProgramName(status->archivename); /*XXX*/
 	PI_Py_Initialize();
 
+    // TODO set sys.path by function from Python C API (Python 2.6+)
 	/* Set sys.path */
-	/* VS("Manipulating Python's sys.path\n"); */
+	VS("LOADER: Manipulating Python's sys.path\n");
 	PI_PyRun_SimpleString("import sys\n");
 	PI_PyRun_SimpleString("del sys.path[:]\n");
     if (status->temppath[0] != PYI_NULLCHAR) {
         strcpy(tmp, status->temppath);
-	    tmp[strlen(tmp)-1] = PYI_NULLCHAR;
 	    sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
         PI_PyRun_SimpleString(cmd);
     }
 
 	strcpy(tmp, status->homepath);
-	tmp[strlen(tmp)-1] = PYI_NULLCHAR;
 	sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
 	PI_PyRun_SimpleString (cmd);
 

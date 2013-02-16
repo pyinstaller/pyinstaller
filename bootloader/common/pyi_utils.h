@@ -30,18 +30,12 @@ int pyi_unsetenv(const char *variable);
 int pyi_create_temp_path(ARCHIVE_STATUS *status);
 void pyi_remove_temp_path(const char *dir);
 
-/* Path manipulation. A new allocated buffer is returned. */
-char *pyi_path_basename(const char *path);
-char *pyi_path_dirname(const char *fullpath);
-char *pyi_path_join(const char *path1, const char *path2);
-char *pyi_path_normalize(const char *path);
-
 /* File manipulation. */
 FILE *pyi_open_target(const char *path, const char* name_);
 int pyi_copy_file(const char *src, const char *dst, const char *filename);
 
 /* Other routines. */
-dylib_t pyi_dlopen(const char *dllpath);
+dylib_t pyi_utils_dlopen(const char *dllpath);
 int pyi_utils_create_child(const char *thisfile, char *const argv[]);
 int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 

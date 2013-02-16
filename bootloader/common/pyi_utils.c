@@ -397,81 +397,9 @@ int pyi_copy_file(const char *src, const char *dst, const char *filename)
 }
 
 
-/*
- * Giving a fullpath, returns a newly allocated string
- * which contains the directory name.
- * The returned string must be freed after use.
- */
-// TODO use for unix function dirname()
-char *pyi_path_dirname(const char *fullpath)
-{
-    char *match = strrchr(fullpath, PYI_SEP);
-    char *pathname = (char *) calloc(PATH_MAX, sizeof(char));
-    VS("LOADER: Calculating dirname from fullpath\n");
-    if (match != NULL)
-        strncpy(pathname, fullpath, match - fullpath + 1);
-    else
-        strcpy(pathname, fullpath);
-
-    VS("LOADER: Pathname: %s\n", pathname);
-    return pathname;
-}
-
-/*
- * Returns the last component of the path in filename. Return result
- * in new buffer.
- */
-// TODO use for unix function basename()
-// TODO For now it is win32 implementation only!
-char *pyi_path_basename(const char *path)
-{
-  /* Search for the last directory separator in PATH.  */
-  char *basename = strrchr (path, '\\');
-  if (!basename) basename = strrchr (path, '/');
-  
-  /* If found, return the address of the following character,
-     or the start of the parameter passed in.  */
-  return basename ? ++basename : (char*)path;
-}
-
-/*
- * Join two path components. Return result in new buffer.
- * Joined path is returned without slash at the end.
- */
-char *pyi_path_join(const char *path1, const char *path2)
-{ 
-    char *joined = strdup(path1);
-    size_t len = 0;
-    /* Append trailing slash if missing. */
-    len = strlen(joined);
-    if (joined[len-1] != PYI_SEP) {
-        joined[len] = PYI_SEP;
-        joined[len+1] = PYI_NULLCHAR;
-    }
-    /* Remove trailing slash if present. */
-    len = strlen(path2);
-    if (path2[len-1] == PYI_SEP) {
-        /* Append path2 without slash. */
-        strncat(joined, path2, len-2);
-    }
-    else {
-        /* path2 does not end with slash. */
-        strcat(joined, path2);
-    }
-    return joined;
-}
-
-/* Normalize a pathname. Return result in new buffer. */
-// TODO implement this function
-char *pyi_path_normalize(const char *path)
-{
-    return NULL;
-}
-
-
 // TODO use dlclose() when exiting.
 /* Load the shared dynamic library (DLL) */
-dylib_t pyi_dlopen(const char *dllpath)
+dylib_t pyi_utils_dlopen(const char *dllpath)
 {
 
 #ifdef WIN32

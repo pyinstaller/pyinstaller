@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
             return -1;
         }
 
-        VS("LOADER: Executing self as child with ");
+        VS("LOADER: Executing self as child\n");
         /* Run the 'child' process, then clean up. */
         pyi_setenv("_MEIPASS2", archive_status->temppath[0] != 0 ? archive_status->temppath : homepath);
 
@@ -152,6 +152,8 @@ int main(int argc, char* argv[])
         if (archive_status->has_temp_directory == true)
             pyi_remove_temp_path(archive_status->temppath);
         pyi_arch_status_free_memory(archive_status);
+        if (extractionpath != NULL)
+            free(extractionpath);
     }
     return rc;
 }

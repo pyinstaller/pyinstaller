@@ -171,17 +171,13 @@ static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
     char srcpath[PATH_MAX];
     char archive_path[PATH_MAX];
 
-    char *dirname = NULL;
+    char dirname[PATH_MAX];
 
     VS("LOADER: Extracting dependencies\n");
     if (splitName(path, filename, item) == -1)
         return -1;
 
-    dirname = pyi_path_dirname(path);
-    if (dirname[0] == 0) {
-        free(dirname);
-        return -1;
-    }
+    pyi_path_dirname(dirname, path);
 
     /* We need to identify three situations: 1) dependecies are in a onedir archive
      * next to the current onefile archive, 2) dependencies are in a onedir/onefile
@@ -193,14 +189,12 @@ static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
         VS("LOADER: File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
-            free(dirname);
             return -1;
         }
     } else if (checkFile(srcpath, "%s%s%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR, "..", PYI_SEPSTR, dirname, PYI_SEPSTR, filename) == 0) {
         VS("LOADER: File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
-            free(dirname);
             return -1;
         }
     } else {
@@ -222,7 +216,6 @@ static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
             return -1;
         }
     }
-    free(dirname);
 
     return 0;
 }
