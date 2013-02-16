@@ -5304,23 +5304,7 @@ int stb_fullpath(char *abs, size_t abs_size, const char *rel)
    #ifdef _MSC_VER
    return _fullpath(abs, rel, abs_size) != NULL;
    #else
-   if (abs[0] == '/' || abs[0] == '~') {
-      if ((size_t) strlen(rel) >= abs_size)
-         return 0;
-      strcpy(abs,rel);
-      return STB_TRUE;
-   } else {
-      size_t n;
-      getcwd(abs, abs_size);
-      n = strlen(abs);
-      if (n+(size_t) strlen(rel)+2 <= abs_size) {
-         abs[n] = '/';
-         strcpy(abs+n+1, rel);
-         return STB_TRUE;
-      } else {
-         return STB_FALSE;
-      }
-   }
+   return realpath(rel, abs) != NULL;
    #endif
 }
 
