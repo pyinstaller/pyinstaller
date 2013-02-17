@@ -101,7 +101,7 @@ char *pyi_getenv(const char *variable)
 /* Set environment variable. */
 // TODO unicode support
 int pyi_setenv(const char *variable, const char *value)
-{
+
     int rc;
 #ifdef WIN32
     rc = SetEnvironmentVariableA(variable, value);
@@ -501,12 +501,12 @@ static int set_dynamic_library_path(const char* path)
 
 #ifdef AIX
     /* LIBPATH is used to look up dynamic libraries on AIX. */
-    setenv("LIBPATH", path, 1);
-    VS("LOADER: %s\n", path);
+    pyi_setenv("LIBPATH", path);
+    VS("LOADER: LIBPATH=%s\n", path);
 #else
     /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
-    rc = setenv("LD_LIBRARY_PATH", path, 1);
-    VS("LOADER: %s\n", path);
+    rc = pyi_setenv("LD_LIBRARY_PATH", path);
+    VS("LOADER: LD_LIBRARY_PATH=%s\n", path);
 #endif /* AIX */
 
     return rc;
@@ -534,13 +534,13 @@ int pyi_utils_set_environment(const ARCHIVE_STATUS *status)
      *     Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
      */
     /* For environment variable details see 'man dyld'. */
-	unsetenv("DYLD_FRAMEWORK_PATH");
-	unsetenv("DYLD_FALLBACK_FRAMEWORK_PATH");
-	unsetenv("DYLD_VERSIONED_FRAMEWORK_PATH");
-	unsetenv("DYLD_LIBRARY_PATH");
-	unsetenv("DYLD_FALLBACK_LIBRARY_PATH");
-	unsetenv("DYLD_VERSIONED_LIBRARY_PATH");
-	unsetenv("DYLD_ROOT_PATH");
+	pyi_unsetenv("DYLD_FRAMEWORK_PATH");
+	pyi_unsetenv("DYLD_FALLBACK_FRAMEWORK_PATH");
+	pyi_unsetenv("DYLD_VERSIONED_FRAMEWORK_PATH");
+	pyi_unsetenv("DYLD_LIBRARY_PATH");
+	pyi_unsetenv("DYLD_FALLBACK_LIBRARY_PATH");
+	pyi_unsetenv("DYLD_VERSIONED_LIBRARY_PATH");
+	pyi_unsetenv("DYLD_ROOT_PATH");
 
 #else
     /* Set library path to temppath. This is only for onefile mode.*/
