@@ -146,7 +146,6 @@ int pyi_get_temp_path(char *buff)
         ret = _tempnam(buff, prefix);
         if (mkdir(ret) == 0) {
             strcpy(buff, ret);
-            strcat(buff, PYI_SEPSTR);
             free(ret);
             return 1;
         }
@@ -163,7 +162,6 @@ int pyi_test_temp_path(char *buff)
 	strcat(buff, "/_MEIXXXXXX");
     if (mkdtemp(buff))
     {
-        strcat(buff, PYI_SEPSTR);
         return 1;
     }
     return 0;
@@ -330,7 +328,6 @@ FILE *pyi_open_target(const char *path, const char* name_)
 
 	strcpy(fnm, path);
 	strcpy(name, name_);
-	fnm[strlen(fnm)-1] = PYI_NULLCHAR;
 
 	dir = strtok(name, PYI_SEPSTR);
 	while (dir != NULL)

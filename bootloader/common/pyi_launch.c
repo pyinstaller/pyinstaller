@@ -32,12 +32,16 @@
 /* PyInstaller headers. */
 #include "stb.h"
 #include "pyi_global.h"
+#include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
 #include "utils.h"  // TODO eliminate utils.h
 
+
+/* Max count of possible opened archives in multipackage mode. */
+#define _MAX_ARCHIVE_POOL_LEN 20
 
 /*
  * The functions in this file defined in reverse order so that forward
@@ -185,12 +189,14 @@ static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
      * archive next to the current onefile archive.
      */
     VS("LOADER: Checking if file exists\n");
+    // TODO implement pyi_path_join to accept variable length of arguments for this case.
     if (checkFile(srcpath, "%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR, dirname, PYI_SEPSTR, filename) == 0) {
         VS("LOADER: File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
             FATALERROR("Error coping %s\n", filename);
             return -1;
         }
+    // TODO implement pyi_path_join to accept variable length of arguments for this case.
     } else if (checkFile(srcpath, "%s%s%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR, "..", PYI_SEPSTR, dirname, PYI_SEPSTR, filename) == 0) {
         VS("LOADER: File %s found, assuming is onedir\n", srcpath);
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
@@ -199,6 +205,7 @@ static int _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
         }
     } else {
         VS("LOADER: File %s not found, assuming is onefile.\n", srcpath);
+        // TODO implement pyi_path_join to accept variable length of arguments for this case.
         if ((checkFile(archive_path, "%s%s%s.pkg", archive_status->homepath, PYI_SEPSTR, path) != 0) &&
             (checkFile(archive_path, "%s%s%s.exe", archive_status->homepath, PYI_SEPSTR, path) != 0) &&
             (checkFile(archive_path, "%s%s%s", archive_status->homepath, PYI_SEPSTR, path) != 0)) {
@@ -250,18 +257,17 @@ int pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status)
  */
 int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
 {
-    size_t MAX_ARCHIVE_POOL_LEN = 20;
     int retcode = 0;
     ptrdiff_t index = 0;
 
     /*
      * archive_pool[0] is reserved for the main process, the others for dependencies.
      */
-    ARCHIVE_STATUS *archive_pool[MAX_ARCHIVE_POOL_LEN];
+    ARCHIVE_STATUS *archive_pool[_MAX_ARCHIVE_POOL_LEN];
 	TOC * ptoc = archive_status->tocbuff;
 
     /* Clean memory for archive_pool list. */
-    memset(&archive_pool, 0, MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
+    memset(&archive_pool, 0, _MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
 
     /* Current process is the 1st item. */
     archive_pool[0] = archive_status;
