@@ -27,6 +27,7 @@
 #include "stb.h"
 #include "pyi_global.h"  // PATH_MAX
 #include "pyi_archive.h"
+#include "pyi_path.h"
 #include "pyi_utils.h"
 
 
@@ -53,7 +54,8 @@ int IsXPOrLater(void)
 
 int CreateActContext(char *workpath, char *thisfile)
 {
-    char manifestpath[PATH_MAX + 1];
+    char manifestpath[PATH_MAX];
+    char basename[PATH_MAX];
     ACTCTX ctx;
     BOOL activated;
     HANDLE k32;
@@ -65,8 +67,8 @@ int CreateActContext(char *workpath, char *thisfile)
         return 1;
        
     /* Setup activation context */
-    strcpy(manifestpath, workpath);
-    strcat(manifestpath, pyi_path_basename(thisfile));
+    pyi_path_basename(basename, thisfile);
+    pyi_path_join(manifestpath, workpath, basename);
     strcat(manifestpath, ".manifest");
     VS("LOADER: manifestpath: %s\n", manifestpath);
     

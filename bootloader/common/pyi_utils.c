@@ -100,8 +100,7 @@ char *pyi_getenv(const char *variable)
 
 /* Set environment variable. */
 // TODO unicode support
-int pyi_setenv(const char *variable, const char *value)
-
+int pyi_setenv(const char *variable, const char *value){
     int rc;
 #ifdef WIN32
     rc = SetEnvironmentVariableA(variable, value);
@@ -129,23 +128,43 @@ int pyi_unsetenv(const char *variable)
 #ifdef WIN32
 
 // TODO rename fuction and revisit
-int pyi_get_temp_path(char *buff)
+int pyi_get_temp_path(char *buffer)
 {
     int i;
     char *ret;
     char prefix[16];
+    stb__wchar wchar_buffer[PATH_MAX];
+    stb__wchar wchar_dos83_buffer[PATH_MAX];
 
-    GetTempPath(PATH_MAX, buff);
+    // TODO later when moving to full unicode support - use 83 filename only where really necessary.
+    /*
+     * Get path to Windows temporary directory.
+     *
+     * Usually on Windows it points to a user-specific path.
+     * When the username contains foreign characters then
+     * the path to temp dir contains them too and the frozen
+     * app fails to run.
+     *
+     * Converting temppath to 8.3 filename should fix this
+     * when running in --onefile mode.
+     */
+    GetTempPathW(PATH_MAX, wchar_buffer);
+    GetShortPathNameW(wchar_buffer, wchar_dos83_buffer, PATH_MAX);
+    /* Convert wchar_t to utf8 just use char as usual. */
+    stb_to_utf8(buffer, wchar_dos83_buffer, PATH_MAX);
+
     sprintf(prefix, "_MEI%d", getpid());
 
-    // Windows does not have a race-free function to create a temporary
-    // directory. Thus, we rely on _tempnam, and simply try several times
-    // to avoid stupid race conditions.
+    /*
+     * Windows does not have a race-free function to create a temporary
+     * directory. Thus, we rely on _tempnam, and simply try several times
+     * to avoid stupid race conditions.
+     */
     for (i=0;i<5;i++) {
         // TODO use race-free fuction - if any exists?
-        ret = _tempnam(buff, prefix);
+        ret = _tempnam(buffer, prefix);
         if (mkdir(ret) == 0) {
-            strcpy(buff, ret);
+            strcpy(buffer, ret);
             free(ret);
             return 1;
         }
