@@ -97,7 +97,16 @@ class CTOC(object):
         FLAG says if the data is compressed.
         TYPCD is the "type" of the entry (used by the C code)
         NM is the entry's name.
+
+        This function is used only while creating an executable.
         """
+        # Import module here since it might not be available during bootstrap
+        # and loading pyi_carchive module could fail.
+        import os.path
+        # Ensure forward slashes in paths are on Windows converted to back
+        # slashes '\\' since on Windows the bootloader works only with back
+        # slashes.
+        nm = os.path.normpath(nm)
         self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
     def get(self, ndx):
@@ -124,6 +133,10 @@ class CTOC(object):
 class CArchive(pyi_archive.Archive):
     """
     An Archive subclass that can hold arbitrary data.
+
+    This class encapsulates all files that are bundled within an executable.
+    It can contain ZlibArchive (Python .pyc files), dlls, Python C extensions
+    and all other data files that are bundled in --onefile mode.
 
     Easily handled from C or from Python.
     """
