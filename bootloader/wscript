@@ -44,6 +44,11 @@ def set_options(opt):
                 help = 'Prevent building LSB (Linux Standard Base) bootloader.',
                 default = False,
                 dest = 'nolsb')
+        opt.add_option('--leak-detector',
+                action = 'store_true',
+                help = 'Link with Boehm garbage collector to detect memory leaks.',
+                default = False,
+                dest = 'boehmgc')               
         opt.add_option('--lsbcc-path',
                 action = 'store',
                 help = 'Path to lsbcc. By default PATH is searched for lsbcc otherwise is tried file /opt/lsb/bin/lsbcc. [Default: lsbcc]',
@@ -221,6 +226,14 @@ def configure(conf):
         if conf.check_cc(function_name='readlink', header_name='unistd.h'):
             conf.env.append_value('CCFLAGS', '-DHAVE_READLINK')
 
+        # This uses Boehm GC to manage memory - it replaces malloc() / free()
+        # functions. Some messages are printed if memory is not deallocated.
+        if opt.boehmgc:
+            conf.check_cc(lib='gc', mandatory=True)
+            conf.env.append_value('CCDEFINES', 'PYI_LEAK_DETECTOR')
+            conf.env.append_value('CCDEFINES', 'GC_FIND_LEAK')
+            conf.env.append_value('CCDEFINES', 'GC_DEBUG')
+            conf.env.append_value('CCDEFINES', 'SAVE_CALL_CHAIN')
 
     ### ccflags
 
@@ -335,10 +348,12 @@ def configure(conf):
 
 
 def build(bld):
+    opt = Options.options
     # Force to run with 1 job (no parallel building).
     # There are reported build failures on multicore CPUs
     # with some msvc versions.
-    Options.options.jobs = 1
+    # TODO revisit parallel building with switch to waf 1.7
+    opt.jobs = 1
 
     myplatform = Utils.detect_platform()
     install_path = '../../PyInstaller/bootloader/' + platform.system() + "-" + bld.env.MYARCH
@@ -426,13 +441,17 @@ def build(bld):
 
     else: # linux, darwin (MacOSX)
 
+        libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
+        if opt.boehmgc:
+            libs.append('gc')
+
         for key, value in targets.items():
             bld(
                 features = 'cc cprogram',
                 source = bld.path.ant_glob('linux/*.c common/*.c'),
                 target = value,
                 install_path = install_path,
-                lib = ['dl', 'z', 'm'],  # 'z' - zlib, 'm' - math,
+                lib = libs,
                 env = bld.env_of_name(key).copy(),
                 includes = ['common', 'linux'],
             )
