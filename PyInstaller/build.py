@@ -726,7 +726,7 @@ class PYZ(Target):
         return False
 
     def assemble(self):
-        logger.info("building PYZ %s", os.path.basename(self.out))
+        logger.info("building PYZ (ZlibArchive) %s", os.path.basename(self.out))
         pyz = pyi_archive.ZlibArchive(level=self.level)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
@@ -943,11 +943,13 @@ class PKG(Target):
         return False
 
     def assemble(self):
-        logger.info("building PKG %s", os.path.basename(self.name))
+        logger.info("building PKG (CArchive) %s", os.path.basename(self.name))
         trash = []
         mytoc = []
         seen = {}
         toc = addSuffixToExtensions(self.toc)
+        # 'inm'  - relative filename inside a CArchive
+        # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in toc:
             if not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
@@ -965,6 +967,7 @@ class PKG(Target):
                     if typ == 'BINARY' and fnm in seen:
                         continue
                     seen[fnm] = 1
+
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
             elif typ == 'OPTION':

@@ -259,6 +259,8 @@ class ZlibArchive(Archive):
     """
     ZlibArchive - an archive with compressed entries. Archive is read
     from the executable created by PyInstaller.
+
+    This archive is used for bundling python modules inside the executable.
     """
     MAGIC = 'PYZ\0'
     TOCPOS = 8

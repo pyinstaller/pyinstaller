@@ -22,9 +22,9 @@ exe = EXE(pyz,
           a.datas,
           a.dependencies,
           name=os.path.join('dist', __testname__ + '.exe'),
-          debug=False,
+          debug=True,
           strip=False,
-          upx=True,
+          upx=False,
           console=1 )
                     
 pyzB = PYZ(b.pure)
@@ -35,8 +35,8 @@ exeB = EXE(pyzB,
           b.datas,
           b.dependencies,
           name=os.path.join('dist', __testdep__ + '.exe'),
-          debug=False,
+          debug=True,
           strip=False,
-          upx=True,
+          upx=False,
           console=1 )
 

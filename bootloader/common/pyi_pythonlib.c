@@ -1,31 +1,16 @@
 /*
+ * ****************************************************************************
+ * Copyright (c) 2013, PyInstaller Development Team.
+ * Distributed under the terms of the GNU General Public License with exception
+ * for distributing bootloader.
+ *
+ * The full license is in the file COPYING.txt, distributed with this software.
+ * ****************************************************************************
+ */
+
+
+/*
  * Functions to load, initialize and launch Python.
- *
- * Copyright (C) 2012, Martin Zibricky
- * Copyright (C) 2005-2011, Giovanni Bajo
- * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * In addition to the permissions in the GNU General Public License, the
- * authors give you unlimited permission to link or embed the compiled
- * version of this file into combinations with other programs, and to
- * distribute those combinations without any restriction coming from the
- * use of this file. (The General Public License restrictions do apply in
- * other respects; for example, they cover modification of the file, and
- * distribution when not linked into a combine executable.)
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
 
@@ -35,7 +20,6 @@
     #include <io.h>  // _setmode
     #include <winsock.h>  // ntohl
 #else
-    #include <dlfcn.h>  // dlopen
     #include <limits.h>  // PATH_MAX
     #include <netinet/in.h>  // ntohl
 #endif
@@ -58,10 +42,15 @@
 int pyi_pylib_load(ARCHIVE_STATUS *status)
 {
 	dylib_t dll;
-	char dllpath[PATH_MAX + 1];
+	char dllpath[PATH_MAX];
     char dllname[64];
     int pyvers = ntohl(status->cookie.pyvers);
 
+/*
+ * On AIX Append the shared object member to the library path
+ * to make it look like this:
+ *   libpython2.6.a(libpython2.6.so)
+ */
 #ifdef AIX
     /*
      * On AIX 'ar' archives are used for both static and shared object.
@@ -70,33 +59,26 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
      */
     uint32_t pyvers_major;
     uint32_t pyvers_minor;
-#endif
 
+    pyvers_major = pyvers / 10;
+    pyvers_minor = pyvers % 10;
+
+    sprintf(dllname, "(libpython%01d.%01d.so)", pyvers_major, pyvers_minor);
+#else
     strcpy(dllname, status->cookie.pylibname);
+#endif
 
     /*
      * Look for Python library in homepath or temppath.
      * It depends on the value of mainpath.
      */
-    strcpy(dllpath, status->mainpath);
+    pyi_path_join(dllpath, status->mainpath, dllname);
 
-#ifdef AIX
-    pyvers_major = pyvers / 10;
-    pyvers_minor = pyvers % 10;
 
-    /* Append the shared object member to the library path
-     * to make it look like this:
-     *   libpython2.6.a(libpython2.6.so)
-     */
-    sprintf(dllpath + strlen(dllpath), "(libpython%01d.%01d.so)", pyvers_major, pyvers_minor);
-#endif
-
-    /* Append Python library name to dllpath. */
-    strcat(dllpath, dllname);
-    VS("Python library: %s\n", dllpath);
+    VS("LOADER: Python library: %s\n", dllpath);
 
 	/* Load the DLL */
-    dll = pyi_dlopen(dllpath);
+    dll = pyi_utils_dlopen(dllpath);
 
     /* Check success of loading Python library. */
 	if (dll == 0) {
@@ -151,7 +133,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 	TOC *ptoc = status->tocbuff;
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_RUNTIME_OPTION) {
-			VS("%s\n", ptoc->name);
+			VS("LOADER: %s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
 				*PI_Py_VerboseFlag = 1;
@@ -188,6 +170,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 	return 0;
 }
 
+
 /*
  * Start python - return 0 on success
  */
@@ -205,34 +188,20 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	PyObject *val;
 	PyObject *sys;
 
+    // TODO set pythonpath by function from Python C API (Python 2.6+)
     /* Set the PYTHONPATH */
-	VS("Manipulating evironment\n");
+	VS("LOADER: Manipulating evironment\n");
     strcpy(pypath, status->mainpath);
-	/* don't chop off SEP if root directory */
-#ifdef WIN32
-	if (strlen(pypath) > 14)
-#else
-	if (strlen(pypath) > 12)
-#endif
-		pypath[strlen(pypath)-1] = '\0';
-
+	VS("LOADER: PYTHONPATH=%s\n", pypath);
 	pyi_setenv("PYTHONPATH", pypath);
-	VS("PYTHONPATH=%s\n", pypath);
-
 
 	/* Clear out PYTHONHOME to avoid clashing with any Python installation. */
 	pyi_unsetenv("PYTHONHOME");
 
     /* Set PYTHONHOME by using function from Python C API. */
     strcpy(pypath, status->mainpath);
-    /* On Windows remove back slash '\\' from the end. */
-    // TODO remove this hook when path handling is fixed in bootloader.
-    #ifdef WIN32
-    /* Remove trailing slash in directory path. */
-    pypath[strlen(pypath)-1] = '\0';
-    #endif
+	VS("LOADER: PYTHONHOME=%s\n", pypath);
     PI_Py_SetPythonHome(pypath);
-	VS("PYTHONHOME=%s\n", pypath);
 
 
 	/* Start python. */
@@ -243,19 +212,18 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	PI_Py_SetProgramName(status->archivename); /*XXX*/
 	PI_Py_Initialize();
 
+    // TODO set sys.path by function from Python C API (Python 2.6+)
 	/* Set sys.path */
-	/* VS("Manipulating Python's sys.path\n"); */
+	VS("LOADER: Manipulating Python's sys.path\n");
 	PI_PyRun_SimpleString("import sys\n");
 	PI_PyRun_SimpleString("del sys.path[:]\n");
-    if (status->temppath[0] != '\0') {
+    if (status->temppath[0] != PYI_NULLCHAR) {
         strcpy(tmp, status->temppath);
-	    tmp[strlen(tmp)-1] = '\0';
 	    sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
         PI_PyRun_SimpleString(cmd);
     }
 
 	strcpy(tmp, status->homepath);
-	tmp[strlen(tmp)-1] = '\0';
 	sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
 	PI_PyRun_SimpleString (cmd);
 
@@ -293,7 +261,7 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 	PyObject *co;
 	PyObject *mod;
 
-	VS("importing modules from CArchive\n");
+	VS("LOADER: importing modules from CArchive\n");
 
 	/* Get the Python function marshall.load
 		* Here we collect some reference to PyObject that we don't dereference
@@ -312,7 +280,7 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 		{
 			unsigned char *modbuf = pyi_arch_extract(status, ptoc);
 
-			VS("extracted %s\n", ptoc->name);
+			VS("LOADER: extracted %s\n", ptoc->name);
 
 			/* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
 			 * data form the right point.
@@ -370,14 +338,14 @@ int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 {
 	TOC * ptoc;
-	VS("Installing import hooks\n");
+	VS("LOADER: Installing import hooks\n");
 
 	/* Iterate through toc looking for zlibs (type 'z') */
 	ptoc = status->tocbuff;
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_PYZ)
 		{
-			VS("%s\n", ptoc->name);
+			VS("LOADER: %s\n", ptoc->name);
 			pyi_pylib_install_zlib(status, ptoc);
 		}
 
@@ -386,9 +354,16 @@ int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 	return 0;
 }
 
-void pyi_pylib_finalize(void)
+void pyi_pylib_finalize(ARCHIVE_STATUS *status)
 {
-	PI_Py_Finalize();
+    /*
+     * Call this function only if Python library was initialized.
+     *
+     * Otherwise it should be NULL pointer. If Python library is not properly
+     * loaded then calling this function might cause some segmentation faults.
+     */
+    if (status->is_pylib_loaded == true) {
+        VS("LOADER: Cleaning up Python interpreter.\n");
+        PI_Py_Finalize();
+    }
 }
-
-

@@ -60,6 +60,8 @@ please let us know if your name is omitted by accident:
 
 * Don Dwiggins - pyodbc import hook.
 
+* Daniele Varrazzo - various bootloader and OS X fixes.
+
 * Greg Copeland - sqlalchemy import hook.
 
 * Seth Remington - PyGTK hook improvements.

@@ -1,33 +1,21 @@
 /*
- * Declarations related to an PyInstaller archive.
+ * ****************************************************************************
+ * Copyright (c) 2013, PyInstaller Development Team.
+ * Distributed under the terms of the GNU General Public License with exception
+ * for distributing bootloader.
  *
- * Copyright (C) 2005, Giovanni Bajo
- * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * In addition to the permissions in the GNU General Public License, the
- * authors give you unlimited permission to link or embed the compiled
- * version of this file into combinations with other programs, and to
- * distribute those combinations without any restriction coming from the
- * use of this file. (The General Public License restrictions do apply in
- * other respects; for example, they cover modification of the file, and
- * distribution when not linked into a combine executable.)
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * The full license is in the file COPYING.txt, distributed with this software.
+ * ****************************************************************************
  */
-#ifndef HEADER_PYI_ARCHIVE_H
-#define HEADER_PYI_ARCHIVE_H
+
+
+/*
+ * Declarations related to an PyInstaller archive.
+ */
+
+
+#ifndef PYI_ARCHIVE_H
+#define PYI_ARCHIVE_H
 
 
 /* Types of CArchive items. */
@@ -70,26 +58,28 @@ typedef struct _archive_status {
     TOC     *tocbuff;
     TOC     *tocend;
     COOKIE  cookie;
-    char    archivename[PATH_MAX + 1];
-    char    homepath[PATH_MAX + 1];
-    char    temppath[PATH_MAX + 1];
-#ifdef WIN32
-    char    homepathraw[PATH_MAX + 1];
-    char    temppathraw[PATH_MAX + 1];
-#endif
+    char    archivename[PATH_MAX];
+    char    homepath[PATH_MAX];
+    char    temppath[PATH_MAX];
     /*
      * Main path could be homepath or temppath. It will be temppath
      * if temppath is available. Sometimes we do not need to know if temppath
      * or homepath should be used. We only need to know the path. This variable
      * is used for example to set PYTHONPATH or PYTHONHOME.
      */
-    char    mainpath[PATH_MAX + 1];
+    char    mainpath[PATH_MAX];
     /* 
      * Flag if temporary directory is available. This usually means running
      * executable in onefile mode. Bootloader has to behave differently
      * in this mode.
      */
-    bool_t  has_temp_directory;
+    bool  has_temp_directory;
+    /*
+     * Flag if Python library was loaded. This indicates if it is safe
+     * to call function PI_Py_Finalize(). If Python dll is missing 
+     * calling this function would cause segmentation fault.
+     */
+    bool  is_pylib_loaded;
 } ARCHIVE_STATUS;
 
 
@@ -110,7 +100,33 @@ int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
 int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
 int pyi_arch_open(ARCHIVE_STATUS *status);
 
+
+/*
+ * Memory allocation wrappers.
+ */
+// TODO implement alloc function.
+//void pyi_arch_status_alloc_memory(ARCHIVE_STATUS *status)
+void pyi_arch_status_free_memory(ARCHIVE_STATUS *status);
+
+/*
+ * Setup the paths and open the archive
+ *
+ * @param archivePath  The path (with trailing backslash) to the archive.
+ *
+ * @param archiveName  The file name of the archive, without a path.
+ *
+ * @param workpath     The path (with trailing backslash) to where
+ *                     the binaries were extracted. If they have not
+ *                     benn extracted yet, this is NULL. If they have,
+ *                     this will either be archivePath, or a temp dir
+ *                     where the user has write permissions.
+ *
+ * @return 0 on success, non-zero otherwise.
+ */
+int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName);
+
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 
-#endif /* HEADER_PYI_ARCHIVE_H */
+
+#endif /* PYI_ARCHIVE_H */
