@@ -18,7 +18,7 @@ import sys
 
 
 from PyInstaller import HOMEPATH
-from PyInstaller.compat import is_win, is_cygwin, is_darwin
+from PyInstaller.compat import getcwd, is_win, is_cygwin, is_darwin
 
 
 onefiletmplt = """# -*- mode: python -*-
@@ -254,10 +254,10 @@ def main(scripts, name=None, onefile=0,
 
     pathex = pathex[:]
     if workdir is None:
-        workdir = os.getcwd()
+        workdir = getcwd()
         pathex.append(workdir)
     else:
-        pathex.append(os.getcwd())
+        pathex.append(getcwd())
     if workdir == HOMEPATH:
         workdir = os.path.join(HOMEPATH, name)
     if not os.path.exists(workdir):

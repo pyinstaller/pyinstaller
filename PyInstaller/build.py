@@ -540,7 +540,7 @@ class Analysis(Target):
                 raise SystemExit("Error: Analysis: script %s not found!" % script)
             d, base = os.path.split(script)
             if not d:
-                d = os.getcwd()
+                d = compat.getcwd()
             d = absnormpath(d)
             pynm, ext = os.path.splitext(base)
             dirs[d] = 1
@@ -1608,7 +1608,7 @@ def build(spec, buildpath):
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]
     if SPECPATH == '':
-        SPECPATH = os.getcwd()
+        SPECPATH = compat.getcwd()
     BUILDPATH = os.path.join(SPECPATH, 'build',
                              "pyi." + sys.platform, specnm)
     # Check and adjustment for build path
