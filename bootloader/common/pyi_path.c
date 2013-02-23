@@ -18,12 +18,15 @@
     #include <windows.h>  // GetModuleFileNameW
     #include <wchar.h>
 #elif __APPLE__
+    #include <libgen.h>  // basename()
     #include <mach-o/dyld.h>  // _NSGetExecutablePath()
 #else
     #include <limits.h>  // PATH_MAX
     // TODO Eliminate getpath.c/.h and replace it with functions from stb.h.
     #include "getpath.h"
 #endif
+
+#include <string.h>
 
 
 /* PyInstaller headers. */
@@ -60,10 +63,9 @@ void pyi_path_dirname(char *result, const char *path)
  * Returns the last component of the path in filename. Return result
  * in new buffer.
  */
-// TODO use for unix function basename()
-// TODO For now it is win32 implementation only!
 void pyi_path_basename(char *result, const char *path)
 {
+#ifdef WIN32
   /* Search for the last directory separator in PATH.  */
   char *basename = strrchr (path, '\\');
   if (!basename) basename = strrchr (path, '/');
@@ -71,6 +73,11 @@ void pyi_path_basename(char *result, const char *path)
   /* If found, return the address of the following character,
      or the start of the parameter passed in.  */
   strcpy(result, basename ? ++basename : (char*)path);
+#else
+    char *base = NULL;
+    base = basename(path);
+    strcpy(result, path);
+#endif
 }
 
 
@@ -165,9 +172,14 @@ int pyi_path_executable(char *execfile, const char *appname)
     pyi_path_dirname(dirname, dos83_buffer);
     pyi_path_join(buffer, dirname, basename);
 
+#elif __APPLE__
+    uint32_t length = sizeof(buffer);
+
     /* Mac OS X has special function to obtain path to executable. */
-// TODO implement 
-//#elif __APPLE__    _NSGetExecutablePath()
+    if (_NSGetExecutablePath(buffer, &length) != 0) {
+        FATALERROR("System error - unable to load!");
+		return -1;
+    }
 #else
     /* Fill in thisfile. */
     #ifdef __CYGWIN__
