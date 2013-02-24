@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013, PyInstaller Development Team.
 #
@@ -7,9 +6,12 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-#
-# Wrapper around Configure.py / Makespec.py / Build.py
-#
+
+
+"""
+Main command-line interface to PyInstaller.
+"""
+
 
 import os
 import optparse
@@ -47,39 +49,40 @@ def __add_options(parser):
                       help='show program version')
 
 
-def main():
-    parser = optparse.OptionParser(
-        usage='python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
-        )
-    __add_options(parser)
-    PyInstaller.makespec.__add_options(parser)
-    PyInstaller.build.__add_options(parser)
-    PyInstaller.log.__add_options(parser)
-    PyInstaller.compat.__add_obsolete_options(parser)
+def run():
+    try:
+        parser = optparse.OptionParser(
+            usage='python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
+            )
+        __add_options(parser)
+        PyInstaller.makespec.__add_options(parser)
+        PyInstaller.build.__add_options(parser)
+        PyInstaller.log.__add_options(parser)
+        PyInstaller.compat.__add_obsolete_options(parser)
 
-    opts, args = parser.parse_args()
-    PyInstaller.log.__process_options(parser, opts)
+        opts, args = parser.parse_args()
+        PyInstaller.log.__process_options(parser, opts)
 
-    # Print program version and exit
-    if opts.version:
-        print get_version()
-        raise SystemExit(0)
+        # Print program version and exit
+        if opts.version:
+            print get_version()
+            raise SystemExit(0)
 
-    if not args:
-        parser.error('Requires at least one scriptname file '
-                     'or exactly one .spec-file')
+        if not args:
+            parser.error('Requires at least one scriptname file '
+                         'or exactly one .spec-file')
 
-    # Skip creating .spec when .spec file is supplied
-    if args[0].endswith('.spec'):
-        spec_file = args[0]
-    else:
-        spec_file = run_makespec(opts, args)
+        # Skip creating .spec when .spec file is supplied
+        if args[0].endswith('.spec'):
+            spec_file = args[0]
+        else:
+            spec_file = run_makespec(opts, args)
 
-    run_build(opts, spec_file)
+        run_build(opts, spec_file)
+
+    except KeyboardInterrupt:
+        raise SystemExit("Aborted by user request.")
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        raise SystemExit("Aborted by user request.")
+        run()
