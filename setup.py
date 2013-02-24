@@ -81,6 +81,6 @@ setup(
 
     entry_points="""
     [console_scripts]
-    pyinstaller=PyInstaller.main:run
+    pyinstaller=PyInstaller.__main__:run
     """
 )
