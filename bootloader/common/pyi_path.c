@@ -21,6 +21,7 @@
     #include <libgen.h>  // basename()
     #include <mach-o/dyld.h>  // _NSGetExecutablePath()
 #else
+    #include <libgen.h>  // basename()
     #include <limits.h>  // PATH_MAX
     // TODO Eliminate getpath.c/.h and replace it with functions from stb.h.
     #include "getpath.h"
@@ -63,7 +64,7 @@ void pyi_path_dirname(char *result, const char *path)
  * Returns the last component of the path in filename. Return result
  * in new buffer.
  */
-void pyi_path_basename(char *result, const char *path)
+void pyi_path_basename(char *result, char *path)
 {
 #ifdef WIN32
   /* Search for the last directory separator in PATH.  */
@@ -75,7 +76,7 @@ void pyi_path_basename(char *result, const char *path)
   strcpy(result, basename ? ++basename : (char*)path);
 #else
     char *base = NULL;
-    base = basename(path);
+    base = (char *) basename(path);
     strcpy(result, path);
 #endif
 }

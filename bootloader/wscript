@@ -308,8 +308,8 @@ def configure(conf):
     dbg.set_variant('debug') # separate subfolder for building
     conf.set_env_name('debug', dbg)
     conf.setenv('debug')
-    conf.env.append_value('CCDEFINES', '_DEBUG LAUNCH_DEBUG'.split())
-    conf.env.append_value('CCFLAGS', conf.env.CCFLAGS_DEBUG)
+    # This define enables verbose console output of the bootloader.
+    conf.env.append_value('CCDEFINES', ['LAUNCH_DEBUG'])
     dbgw = conf.env.copy() # WINDOWED DEBUG environment
     dbgw.set_variant('debugw') # separate subfolder for building
     dbgw.detach()
