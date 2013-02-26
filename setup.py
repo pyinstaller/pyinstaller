@@ -76,11 +76,18 @@ setup(
 
     classifiers = CLASSIFIERS,
     zip_safe = False,
+    packages = find_packages(),
     # This Include precompiled bootloaders.
     include_package_data = True,
 
     entry_points = """
     [console_scripts]
     pyinstaller=PyInstaller.__main__:run
+    pyi-archive_viewer=PyInstaller.cliutils.archive_viewer:run
+    pyi-bindepend=PyInstaller.cliutils.bindepend:run
+    pyi-build=PyInstaller.cliutils.build:run
+    pyi-grab_version=PyInstaller.cliutils.grab_version:run
+    pyi-make_comserver=PyInstaller.cliutils.make_comserver:run
+    pyi-makespec=PyInstaller.cliutils.makespec:run
     """
 )
