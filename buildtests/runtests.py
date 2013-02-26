@@ -389,7 +389,7 @@ class BuildTestRunner(object):
                 prog = self._find_exepath(tmpname,
                         os.path.join('dist', self.test_file))
             fname_list = compat.exec_python(
-                os.path.join(HOMEPATH, 'utils', 'ArchiveViewer.py'),
+                os.path.join(HOMEPATH, 'utils', 'archive_viewer.py'),
                 '-b', '-r', prog)
             # Fix line-endings so eval() does not fail.
             fname_list = fname_list.replace('\r\n', '\n').replace('\n\r', '\n')
