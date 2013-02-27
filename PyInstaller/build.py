@@ -1245,9 +1245,15 @@ class COLLECT(Target):
                                  self.upx_binaries and (is_win or is_cygwin)
                                  and config['hasUPX'], dist_nm=inm)
             if typ != 'DEPENDENCY':
-                shutil.copy2(fnm, tofnm)
+                if os.path.basename(fnm).startswith("."):
+                    logger.debug("%s starts with a period. Skipping." % fnm)
+                else:
+                    shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
-                os.chmod(tofnm, 0755)
+                if os.path.exists(tofnm):
+                    os.chmod(tofnm, 0755)
+                else:
+                    logger.debug("%s does not exist. Skipping." % tofnm)
         _save_data(self.out,
                  (self.name, self.strip_binaries, self.upx_binaries, self.toc))
         return 1
