@@ -1641,7 +1641,7 @@ def __add_options(parser):
                       "(default: included if available)")
 
 
-def main(specfile, buildpath, noconfirm, ascii=False, **kw):
+def main(pyi_config, specfile, buildpath, noconfirm, ascii=False, **kw):
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm
     global HIDDENIMPORTS, NOCONFIRM
@@ -1652,8 +1652,12 @@ def main(specfile, buildpath, noconfirm, ascii=False, **kw):
         HIDDENIMPORTS.extend(misc.get_unicode_modules())
 
     # FIXME: this should be a global import, but can't due to recursive imports
-    import PyInstaller.configure as configure
-    config = configure.get_config(kw.get('upx_dir'))
+    # If configuration dict is supplied - skip configuration step.
+    if pyi_config is None:
+        import PyInstaller.configure as configure
+        config = configure.get_config(kw.get('upx_dir'))
+    else:
+        config = pyi_config
 
     if config['hasRsrcUpdate']:
         from PyInstaller.utils import icon, versioninfo, winresource

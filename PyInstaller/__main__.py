@@ -15,6 +15,7 @@ Main command-line interface to PyInstaller.
 
 import os
 import optparse
+import sys
 
 import PyInstaller.makespec
 import PyInstaller.build
@@ -40,8 +41,8 @@ def run_makespec(opts, args):
     return spec_file
 
 
-def run_build(opts, spec_file):
-    PyInstaller.build.main(spec_file, **opts.__dict__)
+def run_build(opts, spec_file, pyi_config):
+    PyInstaller.build.main(pyi_config, spec_file, **opts.__dict__)
 
 
 def __add_options(parser):
@@ -49,7 +50,11 @@ def __add_options(parser):
                       help='show program version')
 
 
-def run():
+def run(pyi_args=sys.argv[1:], pyi_config=None):
+    """
+    pyi_args     allows running PyInstaller programatically without a subprocess
+    pyi_config   allows checking configuration once when running multiple tests
+    """
     try:
         parser = optparse.OptionParser(
             usage='python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
@@ -60,7 +65,7 @@ def run():
         PyInstaller.log.__add_options(parser)
         PyInstaller.compat.__add_obsolete_options(parser)
 
-        opts, args = parser.parse_args()
+        opts, args = parser.parse_args(pyi_args)
         PyInstaller.log.__process_options(parser, opts)
 
         # Print program version and exit
@@ -78,7 +83,7 @@ def run():
         else:
             spec_file = run_makespec(opts, args)
 
-        run_build(opts, spec_file)
+        run_build(opts, spec_file, pyi_config)
 
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
