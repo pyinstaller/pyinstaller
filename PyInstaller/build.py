@@ -1246,7 +1246,7 @@ class COLLECT(Target):
                                  and config['hasUPX'], dist_nm=inm)
             if typ != 'DEPENDENCY':
                 if os.path.basename(fnm).startswith("."):
-                    logger.debug(fnm + " starts with a period. Skipping.")
+                    logger.debug("%s starts with a period. Skipping." % fnm)
                 else:
                     shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
