@@ -676,8 +676,10 @@ class Analysis(Target):
             for (nm, filename, typ) in binaries:
                 if typ == 'BINARY':
                     deps.update([filename])
+            # If Python library is missing - append it to dependencies.
             if python_lib not in deps:
-                logger.warn('Python dynamic library not included in dependencies!')
+                logger.info('Adding Python library to binary dependencies')
+                binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
         else:
             raise IOError("Python library not found!")
 
