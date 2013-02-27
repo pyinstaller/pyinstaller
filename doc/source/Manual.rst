@@ -6,7 +6,7 @@ PyInstaller Manual
 
 :Version: |PyInstallerVersion|
 :Homepage: |Homepage|
-:Author: Giovanni Bajo & William Caban (based on Gordon McMillan's manual)
+:Author: David Cortesi (based on structure by Giovanni Bajo & William Caban (based on Gordon McMillan's manual))
 :Contact: rasky@develer.com
 :Revision: $Rev$
 :Source URL: $HeadURL$
@@ -43,8 +43,7 @@ Requirements
 **AIX**
   * AIX 6.1 or newer.
     Python executables created using PyInstaller on AIX 6.1 should work
-    on AIX 5.2/5.3. PyInstaller will not work with statically linked Python
-    libraries which has been encountered in Python 2.2 installations on AIX 5.x.
+    on AIX 5.2/5.3.
   * ldd
   * objdump
 
@@ -52,73 +51,253 @@ Requirements
 Installing |PyInstaller|
 ========================
 
-1) Unpack the archive on you path of choice. For the purpose of this
-   documentation we will assume |install_path|.
+From version 2.1 on, |PyInstaller| is a Python package and
+is installed like other Python packages. Begin as follows:
 
-   You will be using a couple of scripts in the |install_path|
-   directory, and these will find everything they need from their own
-   location. For convenience, keep the paths to these scripts short
-   (don't install in a deeply nested subdirectory).
+* Download the pyinstaller archive to any temporary directory.
+* Decompress (unzip) the archive to create a folder named |unzipped_download|.
 
-   **Please note:** Installer is `not` a Python package, so it
-   doesn't need to go in site-packages, or have a .pth file.
+Installing in Windows XP, 7 and 8
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-2) For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32/64bit)
-   precompiled boot-loaders are available. So the installation is
-   complete now.
+Open |unzipped_download| and double-click ``install.py``
+to install the Python modules of |PyInstaller| with other Python modules.
 
-   For other platforms (Solaris, AIX, etc.), users should first try to build the
-   boot-loader:
+This also installs a command ``pyinstaller.exe`` in (??where??).
 
-     cd source
-     python ./waf configure build install
+Installing in Linux and Mac OS X
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+* Open a terminal window.
+* ``cd`` into the |unzipped_download| directory.
+* Execute ``sudo python ./setup.py install``
 
-Getting Started
-===============
+This moves the Python modules to their proper places.
+It also installs a shell script ``pyinstaller``
+in ``/usr/bin/`` (??/usr/local/bin??).
 
+Installing on Solaris, AIX, etc.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For the purpose of this documentation we will assume |PyInstaller| as
-installed into |install_path|.
+For platforms other than Windows, Linux and Mac OS, you must build a
+|bootloader| program for your platform before installing the Python package.
 
+* ``cd`` into the |unzipped_download| directory.
+* ``cd bootloader``.
+* Execute ``python ./waf configure build install``.
 
-Build your project
-~~~~~~~~~~~~~~~~~~
+If this reports an error, ask for technical help.
+It is of no use to continue the installation without a |bootloader|.
+When the |bootloader| has been created,
 
-For building a Windows COM server, please see section `Windows COM
+* ``cd`` into the |unzipped_download| directory.
+* Execute ``python ./setup.py install`` with administrator privilege.
+
+This moves the Python modules to their proper places.
+It also installs a shell script ``pyinstaller``
+in (??where??)
+
+Verifying the installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On all platforms, a ``pyinstaller`` command should now exist on the
+execution path. To verify this enter the command
+
+  ``pyinstaller --version``
+
+The result should resemble ``2.n-xxxxxx``.
+
+Overview: What |PyInstaller| Does and How It Does It
+============================================================
+
+This section covers the basic ideas of |PyInstaller|.
+These ideas apply to all platforms.
+There are many options, exceptions, and special cases covered under `Using PyInstaller`_ .
+
+|PyInstaller| reads a Python script written by you.
+First it analyzes your code to discover every other file 
+your script needs in order to execute.
+Then it finds, copies, and collects all those other
+files—including the active Python interpreter!—and
+puts them with
+your script in a single folder,
+or optionally in a single executable file. 
+
+You distribute this folder or file to other people, and they can execute 
+your program.
+As far as your users can tell, your app is self-contained;
+they do not need to install any support packages,
+or any particular version of Python.
+They do not need to have Python installed at all.
+
+The output of  |PyInstaller| is specific to the active operating system
+and the active version of Python. To prepare a distribution for a different
+OS, you run |PyInstaller| on that OS.
+
+Analysis: Finding the Files Your Program Needs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+What does your script need in order to run, besides a Python interpreter?
+To find out, |PyInstaller| looks at all the ``import`` statements 
+in your script.
+It finds those Python modules and looks in them for ``import``
+statements, and so on recursively, until it has a complete list of Python
+modules your
+script requires.
+
+|PyInstaller| also knows about the GUI packages
+Qt_ (imported via PyQt_ or PySide_), WxPython_, TkInter_
+and some other major packages.
+It can find the dynamic libraries these packages use because
+information about these non-Python code modules is in
+"hook" files that are distributed with Pyinstaller.
+
+Some Python scripts import modules in ways that |PyInstaller| cannot detect:
+for example, by using the ``__import__()`` function with variable data.
+If your script requires files that |PyInstaller| does not know about,
+you must help it:
+
+* You can list additional files on the |PyInstaller| command line.
+* You can edit the ``myscript.spec`` file
+  that |PyInstaller| writes the first time you run it for your script.
+  In the spec file you can tell Pyinstaller about code and data
+  files that are unique to your script.
+* If your script depends on a package that other users might also need,
+  you can prepare a "hook" file and contribute it to |PyInstaller|.
+
+Bundling to One Folder
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When you apply |PyInstaller| to ``myscript.py`` the default
+result is a single folder named ``myscript``.
+This folder contains all the 
+support files, and an executable file also named ``myscript`` 
+(``myscript.exe`` in Windows).
+
+You compress the folder
+to ``myscript.zip`` and transmit it to your users.
+They install the program simply by unzipping it.
+A user runs your app by
+opening the folder and launching the ``myscript`` executable inside it.
+
+One advantage of this format is that by editing the ``myscript.spec`` file
+you can include related files in the distribution folder.
+For example you can distribute a README file, a file of examples,
+a configuration file, even a whole folder of documentation
+as part of the one folder.
+
+Another advantage is that when you change your code, as long
+as it imports `exactly the same set of support files`, you could send out
+only the updated ``myscript`` executable. That is typically much smaller
+than the entire folder. (Of course, if you change the script so that it imports more
+or different support files, you must redistribute the whole bundle.)
+
+A disadvantage of the one-folder format is that the one folder contains
+a large number of files. Your user must find the ``myscript`` executable
+in a long list of names or a big array of icons. Also your user can create
+a problem by accidentally dragging files out of the folder.
+
+Bundling to One File
+~~~~~~~~~~~~~~~~~~~~~
+
+An option of |PyInstaller| is to produce a single executable named
+``myscript`` (``myscript.exe`` in Windows; ``myscript.app`` in Mac OS).
+All the support files needed to run your program are embedded in the one program file.
+
+The advantage of this is that your users see something they expect,
+a single executable to launch.
+One disadvantage is that any related files
+such as README must be distributed separately.
+Another is that the single executable is a bit slower to start up than
+the executable in one folder.
+
+How the Bundled Program Works
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+How does a bundled app work? The key is the |PyInstaller| |bootloader|.
+This is the heart of the ``myscript`` executable in the one folder, 
+and of the one-file executable.
+
+The |PyInstaller| |bootloader| is a binary
+executable program for the active platform
+(Windows, Linux, Mac OS X, etc.).
+When the user launches your program, it is the |bootloader| that runs.
+For a one-folder program, the |bootloader|
+creates a temporary Python environment by setting
+environment variables so that the Python interpreter will look in the
+``myscript`` folder for imported modules.
+
+For a one-file program, the |bootloader| first creates a temporary folder
+in the appropriate temp-folder location for this OS.
+The one file contains compressed copies of your script and all the support files.
+The boot loader uncompresses these and writes copies
+into the the temporary folder.
+(This can take a few seconds, which is why a one-file app may be slower to start up
+than a one-folder app.)
+After creating the temporary folder, the |bootloader|
+sets environment variables to direct Python to the temp folder.
+
+In either case, the |bootloader| starts a copy of the Python interpreter going
+to execute your script.
+Everything follows normally from there, provided
+that all the necessary support files were included.
+
+Console or not?
+~~~~~~~~~~~~~~~~~~~~~
+
+By default the |bootloader| creates a command-line console
+(a terminal window in Linux and Mac OS, a command window in Windows).
+It gives this window to the Python interpreter for its standard input and output.
+Error messages from Python and
+print statements in your script will appear in the console window.
+If your script reads from standard input, the user can enter data in the window.
+
+Optionally you can tell |PyInstaller| to not provide a console window.
+The |bootloader| starts Python with no target for standard output or input.
+Do this if your script has a graphical interface for user input and can properly 
+report its own diagnostics.
+
+Using PyInstaller
+====================
+(??)For building a Windows COM server, please see section `Windows COM
 Server Support`_ below.
 
-In the |install_path| directory, run::
+Set the current directory to the location of your program ``myscript.py``.
+Then execute
 
-      python pyinstaller.py [opts] yourprogram.py
+    ``pyinstaller`` `options...` ``myscript.py``
 
-This will create a sub-directory ``your-program`` in the |install_path|
-directory. The generated files will be placed within the sub-directory
-``your-program/dist``; that's where the files you are interested in
-will be placed. A `spec` file called ``your-program.spec`` will be
-created in the sub-directory ``your-program``, too. Additionally a
-subtracts ``your-program/build`` is created where intermediate build
-files are kept.
+|PyInstaller| analyzes ``myscript.py`` and writes these outputs:
 
-If your current working directory is not |install_path|, the
-directories ``dist`` and ``build`` and the `spec` file will be
-created in the current working directory. Say: the intermediate
-directory ``your-program`` will be skipped.
+* ``myscript.spec``
+* ``myscript`` folder or executable file in the ``dist`` subdirectory
+* Some log files in the ``build`` subdirectory
 
+You may edit the contents of ``myscript.spec``
+(as described under `Using Spec Files`_).
+After you do this, you give the spec file to |PyInstaller| instead of the script:
 
-If you have already created a `spec` file for your project then in
-the |install_path| directory run::
+    ``pyinstaller`` `options...` ``myscript.spec``
 
-       python pyinstaller.py [opts] your-program.spec
+You may give a path to the script or spec file, for example
 
-If your current working directory is not |install_path|, this works
-analogously.
+    ``pyinstaller`` `options...` ``~/myproject/source/myscript.py``
 
-If everything is working and you are happy with the default settings,
-this will be all you have to do. If not, see `Allowed OPTIONS`_, `When
-things go wrong`_ and be sure to read the introduction to `Spec
-Files`_.
+or, on Windows,
 
+    ``pyinstaller`` `options...` ``"C:\myproject\source\myscript.spec"``
+
+|PyInstaller| creates or uses the ``dist`` and ``build`` subdirectories
+in the same directory as the script or spec file that you name.
+(??TRUE? NOT THE CWD??)
+
+You may name more than one script on the command line.
+All the scripts are analyzed and included in the executable output.
+The first script named supplies the name for a
+spec file and for the output folder or executable.
+
+You can also use the ``--name`` option (below) to set the name of the
+outputs.
 
 Allowed Options
 ~~~~~~~~~~~~~~~
@@ -263,7 +442,7 @@ your program. By deafult, ``pyinstaller.py`` generates a spec file automatically
 For simple projects, the generated spec file will be probably sufficient.
 
 For more complex projects, it should be regarded as a template. The spec file is
-actually Python code, and modifying it should be ease. See `Spec Files`_ for
+actually Python code, and modifying it should be ease. See `Using Spec Files`_ for
 details.
 
 In the root directory of |PyInstaller|, there is a simple wizard to create simple
@@ -304,7 +483,7 @@ These options are allowed:
 --out <dir>
     Generate the driver script and spec file in dir.
 
-Now `Build your project`_ on the generated spec file.
+Now `Build your project` * on the generated spec file.
 
 If you have the win32dbg package installed, you can use it with the generated
 COM server. In the driver script, set ``debug=1`` in the registration line.
@@ -342,7 +521,7 @@ the ``TOCs`` building the ``EXE``::
                 a.scripts + [('O','','OPTION')],
                 ...
 
-See `Spec Files`_ for details.
+See `Using Spec Files`_ for details.
 
 
 A Note on using UPX
@@ -642,8 +821,8 @@ cross-references by using ``mf.py``, documented in section `mf.py: A modulefinde
 Replacement`_
 
 
-Spec Files
-==========
+Using Spec Files
+=================
 
 Introduction
 ~~~~~~~~~~~~
@@ -2001,10 +2180,14 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
         of PathImportDirector instance at 825900>
       >>>
 
+.. _Qt: http://www.qt-project.org
+.. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
+.. _PySide: http://qt-project.org/wiki/About-PySide
+.. _WxPython: http://www.wxpython.org/
+.. _TkInter: http://wiki.python.org/moin/TkInter
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
 .. _PIL: http://www.pythonware.com/products/pil/
-.. _PyQt: http://www.riverbankcomputing.co.uk/pyqt/index.php
 .. _PyWin32: http://sourceforge.net/projects/pywin32/files/
 .. _Xcode: http://developer.apple.com/xcode
 .. _`GPL License`: http://www.pyinstaller.org/browser/trunk/doc/LICENSE.GPL?rev=latest
