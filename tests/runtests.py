@@ -46,7 +46,8 @@ except ImportError:
 
 
 from PyInstaller import HOMEPATH
-from PyInstaller import compat
+from PyInstaller import compat, configure
+from PyInstaller import __main__ as pyi_main
 from PyInstaller.compat import is_py25, is_py26, is_win, is_darwin
 from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml
@@ -55,6 +56,7 @@ from PyInstaller.utils import misc
 
 VERBOSE = False
 REPORT = False
+PYI_CONFIG = {}
 # Directory with this script (runtests.py).
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -343,18 +345,23 @@ class BuildTestRunner(object):
             # for main script.
             testfile_spec = self.test_file + '.py'
 
-        pyinst_script = os.path.join(HOMEPATH, 'pyinstaller.py')
+        #pyinst_script = os.path.join(HOMEPATH, 'pyinstaller.py')
 
+        # TODO Fix redirecting stdout/stderr
         # In report mode is stdout and sys.stderr redirected.
-        if self.report:
-            # Write output from subprocess to stdout/err.
-            retcode, out, err = compat.exec_python_all(pyinst_script,
-                  testfile_spec, *OPTS)
-            sys.stdout.write(out)
-            sys.stdout.write(err)
-        else:
-            retcode = compat.exec_python_rc(pyinst_script,
-                  testfile_spec, *OPTS)
+        #if self.report:
+            ## Write output from subprocess to stdout/err.
+            #retcode, out, err = compat.exec_python_all(pyinst_script,
+                  #testfile_spec, *OPTS)
+            #sys.stdout.write(out)
+            #sys.stdout.write(err)
+        #else:
+            #retcode = compat.exec_python_rc(pyinst_script,
+                  #testfile_spec, *OPTS)
+        pyi_args = [testfile_spec] + OPTS
+        # TODO fix return code in running PyInstaller programatically
+        pyi_main.run(pyi_args, PYI_CONFIG)
+        retcode = 0
 
         return retcode == 0
 
@@ -630,10 +637,6 @@ def main():
 
     opts, args = parser.parse_args()
 
-    global VERBOSE, REPORT
-    VERBOSE = opts.verbose
-    REPORT = opts.junitxml is not None
-
     # Do only cleanup.
     if opts.clean:
         clean()
@@ -673,6 +676,13 @@ def main():
         # Create test suite.
         generator = TestCaseGenerator()
         suite = generator.create_suite(test_classes)
+
+    # Set global options
+    global VERBOSE, REPORT, PYI_CONFIG
+    VERBOSE = opts.verbose
+    REPORT = opts.junitxml is not None
+    PYI_CONFIG = configure.get_config(upx_dir=None)  # Run configure phase only once.
+
 
     # Run created test suite.
     clean()
