@@ -47,7 +47,7 @@ except ImportError:
 
 from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
-from PyInstaller import __main__ as pyi_main
+from PyInstaller import main as pyi_main
 from PyInstaller.compat import is_py25, is_py26, is_win, is_darwin
 from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml

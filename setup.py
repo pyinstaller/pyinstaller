@@ -82,7 +82,7 @@ setup(
 
     entry_points = """
     [console_scripts]
-    pyinstaller=PyInstaller.__main__:run
+    pyinstaller=PyInstaller.main:run
     pyi-archive_viewer=PyInstaller.cliutils.archive_viewer:run
     pyi-bindepend=PyInstaller.cliutils.bindepend:run
     pyi-build=PyInstaller.cliutils.build:run
