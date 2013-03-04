@@ -65,7 +65,7 @@ setup(
     long_description = LONG_DESC,
     keywords = 'packaging, standalone executable, pyinstaller, macholib, freeze, py2exe, py2app, bbfreeze',
 
-    author = 'Gordon McMillan, William Caban, Giovanni Bajo, Hartmut Goebel, Martin Zibricky',
+    author = 'Giovanni Bajo, Hartmut Goebel, Martin Zibricky',
     author_email = 'pyinstaller@googlegroups.com',
     maintainer = 'Giovanni Bajo, Hartmut Goebel, Martin Zibricky',
     maintainer_email = 'pyinstaller@googlegroups.com',
