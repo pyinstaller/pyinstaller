@@ -17,14 +17,16 @@ import optparse
 import PyInstaller.build
 import PyInstaller.compat
 import PyInstaller.log
+from PyInstaller.utils import misc
 
 
 def run():
+    misc.check_not_running_as_root()
+
     parser = optparse.OptionParser(usage='%prog [options] specfile')
     PyInstaller.build.__add_options(parser)
     PyInstaller.log.__add_options(parser)
     PyInstaller.compat.__add_obsolete_options(parser)
-
 
     opts, args = parser.parse_args()
     PyInstaller.log.__process_options(parser, opts)

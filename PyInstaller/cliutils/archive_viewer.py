@@ -21,6 +21,7 @@ import zlib
 
 
 from PyInstaller.loader import pyi_archive, pyi_carchive
+from PyInstaller.utils import misc
 import PyInstaller.log
 
 
@@ -33,6 +34,8 @@ brief = False
 
 
 def main(opts, args):
+    misc.check_not_running_as_root()
+
     global stack
     global debug
     global rec_debug

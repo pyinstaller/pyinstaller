@@ -15,6 +15,7 @@ import win32api
 
 
 import PyInstaller.makespec
+from PyInstaller.utils import misc
 
 
 tmplt = '''\
@@ -138,6 +139,8 @@ epilog = ("The next step is to run Build.py against the generated "
 
 
 def run():
+    misc.check_not_running_as_root()
+
     parser = optparse.OptionParser(
         usage='python %s [options] <scriptname>.py [<scriptname>.py ...]',
         epilog="The next step is to run Build.py against the generated"

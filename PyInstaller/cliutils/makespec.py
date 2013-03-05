@@ -19,9 +19,12 @@ import os
 import PyInstaller.makespec
 import PyInstaller.compat
 import PyInstaller.log
+from PyInstaller.utils import misc
 
 
 def run():
+    misc.check_not_running_as_root()
+
     p = optparse.OptionParser(
         usage='python %prog [opts] <scriptname> [<scriptname> ...]'
     )

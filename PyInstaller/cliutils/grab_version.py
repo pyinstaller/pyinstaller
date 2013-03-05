@@ -10,9 +10,12 @@
 
 import sys
 import PyInstaller.utils.versioninfo
+from PyInstaller.utils import misc
 
 
 def run():
+    misc.check_not_running_as_root()
+
     if len(sys.argv) < 2:
         print 'Usage: >python GrabVersion.py <exe>'
         print ' where: <exe> is the fullpathname of a Windows executable.'
