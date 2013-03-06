@@ -316,10 +316,15 @@ def getcwd():
     # TODO os.getcwd should work properly with py3 on windows.
     if is_win:
         try:
-            import win32api
-            cwd = win32api.GetShortPathName(cwd)
-        except ImportError:
-            pass
+            unicode(cwd)
+        except UnicodeDecodeError:
+            # Do conversion to ShortPathName really only in case 'cwd' is not
+            # ascii only - conversion to unicode type cause this unicode error.
+            try:
+                import win32api
+                cwd = win32api.GetShortPathName(cwd)
+            except ImportError:
+                pass
     return cwd
 
 
