@@ -16,7 +16,7 @@ import glob
 import os
 
 from PyInstaller import log as logging
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_unix, is_win
 
 logger = logging.getLogger(__name__)
 
@@ -132,3 +132,16 @@ def get_path_to_toplevel_modules(filename):
         pass
     # No top-level directory found or any error.
     return None
+
+
+def check_not_running_as_root():
+    """
+    Raise SystemExit error if the user is on unix and trying running
+    PyInstaller or its utilities as superuser 'root'.
+    """
+    if is_unix:
+        # Prevent running as superuser (root).
+        if hasattr(os, "getuid") and os.getuid() == 0:
+            logger.error('You are running PyInstaller as user root.'
+                ' This is not supported.')
+            raise SystemExit(10)

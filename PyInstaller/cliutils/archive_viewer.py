@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013, PyInstaller Development Team.
 #
@@ -21,19 +20,8 @@ import tempfile
 import zlib
 
 
-try:
-    import PyInstaller
-except ImportError:
-    # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation.
-    import imp
-    # Prevent running as superuser (root).
-    if not hasattr(os, "getuid") or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
-
-
 from PyInstaller.loader import pyi_archive, pyi_carchive
+from PyInstaller.utils import misc
 import PyInstaller.log
 
 
@@ -46,6 +34,8 @@ brief = False
 
 
 def main(opts, args):
+    misc.check_not_running_as_root()
+
     global stack
     global debug
     global rec_debug
@@ -218,32 +208,33 @@ class ZlibArchive(pyi_archive.ZlibArchive):
         self.lib.read(4)
 
 
-parser = optparse.OptionParser('%prog [options] pyi_archive')
-parser.add_option('-l', '--log',
-                  default=False,
-                  action='store_true',
-                  dest='log',
-                  help='Print an archive log (default: %default)')
-parser.add_option('-r', '--recursive',
-                  default=False,
-                  action='store_true',
-                  dest='rec',
-                  help='Recusively print an archive log (default: %default). '
-                  'Can be combined with -r')
-parser.add_option('-b', '--brief',
-                  default=False,
-                  action='store_true',
-                  dest='brief',
-                  help='Print only file name. (default: %default). '
-                  'Can be combined with -r')
-PyInstaller.log.__add_options(parser)
+def run():
+    parser = optparse.OptionParser('%prog [options] pyi_archive')
+    parser.add_option('-l', '--log',
+                      default=False,
+                      action='store_true',
+                      dest='log',
+                      help='Print an archive log (default: %default)')
+    parser.add_option('-r', '--recursive',
+                      default=False,
+                      action='store_true',
+                      dest='rec',
+                      help='Recusively print an archive log (default: %default). '
+                      'Can be combined with -r')
+    parser.add_option('-b', '--brief',
+                      default=False,
+                      action='store_true',
+                      dest='brief',
+                      help='Print only file name. (default: %default). '
+                      'Can be combined with -r')
+    PyInstaller.log.__add_options(parser)
 
-opts, args = parser.parse_args()
-PyInstaller.log.__process_options(parser, opts)
-if len(args) != 1:
-    parser.error('Requires exactly one pyinstaller archive')
+    opts, args = parser.parse_args()
+    PyInstaller.log.__process_options(parser, opts)
+    if len(args) != 1:
+        parser.error('Requires exactly one pyinstaller archive')
 
-try:
-    raise SystemExit(main(opts, args))
-except KeyboardInterrupt:
-    raise SystemExit("Aborted by user request.")
+    try:
+        raise SystemExit(main(opts, args))
+    except KeyboardInterrupt:
+        raise SystemExit("Aborted by user request.")

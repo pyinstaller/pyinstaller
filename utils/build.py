@@ -9,10 +9,16 @@
 #-----------------------------------------------------------------------------
 
 
-"""
-Main command-line interface to PyInstaller.
-"""
+import os
+import sys
+
+
+# Expand PYTHONPATH with PyInstaller package to support running without
+# installation.
+pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+sys.path.insert(0, pyi_home)
+
 
 if __name__ == '__main__':
-    from PyInstaller.main import run
+    from PyInstaller.cliutils.build import run
     run()

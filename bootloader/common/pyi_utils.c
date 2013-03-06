@@ -178,9 +178,16 @@ int pyi_get_temp_path(char *buffer)
 // TODO Is this really necessary to test for temp path? Why not just use mkdtemp()?
 int pyi_test_temp_path(char *buff)
 {
-	strcat(buff, "/_MEIXXXXXX");
-    if (mkdtemp(buff))
-    {
+    /*
+     * If path does not end with directory separator - append it there.
+     * On OSX the value from $TMPDIR ends with '/'.
+     */
+    if (buff[strlen(buff)-1] != PYI_SEP) {
+        strcat(buff, PYI_SEPSTR);
+    }
+	strcat(buff, "_MEIXXXXXX");
+
+    if (mkdtemp(buff)) {
         return 1;
     }
     return 0;
@@ -189,7 +196,7 @@ int pyi_test_temp_path(char *buff)
 // TODO merge this function with windows version.
 static int pyi_get_temp_path(char *buff)
 {
-    // TODO Do we need to check on unix for common variables paths to temp dirs?
+    /* On OSX the variable TMPDIR is usually defined. */
 	static const char *envname[] = {
 		"TMPDIR", "TEMP", "TMP", 0
 	};

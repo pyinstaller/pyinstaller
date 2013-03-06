@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013, PyInstaller Development Team.
 #
@@ -15,19 +14,8 @@ import sys
 import win32api
 
 
-try:
-    import PyInstaller
-except ImportError:
-    # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation.
-    import imp
-    # Prevent running as superuser (root).
-    if not hasattr(os, "getuid") or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
-
-
 import PyInstaller.makespec
+from PyInstaller.utils import misc
 
 
 tmplt = '''\
@@ -149,7 +137,10 @@ def ispkgdir(path):
 epilog = ("The next step is to run Build.py against the generated "
           "spec file. See doc/Tutorial.html for details.")
 
-if __name__ == '__main__':
+
+def run():
+    misc.check_not_running_as_root()
+
     parser = optparse.OptionParser(
         usage='python %s [options] <scriptname>.py [<scriptname>.py ...]',
         epilog="The next step is to run Build.py against the generated"

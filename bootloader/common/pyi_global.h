@@ -31,12 +31,16 @@
 
 
 /*
- * Definition of type boolean. On OSX boolean type is available.
+ * Definition of type boolean. On OSX boolean type is available
+ * in header <stdbool.h>.
  */
-typedef int bool;
-
-#define true    1
-#define false   0
+#ifdef __APPLE__
+    #include <stdbool.h>  // bool, true, false
+#else
+    typedef int bool;
+    #define true    1
+    #define false   0
+#endif
 
 
 /* Type for dynamic library. */
@@ -60,6 +64,8 @@ typedef int bool;
 // TODO use MSVCR function for file path handling.
 #ifdef WIN32
     #define PATH_MAX 4096  /* Default value on Linux. */
+#elif __APPLE__
+    #define PATH_MAX 1024  /* Recommended value for OSX. */
 #endif
 
 
