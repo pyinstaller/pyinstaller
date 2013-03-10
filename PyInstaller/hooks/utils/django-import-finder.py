@@ -25,8 +25,12 @@ hiddenimports = (list(settings.AUTHENTICATION_BACKENDS) +
 
 
 def find_url_callbacks(urls_module):
-    urlpatterns = urls_module.urlpatterns
-    hid_list = [urls_module.__name__]
+    if isinstance(urls_module, list):
+        urlpatterns = urls_module
+        hid_list = []
+    else:
+        urlpatterns = urls_module.urlpatterns
+        hid_list = [urls_module.__name__]
     for pattern in urlpatterns:
         if isinstance(pattern, RegexURLPattern):
             hid_list.append(pattern.callback.__module__)
