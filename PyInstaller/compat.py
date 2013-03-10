@@ -304,6 +304,30 @@ def exec_python_all(*args, **kwargs):
     return exec_command_all(*cmdargs, **kwargs)
 
 
+# The function os.getcwd() does not work with unicode paths on Windows.
+def getcwd():
+    """
+    Wrap os.getcwd()
+
+    On Windows return ShortPathName (8.3 filename) that contain only ascii
+    characters.
+    """
+    cwd = os.getcwd()
+    # TODO os.getcwd should work properly with py3 on windows.
+    if is_win:
+        try:
+            unicode(cwd)
+        except UnicodeDecodeError:
+            # Do conversion to ShortPathName really only in case 'cwd' is not
+            # ascii only - conversion to unicode type cause this unicode error.
+            try:
+                import win32api
+                cwd = win32api.GetShortPathName(cwd)
+            except ImportError:
+                pass
+    return cwd
+
+
 # Obsolete command line options.
 
 

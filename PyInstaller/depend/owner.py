@@ -23,7 +23,7 @@ import marshal
 import os
 
 from PyInstaller import depend
-from PyInstaller.compat import PYCO, caseOk
+from PyInstaller.compat import getcwd, PYCO, caseOk
 from PyInstaller.loader import pyi_archive
 
 
@@ -133,7 +133,7 @@ class DirOwner(BaseDirOwner):
 
     def __init__(self, path):
         if path == '':
-            path = os.getcwd()
+            path = getcwd()
         if not os.path.isdir(path):
             raise OwnerError("%s is not a directory" % repr(path))
         Owner.__init__(self, path)

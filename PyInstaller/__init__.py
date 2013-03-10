@@ -50,7 +50,21 @@ is_aix = compat.is_aix
 is_unix = compat.is_unix
 
 
+# This ensures PyInstaller will work on Windows with paths containing
+# foreign characters.
 HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+if is_win:
+    try:
+        unicode(HOMEPATH)
+    except UnicodeDecodeError:
+        # Do conversion to ShortPathName really only in case HOMEPATH is not
+        # ascii only - conversion to unicode type cause this unicode error.
+        try:
+            import win32api
+            HOMEPATH = win32api.GetShortPathName(HOMEPATH)
+        except ImportError:
+            pass
+
 
 if is_win:
     CONFIGDIR = compat.getenv('APPDATA')

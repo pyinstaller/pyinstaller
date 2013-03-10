@@ -540,7 +540,7 @@ class Analysis(Target):
                 raise SystemExit("Error: Analysis: script %s not found!" % script)
             d, base = os.path.split(script)
             if not d:
-                d = os.getcwd()
+                d = compat.getcwd()
             d = absnormpath(d)
             pynm, ext = os.path.splitext(base)
             dirs[d] = 1
@@ -676,8 +676,10 @@ class Analysis(Target):
             for (nm, filename, typ) in binaries:
                 if typ == 'BINARY':
                     deps.update([filename])
+            # If Python library is missing - append it to dependencies.
             if python_lib not in deps:
-                logger.warn('Python dynamic library not included in dependencies!')
+                logger.info('Adding Python library to binary dependencies')
+                binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
         else:
             raise IOError("Python library not found!")
 
@@ -1608,7 +1610,7 @@ def build(spec, buildpath):
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]
     if SPECPATH == '':
-        SPECPATH = os.getcwd()
+        SPECPATH = compat.getcwd()
     BUILDPATH = os.path.join(SPECPATH, 'build',
                              "pyi." + sys.platform, specnm)
     # Check and adjustment for build path
@@ -1639,7 +1641,7 @@ def __add_options(parser):
                       "(default: included if available)")
 
 
-def main(specfile, buildpath, noconfirm, ascii=False, **kw):
+def main(pyi_config, specfile, buildpath, noconfirm, ascii=False, **kw):
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm
     global HIDDENIMPORTS, NOCONFIRM
@@ -1650,8 +1652,12 @@ def main(specfile, buildpath, noconfirm, ascii=False, **kw):
         HIDDENIMPORTS.extend(misc.get_unicode_modules())
 
     # FIXME: this should be a global import, but can't due to recursive imports
-    import PyInstaller.configure as configure
-    config = configure.get_config(kw.get('upx_dir'))
+    # If configuration dict is supplied - skip configuration step.
+    if pyi_config is None:
+        import PyInstaller.configure as configure
+        config = configure.get_config(kw.get('upx_dir'))
+    else:
+        config = pyi_config
 
     if config['hasRsrcUpdate']:
         from PyInstaller.utils import icon, versioninfo, winresource

@@ -2471,7 +2471,9 @@ static stb__alloc stb__alloc_global =
    NULL,
    NULL,
    NULL,
-   (stb__chunk *) STB__ENCODE(NULL, STB__CHUNKS)
+   // TODO Following original line causes compilation errors on OSX.
+   // (stb__chunk *) STB__ENCODE(NULL, STB__CHUNKS)
+   (stb__chunk *) STB__CHUNKS
 };
 
 static stb__alloc_type stb__identify(void *p)
