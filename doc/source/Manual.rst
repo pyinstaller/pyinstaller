@@ -67,7 +67,7 @@ In a nutshell, the license is GPL for the source code with the exception that:
     them under GPL terms.
 
 For updated information or clarification see our
-`FAQ`_ at `PyInstaller`_ home page.
+`FAQ`_ at the `PyInstaller`_ home page.
 
 
 Installing |PyInstaller|
