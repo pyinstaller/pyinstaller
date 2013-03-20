@@ -241,14 +241,14 @@ class FixedFileInfo:
               self.productVersionLS >> 16, self.productVersionLS & 0xFFFF)
         fd = (self.fileDateMS, self.fileDateLS)
         tmp = ["FixedFileInfo(",
-               "filevers=%s," % fv,
-               "prodvers=%s," % pv,
+               "filevers=%s," % repr(fv),
+               "prodvers=%s," % repr(pv),
                "mask=%s," % hex(self.fileFlagsMask),
                "flags=%s," % hex(self.fileFlags),
                "OS=%s," % hex(self.fileOS),
                "fileType=%s," % hex(self.fileType),
                "subtype=%s," % hex(self.fileSubtype),
-               "date=%s" % fd,
+               "date=%s" % repr(fd),
                ")"
               ]
         return ('\n'+indent+'  ').join(tmp)
