@@ -512,8 +512,11 @@ class VarStruct:
 
 
 def SetVersion(exenm, versionfile):
-    txt = open(versionfile, 'rU').read()
-    vs = eval(txt)
+    if isinstance(versionfile, VSVersionInfo):
+        vs = versionfile
+    else:
+        txt = open(versionfile, 'rU').read()
+        vs = eval(txt)
     hdst = win32api.BeginUpdateResource(exenm, 0)
     win32api.UpdateResource(hdst, RT_VERSION, 1, vs.toRaw())
     win32api.EndUpdateResource (hdst, 0)
