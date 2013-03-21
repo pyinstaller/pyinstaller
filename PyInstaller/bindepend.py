@@ -714,7 +714,7 @@ def get_python_library_path():
         for name in names:
             full_path = os.path.join(py_prefix, name)
             if os.path.exists(full_path):
-                return name
+                return full_path
 
     # Python library NOT found. Return just None.
     return None
