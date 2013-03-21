@@ -33,16 +33,10 @@ import shutil
 import sys
 
 
-try:
-    import PyInstaller
-except ImportError:
-    # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation.
-    import imp
-    # Prevent running as superuser (root).
-    if not hasattr(os, "getuid") or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
+# Expand PYTHONPATH with PyInstaller package to support running without
+# installation.
+pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+sys.path.insert(0, pyi_home)
 
 
 from PyInstaller import HOMEPATH
