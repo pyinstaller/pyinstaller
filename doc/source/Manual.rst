@@ -91,6 +91,42 @@ and upgrade to a newer version in one command,::
 
     pip install --upgrade pyinstaller
 
+Installing in Windows
+------------------------
+
+For Windows, PyWin32_ is a prerequisite.
+Follow that link and carefully read the instructions; there
+is a different version of PyWin32 for each version of Python.
+With this done you can continue to install ``pip`` using the
+MS-DOS command line.
+
+However it is particularly easy to use pip-Win_,
+which sets up both pip_ and virtualenv_ and makes it simple
+to install packages and to switch between different Python interpreters.
+(For more on virtualenv, see `Supporting Multiple Platforms`_ below.)
+
+When pip-Win is working, enter this command in its Command field
+and click Run:
+
+  ``venv -c -i  pyi-env-name``
+
+This creates a new virtual environment rooted at ``C:\Python\pyi-env-name``
+and make that the current environment. 
+A new command shell
+window opens in which you can run commands within this environment.
+Enter the command
+
+  ``pip install PyInstaller``
+
+Whenever you want to use |PyInstaller|,
+
+* Start pip-Win
+* In the Command field enter ``venv pyi-env-name``
+* Click Run
+
+Then you have a command shell window in which commands
+execute in that environment.
+
 Installing from the archive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -123,16 +159,19 @@ execution path. To verify this enter the command
 
   ``pyinstaller --version``
 
-The result should resemble ``2.n-xxxxxx``.
+The result should resemble ``2.n-xxxxxx`` for a released version,
+and ``2.1dev-xxxxxx`` for a development branch.
 
 If the command is not found, make sure the execution path includes 
 the proper directory:
 
-* Windows: ``C: ???``
-* Linux: ``/usr/local/bin``???
-* Mac OS X: ``/usr/local/bin`` ???
-* AIX: ``???``
-* Solaris: ``???``
+* Windows: C:\PythonXY\Scripts
+* Linux: /usr/bin/
+* OS X (using default Apple-supplied Python) /usr/local/bin
+* OS X (using Python installed by macports) /opt/local/bin
+
+To display the current path in Windows the command is ``echo %path%``
+and in other systems, ``echo $PATH``.
 
 Installed commands
 ~~~~~~~~~~~~~~~~~~~~
@@ -218,9 +257,6 @@ the egg and its dependencies to the set of needed files.
 |PyInstaller| also knows about the GUI packages
 Qt_ (imported via PyQt_ or PySide_), WxPython_, TkInter_, Django_,
 and other major packages.
-It can find the dynamic libraries these packages use because
-information about these non-Python code modules is in
-"hook" files that are distributed with Pyinstaller.
 
 Some Python scripts import modules in ways that |PyInstaller| cannot detect:
 for example, by using the ``__import__()`` function with variable data,
@@ -278,7 +314,7 @@ Bundling to One File
 ~~~~~~~~~~~~~~~~~~~~~
 
 An option of |PyInstaller| is to produce a single executable named
-``myscript`` (``myscript.exe`` in Windows; ``myscript.app`` in Mac OS).
+``myscript`` (``myscript.exe`` in Windows).
 All the support files needed to run your program are embedded in the one program file.
 
 The advantage of this is that your users get something they understand,
@@ -366,18 +402,51 @@ report its own diagnostics.
 Supporting Multiple Platforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you need to distribute your application for more than one platform,
+If you distribute your application for only one combination of OS and Python,
+just install |PyInstaller| like any other package and use it in your
+normal development setup.
+
+Supporting Multiple Python Environments
+-----------------------------------------
+
+When you need to bundle your application for different versions of Python
+or different support libraries, but within one OS -- for example,
+a Python 3 version and a
+Python 2.7 version; or a supported version that uses Qt4 
+and a development version that uses Qt5 -- we recommend using virtualenv_.
+With virtualenv you can maintain different combinations of Python
+and installed packages, and switch from one combination to another easily.
+
+* Use virtualenv to create as many different development environments as you need,
+  each with its own combination of Python and installed packages.
+* Install |PyInstaller| in each environment.
+* Use |PyInstaller| to build your application in each environment.
+
+Note that when using virtualenv, the path to the |PyInstaller| commands is:
+
+* Windows: ENV_ROOT\\Scripts
+* Others:  ENV_ROOT/bin
+
+Under Windows, the pip-Win_ package installs virtualenv and makes it
+especially easy to set up different environments and switch between them.
+Under Linux and Mac OS, you switch environments at the command line.
+
+Supporting Multiple Operating Systems
+---------------------------------------
+
+If you need to distribute your application for more than one OS,
 for example both Windows and Mac OS X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
-If you need to distribute your application for more than one version
-of Python on any single platform, use virtualenv_ .
-With virtualenv you can have different Python environments
-and move between them easily.
+You can do this from a single machine using virtualization.
+The free virtualBox_ or the paid VMWare_ and Parallels_
+allow you to run another complete operating system as a "guest".
+You set up a virtual machine for each "guest" OS and in it, install
+Python, the support packages your application needs, and PyInstaller.
 
-* Use virtualenv to create as many different Python environments as you need.
-* Install |PyInstaller| in each environment.
-* Use |PyInstaller| to build your application in each environment.
+It is possible to cross-develop for Windows under Linux
+using the free Wine_ environment.
+<??Need info on PyInstaller under WINE in Linux - example? restrictions??>
 
 
 Using PyInstaller
@@ -424,6 +493,7 @@ or, on Windows,
 
 |PyInstaller| creates or uses the ``dist`` and ``build`` subdirectories
 in the same directory as the script or spec file that you name.
+In the ``dist`` folder you find the bundled app you distribute to your users.
 
 
 Options
@@ -505,10 +575,9 @@ Options for the Executable Output
 
 -o directory_path, --out=directory_path
     Create the spec file in *directory_path*.
-    The default is the current directory
-    (??STILL-TRUE-->)
-    unless the current directory is the |PyInstaller| distribution directory,
-    when a *name* subdirectory will be created for all output.(<--??)
+    The default location for the spec file is the current directory.
+    (If the current directory is the |PyInstaller| distribution folder,
+    a *name* subdirectory is created told the spec file and ``build`` and ``dist``.)
 
 -c, --console, --nowindowed
     Set up a console subsystem for standard input/output at run time.
@@ -516,7 +585,8 @@ Options for the Executable Output
 
 -w, --windowed, --noconsole
     Do not create a console window for standard input/output at run time.
-    On Mac OS X, use this option with ``--onefile`` to create an OS X application.
+    On Mac OS X, use this option with ``--onefile`` to create an OS X application bundle.
+    This option is ignored under Linux.
 
 -d, --debug
     Cause the |bootloader| to issue progress messages as it initializes
@@ -577,11 +647,13 @@ Options for Mac OS X apps
 Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you specify only ``--onefile`` under Mac OS X, the output is a UNIX executable
+If you specify only ``--onefile`` under Mac OS X, the output 
+in ``dist`` is a UNIX executable
 ``myscript``.
 It can be executed from a Terminal command line.
+Standard input and output work as normal through the Terminal window.
 
-If you specify ``--onefile --nowindow``, the ``dist`` folder contains 
+If you specify ``--onefile --windowed``, the ``dist`` folder contains 
 two outputs: the UNIX executable ``myscript``
 and also an OS X application named ``myscript.app``.
 
@@ -623,8 +695,8 @@ For example in Linux::
 
     pyinstaller --noconfirm --log-level=WARN \
         --onefile --nowindow \
-        --hidden-import=secret1.py \
-        --hidden-import=secret2.py \
+        --hidden-import=secret1 \
+        --hidden-import=secret2 \
         --upx-dir=/usr/local/share/ \
         myscript.spec
 
@@ -632,8 +704,8 @@ Or in Windows, use the little-known BAT file line continuation::
 
     pyinstaller --noconfirm --log-level=WARN ^
         --onefile --nowindow ^
-        --hidden-import=secret1.py ^
-        --hidden-import=secret2.py ^
+        --hidden-import=secret1 ^
+        --hidden-import=secret2 ^
         --icon-file=..\MLNMFLCN.ICO ^
         myscript.spec
 
@@ -648,7 +720,7 @@ Or, when you are certain of all the options, you could make the spec file::
 
 and from then on, just build from the spec file::
 
-    pyi-build myscript.spec
+    pyinstaller myscript.spec
 
 Using UPX
 ~~~~~~~~~~~~~~~~~~~
@@ -674,12 +746,6 @@ If UPX exists, |PyInstaller| applies it to the final executable,
 unless the ``--noupx`` option was given.
 UPX has been used with |PyInstaller| output often, usually with no problems.
 
-There was an incompatibility between UPX version 1.9 and earlier,
-and executables generated by Microsoft Visual Studio (which included
-some versions of the Python interpreter).
-|PyInstaller| checks for an early version of UPX and issues a warning.
-The current UPX version is at least 3.1 so this warning is unlikely
-to be seen.
 
 Using Spec Files
 =================
@@ -809,7 +875,7 @@ For example,
     ``a.binaries - [('badmodule', None, None)]``
 
 is an expression that yields a TOC from which any tuple named ``badmodule``
-has been removed. (??OK to use None instead of null-string? seems more pythonic??)
+has been removed. 
 
 The right-hand argument is a list that contains one tuple
 in which *name* is ``badmodule`` and the *path* and *typecode* elements
@@ -943,170 +1009,6 @@ For example::
 In this example, you have inserted a list of two tuples into the EXE call.
 
 
-
-Inspecting Archives
-====================
-
-An archive is a file that contains other files,
-for exampe a ``.tar`` file, a ``.jar`` file, or a ``.zip`` file.
-Two kinds of archives are used in |PyInstaller|.
-One is a ZlibArchive, which is similar to a Java ``.jar`` file:
-it allows Python modules to be stored efficiently and,
-(with some import hooks) imported directly.
-The other, a CArchive, is similar to a ``.zip`` file,
-a general way of packing up (and optionally compressing) arbitrary blobs of data.
-It gets its name from the fact that it can be manipulated easily from C
-as well as from Python.
-Both of these derive from a common base class, making it fairly easy to
-create new kinds of archives.
-
-ZlibArchive
-~~~~~~~~~~~~~~~
-
-A ZlibArchive contains compressed ``.pyc`` or ``.pyo`` files.
-The ``PYZ`` class invocation in a spec file creates a ZlibArchive.
-
-The table of contents in a ZlibArchive
-is a marshalled dictionary (??What means "marshalled" here? sorted??) that associates a key
-(a member's name as given in an ``import`` statement)
-with a seek position and a length.
-Because it is all marshalled Python, ZlibArchives are platform-independent.
-
-A ZlibArchive hooks in with `iu.py`_ so that at run-time
-python modules can be imported directly from the archive.
-Even with maximum compression this works  faster than the normal import.
-Instead of searching ``sys.path``, there's a lookup in the dictionary.
-There are no directory operations and no
-file to open (the file is already open).
-There's just a seek, a read and a decompress.
-
-A Python error trace will point to the source file from which the archive
-entry was created (the ``__file__`` attribute from the time the
-``.pyc`` was compiled, captured and saved in the archive).
-This will not tell your user anything useful,
-but if they send you a Python error trace,
-you can make sense of it.
-
-|ZlibArchiveImage|
-
-CArchive
-~~~~~~~~~~~~
-
-A CArchive can contain any kind of file.
-It's very much like a ``.zip`` file.
-They are easy to create in Python and easy to unpack from C code.
-A CArchive can be appended to another file, such as
-an ELF and COFF executable.
-To allow this, the archive is made with its table of contents at the
-end of the file, followed only by a cookie that tells where the
-table of contents starts and
-where the archive itself starts.
-
-A CArchive can be embedded within another CArchive.
-An inner archive can be opened and used in place,
-without having to extract it.
-
-Each table of contents entry has variable length.
-The first field in the entry gives the length of the entry.
-The last field is the name of the corresponding packed file.
-The name is null terminated.
-Compression is optional for each member.
-
-There is also a type code associated with each member.
-The type codes are used by the self-extracting executables.
-If you're using a ``CArchive`` as a ``.zip`` file, you don't need to worry about the code.
-
-|CArchiveImage|
-
-Using pyi-archive_viewer
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Use the ``pyi-archive_viewer`` command to inspect any type of archive:
-
-      ``pyi-archive_viewer`` *archivefile*
-
-With this command you can examine the contents of any archive built with
-|PyInstaller| (a ``PYZ`` or ``PKG``), or any executable (``.exe`` file
-or an ELF or COFF binary).
-The archive can be navigated using these commands:
-
-O *name*
-    Open the embedded archive *name* (will prompt if omitted).
-
-U
-    Go up one level (back to viewing the containing archive).
-
-X *name*
-    Extract *name* (will prompt if omitted).
-    Prompts for an output filename.
-    If none given, the member is extracted to stdout.
-
-Q
-    Quit.
-
-The ``pyi-archive_viewer`` command has these options:
-
--h, --help
-    Show help.
-
--l, --log
-    Quick contents log.
-
--b, --brief
-    Print a python evaluable list of contents filenames.
-
--r, --recursive
-    Used with -l or -b, applies recursive behaviour.
-
-
-Inspecting Executables
-=======================
-
-You can inspect any executable file with ``pyi-bindepend``:
-
-    ``pyi-bindepend`` *executable_or_dynamic_library*
-
-The ``pyi-bindepend`` command analyzes the executable or DLL you name
-and writes to stdout all its binary dependencies.
-This is handy to find out which DLLs are required by
-an executable or by another DLL.
-
-``pyi-bindepend`` is used by |PyInstaller| to
-follow the chain of dependencies of binary extensions
-during Analysis.
-
-
-Capturing Version Data
-=============================
-
-
-      ``pyi-grab_version`` *executable_with_version_resource*
-
-
-The ``pyi-grab_version`` command outputs text which can be
-eval'ed by ``utils/versioninfo.py`` (in the |PyInstaller| distribution folder)
-to reproduce a version resource.
-Invoke it with the full path name of a Windows executable
-that has a version resource.
-
-The version text is written to standard output.
-You can copy and paste from the console window or redirect to a file.
-Then you can edit the version information.
-The edited text file can be given with a ``--version-file=``
-option to ``pyinstaller`` or ``pyi-makespec``.
-
-This approach is used because version resources are strange beasts,
-and it may be impossible to fully understanding them.
-Some elements are optional, others required, and you can spend unbounded
-amounts of time figuring this out because it is not well documented.
-When you view the version tab of a Properties dialog,
-there's no straightforward relationship between
-the data displayed and the structure of the resource itself.
-So the easiest thing to do is to find an executable that displays the kind of
-information you want, and grab its resource and edit it.
-Certainly easier than the Version resource wizard in VC++.
-
-
 When Things Go Wrong
 ====================
 
@@ -1193,9 +1095,9 @@ or when your app doesn't seem to be starting,
 or just to learn how the runtime works.
 
 Normally the debug progress messages go to standard output.
-If the ``--noconsole`` option is used when bundling a Windows app,
+If the ``--windowed`` option is used when bundling a Windows app,
 they are displayed as MessageBoxes.
-For a ``--noconsole`` Mac OS (??or Linux??) app they are not displayed.
+For a ``--windowed`` Mac OS app they are not displayed.
 
 Getting Python's Verbose Imports
 --------------------------------
@@ -1208,7 +1110,7 @@ to make sure that they are getting all imports from the bundle,
 and not leaking out to the local installed Python.
 
 Python verbose and warning messages always go to standard output
-and are not visible when the ``--noconsole`` option is used.
+and are not visible when the ``--windowed`` option is used.
 
 Helping PyInstaller Find Modules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1236,7 +1138,7 @@ visible to the analysis phase.
 
 Hidden imports can occur when the code is using ``__import__``
 or perhaps ``exec`` or ``eval``.
-You get warnings of these (`Buildtime Warnings`_ above).
+You get warnings of these (see `Buildtime Messages`_).
 
 Hidden imports can also occur when an extension module uses the
 Python/C API to do an import.
@@ -1294,26 +1196,11 @@ free to do almost anything. One provided hook sets things up so that win32com
 can generate modules at runtime (to disk), and the generated modules can be
 found in the win32com package.
 
-There are two ways to add a new run-time hook script.
-You can add an entry:
-
-       ``'somemodule': ['`` *path/to/somescript.py* ``'],``
-
-into ``support/rthooks.dat``. (??However this addition could be wiped
-out by installation of a later version of |PyInstaller|.??)
-Or you can use the option
+To specify a new runtime hook, use the option
 
        ``--runtime-hook=`` *path/to/somescript.py*
 
 with the ``pyinstaller`` or ``pyi-makespec`` command.
-
-The effect of either is almost the same thing as doing this:
-
-       anal = Analysis(['path/to/somescript.py', 'main.py'], ...
-
-except that the hook script will not be analyzed,
-(that's not a feature - we just haven't found a sane way fit the recursion into
-my persistence scheme).
 
 Adapting to being "frozen"
 --------------------------
@@ -1325,9 +1212,6 @@ configuration file that, when running "live", is found based on a module's
 ``__file__`` attribute.
 That won't work when the code is bundled.
 The usual way to handle this is covered under `Accessing Data Files`_ below.
-
-For really advanced users, you can access the ``iu.ImportManager`` as
-``sys.importManager``. See `iu.py`_ for how you might make use of this fact.
 
 
 
@@ -1376,6 +1260,167 @@ Note that if your program is a one-file executable, the path is to
 a temporary folder that will be deleted.
 Any files you create or modify in that folder will disappear
 when execution ends.
+
+Capturing Version Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      ``pyi-grab_version`` *executable_with_version_resource*
+
+
+The ``pyi-grab_version`` command outputs text which can be
+eval'ed by ``utils/versioninfo.py`` (in the |PyInstaller| distribution folder)
+to reproduce a version resource.
+Invoke it with the full path name of a Windows executable
+that has a version resource.
+
+The version text is written to standard output.
+You can copy and paste from the console window or redirect to a file.
+Then you can edit the version information.
+The edited text file can be given with a ``--version-file=``
+option to ``pyinstaller`` or ``pyi-makespec``.
+
+This approach is used because version resources are strange beasts,
+and it may be impossible to fully understanding them.
+Some elements are optional, others required, and you can spend unbounded
+amounts of time figuring this out because it is not well documented.
+When you view the version tab of a Properties dialog,
+there's no straightforward relationship between
+the data displayed and the structure of the resource itself.
+So the easiest thing to do is to find an executable that displays the kind of
+information you want, and grab its resource and edit it.
+Certainly easier than the Version resource wizard in VC++.
+
+ZlibArchive
+~~~~~~~~~~~~~~~
+
+A ZlibArchive contains compressed ``.pyc`` or ``.pyo`` files.
+The ``PYZ`` class invocation in a spec file creates a ZlibArchive.
+
+The table of contents in a ZlibArchive
+is a Python dictionary that associates a key,
+which is a member's name as given in an ``import`` statement,
+with a seek position and a length in the ZlibArchive.
+All parts of a ZlibArchive are stored in the
+`marshalled`_ format and so are platform-independent.
+
+A ZlibArchive is used at run-time to import bundled python modules.
+Even with maximum compression this works  faster than the normal import.
+Instead of searching ``sys.path``, there's a lookup in the dictionary.
+There are no directory operations and no
+file to open (the file is already open).
+There's just a seek, a read and a decompress.
+
+A Python error trace will point to the source file from which the archive
+entry was created (the ``__file__`` attribute from the time the
+``.pyc`` was compiled, captured and saved in the archive).
+This will not tell your user anything useful,
+but if they send you a Python error trace,
+you can make sense of it.
+
+|ZlibArchiveImage|
+
+CArchive
+~~~~~~~~~~~~
+
+A CArchive can contain any kind of file.
+It's very much like a ``.zip`` file.
+They are easy to create in Python and easy to unpack from C code.
+A CArchive can be appended to another file, such as
+an ELF and COFF executable.
+To allow this, the archive is made with its table of contents at the
+end of the file, followed only by a cookie that tells where the
+table of contents starts and
+where the archive itself starts.
+
+A CArchive can be embedded within another CArchive.
+An inner archive can be opened and used in place,
+without having to extract it.
+
+Each table of contents entry has variable length.
+The first field in the entry gives the length of the entry.
+The last field is the name of the corresponding packed file.
+The name is null terminated.
+Compression is optional for each member.
+
+There is also a type code associated with each member.
+The type codes are used by the self-extracting executables.
+If you're using a ``CArchive`` as a ``.zip`` file, you don't need to worry about the code.
+
+|CArchiveImage|
+
+Using pyi-archive_viewer
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the ``pyi-archive_viewer`` command to inspect any type of archive:
+
+      ``pyi-archive_viewer`` *archivefile*
+
+With this command you can examine the contents of any archive built with
+|PyInstaller| (a ``PYZ`` or ``PKG``), or any executable (``.exe`` file
+or an ELF or COFF binary).
+The archive can be navigated using these commands:
+
+O *name*
+    Open the embedded archive *name* (will prompt if omitted).
+
+U
+    Go up one level (back to viewing the containing archive).
+
+X *name*
+    Extract *name* (will prompt if omitted).
+    Prompts for an output filename.
+    If none given, the member is extracted to stdout.
+
+Q
+    Quit.
+
+The ``pyi-archive_viewer`` command has these options:
+
+-h, --help
+    Show help.
+
+-l, --log
+    Quick contents log.
+
+-b, --brief
+    Print a python evaluable list of contents filenames.
+
+-r, --recursive
+    Used with -l or -b, applies recursive behaviour.
+
+
+
+Inspecting Executables
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can inspect any executable file with ``pyi-bindepend``:
+
+    ``pyi-bindepend`` *executable_or_dynamic_library*
+
+The ``pyi-bindepend`` command analyzes the executable or DLL you name
+and writes to stdout all its binary dependencies.
+This is handy to find out which DLLs are required by
+an executable or by another DLL.
+
+``pyi-bindepend`` is used by |PyInstaller| to
+follow the chain of dependencies of binary extensions
+during Analysis.
+
+Inspecting Archives
+~~~~~~~~~~~~~~~~~~~~
+
+An archive is a file that contains other files,
+for exampe a ``.tar`` file, a ``.jar`` file, or a ``.zip`` file.
+Two kinds of archives are used in |PyInstaller|.
+One is a ZlibArchive, which is similar to a Java ``.jar`` file:
+it allows Python modules to be stored efficiently and,
+(with some import hooks) imported directly.
+The other, a CArchive, is similar to a ``.zip`` file,
+a general way of packing up (and optionally compressing) arbitrary blobs of data.
+It gets its name from the fact that it can be manipulated easily from C
+as well as from Python.
+Both of these derive from a common base class, making it fairly easy to
+create new kinds of archives.
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1501,10 +1546,12 @@ called by a particular module.
 The name of the hook file is ``hook-<module>.py`` where "<module>" is 
 the name of a script or imported module that will be found by Analysis.
 
-(??-->)For example ``hook-xml.dom.py`` is a hook file telling about hidden imports
+(??-->)
+For example ``hook-xml.dom.py`` is a hook file telling about hidden imports
 by the module ``xml.dom``.
 When your script has ``import xml.dom`` or ``from xml import dom``,
-the Analysis will note it and check for a hook file ``hook-xml.dom.py``.(<--correct example??)
+the Analysis will note it and check for a hook file ``hook-xml.dom.py``.
+(<--correct example??)
 
 Typically a hook module has only one line,
 
@@ -1540,7 +1587,6 @@ module object.
 This hook function should return an instance of ``mf.Module``.
 It may be perhaps a brand new one, but more likely the same one passed
 as its argument but modified.
-See `mf.py: A Modulefinder Replacement`_ for details.
 See ``hook-win32com.py`` in the hooks folder for an example.
 
 A hook module is executed like any other
@@ -1576,16 +1622,232 @@ list are sorted.
 (<--??)
 
 
+
+Building the Bootloader
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+(??NOTE I have not verified any of the tech details in this topic!
+If you have actually built the |bootloader| for some platform please
+double-check the examples! ??)
+
+PyInstaller comes with binary bootloaders for most platforms in
+the ``bootloader`` folder of the distribution folder.
+For most cases, these precompiled bootloaders are all you need.
+
+If there is no precompiled bootloader for your platform,
+or if you want to modify the |bootloader| source, you need to build the |bootloader|.
+
+Development tools
+-----------------
+
+On Debian/Ubuntu systems, you can run the following lines to install everything
+required::
+
+        sudo apt-get install build-essential python-dev
+
+On Fedora/RHEL and derivates, you can run the following lines::
+
+        su
+        yum groupinstall "Development Tools"
+        yum install python-devel
+
+On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
+for developing software for Mac OS X. It can be also installed from your
+Mac OS X Install DVD. It is not necessary to install the version 4 of Xcode.
+
+On Solaris and AIX the |bootloader| is tested with gcc.
+
+On Windows you can use the Visual Studio C++ compiler
+(Visual Studio 2008 is recommended).
+A free version you can download is `Visual Studio Express`_.
+Python development libraries are usually installed together with Python.
+
+*Note:* There is no connection between the Visual Studio
+version used to compile the |bootloader| and the Visual Studio version used to
+compile Python. The |bootloader| is a self-contained static executable
+that imposes no restrictions on the version of Python being used. So
+you can use any Visual Studio version you have around.
+
+You can download and install or unpack MinGW distribution from one of the
+following locations:
+
+* `MinGW`_ - stable and mature, uses gcc 3.4 as its base
+
+* `MinGW-w64`_ - more recent, uses gcc 4.4 and up.
+
+* `TDM-GCC`_ - MinGW and MinGW-w64 installers
+
+
+Building
+--------
+
+On Windows, when using MinGW, it is needed to add ``PATH_TO_MINGW\bin``
+to your system ``PATH``. variable. In command prompt before building
+|bootloader| run for example::
+
+        set PATH=C:\MinGW\bin;%PATH%
+
+Change to the ``bootloader`` subdirectory. Run::
+
+        python ./waf configure build install
+
+This will produce ``support/loader/YOUR_OS/run``,
+``support/loader/YOUR_OS/run_d``, ``support/loader/YOUR_OS/runw`` and
+``support/loader/YOUR_OS/runw_d``, which are the bootloaders.
+
+On Windows this will produce in the ``support/loader/YOUR_OS`` directory:
+``run*.exe`` (bootloader for regular programs), and
+``inprocsrvr*.dll`` (bootloader for in-process COM servers).
+
+*Note:* If you have multiple versions of Python, the Python you use to run
+``waf`` is the one whose configuration is used.
+
+*Note:* On AIX the |bootloader| builds with gcc and is tested with gcc 4.2.0 on AIX 6.1.
+
+Linux Standard Base (LSB) binary
+--------------------------------
+
+By default, the bootloaders on Linux are LSB binaries.
+
+LSB is a set of open standards that should increase compatibility among Linux
+distributions.
+|PyInstaller| produces a bootloader as an LSB binary in order
+to increase compatibility for packaged applications among distributions.
+
+*Note:* LSB version 4.0 is required for successfull building of |bootloader|.
+
+On Debian- and Ubuntu-based distros, you can install LSB 4.0 tools by adding
+the following repository to the sources.list file::
+
+        deb http://ftp.linux-foundation.org/pub/lsb/repositories/debian lsb-4.0 main
+
+then after having update the apt repository::
+
+        sudo apt-get update
+
+you can install LSB 4.0::
+
+        sudo apt-get install lsb lsb-build-cc
+
+Most other distributions contain only LSB 3.0 in their software
+repositories and thus LSB build tools 4.0 must be downloaded by hand.
+From Linux Foundation download `LSB sdk 4.0`_ for your architecture.
+
+Unpack it by::
+
+        tar -xvzf lsb-sdk-4.0.3-1.ia32.tar.gz
+
+To install it run::
+
+        cd lsb-sdk
+        ./install.sh
+
+
+After having installed the LSB tools, you can follow the standard building
+instructions.
+
+*NOTE:* if for some reason you want to avoid LSB compilation, you can
+do so by specifying --no-lsb on the waf command line, as follows::
+
+       python waf configure --no-lsb build install
+
+This will also produce ``support/loader/YOUR_OS/run``,
+``support/loader/YOUR_OS/run_d``, ``support/loader/YOUR_OS/runw`` and
+``support/loader/YOUR_OS/runw_d``, but they will not be LSB binaries.
+
+
+
+Outdated Features
+==================
+
+The following sections document features of |PyInstaller| that
+are still present in the code but are rarely used and may no longer work.
+
+Windows COM Server Support
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		Recent rename:
+		  ./utils/MakeComServer.py  - ./utils/make_comserver.py
+		
+		and after python setup.py install there will be command
+		'pyi-make_comserver'
+
+
+
+A Windows COM server is a Windows program the uses
+`Microsoft COM`_ (Component Object Model) technology.
+If you write such a program in Python you can bundle it with |PyInstaller|,
+but you must prepare a special spec file and name the spec
+file, not your script, to the pyinstaller command.
+
+To prepare the spec file use the command
+
+    ``pyi-make_comserver`` [*options*] myscript.py
+
+Alternatively you can use the ``make_comserver.py`` script 
+in the ``utils`` subdirectory of the |PyInstaller| folder.
+
+This will generate a spec file ``myscript.spec``
+and a new script ``drivescript.py``.
+From this point you build your project using the pyinstaller
+command, naming the spec file as its input.
+
+pyi-make_comserver assumes that your top level code (registration etc.) is
+"normal". If it's not, you will have to edit the generated script.
+
+These options are allowed with the pyi-make_comserver command:
+
+--debug
+    Use the debug (verbose) version of the |bootloader| in the executable.
+
+--verbose
+    Register the COM server(s) with the quiet flag off.
+
+--ascii
+    do not include Unicode support modules.
+
+--out=output_path
+    Generate ``drivescript.py`` and the spec file in *output_path*.
+
+If you have the win32dbg package installed, you can use it with the generated
+COM server. In ``drivescript.py``, set ``debug=1`` in the registration line.
+
+Caution: the inprocess COM server support will not work when the client
+process already has Python loaded. It would be rather tricky to
+non-obtrusively hook into an already running Python, but the show-stopper is
+that the Python/C API won't let us find out which interpreter instance to
+hook into. (If this is important to you, you might experiment with using
+apartment threading, which seems the best possibility to get this to work). To
+use a "frozen" COM server from a Python process, you'll have to load it as an
+exe::
+
+      o = win32com.client.Dispatch(progid,
+                       clsctx=pythoncom.CLSCTX_LOCAL_SERVER)
+
+
+Building Optimized
+~~~~~~~~~~~~~~~~~~
+
+There are two facets to running optimized: gathering ``.pyo``'s,
+and setting the
+``Py_OptimizeFlag``. Installer will gather ``.pyo``'s if it is run optimized::
+
+       python -O pyinstaller.py ...
+
+
+The ``Py_OptimizeFlag`` will be set if you use a ``('O','','OPTION')`` in one of
+the ``TOCs`` building the ``EXE``::
+
+      exe = EXE(pyz,
+                a.scripts + [('O','','OPTION')],
+                ...
+
+See `Using Spec Files`_ for details.
+
 .. _iu.py:
 
 ``iu.py``: An *imputil* Replacement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-(??I have only done a light copy-edit on this topic -- anyone who wants
-to expand or improve it please do??)
-
-(??n.b. per the 2.7.3 Python doc,
-imputil is Deprecated since version 2.6 and has been removed in Python 3. Comment??)
 
 Module ``iu`` grows out of the pioneering work that Greg Stein did
 with imputil_ (actually, it includes some verbatim ``imputil``
@@ -1764,12 +2026,11 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
         of PathImportDirector instance at 825900>
       >>>
 
-
 ``mf.py``: A Modulefinder Replacement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-(??I have done only a light copy-edit on this topic, anyone who
-actually understands it and wants to expand/clarify it, please do!??
+(``mf.py`` is no longer supported although may work.
+The ``modulegraph`` package, whic is related, will be supported in a future release.)
 
 Module ``mf`` replaces Modulefinder_ but is modelled after iu.py_.
 
@@ -1960,226 +2221,6 @@ The tuples in the imports list are (name, delayed, conditional).
          - string (C:\Program Files\Python\Lib\string.py)
       >>>
 
-Building the Bootloader
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-(??NOTE I have not verified any of the tech details in this topic!
-If you have actually built the |bootloader| for some platform please
-double-check the examples!??)
-
-PyInstaller comes with binary bootloaders for most platforms in
-the ``bootloader`` folder of the distribution folder.
-For most cases, these precompiled bootloaders are all you need.
-
-If there is no precompiled bootloader for your platform,
-or if you want to modify the |bootloader| source, you need to build the |bootloader|.
-
-Development tools
------------------
-
-On Debian/Ubuntu systems, you can run the following lines to install everything
-required::
-
-        sudo apt-get install build-essential python-dev
-
-On Fedora/RHEL and derivates, you can run the following lines::
-
-        su
-        yum groupinstall "Development Tools"
-        yum install python-devel
-
-On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
-for developing software for Mac OS X. It can be also installed from your
-Mac OS X Install DVD. It is not necessary to install the version 4 of Xcode.
-
-On Solaris and AIX the |bootloader| is tested with gcc.
-
-On Windows you can use MinGW (gcc for Windows) and Visual Studio C++ (msvc)
-compilers. Python development libraries are usually installed together with
-Python.
-
-*Note:* There is no interdependence between the Visual Studio
-version used to compile the |bootloader| and the Visual Studio version used to
-compile Python. The |bootloader| is a self-contained static executable
-that imposes no restrictions on the version of Python being used. So
-you can use any Visual Studio version you have around.
-
-You can download and install or unpack MinGW distribution from one of the
-following locations:
-
-* `MinGW`_ - stable and mature, uses gcc 3.4 as its base
-
-* `MinGW-w64`_ - more recent, uses gcc 4.4 and up.
-
-* `TDM-GCC`_ - MinGW and MinGW-w64 installers
-
-
-Building
---------
-
-On Windows, when using MinGW, it is needed to add ``PATH_TO_MINGW\bin``
-to your system ``PATH``. variable. In command prompt before building
-|bootloader| run for example::
-
-        set PATH=C:\MinGW\bin;%PATH%
-
-Change to the ``bootloader`` subdirectory. Run::
-
-        python ./waf configure build install
-
-This will produce ``support/loader/YOUR_OS/run``,
-``support/loader/YOUR_OS/run_d``, ``support/loader/YOUR_OS/runw`` and
-``support/loader/YOUR_OS/runw_d``, which are the bootloaders.
-
-On Windows this will produce in the ``support/loader/YOUR_OS`` directory:
-``run*.exe`` (bootloader for regular programs), and
-``inprocsrvr*.dll`` (bootloader for in-process COM servers).
-
-*Note:* If you have multiple versions of Python, the Python you use to run
-``waf`` is the one whose configuration is used.
-
-*Note:* On AIX the |bootloader| builds with gcc and is tested with gcc 4.2.0 on AIX 6.1.
-
-Linux Standard Base (LSB) binary
---------------------------------
-
-By default, the bootloaders on Linux are LSB binaries.
-
-LSB is a set of open standards that should increase compatibility among Linux
-distributions.
-|PyInstaller| produces a bootloader as an LSB binary in order
-to increase compatibility for packaged applications among distributions.
-
-*Note:* LSB version 4.0 is required for successfull building of |bootloader|.
-
-On Debian- and Ubuntu-based distros, you can install LSB 4.0 tools by adding
-the following repository to the sources.list file::
-
-        deb http://ftp.linux-foundation.org/pub/lsb/repositories/debian lsb-4.0 main
-
-then after having update the apt repository::
-
-        sudo apt-get update
-
-you can install LSB 4.0::
-
-        sudo apt-get install lsb lsb-build-cc
-
-Most other distributions contain only LSB 3.0 in their software
-repositories and thus LSB build tools 4.0 must be downloaded by hand.
-From Linux Foundation download `LSB sdk 4.0`_ for your architecture.
-
-Unpack it by::
-
-        tar -xvzf lsb-sdk-4.0.3-1.ia32.tar.gz
-
-To install it run::
-
-        cd lsb-sdk
-        ./install.sh
-
-
-After having installed the LSB tools, you can follow the standard building
-instructions.
-
-*NOTE:* if for some reason you want to avoid LSB compilation, you can
-do so by specifying --no-lsb on the waf command line, as follows::
-
-       python waf configure --no-lsb build install
-
-This will also produce ``support/loader/YOUR_OS/run``,
-``support/loader/YOUR_OS/run_d``, ``support/loader/YOUR_OS/runw`` and
-``support/loader/YOUR_OS/runw_d``, but they will not be LSB binaries.
-
-
-
-Outdated Features
-==================
-
-The following sections document features of |PyInstaller| that
-are still present in the code but are rarely used and may no longer work.
-
-Windows COM Server Support
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		Recent rename:
-		  ./utils/MakeComServer.py  - ./utils/make_comserver.py
-		
-		and after python setup.py install there will be command
-		'pyi-make_comserver'
-
-
-
-A Windows COM server is a Windows program the uses
-`Microsoft COM`_ (Component Object Model) technology.
-If you write such a program in Python you can bundle it with |PyInstaller|,
-but you must prepare a special spec file and name the spec
-file, not your script, to the pyinstaller command.
-
-To prepare the spec file use the command
-
-    ``pyi-make_comserver`` [*options*] myscript.py
-
-Alternatively you can use the ``make_comserver.py`` script 
-in the ``utils`` subdirectory of the |PyInstaller| folder.
-
-This will generate a spec file ``myscript.spec``
-and a new script ``drivescript.py``.
-From this point you build your project using the pyinstaller
-command, naming the spec file as its input.
-
-pyi-make_comserver assumes that your top level code (registration etc.) is
-"normal". If it's not, you will have to edit the generated script.
-
-These options are allowed with the pyi-make_comserver command:
-
---debug
-    Use the debug (verbose) version of the |bootloader| in the executable.
-
---verbose
-    Register the COM server(s) with the quiet flag off.
-
---ascii
-    do not include Unicode support modules.
-
---out=output_path
-    Generate ``drivescript.py`` and the spec file in *output_path*.
-
-If you have the win32dbg package installed, you can use it with the generated
-COM server. In ``drivescript.py``, set ``debug=1`` in the registration line.
-
-Caution: the inprocess COM server support will not work when the client
-process already has Python loaded. It would be rather tricky to
-non-obtrusively hook into an already running Python, but the show-stopper is
-that the Python/C API won't let us find out which interpreter instance to
-hook into. (If this is important to you, you might experiment with using
-apartment threading, which seems the best possibility to get this to work). To
-use a "frozen" COM server from a Python process, you'll have to load it as an
-exe::
-
-      o = win32com.client.Dispatch(progid,
-                       clsctx=pythoncom.CLSCTX_LOCAL_SERVER)
-
-
-Building Optimized
-~~~~~~~~~~~~~~~~~~
-
-(??must change)There are two facets to running optimized: gathering ``.pyo``'s,
-and setting the
-``Py_OptimizeFlag``. Installer will gather ``.pyo``'s if it is run optimized::
-
-       python -O pyinstaller.py ...
-
-
-The ``Py_OptimizeFlag`` will be set if you use a ``('O','','OPTION')`` in one of
-the ``TOCs`` building the ``EXE``::
-
-      exe = EXE(pyz,
-                a.scripts + [('O','','OPTION')],
-                ...
-
-See `Using Spec Files`_ for details.
-
 
 
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
@@ -2192,7 +2233,7 @@ See `Using Spec Files`_ for details.
 .. _TkInter: http://wiki.python.org/moin/TkInter
 .. _setup_tools: https://pypi.python.org/pypi/setuptools
 .. _pip: http://www.pip-installer.org/
-.. _virtualenv: https://pypi.python.org/pypi/virtualenv
+.. _virtualenv:  http://www.virtualenv.org/
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
@@ -2214,5 +2255,13 @@ See `Using Spec Files`_ for details.
 .. _Modulefinder: http://docs.python.org/2.7/library/modulefinder.html
 .. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
 .. _Django: https://www.djangoproject.com/
-.. include:: _definitions.txt
+.. _marshalled: http://docs.python.org/library/marshal
+.. _`Visual Studio Express`: http://www.microsoft.com/express/
 .. _PyInstaller.org: http://www.pyinstaller.org/
+.. _Parallels: http://www.parallels.com/
+.. _virtualBox: https://www.virtualbox.org
+.. _VMWare: http://www.vmware.com/solutions/desktop/
+.. _Wine: http://www.winehq.org/
+.. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
+
+.. include:: _definitions.txt
