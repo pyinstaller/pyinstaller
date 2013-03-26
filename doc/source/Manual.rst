@@ -1290,8 +1290,24 @@ So the easiest thing to do is to find an executable that displays the kind of
 information you want, and grab its resource and edit it.
 Certainly easier than the Version resource wizard in VC++.
 
+Inspecting Archives
+~~~~~~~~~~~~~~~~~~~~~~
+
+An archive is a file that contains other files,
+for exampe a ``.tar`` file, a ``.jar`` file, or a ``.zip`` file.
+Two kinds of archives are used in |PyInstaller|.
+One is a ZlibArchive, which
+allows Python modules to be stored efficiently and,
+(with some import hooks) imported directly.
+The other, a CArchive, is similar to a ``.zip`` file,
+a general way of packing up (and optionally compressing) arbitrary blobs of data.
+It gets its name from the fact that it can be manipulated easily from C
+as well as from Python.
+Both of these derive from a common base class, making it fairly easy to
+create new kinds of archives.
+
 ZlibArchive
-~~~~~~~~~~~~~~~
+--------------
 
 A ZlibArchive contains compressed ``.pyc`` or ``.pyo`` files.
 The ``PYZ`` class invocation in a spec file creates a ZlibArchive.
@@ -1320,7 +1336,7 @@ you can make sense of it.
 |ZlibArchiveImage|
 
 CArchive
-~~~~~~~~~~~~
+-------------
 
 A CArchive can contain any kind of file.
 It's very much like a ``.zip`` file.
@@ -1349,7 +1365,7 @@ If you're using a ``CArchive`` as a ``.zip`` file, you don't need to worry about
 |CArchiveImage|
 
 Using pyi-archive_viewer
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 Use the ``pyi-archive_viewer`` command to inspect any type of archive:
 
@@ -1406,21 +1422,6 @@ an executable or by another DLL.
 follow the chain of dependencies of binary extensions
 during Analysis.
 
-Inspecting Archives
-~~~~~~~~~~~~~~~~~~~~
-
-An archive is a file that contains other files,
-for exampe a ``.tar`` file, a ``.jar`` file, or a ``.zip`` file.
-Two kinds of archives are used in |PyInstaller|.
-One is a ZlibArchive, which is similar to a Java ``.jar`` file:
-it allows Python modules to be stored efficiently and,
-(with some import hooks) imported directly.
-The other, a CArchive, is similar to a ``.zip`` file,
-a general way of packing up (and optionally compressing) arbitrary blobs of data.
-It gets its name from the fact that it can be manipulated easily from C
-as well as from Python.
-Both of these derive from a common base class, making it fairly easy to
-create new kinds of archives.
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
