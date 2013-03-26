@@ -107,11 +107,13 @@
 <li><a class="reference internal" href="#advanced-topics" id="id48">Advanced Topics</a><ul>
 <li><a class="reference internal" href="#accessing-data-files" id="id49">Accessing Data Files</a></li>
 <li><a class="reference internal" href="#capturing-version-data" id="id50">Capturing Version Data</a></li>
-<li><a class="reference internal" href="#zlibarchive" id="id51">ZlibArchive</a></li>
-<li><a class="reference internal" href="#carchive" id="id52">CArchive</a></li>
-<li><a class="reference internal" href="#using-pyi-archive-viewer" id="id53">Using pyi-archive_viewer</a></li>
-<li><a class="reference internal" href="#inspecting-executables" id="id54">Inspecting Executables</a></li>
-<li><a class="reference internal" href="#inspecting-archives" id="id55">Inspecting Archives</a></li>
+<li><a class="reference internal" href="#inspecting-archives" id="id51">Inspecting Archives</a><ul>
+<li><a class="reference internal" href="#zlibarchive" id="id52">ZlibArchive</a></li>
+<li><a class="reference internal" href="#carchive" id="id53">CArchive</a></li>
+<li><a class="reference internal" href="#using-pyi-archive-viewer" id="id54">Using pyi-archive_viewer</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#inspecting-executables" id="id55">Inspecting Executables</a></li>
 <li><a class="reference internal" href="#multipackage-bundles" id="id56">Multipackage Bundles</a><ul>
 <li><a class="reference internal" href="#merge-function" id="id57">MERGE Function</a></li>
 <li><a class="reference internal" href="#example-merge-spec-file" id="id58">Example MERGE spec file</a></li>
@@ -1385,8 +1387,22 @@ So the easiest thing to do is to find an executable that displays the kind of
 information you want, and grab its resource and edit it.
 Certainly easier than the Version resource wizard in VC++.</p>
 </div>
+<div class="section" id="inspecting-archives">
+<h2><a class="toc-backref" href="#id51">Inspecting Archives</a></h2>
+<p>An archive is a file that contains other files,
+for exampe a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils literal">.jar</tt> file, or a <tt class="docutils literal">.zip</tt> file.
+Two kinds of archives are used in <cite>PyInstaller</cite>.
+One is a ZlibArchive, which
+allows Python modules to be stored efficiently and,
+(with some import hooks) imported directly.
+The other, a CArchive, is similar to a <tt class="docutils literal">.zip</tt> file,
+a general way of packing up (and optionally compressing) arbitrary blobs of data.
+It gets its name from the fact that it can be manipulated easily from C
+as well as from Python.
+Both of these derive from a common base class, making it fairly easy to
+create new kinds of archives.</p>
 <div class="section" id="zlibarchive">
-<h2><a class="toc-backref" href="#id51">ZlibArchive</a></h2>
+<h3><a class="toc-backref" href="#id52">ZlibArchive</a></h3>
 <p>A ZlibArchive contains compressed <tt class="docutils literal">.pyc</tt> or <tt class="docutils literal">.pyo</tt> files.
 The <tt class="docutils literal">PYZ</tt> class invocation in a spec file creates a ZlibArchive.</p>
 <p>The table of contents in a ZlibArchive
@@ -1410,7 +1426,7 @@ you can make sense of it.</p>
 <p><img alt="ZlibArchiveImage" src="images/ZlibArchive.png" /></p>
 </div>
 <div class="section" id="carchive">
-<h2><a class="toc-backref" href="#id52">CArchive</a></h2>
+<h3><a class="toc-backref" href="#id53">CArchive</a></h3>
 <p>A CArchive can contain any kind of file.
 It's very much like a <tt class="docutils literal">.zip</tt> file.
 They are easy to create in Python and easy to unpack from C code.
@@ -1434,7 +1450,7 @@ If you're using a <tt class="docutils literal">CArchive</tt> as a <tt class="doc
 <p><img alt="CArchiveImage" src="images/CArchive.png" /></p>
 </div>
 <div class="section" id="using-pyi-archive-viewer">
-<h2><a class="toc-backref" href="#id53">Using pyi-archive_viewer</a></h2>
+<h3><a class="toc-backref" href="#id54">Using pyi-archive_viewer</a></h3>
 <p>Use the <tt class="docutils literal"><span class="pre">pyi-archive_viewer</span></tt> command to inspect any type of archive:</p>
 <blockquote>
 <tt class="docutils literal"><span class="pre">pyi-archive_viewer</span></tt> <em>archivefile</em></blockquote>
@@ -1475,8 +1491,9 @@ If none given, the member is extracted to stdout.</dd>
 </tbody>
 </table>
 </div>
+</div>
 <div class="section" id="inspecting-executables">
-<h2><a class="toc-backref" href="#id54">Inspecting Executables</a></h2>
+<h2><a class="toc-backref" href="#id55">Inspecting Executables</a></h2>
 <p>You can inspect any executable file with <tt class="docutils literal"><span class="pre">pyi-bindepend</span></tt>:</p>
 <blockquote>
 <tt class="docutils literal"><span class="pre">pyi-bindepend</span></tt> <em>executable_or_dynamic_library</em></blockquote>
@@ -1487,21 +1504,6 @@ an executable or by another DLL.</p>
 <p><tt class="docutils literal"><span class="pre">pyi-bindepend</span></tt> is used by <cite>PyInstaller</cite> to
 follow the chain of dependencies of binary extensions
 during Analysis.</p>
-</div>
-<div class="section" id="inspecting-archives">
-<h2><a class="toc-backref" href="#id55">Inspecting Archives</a></h2>
-<p>An archive is a file that contains other files,
-for exampe a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils literal">.jar</tt> file, or a <tt class="docutils literal">.zip</tt> file.
-Two kinds of archives are used in <cite>PyInstaller</cite>.
-One is a ZlibArchive, which is similar to a Java <tt class="docutils literal">.jar</tt> file:
-it allows Python modules to be stored efficiently and,
-(with some import hooks) imported directly.
-The other, a CArchive, is similar to a <tt class="docutils literal">.zip</tt> file,
-a general way of packing up (and optionally compressing) arbitrary blobs of data.
-It gets its name from the fact that it can be manipulated easily from C
-as well as from Python.
-Both of these derive from a common base class, making it fairly easy to
-create new kinds of archives.</p>
 </div>
 <div class="section" id="multipackage-bundles">
 <h2><a class="toc-backref" href="#id56">Multipackage Bundles</a></h2>
@@ -2213,7 +2215,7 @@ W: delayed  eval hack detected at line 418
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2013-03-26 15:39 UTC.
+Generated on: 2013-03-26 16:04 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
