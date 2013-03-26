@@ -575,9 +575,9 @@ Options for the Executable Output
 
 -o directory_path, --out=directory_path
     Create the spec file in *directory_path*.
-    The default location for the spec file is the current directory.
+    The default location for the spec file is the ``dist`` folder in the current directory.
     (If the current directory is the |PyInstaller| distribution folder,
-    a *name* subdirectory is created told the spec file and ``build`` and ``dist``.)
+    a *name* subdirectory is created to hold the spec file and ``build`` and ``dist``.)
 
 -c, --console, --nowindowed
     Set up a console subsystem for standard input/output at run time.
@@ -713,8 +713,8 @@ Or, when you are certain of all the options, you could make the spec file::
 
     pyi-makespec --noconfirm --log-level=WARN \
         --onefile --nowindow \
-        --hidden-import=secret1.py \
-        --hidden-import=secret2.py \
+        --hidden-import=secret1 \
+        --hidden-import=secret2 \
         --upx-dir=/usr/local/share/ \
         myscript.py
 
