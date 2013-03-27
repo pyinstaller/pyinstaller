@@ -54,25 +54,25 @@
 <li><a class="reference internal" href="#how-the-one-folder-program-works" id="id13">How the One-Folder Program Works</a></li>
 <li><a class="reference internal" href="#how-the-one-file-program-works" id="id14">How the One-File Program Works</a></li>
 <li><a class="reference internal" href="#console-or-not" id="id15">Console or not?</a></li>
-<li><a class="reference internal" href="#supporting-multiple-platforms" id="id16">Supporting Multiple Platforms</a><ul>
-<li><a class="reference internal" href="#supporting-multiple-python-environments" id="id17">Supporting Multiple Python Environments</a></li>
-<li><a class="reference internal" href="#supporting-multiple-operating-systems" id="id18">Supporting Multiple Operating Systems</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#using-pyinstaller" id="id16">Using PyInstaller</a><ul>
+<li><a class="reference internal" href="#options" id="id17">Options</a><ul>
+<li><a class="reference internal" href="#general-options" id="id18">General Options</a></li>
+<li><a class="reference internal" href="#options-for-finding-imported-modules-and-libraries" id="id19">Options for Finding Imported Modules and Libraries</a></li>
+<li><a class="reference internal" href="#options-for-the-executable-output" id="id20">Options for the Executable Output</a></li>
+<li><a class="reference internal" href="#options-for-windows-apps" id="id21">Options for Windows apps</a></li>
+<li><a class="reference internal" href="#options-for-mac-os-x-apps" id="id22">Options for Mac OS X apps</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#using-pyinstaller" id="id19">Using PyInstaller</a><ul>
-<li><a class="reference internal" href="#options" id="id20">Options</a><ul>
-<li><a class="reference internal" href="#general-options" id="id21">General Options</a></li>
-<li><a class="reference internal" href="#options-for-finding-imported-modules-and-libraries" id="id22">Options for Finding Imported Modules and Libraries</a></li>
-<li><a class="reference internal" href="#options-for-the-executable-output" id="id23">Options for the Executable Output</a></li>
-<li><a class="reference internal" href="#options-for-windows-apps" id="id24">Options for Windows apps</a></li>
-<li><a class="reference internal" href="#options-for-mac-os-x-apps" id="id25">Options for Mac OS X apps</a></li>
+<li><a class="reference internal" href="#building-mac-os-x-app-bundles" id="id23">Building Mac OS X App Bundles</a></li>
+<li><a class="reference internal" href="#shortening-the-command" id="id24">Shortening the Command</a></li>
+<li><a class="reference internal" href="#using-upx" id="id25">Using UPX</a></li>
+<li><a class="reference internal" href="#supporting-multiple-platforms" id="id26">Supporting Multiple Platforms</a><ul>
+<li><a class="reference internal" href="#supporting-multiple-python-environments" id="id27">Supporting Multiple Python Environments</a></li>
+<li><a class="reference internal" href="#supporting-multiple-operating-systems" id="id28">Supporting Multiple Operating Systems</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#building-mac-os-x-app-bundles" id="id26">Building Mac OS X App Bundles</a></li>
-<li><a class="reference internal" href="#shorten-the-command" id="id27">Shorten the Command</a></li>
-<li><a class="reference internal" href="#using-upx" id="id28">Using UPX</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#using-spec-files" id="id29">Using Spec Files</a><ul>
@@ -503,53 +503,9 @@ The bootloader starts Python with no target for standard output or input.
 Do this if your script has a graphical interface for user input and can properly
 report its own diagnostics.</p>
 </div>
-<div class="section" id="supporting-multiple-platforms">
-<h2><a class="toc-backref" href="#id16">Supporting Multiple Platforms</a></h2>
-<p>If you distribute your application for only one combination of OS and Python,
-just install <cite>PyInstaller</cite> like any other package and use it in your
-normal development setup.</p>
-<div class="section" id="supporting-multiple-python-environments">
-<h3><a class="toc-backref" href="#id17">Supporting Multiple Python Environments</a></h3>
-<p>When you need to bundle your application for different versions of Python
-or different support libraries, but within one OS -- for example,
-a Python 3 version and a
-Python 2.7 version; or a supported version that uses Qt4
-and a development version that uses Qt5 -- we recommend using <a class="reference external" href="http://www.virtualenv.org/">virtualenv</a>.
-With virtualenv you can maintain different combinations of Python
-and installed packages, and switch from one combination to another easily.</p>
-<ul class="simple">
-<li>Use virtualenv to create as many different development environments as you need,
-each with its own combination of Python and installed packages.</li>
-<li>Install <cite>PyInstaller</cite> in each environment.</li>
-<li>Use <cite>PyInstaller</cite> to build your application in each environment.</li>
-</ul>
-<p>Note that when using virtualenv, the path to the <cite>PyInstaller</cite> commands is:</p>
-<ul class="simple">
-<li>Windows: ENV_ROOT\Scripts</li>
-<li>Others:  ENV_ROOT/bin</li>
-</ul>
-<p>Under Windows, the <a class="reference external" href="https://sites.google.com/site/pydatalog/python/pip-for-windows">pip-Win</a> package installs virtualenv and makes it
-especially easy to set up different environments and switch between them.
-Under Linux and Mac OS, you switch environments at the command line.</p>
-</div>
-<div class="section" id="supporting-multiple-operating-systems">
-<h3><a class="toc-backref" href="#id18">Supporting Multiple Operating Systems</a></h3>
-<p>If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install <cite>PyInstaller</cite>
-on each platform and bundle your app separately on each.</p>
-<p>You can do this from a single machine using virtualization.
-The free <a class="reference external" href="https://www.virtualbox.org">virtualBox</a> or the paid <a class="reference external" href="http://www.vmware.com/solutions/desktop/">VMWare</a> and <a class="reference external" href="http://www.parallels.com/">Parallels</a>
-allow you to run another complete operating system as a &quot;guest&quot;.
-You set up a virtual machine for each &quot;guest&quot; OS and in it, install
-Python, the support packages your application needs, and PyInstaller.</p>
-<p>It is possible to cross-develop for Windows under Linux
-using the free <a class="reference external" href="http://www.winehq.org/">Wine</a> environment.
-&lt;??Need info on PyInstaller under WINE in Linux - example? restrictions??&gt;</p>
-</div>
-</div>
 </div>
 <div class="section" id="using-pyinstaller">
-<h1><a class="toc-backref" href="#id19">Using PyInstaller</a></h1>
+<h1><a class="toc-backref" href="#id16">Using PyInstaller</a></h1>
 <p>The syntax of the <tt class="docutils literal">pyinstaller</tt> command is:</p>
 <blockquote>
 <tt class="docutils literal">pyinstaller</tt> [<em>options</em>] <em>script</em> [<em>script</em> ...] | <em>specfile</em></blockquote>
@@ -586,9 +542,9 @@ After you do this, you name the spec file to <cite>PyInstaller</cite> instead of
 in the same directory as the script or spec file that you name.
 In the <tt class="docutils literal">dist</tt> folder you find the bundled app you distribute to your users.</p>
 <div class="section" id="options">
-<h2><a class="toc-backref" href="#id20">Options</a></h2>
+<h2><a class="toc-backref" href="#id17">Options</a></h2>
 <div class="section" id="general-options">
-<h3><a class="toc-backref" href="#id21">General Options</a></h3>
+<h3><a class="toc-backref" href="#id18">General Options</a></h3>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
@@ -626,7 +582,7 @@ The default is INFO.</td></tr>
 </table>
 </div>
 <div class="section" id="options-for-finding-imported-modules-and-libraries">
-<h3><a class="toc-backref" href="#id22">Options for Finding Imported Modules and Libraries</a></h3>
+<h3><a class="toc-backref" href="#id19">Options for Finding Imported Modules and Libraries</a></h3>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
@@ -663,7 +619,7 @@ This option may be given more than once.</td></tr>
 </table>
 </div>
 <div class="section" id="options-for-the-executable-output">
-<h3><a class="toc-backref" href="#id23">Options for the Executable Output</a></h3>
+<h3><a class="toc-backref" href="#id20">Options for the Executable Output</a></h3>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
@@ -720,7 +676,7 @@ under <a class="reference internal" href="#using-upx">Using UPX</a> below.)</td>
 </table>
 </div>
 <div class="section" id="options-for-windows-apps">
-<h3><a class="toc-backref" href="#id24">Options for Windows apps</a></h3>
+<h3><a class="toc-backref" href="#id21">Options for Windows apps</a></h3>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
@@ -759,7 +715,7 @@ This option an be used more than once to specify more resources.</td></tr>
 </table>
 </div>
 <div class="section" id="options-for-mac-os-x-apps">
-<h3><a class="toc-backref" href="#id25">Options for Mac OS X apps</a></h3>
+<h3><a class="toc-backref" href="#id22">Options for Mac OS X apps</a></h3>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
@@ -776,7 +732,7 @@ and <tt class="docutils literal"><span class="pre">--windowed</span></tt> are sp
 </div>
 </div>
 <div class="section" id="building-mac-os-x-app-bundles">
-<h2><a class="toc-backref" href="#id26">Building Mac OS X App Bundles</a></h2>
+<h2><a class="toc-backref" href="#id23">Building Mac OS X App Bundles</a></h2>
 <p>If you specify only <tt class="docutils literal"><span class="pre">--onefile</span></tt> under Mac OS X, the output
 in <tt class="docutils literal">dist</tt> is a UNIX executable
 <tt class="docutils literal">myscript</tt>.
@@ -809,8 +765,8 @@ in <tt class="docutils literal">Resources</tt>.</li>
 <p><a class="reference external" href="http://www.lemkesoft.de/en/products/graphic-converter/">GraphicConverter</a> is one of several applications
 that can save a JPEG or PNG image in the <tt class="docutils literal">.icns</tt> format.</p>
 </div>
-<div class="section" id="shorten-the-command">
-<h2><a class="toc-backref" href="#id27">Shorten the Command</a></h2>
+<div class="section" id="shortening-the-command">
+<h2><a class="toc-backref" href="#id24">Shortening the Command</a></h2>
 <p>Because of its numerous options, a full <tt class="docutils literal">pyinstaller</tt> command
 can become very long.
 You will run the same command again and again as you develop
@@ -851,7 +807,7 @@ pyinstaller myscript.spec
 </pre>
 </div>
 <div class="section" id="using-upx">
-<h2><a class="toc-backref" href="#id28">Using UPX</a></h2>
+<h2><a class="toc-backref" href="#id25">Using UPX</a></h2>
 <p><a class="reference external" href="http://upx.sourceforge.net/">UPX</a> is a free utility available for most operating systems
 (follow the link to the website where it can be downloaded).
 UPX compresses executable files and libraries making them smaller,
@@ -872,6 +828,67 @@ which creates a temporary environment for Python.</li>
 If UPX exists, <cite>PyInstaller</cite> applies it to the final executable,
 unless the <tt class="docutils literal"><span class="pre">--noupx</span></tt> option was given.
 UPX has been used with <cite>PyInstaller</cite> output often, usually with no problems.</p>
+</div>
+<div class="section" id="supporting-multiple-platforms">
+<h2><a class="toc-backref" href="#id26">Supporting Multiple Platforms</a></h2>
+<p>If you distribute your application for only one combination of OS and Python,
+just install <cite>PyInstaller</cite> like any other package and use it in your
+normal development setup.</p>
+<div class="section" id="supporting-multiple-python-environments">
+<h3><a class="toc-backref" href="#id27">Supporting Multiple Python Environments</a></h3>
+<p>When you need to bundle your application within one OS
+but for different versions of Python and support libraries -- for example,
+a Python 3 version and a Python 2.7 version;
+or a supported version that uses Qt4 and a development version that uses Qt5 --
+we recommend you use <a class="reference external" href="http://www.virtualenv.org/">virtualenv</a>.
+With virtualenv you can maintain different combinations of Python
+and installed packages, and switch from one combination to another easily.</p>
+<ul class="simple">
+<li>Use virtualenv to create as many different development environments as you need,
+each with its own combination of Python and installed packages.</li>
+<li>Install <cite>PyInstaller</cite> in each environment.</li>
+<li>Use <cite>PyInstaller</cite> to build your application in each environment.</li>
+</ul>
+<p>Note that when using virtualenv, the path to the <cite>PyInstaller</cite> commands is:</p>
+<ul class="simple">
+<li>Windows: ENV_ROOT\Scripts</li>
+<li>Others:  ENV_ROOT/bin</li>
+</ul>
+<p>Under Windows, the <a class="reference external" href="https://sites.google.com/site/pydatalog/python/pip-for-windows">pip-Win</a> package installs virtualenv and makes it
+especially easy to set up different environments and switch between them.
+Under Linux and Mac OS, you switch environments at the command line.</p>
+</div>
+<div class="section" id="supporting-multiple-operating-systems">
+<h3><a class="toc-backref" href="#id28">Supporting Multiple Operating Systems</a></h3>
+<p>If you need to distribute your application for more than one OS,
+for example both Windows and Mac OS X, you must install <cite>PyInstaller</cite>
+on each platform and bundle your app separately on each.</p>
+<p>You can do this from a single machine using virtualization.
+The free <a class="reference external" href="https://www.virtualbox.org">virtualBox</a> or the paid <a class="reference external" href="http://www.vmware.com/solutions/desktop/">VMWare</a> and <a class="reference external" href="http://www.parallels.com/">Parallels</a>
+allow you to run another complete operating system as a &quot;guest&quot;.
+You set up a virtual machine for each &quot;guest&quot; OS.
+In it you install
+Python, the support packages your application needs, and PyInstaller.</p>
+<p>The <a class="reference external" href="https://www.dropbox.com/home">Dropbox</a> system is useful with virtual machines.
+Install a Dropbox client in each virtual machine, all linked to your Dropbox account.
+Keep a single copy of your script(s) in a Dropbox folder.
+Then on any virtual machine you can run <cite>PyInstaller</cite> thus:</p>
+<pre class="literal-block">
+pyinstaller --build=path-to-local-build-folder      \
+            --out=path-to-local-dist-folder         \
+            ...other options as required...         \
+            path-to-Dropbox-project-folder/src/myscript.py
+</pre>
+<p>Test your bundled app; it is in <em>path-to-local-dist-folder</em>.
+Then you can compress the app to a zip file and copy it to
+the <tt class="docutils literal">Public</tt> folder of your Dropbox.
+Your users can download it from there.
+(Pro tip: Wait until Dropbox has uploaded the .zip to the cloud
+before shutting down the virtual machine.)</p>
+<p>It is possible to cross-develop for Windows under Linux
+using the free <a class="reference external" href="http://www.winehq.org/">Wine</a> environment.
+&lt;??Need info on PyInstaller under WINE in Linux - example? restrictions??&gt;</p>
+</div>
 </div>
 </div>
 <div class="section" id="using-spec-files">
@@ -2215,7 +2232,7 @@ W: delayed  eval hack detected at line 418
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2013-03-26 16:04 UTC.
+Generated on: 2013-03-27 18:43 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

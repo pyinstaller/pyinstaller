@@ -399,55 +399,6 @@ The |bootloader| starts Python with no target for standard output or input.
 Do this if your script has a graphical interface for user input and can properly 
 report its own diagnostics.
 
-Supporting Multiple Platforms
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you distribute your application for only one combination of OS and Python,
-just install |PyInstaller| like any other package and use it in your
-normal development setup.
-
-Supporting Multiple Python Environments
------------------------------------------
-
-When you need to bundle your application for different versions of Python
-or different support libraries, but within one OS -- for example,
-a Python 3 version and a
-Python 2.7 version; or a supported version that uses Qt4 
-and a development version that uses Qt5 -- we recommend using virtualenv_.
-With virtualenv you can maintain different combinations of Python
-and installed packages, and switch from one combination to another easily.
-
-* Use virtualenv to create as many different development environments as you need,
-  each with its own combination of Python and installed packages.
-* Install |PyInstaller| in each environment.
-* Use |PyInstaller| to build your application in each environment.
-
-Note that when using virtualenv, the path to the |PyInstaller| commands is:
-
-* Windows: ENV_ROOT\\Scripts
-* Others:  ENV_ROOT/bin
-
-Under Windows, the pip-Win_ package installs virtualenv and makes it
-especially easy to set up different environments and switch between them.
-Under Linux and Mac OS, you switch environments at the command line.
-
-Supporting Multiple Operating Systems
----------------------------------------
-
-If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
-on each platform and bundle your app separately on each.
-
-You can do this from a single machine using virtualization.
-The free virtualBox_ or the paid VMWare_ and Parallels_
-allow you to run another complete operating system as a "guest".
-You set up a virtual machine for each "guest" OS and in it, install
-Python, the support packages your application needs, and PyInstaller.
-
-It is possible to cross-develop for Windows under Linux
-using the free Wine_ environment.
-<??Need info on PyInstaller under WINE in Linux - example? restrictions??>
-
 
 Using PyInstaller
 ====================
@@ -680,7 +631,7 @@ you can apply your own icon as follows:
 GraphicConverter_ is one of several applications
 that can save a JPEG or PNG image in the ``.icns`` format.
 
-Shorten the Command
+Shortening the Command
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Because of its numerous options, a full ``pyinstaller`` command
@@ -745,6 +696,73 @@ been UPX-compressed, the full execution sequence is:
 If UPX exists, |PyInstaller| applies it to the final executable,
 unless the ``--noupx`` option was given.
 UPX has been used with |PyInstaller| output often, usually with no problems.
+
+Supporting Multiple Platforms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you distribute your application for only one combination of OS and Python,
+just install |PyInstaller| like any other package and use it in your
+normal development setup.
+
+Supporting Multiple Python Environments
+-----------------------------------------
+
+When you need to bundle your application within one OS
+but for different versions of Python and support libraries -- for example,
+a Python 3 version and a Python 2.7 version;
+or a supported version that uses Qt4 and a development version that uses Qt5 --
+we recommend you use virtualenv_.
+With virtualenv you can maintain different combinations of Python
+and installed packages, and switch from one combination to another easily.
+
+* Use virtualenv to create as many different development environments as you need,
+  each with its own combination of Python and installed packages.
+* Install |PyInstaller| in each environment.
+* Use |PyInstaller| to build your application in each environment.
+
+Note that when using virtualenv, the path to the |PyInstaller| commands is:
+
+* Windows: ENV_ROOT\\Scripts
+* Others:  ENV_ROOT/bin
+
+Under Windows, the pip-Win_ package installs virtualenv and makes it
+especially easy to set up different environments and switch between them.
+Under Linux and Mac OS, you switch environments at the command line.
+
+Supporting Multiple Operating Systems
+---------------------------------------
+
+If you need to distribute your application for more than one OS,
+for example both Windows and Mac OS X, you must install |PyInstaller|
+on each platform and bundle your app separately on each.
+
+You can do this from a single machine using virtualization.
+The free virtualBox_ or the paid VMWare_ and Parallels_
+allow you to run another complete operating system as a "guest".
+You set up a virtual machine for each "guest" OS.
+In it you install
+Python, the support packages your application needs, and PyInstaller.
+
+The Dropbox_ system is useful with virtual machines.
+Install a Dropbox client in each virtual machine, all linked to your Dropbox account.
+Keep a single copy of your script(s) in a Dropbox folder.
+Then on any virtual machine you can run |PyInstaller| thus::
+
+  pyinstaller --build=path-to-local-build-folder      \
+              --out=path-to-local-dist-folder         \
+              ...other options as required...         \
+              path-to-Dropbox-project-folder/src/myscript.py
+
+Test your bundled app; it is in *path-to-local-dist-folder*.
+Then you can compress the app to a zip file and copy it to
+the ``Public`` folder of your Dropbox.
+Your users can download it from there.
+(Pro tip: Wait until Dropbox has uploaded the .zip to the cloud
+before shutting down the virtual machine.)
+
+It is possible to cross-develop for Windows under Linux
+using the free Wine_ environment.
+<??Need info on PyInstaller under WINE in Linux - example? restrictions??>
 
 
 Using Spec Files
@@ -2264,5 +2282,5 @@ The tuples in the imports list are (name, delayed, conditional).
 .. _VMWare: http://www.vmware.com/solutions/desktop/
 .. _Wine: http://www.winehq.org/
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
-
+.. _Dropbox: https://www.dropbox.com/home
 .. include:: _definitions.txt
