@@ -97,6 +97,8 @@ _OLD_OPTIONS = [
     '-K', '--tk',
     '-C', '--configfile',
     '--skip-configure',
+    '-o', '--out',
+    '--buildpath',
     ]
 
 
@@ -326,6 +328,14 @@ def getcwd():
             except ImportError:
                 pass
     return cwd
+
+
+def expand_path(path):
+    """
+    Replace initial tilde '~' in path with user's home directory and also
+    expand environment variables (${VARNAME} - Unix, %VARNAME% - Windows).
+    """
+    return os.path.expandvars(os.path.expanduser(path))
 
 
 # Obsolete command line options.
