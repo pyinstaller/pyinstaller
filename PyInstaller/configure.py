@@ -139,8 +139,7 @@ def get_config(upx_dir, **kw):
         # wait several seconds for user to see this message
         time.sleep(4)
 
-    # if not set by Make.py we can assume Windows
-    config = {'useELFEXE': 1}
+    config = {}
     test_RsrcUpdate(config)
     test_UPX(config, upx_dir)
     find_PYZ_dependencies(config)
