@@ -109,9 +109,9 @@ class SkipChecker(object):
             }
         # Required Python modules for some tests.
         self.MODULES = {
-            'basic/test_ctypes': ['ctypes'],
             'basic/test_module_attributes': ['xml.etree.cElementTree'],
             'basic/test_multiprocess': ['multiprocessing'],
+            'basic/test_onefile_ctypes': ['ctypes'],
             'basic/test_onefile_multiprocess': ['multiprocessing'],
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_onefile_win32com': ['win32com'],
@@ -149,7 +149,7 @@ class SkipChecker(object):
             }
         # Other dependecies of some tests.
         self.DEPENDENCIES = {
-            'basic/test_ctypes': [depend.c_compiler()],
+            'basic/test_onefile_ctypes': [depend.c_compiler()],
             # Support for unzipped eggs is not yet implemented.
             # http://www.pyinstaller.org/ticket/541
             'import/test_eggs1': ['Unzipped eggs not yet implemented.'],
@@ -216,8 +216,8 @@ class SkipChecker(object):
 
 SPEC_FILE = set([
     'basic/test_5',  # TODO What is the purpose of this test case?
-    'basic/test_ctypes',
     'basic/test_threading2',
+    'basic/test_onefile_ctypes',
     'basic/test_onefile_pkg_resources',
     'basic/test_pkg_structures',
     'import/test_app_with_plugins',
@@ -318,7 +318,9 @@ class BuildTestRunner(object):
 
         Return True if build succeded False otherwise.
         """
-        OPTS = ['--debug', '--noupx']
+        OPTS = ['--debug', '--noupx', '--specpath', os.getcwd(), '--distpath',
+                os.path.join(os.getcwd(), 'dist'), '--workpath',
+                os.path.join(os.getcwd(), 'build')]
 
         if self.verbose:
             OPTS.extend(['--debug', '--log-level=INFO'])

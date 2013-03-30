@@ -18,7 +18,6 @@ import sys
 # For Linux, Solaris, AIX only
 
 libpath = os.path.normpath(os.path.abspath(os.path.dirname(sys.executable)))
-libpath += '/'
 
 # The name of the environment variable used to define the path where the
 # OS should search for dynamic libraries.
