@@ -51,7 +51,11 @@ _definitions.txt:
 	# run `pyinstaller.py -v` to get the version
 	echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> $@
 	echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
-	echo '.. |install_path| replace:: /your/path/to/pyinstaller/' >> $@
+	echo '.. |install_path| replace:: /OBSOLETE-REMOVE/' >> $@
+	# folder name of package after download and unzip
+	echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
+	# how we punctuate boot loader as a proper noun "the bootloader"
+	echo '.. |bootloader| replace:: bootloader' >> $@
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
