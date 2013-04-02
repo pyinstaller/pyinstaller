@@ -68,7 +68,7 @@ else:
 os.chdir("..")
 
 
-__testname__ = 'test_ctypes'
+__testname__ = 'test_onefile_ctypes'
 
 a = Analysis([__testname__ + '.py'],
              pathex=[])
@@ -76,8 +76,8 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
-          name=os.path.join('dist', __testname__, __testname__ + '.exe'),
+          name=__testname__ + '.exe',
           debug=False,
           strip=False,
           upx=False,
-          console=1)
+          console=False)
