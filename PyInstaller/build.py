@@ -1287,11 +1287,16 @@ class BUNDLE(Target):
             '..', 'bootloader', 'images', 'icon-windowed.icns'))
 
         Target.__init__(self)
+
+        # .app bundle is created in DISTPATH.
         self.name = kws.get('name', None)
-        if self.name is not None:
-            self.appname = os.path.splitext(os.path.basename(self.name))[0]
+        base_name = os.path.basename(self.name)
+        self.name = os.path.join(DISTPATH, base_name)
+
+        self.appname = os.path.splitext(base_name)[0]
         self.version = kws.get("version", "0.0.0")
         self.toc = TOC()
+
         for arg in args:
             if isinstance(arg, EXE):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
