@@ -548,7 +548,7 @@ class Analysis(Target):
         ###################################################
         # Initialize importTracker and analyze scripts
         importTracker = PyInstaller.depend.imptracker.ImportTracker(
-                dirs.keys() + self.pathex, self.hookspath, self.excludes)
+                dirs.keys() + self.pathex, self.hookspath, self.excludes, workpath=WORKPATH)
         PyInstaller.__pathex__ = self.pathex[:]
         scripts = []  # will contain scripts to bundle
         for i, script in enumerate(self.inputs):
