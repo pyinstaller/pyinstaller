@@ -28,7 +28,7 @@ from PyInstaller.loader import pyi_archive, pyi_carchive
 import PyInstaller.depend.imptracker
 import PyInstaller.depend.modules
 
-from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
+from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin, is_cygwin
 import PyInstaller.compat as compat
 import PyInstaller.bindepend as bindepend
@@ -50,12 +50,12 @@ STRINGTYPE = type('')
 TUPLETYPE = type((None,))
 UNCOMPRESSED, COMPRESSED = range(2)
 
-DEFAULT_BUILDPATH = os.path.join('SPECPATH', 'build',
-                                 'pyi.TARGET_PLATFORM', 'SPECNAME')
 
+# Set of global variables that can be used while processing .spec file.
 SPEC = None
 SPECPATH = None
-BUILDPATH = None
+DISTPATH = None
+WORKPATH = None
 WARNFILE = None
 NOCONFIRM = None
 
@@ -109,11 +109,11 @@ def compile_pycos(toc):
     pyc/pyo files, writing in a local directory if required, and returns the
     list of tuples with the updated pathnames.
     """
-    global BUILDPATH
+    global WORKPATH
 
     # For those modules that need to be rebuilt, use the build directory
     # PyInstaller creates during the build process.
-    basepath = os.path.join(BUILDPATH, "localpycos")
+    basepath = os.path.join(WORKPATH, "localpycos")
 
     new_toc = []
     for (nm, fnm, typ) in toc:
@@ -223,16 +223,16 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
 def _check_path_overlap(path):
     """
-    Check that path does not overlap with BUILDPATH or SPECPATH (i.e.
-    BUILDPATH and SPECPATH may not start with path, which could be
+    Check that path does not overlap with WORKPATH or SPECPATH (i.e.
+    WORKPATH and SPECPATH may not start with path, which could be
     caused by a faulty hand-edited specfile)
 
     Raise SystemExit if there is overlap, return True otherwise
     """
     specerr = 0
-    if BUILDPATH.startswith(path):
+    if WORKPATH.startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
-                     'BUILDPATH (%s)', path, BUILDPATH)
+                     'WORKPATH (%s)', path, WORKPATH)
         specerr += 1
     if SPECPATH.startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
@@ -286,7 +286,7 @@ def check_egg(pth):
 #--
 
 
-class Target:
+class Target(object):
     invcnum = 0
 
     def __init__(self):
@@ -294,7 +294,7 @@ class Target:
         # toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        self.out = os.path.join(BUILDPATH, 'out%02d-%s.toc' %
+        self.out = os.path.join(WORKPATH, 'out%02d-%s.toc' %
                                 (self.invcnum, self.__class__.__name__))
         self.outnm = os.path.basename(self.out)
         self.dependencies = TOC()
@@ -518,7 +518,7 @@ class Analysis(Target):
             depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
                                                processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
-            depmanifest.filename = os.path.join(BUILDPATH,
+            depmanifest.filename = os.path.join(WORKPATH,
                                                 specnm + ".exe.manifest")
 
         binaries = []  # binaries to bundle
@@ -548,7 +548,7 @@ class Analysis(Target):
         ###################################################
         # Initialize importTracker and analyze scripts
         importTracker = PyInstaller.depend.imptracker.ImportTracker(
-                dirs.keys() + self.pathex, self.hookspath, self.excludes)
+                dirs.keys() + self.pathex, self.hookspath, self.excludes, workpath=WORKPATH)
         PyInstaller.__pathex__ = self.pathex[:]
         scripts = []  # will contain scripts to bundle
         for i, script in enumerate(self.inputs):
@@ -992,31 +992,46 @@ class PKG(Target):
 
 class EXE(Target):
     typ = 'EXECUTABLE'
-    exclude_binaries = 0
-    append_pkg = 1
 
-    def __init__(self, *args, **kws):
+    def __init__(self, *args, **kwargs):
         Target.__init__(self)
-        self.console = kws.get('console', 1)
-        self.debug = kws.get('debug', 0)
-        self.name = kws.get('name', None)
-        self.icon = kws.get('icon', None)
-        self.versrsrc = kws.get('version', None)
-        self.manifest = kws.get('manifest', None)
-        self.resources = kws.get('resources', [])
-        self.strip = kws.get('strip', None)
-        self.upx = kws.get('upx', None)
-        self.exclude_binaries = kws.get('exclude_binaries', 0)
-        self.append_pkg = kws.get('append_pkg', self.append_pkg)
-        if self.name is None:
-            self.name = self.out[:-3] + 'exe'
-        if not os.path.isabs(self.name):
-            self.name = os.path.join(SPECPATH, self.name)
-        if is_win or is_cygwin:
-            self.pkgname = self.name[:-3] + 'pkg'
+
+        # TODO could be 'append_pkg' removed?
+        self.append_pkg = kwargs.get('append_pkg', True)
+
+        # Available options for EXE in .spec files.
+        self.exclude_binaries = kwargs.get('exclude_binaries', False)
+        self.console = kwargs.get('console', True)
+        self.debug = kwargs.get('debug', False)
+        self.name = kwargs.get('name', None)
+        self.icon = kwargs.get('icon', None)
+        self.versrsrc = kwargs.get('version', None)
+        self.manifest = kwargs.get('manifest', None)
+        self.resources = kwargs.get('resources', [])
+        self.strip = kwargs.get('strip', None)
+        self.upx = kwargs.get('upx', None)
+
+        # Old .spec format included in 'name' the path where to put created
+        # app. New format includes only exename.
+        #
+        # Ignore fullpath in the 'name' and prepend DISTPATH or WORKPATH.
+        # DISTPATH - onefile 
+        # WORKPATH - onedir
+        if self.exclude_binaries:
+            # onedir mode - create executable in WORKPATH.
+            self.name = os.path.join(WORKPATH, os.path.basename(self.name))
         else:
-            self.pkgname = self.name + '.pkg'
+            # onefile mode - create executable in DISTPATH.
+            self.name = os.path.join(DISTPATH, os.path.basename(self.name))
+        
+        # Base name of the EXE file without .exe suffix.
+        base_name = os.path.basename(self.name)
+        if is_win or is_cygwin:
+            base_name = os.path.splitext(base_name)[0]
+        self.pkgname = base_name + '.pkg'
+
         self.toc = TOC()
+
         for arg in args:
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
@@ -1026,12 +1041,12 @@ class EXE(Target):
             else:
                 self.toc.extend(arg)
         if is_win:
-            filename = os.path.join(BUILDPATH, specnm + ".exe.manifest")
+            filename = os.path.join(WORKPATH, specnm + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
                 self.console)
             self.toc.append((os.path.basename(self.name) + ".manifest", filename,
                 'BINARY'))
-        self.pkg = PKG(self.toc, cdict=kws.get('cdict', None),
+        self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
                        )
@@ -1193,13 +1208,18 @@ class DLL(EXE):
 class COLLECT(Target):
     def __init__(self, *args, **kws):
         Target.__init__(self)
-        self.name = kws.get('name', None)
-        if self.name is None:
-            self.name = 'dist_' + self.out[:-4]
-        self.strip_binaries = kws.get('strip', 0)
-        self.upx_binaries = kws.get('upx', 0)
-        if not os.path.isabs(self.name):
-            self.name = os.path.join(SPECPATH, self.name)
+        self.strip_binaries = kws.get('strip', False)
+        self.upx_binaries = kws.get('upx', False)
+
+        self.name = kws.get('name')
+        # Old .spec format included in 'name' the path where to collect files
+        # for the created app.
+        # app. New format includes only directory name.
+        #
+        # The 'name' directory is created in DISTPATH and necessary files are
+        # then collected to this directory.
+        self.name = os.path.join(DISTPATH, os.path.basename(self.name))
+
         self.toc = TOC()
         for arg in args:
             if isinstance(arg, TOC):
@@ -1267,11 +1287,16 @@ class BUNDLE(Target):
             '..', 'bootloader', 'images', 'icon-windowed.icns'))
 
         Target.__init__(self)
+
+        # .app bundle is created in DISTPATH.
         self.name = kws.get('name', None)
-        if self.name is not None:
-            self.appname = os.path.splitext(os.path.basename(self.name))[0]
+        base_name = os.path.basename(self.name)
+        self.name = os.path.join(DISTPATH, base_name)
+
+        self.appname = os.path.splitext(base_name)[0]
         self.version = kws.get("version", "0.0.0")
         self.toc = TOC()
+
         for arg in args:
             if isinstance(arg, EXE):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
@@ -1603,33 +1628,51 @@ def TkPKG():
                      'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
 
 
-def build(spec, buildpath):
-    global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
+def build(spec, distpath, workpath):
+    """
+    Build the executable according to the created SPEC file.
+    """
+    # Set of global variables that can be used while processing .spec file.
+    global SPECPATH, DISTPATH, WORKPATH, WARNFILE, rthooks, SPEC, specnm
+
     rthooks = _load_data(os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks.dat'))
-    SPEC = spec
+
+    # Ensure starting tilde and environment variables get expanded in distpath / workpath.
+    # '~/path/abc', '${env_var_name}/path/abc/def'
+    distpath = compat.expand_path(distpath)
+    workpath = compat.expand_path(workpath)
+    SPEC = compat.expand_path(spec)
+
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]
-    if SPECPATH == '':
-        SPECPATH = compat.getcwd()
-    BUILDPATH = os.path.join(SPECPATH, 'build',
-                             "pyi." + sys.platform, specnm)
-    # Check and adjustment for build path
-    if buildpath != DEFAULT_BUILDPATH:
-        bpath = buildpath
-        if os.path.isabs(bpath):
-            BUILDPATH = bpath
-        else:
-            BUILDPATH = os.path.join(SPECPATH, bpath)
-    WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
-    if not os.path.exists(BUILDPATH):
-        os.makedirs(BUILDPATH)
-    # Executing the specfile (it's a valid python file)
+
+    # Add 'specname' to workpath and distpath if they point to PyInstaller homepath.
+    if os.path.dirname(distpath) == HOMEPATH:
+        distpath = os.path.join(HOMEPATH, specnm, os.path.basename(distpath))
+    DISTPATH = distpath
+    if os.path.dirname(workpath) == HOMEPATH:
+        workpath = os.path.join(HOMEPATH, specnm, os.path.basename(workpath), specnm)
+    else:
+        WORKPATH = os.path.join(workpath, specnm)
+
+    WARNFILE = os.path.join(WORKPATH, 'warn%s.txt' % specnm)
+
+    # Create DISTPATH and WORKPATH if they does not exist.
+    for pth in (DISTPATH, WORKPATH):
+        if not os.path.exists(WORKPATH):
+            os.makedirs(WORKPATH)
+ 
+    # Executing the specfile. The executed .spec file will use DISTPATH and
+    # WORKPATH values.
     execfile(spec)
 
 
 def __add_options(parser):
-    parser.add_option('--buildpath', default=DEFAULT_BUILDPATH,
-                      help='Buildpath (default: %default)')
+    parser.add_option("--distpath", metavar="DIR",
+                default=DEFAULT_DISTPATH,
+                 help='Where to put the final app (default: %default)')
+    parser.add_option('--workpath', default=DEFAULT_WORKPATH,
+                      help='Where to put all the temporary work files, .log, .pyz and etc. (default: %default)')
     parser.add_option('-y', '--noconfirm',
                       action="store_true", default=False,
                       help='Remove output directory (default: %s) without '
@@ -1641,7 +1684,8 @@ def __add_options(parser):
                       "(default: included if available)")
 
 
-def main(pyi_config, specfile, buildpath, noconfirm, ascii=False, **kw):
+def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
+    # Set of global variables that can be used while processing .spec file.
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm
     global HIDDENIMPORTS, NOCONFIRM
@@ -1668,7 +1712,4 @@ def main(pyi_config, specfile, buildpath, noconfirm, ascii=False, **kw):
     if config['hasUPX']:
         setupUPXFlags()
 
-    if not config['useELFEXE']:
-        EXE.append_pkg = 0
-
-    build(specfile, buildpath)
+    build(specfile, kw.get('distpath'), kw.get('workpath'))

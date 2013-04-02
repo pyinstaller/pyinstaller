@@ -34,6 +34,6 @@ def run():
         parser.error('Requires exactly one .spec-file')
 
     try:
-        PyInstaller.build.main(args[0], **opts.__dict__)
+        PyInstaller.build.main(None, args[0], **opts.__dict__)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

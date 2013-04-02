@@ -115,7 +115,7 @@ def configure(conf):
                 # msvc 7.1 (Visual Studio 2003)
                 # msvc 8.0 (Visual Studio 2005)
                 # msvc 9.0 (Visual Studio 2008)
-                #conf.env['MSVC_VERSIONS'] = ['msvc 7.1', 'msvc 8.0', 'msvc 9.0']
+                conf.env['MSVC_VERSIONS'] = ['msvc 7.1', 'msvc 8.0', 'msvc 9.0', 'wsdk 7.0', 'wsdk 7.1']
                 if myarch == '32bit':
                     conf.env['MSVC_TARGETS'] = ['x86', 'ia32']
                 elif myarch == '64bit':

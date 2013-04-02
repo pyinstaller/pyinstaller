@@ -1,14 +1,24 @@
 #!/usr/bin/env python
+import os
 import sys
-from ctypes import *
+from ctypes import CDLL
 
-# Current working directory is set to dist directory for tests.
+
+if hasattr(sys, 'frozen'):
+    lib_path = os.path.join(os.path.dirname(sys.executable), '..', 'ctypes')
+else:
+    lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ctypes')
+
 
 def dummy(arg):
-    if sys.platform == "win32":
-        tct = CDLL("..\\..\\ctypes\\testctypes-win.dll")
+    """
+    Test loading ctypes library and passing an argument to it.
+    """
+    if sys.platform.startswith('win32'):
+        pth = os.path.join(lib_path, 'testctypes-win.dll')
     elif sys.platform.startswith("darwin"):
-        tct = CDLL("../../ctypes/testctypes.dylib")
+        pth = os.path.join(lib_path, 'testctypes.dylib')
     else:
-        tct = CDLL("../../ctypes/testctypes.so")
+        pth = os.path.join(lib_path, 'testctypes.so')
+    tct = CDLL(pth)
     return tct.dummy(arg)
