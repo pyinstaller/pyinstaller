@@ -297,7 +297,7 @@ def main(scripts, name=None, onefile=False,
         # List with custom runtime hook files.
         'runtime_hooks': runtime_hooks,
         # only Windows and Mac OS X distinguish windowed and console apps
-        'console': console or debug,
+        'console': console,
     }
 
     if is_win or is_cygwin:
