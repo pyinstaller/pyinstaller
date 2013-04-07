@@ -256,7 +256,7 @@ class FrozenImporter(object):
                 if is_pkg:
                     module.__package__ = fullname
                 else:
-                    module.__package__ = fullname.rpartition('.')[0]
+                    module.__package__ = fullname.rsplit('.', 1)[0]
 
                 ### Add module object to sys.modules dictionary.
                 # Module object must be in sys.modules before the loader
