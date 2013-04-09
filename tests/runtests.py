@@ -95,9 +95,9 @@ class SkipChecker(object):
             'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
             'import/test_c_extension': is_py25,
             'import/test_onefile_c_extension': is_py25,
-            'import/test_relative_import': is_py25,
-            'import/test_relative_import2': is_py26,
-            'import/test_relative_import3': is_py25,
+            'import/test_onefile_relative_import': is_py25,
+            'import/test_onefile_relative_import2': is_py26,
+            'import/test_onefile_relative_import3': is_py25,
             'libraries/test_enchant': is_win,
             # docutils, a sphinx dependency, fails in
             # docutils.utils.__init__.py, function decode_path, where
@@ -144,6 +144,7 @@ class SkipChecker(object):
             'import/test_onefile_ctypes_cdll_c': ['ctypes'],
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
+            'import/test_pep302_import_protocol': ['sqlite3'],
             'interactive/test_pygame': ['pygame'],
             'interactive/test_pyqt4_multiprocessing': ['multiprocessing', 'PyQt4'],
             }
