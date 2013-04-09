@@ -144,7 +144,7 @@ class SkipChecker(object):
             'import/test_onefile_ctypes_cdll_c': ['ctypes'],
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
-            'import/test_pep302_import_protocol': ['sqlite3'],
+            'import/test_pep302_import_protokol': ['sqlite3'],
             'interactive/test_pygame': ['pygame'],
             'interactive/test_pyqt4_multiprocessing': ['multiprocessing', 'PyQt4'],
             }
