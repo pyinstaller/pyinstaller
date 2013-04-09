@@ -1628,7 +1628,7 @@ def TkPKG():
                      'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
 
 
-def build(spec, distpath, workpath):
+def build(spec, distpath, workpath, clean_build):
     """
     Build the executable according to the created SPEC file.
     """
@@ -1657,6 +1657,20 @@ def build(spec, distpath, workpath):
 
     WARNFILE = os.path.join(WORKPATH, 'warn%s.txt' % specnm)
 
+    # Clean PyInstaller cache (CONFIGDIR) and temporary files (WORKPATH)
+    # to be able start a clean build.
+    if clean_build:
+        logger.info('Removing temporary files and cleaning cache in %s', CONFIGDIR)
+        for pth in (CONFIGDIR, WORKPATH):
+            if os.path.exists(pth):
+                # Remove all files in 'pth'.
+                for f in glob.glob(pth + '/*'):
+                    # Remove dirs recursively.
+                    if os.path.isdir(f):
+                        shutil.rmtree(f)
+                    else:
+                        os.remove(f)
+
     # Create DISTPATH and WORKPATH if they does not exist.
     for pth in (DISTPATH, WORKPATH):
         if not os.path.exists(WORKPATH):
@@ -1682,6 +1696,9 @@ def __add_options(parser):
     parser.add_option("-a", "--ascii", action="store_true",
                  help="do NOT include unicode encodings "
                       "(default: included if available)")
+    parser.add_option('--clean', dest='clean_build', action='store_true', default=False,
+                 help='Clean PyInstaller cache and remove temporary files '
+                      'before building.')
 
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
@@ -1712,4 +1729,4 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     if config['hasUPX']:
         setupUPXFlags()
 
-    build(specfile, kw.get('distpath'), kw.get('workpath'))
+    build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))
