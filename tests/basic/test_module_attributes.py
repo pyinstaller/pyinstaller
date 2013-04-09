@@ -57,9 +57,14 @@ def exec_python(pycode):
 
 
 def compare(test_name, expect, frozen):
+    # PyInstaller sets attribute '__lodader'. Remove this attribute from the
+    # module properties.
+    frozen.remove('__loader__')
+    frozen = str(frozen)
+
     print(test_name)
     print('  Attributes expected: ' + expect)
-    print('  Attributes current: ' + frozen)
+    print('  Attributes current:  ' + frozen)
     print('')
     # Compare attributes of frozen module with unfronzen module.
     if not frozen == expect:
@@ -68,11 +73,11 @@ def compare(test_name, expect, frozen):
 
 ## Pure Python module.
 _expect = exec_python('import xml.etree.ElementTree as ET; print dir(ET)')
-_frozen = str(dir(ET))
+_frozen = dir(ET)
 compare('ElementTree', _expect, _frozen)
 
 
 ## C-extension Python module.
 _expect = exec_python('import xml.etree.cElementTree as cET; print dir(cET)')
-_frozen = str(dir(cET))
+_frozen = dir(cET)
 compare('cElementTree', _expect, _frozen)

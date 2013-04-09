@@ -57,10 +57,12 @@ class BuiltinImporter(object):
             # Remove 'fullname' from sys.modules if it was appended there.
             if fullname in sys.modules:
                 sys.modules.pop(fullname)
-            raise  # Raise the same exception again.
-        finally:
             # Release the interpreter's import lock.
             imp.release_lock()
+            raise  # Raise the same exception again.
+
+        # Release the interpreter's import lock.
+        imp.release_lock()
 
         return module
 
@@ -254,7 +256,7 @@ class FrozenImporter(object):
                 if is_pkg:
                     module.__package__ = fullname
                 else:
-                    module.__package__ = fullname.rpartition('.')[0]
+                    module.__package__ = fullname.rsplit('.', 1)[0]
 
                 ### Add module object to sys.modules dictionary.
                 # Module object must be in sys.modules before the loader
@@ -274,10 +276,13 @@ class FrozenImporter(object):
             # TODO Do we need to raise different types of Exceptions for better debugging?
             # PEP302 requires to raise ImportError exception.
             #raise ImportError("Can't load frozen module: %s" % fullname)
-            raise
-        finally:
+
             # Release the interpreter's import lock.
             imp.release_lock()
+            raise
+
+        # Release the interpreter's import lock.
+        imp.release_lock()
 
         # Module returned only in case of no exception.
         return module
@@ -414,10 +419,12 @@ class CExtensionImporter(object):
             # Remove 'fullname' from sys.modules if it was appended there.
             if fullname in sys.modules:
                 sys.modules.pop(fullname)
-            raise  # Raise the same exception again.
-        finally:
             # Release the interpreter's import lock.
             imp.release_lock()
+            raise  # Raise the same exception again.
+
+        # Release the interpreter's import lock.
+        imp.release_lock()
 
         return module
 

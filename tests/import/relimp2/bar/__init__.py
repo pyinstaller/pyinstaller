@@ -1,1 +1,1 @@
-from .baz import *
+from .baz import say_hello_please
