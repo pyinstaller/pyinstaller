@@ -148,6 +148,8 @@ int main(int argc, char* argv[])
         /* Run the 'child' process, then clean up. */
         pyi_setenv("_MEIPASS2", archive_status->temppath[0] != 0 ? archive_status->temppath : homepath);
 
+        VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));
+
         if (pyi_utils_set_environment(archive_status) == -1)
             return -1;
 
@@ -167,8 +169,8 @@ int main(int argc, char* argv[])
                argv_pyi[argc_pyi++] = strdup(argv[i]);
             }
         }
+
         ProcessAppleEvents();
-  
 #endif
 
         /* Run user's code in a subprocess and pass command line arguments to it. */
@@ -182,6 +184,11 @@ int main(int argc, char* argv[])
         pyi_arch_status_free_memory(archive_status);
         if (extractionpath != NULL)
             free(extractionpath);
+
+#if defined(__APPLE__) && defined(WINDOWED)
+        for (i = 0; i < argc_pyi; i++) free(argv_pyi[i]);
+        free(argv_pyi);
+#endif
     }
     return rc;
 }

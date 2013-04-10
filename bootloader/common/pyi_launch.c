@@ -485,7 +485,7 @@ pascal OSErr HandleOpenDocAE(const AppleEvent *theAppleEvent, AppleEvent *reply,
   AEKeyword keywd;
   FSRef theRef;
 
-  VS("HandleOpenDocAE called.\n");
+  VS("LOADER: HandleOpenDocAE called.\n");
 
   OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
   if (err != noErr) return err;
@@ -528,14 +528,14 @@ void AppleMainEventLoop()
    Boolean gotEvent;
    EventRecord event;
    UInt32 timeout = 1*60; // number of ticks (1/60th of a second)
-   VS("Entering AppleEvent main loop.\n");
+   VS("LOADER: Entering AppleEvent main loop.\n");
 
    while (!gQuit)
    {
       gotEvent = WaitNextEvent(highLevelEventMask, &event, timeout, NULL);
       if (gotEvent)
       {
-         VS("Processing an AppleEvent.\n");
+         VS("LOADER: Processing an AppleEvent.\n");
          AEProcessAppleEvent(&event);
       }
       gQuit = true;
@@ -549,7 +549,7 @@ void ProcessAppleEvents()
    err = AEInstallEventHandler( kCoreEventClass , kAEOpenDocuments , HandleOpenDocAE , 0 , false );
    if (err != noErr)
     {
-       VS("Error installing AppleEvent handler.\n");
+       VS("LOADER: Error installing AppleEvent handler.\n");
     }
     else
     {
