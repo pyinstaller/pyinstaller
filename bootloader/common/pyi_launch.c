@@ -466,3 +466,98 @@ void pyi_launch_finalize(ARCHIVE_STATUS *status)
     #endif
     pyi_pylib_finalize(status);
 }
+
+
+
+
+#if defined(__APPLE__) && defined(WINDOWED)
+int argc_pyi;
+char** argv_pyi;
+pascal OSErr HandleOpenDocAE(const AppleEvent *theAppleEvent, AppleEvent *reply, SInt32 handlerRefcon)
+{
+  AEDescList docList;
+  long index;
+  long count = 0;
+  int i;
+  char *myFileName;
+  Size actualSize;
+  DescType returnedType;
+  AEKeyword keywd;
+  FSRef theRef;
+
+  VS("HandleOpenDocAE called.\n");
+
+  OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
+  if (err != noErr) return err;
+
+  err = AECountItems(&docList, &count);
+  if (err != noErr) return err;
+  for (index = 1; index <= count; index++)
+  {
+     err = AEGetNthPtr(&docList, index, typeFSRef, &keywd, &returnedType, &theRef, sizeof(theRef), &actualSize);
+
+     CFURLRef fullURLRef;
+     fullURLRef = CFURLCreateFromFSRef(NULL, &theRef);
+     CFStringRef cfString = CFURLCopyFileSystemPath(fullURLRef, kCFURLPOSIXPathStyle);
+     CFRelease(fullURLRef);
+     CFMutableStringRef cfMutableString = CFStringCreateMutableCopy(NULL, 0, cfString);
+     CFRelease(cfString);
+     CFStringNormalize(cfMutableString, kCFStringNormalizationFormC);
+     int len = CFStringGetLength(cfMutableString);
+     const int bufferSize = (len+1)*6;  // in theory up to six bytes per Unicode code point, for UTF-8.
+     char* buffer = (char*)malloc(bufferSize);
+     CFStringGetCString(cfMutableString, buffer, bufferSize, kCFStringEncodingUTF8);
+
+     argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
+     argv_pyi[argc_pyi++] = strdup(buffer);
+     argv_pyi[argc_pyi] = NULL;
+
+     free(buffer);
+  }
+
+  err = AEDisposeDesc(&docList);
+
+
+  return (err);
+}
+
+static int gQuit = false;
+
+void AppleMainEventLoop()
+{
+   Boolean gotEvent;
+   EventRecord event;
+   UInt32 timeout = 1*60; // number of ticks (1/60th of a second)
+   VS("Entering AppleEvent main loop.\n");
+
+   while (!gQuit)
+   {
+      gotEvent = WaitNextEvent(highLevelEventMask, &event, timeout, NULL);
+      if (gotEvent)
+      {
+         VS("Processing an AppleEvent.\n");
+         AEProcessAppleEvent(&event);
+      }
+      gQuit = true;
+   }
+}
+
+void ProcessAppleEvents()
+{
+   OSErr err;
+
+   err = AEInstallEventHandler( kCoreEventClass , kAEOpenDocuments , HandleOpenDocAE , 0 , false );
+   if (err != noErr)
+    {
+       VS("Error installing AppleEvent handler.\n");
+    }
+    else
+    {
+       AppleMainEventLoop();
+    }
+
+   // TODO: uninstall event handler.
+}
+
+#endif
+

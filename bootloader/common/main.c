@@ -54,6 +54,15 @@
 #include "pyi_launch.h"
 
 
+/*
+   global variables that are used for Apple/Windowed only.  They must have global scope, in order to
+   be visible within HandleOpenDocAE.
+*/
+char **argv_pyi = NULL;
+int argc_pyi = 0;
+
+
+
 #if defined(WIN32) && defined(WINDOWED)
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						LPSTR lpCmdLine, int nCmdShow )
@@ -142,8 +151,28 @@ int main(int argc, char* argv[])
         if (pyi_utils_set_environment(archive_status) == -1)
             return -1;
 
-        /* Run user's code in a subprocess and pass command line argumets to it. */
-        rc = pyi_utils_create_child(executable, argv);
+        argv_pyi = argv;
+        argc_pyi = argc;
+#if defined(__APPLE__) && defined(WINDOWED)
+        argv_pyi = (char**)calloc(argc+1,sizeof(char*));
+        argc_pyi = 0;
+        for (i = 0; i < argc; i++)
+        {
+          if (strstr(argv[i],"-psn") == argv[i])  // filter out the -psnxxxx command line argument
+            {
+               // skip
+            }
+          else
+            {
+               argv_pyi[argc_pyi++] = strdup(argv[i]);
+            }
+        }
+        ProcessAppleEvents();
+  
+#endif
+
+        /* Run user's code in a subprocess and pass command line arguments to it. */
+        rc = pyi_utils_create_child(executable, argv_pyi);
 
         VS("LOADER: Back to parent\n");
 
