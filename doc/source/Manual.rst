@@ -103,7 +103,7 @@ MS-DOS command line.
 However it is particularly easy to use pip-Win_,
 which sets up both pip_ and virtualenv_ and makes it simple
 to install packages and to switch between different Python interpreters.
-(For more on virtualenv, see `Supporting Multiple Platforms`_ below.)
+(For more on the uses of virtualenv, see `Supporting Multiple Platforms`_ below.)
 
 When pip-Win is working, enter this command in its Command field
 and click Run:
@@ -199,16 +199,13 @@ The complete installation places these commands on the execution path:
   See `Windows COM Server Support`_.
 
 If you do not perform the complete installation (``setup.py`` or 
-installing via ``pip``), these commands will not exist.
+installing via ``pip``), these commands will not exist as commands.
 However you can still execute all the functions documented below
 by running Python scripts found in the distribution folder.
-For example the equivalent of the ``pyinstaller`` command is
-
-    ``python /path-to-distribution-folder/pyinstaller.py``
-
-The other commands can be found in the same way at the top level
-or in the ``utils`` folder.
-
+The equivalent of the ``pyinstaller`` command is
+*pyinstaller-folder* ``/pyinstaller.py``.
+The other commands are found in *pyinstaller-folder* ``/cliutils/`` 
+with obvious names (``makespec.py`` and etc.)
 
 Overview: What |PyInstaller| Does and How It Does It
 ============================================================
@@ -221,7 +218,7 @@ There are many options, exceptions, and special cases covered under `Using PyIns
 First it analyzes your code to discover every other file 
 your script needs in order to execute.
 Then it finds, copies, and collects all those other
-files—including the active Python interpreter!—and
+filesâ€”including the active Python interpreter!â€”and
 puts them with
 your script in a single folder,
 or optionally in a single executable file. 
@@ -370,7 +367,7 @@ Because the program makes a temporary folder with a unique name,
 you can run multiple copies; they won't interfere with each other.
 However, running multiple copies is expensive in disk space because nothing is shared.
 
-The ``_MEIxxxxx`` directory is not removed if the program crashes
+The ``_MEIxxxxx`` folder is not removed if the program crashes
 or is killed (kill -9 on Unix, killed by Task Manager on Windows).
 Thus if your app crashes frequently, your users will lose disk space to
 multiple ``_MEIxxxxx`` temporary folders.
@@ -379,7 +376,7 @@ Do *not* give administrator privileges to a one-file executable
 (setuid root in Unix/Linux, "Run this program as an administrator"
 property in Windows 7).
 There is an unlikely but not impossible way in which a malicious attacker could
-corrupt one of the shared libraries in the temp directory
+corrupt one of the shared libraries in the temp folder
 while the |bootloader| is preparing it.
 Distribute a privileged program in one-folder mode instead.
 
@@ -399,6 +396,21 @@ The |bootloader| starts Python with no target for standard output or input.
 Do this if your script has a graphical interface for user input and can properly 
 report its own diagnostics.
 
+Hiding the Source Code
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The bundled app does not include any source code.
+However, |PyInstaller| bundles compiled Python scripts (``.pyc`` files).
+These could in principle be decompiled to reveal the logic of
+your code.
+
+If you want to hide your source code more thoroughly, one possible option
+is to compile some of your modules with Cython_.
+Using Cython you can convert Python modules into C and compile
+the C to machine language.
+|PyInstaller| can follow import statements that refer to
+Cython C object modules and bundle them.
+
 
 Using PyInstaller
 ====================
@@ -408,28 +420,30 @@ The syntax of the ``pyinstaller`` command is:
 
     ``pyinstaller`` [*options*] *script* [*script* ...] | *specfile*
 
-In the normal case,
+In the most simple case,
 set the current directory to the location of your program ``myscript.py``
-and execute
+and execute::
 
-    ``pyinstaller`` `options...` ``myscript.py``
+    pyinstaller myscript.py
 
 |PyInstaller| analyzes ``myscript.py`` and:
 
-* Writes ``myscript.spec``.
-* Creates a directory ``build`` if it does not exist.
-* Writes some log files in the ``build`` directory.
-* Creates a directory ``dist`` if it does not exist.
-* Writes the ``myscript`` executable folder or file in the ``dist`` directory.
+* Writes ``myscript.spec`` in the current directory.
+* Creates a folder ``build`` in the current directory if it does not exist.
+* Writes some log files and working files in the ``build`` folder.
+* Creates a folder ``dist`` in the current directory if it does not exist.
+* Writes the ``myscript`` executable folder in the ``dist`` folder.
+
+In the ``dist`` folder you find the bundled app you distribute to your users.
 
 Normally you name one script on the command line.
 If you name more, all are analyzed and included in the output.
-However, the first script named supplies the default name for the
-spec file and for the executable folder or file,
-and is the first to execute at run-time.
+However, the first script named supplies the name for the
+spec file and for the executable folder or file.
+Its code is the first to execute at run-time.
 
 For certain uses you may edit the contents of ``myscript.spec``
-(as described under `Using Spec Files`_).
+(described under `Using Spec Files`_).
 After you do this, you name the spec file to |PyInstaller| instead of the script:
 
     ``pyinstaller myscript.spec``
@@ -442,10 +456,9 @@ or, on Windows,
 
     ``pyinstaller "C:\Documents and Settings\project\myscript.spec"``
 
+In this case
 |PyInstaller| creates or uses the ``dist`` and ``build`` subdirectories
-in the same directory as the script or spec file that you name.
-In the ``dist`` folder you find the bundled app you distribute to your users.
-
+in the same location as the script or spec file that you name.
 
 Options
 ~~~~~~~~~~~~~~~
@@ -465,11 +478,25 @@ General Options
     Do *not* include Python module ``codecs`` and other Unicode support.
     The default is to include them if available, whether the script imports them or not.
 
---buildpath=path_to_build_directory
-    Specify where to put the |PyInstaller| log files for this run.
-    The default path is a ``build`` subdirectory
-    in the same directory as the input script or spec file.
+--distpath=path_to_executable, -o path_to_executable
+	Say where to put the bundled app.
+	The default is a ``dist`` folder in 
+	the same location as the first script.
+	
+--specpath=path_to_spec_file
+	Say where to put the *name* `.spec` file.
+	The default is the same location as the first script.
 
+--buildpath=path_to_work_files
+    Say where to put the |PyInstaller| log and work files for this run.
+    The default path is a ``build`` folder
+    in the same location as the first script or spec.
+
+--clean
+	Tells |PyInstaller| to erase all log and work files before it ends.
+	The default is to leave the log and work files behind
+	in the workpath.
+	
 -y, --noconfirm
     Replace an existing executable folder or file without warning.
     The default is to ask for permission before deleting.
@@ -515,7 +542,7 @@ Options for the Executable Output
 
 -n name, --name=name
     Give a *name* for the specfile and the executable output.
-    The default is the basename of the (first) script.
+    The default is the basename of the first script.
 
 -D, --onedir
     Create a folder *name* containing an executable *name*
@@ -523,12 +550,6 @@ Options for the Executable Output
 
 -F, --onefile
     Create a single executable file *name* (or *name* ``.exe`` or *name* ``.app``).
-
--o directory_path, --out=directory_path
-    Create the spec file in *directory_path*.
-    The default location for the spec file is the ``dist`` folder in the current directory.
-    (If the current directory is the |PyInstaller| distribution folder,
-    a *name* subdirectory is created to hold the spec file and ``build`` and ``dist``.)
 
 -c, --console, --nowindowed
     Set up a console subsystem for standard input/output at run time.
@@ -544,7 +565,7 @@ Options for the Executable Output
     at run time. See `Getting Debug Messages`_ below.
 
 -s, --strip
-    Apply strip (symbol table stripper to reduce file size)
+    Apply ``strip`` (symbol table stripper to reduce file size)
     to the executable and all shared libraries.
     Not recommended with the cygwin package on
     Windows, which tends to render normal Win32 dlls unusable.
@@ -638,8 +659,6 @@ Because of its numerous options, a full ``pyinstaller`` command
 can become very long.
 You will run the same command again and again as you develop
 your script.
-You can shorten the command in one of two ways.
-
 You can put the command in a shell script or batch file,
 using line continuations to make it readable.
 For example in Linux::
@@ -660,18 +679,6 @@ Or in Windows, use the little-known BAT file line continuation::
         --icon-file=..\MLNMFLCN.ICO ^
         myscript.spec
 
-Or, when you are certain of all the options, you could make the spec file::
-
-    pyi-makespec --noconfirm --log-level=WARN \
-        --onefile --nowindow \
-        --hidden-import=secret1 \
-        --hidden-import=secret2 \
-        --upx-dir=/usr/local/share/ \
-        myscript.py
-
-and from then on, just build from the spec file::
-
-    pyinstaller myscript.spec
 
 Using UPX
 ~~~~~~~~~~~~~~~~~~~
@@ -748,17 +755,19 @@ Install a Dropbox client in each virtual machine, all linked to your Dropbox acc
 Keep a single copy of your script(s) in a Dropbox folder.
 Then on any virtual machine you can run |PyInstaller| thus::
 
-  pyinstaller --build=path-to-local-build-folder      \
-              --out=path-to-local-dist-folder         \
-              ...other options as required...         \
-              path-to-Dropbox-project-folder/src/myscript.py
+    cd ~/Dropbox/project_folder/src # Linux, Mac -- Windows similar
+    pyinstaller --workpath=path-to-local-temp-folder  \
+                --distpath=path-to-local-dist-folder  \
+                ...other options as required...       \
+                ./myscript.py
 
-Test your bundled app; it is in *path-to-local-dist-folder*.
-Then you can compress the app to a zip file and copy it to
+Your bundled app is in *path-to-local-dist-folder* on the
+virtual machine's local disk.
+After testing it, you can compress the app to a zip file and copy it to
 the ``Public`` folder of your Dropbox.
 Your users can download it from there.
-(Pro tip: Wait until Dropbox has uploaded the .zip to the cloud
-before shutting down the virtual machine.)
+(Pro tip: Do not shut down the virtual machine until
+Dropbox has completely uploaded the .zip to the cloud.)
 
 It is possible to cross-develop for Windows under Linux
 using the free Wine_ environment.
@@ -771,13 +780,13 @@ Using Spec Files
 The spec (specification) file tells |PyInstaller| how to process your script.
 When you name a script (or scripts) to the ``pyinstaller`` command,
 the first thing it does is to build a spec file *name*.spec.
-The spec file encodes all the option values and script names
+The spec file encodes the script names and most of the options
 you give to the ``pyinstaller`` command.
 
 For many uses of |PyInstaller| you do not need to examine or modify the spec file.
 Editing the spec file was once a common way to help |PyInstaller|
 find all the parts of a program, but this is now less common.
-It is often enough to
+It is usually enough to
 give all the needed information (such as hidden imports)
 as option values to the ``pyinstaller`` command and let it run.
 
@@ -799,34 +808,43 @@ This command creates the *name*.spec file but does not
 go on to build the executable.
 
 After you have created a spec file and modified it as necessary,
-you can build your application in either of two ways:
+you can build your application from it in either of two ways:
 
     ``pyinstaller`` *specfile*
 
-or simply
+or
 
     ``pyi-build`` *specfile*
 
-The latter may be very slightly faster.
-It executes the part of ``pyinstaller`` that follows creation of a spec file.    
+The latter executes the part of ``pyinstaller`` that follows creation of a spec file. 
+
+When you create a spec file, many command options are written into the spec file.
+When you build from a spec file, those options from
+the command line are ignored, being replaced by the options in the spec file.
+Only the following options are acted on when building from a spec file:
+
+*  --upx-dir=
+*  --distpath=
+*  --workpath=
+*  --noconfirm
+*  --ascii
+
 
 Spec File Operation
 ~~~~~~~~~~~~~~~~~~~~
 
-A spec file should contain only executable Python statements and comments.
-The *options* given in the ``pyinstaller`` or ``pyi-makespec`` command
-are written into the spec file as argument values.
 
-After it creates the spec file,
-or opens the spec file when one is given instead of a script,
-the ``pyinstaller`` command executes the spec file as code.
-The statements in it create objects from classes that are defined in the 
+After |PyInstaller| creates a spec file,
+or opens a spec file when one is given instead of a script,
+the ``pyinstaller`` command *executes the spec file as code*.
+This is important to understand: the spec file contents are
+the central part of the code executed by |PyInstaller|.
+Your bundled application is created by the execution of the spec file.
+
+
+
+The statements in a spec file create objects from classes that are defined in the 
 |PyInstaller| module ``build.py``.
-(Feel free to read it!)
-All the work of creating the bundle is
-initiated and managed by the ``__init__`` methods of these class definitions.
-In other words, the execution of the spec file creates the bundled app.
-
 Here is an unrealistically simplified spec file for one-folder mode::
 
       a = Analysis(['myscript.py'])
@@ -860,12 +878,12 @@ In one-file mode, there is no call to ``COLLECT``, and the
 
 In order to read or modify a spec file you must understand some of
 the classes it uses.
-However, the spec file is an executable part of |PyInstaller|,
-so the class definitions and the exact contents of the spec file
-might change in future releases.
-For this reason, the following contains only the most useful and
-reliable detail.
-(Some further details are under `Advanced Topics`_ below.)
+However, the class definitions and the exact contents of the spec
+file might change in future releases.
+For this reason, the following
+contains only the most useful and reliable detail.
+Some further details are under Advanced Topics below;
+and you can find the complete definition of these classes in the module ``build.py``.
 
 
 TOC Class (Table of Contents)
@@ -1030,11 +1048,21 @@ In this example, you have inserted a list of two tuples into the EXE call.
 When Things Go Wrong
 ====================
 
-Recipes and Instructions for special modules
+Recipes and Examples for Specific Problems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Code examples for some modules needing special care and some common
-issues are available on our Recipe_ web-page.
+Code examples for some advanced uses and some common
+problems are available on our Recipe_ web-page.
+Some of the recipes there include:
+
+* A more sophisticated way of collecting data files
+  than the one shown above (`Adding Files to the Bundle`_).
+
+* A use of a run-time hook to set the Qt API level.
+
+* A workaround for a multiprocessing constraint under Windows.
+
+and others. Please feel free to contribute more recipes!
 
 
 Getting the Latest Version
@@ -1046,11 +1074,19 @@ This version might have fixes or features that are not yet at ``pypi``.
 Links to download the latest stable version and the latest development
 version are at PyInstaller.org_.
 
+If you have Git_ installed on your development system,
+you can use it together with pip
+to install the latest version of |PyInstaller| directly::
+
+    pip install -e git://github.com/pyinstaller/pyinstaller.git#egg=PyInstaller
+
+
+
 Finding out What Went Wrong
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Buildtime Messages
-------------------
+Build-time Messages
+--------------------
 
 When an ``Analysis`` step runs, it produces error and warning messages.
 These display after the command line if the ``--log-level`` option allows it.
@@ -1058,8 +1094,9 @@ Analysis also puts messages in a warnings file
 named ``warn<name>.txt`` in the spec file's directory.
 
 An error message appears if Analysis detects an unconditional import
-(one at the top level of the script, so it is certain to be executed)
 and the module it names cannot be found.
+An unconditional import is one that appears at the top level of the script,
+so it is certain to be executed.
 
 A warning is given if the module named in an import cannot be found,
 but the import itself is conditional.
@@ -1082,9 +1119,9 @@ will have lines like::
 The analysis has detected that the import is within a conditional
 block (an if statement).
 You will know that in this system, ``os`` will never need to import 
-the ``os2`` module, for example, so the warning can be ignored.
+the ``os2`` module, for example, so that warning can be ignored.
 
-Ignorable warnings may also be produced when a class or function is declared in
+Warnings may also be produced when a class or function is declared in
 a package (an ``__init__.py`` module), and the import specifies
 ``package.name``. In this case, the analysis can't tell if name is supposed to
 refer to a submodule or package.
@@ -1103,11 +1140,8 @@ see `Listing Hidden Imports`_ below for how to do it.
 Getting Debug Messages
 ----------------------
 
-Debug messages from PyInstaller itself can be enabled
-or hidden by giving the ``--log-level`` option.
-
-Giving the ``--debug`` option causes the bundled executable to 
-write progress messages whenever it runs.
+Giving the ``--debug`` option causes the bundled executable itself to 
+write progress messages when it runs.
 This can be useful during development of a complex package,
 or when your app doesn't seem to be starting,
 or just to learn how the runtime works.
@@ -1156,7 +1190,7 @@ visible to the analysis phase.
 
 Hidden imports can occur when the code is using ``__import__``
 or perhaps ``exec`` or ``eval``.
-You get warnings of these (see `Buildtime Messages`_).
+You get warnings of these (see `Build-time Messages`_).
 
 Hidden imports can also occur when an extension module uses the
 Python/C API to do an import.
@@ -1174,15 +1208,16 @@ Extending a Package's ``__path__``
 
 Python allows a script to extend the search path used for imports
 through the ``__path__`` mechanism.
-Normally, a module's ``__path__`` has only one entry,
+Normally, the ``__path__`` of an imported module has only one entry,
 the directory in which the ``__init__.py`` was found.
 But ``__init__.py`` is free to extend its ``__path__`` to include other directories.
 For example, the ``win32com.shell.shell`` module actually resolves to
 ``win32com/win32comext/shell/shell.pyd``.
 This is because ``win32com/__init__.py`` appends ``../win32comext`` to its ``__path__``.
 
-Because the ``__init__.py`` is not actually executed during analysis,
-changes to ``__path__`` are not seen.
+Because the ``__init__.py`` of an imported module
+is not actually executed during analysis,
+changes it makes to ``__path__`` are not seen by |PyInstaller|.
 We fix the problem with the same hook mechanism we use for hidden imports,
 with some additional logic; see `Using Hook Files`_ below.
 
@@ -1206,8 +1241,8 @@ At the end of an analysis, the names in the module list are looked up in
 This text file is the string representation of a
 Python dictionary. The key is the module name, and the value is a list
 of hook-script pathnames.
-If there is a match, the names of the script(s) are added to the output
-and will run before the main script starts.
+If there is a match, those scripts are included in the bundled app
+and will be called before your main script starts.
 
 Hooks done in this way, while they need to be careful of what they import, are
 free to do almost anything. One provided hook sets things up so that win32com
@@ -1220,34 +1255,21 @@ To specify a new runtime hook, use the option
 
 with the ``pyinstaller`` or ``pyi-makespec`` command.
 
-Adapting to being "frozen"
---------------------------
-
-In most sophisticated apps, it becomes necessary to learn at run-time
-whether you're running "live" (from source) or "frozen" (part of a bundle).
-For example, you might have a
-configuration file that, when running "live", is found based on a module's
-``__file__`` attribute.
-That won't work when the code is bundled.
-The usual way to handle this is covered under `Accessing Data Files`_ below.
-
 
 
 
 Advanced Topics
 ================
 
-Accessing Data Files
-~~~~~~~~~~~~~~~~~~~~~~~
+Adapting to being "frozen"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can include related files in either type of distribution.
-Data files and folders of files can be included
-by editing the spec file; see `Adding Files to the Bundle`_.
-
-In the one-folder distribution, your users find
-the related files in the distribution folder.
-In the one-file mode, the data files can be found by
-your program but are not available to the user.
+In some apps it is necessary to learn at run-time
+whether the app is running "live" (from source) or "frozen" (part of a bundle).
+For example, you might have a
+configuration file that, when running "live", is found based on a module's
+``__file__`` attribute.
+That won't work when the code is bundled.
 
 When your application needs access to a data file,
 for example a configuration file or an icon image file,
@@ -1274,9 +1296,23 @@ When your program was not started by the |bootloader|, the standard Python
 variable ``__file__`` is the full path to the script now executing,
 and ``os.path.dirname()`` extracts the path to the folder that contains it.
 
-Note that if your program is a one-file executable, the path is to
-a temporary folder that will be deleted.
-Any files you create or modify in that folder will disappear
+
+Accessing Data Files
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You can include related files in either type of distribution.
+Data files and folders of files can be included
+by editing the spec file; see `Adding Files to the Bundle`_.
+
+In the one-folder distribution, included files are in the distribution folder.
+You can direct your users to these files, for example
+to read a ``README`` or edit a configuration file.
+Your code can make useful changes to files in the folder.
+
+In the one-file mode, the ``basedir`` path discovered by the code above
+is the path to a temporary folder that will be deleted.
+Your users cannot easily access any included files.
+Any files your code creates or modifies in that folder will disappear
 when execution ends.
 
 Capturing Version Data
@@ -1285,28 +1321,30 @@ Capturing Version Data
       ``pyi-grab_version`` *executable_with_version_resource*
 
 
-The ``pyi-grab_version`` command outputs text which can be
-eval'ed by ``utils/versioninfo.py`` (in the |PyInstaller| distribution folder)
-to reproduce a version resource.
-Invoke it with the full path name of a Windows executable
+The ``pyi-grab_version`` command is invoked
+with the full path name of a Windows executable
 that has a version resource.
 
+It outputs text that represents a standard version resource.
 The version text is written to standard output.
-You can copy and paste from the console window or redirect to a file.
-Then you can edit the version information.
-The edited text file can be given with a ``--version-file=``
+You can copy it from the console window or redirect it to a file.
+Then you can edit the version information to adapt it to your program.
+
+The edited text file can be
+eval'ed by ``utils/versioninfo.py`` in the |PyInstaller| distribution folder
+to reproduce a standard version resource.
+Or the text file can be given with a ``--version-file=``
 option to ``pyinstaller`` or ``pyi-makespec``.
 
 This approach is used because version resources are strange beasts,
 and it may be impossible to fully understanding them.
-Some elements are optional, others required, and you can spend unbounded
-amounts of time figuring this out because it is not well documented.
+Some elements are optional, others required.
 When you view the version tab of a Properties dialog,
 there's no straightforward relationship between
 the data displayed and the structure of the resource itself.
 So the easiest thing to do is to find an executable that displays the kind of
 information you want, and grab its resource and edit it.
-Certainly easier than the Version resource wizard in VC++.
+This is usually easier than the Version resource wizard in VC++.
 
 Inspecting Archives
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -1380,6 +1418,12 @@ There is also a type code associated with each member.
 The type codes are used by the self-extracting executables.
 If you're using a ``CArchive`` as a ``.zip`` file, you don't need to worry about the code.
 
+The ELF executable format (Windows, Linux and some others) allows arbitrary
+data to be concatenated to the end of the executable without disturbing its
+functionality. For this reason, a CArchive's Table of Contents is
+at the end of the archive. The executable can open itself as a binary
+file, seek to the end and 'open' the CArchive.
+
 |CArchiveImage|
 
 Using pyi-archive_viewer
@@ -1396,6 +1440,8 @@ The archive can be navigated using these commands:
 
 O *name*
     Open the embedded archive *name* (will prompt if omitted).
+    For example when looking in a one-file executable, you
+    can open the ``outPYZ.pyz`` archive inside it.
 
 U
     Go up one level (back to viewing the containing archive).
@@ -2049,7 +2095,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 (``mf.py`` is no longer supported although may work.
-The ``modulegraph`` package, whic is related, will be supported in a future release.)
+The ``modulegraph`` package, which is similar, will be supported in a future release.)
 
 Module ``mf`` replaces Modulefinder_ but is modelled after iu.py_.
 
@@ -2283,4 +2329,6 @@ The tuples in the imports list are (name, delayed, conditional).
 .. _Wine: http://www.winehq.org/
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
 .. _Dropbox: https://www.dropbox.com/home
+.. _Git: http://git-scm.com/downloads
+.. _Cython: http://www.cython.org/
 .. include:: _definitions.txt
