@@ -554,9 +554,14 @@ void ProcessAppleEvents()
     else
     {
        AppleMainEventLoop();
+
+       err = AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, HandleOpenDocAE, false);
+       if (err != noErr)
+       {
+          VS("LOADER: Error uninstalling AppleEvent handler.\n");
+       }
     }
 
-   // TODO: uninstall event handler.
 }
 
 #endif
