@@ -471,10 +471,10 @@ void pyi_launch_finalize(ARCHIVE_STATUS *status)
 
 
 #if defined(__APPLE__) && defined(WINDOWED)
-int argc_pyi;
-char** argv_pyi;
 pascal OSErr HandleOpenDocAE(const AppleEvent *theAppleEvent, AppleEvent *reply, SInt32 handlerRefcon)
 {
+  extern int argc_pyi;
+  extern char** argv_pyi;
   AEDescList docList;
   long index;
   long count = 0;
