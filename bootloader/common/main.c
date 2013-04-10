@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 #endif
 {
     /*  archive_status contain status information of the main process. */
-    ARCHIVE_STATUS *archive_status;
+    ARCHIVE_STATUS *archive_status = NULL;
     char executable[PATH_MAX];
     char homepath[PATH_MAX];
     char archivefile[PATH_MAX];
@@ -75,8 +75,7 @@ int main(int argc, char* argv[])
 #endif
     int i = 0;
 
-    memset(&archive_status, 0, sizeof(ARCHIVE_STATUS *));
-    archive_status = (ARCHIVE_STATUS *) malloc(sizeof(ARCHIVE_STATUS));
+    archive_status = (ARCHIVE_STATUS *) calloc(1,sizeof(ARCHIVE_STATUS));
     if (archive_status == NULL) {
         FATALERROR("Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
