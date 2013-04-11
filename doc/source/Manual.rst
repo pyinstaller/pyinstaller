@@ -111,7 +111,7 @@ and click Run:
   ``venv -c -i  pyi-env-name``
 
 This creates a new virtual environment rooted at ``C:\Python\pyi-env-name``
-and make that the current environment. 
+and makes it the current environment. 
 A new command shell
 window opens in which you can run commands within this environment.
 Enter the command
@@ -218,7 +218,7 @@ There are many options, exceptions, and special cases covered under `Using PyIns
 First it analyzes your code to discover every other file 
 your script needs in order to execute.
 Then it finds, copies, and collects all those other
-filesâ€”including the active Python interpreter!â€”and
+files -- including the active Python interpreter! -- and
 puts them with
 your script in a single folder,
 or optionally in a single executable file. 
@@ -368,7 +368,8 @@ you can run multiple copies; they won't interfere with each other.
 However, running multiple copies is expensive in disk space because nothing is shared.
 
 The ``_MEIxxxxx`` folder is not removed if the program crashes
-or is killed (kill -9 on Unix, killed by Task Manager on Windows).
+or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
+"Force Quit" on Mac OS).
 Thus if your app crashes frequently, your users will lose disk space to
 multiple ``_MEIxxxxx`` temporary folders.
 
@@ -391,7 +392,7 @@ Error messages from Python and
 print statements in your script will appear in the console window.
 If your script reads from standard input, the user can enter data in the window.
 
-Optionally you can tell |PyInstaller| to not provide a console window.
+An option for Windows and Mac OS is to tell |PyInstaller| to not provide a console window.
 The |bootloader| starts Python with no target for standard output or input.
 Do this if your script has a graphical interface for user input and can properly 
 report its own diagnostics.
@@ -493,9 +494,10 @@ General Options
     in the same location as the first script or spec.
 
 --clean
-	Tells |PyInstaller| to erase all log and work files before it ends.
-	The default is to leave the log and work files behind
-	in the workpath.
+	Tells |PyInstaller| to erase all log and work files before it starts.
+	The default is to take advantage of any work files existing in
+	the workpath from a prior run to possibly shorten the building process.
+	Use --clean to make sure all parts of the app are built fresh.
 	
 -y, --noconfirm
     Replace an existing executable folder or file without warning.
@@ -504,6 +506,7 @@ General Options
 --log-level=keyword
     Tell |PyInstaller| how much detail you want it to report on the
     console as it runs.
+    For more about these messages, see `Build-time Messages`_ below.
     The keywords, from most verbose to least, are DEBUG INFO WARN ERROR CRITICAL.
     The default is INFO.
 
@@ -513,11 +516,11 @@ Options for Finding Imported Modules and Libraries
 
 -p dir_list, --paths=dir_list
     Set the search path(s) for imported modules (like using PYTHONPATH).
-    Give one or more paths separated by ``;`` (under Windows) or ``:``
-    (all other platforms).
     Use this option to help |PyInstaller| to search in the right places
     when your code modifies ``sys.path`` for imports.
-    This option can be given more than once.
+    Give one or more paths separated by ``;`` (under Windows) or ``:``
+    (all other platforms), or give the option
+    more than once to give multiple paths to search.
 
 --hidden-import=modulename
     Name an imported Python module that is not visible in your code.
@@ -556,9 +559,11 @@ Options for the Executable Output
     This is the default for both one-file and one-folder modes.
 
 -w, --windowed, --noconsole
-    Do not create a console window for standard input/output at run time.
-    On Mac OS X, use this option with ``--onefile`` to create an OS X application bundle.
-    This option is ignored under Linux.
+    On Windows and Mac OS X, do not create a console window at run time
+    for standard input/output.
+    On Mac OS X, this option with ``--onefile`` triggers
+    the creation of an OS X application bundle.
+    This option is for other operating systems.
 
 -d, --debug
     Cause the |bootloader| to issue progress messages as it initializes
@@ -743,7 +748,8 @@ been UPX-compressed, the full execution sequence is:
   which creates a temporary environment for Python.
 * The Python interpreter executes your script.
 
-|PyInstaller| looks for UPX on the execution path.
+|PyInstaller| looks for UPX on the execution path
+or the path specified with the ``--upx-dir`` option.
 If UPX exists, |PyInstaller| applies it to the final executable,
 unless the ``--noupx`` option was given.
 UPX has been used with |PyInstaller| output often, usually with no problems.

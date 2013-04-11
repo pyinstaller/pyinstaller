@@ -262,7 +262,7 @@ and click Run:</p>
 <blockquote>
 <tt class="docutils literal">venv <span class="pre">-c</span> <span class="pre">-i</span>&nbsp; <span class="pre">pyi-env-name</span></tt></blockquote>
 <p>This creates a new virtual environment rooted at <tt class="docutils literal"><span class="pre">C:\Python\pyi-env-name</span></tt>
-and make that the current environment.
+and makes it the current environment.
 A new command shell
 window opens in which you can run commands within this environment.
 Enter the command</p>
@@ -355,7 +355,7 @@ There are many options, exceptions, and special cases covered under <a class="re
 First it analyzes your code to discover every other file
 your script needs in order to execute.
 Then it finds, copies, and collects all those other
-filesâ€”including the active Python interpreter!â€”and
+files -- including the active Python interpreter! -- and
 puts them with
 your script in a single folder,
 or optionally in a single executable file.</p>
@@ -484,7 +484,8 @@ the first deletes the temporary folder.</p>
 you can run multiple copies; they won't interfere with each other.
 However, running multiple copies is expensive in disk space because nothing is shared.</p>
 <p>The <tt class="docutils literal">_MEIxxxxx</tt> folder is not removed if the program crashes
-or is killed (kill -9 on Unix, killed by Task Manager on Windows).
+or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
+&quot;Force Quit&quot; on Mac OS).
 Thus if your app crashes frequently, your users will lose disk space to
 multiple <tt class="docutils literal">_MEIxxxxx</tt> temporary folders.</p>
 <p>Do <em>not</em> give administrator privileges to a one-file executable
@@ -503,7 +504,7 @@ It gives this window to the Python interpreter for its standard input and output
 Error messages from Python and
 print statements in your script will appear in the console window.
 If your script reads from standard input, the user can enter data in the window.</p>
-<p>Optionally you can tell <cite>PyInstaller</cite> to not provide a console window.
+<p>An option for Windows and Mac OS is to tell <cite>PyInstaller</cite> to not provide a console window.
 The bootloader starts Python with no target for standard output or input.
 Do this if your script has a graphical interface for user input and can properly
 report its own diagnostics.</p>
@@ -599,9 +600,10 @@ The default path is a <tt class="docutils literal">build</tt> folder
 in the same location as the first script or spec.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">--clean</span></kbd></td>
-<td>Tells <cite>PyInstaller</cite> to erase all log and work files before it ends.
-The default is to leave the log and work files behind
-in the workpath.</td></tr>
+<td>Tells <cite>PyInstaller</cite> to erase all log and work files before it starts.
+The default is to take advantage of any work files existing in
+the workpath from a prior run to possibly shorten the building process.
+Use --clean to make sure all parts of the app are built fresh.</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">-y</span>, <span class="option">--noconfirm</span></kbd></td>
 </tr>
@@ -612,6 +614,7 @@ The default is to ask for permission before deleting.</td></tr>
 </tr>
 <tr><td>&nbsp;</td><td>Tell <cite>PyInstaller</cite> how much detail you want it to report on the
 console as it runs.
+For more about these messages, see <a class="reference internal" href="#build-time-messages">Build-time Messages</a> below.
 The keywords, from most verbose to least, are DEBUG INFO WARN ERROR CRITICAL.
 The default is INFO.</td></tr>
 </tbody>
@@ -627,11 +630,11 @@ The default is INFO.</td></tr>
 <kbd><span class="option">-p <var>dir_list</var></span>, <span class="option">--paths=<var>dir_list</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Set the search path(s) for imported modules (like using PYTHONPATH).
-Give one or more paths separated by <tt class="docutils literal">;</tt> (under Windows) or <tt class="docutils literal">:</tt>
-(all other platforms).
 Use this option to help <cite>PyInstaller</cite> to search in the right places
 when your code modifies <tt class="docutils literal">sys.path</tt> for imports.
-This option can be given more than once.</td></tr>
+Give one or more paths separated by <tt class="docutils literal">;</tt> (under Windows) or <tt class="docutils literal">:</tt>
+(all other platforms), or give the option
+more than once to give multiple paths to search.</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--hidden-import=<var>modulename</var></span></kbd></td>
 </tr>
@@ -680,9 +683,11 @@ This is the default for both one-file and one-folder modes.</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">-w</span>, <span class="option">--windowed</span>, <span class="option">--noconsole</span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Do not create a console window for standard input/output at run time.
-On Mac OS X, use this option with <tt class="docutils literal"><span class="pre">--onefile</span></tt> to create an OS X application bundle.
-This option is ignored under Linux.</td></tr>
+<tr><td>&nbsp;</td><td>On Windows and Mac OS X, do not create a console window at run time
+for standard input/output.
+On Mac OS X, this option with <tt class="docutils literal"><span class="pre">--onefile</span></tt> triggers
+the creation of an OS X application bundle.
+This option is for other operating systems.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">-d</span>, <span class="option">--debug</span></kbd></td>
 <td>Cause the bootloader to issue progress messages as it initializes
@@ -877,7 +882,8 @@ been UPX-compressed, the full execution sequence is:</p>
 which creates a temporary environment for Python.</li>
 <li>The Python interpreter executes your script.</li>
 </ul>
-<p><cite>PyInstaller</cite> looks for UPX on the execution path.
+<p><cite>PyInstaller</cite> looks for UPX on the execution path
+or the path specified with the <tt class="docutils literal"><span class="pre">--upx-dir</span></tt> option.
 If UPX exists, <cite>PyInstaller</cite> applies it to the final executable,
 unless the <tt class="docutils literal"><span class="pre">--noupx</span></tt> option was given.
 UPX has been used with <cite>PyInstaller</cite> output often, usually with no problems.</p>
@@ -2315,7 +2321,7 @@ W: delayed  eval hack detected at line 418
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2013-04-11 20:31 UTC.
+Generated on: 2013-04-11 22:18 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
