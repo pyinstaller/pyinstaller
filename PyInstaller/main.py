@@ -59,7 +59,7 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
 
     try:
         parser = optparse.OptionParser(
-            usage='python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
+            usage='%prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
             )
         __add_options(parser)
         PyInstaller.makespec.__add_options(parser)
