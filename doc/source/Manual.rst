@@ -638,19 +638,63 @@ It contains:
   + A folder ``Resources`` that contains an icon file ``icon-windowed.icns``.
   + A file ``Info.plist`` that describes the app.
 
-``Info.plist`` (which you can inspect with the Property List Editor
-that is part of XCode) designates the icon file for the app.
+``Info.plist`` is an `Info Property List`_ XML file (or "plist").
+Its contents tell Mac OS X about your application.
+You can inspect and edit a plist  with the Property List Editor
+that is part of XCode.
 
-By default |PyInstaller| provides its own logo as the icon file for the app.
-As a work-around (pending the promised support for the ``--icon-file`` option)
-you can apply your own icon as follows:
+Setting a Custom Icon
+-----------------------
 
-* Prepare an ``.icns`` file with your own graphic.
-* Save it as ``icon-windowed.icns`` replacing the default one 
+The minimal plist provided by |PyInstaller| designates the icon file for the app
+as the  ``icon-windowed.icns`` file in ``Resources``.
+This is the |PyInstaller| logo in icns format.
+Support for the ``--icon-file`` option is promised for the future.
+For now you can apply your own icon after the app is built in several ways:
+
+* Prepare another ``.icns`` file with your own graphic,
+  save it as ``icon-windowed.icns`` replacing the default one 
   in ``Resources``.
+
+* Prepare an ``.icns`` file with your own graphic,
+  place it in ``Resources`` and edit the  ``Info.plist`` to name it.
+
+* Prepare an ``.icns`` file with your own graphic;
+  open in it Preview.app; select-all and copy;
+  in the Finder, Get Info on your app;
+  click the icon in the info display and paste.
 
 GraphicConverter_ is one of several applications
 that can save a JPEG or PNG image in the ``.icns`` format.
+
+Setting the Supported Document Types
+--------------------------------------
+
+You can also edit the ``Info.plist`` file to tell the Mac OS X
+Launcher what document types your application supports.
+Refer to the Mac OS developer documentation for these keywords.
+
+Getting the Opened Document Names
+------------------------------------
+
+When a user double-clicks a document of a type your application
+supports, or when a user drags a document icon and drops it
+on your application's icon, Mac OS X launches your application
+and provides the name(s) of the opened document(s) in the 
+form of an OpenDocument AppleEvent.
+This AppleEvent is received by the |bootloader| 
+before your code has started executing.
+
+The |bootloader| gets the names of opened documents from
+the OpenDocument event and encodes them into the ``argv``
+string before starting your code.
+Thus your code can query ``sys.argv`` to get the names
+of documents that should be opened at startup.
+
+OpenDocument is the only AppleEvent the |bootloader| handles.
+If you want to handle other events, or events that
+are delivered after the program has launched, you must
+set up the appropriate handlers.
 
 Shortening the Command
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2331,4 +2375,5 @@ The tuples in the imports list are (name, delayed, conditional).
 .. _Dropbox: https://www.dropbox.com/home
 .. _Git: http://git-scm.com/downloads
 .. _Cython: http://www.cython.org/
+.. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
 .. include:: _definitions.txt
