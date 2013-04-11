@@ -278,13 +278,7 @@ def configure(conf):
         conf.env.append_value('LINKFLAGS', '-arch')
         conf.env.append_value('LINKFLAGS', mac_arch)
 
-        # to support catching AppleEvents, we have to link against the Carbon framework.  But,
-        # this linkage only needs to be there for the windowed bootloaders; ask the devs how
-        # to keep this from happening for console bootloaders.  Also, what about 64-bit?
-        conf.env.append_value('LINKFLAGS', '-framework')
-        conf.env.append_value('LINKFLAGS', 'Carbon')
-        
-
+       
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
@@ -329,9 +323,14 @@ def configure(conf):
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
             conf.env.append_value('LINKFLAGS', '-mwindows')
     elif myplatform.startswith('darwin'):
-        conf.env.append_value('CCFLAGS', '-I/Developer/Headers/FlatCarbon')
+        #conf.env.append_value('CCFLAGS', '-I/Developer/Headers/FlatCarbon')
+        # To support catching AppleEvents and running as ordinary OSX GUI app,
+        # we have to link against the Carbon framework.
+        # This linkage only needs to be there for the windowed bootloaders.
         conf.env.append_value('LINKFLAGS', '-framework')
         conf.env.append_value('LINKFLAGS', 'Carbon')
+        # conf.env.append_value('LINKFLAGS', '-framework')
+        # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
 
     ## setup RELEASE environment
@@ -351,8 +350,14 @@ def configure(conf):
     if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
             conf.env.append_value('LINKFLAGS', '-mwindows')
     elif myplatform.startswith('darwin'):
+        # To support catching AppleEvents and running as ordinary OSX GUI app,
+        # we have to link against the Carbon framework.
+        # This linkage only needs to be there for the windowed bootloaders.
         conf.env.append_value('LINKFLAGS', '-framework')
-        conf.env.append_value('LINKFLAGS', 'ApplicationServices')
+        conf.env.append_value('LINKFLAGS', 'Carbon')
+        # TODO Do we need to link with this framework?
+        # conf.env.append_value('LINKFLAGS', '-framework')
+        # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
 
 def build(bld):
