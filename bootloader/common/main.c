@@ -54,6 +54,7 @@
 #include "pyi_launch.h"
 
 
+
 #if defined(WIN32) && defined(WINDOWED)
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						LPSTR lpCmdLine, int nCmdShow )
@@ -139,11 +140,13 @@ int main(int argc, char* argv[])
         /* Run the 'child' process, then clean up. */
         pyi_setenv("_MEIPASS2", archive_status->temppath[0] != 0 ? archive_status->temppath : homepath);
 
+        VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));
+
         if (pyi_utils_set_environment(archive_status) == -1)
             return -1;
 
-        /* Run user's code in a subprocess and pass command line argumets to it. */
-        rc = pyi_utils_create_child(executable, argv);
+        /* Run user's code in a subprocess and pass command line arguments to it. */
+        rc = pyi_utils_create_child(executable, argc, argv);
 
         VS("LOADER: Back to parent\n");
 
