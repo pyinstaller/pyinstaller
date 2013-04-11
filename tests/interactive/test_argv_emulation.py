@@ -6,7 +6,7 @@ print "Argv from python:", sys.argv
 # testing the argv capturing capability on the Mac is not that easy, but doable.  First, build the app bundle
 # with PyInstaller, like this:
 #
-# $path_to_your_pyinstaller/pyinstaller.py -w -d test_argv_emulation.py
+# python $path_to_your_pyinstaller/pyinstaller.py -w -d test_argv_emulation.py
 #
 # The result should be test_argv_emulation.app.  Then, create a file called Info.plist and place the attached
 # text into it, and copy it to test_argv_emulation.app/Contents/.  Finally, create a file called "a.foo", and drag/drop that 
