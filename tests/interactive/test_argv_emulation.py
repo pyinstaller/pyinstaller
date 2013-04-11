@@ -4,9 +4,13 @@ print "Argv from python:", sys.argv
 
 
 # testing the argv capturing capability on the Mac is not that easy, but doable.  First, build the app bundle
-# with PyInstaller.  The result should be TestArgvEmu.app.  Then, create a file called Info.plist and place the attached
-# text into it, and copy it to TestArgvEmu.app/Contents/.  Finally, create a file called "a.foo", and drag/drop that 
-# file onto the TestArgvEmu.app's icon in the Finder.  The app will very briefly run, and should print an output to 
+# with PyInstaller, like this:
+#
+# $path_to_your_pyinstaller/pyinstaller.py -w -d test_argv_emulation.py
+#
+# The result should be test_argv_emulation.app.  Then, create a file called Info.plist and place the attached
+# text into it, and copy it to test_argv_emulation.app/Contents/.  Finally, create a file called "a.foo", and drag/drop that 
+# file onto the test_argv_emulation.app's icon in the Finder.  The app will very briefly run, and should print an output to 
 # stdout, which is viewable in the Mac's Console app.  The output should read something like:
 #   
 #   Argv from python: ['/the/path/to/the/app','/the/path/to/the/file/a.foo'] 
@@ -21,7 +25,7 @@ print "Argv from python:", sys.argv
         <key>CFBundleDevelopmentRegion</key>
         <string>English</string>
         <key>CFBundleDisplayName</key>
-        <string>TestArgvEmu</string>
+        <string>test_argv_emulation</string>
         <key>CFBundleDocumentTypes</key>
         <array>
                 <dict>
@@ -35,13 +39,13 @@ print "Argv from python:", sys.argv
                 </dict>
         </array>
         <key>CFBundleExecutable</key>
-        <string>TestArgvEmu</string>
+        <string>test_argv_emulation</string>
         <key>CFBundleIdentifier</key>
-        <string>org.pythonmac.unspecified.TestArgvEmu</string>
+        <string>org.pythonmac.unspecified.test_argv_emulation</string>
         <key>CFBundleInfoDictionaryVersion</key>
         <string>6.0</string>
         <key>CFBundleName</key>
-        <string>TestArgvEmu</string>
+        <string>test_argv_emulation</string>
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>CFBundleShortVersionString</key>
