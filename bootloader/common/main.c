@@ -54,6 +54,7 @@
 #include "pyi_launch.h"
 
 
+
 #if defined(WIN32) && defined(WINDOWED)
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						LPSTR lpCmdLine, int nCmdShow )
@@ -62,7 +63,7 @@ int main(int argc, char* argv[])
 #endif
 {
     /*  archive_status contain status information of the main process. */
-    ARCHIVE_STATUS *archive_status;
+    ARCHIVE_STATUS *archive_status = NULL;
     char executable[PATH_MAX];
     char homepath[PATH_MAX];
     char archivefile[PATH_MAX];
@@ -75,8 +76,7 @@ int main(int argc, char* argv[])
 #endif
     int i = 0;
 
-    memset(&archive_status, 0, sizeof(ARCHIVE_STATUS *));
-    archive_status = (ARCHIVE_STATUS *) malloc(sizeof(ARCHIVE_STATUS));
+    archive_status = (ARCHIVE_STATUS *) calloc(1,sizeof(ARCHIVE_STATUS));
     if (archive_status == NULL) {
         FATALERROR("Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
@@ -140,11 +140,13 @@ int main(int argc, char* argv[])
         /* Run the 'child' process, then clean up. */
         pyi_setenv("_MEIPASS2", archive_status->temppath[0] != 0 ? archive_status->temppath : homepath);
 
+        VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));
+
         if (pyi_utils_set_environment(archive_status) == -1)
             return -1;
 
-        /* Run user's code in a subprocess and pass command line argumets to it. */
-        rc = pyi_utils_create_child(executable, argv);
+        /* Run user's code in a subprocess and pass command line arguments to it. */
+        rc = pyi_utils_create_child(executable, argc, argv);
 
         VS("LOADER: Back to parent\n");
 
