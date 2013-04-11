@@ -81,10 +81,6 @@ int callSimpleEntryPoint(char *name, int *presult);
  */
 void cleanUp(ARCHIVE_STATUS *status);
 
-#if defined(__APPLE__) && defined(WINDOWED)
-void ProcessAppleEvents();
-#endif
-
 
 #endif  /* PYI_LAUNCH_H */
 

@@ -39,5 +39,10 @@ dylib_t pyi_utils_dlopen(const char *dllpath);
 int pyi_utils_create_child(const char *thisfile, char *const argv[]);
 int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 
+#if defined(__APPLE__) && defined(WINDOWED)
+void process_apple_events();
+#endif
+
+
 
 #endif /* HEADER_PY_UTILS_H */

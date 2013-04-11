@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        ProcessAppleEvents();
+        process_apple_events();
 #endif
 
         /* Run user's code in a subprocess and pass command line arguments to it. */
