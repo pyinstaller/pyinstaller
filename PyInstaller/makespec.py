@@ -93,7 +93,7 @@ coll = COLLECT(exe, dll,
 """
 
 bundleexetmplt = """app = BUNDLE(exe,
-             name='%(exename)s.app'))
+             name='%(exename)s.app')
 """
 
 bundletmplt = """app = BUNDLE(coll,
