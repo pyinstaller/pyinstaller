@@ -1651,7 +1651,7 @@ def build(spec, distpath, workpath, clean_build):
         distpath = os.path.join(HOMEPATH, specnm, os.path.basename(distpath))
     DISTPATH = distpath
     if os.path.dirname(workpath) == HOMEPATH:
-        workpath = os.path.join(HOMEPATH, specnm, os.path.basename(workpath), specnm)
+        WORKPATH = os.path.join(HOMEPATH, specnm, os.path.basename(workpath), specnm)
     else:
         WORKPATH = os.path.join(workpath, specnm)
 
