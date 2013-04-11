@@ -1,23 +1,17 @@
 #! /usr/bin/env python
-# encoding: utf-8
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Bootloader building script.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# Copyright (C) 2010-2012, Martin Zibricky
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
+"""
+Bootloader building script.
+"""
 
 
 import os
@@ -44,6 +38,13 @@ out = 'build'
 def set_options(opt):
     myplatform = Utils.detect_platform()
     
+    if not myplatform.startswith('win'):
+        opt.add_option('--leak-detector',
+                action = 'store_true',
+                help = 'Link with Boehm garbage collector to detect memory leaks.',
+                default = False,
+                dest = 'boehmgc')
+
     if myplatform.startswith('linux'):
         opt.add_option('--no-lsb',
                 action = 'store_true',
@@ -62,7 +63,6 @@ def set_options(opt):
                 dest = 'lsb_version')
 
     opt.tool_options('compiler_cc')
-
 
 
 def configure(conf):
@@ -115,7 +115,7 @@ def configure(conf):
                 # msvc 7.1 (Visual Studio 2003)
                 # msvc 8.0 (Visual Studio 2005)
                 # msvc 9.0 (Visual Studio 2008)
-                #conf.env['MSVC_VERSIONS'] = ['msvc 7.1', 'msvc 8.0', 'msvc 9.0']
+                conf.env['MSVC_VERSIONS'] = ['msvc 7.1', 'msvc 8.0', 'msvc 9.0', 'wsdk 7.0', 'wsdk 7.1']
                 if myarch == '32bit':
                     conf.env['MSVC_TARGETS'] = ['x86', 'ia32']
                 elif myarch == '64bit':
@@ -227,6 +227,14 @@ def configure(conf):
         if conf.check_cc(function_name='readlink', header_name='unistd.h'):
             conf.env.append_value('CCFLAGS', '-DHAVE_READLINK')
 
+        # This uses Boehm GC to manage memory - it replaces malloc() / free()
+        # functions. Some messages are printed if memory is not deallocated.
+        if opt.boehmgc:
+            conf.check_cc(lib='gc', mandatory=True)
+            conf.env.append_value('CCDEFINES', 'PYI_LEAK_DETECTOR')
+            conf.env.append_value('CCDEFINES', 'GC_FIND_LEAK')
+            conf.env.append_value('CCDEFINES', 'GC_DEBUG')
+            conf.env.append_value('CCDEFINES', 'SAVE_CALL_CHAIN')
 
     ### ccflags
 
@@ -300,8 +308,8 @@ def configure(conf):
     dbg.set_variant('debug') # separate subfolder for building
     conf.set_env_name('debug', dbg)
     conf.setenv('debug')
-    conf.env.append_value('CCDEFINES', '_DEBUG LAUNCH_DEBUG'.split())
-    conf.env.append_value('CCFLAGS', conf.env.CCFLAGS_DEBUG)
+    # This define enables verbose console output of the bootloader.
+    conf.env.append_value('CCDEFINES', ['LAUNCH_DEBUG'])
     dbgw = conf.env.copy() # WINDOWED DEBUG environment
     dbgw.set_variant('debugw') # separate subfolder for building
     dbgw.detach()
@@ -341,12 +349,15 @@ def configure(conf):
 
 
 def build(bld):
+    myplatform = Utils.detect_platform()
+    opt = Options.options
+
     # Force to run with 1 job (no parallel building).
     # There are reported build failures on multicore CPUs
     # with some msvc versions.
-    Options.options.jobs = 1
+    # TODO revisit parallel building with switch to waf 1.7
+    opt.jobs = 1
 
-    myplatform = Utils.detect_platform()
     install_path = '../../PyInstaller/bootloader/' + platform.system() + "-" + bld.env.MYARCH
     if bld.env.MYMACHINE:
         install_path += '-' + bld.env.MYMACHINE
@@ -405,7 +416,7 @@ def build(bld):
         for key, value in dict(release='inprocsrvr', debug='inprocsrvr_d').items():
             bld(
                 features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_*.c common/launch.c windows/dllmain.c'),
+                source = bld.path.ant_glob('common/pyi_*.c windows/*.c'),
                 target = value,
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',
@@ -420,7 +431,7 @@ def build(bld):
         for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d').items():
             bld(
                 features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_*.c common/launch.c windows/dllmain.c'),
+                source = bld.path.ant_glob('common/pyi_*.c windows/*.c'),
                 target = value,
                 install_path = install_path,
                 uselib_local = 'staticlib_zlib',
@@ -432,13 +443,17 @@ def build(bld):
 
     else: # linux, darwin (MacOSX)
 
+        libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
+        if opt.boehmgc:
+            libs.append('gc')
+
         for key, value in targets.items():
             bld(
                 features = 'cc cprogram',
                 source = bld.path.ant_glob('linux/*.c common/*.c'),
                 target = value,
                 install_path = install_path,
-                lib = ['dl', 'z', 'm'],  # 'z' - zlib, 'm' - math,
+                lib = libs,
                 env = bld.env_of_name(key).copy(),
                 includes = ['common', 'linux'],
             )

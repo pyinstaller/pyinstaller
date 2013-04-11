@@ -750,8 +750,10 @@ static void stb__print_one(void *handle, char *s, intptr_t len)
 {
    if (len)
       // Explicitly change 'len' type to int32_t.
-      if (WriteConsoleA(handle, s, (int32_t) len, NULL,NULL))
-         fwrite(s, 1, len, stdout); // if it fails, maybe redirected, so do normal
+      if (WriteConsoleA(handle, s, (int32_t) len, NULL,NULL) == STB_FALSE) {
+          // Writing to console failed, so do normal. Maybe stdout is redirected.
+         fwrite(s, 1, len, stdout);
+    }
 }
 
 static void stb__print(char *s)
@@ -823,6 +825,7 @@ static void stb__print(char *s)
       s=t;
       SetConsoleTextAttribute(handle, 0x07);
    }
+
    stb__print_one(handle, t, s-t);
    SetConsoleTextAttribute(handle, 0x07);
 }
@@ -888,7 +891,7 @@ void stbprint(const char *fmt, ...)
 typedef unsigned short stb__wchar;
 
 STB_EXTERN stb__wchar * stb_from_utf8(stb__wchar *buffer, char *str, int n);
-STB_EXTERN char       * stb_to_utf8  (char *buffer, stb__wchar *str, int n);
+STB_EXTERN char       * stb_to_utf8  (char *buffer, const stb__wchar *str, int n);
 
 STB_EXTERN stb__wchar *stb__from_utf8(char *str);
 STB_EXTERN stb__wchar *stb__from_utf8_alt(char *str);
@@ -946,7 +949,7 @@ stb__wchar * stb_from_utf8(stb__wchar *buffer, char *ostr, int n)
    return buffer;
 }
 
-char * stb_to_utf8(char *buffer, stb__wchar *str, int n)
+char * stb_to_utf8(char *buffer, const stb__wchar *str, int n)
 {
    int i=0;
    --n;
@@ -2468,7 +2471,9 @@ static stb__alloc stb__alloc_global =
    NULL,
    NULL,
    NULL,
-   (stb__chunk *) STB__ENCODE(NULL, STB__CHUNKS)
+   // TODO Following original line causes compilation errors on OSX.
+   // (stb__chunk *) STB__ENCODE(NULL, STB__CHUNKS)
+   (stb__chunk *) STB__CHUNKS
 };
 
 static stb__alloc_type stb__identify(void *p)
@@ -5301,23 +5306,7 @@ int stb_fullpath(char *abs, size_t abs_size, const char *rel)
    #ifdef _MSC_VER
    return _fullpath(abs, rel, abs_size) != NULL;
    #else
-   if (abs[0] == '/' || abs[0] == '~') {
-      if ((size_t) strlen(rel) >= abs_size)
-         return 0;
-      strcpy(abs,rel);
-      return STB_TRUE;
-   } else {
-      size_t n;
-      getcwd(abs, abs_size);
-      n = strlen(abs);
-      if (n+(size_t) strlen(rel)+2 <= abs_size) {
-         abs[n] = '/';
-         strcpy(abs+n+1, rel);
-         return STB_TRUE;
-      } else {
-         return STB_FALSE;
-      }
-   }
+   return realpath(rel, abs) != NULL;
    #endif
 }
 

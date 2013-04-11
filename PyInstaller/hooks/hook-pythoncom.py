@@ -15,8 +15,11 @@ as a data file. The path to this dll is contained in __file__
 attribute.
 """
 
-
+import os.path
 from PyInstaller.hooks.hookutils import get_module_file_attribute
 
-
-datas = [(get_module_file_attribute('pythoncom'), '.')]
+def hook(mod):
+    pth = get_module_file_attribute('pythoncom')
+    name = os.path.basename(pth)
+    mod.binaries.extend([(name, pth, 'BINARY')])
+    return mod

@@ -1,43 +1,46 @@
 /*
- * Glogal shared declarations used in many bootloader files.
+ * ****************************************************************************
+ * Copyright (c) 2013, PyInstaller Development Team.
+ * Distributed under the terms of the GNU General Public License with exception
+ * for distributing bootloader.
  *
- * Copyright (C) 2012, Martin Zibricky
- * Copyright (C) 2005, Giovanni Bajo
- * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * In addition to the permissions in the GNU General Public License, the
- * authors give you unlimited permission to link or embed the compiled
- * version of this file into combinations with other programs, and to
- * distribute those combinations without any restriction coming from the
- * use of this file. (The General Public License restrictions do apply in
- * other respects; for example, they cover modification of the file, and
- * distribution when not linked into a combine executable.)
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * The full license is in the file COPYING.txt, distributed with this software.
+ * ****************************************************************************
  */
-#ifndef HEADER_PYI_GLOBAL_H
-#define HEADER_PYI_GLOBAL_H
 
 
 /*
- * Definition of type boolean. On OSX boolean type is available.
+ * Glogal shared declarations used in many bootloader files.
  */
-typedef int bool_t;
 
-#define false 0
-#define true  1
+
+#ifndef PYI_GLOBAL_H
+#define PYI_GLOBAL_H
+
+
+/*
+ * Detect memory leaks.
+ *
+ * Use Boehm garbage collector to detect memory leaks.
+ * malloc(), free(), strdup() and similar functions
+ * are replaced by calls from the gc library.
+ */
+#ifdef PYI_LEAK_DETECTOR
+    #include <gc/leak_detector.h>
+#endif
+
+
+/*
+ * Definition of type boolean. On OSX boolean type is available
+ * in header <stdbool.h>.
+ */
+#ifdef __APPLE__
+    #include <stdbool.h>  // bool, true, false
+#else
+    typedef int bool;
+    #define true    1
+    #define false   0
+#endif
 
 
 /* Type for dynamic library. */
@@ -61,6 +64,8 @@ typedef int bool_t;
 // TODO use MSVCR function for file path handling.
 #ifdef WIN32
     #define PATH_MAX 4096  /* Default value on Linux. */
+#elif __APPLE__
+    #define PATH_MAX 1024  /* Recommended value for OSX. */
 #endif
 
 
@@ -104,15 +109,24 @@ typedef int bool_t;
 #endif
 
 
-/* Path separator. */
+/* Path and string macros. */
 
 #ifdef WIN32
-    #define PATHSEP ";"
-    #define SEP '\\'
+    #define PYI_PATHSEP    ';'
+    #define PYI_SEP        '\\'
+    /*
+     * For some functions like strcat() we need to pass
+     * string and not only char.
+     */
+    #define PYI_SEPSTR     "\\"
 #else
-    #define PATHSEP ":"
-    #define SEP '/'
+    #define PYI_PATHSEP    ':'
+    #define PYI_SEP        '/'
+    #define PYI_SEPSTR     "/"
 #endif
+
+/* Strings are usually terminated by this character. */
+#define PYI_NULLCHAR       '\0'
 
 
 /* Rewrite ANSI/POSIX functions to Win32 equivalents. */
@@ -128,9 +142,4 @@ typedef int bool_t;
 #endif
 
 
-
-
-/* Refers to 1st item in the archive status_list. */
-#define SELF 0
-
-#endif /* HEADER_PYI_GLOBAL_H */
+#endif /* PYI_GLOBAL_H */

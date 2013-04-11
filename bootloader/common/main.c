@@ -1,29 +1,16 @@
 /*
+ * ****************************************************************************
+ * Copyright (c) 2013, PyInstaller Development Team.
+ * Distributed under the terms of the GNU General Public License with exception
+ * for distributing bootloader.
+ *
+ * The full license is in the file COPYING.txt, distributed with this software.
+ * ****************************************************************************
+ */
+
+
+/*
  * Bootloader for a packed executable.
- * Copyright (C) 2005-2011, Giovanni Bajo
- * Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * In addition to the permissions in the GNU General Public License, the
- * authors give you unlimited permission to link or embed the compiled
- * version of this file into combinations with other programs, and to
- * distribute those combinations without any restriction coming from the
- * use of this file. (The General Public License restrictions do apply in
- * other respects; for example, they cover modification of the file, and
- * distribution when not linked into a combine executable.)
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
 
@@ -46,11 +33,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 
-/* To call TransformProcessType in the child process. */
-#if defined(__APPLE__) && defined(WINDOWED)
-#include <Carbon/Carbon.h>
-#endif
-
 #ifdef WIN32
     #include <windows.h>
     #include <wchar.h>
@@ -64,15 +46,12 @@
 
 /* PyInstaller headers. */
 #include "stb.h"
-#include "pyi_global.h"
+#include "pyi_global.h" // PATH_MAX for win32
+#include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_pythonlib.h"
-#include "utils.h"
-#include "launch.h"
-
-
-#define MAX_STATUS_LIST 20
+#include "pyi_launch.h"
 
 
 #if defined(WIN32) && defined(WINDOWED)
@@ -82,15 +61,12 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 int main(int argc, char* argv[])
 #endif
 {
-    /*  status_list[0] is reserved for the main process, the others for dependencies. */
-    ARCHIVE_STATUS *status_list[MAX_STATUS_LIST];
-    char thisfile[PATH_MAX];
-#ifdef WIN32
-    wchar_t thisfilew[PATH_MAX + 1];
-#endif
+    /*  archive_status contain status information of the main process. */
+    ARCHIVE_STATUS *archive_status = NULL;
+    char executable[PATH_MAX];
     char homepath[PATH_MAX];
-    char archivefile[PATH_MAX + 5];
-    char MEIPASS2[PATH_MAX + 1];
+    char archivefile[PATH_MAX];
+    char MEIPASS2[PATH_MAX];
     int rc = 0;
     char *extractionpath = NULL;
 #if defined(WIN32) && defined(WINDOWED)
@@ -99,119 +75,84 @@ int main(int argc, char* argv[])
 #endif
     int i = 0;
 
-    memset(&status_list, 0, MAX_STATUS_LIST * sizeof(ARCHIVE_STATUS *));
-    if ((status_list[SELF] = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS))) == NULL){
+    archive_status = (ARCHIVE_STATUS *) calloc(1,sizeof(ARCHIVE_STATUS));
+    if (archive_status == NULL) {
         FATALERROR("Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
     }
 
-    get_thisfile(thisfile, argv[0]);
-#ifdef WIN32
-    get_thisfilew(thisfilew);
-#endif
-    get_archivefile(archivefile, thisfile);
-    get_homepath(homepath, thisfile);
+    pyi_path_executable(executable, argv[0]);
+    pyi_path_archivefile(archivefile, executable);
+    pyi_path_homepath(homepath, executable);
 
     extractionpath = pyi_getenv("_MEIPASS2");
 
-    /* If the Python program we are about to run invokes another PyInstaller
-     * one-file program as subprocess, this subprocess must not be fooled into
-     * thinking that it is already unpacked. Therefore, PyInstaller deletes
-     * the _MEIPASS2 variable from the environment in _pyi_bootstrap.py.
-     *
-     * However, on some platforms (e.g. AIX) the Python function 'os.unsetenv()'
-     * does not always exist. In these cases we cannot delete the _MEIPASS2
-     * environment variable from Python but only set it to the empty string.
-     * The code below takes into account that _MEIPASS2 may exist while its
-     * value is only the empty string.
-     */
-    if (extractionpath && *extractionpath == 0) {
-        extractionpath = NULL;
-    }
+    VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
-    VS("_MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
-
-    if (init(status_list[SELF], homepath, &thisfile[strlen(homepath)])) {
-        if (init(status_list[SELF], homepath, &archivefile[strlen(homepath)])) {
+    if (pyi_arch_setup(archive_status, homepath, &executable[strlen(homepath)])) {
+        if (pyi_arch_setup(archive_status, homepath, &archivefile[strlen(homepath)])) {
             FATALERROR("Cannot open self %s or archive %s\n",
-                    thisfile, archivefile);
+                    executable, archivefile);
             return -1;
         }
     }
 
 #ifdef WIN32
-    if (!extractionpath && !needToExtractBinaries(status_list)) {
-        VS("No need to extract files to run; setting extractionpath to homepath\n");
+    /* On Windows use single-process for --onedir mode. */
+    if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
+        VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
         strcpy(MEIPASS2, homepath);
         pyi_setenv("_MEIPASS2", MEIPASS2); //Bootstrap sets sys._MEIPASS, plugins rely on it
     }
 #endif
     if (extractionpath) {
-        VS("Already in the child - running!\n");
+        VS("LOADER: Already in the child - running user's code.\n");
         /*  If binaries were extracted to temppath,
          *  we pass it through status variable
          */
         if (strcmp(homepath, extractionpath) != 0) {
-            strcpy(status_list[SELF]->temppath, extractionpath);
-#ifdef WIN32
-            strcpy(status_list[SELF]->temppathraw, extractionpath);
-#endif
+            strcpy(archive_status->temppath, extractionpath);
             /*
              * Temp path exits - set appropriate flag and change
              * status->mainpath to point to temppath.
              */
-            status_list[SELF]->has_temp_directory = true;
-#ifdef WIN32
-            strcpy(status_list[SELF]->mainpath, status_list[SELF]->temppathraw);
-#else
-            strcpy(status_list[SELF]->mainpath, status_list[SELF]->temppath);
-#endif
+            archive_status->has_temp_directory = true;
+            strcpy(archive_status->mainpath, archive_status->temppath);
         }
 
-#if defined(__APPLE__) && defined(WINDOWED)
-        ProcessSerialNumber psn = { 0, kCurrentProcess };
-        OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
-#endif
-#ifdef WIN32
-        CreateActContext(extractionpath, thisfile);
-#endif
-        rc = doIt(status_list[SELF], argc, argv);
-#ifdef WIN32
-        ReleaseActContext();
-#endif
-	pyi_pylib_finalize();
+        /* Main code to initialize Python and run user's code. */
+        pyi_launch_initialize(executable, extractionpath);
+        rc = pyi_launch_execute(archive_status, argc, argv);
+        pyi_launch_finalize(archive_status);
+
     } else {
-        if (extractBinaries(status_list)) {
-            VS("Error extracting binaries\n");
+
+        /* status->temppath is created if necessary. */
+        if (pyi_launch_extract_binaries(archive_status)) {
+            VS("LOADER: temppath is %s\n", archive_status->temppath);
+            VS("LOADER: Error extracting binaries\n");
             return -1;
         }
 
-        VS("Executing self as child with ");
-        /* run the "child" process, then clean up */
-#ifdef WIN32
-        pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppathraw : status_list[SELF]->homepathraw);
-#else
-        pyi_setenv("_MEIPASS2", status_list[SELF]->temppath[0] != 0 ? status_list[SELF]->temppath : homepath);
-#endif
+        VS("LOADER: Executing self as child\n");
+        /* Run the 'child' process, then clean up. */
+        pyi_setenv("_MEIPASS2", archive_status->temppath[0] != 0 ? archive_status->temppath : homepath);
 
-        if (set_environment(status_list[SELF]) == -1)
+        if (pyi_utils_set_environment(archive_status) == -1)
             return -1;
 
-#ifndef WIN32
-        rc = spawn(thisfile, argv);
-#else
-        rc = spawn(thisfilew);
-#endif
+        /* Run user's code in a subprocess and pass command line argumets to it. */
+        rc = pyi_utils_create_child(executable, argv);
 
-        VS("Back to parent...\n");
-        if (status_list[SELF]->has_temp_directory == true)
-            pyi_remove_temp_path(status_list[SELF]->temppath);
+        VS("LOADER: Back to parent\n");
 
-        for (i = SELF; status_list[i] != NULL; i++) {
-            VS("Freeing status for %s\n", status_list[i]->archivename);
-            free(status_list[i]);
-        }
+        VS("LOADER: Doing cleanup\n");
+        if (archive_status->has_temp_directory == true)
+            pyi_remove_temp_path(archive_status->temppath);
+        pyi_arch_status_free_memory(archive_status);
+        if (extractionpath != NULL)
+            free(extractionpath);
     }
     return rc;
 }
