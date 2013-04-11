@@ -34,6 +34,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>  // struct stat
+#if defined(__APPLE__) && defined(WINDOWED)
+    #include <Carbon/Carbon.h>  // AppleEventsT
+#endif
 
 /*
  * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms: 
@@ -54,6 +57,20 @@
 #ifndef WIN32
     // TODO Eliminate getpath.c/.h and replace it with functions from stb.h.
     #include "getpath.h"
+#endif
+
+/*
+   global variables that are used to copy argc/argv, so that PyIstaller can manipulate them
+   if need be.  One case in which the incoming argc/argv is manipulated is in the case of
+   Apple/Windowed, where we watch for AppleEvents in order to add files to the command line.
+   (this is argv_emulation).  These variables must be of file global scope to be able to
+   be accessed inside of the AppleEvents handlers.
+*/
+static char **argv_pyi = NULL;
+static int argc_pyi = 0;
+
+#if defined(__APPLE__) && defined(WINDOWED)
+static void process_apple_events();
 #endif
 
 
@@ -598,17 +615,41 @@ static void _signal_handler(int signal)
 /* Start frozen application in a subprocess. The frozen application runs
  * in a subprocess.
  */
-int pyi_utils_create_child(const char *thisfile, char *const argv[])
+int pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
 {
     pid_t pid = 0;
     int rc = 0;
+    int i;
+
+    argv_pyi = (char**)calloc(argc+1,sizeof(char*));
+    argc_pyi = 0;
+
+    for (i = 0; i < argc; i++)
+    {
+#if defined(__APPLE__) && defined(WINDOWED)
+      // if we are on a Mac, it passes a strange -psnxxx argument.  Filter it out.
+      if (strstr(argv[i],"-psn") == argv[i])  
+        {
+           // skip
+        }
+      else
+#endif
+        {
+           argv_pyi[argc_pyi++] = strdup(argv[i]);
+        }
+    }
+
+#if defined(__APPLE__) && defined(WINDOWED)
+    process_apple_events();
+#endif
+
 
     pid = fork();
 
     /* Child code. */
     if (pid == 0)
         /* Replace process by starting a new application. */
-        execvp(thisfile, argv);
+        execvp(thisfile, argv_pyi);
     /* Parent code. */
     else
     {
@@ -629,6 +670,9 @@ int pyi_utils_create_child(const char *thisfile, char *const argv[])
         signal(SIGINT, SIG_DFL);
         signal(SIGKILL, SIG_DFL);
         signal(SIGTERM, SIG_DFL);
+
+        for (i = 0; i < argc_pyi; i++) free(argv_pyi[i]);
+        free(argv_pyi);
     }
     if (WIFEXITED(rc))
         return WEXITSTATUS(rc);
@@ -638,6 +682,105 @@ int pyi_utils_create_child(const char *thisfile, char *const argv[])
         raise(WTERMSIG(rc));
     return 1;
 }
+
+
+
+
+
+#if defined(__APPLE__) && defined(WINDOWED)
+static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SInt32 handlerRefcon)
+{
+  AEDescList docList;
+  long index;
+  long count = 0;
+  int i;
+  char *myFileName;
+  Size actualSize;
+  DescType returnedType;
+  AEKeyword keywd;
+  FSRef theRef;
+
+  VS("LOADER: handle_open_doc_ae called.\n");
+
+  OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
+  if (err != noErr) return err;
+
+  err = AECountItems(&docList, &count);
+  if (err != noErr) return err;
+  for (index = 1; index <= count; index++)
+  {
+     err = AEGetNthPtr(&docList, index, typeFSRef, &keywd, &returnedType, &theRef, sizeof(theRef), &actualSize);
+
+     CFURLRef fullURLRef;
+     fullURLRef = CFURLCreateFromFSRef(NULL, &theRef);
+     CFStringRef cfString = CFURLCopyFileSystemPath(fullURLRef, kCFURLPOSIXPathStyle);
+     CFRelease(fullURLRef);
+     CFMutableStringRef cfMutableString = CFStringCreateMutableCopy(NULL, 0, cfString);
+     CFRelease(cfString);
+     CFStringNormalize(cfMutableString, kCFStringNormalizationFormC);
+     int len = CFStringGetLength(cfMutableString);
+     const int bufferSize = (len+1)*6;  // in theory up to six bytes per Unicode code point, for UTF-8.
+     char* buffer = (char*)malloc(bufferSize);
+     CFStringGetCString(cfMutableString, buffer, bufferSize, kCFStringEncodingUTF8);
+
+     argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
+     argv_pyi[argc_pyi++] = strdup(buffer);
+     argv_pyi[argc_pyi] = NULL;
+
+     free(buffer);
+  }
+
+  err = AEDisposeDesc(&docList);
+
+
+  return (err);
+}
+
+static int gQuit = false;
+
+static void apple_main_event_loop()
+{
+   Boolean gotEvent;
+   EventRecord event;
+   UInt32 timeout = 1*60; // number of ticks (1/60th of a second)
+   VS("LOADER: Entering AppleEvent main loop.\n");
+
+   while (!gQuit)
+   {
+      gotEvent = WaitNextEvent(highLevelEventMask, &event, timeout, NULL);
+      if (gotEvent)
+      {
+         VS("LOADER: Processing an AppleEvent.\n");
+         AEProcessAppleEvent(&event);
+      }
+      gQuit = true;
+   }
+}
+
+static void process_apple_events()
+{
+   OSErr err;
+
+   err = AEInstallEventHandler( kCoreEventClass , kAEOpenDocuments , handle_open_doc_ae , 0 , false );
+   if (err != noErr)
+    {
+       VS("LOADER: Error installing AppleEvent handler.\n");
+    }
+    else
+    {
+       apple_main_event_loop();
+
+       err = AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, handle_open_doc_ae, false);
+       if (err != noErr)
+       {
+          VS("LOADER: Error uninstalling AppleEvent handler.\n");
+       }
+    }
+
+}
+
+#endif
+
 
 
 #endif  /* WIN32 */
