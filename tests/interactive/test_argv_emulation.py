@@ -2,7 +2,6 @@ import sys
 print "Argv from python:", sys.argv
 
 
-
 # testing the argv capturing capability on the Mac is not that easy, but doable.  First, build the app bundle
 # with PyInstaller, like this:
 #
@@ -14,7 +13,10 @@ print "Argv from python:", sys.argv
 # stdout, which is viewable in the Mac's Console app.  The output should read something like:
 #   
 #   Argv from python: ['/the/path/to/the/app','/the/path/to/the/file/a.foo'] 
-
+#
+# The Mac's Console app is not terminal. Mac's Console app is a log viewer of system's messages.
+# This app can be found in your Applications (icon in the taskbar), then utilities, then Console.app.
+#   http://en.wikipedia.org/wiki/Console_(OS_X)
 
 
 """
