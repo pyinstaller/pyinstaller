@@ -480,7 +480,7 @@ int pyi_utils_set_environment(const ARCHIVE_STATUS *status)
 	return 0;
 }
 
-int pyi_utils_create_child(const char *thisfile, char *const argv[])
+int pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
 {
 	SECURITY_ATTRIBUTES sa;
 	STARTUPINFOW si;
@@ -688,7 +688,7 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
 
 
 #if defined(__APPLE__) && defined(WINDOWED)
-static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SInt32 handlerRefcon)
+static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
 {
   AEDescList docList;
   long index;

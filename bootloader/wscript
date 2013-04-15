@@ -311,6 +311,7 @@ def configure(conf):
     conf.setenv('debug')
     # This define enables verbose console output of the bootloader.
     conf.env.append_value('CCDEFINES', ['LAUNCH_DEBUG'])
+    conf.env.append_value('CCDEFINES', 'NDEBUG')
     dbgw = conf.env.copy() # WINDOWED DEBUG environment
     dbgw.set_variant('debugw') # separate subfolder for building
     dbgw.detach()
@@ -360,6 +361,7 @@ def configure(conf):
         # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
 
+# TODO Use 'strip' command to decrease the size of compiled bootloaders.
 def build(bld):
     myplatform = Utils.detect_platform()
     opt = Options.options
