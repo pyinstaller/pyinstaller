@@ -1,0 +1,6 @@
+This directory contain scripts that are executed by PyInstaller.hook.hookutils
+module to do some detection for some import hooks.
+
+In PyInstaller we cannot directly import modules that the application depend on.
+These scripts do some necessary detection in a subprocess.
+

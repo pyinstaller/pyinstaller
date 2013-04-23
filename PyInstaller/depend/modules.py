@@ -1,29 +1,24 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2005, Giovanni Bajo
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
-# All we're doing here is tracking, not importing
-# If we were importing, these would be hooked to the real module objects
+"""
+All we're doing here is tracking, not importing
+If we were importing, these would be hooked to the real module objects
+"""
+
+
 import os
 
 from PyInstaller.compat import ctypes, PYCO
 from PyInstaller.depend.utils import _resolveCtypesImports, scan_code
+
 import PyInstaller.depend.impdirector
 
 
@@ -82,12 +77,28 @@ class PyModule(Module):
             self.__file__ = self.__file__ + PYCO
         self.scancode()
 
+    def _remove_duplicate_entries(self, item_list):
+        """
+        Remove duplicate entries from the list.
+        """
+        # The strategy is to convert a list to a set and then back.
+        # This conversion will eliminate duplicate entries.
+        return list(set(item_list))
+
     def scancode(self):
         self.imports, self.warnings, self.binaries, allnms = scan_code(self.co)
+        # TODO There has to be some bugs in the 'scan_code()' functions because
+        #      some imports are present twice in the self.imports list.
+        #      This could be fixed when scan_code will be replaced by package
+        #      modulegraph.
+        self.imports = self._remove_duplicate_entries(self.imports)
+
         if allnms:
             self._all = allnms
         if ctypes and self.binaries:
             self.binaries = _resolveCtypesImports(self.binaries)
+            # Just to make sure there will be no duplicate entries.
+            self.binaries = self._remove_duplicate_entries(self.binaries)
 
 
 class PyScript(PyModule):

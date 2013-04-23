@@ -1,21 +1,11 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2012, Martin Zibricky
-# Copyright (C) 2011, Hartmut Goebel
-# Copyright (C) 2005, Giovanni Bajo
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
 import os
@@ -23,7 +13,7 @@ import sys
 
 import PyInstaller.bindepend
 
-from PyInstaller.compat import is_py24, is_win, is_darwin, is_unix, is_virtualenv
+from PyInstaller.compat import is_win, is_darwin, is_unix, is_virtualenv
 from PyInstaller.build import Tree
 from PyInstaller.hooks.hookutils import exec_statement, logger
 
@@ -40,7 +30,7 @@ def _handle_broken_tk():
 
     https://github.com/pypa/virtualenv/issues/93
     """
-    if is_win and is_virtualenv and is_py24:
+    if is_win and is_virtualenv:
         basedir = os.path.join(sys.real_prefix, 'tcl')
         files = os.listdir(basedir)
         v = os.environ
@@ -142,9 +132,9 @@ def _collect_tkfiles(mod):
     tkdir = "tk"
 
     tcltree = Tree(tcl_root, os.path.join('_MEI', tcldir),
-                   excludes=['demos', 'encoding', '*.lib', 'tclConfig.sh'])
+                   excludes=['demos', '*.lib', 'tclConfig.sh'])
     tktree = Tree(tk_root, os.path.join('_MEI', tkdir),
-                  excludes=['demos', 'encoding', '*.lib', 'tkConfig.sh'])
+                  excludes=['demos', '*.lib', 'tkConfig.sh'])
     return (tcltree + tktree)
 
 

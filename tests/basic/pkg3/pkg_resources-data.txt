@@ -1,0 +1,1 @@
+This is data text for testing freezing pkg_resources module.

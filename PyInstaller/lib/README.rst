@@ -8,7 +8,13 @@ macholib
 
     # For PyInstaller/lib/ define the version here, since there is no
     # package-resource.
-    __version__ = '1.4.2'
+    __version__ = '1.5.0'
+
+- add fixed version string to ./modulegraph/__init__.py::
+
+    # For PyInstaller/lib/ define the version here, since there is no
+    # package-resource.
+    __version__ = '0.9.1'
 
 - remove the following line from ./macholib/utils.py, ./macholib/MachO.py,
   ./macholib/MachOGraph.py. Otherwise macholib complains about 

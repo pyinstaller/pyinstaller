@@ -1,5 +1,42 @@
 (+ user visible changes, * internal stuff)
 
+Changes since PyInstaller 2.0
+-------------------------------
+ + PyInstaller integration with setuptools (direct installation with easy_install or pip
+   from PYPI - https://pypi.python.org/pypi). After installation there will be available
+   command 'pyinstaller' for PyInstaller usage.
+ + (Windows) Fix running frozen app running from paths containing foreign characters.
+ + (Windows) Fix running PyInstaller from paths containing foreign characters.
+ +
+ + Add experimental support for Linux arm (thanks to Shane Hansen).
+ + Minimum suported Python version is 2.4.
+ + Add import hooks for docutils, jinja2, sphinx, pytz, idlelib.
+   (thanks to Bryan A. Jones)
+ + Add import hooks for IPython, Scipy.
+ + Fix django import hook to work with Django 1.4.
+ + Add rthook for twisted.
+ + Add rthook for pkg_resource. It fixes the following functions for frozen app
+   pkg_resources.resource_stream(), pkg_resources.resource_string().
+ + Better support for pkg_resources (.egg manipulation) in frozen executables.
+ + Add option --runtime-hook to allow running custom code from frozen app
+   before loading other Python from the frozen app. This is usefull for some
+   specialized preprocessing just for the frozen executable. E.g. this
+   option can be used to set SIP api v2 for PyQt4.
+ * (OSX) Fix missing qt_menu.nib in dist directory when using PySide.
+ * Environment variable PYTHONHOME is now unset and path to python home
+   is set in bootloader by function Py_SetPythonHome().This overrides
+   sys.prefix and sys.exec_prefix for frozen application.
+ * Python library filename (e.g. python27.dll, libpython2.7.so.1.0, etc)
+   is embedded to the created exe file. Bootloader is not trying several
+   filenames anymore.
+ * Frozen executables now use PEP-302 import hooks to import frozen modules
+   and C extensions. (sys.meta_path)
+ * Drop old import machinery from iu.py.
+ * Drop own code to import modules from zip archives (.egg files) in frozen
+   executales. Native Python implementation is kept unchanged.
+ * Drop old crypto code. This feature was never completed.
+ * Drop bootloader dependency on Python headers for compilation.
+
 Changes since PyInstaller 1.5.1
 -------------------------------
  + Minimum suported Python version is 2.3.

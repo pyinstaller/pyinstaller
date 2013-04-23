@@ -1,11 +1,19 @@
-#!/usr/bin/env python
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
 
 import glob
 import os
 import sys
 import PyInstaller
 import PyInstaller.compat as compat
-from PyInstaller.compat import is_darwin, set
+from PyInstaller.compat import is_darwin
 from PyInstaller.utils import misc
 
 import PyInstaller.log as logging
@@ -22,7 +30,7 @@ def __exec_python_cmd(cmd):
     pp = os.pathsep.join(PyInstaller.__pathex__)
     old_pp = compat.getenv('PYTHONPATH')
     if old_pp:
-        pp = os.pathsep.join([pp, old_pp])
+        pp = os.pathsep.join([old_pp, pp])
     compat.setenv("PYTHONPATH", pp)
     try:
         try:
@@ -45,22 +53,27 @@ def exec_statement(statement):
     return __exec_python_cmd(cmd)
 
 
-def exec_script(scriptfilename, *args):
+def exec_script(script_filename, *args):
     """
     Executes a Python script in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a
     single string.
 
     To prevent missuse, the script passed to hookutils.exec-script
-    must be located in the `hooks` directory.
+    must be located in the `hooks/utils` directory.
     """
-
-    if scriptfilename != os.path.basename(scriptfilename):
+    script_filename = os.path.join('utils', os.path.basename(script_filename))
+    script_filename = os.path.join(os.path.dirname(__file__), script_filename)
+    if not os.path.exists(script_filename):
         raise SystemError("To prevent missuse, the script passed to "
                           "hookutils.exec-script must be located in "
-                          "the `hooks` directory.")
+                          "the `hooks/utils` directory.")
 
-    cmd = [os.path.join(os.path.dirname(__file__), scriptfilename)]
+    # Scripts might be importing some modules. Add PyInstaller code to pathex.
+    pyinstaller_root_dir = os.path.dirname(os.path.abspath(PyInstaller.__path__[0]))
+    PyInstaller.__pathex__.append(pyinstaller_root_dir)
+
+    cmd = [script_filename]
     cmd.extend(args)
     return __exec_python_cmd(cmd)
 
@@ -111,7 +124,6 @@ diff.discard('%(modname)s')
 print list(diff)
 """ % {'modname': modname}
     module_imports = eval_statement(statement)
-    
 
     if not module_imports:
         logger.error('Cannot find imports for module %s' % modname)
@@ -184,7 +196,6 @@ def qt4_menu_nib_dir():
     ]
 
     # Qt4 from Homebrew compiled as framework
-    import glob
     globpath = '/usr/local/Cellar/qt/4.*/lib/QtGui.framework/Versions/4/Resources'
     qt_homebrew_dirs = glob.glob(globpath)
     dirs += qt_homebrew_dirs
@@ -202,28 +213,61 @@ def qt4_menu_nib_dir():
 
 
 def django_dottedstring_imports(django_root_dir):
+    """
+    Get all the necessary Django modules specified in settings.py.
+
+    In the settings.py the modules are specified in several variables
+    as strings.
+    """
     package_name = os.path.basename(django_root_dir)
-    compat.setenv("DJANGO_SETTINGS_MODULE", "%s.settings" % package_name)
-    return eval_script("django-import-finder.py")
+    compat.setenv('DJANGO_SETTINGS_MODULE', '%s.settings' % package_name)
+
+    # Extend PYTHONPATH with parent dir of django_root_dir.
+    PyInstaller.__pathex__.append(misc.get_path_to_toplevel_modules(django_root_dir))
+    # Extend PYTHONPATH with django_root_dir.
+    # Many times Django users do not specify absolute imports in the settings module.
+    PyInstaller.__pathex__.append(django_root_dir)
+
+    ret = eval_script('django-import-finder.py')
+
+    # Unset environment variables again.
+    compat.unsetenv('DJANGO_SETTINGS_MODULE')
+
+    return ret
 
 
-def find_django_root(dir):
-    entities = set(os.listdir(dir))
-    if "manage.py" in entities and "settings.py" in entities and "urls.py" in entities:
-        return [dir]
+def django_find_root_dir():
+    """
+    Return path to directory (top-level Python package) that contains main django
+    files. Return None if no directory was detected.
+
+    Main Django project directory contain files like '__init__.py', 'settings.py'
+    and 'url.py'.
+
+    In Django 1.4+ the script 'manage.py' is not in the directory with 'settings.py'
+    but usually one level up. We need to detect this special case too.
+    """
+    # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
+    # first main executable script.
+    manage_py = sys._PYI_SETTINGS['scripts'][0]
+    manage_dir = os.path.dirname(os.path.abspath(manage_py))
+
+    # Get the Django root directory. The directory that contains settings.py and url.py.
+    # It could be the directory containig manage.py or any of its subdirectories.
+    settings_dir = None
+    files = set(os.listdir(manage_dir))
+    if 'settings.py' in files and 'urls.py' in files:
+        settings_dir = manage_dir
     else:
-        django_root_directories = []
-        for entity in entities:
-            path_to_analyze = os.path.join(dir, entity)
-            if os.path.isdir(path_to_analyze):
-                try:
-                    dir_entities = os.listdir(path_to_analyze)
-                except (IOError, OSError):
-                    # silently skip unreadable directories
-                    continue
-                if "manage.py" in dir_entities and "settings.py" in dir_entities and "urls.py" in dir_entities:
-                    django_root_directories.append(path_to_analyze)
-        return django_root_directories
+        for f in files:
+            if os.path.isdir(f):
+                subfiles = os.listdir(os.path.join(manage_dir, f))
+                # Subdirectory contains critical files.
+                if 'settings.py' in subfiles and 'urls.py' in subfiles:
+                    settings_dir = os.path.join(manage_dir, f)
+                    break  # Find the first directory.
+    
+    return settings_dir
 
 
 def matplotlib_backends():
@@ -279,3 +323,167 @@ def opengl_arrays_modules():
         modules.append('OpenGL.arrays.' + mod)
 
     return modules
+
+
+def remove_prefix(string, prefix):
+    """
+    This funtion removes the given prefix from a string, if the string does
+    indeed begin with the prefix; otherwise, it returns the string
+    unmodified.
+    """
+    if string.startswith(prefix):
+        return string[len(prefix):]
+    else:
+        return string
+
+
+def remove_suffix(string, suffix):
+    """
+    This funtion removes the given suffix from a string, if the string
+    does indeed end with the prefix; otherwise, it returns the string
+    unmodified.
+    """
+    # Special case: if suffix is empty, string[:0] returns ''. So, test
+    # for a non-empty suffix.
+    if suffix and string.endswith(suffix):
+        return string[:-len(suffix)]
+    else:
+        return string
+
+
+def remove_file_extension(filename):
+    """
+    This funtion returns filename without its extension.
+    """
+    return os.path.splitext(filename)[0]
+
+
+def get_module_file_attribute(package):
+    """
+    Given a pacage name, return the value of __file__ attribute.
+
+    In PyInstaller process we cannot import directly analyzed modules.
+    """
+    # Statement to return __file__ attribute of a package.
+    __file__statement = """
+# Fun Python behavior: __import__('mod.submod') returns mod,
+# where as __import__('mod.submod', fromlist = [a non-empty list])
+# returns mod.submod. See the docs on `__import__
+# <http://docs.python.org/library/functions.html#__import__>`_.
+# Keyworded arguments in __import__ function are available
+# in Python 2.5+. Compatibility with Python 2.4 is preserved.
+_fromlist = ['']
+_globals = {}
+_locals = {}
+package = __import__('%s', _globals, _locals, _fromlist)
+print package.__file__
+"""
+    return exec_statement(__file__statement % package)
+
+
+def get_package_paths(package):
+    """
+    Given a package, return the path to packages stored on this machine
+    and also returns the path to this particular package. For example,
+    if pkg.subpkg lives in /abs/path/to/python/libs, then this function
+    returns (/abs/path/to/python/libs,
+             /abs/path/to/python/libs/pkg/subpkg).
+    """
+    # A package must have a path -- check for this, in case the package
+    # parameter is actually a module.
+    is_pkg_statement = 'import %s as p; print hasattr(p, "__path__")'
+    is_package = eval_statement(is_pkg_statement % package)
+    assert is_package
+
+    file_attr = get_module_file_attribute(package)
+
+    # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
+    # Search for Python files in /abs/path/to/package/subpackage; pkg_dir
+    # stores this path.
+    pkg_dir = os.path.dirname(file_attr)
+    # When found, remove /abs/path/to/ from the filename; mod_base stores
+    # this path to be removed.
+    pkg_base = remove_suffix(pkg_dir, package.replace('.', os.sep))
+
+    return pkg_base, pkg_dir
+
+
+# All these extension represent Python modules or extension modules
+PY_EXECUTABLE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
+
+
+def collect_submodules(package):
+    """
+    The following two functions were originally written by Ryan Welsh
+    (welchr AT umich.edu).
+
+    This produces a list of strings which specify all the modules in
+    package.  Its results can be directly assigned to ``hiddenimports``
+    in a hook script; see, for example, hook-sphinx.py. The
+    package parameter must be a string which names the package.
+
+    This function does not work on zipped Python eggs.
+
+    This function is used only for hook scripts, but not by the body of
+    PyInstaller.
+    """
+    pkg_base, pkg_dir = get_package_paths(package)
+    # Walk through all file in the given package, looking for submodules.
+    mods = set()
+    for dirpath, dirnames, filenames in os.walk(pkg_dir):
+        # Change from OS separators to a dotted Python module path,
+        # removing the path up to the package's name. For example,
+        # '/abs/path/to/desired_package/sub_package' becomes
+        # 'desired_package.sub_package'
+        mod_path = remove_prefix(dirpath, pkg_base).replace(os.sep, ".")
+
+        # If this subdirectory is a package, add it and all other .py
+        # files in this subdirectory to the list of modules.
+        if '__init__.py' in filenames:
+            mods.add(mod_path)
+            for f in filenames:
+                extension = os.path.splitext(f)[1]
+                if ((remove_file_extension(f) != '__init__') and
+                    extension in PY_EXECUTABLE_EXTENSIONS):
+                    mods.add(mod_path + "." + remove_file_extension(f))
+        else:
+        # If not, nothing here is part of the package; don't visit any of
+        # these subdirs.
+            del dirnames[:]
+
+    return list(mods)
+
+
+# These extensions represent Python executables and should therefore be
+# ignored.
+PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
+
+
+def collect_data_files(package):
+    """
+    This routine produces a list of (source, dest) non-Python (i.e. data)
+    files which reside in package. Its results can be directly assigned to
+    ``datas`` in a hook script; see, for example, hook-sphinx.py. The
+    package parameter must be a string which names the package.
+
+    This function does not work on zipped Python eggs.
+
+    This function is used only for hook scripts, but not by the body of
+    PyInstaller.
+    """
+    pkg_base, pkg_dir = get_package_paths(package)
+    # Walk through all file in the given package, looking for data files.
+    datas = []
+    for dirpath, dirnames, files in os.walk(pkg_dir):
+        for f in files:
+            extension = os.path.splitext(f)[1]
+            if not extension in PY_IGNORE_EXTENSIONS:
+                # Produce the tuple
+                # (/abs/path/to/source/mod/submod/file.dat,
+                #  mod/submod/file.dat)
+                source = os.path.join(dirpath, f)
+                dest = remove_prefix(dirpath,
+                                     os.path.dirname(pkg_base) + os.sep)
+                datas.append((source, dest))
+
+    return datas

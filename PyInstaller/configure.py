@@ -1,32 +1,26 @@
-#! /usr/bin/env python
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Configure PyInstaller for the current Python installation.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# Copyright (C) 2005, Giovanni Bajo
-# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
+"""
+Configure PyInstaller for the current Python installation.
+"""
+
+
 import os
 import sys
 import shutil
-import re
 import time
 import inspect
 
 from PyInstaller import HOMEPATH, PLATFORM
-from PyInstaller import is_win, is_unix, is_darwin, is_py24, get_version
+from PyInstaller.compat import is_win, is_darwin
 
 import PyInstaller.build as build
 import PyInstaller.compat as compat
@@ -35,33 +29,7 @@ import PyInstaller.log as logging
 import PyInstaller.depend.modules
 import PyInstaller.depend.imptracker
 
-logger = logging.getLogger('PyInstaller.configure')
-
-
-def test_Crypt(config):
-    # TODO: disabled for now
-    config["useCrypt"] = 0
-    return
-
-    #Crypt support. We need to build the AES module and we'll use distutils
-    # for that. FIXME: the day we'll use distutils for everything this will be
-    # a solved problem.
-    logger.info("trying to build crypt support...")
-    from distutils.core import run_setup
-    cwd = os.getcwd()
-    args = sys.argv[:]
-    try:
-        os.chdir(os.path.join(HOMEPATH, "source", "crypto"))
-        dist = run_setup("setup.py", ["install"])
-        if dist.have_run.get("install", 0):
-            config["useCrypt"] = 1
-            logger.info("... crypto support available")
-        else:
-            config["useCrypt"] = 0
-            logger.info("... error building crypto support")
-    finally:
-        os.chdir(cwd)
-        sys.argv = args
+logger = logging.getLogger(__name__)
 
 
 def test_RsrcUpdate(config):
@@ -77,7 +45,7 @@ def test_RsrcUpdate(config):
         logger.info('... resource update unavailable - %s', detail)
         return
 
-    test_exe = os.path.join(HOMEPATH, 'support', 'loader', PLATFORM, 'runw.exe')
+    test_exe = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, 'runw.exe')
     if not os.path.exists(test_exe):
         config['hasRsrcUpdate'] = 0
         logger.error('... resource update unavailable - %s not found', test_exe)
@@ -110,7 +78,7 @@ def test_UPX(config, upx_dir):
         if vers:
             v = vers[0].split()[1]
             hasUPX = tuple(map(int, v.split(".")))
-            if is_win and is_py24 and hasUPX < (1, 92):
+            if is_win and hasUPX < (1, 92):
                 logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
                 hasUPX = 0
     except Exception, e:
@@ -129,17 +97,23 @@ def test_UPX(config, upx_dir):
     config['upx_dir'] = upx_dir
 
 
+# TODO Drop this function when new module system based on 'modulegraph'
+#      is in place.
 def find_PYZ_dependencies(config):
     logger.debug("Computing PYZ dependencies")
-    # We need to import `archive` from `PyInstaller` directory, but
+    # We need to import `pyi_importers` from `PyInstaller` directory, but
     # not from package `PyInstaller`
     import PyInstaller.loader
     a = PyInstaller.depend.imptracker.ImportTracker([
         os.path.dirname(inspect.getsourcefile(PyInstaller.loader)),
         os.path.join(HOMEPATH, 'support')])
 
-    a.analyze_r('archive')
-    mod = a.modules['archive']
+    # Frozen executable needs some modules bundled as bytecode objects ('PYMODULE' type)
+    # for the bootstrap process. The following lines ensures that.
+    # It's like making those modules 'built-in'.
+    # 'pyi_importers' is the base module that should be available as bytecode (co) object.
+    a.analyze_r('pyi_importers')
+    mod = a.modules['pyi_importers']
     toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
     for i, (nm, fnm, typ) in enumerate(toc):
         mod = a.modules[nm]
@@ -165,9 +139,7 @@ def get_config(upx_dir, **kw):
         # wait several seconds for user to see this message
         time.sleep(4)
 
-    # if not set by Make.py we can assume Windows
-    config = {'useELFEXE': 1}
-    test_Crypt(config)
+    config = {}
     test_RsrcUpdate(config)
     test_UPX(config, upx_dir)
     find_PYZ_dependencies(config)

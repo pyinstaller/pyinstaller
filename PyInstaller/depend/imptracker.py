@@ -1,34 +1,26 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2005, Giovanni Bajo
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
 
 import sys
 import os
 import glob
+import UserDict
 
 from PyInstaller import depend, hooks
-from PyInstaller.compat import is_win, LogDict, set
+from PyInstaller.compat import is_win
 
 import PyInstaller.log as logging
 import PyInstaller.depend.owner
 import PyInstaller.depend.impdirector
 
-logger = logging.getLogger('PyInstaller.build.mf')
+logger = logging.getLogger(__name__)
 
 
 #=================Import Tracker============================#
@@ -41,15 +33,90 @@ UNTRIED = -1
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
 
 
+# TODO Probably just use modulegraph directly in 'assemble()' in build.py
+#      without ImportTracker or with a different api.
+class ImportTrackerModulegraph:
+    """
+    New import tracker based on module 'modulegraph' for resolving
+    dependencies on Python modules.
+
+    PyInstaller is not able to handle some cases of resolving dependencies.
+    Rather try use a module for that than trying to fix current implementation.
+
+    Public api:
+
+        self.analyze_scripts()
+        self.getwarnings()
+    """
+    def __init__(self, xpath=None, hookspath=None, excludes=None):
+        self.warnings = {}
+        if xpath:
+            self.path = xpath
+        self.path.extend(sys.path)
+        self.modules = dict()
+
+        if hookspath:
+            hooks.__path__.extend(hookspath)
+        if excludes is None:
+            self.excludes = set()
+        else:
+            self.excludes = set(excludes)
+
+    def analyze_script(self, filenames):
+        """
+        Analyze given scripts and get dependencies on other Python modules.
+
+        return two lists - python modules and python extensions
+        """
+        from modulegraph.find_modules import find_modules, parse_mf_results
+
+        mf = find_modules(filenames, excludes=self.excludes)
+        py_files, extensions = parse_mf_results(mf)
+
+        return py_files, extensions
+
+    def getwarnings(self):
+        warnings = self.warnings.keys()
+        for nm, mod in self.modules.items():
+            if mod:
+                for w in mod.warnings:
+                    warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
+        return warnings
+
+
 class ImportTracker:
     # really the equivalent of builtin import
-    def __init__(self, xpath=None, hookspath=None, excludes=None):
+    def __init__(self, xpath=None, hookspath=None, excludes=None, workpath=None):
+
+        # In debug mode a .log file is written to WORKPATH.
+        if __debug__ and workpath:
+            class LogDict(UserDict.UserDict):
+                count = 0
+                #def __init__(self, *args, workpath=''):
+                def __init__(self, *args):
+                    UserDict.UserDict.__init__(self, *args)
+                    LogDict.count += 1
+                    logfile = "logdict%s-%d.log" % (".".join(map(str, sys.version_info)),
+                                                    LogDict.count)
+                    logfile = os.path.join(workpath, logfile)
+                    self.logfile = open(logfile, "w")
+
+                def __setitem__(self, key, value):
+                    self.logfile.write("%s: %s -> %s\n" % (key, self.data.get(key), value))
+                    UserDict.UserDict.__setitem__(self, key, value)
+
+                def __delitem__(self, key):
+                    self.logfile.write("  DEL %s\n" % key)
+                    UserDict.UserDict.__delitem__(self, key)
+            self.modules = LogDict()
+        else:
+            self.modules = dict()
+
         self.path = []
         self.warnings = {}
         if xpath:
             self.path = xpath
         self.path.extend(sys.path)
-        self.modules = LogDict()
 
         # RegistryImportDirector is necessary only on Windows.
         if is_win:
@@ -258,6 +325,7 @@ class ImportTracker:
             except AttributeError:
                 pass
             else:
+                logger.info('Processing hook %s' % hookmodnm)
                 mod = self._handle_hook(mod, hook)
                 if fqname != mod.__name__:
                     logger.warn("%s is changing its name to %s",

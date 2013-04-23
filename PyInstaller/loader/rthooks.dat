@@ -1,0 +1,14 @@
+{
+    'babel':      ['pyi_rth_babel.py'],
+    'django':     ['pyi_rth_django.py'],
+    'encodings':  ['pyi_rth_encodings.py'],
+    'Image':      ['pyi_rth_Image.py'],
+    'matplotlib': ['pyi_rth_mpldata.py'],
+    'PIL.Image':  ['pyi_rth_PIL_Image.py'],
+    'pkg_resources':  ['pyi_rth_pkgres.py'],
+    'PyQt4':      ['pyi_rth_qt4plugins.py'],
+    'Tkinter':    ['pyi_rth_Tkinter.py'],
+    'twisted.internet.reactor':        ['pyi_rth_twisted.py'],
+    'usb':        ['pyi_rth_usb.py'],
+    'win32com':   ['pyi_rth_win32comgenpy.py'],
+}

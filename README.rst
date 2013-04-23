@@ -5,7 +5,7 @@ Official website: http://www.pyinstaller.org
 Requirements
 ------------
 - Python: 
-   * 2.3 - 2.7 (Python 3 is not supported)
+   * 2.4 - 2.7 (Python 3 is not supported)
 
 - Windows (32bit/64bit):
    * Windows XP or newer.
