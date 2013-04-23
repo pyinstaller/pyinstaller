@@ -69,6 +69,17 @@ In a nutshell, the license is GPL for the source code with the exception that:
 For updated information or clarification see our
 `FAQ`_ at the `PyInstaller`_ home page.
 
+How To Contribute
+=====================
+
+|PyInstaller| is an open-source project that is created and
+maintained by volunteers.
+At `Pyinstaller.org`_ you find links to the mailing list,
+IRC channel, and Git repository,
+and the important `How to Contribute`_ link.
+Contributions to code and documentation are welcome,
+as well as tested hooks for installing other packages.
+
 
 Installing |PyInstaller|
 ========================
@@ -342,36 +353,45 @@ to execute your script.
 Everything follows normally from there, provided
 that all the necessary support files were included.
 
+(This is an overview.
+For more detail, see `The Bootstrap Process in Detail`_ below.)
+
 How the One-File Program Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For a one-file program, the |bootloader| first creates a temporary folder
 in the appropriate temp-folder location for this OS.
-The folder is named ``_MEIxxxxx``, where ``xxxxx`` is a random number.
+The folder is named ``_MEIxxxxxx``, where ``xxxxxx`` is a random number.
 
-The one file contains compressed copies of your script and all the support files.
-The boot loader uncompresses these and writes copies
+The one file contains an embedded archive of all the Python
+modules used by your script, as well as
+compressed copies of any non-Python support files (e.g. ``.so`` files).
+The boot loader uncompresses the support files and writes copies
 into the the temporary folder.
 This can take a little time.
 That is why a one-file app is a little slower to start
 than a one-folder app.
 
 After creating the temporary folder, the |bootloader|
-invokes itself from the temporary folder.
-This second |bootloader| proceeds exactly as for the one-folder
+proceeds exactly as for the one-folder
 bundle, in the context of the temporary folder.
-When the second |bootloader| terminates,
-the first deletes the temporary folder.
+When the bundled code terminates,
+it deletes the temporary folder.
+
+(Note that in Linux and related systems, it is possible
+to mount the ``/tmp`` folder with a "no-execution" option.
+That option is not compatible with a |PyInstaller|
+one-file bundle. It needs to execute code out of ``/tmp``.)
 
 Because the program makes a temporary folder with a unique name,
 you can run multiple copies; they won't interfere with each other.
 However, running multiple copies is expensive in disk space because nothing is shared.
 
-The ``_MEIxxxxx`` folder is not removed if the program crashes
+The ``_MEIxxxxxx`` folder is not removed if the program crashes
 or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
 "Force Quit" on Mac OS).
 Thus if your app crashes frequently, your users will lose disk space to
-multiple ``_MEIxxxxx`` temporary folders.
+multiple ``_MEIxxxxxx`` temporary folders.
 
 Do *not* give administrator privileges to a one-file executable
 (setuid root in Unix/Linux, "Run this program as an administrator"
@@ -561,9 +581,9 @@ Options for the Executable Output
 -w, --windowed, --noconsole
     On Windows and Mac OS X, do not create a console window at run time
     for standard input/output.
+    (This option is ignored for other operating systems.)
     On Mac OS X, this option with ``--onefile`` triggers
     the creation of an OS X application bundle.
-    This option is for other operating systems.
 
 -d, --debug
     Cause the |bootloader| to issue progress messages as it initializes
@@ -819,10 +839,9 @@ Your users can download it from there.
 (Pro tip: Do not shut down the virtual machine until
 Dropbox has completely uploaded the .zip to the cloud.)
 
-It is possible to cross-develop for Windows under Linux
+It is claimed to be possible to cross-develop for Windows under Linux
 using the free Wine_ environment.
-<??Need info on PyInstaller under WINE in Linux - example? restrictions??>
-
+Further details are needed, see `How to Contribute`_.
 
 Using Spec Files
 =================
@@ -869,9 +888,10 @@ or
 The latter executes the part of ``pyinstaller`` that follows creation of a spec file. 
 
 When you create a spec file, many command options are written into the spec file.
-When you build from a spec file, those options from
-the command line are ignored, being replaced by the options in the spec file.
-Only the following options are acted on when building from a spec file:
+When you build from a spec file, those options cannot be changed.
+If they are given on the command line they are ignored and
+replaced by the options in the spec file.
+Only the following options have an effect when building from a spec file:
 
 *  --upx-dir=
 *  --distpath=
@@ -1201,6 +1221,9 @@ If the ``--windowed`` option is used when bundling a Windows app,
 they are displayed as MessageBoxes.
 For a ``--windowed`` Mac OS app they are not displayed.
 
+Remember to bundle without ``--debug`` for your production version.
+Users would find the messages annoying.
+
 Getting Python's Verbose Imports
 --------------------------------
 
@@ -1213,6 +1236,7 @@ and not leaking out to the local installed Python.
 
 Python verbose and warning messages always go to standard output
 and are not visible when the ``--windowed`` option is used.
+Remember to not use this in the distributed program.
 
 Helping PyInstaller Find Modules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1250,7 +1274,9 @@ There will be no warnings, only a crash at run-time.
 To find these hidden imports,
 set the ``-v`` flag (`Getting Python's Verbose Imports`_ above).
 
-Once you know what they are, you collect the needed modules
+Once you know what they are, you add the needed modules
+to the bundle using the ``--hidden-import=`` command option,
+by editing the spec file, or
 with a hook file: `Using Hook Files`_ below.
 
 Extending a Package's ``__path__``
@@ -1286,30 +1312,180 @@ More bizarre situations can be accomodated with runtime hooks.
 These are small scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.
 
+There are two ways of providing runtime hooks.
+You can name them with the option ``--runtime-hook=`` *path-to-script*.
+
+Second, some runtime hooks are provided.
 At the end of an analysis, the names in the module list are looked up in
-``support/rthooks.dat`` in the |PyInstaller| install folder.
+``rthooks/rthooks.dat`` in the |PyInstaller| install folder.
 This text file is the string representation of a
 Python dictionary. The key is the module name, and the value is a list
 of hook-script pathnames.
 If there is a match, those scripts are included in the bundled app
 and will be called before your main script starts.
 
-Hooks done in this way, while they need to be careful of what they import, are
-free to do almost anything. One provided hook sets things up so that win32com
-can generate modules at runtime (to disk), and the generated modules can be
-found in the win32com package.
+Hooks you name with the option are executed 
+in the order given, and before any installed runtime hooks.
+If you specify  ``--runtime-hook=file1.py --runtime-hook=file2.py``
+then the execution order at runtime will be:
 
-To specify a new runtime hook, use the option
+1. Code of ``file1.py``
+2. Code of ``file2.py``
+3. Any hook specified for an included module that is found
+   in ``rthooks/rthooks.dat``
+4. Your main script
 
-       ``--runtime-hook=`` *path/to/somescript.py*
-
-with the ``pyinstaller`` or ``pyi-makespec`` command.
-
-
+Hooks done in this way, while they need to be careful of what they import,
+are free to do almost anything.
+One reason to write a run-time hook is to
+override some functions or variables from some modules.
+A good example of this is the Django runtime
+hook (see ``loader/rthooks/pyi_rth_django.py`` in the
+|PyInstaller| folder).
+Django imports some modules dynamically and it is looking
+for some ``.py`` files.
+However ``.py`` files are not available in the one-file bundle.
+We need to override the function
+``django.core.management.find_commands``
+in a way that will just return a list of values.
+The runtime hook does this as follows::
+     
+    import django.core.management
+    def _find_commands(_):
+        return """cleanup shell runfcgi runserver""".split()
+    django.core.management.find_commands = _find_commands
 
 
 Advanced Topics
 ================
+
+The Bootstrap Process in Detail
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are many steps that must take place before the bundled
+script can begin execution. 
+A summary of these steps was given in the Overview
+(`How the One-Folder Program Works`_ and
+`How the One-File Program Works`_).
+Here is more detail to help you understand what the |bootloader|
+does and how to figure out problems.
+
+Bootloader
+----------
+
+The bootloader prepares everything for running Python code.
+It begins the setup and then reruns itself in another process.
+This approach of using two processes allows a lot of flexibility
+and is used in all bundles except one-folder mode in Windows.
+So do not be surprised if you will see your frozen app
+as  two processes in your system task manager.
+     
+What happens during execution of bootloader:
+     
+A. First process: bootloader starts
+
+    1. If one-file mode, extract bundled files to
+       temppath/_MEIxxxxxx
+    
+    2. Set/unset various environment variables,
+       e.g. override LD_LIBRARY_PATH on Linux or LIBPATH on AIX;
+       unset DYLD_LIBRARY_PATH on OSX.
+       
+    3. Set up to handle signals for both processes.
+    
+    4. Run the child process.
+    
+    5. Wait for the child process to finish.
+    
+    6. If one-file mode, delete temppath/_MEIxxxxxx.
+     
+B. Second process: bootloader itself started as a child process.
+
+    1. On Windows set the `activation context`_ 
+    
+    2. Load the Python dynamic library.
+       The name of the dynamic library is embedded in the
+       executable file.
+    
+    3. Initialize Python interpreter: set PYTHONPATH, PYTHONHOME
+    
+    4. Run python code.
+ 
+ 
+Running Python code
+-------------------
+
+Running Python code consists of several steps:
+ 
+1. Run Python initialization code which
+   prepares everything for running the user's main script.
+   The initialization code can use only the Python built-in modules
+   because the general import mechanism is not yet available.
+   It sets up the python import mechanism to load modules
+   from archives embedded in the executable.
+   It also adds the attributes ``frozen``
+   and ``MEIPASS`` to the ``sys`` built-in module.
+
+2. Execute run run-time hooks: first those specified by the
+   user, then any standard ones.
+
+3. Install python "egg" files.
+   When a module is part of a zip file (.egg),
+   it has been bundled into the ``./eggs`` directory.
+   Installing means appending .egg file names to ``sys.path``.
+   Python automatically detects whether an
+   item in ``sys.path`` is a zip file or a directory.
+
+4. Run the main script.
+
+Python imports in a frozen app
+-------------------------------------
+
+PyInstaller embeds compiled python code
+(``.pyc`` files) within the executable.
+PyInstaller injects its code into the
+normal Python import mechanism.
+Python allows this;
+the support is described in `PEP 302`_  "New Import Hooks".
+ 
+PyInstaller implements the PEP 302 specification for
+importing built-in modules,
+importing frozen modules (compiled python code
+bundled with the app) and for C-extensions.
+The code can be read in ``./PyInstaller/loader/pyi_importers.py``.
+ 
+At runtime the PyInstaller PEP 302 hooks are appended
+to the variable ``sys.meta_path``.
+When trying to import modules the interpreter will
+first try PEP 302 hooks in ``sys.meta_path``
+before searching in ``sys.path``.
+As a result, the Python interpreter 
+loads imported python modules from the archive embedded
+in the bundled executable.
+
+This is the resolution order of import statements
+in a bundled app:
+ 
+1. Is it a built-in module?
+   A list of built-in modules is in variable
+   ``sys.builtin_module_names``.
+
+2. Is it a module embedded in the executable?
+   Then load it from embedded archive.
+
+3. Is it a C-extension?
+   The app will try to find a file with name
+   *package.subpackage.module* ``.pyd`` or
+   *package.subpackage.module* ``.so``
+
+4. Next examine paths in the ``sys.path``
+   (PYTHONPATH). 
+   There could be any additional location with python modules
+   or ``.egg`` filenames.
+   
+5. If the module was not found then
+   raise ``ImportError``.
+
 
 Adapting to being "frozen"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1354,16 +1530,31 @@ You can include related files in either type of distribution.
 Data files and folders of files can be included
 by editing the spec file; see `Adding Files to the Bundle`_.
 
-In the one-folder distribution, included files are in the distribution folder.
+In the one-folder distribution,
+bundled files are in the distribution folder.
 You can direct your users to these files, for example
-to read a ``README`` or edit a configuration file.
+to see the ``README`` or edit a configuration file.
 Your code can make useful changes to files in the folder.
 
 In the one-file mode, the ``basedir`` path discovered by the code above
 is the path to a temporary folder that will be deleted.
 Your users cannot easily access any included files.
-Any files your code creates or modifies in that folder will disappear
-when execution ends.
+Any files your code creates or modifies in that folder
+are available only while the app is running.
+When it ends they will be deleted.
+
+Another way to access data files in one-file mode is to 
+refer to ``sys.executable``. 
+In an un-bundled app, that is, when running your script
+from the command line or a debugger, ``sys.executable``
+is the path to the Python interpreter.
+In a bundled app, it is the path to the bundled executable.
+The expression
+
+	``os.path.dirname(sys.executable)``
+
+gives the path of the folder containing the executable file
+that was launched to start the app.
 
 Capturing Version Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1656,21 +1847,22 @@ objects and performing the ``PYZ``, ``EXE`` and ``COLLECT`` statements.
 Using Hook Files
 ~~~~~~~~~~~~~~~~~~~~~
 
-A "hook" file tells |PyInstaller| about hidden imports 
+In summary, a "hook" file tells |PyInstaller| about hidden imports 
 called by a particular module.
 The name of the hook file is ``hook-<module>.py`` where "<module>" is 
 the name of a script or imported module that will be found by Analysis.
+You should browse through the existing hooks in the
+``hooks`` folder of the |PyInstaller| distribution folder,
+if only to see the names of the many supported imports.
 
-(??-->)
-For example ``hook-xml.dom.py`` is a hook file telling about hidden imports
-by the module ``xml.dom``.
-When your script has ``import xml.dom`` or ``from xml import dom``,
-the Analysis will note it and check for a hook file ``hook-xml.dom.py``.
-(<--correct example??)
+For example ``hook-cPickle.py`` is a hook file telling
+about hidden imports used by the module ``cPickle``.
+When your script has ``import cPickle``
+the Analysis will note it and check for a hook file ``hook-cPickle.py``.
 
-Typically a hook module has only one line,
+Typically a hook module has only one line; in ``hook-cPickle.py`` it is
 
-      ``hiddenimports = ['module1', 'module2']``
+      ``hiddenimports = ['copy_reg', 'types', 'string']``
 
 assigning a list of one or more module names to ``hiddenimports``.
 These module names are added to the Analysis list exactly as if the 
@@ -1688,69 +1880,100 @@ the command could be simply
 If you successfully hook a publicly distributed module in this way,
 please send us the hook file so we can make it available to others. 
 
-You may want to look at the existing hooks in the
-``hooks`` folder of the |PyInstaller| distribution folder.
+Hooks in Detail
+~~~~~~~~~~~~~~~~~~~~~
 
-When a module modifies the ``__path__`` variable,
-a static list of names won't suffice
+A hook is a module named
+``hook-`` *fully.qualified.import.name* ``.py`` in the
+``hooks`` folder of the |PyInstaller| folder
+(or in a folder specified with ``--additional-hooks-dir``).
+
+A hook is executable Python code that should
+define one or more of the following three global names:
+
+
+``hiddenimports``
+    A list of module names (relative or absolute) that the
+    hooked module imports in some opaque way.
+    These names extend the list of imported modules created
+    by scanning the code. Example::
+
+        hiddenimports = ['_proxy', 'utils', 'defs']
+
+    A way to simplify adding all submodules of a package is to use::
+
+        from hookutils import collect_submodules
+        hiddenimports = collect_submodules('package')
+
+    For an example see ``hook-docutils.py`` in the hooks folder.
+
+``datas``
+   A list of globs of files or directories to bundle as datafiles. For
+   each glob, a destination directory is specified.
+
+   Example::
+
+      datas = [
+           ('/usr/share/icons/education_*.png', 'icons'),
+           ('/usr/share/libsmi/mibs/*', 'mibs'),
+	   ]
+
+   This will copy all files matching `education_*.png` into the
+   subdirectory `icons`,
+   and recursively (because of the ``*`` wildcard)
+   copy the content of `/usr/share/libsmi/mibs` into `mibs`.
+   
+   A way to simplify collecting a folder of files is to use::
+
+      from hookutils import collect_data_files
+      datas = collect_data_files('package_name')
+
+   to collect all package-related data files into a folder
+   *package_name* in the app bundle.
+   For an example see hook-pytz.py in the hooks folder.
+
+``attrs``
+    A list of ``(`` *name* ``,`` *value* ``)`` pairs
+    (where value is normally meaningless).
+
+    This will set the module-attribute *name* to *value* for each
+    pair in the list. The value is usually unimportant because the
+    modules are not executed.
+
+    The main purpose is so that ImportTracker will not issue spurious
+    warnings when the rightmost node in a dotted name turns out to be
+    an attribute in a package, instead of a missing submodule.
+    For an example see the hook file ``hook-xml.sax.py``.
+
+
+``def hook(mod):``
+    Defines a function that takes a ``Module`` object.
+    It must return a ``Module`` object, possibly the same one
+    unchanged, or a modified one.
+    A ``Module`` object is an instance of the class
+    ``PyInstaller.depend.modules.Module()`` which you can read.
+    If defined, ``hook(mod)`` is called before |PyInstaller| tests
+    ``hiddenimports`` and ``attrs``. So one use of a ``hook(mod)``
+    function would be to test ``sys.version`` and adjust 
+    ``hiddenimports`` based on that.
+
+This function is supported to handle cases like dynamic modification of a
+package's ``__path__`` variable.
+A static list of names won't suffice
 because the new entry on ``__path__`` may well require computation.
-
-In this case, the hook file must define a function ``hook(mod)``.
-The *mod* argument is an instance of ``mf.Module``
-which has (more or less) the same attributes as a real
-module object.
-This hook function should return an instance of ``mf.Module``.
-It may be perhaps a brand new one, but more likely the same one passed
-as its argument but modified.
 See ``hook-win32com.py`` in the hooks folder for an example.
-
-A hook module is executed like any other
-module, so you can use any Python code in it.
-See the existing hooks in for some examples, esp. the django-related hooks.
-
-Warnings
---------
-
-(?? I have no idea of the context for this topic: hook file? spec file?-->)
-
-``ImportTracker`` has a ``getwarnings()`` method that returns all the
-warnings accumulated by the instance, and by the ``Module`` instances
-in its modules dict. Generally, it is ``ImportTracker`` who will
-accumulate the warnings generated during the structural phase, and
-``Modules`` that will get the warnings generated during the code scan.
-
-Note that by using a hook module, you can silence some particularly tiresome
-warnings, but not all of them.
-(<--??)
-
-Cross Reference
----------------
-
-(?? What is the context for this topic, where would getxref() be used? example? -->)
-
-Once a full analysis (that is, an ``analyze_r`` call) has been done,
-you can get a cross reference by using ``getxref()``. This returns a
-list of tuples. Each tuple is ``(modulename, importers)``, where
-importers is a list of the (fully qualified) names of the modules
-importing ``modulename``. Both the returned list and the importers
-list are sorted.
-(<--??)
-
 
 
 Building the Bootloader
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
-(??NOTE I have not verified any of the tech details in this topic!
-If you have actually built the |bootloader| for some platform please
-double-check the examples! ??)
 
 PyInstaller comes with binary bootloaders for most platforms in
 the ``bootloader`` folder of the distribution folder.
 For most cases, these precompiled bootloaders are all you need.
 
 If there is no precompiled bootloader for your platform,
-or if you want to modify the |bootloader| source, you need to build the |bootloader|.
+or if you want to modify the |bootloader| source,
+you need to build the |bootloader|.
 
 Development tools
 -----------------
@@ -1871,6 +2094,121 @@ This will also produce ``support/loader/YOUR_OS/run``,
 ``support/loader/YOUR_OS/runw_d``, but they will not be LSB binaries.
 
 
+Modulefinder Replacement - ImportTracker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Imptracker package
+(defined in ``depend/imptracker.py`` in the |PyInstaller| folder) 
+replaces Modulefinder_ but is modelled after iu.py_.
+The ``modulegraph`` package, which is similar,
+will be supported in a future release.
+
+Imptracker, like Modulefinder,
+uses ``ImportDirectors`` and ``Owners`` to partition the
+import name space. Except for the fact that these return ``Module``
+instances instead of real module objects, they are identical.
+
+Instead of an ``ImportManager``, it has an ``ImportTracker`` managing things.
+
+ImportTracker
+-------------
+
+``ImportTracker`` can be called in two ways: ``analyze_one(name,
+importername=None)`` or ``analyze_r(name, importername=None)``. The
+second method does what modulefinder does - it recursively finds all
+the module names that importing name would cause to appear in
+``sys.modules``. The first method is non-recursive. This is useful,
+because it is the only way of answering the question "Who imports
+name?" But since it is somewhat unrealistic (very few real imports do
+not involve recursion), it deserves some explanation.
+
+``analyze_one()``
+-----------------
+
+When a name is imported, there are structural and dynamic effects.
+The dynamic
+effects are due to the execution of the top-level code in the module (or
+modules) that get imported. The structural effects have to do with whether the
+import is relative or absolute, and whether the name is a dotted name (if there
+are N dots in the name, then N+1 modules will be imported even without any code
+running).
+
+The analyze_one method determines the structural effects, and defers
+the dynamic effects. For example, ``analyze_one("B.C", "A")`` could
+return ``["B", "B.C"]`` or ``["A.B", "A.B.C"]`` depending on whether
+the import turns out to be relative or absolute. In addition,
+ImportTracker's modules dict will have Module instances for them.
+
+Module Classes
+--------------
+
+There are Module subclasses for builtins, extensions, packages and (normal)
+modules. Besides the normal module object attributes, they have an attribute
+imports. For packages and normal modules, imports is a list populated by
+scanning the code object (and therefor, the names in this list may be relative
+or absolute names - we don't know until they have been analyzed).
+
+The highly astute will notice that there is a hole in
+``analyze_one()`` here. The first thing that happens when ``B.C`` is
+being imported is that ``B`` is imported and its top-level code
+executed. That top-level code can do various things so that when the
+import of ``B.C`` finally occurs, something completely different
+happens (from what a structural analysis would predict). But mf can
+handle this through its hooks mechanism.
+
+code scanning
+-------------
+
+Like modulefinder, ``ImportTracker`` scans the byte code of a module,
+looking for imports.
+In addition it will pick out a module's ``__all__``
+attribute, if it is built as a list of constant names. This means that
+if a package declares an ``__all__`` list as a list of names,
+ImportTracker will track those names if asked to analyze
+``package.*``. The code scan also notes the occurance of
+``__import__``, ``exec`` and ``eval``, and can issue warnings when
+they are found.
+
+The code scanning also keeps track (as well as it can) of the context of an
+import. It recognizes when imports are found at the top-level, and when they
+are found inside definitions (deferred imports). Within that, it also tracks
+whether the import is inside a condition (conditional imports).
+
+Hooks
+-------
+
+In modulefinder, scanning the code takes the place of executing the
+code object. ``ExtensionModules``, of course, don't get scanned, so
+there needs to be a way of recording any imports they do.
+
+Please read `Listing Hidden Imports`_ for more information.
+
+``ImportTracker`` goes further and allows a module to be hooked (after it has been
+scanned, but before analyze_one is done with it). 
+
+
+Warnings
+--------
+
+``ImportTracker`` has a ``getwarnings()`` method that returns all the
+warnings accumulated by the instance, and by the ``Module`` instances
+in its modules dict. Generally, it is ``ImportTracker`` who will
+accumulate the warnings generated during the structural phase, and
+``Modules`` that will get the warnings generated during the code scan.
+
+Note that by using a hook module, you can silence some particularly tiresome
+warnings, but not all of them.
+
+Cross Reference
+---------------
+
+Once a full analysis (that is, an ``analyze_r`` call) has been done,
+you can get a cross reference by using ``getxref()``. This returns a
+list of tuples. Each tuple is ``(modulename, importers)``, where
+importers is a list of the (fully qualified) names of the modules
+importing ``modulename``. Both the returned list and the importers
+list are sorted.
+
 
 Outdated Features
 ==================
@@ -1958,6 +2296,7 @@ the ``TOCs`` building the ``EXE``::
                 ...
 
 See `Using Spec Files`_ for details.
+
 
 .. _iu.py:
 
@@ -2141,202 +2480,6 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
         of PathImportDirector instance at 825900>
       >>>
 
-``mf.py``: A Modulefinder Replacement
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-(``mf.py`` is no longer supported although may work.
-The ``modulegraph`` package, which is similar, will be supported in a future release.)
-
-Module ``mf`` replaces Modulefinder_ but is modelled after iu.py_.
-
-It also uses ``ImportDirectors`` and ``Owners`` to partition the
-import name space. Except for the fact that these return ``Module``
-instances instead of real module objects, they are identical.
-
-Instead of an ``ImportManager``, ``mf`` has an ``ImportTracker``
-managing things.
-
-ImportTracker
--------------
-
-``ImportTracker`` can be called in two ways: ``analyze_one(name,
-importername=None)`` or ``analyze_r(name, importername=None)``. The
-second method does what modulefinder does - it recursively finds all
-the module names that importing name would cause to appear in
-``sys.modules``. The first method is non-recursive. This is useful,
-because it is the only way of answering the question "Who imports
-name?" But since it is somewhat unrealistic (very few real imports do
-not involve recursion), it deserves some explanation.
-
-``analyze_one()``
------------------
-
-When a name is imported, there are structural and dynamic effects. The dynamic
-effects are due to the execution of the top-level code in the module (or
-modules) that get imported. The structural effects have to do with whether the
-import is relative or absolute, and whether the name is a dotted name (if there
-are N dots in the name, then N+1 modules will be imported even without any code
-running).
-
-The analyze_one method determines the structural effects, and defers
-the dynamic effects. For example, ``analyze_one("B.C", "A")`` could
-return ``["B", "B.C"]`` or ``["A.B", "A.B.C"]`` depending on whether
-the import turns out to be relative or absolute. In addition,
-ImportTracker's modules dict will have Module instances for them.
-
-Module Classes
---------------
-
-There are Module subclasses for builtins, extensions, packages and (normal)
-modules. Besides the normal module object attributes, they have an attribute
-imports. For packages and normal modules, imports is a list populated by
-scanning the code object (and therefor, the names in this list may be relative
-or absolute names - we don't know until they have been analyzed).
-
-The highly astute will notice that there is a hole in
-``analyze_one()`` here. The first thing that happens when ``B.C`` is
-being imported is that ``B`` is imported and its top-level code
-executed. That top-level code can do various things so that when the
-import of ``B.C`` finally occurs, something completely different
-happens (from what a structural analysis would predict). But mf can
-handle this through its hooks mechanism.
-
-code scanning
--------------
-
-Like modulefinder, ``mf`` scans the byte code of a module, looking for
-imports. In addition, ``mf`` will pick out a module's ``__all__``
-attribute, if it is built as a list of constant names. This means that
-if a package declares an ``__all__`` list as a list of names,
-ImportTracker will track those names if asked to analyze
-``package.*``. The code scan also notes the occurance of
-``__import__``, ``exec`` and ``eval``, and can issue warnings when
-they are found.
-
-The code scanning also keeps track (as well as it can) of the context of an
-import. It recognizes when imports are found at the top-level, and when they
-are found inside definitions (deferred imports). Within that, it also tracks
-whether the import is inside a condition (conditional imports).
-
-Hooks
--------
-
-In modulefinder, scanning the code takes the place of executing the
-code object. ``ExtensionModules``, of course, don't get scanned, so
-there needs to be a way of recording any imports they do.
-
-Please read `Listing Hidden Imports`_ for more information.
-
-``mf`` goes further and allows a module to be hooked (after it has been
-scanned, but before analyze_one is done with it). A hook is a module named
-``hook-fully.qualified.name`` in the ``PyInstaller.hooks`` package.
-
-These modules should have one or more of the following three global
-names defined:
-
-
-``hiddenimports``
-    A list of modules names (relative or absolute) the
-    module imports in some untrackable way.
-
-    This extends the list of modules to be imported which is created
-    by scanning the code.
-
-    Example::
-
-      hiddenimports = ['_proxy', 'utils', 'defs']
-
-``datas``
-   A list of globs of files or directories to bundle as datafiles. For
-   each glob, a destination directory is specified.
-
-   Example::
-
-      datas = [
-           ('/usr/share/icons/education_*.png', 'icons'),
-           ('/usr/share/libsmi/mibs/*', 'mibs'),
-	   ]
-
-   This will copy all iconfiles matching `education_*.png` into the
-   subdirectory `icons` and recursively copy the content of
-   `/usr/share/libsmi/mibs` into `mibs`.
-
-``attrs``
-    A list of ``(name, value)`` pairs (where value is normally
-    meaningless).
-
-    This will set the module-attribute ``name`` to ``value`` for each
-    pait in the list. The value is meaningless normally, since the
-    modules are not executed.
-
-    This exists mainly so that ImportTracker won't issue spurious
-    warnings when the rightmost node in a dotted name turns out to be
-    an attribute in a package, instead of a missing submodule.
-
-    Example: See ``PyInstaller/hooks/hook-xml.dom.ext.py``.
-
-
-``hook(mod)``
-    A function expecting a ``Module`` instance and
-    returning a ``Module`` instance (so it can modify or replace).
-
-    This exists for things like dynamic modification of a
-    package's ``__path__`` or perverse situations, like
-    ``xml.__init__`` replacing itself in ``sys.modules`` with
-    ``_xmlplus.__init__``. (It takes nine hook modules to properly
-    trace through PyXML-using code, and I can't believe that it's any
-    easier for the poor programmer using that package). 
-
-    The ``hook(mod)`` (if it exists) is called before looking at the
-    others - that way it can, for example, test ``sys.version`` and
-    adjust what's in ``hiddenimports``.
-
-
-mf Usage
---------
-
-A simple example follows:
-
-      >>> import mf
-      >>> a = mf.ImportTracker()
-      >>> a.analyze_r("os")
-      ['os', 'sys', 'posixpath', 'nt', 'stat', 'string', 'strop',
-      're', 'pcre', 'ntpath', 'dospath', 'macpath', 'win32api',
-      'UserDict', 'copy', 'types', 'repr', 'tempfile']
-      >>> a.analyze_one("os")
-      ['os']
-      >>> a.modules['string'].imports
-      [('strop', 0, 0), ('strop.*', 0, 0), ('re', 1, 1)]
-      >>>
-
-
-The tuples in the imports list are (name, delayed, conditional).
-
-      >>> for w in a.modules['string'].warnings: print w
-      ...
-      W: delayed  eval hack detected at line 359
-      W: delayed  eval hack detected at line 389
-      W: delayed  eval hack detected at line 418
-      >>> for w in a.getwarnings(): print w
-      ...
-      W: no module named pwd (delayed, conditional import by posixpath)
-      W: no module named dos (conditional import by os)
-      W: no module named os2 (conditional import by os)
-      W: no module named posix (conditional import by os)
-      W: no module named mac (conditional import by os)
-      W: no module named MACFS (delayed, conditional import by tempfile)
-      W: no module named macfs (delayed, conditional import by tempfile)
-      W: top-level conditional exec statment detected at line 47
-         - os (C:\Program Files\Python\Lib\os.py)
-      W: delayed  eval hack detected at line 359
-         - string (C:\Program Files\Python\Lib\string.py)
-      W: delayed  eval hack detected at line 389
-         - string (C:\Program Files\Python\Lib\string.py)
-      W: delayed  eval hack detected at line 418
-         - string (C:\Program Files\Python\Lib\string.py)
-      >>>
-
-
 
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
@@ -2382,4 +2525,7 @@ The tuples in the imports list are (name, delayed, conditional).
 .. _Git: http://git-scm.com/downloads
 .. _Cython: http://www.cython.org/
 .. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
+.. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
+.. _`PEP 302`: http://www.python.org/dev/peps/pep-0302/
+.. _`How to Contribute`: http://www.pyinstaller.org/wiki/Development/HowtoContribute
 .. include:: _definitions.txt
