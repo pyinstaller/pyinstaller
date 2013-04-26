@@ -1296,15 +1296,23 @@ class BUNDLE(Target):
         self.appname = os.path.splitext(base_name)[0]
         self.version = kws.get("version", "0.0.0")
         self.toc = TOC()
+        self.strip = 0
+        self.upx = 0
 
         for arg in args:
             if isinstance(arg, EXE):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                self.toc.extend(arg.dependencies)
+                self.toc.extend(arg.dependencies) 
+                self.strip = arg.strip
+                self.upx = arg.upx
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
+                # TOC doesn't have a strip or upx attribute, so there is no way for us to
+                # tell which cache we should draw from.
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
+                self.strip = arg.strip_binaries
+                self.upx = arg.upx_binaries
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
@@ -1381,7 +1389,7 @@ class BUNDLE(Target):
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, dist_nm=inm)
+                fnm = checkCache(fnm, strip=self.strip, upx=self.upx, dist_nm=inm)
             tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
