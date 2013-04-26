@@ -69,6 +69,17 @@ In a nutshell, the license is GPL for the source code with the exception that:
 For updated information or clarification see our
 `FAQ`_ at the `PyInstaller`_ home page.
 
+How To Contribute
+=====================
+
+|PyInstaller| is an open-source project that is created and
+maintained by volunteers.
+At `Pyinstaller.org`_ you find links to the mailing list,
+IRC channel, and Git repository,
+and the important `How to Contribute`_ link.
+Contributions to code and documentation are welcome,
+as well as tested hooks for installing other packages.
+
 
 Installing |PyInstaller|
 ========================
@@ -103,7 +114,7 @@ MS-DOS command line.
 However it is particularly easy to use pip-Win_,
 which sets up both pip_ and virtualenv_ and makes it simple
 to install packages and to switch between different Python interpreters.
-(For more on virtualenv, see `Supporting Multiple Platforms`_ below.)
+(For more on the uses of virtualenv, see `Supporting Multiple Platforms`_ below.)
 
 When pip-Win is working, enter this command in its Command field
 and click Run:
@@ -111,7 +122,7 @@ and click Run:
   ``venv -c -i  pyi-env-name``
 
 This creates a new virtual environment rooted at ``C:\Python\pyi-env-name``
-and make that the current environment. 
+and makes it the current environment. 
 A new command shell
 window opens in which you can run commands within this environment.
 Enter the command
@@ -199,16 +210,13 @@ The complete installation places these commands on the execution path:
   See `Windows COM Server Support`_.
 
 If you do not perform the complete installation (``setup.py`` or 
-installing via ``pip``), these commands will not exist.
+installing via ``pip``), these commands will not exist as commands.
 However you can still execute all the functions documented below
 by running Python scripts found in the distribution folder.
-For example the equivalent of the ``pyinstaller`` command is
-
-    ``python /path-to-distribution-folder/pyinstaller.py``
-
-The other commands can be found in the same way at the top level
-or in the ``utils`` folder.
-
+The equivalent of the ``pyinstaller`` command is
+*pyinstaller-folder* ``/pyinstaller.py``.
+The other commands are found in *pyinstaller-folder* ``/cliutils/`` 
+with obvious names (``makespec.py`` and etc.)
 
 Overview: What |PyInstaller| Does and How It Does It
 ============================================================
@@ -221,7 +229,7 @@ There are many options, exceptions, and special cases covered under `Using PyIns
 First it analyzes your code to discover every other file 
 your script needs in order to execute.
 Then it finds, copies, and collects all those other
-files—including the active Python interpreter!—and
+files -- including the active Python interpreter! -- and
 puts them with
 your script in a single folder,
 or optionally in a single executable file. 
@@ -345,41 +353,51 @@ to execute your script.
 Everything follows normally from there, provided
 that all the necessary support files were included.
 
+(This is an overview.
+For more detail, see `The Bootstrap Process in Detail`_ below.)
+
 How the One-File Program Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For a one-file program, the |bootloader| first creates a temporary folder
 in the appropriate temp-folder location for this OS.
-The folder is named ``_MEIxxxxx``, where ``xxxxx`` is a random number.
+The folder is named ``_MEIxxxxxx``, where ``xxxxxx`` is a random number.
 
-The one file contains compressed copies of your script and all the support files.
-The boot loader uncompresses these and writes copies
+The one file contains an embedded archive of all the Python
+modules used by your script, as well as
+compressed copies of any non-Python support files (e.g. ``.so`` files).
+The boot loader uncompresses the support files and writes copies
 into the the temporary folder.
 This can take a little time.
 That is why a one-file app is a little slower to start
 than a one-folder app.
 
 After creating the temporary folder, the |bootloader|
-invokes itself from the temporary folder.
-This second |bootloader| proceeds exactly as for the one-folder
+proceeds exactly as for the one-folder
 bundle, in the context of the temporary folder.
-When the second |bootloader| terminates,
-the first deletes the temporary folder.
+When the bundled code terminates,
+it deletes the temporary folder.
+
+(Note that in Linux and related systems, it is possible
+to mount the ``/tmp`` folder with a "no-execution" option.
+That option is not compatible with a |PyInstaller|
+one-file bundle. It needs to execute code out of ``/tmp``.)
 
 Because the program makes a temporary folder with a unique name,
 you can run multiple copies; they won't interfere with each other.
 However, running multiple copies is expensive in disk space because nothing is shared.
 
-The ``_MEIxxxxx`` directory is not removed if the program crashes
-or is killed (kill -9 on Unix, killed by Task Manager on Windows).
+The ``_MEIxxxxxx`` folder is not removed if the program crashes
+or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
+"Force Quit" on Mac OS).
 Thus if your app crashes frequently, your users will lose disk space to
-multiple ``_MEIxxxxx`` temporary folders.
+multiple ``_MEIxxxxxx`` temporary folders.
 
 Do *not* give administrator privileges to a one-file executable
 (setuid root in Unix/Linux, "Run this program as an administrator"
 property in Windows 7).
 There is an unlikely but not impossible way in which a malicious attacker could
-corrupt one of the shared libraries in the temp directory
+corrupt one of the shared libraries in the temp folder
 while the |bootloader| is preparing it.
 Distribute a privileged program in one-folder mode instead.
 
@@ -394,10 +412,25 @@ Error messages from Python and
 print statements in your script will appear in the console window.
 If your script reads from standard input, the user can enter data in the window.
 
-Optionally you can tell |PyInstaller| to not provide a console window.
+An option for Windows and Mac OS is to tell |PyInstaller| to not provide a console window.
 The |bootloader| starts Python with no target for standard output or input.
 Do this if your script has a graphical interface for user input and can properly 
 report its own diagnostics.
+
+Hiding the Source Code
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The bundled app does not include any source code.
+However, |PyInstaller| bundles compiled Python scripts (``.pyc`` files).
+These could in principle be decompiled to reveal the logic of
+your code.
+
+If you want to hide your source code more thoroughly, one possible option
+is to compile some of your modules with Cython_.
+Using Cython you can convert Python modules into C and compile
+the C to machine language.
+|PyInstaller| can follow import statements that refer to
+Cython C object modules and bundle them.
 
 
 Using PyInstaller
@@ -408,28 +441,30 @@ The syntax of the ``pyinstaller`` command is:
 
     ``pyinstaller`` [*options*] *script* [*script* ...] | *specfile*
 
-In the normal case,
+In the most simple case,
 set the current directory to the location of your program ``myscript.py``
-and execute
+and execute::
 
-    ``pyinstaller`` `options...` ``myscript.py``
+    pyinstaller myscript.py
 
 |PyInstaller| analyzes ``myscript.py`` and:
 
-* Writes ``myscript.spec``.
-* Creates a directory ``build`` if it does not exist.
-* Writes some log files in the ``build`` directory.
-* Creates a directory ``dist`` if it does not exist.
-* Writes the ``myscript`` executable folder or file in the ``dist`` directory.
+* Writes ``myscript.spec`` in the current directory.
+* Creates a folder ``build`` in the current directory if it does not exist.
+* Writes some log files and working files in the ``build`` folder.
+* Creates a folder ``dist`` in the current directory if it does not exist.
+* Writes the ``myscript`` executable folder in the ``dist`` folder.
+
+In the ``dist`` folder you find the bundled app you distribute to your users.
 
 Normally you name one script on the command line.
 If you name more, all are analyzed and included in the output.
-However, the first script named supplies the default name for the
-spec file and for the executable folder or file,
-and is the first to execute at run-time.
+However, the first script named supplies the name for the
+spec file and for the executable folder or file.
+Its code is the first to execute at run-time.
 
 For certain uses you may edit the contents of ``myscript.spec``
-(as described under `Using Spec Files`_).
+(described under `Using Spec Files`_).
 After you do this, you name the spec file to |PyInstaller| instead of the script:
 
     ``pyinstaller myscript.spec``
@@ -442,10 +477,9 @@ or, on Windows,
 
     ``pyinstaller "C:\Documents and Settings\project\myscript.spec"``
 
+In this case
 |PyInstaller| creates or uses the ``dist`` and ``build`` subdirectories
-in the same directory as the script or spec file that you name.
-In the ``dist`` folder you find the bundled app you distribute to your users.
-
+in the same location as the script or spec file that you name.
 
 Options
 ~~~~~~~~~~~~~~~
@@ -465,11 +499,26 @@ General Options
     Do *not* include Python module ``codecs`` and other Unicode support.
     The default is to include them if available, whether the script imports them or not.
 
---buildpath=path_to_build_directory
-    Specify where to put the |PyInstaller| log files for this run.
-    The default path is a ``build`` subdirectory
-    in the same directory as the input script or spec file.
+--distpath=path_to_executable, -o path_to_executable
+	Say where to put the bundled app.
+	The default is a ``dist`` folder in 
+	the same location as the first script.
+	
+--specpath=path_to_spec_file
+	Say where to put the *name* `.spec` file.
+	The default is the same location as the first script.
 
+--buildpath=path_to_work_files
+    Say where to put the |PyInstaller| log and work files for this run.
+    The default path is a ``build`` folder
+    in the same location as the first script or spec.
+
+--clean
+	Tells |PyInstaller| to erase all log and work files before it starts.
+	The default is to take advantage of any work files existing in
+	the workpath from a prior run to possibly shorten the building process.
+	Use --clean to make sure all parts of the app are built fresh.
+	
 -y, --noconfirm
     Replace an existing executable folder or file without warning.
     The default is to ask for permission before deleting.
@@ -477,6 +526,7 @@ General Options
 --log-level=keyword
     Tell |PyInstaller| how much detail you want it to report on the
     console as it runs.
+    For more about these messages, see `Build-time Messages`_ below.
     The keywords, from most verbose to least, are DEBUG INFO WARN ERROR CRITICAL.
     The default is INFO.
 
@@ -486,11 +536,11 @@ Options for Finding Imported Modules and Libraries
 
 -p dir_list, --paths=dir_list
     Set the search path(s) for imported modules (like using PYTHONPATH).
-    Give one or more paths separated by ``;`` (under Windows) or ``:``
-    (all other platforms).
     Use this option to help |PyInstaller| to search in the right places
     when your code modifies ``sys.path`` for imports.
-    This option can be given more than once.
+    Give one or more paths separated by ``;`` (under Windows) or ``:``
+    (all other platforms), or give the option
+    more than once to give multiple paths to search.
 
 --hidden-import=modulename
     Name an imported Python module that is not visible in your code.
@@ -515,7 +565,7 @@ Options for the Executable Output
 
 -n name, --name=name
     Give a *name* for the specfile and the executable output.
-    The default is the basename of the (first) script.
+    The default is the basename of the first script.
 
 -D, --onedir
     Create a folder *name* containing an executable *name*
@@ -524,27 +574,23 @@ Options for the Executable Output
 -F, --onefile
     Create a single executable file *name* (or *name* ``.exe`` or *name* ``.app``).
 
--o directory_path, --out=directory_path
-    Create the spec file in *directory_path*.
-    The default location for the spec file is the ``dist`` folder in the current directory.
-    (If the current directory is the |PyInstaller| distribution folder,
-    a *name* subdirectory is created to hold the spec file and ``build`` and ``dist``.)
-
 -c, --console, --nowindowed
     Set up a console subsystem for standard input/output at run time.
     This is the default for both one-file and one-folder modes.
 
 -w, --windowed, --noconsole
-    Do not create a console window for standard input/output at run time.
-    On Mac OS X, use this option with ``--onefile`` to create an OS X application bundle.
-    This option is ignored under Linux.
+    On Windows and Mac OS X, do not create a console window at run time
+    for standard input/output.
+    (This option is ignored for other operating systems.)
+    On Mac OS X, this option with ``--onefile`` triggers
+    the creation of an OS X application bundle.
 
 -d, --debug
     Cause the |bootloader| to issue progress messages as it initializes
     at run time. See `Getting Debug Messages`_ below.
 
 -s, --strip
-    Apply strip (symbol table stripper to reduce file size)
+    Apply ``strip`` (symbol table stripper to reduce file size)
     to the executable and all shared libraries.
     Not recommended with the cygwin package on
     Windows, which tends to render normal Win32 dlls unusable.
@@ -617,19 +663,63 @@ It contains:
   + A folder ``Resources`` that contains an icon file ``icon-windowed.icns``.
   + A file ``Info.plist`` that describes the app.
 
-``Info.plist`` (which you can inspect with the Property List Editor
-that is part of XCode) designates the icon file for the app.
+``Info.plist`` is an `Info Property List`_ XML file (or "plist").
+Its contents tell Mac OS X about your application.
+You can inspect and edit a plist  with the Property List Editor
+that is part of XCode.
 
-By default |PyInstaller| provides its own logo as the icon file for the app.
-As a work-around (pending the promised support for the ``--icon-file`` option)
-you can apply your own icon as follows:
+Setting a Custom Icon
+-----------------------
 
-* Prepare an ``.icns`` file with your own graphic.
-* Save it as ``icon-windowed.icns`` replacing the default one 
+The minimal plist provided by |PyInstaller| designates the icon file for the app
+as the  ``icon-windowed.icns`` file in ``Resources``.
+This is the |PyInstaller| logo in icns format.
+Support for the ``--icon-file`` option is promised for the future.
+For now you can apply your own icon after the app is built in several ways:
+
+* Prepare another ``.icns`` file with your own graphic,
+  save it as ``icon-windowed.icns`` replacing the default one 
   in ``Resources``.
+
+* Prepare an ``.icns`` file with your own graphic,
+  place it in ``Resources`` and edit the  ``Info.plist`` to name it.
+
+* Prepare an ``.icns`` file with your own graphic;
+  open in it Preview.app; select-all and copy;
+  in the Finder, Get Info on your app;
+  click the icon in the info display and paste.
 
 GraphicConverter_ is one of several applications
 that can save a JPEG or PNG image in the ``.icns`` format.
+
+Setting the Supported Document Types
+--------------------------------------
+
+You can also edit the ``Info.plist`` file to tell the Mac OS X
+Launcher what document types your application supports.
+Refer to the Mac OS developer documentation for these keywords.
+
+Getting the Opened Document Names
+------------------------------------
+
+When a user double-clicks a document of a type your application
+supports, or when a user drags a document icon and drops it
+on your application's icon, Mac OS X launches your application
+and provides the name(s) of the opened document(s) in the 
+form of an OpenDocument AppleEvent.
+This AppleEvent is received by the |bootloader| 
+before your code has started executing.
+
+The |bootloader| gets the names of opened documents from
+the OpenDocument event and encodes them into the ``argv``
+string before starting your code.
+Thus your code can query ``sys.argv`` to get the names
+of documents that should be opened at startup.
+
+OpenDocument is the only AppleEvent the |bootloader| handles.
+If you want to handle other events, or events that
+are delivered after the program has launched, you must
+set up the appropriate handlers.
 
 Shortening the Command
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -638,8 +728,6 @@ Because of its numerous options, a full ``pyinstaller`` command
 can become very long.
 You will run the same command again and again as you develop
 your script.
-You can shorten the command in one of two ways.
-
 You can put the command in a shell script or batch file,
 using line continuations to make it readable.
 For example in Linux::
@@ -660,18 +748,6 @@ Or in Windows, use the little-known BAT file line continuation::
         --icon-file=..\MLNMFLCN.ICO ^
         myscript.spec
 
-Or, when you are certain of all the options, you could make the spec file::
-
-    pyi-makespec --noconfirm --log-level=WARN \
-        --onefile --nowindow \
-        --hidden-import=secret1 \
-        --hidden-import=secret2 \
-        --upx-dir=/usr/local/share/ \
-        myscript.py
-
-and from then on, just build from the spec file::
-
-    pyinstaller myscript.spec
 
 Using UPX
 ~~~~~~~~~~~~~~~~~~~
@@ -692,7 +768,8 @@ been UPX-compressed, the full execution sequence is:
   which creates a temporary environment for Python.
 * The Python interpreter executes your script.
 
-|PyInstaller| looks for UPX on the execution path.
+|PyInstaller| looks for UPX on the execution path
+or the path specified with the ``--upx-dir`` option.
 If UPX exists, |PyInstaller| applies it to the final executable,
 unless the ``--noupx`` option was given.
 UPX has been used with |PyInstaller| output often, usually with no problems.
@@ -748,22 +825,23 @@ Install a Dropbox client in each virtual machine, all linked to your Dropbox acc
 Keep a single copy of your script(s) in a Dropbox folder.
 Then on any virtual machine you can run |PyInstaller| thus::
 
-  pyinstaller --build=path-to-local-build-folder      \
-              --out=path-to-local-dist-folder         \
-              ...other options as required...         \
-              path-to-Dropbox-project-folder/src/myscript.py
+    cd ~/Dropbox/project_folder/src # Linux, Mac -- Windows similar
+    pyinstaller --workpath=path-to-local-temp-folder  \
+                --distpath=path-to-local-dist-folder  \
+                ...other options as required...       \
+                ./myscript.py
 
-Test your bundled app; it is in *path-to-local-dist-folder*.
-Then you can compress the app to a zip file and copy it to
+Your bundled app is in *path-to-local-dist-folder* on the
+virtual machine's local disk.
+After testing it, you can compress the app to a zip file and copy it to
 the ``Public`` folder of your Dropbox.
 Your users can download it from there.
-(Pro tip: Wait until Dropbox has uploaded the .zip to the cloud
-before shutting down the virtual machine.)
+(Pro tip: Do not shut down the virtual machine until
+Dropbox has completely uploaded the .zip to the cloud.)
 
-It is possible to cross-develop for Windows under Linux
+It is claimed to be possible to cross-develop for Windows under Linux
 using the free Wine_ environment.
-<??Need info on PyInstaller under WINE in Linux - example? restrictions??>
-
+Further details are needed, see `How to Contribute`_.
 
 Using Spec Files
 =================
@@ -771,13 +849,13 @@ Using Spec Files
 The spec (specification) file tells |PyInstaller| how to process your script.
 When you name a script (or scripts) to the ``pyinstaller`` command,
 the first thing it does is to build a spec file *name*.spec.
-The spec file encodes all the option values and script names
+The spec file encodes the script names and most of the options
 you give to the ``pyinstaller`` command.
 
 For many uses of |PyInstaller| you do not need to examine or modify the spec file.
 Editing the spec file was once a common way to help |PyInstaller|
 find all the parts of a program, but this is now less common.
-It is often enough to
+It is usually enough to
 give all the needed information (such as hidden imports)
 as option values to the ``pyinstaller`` command and let it run.
 
@@ -799,34 +877,44 @@ This command creates the *name*.spec file but does not
 go on to build the executable.
 
 After you have created a spec file and modified it as necessary,
-you can build your application in either of two ways:
+you can build your application from it in either of two ways:
 
     ``pyinstaller`` *specfile*
 
-or simply
+or
 
     ``pyi-build`` *specfile*
 
-The latter may be very slightly faster.
-It executes the part of ``pyinstaller`` that follows creation of a spec file.    
+The latter executes the part of ``pyinstaller`` that follows creation of a spec file. 
+
+When you create a spec file, many command options are written into the spec file.
+When you build from a spec file, those options cannot be changed.
+If they are given on the command line they are ignored and
+replaced by the options in the spec file.
+Only the following options have an effect when building from a spec file:
+
+*  --upx-dir=
+*  --distpath=
+*  --workpath=
+*  --noconfirm
+*  --ascii
+
 
 Spec File Operation
 ~~~~~~~~~~~~~~~~~~~~
 
-A spec file should contain only executable Python statements and comments.
-The *options* given in the ``pyinstaller`` or ``pyi-makespec`` command
-are written into the spec file as argument values.
 
-After it creates the spec file,
-or opens the spec file when one is given instead of a script,
-the ``pyinstaller`` command executes the spec file as code.
-The statements in it create objects from classes that are defined in the 
+After |PyInstaller| creates a spec file,
+or opens a spec file when one is given instead of a script,
+the ``pyinstaller`` command *executes the spec file as code*.
+This is important to understand: the spec file contents are
+the central part of the code executed by |PyInstaller|.
+Your bundled application is created by the execution of the spec file.
+
+
+
+The statements in a spec file create objects from classes that are defined in the 
 |PyInstaller| module ``build.py``.
-(Feel free to read it!)
-All the work of creating the bundle is
-initiated and managed by the ``__init__`` methods of these class definitions.
-In other words, the execution of the spec file creates the bundled app.
-
 Here is an unrealistically simplified spec file for one-folder mode::
 
       a = Analysis(['myscript.py'])
@@ -860,12 +948,12 @@ In one-file mode, there is no call to ``COLLECT``, and the
 
 In order to read or modify a spec file you must understand some of
 the classes it uses.
-However, the spec file is an executable part of |PyInstaller|,
-so the class definitions and the exact contents of the spec file
-might change in future releases.
-For this reason, the following contains only the most useful and
-reliable detail.
-(Some further details are under `Advanced Topics`_ below.)
+However, the class definitions and the exact contents of the spec
+file might change in future releases.
+For this reason, the following
+contains only the most useful and reliable detail.
+Some further details are under Advanced Topics below;
+and you can find the complete definition of these classes in the module ``build.py``.
 
 
 TOC Class (Table of Contents)
@@ -1030,11 +1118,21 @@ In this example, you have inserted a list of two tuples into the EXE call.
 When Things Go Wrong
 ====================
 
-Recipes and Instructions for special modules
+Recipes and Examples for Specific Problems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Code examples for some modules needing special care and some common
-issues are available on our Recipe_ web-page.
+Code examples for some advanced uses and some common
+problems are available on our Recipe_ web-page.
+Some of the recipes there include:
+
+* A more sophisticated way of collecting data files
+  than the one shown above (`Adding Files to the Bundle`_).
+
+* A use of a run-time hook to set the Qt API level.
+
+* A workaround for a multiprocessing constraint under Windows.
+
+and others. Please feel free to contribute more recipes!
 
 
 Getting the Latest Version
@@ -1046,11 +1144,19 @@ This version might have fixes or features that are not yet at ``pypi``.
 Links to download the latest stable version and the latest development
 version are at PyInstaller.org_.
 
+If you have Git_ installed on your development system,
+you can use it together with pip
+to install the latest version of |PyInstaller| directly::
+
+    pip install -e git://github.com/pyinstaller/pyinstaller.git#egg=PyInstaller
+
+
+
 Finding out What Went Wrong
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Buildtime Messages
-------------------
+Build-time Messages
+--------------------
 
 When an ``Analysis`` step runs, it produces error and warning messages.
 These display after the command line if the ``--log-level`` option allows it.
@@ -1058,8 +1164,9 @@ Analysis also puts messages in a warnings file
 named ``warn<name>.txt`` in the spec file's directory.
 
 An error message appears if Analysis detects an unconditional import
-(one at the top level of the script, so it is certain to be executed)
 and the module it names cannot be found.
+An unconditional import is one that appears at the top level of the script,
+so it is certain to be executed.
 
 A warning is given if the module named in an import cannot be found,
 but the import itself is conditional.
@@ -1082,9 +1189,9 @@ will have lines like::
 The analysis has detected that the import is within a conditional
 block (an if statement).
 You will know that in this system, ``os`` will never need to import 
-the ``os2`` module, for example, so the warning can be ignored.
+the ``os2`` module, for example, so that warning can be ignored.
 
-Ignorable warnings may also be produced when a class or function is declared in
+Warnings may also be produced when a class or function is declared in
 a package (an ``__init__.py`` module), and the import specifies
 ``package.name``. In this case, the analysis can't tell if name is supposed to
 refer to a submodule or package.
@@ -1103,11 +1210,8 @@ see `Listing Hidden Imports`_ below for how to do it.
 Getting Debug Messages
 ----------------------
 
-Debug messages from PyInstaller itself can be enabled
-or hidden by giving the ``--log-level`` option.
-
-Giving the ``--debug`` option causes the bundled executable to 
-write progress messages whenever it runs.
+Giving the ``--debug`` option causes the bundled executable itself to 
+write progress messages when it runs.
 This can be useful during development of a complex package,
 or when your app doesn't seem to be starting,
 or just to learn how the runtime works.
@@ -1116,6 +1220,9 @@ Normally the debug progress messages go to standard output.
 If the ``--windowed`` option is used when bundling a Windows app,
 they are displayed as MessageBoxes.
 For a ``--windowed`` Mac OS app they are not displayed.
+
+Remember to bundle without ``--debug`` for your production version.
+Users would find the messages annoying.
 
 Getting Python's Verbose Imports
 --------------------------------
@@ -1129,6 +1236,7 @@ and not leaking out to the local installed Python.
 
 Python verbose and warning messages always go to standard output
 and are not visible when the ``--windowed`` option is used.
+Remember to not use this in the distributed program.
 
 Helping PyInstaller Find Modules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1156,7 +1264,7 @@ visible to the analysis phase.
 
 Hidden imports can occur when the code is using ``__import__``
 or perhaps ``exec`` or ``eval``.
-You get warnings of these (see `Buildtime Messages`_).
+You get warnings of these (see `Build-time Messages`_).
 
 Hidden imports can also occur when an extension module uses the
 Python/C API to do an import.
@@ -1166,7 +1274,9 @@ There will be no warnings, only a crash at run-time.
 To find these hidden imports,
 set the ``-v`` flag (`Getting Python's Verbose Imports`_ above).
 
-Once you know what they are, you collect the needed modules
+Once you know what they are, you add the needed modules
+to the bundle using the ``--hidden-import=`` command option,
+by editing the spec file, or
 with a hook file: `Using Hook Files`_ below.
 
 Extending a Package's ``__path__``
@@ -1174,15 +1284,16 @@ Extending a Package's ``__path__``
 
 Python allows a script to extend the search path used for imports
 through the ``__path__`` mechanism.
-Normally, a module's ``__path__`` has only one entry,
+Normally, the ``__path__`` of an imported module has only one entry,
 the directory in which the ``__init__.py`` was found.
 But ``__init__.py`` is free to extend its ``__path__`` to include other directories.
 For example, the ``win32com.shell.shell`` module actually resolves to
 ``win32com/win32comext/shell/shell.pyd``.
 This is because ``win32com/__init__.py`` appends ``../win32comext`` to its ``__path__``.
 
-Because the ``__init__.py`` is not actually executed during analysis,
-changes to ``__path__`` are not seen.
+Because the ``__init__.py`` of an imported module
+is not actually executed during analysis,
+changes it makes to ``__path__`` are not seen by |PyInstaller|.
 We fix the problem with the same hook mechanism we use for hidden imports,
 with some additional logic; see `Using Hook Files`_ below.
 
@@ -1201,53 +1312,190 @@ More bizarre situations can be accomodated with runtime hooks.
 These are small scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.
 
+There are two ways of providing runtime hooks.
+You can name them with the option ``--runtime-hook=`` *path-to-script*.
+
+Second, some runtime hooks are provided.
 At the end of an analysis, the names in the module list are looked up in
-``support/rthooks.dat`` in the |PyInstaller| install folder.
+``rthooks/rthooks.dat`` in the |PyInstaller| install folder.
 This text file is the string representation of a
 Python dictionary. The key is the module name, and the value is a list
 of hook-script pathnames.
-If there is a match, the names of the script(s) are added to the output
-and will run before the main script starts.
+If there is a match, those scripts are included in the bundled app
+and will be called before your main script starts.
 
-Hooks done in this way, while they need to be careful of what they import, are
-free to do almost anything. One provided hook sets things up so that win32com
-can generate modules at runtime (to disk), and the generated modules can be
-found in the win32com package.
+Hooks you name with the option are executed 
+in the order given, and before any installed runtime hooks.
+If you specify  ``--runtime-hook=file1.py --runtime-hook=file2.py``
+then the execution order at runtime will be:
 
-To specify a new runtime hook, use the option
+1. Code of ``file1.py``
+2. Code of ``file2.py``
+3. Any hook specified for an included module that is found
+   in ``rthooks/rthooks.dat``
+4. Your main script
 
-       ``--runtime-hook=`` *path/to/somescript.py*
-
-with the ``pyinstaller`` or ``pyi-makespec`` command.
-
-Adapting to being "frozen"
---------------------------
-
-In most sophisticated apps, it becomes necessary to learn at run-time
-whether you're running "live" (from source) or "frozen" (part of a bundle).
-For example, you might have a
-configuration file that, when running "live", is found based on a module's
-``__file__`` attribute.
-That won't work when the code is bundled.
-The usual way to handle this is covered under `Accessing Data Files`_ below.
-
-
+Hooks done in this way, while they need to be careful of what they import,
+are free to do almost anything.
+One reason to write a run-time hook is to
+override some functions or variables from some modules.
+A good example of this is the Django runtime
+hook (see ``loader/rthooks/pyi_rth_django.py`` in the
+|PyInstaller| folder).
+Django imports some modules dynamically and it is looking
+for some ``.py`` files.
+However ``.py`` files are not available in the one-file bundle.
+We need to override the function
+``django.core.management.find_commands``
+in a way that will just return a list of values.
+The runtime hook does this as follows::
+     
+    import django.core.management
+    def _find_commands(_):
+        return """cleanup shell runfcgi runserver""".split()
+    django.core.management.find_commands = _find_commands
 
 
 Advanced Topics
 ================
 
-Accessing Data Files
-~~~~~~~~~~~~~~~~~~~~~~~
+The Bootstrap Process in Detail
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can include related files in either type of distribution.
-Data files and folders of files can be included
-by editing the spec file; see `Adding Files to the Bundle`_.
+There are many steps that must take place before the bundled
+script can begin execution. 
+A summary of these steps was given in the Overview
+(`How the One-Folder Program Works`_ and
+`How the One-File Program Works`_).
+Here is more detail to help you understand what the |bootloader|
+does and how to figure out problems.
 
-In the one-folder distribution, your users find
-the related files in the distribution folder.
-In the one-file mode, the data files can be found by
-your program but are not available to the user.
+Bootloader
+----------
+
+The bootloader prepares everything for running Python code.
+It begins the setup and then reruns itself in another process.
+This approach of using two processes allows a lot of flexibility
+and is used in all bundles except one-folder mode in Windows.
+So do not be surprised if you will see your frozen app
+as  two processes in your system task manager.
+     
+What happens during execution of bootloader:
+     
+A. First process: bootloader starts
+
+    1. If one-file mode, extract bundled files to
+       temppath/_MEIxxxxxx
+    
+    2. Set/unset various environment variables,
+       e.g. override LD_LIBRARY_PATH on Linux or LIBPATH on AIX;
+       unset DYLD_LIBRARY_PATH on OSX.
+       
+    3. Set up to handle signals for both processes.
+    
+    4. Run the child process.
+    
+    5. Wait for the child process to finish.
+    
+    6. If one-file mode, delete temppath/_MEIxxxxxx.
+     
+B. Second process: bootloader itself started as a child process.
+
+    1. On Windows set the `activation context`_ 
+    
+    2. Load the Python dynamic library.
+       The name of the dynamic library is embedded in the
+       executable file.
+    
+    3. Initialize Python interpreter: set PYTHONPATH, PYTHONHOME
+    
+    4. Run python code.
+ 
+ 
+Running Python code
+-------------------
+
+Running Python code consists of several steps:
+ 
+1. Run Python initialization code which
+   prepares everything for running the user's main script.
+   The initialization code can use only the Python built-in modules
+   because the general import mechanism is not yet available.
+   It sets up the python import mechanism to load modules
+   from archives embedded in the executable.
+   It also adds the attributes ``frozen``
+   and ``MEIPASS`` to the ``sys`` built-in module.
+
+2. Execute run run-time hooks: first those specified by the
+   user, then any standard ones.
+
+3. Install python "egg" files.
+   When a module is part of a zip file (.egg),
+   it has been bundled into the ``./eggs`` directory.
+   Installing means appending .egg file names to ``sys.path``.
+   Python automatically detects whether an
+   item in ``sys.path`` is a zip file or a directory.
+
+4. Run the main script.
+
+Python imports in a frozen app
+-------------------------------------
+
+PyInstaller embeds compiled python code
+(``.pyc`` files) within the executable.
+PyInstaller injects its code into the
+normal Python import mechanism.
+Python allows this;
+the support is described in `PEP 302`_  "New Import Hooks".
+ 
+PyInstaller implements the PEP 302 specification for
+importing built-in modules,
+importing frozen modules (compiled python code
+bundled with the app) and for C-extensions.
+The code can be read in ``./PyInstaller/loader/pyi_importers.py``.
+ 
+At runtime the PyInstaller PEP 302 hooks are appended
+to the variable ``sys.meta_path``.
+When trying to import modules the interpreter will
+first try PEP 302 hooks in ``sys.meta_path``
+before searching in ``sys.path``.
+As a result, the Python interpreter 
+loads imported python modules from the archive embedded
+in the bundled executable.
+
+This is the resolution order of import statements
+in a bundled app:
+ 
+1. Is it a built-in module?
+   A list of built-in modules is in variable
+   ``sys.builtin_module_names``.
+
+2. Is it a module embedded in the executable?
+   Then load it from embedded archive.
+
+3. Is it a C-extension?
+   The app will try to find a file with name
+   *package.subpackage.module* ``.pyd`` or
+   *package.subpackage.module* ``.so``
+
+4. Next examine paths in the ``sys.path``
+   (PYTHONPATH). 
+   There could be any additional location with python modules
+   or ``.egg`` filenames.
+   
+5. If the module was not found then
+   raise ``ImportError``.
+
+
+Adapting to being "frozen"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In some apps it is necessary to learn at run-time
+whether the app is running "live" (from source) or "frozen" (part of a bundle).
+For example, you might have a
+configuration file that, when running "live", is found based on a module's
+``__file__`` attribute.
+That won't work when the code is bundled.
 
 When your application needs access to a data file,
 for example a configuration file or an icon image file,
@@ -1274,10 +1522,39 @@ When your program was not started by the |bootloader|, the standard Python
 variable ``__file__`` is the full path to the script now executing,
 and ``os.path.dirname()`` extracts the path to the folder that contains it.
 
-Note that if your program is a one-file executable, the path is to
-a temporary folder that will be deleted.
-Any files you create or modify in that folder will disappear
-when execution ends.
+
+Accessing Data Files
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You can include related files in either type of distribution.
+Data files and folders of files can be included
+by editing the spec file; see `Adding Files to the Bundle`_.
+
+In the one-folder distribution,
+bundled files are in the distribution folder.
+You can direct your users to these files, for example
+to see the ``README`` or edit a configuration file.
+Your code can make useful changes to files in the folder.
+
+In the one-file mode, the ``basedir`` path discovered by the code above
+is the path to a temporary folder that will be deleted.
+Your users cannot easily access any included files.
+Any files your code creates or modifies in that folder
+are available only while the app is running.
+When it ends they will be deleted.
+
+Another way to access data files in one-file mode is to 
+refer to ``sys.executable``. 
+In an un-bundled app, that is, when running your script
+from the command line or a debugger, ``sys.executable``
+is the path to the Python interpreter.
+In a bundled app, it is the path to the bundled executable.
+The expression
+
+	``os.path.dirname(sys.executable)``
+
+gives the path of the folder containing the executable file
+that was launched to start the app.
 
 Capturing Version Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1285,28 +1562,30 @@ Capturing Version Data
       ``pyi-grab_version`` *executable_with_version_resource*
 
 
-The ``pyi-grab_version`` command outputs text which can be
-eval'ed by ``utils/versioninfo.py`` (in the |PyInstaller| distribution folder)
-to reproduce a version resource.
-Invoke it with the full path name of a Windows executable
+The ``pyi-grab_version`` command is invoked
+with the full path name of a Windows executable
 that has a version resource.
 
+It outputs text that represents a standard version resource.
 The version text is written to standard output.
-You can copy and paste from the console window or redirect to a file.
-Then you can edit the version information.
-The edited text file can be given with a ``--version-file=``
+You can copy it from the console window or redirect it to a file.
+Then you can edit the version information to adapt it to your program.
+
+The edited text file can be
+eval'ed by ``utils/versioninfo.py`` in the |PyInstaller| distribution folder
+to reproduce a standard version resource.
+Or the text file can be given with a ``--version-file=``
 option to ``pyinstaller`` or ``pyi-makespec``.
 
 This approach is used because version resources are strange beasts,
 and it may be impossible to fully understanding them.
-Some elements are optional, others required, and you can spend unbounded
-amounts of time figuring this out because it is not well documented.
+Some elements are optional, others required.
 When you view the version tab of a Properties dialog,
 there's no straightforward relationship between
 the data displayed and the structure of the resource itself.
 So the easiest thing to do is to find an executable that displays the kind of
 information you want, and grab its resource and edit it.
-Certainly easier than the Version resource wizard in VC++.
+This is usually easier than the Version resource wizard in VC++.
 
 Inspecting Archives
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -1380,6 +1659,12 @@ There is also a type code associated with each member.
 The type codes are used by the self-extracting executables.
 If you're using a ``CArchive`` as a ``.zip`` file, you don't need to worry about the code.
 
+The ELF executable format (Windows, Linux and some others) allows arbitrary
+data to be concatenated to the end of the executable without disturbing its
+functionality. For this reason, a CArchive's Table of Contents is
+at the end of the archive. The executable can open itself as a binary
+file, seek to the end and 'open' the CArchive.
+
 |CArchiveImage|
 
 Using pyi-archive_viewer
@@ -1396,6 +1681,8 @@ The archive can be navigated using these commands:
 
 O *name*
     Open the embedded archive *name* (will prompt if omitted).
+    For example when looking in a one-file executable, you
+    can open the ``outPYZ.pyz`` archive inside it.
 
 U
     Go up one level (back to viewing the containing archive).
@@ -1560,21 +1847,22 @@ objects and performing the ``PYZ``, ``EXE`` and ``COLLECT`` statements.
 Using Hook Files
 ~~~~~~~~~~~~~~~~~~~~~
 
-A "hook" file tells |PyInstaller| about hidden imports 
+In summary, a "hook" file tells |PyInstaller| about hidden imports 
 called by a particular module.
 The name of the hook file is ``hook-<module>.py`` where "<module>" is 
 the name of a script or imported module that will be found by Analysis.
+You should browse through the existing hooks in the
+``hooks`` folder of the |PyInstaller| distribution folder,
+if only to see the names of the many supported imports.
 
-(??-->)
-For example ``hook-xml.dom.py`` is a hook file telling about hidden imports
-by the module ``xml.dom``.
-When your script has ``import xml.dom`` or ``from xml import dom``,
-the Analysis will note it and check for a hook file ``hook-xml.dom.py``.
-(<--correct example??)
+For example ``hook-cPickle.py`` is a hook file telling
+about hidden imports used by the module ``cPickle``.
+When your script has ``import cPickle``
+the Analysis will note it and check for a hook file ``hook-cPickle.py``.
 
-Typically a hook module has only one line,
+Typically a hook module has only one line; in ``hook-cPickle.py`` it is
 
-      ``hiddenimports = ['module1', 'module2']``
+      ``hiddenimports = ['copy_reg', 'types', 'string']``
 
 assigning a list of one or more module names to ``hiddenimports``.
 These module names are added to the Analysis list exactly as if the 
@@ -1592,69 +1880,100 @@ the command could be simply
 If you successfully hook a publicly distributed module in this way,
 please send us the hook file so we can make it available to others. 
 
-You may want to look at the existing hooks in the
-``hooks`` folder of the |PyInstaller| distribution folder.
+Hooks in Detail
+~~~~~~~~~~~~~~~~~~~~~
 
-When a module modifies the ``__path__`` variable,
-a static list of names won't suffice
+A hook is a module named
+``hook-`` *fully.qualified.import.name* ``.py`` in the
+``hooks`` folder of the |PyInstaller| folder
+(or in a folder specified with ``--additional-hooks-dir``).
+
+A hook is executable Python code that should
+define one or more of the following three global names:
+
+
+``hiddenimports``
+    A list of module names (relative or absolute) that the
+    hooked module imports in some opaque way.
+    These names extend the list of imported modules created
+    by scanning the code. Example::
+
+        hiddenimports = ['_proxy', 'utils', 'defs']
+
+    A way to simplify adding all submodules of a package is to use::
+
+        from hookutils import collect_submodules
+        hiddenimports = collect_submodules('package')
+
+    For an example see ``hook-docutils.py`` in the hooks folder.
+
+``datas``
+   A list of globs of files or directories to bundle as datafiles. For
+   each glob, a destination directory is specified.
+
+   Example::
+
+      datas = [
+           ('/usr/share/icons/education_*.png', 'icons'),
+           ('/usr/share/libsmi/mibs/*', 'mibs'),
+	   ]
+
+   This will copy all files matching `education_*.png` into the
+   subdirectory `icons`,
+   and recursively (because of the ``*`` wildcard)
+   copy the content of `/usr/share/libsmi/mibs` into `mibs`.
+   
+   A way to simplify collecting a folder of files is to use::
+
+      from hookutils import collect_data_files
+      datas = collect_data_files('package_name')
+
+   to collect all package-related data files into a folder
+   *package_name* in the app bundle.
+   For an example see hook-pytz.py in the hooks folder.
+
+``attrs``
+    A list of ``(`` *name* ``,`` *value* ``)`` pairs
+    (where value is normally meaningless).
+
+    This will set the module-attribute *name* to *value* for each
+    pair in the list. The value is usually unimportant because the
+    modules are not executed.
+
+    The main purpose is so that ImportTracker will not issue spurious
+    warnings when the rightmost node in a dotted name turns out to be
+    an attribute in a package, instead of a missing submodule.
+    For an example see the hook file ``hook-xml.sax.py``.
+
+
+``def hook(mod):``
+    Defines a function that takes a ``Module`` object.
+    It must return a ``Module`` object, possibly the same one
+    unchanged, or a modified one.
+    A ``Module`` object is an instance of the class
+    ``PyInstaller.depend.modules.Module()`` which you can read.
+    If defined, ``hook(mod)`` is called before |PyInstaller| tests
+    ``hiddenimports`` and ``attrs``. So one use of a ``hook(mod)``
+    function would be to test ``sys.version`` and adjust 
+    ``hiddenimports`` based on that.
+
+This function is supported to handle cases like dynamic modification of a
+package's ``__path__`` variable.
+A static list of names won't suffice
 because the new entry on ``__path__`` may well require computation.
-
-In this case, the hook file must define a function ``hook(mod)``.
-The *mod* argument is an instance of ``mf.Module``
-which has (more or less) the same attributes as a real
-module object.
-This hook function should return an instance of ``mf.Module``.
-It may be perhaps a brand new one, but more likely the same one passed
-as its argument but modified.
 See ``hook-win32com.py`` in the hooks folder for an example.
-
-A hook module is executed like any other
-module, so you can use any Python code in it.
-See the existing hooks in for some examples, esp. the django-related hooks.
-
-Warnings
---------
-
-(?? I have no idea of the context for this topic: hook file? spec file?-->)
-
-``ImportTracker`` has a ``getwarnings()`` method that returns all the
-warnings accumulated by the instance, and by the ``Module`` instances
-in its modules dict. Generally, it is ``ImportTracker`` who will
-accumulate the warnings generated during the structural phase, and
-``Modules`` that will get the warnings generated during the code scan.
-
-Note that by using a hook module, you can silence some particularly tiresome
-warnings, but not all of them.
-(<--??)
-
-Cross Reference
----------------
-
-(?? What is the context for this topic, where would getxref() be used? example? -->)
-
-Once a full analysis (that is, an ``analyze_r`` call) has been done,
-you can get a cross reference by using ``getxref()``. This returns a
-list of tuples. Each tuple is ``(modulename, importers)``, where
-importers is a list of the (fully qualified) names of the modules
-importing ``modulename``. Both the returned list and the importers
-list are sorted.
-(<--??)
-
 
 
 Building the Bootloader
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
-(??NOTE I have not verified any of the tech details in this topic!
-If you have actually built the |bootloader| for some platform please
-double-check the examples! ??)
 
 PyInstaller comes with binary bootloaders for most platforms in
 the ``bootloader`` folder of the distribution folder.
 For most cases, these precompiled bootloaders are all you need.
 
 If there is no precompiled bootloader for your platform,
-or if you want to modify the |bootloader| source, you need to build the |bootloader|.
+or if you want to modify the |bootloader| source,
+you need to build the |bootloader|.
 
 Development tools
 -----------------
@@ -1775,6 +2094,121 @@ This will also produce ``support/loader/YOUR_OS/run``,
 ``support/loader/YOUR_OS/runw_d``, but they will not be LSB binaries.
 
 
+Modulefinder Replacement - ImportTracker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Imptracker package
+(defined in ``depend/imptracker.py`` in the |PyInstaller| folder) 
+replaces Modulefinder_ but is modelled after iu.py_.
+The ``modulegraph`` package, which is similar,
+will be supported in a future release.
+
+Imptracker, like Modulefinder,
+uses ``ImportDirectors`` and ``Owners`` to partition the
+import name space. Except for the fact that these return ``Module``
+instances instead of real module objects, they are identical.
+
+Instead of an ``ImportManager``, it has an ``ImportTracker`` managing things.
+
+ImportTracker
+-------------
+
+``ImportTracker`` can be called in two ways: ``analyze_one(name,
+importername=None)`` or ``analyze_r(name, importername=None)``. The
+second method does what modulefinder does - it recursively finds all
+the module names that importing name would cause to appear in
+``sys.modules``. The first method is non-recursive. This is useful,
+because it is the only way of answering the question "Who imports
+name?" But since it is somewhat unrealistic (very few real imports do
+not involve recursion), it deserves some explanation.
+
+``analyze_one()``
+-----------------
+
+When a name is imported, there are structural and dynamic effects.
+The dynamic
+effects are due to the execution of the top-level code in the module (or
+modules) that get imported. The structural effects have to do with whether the
+import is relative or absolute, and whether the name is a dotted name (if there
+are N dots in the name, then N+1 modules will be imported even without any code
+running).
+
+The analyze_one method determines the structural effects, and defers
+the dynamic effects. For example, ``analyze_one("B.C", "A")`` could
+return ``["B", "B.C"]`` or ``["A.B", "A.B.C"]`` depending on whether
+the import turns out to be relative or absolute. In addition,
+ImportTracker's modules dict will have Module instances for them.
+
+Module Classes
+--------------
+
+There are Module subclasses for builtins, extensions, packages and (normal)
+modules. Besides the normal module object attributes, they have an attribute
+imports. For packages and normal modules, imports is a list populated by
+scanning the code object (and therefor, the names in this list may be relative
+or absolute names - we don't know until they have been analyzed).
+
+The highly astute will notice that there is a hole in
+``analyze_one()`` here. The first thing that happens when ``B.C`` is
+being imported is that ``B`` is imported and its top-level code
+executed. That top-level code can do various things so that when the
+import of ``B.C`` finally occurs, something completely different
+happens (from what a structural analysis would predict). But mf can
+handle this through its hooks mechanism.
+
+code scanning
+-------------
+
+Like modulefinder, ``ImportTracker`` scans the byte code of a module,
+looking for imports.
+In addition it will pick out a module's ``__all__``
+attribute, if it is built as a list of constant names. This means that
+if a package declares an ``__all__`` list as a list of names,
+ImportTracker will track those names if asked to analyze
+``package.*``. The code scan also notes the occurance of
+``__import__``, ``exec`` and ``eval``, and can issue warnings when
+they are found.
+
+The code scanning also keeps track (as well as it can) of the context of an
+import. It recognizes when imports are found at the top-level, and when they
+are found inside definitions (deferred imports). Within that, it also tracks
+whether the import is inside a condition (conditional imports).
+
+Hooks
+-------
+
+In modulefinder, scanning the code takes the place of executing the
+code object. ``ExtensionModules``, of course, don't get scanned, so
+there needs to be a way of recording any imports they do.
+
+Please read `Listing Hidden Imports`_ for more information.
+
+``ImportTracker`` goes further and allows a module to be hooked (after it has been
+scanned, but before analyze_one is done with it). 
+
+
+Warnings
+--------
+
+``ImportTracker`` has a ``getwarnings()`` method that returns all the
+warnings accumulated by the instance, and by the ``Module`` instances
+in its modules dict. Generally, it is ``ImportTracker`` who will
+accumulate the warnings generated during the structural phase, and
+``Modules`` that will get the warnings generated during the code scan.
+
+Note that by using a hook module, you can silence some particularly tiresome
+warnings, but not all of them.
+
+Cross Reference
+---------------
+
+Once a full analysis (that is, an ``analyze_r`` call) has been done,
+you can get a cross reference by using ``getxref()``. This returns a
+list of tuples. Each tuple is ``(modulename, importers)``, where
+importers is a list of the (fully qualified) names of the modules
+importing ``modulename``. Both the returned list and the importers
+list are sorted.
+
 
 Outdated Features
 ==================
@@ -1862,6 +2296,7 @@ the ``TOCs`` building the ``EXE``::
                 ...
 
 See `Using Spec Files`_ for details.
+
 
 .. _iu.py:
 
@@ -2045,202 +2480,6 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
         of PathImportDirector instance at 825900>
       >>>
 
-``mf.py``: A Modulefinder Replacement
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-(``mf.py`` is no longer supported although may work.
-The ``modulegraph`` package, whic is related, will be supported in a future release.)
-
-Module ``mf`` replaces Modulefinder_ but is modelled after iu.py_.
-
-It also uses ``ImportDirectors`` and ``Owners`` to partition the
-import name space. Except for the fact that these return ``Module``
-instances instead of real module objects, they are identical.
-
-Instead of an ``ImportManager``, ``mf`` has an ``ImportTracker``
-managing things.
-
-ImportTracker
--------------
-
-``ImportTracker`` can be called in two ways: ``analyze_one(name,
-importername=None)`` or ``analyze_r(name, importername=None)``. The
-second method does what modulefinder does - it recursively finds all
-the module names that importing name would cause to appear in
-``sys.modules``. The first method is non-recursive. This is useful,
-because it is the only way of answering the question "Who imports
-name?" But since it is somewhat unrealistic (very few real imports do
-not involve recursion), it deserves some explanation.
-
-``analyze_one()``
------------------
-
-When a name is imported, there are structural and dynamic effects. The dynamic
-effects are due to the execution of the top-level code in the module (or
-modules) that get imported. The structural effects have to do with whether the
-import is relative or absolute, and whether the name is a dotted name (if there
-are N dots in the name, then N+1 modules will be imported even without any code
-running).
-
-The analyze_one method determines the structural effects, and defers
-the dynamic effects. For example, ``analyze_one("B.C", "A")`` could
-return ``["B", "B.C"]`` or ``["A.B", "A.B.C"]`` depending on whether
-the import turns out to be relative or absolute. In addition,
-ImportTracker's modules dict will have Module instances for them.
-
-Module Classes
---------------
-
-There are Module subclasses for builtins, extensions, packages and (normal)
-modules. Besides the normal module object attributes, they have an attribute
-imports. For packages and normal modules, imports is a list populated by
-scanning the code object (and therefor, the names in this list may be relative
-or absolute names - we don't know until they have been analyzed).
-
-The highly astute will notice that there is a hole in
-``analyze_one()`` here. The first thing that happens when ``B.C`` is
-being imported is that ``B`` is imported and its top-level code
-executed. That top-level code can do various things so that when the
-import of ``B.C`` finally occurs, something completely different
-happens (from what a structural analysis would predict). But mf can
-handle this through its hooks mechanism.
-
-code scanning
--------------
-
-Like modulefinder, ``mf`` scans the byte code of a module, looking for
-imports. In addition, ``mf`` will pick out a module's ``__all__``
-attribute, if it is built as a list of constant names. This means that
-if a package declares an ``__all__`` list as a list of names,
-ImportTracker will track those names if asked to analyze
-``package.*``. The code scan also notes the occurance of
-``__import__``, ``exec`` and ``eval``, and can issue warnings when
-they are found.
-
-The code scanning also keeps track (as well as it can) of the context of an
-import. It recognizes when imports are found at the top-level, and when they
-are found inside definitions (deferred imports). Within that, it also tracks
-whether the import is inside a condition (conditional imports).
-
-Hooks
--------
-
-In modulefinder, scanning the code takes the place of executing the
-code object. ``ExtensionModules``, of course, don't get scanned, so
-there needs to be a way of recording any imports they do.
-
-Please read `Listing Hidden Imports`_ for more information.
-
-``mf`` goes further and allows a module to be hooked (after it has been
-scanned, but before analyze_one is done with it). A hook is a module named
-``hook-fully.qualified.name`` in the ``PyInstaller.hooks`` package.
-
-These modules should have one or more of the following three global
-names defined:
-
-
-``hiddenimports``
-    A list of modules names (relative or absolute) the
-    module imports in some untrackable way.
-
-    This extends the list of modules to be imported which is created
-    by scanning the code.
-
-    Example::
-
-      hiddenimports = ['_proxy', 'utils', 'defs']
-
-``datas``
-   A list of globs of files or directories to bundle as datafiles. For
-   each glob, a destination directory is specified.
-
-   Example::
-
-      datas = [
-           ('/usr/share/icons/education_*.png', 'icons'),
-           ('/usr/share/libsmi/mibs/*', 'mibs'),
-	   ]
-
-   This will copy all iconfiles matching `education_*.png` into the
-   subdirectory `icons` and recursively copy the content of
-   `/usr/share/libsmi/mibs` into `mibs`.
-
-``attrs``
-    A list of ``(name, value)`` pairs (where value is normally
-    meaningless).
-
-    This will set the module-attribute ``name`` to ``value`` for each
-    pait in the list. The value is meaningless normally, since the
-    modules are not executed.
-
-    This exists mainly so that ImportTracker won't issue spurious
-    warnings when the rightmost node in a dotted name turns out to be
-    an attribute in a package, instead of a missing submodule.
-
-    Example: See ``PyInstaller/hooks/hook-xml.dom.ext.py``.
-
-
-``hook(mod)``
-    A function expecting a ``Module`` instance and
-    returning a ``Module`` instance (so it can modify or replace).
-
-    This exists for things like dynamic modification of a
-    package's ``__path__`` or perverse situations, like
-    ``xml.__init__`` replacing itself in ``sys.modules`` with
-    ``_xmlplus.__init__``. (It takes nine hook modules to properly
-    trace through PyXML-using code, and I can't believe that it's any
-    easier for the poor programmer using that package). 
-
-    The ``hook(mod)`` (if it exists) is called before looking at the
-    others - that way it can, for example, test ``sys.version`` and
-    adjust what's in ``hiddenimports``.
-
-
-mf Usage
---------
-
-A simple example follows:
-
-      >>> import mf
-      >>> a = mf.ImportTracker()
-      >>> a.analyze_r("os")
-      ['os', 'sys', 'posixpath', 'nt', 'stat', 'string', 'strop',
-      're', 'pcre', 'ntpath', 'dospath', 'macpath', 'win32api',
-      'UserDict', 'copy', 'types', 'repr', 'tempfile']
-      >>> a.analyze_one("os")
-      ['os']
-      >>> a.modules['string'].imports
-      [('strop', 0, 0), ('strop.*', 0, 0), ('re', 1, 1)]
-      >>>
-
-
-The tuples in the imports list are (name, delayed, conditional).
-
-      >>> for w in a.modules['string'].warnings: print w
-      ...
-      W: delayed  eval hack detected at line 359
-      W: delayed  eval hack detected at line 389
-      W: delayed  eval hack detected at line 418
-      >>> for w in a.getwarnings(): print w
-      ...
-      W: no module named pwd (delayed, conditional import by posixpath)
-      W: no module named dos (conditional import by os)
-      W: no module named os2 (conditional import by os)
-      W: no module named posix (conditional import by os)
-      W: no module named mac (conditional import by os)
-      W: no module named MACFS (delayed, conditional import by tempfile)
-      W: no module named macfs (delayed, conditional import by tempfile)
-      W: top-level conditional exec statment detected at line 47
-         - os (C:\Program Files\Python\Lib\os.py)
-      W: delayed  eval hack detected at line 359
-         - string (C:\Program Files\Python\Lib\string.py)
-      W: delayed  eval hack detected at line 389
-         - string (C:\Program Files\Python\Lib\string.py)
-      W: delayed  eval hack detected at line 418
-         - string (C:\Program Files\Python\Lib\string.py)
-      >>>
-
-
 
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
@@ -2283,4 +2522,10 @@ The tuples in the imports list are (name, delayed, conditional).
 .. _Wine: http://www.winehq.org/
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
 .. _Dropbox: https://www.dropbox.com/home
+.. _Git: http://git-scm.com/downloads
+.. _Cython: http://www.cython.org/
+.. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
+.. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
+.. _`PEP 302`: http://www.python.org/dev/peps/pep-0302/
+.. _`How to Contribute`: http://www.pyinstaller.org/wiki/Development/HowtoContribute
 .. include:: _definitions.txt

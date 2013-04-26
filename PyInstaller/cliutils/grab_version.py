@@ -17,12 +17,11 @@ def run():
     misc.check_not_running_as_root()
 
     if len(sys.argv) < 2:
-        print 'Usage: >python GrabVersion.py <exe>'
+        print 'Usage: python grab_version.py <exe>'
         print ' where: <exe> is the fullpathname of a Windows executable.'
-        print ' The printed output may be saved to a file,  editted and '
-        print ' used as the input for a verion resource on any of the '
-        print ' executable targets in an Installer config file.'
-        print ' Note that only NT / Win2K can set version resources.'
+        print ' The printed output may be saved to a file, edited and '
+        print ' used as the input for a version resource on any of the '
+        print ' executable targets in an Installer spec file.'
     else:
         try:
             vs = PyInstaller.utils.versioninfo.decode(sys.argv[1])
