@@ -742,7 +742,7 @@ def cacheDigest(fnm):
     return digest
 
 
-def checkCache(fnm, strip=0, upx=0, dist_nm=None):
+def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -759,13 +759,13 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
         or fnm.lower().endswith(".manifest")):
         return fnm
     if strip:
-        strip = 1
+        strip = True
     else:
-        strip = 0
+        strip = False
     if upx:
-        upx = 1
+        upx = True
     else:
-        upx = 0
+        upx = False
 
     # Load cache index
     # Make cachedir per Python major/minor version.
@@ -797,7 +797,7 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
             return cachedfile
     if upx:
         if strip:
-            fnm = checkCache(fnm, 1, 0)
+            fnm = checkCache(fnm, strip=True, upx=False)
         bestopt = "--best"
         # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
         # A better configure-time check is due.
@@ -905,7 +905,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0):
+                 strip_binaries=False, upx_binaries=False):
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -960,9 +960,9 @@ class PKG(Target):
                 if self.exclude_binaries and typ != 'DEPENDENCY':
                     self.dependencies.append((inm, fnm, typ))
                 else:
-                    fnm = checkCache(fnm, self.strip_binaries,
-                                     self.upx_binaries and (is_win or is_cygwin)
-                                     and config['hasUPX'], dist_nm=inm)
+                    fnm = checkCache(fnm, strip=self.strip_binaries,
+                                     upx=(self.upx_binaries and (is_win or is_cygwin)
+                                     and config['hasUPX']), dist_nm=inm)
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
@@ -1008,8 +1008,8 @@ class EXE(Target):
         self.versrsrc = kwargs.get('version', None)
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
-        self.strip = kwargs.get('strip', None)
-        self.upx = kwargs.get('upx', None)
+        self.strip = kwargs.get('strip', False)
+        self.upx = kwargs.get('upx', False)
 
         # Old .spec format included in 'name' the path where to put created
         # app. New format includes only exename.
@@ -1161,7 +1161,7 @@ class EXE(Target):
                         logger.exception(exc)
             trash.append(tmpnm)
             exe = tmpnm
-        exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
+        exe = checkCache(exe, strip=self.strip, upx=(self.upx and config['hasUPX']))
         self.copy(exe, outf)
         if self.append_pkg:
             logger.info("Appending archive to EXE %s", self.name)
@@ -1263,9 +1263,9 @@ class COLLECT(Target):
             if not os.path.exists(todir):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, self.strip_binaries,
-                                 self.upx_binaries and (is_win or is_cygwin)
-                                 and config['hasUPX'], dist_nm=inm)
+                fnm = checkCache(fnm, strip=self.strip_binaries,
+                                 upx=(self.upx_binaries and (is_win or is_cygwin)
+                                 and config['hasUPX']), dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
@@ -1296,8 +1296,8 @@ class BUNDLE(Target):
         self.appname = os.path.splitext(base_name)[0]
         self.version = kws.get("version", "0.0.0")
         self.toc = TOC()
-        self.strip = 0
-        self.upx = 0
+        self.strip = False
+        self.upx = False
 
         for arg in args:
             if isinstance(arg, EXE):
