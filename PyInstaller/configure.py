@@ -13,11 +13,12 @@ Configure PyInstaller for the current Python installation.
 """
 
 
-import os
-import sys
-import shutil
-import time
 import inspect
+import os
+import shutil
+import sys
+import tempfile
+import time
 
 from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller.compat import is_win, is_darwin
@@ -53,7 +54,7 @@ def test_RsrcUpdate(config):
 
     # The test_exe may be read-only
     # make a writable copy and test using that
-    rw_test_exe = os.path.join(compat.getenv('TEMP'), 'me_test_exe.tmp')
+    rw_test_exe = os.path.join(tempfile.gettempdir(), 'me_test_exe.tmp')
     shutil.copyfile(test_exe, rw_test_exe)
     try:
         hexe = win32api.BeginUpdateResource(rw_test_exe, 0)
