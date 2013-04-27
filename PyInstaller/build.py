@@ -810,10 +810,14 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
-            # -S = strip only debug symbols.
-            # The default strip behaviour breaks some shared libraries
-            # under Mac OSX
-            cmd = ["strip", "-S", cachedfile]
+            strip_options = []
+            if is_darwin:
+               # The default strip behaviour breaks some shared libraries
+               # under Mac OSX.
+               # -S = strip only debug symbols.
+               strip_options = ["-S"]
+            cmd = ["strip"] + strip_options + [cachedfile]
+
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
 
@@ -873,6 +877,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
 
     if cmd:
         try:
+            logger.info("Executing - " + ' '.join(cmd))
             compat.exec_command(*cmd)
         except OSError, e:
             raise SystemExit("Execution failed: %s" % e)
