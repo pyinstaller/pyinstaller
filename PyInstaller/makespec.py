@@ -151,70 +151,67 @@ def __add_options(parser):
     g = parser.add_option_group('What to generate')
     g.add_option("-F", "--onefile", dest="onefile",
                  action="store_true", default=False,
-                 help="create a single file deployment")
+                 help="Create a one-file bundled executable.")
     g.add_option("-D", "--onedir", dest="onefile",
                  action="store_false",
-                 help="create a single directory deployment (default)")
+                 help="Create a one-folder bundle containing an executable (default)")
     g.add_option("--specpath", metavar="DIR", default=None,
-                 help="generate the spec file in the specified directory "
+                 help="Folder to store the generated spec file "
                       "(default: current directory)")
     g.add_option("-n", "--name",
-                 help="name to assign to the project "
+                 help="Name to assign to the bundled app and spec file "
                       "(default: first script's basename)")
 
     g = parser.add_option_group('What to bundle, where to search')
     g.add_option("-p", "--paths", default=[], dest="pathex",
                  metavar="DIR", action="append",
-                 help="set base path for import (like using PYTHONPATH). "
-                      "Multiple directories are allowed, separating them "
-                      "with %s, or using this option multiple times"
+                 help="A path to search for imports (like using PYTHONPATH). "
+                      "Multiple paths are allowed, separated "
+                      "by %s, or use this option multiple times"
                       % repr(os.pathsep))
     g.add_option('--hidden-import',
                  action='append',
                  metavar="MODULENAME", dest='hiddenimports',
-                 help='import hidden in the script(s). This option can '
-                 'be used multiple times.')
+                 help='Name an import not visible in the code of the script(s). '
+                 'This option can be used multiple times.')
     g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
-                 help="additional path to search for hooks "
-                      "(may be given several times)")
+                 help="An additional path to search for hooks. "
+                      "This option can be used multiple times.")
     g.add_option('--runtime-hook', action='append', dest='runtime_hooks',
-            help='path to a file with custom runtime hook. Runtime hook '
-            'contains code that is bundled with the frozen executable and its code '
-            'is executed before other code or module. This is handy for any tricky '
-            'setup of the frozen code or modules. '
-            '(may be given several times)')
+            help='Path to a custom runtime hook file. A runtime hook '
+            'is code that is bundled with the executable and '
+            'is executed before any other code or module '
+            'to set up special features of the runtime environment. '
+            'This option can be used multiple times.')
 
     g = parser.add_option_group('How to generate')
     g.add_option("-d", "--debug", action="store_true", default=False,
-                 help=("use the debug (verbose) build of the executable for "
-                       "packaging. This will make the packaged executable be "
-                       "more verbose when run."))
+                 help=("Tell the bootloader to issue progress messages "
+                       "while initializing and starting the bundled app. "
+                       "Used to diagnose problems with missing imports."))
     g.add_option("-s", "--strip", action="store_true",
-                 help="strip the exe and shared libs "
-                      "(don't try this on Windows)")
+                 help="Apply a symbol-table strip to the executable and shared libs "
+                      "(not recommended for Windows)")
     g.add_option("--noupx", action="store_true", default=False,
-                 help="do not use UPX even if available (works differently "
-                      "between Windows and *nix)")
+                 help="Do not use UPX even if it is available "
+                      "(works differently between Windows and *nix)")
 
     g = parser.add_option_group('Windows and Mac OS X specific options')
     g.add_option("-c", "--console", "--nowindowed", dest="console",
                  action="store_true", default=True,
-                 help="use a console subsystem executable (default)")
+                 help="Open a console window for standard i/o (default)")
     g.add_option("-w", "--windowed", "--noconsole", dest="console",
                  action="store_false",
-                 help="use a windowed subsystem executable, which on Windows "
-                      "does not open the console when the program is launched."
-                      'On Mac OS X it allows running gui applications and also'
-                      'creates an .app bundle.'
-                      'Mandatory for gui applications on Mac OS X')
+                 help="Windows and Mac OS X: do not provide a console window "
+                      "for standard i/o. "
+                      "On Mac OS X this also triggers building an OS X .app bundle."
+                      "This option is ignored in *NIX systems.")
     g.add_option("-i", "--icon", dest="icon_file",
-                 metavar="FILE.ICO or FILE.EXE,ID or FILE.ICNS",
-                 help="If FILE is an .ico file, add the icon to the final "
-                      "executable. Otherwise, the syntax 'file.exe,id' to "
-                      "extract the icon with the specified id "
-                      "from file.exe and add it to the final executable. "
-                      "If FILE is an .icns file, add the icon to the final "
-                      ".app bundle on Mac OS X (for Mac not yet implemented)")
+                 metavar="FILE.ico or FILE.exe,ID or FILE.icns",
+                 help="FILE.ico: apply that icon to a Windows executable. "
+                      "FILE.exe,ID, extract the icon with ID from an exe. "
+                      "FILE.icns: apply the icon to the "
+                      ".app bundle on Mac OS X (not yet implemented)")
 
     g = parser.add_option_group('Windows specific options')
     g.add_option("--version-file",
@@ -224,17 +221,16 @@ def __add_options(parser):
                  help="add manifest FILE or XML to the exe")
     g.add_option("-r", "--resource", default=[], dest="resources",
                  metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
-                 help="add/update resource of the given type, name and language "
-                      "from FILE to the final executable. FILE can be a "
-                      "data file or an exe/dll. For data files, atleast "
-                      "TYPE and NAME need to be specified, LANGUAGE defaults "
+                 help="Add or update a resource of the given type, name and language "
+                      "from FILE to a Windows executable. FILE can be a "
+                      "data file or an exe/dll. For data files, at least "
+                      "TYPE and NAME must be specified. LANGUAGE defaults "
                       "to 0 or may be specified as wildcard * to update all "
                       "resources of the given TYPE and NAME. For exe/dll "
                       "files, all resources from FILE will be added/updated "
                       "to the final executable if TYPE, NAME and LANGUAGE "
                       "are omitted or specified as wildcard *."
-                      "Multiple resources are allowed, using this option "
-                      "multiple times.")
+                      "This option can be used multiple times.")
 
 
 def main(scripts, name=None, onefile=False,

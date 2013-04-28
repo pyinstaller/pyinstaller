@@ -48,7 +48,7 @@ def run_build(opts, spec_file, pyi_config):
 
 def __add_options(parser):
     parser.add_option('-v', '--version', default=False, action='store_true',
-                      help='show program version')
+                      help='Show program version info and exit.')
 
 def run(pyi_args=sys.argv[1:], pyi_config=None):
     """
@@ -59,7 +59,7 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
 
     try:
         parser = optparse.OptionParser(
-            usage='python %prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
+            usage='%prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
             )
         __add_options(parser)
         PyInstaller.makespec.__add_options(parser)

@@ -3,7 +3,7 @@
     'django':     ['pyi_rth_django.py'],
     'encodings':  ['pyi_rth_encodings.py'],
     'Image':      ['pyi_rth_Image.py'],
-    'matplotlib': ['pyi_rth_mpldata.py'],
+    'matplotlib': ['pyi_rth_mplconfig.py', 'pyi_rth_mpldata.py'],
     'PIL.Image':  ['pyi_rth_PIL_Image.py'],
     'pkg_resources':  ['pyi_rth_pkgres.py'],
     'PyQt4':      ['pyi_rth_qt4plugins.py'],
