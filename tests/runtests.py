@@ -120,6 +120,7 @@ class SkipChecker(object):
             'libraries/test_Image': ['PIL'],
             'libraries/test_Image2': ['PIL'],
             'libraries/test_numpy': ['numpy'],
+            'libraries/test_onefile_matplotlib': ['matplotlib'],
             'libraries/test_onefile_tkinter': ['Tkinter'],
             'libraries/test_PIL': ['PIL'],
             'libraries/test_PIL2': ['PIL'],
