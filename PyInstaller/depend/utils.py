@@ -267,10 +267,18 @@ def scan_code_for_ctypes(co, instrs, i):
     # need to patch the compiled pyc file to make it work correctly!
 
     w = []
-    for bin in list(b):
-        if bin != os.path.basename(bin):
-            b.remove(bin)
-            w.append("W: ignoring %s - ctypes imports only supported using bare filenames" % (bin,))
+    for binary in list(b):
+        # 'binary' might be in some cases None. Some Python modules might contain
+        # code like the following. For example PyObjC.objc._bridgesupport contain
+        # code like that.
+        #
+        #     dll = ctypes.CDLL(None)
+        if binary:
+            if binary != os.path.basename(binary):
+                w.append("W: ignoring %s - ctypes imports only supported using bare filenames" % (binary,))
+        else:
+            # None values has to be removed too.
+            b.remove(binary)
 
     return b, w
 

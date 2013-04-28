@@ -219,7 +219,7 @@ def run():
                       default=False,
                       action='store_true',
                       dest='rec',
-                      help='Recusively print an archive log (default: %default). '
+                      help='Recursively print an archive log (default: %default). '
                       'Can be combined with -r')
     parser.add_option('-b', '--brief',
                       default=False,

@@ -134,8 +134,8 @@ def ispkgdir(path):
             return 0
     return 1
 
-epilog = ("The next step is to run Build.py against the generated "
-          "spec file. See doc/Tutorial.html for details.")
+epilog = ("The next step is to run pyi-build against the generated "
+          "spec file.")
 
 
 def run():
@@ -143,17 +143,17 @@ def run():
 
     parser = optparse.OptionParser(
         usage='python %s [options] <scriptname>.py [<scriptname>.py ...]',
-        epilog="The next step is to run Build.py against the generated"
-               "spec file. See doc/Tutorial.html for details."
+        epilog="The next step is to run pyi-build against the generated"
+               "spec file."
         )
     parser.add_option('--debug', default=False, action='store_true',
-            help='use debug console build and register COM servers with debug')
+            help='Enable bootloader debug messages, and register COM servers with debug')
     parser.add_option('--verbose', default=False, action='store_true',
-                      help='use verbose flag in COM server registration')
+                      help='Use verbose flag in COM server registration')
     parser.add_option('--out', default='.',
                       metavar='DIR',
                       dest='workdir',
-                      help='generate script and spec file in dir')
+                      help='Where to write the generated script and spec file')
     parser.add_option('--ascii', default=False, action='store_true')
 
     opts, args = parser.parse_args()
