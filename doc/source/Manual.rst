@@ -449,10 +449,10 @@ and execute::
 
 |PyInstaller| analyzes ``myscript.py`` and:
 
-* Writes ``myscript.spec`` in the current directory.
-* Creates a folder ``build`` in the current directory if it does not exist.
+* Writes ``myscript.spec`` in the same folder as the script.
+* Creates a folder ``build`` in the same folder as the script if it does not exist.
 * Writes some log files and working files in the ``build`` folder.
-* Creates a folder ``dist`` in the current directory if it does not exist.
+* Creates a folder ``dist`` in the same folder as the script if it does not exist.
 * Writes the ``myscript`` executable folder in the ``dist`` folder.
 
 In the ``dist`` folder you find the bundled app you distribute to your users.
@@ -477,10 +477,6 @@ or, on Windows,
 
     ``pyinstaller "C:\Documents and Settings\project\myscript.spec"``
 
-In this case
-|PyInstaller| creates or uses the ``dist`` and ``build`` subdirectories
-in the same location as the script or spec file that you name.
-
 Options
 ~~~~~~~~~~~~~~~
 
@@ -502,16 +498,16 @@ General Options
 --distpath=path_to_executable, -o path_to_executable
 	Say where to put the bundled app.
 	The default is a ``dist`` folder in 
-	the same location as the first script.
+	the same folder as the first script.
 	
 --specpath=path_to_spec_file
 	Say where to put the *name* `.spec` file.
-	The default is the same location as the first script.
+	The default is the same folder as the first script.
 
---buildpath=path_to_work_files
+--workpath=path_to_work_files
     Say where to put the |PyInstaller| log and work files for this run.
     The default path is a ``build`` folder
-    in the same location as the first script or spec.
+    in the same folder as the first script or spec.
 
 --clean
 	Tells |PyInstaller| to erase all log and work files before it starts.
