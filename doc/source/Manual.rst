@@ -1831,7 +1831,7 @@ Save the merged spec file as ``foobarzap.spec`` and then build it::
 
     pyi-build foobarzap.spec
 
-There are several multipackage examples in the ``buildtests/multipackage`` directory
+There are several multipackage examples in the ``tests/multipackage`` folder
 of the |PyInstaller| distribution folder.
 
 Remember that a spec file is executable Python.
