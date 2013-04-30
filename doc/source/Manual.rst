@@ -176,10 +176,10 @@ and ``2.1dev-xxxxxx`` for a development branch.
 If the command is not found, make sure the execution path includes 
 the proper directory:
 
-* Windows: C:\PythonXY\Scripts
-* Linux: /usr/bin/
-* OS X (using default Apple-supplied Python) /usr/local/bin
-* OS X (using Python installed by macports) /opt/local/bin
+* Windows: ``C:\PythonXY\Scripts``
+* Linux: ``/usr/bin/``
+* OS X (using default Apple-supplied Python) ``/usr/local/bin``
+* OS X (using Python installed by macports) ``/opt/local/bin``
 
 To display the current path in Windows the command is ``echo %path%``
 and in other systems, ``echo $PATH``.
