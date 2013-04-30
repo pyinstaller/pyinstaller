@@ -578,7 +578,7 @@ Options for the Executable Output
     On Windows and Mac OS X, do not create a console window at run time
     for standard input/output.
     (This option is ignored for other operating systems.)
-    On Mac OS X, this option with ``--onefile`` triggers
+    On Mac OS X, this option triggers
     the creation of an OS X application bundle.
 
 -d, --debug
@@ -646,7 +646,7 @@ in ``dist`` is a UNIX executable
 It can be executed from a Terminal command line.
 Standard input and output work as normal through the Terminal window.
 
-If you specify ``--onefile --windowed``, the ``dist`` folder contains 
+If you specify ``--windowed``, the ``dist`` folder contains 
 two outputs: the UNIX executable ``myscript``
 and also an OS X application named ``myscript.app``.
 
