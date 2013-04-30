@@ -1313,7 +1313,7 @@ You can name them with the option ``--runtime-hook=`` *path-to-script*.
 
 Second, some runtime hooks are provided.
 At the end of an analysis, the names in the module list are looked up in
-``rthooks/rthooks.dat`` in the |PyInstaller| install folder.
+``loader/rthooks.dat`` in the |PyInstaller| install folder.
 This text file is the string representation of a
 Python dictionary. The key is the module name, and the value is a list
 of hook-script pathnames.
