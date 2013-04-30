@@ -1949,7 +1949,8 @@ define one or more of the following three global names:
     A ``Module`` object is an instance of the class
     ``PyInstaller.depend.modules.Module()`` which you can read.
     If defined, ``hook(mod)`` is called before |PyInstaller| tests
-    ``hiddenimports`` and ``attrs``. So one use of a ``hook(mod)``
+    ``hiddenimports``,  ``datas``, or ``attrs``.
+    So one use of a ``hook(mod)``
     function would be to test ``sys.version`` and adjust 
     ``hiddenimports`` based on that.
 
