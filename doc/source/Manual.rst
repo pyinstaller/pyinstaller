@@ -1587,7 +1587,7 @@ Inspecting Archives
 ~~~~~~~~~~~~~~~~~~~~~~
 
 An archive is a file that contains other files,
-for exampe a ``.tar`` file, a ``.jar`` file, or a ``.zip`` file.
+for example a ``.tar`` file, a ``.jar`` file, or a ``.zip`` file.
 Two kinds of archives are used in |PyInstaller|.
 One is a ZlibArchive, which
 allows Python modules to be stored efficiently and,
