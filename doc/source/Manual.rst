@@ -170,7 +170,7 @@ execution path. To verify this enter the command
 
   ``pyinstaller --version``
 
-The result should resemble ``2.n-xxxxxx`` for a released version,
+The result should resemble ``2.n`` for a released version,
 and ``2.1dev-xxxxxx`` for a development branch.
 
 If the command is not found, make sure the execution path includes 
