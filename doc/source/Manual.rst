@@ -1975,16 +1975,15 @@ you need to build the |bootloader|.
 Development tools
 -----------------
 
-On Debian/Ubuntu systems, you can run the following lines to install everything
-required::
+On Debian/Ubuntu systems, you can run the following to
+install everything required::
 
-        sudo apt-get install build-essential python-dev
+    $ sudo apt-get install build-essential
 
-On Fedora/RHEL and derivates, you can run the following lines::
+On Fedora/RHEL and derivates, you can run the following::
 
-        su
-        yum groupinstall "Development Tools"
-        yum install python-devel
+    $ su
+    $ yum groupinstall "Development Tools"
 
 On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
 for developing software for Mac OS X. It can be also installed from your
@@ -1995,7 +1994,6 @@ On Solaris and AIX the |bootloader| is tested with gcc.
 On Windows you can use the Visual Studio C++ compiler
 (Visual Studio 2008 is recommended).
 A free version you can download is `Visual Studio Express`_.
-Python development libraries are usually installed together with Python.
 
 *Note:* There is no connection between the Visual Studio
 version used to compile the |bootloader| and the Visual Studio version used to
@@ -2026,9 +2024,14 @@ Change to the ``bootloader`` subdirectory. Run::
 
         python ./waf configure build install
 
-This will produce ``support/loader/YOUR_OS/run``,
-``support/loader/YOUR_OS/run_d``, ``support/loader/YOUR_OS/runw`` and
-``support/loader/YOUR_OS/runw_d``, which are the bootloaders.
+This will produce
+
+* ``bootloader/YOUR_OS/run``,
+* ``bootloader/YOUR_OS/run_d``
+* ``bootloader/YOUR_OS/runw`` and
+* ``bootloader/YOUR_OS/runw_d``
+
+which are the bootloaders.
 
 On Windows this will produce in the ``support/loader/YOUR_OS`` directory:
 ``run*.exe`` (bootloader for regular programs), and
