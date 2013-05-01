@@ -17,7 +17,7 @@
 <col class="docinfo-content" />
 <tbody valign="top">
 <tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller 2.1dev-8be87c7</td></tr>
+<td>PyInstaller 2.1dev-ccb6f3d</td></tr>
 <tr class="field"><th class="docinfo-name">Homepage:</th><td class="field-body"><a class="reference external" href="http://www.pyinstaller.org">http://www.pyinstaller.org</a></td>
 </tr>
 <tr><th class="docinfo-name">Author:</th>
@@ -320,15 +320,15 @@ to complete the installation.</p>
 execution path. To verify this enter the command</p>
 <blockquote>
 <tt class="docutils literal">pyinstaller <span class="pre">--version</span></tt></blockquote>
-<p>The result should resemble <tt class="docutils literal"><span class="pre">2.n-xxxxxx</span></tt> for a released version,
+<p>The result should resemble <tt class="docutils literal">2.n</tt> for a released version,
 and <tt class="docutils literal"><span class="pre">2.1dev-xxxxxx</span></tt> for a development branch.</p>
 <p>If the command is not found, make sure the execution path includes
 the proper directory:</p>
 <ul class="simple">
-<li>Windows: C:PythonXYScripts</li>
-<li>Linux: /usr/bin/</li>
-<li>OS X (using default Apple-supplied Python) /usr/local/bin</li>
-<li>OS X (using Python installed by macports) /opt/local/bin</li>
+<li>Windows: <tt class="docutils literal"><span class="pre">C:\PythonXY\Scripts</span></tt></li>
+<li>Linux: <tt class="docutils literal">/usr/bin/</tt></li>
+<li>OS X (using default Apple-supplied Python) <tt class="docutils literal">/usr/local/bin</tt></li>
+<li>OS X (using Python installed by macports) <tt class="docutils literal">/opt/local/bin</tt></li>
 </ul>
 <p>To display the current path in Windows the command is <tt class="docutils literal">echo %path%</tt>
 and in other systems, <tt class="docutils literal">echo $PATH</tt>.</p>
@@ -558,10 +558,10 @@ pyinstaller myscript.py
 </pre>
 <p><cite>PyInstaller</cite> analyzes <tt class="docutils literal">myscript.py</tt> and:</p>
 <ul class="simple">
-<li>Writes <tt class="docutils literal">myscript.spec</tt> in the current directory.</li>
-<li>Creates a folder <tt class="docutils literal">build</tt> in the current directory if it does not exist.</li>
+<li>Writes <tt class="docutils literal">myscript.spec</tt> in the same folder as the script.</li>
+<li>Creates a folder <tt class="docutils literal">build</tt> in the same folder as the script if it does not exist.</li>
 <li>Writes some log files and working files in the <tt class="docutils literal">build</tt> folder.</li>
-<li>Creates a folder <tt class="docutils literal">dist</tt> in the current directory if it does not exist.</li>
+<li>Creates a folder <tt class="docutils literal">dist</tt> in the same folder as the script if it does not exist.</li>
 <li>Writes the <tt class="docutils literal">myscript</tt> executable folder in the <tt class="docutils literal">dist</tt> folder.</li>
 </ul>
 <p>In the <tt class="docutils literal">dist</tt> folder you find the bundled app you distribute to your users.</p>
@@ -581,9 +581,6 @@ After you do this, you name the spec file to <cite>PyInstaller</cite> instead of
 <p>or, on Windows,</p>
 <blockquote>
 <tt class="docutils literal">pyinstaller <span class="pre">&quot;C:\Documents</span> and Settings\project\myscript.spec&quot;</tt></blockquote>
-<p>In this case
-<cite>PyInstaller</cite> creates or uses the <tt class="docutils literal">dist</tt> and <tt class="docutils literal">build</tt> subdirectories
-in the same location as the script or spec file that you name.</p>
 <div class="section" id="options">
 <h2><a class="toc-backref" href="#id20">Options</a></h2>
 <div class="section" id="general-options">
@@ -608,18 +605,18 @@ The default is to include them if available, whether the script imports them or 
 </tr>
 <tr><td>&nbsp;</td><td>Say where to put the bundled app.
 The default is a <tt class="docutils literal">dist</tt> folder in
-the same location as the first script.</td></tr>
+the same folder as the first script.</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--specpath=<var>path_to_spec_file</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Say where to put the <em>name</em> <cite>.spec</cite> file.
-The default is the same location as the first script.</td></tr>
+The default is the same folder as the first script.</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--buildpath=<var>path_to_work_files</var></span></kbd></td>
+<kbd><span class="option">--workpath=<var>path_to_work_files</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Say where to put the <cite>PyInstaller</cite> log and work files for this run.
 The default path is a <tt class="docutils literal">build</tt> folder
-in the same location as the first script or spec.</td></tr>
+in the same folder as the first script or spec.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">--clean</span></kbd></td>
 <td>Tells <cite>PyInstaller</cite> to erase all log and work files before it starts.
@@ -708,7 +705,7 @@ This is the default for both one-file and one-folder modes.</td></tr>
 <tr><td>&nbsp;</td><td>On Windows and Mac OS X, do not create a console window at run time
 for standard input/output.
 (This option is ignored for other operating systems.)
-On Mac OS X, this option with <tt class="docutils literal"><span class="pre">--onefile</span></tt> triggers
+On Mac OS X, this option triggers
 the creation of an OS X application bundle.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">-d</span>, <span class="option">--debug</span></kbd></td>
@@ -794,7 +791,7 @@ in <tt class="docutils literal">dist</tt> is a UNIX executable
 <tt class="docutils literal">myscript</tt>.
 It can be executed from a Terminal command line.
 Standard input and output work as normal through the Terminal window.</p>
-<p>If you specify <tt class="docutils literal"><span class="pre">--onefile</span> <span class="pre">--windowed</span></tt>, the <tt class="docutils literal">dist</tt> folder contains
+<p>If you specify <tt class="docutils literal"><span class="pre">--windowed</span></tt>, the <tt class="docutils literal">dist</tt> folder contains
 two outputs: the UNIX executable <tt class="docutils literal">myscript</tt>
 and also an OS X application named <tt class="docutils literal">myscript.app</tt>.</p>
 <p>As you probably know, an application is a special type of folder.
@@ -1425,7 +1422,7 @@ effectively providing additional top-level code to your script.</p>
 You can name them with the option <tt class="docutils literal"><span class="pre">--runtime-hook=</span></tt> <em>path-to-script</em>.</p>
 <p>Second, some runtime hooks are provided.
 At the end of an analysis, the names in the module list are looked up in
-<tt class="docutils literal">rthooks/rthooks.dat</tt> in the <cite>PyInstaller</cite> install folder.
+<tt class="docutils literal">loader/rthooks.dat</tt> in the <cite>PyInstaller</cite> install folder.
 This text file is the string representation of a
 Python dictionary. The key is the module name, and the value is a list
 of hook-script pathnames.
@@ -1669,7 +1666,7 @@ This is usually easier than the Version resource wizard in VC++.</p>
 <div class="section" id="inspecting-archives">
 <h2><a class="toc-backref" href="#id61">Inspecting Archives</a></h2>
 <p>An archive is a file that contains other files,
-for exampe a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils literal">.jar</tt> file, or a <tt class="docutils literal">.zip</tt> file.
+for example a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils literal">.jar</tt> file, or a <tt class="docutils literal">.zip</tt> file.
 Two kinds of archives are used in <cite>PyInstaller</cite>.
 One is a ZlibArchive, which
 allows Python modules to be stored efficiently and,
@@ -1889,7 +1886,7 @@ foo_exe = EXE(foo_pyz, foo_a.scripts, ... etc.
 <pre class="literal-block">
 pyi-build foobarzap.spec
 </pre>
-<p>There are several multipackage examples in the <tt class="docutils literal">buildtests/multipackage</tt> directory
+<p>There are several multipackage examples in the <tt class="docutils literal">tests/multipackage</tt> folder
 of the <cite>PyInstaller</cite> distribution folder.</p>
 <p>Remember that a spec file is executable Python.
 You can use all the Python facilities (<tt class="docutils literal">for</tt> and <tt class="docutils literal">with</tt>
@@ -1993,7 +1990,8 @@ unchanged, or a modified one.
 A <tt class="docutils literal">Module</tt> object is an instance of the class
 <tt class="docutils literal">PyInstaller.depend.modules.Module()</tt> which you can read.
 If defined, <tt class="docutils literal">hook(mod)</tt> is called before <cite>PyInstaller</cite> tests
-<tt class="docutils literal">hiddenimports</tt> and <tt class="docutils literal">attrs</tt>. So one use of a <tt class="docutils literal">hook(mod)</tt>
+<tt class="docutils literal">hiddenimports</tt>,  <tt class="docutils literal">datas</tt>, or <tt class="docutils literal">attrs</tt>.
+So one use of a <tt class="docutils literal">hook(mod)</tt>
 function would be to test <tt class="docutils literal">sys.version</tt> and adjust
 <tt class="docutils literal">hiddenimports</tt> based on that.</dd>
 </dl>
@@ -2013,16 +2011,15 @@ or if you want to modify the bootloader source,
 you need to build the bootloader.</p>
 <div class="section" id="development-tools">
 <h3><a class="toc-backref" href="#id72">Development tools</a></h3>
-<p>On Debian/Ubuntu systems, you can run the following lines to install everything
-required:</p>
+<p>On Debian/Ubuntu systems, you can run the following to
+install everything required:</p>
 <pre class="literal-block">
-sudo apt-get install build-essential python-dev
+sudo apt-get install build-essential
 </pre>
-<p>On Fedora/RHEL and derivates, you can run the following lines:</p>
+<p>On Fedora/RHEL and derivates, you can run the following:</p>
 <pre class="literal-block">
 su
 yum groupinstall &quot;Development Tools&quot;
-yum install python-devel
 </pre>
 <p>On Mac OS X you can get gcc by installing <a class="reference external" href="http://developer.apple.com/xcode">Xcode</a>. It is a suite of tools
 for developing software for Mac OS X. It can be also installed from your
@@ -2030,8 +2027,7 @@ Mac OS X Install DVD. It is not necessary to install the version 4 of Xcode.</p>
 <p>On Solaris and AIX the bootloader is tested with gcc.</p>
 <p>On Windows you can use the Visual Studio C++ compiler
 (Visual Studio 2008 is recommended).
-A free version you can download is <a class="reference external" href="http://www.microsoft.com/express/">Visual Studio Express</a>.
-Python development libraries are usually installed together with Python.</p>
+A free version you can download is <a class="reference external" href="http://www.microsoft.com/express/">Visual Studio Express</a>.</p>
 <p><em>Note:</em> There is no connection between the Visual Studio
 version used to compile the bootloader and the Visual Studio version used to
 compile Python. The bootloader is a self-contained static executable
@@ -2057,10 +2053,15 @@ set PATH=C:\MinGW\bin;%PATH%
 <pre class="literal-block">
 python ./waf configure build install
 </pre>
-<p>This will produce <tt class="docutils literal">support/loader/YOUR_OS/run</tt>,
-<tt class="docutils literal">support/loader/YOUR_OS/run_d</tt>, <tt class="docutils literal">support/loader/YOUR_OS/runw</tt> and
-<tt class="docutils literal">support/loader/YOUR_OS/runw_d</tt>, which are the bootloaders.</p>
-<p>On Windows this will produce in the <tt class="docutils literal">support/loader/YOUR_OS</tt> directory:
+<p>This will produce</p>
+<ul class="simple">
+<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/run</tt>,</li>
+<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/run_d</tt></li>
+<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/runw</tt> and</li>
+<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/runw_d</tt></li>
+</ul>
+<p>which are the bootloaders.</p>
+<p>On Windows this will produce in the <tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS</tt> directory:
 <tt class="docutils literal"><span class="pre">run*.exe</span></tt> (bootloader for regular programs), and
 <tt class="docutils literal"><span class="pre">inprocsrvr*.dll</span></tt> (bootloader for in-process COM servers).</p>
 <p><em>Note:</em> If you have multiple versions of Python, the Python you use to run
@@ -2459,7 +2460,7 @@ were easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2013-04-23 22:06 UTC.
+Generated on: 2013-05-01 14:59 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
