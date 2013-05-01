@@ -1978,12 +1978,12 @@ Development tools
 On Debian/Ubuntu systems, you can run the following to
 install everything required::
 
-    $ sudo apt-get install build-essential
+    sudo apt-get install build-essential
 
 On Fedora/RHEL and derivates, you can run the following::
 
-    $ su
-    $ yum groupinstall "Development Tools"
+    su
+    yum groupinstall "Development Tools"
 
 On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
 for developing software for Mac OS X. It can be also installed from your
