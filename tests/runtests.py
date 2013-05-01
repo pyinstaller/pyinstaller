@@ -1,23 +1,13 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2011-2013 Martin Zibricky
-# Copyright (C) 2011-2012 Hartmut Goebel
-# Copyright (C) 2005-2011 Giovanni Bajo
-# Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
 
 # This program will execute any file with name test*<digit>.py. If your test
 # need an aditional dependency name it test*<digit><letter>.py to be ignored
@@ -109,6 +99,7 @@ class SkipChecker(object):
             }
         # Required Python modules for some tests.
         self.MODULES = {
+            'basic/test_8': ['codecs'],
             'basic/test_module_attributes': ['xml.etree.cElementTree'],
             'basic/test_multiprocess': ['multiprocessing'],
             'basic/test_onefile_ctypes': ['ctypes'],

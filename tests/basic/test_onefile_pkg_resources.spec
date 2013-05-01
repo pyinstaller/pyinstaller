@@ -1,4 +1,12 @@
 # -*- mode: python -*-
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
 __testname__ = 'test_onefile_pkg_resources'
@@ -40,7 +48,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           datafile,
-          name=os.path.join('dist',  __testname__ + '.exe'),
+          name= __testname__ + '.exe',
           debug=True,
           strip=None,
           upx=True,

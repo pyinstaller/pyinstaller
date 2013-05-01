@@ -8,5 +8,17 @@
 #-----------------------------------------------------------------------------
 
 
-import time
-print time.strptime(time.ctime())
+import codecs
+import sys
+
+
+a = 'foo bar'
+au = codecs.getdecoder('utf-8')(a)[0]
+b = codecs.getencoder('utf-8')(au)[0]
+
+
+print('codecs working: %s' % (a == b))
+assert a == b
+
+
+sys.exit(0)

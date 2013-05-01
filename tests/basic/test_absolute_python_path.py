@@ -1,7 +1,18 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
 # sys.path  should contain absolute paths.
 # With relative paths frozen application will
 # fail to import modules when currect working
 # directory is changed.
+
 
 import os
 import sys

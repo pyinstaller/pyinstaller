@@ -1,4 +1,13 @@
 # -*- mode: python -*-
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
 
 __testname__ = 'test_pkg_structures'
 
@@ -9,7 +18,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=1,
-          name=os.path.join('build', 'pyi.'+sys.platform, __testname__ + '.exe'),
+          name= __testname__ + '.exe',
           icon=__testname__+'.ico',
           version=__testname__+'-version.txt',
           debug=0,
@@ -17,4 +26,4 @@ exe = EXE(pyz,
 
 coll = COLLECT( exe,
                a.binaries,
-               name=os.path.join('dist', __testname__),)
+               name= __testname__)

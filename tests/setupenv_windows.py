@@ -1,19 +1,11 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2012, Martin Zibricky
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
 # Install necessary 3rd party Python modules to run all tests.
@@ -32,15 +24,10 @@ import sys
 from setuptools.command import easy_install
 
 
-try:
-    import PyInstaller
-except ImportError:
-    # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation
-    import imp
-    if not hasattr(os, "getuid") or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]))
+# Expand PYTHONPATH with PyInstaller package to support running without
+# installation.
+pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+sys.path.insert(0, pyi_home)
 
 
 from PyInstaller.compat import is_py25, is_py26
@@ -74,6 +61,7 @@ _PACKAGES = {
     'sqlalchemy': ['SQLAlchemy-*%s-py%s.exe' % (py_arch(), PYVER)],
     'wx': ['wxPython-common-*%s-py%s.exe' % (py_arch(), PYVER),
         'wxPython-2*%s-py%s.exe' % (py_arch(), PYVER)],
+    # PyWin32 is installed on ShiningPanda hosting.
     'win32api': ['http://downloads.sourceforge.net/project/pywin32/pywin32/Build%%20217/pywin32-217.%s-py%s.exe' %
         (py_arch(), PYVER)],
 }

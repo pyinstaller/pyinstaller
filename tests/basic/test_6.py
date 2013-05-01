@@ -1,36 +1,32 @@
-# Copyright (C) 2012, Hartmut Goebel
-# Copyright (C) 2005, Giovanni Bajo
-# Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
 
 import sys, os
 import data6
 
-print "data6.x is", data6.x
+
+print('data6.x is %s' % data6.x)
 
 txt = """\
 x = %d
 """ % (data6.x + 1)
+
 
 if hasattr(sys, 'frozen'):
     data6_filename = os.path.join(sys._MEIPASS, 'data6.py')
 else:
     data6_filename = data6.__file__
 
+
 open(data6_filename, 'w').write(txt)
 
+
 reload(data6)
-print "data6.x is now", data6.x
+print('data6.x is now %s' % data6.x)
