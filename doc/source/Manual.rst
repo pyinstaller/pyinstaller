@@ -2026,14 +2026,14 @@ Change to the ``bootloader`` subdirectory. Run::
 
 This will produce
 
-* ``bootloader/YOUR_OS/run``,
-* ``bootloader/YOUR_OS/run_d``
-* ``bootloader/YOUR_OS/runw`` and
-* ``bootloader/YOUR_OS/runw_d``
+* ``./PyInstaller/bootloader/YOUR_OS/run``,
+* ``./PyInstaller/bootloader/YOUR_OS/run_d``
+* ``./PyInstaller/bootloader/YOUR_OS/runw`` and
+* ``./PyInstaller/bootloader/YOUR_OS/runw_d``
 
 which are the bootloaders.
 
-On Windows this will produce in the ``support/loader/YOUR_OS`` directory:
+On Windows this will produce in the ``./PyInstaller/bootloader/YOUR_OS`` directory:
 ``run*.exe`` (bootloader for regular programs), and
 ``inprocsrvr*.dll`` (bootloader for in-process COM servers).
 
