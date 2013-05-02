@@ -99,7 +99,7 @@ class SkipChecker(object):
             }
         # Required Python modules for some tests.
         self.MODULES = {
-            'basic/test_8': ['codecs'],
+            'basic/test_codecs': ['codecs'],
             'basic/test_module_attributes': ['xml.etree.cElementTree'],
             'basic/test_multiprocess': ['multiprocessing'],
             'basic/test_onefile_ctypes': ['ctypes'],

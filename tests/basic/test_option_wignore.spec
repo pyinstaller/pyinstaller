@@ -9,7 +9,7 @@
 #-----------------------------------------------------------------------------
 
 
-__testname__ = 'test_5'
+__testname__ = 'test_option_wignore'
 
 a = Analysis([__testname__ + '.py'],
              pathex=[])
