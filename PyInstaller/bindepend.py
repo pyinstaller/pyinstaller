@@ -587,9 +587,11 @@ def findLibrary(name):
 
     lib = None
 
-    # Look in the LD_LIBRARY_PATH
+    # Look in the LD_LIBRARY_PATH according to platform.
     if is_aix:
         lp = compat.getenv('LIBPATH', '')
+    elif is_darwin:
+        lp = compat.getenv('DYLD_LIBRARY_PATH', '')
     else:
         lp = compat.getenv('LD_LIBRARY_PATH', '')
     for path in lp.split(os.pathsep):
