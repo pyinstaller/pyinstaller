@@ -97,75 +97,76 @@
 <li><a class="reference internal" href="#getting-the-latest-version" id="id43">Getting the Latest Version</a></li>
 <li><a class="reference internal" href="#finding-out-what-went-wrong" id="id44">Finding out What Went Wrong</a><ul>
 <li><a class="reference internal" href="#build-time-messages" id="id45">Build-time Messages</a></li>
-<li><a class="reference internal" href="#getting-debug-messages" id="id46">Getting Debug Messages</a></li>
-<li><a class="reference internal" href="#getting-python-s-verbose-imports" id="id47">Getting Python's Verbose Imports</a></li>
+<li><a class="reference internal" href="#build-time-python-errors" id="id46">Build-Time Python Errors</a></li>
+<li><a class="reference internal" href="#getting-debug-messages" id="id47">Getting Debug Messages</a></li>
+<li><a class="reference internal" href="#getting-python-s-verbose-imports" id="id48">Getting Python's Verbose Imports</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#helping-pyinstaller-find-modules" id="id48">Helping PyInstaller Find Modules</a><ul>
-<li><a class="reference internal" href="#extending-the-path" id="id49">Extending the Path</a></li>
-<li><a class="reference internal" href="#listing-hidden-imports" id="id50">Listing Hidden Imports</a></li>
-<li><a class="reference internal" href="#extending-a-package-s-path" id="id51">Extending a Package's <tt class="docutils literal">__path__</tt></a></li>
-<li><a class="reference internal" href="#changing-runtime-behavior" id="id52">Changing Runtime Behavior</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#advanced-topics" id="id53">Advanced Topics</a><ul>
-<li><a class="reference internal" href="#the-bootstrap-process-in-detail" id="id54">The Bootstrap Process in Detail</a><ul>
-<li><a class="reference internal" href="#bootloader" id="id55">Bootloader</a></li>
-<li><a class="reference internal" href="#running-python-code" id="id56">Running Python code</a></li>
-<li><a class="reference internal" href="#python-imports-in-a-frozen-app" id="id57">Python imports in a frozen app</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#adapting-to-being-frozen" id="id58">Adapting to being &quot;frozen&quot;</a></li>
-<li><a class="reference internal" href="#accessing-data-files" id="id59">Accessing Data Files</a></li>
-<li><a class="reference internal" href="#capturing-version-data" id="id60">Capturing Version Data</a></li>
-<li><a class="reference internal" href="#inspecting-archives" id="id61">Inspecting Archives</a><ul>
-<li><a class="reference internal" href="#zlibarchive" id="id62">ZlibArchive</a></li>
-<li><a class="reference internal" href="#carchive" id="id63">CArchive</a></li>
-<li><a class="reference internal" href="#using-pyi-archive-viewer" id="id64">Using pyi-archive_viewer</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#inspecting-executables" id="id65">Inspecting Executables</a></li>
-<li><a class="reference internal" href="#multipackage-bundles" id="id66">Multipackage Bundles</a><ul>
-<li><a class="reference internal" href="#merge-function" id="id67">MERGE Function</a></li>
-<li><a class="reference internal" href="#example-merge-spec-file" id="id68">Example MERGE spec file</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#using-hook-files" id="id69">Using Hook Files</a></li>
-<li><a class="reference internal" href="#hooks-in-detail" id="id70">Hooks in Detail</a></li>
-<li><a class="reference internal" href="#building-the-bootloader" id="id71">Building the Bootloader</a><ul>
-<li><a class="reference internal" href="#development-tools" id="id72">Development tools</a></li>
-<li><a class="reference internal" href="#building" id="id73">Building</a></li>
-<li><a class="reference internal" href="#linux-standard-base-lsb-binary" id="id74">Linux Standard Base (LSB) binary</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#modulefinder-replacement-importtracker" id="id75">Modulefinder Replacement - ImportTracker</a><ul>
-<li><a class="reference internal" href="#importtracker" id="id76">ImportTracker</a></li>
-<li><a class="reference internal" href="#analyze-one" id="id77"><tt class="docutils literal">analyze_one()</tt></a></li>
-<li><a class="reference internal" href="#module-classes" id="id78">Module Classes</a></li>
-<li><a class="reference internal" href="#code-scanning" id="id79">code scanning</a></li>
-<li><a class="reference internal" href="#hooks" id="id80">Hooks</a></li>
-<li><a class="reference internal" href="#warnings" id="id81">Warnings</a></li>
-<li><a class="reference internal" href="#cross-reference" id="id82">Cross Reference</a></li>
+<li><a class="reference internal" href="#helping-pyinstaller-find-modules" id="id49">Helping PyInstaller Find Modules</a><ul>
+<li><a class="reference internal" href="#extending-the-path" id="id50">Extending the Path</a></li>
+<li><a class="reference internal" href="#listing-hidden-imports" id="id51">Listing Hidden Imports</a></li>
+<li><a class="reference internal" href="#extending-a-package-s-path" id="id52">Extending a Package's <tt class="docutils literal">__path__</tt></a></li>
+<li><a class="reference internal" href="#changing-runtime-behavior" id="id53">Changing Runtime Behavior</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#outdated-features" id="id83">Outdated Features</a><ul>
-<li><a class="reference internal" href="#windows-com-server-support" id="id84">Windows COM Server Support</a></li>
-<li><a class="reference internal" href="#building-optimized" id="id85">Building Optimized</a></li>
-<li><a class="reference internal" href="#iu-py-an-imputil-replacement" id="id86"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a><ul>
-<li><a class="reference internal" href="#importmanager" id="id87"><tt class="docutils literal">ImportManager</tt></a></li>
-<li><a class="reference internal" href="#importdirector" id="id88"><tt class="docutils literal">ImportDirector</tt></a></li>
-<li><a class="reference internal" href="#pathimportdirector" id="id89"><tt class="docutils literal">PathImportDirector</tt></a></li>
-<li><a class="reference internal" href="#owner" id="id90"><tt class="docutils literal">Owner</tt></a></li>
-<li><a class="reference internal" href="#packages" id="id91">Packages</a></li>
-<li><a class="reference internal" href="#possibilities" id="id92">Possibilities</a></li>
-<li><a class="reference internal" href="#compatibility" id="id93">Compatibility</a></li>
-<li><a class="reference internal" href="#performance" id="id94">Performance</a></li>
-<li><a class="reference internal" href="#limitations" id="id95">Limitations</a></li>
-<li><a class="reference internal" href="#iu-usage" id="id96">iu Usage</a></li>
+<li><a class="reference internal" href="#advanced-topics" id="id54">Advanced Topics</a><ul>
+<li><a class="reference internal" href="#the-bootstrap-process-in-detail" id="id55">The Bootstrap Process in Detail</a><ul>
+<li><a class="reference internal" href="#bootloader" id="id56">Bootloader</a></li>
+<li><a class="reference internal" href="#running-python-code" id="id57">Running Python code</a></li>
+<li><a class="reference internal" href="#python-imports-in-a-frozen-app" id="id58">Python imports in a frozen app</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adapting-to-being-frozen" id="id59">Adapting to being &quot;frozen&quot;</a></li>
+<li><a class="reference internal" href="#accessing-data-files" id="id60">Accessing Data Files</a></li>
+<li><a class="reference internal" href="#capturing-version-data" id="id61">Capturing Version Data</a></li>
+<li><a class="reference internal" href="#inspecting-archives" id="id62">Inspecting Archives</a><ul>
+<li><a class="reference internal" href="#zlibarchive" id="id63">ZlibArchive</a></li>
+<li><a class="reference internal" href="#carchive" id="id64">CArchive</a></li>
+<li><a class="reference internal" href="#using-pyi-archive-viewer" id="id65">Using pyi-archive_viewer</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#inspecting-executables" id="id66">Inspecting Executables</a></li>
+<li><a class="reference internal" href="#multipackage-bundles" id="id67">Multipackage Bundles</a><ul>
+<li><a class="reference internal" href="#merge-function" id="id68">MERGE Function</a></li>
+<li><a class="reference internal" href="#example-merge-spec-file" id="id69">Example MERGE spec file</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-hook-files" id="id70">Using Hook Files</a></li>
+<li><a class="reference internal" href="#hooks-in-detail" id="id71">Hooks in Detail</a></li>
+<li><a class="reference internal" href="#building-the-bootloader" id="id72">Building the Bootloader</a><ul>
+<li><a class="reference internal" href="#development-tools" id="id73">Development tools</a></li>
+<li><a class="reference internal" href="#building" id="id74">Building</a></li>
+<li><a class="reference internal" href="#linux-standard-base-lsb-binary" id="id75">Linux Standard Base (LSB) binary</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#modulefinder-replacement-importtracker" id="id76">Modulefinder Replacement - ImportTracker</a><ul>
+<li><a class="reference internal" href="#importtracker" id="id77">ImportTracker</a></li>
+<li><a class="reference internal" href="#analyze-one" id="id78"><tt class="docutils literal">analyze_one()</tt></a></li>
+<li><a class="reference internal" href="#module-classes" id="id79">Module Classes</a></li>
+<li><a class="reference internal" href="#code-scanning" id="id80">code scanning</a></li>
+<li><a class="reference internal" href="#hooks" id="id81">Hooks</a></li>
+<li><a class="reference internal" href="#warnings" id="id82">Warnings</a></li>
+<li><a class="reference internal" href="#cross-reference" id="id83">Cross Reference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#outdated-features" id="id84">Outdated Features</a><ul>
+<li><a class="reference internal" href="#windows-com-server-support" id="id85">Windows COM Server Support</a></li>
+<li><a class="reference internal" href="#building-optimized" id="id86">Building Optimized</a></li>
+<li><a class="reference internal" href="#iu-py-an-imputil-replacement" id="id87"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a><ul>
+<li><a class="reference internal" href="#importmanager" id="id88"><tt class="docutils literal">ImportManager</tt></a></li>
+<li><a class="reference internal" href="#importdirector" id="id89"><tt class="docutils literal">ImportDirector</tt></a></li>
+<li><a class="reference internal" href="#pathimportdirector" id="id90"><tt class="docutils literal">PathImportDirector</tt></a></li>
+<li><a class="reference internal" href="#owner" id="id91"><tt class="docutils literal">Owner</tt></a></li>
+<li><a class="reference internal" href="#packages" id="id92">Packages</a></li>
+<li><a class="reference internal" href="#possibilities" id="id93">Possibilities</a></li>
+<li><a class="reference internal" href="#compatibility" id="id94">Compatibility</a></li>
+<li><a class="reference internal" href="#performance" id="id95">Performance</a></li>
+<li><a class="reference internal" href="#limitations" id="id96">Limitations</a></li>
+<li><a class="reference internal" href="#iu-usage" id="id97">iu Usage</a></li>
 </ul>
 </li>
 </ul>
@@ -1330,8 +1331,33 @@ cannot see.</p>
 <p>Problems detected through these messages can be corrected;
 see <a class="reference internal" href="#listing-hidden-imports">Listing Hidden Imports</a> below for how to do it.</p>
 </div>
+<div class="section" id="build-time-python-errors">
+<h3><a class="toc-backref" href="#id46">Build-Time Python Errors</a></h3>
+<p><cite>PyInstaller</cite> sometimes terminates by raising a Python exception.
+In most cases the reason is clear from the exception message,
+for example &quot;Your system is not supported&quot;, or &quot;Pyinstaller
+requires at least Python 2.4&quot;.
+Others clearly indicate a bug that should be reported.</p>
+<p>One of these errors can be puzzling, however:
+<tt class="docutils literal"><span class="pre">IOError(&quot;Python</span> library not <span class="pre">found!&quot;)</span></tt>
+<cite>PyInstaller</cite> needs to bundle the Python library, which is the
+main part of the Python interpreter, linked as a dynamic load library.
+The name and location of this file varies depending on the platform in use.
+Some Python installations do not include a dynamic Python library
+by default (a static-linked one may be present but cannot be used).
+You may need to install a development package of some kind.
+Or, the library may exist but is not in a folder where <cite>PyInstaller</cite>
+is searching.</p>
+<p>The places where <cite>PyInstaller</cite> looks for the python library are
+different in different operating systems, but <tt class="docutils literal">/lib</tt> and <tt class="docutils literal">/usr/lib</tt>
+are checked in most systems.
+If you cannot put the python library there,
+try setting the correct path in the environment variable
+<tt class="docutils literal">LD_LIBRARY_PATH</tt> in Linux or
+<tt class="docutils literal">DYLD_LIBRARY_PATH</tt> in OS X.</p>
+</div>
 <div class="section" id="getting-debug-messages">
-<h3><a class="toc-backref" href="#id46">Getting Debug Messages</a></h3>
+<h3><a class="toc-backref" href="#id47">Getting Debug Messages</a></h3>
 <p>Giving the <tt class="docutils literal"><span class="pre">--debug</span></tt> option causes the bundled executable itself to
 write progress messages when it runs.
 This can be useful during development of a complex package,
@@ -1345,7 +1371,7 @@ For a <tt class="docutils literal"><span class="pre">--windowed</span></tt> Mac 
 Users would find the messages annoying.</p>
 </div>
 <div class="section" id="getting-python-s-verbose-imports">
-<h3><a class="toc-backref" href="#id47">Getting Python's Verbose Imports</a></h3>
+<h3><a class="toc-backref" href="#id48">Getting Python's Verbose Imports</a></h3>
 <p>You can also pass a <tt class="docutils literal"><span class="pre">-v</span></tt> (verbose imports) flag to the embedded Python
 (see <a class="reference internal" href="#giving-run-time-python-options">Giving Run-time Python Options</a> above).
 This can be extremely useful.
@@ -1358,9 +1384,9 @@ Remember to not use this in the distributed program.</p>
 </div>
 </div>
 <div class="section" id="helping-pyinstaller-find-modules">
-<h2><a class="toc-backref" href="#id48">Helping PyInstaller Find Modules</a></h2>
+<h2><a class="toc-backref" href="#id49">Helping PyInstaller Find Modules</a></h2>
 <div class="section" id="extending-the-path">
-<h3><a class="toc-backref" href="#id49">Extending the Path</a></h3>
+<h3><a class="toc-backref" href="#id50">Extending the Path</a></h3>
 <p>If Analysis recognizes that a module is needed, but cannot find that module,
 it is often because the script is manipulating <tt class="docutils literal">sys.path</tt>.
 The easiest thing to do in this case is to use the <tt class="docutils literal"><span class="pre">--paths=</span></tt> option
@@ -1372,7 +1398,7 @@ pyi-makespec --paths=/path/to/thisdir \
 <p>These paths will be added to the current <tt class="docutils literal">sys.path</tt> during analysis.</p>
 </div>
 <div class="section" id="listing-hidden-imports">
-<h3><a class="toc-backref" href="#id50">Listing Hidden Imports</a></h3>
+<h3><a class="toc-backref" href="#id51">Listing Hidden Imports</a></h3>
 <p>If Analysis thinks it has found all the imports,
 but the app fails with an import error,
 the problem is a hidden import; that is, an import that is not
@@ -1392,7 +1418,7 @@ by editing the spec file, or
 with a hook file: <a class="reference internal" href="#using-hook-files">Using Hook Files</a> below.</p>
 </div>
 <div class="section" id="extending-a-package-s-path">
-<h3><a class="toc-backref" href="#id51">Extending a Package's <tt class="docutils literal">__path__</tt></a></h3>
+<h3><a class="toc-backref" href="#id52">Extending a Package's <tt class="docutils literal">__path__</tt></a></h3>
 <p>Python allows a script to extend the search path used for imports
 through the <tt class="docutils literal">__path__</tt> mechanism.
 Normally, the <tt class="docutils literal">__path__</tt> of an imported module has only one entry,
@@ -1414,7 +1440,7 @@ knows nothing of <tt class="docutils literal"><span class="pre">../win32comext</
 <p>Once in awhile, that's not enough.</p>
 </div>
 <div class="section" id="changing-runtime-behavior">
-<h3><a class="toc-backref" href="#id52">Changing Runtime Behavior</a></h3>
+<h3><a class="toc-backref" href="#id53">Changing Runtime Behavior</a></h3>
 <p>More bizarre situations can be accomodated with runtime hooks.
 These are small scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.</p>
@@ -1463,9 +1489,9 @@ django.core.management.find_commands = _find_commands
 </div>
 </div>
 <div class="section" id="advanced-topics">
-<h1><a class="toc-backref" href="#id53">Advanced Topics</a></h1>
+<h1><a class="toc-backref" href="#id54">Advanced Topics</a></h1>
 <div class="section" id="the-bootstrap-process-in-detail">
-<h2><a class="toc-backref" href="#id54">The Bootstrap Process in Detail</a></h2>
+<h2><a class="toc-backref" href="#id55">The Bootstrap Process in Detail</a></h2>
 <p>There are many steps that must take place before the bundled
 script can begin execution.
 A summary of these steps was given in the Overview
@@ -1474,7 +1500,7 @@ A summary of these steps was given in the Overview
 Here is more detail to help you understand what the bootloader
 does and how to figure out problems.</p>
 <div class="section" id="bootloader">
-<h3><a class="toc-backref" href="#id55">Bootloader</a></h3>
+<h3><a class="toc-backref" href="#id56">Bootloader</a></h3>
 <p>The bootloader prepares everything for running Python code.
 It begins the setup and then reruns itself in another process.
 This approach of using two processes allows a lot of flexibility
@@ -1513,7 +1539,7 @@ executable file.</li>
 </ol>
 </div>
 <div class="section" id="running-python-code">
-<h3><a class="toc-backref" href="#id56">Running Python code</a></h3>
+<h3><a class="toc-backref" href="#id57">Running Python code</a></h3>
 <p>Running Python code consists of several steps:</p>
 <ol class="arabic simple">
 <li>Run Python initialization code which
@@ -1536,7 +1562,7 @@ item in <tt class="docutils literal">sys.path</tt> is a zip file or a directory.
 </ol>
 </div>
 <div class="section" id="python-imports-in-a-frozen-app">
-<h3><a class="toc-backref" href="#id57">Python imports in a frozen app</a></h3>
+<h3><a class="toc-backref" href="#id58">Python imports in a frozen app</a></h3>
 <p>PyInstaller embeds compiled python code
 (<tt class="docutils literal">.pyc</tt> files) within the executable.
 PyInstaller injects its code into the
@@ -1578,7 +1604,7 @@ raise <tt class="docutils literal">ImportError</tt>.</li>
 </div>
 </div>
 <div class="section" id="adapting-to-being-frozen">
-<h2><a class="toc-backref" href="#id58">Adapting to being &quot;frozen&quot;</a></h2>
+<h2><a class="toc-backref" href="#id59">Adapting to being &quot;frozen&quot;</a></h2>
 <p>In some apps it is necessary to learn at run-time
 whether the app is running &quot;live&quot; (from source) or &quot;frozen&quot; (part of a bundle).
 For example, you might have a
@@ -1610,7 +1636,7 @@ variable <tt class="docutils literal">__file__</tt> is the full path to the scri
 and <tt class="docutils literal">os.path.dirname()</tt> extracts the path to the folder that contains it.</p>
 </div>
 <div class="section" id="accessing-data-files">
-<h2><a class="toc-backref" href="#id59">Accessing Data Files</a></h2>
+<h2><a class="toc-backref" href="#id60">Accessing Data Files</a></h2>
 <p>You can include related files in either type of distribution.
 Data files and folders of files can be included
 by editing the spec file; see <a class="reference internal" href="#adding-files-to-the-bundle">Adding Files to the Bundle</a>.</p>
@@ -1638,7 +1664,7 @@ The expression</p>
 that was launched to start the app.</p>
 </div>
 <div class="section" id="capturing-version-data">
-<h2><a class="toc-backref" href="#id60">Capturing Version Data</a></h2>
+<h2><a class="toc-backref" href="#id61">Capturing Version Data</a></h2>
 <blockquote>
 <tt class="docutils literal"><span class="pre">pyi-grab_version</span></tt> <em>executable_with_version_resource</em></blockquote>
 <p>The <tt class="docutils literal"><span class="pre">pyi-grab_version</span></tt> command is invoked
@@ -1664,7 +1690,7 @@ information you want, and grab its resource and edit it.
 This is usually easier than the Version resource wizard in VC++.</p>
 </div>
 <div class="section" id="inspecting-archives">
-<h2><a class="toc-backref" href="#id61">Inspecting Archives</a></h2>
+<h2><a class="toc-backref" href="#id62">Inspecting Archives</a></h2>
 <p>An archive is a file that contains other files,
 for example a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils literal">.jar</tt> file, or a <tt class="docutils literal">.zip</tt> file.
 Two kinds of archives are used in <cite>PyInstaller</cite>.
@@ -1678,7 +1704,7 @@ as well as from Python.
 Both of these derive from a common base class, making it fairly easy to
 create new kinds of archives.</p>
 <div class="section" id="zlibarchive">
-<h3><a class="toc-backref" href="#id62">ZlibArchive</a></h3>
+<h3><a class="toc-backref" href="#id63">ZlibArchive</a></h3>
 <p>A ZlibArchive contains compressed <tt class="docutils literal">.pyc</tt> or <tt class="docutils literal">.pyo</tt> files.
 The <tt class="docutils literal">PYZ</tt> class invocation in a spec file creates a ZlibArchive.</p>
 <p>The table of contents in a ZlibArchive
@@ -1702,7 +1728,7 @@ you can make sense of it.</p>
 <p><img alt="ZlibArchiveImage" src="images/ZlibArchive.png" /></p>
 </div>
 <div class="section" id="carchive">
-<h3><a class="toc-backref" href="#id63">CArchive</a></h3>
+<h3><a class="toc-backref" href="#id64">CArchive</a></h3>
 <p>A CArchive can contain any kind of file.
 It's very much like a <tt class="docutils literal">.zip</tt> file.
 They are easy to create in Python and easy to unpack from C code.
@@ -1731,7 +1757,7 @@ file, seek to the end and 'open' the CArchive.</p>
 <p><img alt="CArchiveImage" src="images/CArchive.png" /></p>
 </div>
 <div class="section" id="using-pyi-archive-viewer">
-<h3><a class="toc-backref" href="#id64">Using pyi-archive_viewer</a></h3>
+<h3><a class="toc-backref" href="#id65">Using pyi-archive_viewer</a></h3>
 <p>Use the <tt class="docutils literal"><span class="pre">pyi-archive_viewer</span></tt> command to inspect any type of archive:</p>
 <blockquote>
 <tt class="docutils literal"><span class="pre">pyi-archive_viewer</span></tt> <em>archivefile</em></blockquote>
@@ -1776,7 +1802,7 @@ If none given, the member is extracted to stdout.</dd>
 </div>
 </div>
 <div class="section" id="inspecting-executables">
-<h2><a class="toc-backref" href="#id65">Inspecting Executables</a></h2>
+<h2><a class="toc-backref" href="#id66">Inspecting Executables</a></h2>
 <p>You can inspect any executable file with <tt class="docutils literal"><span class="pre">pyi-bindepend</span></tt>:</p>
 <blockquote>
 <tt class="docutils literal"><span class="pre">pyi-bindepend</span></tt> <em>executable_or_dynamic_library</em></blockquote>
@@ -1789,7 +1815,7 @@ follow the chain of dependencies of binary extensions
 during Analysis.</p>
 </div>
 <div class="section" id="multipackage-bundles">
-<h2><a class="toc-backref" href="#id66">Multipackage Bundles</a></h2>
+<h2><a class="toc-backref" href="#id67">Multipackage Bundles</a></h2>
 <p>Some products are made of several different apps,
 each of which might
 depend on a common set of third-party libraries, or share code in other ways.
@@ -1825,7 +1851,7 @@ A script that comes later in the list and needs the same file
 will have an external reference.
 You might sequence the scripts to place the most-used scripts first in the list.</p>
 <div class="section" id="merge-function">
-<h3><a class="toc-backref" href="#id67">MERGE Function</a></h3>
+<h3><a class="toc-backref" href="#id68">MERGE Function</a></h3>
 <p>A custom spec file for a multipackage bundle contains one call to the MERGE function:</p>
 <pre class="literal-block">
 MERGE(*args)
@@ -1843,7 +1869,7 @@ It modifies the total list to avoid duplication of libraries and modules.
 As a result the packages generated will be connected.</p>
 </div>
 <div class="section" id="example-merge-spec-file">
-<h3><a class="toc-backref" href="#id68">Example MERGE spec file</a></h3>
+<h3><a class="toc-backref" href="#id69">Example MERGE spec file</a></h3>
 <p>One way to construct a spec file for a multipackage bundle is to
 first build a spec file for each app in the package.
 Suppose you have a product that comprises three apps named
@@ -1896,7 +1922,7 @@ objects and performing the <tt class="docutils literal">PYZ</tt>, <tt class="doc
 </div>
 </div>
 <div class="section" id="using-hook-files">
-<h2><a class="toc-backref" href="#id69">Using Hook Files</a></h2>
+<h2><a class="toc-backref" href="#id70">Using Hook Files</a></h2>
 <p>In summary, a &quot;hook&quot; file tells <cite>PyInstaller</cite> about hidden imports
 called by a particular module.
 The name of the hook file is <tt class="docutils literal"><span class="pre">hook-&lt;module&gt;.py</span></tt> where &quot;&lt;module&gt;&quot; is
@@ -1926,7 +1952,7 @@ the command could be simply</p>
 please send us the hook file so we can make it available to others.</p>
 </div>
 <div class="section" id="hooks-in-detail">
-<h2><a class="toc-backref" href="#id70">Hooks in Detail</a></h2>
+<h2><a class="toc-backref" href="#id71">Hooks in Detail</a></h2>
 <p>A hook is a module named
 <tt class="docutils literal">hook-</tt> <em>fully.qualified.import.name</em> <tt class="docutils literal">.py</tt> in the
 <tt class="docutils literal">hooks</tt> folder of the <cite>PyInstaller</cite> folder
@@ -2002,7 +2028,7 @@ because the new entry on <tt class="docutils literal">__path__</tt> may well req
 See <tt class="docutils literal"><span class="pre">hook-win32com.py</span></tt> in the hooks folder for an example.</p>
 </div>
 <div class="section" id="building-the-bootloader">
-<h2><a class="toc-backref" href="#id71">Building the Bootloader</a></h2>
+<h2><a class="toc-backref" href="#id72">Building the Bootloader</a></h2>
 <p>PyInstaller comes with binary bootloaders for most platforms in
 the <tt class="docutils literal">bootloader</tt> folder of the distribution folder.
 For most cases, these precompiled bootloaders are all you need.</p>
@@ -2010,7 +2036,7 @@ For most cases, these precompiled bootloaders are all you need.</p>
 or if you want to modify the bootloader source,
 you need to build the bootloader.</p>
 <div class="section" id="development-tools">
-<h3><a class="toc-backref" href="#id72">Development tools</a></h3>
+<h3><a class="toc-backref" href="#id73">Development tools</a></h3>
 <p>On Debian/Ubuntu systems, you can run the following to
 install everything required:</p>
 <pre class="literal-block">
@@ -2042,7 +2068,7 @@ following locations:</p>
 </ul>
 </div>
 <div class="section" id="building">
-<h3><a class="toc-backref" href="#id73">Building</a></h3>
+<h3><a class="toc-backref" href="#id74">Building</a></h3>
 <p>On Windows, when using MinGW, it is needed to add <tt class="docutils literal">PATH_TO_MINGW\bin</tt>
 to your system <tt class="docutils literal">PATH</tt>. variable. In command prompt before building
 bootloader run for example:</p>
@@ -2069,7 +2095,7 @@ python ./waf configure build install
 <p><em>Note:</em> On AIX the bootloader builds with gcc and is tested with gcc 4.2.0 on AIX 6.1.</p>
 </div>
 <div class="section" id="linux-standard-base-lsb-binary">
-<h3><a class="toc-backref" href="#id74">Linux Standard Base (LSB) binary</a></h3>
+<h3><a class="toc-backref" href="#id75">Linux Standard Base (LSB) binary</a></h3>
 <p>By default, the bootloaders on Linux are LSB binaries.</p>
 <p>LSB is a set of open standards that should increase compatibility among Linux
 distributions.
@@ -2114,7 +2140,7 @@ python waf configure --no-lsb build install
 </div>
 </div>
 <div class="section" id="modulefinder-replacement-importtracker">
-<h2><a class="toc-backref" href="#id75">Modulefinder Replacement - ImportTracker</a></h2>
+<h2><a class="toc-backref" href="#id76">Modulefinder Replacement - ImportTracker</a></h2>
 <p>The Imptracker package
 (defined in <tt class="docutils literal">depend/imptracker.py</tt> in the <cite>PyInstaller</cite> folder)
 replaces <a class="reference external" href="http://docs.python.org/2.7/library/modulefinder.html">Modulefinder</a> but is modelled after <a class="reference internal" href="#iu-py">iu.py</a>.
@@ -2126,7 +2152,7 @@ import name space. Except for the fact that these return <tt class="docutils lit
 instances instead of real module objects, they are identical.</p>
 <p>Instead of an <tt class="docutils literal">ImportManager</tt>, it has an <tt class="docutils literal">ImportTracker</tt> managing things.</p>
 <div class="section" id="importtracker">
-<h3><a class="toc-backref" href="#id76">ImportTracker</a></h3>
+<h3><a class="toc-backref" href="#id77">ImportTracker</a></h3>
 <p><tt class="docutils literal">ImportTracker</tt> can be called in two ways: <tt class="docutils literal">analyze_one(name,
 importername=None)</tt> or <tt class="docutils literal">analyze_r(name, importername=None)</tt>. The
 second method does what modulefinder does - it recursively finds all
@@ -2137,7 +2163,7 @@ name?&quot; But since it is somewhat unrealistic (very few real imports do
 not involve recursion), it deserves some explanation.</p>
 </div>
 <div class="section" id="analyze-one">
-<h3><a class="toc-backref" href="#id77"><tt class="docutils literal">analyze_one()</tt></a></h3>
+<h3><a class="toc-backref" href="#id78"><tt class="docutils literal">analyze_one()</tt></a></h3>
 <p>When a name is imported, there are structural and dynamic effects.
 The dynamic
 effects are due to the execution of the top-level code in the module (or
@@ -2152,7 +2178,7 @@ the import turns out to be relative or absolute. In addition,
 ImportTracker's modules dict will have Module instances for them.</p>
 </div>
 <div class="section" id="module-classes">
-<h3><a class="toc-backref" href="#id78">Module Classes</a></h3>
+<h3><a class="toc-backref" href="#id79">Module Classes</a></h3>
 <p>There are Module subclasses for builtins, extensions, packages and (normal)
 modules. Besides the normal module object attributes, they have an attribute
 imports. For packages and normal modules, imports is a list populated by
@@ -2167,7 +2193,7 @@ happens (from what a structural analysis would predict). But mf can
 handle this through its hooks mechanism.</p>
 </div>
 <div class="section" id="code-scanning">
-<h3><a class="toc-backref" href="#id79">code scanning</a></h3>
+<h3><a class="toc-backref" href="#id80">code scanning</a></h3>
 <p>Like modulefinder, <tt class="docutils literal">ImportTracker</tt> scans the byte code of a module,
 looking for imports.
 In addition it will pick out a module's <tt class="docutils literal">__all__</tt>
@@ -2183,7 +2209,7 @@ are found inside definitions (deferred imports). Within that, it also tracks
 whether the import is inside a condition (conditional imports).</p>
 </div>
 <div class="section" id="hooks">
-<h3><a class="toc-backref" href="#id80">Hooks</a></h3>
+<h3><a class="toc-backref" href="#id81">Hooks</a></h3>
 <p>In modulefinder, scanning the code takes the place of executing the
 code object. <tt class="docutils literal">ExtensionModules</tt>, of course, don't get scanned, so
 there needs to be a way of recording any imports they do.</p>
@@ -2192,7 +2218,7 @@ there needs to be a way of recording any imports they do.</p>
 scanned, but before analyze_one is done with it).</p>
 </div>
 <div class="section" id="warnings">
-<h3><a class="toc-backref" href="#id81">Warnings</a></h3>
+<h3><a class="toc-backref" href="#id82">Warnings</a></h3>
 <p><tt class="docutils literal">ImportTracker</tt> has a <tt class="docutils literal">getwarnings()</tt> method that returns all the
 warnings accumulated by the instance, and by the <tt class="docutils literal">Module</tt> instances
 in its modules dict. Generally, it is <tt class="docutils literal">ImportTracker</tt> who will
@@ -2202,7 +2228,7 @@ accumulate the warnings generated during the structural phase, and
 warnings, but not all of them.</p>
 </div>
 <div class="section" id="cross-reference">
-<h3><a class="toc-backref" href="#id82">Cross Reference</a></h3>
+<h3><a class="toc-backref" href="#id83">Cross Reference</a></h3>
 <p>Once a full analysis (that is, an <tt class="docutils literal">analyze_r</tt> call) has been done,
 you can get a cross reference by using <tt class="docutils literal">getxref()</tt>. This returns a
 list of tuples. Each tuple is <tt class="docutils literal">(modulename, importers)</tt>, where
@@ -2213,11 +2239,11 @@ list are sorted.</p>
 </div>
 </div>
 <div class="section" id="outdated-features">
-<h1><a class="toc-backref" href="#id83">Outdated Features</a></h1>
+<h1><a class="toc-backref" href="#id84">Outdated Features</a></h1>
 <p>The following sections document features of <cite>PyInstaller</cite> that
 are still present in the code but are rarely used and may no longer work.</p>
 <div class="section" id="windows-com-server-support">
-<h2><a class="toc-backref" href="#id84">Windows COM Server Support</a></h2>
+<h2><a class="toc-backref" href="#id85">Windows COM Server Support</a></h2>
 <blockquote>
 <dl class="docutils">
 <dt>Recent rename:</dt>
@@ -2278,7 +2304,7 @@ o = win32com.client.Dispatch(progid,
 </pre>
 </div>
 <div class="section" id="building-optimized">
-<h2><a class="toc-backref" href="#id85">Building Optimized</a></h2>
+<h2><a class="toc-backref" href="#id86">Building Optimized</a></h2>
 <p>There are two facets to running optimized: gathering <tt class="docutils literal">.pyo</tt>'s,
 and setting the
 <tt class="docutils literal">Py_OptimizeFlag</tt>. Installer will gather <tt class="docutils literal">.pyo</tt>'s if it is run optimized:</p>
@@ -2295,7 +2321,7 @@ exe = EXE(pyz,
 <p>See <a class="reference internal" href="#using-spec-files">Using Spec Files</a> for details.</p>
 </div>
 <div class="section" id="iu-py-an-imputil-replacement">
-<span id="iu-py"></span><h2><a class="toc-backref" href="#id86"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a></h2>
+<span id="iu-py"></span><h2><a class="toc-backref" href="#id87"><tt class="docutils literal">iu.py</tt>: An <em>imputil</em> Replacement</a></h2>
 <p>Module <tt class="docutils literal">iu</tt> grows out of the pioneering work that Greg Stein did
 with <a class="reference external" href="http://docs.python.org/2.7/library/imputil.html">imputil</a> (actually, it includes some verbatim <tt class="docutils literal">imputil</tt>
 code, but since Greg didn't copyright it, we won't mention it).
@@ -2311,7 +2337,7 @@ least certain kinds of import hooks.</p>
 and hides all the semantic complexities of a Python import request from its
 delegates.</p>
 <div class="section" id="importmanager">
-<h3><a class="toc-backref" href="#id87"><tt class="docutils literal">ImportManager</tt></a></h3>
+<h3><a class="toc-backref" href="#id88"><tt class="docutils literal">ImportManager</tt></a></h3>
 <p><tt class="docutils literal">ImportManager</tt> formalizes the concept of a metapath. This concept implicitly
 exists in native Python in that builtins and frozen modules are searched
 before <tt class="docutils literal">sys.path</tt>, (on Windows there's also a search of the registry, while on
@@ -2328,7 +2354,7 @@ to see if the module has already been imported; to keep <tt class="docutils lite
 date; to handle the fromlist and return the correct module object.</p>
 </div>
 <div class="section" id="importdirector">
-<h3><a class="toc-backref" href="#id88"><tt class="docutils literal">ImportDirector</tt></a></h3>
+<h3><a class="toc-backref" href="#id89"><tt class="docutils literal">ImportDirector</tt></a></h3>
 <p>An <tt class="docutils literal">ImportDirector</tt> just needs to respond to <tt class="docutils literal">getmod(name)</tt> by
 returning a module object or <tt class="docutils literal">None</tt>. As you will see, an
 <tt class="docutils literal">ImportDirector</tt> can consider name to be atomic - it has no need to
@@ -2336,7 +2362,7 @@ examine name to see if it is dotted.</p>
 <p>To see how this works, we need to examine the <tt class="docutils literal">PathImportDirector</tt>.</p>
 </div>
 <div class="section" id="pathimportdirector">
-<h3><a class="toc-backref" href="#id89"><tt class="docutils literal">PathImportDirector</tt></a></h3>
+<h3><a class="toc-backref" href="#id90"><tt class="docutils literal">PathImportDirector</tt></a></h3>
 <p>The <tt class="docutils literal">PathImportDirector</tt> subclass manages a list of names, most
 notably <tt class="docutils literal">sys.path</tt>. To do so, it maintains a shadowpath, a
 dictionary mapping the names on its pathlist (eg, <tt class="docutils literal">sys.path</tt>) to
@@ -2348,7 +2374,7 @@ needed (if all your imports are satisfied by the first two elements of
 two entries).</p>
 </div>
 <div class="section" id="owner">
-<h3><a class="toc-backref" href="#id90"><tt class="docutils literal">Owner</tt></a></h3>
+<h3><a class="toc-backref" href="#id91"><tt class="docutils literal">Owner</tt></a></h3>
 <p>An <tt class="docutils literal">Owner</tt> is much like an <tt class="docutils literal">ImportDirector</tt> but manages a much
 more concrete piece of turf. For example, a <tt class="docutils literal">DirOwner</tt> manages one
 directory. Since there are no other officially recognized
@@ -2367,7 +2393,7 @@ the tree covers the entire top-level import namespace.</p>
 package module (an <tt class="docutils literal">__init__.py</tt>).</p>
 </div>
 <div class="section" id="packages">
-<h3><a class="toc-backref" href="#id91">Packages</a></h3>
+<h3><a class="toc-backref" href="#id92">Packages</a></h3>
 <p>To make this work, <tt class="docutils literal">Owners</tt> need to recognize when a module is a
 package. For a <tt class="docutils literal">DirOwner</tt>, this means that name is a subdirectory
 which contains an <tt class="docutils literal">__init__.py</tt>. The <tt class="docutils literal">__init__</tt> module is loaded
@@ -2386,7 +2412,7 @@ to route the request back up the package tree to the archive
 <tt class="docutils literal">Owner</tt>, qualifying the name at each step.)</p>
 </div>
 <div class="section" id="possibilities">
-<h3><a class="toc-backref" href="#id92">Possibilities</a></h3>
+<h3><a class="toc-backref" href="#id93">Possibilities</a></h3>
 <p>Let's say we want to import from zip files. So, we subclass <tt class="docutils literal">Owner</tt>.
 The <tt class="docutils literal">__init__</tt> method should take a filename, and raise a
 <tt class="docutils literal">ValueError</tt> if the file is not an acceptable <tt class="docutils literal">.zip</tt> file. (When a
@@ -2403,7 +2429,7 @@ zip file on <tt class="docutils literal">sys.path</tt>. A package could even put
 <tt class="docutils literal">__path__</tt>.</p>
 </div>
 <div class="section" id="compatibility">
-<h3><a class="toc-backref" href="#id93">Compatibility</a></h3>
+<h3><a class="toc-backref" href="#id94">Compatibility</a></h3>
 <p>This code has been tested with the PyXML, mxBase and Win32 packages,
 covering over a dozen import hacks from manipulations of <tt class="docutils literal">__path__</tt>
 to replacing a module in <tt class="docutils literal">sys.modules</tt> with a different one.
@@ -2412,7 +2438,7 @@ names recorded in <tt class="docutils literal">sys.modules</tt> and module attri
 imported through <tt class="docutils literal">iu</tt> have an extra attribute - <tt class="docutils literal">__importsub__</tt>).</p>
 </div>
 <div class="section" id="performance">
-<h3><a class="toc-backref" href="#id94">Performance</a></h3>
+<h3><a class="toc-backref" href="#id95">Performance</a></h3>
 <p>In most cases, <tt class="docutils literal">iu</tt> is slower than builtin import (by 15 to 20%) but
 faster than <tt class="docutils literal">imputil</tt> (by 15 to 20%). By inserting archives at the
 front of <tt class="docutils literal">sys.path</tt> containing the standard lib and the package
@@ -2421,7 +2447,7 @@ box, 10% faster!) than builtin import. A bit more can be shaved off by
 manipulating the <tt class="docutils literal">ImportManager</tt>'s metapath.</p>
 </div>
 <div class="section" id="limitations">
-<h3><a class="toc-backref" href="#id95">Limitations</a></h3>
+<h3><a class="toc-backref" href="#id96">Limitations</a></h3>
 <p>This module makes no attempt to facilitate policy import hacks. It is easy to
 implement certain kinds of policies within a particular domain, but
 fundamentally iu works by dividing up the import namespace into independent
@@ -2439,7 +2465,7 @@ should be, but <tt class="docutils literal">__aimport__</tt>, <tt class="docutil
 were easy to implement.</p>
 </div>
 <div class="section" id="iu-usage">
-<h3><a class="toc-backref" href="#id96">iu Usage</a></h3>
+<h3><a class="toc-backref" href="#id97">iu Usage</a></h3>
 <p>Here's a simple example of using <tt class="docutils literal">iu</tt> as a builtin import replacement.</p>
 <blockquote>
 <pre class="doctest-block">
@@ -2460,7 +2486,7 @@ were easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2013-05-01 14:59 UTC.
+Generated on: 2013-05-03 20:07 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

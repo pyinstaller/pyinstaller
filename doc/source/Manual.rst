@@ -1181,7 +1181,6 @@ will have lines like::
       WARNING: no module named ce (conditional import by os)
       WARNING: no module named os2 (conditional import by os)
 
-
 The analysis has detected that the import is within a conditional
 block (an if statement).
 You will know that in this system, ``os`` will never need to import 
@@ -1202,6 +1201,34 @@ cannot see.
 
 Problems detected through these messages can be corrected;
 see `Listing Hidden Imports`_ below for how to do it.
+
+Build-Time Python Errors
+-------------------------
+
+|PyInstaller| sometimes terminates by raising a Python exception.
+In most cases the reason is clear from the exception message,
+for example "Your system is not supported", or "Pyinstaller
+requires at least Python 2.4".
+Others clearly indicate a bug that should be reported.
+
+One of these errors can be puzzling, however:
+``IOError("Python library not found!")``
+|PyInstaller| needs to bundle the Python library, which is the
+main part of the Python interpreter, linked as a dynamic load library.
+The name and location of this file varies depending on the platform in use.
+Some Python installations do not include a dynamic Python library
+by default (a static-linked one may be present but cannot be used).
+You may need to install a development package of some kind.
+Or, the library may exist but is not in a folder where |PyInstaller|
+is searching.
+
+The places where |PyInstaller| looks for the python library are
+different in different operating systems, but ``/lib`` and ``/usr/lib``
+are checked in most systems.
+If you cannot put the python library there, 
+try setting the correct path in the environment variable
+``LD_LIBRARY_PATH`` in Linux or
+``DYLD_LIBRARY_PATH`` in OS X.
 
 Getting Debug Messages
 ----------------------
