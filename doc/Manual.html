@@ -258,7 +258,7 @@ you can download and install <cite>PyInstaller</cite> in one command, for exampl
 <pre class="literal-block">
 pip install pyinstaller
 </pre>
-<p>and upgrade to a newer version in one command,:</p>
+<p>and upgrade to a newer version in one command:</p>
 <pre class="literal-block">
 pip install --upgrade pyinstaller
 </pre>
@@ -297,8 +297,8 @@ execute in that environment.</p>
 <div class="section" id="installing-from-the-archive">
 <h2><a class="toc-backref" href="#id8">Installing from the archive</a></h2>
 <p>You can also install <cite>PyInstaller</cite> by downloading the compressed archive
-from <a class="reference external" href="https://pypi.python.org/pypi/PyInstaller/">pypi</a> and expanding the archive.</p>
-<p>Inside the archive is a script <tt class="docutils literal">setup.py</tt>.
+from <a class="reference external" href="https://pypi.python.org/pypi/PyInstaller/">PyPI</a> and expanding the archive.</p>
+<p>Inside the archive is a script named <tt class="docutils literal">setup.py</tt>.
 Execute <tt class="docutils literal">python setup.py install</tt>
 with administrator privilege to install or upgrade <cite>PyInstaller</cite>.</p>
 <p>For platforms other than Windows, Linux and Mac OS, you must build a
@@ -309,16 +309,16 @@ bootloader program for your platform before installing the Python package.</p>
 <li>Make a bootloader with: <tt class="docutils literal">python ./waf configure build install</tt>.</li>
 </ul>
 <p>If this reports an error, read <a class="reference internal" href="#building-the-bootloader">Building the Bootloader</a> below,
-and then ask for technical help.
+then ask for technical help.
 It is of no use to continue the installation without a bootloader.
 After the bootloader has been created,
-you can run <tt class="docutils literal">python setup.py install</tt> with administrator privilege
+you can run <tt class="docutils literal">python setup.py install</tt> with administrator privileges
 to complete the installation.</p>
 </div>
 <div class="section" id="verifying-the-installation">
 <h2><a class="toc-backref" href="#id9">Verifying the installation</a></h2>
 <p>On all platforms, the command <tt class="docutils literal">pyinstaller</tt> should now exist on the
-execution path. To verify this enter the command</p>
+execution path. To verify this, enter the command</p>
 <blockquote>
 <tt class="docutils literal">pyinstaller <span class="pre">--version</span></tt></blockquote>
 <p>The result should resemble <tt class="docutils literal">2.n</tt> for a released version,
@@ -326,9 +326,11 @@ and <tt class="docutils literal"><span class="pre">2.1dev-xxxxxx</span></tt> for
 <p>If the command is not found, make sure the execution path includes
 the proper directory:</p>
 <ul class="simple">
-<li>Windows: <tt class="docutils literal"><span class="pre">C:\PythonXY\Scripts</span></tt></li>
+<li>Windows: <tt class="docutils literal"><span class="pre">C:\PythonXY\Scripts</span></tt> (where <em>XY</em> stands for the
+major and minor Python verysion number, for example <tt class="docutils literal"><span class="pre">C:\Python27\Scripts</span></tt>
+for Python 2.7)</li>
 <li>Linux: <tt class="docutils literal">/usr/bin/</tt></li>
-<li>OS X (using default Apple-supplied Python) <tt class="docutils literal">/usr/local/bin</tt></li>
+<li>OS X (using the default Apple-supplied Python) <tt class="docutils literal">/usr/local/bin</tt></li>
 <li>OS X (using Python installed by macports) <tt class="docutils literal">/opt/local/bin</tt></li>
 </ul>
 <p>To display the current path in Windows the command is <tt class="docutils literal">echo %path%</tt>
@@ -359,15 +361,15 @@ by running Python scripts found in the distribution folder.
 The equivalent of the <tt class="docutils literal">pyinstaller</tt> command is
 <em>pyinstaller-folder</em> <tt class="docutils literal">/pyinstaller.py</tt>.
 The other commands are found in <em>pyinstaller-folder</em> <tt class="docutils literal">/cliutils/</tt>
-with obvious names (<tt class="docutils literal">makespec.py</tt> and etc.)</p>
+with obvious names (<tt class="docutils literal">makespec.py</tt>, etc.)</p>
 </div>
 </div>
 <div class="section" id="overview-what-pyinstaller-does-and-how-it-does-it">
 <h1><a class="toc-backref" href="#id11">Overview: What <cite>PyInstaller</cite> Does and How It Does It</a></h1>
 <p>This section covers the basic ideas of <cite>PyInstaller</cite>.
 These ideas apply to all platforms.
-There are many options, exceptions, and special cases covered under <a class="reference internal" href="#using-pyinstaller">Using PyInstaller</a> .</p>
-<p><cite>PyInstaller</cite> reads a Python script written by you.
+There are many options, exceptions, and special cases covered under <a class="reference internal" href="#using-pyinstaller">Using PyInstaller</a>.
+<cite>PyInstaller</cite> reads a Python script written by you.
 First it analyzes your code to discover every other file
 your script needs in order to execute.
 Then it finds, copies, and collects all those other
@@ -422,7 +424,7 @@ you can contribute your hook file to <cite>PyInstaller</cite>.</li>
 <h2><a class="toc-backref" href="#id13">Bundling to One Folder</a></h2>
 <p>When you apply <cite>PyInstaller</cite> to <tt class="docutils literal">myscript.py</tt> the default
 result is a single folder named <tt class="docutils literal">myscript</tt>.
-This folder contains all the
+This folder contains all the necessary
 support files, and an executable file also named <tt class="docutils literal">myscript</tt>
 (<tt class="docutils literal">myscript.exe</tt> in Windows).</p>
 <p>You compress the folder
@@ -485,11 +487,11 @@ For more detail, see <a class="reference internal" href="#the-bootstrap-process-
 <h2><a class="toc-backref" href="#id16">How the One-File Program Works</a></h2>
 <p>For a one-file program, the bootloader first creates a temporary folder
 in the appropriate temp-folder location for this OS.
-The folder is named <tt class="docutils literal">_MEIxxxxxx</tt>, where <tt class="docutils literal">xxxxxx</tt> is a random number.</p>
+The folder is named <tt class="docutils literal">_MEI</tt><em>xxxxxx</em>, where <em>xxxxxx</em> is a random number.</p>
 <p>The one file contains an embedded archive of all the Python
 modules used by your script, as well as
 compressed copies of any non-Python support files (e.g. <tt class="docutils literal">.so</tt> files).
-The boot loader uncompresses the support files and writes copies
+The bootloader uncompresses the support files and writes copies
 into the the temporary folder.
 This can take a little time.
 That is why a one-file app is a little slower to start
@@ -506,11 +508,11 @@ one-file bundle. It needs to execute code out of <tt class="docutils literal">/t
 <p>Because the program makes a temporary folder with a unique name,
 you can run multiple copies; they won't interfere with each other.
 However, running multiple copies is expensive in disk space because nothing is shared.</p>
-<p>The <tt class="docutils literal">_MEIxxxxxx</tt> folder is not removed if the program crashes
+<p>The <tt class="docutils literal">_MEI</tt><em>xxxxxx</em> folder is not removed if the program crashes
 or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
 &quot;Force Quit&quot; on Mac OS).
 Thus if your app crashes frequently, your users will lose disk space to
-multiple <tt class="docutils literal">_MEIxxxxxx</tt> temporary folders.</p>
+multiple <tt class="docutils literal">_MEI</tt><em>xxxxxx</em> temporary folders.</p>
 <p>Do <em>not</em> give administrator privileges to a one-file executable
 (setuid root in Unix/Linux, &quot;Run this program as an administrator&quot;
 property in Windows 7).
@@ -595,8 +597,7 @@ After you do this, you name the spec file to <cite>PyInstaller</cite> instead of
 <td>Print a summary of the options and exit.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">-v</span>, <span class="option">--version</span></kbd></td>
-<td>Print the version of the program as 2. <em>n</em> -<em>xxxxxxx</em> where <em>n</em> is the
-sub-version and <em>xxxxxxx</em> is a git commit tag.</td></tr>
+<td>Print the version of the program as 2.<em>n</em>.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">-a</span>, <span class="option">--ascii</span></kbd></td>
 <td>Do <em>not</em> include Python module <tt class="docutils literal">codecs</tt> and other Unicode support.
@@ -604,23 +605,23 @@ The default is to include them if available, whether the script imports them or 
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--distpath=<var>path_to_executable</var></span>, <span class="option">-o <var>path_to_executable</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Say where to put the bundled app.
+<tr><td>&nbsp;</td><td>Specify where to put the bundled app.
 The default is a <tt class="docutils literal">dist</tt> folder in
 the same folder as the first script.</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--specpath=<var>path_to_spec_file</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Say where to put the <em>name</em> <cite>.spec</cite> file.
+<tr><td>&nbsp;</td><td>Specify where to put the <em>name</em> <cite>.spec</cite> file.
 The default is the same folder as the first script.</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--workpath=<var>path_to_work_files</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Say where to put the <cite>PyInstaller</cite> log and work files for this run.
+<tr><td>&nbsp;</td><td>Specify where to put the <cite>PyInstaller</cite> log and work files for this run.
 The default path is a <tt class="docutils literal">build</tt> folder
 in the same folder as the first script or spec.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">--clean</span></kbd></td>
-<td>Tells <cite>PyInstaller</cite> to erase all log and work files before it starts.
+<td>Tell <cite>PyInstaller</cite> to erase all log and work files before it starts.
 The default is to take advantage of any work files existing in
 the workpath from a prior run to possibly shorten the building process.
 Use --clean to make sure all parts of the app are built fresh.</td></tr>
@@ -865,7 +866,7 @@ You will run the same command again and again as you develop
 your script.
 You can put the command in a shell script or batch file,
 using line continuations to make it readable.
-For example in Linux:</p>
+For example, in Linux:</p>
 <pre class="literal-block">
 pyinstaller --noconfirm --log-level=WARN \
     --onefile --nowindow \
@@ -1011,7 +1012,7 @@ you can build your application from it in either of two ways:</p>
 When you build from a spec file, those options cannot be changed.
 If they are given on the command line they are ignored and
 replaced by the options in the spec file.
-Only the following options have an effect when building from a spec file:</p>
+Only the following command-line options have an effect when building from a spec file:</p>
 <ul class="simple">
 <li>--upx-dir=</li>
 <li>--distpath=</li>
@@ -1042,10 +1043,10 @@ The statements do the following:</p>
 <ul class="simple">
 <li>A new instance of class <tt class="docutils literal">Analysis</tt> takes a list of script names as input.
 The resulting object (here named <tt class="docutils literal">a</tt>) contains three lists,
-held in object properties named:<ul>
-<li><tt class="docutils literal">scripts</tt>: the python scripts named on the command line</li>
-<li><tt class="docutils literal">pure</tt>: pure python modules needed by the scripts</li>
-<li><tt class="docutils literal">binaries</tt>: non-python modules needed by the scripts</li>
+held in object properties named<ul>
+<li><tt class="docutils literal">scripts</tt>: the python scripts named on the command line;</li>
+<li><tt class="docutils literal">pure</tt>: pure python modules needed by the scripts;</li>
+<li><tt class="docutils literal">binaries</tt>: non-python modules needed by the scripts.</li>
 </ul>
 </li>
 <li>An instance of <tt class="docutils literal">PYZ</tt> (a <tt class="docutils literal">.pyz</tt> archive, described
@@ -1073,7 +1074,7 @@ containing a list of scripts;
 the <tt class="docutils literal">pure</tt> member is a TOC with a list of modules, and so on.</p>
 <p>Basically a <tt class="docutils literal">TOC</tt> object contains a list of tuples of the form</p>
 <blockquote>
-<tt class="docutils literal">(</tt> <em>name</em> <tt class="docutils literal">,</tt> <em>path</em> <tt class="docutils literal">,</tt> <em>typecode</em> <tt class="docutils literal">)</tt></blockquote>
+<tt class="docutils literal">(</tt><em>name</em><tt class="docutils literal">,</tt><em>path</em><tt class="docutils literal">,</tt><em>typecode</em><tt class="docutils literal">)</tt></blockquote>
 <p>In fact, it acts as an ordered set of tuples; that is, it contains no duplicates
 (where uniqueness is based on the <em>name</em> element of each tuple).
 Within this constraint, a TOC preserves the order of tuples added to it.</p>
@@ -1086,7 +1087,8 @@ For example,</p>
 <tt class="docutils literal">a.binaries - <span class="pre">[('badmodule',</span> None, None)]</tt></blockquote>
 <p>is an expression that yields a TOC from which any tuple named <tt class="docutils literal">badmodule</tt>
 has been removed.</p>
-<p>The right-hand argument is a list that contains one tuple
+<p>The right-hand argument to the subtraction operator
+is a list that contains one tuple
 in which <em>name</em> is <tt class="docutils literal">badmodule</tt> and the <em>path</em> and <em>typecode</em> elements
 are <tt class="docutils literal">None</tt>.
 (Because set membership is based on the <em>name</em> element of a tuple only,
@@ -1143,7 +1145,7 @@ but for the normal case you need to know only three:</p>
 <p>The Tree class is a way of creating a TOC that describes some or all of the
 files within a directory:</p>
 <blockquote>
-<tt class="docutils literal">Tree(</tt> <em>root</em> <tt class="docutils literal">, prefix=</tt> <em>run-time-folder</em> <tt class="docutils literal">, excludes=</tt> <em>match</em> <tt class="docutils literal">)</tt></blockquote>
+<tt class="docutils literal">Tree(</tt><em>root</em><tt class="docutils literal">, prefix=</tt><em>run-time-folder</em><tt class="docutils literal">, excludes=</tt><em>match</em><tt class="docutils literal">)</tt></blockquote>
 <ul class="simple">
 <li>The <em>root</em> argument is a path string to a directory.
 It may be absolute or relative to the build directory.</li>
@@ -1155,8 +1157,8 @@ the top level of the run-time folder.</li>
 <li>The <em>excludes</em> argument, if given, is a list of one or more
 strings that match files in the <em>root</em> that should be omitted from the Tree.
 An item in the list can be either:<ul>
-<li>a name, and files or folders with this basename are excluded</li>
-<li><tt class="docutils literal">*.ext</tt> and files with this extension are excluded</li>
+<li>a name, which causes files or folders with this basename to be excluded</li>
+<li><tt class="docutils literal">*.ext</tt>, which causes files with this extension to be excluded</li>
 </ul>
 </li>
 </ul>
@@ -1182,7 +1184,7 @@ collect = COLLECT(a.binaries +
           [('README', '/my/project/readme', 'DATA')], ...)
 </pre>
 <p>This adds one tuple to the <tt class="docutils literal">a.binaries</tt> TOC.
-However, COLLECT class takes a variable-length list of arguments,
+However, the COLLECT class takes a variable-length list of arguments,
 so it is possible to just append a list of one tuple to the argument list:</p>
 <pre class="literal-block">
 collect = COLLECT(a.binaries,
@@ -1275,7 +1277,7 @@ than the one shown above (<a class="reference internal" href="#adding-files-to-t
 <h2><a class="toc-backref" href="#id43">Getting the Latest Version</a></h2>
 <p>If you have some reason to think you have found a bug in <cite>PyInstaller</cite>
 you can try downloading the latest development version.
-This version might have fixes or features that are not yet at <tt class="docutils literal">pypi</tt>.
+This version might have fixes or features that are not yet at <a class="reference external" href="https://pypi.python.org/pypi/PyInstaller/">PyPI</a>.
 Links to download the latest stable version and the latest development
 version are at <a class="reference external" href="http://www.pyinstaller.org/">PyInstaller.org</a>.</p>
 <p>If you have <a class="reference external" href="http://git-scm.com/downloads">Git</a> installed on your development system,
@@ -1372,7 +1374,7 @@ Users would find the messages annoying.</p>
 </div>
 <div class="section" id="getting-python-s-verbose-imports">
 <h3><a class="toc-backref" href="#id48">Getting Python's Verbose Imports</a></h3>
-<p>You can also pass a <tt class="docutils literal"><span class="pre">-v</span></tt> (verbose imports) flag to the embedded Python
+<p>You can also pass a <tt class="docutils literal"><span class="pre">-v</span></tt> (verbose imports) flag to the embedded Python interpreter
 (see <a class="reference internal" href="#giving-run-time-python-options">Giving Run-time Python Options</a> above).
 This can be extremely useful.
 It can be informative even with apps that are apparently working,
@@ -1415,7 +1417,7 @@ set the <tt class="docutils literal"><span class="pre">-v</span></tt> flag (<a c
 <p>Once you know what they are, you add the needed modules
 to the bundle using the <tt class="docutils literal"><span class="pre">--hidden-import=</span></tt> command option,
 by editing the spec file, or
-with a hook file: <a class="reference internal" href="#using-hook-files">Using Hook Files</a> below.</p>
+with a hook file (see <a class="reference internal" href="#using-hook-files">Using Hook Files</a> below).</p>
 </div>
 <div class="section" id="extending-a-package-s-path">
 <h3><a class="toc-backref" href="#id52">Extending a Package's <tt class="docutils literal">__path__</tt></a></h3>
@@ -1437,7 +1439,7 @@ to the analysis.
 That is, at runtime <tt class="docutils literal">win32com.shell</tt> is resolved the same
 way as <tt class="docutils literal">win32com.anythingelse</tt>, and <tt class="docutils literal">win32com.__path__</tt>
 knows nothing of <tt class="docutils literal"><span class="pre">../win32comext</span></tt>.</p>
-<p>Once in awhile, that's not enough.</p>
+<p>Once in a while, that's not enough.</p>
 </div>
 <div class="section" id="changing-runtime-behavior">
 <h3><a class="toc-backref" href="#id53">Changing Runtime Behavior</a></h3>
@@ -1445,9 +1447,10 @@ knows nothing of <tt class="docutils literal"><span class="pre">../win32comext</
 These are small scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.</p>
 <p>There are two ways of providing runtime hooks.
-You can name them with the option <tt class="docutils literal"><span class="pre">--runtime-hook=</span></tt> <em>path-to-script</em>.</p>
+You can name them with the option <tt class="docutils literal"><span class="pre">--runtime-hook=</span></tt><em>path-to-script</em>.</p>
 <p>Second, some runtime hooks are provided.
-At the end of an analysis, the names in the module list are looked up in
+At the end of an analysis,
+the names in the module list produced by the Analysis phase are looked up in
 <tt class="docutils literal">loader/rthooks.dat</tt> in the <cite>PyInstaller</cite> install folder.
 This text file is the string representation of a
 Python dictionary. The key is the module name, and the value is a list
@@ -1459,13 +1462,13 @@ in the order given, and before any installed runtime hooks.
 If you specify  <tt class="docutils literal"><span class="pre">--runtime-hook=file1.py</span> <span class="pre">--runtime-hook=file2.py</span></tt>
 then the execution order at runtime will be:</p>
 <ol class="arabic simple">
-<li>Code of <tt class="docutils literal">file1.py</tt></li>
-<li>Code of <tt class="docutils literal">file2.py</tt></li>
+<li>Code of <tt class="docutils literal">file1.py</tt>.</li>
+<li>Code of <tt class="docutils literal">file2.py</tt>.</li>
 <li>Any hook specified for an included module that is found
-in <tt class="docutils literal">rthooks/rthooks.dat</tt></li>
-<li>Your main script</li>
+in <tt class="docutils literal">rthooks/rthooks.dat</tt>.</li>
+<li>Your main script.</li>
 </ol>
-<p>Hooks done in this way, while they need to be careful of what they import,
+<p>Hooks called in this way, while they need to be careful of what they import,
 are free to do almost anything.
 One reason to write a run-time hook is to
 override some functions or variables from some modules.
@@ -1509,29 +1512,28 @@ So do not be surprised if you will see your frozen app
 as  two processes in your system task manager.</p>
 <p>What happens during execution of bootloader:</p>
 <ol class="upperalpha">
-<li><p class="first">First process: bootloader starts</p>
+<li><p class="first">First process: bootloader starts.</p>
 <blockquote>
 <ol class="arabic simple">
-<li>If one-file mode, extract bundled files to
-temppath/_MEIxxxxxx</li>
+<li>If one-file mode, extract bundled files to <em>temppath</em><tt class="docutils literal">_MEI</tt><em>xxxxxx</em></li>
 <li>Set/unset various environment variables,
 e.g. override LD_LIBRARY_PATH on Linux or LIBPATH on AIX;
 unset DYLD_LIBRARY_PATH on OSX.</li>
 <li>Set up to handle signals for both processes.</li>
 <li>Run the child process.</li>
 <li>Wait for the child process to finish.</li>
-<li>If one-file mode, delete temppath/_MEIxxxxxx.</li>
+<li>If one-file mode, delete <em>temppath</em><tt class="docutils literal">_MEI</tt><em>xxxxxx</em>.</li>
 </ol>
 </blockquote>
 </li>
 <li><p class="first">Second process: bootloader itself started as a child process.</p>
 <blockquote>
 <ol class="arabic simple">
-<li>On Windows set the <a class="reference external" href="http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx">activation context</a></li>
+<li>On Windows set the <a class="reference external" href="http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx">activation context</a>.</li>
 <li>Load the Python dynamic library.
 The name of the dynamic library is embedded in the
 executable file.</li>
-<li>Initialize Python interpreter: set PYTHONPATH, PYTHONHOME</li>
+<li>Initialize Python interpreter: set PYTHONPATH, PYTHONHOME.</li>
 <li>Run python code.</li>
 </ol>
 </blockquote>
@@ -1549,7 +1551,7 @@ because the general import mechanism is not yet available.
 It sets up the python import mechanism to load modules
 from archives embedded in the executable.
 It also adds the attributes <tt class="docutils literal">frozen</tt>
-and <tt class="docutils literal">MEIPASS</tt> to the <tt class="docutils literal">sys</tt> built-in module.</li>
+and <tt class="docutils literal">_MEIPASS</tt> to the <tt class="docutils literal">sys</tt> built-in module.</li>
 <li>Execute run run-time hooks: first those specified by the
 user, then any standard ones.</li>
 <li>Install python &quot;egg&quot; files.
@@ -1563,9 +1565,9 @@ item in <tt class="docutils literal">sys.path</tt> is a zip file or a directory.
 </div>
 <div class="section" id="python-imports-in-a-frozen-app">
 <h3><a class="toc-backref" href="#id58">Python imports in a frozen app</a></h3>
-<p>PyInstaller embeds compiled python code
+<p><cite>PyInstaller</cite> embeds compiled python code
 (<tt class="docutils literal">.pyc</tt> files) within the executable.
-PyInstaller injects its code into the
+<cite>PyInstaller</cite> injects its code into the
 normal Python import mechanism.
 Python allows this;
 the support is described in <a class="reference external" href="http://www.python.org/dev/peps/pep-0302/">PEP 302</a>  &quot;New Import Hooks&quot;.</p>
@@ -1592,10 +1594,9 @@ A list of built-in modules is in variable
 Then load it from embedded archive.</li>
 <li>Is it a C-extension?
 The app will try to find a file with name
-<em>package.subpackage.module</em> <tt class="docutils literal">.pyd</tt> or
-<em>package.subpackage.module</em> <tt class="docutils literal">.so</tt></li>
-<li>Next examine paths in the <tt class="docutils literal">sys.path</tt>
-(PYTHONPATH).
+<em>package.subpackage.module</em><tt class="docutils literal">.pyd</tt> or
+<em>package.subpackage.module</em><tt class="docutils literal">.so</tt></li>
+<li>Next examine paths in the <tt class="docutils literal">sys.path</tt> (PYTHONPATH).
 There could be any additional location with python modules
 or <tt class="docutils literal">.egg</tt> filenames.</li>
 <li>If the module was not found then
@@ -1619,15 +1620,16 @@ import sys
 import os
 ...
 if getattr(sys, 'frozen', False):
-    # we are running in a pyinstaller bundle
+    # we are running in a |PyInstaller| bundle
     basedir = sys._MEIPASS
 else:
-    # we are running in a normal python environment
+    # we are running in a normal Python environment
     basedir = os.path.dirname(__file__)
 </pre>
 <p>The <cite>PyInstaller</cite> bootloader adds the attribute <tt class="docutils literal">frozen</tt> to the <tt class="docutils literal">sys</tt> module.
 If that attribute exists, your script has been launched by the bootloader.
-When that is true, <tt class="docutils literal">sys._MEIPASS</tt> contains the path to the folder containing
+When that is true, <tt class="docutils literal">sys._MEIPASS</tt> (note the underscore in the name)
+contains the path to the folder containing
 your script and any other files or folders bundled with it.
 For one-folder mode this is the distribution folder.
 For one-file mode it is the temporary folder created by the bootloader .</p>
@@ -1680,7 +1682,7 @@ to reproduce a standard version resource.
 Or the text file can be given with a <tt class="docutils literal"><span class="pre">--version-file=</span></tt>
 option to <tt class="docutils literal">pyinstaller</tt> or <tt class="docutils literal"><span class="pre">pyi-makespec</span></tt>.</p>
 <p>This approach is used because version resources are strange beasts,
-and it may be impossible to fully understanding them.
+and it may be impossible to fully understand them.
 Some elements are optional, others required.
 When you view the version tab of a Properties dialog,
 there's no straightforward relationship between
@@ -1696,7 +1698,7 @@ for example a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils
 Two kinds of archives are used in <cite>PyInstaller</cite>.
 One is a ZlibArchive, which
 allows Python modules to be stored efficiently and,
-(with some import hooks) imported directly.
+with some import hooks, imported directly.
 The other, a CArchive, is similar to a <tt class="docutils literal">.zip</tt> file,
 a general way of packing up (and optionally compressing) arbitrary blobs of data.
 It gets its name from the fact that it can be manipulated easily from C
@@ -2486,7 +2488,7 @@ were easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2013-05-03 20:07 UTC.
+Generated on: 2013-05-08 19:16 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

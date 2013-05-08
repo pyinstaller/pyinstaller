@@ -98,7 +98,7 @@ you can download and install |PyInstaller| in one command, for example::
 
     pip install pyinstaller
 
-and upgrade to a newer version in one command,::
+and upgrade to a newer version in one command::
 
     pip install --upgrade pyinstaller
 
@@ -142,9 +142,9 @@ Installing from the archive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also install |PyInstaller| by downloading the compressed archive
-from pypi_ and expanding the archive.
+from PyPI_ and expanding the archive.
 
-Inside the archive is a script ``setup.py``.
+Inside the archive is a script named ``setup.py``.
 Execute ``python setup.py install``
 with administrator privilege to install or upgrade |PyInstaller|.
 
@@ -156,17 +156,17 @@ For platforms other than Windows, Linux and Mac OS, you must build a
 * Make a bootloader with: ``python ./waf configure build install``.
 
 If this reports an error, read `Building the Bootloader`_ below,
-and then ask for technical help.
+then ask for technical help.
 It is of no use to continue the installation without a |bootloader|.
 After the |bootloader| has been created,
-you can run ``python setup.py install`` with administrator privilege
+you can run ``python setup.py install`` with administrator privileges
 to complete the installation.
 
 Verifying the installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On all platforms, the command ``pyinstaller`` should now exist on the
-execution path. To verify this enter the command
+execution path. To verify this, enter the command
 
   ``pyinstaller --version``
 
@@ -176,9 +176,11 @@ and ``2.1dev-xxxxxx`` for a development branch.
 If the command is not found, make sure the execution path includes 
 the proper directory:
 
-* Windows: ``C:\PythonXY\Scripts``
+* Windows: ``C:\PythonXY\Scripts`` (where *XY* stands for the
+  major and minor Python verysion number, for example ``C:\Python27\Scripts``
+  for Python 2.7)
 * Linux: ``/usr/bin/``
-* OS X (using default Apple-supplied Python) ``/usr/local/bin``
+* OS X (using the default Apple-supplied Python) ``/usr/local/bin``
 * OS X (using Python installed by macports) ``/opt/local/bin``
 
 To display the current path in Windows the command is ``echo %path%``
@@ -216,15 +218,14 @@ by running Python scripts found in the distribution folder.
 The equivalent of the ``pyinstaller`` command is
 *pyinstaller-folder* ``/pyinstaller.py``.
 The other commands are found in *pyinstaller-folder* ``/cliutils/`` 
-with obvious names (``makespec.py`` and etc.)
+with obvious names (``makespec.py``, etc.)
 
 Overview: What |PyInstaller| Does and How It Does It
 ============================================================
 
 This section covers the basic ideas of |PyInstaller|.
 These ideas apply to all platforms.
-There are many options, exceptions, and special cases covered under `Using PyInstaller`_ .
-
+There are many options, exceptions, and special cases covered under `Using PyInstaller`_.
 |PyInstaller| reads a Python script written by you.
 First it analyzes your code to discover every other file 
 your script needs in order to execute.
@@ -287,7 +288,7 @@ Bundling to One Folder
 
 When you apply |PyInstaller| to ``myscript.py`` the default
 result is a single folder named ``myscript``.
-This folder contains all the 
+This folder contains all the necessary
 support files, and an executable file also named ``myscript`` 
 (``myscript.exe`` in Windows).
 
@@ -361,12 +362,12 @@ How the One-File Program Works
 
 For a one-file program, the |bootloader| first creates a temporary folder
 in the appropriate temp-folder location for this OS.
-The folder is named ``_MEIxxxxxx``, where ``xxxxxx`` is a random number.
+The folder is named ``_MEI``\ *xxxxxx*, where *xxxxxx* is a random number.
 
 The one file contains an embedded archive of all the Python
 modules used by your script, as well as
 compressed copies of any non-Python support files (e.g. ``.so`` files).
-The boot loader uncompresses the support files and writes copies
+The |bootloader| uncompresses the support files and writes copies
 into the the temporary folder.
 This can take a little time.
 That is why a one-file app is a little slower to start
@@ -387,11 +388,11 @@ Because the program makes a temporary folder with a unique name,
 you can run multiple copies; they won't interfere with each other.
 However, running multiple copies is expensive in disk space because nothing is shared.
 
-The ``_MEIxxxxxx`` folder is not removed if the program crashes
+The ``_MEI``\ *xxxxxx* folder is not removed if the program crashes
 or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
 "Force Quit" on Mac OS).
 Thus if your app crashes frequently, your users will lose disk space to
-multiple ``_MEIxxxxxx`` temporary folders.
+multiple ``_MEI``\ *xxxxxx* temporary folders.
 
 Do *not* give administrator privileges to a one-file executable
 (setuid root in Unix/Linux, "Run this program as an administrator"
@@ -488,29 +489,28 @@ General Options
     Print a summary of the options and exit.
 
 -v, --version
-    Print the version of the program as 2. *n* -*xxxxxxx* where *n* is the
-    sub-version and *xxxxxxx* is a git commit tag.
+    Print the version of the program as 2.\ *n*.
 
 -a, --ascii
     Do *not* include Python module ``codecs`` and other Unicode support.
     The default is to include them if available, whether the script imports them or not.
 
 --distpath=path_to_executable, -o path_to_executable
-	Say where to put the bundled app.
+	Specify where to put the bundled app.
 	The default is a ``dist`` folder in 
 	the same folder as the first script.
 	
 --specpath=path_to_spec_file
-	Say where to put the *name* `.spec` file.
+	Specify where to put the *name* `.spec` file.
 	The default is the same folder as the first script.
 
 --workpath=path_to_work_files
-    Say where to put the |PyInstaller| log and work files for this run.
+    Specify where to put the |PyInstaller| log and work files for this run.
     The default path is a ``build`` folder
     in the same folder as the first script or spec.
 
 --clean
-	Tells |PyInstaller| to erase all log and work files before it starts.
+	Tell |PyInstaller| to erase all log and work files before it starts.
 	The default is to take advantage of any work files existing in
 	the workpath from a prior run to possibly shorten the building process.
 	Use --clean to make sure all parts of the app are built fresh.
@@ -726,7 +726,7 @@ You will run the same command again and again as you develop
 your script.
 You can put the command in a shell script or batch file,
 using line continuations to make it readable.
-For example in Linux::
+For example, in Linux::
 
     pyinstaller --noconfirm --log-level=WARN \
         --onefile --nowindow \
@@ -887,7 +887,7 @@ When you create a spec file, many command options are written into the spec file
 When you build from a spec file, those options cannot be changed.
 If they are given on the command line they are ignored and
 replaced by the options in the spec file.
-Only the following options have an effect when building from a spec file:
+Only the following command-line options have an effect when building from a spec file:
 
 *  --upx-dir=
 *  --distpath=
@@ -924,11 +924,11 @@ The statements do the following:
 
 * A new instance of class ``Analysis`` takes a list of script names as input.
   The resulting object (here named ``a``) contains three lists,
-  held in object properties named:
-  
-  - ``scripts``: the python scripts named on the command line
-  - ``pure``: pure python modules needed by the scripts
-  - ``binaries``: non-python modules needed by the scripts
+  held in object properties named
+
+  - ``scripts``: the python scripts named on the command line;
+  - ``pure``: pure python modules needed by the scripts;
+  - ``binaries``: non-python modules needed by the scripts.
 
 * An instance of ``PYZ`` (a ``.pyz`` archive, described
   under `Inspecting Archives`_ below) is built to contain the modules
@@ -962,7 +962,7 @@ the ``pure`` member is a TOC with a list of modules, and so on.
 
 Basically a ``TOC`` object contains a list of tuples of the form
 
-    ``(`` *name* ``,`` *path* ``,`` *typecode* ``)``
+    ``(``\ *name*\ ``,``\ *path*\ ``,``\ *typecode*\ ``)``
 
 In fact, it acts as an ordered set of tuples; that is, it contains no duplicates
 (where uniqueness is based on the *name* element of each tuple).
@@ -979,7 +979,8 @@ For example,
 is an expression that yields a TOC from which any tuple named ``badmodule``
 has been removed. 
 
-The right-hand argument is a list that contains one tuple
+The right-hand argument to the subtraction operator
+is a list that contains one tuple
 in which *name* is ``badmodule`` and the *path* and *typecode* elements
 are ``None``.
 (Because set membership is based on the *name* element of a tuple only,
@@ -1017,7 +1018,7 @@ The Tree Class
 The Tree class is a way of creating a TOC that describes some or all of the
 files within a directory:
 
-      ``Tree(`` *root* ``, prefix=`` *run-time-folder* ``, excludes=`` *match* ``)``
+      ``Tree(``\ *root*\ ``, prefix=``\ *run-time-folder*\ ``, excludes=``\ *match*\ ``)``
 
 * The *root* argument is a path string to a directory.
   It may be absolute or relative to the build directory.
@@ -1032,9 +1033,9 @@ files within a directory:
   strings that match files in the *root* that should be omitted from the Tree.
   An item in the list can be either:
   
-  - a name, and files or folders with this basename are excluded
+  - a name, which causes files or folders with this basename to be excluded
   
-  - ``*.ext`` and files with this extension are excluded
+  - ``*.ext``, which causes files with this extension to be excluded
 
 For example::
 
@@ -1059,7 +1060,7 @@ To add a README file at the top level of a one-folder bundle::
                 [('README', '/my/project/readme', 'DATA')], ...)
 
 This adds one tuple to the ``a.binaries`` TOC. 
-However, COLLECT class takes a variable-length list of arguments,
+However, the COLLECT class takes a variable-length list of arguments,
 so it is possible to just append a list of one tuple to the argument list::
 
       collect = COLLECT(a.binaries,
@@ -1136,7 +1137,7 @@ Getting the Latest Version
 
 If you have some reason to think you have found a bug in |PyInstaller|
 you can try downloading the latest development version.
-This version might have fixes or features that are not yet at ``pypi``.
+This version might have fixes or features that are not yet at `PyPI`_.
 Links to download the latest stable version and the latest development
 version are at PyInstaller.org_.
 
@@ -1250,7 +1251,7 @@ Users would find the messages annoying.
 Getting Python's Verbose Imports
 --------------------------------
 
-You can also pass a ``-v`` (verbose imports) flag to the embedded Python
+You can also pass a ``-v`` (verbose imports) flag to the embedded Python interpreter
 (see `Giving Run-time Python Options`_ above).
 This can be extremely useful.
 It can be informative even with apps that are apparently working,
@@ -1300,7 +1301,7 @@ set the ``-v`` flag (`Getting Python's Verbose Imports`_ above).
 Once you know what they are, you add the needed modules
 to the bundle using the ``--hidden-import=`` command option,
 by editing the spec file, or
-with a hook file: `Using Hook Files`_ below.
+with a hook file (see `Using Hook Files`_ below).
 
 Extending a Package's ``__path__``
 ----------------------------------
@@ -1326,7 +1327,7 @@ That is, at runtime ``win32com.shell`` is resolved the same
 way as ``win32com.anythingelse``, and ``win32com.__path__``
 knows nothing of ``../win32comext``.
 
-Once in awhile, that's not enough.
+Once in a while, that's not enough.
 
 Changing Runtime Behavior
 -------------------------
@@ -1336,10 +1337,11 @@ These are small scripts that manipulate the environment before your main script 
 effectively providing additional top-level code to your script.
 
 There are two ways of providing runtime hooks.
-You can name them with the option ``--runtime-hook=`` *path-to-script*.
+You can name them with the option ``--runtime-hook=``\ *path-to-script*.
 
 Second, some runtime hooks are provided.
-At the end of an analysis, the names in the module list are looked up in
+At the end of an analysis,
+the names in the module list produced by the Analysis phase are looked up in
 ``loader/rthooks.dat`` in the |PyInstaller| install folder.
 This text file is the string representation of a
 Python dictionary. The key is the module name, and the value is a list
@@ -1352,13 +1354,13 @@ in the order given, and before any installed runtime hooks.
 If you specify  ``--runtime-hook=file1.py --runtime-hook=file2.py``
 then the execution order at runtime will be:
 
-1. Code of ``file1.py``
-2. Code of ``file2.py``
+1. Code of ``file1.py``.
+2. Code of ``file2.py``.
 3. Any hook specified for an included module that is found
-   in ``rthooks/rthooks.dat``
-4. Your main script
+   in ``rthooks/rthooks.dat``.
+4. Your main script.
 
-Hooks done in this way, while they need to be careful of what they import,
+Hooks called in this way, while they need to be careful of what they import,
 are free to do almost anything.
 One reason to write a run-time hook is to
 override some functions or variables from some modules.
@@ -1405,10 +1407,9 @@ as  two processes in your system task manager.
      
 What happens during execution of bootloader:
      
-A. First process: bootloader starts
+A. First process: bootloader starts.
 
-    1. If one-file mode, extract bundled files to
-       temppath/_MEIxxxxxx
+    1. If one-file mode, extract bundled files to *temppath*\ ``_MEI``\ *xxxxxx*
     
     2. Set/unset various environment variables,
        e.g. override LD_LIBRARY_PATH on Linux or LIBPATH on AIX;
@@ -1420,17 +1421,17 @@ A. First process: bootloader starts
     
     5. Wait for the child process to finish.
     
-    6. If one-file mode, delete temppath/_MEIxxxxxx.
+    6. If one-file mode, delete *temppath*\ ``_MEI``\ *xxxxxx*.
      
 B. Second process: bootloader itself started as a child process.
 
-    1. On Windows set the `activation context`_ 
+    1. On Windows set the `activation context`_.
     
     2. Load the Python dynamic library.
        The name of the dynamic library is embedded in the
        executable file.
     
-    3. Initialize Python interpreter: set PYTHONPATH, PYTHONHOME
+    3. Initialize Python interpreter: set PYTHONPATH, PYTHONHOME.
     
     4. Run python code.
  
@@ -1447,7 +1448,7 @@ Running Python code consists of several steps:
    It sets up the python import mechanism to load modules
    from archives embedded in the executable.
    It also adds the attributes ``frozen``
-   and ``MEIPASS`` to the ``sys`` built-in module.
+   and ``_MEIPASS`` to the ``sys`` built-in module.
 
 2. Execute run run-time hooks: first those specified by the
    user, then any standard ones.
@@ -1464,9 +1465,9 @@ Running Python code consists of several steps:
 Python imports in a frozen app
 -------------------------------------
 
-PyInstaller embeds compiled python code
+|PyInstaller| embeds compiled python code
 (``.pyc`` files) within the executable.
-PyInstaller injects its code into the
+|PyInstaller| injects its code into the
 normal Python import mechanism.
 Python allows this;
 the support is described in `PEP 302`_  "New Import Hooks".
@@ -1498,11 +1499,10 @@ in a bundled app:
 
 3. Is it a C-extension?
    The app will try to find a file with name
-   *package.subpackage.module* ``.pyd`` or
-   *package.subpackage.module* ``.so``
+   *package.subpackage.module*\ ``.pyd`` or
+   *package.subpackage.module*\ ``.so``
 
-4. Next examine paths in the ``sys.path``
-   (PYTHONPATH). 
+4. Next examine paths in the ``sys.path`` (PYTHONPATH). 
    There could be any additional location with python modules
    or ``.egg`` filenames.
    
@@ -1528,15 +1528,16 @@ you get the path to the file with the following code::
     import os
     ...
     if getattr(sys, 'frozen', False):
-        # we are running in a pyinstaller bundle
+        # we are running in a |PyInstaller| bundle
         basedir = sys._MEIPASS
     else:
-        # we are running in a normal python environment
+        # we are running in a normal Python environment
         basedir = os.path.dirname(__file__)
 
 The |PyInstaller| |bootloader| adds the attribute ``frozen`` to the ``sys`` module.
 If that attribute exists, your script has been launched by the |bootloader|.
-When that is true, ``sys._MEIPASS`` contains the path to the folder containing
+When that is true, ``sys._MEIPASS`` (note the underscore in the name)
+contains the path to the folder containing
 your script and any other files or folders bundled with it.
 For one-folder mode this is the distribution folder.
 For one-file mode it is the temporary folder created by the |bootloader| .
@@ -1601,7 +1602,7 @@ Or the text file can be given with a ``--version-file=``
 option to ``pyinstaller`` or ``pyi-makespec``.
 
 This approach is used because version resources are strange beasts,
-and it may be impossible to fully understanding them.
+and it may be impossible to fully understand them.
 Some elements are optional, others required.
 When you view the version tab of a Properties dialog,
 there's no straightforward relationship between
@@ -1618,7 +1619,7 @@ for example a ``.tar`` file, a ``.jar`` file, or a ``.zip`` file.
 Two kinds of archives are used in |PyInstaller|.
 One is a ZlibArchive, which
 allows Python modules to be stored efficiently and,
-(with some import hooks) imported directly.
+with some import hooks, imported directly.
 The other, a CArchive, is similar to a ``.zip`` file,
 a general way of packing up (and optionally compressing) arbitrary blobs of data.
 It gets its name from the fact that it can be manipulated easily from C
