@@ -748,10 +748,17 @@ Or in Windows, use the little-known BAT file line continuation::
 Using UPX
 ~~~~~~~~~~~~~~~~~~~
 
-UPX_ is a free utility available for most operating systems
-(follow the link to the website where it can be downloaded).
-UPX compresses executable files and libraries making them smaller,
-sometimes amazingly smaller.
+UPX_ is a free utility available for most operating systems.
+UPX compresses executable files and libraries, making them smaller,
+sometimes much smaller.
+UPX is available for most operating systems and can compress
+a large number of executable file formats.
+See the UPX_ home page for downloads, and for the list of 
+supported executable formats.
+As of May 2013, the only major absence is 64-bit binaries for
+Windows and Mac OS X.
+UPX has no effect on these.
+
 A compressed executable program is wrapped in UPX
 startup code that dynamically decompresses the program 
 when the program is launched.
