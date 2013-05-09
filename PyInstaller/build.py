@@ -966,8 +966,8 @@ class PKG(Target):
                     self.dependencies.append((inm, fnm, typ))
                 else:
                     fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin)
-                                     and config['hasUPX']), dist_nm=inm)
+                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     dist_nm=inm)
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
@@ -1014,7 +1014,11 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
-        self.upx = kwargs.get('upx', False)
+
+        if config['hasUPX']: 
+           self.upx = kwargs.get('upx', False)
+        else:
+           self.upx = False
 
         # Old .spec format included in 'name' the path where to put created
         # app. New format includes only exename.
@@ -1166,7 +1170,7 @@ class EXE(Target):
                         logger.exception(exc)
             trash.append(tmpnm)
             exe = tmpnm
-        exe = checkCache(exe, strip=self.strip, upx=(self.upx and config['hasUPX']))
+        exe = checkCache(exe, strip=self.strip, upx=self.upx)
         self.copy(exe, outf)
         if self.append_pkg:
             logger.info("Appending archive to EXE %s", self.name)
@@ -1214,7 +1218,11 @@ class COLLECT(Target):
     def __init__(self, *args, **kws):
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
-        self.upx_binaries = kws.get('upx', False)
+
+        if config['hasUPX']: 
+           self.upx_binaries = kws.get('upx', False)
+        else:
+           self.upx_binaries = False
 
         self.name = kws.get('name')
         # Old .spec format included in 'name' the path where to collect files
@@ -1269,8 +1277,8 @@ class COLLECT(Target):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
-                                 upx=(self.upx_binaries and (is_win or is_cygwin)
-                                 and config['hasUPX']), dist_nm=inm)
+                                 upx=(self.upx_binaries and (is_win or is_cygwin)), 
+                                 dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
@@ -1292,7 +1300,7 @@ class BUNDLE(Target):
             '..', 'bootloader', 'images', 'icon-windowed.icns'))
 
         Target.__init__(self)
-
+ 
         # .app bundle is created in DISTPATH.
         self.name = kws.get('name', None)
         base_name = os.path.basename(self.name)
@@ -1309,7 +1317,7 @@ class BUNDLE(Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 self.toc.extend(arg.dependencies) 
                 self.strip = arg.strip
-                self.upx = arg.upx
+                self.upx = arg.upx 
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
                 # TOC doesn't have a strip or upx attribute, so there is no way for us to
@@ -1317,7 +1325,7 @@ class BUNDLE(Target):
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
                 self.strip = arg.strip_binaries
-                self.upx = arg.upx_binaries
+                self.upx = arg.upx_binaries 
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
