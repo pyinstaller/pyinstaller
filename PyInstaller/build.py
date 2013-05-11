@@ -742,7 +742,7 @@ def cacheDigest(fnm):
     return digest
 
 
-def checkCache(fnm, strip=0, upx=0, dist_nm=None):
+def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -759,13 +759,13 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
         or fnm.lower().endswith(".manifest")):
         return fnm
     if strip:
-        strip = 1
+        strip = True
     else:
-        strip = 0
+        strip = False
     if upx:
-        upx = 1
+        upx = True
     else:
-        upx = 0
+        upx = False
 
     # Load cache index
     # Make cachedir per Python major/minor version.
@@ -797,7 +797,7 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
             return cachedfile
     if upx:
         if strip:
-            fnm = checkCache(fnm, 1, 0)
+            fnm = checkCache(fnm, strip=True, upx=False)
         bestopt = "--best"
         # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
         # A better configure-time check is due.
@@ -810,10 +810,14 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
         cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
-            # -S = strip only debug symbols.
-            # The default strip behaviour breaks some shared libraries
-            # under Mac OSX
-            cmd = ["strip", "-S", cachedfile]
+            strip_options = []
+            if is_darwin:
+               # The default strip behaviour breaks some shared libraries
+               # under Mac OSX.
+               # -S = strip only debug symbols.
+               strip_options = ["-S"]
+            cmd = ["strip"] + strip_options + [cachedfile]
+
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
 
@@ -873,6 +877,7 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
 
     if cmd:
         try:
+            logger.info("Executing - " + ' '.join(cmd))
             compat.exec_command(*cmd)
         except OSError, e:
             raise SystemExit("Execution failed: %s" % e)
@@ -905,7 +910,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0):
+                 strip_binaries=False, upx_binaries=False):
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -960,9 +965,9 @@ class PKG(Target):
                 if self.exclude_binaries and typ != 'DEPENDENCY':
                     self.dependencies.append((inm, fnm, typ))
                 else:
-                    fnm = checkCache(fnm, self.strip_binaries,
-                                     self.upx_binaries and (is_win or is_cygwin)
-                                     and config['hasUPX'], dist_nm=inm)
+                    fnm = checkCache(fnm, strip=self.strip_binaries,
+                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     dist_nm=inm)
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
@@ -1008,8 +1013,12 @@ class EXE(Target):
         self.versrsrc = kwargs.get('version', None)
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
-        self.strip = kwargs.get('strip', None)
-        self.upx = kwargs.get('upx', None)
+        self.strip = kwargs.get('strip', False)
+
+        if config['hasUPX']: 
+           self.upx = kwargs.get('upx', False)
+        else:
+           self.upx = False
 
         # Old .spec format included in 'name' the path where to put created
         # app. New format includes only exename.
@@ -1161,7 +1170,7 @@ class EXE(Target):
                         logger.exception(exc)
             trash.append(tmpnm)
             exe = tmpnm
-        exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
+        exe = checkCache(exe, strip=self.strip, upx=self.upx)
         self.copy(exe, outf)
         if self.append_pkg:
             logger.info("Appending archive to EXE %s", self.name)
@@ -1209,7 +1218,11 @@ class COLLECT(Target):
     def __init__(self, *args, **kws):
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
-        self.upx_binaries = kws.get('upx', False)
+
+        if config['hasUPX']: 
+           self.upx_binaries = kws.get('upx', False)
+        else:
+           self.upx_binaries = False
 
         self.name = kws.get('name')
         # Old .spec format included in 'name' the path where to collect files
@@ -1263,9 +1276,9 @@ class COLLECT(Target):
             if not os.path.exists(todir):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, self.strip_binaries,
-                                 self.upx_binaries and (is_win or is_cygwin)
-                                 and config['hasUPX'], dist_nm=inm)
+                fnm = checkCache(fnm, strip=self.strip_binaries,
+                                 upx=(self.upx_binaries and (is_win or is_cygwin)), 
+                                 dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
@@ -1287,7 +1300,7 @@ class BUNDLE(Target):
             '..', 'bootloader', 'images', 'icon-windowed.icns'))
 
         Target.__init__(self)
-
+ 
         # .app bundle is created in DISTPATH.
         self.name = kws.get('name', None)
         base_name = os.path.basename(self.name)
@@ -1296,15 +1309,23 @@ class BUNDLE(Target):
         self.appname = os.path.splitext(base_name)[0]
         self.version = kws.get("version", "0.0.0")
         self.toc = TOC()
+        self.strip = False
+        self.upx = False
 
         for arg in args:
             if isinstance(arg, EXE):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                self.toc.extend(arg.dependencies)
+                self.toc.extend(arg.dependencies) 
+                self.strip = arg.strip
+                self.upx = arg.upx 
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
+                # TOC doesn't have a strip or upx attribute, so there is no way for us to
+                # tell which cache we should draw from.
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
+                self.strip = arg.strip_binaries
+                self.upx = arg.upx_binaries 
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
@@ -1381,7 +1402,7 @@ class BUNDLE(Target):
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, dist_nm=inm)
+                fnm = checkCache(fnm, strip=self.strip, upx=self.upx, dist_nm=inm)
             tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
