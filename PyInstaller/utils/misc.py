@@ -84,12 +84,13 @@ def get_unicode_modules():
     modules = []
     try:
         import codecs
-        modules = ['codecs']
-        import encodings
+        modules.append('codecs')
         # `encodings` imports `codecs`, so only the first is required.
-        modules = ['encodings']
+        import encodings
+        modules.append('encodings')
     except ImportError:
-        pass
+        logger.error("Cannot detect modules 'codecs' and 'encodings'.")
+
     return modules
 
 
