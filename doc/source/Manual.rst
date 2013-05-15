@@ -1046,20 +1046,30 @@ files within a directory:
 
 For example::
 
-    extra_tree = Tree('../src/extras', prefix='extras', exclude=['tmp'])
+    extra_tree = Tree('../src/extras', prefix='extras', excludes=['tmp'])
 
 This creates ``extra_tree`` as a TOC object that lists
 all files from the relative path ``../src/extras``,
 omitting those that have the basename (or are in a folder named) ``tmp``.
-At run-time your program can find these files in a folder named ``extras``
-in the bundle folder.
+
+Each tuple in this TOC has:
+
+* A *typecode* of ``DATA``,
+
+* A *path* consisting of a complete, absolute path to one file in the *root* folder,
+
+* A *name* consisting of the filename of this file, or,
+  if you specify a *prefix*, the *name* is *prefix*\ ``/``\ *filename*. 
+
 
 Adding Files to the Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To add files to the bundle, add them to the argument list of the
+To add files to the bundle, you insert them into the argument list of the
 ``COLLECT`` object for a one-folder bundle,
 or to the argument list of the ``EXE`` object for a one-file bundle.
+You can add files as single TOC-style tuples,
+or you can add an entire Tree object by name.
 
 To add a README file at the top level of a one-folder bundle::
 
