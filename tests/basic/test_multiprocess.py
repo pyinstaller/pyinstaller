@@ -1,3 +1,13 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
 # Bootloader unsets _MEIPASS2 for child processes to allow running
 # PyInstaller binaries inside pyinstaller binaries.
 # This is ok for mac or unix with fork() system call.
@@ -8,7 +18,6 @@
 
 
 import multiprocessing
-import os
 import sys
 
 
@@ -20,16 +29,16 @@ class SendeventProcess(multiprocessing.Process):
         self.start()
 
     def run(self):
-        print 'SendeventProcess'
+        print('SendeventProcess')
         self.resultQueue.put((1, 2))
-        print 'SendeventProcess'
+        print('SendeventProcess')
 
 
 if __name__ == '__main__':
     # On Windows calling this function is necessary.
     if sys.platform.startswith('win'):
         multiprocessing.freeze_support()
-    print 'main'
+    print('main')
     resultQueue = multiprocessing.Queue()
     SendeventProcess(resultQueue)
-    print 'main'
+    print('main')

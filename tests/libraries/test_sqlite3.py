@@ -8,14 +8,14 @@
 #-----------------------------------------------------------------------------
 
 
-from wx.lib.pubsub import pub as Publisher
+# PyInstaller did not included module 'sqlite3.dump'.
+import sqlite3
 
 
-def on_message(number):
-    print 'In the handler'
-    if not number == 762:
-        raise SystemExit('wx_pubsub failed.')
+conn = sqlite3.connect(':memory:')
+csr = conn.cursor()
+csr.execute('CREATE TABLE Example (id)')
 
 
-Publisher.subscribe(on_message, 'topic.subtopic')
-Publisher.sendMessage('topic.subtopic', number=762)
+for line in conn.iterdump():
+    print(line)
