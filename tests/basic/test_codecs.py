@@ -8,14 +8,17 @@
 #-----------------------------------------------------------------------------
 
 
-from wx.lib.pubsub import pub as Publisher
+import codecs
+import sys
 
 
-def on_message(number):
-    print 'In the handler'
-    if not number == 762:
-        raise SystemExit('wx_pubsub failed.')
+a = 'foo bar'
+au = codecs.getdecoder('utf-8')(a)[0]
+b = codecs.getencoder('utf-8')(au)[0]
 
 
-Publisher.subscribe(on_message, 'topic.subtopic')
-Publisher.sendMessage('topic.subtopic', number=762)
+print('codecs working: %s' % (a == b))
+assert a == b
+
+
+sys.exit(0)

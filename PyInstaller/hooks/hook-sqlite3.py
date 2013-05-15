@@ -8,14 +8,6 @@
 #-----------------------------------------------------------------------------
 
 
-from wx.lib.pubsub import pub as Publisher
+from hookutils import collect_submodules
 
-
-def on_message(number):
-    print 'In the handler'
-    if not number == 762:
-        raise SystemExit('wx_pubsub failed.')
-
-
-Publisher.subscribe(on_message, 'topic.subtopic')
-Publisher.sendMessage('topic.subtopic', number=762)
+hiddenimports = collect_submodules('sqlite3')

@@ -1,22 +1,17 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2012, Bryan A. Jones
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
-# Verify packaging of Sphinx, which relies on jinja2 and on docutils. Sphinx and docutils rely on data files in their module directories, which their respective hook scripts must find and copy.
+# Verify packaging of Sphinx, which relies on jinja2 and on docutils. Sphinx and docutils
+# rely on data files in their module directories, which their respective hook scripts must
+# find and copy.
+
 
 import sphinx, sys
 # See http://sphinx.pocoo.org/invocation.html#invocation for more details of 
