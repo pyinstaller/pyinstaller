@@ -1,8 +1,16 @@
 # -*- mode: python -*-
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
-'''
-MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onedir pack)
-'''
+
+# MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onedir pack)
+
 
 __testname__ = 'test_multipackage2'
 __testdep__ = 'multipackage2_B'

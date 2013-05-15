@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
-################################################################################
-#! /usr/bin/python
-################################################################################
-# Crosstown Traffic <http://h10r.blogspot.com/>
-# Hendrik Heuer <hendrikheuer AT gmail DOT com>
-# GNU General Public License
-################################################################################
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
 
 # This is a copy of
 # http://jonasbsb.jo.funpic.de/hendrix/pygame-example.py
+
 
 try:
     import sys

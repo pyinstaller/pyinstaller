@@ -8,6 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
+# PyInstaller did not included module 'sqlite3.dump'.
 import sqlite3
 
 
