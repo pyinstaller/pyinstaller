@@ -1046,7 +1046,7 @@ files within a directory:
 
 For example::
 
-    extra_tree = Tree('../src/extras', prefix='extras', exclude=['tmp'])
+    extra_tree = Tree('../src/extras', prefix='extras', excludes=['tmp'])
 
 This creates ``extra_tree`` as a TOC object that lists
 all files from the relative path ``../src/extras``,
