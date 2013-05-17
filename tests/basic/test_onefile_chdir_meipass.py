@@ -11,8 +11,11 @@
 import os
 import sys
 
+
 os.chdir(sys._MEIPASS)
 
-import data6
+
+import data_assignment
+
 
 print(os.getcwd())
