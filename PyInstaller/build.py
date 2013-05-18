@@ -42,6 +42,60 @@ import PyInstaller.log as logging
 if is_win:
     from PyInstaller.utils import winmanifest
 
+# ----------------------------------------------------------------
+#
+# Define a modified ModuleGraph that can return its contents as
+# a TOC. This should probably be a separate module imported here.
+#
+# The only extension over ModuleGraph is a method to extract nodes
+# from the flattened graph and return them in the form of a TOC.
+# The input is a PyInstaller TOC typecode which we match to the
+# ModuleGraph node types as follows:
+#   PYMODULE to Module
+#   PYSOURCE to Script
+#   EXTENSION to Extension
+#   BINARY to ??
+# We use ModuleGraph (really, ObjectGraph) flatten() to return
+# all the nodes. This is patterned after ModuleGraph.report().
+# ----------------------------------------------------------------
+from modulegraph.modulegraph import ModuleGraph
+class PyiModuleGraph(ModuleGraph):
+    def __init__ (self, **kwargs) :
+        super(PyiModuleGraph, self).__init__(**kwargs)
+        # Dict to map ModuleGraph node types to TOC typecodes
+        self.typedict = {
+            'Module' : 'PYMODULE',
+            'SourceModule' : 'PYMODULE',
+            'Extension' : 'EXTENSION',
+            'Script' : 'PYSOURCE',
+            '?not sure' : 'BINARY'
+            }
+
+    def make_a_TOC(self, typecode = ['PYMODULE']):
+        result = TOC()
+        for node in self.flatten() :
+            # get node type e.g. Script, could be None
+            mg_type = type(node).__name__
+            # translate to corresponding TOC typecode if any
+            toc_type = self.typedict.get(mg_type, None)
+            # if caller cares about typecode, and there is a mismatch, 
+            if len(typecode) :
+                if not (toc_type in typecode) :
+                    toc_type = None
+            else: toc_type = mg_type
+            
+            if toc_type is not None :
+                # desired type or no preference
+                result.append(
+                    ( os.path.basename(node.identifier),
+                      node.identifier,
+                      toc_type
+                    )
+                )
+        return result
+# ----------------------------------------------------------------
+# End PyiModuleGraph
+# ----------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 
@@ -441,67 +495,36 @@ class Analysis(Target):
     # TODO handle hooks properly.
     #def assemble(self):
     def assemble_modulegraph(self):
-        """
-        New assemble function based on module 'modulegraph' for resolving
-        dependencies on Python modules.
-
-        PyInstaller is not able to handle some cases of resolving dependencies.
-        Rather try use a module for that than trying to fix current implementation.
-        """
-        from modulegraph.modulegraph import ModuleGraph
-        from modulegraph.find_modules import get_implies, find_needed_modules
-        from PyInstaller import hooks
-
-        # Python scripts for analysis.
-        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-        scripts = [
-            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
-        ]
-
-        #tracker = PyInstaller.depend.imptracker.ImportTrackerModulegraph(
-                #dirs.keys() + self.pathex, self.hookspath, self.excludes)
-
-        # TODO implement the following to get python modules and extension lists:
-        #      process all hooks to get hidden imports and create mapping:
-        def collect_implies():
-            """
-            Collect all hiddenimports from hooks and from modulegraph.
-            """
-            # Dictionary like
-            #   {'mod_name': ['dependent_mod1', dependent_mod2', ...]}
-            implies = get_implies()
-            # TODO implement getting through hooks
-            # TODO use also hook_dir supplied by user
-            hook_dir = os.path.dirname(os.path.abspath(hooks.__file__))
-            files = glob.glob(hook_dir + os.sep + 'hook-*.py')
-            for f in files:
-                # Name of the module this hook is for.
-                mod_name = os.path.basename(f).lstrip('hook-').rstrip('.py')
-                hook_mod_name = 'PyInstaller.hooks.hook-%s' % mod_name
-                # Loaded and initialized hook module.
-                hook_mod = imp.load_source(hook_mod_name, f)
-                if hasattr(hook_mod, 'hiddenimports'):
-                    # Extend the list of implies.
-                    implies[mod_name] = hook_mod.hiddenimports
-            return implies
-
-        #        {'PyQt4.QtGui': ['PyQt4.QtCore', 'sip'], 'another_Mod' ['hidden_import1', 'hidden_import2'], ...}
-        #      supply this mapping as 'implies' keyword to
-        #        modulegraph.modulegraph.ModuleGraph()
-        #      do analysis of scripts - user scripts, pyi_archive, pyi_os_path, pyi_importers, pyi_carchive, _pyi_bootstrap
-        #      find necessary rthooks
-        #      do analysis of rthooks and add it to modulegraph object
-        #      analyze python modules for ctype imports - modulegraph does not do that
-
-        # TODO process other attribute from used pyinstaller hooks.
-        # TODO resolve DLL/so/dylib dependencies.
-        graph = ModuleGraph(
-            path=[_init_code_path] + sys.path,
-            implies=collect_implies(),
-            debug=0)
-        graph = find_needed_modules(graph, scripts=scripts)
-        graph.report()
-
+        # As for original assemble, the list of scripts, starting with our own
+        # bootstrap ones, is in self.inputs, each as a normalized pathname.
+        graph = PyiModuleGraph() # class defined at top of module
+        for script in self.inputs:
+            node = graph.run_script(script)
+        MG_scripts = graph.make_a_TOC(['PYSOURCE'])
+        MG_binaries = graph.make_a_TOC(['EXTENSION', 'BINARY'])
+        MG_pure = graph.make_a_TOC(['PYMODULE'])
+        MG_toc = graph.make_a_TOC([]) # get them all
+        logger.info("###### comparing tocs")
+        self.compare_tocs_and_print(self.pure, 'pure', MG_pure, MG_toc)
+        self.compare_tocs_and_print(self.scripts, 'scripts', MG_scripts, MG_toc)
+        self.compare_tocs_and_print(self.binaries, 'binaries', MG_binaries, MG_toc)
+    # TEMP KLUDGE REMOVE
+    def compare_tocs_and_print(self,a,a_name,mg_part,mg_all):
+        for (n, p, t) in a :
+            in_a = a_name if (n in a.fltr) else ''
+            if n in mg_part.fltr :
+                in_b = 'mg '+a_name
+            elif n in mg_all.fltr :
+                # can't believe there's no index to a toc?
+                for (n1, x, t1) in mg_all :
+                    if n1 == n :
+                        break
+                in_b = 'mg all as ' + t1
+            else:
+                in_b = '?'
+            logger.info("{0:15}:{1:10} in {2} and {3}".format(
+                n, t, in_a, in_b,  )
+                        )
 
     def assemble(self):
         logger.info("running Analysis %s", os.path.basename(self.out))
@@ -649,6 +672,7 @@ class Analysis(Target):
             oldstuff = None
 
         self.pure = TOC(compile_pycos(self.pure))
+        self.assemble_modulegraph()
 
         newstuff = tuple([getattr(self, g[0]) for g in self.GUTS])
         if oldstuff != newstuff:
@@ -812,10 +836,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         if strip:
             strip_options = []
             if is_darwin:
-               # The default strip behaviour breaks some shared libraries
-               # under Mac OSX.
-               # -S = strip only debug symbols.
-               strip_options = ["-S"]
+                # The default strip behaviour breaks some shared libraries
+                # under Mac OSX.
+                # -S = strip only debug symbols.
+                strip_options = ["-S"]
             cmd = ["strip"] + strip_options + [cachedfile]
 
     shutil.copy2(fnm, cachedfile)
