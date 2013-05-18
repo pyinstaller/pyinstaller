@@ -78,10 +78,12 @@ class PyiModuleGraph(ModuleGraph):
             mg_type = type(node).__name__
             # translate to corresponding TOC typecode if any
             toc_type = self.typedict.get(mg_type, None)
-            # if caller cares about typecode, and there is a mismatch, 
+            # if caller cares about typecode, 
             if len(typecode) :
+                # if there is a mismatch, skip this one
                 if not (toc_type in typecode) :
                     toc_type = None
+            # caller doesn't care, return the graph type name
             else: toc_type = mg_type
             
             if toc_type is not None :
@@ -511,20 +513,19 @@ class Analysis(Target):
     # TEMP KLUDGE REMOVE
     def compare_tocs_and_print(self,a,a_name,mg_part,mg_all):
         for (n, p, t) in a :
-            in_a = a_name if (n in a.fltr) else ''
             if n in mg_part.fltr :
-                in_b = 'mg '+a_name
+                mg_name = 'and mg_'+a_name
             elif n in mg_all.fltr :
                 # can't believe there's no index to a toc?
                 for (n1, x, t1) in mg_all :
                     if n1 == n :
                         break
-                in_b = 'mg all as ' + t1
+                mg_name = 'mg all as ' + t1
             else:
-                in_b = '?'
-            logger.info("{0:15}:{1:10} in {2} and {3}".format(
-                n, t, in_a, in_b,  )
-                        )
+                mg_name = 'but not mg'
+            # doing print not logger.info so can sort the result
+            print "{0} as {1} in {2} {3}".format(
+                n, t, a_name, mg_name  )
 
     def assemble(self):
         logger.info("running Analysis %s", os.path.basename(self.out))
