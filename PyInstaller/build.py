@@ -42,63 +42,6 @@ import PyInstaller.log as logging
 if is_win:
     from PyInstaller.utils import winmanifest
 
-# ----------------------------------------------------------------
-#
-# Define a modified ModuleGraph that can return its contents as
-# a TOC. This should probably be a separate module imported here.
-#
-# The only extension over ModuleGraph is a method to extract nodes
-# from the flattened graph and return them in the form of a TOC.
-# The input is a PyInstaller TOC typecode which we match to the
-# ModuleGraph node types as follows:
-#   PYMODULE to Module
-#   PYSOURCE to Script
-#   EXTENSION to Extension
-#   BINARY to ??
-# We use ModuleGraph (really, ObjectGraph) flatten() to return
-# all the nodes. This is patterned after ModuleGraph.report().
-# ----------------------------------------------------------------
-from modulegraph.modulegraph import ModuleGraph
-class PyiModuleGraph(ModuleGraph):
-    def __init__ (self, **kwargs) :
-        super(PyiModuleGraph, self).__init__(**kwargs)
-        # Dict to map ModuleGraph node types to TOC typecodes
-        self.typedict = {
-            'Module' : 'PYMODULE',
-            'SourceModule' : 'PYMODULE',
-            'Extension' : 'EXTENSION',
-            'Script' : 'PYSOURCE',
-            '?not sure' : 'BINARY'
-            }
-
-    def make_a_TOC(self, typecode = ['PYMODULE']):
-        result = TOC()
-        for node in self.flatten() :
-            # get node type e.g. Script, could be None
-            mg_type = type(node).__name__
-            # translate to corresponding TOC typecode if any
-            toc_type = self.typedict.get(mg_type, None)
-            # if caller cares about typecode, 
-            if len(typecode) :
-                # if there is a mismatch, skip this one
-                if not (toc_type in typecode) :
-                    toc_type = None
-            # caller doesn't care, return the graph type name
-            else: toc_type = mg_type
-            
-            if toc_type is not None :
-                # desired type or no preference
-                result.append(
-                    ( os.path.basename(node.identifier),
-                      node.identifier,
-                      toc_type
-                    )
-                )
-        return result
-# ----------------------------------------------------------------
-# End PyiModuleGraph
-# ----------------------------------------------------------------
-
 logger = logging.getLogger(__name__)
 
 
@@ -114,6 +57,8 @@ DISTPATH = None
 WORKPATH = None
 WARNFILE = None
 NOCONFIRM = None
+# TEMP-REMOVE! 1 line
+DEBUG = False
 
 # Some modules are included if they are detected at build-time or
 # if a command-line argument is specified. (e.g. --ascii)
@@ -492,42 +437,22 @@ class Analysis(Target):
         self.hiddenimports = hiddenimports
         return False
 
-    # TODO implement same functionality as 'assemble()'
-    # TODO convert output from 'modulegraph' to PyInstaller format - self.modules.
-    # TODO handle hooks properly.
-    #def assemble(self):
-    def assemble_modulegraph(self):
+    # Eventually this will be: def assemble(self):
+    def assemble_new(self):
         # As for original assemble, the list of scripts, starting with our own
         # bootstrap ones, is in self.inputs, each as a normalized pathname.
-        graph = PyiModuleGraph() # class defined at top of module
+        graph = PyiModuleGraph() # class defined at end of module after TOC
+    
         for script in self.inputs:
             node = graph.run_script(script)
-        MG_scripts = graph.make_a_TOC(['PYSOURCE'])
-        MG_binaries = graph.make_a_TOC(['EXTENSION', 'BINARY'])
-        MG_pure = graph.make_a_TOC(['PYMODULE'])
-        MG_toc = graph.make_a_TOC([]) # get them all
-        logger.info("###### comparing tocs")
-        self.compare_tocs_and_print(self.pure, 'pure', MG_pure, MG_toc)
-        self.compare_tocs_and_print(self.scripts, 'scripts', MG_scripts, MG_toc)
-        self.compare_tocs_and_print(self.binaries, 'binaries', MG_binaries, MG_toc)
-    # TEMP KLUDGE REMOVE
-    def compare_tocs_and_print(self,a,a_name,mg_part,mg_all):
-        for (n, p, t) in a :
-            if n in mg_part.fltr :
-                mg_name = 'and mg_'+a_name
-            elif n in mg_all.fltr :
-                # can't believe there's no index to a toc?
-                for (n1, x, t1) in mg_all :
-                    if n1 == n :
-                        break
-                mg_name = 'mg all as ' + t1
-            else:
-                mg_name = 'but not mg'
-            # doing print not logger.info so can sort the result
-            print "{0} as {1} in {2} {3}".format(
-                n, t, a_name, mg_name  )
+        self.scripts = graph.make_a_TOC(['PYSOURCE'])
+        self.binaries = graph.make_a_TOC(['EXTENSION', 'BINARY'])
+        self.pure = graph.make_a_TOC(['PYMODULE'])
+        self.zipfiles = TOC()
+        self.datas = TOC()
 
-    def assemble(self):
+    # The original assemble() based on ImpTracker
+    def assemble_old(self):
         logger.info("running Analysis %s", os.path.basename(self.out))
         # Reset seen variable to correctly discover dependencies
         # if there are multiple Analysis in a single specfile.
@@ -673,7 +598,6 @@ class Analysis(Target):
             oldstuff = None
 
         self.pure = TOC(compile_pycos(self.pure))
-        self.assemble_modulegraph()
 
         newstuff = tuple([getattr(self, g[0]) for g in self.GUTS])
         if oldstuff != newstuff:
@@ -687,6 +611,65 @@ class Analysis(Target):
         logger.info("%s no change!", self.out)
         return 0
 
+    # TEMP SCAFFOLD TO TEST old and new methods in parallel -- down to END
+    def assemble(self) :
+        # fill in a lot of self.variables esp. self.scripts, self.pure,
+        # self.binaries, self.zipfiles, and self.datas.
+        self.assemble_old()
+        if DEBUG :
+            # save those work products aside and try the new version
+            oldies = { 'scripts':self.scripts,
+                     'pure':self.pure,
+                     'binaries':self.binaries,
+                     'zipfiles':self.zipfiles,
+                     'datas':self.datas
+                     }
+            self.assemble_new()
+            goodies = { 'scripts':self.scripts,
+                     'pure':self.pure,
+                     'binaries':self.binaries,
+                     'zipfiles':self.zipfiles,
+                     'datas':self.datas
+                     }
+            for key in oldies :
+                self.compare_and_print(key,oldies[key],goodies[key])
+            putback = oldies
+            # putback = goodies # someday...
+            self.scripts = putback['scripts']
+            self.pure = putback['pure']
+            self.binaries = putback['binaries']
+            self.zipfiles = putback['zipfiles']
+            self.datas = putback['datas']
+
+    # print the differences between an old and a new TOC
+    # to sort the result do:
+    # pyinstaller --debug <other options> <specname>.spec \
+    #   | grep TOCMP | sort -f --key=2,4
+    def compare_and_print(self,toc_name,orig_toc,new_toc):
+        template = 'TOCMP {0} {1} {2} {3} {4}'
+        # output is TOCMP tocname F itemname itemtype itempath
+        # where F is:
+        # + for "in new not in old"
+        # - for "in old not in new"
+        # ? for "in both but paths differ"
+        only_old = orig_toc - new_toc
+        only_new = new_toc - orig_toc
+        in_both = orig_toc.intersect(new_toc) # uses new_toc's tuple values
+        print template.format(toc_name,'','','','') # marker line in case no diffs to show
+        F = '+'
+        for (n,p,t) in only_new :
+            print template.format(toc_name,F,n,t,p)
+        F = '-'
+        for (n,p,t) in only_old :
+            print template.format(toc_name,F,n,t,p)
+        F = '?'
+        for (n,new_p,t) in in_both :
+            for (n2, old_p, t) in orig_toc :
+                if n == n2 : break
+            if new_p != old_p :
+                print (template + ' {5}').format(toc_name,F,n,t,old_p,new_p)
+    # END TEMP SCAFFOLD CODE resume original code ------------------------
+        
     def _check_python_library(self, binaries):
         """
         Verify presence of the Python dynamic library in the binary dependencies.
@@ -1579,6 +1562,69 @@ class Tree(Target, TOC):
         logger.info("%s no change!", self.out)
         return 0
 
+# ----------------------------------------------------------------
+#
+# Define a modified ModuleGraph that can return its contents as
+# a TOC. This along with TOC and Tree should probably be in
+# a separate module imported here.
+#
+# The only extension over ModuleGraph is a method to extract nodes
+# from the flattened graph and return them in the form of a TOC.
+# The input is a list of PyInstaller TOC typecodes. If the list
+# is empty we return the complete flattened graph as a TOC with
+# the ModuleGraph note types in place of typecodes -- good for
+# debugging only.
+# Otherwise we match the desired typecode(s) to the
+# ModuleGraph node types as follows:
+#   PYMODULE to Module and SourceModule
+#   PYSOURCE to Script
+#   EXTENSION to Extension
+#   BINARY to ??
+# We use the ModuleGraph (really, ObjectGraph) flatten() method to
+# scan all the nodes. This is patterned after ModuleGraph.report().
+# ----------------------------------------------------------------
+from modulegraph.modulegraph import ModuleGraph
+class PyiModuleGraph(ModuleGraph):
+    def __init__ (self, **kwargs) :
+        super(PyiModuleGraph, self).__init__(**kwargs)
+        # Dict to map ModuleGraph node types to TOC typecodes
+        self.typedict = {
+            'Module' : 'PYMODULE',
+            'SourceModule' : 'PYMODULE',
+            'Extension' : 'EXTENSION',
+            'Script' : 'PYSOURCE',
+            '?not sure' : 'BINARY'
+            }
+
+    def make_a_TOC(self, typecode = ['PYMODULE']):
+        result = TOC()
+        for node in self.flatten() :
+            # get node type e.g. Script, could be None
+            mg_type = type(node).__name__
+            # translate to corresponding TOC typecode if any
+            toc_type = self.typedict.get(mg_type, None)
+            # if caller cares about typecode, 
+            if len(typecode) :
+                # if there is a mismatch, skip this one
+                if not (toc_type in typecode) :
+                    toc_type = None
+            # caller doesn't care, return the graph type name
+            else: toc_type = mg_type
+            
+            if toc_type is not None :
+                # desired type or no preference
+                x, name = os.path.split(node.identifier)
+                result.append(
+                    ( name,
+                      node.identifier,
+                      toc_type
+                    )
+                )
+        return result
+# ----------------------------------------------------------------
+# End PyiModuleGraph
+# ----------------------------------------------------------------
+
 
 class MERGE(object):
     """
@@ -1738,12 +1784,15 @@ def __add_options(parser):
                  help='Clean PyInstaller cache and remove temporary files '
                       'before building.')
 
-
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # Set of global variables that can be used while processing .spec file.
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm
     global HIDDENIMPORTS, NOCONFIRM
+    # TEMP-REMOVE 2 lines
+    global DEBUG # save debug flag for temp use
+    DEBUG = kw['debug']
+    
     NOCONFIRM = noconfirm
 
     # Test unicode support.
