@@ -1605,21 +1605,17 @@ class PyiModuleGraph(ModuleGraph):
             toc_type = self.typedict.get(mg_type, None)
             # if caller cares about typecode, 
             if len(typecode) :
-                # if there is a mismatch, skip this one
+                # Caller cares; if there is a mismatch, skip this one
                 if not (toc_type in typecode) :
                     toc_type = None
             # caller doesn't care, return the graph type name
             else: toc_type = mg_type
             
             if toc_type is not None :
-                # desired type or no preference
-                x, name = os.path.split(node.identifier)
-                result.append(
-                    ( name,
-                      node.identifier,
-                      toc_type
-                    )
-                )
+                # a desired node type, or no preference
+                (name, ext) = os.path.splitext(node.filename)
+                name = os.path.basename(name)
+                result.append( ( name, node.filename, toc_type ) )
         return result
 # ----------------------------------------------------------------
 # End PyiModuleGraph
