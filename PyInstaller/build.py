@@ -457,8 +457,6 @@ class Analysis(Target):
         # And import any remaining user scripts
         for script in self.inputs[6:] :
             node = self.graph.run_script(script,top_node)
-        # Get a toc listing every node of type Package, and push it back
-        # into the graph to be expanded.
         self.scripts =  self.graph.make_a_TOC(['PYSOURCE'])
         self.binaries =  self.graph.make_a_TOC(['EXTENSION', 'BINARY'])
         self.pure =  self.graph.make_a_TOC(['PYMODULE'])
