@@ -441,13 +441,27 @@ class Analysis(Target):
     def assemble_new(self):
         # As for original assemble, the list of scripts, starting with our own
         # bootstrap ones, is in self.inputs, each as a normalized pathname.
-        graph = PyiModuleGraph() # class defined at end of module after TOC
-    
-        for script in self.inputs:
-            node = graph.run_script(script)
-        self.scripts = graph.make_a_TOC(['PYSOURCE'])
-        self.binaries = graph.make_a_TOC(['EXTENSION', 'BINARY'])
-        self.pure = graph.make_a_TOC(['PYMODULE'])
+        # TODO: this path should be saved in __init__ as self.code_path
+        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+        # Instantiate a ModuleGraph - class defined at end of module after class TOC
+        # argument is the set of paths to use for imports, sys.path plus our loader.
+        self.graph = PyiModuleGraph(sys.path + [_init_code_path])
+        # Graph the first script in the analysis, and save its node to use as
+        # the "caller" node for all others, thus getting a connected graph.
+        # TODO: in __init__ the input scripts should be saved separately from the
+        # pyi-loader set. Temp kludge: the first/only user script is self.inputs[5]
+        top_node = self.graph.run_script(self.inputs[5])
+        # With a caller in hand, import all the loader set
+        for script in self.inputs[:4] :
+            node =  self.graph.run_script(script, top_node)
+        # And import any remaining user scripts
+        for script in self.inputs[6:] :
+            node = self.graph.run_script(script,top_node)
+        # Get a toc listing every node of type Package, and push it back
+        # into the graph to be expanded.
+        self.scripts =  self.graph.make_a_TOC(['PYSOURCE'])
+        self.binaries =  self.graph.make_a_TOC(['EXTENSION', 'BINARY'])
+        self.pure =  self.graph.make_a_TOC(['PYMODULE'])
         self.zipfiles = TOC()
         self.datas = TOC()
 
@@ -633,6 +647,14 @@ class Analysis(Target):
                      }
             for key in oldies :
                 self.compare_and_print(key,oldies[key],goodies[key])
+            # little more diagnosis
+            dbg_toc = self.graph.make_a_TOC(['MissingModule'])
+            for (n,p,t) in dbg_toc.data :
+                print 'TOCMP {0} {1} {2}'.format(t,n,p)
+            dbg_toc = self.graph.make_a_TOC(['BuiltinModule'])
+            for (n,p,t) in dbg_toc.data :
+                print 'TOCMP {0} {1} {2}'.format(t,n,p)
+            
             putback = oldies
             # putback = goodies # someday...
             self.scripts = putback['scripts']
@@ -1585,8 +1607,8 @@ class Tree(Target, TOC):
 # ----------------------------------------------------------------
 from modulegraph.modulegraph import ModuleGraph
 class PyiModuleGraph(ModuleGraph):
-    def __init__ (self, **kwargs) :
-        super(PyiModuleGraph, self).__init__(**kwargs)
+    def __init__ (self, *args) :
+        super(PyiModuleGraph, self).__init__(*args)
         # Dict to map ModuleGraph node types to TOC typecodes
         self.typedict = {
             'Module' : 'PYMODULE',
@@ -1596,26 +1618,28 @@ class PyiModuleGraph(ModuleGraph):
             '?not sure' : 'BINARY'
             }
 
-    def make_a_TOC(self, typecode = ['PYMODULE']):
+    def make_a_TOC(self, typecode = []):
         result = TOC()
         for node in self.flatten() :
             # get node type e.g. Script, could be None
             mg_type = type(node).__name__
-            # translate to corresponding TOC typecode if any
-            toc_type = self.typedict.get(mg_type, None)
+            # translate to corresponding TOC typecode, or leave as-is
+            toc_type = self.typedict.get(mg_type, mg_type)
             # if caller cares about typecode, 
             if len(typecode) :
                 # Caller cares; if there is a mismatch, skip this one
                 if not (toc_type in typecode) :
                     toc_type = None
-            # caller doesn't care, return the graph type name
-            else: toc_type = mg_type
+            # caller doesn't care, return the ModuleGraph type name
             
             if toc_type is not None :
                 # a desired node type, or no preference
-                (name, ext) = os.path.splitext(node.filename)
-                name = os.path.basename(name)
-                result.append( ( name, node.filename, toc_type ) )
+                if node.filename is not None:
+                    (name, ext) = os.path.splitext(node.filename)
+                    name = os.path.basename(name)
+                    result.append( ( name, node.filename, toc_type ) )
+                else:
+                    result.append( ( node.identifier, '', toc_type ) )
         return result
 # ----------------------------------------------------------------
 # End PyiModuleGraph
