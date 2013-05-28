@@ -1417,9 +1417,14 @@ class BUNDLE(Target):
         if not is_darwin:
             return
 
-        # icns icon for app bundle.
-        self.icon = kws.get('icon', os.path.join(os.path.dirname(__file__),
-            '..', 'bootloader', 'images', 'icon-windowed.icns'))
+        # .icns icon for app bundle.
+        # Use icon supplied by user or just use the default one from PyInstaller.
+        self.icon = kws.get('icon')
+        if not self.icon:
+            self.icon = os.path.join(os.path.dirname(__file__),
+                'bootloader', 'images', 'icon-windowed.icns')
+        # Ensure icon path is absolute.
+        self.icon = os.path.abspath(self.icon)
 
         Target.__init__(self)
  
