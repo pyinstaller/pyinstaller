@@ -109,6 +109,7 @@ class SkipChecker(object):
             'basic/test_onefile_win32com': ['win32com'],
             'basic/test_pkg_structures': ['pkg_resources'],
             'libraries/test_enchant': ['enchant'],
+            'libraries/test_gst': ['gst'],
             'libraries/test_Image': ['PIL'],
             'libraries/test_Image2': ['PIL'],
             'libraries/test_numpy': ['numpy'],
