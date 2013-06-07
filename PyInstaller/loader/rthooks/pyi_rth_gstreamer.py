@@ -8,10 +8,14 @@
 #-----------------------------------------------------------------------------
 
 
-import PyInstaller.hooks.hookutils
+import os
+import sys
 
 
-# If the user imports setuparg1, we just set an attribute
-# in PyInstaller.hooks.hookutils that allows us to later
-# find out about this.
-PyInstaller.hooks.hookutils.hook_variables['wxpubsub'] = 'arg1'
+# Without this environment variable set to 'no' importing 'gst'
+# causes 100% CPU load. (Tested on OSX.)
+os.environ['GST_REGISTRY_FORK'] = 'no'
+
+
+# Tested on OSX only.
+os.environ['GST_PLUGIN_PATH'] = os.path.join(sys._MEIPASS, 'gst_plugins')

@@ -20,6 +20,16 @@ import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
+# Some hooks need to save some values. This is the dict that can be used for
+# that.
+#
+# When running tests this variable should be reseted before every test.
+#
+# For example the 'wx' module needs variable 'wxpubsub'. This tells PyInstaller
+# which protocol of the wx module should be bundled.
+hook_variables = {}
+
+
 def __exec_python_cmd(cmd):
     """
     Executes an externally spawned Python interpreter and returns

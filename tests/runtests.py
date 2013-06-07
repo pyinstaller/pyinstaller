@@ -33,6 +33,7 @@ from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
 from PyInstaller.compat import is_py25, is_py26, is_win, is_darwin
+from PyInstaller.hooks import hookutils
 from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc
@@ -108,6 +109,7 @@ class SkipChecker(object):
             'basic/test_onefile_win32com': ['win32com'],
             'basic/test_pkg_structures': ['pkg_resources'],
             'libraries/test_enchant': ['enchant'],
+            'libraries/test_gst': ['gst'],
             'libraries/test_Image': ['PIL'],
             'libraries/test_Image2': ['PIL'],
             'libraries/test_numpy': ['numpy'],
@@ -441,6 +443,10 @@ class GenericTestCase(unittest.TestCase):
         # On Windows we need to preserve systme PATH for subprocesses in tests.
         build_python.write(os.environ.get('PATH') + '\n')
         build_python.close()
+        # Clean variables that could be set by PyInstaller import hooks.
+        # We need to clean it because some tests might fails.
+        # Like 'wx_pubsub' tests'.
+        hookutils.hook_variables = {}
 
     def tearDown(self):
         os.chdir(self.curr_workdir)  # go back from testdir
