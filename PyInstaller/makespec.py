@@ -93,11 +93,13 @@ coll = COLLECT(exe, dll,
 """
 
 bundleexetmplt = """app = BUNDLE(exe,
-             name='%(exename)s.app')
+             name='%(exename)s.app',
+             icon=%(icon)s)
 """
 
 bundletmplt = """app = BUNDLE(coll,
-             name='%(name)s.app')
+             name='%(name)s.app',
+             icon=%(icon)s)
 """
 
 
@@ -211,7 +213,7 @@ def __add_options(parser):
                  help="FILE.ico: apply that icon to a Windows executable. "
                       "FILE.exe,ID, extract the icon with ID from an exe. "
                       "FILE.icns: apply the icon to the "
-                      ".app bundle on Mac OS X (not yet implemented)")
+                      ".app bundle on Mac OS X")
 
     g = parser.add_option_group('Windows specific options')
     g.add_option("--version-file",
@@ -264,8 +266,19 @@ def main(scripts, name=None, onefile=False,
     exe_options = ''
     if version_file:
         exe_options = "%s, version='%s'" % (exe_options, quote_win_filepath(version_file))
+
     if icon_file:
+        # Icon file for Windows.
+        # On Windows default icon is embedded in the bootloader executable.
         exe_options = "%s, icon='%s'" % (exe_options, quote_win_filepath(icon_file))
+        # Icon file for OSX.
+        # We need to encapsulate it into apostrofes.
+        icon_file = "'%s'" % icon_file
+    else:
+        # On OSX default icon has to be copied into the .app bundle.
+        # The the text value 'None' means - use default icon.
+        icon_file = 'None'
+
     if manifest:
         if "<" in manifest:
             # Assume XML string
@@ -294,6 +307,8 @@ def main(scripts, name=None, onefile=False,
         'runtime_hooks': runtime_hooks,
         # only Windows and Mac OS X distinguish windowed and console apps
         'console': console,
+        # Icon filename. Only OSX uses this item.
+        'icon': icon_file,
     }
 
     if is_win or is_cygwin:
