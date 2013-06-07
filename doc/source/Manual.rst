@@ -634,7 +634,6 @@ Options for Mac OS X apps
     Specify a Mac icon-set file to be applied to
     the output *name*.app that is created when both ``--onefile``
     and ``--windowed`` are specified.
-    (Not yet implemented.)
 
 
 Building Mac OS X App Bundles
