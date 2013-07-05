@@ -20,6 +20,9 @@ def hook(mod):
     # Ignore 'Tkinter' to prevent inclusion of Tcl/Tk library.
     for i, m in enumerate(mod.imports):
         if m[0] == 'Tkinter':
-            del mod.imports[i]
-            break
+	    if hasattr(mod,'del_import') :
+		# new-style mod object, record deletion
+		mod.del_import(m[0])
+	    del mod.imports[i]
+	    break
     return mod

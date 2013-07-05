@@ -11,16 +11,21 @@
 import sys
 
 def hook(mod):
-    if 'posix' in sys.builtin_module_names:
-        removes = ['nt', 'ntpath', 'dos', 'dospath', 'os2', 'mac', 'macpath',
-                   'ce', 'riscos', 'riscospath', 'win32api', 'riscosenviron']
-    elif 'nt' in sys.builtin_module_names:
-        removes = ['dos', 'dospath', 'os2', 'mac', 'macpath', 'ce', 'riscos',
-                   'riscospath', 'riscosenviron',]
+        removes = []
+        if 'posix' in sys.builtin_module_names:
+                removes = ['nt', 'ntpath', 'dos', 'dospath', 'os2', 'mac', 'macpath',
+                           'ce', 'riscos', 'riscospath', 'win32api', 'riscosenviron']
+        elif 'nt' in sys.builtin_module_names:
+                removes = ['dos', 'dospath', 'os2', 'mac', 'macpath', 'ce', 'riscos',
+                           'riscospath', 'riscosenviron',]
 
-    mod.imports = [m
-                   for m in mod.imports
-                   # if first part of module-name not in removes
-                   if m[0].split('.', 1)[0] not in removes
-    ]
-    return mod
+        if hasattr(mod,'del_import') :
+                # new-style module, record removed names
+                for name in removes :
+                        mod.del_import(name)
+        mod.imports = [m
+               for m in mod.imports
+               # if first part of module-name not in removes
+               if m[0].split('.', 1)[0] not in removes
+               ]
+        return mod                

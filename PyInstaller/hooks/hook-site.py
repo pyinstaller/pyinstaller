@@ -29,5 +29,9 @@ def hook(mod):
     pyi_dir = os.path.abspath(os.path.dirname(PyInstaller.__file__))
     fake_file = os.path.join(pyi_dir, 'fake', 'fake-site.py')
     new_code_object = PyInstaller.utils.misc.get_code_object(fake_file)
-    mod = PyInstaller.depend.modules.PyModule('site', fake_file, new_code_object)
+    if hasattr(mod,'retarget') :
+        # new-style mod: don't replace, retarget the modulegraph node
+        mod.retarget(fake_file, new_code_object)
+    else:
+        mod = PyInstaller.depend.modules.PyModule('site', fake_file, new_code_object)
     return mod
