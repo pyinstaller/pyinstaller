@@ -98,36 +98,80 @@ def test_UPX(config, upx_dir):
     config['upx_dir'] = upx_dir
 
 
-# TODO Drop this function when new module system based on 'modulegraph'
-#      is in place.
+# TODO this temporary function returns a hard-coded list of modules.
+# In future when Modulegraph retains the info to distinguish top-level
+# imports from conditional and deferred imports, it can be recoded
+# approximately as follows:
+'''
+    def node_name(node) :
+        # Get a unique module name from a graph node including the 
+        # case of a Script node where the identifier is a full path string
+        ntype = type(node).__name__
+        if ntype == 'Script' :
+            return os.path.basename(node.filename)
+        return node.identifier
+    
+    # Create a fresh graph initialized with pyi_importers.py
+    mg = PyiModuleGraph(sys.path + ['path-to-PyInstaller/loader'])
+    script_node = mg.run_script('full-path-to-pyi_importers.py'))
+    # Extract from the graph the list of top-level non-conditional imports
+    toc = TOC( [ (node_name(script_node), script_node.filename, 'PYMODULE') ] )
+    node_list = [script_node]
+    for i, importer in enumerate(node_list) :
+        # Look at the edges emerging from that node:
+        iter_out, _ = mg.get_edges(importer)
+        for node in iter_out :
+            ntype = type(node).__name__
+            if ntype == 'BuiltinModule' :
+                continue # ignore builtins
+            # if the-edge-that-leads-to-node-represents-a-conditional-import:
+            #   continue # ignore conditional imports
+            node_tuple = (node_name(node), node.filename, 'PYMODULE')
+            if node_tuple not in toc :
+                # remember this import and look at its imports too
+                toc.append(node_tuple)
+                node_list.append(node)
+'''
+
 def find_PYZ_dependencies(config):
     logger.debug("Computing PYZ dependencies")
-    # We need to import `pyi_importers` from `PyInstaller` directory, but
-    # not from package `PyInstaller`
-    import PyInstaller.loader
-    a = PyInstaller.depend.imptracker.ImportTracker([
-        os.path.dirname(inspect.getsourcefile(PyInstaller.loader)),
-        os.path.join(HOMEPATH, 'support')])
+    ## We need to import `pyi_importers` from `PyInstaller` directory, but
+    ## not from package `PyInstaller`
+    #import PyInstaller.loader
+    #a = PyInstaller.depend.imptracker.ImportTracker([
+        #os.path.dirname(inspect.getsourcefile(PyInstaller.loader)),
+        #os.path.join(HOMEPATH, 'support')])
 
-    # Frozen executable needs some modules bundled as bytecode objects ('PYMODULE' type)
-    # for the bootstrap process. The following lines ensures that.
-    # It's like making those modules 'built-in'.
-    # 'pyi_importers' is the base module that should be available as bytecode (co) object.
-    a.analyze_r('pyi_importers')
-    mod = a.modules['pyi_importers']
-    toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
-    for i, (nm, fnm, typ) in enumerate(toc):
-        mod = a.modules[nm]
-        tmp = []
-        for importednm, isdelayed, isconditional, level in mod.imports:
-            if not isconditional:
-                realnms = a.analyze_one(importednm, nm)
-                for realnm in realnms:
-                    imported = a.modules[realnm]
-                    if not isinstance(imported, PyInstaller.depend.modules.BuiltinModule):
-                        tmp.append((imported.__name__, imported.__file__, imported.typ))
-        toc.extend(tmp)
-    toc.reverse()
+    ## Frozen executable needs some modules bundled as bytecode objects ('PYMODULE' type)
+    ## for the bootstrap process. The following lines ensures that.
+    ## It's like making those modules 'built-in'.
+    ## 'pyi_importers' is the base module that should be available as bytecode (co) object.
+    #a.analyze_r('pyi_importers')
+    #mod = a.modules['pyi_importers']
+    #toc = build.TOC([(mod.__name__, mod.__file__, 'PYMODULE')])
+    #for i, (nm, fnm, typ) in enumerate(toc):
+        #mod = a.modules[nm]
+        #tmp = []
+        #for importednm, isdelayed, isconditional, level in mod.imports:
+            #if not isconditional:
+                #realnms = a.analyze_one(importednm, nm)
+                #for realnm in realnms:
+                    #imported = a.modules[realnm]
+                    #if not isinstance(imported, PyInstaller.depend.modules.BuiltinModule):
+                        #tmp.append((imported.__name__, imported.__file__, imported.typ))
+        #toc.extend(tmp)
+    #toc.reverse()
+    # TODO - these hard-coded paths to struct/_struct are bogus, need to
+    # at least get the real platform-dependent ones out of the main graph?
+    loaderpath = HOMEPATH + '/PyInstaller/loader/'    
+    toc = build.TOC( [
+        ('_struct', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/lib-dynload/_struct.so','EXTENSION'),
+        ('struct', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/struct.pyo', 'PYMODULE'),
+        ('pyi_os_path',loaderpath + 'pyi_os_path.pyc', 'PYMODULE'),
+        ('pyi_archive', loaderpath + 'pyi_archive.pyc', 'PYMODULE'),
+        ('pyi_importers', loaderpath + 'pyi_importers.pyc', 'PYMODULE')
+    ] )
+    
     config['PYZ_dependencies'] = toc.data
 
 

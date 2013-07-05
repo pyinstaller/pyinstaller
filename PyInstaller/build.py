@@ -22,7 +22,7 @@ import shutil
 import sys
 import tempfile
 import UserList
-
+import importlib
 from PyInstaller.loader import pyi_archive, pyi_carchive
 
 import PyInstaller.depend.imptracker
@@ -57,8 +57,6 @@ DISTPATH = None
 WORKPATH = None
 WARNFILE = None
 NOCONFIRM = None
-# TEMP-REMOVE! 1 line
-DEBUG = False
 
 # Some modules are included if they are detected at build-time or
 # if a command-line argument is specified. (e.g. --ascii)
@@ -93,7 +91,7 @@ def setupUPXFlags():
     f = "--best " + f
     compat.setenv("UPX", f)
 
-
+# TODO: explain why this doesn't use os.path.getmtime() ?
 def mtime(fnm):
     try:
         return os.stat(fnm)[8]
@@ -106,42 +104,73 @@ def absnormpath(apath):
 
 
 def compile_pycos(toc):
-    """Given a TOC or equivalent list of tuples, generates all the required
+    """
+    Given a TOC or equivalent list of tuples, generates all the required
     pyc/pyo files, writing in a local directory if required, and returns the
     list of tuples with the updated pathnames.
+    
+    In the old system using ImpTracker, the generated TOC of "pure" modules
+    already contains paths to nm.pyc or nm.pyo and it is only necessary
+    to check that these files are not older than the source.
+    In the new system using ModuleGraph, the path given is to nm.py
+    and we do not know if nm.pyc/.pyo exists. The following logic works
+    with both (so if at some time modulegraph starts returning filenames
+    of .pyc, it will cope).
+
+    If PyInstaller is running optimized ("python -O pyinstaller...")
+    we will look first for .pyo files; otherwise look for .pyc ones.
     """
     global WORKPATH
 
     # For those modules that need to be rebuilt, use the build directory
     # PyInstaller creates during the build process.
     basepath = os.path.join(WORKPATH, "localpycos")
-
+    # Copy everything from toc to this new TOC, possibly unchanged.
     new_toc = []
     for (nm, fnm, typ) in toc:
         if typ != 'PYMODULE':
             new_toc.append((nm, fnm, typ))
             continue
 
-        # Trim the terminal "c" or "o"
-        source_fnm = fnm[:-1]
+        if fnm.endswith('.py') :
+            # we are given a source path, determine the object path if any
+            src_fnm = fnm
+            # assume we want pyo only when now running -O or -OO
+            obj_fnm = src_fnm + ('o' if sys.flags.optimize else 'c')
+            if not os.path.exists(obj_fnm) :
+                # alas that one is not there so assume the other choice
+                obj_fnm = src_fnm + ('c' if sys.flags.optimize else 'o')
+        else:
+            # fnm is not "name.py" so assume we are given name.pyc/.pyo
+            obj_fnm = fnm # take that namae to be the desired object
+            src_fnm = fnm[:-1] # drop the 'c' or 'o' to make a source name
 
-        # We need to perform a build ourselves if the source is newer
-        # than the compiled, or the compiled doesn't exist, or if it
-        # has been written by a different Python version.
-        needs_compile = (mtime(source_fnm) > mtime(fnm)
-                         or
-                         open(fnm, 'rb').read()[:4] != imp.get_magic())
+        # We need to perform a build ourselves if obj_fnm doesn't exist,
+        # or if src_fnm is newer than obj_fnm, or if obj_fnm was created
+        # by a different Python version.
+        # TODO: explain why this does read()[:4] (reading all the file)
+        # instead of just read(4)? Yes for many a .pyc file, it is all
+        # in one sector so there's no difference in I/O but still it
+        # seems inelegant to copy it all then subscript 4 bytes.
+        needs_compile = ( (mtime(src_fnm) > mtime(obj_fnm) )
+                          or
+                          (open(obj_fnm, 'rb').read()[:4] != imp.get_magic())
+                        )
         if needs_compile:
             try:
-                py_compile.compile(source_fnm, fnm)
-                logger.debug("compiled %s", source_fnm)
+                # TODO: there should be no need to repeat the compile,
+                # because ModuleGraph does a compile and stores the result
+                # in the .code member of the graph node. Should be possible
+                # to get the node and write the code to obj_fnm
+                py_compile.compile(src_fnm, obj_fnm)
+                logger.debug("compiled %s", src_fnm)
             except IOError:
                 # If we're compiling on a system directory, probably we don't
                 # have write permissions; thus we compile to a local directory
                 # and change the TOC entry accordingly.
-                ext = os.path.splitext(fnm)[1]
+                ext = os.path.splitext(obj_fnm)[1]
 
-                if "__init__" not in fnm:
+                if "__init__" not in obj_fnm:
                     # If it's a normal module, use last part of the qualified
                     # name as module name and the first as leading path
                     leading, mod_name = nm.split(".")[:-1], nm.split(".")[-1]
@@ -155,15 +184,17 @@ def compile_pycos(toc):
                 if not os.path.exists(leading):
                     os.makedirs(leading)
 
-                fnm = os.path.join(leading, mod_name + ext)
-                needs_compile = (mtime(source_fnm) > mtime(fnm)
+                obj_fnm = os.path.join(leading, mod_name + ext)
+                # TODO see above regarding read()[:4] versus read(4)
+                needs_compile = (mtime(src_fnm) > mtime(obj_fnm)
                                  or
-                                 open(fnm, 'rb').read()[:4] != imp.get_magic())
+                                 open(obj_fnm, 'rb').read()[:4] != imp.get_magic())
                 if needs_compile:
+                    # TODO see above regarding using node.code
                     py_compile.compile(source_fnm, fnm)
                     logger.debug("compiled %s", source_fnm)
-
-        new_toc.append((nm, fnm, typ))
+        # if we get to here, obj_fnm is the path to the compiled module nm.py
+        new_toc.append((nm, obj_fnm, typ))
 
     return new_toc
 
@@ -182,7 +213,7 @@ def addSuffixToExtensions(toc):
     return new_toc
 
 
-#--- functons for checking guts ---
+#--- functions for checking guts ---
 
 def _check_guts_eq(attr, old, new, last_build):
     """
@@ -359,6 +390,9 @@ class Analysis(Target):
             os.path.join(_init_code_path, 'pyi_carchive.py'),
             os.path.join(_init_code_path, 'pyi_os_path.py'),
             ]
+        self.loader_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+        #TODO: store user scripts in separate variable from init scripts,
+        # see TODO (S) below
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
                 logger.warn('Ignoring obsolete auto-added script %s', script)
@@ -385,7 +419,7 @@ class Analysis(Target):
 
 
         self.hiddenimports = hiddenimports or []
-        # Include modules detected at build time. Like 'codecs' and encodings.
+        # Include modules detected when parsing options,l ike 'codecs' and encodings.
         self.hiddenimports.extend(HIDDENIMPORTS)
 
         self.hookspath = hookspath
@@ -437,259 +471,225 @@ class Analysis(Target):
         self.hiddenimports = hiddenimports
         return False
 
-    # Eventually this will be: def assemble(self):
-    def assemble_new(self):
-        # As for original assemble, the list of scripts, starting with our own
-        # bootstrap ones, is in self.inputs, each as a normalized pathname.
-        # TODO: this path should be saved in __init__ as self.code_path
-        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-        # Instantiate a ModuleGraph - class defined at end of module after class TOC
-        # argument is the set of paths to use for imports, sys.path plus our loader.
-        self.graph = PyiModuleGraph(sys.path + [_init_code_path])
-        # Graph the first script in the analysis, and save its node to use as
-        # the "caller" node for all others, thus getting a connected graph.
-        # TODO: in __init__ the input scripts should be saved separately from the
-        # pyi-loader set. Temp kludge: the first/only user script is self.inputs[5]
-        top_node = self.graph.run_script(self.inputs[5])
-        # With a caller in hand, import all the loader set
-        for script in self.inputs[:4] :
-            node =  self.graph.run_script(script, top_node)
-        # And import any remaining user scripts
-        for script in self.inputs[6:] :
-            node = self.graph.run_script(script,top_node)
-        self.scripts =  self.graph.make_a_TOC(['PYSOURCE'])
-        self.binaries =  self.graph.make_a_TOC(['EXTENSION', 'BINARY'])
-        self.pure =  self.graph.make_a_TOC(['PYMODULE'])
-        self.zipfiles = TOC()
-        self.datas = TOC()
-
-    # The original assemble() based on ImpTracker
-    def assemble_old(self):
+    def assemble(self):
         logger.info("running Analysis %s", os.path.basename(self.out))
-        # Reset seen variable to correctly discover dependencies
-        # if there are multiple Analysis in a single specfile.
-        bindepend.seen = {}
-
+        # Get paths to Python and, in Windows, the manifest.
         python = sys.executable
         if not is_win:
+            # Linux/MacOS: get a real, non-link path to the running Python executable.            
             while os.path.islink(python):
                 python = os.path.join(os.path.dirname(python), os.readlink(python))
             depmanifest = None
         else:
+            # Windows: no links, but "manifestly" need this:
             depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
                                                processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
             depmanifest.filename = os.path.join(WORKPATH,
                                                 specnm + ".exe.manifest")
 
-        binaries = []  # binaries to bundle
-
-        # Always add Python's dependencies first
+        # We record "binaries" separately from the modulegraph, as there
+        # is no way to record those dependencies in the graph. These include
+        # the python executable and any binaries added by hooks later.
+        # "binaries" are not the same as "extensions" which are .so or .dylib
+        # that are found and recorded as extension nodes in the graph.
+        # Reset seen variable before running bindepend. We use bindepend only for
+        # the python executable.
+        bindepend.seen = {}
+        # Add Python's dependencies first.
         # This ensures that its assembly depencies under Windows get pulled in
         # first, so that .pyd files analyzed later which may not have their own
         # manifest and may depend on DLLs which are part of an assembly
         # referenced by Python's manifest, don't cause 'lib not found' messages
-        binaries.extend(bindepend.Dependencies([('', python, '')],
+        self.binaries.extend(bindepend.Dependencies([('', python, '')],
                                                manifest=depmanifest)[1:])
-
-        ###################################################
-        # Scan inputs and prepare:
-        dirs = {}  # input directories
-        pynms = []  # python filenames with no extension
-        for script in self.inputs:
-            if not os.path.exists(script):
-                raise SystemExit("Error: Analysis: script %s not found!" % script)
-            d, base = os.path.split(script)
-            if not d:
-                d = compat.getcwd()
-            d = absnormpath(d)
-            pynm, ext = os.path.splitext(base)
-            dirs[d] = 1
-            pynms.append(pynm)
-        ###################################################
-        # Initialize importTracker and analyze scripts
-        importTracker = PyInstaller.depend.imptracker.ImportTracker(
-                dirs.keys() + self.pathex, self.hookspath, self.excludes, workpath=WORKPATH)
-        PyInstaller.__pathex__ = self.pathex[:]
-        scripts = []  # will contain scripts to bundle
-        for i, script in enumerate(self.inputs):
+                
+        # Instantiate a ModuleGraph. The class is defined at end of this module.
+        # The argument is the set of paths to use for imports: sys.path,
+        # plus our loader, plus other paths from e.g. --path option).
+        self.graph = PyiModuleGraph(sys.path + [self.loader_path] + self.pathex)
+        
+        # Graph the first script in the analysis, and save its node to use as
+        # the "caller" node for all others. This gives a connected graph rather than
+        # a collection of unrelated trees, one for each of self.inputs.
+        # The list of scripts, starting with our own bootstrap ones, is in
+        # self.inputs, each as a normalized pathname.
+        
+        # TODO: (S) in __init__ the input scripts should be saved separately from the
+        # pyi-loader set. TEMP: assume the first/only user script is self.inputs[5]
+        script = self.inputs[5]
+        logger.info("Analyzing %s", script)
+        top_node = self.graph.run_script(script)
+        # list to hold graph nodes of loader scripts and runtime hooks in use order        
+        priority_scripts = [] 
+        # With a caller node in hand, import all the loader set as called by it.
+        # The old Analysis checked that the script existed and raised an error,
+        # but now just assume that if it does not, Modulegraph will raise error.
+        # Save the graph nodes of each in sequence.
+        for script in self.inputs[:5] :
             logger.info("Analyzing %s", script)
-            importTracker.analyze_script(script)
-            scripts.append((pynms[i], script, 'PYSOURCE'))
-        PyInstaller.__pathex__ = []
+            priority_scripts.append( self.graph.run_script(script, top_node) )
+        # And import any remaining user scripts as if called by the first one.
+        for script in self.inputs[6:] :
+            logger.info("Analyzing %s", script)
+            node = self.graph.run_script(script,top_node)
 
-        # analyze the script's hidden imports
+        # Analyze the script's hidden imports (named on the command line)
         for modnm in self.hiddenimports:
-            if modnm in importTracker.modules:
+            if self.graph.findNode(modnm) is not None :
                 logger.info("Hidden import %r has been found otherwise", modnm)
                 continue
             logger.info("Analyzing hidden import %r", modnm)
-            importTracker.analyze_one(modnm)
-            if not modnm in importTracker.modules:
+            # ModuleGraph throws Import Error if import not found
+            try :
+                node = self.graph.import_hook(modnm, top_node)
+            except :
                 logger.error("Hidden import %r not found", modnm)
 
-        ###################################################
-        # Fills pure, binaries and rthookcs lists to TOC
-        pure = []     # pure python modules
-        zipfiles = []  # zipfiles to bundle - zipped Python .egg files.
-        datas = []    # datafiles to bundle
-        rthooks = []  # rthooks if needed
-
-        # Include custom rthooks (runtime hooks).
+        # Process custom runtime hooks (from --runtime-hook options).
         # The runtime hooks are order dependent. First hooks in the list
-        # are executed first.
-        # Custom hooks are added before Pyinstaller rthooks and thus they are
-        # executed first.
+        # are executed first. Put their graph nodes at the head of the
+        # priority_scripts list Pyinstaller-defined rthooks and
+        # thus they are executed first.
+        number_of_rthooks = 0
         if self.custom_runtime_hooks:
-            logger.info("Including custom run-time hooks")
-            # Data structure in format:
-            # ('rt_hook_mod_name', '/rt/hook/file/name.py', 'PYSOURCE')
             for hook_file in self.custom_runtime_hooks:
+                logger.info("Including custom run-time hook %r", hook_file)                
                 hook_file = os.path.abspath(hook_file)
-                items = (os.path.splitext(os.path.basename(hook_file))[0], hook_file, 'PYSOURCE')
-                rthooks.append(items)
+                # Not using "try" here because the path is supposed to
+                # exist, if it does not, the raised error will explain.
+                priority_scripts.insert( 0, self.graph.run_script(hook_file, top_node) )
+                number_of_rthooks += 1
+        # Find runtime hooks that are implied by packages already imported.
+        # Get a temporary TOC listing all the scripts and packages graphed
+        # so far. Assuming that runtime hooks apply only to modules and packages.
+        temp_toc = self.graph.make_a_TOC(['PYMODULE','PYSOURCE'])
+        logger.info("Looking for standard run-time hooks")
+        for (name, path, typecode) in temp_toc :
+            for (hook, path, typecode) in _findRTHook(name) :
+                logger.info("Including run-time hook %r", hook)
+                priority_scripts.insert(
+                    number_of_rthooks,
+                    self.graph.run_script(path, top_node)
+                )
+        # priority_scripts is now a list of the graph nodes of custom runtime
+        # hooks, then regular runtime hooks, then the PyI loader scripts.
+        # Further on, we will make sure they end up at the front of self.scripts 
 
-        # Find rthooks.
-        logger.info("Looking for run-time hooks")
-        for modnm, mod in importTracker.modules.items():
-            rthooks.extend(_findRTHook(modnm))
+        # KLUDGE? If any script analyzed so far has imported "site" then,
+        # when in the next step we call hook_site.py, it will replace
+        # the code of the site node with the code of fake/fake-site.py. 
+        # But we also need to let Modulegraph know about any imports from
+        # that fake_site module.
+        node = self.graph.findNode('site')
+        if node is not None :
+            self.graph.run_script(
+                os.path.join(HOMEPATH, 'PyInstaller', 'fake', 'fake-site.py'),
+                top_node)
 
-        # Analyze rthooks. Runtime hooks has to be also analyzed.
-        # Otherwise some dependencies could be missing.
-        # Data structure in format:
-        # ('rt_hook_mod_name', '/rt/hook/file/name.py', 'PYSOURCE')
-        for hook_mod, hook_file, mod_type in rthooks:
-            logger.info("Analyzing rthook %s", hook_file)
-            importTracker.analyze_script(hook_file)
-
-        for modnm, mod in importTracker.modules.items():
-            # FIXME: why can we have a mod == None here?
-            if mod is None:
+        # Now find regular hooks and execute them. Get a new TOC, in part
+        # because graphing a runtime hook might have added some names, but
+        # also because regular hooks can apply to extensions and builtins.
+        temp_toc = self.graph.make_a_TOC(['PYMODULE','PYSOURCE','BUILTIN','EXTENSION'])
+        for (imported_name, path, typecode) in temp_toc :
+            try:
+                hook_name = 'hook-' + imported_name
+                hook_name_space = importlib.import_module('PyInstaller.hooks.' + hook_name)
+            except ImportError:
                 continue
+            # TODO: move the following to a function like imptracker.handle_hook
+            logger.info('Processing hook %s' % hook_name)
+            from_node = self.graph.findNode(imported_name)
+            # hook_name_space represents the code of "hook-imported_name.py"
+            if hasattr(hook_name_space,'hiddenimports') :
+                # push hidden imports into the graph, as if imported from name
+                for item in hook_name_space.hiddenimports :
+                    to_node = self.graph.findNode(item)
+                    if to_node is None :
+                        self.graph.import_hook(item,from_node)
+                    #else :
+                        #print('hidden import {0} found otherwise'.format(item))
+            if hasattr(hook_name_space,'datas') :
+                # add desired data files to our datas TOC
+                pass # <------- TODO see imptracker._handle_hook
+            if hasattr(hook_name_space,'hook'):
+                # Process a hook(mod) function. Create a Module object as its API.
+                # TODO: it won't be called "FakeModule" later on
+                mod = PyInstaller.depend.modules.FakeModule(imported_name,self.graph)
+                mod = hook_name_space.hook(mod)
+                for item in mod._added_imports :
+                    # as with hidden imports, add to graph as called by imported_name
+                    self.graph.run_script(item,from_node)
+                for item in mod._added_binaries :
+                    self.binaries.append(item) # supposed to be TOC form (n,p,'BINARY')
+                for item in mod._deleted_imports :
+                    # Remove the graph link between the hooked module and item.
+                    # This removes the 'item' node from the graph if no other
+                    # links go to it (no other modules import it)
+                    self.graph.removeReference(mod.node,item)
+        
+        # Extract the nodes of the graph as TOCs for further processing.
+        # Initialize the scripts list with priority scripts in the proper order.
+        self.scripts = self.graph.nodes_to_TOC(priority_scripts)
+        # Put all other script names into the TOC after them. (The rthooks names
+        # will be found again, but TOC.append skips duplicates.)
+        self.scripts = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
+        # Extend the binaries list with all the Extensions modulegraph has found.
+        self.binaries = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
+        # Fill the "pure" list with modules.
+        self.pure =  self.graph.make_a_TOC(['PYMODULE'])
+        # Ensure we have .pyc/.pyo object files for all PYMODULE in pure
+        self.pure = TOC(compile_pycos(self.pure))
 
-            datas.extend(mod.datas)
-
-            if isinstance(mod, PyInstaller.depend.modules.BuiltinModule):
-                pass
-            elif isinstance(mod, PyInstaller.depend.modules.ExtensionModule):
-                binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
-                # allows hooks to specify additional dependency
-                # on other shared libraries loaded at runtime (by dlopen)
-                binaries.extend(mod.binaries)
-            elif isinstance(mod, (PyInstaller.depend.modules.PkgInZipModule, PyInstaller.depend.modules.PyInZipModule)):
-                zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
-                                 str(mod.owner), 'ZIPFILE'))
-            else:
-                # mf.PyModule instances expose a list of binary
-                # dependencies, most probably shared libraries accessed
-                # via ctypes. Add them to the overall required binaries.
-                binaries.extend(mod.binaries)
-                if modnm != '__main__':
-                    pure.append((modnm, mod.__file__, 'PYMODULE'))
-
-        # Add remaining binary dependencies
-        binaries.extend(bindepend.Dependencies(binaries,
-                                               manifest=depmanifest))
+        # TODO: ImpTracker could flag a module as residing in a zip file (because an
+        # egg that had not yet been installed??) and the old code would do this:      
+        # scripts.insert(-1, ('_pyi_egg_install.py',
+        #     os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
+        # It appears that Modulegraph will expand an uninstalled egg but need test
+        self.zipfiles = TOC()
+        # Copied from original code
         if is_win:
             depmanifest.writeprettyxml()
-        self._check_python_library(binaries)
-        if zipfiles:
-            _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-            scripts.insert(-1, ('_pyi_egg_install.py', os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
-        # Add runtime hooks just before the last script (which is
-        # the entrypoint of the application).
-        scripts[-1:-1] = rthooks
-        self.scripts = TOC(scripts)
-        self.pure = TOC(pure)
-        self.binaries = TOC(binaries)
-        self.zipfiles = TOC(zipfiles)
-        self.datas = TOC(datas)
-        try:  # read .toc
+        # Get the saved details of a prior run, if any. Would not exist if
+        # the user erased the work files, or gave a different --workpath
+        # or specified --clean.
+        try:
             oldstuff = _load_data(self.out)
         except:
             oldstuff = None
 
-        self.pure = TOC(compile_pycos(self.pure))
-
+        # Collect the work-product of this run
         newstuff = tuple([getattr(self, g[0]) for g in self.GUTS])
+        # If there was no previous, or if it is different, save the new
         if oldstuff != newstuff:
+            # Save all the new stuff to avoid regenerating it later, maybe
             _save_data(self.out, newstuff)
-            wf = open(WARNFILE, 'w')
-            for ln in importTracker.getwarnings():
-                wf.write(ln + '\n')
-            wf.close()
-            logger.info("Warnings written to %s", WARNFILE)
+            # Write warnings about missing modules. Get them from the graph
+            # and use the graph to figure out who tried to import them.
+            # TODO: previously we could say whether an import was top-level,
+            # deferred (in a def'd function) or conditional (in an if stmt).
+            # That information is not available from ModuleGraph at this time.
+            # When that info is available change this code to write one line for
+            # each importer-name, with type of import for that importer
+            # "no module named foo conditional/deferred/toplevel importy by bar"
+            miss_toc = self.graph.make_a_TOC(['MISSING'])
+            if len(miss_toc) : # there are some missing modules
+                wf = open(WARNFILE, 'w')
+                for (n, p, t) in miss_toc :
+                    importer_names = self.graph.importer_names(n)
+                    wf.write( 'no module named '
+                              + n
+                              + ' - imported by '
+                              + ', '.join(importer_names)
+                              + '\n'
+                              )
+                wf.close()
+                logger.info("Warnings written to %s", WARNFILE)
             return 1
-        logger.info("%s no change!", self.out)
-        return 0
-
-    # TEMP SCAFFOLD TO TEST old and new methods in parallel -- down to END
-    def assemble(self) :
-        # fill in a lot of self.variables esp. self.scripts, self.pure,
-        # self.binaries, self.zipfiles, and self.datas.
-        self.assemble_old()
-        if DEBUG :
-            # save those work products aside and try the new version
-            oldies = { 'scripts':self.scripts,
-                     'pure':self.pure,
-                     'binaries':self.binaries,
-                     'zipfiles':self.zipfiles,
-                     'datas':self.datas
-                     }
-            self.assemble_new()
-            goodies = { 'scripts':self.scripts,
-                     'pure':self.pure,
-                     'binaries':self.binaries,
-                     'zipfiles':self.zipfiles,
-                     'datas':self.datas
-                     }
-            for key in oldies :
-                self.compare_and_print(key,oldies[key],goodies[key])
-            # little more diagnosis
-            dbg_toc = self.graph.make_a_TOC(['MissingModule'])
-            for (n,p,t) in dbg_toc.data :
-                print 'TOCMP {0} {1} {2}'.format(t,n,p)
-            dbg_toc = self.graph.make_a_TOC(['BuiltinModule'])
-            for (n,p,t) in dbg_toc.data :
-                print 'TOCMP {0} {1} {2}'.format(t,n,p)
-            
-            putback = oldies
-            # putback = goodies # someday...
-            self.scripts = putback['scripts']
-            self.pure = putback['pure']
-            self.binaries = putback['binaries']
-            self.zipfiles = putback['zipfiles']
-            self.datas = putback['datas']
-
-    # print the differences between an old and a new TOC
-    # to sort the result do:
-    # pyinstaller --debug <other options> <specname>.spec \
-    #   | grep TOCMP | sort -f --key=2,4
-    def compare_and_print(self,toc_name,orig_toc,new_toc):
-        template = 'TOCMP {0} {1} {2} {3} {4}'
-        # output is TOCMP tocname F itemname itemtype itempath
-        # where F is:
-        # + for "in new not in old"
-        # - for "in old not in new"
-        # ? for "in both but paths differ"
-        only_old = orig_toc - new_toc
-        only_new = new_toc - orig_toc
-        in_both = orig_toc.intersect(new_toc) # uses new_toc's tuple values
-        print template.format(toc_name,'','','','') # marker line in case no diffs to show
-        F = '+'
-        for (n,p,t) in only_new :
-            print template.format(toc_name,F,n,t,p)
-        F = '-'
-        for (n,p,t) in only_old :
-            print template.format(toc_name,F,n,t,p)
-        F = '?'
-        for (n,new_p,t) in in_both :
-            for (n2, old_p, t) in orig_toc :
-                if n == n2 : break
-            if new_p != old_p :
-                print (template + ' {5}').format(toc_name,F,n,t,old_p,new_p)
-    # END TEMP SCAFFOLD CODE resume original code ------------------------
-        
+        else :
+            logger.info("%s no change!", self.out)
+            return 0
+         
     def _check_python_library(self, binaries):
         """
         Verify presence of the Python dynamic library in the binary dependencies.
@@ -1583,25 +1583,30 @@ class Tree(Target, TOC):
         return 0
 
 # ----------------------------------------------------------------
-#
-# Define a modified ModuleGraph that can return its contents as
-# a TOC. This along with TOC and Tree should probably be in
-# a separate module imported here.
-#
-# The only extension over ModuleGraph is a method to extract nodes
-# from the flattened graph and return them in the form of a TOC.
-# The input is a list of PyInstaller TOC typecodes. If the list
-# is empty we return the complete flattened graph as a TOC with
-# the ModuleGraph note types in place of typecodes -- good for
-# debugging only.
-# Otherwise we match the desired typecode(s) to the
-# ModuleGraph node types as follows:
-#   PYMODULE to Module and SourceModule
-#   PYSOURCE to Script
-#   EXTENSION to Extension
-#   BINARY to ??
-# We use the ModuleGraph (really, ObjectGraph) flatten() method to
-# scan all the nodes. This is patterned after ModuleGraph.report().
+'''
+Define a modified ModuleGraph that can return its contents as
+a TOC and in other ways act like the old ImpTracker.
+TODO: This class, along with TOC and Tree should be in a separate module.
+
+For reference, the ModuleGraph node types and their contents:
+
+  nodetype       identifier       filename		    
+
+ Script         full path to .py   full path to .py
+ SourceModule     basename         full path to .py    
+ BuiltinModule    basename         None
+ CompiledModule   basename         full path to .pyc    
+ Extension        basename         full path to .so
+ MissingModule    basename         None
+ Package          basename         full path to __init__.py
+        packagepath is ['path to package']
+        globalnames is set of global names __init__.py defines
+
+The main extension here over ModuleGraph is a method to extract nodes
+from the flattened graph and return them as a TOC, or added to a TOC.
+Other added methods look up nodes by identifier and return facts
+about them, replacing what the old ImpTracker list could do.
+'''
 # ----------------------------------------------------------------
 from modulegraph.modulegraph import ModuleGraph
 class PyiModuleGraph(ModuleGraph):
@@ -1611,34 +1616,88 @@ class PyiModuleGraph(ModuleGraph):
         self.typedict = {
             'Module' : 'PYMODULE',
             'SourceModule' : 'PYMODULE',
+            'CompiledModule' : 'PYMODULE',
+            'Package' : 'PYMODULE',
             'Extension' : 'EXTENSION',
             'Script' : 'PYSOURCE',
-            '?not sure' : 'BINARY'
+            'BuiltinModule' : 'BUILTIN',
+            'MissingModule' : 'MISSING',
+            'does not occur' : 'BINARY'
             }
+    
+    # Return the name, path and type of selected nodes as a TOC, or appended
+    # to a TOC. The selection is via a list of PyInstaller TOC typecodes.
+    # If that list is empty we return the complete flattened graph as a TOC
+    # with the ModuleGraph note types in place of typecodes -- meant for
+    # debugging only. Normally we return ModuleGraph nodes whose types map
+    # to the requested PyInstaller typecode(s) as indicated in the typedict.
+    #
+    # We use the ModuleGraph (really, ObjectGraph) flatten() method to
+    # scan all the nodes. This is patterned after ModuleGraph.report().
 
-    def make_a_TOC(self, typecode = []):
-        result = TOC()
+    def make_a_TOC(self, typecode = [], existing_TOC = None ):
+        result = existing_TOC or TOC()
         for node in self.flatten() :
-            # get node type e.g. Script, could be None
+            # get node type e.g. Script
             mg_type = type(node).__name__
-            # translate to corresponding TOC typecode, or leave as-is
+            if mg_type is None:
+                continue # some nodes are not typed?
+            # translate to the corresponding TOC typecode, or leave as-is
             toc_type = self.typedict.get(mg_type, mg_type)
-            # if caller cares about typecode, 
+            # Does the caller care about the typecode?
             if len(typecode) :
-                # Caller cares; if there is a mismatch, skip this one
+                # Caller cares, so if there is a mismatch, skip this one
                 if not (toc_type in typecode) :
-                    toc_type = None
-            # caller doesn't care, return the ModuleGraph type name
-            
-            if toc_type is not None :
-                # a desired node type, or no preference
-                if node.filename is not None:
-                    (name, ext) = os.path.splitext(node.filename)
-                    name = os.path.basename(name)
-                    result.append( ( name, node.filename, toc_type ) )
-                else:
-                    result.append( ( node.identifier, '', toc_type ) )
+                    continue
+            # else: caller doesn't care, return ModuleGraph type in typecode
+            # Extract the identifier and a path if any.
+            if mg_type == "Script" :
+                # for Script nodes only, identifier is a whole path
+                (name, ext) = os.path.splitext(node.filename)
+                name = os.path.basename(name)
+            else:
+                name = node.identifier
+            path = node.filename if node.filename is not None else ''
+            # TOC.append the data. This checks for a pre-existing name
+            # and skips it if it exists.
+            result.append( (name, path, toc_type) )
         return result
+    
+    # Given a list of nodes, create a TOC representing those nodes.
+    # This is mainly used to initialize a TOC of scripts with the
+    # ones that are runtime hooks. The process is almost the same as
+    # make_a_TOC, but the caller guarantees the nodes are
+    # valid, so minimal checking.
+    def nodes_to_TOC(self, node_list, existing_TOC = None ):
+        result = existing_TOC or TOC()
+        for node in node_list:
+            mg_type = type(node).__name__
+            toc_type = self.typedict[mg_type]
+            if mg_type == "Script" :
+                (name, ext) = os.path.splitext(node.filename)
+                name = os.path.basename(name)
+            else:
+                name = node.identifier
+            path = node.filename if node.filename is not None else ''
+            result.append( (name, path, toc_type) )
+        return result
+
+    # Return true if the named item is in the graph as a BuiltinModule node.
+    # The passed name is a basename.
+    def is_a_builtin(self, name) :
+        node = self.findNode(name)
+        if node is None : return False
+        return type(node).__name__ == 'BuiltinModule'
+
+    # Return a list of the names that import a given name. Basically
+    # just get the iterator for incoming-edges and return the
+    # identifiers from the nodes it reports.
+    def importer_names(self, name) :
+        node = self.findNode(name)
+        if node is None : return []
+        _, iter_inc = self.get_edges(node)
+        return [importer.identifier for importer in iter_inc]
+            
 # ----------------------------------------------------------------
 # End PyiModuleGraph
 # ----------------------------------------------------------------
