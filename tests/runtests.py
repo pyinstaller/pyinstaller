@@ -210,11 +210,12 @@ class SkipChecker(object):
 
 
 SPEC_FILE = set([
-    'basic/test_option_wignore',
-    'basic/test_threading2',
     'basic/test_onefile_ctypes',
     'basic/test_onefile_pkg_resources',
+    'basic/test_option_verbose',
+    'basic/test_option_wignore',
     'basic/test_pkg_structures',
+    'basic/test_threading2',
     'import/test_app_with_plugins',
     'import/test_eggs2',
     'import/test_hiddenimport',

@@ -1032,7 +1032,9 @@ class PKG(Target):
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in toc:
-            if not os.path.isfile(fnm) and check_egg(fnm):
+            # Ensure filename 'fnm' is not None or empty string. Otherwise
+            # it will fail in case of 'typ' being type OPTION.
+            if fnm and not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
