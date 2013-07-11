@@ -161,15 +161,20 @@ def find_PYZ_dependencies(config):
                         #tmp.append((imported.__name__, imported.__file__, imported.typ))
         #toc.extend(tmp)
     #toc.reverse()
+
+    # Import 'struct' modules to get real paths to module file names.
+    mod1 = __import__('_struct')  # C extension.
+    mod2 = __import__('struct')
+
     # TODO - these hard-coded paths to struct/_struct are bogus, need to
     # at least get the real platform-dependent ones out of the main graph?
-    loaderpath = HOMEPATH + '/PyInstaller/loader/'    
+    loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
     toc = build.TOC( [
-        ('_struct', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/lib-dynload/_struct.so','EXTENSION'),
-        ('struct', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/struct.pyo', 'PYMODULE'),
-        ('pyi_os_path',loaderpath + 'pyi_os_path.pyc', 'PYMODULE'),
-        ('pyi_archive', loaderpath + 'pyi_archive.pyc', 'PYMODULE'),
-        ('pyi_importers', loaderpath + 'pyi_importers.pyc', 'PYMODULE')
+        ('_struct', os.path.abspath(mod1.__file__), 'EXTENSION'),
+        ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
+        ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
+        ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
+        ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
     ] )
     
     config['PYZ_dependencies'] = toc.data
