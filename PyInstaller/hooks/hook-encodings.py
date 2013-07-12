@@ -19,4 +19,4 @@ for f in glob.glob(os.path.join(libpath, "encodings", "*.py")):
     f = os.path.basename(f)
     f = os.path.splitext(f)[0]
     if f != "__init__":
-        hiddenimports.append(f)
+        hiddenimports.append('encodings.%s' % f)

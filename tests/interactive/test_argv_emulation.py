@@ -1,8 +1,18 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
 import sys
 print "Argv from python:", sys.argv
 
 
-# testing the argv capturing capability on the Mac is not that easy, but doable.  First, build the app bundle
+# Testing the argv capturing capability on the Mac is not that easy, but doable.  First, build the app bundle
 # with PyInstaller, like this:
 #
 # python $path_to_your_pyinstaller/pyinstaller.py -w -d test_argv_emulation.py

@@ -92,3 +92,26 @@ if sys.stdout.fileno() < 0:
     sys.stdout = NullWriter()
 if sys.stderr.fileno() < 0:
     sys.stderr = NullWriter()
+
+
+# At least on Windows, Python seems to hook up the codecs on this
+# import, so it's not enough to just package up all the encodings.
+#
+# It was also reported that without 'encodings' module the frozen executable
+# will fail to load in some configurations:
+#
+# http://www.pyinstaller.org/ticket/651
+#
+# Import 'encodings' module in a run-time hook is not enough since some
+# run-time hooks require this module and the order of running code from
+# from run-time hooks is not defined.
+try:
+    import encodings
+except ImportError:
+    pass
+
+
+# In the Python interpreter 'warnings' module is imported when 'sys.warnoptions'
+# is not empty. Mimic this behavior in PyInstaller.
+if sys.warnoptions:
+    import warnings

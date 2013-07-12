@@ -364,6 +364,28 @@ class Target(object):
 
 
 class Analysis(Target):
+    """
+    Class does analysis of the user's main Python scripts.
+
+    An Analysis has five outputs, all TOCs (Table of Contents) accessed as
+    attributes of the analysis.
+
+    scripts
+            The scripts you gave Analysis as input, with any runtime hook scripts
+            prepended.
+    pure
+            The pure Python modules.
+    binaries
+            The extensionmodules and their dependencies. The secondary dependecies
+            are filtered. On Windows files from C:\Windows are excluded by default.
+            On Linux/Unix only system libraries from /lib or /usr/lib are excluded.
+    datas
+            Data-file dependencies. These are data-file that are found to be needed
+            by modules. They can be anything: plugins, font files, images, translations,
+            etc.
+    zipfiles
+            The zipfiles dependencies (usually .egg files).
+    """
     _old_scripts = set((
         absnormpath(os.path.join(HOMEPATH, "support", "_mountzlib.py")),
         absnormpath(os.path.join(CONFIGDIR, "support", "useUnicode.py")),
@@ -376,6 +398,23 @@ class Analysis(Target):
 
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
                  hookspath=None, excludes=None, runtime_hooks=[]):
+        """
+        scripts
+                A list of scripts specified as file names.
+        pathex
+                An optional list of paths to be searched before sys.path.
+        hiddenimport
+                An optional list of additional (hidden) modules to include.
+        hookspath
+                An optional list of additional paths to search for hooks.
+                (hook-modules).
+        excludes
+                An optional list of module or package names (their Python names,
+                not path names) that will be ignored (as though they were not found).
+        runtime_hooks
+                An optional list of scripts to use as users' runtime hooks. Specified
+                as file names.
+        """
         Target.__init__(self)
 
         sys._PYI_SETTINGS = {}
@@ -733,9 +772,22 @@ def _findRTHook(modnm):
 
 
 class PYZ(Target):
+    """
+    Creates a ZlibArchive that contains all pure Python modules.
+    """
     typ = 'PYZ'
 
     def __init__(self, toc, name=None, level=9):
+        """
+        toc
+                A TOC (Table of Contents), normally an Analysis.pure?
+        name
+                A filename for the .pyz. Normally not needed, as the generated
+                name will do fine.
+        level
+                The Zlib compression level to use. If 0, the zlib module is
+                not required.
+        """
         Target.__init__(self)
         self.toc = toc
         self.name = name
@@ -932,6 +984,11 @@ UNCOMPRESSED, COMPRESSED = range(2)
 
 
 class PKG(Target):
+    """
+    Creates a CArchive. CArchive is the data structure that is embedded
+    into the executable. This data structure allows to include various
+    read-only data in a sigle-file deployment.
+    """
     typ = 'PKG'
     xformdict = {'PYMODULE': 'm',
                  'PYSOURCE': 's',
@@ -946,6 +1003,23 @@ class PKG(Target):
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=False, upx_binaries=False):
+        """
+        toc
+                A TOC (Table of Contents)
+        name
+                An optional filename for the PKG.
+        cdict
+                Dictionary that specifies compression by typecode. For Example,
+                PYZ is left uncompressed so that it can be accessed inside the
+                PKG. The default uses sensible values. If zlib is not available,
+                no compression is used.
+        exclude_binaries
+                If True, EXTENSIONs and BINARYs will be left out of the PKG,
+                and forwarded to its container (usually a COLLECT).
+        strip_binaries
+                If True, use 'strip' command to reduce the size of binary files.
+        upx_binaries
+        """
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -993,7 +1067,9 @@ class PKG(Target):
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in toc:
-            if not os.path.isfile(fnm) and check_egg(fnm):
+            # Ensure filename 'fnm' is not None or empty string. Otherwise
+            # it will fail in case of 'typ' being type OPTION.
+            if fnm and not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
@@ -1001,8 +1077,8 @@ class PKG(Target):
                     self.dependencies.append((inm, fnm, typ))
                 else:
                     fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin)
-                                     and config['hasUPX']), dist_nm=inm)
+                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     dist_nm=inm)
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
@@ -1031,12 +1107,42 @@ class PKG(Target):
 
 
 class EXE(Target):
+    """
+    Creates the final executable of the frozen app.
+    This bundles all necessary files together.
+    """
     typ = 'EXECUTABLE'
 
     def __init__(self, *args, **kwargs):
+        """
+        args
+                One or more arguments that are either TOCs Targets.
+        kwargs
+            Possible keywork arguments:
+
+            console
+                On Windows or OSX governs whether to use the console executable
+                or the windowed executable. Always True on Linux/Unix (always
+                console executable - it does not matter there).
+            debug
+                Setting to True gives you progress mesages from the executable
+                (for console=False there will be annoying MessageBoxes on Windows).
+            name
+                The filename for the executable.
+            exclude_binaries
+                Forwarded to the PKG the EXE builds.
+            icon
+                Windows or OSX only. icon='myicon.ico' to use an icon file or
+                icon='notepad.exe,0' to grab an icon resource.
+            version
+                Windows only. version='myversion.txt'. Use grab_version.py to get
+                a version resource from an executable and then edit the output to
+                create your own. (The syntax of version resources is so arcane
+                that I wouldn't attempt to write one from scratch).
+        """
         Target.__init__(self)
 
-        # TODO could be 'append_pkg' removed?
+        # TODO could be 'append_pkg' removed? It seems not to be used anymore.
         self.append_pkg = kwargs.get('append_pkg', True)
 
         # Available options for EXE in .spec files.
@@ -1049,7 +1155,11 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
-        self.upx = kwargs.get('upx', False)
+
+        if config['hasUPX']: 
+           self.upx = kwargs.get('upx', False)
+        else:
+           self.upx = False
 
         # Old .spec format included in 'name' the path where to put created
         # app. New format includes only exename.
@@ -1201,7 +1311,7 @@ class EXE(Target):
                         logger.exception(exc)
             trash.append(tmpnm)
             exe = tmpnm
-        exe = checkCache(exe, strip=self.strip, upx=(self.upx and config['hasUPX']))
+        exe = checkCache(exe, strip=self.strip, upx=self.upx)
         self.copy(exe, outf)
         if self.append_pkg:
             logger.info("Appending archive to EXE %s", self.name)
@@ -1230,6 +1340,12 @@ class EXE(Target):
 
 
 class DLL(EXE):
+    """
+    On Windows, this provides support for doing in-process COM servers. It is not
+    generalized. However, embedders can follow the same model to build a special
+    purpose process DLL so the Python support in their app is hidden. You will
+    need to write your own dll.
+    """
     def assemble(self):
         logger.info("building DLL %s", os.path.basename(self.out))
         outf = open(self.name, 'wb')
@@ -1246,10 +1362,26 @@ class DLL(EXE):
 
 
 class COLLECT(Target):
+    """
+    In one-dir mode creates the output folder with all necessary files.
+    """
     def __init__(self, *args, **kws):
+        """
+        args
+                One or more arguments that are either TOCs Targets.
+        kws
+            Possible keywork arguments:
+
+                name
+                    The name of the directory to be built.
+        """
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
-        self.upx_binaries = kws.get('upx', False)
+
+        if config['hasUPX']: 
+           self.upx_binaries = kws.get('upx', False)
+        else:
+           self.upx_binaries = False
 
         self.name = kws.get('name')
         # Old .spec format included in 'name' the path where to collect files
@@ -1304,8 +1436,8 @@ class COLLECT(Target):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
-                                 upx=(self.upx_binaries and (is_win or is_cygwin)
-                                 and config['hasUPX']), dist_nm=inm)
+                                 upx=(self.upx_binaries and (is_win or is_cygwin)), 
+                                 dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
@@ -1322,12 +1454,17 @@ class BUNDLE(Target):
         if not is_darwin:
             return
 
-        # icns icon for app bundle.
-        self.icon = kws.get('icon', os.path.join(os.path.dirname(__file__),
-            '..', 'bootloader', 'images', 'icon-windowed.icns'))
+        # .icns icon for app bundle.
+        # Use icon supplied by user or just use the default one from PyInstaller.
+        self.icon = kws.get('icon')
+        if not self.icon:
+            self.icon = os.path.join(os.path.dirname(__file__),
+                'bootloader', 'images', 'icon-windowed.icns')
+        # Ensure icon path is absolute.
+        self.icon = os.path.abspath(self.icon)
 
         Target.__init__(self)
-
+ 
         # .app bundle is created in DISTPATH.
         self.name = kws.get('name', None)
         base_name = os.path.basename(self.name)
@@ -1344,7 +1481,7 @@ class BUNDLE(Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 self.toc.extend(arg.dependencies) 
                 self.strip = arg.strip
-                self.upx = arg.upx
+                self.upx = arg.upx 
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
                 # TOC doesn't have a strip or upx attribute, so there is no way for us to
@@ -1352,7 +1489,7 @@ class BUNDLE(Target):
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
                 self.strip = arg.strip_binaries
-                self.upx = arg.upx_binaries
+                self.upx = arg.upx_binaries 
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
@@ -1448,6 +1585,23 @@ class BUNDLE(Target):
 
 
 class TOC(UserList.UserList):
+    """
+    TOC (Table of Contents) class is a list of tuples of the form (name, path, tytecode).
+
+    typecode    name                   path                        description
+    --------------------------------------------------------------------------------------
+    EXTENSION   Python internal name.  Full path name in build.    Extension module.
+    PYSOURCE    Python internal name.  Full path name in build.    Script.
+    PYMODULE    Python internal name.  Full path name in build.    Pure Python module (including __init__ modules).
+    PYZ         Runtime name.          Full path name in build.    A .pyz archive (ZlibArchive data structure).
+    PKG         Runtime name.          Full path name in build.    A .pkg archive (Carchive data structure).
+    BINARY      Runtime name.          Full path name in build.    Shared library.
+    DATA        Runtime name.          Full path name in build.    Arbitrary files.
+    OPTION      The option.            Unused.                     Python runtime option (frozen into executable).
+
+    A TOC contains various types of files. A TOC contains no duplicates and preserves order.
+    PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
+    """
     def __init__(self, initlist=None):
         UserList.UserList.__init__(self)
         self.fltr = {}
@@ -1519,7 +1673,25 @@ class TOC(UserList.UserList):
 
 
 class Tree(Target, TOC):
+    """
+    This class is a way of creating a TOC (Table of Contents) that describes
+    some or all of the files within a directory.
+    """
     def __init__(self, root=None, prefix=None, excludes=None):
+        """
+        root
+                The root of the tree (on the build system).
+        prefix
+                Optional prefix to the names of the target system.
+        excludes
+                A list of names to exclude. Two forms are allowed:
+
+                    name
+                        Files with this basename will be excluded (do not
+                        include the path).
+                    *.ext
+                        Any file with the given extension will be excluded.
+        """
         Target.__init__(self)
         TOC.__init__(self)
         self.root = root

@@ -11,6 +11,8 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+* David Cortesi - PyInstaller manual rewrite.
+
 * Vaclav Smilauer - IPython import hook.
 
 * Shane Hansen - Linux arm support.
@@ -59,6 +61,8 @@ please let us know if your name is omitted by accident:
 * Pascal Veret - PyQt4 import hook with Qt4 plugins.
 
 * Don Dwiggins - pyodbc import hook.
+
+* Allan Green - refactoring and improved in-process COM servers.
 
 * Daniele Varrazzo - various bootloader and OS X fixes.
 

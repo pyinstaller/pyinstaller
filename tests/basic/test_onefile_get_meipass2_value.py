@@ -1,8 +1,19 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
 # Bootloader unsets _MEIPASS2 for child processes so that if the program
 # invokes another PyInstaller one-file program as subprocess, this
 # subprocess will not fooled into thinking that it is already unpacked.
 #
 # This test checks if it is really unset.
+
 
 import os
 import sys
@@ -37,8 +48,8 @@ if meipass.startswith(r'%'):
     meipass = ''
 
 
-print meipass
-print '_MEIPASS2 value:', sys._MEIPASS
+print(meipass)
+print('_MEIPASS2 value: %s' % sys._MEIPASS)
 
 
 if meipass:

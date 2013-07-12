@@ -1,3 +1,13 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
 # Twisted is an event-driven networking engine.
 # 
 # This is the test for qt4reactor - Twisted is driven by the Qt mainloop.
