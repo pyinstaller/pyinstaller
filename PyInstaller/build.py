@@ -551,15 +551,22 @@ class Analysis(Target):
         # are executed first. Put their graph nodes at the head of the
         # priority_scripts list Pyinstaller-defined rthooks and
         # thus they are executed first.
-        number_of_rthooks = 0
+
+        # First priority script has to be '_pyi_bootstrap' and rthooks after
+        # this script. - _pyi_bootstrap is at position 0. First rthook should
+        # be at position 1.
+        RTH_START_POSITION = 1
+        rthook_next_position = RTH_START_POSITION
+
         if self.custom_runtime_hooks:
             for hook_file in self.custom_runtime_hooks:
                 logger.info("Including custom run-time hook %r", hook_file)                
                 hook_file = os.path.abspath(hook_file)
                 # Not using "try" here because the path is supposed to
                 # exist, if it does not, the raised error will explain.
-                priority_scripts.insert( 0, self.graph.run_script(hook_file, top_node) )
-                number_of_rthooks += 1
+                priority_scripts.insert( RTH_START_POSITION, self.graph.run_script(hook_file, top_node) )
+                rthook_next_position += 1
+
         # Find runtime hooks that are implied by packages already imported.
         # Get a temporary TOC listing all the scripts and packages graphed
         # so far. Assuming that runtime hooks apply only to modules and packages.
@@ -569,7 +576,7 @@ class Analysis(Target):
             for (hook, path, typecode) in _findRTHook(name) :
                 logger.info("Including run-time hook %r", hook)
                 priority_scripts.insert(
-                    number_of_rthooks,
+                    rthook_next_position,
                     self.graph.run_script(path, top_node)
                 )
         # priority_scripts is now a list of the graph nodes of custom runtime
