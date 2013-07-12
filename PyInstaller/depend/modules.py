@@ -20,6 +20,7 @@ from PyInstaller.compat import ctypes, PYCO
 from PyInstaller.depend.utils import _resolveCtypesImports, scan_code
 
 import PyInstaller.depend.impdirector
+import PyInstaller.utils.misc
 
 
 class Module:
@@ -203,6 +204,8 @@ class FakeModule(Module):
         self.name = identifier
         # keep a pointer back to the original node
         self.node = node
+        # keep a pointer back to the original graph
+        self.graph = graph
         # Add the __file__ member
         self.__file__ = node.filename
         # Add the __path__ member which is either None or, if
@@ -242,11 +245,17 @@ class FakeModule(Module):
         self._added_binaries.append(list_of_tuples)
         self.binaries.append(list_of_tuples)
     
-    def retarget(self,new_path,new_code):
+    def retarget(self, path_to_new_code):
         # Used by hook-site (and others?) to retarget a module to a simpler one
         # more suited to being frozen. 
+        
+        # Keep the original filename in the fake code object.
+        new_code = PyInstaller.utils.misc.get_code_object(path_to_new_code, new_filename=self.node.filename)
+        # Update node.
         self.node.code = new_code
-        self.node.filename = new_path
+        self.node.filename = path_to_new_code
+        # Update dependencies in the graph.
+        self.graph.scan_code(new_code, self.node)
         
 # ----------------------------------------------------------------
 # End FakeModule

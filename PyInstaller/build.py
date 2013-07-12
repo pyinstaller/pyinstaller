@@ -626,12 +626,14 @@ class Analysis(Target):
         # when in the next step we call hook_site.py, it will replace
         # the code of the site node with the code of fake/fake-site.py. 
         # But we also need to let Modulegraph know about any imports from
-        # that fake_site module.
-        node = self.graph.findNode('site')
-        if node is not None :
-            self.graph.run_script(
-                os.path.join(HOMEPATH, 'PyInstaller', 'fake', 'fake-site.py'),
-                top_node)
+        # that fake_site module and replace found imports of the 'site' module.
+        # TODO I think the following code could be removed. Updating dependencies
+        #      found in 'site' is done in PyInstaller.depend.modules.FakeModule.retarget()
+        #node = self.graph.findNode('site')
+        #if node is not None :
+            #self.graph.run_script(
+                #os.path.join(HOMEPATH, 'PyInstaller', 'fake', 'fake-site.py'),
+                #top_node)
 
         # Now find regular hooks and execute them. Get a new TOC, in part
         # because graphing a runtime hook might have added some names, but
