@@ -351,26 +351,6 @@ class ImportTracker:
         if hasattr(hook, 'attrs'):
             for attr, val in hook.attrs:
                 setattr(mod, attr, val)
-        if hasattr(hook, 'datas'):
-            # hook.datas is a list of globs of files or
-            # directories to bundle as datafiles. For each
-            # glob, a destination directory is specified.
-            def _visit((base, dest_dir, datas), dirname, names):
-                for fn in names:
-                    fn = os.path.join(dirname, fn)
-                    if os.path.isfile(fn):
-                        datas.append((dest_dir + fn[len(base) + 1:], fn, 'DATA'))
-
-            datas = mod.datas  # shortcut
-            for g, dest_dir in hook.datas:
-                if dest_dir:
-                    dest_dir += os.sep
-                for fn in glob.glob(g):
-                    if os.path.isfile(fn):
-                        datas.append((dest_dir + os.path.basename(fn), fn, 'DATA'))
-                    else:
-                        os.path.walk(fn, _visit,
-                                     (os.path.dirname(fn), dest_dir, datas))
         return mod
 
     def getwarnings(self):

@@ -489,6 +489,33 @@ class Analysis(Target):
             ('hiddenimports', _check_guts_eq),
             )
 
+    def _format_hook_datas(self, hook):
+        """
+        hook.datas is a list of globs of files or
+        directories to bundle as datafiles. For each
+        glob, a destination directory is specified.
+        """
+        datas = []
+
+        def _visit((base, dest_dir, datas), dirname, names):
+            """
+            Format whole directory tree from 'datas'.
+            """
+            for fn in names:
+                fn = os.path.join(dirname, fn)
+                if os.path.isfile(fn):
+                    datas.append((dest_dir + fn[len(base) + 1:], fn, 'DATA'))
+
+        for g, dest_dir in getattr(hook, 'datas', []):
+            if dest_dir:
+                dest_dir += os.sep
+            for fn in glob.glob(g):
+                if os.path.isfile(fn):
+                    datas.append((dest_dir + os.path.basename(fn), fn, 'DATA'))
+                else:
+                    os.path.walk(fn, _visit, (os.path.dirname(fn), dest_dir, datas))
+        return datas
+
     def check_guts(self, last_build):
         if last_build == 0:
             logger.info("building %s because %s non existent", self.__class__.__name__, self.outnm)
@@ -658,8 +685,8 @@ class Analysis(Target):
                     #else :
                         #print('hidden import {0} found otherwise'.format(item))
             if hasattr(hook_name_space,'datas') :
-                # add desired data files to our datas TOC
-                pass # <------- TODO see imptracker._handle_hook
+                # Add desired data files to our datas TOC
+                self.datas.extend(self._format_hook_datas(hook_name_space))
             if hasattr(hook_name_space,'hook'):
                 # Process a hook(mod) function. Create a Module object as its API.
                 # TODO: it won't be called "FakeModule" later on
