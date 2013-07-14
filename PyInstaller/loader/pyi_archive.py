@@ -269,7 +269,10 @@ class ZlibArchive(Archive):
     LEVEL = 9
     NO_COMPRESSION_LEVEL = 0
 
-    def __init__(self, path=None, offset=None, level=9):
+    def __init__(self, path=None, offset=None, level=9, code_dict={}):
+        """
+        code_dict      dict containing module code objects from ModuleGraph.
+        """
         if path is None:
             offset = 0
         elif offset is None:
@@ -285,6 +288,10 @@ class ZlibArchive(Archive):
                     break
             else:
                 offset = 0
+
+        # Keep references to module code objects constructed by ModuleGraph
+        # to avoid writting .pyc/pyo files to hdd.
+        self.code_dict = code_dict
 
         # Zlib compression level.
         self.LEVEL = level
@@ -327,6 +334,7 @@ class ZlibArchive(Archive):
         pth = entry[1]
         base, ext = self.os.path.splitext(self.os.path.basename(pth))
         ispkg = base == '__init__'
+        """
         try:
             txt = open(pth[:-1], 'rU').read() + '\n'
         except (IOError, OSError):
@@ -348,6 +356,8 @@ class ZlibArchive(Archive):
                 print e.args
                 raise
             obj = self._mod_zlib.compress(marshal.dumps(co), self.LEVEL)
+        """
+        obj = self._mod_zlib.compress(marshal.dumps(self.code_dict[nm]), self.LEVEL)
         self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
 

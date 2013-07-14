@@ -191,8 +191,8 @@ def compile_pycos(toc):
                                  open(obj_fnm, 'rb').read()[:4] != imp.get_magic())
                 if needs_compile:
                     # TODO see above regarding using node.code
-                    py_compile.compile(source_fnm, fnm)
-                    logger.debug("compiled %s", source_fnm)
+                    py_compile.compile(src_fnm, fnm)
+                    logger.debug("compiled %s", src_fnm)
         # if we get to here, obj_fnm is the path to the compiled module nm.py
         new_toc.append((nm, obj_fnm, typ))
 
@@ -469,7 +469,7 @@ class Analysis(Target):
 
         self.excludes = excludes
         self.scripts = TOC()
-        self.pure = TOC()
+        self.pure = {'toc': TOC(), 'code': {}}
         self.binaries = TOC()
         self.zipfiles = TOC()
         self.datas = TOC()
@@ -530,7 +530,7 @@ class Analysis(Target):
             return True
         scripts, pure, binaries, zipfiles, datas, hiddenimports = data[-6:]
         self.scripts = TOC(scripts)
-        self.pure = TOC(pure)
+        self.pure = {'toc': TOC(pure), 'code': {}}
         self.binaries = TOC(binaries)
         self.zipfiles = TOC(zipfiles)
         self.datas = TOC(datas)
@@ -636,7 +636,8 @@ class Analysis(Target):
         # Find runtime hooks that are implied by packages already imported.
         # Get a temporary TOC listing all the scripts and packages graphed
         # so far. Assuming that runtime hooks apply only to modules and packages.
-        temp_toc = self.graph.make_a_TOC(['PYMODULE','PYSOURCE'])
+        temp_toc, code_dict = self.graph.make_a_TOC(['PYMODULE','PYSOURCE'])
+        self.pure['code'].update(code_dict)
         logger.info("Looking for standard run-time hooks")
         for (name, path, typecode) in temp_toc :
             for (hook, path, typecode) in _findRTHook(name) :
@@ -665,7 +666,8 @@ class Analysis(Target):
         # Now find regular hooks and execute them. Get a new TOC, in part
         # because graphing a runtime hook might have added some names, but
         # also because regular hooks can apply to extensions and builtins.
-        temp_toc = self.graph.make_a_TOC(['PYMODULE','PYSOURCE','BUILTIN','EXTENSION'])
+        temp_toc, code_dict = self.graph.make_a_TOC(['PYMODULE','PYSOURCE','BUILTIN','EXTENSION'])
+        self.pure['code'].update(code_dict)
         for (imported_name, path, typecode) in temp_toc :
             try:
                 hook_name = 'hook-' + imported_name
@@ -708,13 +710,17 @@ class Analysis(Target):
         self.scripts = self.graph.nodes_to_TOC(priority_scripts)
         # Put all other script names into the TOC after them. (The rthooks names
         # will be found again, but TOC.append skips duplicates.)
-        self.scripts = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
+        self.scripts, code_dict = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
+        self.pure['code'].update(code_dict)
         # Extend the binaries list with all the Extensions modulegraph has found.
-        self.binaries = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
+        self.binaries, code_dict = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
+        self.pure['code'].update(code_dict)
         # Fill the "pure" list with modules.
-        self.pure =  self.graph.make_a_TOC(['PYMODULE'])
+        self.pure['toc'], code_dict =  self.graph.make_a_TOC(['PYMODULE'])
+        self.pure['code'].update(code_dict)
+
         # Ensure we have .pyc/.pyo object files for all PYMODULE in pure
-        self.pure = TOC(compile_pycos(self.pure))
+        #self.pure = TOC(compile_pycos(self.pure))
 
         # TODO: ImpTracker could flag a module as residing in a zip file (because an
         # egg that had not yet been installed??) and the old code would do this:      
@@ -747,7 +753,8 @@ class Analysis(Target):
             # When that info is available change this code to write one line for
             # each importer-name, with type of import for that importer
             # "no module named foo conditional/deferred/toplevel importy by bar"
-            miss_toc = self.graph.make_a_TOC(['MISSING'])
+            miss_toc, code_dict = self.graph.make_a_TOC(['MISSING'])
+            self.pure['code'].update(code_dict)
             if len(miss_toc) : # there are some missing modules
                 wf = open(WARNFILE, 'w')
                 for (n, p, t) in miss_toc :
@@ -806,10 +813,13 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc, name=None, level=9):
+    def __init__(self, toc_dict, name=None, level=9):
         """
-        toc
-                A TOC (Table of Contents), normally an Analysis.pure?
+        toc_dict
+            toc_dict['toc']
+                A TOC (Table of Contents), normally an Analysis.pure['toc']?
+            toc_dict['code']
+                A dict of module code objects from ModuleGraph.
         name
                 A filename for the .pyz. Normally not needed, as the generated
                 name will do fine.
@@ -818,7 +828,9 @@ class PYZ(Target):
                 not required.
         """
         Target.__init__(self)
-        self.toc = toc
+        self.toc = toc_dict['toc']
+        # Use code objects directly from ModuleGraph to speed up PyInstaller.
+        self.code_dict = toc_dict['code']
         self.name = name
         if name is None:
             self.name = self.out[:-3] + 'pyz'
@@ -845,7 +857,7 @@ class PYZ(Target):
 
     def assemble(self):
         logger.info("building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = pyi_archive.ZlibArchive(level=self.level)
+        pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
         _save_data(self.out, (self.name, self.level, self.toc))
@@ -1845,6 +1857,9 @@ class PyiModuleGraph(ModuleGraph):
 
     def make_a_TOC(self, typecode = [], existing_TOC = None ):
         result = existing_TOC or TOC()
+        # Keep references to module code objects constructed by ModuleGraph
+        # to avoid writting .pyc/pyo files to hdd.
+        code_dict = {}
         for node in self.flatten() :
             # get node type e.g. Script
             mg_type = type(node).__name__
@@ -1869,7 +1884,11 @@ class PyiModuleGraph(ModuleGraph):
             # TOC.append the data. This checks for a pre-existing name
             # and skips it if it exists.
             result.append( (name, path, toc_type) )
-        return result
+            # Keep references to module code objects constructed by ModuleGraph
+            # to avoid compiling and writting .pyc/pyo files to hdd.
+            if node.code:
+                code_dict[name] = node.code
+        return result, code_dict
     
     # Given a list of nodes, create a TOC representing those nodes.
     # This is mainly used to initialize a TOC of scripts with the
