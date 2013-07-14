@@ -14,10 +14,8 @@ Build packages using spec files.
 
 
 import glob
-import imp
 import os
 import pprint
-import py_compile
 import shutil
 import sys
 import tempfile
@@ -91,112 +89,9 @@ def setupUPXFlags():
     f = "--best " + f
     compat.setenv("UPX", f)
 
-# TODO: explain why this doesn't use os.path.getmtime() ?
-def mtime(fnm):
-    try:
-        return os.stat(fnm)[8]
-    except:
-        return 0
-
 
 def absnormpath(apath):
     return os.path.abspath(os.path.normpath(apath))
-
-
-def compile_pycos(toc):
-    """
-    Given a TOC or equivalent list of tuples, generates all the required
-    pyc/pyo files, writing in a local directory if required, and returns the
-    list of tuples with the updated pathnames.
-    
-    In the old system using ImpTracker, the generated TOC of "pure" modules
-    already contains paths to nm.pyc or nm.pyo and it is only necessary
-    to check that these files are not older than the source.
-    In the new system using ModuleGraph, the path given is to nm.py
-    and we do not know if nm.pyc/.pyo exists. The following logic works
-    with both (so if at some time modulegraph starts returning filenames
-    of .pyc, it will cope).
-
-    If PyInstaller is running optimized ("python -O pyinstaller...")
-    we will look first for .pyo files; otherwise look for .pyc ones.
-    """
-    global WORKPATH
-
-    # For those modules that need to be rebuilt, use the build directory
-    # PyInstaller creates during the build process.
-    basepath = os.path.join(WORKPATH, "localpycos")
-    # Copy everything from toc to this new TOC, possibly unchanged.
-    new_toc = []
-    for (nm, fnm, typ) in toc:
-        if typ != 'PYMODULE':
-            new_toc.append((nm, fnm, typ))
-            continue
-
-        if fnm.endswith('.py') :
-            # we are given a source path, determine the object path if any
-            src_fnm = fnm
-            # assume we want pyo only when now running -O or -OO
-            obj_fnm = src_fnm + ('o' if sys.flags.optimize else 'c')
-            if not os.path.exists(obj_fnm) :
-                # alas that one is not there so assume the other choice
-                obj_fnm = src_fnm + ('c' if sys.flags.optimize else 'o')
-        else:
-            # fnm is not "name.py" so assume we are given name.pyc/.pyo
-            obj_fnm = fnm # take that namae to be the desired object
-            src_fnm = fnm[:-1] # drop the 'c' or 'o' to make a source name
-
-        # We need to perform a build ourselves if obj_fnm doesn't exist,
-        # or if src_fnm is newer than obj_fnm, or if obj_fnm was created
-        # by a different Python version.
-        # TODO: explain why this does read()[:4] (reading all the file)
-        # instead of just read(4)? Yes for many a .pyc file, it is all
-        # in one sector so there's no difference in I/O but still it
-        # seems inelegant to copy it all then subscript 4 bytes.
-        needs_compile = ( (mtime(src_fnm) > mtime(obj_fnm) )
-                          or
-                          (open(obj_fnm, 'rb').read()[:4] != imp.get_magic())
-                        )
-        if needs_compile:
-            try:
-                # TODO: there should be no need to repeat the compile,
-                # because ModuleGraph does a compile and stores the result
-                # in the .code member of the graph node. Should be possible
-                # to get the node and write the code to obj_fnm
-                py_compile.compile(src_fnm, obj_fnm)
-                logger.debug("compiled %s", src_fnm)
-            except IOError:
-                # If we're compiling on a system directory, probably we don't
-                # have write permissions; thus we compile to a local directory
-                # and change the TOC entry accordingly.
-                ext = os.path.splitext(obj_fnm)[1]
-
-                if "__init__" not in obj_fnm:
-                    # If it's a normal module, use last part of the qualified
-                    # name as module name and the first as leading path
-                    leading, mod_name = nm.split(".")[:-1], nm.split(".")[-1]
-                else:
-                    # In case of a __init__ module, use all the qualified name
-                    # as leading path and use "__init__" as the module name
-                    leading, mod_name = nm.split("."), "__init__"
-
-                leading = os.path.join(basepath, *leading)
-
-                if not os.path.exists(leading):
-                    os.makedirs(leading)
-
-                obj_fnm = os.path.join(leading, mod_name + ext)
-                # TODO see above regarding read()[:4] versus read(4)
-                needs_compile = (mtime(src_fnm) > mtime(obj_fnm)
-                                 or
-                                 open(obj_fnm, 'rb').read()[:4] != imp.get_magic())
-                if needs_compile:
-                    # TODO see above regarding using node.code
-                    py_compile.compile(src_fnm, fnm)
-                    logger.debug("compiled %s", src_fnm)
-        # if we get to here, obj_fnm is the path to the compiled module nm.py
-        new_toc.append((nm, obj_fnm, typ))
-
-    return new_toc
 
 
 def addSuffixToExtensions(toc):
@@ -233,10 +128,10 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     if pyc=1, check for .py files, too
     """
     for (nm, fnm, typ) in old:
-        if mtime(fnm) > last_build:
+        if misc.mtime(fnm) > last_build:
             logger.info("building because %s changed", fnm)
             return True
-        elif pyc and mtime(fnm[:-1]) > last_build:
+        elif pyc and misc.mtime(fnm[:-1]) > last_build:
             logger.info("building because %s changed", fnm[:-1])
             return True
     return False
@@ -333,7 +228,7 @@ class Target(object):
 
     def __postinit__(self):
         logger.info("checking %s", self.__class__.__name__)
-        if self.check_guts(mtime(self.out)):
+        if self.check_guts(misc.mtime(self.out)):
             self.assemble()
 
     GUTS = []
@@ -521,7 +416,7 @@ class Analysis(Target):
             logger.info("building %s because %s non existent", self.__class__.__name__, self.outnm)
             return True
         for fnm in self.inputs:
-            if mtime(fnm) > last_build:
+            if misc.mtime(fnm) > last_build:
                 logger.info("building because %s changed", fnm)
                 return True
 
@@ -719,9 +614,6 @@ class Analysis(Target):
         self.pure['toc'], code_dict =  self.graph.make_a_TOC(['PYMODULE'])
         self.pure['code'].update(code_dict)
 
-        # Ensure we have .pyc/.pyo object files for all PYMODULE in pure
-        #self.pure = TOC(compile_pycos(self.pure))
-
         # TODO: ImpTracker could flag a module as residing in a zip file (because an
         # egg that had not yet been installed??) and the old code would do this:      
         # scripts.insert(-1, ('_pyi_egg_install.py',
@@ -836,7 +728,8 @@ class PYZ(Target):
             self.name = self.out[:-3] + 'pyz'
         # Level of zlib compression.
         self.level = level
-        self.dependencies = compile_pycos(config['PYZ_dependencies'])
+        # Compile top-level modules so we could run them at app startup.
+        self.dependencies = misc.compile_py_files(config['PYZ_dependencies'], WORKPATH)
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
@@ -1275,10 +1168,10 @@ class EXE(Target):
             logger.info("ignoring icon, version, manifest and resources = platform not capable")
 
         mtm = data[-1]
-        if mtm != mtime(self.name):
+        if mtm != misc.mtime(self.name):
             logger.info("rebuilding %s because mtimes don't match", self.outnm)
             return True
-        if mtm < mtime(self.pkg.out):
+        if mtm < misc.mtime(self.pkg.out):
             logger.info("rebuilding %s because pkg is more recent", self.outnm)
             return True
 
@@ -1364,7 +1257,7 @@ class EXE(Target):
         os.chmod(self.name, 0755)
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
-                mtime(self.name))
+                misc.mtime(self.name))
         assert len(guts) == len(self.GUTS)
         _save_data(self.out, guts)
         for item in trash:
@@ -1398,7 +1291,7 @@ class DLL(EXE):
         os.chmod(self.name, 0755)
         _save_data(self.out,
                    (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, mtime(self.name)))
+                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, misc.mtime(self.name)))
         return 1
 
 
@@ -1756,7 +1649,7 @@ class Tree(Target, TOC):
         toc = data[3]  # toc
         while stack:
             d = stack.pop()
-            if mtime(d) > last_build:
+            if misc.mtime(d) > last_build:
                 logger.info("building %s because directory %s changed",
                             self.outnm, d)
                 return True

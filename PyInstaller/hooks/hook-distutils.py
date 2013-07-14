@@ -52,6 +52,7 @@ def hook(mod):
     This hook checks for the distutils hacks present when using the
     virtualenv package.
     """
+    # TODO Fix this for Modulegraph implementation.
     # Non-empty  means PyInstaller is running inside virtualenv.
     # Virtualenv overrides real distutils modules.
     if hasattr(distutils, 'distutils_path'):

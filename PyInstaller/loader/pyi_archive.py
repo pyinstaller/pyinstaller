@@ -330,35 +330,13 @@ class ZlibArchive(Archive):
         if self.os is None:
             import os
             self.os = os
-        nm = entry[0]
+        name = entry[0]
         pth = entry[1]
         base, ext = self.os.path.splitext(self.os.path.basename(pth))
         ispkg = base == '__init__'
-        """
-        try:
-            txt = open(pth[:-1], 'rU').read() + '\n'
-        except (IOError, OSError):
-            try:
-                f = open(pth, 'rb')
-                f.seek(8)  # skip magic and timestamp
-                bytecode = f.read()
-                marshal.loads(bytecode).co_filename  # to make sure it's valid
-                obj = self._mod_zlib.compress(bytecode, self.LEVEL)
-            except (IOError, ValueError, EOFError, AttributeError):
-                raise ValueError("bad bytecode in %s and no source" % pth)
-        else:
-            txt = txt.replace('\r\n', '\n')
-            try:
-                import os
-                co = compile(txt, self.os.path.join(self.path, nm), 'exec')
-            except SyntaxError, e:
-                print "Syntax error in", pth[:-1]
-                print e.args
-                raise
-            obj = self._mod_zlib.compress(marshal.dumps(co), self.LEVEL)
-        """
-        obj = self._mod_zlib.compress(marshal.dumps(self.code_dict[nm]), self.LEVEL)
-        self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
+
+        obj = self._mod_zlib.compress(marshal.dumps(self.code_dict[name]), self.LEVEL)
+        self.toc[name] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
 
     def update_headers(self, tocpos):
