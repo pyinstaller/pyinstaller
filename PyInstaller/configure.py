@@ -169,14 +169,23 @@ def find_PYZ_dependencies(config):
     # TODO - these hard-coded paths to struct/_struct are bogus, need to
     # at least get the real platform-dependent ones out of the main graph?
     loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-    toc = build.TOC( [
-        ('_struct', os.path.abspath(mod1.__file__), 'EXTENSION'),
-        ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
-        ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
-        ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
-        ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
-    ] )
-    
+    # On Windows '_struct' module is a built-in module.
+    if is_win:
+        toc = build.TOC( [
+            ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
+            ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
+            ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
+            ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
+        ] )
+    else:
+         toc = build.TOC( [
+            ('_struct', os.path.abspath(mod1.__file__), 'EXTENSION'),
+            ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
+            ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
+            ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
+            ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
+        ] )       
+
     config['PYZ_dependencies'] = toc.data
 
 
