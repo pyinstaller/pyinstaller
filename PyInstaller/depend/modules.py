@@ -233,13 +233,18 @@ class FakeModule(Module):
         self._deleted_imports = []
         self._added_binaries = []
         
-    def add_import(self,name):
-        self._added_imports.append(name) # save change to implement in graph later
-        self.imports.append([name,1,0,-1]) # make change visible to caller
+    def add_import(self,names):
+        if not isinstance(names, list):
+            names = [names]  # Allow passing string or list.
+        self._added_imports.extend(names) # save change to implement in graph later
+        for name in names:
+            self.imports.append([name,1,0,-1]) # make change visible to caller
 
-    def del_import(self,name):
+    def del_import(self,names):
         # just save to implement in graph later
-        self._deleted_imports.append(name)
+        if not isinstance(names, list):
+            names = [names]  # Allow passing string or list.
+        self._deleted_imports.extend(names)
 
     def add_binary(self,list_of_tuples):
         self._added_binaries.append(list_of_tuples)

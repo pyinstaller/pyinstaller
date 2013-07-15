@@ -11,9 +11,6 @@
 from PyInstaller.hooks import hookutils
 
 
-hiddenimports = []
-
-
 def hook(mod):
     global hiddenimports
     # `PIL.Image` may be imported as `PIL.Image` or as `Image`
@@ -33,12 +30,11 @@ for name in sys.modules:
     if name.endswith('ImagePlugin'):
         # Modules are printed to stdout and the output is then parsed.
         print name
-""" % {'modname': mod.__name__}
+""" % {'modname': mod.name}
     out = hookutils.exec_statement(statement)
-    hiddenimports = out.strip().splitlines()
+    mod.add_import = out.strip().splitlines()
+
     # Ignore 'FixTk' to prevent inclusion of Tcl/Tk library.
-    for i, m in enumerate(mod.imports):
-        if m[0] == 'FixTk':
-            del mod.imports[i]
-            break
+    mod.del_import('FixTk')
+
     return mod
