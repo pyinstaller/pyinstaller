@@ -97,6 +97,8 @@ def pefile_read_version(filename):
 # Ensures no code from the executable is executed.
 LOAD_LIBRARY_AS_DATAFILE = 2
 
+STRINGTYPE = type(u'')
+
 
 def getRaw(o):
     return str(buffer(o))
@@ -195,7 +197,7 @@ def parseUString(data, start, limit):
         if data[i:i+2] == '\000\000':
             break
         i += 2
-    text = pywintypes.UnicodeFromRaw(data[start:i])
+    text = unicode(data[start:i], 'UTF-16LE')
     i += 2
     return i, text
 
@@ -386,7 +388,7 @@ class StringTable:
         newindent = indent + u'  '
         tmp = map(unicode, self.kids)
         tmp = (u',\n%s' % newindent).join(tmp)
-        return (u'%sStringTable(\n%s%s,\n%s[%s])'
+        return (u"%sStringTable(\n%su'%s',\n%s[%s])"
                 % (indent, newindent, self.name, newindent, tmp))
 
 
@@ -412,19 +414,23 @@ class StringStruct:
 
     def toRaw(self):
         if type(self.name) is STRINGTYPE:
-            self.name = pywintypes.Unicode(self.name)
+            # Convert unicode object to byte string.
+            raw_name = self.name.encode('UTF-16LE')
         if type(self.val) is STRINGTYPE:
-            self.val = pywintypes.Unicode(self.val)
-        vallen = len(self.val) + 1
+            # Convert unicode object to byte string.
+            raw_val = self.val.encode('UTF-16LE')
+        # TODO document the size of vallen and sublen.
+        vallen = len(raw_val) + 2
         typ = 1
-        sublen = 6 + 2*len(self.name) + 2
+        sublen = 6 + len(raw_name) + 2
         pad = ''
         if sublen % 4:
             pad = '\000\000'
-        sublen = sublen + len(pad) + 2*vallen
-        return (struct.pack('hhh', sublen, vallen, typ)
-                + getRaw(self.name) + '\000\000' + pad
-                + getRaw(self.val) + '\000\000')
+        sublen = sublen + len(pad) + vallen
+        abcd = (struct.pack('hhh', sublen, vallen, typ)
+                + raw_name + '\000\000' + pad
+                + raw_val + '\000\000')
+        return abcd
 
     def __unicode__(self, indent=''):
         return u"StringStruct(u'%s', u'%s')" % (self.name, self.val) 
@@ -478,8 +484,6 @@ class VarFileInfo:
         return "%sVarFileInfo([%s])" % (indent, ', '.join(tmp))
 
 
-STRINGTYPE = type('')
-
 class VarStruct:
     """
     WORD  wLength;        // length of the version resource
@@ -527,7 +531,9 @@ def SetVersion(exenm, versionfile):
     if isinstance(versionfile, VSVersionInfo):
         vs = versionfile
     else:
-        txt = open(versionfile, 'rU').read()
+        fp = codecs.open(versionfile, 'rU', 'utf-8')
+        txt = fp.read()
+        fp.close()
         vs = eval(txt)
     hdst = win32api.BeginUpdateResource(exenm, 0)
     win32api.UpdateResource(hdst, RESOURCE_TYPE['RT_VERSION'], 1, vs.toRaw())
