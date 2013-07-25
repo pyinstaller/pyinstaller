@@ -180,9 +180,17 @@ class VSVersionInfo:
         tmp = [kid.__unicode__(indent+u'  ')
                for kid in self.kids]
         tmp = u', \n'.join(tmp)
-        return (u'# UTF-8\nVSVersionInfo(\n%sffi=%s,\n%skids=[\n%s\n%s]\n)\n'
-                % (indent, self.ffi.__unicode__(indent), indent,
-                   tmp, indent))
+        return (u"""# UTF-8
+#
+# For more details about fixed file info 'ffi' see:
+# http://msdn.microsoft.com/en-us/library/ms646997.aspx
+VSVersionInfo(
+%sffi=%s,
+%skids=[
+%s
+%s]
+)
+""" % (indent, self.ffi.__unicode__(indent), indent, tmp, indent))
 
 
 def parseCommon(data, start=0):
@@ -281,16 +289,27 @@ class FixedFileInfo:
               self.productVersionLS >> 16, self.productVersionLS & 0xFFFF)
         fd = (self.fileDateMS, self.fileDateLS)
         tmp = [u'FixedFileInfo(',
-               u'filevers=%s,' % unicode(fv),
-               u'prodvers=%s,' % unicode(pv),
-               u'mask=%s,' % hex(self.fileFlagsMask),
-               u'flags=%s,' % hex(self.fileFlags),
-               u'OS=%s,' % hex(self.fileOS),
-               u'fileType=%s,' % hex(self.fileType),
-               u'subtype=%s,' % hex(self.fileSubtype),
-               u'date=%s' % unicode(fd),
-               u')'
-              ]
+            u'# filevers and prodvers should be always a tupple with four items: (1, 2, 3, 4)',
+            u'# Set not needed items to zero 0.',
+            u'filevers=%s,' % unicode(fv),
+            u'prodvers=%s,' % unicode(pv),
+            u"# Contains a bitmask that specifies the valid bits 'flags'r",
+            u'mask=%s,' % hex(self.fileFlagsMask),
+            u'# Contains a bitmask that specifies the Boolean attributes of the file.',
+            u'flags=%s,' % hex(self.fileFlags),
+            u'# The operating system for which this file was designed.',
+            u'# 0x4 - NT and there is no need to change it.',
+            u'OS=%s,' % hex(self.fileOS),
+            u'# The general type of file.',
+            u'# 0x1 - the file is an application.',
+            u'fileType=%s,' % hex(self.fileType),
+            u'# The function of the file.',
+            u'# 0x0 - the function is not defined for this fileType',
+            u'subtype=%s,' % hex(self.fileSubtype),
+            u'# Creation date and time stamp.',
+            u'date=%s' % unicode(fd),
+            u')'
+        ]
         return (u'\n'+indent+u'  ').join(tmp)
 
 
