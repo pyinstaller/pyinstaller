@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013, PyInstaller Development Team.
 #
@@ -12,10 +13,12 @@ import os
 import sys
 
 
-os.chdir(sys._MEIPASS)
+# Expand PYTHONPATH with PyInstaller package to support running without
+# installation.
+pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+sys.path.insert(0, pyi_home)
 
 
-import data_assignment
-
-
-print(os.getcwd())
+if __name__ == '__main__':
+    from PyInstaller.cliutils.set_version import run
+    run()

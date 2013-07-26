@@ -8,14 +8,8 @@
 #-----------------------------------------------------------------------------
 
 
-import os
-import sys
+print('test - PYTHONVERBOSE - trace import statements')
 
+import re
 
-os.chdir(sys._MEIPASS)
-
-
-import data_assignment
-
-
-print(os.getcwd())
+print('test - done')
