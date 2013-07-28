@@ -601,8 +601,9 @@ Options for the Executable Output
 Options for Windows apps 
 --------------------------
 
---version-file=resource_file
-    Add a version resource from *resource_file* to the .exe output.
+--version-file=version_text_file
+    Add a Version resource to the .exe output
+    using a *version_text_file* as produced by ``pyi-grab_version``.
     See `Capturing Version Data`_ below.
 
 -m file, -m xml_string, --manifest=file, --manifest=xml_string
@@ -1604,28 +1605,66 @@ Capturing Version Data
 
 The ``pyi-grab_version`` command is invoked
 with the full path name of a Windows executable
-that has a version resource.
+that has a Version resource.
+(A Version resource contains a group of data structures,
+some containing binary integers and some containing strings,
+that describe the properties of the executable.
+For details see the `Version Information Structures`_ page.)
 
-It outputs text that represents a standard version resource.
+The command writes text that represents
+a Version resource in readable form.
 The version text is written to standard output.
 You can copy it from the console window or redirect it to a file.
 Then you can edit the version information to adapt it to your program.
-
-The edited text file can be
-eval'ed by ``utils/versioninfo.py`` in the |PyInstaller| distribution folder
-to reproduce a standard version resource.
-Or the text file can be given with a ``--version-file=``
-option to ``pyinstaller`` or ``pyi-makespec``.
-
-This approach is used because version resources are strange beasts,
-and it may be impossible to fully understand them.
+This approach is used because version resources are complex.
 Some elements are optional, others required.
 When you view the version tab of a Properties dialog,
-there's no straightforward relationship between
-the data displayed and the structure of the resource itself.
-So the easiest thing to do is to find an executable that displays the kind of
-information you want, and grab its resource and edit it.
-This is usually easier than the Version resource wizard in VC++.
+there's no simple relationship between
+the data displayed and the structure of the resource.
+Using ``pyi-grab_version`` you can find an executable that displays the kind of
+information you want, copy its resource data, and modify it to suit your package.
+
+The version text file is encoded UTF-8 and may contain non-ASCII characters.
+(Unicode characters are allowed in Version resource string fields.)
+Be sure to edit and save the text file in UTF-8 unless you are
+certain it contains only ASCII string values.
+
+The edited version text file can be given with a ``--version-file=``
+option to ``pyinstaller`` or ``pyi-makespec``.
+The text data is converted to a Version resource and
+installed in the executable output.
+
+In a Version resource there are two 64-bit binary values,
+``FileVersion`` and ``ProductVersion``.
+In the version text file these are given as four-element tuples,
+for example::
+
+    filevers=(2, 0, 4, 0),
+    prodvers=(2, 0, 4, 0),
+
+The elements of each tuple represent 16-bit values
+from most-significant to least-significant.
+For example the ``FileVersion`` value given resolves to
+``0002000000040000`` in hex.
+
+      ``set_version`` *version_text_file* *executable_file*
+
+The ``set_version`` utility reads a version text file as written
+by ``pyi-grab_version``, converts it to a Version resource,
+and installs that resource in the *executable_file* specified.
+
+For advanced uses, examine a version text file.
+You find it is Python code that creates a ``VSVersionInfo`` object.
+The class definition for ``VSVersionInfo`` is found in
+``utils/versioninfo.py`` in the |PyInstaller| distribution folder.
+You can write a program that imports that module.
+In that program you can ``eval``
+the contents of a version info text file to produce a 
+``VSVersionInfo`` object.
+You can use the ``.toRaw()`` method of that object to
+produce a Version resource in binary form.
+Or you can apply the ``unicode()`` function to the object
+to reproduce the version text file.
 
 Inspecting Archives
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -2572,4 +2611,5 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
 .. _`PEP 302`: http://www.python.org/dev/peps/pep-0302/
 .. _`How to Contribute`: http://www.pyinstaller.org/wiki/Development/HowtoContribute
+.. _`Version Information Structures`: http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx
 .. include:: _definitions.txt
