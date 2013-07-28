@@ -4,11 +4,11 @@
 # http://msdn.microsoft.com/en-us/library/ms646997.aspx
 VSVersionInfo(
   ffi=FixedFileInfo(
-    # filevers and prodvers should be always a tupple with four items: (1, 2, 3, 4)
+    # filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)
     # Set not needed items to zero 0.
     filevers=(2, 0, 4, 0),
     prodvers=(2, 0, 4, 0),
-    # Contains a bitmask that specifies the valid bits 'flags'r
+    # Contains a bitmask that specifies the valid bits 'flags'
     mask=0x0,
     # Contains a bitmask that specifies the Boolean attributes of the file.
     flags=0x0,
