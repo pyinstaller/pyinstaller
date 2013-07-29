@@ -289,7 +289,7 @@ class FixedFileInfo:
               self.productVersionLS >> 16, self.productVersionLS & 0xFFFF)
         fd = (self.fileDateMS, self.fileDateLS)
         tmp = [u'FixedFileInfo(',
-            u'# filevers and prodvers should be always a tupple with four items: (1, 2, 3, 4)',
+            u'# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
             u'# Set not needed items to zero 0.',
             u'filevers=%s,' % unicode(fv),
             u'prodvers=%s,' % unicode(pv),
