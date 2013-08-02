@@ -32,6 +32,13 @@ top = '.'
 out = 'build'
 
 
+# TODO use following variable only on darwin and for 32bit loader.
+# OS X 10.5 doesn't understand the load command  'LC_DYLD_INFO_ONLY'
+# that is used by the OS X 10.6 linker.
+# The following variable fixes 10.5 compatibility.
+os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.5'
+
+
 # TODO strip created binaries.
 
 
@@ -278,6 +285,13 @@ def configure(conf):
         conf.env.append_value('LINKFLAGS', '-arch')
         conf.env.append_value('LINKFLAGS', mac_arch)
 
+        if myarch == '32bit':
+            conf.env.append_value('CCFLAGS', '-mmacosx-version-min=10.5')
+        else:
+            conf.env.append_value('CCFLAGS', '-mmacosx-version-min=10.6')
+
+        
+
        
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
@@ -288,9 +302,6 @@ def configure(conf):
 
 
     ### Other stuff
-
-    if myplatform.startswith('darwin'):
-        conf.env.MACOSX_DEPLOYMENT_TARGET = '10.5'
 
     if myplatform.startswith('win'):
         # RC file - icon
