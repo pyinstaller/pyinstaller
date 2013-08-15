@@ -21,7 +21,7 @@ from glob import glob
 import zipfile
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26
+from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26, is_py27
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
@@ -612,9 +612,25 @@ def findLibrary(name):
 
     # Look in the known safe paths
     if lib is None:
-        paths = ['/lib', '/usr/lib']
+        paths = ['/lib', '/lib32', '/lib64', '/usr/lib', '/usr/lib32', '/usr/lib64']
+
+        # On Debian/Ubuntu /usr/bin/python is linked statically with libpython.
+        # Newer Debian/Ubuntu with multiarch support putsh the libpythonX.Y.so
+        # To paths like /usr/lib/i386-linux-gnu/.
+        # Works only for Python 2.7.
+        if is_py27:
+            import sysconfig  # Module available only in Python 2.7.
+            arch_subdir = sysconfig.get_config_var('multiarchsubdir')
+            arch_subdir = os.path.basename(arch_subdir)
+            paths.extend([
+                os.path.join('/usr/lib', arch_subdir),
+                os.path.join('/usr/lib32', arch_subdir),
+                os.path.join('/usr/lib64', arch_subdir),
+            ])
+
         if is_aix:
             paths.append('/opt/freeware/lib')
+
         for path in paths:
             libs = glob(os.path.join(path, name + '*'))
             if libs:
