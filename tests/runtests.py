@@ -26,8 +26,11 @@ import sys
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
 if not hasattr(sys, 'real_prefix'):
+    _virtual_env_ = False
     pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     sys.path.insert(0, pyi_home)
+else:
+    _virtual_env_ = True
 
 
 from PyInstaller import HOMEPATH
@@ -389,9 +392,13 @@ class BuildTestRunner(object):
             if prog is None:
                 prog = self._find_exepath(tmpname,
                         os.path.join('dist', self.test_file))
-            fname_list = compat.exec_python(
-                os.path.join(HOMEPATH, 'utils', 'archive_viewer.py'),
-                '-b', '-r', prog)
+            if _virtual_env_:
+                fname_list = compat.exec_command(
+                    'pyi-archive_viewer', '-b', '-r', prog)
+            else:
+                fname_list = compat.exec_python(
+                    os.path.join(HOMEPATH, 'utils', 'archive_viewer.py'),
+                    '-b', '-r', prog)
             # Fix line-endings so eval() does not fail.
             fname_list = fname_list.replace('\r\n', '\n').replace('\n\r', '\n')
             fname_list = eval(fname_list)
