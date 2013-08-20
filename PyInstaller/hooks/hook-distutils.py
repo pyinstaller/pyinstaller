@@ -40,8 +40,8 @@ datas = [
 ]
 
 
-# On Windows Makefile does not exist.
-if not is_win:
+# The Makefile does not exist on all platforms, eg. on Windows
+if os.path.exists(_MAKEFILE):
     _frozen_makefile = compat.relpath(os.path.dirname(_MAKEFILE), sys_prefix)
     datas.append((_MAKEFILE, _frozen_makefile))
 
