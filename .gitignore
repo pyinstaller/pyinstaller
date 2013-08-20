@@ -33,6 +33,10 @@
 /tests/*/build/
 /tests/*/dist/
 
+# ignore generated spec-files
+# NB: You can still add .spec-files to be tracked using `git add`
+/tests/*/*.spec
+
 # /tests/basic/
 /tests/basic/python_exe.build
 
