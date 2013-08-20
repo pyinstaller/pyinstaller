@@ -25,9 +25,10 @@ from setuptools.command import easy_install
 
 
 # Expand PYTHONPATH with PyInstaller package to support running without
-# installation.
-pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-sys.path.insert(0, pyi_home)
+# installation -- only if not running in a virtualenv.
+if not hasattr(sys, 'real_prefix'):
+    pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    sys.path.insert(0, pyi_home)
 
 
 from PyInstaller.compat import is_py25, is_py26
