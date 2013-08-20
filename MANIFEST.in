@@ -1,2 +1,2 @@
-exclude .hgignore
+exclude *.py[co]
 recursive-include PyInstaller *
