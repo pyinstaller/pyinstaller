@@ -383,7 +383,7 @@ class BuildTestRunner(object):
         are not defined.
         """
         logsfn = glob.glob(self.test_file + '.toc')
-        # Other main scritps do not start with 'test_'.
+        # Other main scripts do not start with 'test_'.
         logsfn += glob.glob(self.test_file.split('_', 1)[1] + '_?.toc')
         for logfn in logsfn:
             self._msg("EXECUTING MATCHING " + logfn)
