@@ -1397,7 +1397,7 @@ class COLLECT(Target):
                 continue
             if os.pardir in os.path.normpath(inm) or os.path.isabs(inm):
                 raise SystemExit('Security-Alert: try to store file outside '
-                                 'of dist-directory. Aborting.')
+                                 'of dist-directory. Aborting. %r' % inm)
             tofnm = os.path.join(self.name, inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
