@@ -10,6 +10,7 @@
 
 import sysconfig
 import os
+import sys
 
 from PyInstaller import compat
 
