@@ -8,14 +8,12 @@
 #-----------------------------------------------------------------------------
 
 
-import distutils
 import distutils.sysconfig
 import marshal
 import os
 import sys
 
 from PyInstaller import compat
-from PyInstaller.compat import is_win
 
 
 # distutils module requires Makefile and pyconfig.h files from Python
