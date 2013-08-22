@@ -11,6 +11,7 @@
 import sys
 import os
 import glob
+import imp
 import UserDict
 
 from PyInstaller import depend, hooks
@@ -320,9 +321,9 @@ class ImportTracker:
             # this (and scan_code) are instead of doing "exec co in mod.__dict__"
             try:
                 hookmodnm = 'hook-' + fqname
-                hooks = __import__('PyInstaller.hooks', globals(), locals(), [hookmodnm])
-                hook = getattr(hooks, hookmodnm)
-            except AttributeError:
+                m = imp.find_module(hookmodnm, PyInstaller.hooks.__path__)
+                hook = imp.load_module(hookmodnm, *m)
+            except ImportError:
                 pass
             else:
                 logger.info('Processing hook %s' % hookmodnm)
