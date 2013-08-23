@@ -29,13 +29,7 @@ _MAKEFILE = distutils.sysconfig.get_makefile_filename()
 def _find_prefix(filename):
     if not compat.is_virtualenv:
         return sys.prefix
-    prefixes = [sys.prefix]
-    if hasattr(sys, 'real_prefix'):
-        # virtualenv
-        prefixes.append(sys.real_prefix)
-    if hasattr(sys, 'base_prefix'):
-        # PEP 405 venv (new in Python 3.3)
-        prefixes.append(sys.base_prefix)
+    prefixes = [sys.prefix, compat.venv_real_prefix]
     possible_prefixes = []
     for prefix in prefixes:
         common = os.path.commonprefix([prefix, filename])
