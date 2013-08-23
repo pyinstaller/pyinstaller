@@ -12,10 +12,14 @@
 This module contains various helper functions for git DVCS
 """
 
-
+import os
 from PyInstaller import compat
 
 def get_repo_revision():
+    path = os.path # shortcut
+    gitdir = path.normpath(path.join(path.dirname(__file__), '..','..', '.git'))
+    if not path.exists(gitdir):
+        return ''
     try:
         rev = compat.exec_command('git', 'rev-parse', '--short', 'HEAD').strip()
         if rev:
