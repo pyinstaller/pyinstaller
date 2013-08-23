@@ -322,7 +322,7 @@ class ImportTracker:
             try:
                 hookmodnm = 'hook-' + fqname
                 m = imp.find_module(hookmodnm, PyInstaller.hooks.__path__)
-                hook = imp.load_module(hookmodnm, *m)
+                hook = imp.load_module('PyInstaller.hooks.' + hookmodnm, *m)
             except ImportError:
                 pass
             else:
