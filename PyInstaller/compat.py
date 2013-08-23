@@ -108,7 +108,11 @@ else:
 
 
 # Some code parts needs to behave different when running in virtualenv.
-is_virtualenv = hasattr(sys, 'real_prefix')
+# 'real_prefix is for virtualenv,
+# 'base_prefix' is for PEP 405 venv (new in Python 3.3)
+venv_real_prefix = (getattr(sys, 'real_prefix', None) or
+                    getattr(sys, 'base_prefix', None))
+is_virtualenv = bool(venv_real_prefix)
 
 
 def architecture():
