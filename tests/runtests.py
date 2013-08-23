@@ -658,7 +658,8 @@ def main():
             if not test_list:
                 test_list = [arg]
             else:
-                test_list = [x for x in test_list if os.path.splitext(x)[1] == ".py"]
+                test_list = [x for x in test_list
+                             if os.path.splitext(x)[1] in (".py", ".spec")]
             # Sort tests aplhabetically. For example test
             # basic/test_nested_launch1 depends on basic/test_nested_launch0.
             # Otherwise it would fail.
