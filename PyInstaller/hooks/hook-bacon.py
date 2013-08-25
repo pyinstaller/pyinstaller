@@ -1,3 +1,15 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+# Hook for Bacon (https://github.com/aholkner/bacon)
+# Bacon requires its native DLLs to be copied alongside frozen executable.
+
 from PyInstaller.compat import is_win, is_darwin
 from PyInstaller.hooks.hookutils import get_package_paths
 
