@@ -22,6 +22,11 @@ d = os.path.join(sys._MEIPASS, d)
 # We remove QT_PLUGIN_PATH variable, beasuse we want Qt4 to load
 # plugins only from one path.
 if 'QT_PLUGIN_PATH' in os.environ:
+    # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
+    # deleting the var from os.environ does not delete it from the environment.
+    # In those cases we cannot delete the variable but only set it to the
+    # empty string.
+    os.environ['QT_PLUGIN_PATH'] = ''
     del os.environ['QT_PLUGIN_PATH']
 
 
