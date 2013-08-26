@@ -22,7 +22,8 @@ def main():
         basedir = sys._MEIPASS
     else:
         basedir = os.path.dirname(__file__)
-    quickview.setSource(QtCore.QUrl.fromLocalFile(os.path.join(basedir, 'hello.qml')))
+    quickview.setSource(QtCore.QUrl.fromLocalFile(
+                                    os.path.join(basedir,'hello.qml')))
     quickview.show()
     
     app.exec_()
