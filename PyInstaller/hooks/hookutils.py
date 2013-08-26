@@ -187,17 +187,20 @@ def qt4_plugins_binaries(plugin_type):
 
 
 def qt4_menu_nib_dir():
-    """Return path to Qt resource dir qt_menu.nib."""
+    """Return path to Qt resource dir qt_menu.nib. OSX only"""
     menu_dir = ''
     # Detect MacPorts prefix (usually /opt/local).
     # Suppose that PyInstaller is using python from macports.
     macports_prefix = sys.executable.split('/Library')[0]
     
-    dirs=[]
-    if os.environ['QT5DIR']:
-        dirs.append(os.path.join(os.environ['QT5DIR'], "src", "plugins", "platforms", "cocoa"))
-    
     # list of directories where to look for qt_menu.nib    
+    dirs = []
+    # If PyQt4 is built against Qt5 look for the qt_menu.nib in a user
+    # specified location, if it exists.
+    if os.environ['QT5DIR']:
+        dirs.append(os.path.join(os.environ['QT5DIR'],
+                                 "src", "plugins", "platforms", "cocoa"))
+    
     dirs += [
         # Qt4 from MacPorts not compiled as framework.
         os.path.join(macports_prefix, 'lib', 'Resources'),
@@ -270,17 +273,19 @@ def qt5_plugins_binaries(plugin_type):
     return binaries
 
 def qt5_menu_nib_dir():
-    """Return path to Qt resource dir qt_menu.nib."""
+    """Return path to Qt resource dir qt_menu.nib. OSX only"""
     menu_dir = ''
     
     # If the QT5DIR env var is set then look there first. It should be set to the
     # qtbase dir in the Qt5 distribution.
-    dirs=[]
+    dirs = []
     if os.environ['QT5DIR']:
-        dirs.append(os.path.join(os.environ['QT5DIR'], "src", "plugins", "platforms", "cocoa"))
+        dirs.append(os.path.join(os.environ['QT5DIR'],
+                                 "src", "plugins", "platforms", "cocoa"))
 
     # As of the time of writing macports doesn't yet support Qt5. So this is
     # just modified from the Qt4 version.
+    # FIXME: update this when MacPorts supports Qt5
     # Detect MacPorts prefix (usually /opt/local).
     # Suppose that PyInstaller is using python from macports.
     macports_prefix = sys.executable.split('/Library')[0]
@@ -297,6 +302,7 @@ def qt5_menu_nib_dir():
         '/Library/Frameworks/QtGui.Framework/Versions/Current/Resources',
     ])
 
+    # Copied verbatim from the Qt4 version with 4 changed to 5
     # Qt5 from Homebrew compiled as framework
     globpath = '/usr/local/Cellar/qt/5.*/lib/QtGui.framework/Versions/5/Resources'
     qt_homebrew_dirs = glob.glob(globpath)

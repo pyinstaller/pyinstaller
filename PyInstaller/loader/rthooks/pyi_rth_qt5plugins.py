@@ -8,9 +8,9 @@
 #-----------------------------------------------------------------------------
 
 
-# Qt4 plugins are bundled as data files (see hooks/hook-PyQt4*),
-# within a "qt4_plugins" directory.
-# We add a runtime hook to tell Qt4 where to find them.
+# Qt5 plugins are bundled as data files (see hooks/hook-PyQt5*),
+# within a "qt5_plugins" directory.
+# We add a runtime hook to tell Qt5 where to find them.
 
 import os
 import sys
@@ -19,7 +19,7 @@ d = "qt5_plugins"
 d = os.path.join(sys._MEIPASS, d)
 
 
-# We remove QT_PLUGIN_PATH variable, beasuse we want Qt4 to load
+# We remove QT_PLUGIN_PATH variable, because we want Qt5 to load
 # plugins only from one path.
 if 'QT_PLUGIN_PATH' in os.environ:
     del os.environ['QT_PLUGIN_PATH']
