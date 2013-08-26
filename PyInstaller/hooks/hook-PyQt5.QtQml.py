@@ -8,5 +8,5 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['sip', 'PyQt5.QtCore', 'PyQt5.QtV8', 'PyQt5.QtNetwork', 'PyQt5._qt']
+hiddenimports = ['sip', 'PyQt5.QtCore', 'PyQt5.QtNetwork', 'PyQt5._qt']
 
