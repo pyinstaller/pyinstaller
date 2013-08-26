@@ -10,7 +10,10 @@
 
 from PyInstaller.hooks.hookutils import eval_statement
 
-hiddenimports = ["PyQt5.QtCore", "PyQt5.QtWidgets", "PyQt5.QtGui", "PyQt5.QtSvg"]
+hiddenimports = ["PyQt5.QtCore",
+                 "PyQt5.QtWidgets",
+                 "PyQt5.QtGui",
+                 "PyQt5.QtSvg"]
 
 if eval_statement("from PyQt5 import Qwt5; print hasattr(Qwt5, 'toNumpy')"):
     hiddenimports.append("numpy")
