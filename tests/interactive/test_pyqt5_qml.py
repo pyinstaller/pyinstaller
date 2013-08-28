@@ -16,6 +16,10 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtQuick
 
 def main():
+    # This is required so that app.quit can be invoked
+    # when the quickview is closed. 
+    global app 
+    
     app = QtWidgets.QApplication(sys.argv)
     quickview = QtQuick.QQuickView()
     if getattr(sys, 'frozen', None):
@@ -24,6 +28,7 @@ def main():
         basedir = os.path.dirname(__file__)
     quickview.setSource(QtCore.QUrl.fromLocalFile(
                                     os.path.join(basedir,'hello.qml')))
+    quickview.engine().quit.connect(app.quit)
     quickview.show()
     
     app.exec_()
