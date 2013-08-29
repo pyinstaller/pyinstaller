@@ -728,7 +728,7 @@ def get_python_library_path():
         # In virtualenv PyInstaller is not able to find Python library.
         # We need special care for this case.
         if compat.is_virtualenv:
-            py_prefix = sys.real_prefix
+            py_prefix = compat.venv_real_prefix
         else:
             py_prefix = sys.prefix
 

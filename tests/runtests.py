@@ -23,13 +23,14 @@ import shutil
 import sys
 
 
-try:
-    import PyInstaller
-except ImportError:
-    # Expand PYTHONPATH with PyInstaller package to support running without
-    # installation.
+# Expand PYTHONPATH with PyInstaller package to support running without
+# installation -- only if not running in a virtualenv.
+if not hasattr(sys, 'real_prefix'):
+    _virtual_env_ = False
     pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     sys.path.insert(0, pyi_home)
+else:
+    _virtual_env_ = True
 
 
 from PyInstaller import HOMEPATH
@@ -124,6 +125,7 @@ class SkipChecker(object):
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
             'libraries/test_pytz': ['pytz'],
+            'libraries/test_sysconfig': ['sysconfig'],
             'libraries/test_scipy': ['numpy', 'scipy'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
             'libraries/test_twisted_qt4reactor': ['twisted', 'PyQt4'],
@@ -382,7 +384,7 @@ class BuildTestRunner(object):
         are not defined.
         """
         logsfn = glob.glob(self.test_file + '.toc')
-        # Other main scritps do not start with 'test_'.
+        # Other main scripts do not start with 'test_'.
         logsfn += glob.glob(self.test_file.split('_', 1)[1] + '_?.toc')
         for logfn in logsfn:
             self._msg("EXECUTING MATCHING " + logfn)
@@ -391,9 +393,13 @@ class BuildTestRunner(object):
             if prog is None:
                 prog = self._find_exepath(tmpname,
                         os.path.join('dist', self.test_file))
-            fname_list = compat.exec_python(
-                os.path.join(HOMEPATH, 'utils', 'archive_viewer.py'),
-                '-b', '-r', prog)
+            if _virtual_env_:
+                fname_list = compat.exec_command(
+                    'pyi-archive_viewer', '-b', '-r', prog)
+            else:
+                fname_list = compat.exec_python(
+                    os.path.join(HOMEPATH, 'utils', 'archive_viewer.py'),
+                    '-b', '-r', prog)
             # Fix line-endings so eval() does not fail.
             fname_list = fname_list.replace('\r\n', '\n').replace('\n\r', '\n')
             fname_list = eval(fname_list)
@@ -652,7 +658,8 @@ def main():
             if not test_list:
                 test_list = [arg]
             else:
-                test_list = [x for x in test_list if os.path.splitext(x)[1] == ".py"]
+                test_list = [x for x in test_list
+                             if os.path.splitext(x)[1] in (".py", ".spec")]
             # Sort tests aplhabetically. For example test
             # basic/test_nested_launch1 depends on basic/test_nested_launch0.
             # Otherwise it would fail.

@@ -19,6 +19,7 @@ Changes since PyInstaller 2.0
  + Minimum suported Python version is 2.4.
  + Add import hooks for docutils, jinja2, sphinx, pytz, idlelib, sqlite3.
  + Add import hooks for IPython, Scipy, pygst, Python for .NET.
+ + Add import hooks for PyQt5, Bacon.
  + Fix django import hook to work with Django 1.4.
  + Add rthook for twisted, pygst.
  + Add rthook for pkg_resource. It fixes the following functions for frozen app
