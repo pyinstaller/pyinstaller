@@ -23,10 +23,13 @@ import shutil
 import sys
 
 
-# Expand PYTHONPATH with PyInstaller package to support running without
-# installation.
-pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-sys.path.insert(0, pyi_home)
+try:
+    import PyInstaller
+except ImportError:
+    # Expand PYTHONPATH with PyInstaller package to support running without
+    # installation.
+    pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    sys.path.insert(0, pyi_home)
 
 
 from PyInstaller import HOMEPATH
