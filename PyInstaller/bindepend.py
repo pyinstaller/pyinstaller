@@ -617,16 +617,19 @@ def findLibrary(name):
         # On Debian/Ubuntu /usr/bin/python is linked statically with libpython.
         # Newer Debian/Ubuntu with multiarch support putsh the libpythonX.Y.so
         # To paths like /usr/lib/i386-linux-gnu/.
-        # Works only for Python 2.7.
-        if is_py27:
+        try:
             import sysconfig  # Module available only in Python 2.7.
             arch_subdir = sysconfig.get_config_var('multiarchsubdir')
-            arch_subdir = os.path.basename(arch_subdir)
-            paths.extend([
-                os.path.join('/usr/lib', arch_subdir),
-                os.path.join('/usr/lib32', arch_subdir),
-                os.path.join('/usr/lib64', arch_subdir),
-            ])
+            # Ignore if None is returned.
+            if arch_subdir:
+                arch_subdir = os.path.basename(arch_subdir)
+                paths.extend([
+                    os.path.join('/usr/lib', arch_subdir),
+                    os.path.join('/usr/lib32', arch_subdir),
+                    os.path.join('/usr/lib64', arch_subdir),
+                ])
+        except ImportError:
+            pass
 
         if is_aix:
             paths.append('/opt/freeware/lib')
