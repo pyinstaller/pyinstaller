@@ -127,6 +127,7 @@ class SkipChecker(object):
             'libraries/test_pytz': ['pytz'],
             'libraries/test_sysconfig': ['sysconfig'],
             'libraries/test_scipy': ['numpy', 'scipy'],
+            'libraries/test_sqlite3': ['sqlite3'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
             'libraries/test_twisted_qt4reactor': ['twisted', 'PyQt4'],
             'libraries/test_twisted_reactor': ['twisted'],
