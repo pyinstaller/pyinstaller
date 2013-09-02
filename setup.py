@@ -10,6 +10,7 @@
 
 
 import os
+import stat
 from setuptools import setup, find_packages
 from PyInstaller import get_version
 
@@ -84,6 +85,7 @@ def _write_git_version_file(filename):
     Fake PyInstaller.utils.git.py to always return the current revision.
     """
     git_version = PyInstaller.utils.git.get_repo_revision()
+    st = os.stat(filename)
     # remove the file first for the case it's hard-linked to the
     # original file
     os.remove(filename)
@@ -93,6 +95,7 @@ def _write_git_version_file(filename):
         git_mod.write(template % git_version)
     finally:
         git_mod.close()
+    os.chmod(filename, stat.S_IMODE(st.st_mode))
 
 
 class my_build_py(build_py):
