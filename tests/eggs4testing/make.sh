@@ -14,6 +14,7 @@ NSPKG_1="nspkg1-aaa nspkg1-bbb nspkg1-ccc nspkg1-empty"
 NSPKG_2="nspkg2-aaa nspkg2-bbb nspkg2-ccc nspkg2-empty"
 
 distdir="$PWD"/dist
+testsdir="$PWD"/../import
 
 export PYTHONDONTWRITEBYTECODE=1
 
@@ -23,11 +24,11 @@ rm -rf $NSPKG_1 $NSPKG_2
 ./build-nspkg-tests.py
 
 
-python setup-zipped.py bdist_egg
-# nedd to clean up build-dir, otherwise stuff from `zipped_egg`
-# goes into `unzipped_egg*.egg`
+# We need to clean up build-dir between builds, otherwise stuff from
+# one egg goes into the next one.
+python setup-zipped.py bdist_egg --dist-dir "$distdir"
 rm -rf build/
-python setup-unzipped.py bdist_egg
+python setup-unzipped.py bdist_egg --dist-dir "$distdir"
 rm -rf build/
 
 for pkg in $NSPKG_1 ; do
@@ -49,7 +50,7 @@ for pkg in $NSPKG_2 ; do
 	--record=install.log
     cd -
 done
-cp ../import/test_{eggs,nspkg{1,2}}*.py venv
+cp $testsdir/test_{eggs,nspkg{1,2}}*.py venv
 
 # see if the unpackaged test-case still works
 cd venv
@@ -62,18 +63,18 @@ python test_nspkg2.py
 cd ..
 
 cd venv
-rm -rfv ../../import/{,un}zipped.egg ../../import/nspkg{1,2}*-pkg
-mv -v lib/python2.7/site-packages/zipped_egg-*.egg ../../import/zipped.egg
-mv -v lib/python2.7/site-packages/unzipped_egg-*.egg ../../import/unzipped.egg
+rm -rfv $testsdir/{,un}zipped.egg $testsdir/nspkg{1,2}*-pkg
+mv -v lib/python2.7/site-packages/zipped_egg-*.egg $testsdir/zipped.egg
+mv -v lib/python2.7/site-packages/unzipped_egg-*.egg $testsdir/unzipped.egg
 
-pkgdir=../../import/nspkg1-pkg
+pkgdir=$testsdir/nspkg1-pkg
 mkdir -p $pkgdir
 for pkg in $NSPKG_1 ; do
     pkg=${pkg/-/_}
     mv -v lib/python2.7/site-packages/$pkg-*.egg $pkgdir/$pkg.egg
 done
 
-pkgdir=../../import/nspkg2-pkg
+pkgdir=$testsdir/nspkg2-pkg
 mkdir -p $pkgdir
 mv -v lib/python2.7/site-packages/nspkg2/ $pkgdir
 for pkg in $NSPKG_2 ; do
