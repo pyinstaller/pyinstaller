@@ -13,24 +13,27 @@ from setuptools import setup, find_packages
 from PyInstaller import get_version
 
 
-DESC = 'Converts (packages) Python programs into stand-alone executables, \
-under Windows, Linux, Mac OS X, AIX and Solaris.'
+DESC = ('Converts (packages) Python programs into stand-alone executables, '
+        'under Windows, Linux, Mac OS X, AIX and Solaris.')
 
-LONG_DESC = "PyInstaller is a program that converts (packages) Python \
-programs into stand-alone executables, under Windows, Linux, Mac OS X, \
-AIX and Solaris. Its main advantages over similar tools are that \
-PyInstaller works with any version of Python since 2.3, it builds smaller \
-executables thanks to transparent compression, it is fully multi-platform, \
-and uses the OS support to load the dynamic libraries, thus ensuring full \
-compatibility.\n\n\
-The main goal of PyInstaller is to be compatible with 3rd-party packages \
-out-of-the-box. This means that, with PyInstaller, all the required tricks \
-to make external packages work are already integrated within PyInstaller \
-itself so that there is no user intervention required. You'll never be \
-required to look for tricks in wikis and apply custom modification to your \
-files or your setup scripts. As an example, libraries like PyQt, Django or \
-matplotlib are fully supported, without having to handle plugins or \
-external data files manually."
+LONG_DESC = """
+PyInstaller is a program that converts (packages) Python
+programs into stand-alone executables, under Windows, Linux, Mac OS X,
+AIX and Solaris. Its main advantages over similar tools are that
+PyInstaller works with any version of Python since 2.3, it builds smaller
+executables thanks to transparent compression, it is fully multi-platform,
+and uses the OS support to load the dynamic libraries, thus ensuring full
+compatibility.
+
+The main goal of PyInstaller is to be compatible with 3rd-party packages
+out-of-the-box. This means that, with PyInstaller, all the required tricks
+to make external packages work are already integrated within PyInstaller
+itself so that there is no user intervention required. You'll never be
+required to look for tricks in wikis and apply custom modification to your
+files or your setup scripts. As an example, libraries like PyQt, Django or
+matplotlib are fully supported, without having to handle plugins or
+external data files manually.
+"""
 
 
 CLASSIFIERS = """
@@ -79,15 +82,16 @@ setup(
     maintainer='Giovanni Bajo, Hartmut Goebel, Martin Zibricky',
     maintainer_email='pyinstaller@googlegroups.com',
 
-    license='GPL license with a special exception which allows to use PyInstaller \
-to build and distribute non-free programs (including commercial ones)',
+    license=('GPL license with a special exception which allows to use '
+             'PyInstaller to build and distribute non-free programs '
+             '(including commercial ones)'),
     url='http://www.pyinstaller.org',
     download_url='https://sourceforge.net/projects/pyinstaller/files',
 
     classifiers=CLASSIFIERS,
     zip_safe=False,
     packages=find_packages(),
-    # This Include precompiled bootloaders.
+    # This includes precompiled bootloaders.
     include_package_data=True,
 
     entry_points="""
