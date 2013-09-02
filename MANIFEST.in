@@ -1,2 +1,2 @@
-exclude *.py[co]
 recursive-include PyInstaller *
+global-exclude *.py[co]
