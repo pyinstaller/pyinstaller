@@ -4,6 +4,7 @@ Helper script for generating namespace packages for test-cases.
 """
 
 import os
+import shutil
 
 declare_namespace_template = """
 import pkg_resources
@@ -32,6 +33,8 @@ OLDPWD = os.getcwd()
 
 def make_package(pkgname, namespace_packages, modules, zip_safe=False):
     base = os.path.join(workdir, pkgname)
+    if os.path.exists(base):
+        shutil.rmtree(base)
     os.mkdir(base)
     os.chdir(base)
     # write __init__-files for each namespaced package
