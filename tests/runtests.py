@@ -131,6 +131,8 @@ class SkipChecker(object):
             'libraries/test_wx_pubsub_arg1': ['wx'],
             'libraries/test_wx_pubsub_kwargs': ['wx'],
             'libraries/test_sphinx': ['sphinx', 'docutils', 'jinja2', 'uuid'],
+            'libraries/test_zope': ['zope'],
+            'libraries/test_zope_interface': ['zope.interface'],
             'import/test_c_extension': ['simplejson'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_eggs2': ['pkg_resources'],
