@@ -64,23 +64,23 @@ cd ..
 
 cd venv
 rm -rfv $testsdir/{,un}zipped.egg $testsdir/nspkg{1,2}*-pkg
-mv -v lib/python2.7/site-packages/zipped_egg-*.egg $testsdir/zipped.egg
-mv -v lib/python2.7/site-packages/unzipped_egg-*.egg $testsdir/unzipped.egg
+mv -v lib/python*/site-packages/zipped_egg-*.egg $testsdir/zipped.egg
+mv -v lib/python*/site-packages/unzipped_egg-*.egg $testsdir/unzipped.egg
 
 pkgdir=$testsdir/nspkg1-pkg
 mkdir -p $pkgdir
 for pkg in $NSPKG_1 ; do
     pkg=${pkg/-/_}
-    mv -v lib/python2.7/site-packages/$pkg-*.egg $pkgdir/$pkg.egg
+    mv -v lib/python*/site-packages/$pkg-*.egg $pkgdir/$pkg.egg
 done
 
 pkgdir=$testsdir/nspkg2-pkg
 mkdir -p $pkgdir
-mv -v lib/python2.7/site-packages/nspkg2/ $pkgdir
+mv -v lib/python*/site-packages/nspkg2/ $pkgdir
 for pkg in $NSPKG_2 ; do
     pkg=${pkg/-/_}
-    mv -v lib/python2.7/site-packages/$pkg-*.egg-info/ $pkgdir/$pkg.egg-info
-    mv -v lib/python2.7/site-packages/$pkg-*-nspkg.pth $pkgdir/$pkg-nspkg.pth
+    mv -v lib/python*/site-packages/$pkg-*.egg-info/ $pkgdir/$pkg.egg-info
+    mv -v lib/python*/site-packages/$pkg-*-nspkg.pth $pkgdir/$pkg-nspkg.pth
 done
 
 cd ..
