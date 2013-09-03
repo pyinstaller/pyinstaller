@@ -17,8 +17,8 @@ from PyQt5 import QtQuick
 
 # The hello.qml file is put in a resource so that the packaged app can access
 # it. To rebuild it use:
-# > pyrcc5 test_pyqt5_qml.qrc > test_pyqt5_qml_qrc.py
-import test_pyqt5_qml_qrc
+# > pyrcc5 pyqt5_qml.qrc > pyqt5_qml_qrc.py
+import pyqt5_qml_qrc
 
 def main():
     # This is required so that app.quit can be invoked when the quickview
