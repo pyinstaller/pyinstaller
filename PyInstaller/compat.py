@@ -24,6 +24,7 @@ import sys
 is_py25 = sys.version_info >= (2, 5)
 is_py26 = sys.version_info >= (2, 6)
 is_py27 = sys.version_info >= (2, 7)
+is_py33 = sys.version_info >= (3, 3)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
