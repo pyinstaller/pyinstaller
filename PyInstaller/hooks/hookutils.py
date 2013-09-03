@@ -175,7 +175,7 @@ def qt4_phonon_plugins_dir():
 
 
 def qt4_plugins_binaries(plugin_type):
-    """Return list of dynamic libraries formated for mod.binaries."""
+    """Return list of dynamic libraries formatted for mod.binaries."""
     binaries = []
     pdir = qt4_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
@@ -262,7 +262,7 @@ def qt5_phonon_plugins_dir():
 
 
 def qt5_plugins_binaries(plugin_type):
-    """Return list of dynamic libraries formated for mod.binaries."""
+    """Return list of dynamic libraries formatted for mod.binaries."""
     binaries = []
     pdir = qt5_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
