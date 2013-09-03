@@ -13,7 +13,7 @@ import os
 import sys
 import PyInstaller
 import PyInstaller.compat as compat
-from PyInstaller.compat import is_darwin
+from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils import misc
 
 import PyInstaller.log as logging
@@ -321,12 +321,19 @@ def qt5_menu_nib_dir():
 
 def qt5_qml_dir():
     import subprocess
-    qmldir = subprocess.check_output(["qmake", "-query", "QT_INSTALL_QML"]).strip()
+    qmldir = subprocess.check_output(["qmake", "-query",
+                                      "QT_INSTALL_QML"]).strip()
     if len(qmldir) == 0:
         logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
                         + 'QT_INSTALL_QML" returned nothing')
     if not os.path.exists(qmldir):
         logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
+    
+    # On Windows 'qmake -query' uses / as the path separator
+    # so change it to \\. 
+    if is_win:
+        import string
+        qmldir = string.replace(qmldir, '/', '\\')
 
     return qmldir
  
