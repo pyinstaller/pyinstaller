@@ -32,7 +32,7 @@ sys.path.insert(0, pyi_home)
 from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
-from PyInstaller.compat import is_py25, is_py26, is_win, is_darwin
+from PyInstaller.compat import is_py25, is_py26, is_py33, is_win, is_darwin
 from PyInstaller.hooks import hookutils
 from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml
@@ -89,6 +89,7 @@ class SkipChecker(object):
             'import/test_onefile_relative_import': is_py25,
             'import/test_onefile_relative_import2': is_py26,
             'import/test_onefile_relative_import3': is_py25,
+            'import/test_nspkg-pep420': is_py33,
             'libraries/test_enchant': is_win,
             # docutils, a sphinx dependency, fails in
             # docutils.utils.__init__.py, function decode_path, where
