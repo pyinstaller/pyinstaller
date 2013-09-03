@@ -8,15 +8,13 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-# Since this .pth-file does not reside on a site-dir, we need to add
-# it manually
-import site
 import os
-site.addsitedir(os.path.join(SPECPATH, 'nspkg2-pkg'))
+import glob
 
-__testname__ = 'test_nspkg2'
+__testname__ = 'test_nspkg1-empty'
 
 a = Analysis([__testname__ + '.py'],
+             pathex=glob.glob(os.path.join('nspkg1-pkg', '*.egg')),
              hiddenimports=[],
              hookspath=None,
              runtime_hooks=None)
