@@ -23,6 +23,11 @@ def get_repo_revision():
     try:
         rev = compat.exec_command('git', 'rev-parse', '--short', 'HEAD').strip()
         if rev:
+            # need to update index first to get reliable state
+            compat.exec_command_rc('git', 'update-index', '-q', '--refresh')
+            changed = compat.exec_command_rc('git', 'diff-index', '--quiet', 'HEAD')
+            if changed:
+                rev = rev + '-mod'
             return rev
     except:
         pass

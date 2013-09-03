@@ -14,6 +14,7 @@
 /build/
 /dist/
 /*.patch
+/MANIFEST
 
 # Temporary vim files
 *.swp
