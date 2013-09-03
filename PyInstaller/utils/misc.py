@@ -23,9 +23,10 @@ logger = logging.getLogger(__name__)
 
 def dlls_in_subdirs(directory):
     """Returns *.dll, *.so, *.dylib in given directories and subdirectories."""
-    files = []
+    filelist = []
     for root, dirs, files in os.walk(directory):
-        files.extend(dlls_in_dir(root))
+        filelist.extend(dlls_in_dir(root))
+    return filelist
 
 
 def dlls_in_dir(directory):

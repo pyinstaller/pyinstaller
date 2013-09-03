@@ -13,7 +13,7 @@ import os
 import sys
 import PyInstaller
 import PyInstaller.compat as compat
-from PyInstaller.compat import is_darwin
+from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils import misc
 
 import PyInstaller.log as logging
@@ -175,7 +175,7 @@ def qt4_phonon_plugins_dir():
 
 
 def qt4_plugins_binaries(plugin_type):
-    """Return list of dynamic libraries formated for mod.binaries."""
+    """Return list of dynamic libraries formatted for mod.binaries."""
     binaries = []
     pdir = qt4_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
@@ -262,7 +262,7 @@ def qt5_phonon_plugins_dir():
 
 
 def qt5_plugins_binaries(plugin_type):
-    """Return list of dynamic libraries formated for mod.binaries."""
+    """Return list of dynamic libraries formatted for mod.binaries."""
     binaries = []
     pdir = qt5_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
@@ -319,7 +319,48 @@ def qt5_menu_nib_dir():
         logger.error('Cannot find qt_menu.nib directory')
     return menu_dir
 
+def qt5_qml_dir():
+    import subprocess
+    qmldir = subprocess.check_output(["qmake", "-query",
+                                      "QT_INSTALL_QML"]).strip()
+    if len(qmldir) == 0:
+        logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
+                        + 'QT_INSTALL_QML" returned nothing')
+    if not os.path.exists(qmldir):
+        logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
+    
+    # On Windows 'qmake -query' uses / as the path separator
+    # so change it to \\. 
+    if is_win:
+        import string
+        qmldir = string.replace(qmldir, '/', '\\')
 
+    return qmldir
+ 
+def qt5_qml_data(dir):
+    """Return Qml library dir formatted for data"""
+    qmldir = qt5_qml_dir()
+    return (os.path.join(qmldir, dir), 'qml')
+        
+def qt5_qml_plugins_binaries(dir):
+    """Return list of dynamic libraries formatted for mod.binaries."""
+    import string
+    binaries = []
+    qmldir = qt5_qml_dir()
+    dir = string.rstrip(dir, os.sep)
+    files = misc.dlls_in_subdirs(os.path.join(qmldir, dir))
+    if files is not None:
+        for f in files:
+            relpath = string.lstrip(f, qmldir)
+            instdir, file = os.path.split(relpath)
+            instdir = os.path.join("qml", instdir)
+            logger.debug("qt5_qml_plugins_binaries installing %s in %s"
+                         % (f, instdir) )
+                
+            binaries.append((
+                os.path.join(instdir, os.path.basename(f)),
+                    f, 'BINARY'))
+    return binaries    
 
 def django_dottedstring_imports(django_root_dir):
     """

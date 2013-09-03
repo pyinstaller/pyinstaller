@@ -11,6 +11,5 @@
 hiddenimports = ['sip',
                  'PyQt5.QtCore',
                  'PyQt5.QtWidgets',
-                 'PyQt5.QtGui',
-                 'PyQt5._qt']
+                 'PyQt5.QtGui']
 

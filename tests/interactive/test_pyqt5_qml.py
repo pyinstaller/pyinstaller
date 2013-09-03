@@ -32,6 +32,12 @@ def main():
         basedir = sys._MEIPASS
     else:
         basedir = os.path.dirname(__file__)
+        
+    # The app dir is in the default import path but we can't put the QtQuick
+    # import lib dirs there because of a name clash (on OSX) with the QtQuick
+    # dll.
+    print("Qt5 Qml import paths: " \
+                + unicode(quickview.engine().importPathList()))
     quickview.setSource(QtCore.QUrl('qrc:/hello.qml'))
     quickview.engine().quit.connect(app.quit)
     quickview.show()
