@@ -319,7 +319,41 @@ def qt5_menu_nib_dir():
         logger.error('Cannot find qt_menu.nib directory')
     return menu_dir
 
+def qt5_qml_dir():
+    import subprocess
+    qmldir = subprocess.check_output(["qmake", "-query", "QT_INSTALL_QML"]).strip()
+    if len(qmldir) == 0:
+        logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
+                        + 'QT_INSTALL_QML" returned nothing')
+    if not os.path.exists(qmldir):
+        logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
 
+    return qmldir
+ 
+def qt5_qml_data(dir):
+    """Return Qml library dir formatted for data"""
+    qmldir = qt5_qml_dir()
+    return (os.path.join(qmldir, dir), 'qml')
+        
+def qt5_qml_plugins_binaries(dir):
+    """Return list of dynamic libraries formatted for mod.binaries."""
+    import string
+    binaries = []
+    qmldir = qt5_qml_dir()
+    dir = string.rstrip(dir, os.sep)
+    files = misc.dlls_in_subdirs(os.path.join(qmldir, dir))
+    if files is not None:
+        for f in files:
+            relpath = string.lstrip(f, qmldir)
+            instdir, file = os.path.split(relpath)
+            instdir = os.path.join("qml", instdir)
+            logger.debug("qt5_qml_plugins_binaries installing %s in %s"
+                         % (f, instdir) )
+                
+            binaries.append((
+                os.path.join(instdir, os.path.basename(f)),
+                    f, 'BINARY'))
+    return binaries    
 
 def django_dottedstring_imports(django_root_dir):
     """

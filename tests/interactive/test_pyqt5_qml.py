@@ -32,6 +32,8 @@ def main():
         basedir = sys._MEIPASS
     else:
         basedir = os.path.dirname(__file__)
+    print("Qt5 Qml import paths: " \
+                + unicode(quickview.engine().importPathList()))
     quickview.setSource(QtCore.QUrl('qrc:/hello.qml'))
     quickview.engine().quit.connect(app.quit)
     quickview.show()
