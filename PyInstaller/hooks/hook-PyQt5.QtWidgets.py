@@ -8,4 +8,4 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['sip', "PyQt5._qt", "PyQt5.QtCore", "PyQt5.QtGui"]
+hiddenimports = ['sip', "PyQt5.QtCore", "PyQt5.QtGui"]

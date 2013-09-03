@@ -15,6 +15,5 @@ hiddenimports = ["sip",
                  "PyQt5.QtQuick",
                  "PyQt5.QtQml",
                  "PyQt5.QtSql",
-                 "PyQt5.QtSensors",
-                 "PyQt5._qt"
+                 "PyQt5.QtSensors"
                  ]

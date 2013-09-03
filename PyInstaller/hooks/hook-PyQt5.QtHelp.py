@@ -15,5 +15,4 @@ hiddenimports = [
     'PyQt5.QtSql',
     'PyQt5.QtNetwork',
     'PyQt5.QtWidgets',
-    'PyQt5._qt'
 ]

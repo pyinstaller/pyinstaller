@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['sip', "PyQt5._qt"]
+hiddenimports = ['sip']
 
 from PyInstaller.hooks.hookutils import qt5_plugins_binaries
 
