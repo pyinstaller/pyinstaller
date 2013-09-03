@@ -12,7 +12,7 @@ pkg_resources.declare_namespace(__name__)
 """
 
 module_template = """
-print 'this is module', __name__
+print ('this is module %s' % __name__)
 """
 
 setup_template = """

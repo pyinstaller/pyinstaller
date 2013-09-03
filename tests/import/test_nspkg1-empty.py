@@ -17,4 +17,4 @@ if not getattr(sys, 'frozen', None):
         os.path.dirname(__file__), 'nspkg1-pkg', 'nspkg1_empty.egg'))
 
 import nspkg1
-print nspkg1
+print (nspkg1)
