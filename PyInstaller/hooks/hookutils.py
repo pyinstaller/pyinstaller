@@ -197,7 +197,7 @@ def qt4_menu_nib_dir():
     dirs = []
     # If PyQt4 is built against Qt5 look for the qt_menu.nib in a user
     # specified location, if it exists.
-    if os.environ['QT5DIR']:
+    if 'QT5DIR' in os.environ:
         dirs.append(os.path.join(os.environ['QT5DIR'],
                                  "src", "plugins", "platforms", "cocoa"))
     
@@ -279,7 +279,7 @@ def qt5_menu_nib_dir():
     # If the QT5DIR env var is set then look there first. It should be set to the
     # qtbase dir in the Qt5 distribution.
     dirs = []
-    if os.environ['QT5DIR']:
+    if 'QT5DIR' in os.environ:
         dirs.append(os.path.join(os.environ['QT5DIR'],
                                  "src", "plugins", "platforms", "cocoa"))
 

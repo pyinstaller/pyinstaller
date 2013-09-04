@@ -20,6 +20,7 @@ import optparse
 import os
 import re
 import shutil
+import subprocess
 import sys
 
 
@@ -256,12 +257,15 @@ class BuildTestRunner(object):
             sys.stdout.write('\n' + 10 * '#' + ' ' + text + ' ' + 10 * '#' + '\n\n')
             sys.stdout.flush()
 
-    def _plain_msg(self, text):
+    def _plain_msg(self, text, newline=True):
         """
         Print text to console only in verbose mode.
         """
         if self.verbose:
-            sys.stdout.write(text + '\n')
+            if newline:
+                sys.stdout.write(text + '\n')
+            else:
+                sys.stdout.write(text)
             sys.stdout.flush()
 
     def _find_exepath(self, test, parent_dir='dist'):
@@ -298,15 +302,23 @@ class BuildTestRunner(object):
             self._plain_msg("RUNNING: " + prog)
             old_wd = os.getcwd()
             os.chdir(os.path.dirname(prog))
+            # Run executable.
             prog = os.path.join(os.curdir, os.path.basename(prog))
-            retcode, out, err = compat.exec_command_all(prog)
-            os.chdir(old_wd)
+            proc = subprocess.Popen([prog], stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+            # Prints stdout of subprocess continuously.
             self._msg('STDOUT %s' % self.test_name)
-            self._plain_msg(out)
+            while proc.poll() is None:
+                #line = proc.stdout.readline().strip()
+                line = proc.stdout.read(1)
+                self._plain_msg(line, newline=False)
+            # Print possible stderr at the end.
             self._msg('STDERR %s' % self.test_name)
-            self._plain_msg(err)
+            self._plain_msg(proc.stderr.read())
             compat.setenv("PATH", path)
-            return retcode
+            # Restore current working directory
+            os.chdir(old_wd)
+
+            return proc.returncode
 
     def test_exists(self):
         """
