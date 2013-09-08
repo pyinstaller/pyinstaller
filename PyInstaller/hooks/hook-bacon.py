@@ -30,13 +30,17 @@ if is_win:
              'msvcr110.dll',
              'vccorllib110.dll']
     if ctypes.sizeof(ctypes.c_void_p) == 4:
+        hiddenimports = ["bacon.windows32"]
         datas = collect_native_files('bacon.windows32', files)
     else:
+        hiddenimports = ["bacon.windows64"]
         datas = collect_native_files('bacon.windows64', files)
 elif is_darwin:
     if ctypes.sizeof(ctypes.c_void_p) == 4:
+        hiddenimports = ["bacon.darwin32"]
         files = ['Bacon.dylib']
         datas = collect_native_files('bacon.darwin32', files)
     else:
+        hiddenimports = ["bacon.darwin64"]
         files = ['Bacon64.dylib']
         datas = collect_native_files('bacon.darwin64', files)
