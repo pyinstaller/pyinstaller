@@ -12,11 +12,12 @@
 import os
 import stat
 from setuptools import setup, find_packages
-from PyInstaller import get_version
-
 from distutils.command.build_py import build_py
 from distutils.command.sdist import sdist
+
+from PyInstaller import get_version
 import PyInstaller.utils.git
+
 
 DESC = ('Converts (packages) Python programs into stand-alone executables, '
         'under Windows, Linux, Mac OS X, AIX and Solaris.')
@@ -141,7 +142,12 @@ setup(
     classifiers=CLASSIFIERS,
     zip_safe=False,
     packages=find_packages(),
-    # This includes precompiled bootloaders.
+    package_data={
+        # This includes precompiled bootloaders.
+        'PyInstaller': ['bootloader/*/*'],
+        # This file is necessary for rthooks (runtime hooks).
+        'PyInstaller.loader': ['rthooks.dat'],
+        },
     include_package_data=True,
     cmdclass = {
         'sdist': my_sdist,

@@ -1,2 +1,3 @@
 recursive-include PyInstaller *
-global-exclude *.py[co]
+exclude .gitignore
+global-exclude *.pyc *.pyo
