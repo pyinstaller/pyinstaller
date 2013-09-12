@@ -23,6 +23,11 @@ import shutil
 import subprocess
 import sys
 
+# ignore some warnings which only confuse when running tests
+import warnings
+warnings.filterwarnings('ignore',
+    "Parent module '.*' not found while handling absolute import")
+
 
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
@@ -32,6 +37,7 @@ if not hasattr(sys, 'real_prefix'):
     sys.path.insert(0, pyi_home)
 else:
     _virtual_env_ = True
+
 
 
 from PyInstaller import HOMEPATH
