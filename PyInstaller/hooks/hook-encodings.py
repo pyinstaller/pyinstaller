@@ -12,9 +12,11 @@
 attrs = [('search_function',0)]
 
 import os, sys, glob
-from distutils import sysconfig
+import encodings
+
+libpath = os.path.dirname(os.path.dirname(os.path.realpath(encodings.__file__)))
+
 hiddenimports = []
-libpath = sysconfig.get_python_lib(plat_specific=0, standard_lib=1)
 for f in glob.glob(os.path.join(libpath, "encodings", "*.py")):
     f = os.path.basename(f)
     f = os.path.splitext(f)[0]
