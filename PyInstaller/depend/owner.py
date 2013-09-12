@@ -103,7 +103,7 @@ class BaseDirOwner(Owner):
                     logger.warn("bad .py%s found (%s), will use .py",
                                 PYCO, pyc[0])
 
-        if co is None or py and pyc[1] < py[1]:
+        if (co is None and py) or (py and pyc[1] < py[1]):
             # If we have no pyc or py is newer
             try:
                 stuff = self._read(py[0]) + '\n'
