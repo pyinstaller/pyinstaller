@@ -128,6 +128,10 @@ def _collect_tkfiles(mod):
 
     tcl_root, tk_root = _find_tk(mod)
 
+    if not tcl_root:
+        logger.error("TCL/TK seams to be not properly installed on this system")
+        return []
+
     tcldir = "tcl"
     tkdir = "tk"
 
