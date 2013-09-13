@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013, PyInstaller Development Team.
 #
@@ -14,6 +15,25 @@ from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+class MyDialog(QtGui.QDialog):
+
+    def __init__(self):
+        super(MyDialog, self).__init__()
+
+        self.label = Qt.QLabel(
+            u"Press <ESC> to exit. Some non-ascii chars: řčšěíáŘ",
+            self)
+        self.setWindowTitle("Hello World from PyQt4")
+        #self.resize(500, 300)
+        self.show()
+
+    def sizeHint(self):
+        return self.label.sizeHint()
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.close()
+
 
 def main():
     app = Qt.QApplication(sys.argv)
@@ -22,10 +42,7 @@ def main():
     print("Qt4 plugin paths: " + unicode(list(app.libraryPaths())))
     print("Qt4 image read support: " + read_formats)
     print('Qt4 Libraries path: ' + unicode(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath)))
-    label = Qt.QLabel("Hello World from PyQt4", None)
-    label.setWindowTitle("Hello World from PyQt4")
-    label.resize(300, 300)
-    label.show()
+    ex = MyDialog()
     app.exec_()
 
 
