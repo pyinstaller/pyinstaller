@@ -109,6 +109,7 @@ class SkipChecker(object):
             # Macs return 'utf-8'.
             'libraries/test_sphinx': is_win or is_darwin,
             }
+
         # Required Python modules for some tests.
         self.MODULES = {
             'basic/test_codecs': ['codecs'],
@@ -119,6 +120,7 @@ class SkipChecker(object):
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_onefile_win32com': ['win32com'],
             'basic/test_pkg_structures': ['pkg_resources'],
+
             'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
             'libraries/test_Image': ['PIL'],
@@ -144,6 +146,7 @@ class SkipChecker(object):
             'libraries/test_wx_pubsub_arg1': ['wx'],
             'libraries/test_wx_pubsub_kwargs': ['wx'],
             'libraries/test_sphinx': ['sphinx', 'docutils', 'jinja2', 'uuid'],
+
             'import/test_c_extension': ['simplejson'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_eggs2': ['pkg_resources'],
@@ -152,9 +155,18 @@ class SkipChecker(object):
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
             'import/test_pep302_import_protokol': ['sqlite3'],
+
+            'interactive/test_ipython': ['IPython'],
+            'interactive/test_matplotlib': ['matplotlib'],
             'interactive/test_pygame': ['pygame'],
             'interactive/test_pyqt4_multiprocessing': ['multiprocessing', 'PyQt4'],
+            'interactive/test_qt4': ['PyQt4'],
+            'interactive/test_qt5': ['PyQt5'],
+            'interactive/test_tix': ['Tix'],
+            'interactive/test_tkinter': ['Tkinter'],
+            'interactive/test_wx': ['wx'],
             }
+
         # Other dependecies of some tests.
         self.DEPENDENCIES = {
             'basic/test_onefile_ctypes': [depend.c_compiler()],
