@@ -1,0 +1,36 @@
+# pure python modules
+setuptools
+docutils
+jinja2
+sphinx
+uuid
+pyusb
+pytz
+pyenchant
+IPython
+
+# uses ctypes, but requires speech lib to be installed
+pyttsx
+
+# extension modules which do not require external headers
+zope.interface # required by twisted
+simplejson
+SQLAlchemy
+multiprocessing
+
+# Extension modules which require additional external headers.
+# Most probably you want to install them using your operating systems
+# package-management.
+twisted
+PIL
+# PyQt4
+MySQL-python
+psycopg2
+# gst
+matplotlib
+numpy
+scipy
+pycrypto
+pygame
+#pyodbc
+wxPython
