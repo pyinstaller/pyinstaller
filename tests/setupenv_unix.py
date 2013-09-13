@@ -42,6 +42,7 @@ _PACKAGES = [
     'simplejson',
     'SQLAlchemy',
     #'wxPython',
+    'IPython',
 ]
 
 
