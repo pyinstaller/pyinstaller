@@ -103,7 +103,7 @@ class BaseDirOwner(Owner):
                     logger.warn("bad .py%s found (%s), will use .py",
                                 PYCO, pyc[0])
 
-        if co is None or py and pyc[1] < py[1]:
+        if (co is None and py) or (py and pyc[1] < py[1]):
             # If we have no pyc or py is newer
             try:
                 stuff = self._read(py[0]) + '\n'
@@ -142,10 +142,15 @@ class DirOwner(BaseDirOwner):
         return os.path.isdir(os.path.join(self.path, fn))
 
     def _modtime(self, fn):
+        fn = os.path.join(self.path, fn)
         try:
-            return os.stat(os.path.join(self.path, fn))[8]
+            # the file must not only by stat()-able, but also readable
+            if os.access(fn, os.R_OK):
+                return os.stat(fn)[8]
         except OSError:
-            return None
+            # return None
+            pass
+        return None
 
     def _read(self, fn):
         return open(os.path.join(self.path, fn), 'rb').read()

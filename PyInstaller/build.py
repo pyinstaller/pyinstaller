@@ -95,9 +95,13 @@ def setupUPXFlags():
 
 def mtime(fnm):
     try:
-        return os.stat(fnm)[8]
-    except:
-        return 0
+        # the file must not only by stat()-able, but also readable
+        if os.access(fnm, os.R_OK):
+            return os.stat(fnm)[8]
+    except OSError:
+        # return 0
+        pass
+    return 0
 
 
 def absnormpath(apath):
