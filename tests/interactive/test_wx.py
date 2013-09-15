@@ -22,7 +22,7 @@ def main():
     frame = wx.Frame(None, title="Hello World from wxPython")
     panel = wx.Panel(frame)
     label = wx.StaticText(panel, -1,
-                          "Press <ESC> to exit. Some non-ascii chars: řčšěíáŘ")
+                          u"Press <ESC> to exit. Some non-ascii chars: řčšěíáŘ")
     panel.Bind(wx.EVT_KEY_DOWN, onKeyDown)
     panel.SetFocus()
     frame.Show()

@@ -17,5 +17,7 @@ csr = conn.cursor()
 csr.execute('CREATE TABLE Example (id)')
 
 
-for line in conn.iterdump():
-    print(line)
+# Only Python 2.6+ has attribute 'iterdump'.
+if hasattr(conn, 'iterdump'):
+    for line in conn.iterdump():
+         print(line)
