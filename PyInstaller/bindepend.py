@@ -415,7 +415,7 @@ def selectImports(pth, xtrapath=None):
                              lib, os.path.basename(pth))
                 rv.append((lib, npth))
         else:
-            logger.error("lib not found: %s dependency of %s", lib, pth)
+            logger.warning("lib not found: %s dependency of %s", lib, pth)
 
     return rv
 
