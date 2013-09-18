@@ -39,22 +39,28 @@ Usage
 
 ::
 
+      pyinstaller /path/to/yourscript.py
+
+or the following when using PyInstaller without installation::
+
       python pyinstaller.py /path/to/yourscript.py
 
 For more details, see the `doc/Manual.html`_.
+
 
 Installation in brief
 ---------------------
 
 1. Unpack the archive on you path of choice.
 2. For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32/64bit)
-   precompiled boot-loaders are available. So the installation is
-   complete.
+   precompiled boot-loaders are available. So to install PyInstaller::
+   
+        python setup.py install
 
-   For other platforms, users should first try to build the
-   boot-loader::
+  For other platforms, users should first try to build the
+  boot-loader before installation::
 
-        cd source
+        cd bootloader
         python ./waf configure build install
 
 
@@ -64,6 +70,6 @@ See `doc/CHANGES.txt`_.
 
 
 .. _pywin32: http://sourceforge.net/projects/pywin32/
-.. _`doc/Manual.html`: http://www.pyinstaller.org/export/develop/project/doc/Manual.html?format=raw
-.. _`doc/CHANGES.txt`: http://www.pyinstaller.org/export/develop/project/doc/CHANGES.txt?format=raw
+.. _`doc/Manual.html`: http://pythonhosted.org//PyInstaller
+.. _`doc/CHANGES.txt`: https://github.com/pyinstaller/pyinstaller/blob/develop/doc/CHANGES.txt
 

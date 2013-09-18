@@ -58,6 +58,17 @@ if MEIPASS2 in os.environ:
     del os.environ[MEIPASS2]
 
 
+# Some packages behaves differently when running inside virtual environment.
+# E.g. IPython tries to append path VIRTUAL_ENV to sys.path.
+# For the frozen app we want to prevent this behavior.
+VIRTENV = 'VIRTUAL_ENV'
+if VIRTENV in os.environ:
+    # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
+    # deleting the var from os.environ does not delete it from the environment.
+    os.environ[VIRTENV] = ''
+    del os.environ[VIRTENV]
+
+
 # Forces PyInstaller to include fake 'site' module. Fake 'site' module
 # is dummy and does not do any search for additional Python modules.
 import site
