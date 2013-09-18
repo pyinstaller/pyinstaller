@@ -70,6 +70,6 @@ See `doc/CHANGES.txt`_.
 
 
 .. _pywin32: http://sourceforge.net/projects/pywin32/
-.. _`doc/Manual.html`: http://www.pyinstaller.org/export/develop/project/doc/Manual.html?format=raw
-.. _`doc/CHANGES.txt`: http://www.pyinstaller.org/export/develop/project/doc/CHANGES.txt?format=raw
+.. _`doc/Manual.html`: http://pythonhosted.org//PyInstaller
+.. _`doc/CHANGES.txt`: https://github.com/pyinstaller/pyinstaller/blob/develop/doc/CHANGES.txt
 
