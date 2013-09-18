@@ -117,20 +117,19 @@ def _extract_from_egg(toc):
     Ensure all binary modules in zipped eggs get extracted and
     included with the frozen executable.
 
-    The supplied toc is directly modified to make changes effective.
-
     return  modified table of content
     """
+    new_toc = []
     for item in toc:
         # Item is a tupple
         #  (mod_name, path, type)
         modname, pth, typ = item
         if not os.path.isfile(pth):
             pth = check_extract_from_egg(pth)[0][0]
-            # Replace value in original data structure.
-            toc.remove(item)
-            toc.append((modname, pth, typ))
-    return toc
+        
+        # Add value to new data structure.
+        new_toc.append((modname, pth, typ))
+    return new_toc
 
 
 def Dependencies(lTOC, xtrapath=None, manifest=None):
