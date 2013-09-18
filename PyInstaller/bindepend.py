@@ -64,12 +64,21 @@ def getfullnameof(mod, xtrapath=None):
     Return the full path name of MOD.
     Will search the full Windows search path, as well as sys.path
     """
+    # TODO: Allow in import-hooks to specify additional paths where the PyInstaller
+    #       should look for other libraries.
     # SciPy/Numpy Windows builds from http://www.lfd.uci.edu/~gohlke/pythonlibs
     # Contain some dlls in directory like C:\Python27\Lib\site-packages\numpy\core\
     from distutils.sysconfig import get_python_lib
-    numpy_core_path = os.path.join(get_python_lib(), 'numpy', 'core')
+    numpy_core_paths = [os.path.join(get_python_lib(), 'numpy', 'core')]
+    # In virtualenv numpy might be installed directly in real prefix path.
+    # Then include this path too.
+    if hasattr(sys, 'real_prefix'):
+        numpy_core_paths.append(
+            os.path.join(sys.real_prefix, 'Lib', 'site-packages', 'numpy', 'core')
+        )
+
     # Search sys.path first!
-    epath = sys.path + [numpy_core_path] + winutils.get_system_path()
+    epath = sys.path + numpy_core_paths + winutils.get_system_path()
     if xtrapath is not None:
         if type(xtrapath) == type(''):
             epath.insert(0, xtrapath)
@@ -126,7 +135,7 @@ def _extract_from_egg(toc):
         modname, pth, typ = item
         if not os.path.isfile(pth):
             pth = check_extract_from_egg(pth)[0][0]
-        
+
         # Add value to new data structure.
         new_toc.append((modname, pth, typ))
     return new_toc
@@ -414,7 +423,7 @@ def selectImports(pth, xtrapath=None):
                              lib, os.path.basename(pth))
                 rv.append((lib, npth))
         else:
-            logger.error("lib not found: %s dependency of %s", lib, pth)
+            logger.warning("lib not found: %s dependency of %s", lib, pth)
 
     return rv
 

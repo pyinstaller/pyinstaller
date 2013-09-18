@@ -32,7 +32,9 @@ sys.path.insert(0, lib.__path__[0])
 from PyInstaller import compat
 from PyInstaller.utils import git
 
-VERSION = (2, 1, 0, 'dev', git.get_repo_revision())
+# Uncomment this line for development of version 3.0.
+#VERSION = (3, 0, 0, 'dev', git.get_repo_revision())
+VERSION = (2, 1, 0)
 
 
 is_py25 = compat.is_py25
