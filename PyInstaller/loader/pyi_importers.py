@@ -374,12 +374,6 @@ class CExtensionImporter(object):
     """
     def __init__(self):
         # TODO cache directory content for faster module lookup without file system access.
-        # Find the platform specific suffix. On Windows it is .pyd, on Linux/Unix .so.
-        for ext, mode, typ in imp.get_suffixes():
-            if typ == imp.C_EXTENSION:
-                self._c_ext_tuple = (ext, mode, typ)
-                self._suffix = ext  # Just string like .pyd  or  .so
-                break
         # Create hashmap of directory content for better performance.
         files = pyi_os_path.os_listdir(sys.prefix)
         self._file_cache = set(files)
@@ -389,8 +383,14 @@ class CExtensionImporter(object):
         module_loader = None  # None means - no module found by this importer.
 
         # Look in the file list of sys.prefix path (alias PYTHONHOME).
-        if fullname + self._suffix in self._file_cache:
-            module_loader = self
+        # Find the platform specific suffix. On Windows it is .pyd, on Linux/Unix .so.
+        for ext, mode, typ in imp.get_suffixes():
+            if typ == imp.C_EXTENSION:
+                if fullname + ext in self._file_cache:
+                    self._c_ext_tuple = (ext, mode, typ)
+                    self._suffix = ext
+                    module_loader = self
+                    break
 
         imp.release_lock()
         return module_loader
