@@ -1,13 +1,25 @@
-import sys
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
 from PyInstaller.hooks.hookutils import qt4_menu_nib_dir
+from PyInstaller.compat import is_darwin
+
 
 # In the new consolidated mode any PyQt depends on _qt
 hiddenimports = ['sip', 'PyQt4._qt']
 
-# For Qt to work on Mac OS X it is necessary include
-# directory qt_menu.nib. This directory contains some
-# resource files necessary to run PyQt app.
-if sys.platform.startswith('darwin'):
+
+# For Qt to work on Mac OS X it is necessary to include directory qt_menu.nib.
+# This directory contains some resource files necessary to run PyQt or PySide
+# app.
+if is_darwin:
     datas = [
         (qt4_menu_nib_dir(), ''),
     ]

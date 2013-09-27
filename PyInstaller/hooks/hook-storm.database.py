@@ -1,7 +1,17 @@
-# Hook for storm ORM
-# Author: mail@georg-schoelly.ch
-# Date: 2011-10-14
-# Ticket: #437
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
+"""
+Hook for storm ORM.
+"""
+
 
 hiddenimports = [
     'storm.databases.sqlite',

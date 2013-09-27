@@ -1,27 +1,33 @@
-# This module contains various helper functions for git DVCS
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2011, hartmut Goebel
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
+
+"""
+This module contains various helper functions for git DVCS
+"""
+
+import os
 from PyInstaller import compat
 
 def get_repo_revision():
+    path = os.path # shortcut
+    gitdir = path.normpath(path.join(path.dirname(__file__), '..','..', '.git'))
+    if not path.exists(gitdir):
+        return ''
     try:
         rev = compat.exec_command('git', 'rev-parse', '--short', 'HEAD').strip()
         if rev:
+            # need to update index first to get reliable state
+            compat.exec_command_rc('git', 'update-index', '-q', '--refresh')
+            changed = compat.exec_command_rc('git', 'diff-index', '--quiet', 'HEAD')
+            if changed:
+                rev = rev + '-mod'
             return rev
     except:
         pass

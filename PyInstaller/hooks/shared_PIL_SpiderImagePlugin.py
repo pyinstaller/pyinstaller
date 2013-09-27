@@ -1,29 +1,28 @@
-# Copyright (C) 2006, Giovanni Bajo
-# Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
-# PIL's SpiderImagePlugin features a tkPhotoImage() method which imports
-# ImageTk (and thus brings the whole Tcl/Tk library in).
-# We cheat a little and remove the ImageTk import: I assume that if people
-# are really using ImageTk in their application, they will also import it
-# directly.
+
+"""
+PIL's SpiderImagePlugin features a tkPhotoImage() method which imports
+ImageTk (and thus brings the whole Tcl/Tk library in).
+We cheat a little and remove the ImageTk import: I assume that if people
+are really using ImageTk in their application, they will also import it
+directly.
+"""
+
 
 def hook(mod):
     for i, m in enumerate(mod.imports):
-        if m[0] == "ImageTk":
+        # Ignore these two modules to not include whole Tk or Qt stack.
+        # If these modules should be included then they will definitely
+        # be dependency as any other module.
+        if m[0] ==  'ImageTk':
             del mod.imports[i]
             break
     return mod

@@ -1,48 +1,45 @@
-#! /usr/bin/env python
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Find external dependencies of binary libraries.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# Copyright (C) 2005, Giovanni Bajo
-# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+"""
+Find external dependencies of binary libraries.
+"""
+
 
 import os
 import sys
 import re
 from glob import glob
+
 # Required for extracting eggs.
 import zipfile
 
-from PyInstaller import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26
+
+from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26, is_py27
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
-from PyInstaller.compat import set
 
 
 import PyInstaller.log as logging
-logger = logging.getLogger('PyInstaller.build.bindepend')
+logger = logging.getLogger(__file__)
 
 seen = {}
 
 if is_win:
     if is_py26:
         try:
-            import win32api
+            # For Portable Python it is required to import pywintypes before
+            # win32api module. See for details:
+            # http://www.voidspace.org.uk/python/movpy/reference/win32ext.html#problems-with-win32api
             import pywintypes
+            import win32api
         except ImportError:
             raise SystemExit("Error: PyInstaller for Python 2.6+ on Windows "
                  "needs pywin32.\r\nPlease install from "
@@ -67,8 +64,21 @@ def getfullnameof(mod, xtrapath=None):
     Return the full path name of MOD.
     Will search the full Windows search path, as well as sys.path
     """
+    # TODO: Allow in import-hooks to specify additional paths where the PyInstaller
+    #       should look for other libraries.
+    # SciPy/Numpy Windows builds from http://www.lfd.uci.edu/~gohlke/pythonlibs
+    # Contain some dlls in directory like C:\Python27\Lib\site-packages\numpy\core\
+    from distutils.sysconfig import get_python_lib
+    numpy_core_paths = [os.path.join(get_python_lib(), 'numpy', 'core')]
+    # In virtualenv numpy might be installed directly in real prefix path.
+    # Then include this path too.
+    if hasattr(sys, 'real_prefix'):
+        numpy_core_paths.append(
+            os.path.join(sys.real_prefix, 'Lib', 'site-packages', 'numpy', 'core')
+        )
+
     # Search sys.path first!
-    epath = sys.path + winutils.get_system_path()
+    epath = sys.path + numpy_core_paths + winutils.get_system_path()
     if xtrapath is not None:
         if type(xtrapath) == type(''):
             epath.insert(0, xtrapath)
@@ -116,20 +126,19 @@ def _extract_from_egg(toc):
     Ensure all binary modules in zipped eggs get extracted and
     included with the frozen executable.
 
-    The supplied toc is directly modified to make changes effective.
-
     return  modified table of content
     """
+    new_toc = []
     for item in toc:
         # Item is a tupple
         #  (mod_name, path, type)
         modname, pth, typ = item
         if not os.path.isfile(pth):
             pth = check_extract_from_egg(pth)[0][0]
-            # Replace value in original data structure.
-            toc.remove(item)
-            toc.append((modname, pth, typ))
-    return toc
+
+        # Add value to new data structure.
+        new_toc.append((modname, pth, typ))
+    return new_toc
 
 
 def Dependencies(lTOC, xtrapath=None, manifest=None):
@@ -414,7 +423,7 @@ def selectImports(pth, xtrapath=None):
                              lib, os.path.basename(pth))
                 rv.append((lib, npth))
         else:
-            logger.error("lib not found: %s dependency of %s", lib, pth)
+            logger.warning("lib not found: %s dependency of %s", lib, pth)
 
     return rv
 
@@ -429,11 +438,11 @@ def _getImports_ldd(pth):
     if is_aix:
         # Match libs of the form 'archive.a(sharedobject.so)'
         # Will not match the fake lib '/unix'
-        lddPattern = re.compile(r"\s+(.*?)(\(.*\))")
+        lddPattern = re.compile(r"\s*(.*?)(\(.*\))")
     else:
-        lddPattern = re.compile(r"\s+(.*?)\s+=>\s+(.*?)\s+\(.*\)")
+        lddPattern = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
-    for line in compat.exec_command('ldd', pth).strip().splitlines():
+    for line in compat.exec_command('ldd', pth).splitlines():
         m = lddPattern.search(line)
         if m:
             if is_aix:
@@ -586,8 +595,13 @@ def findLibrary(name):
 
     lib = None
 
-    # Look in the LD_LIBRARY_PATH
-    lp = compat.getenv('LD_LIBRARY_PATH', '')
+    # Look in the LD_LIBRARY_PATH according to platform.
+    if is_aix:
+        lp = compat.getenv('LIBPATH', '')
+    elif is_darwin:
+        lp = compat.getenv('DYLD_LIBRARY_PATH', '')
+    else:
+        lp = compat.getenv('LD_LIBRARY_PATH', '')
     for path in lp.split(os.pathsep):
         libs = glob(os.path.join(path, name + '*'))
         if libs:
@@ -595,7 +609,10 @@ def findLibrary(name):
             break
 
     # Look in /etc/ld.so.cache
-    if lib is None:
+    # TODO Look for ldconfig in /usr/sbin/ldconfig. /sbin is deprecated
+    #      in recent linux distributions.
+    # Solaris does not have /sbin/ldconfig. Just check if this file exists.
+    if lib is None and os.path.exists('/sbin/ldconfig'):
         expr = r'/[^\(\)\s]*%s\.[^\(\)\s]*' % re.escape(name)
         m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-p'))
         if m:
@@ -603,9 +620,28 @@ def findLibrary(name):
 
     # Look in the known safe paths
     if lib is None:
-        paths = ['/lib', '/usr/lib']
+        paths = ['/lib', '/lib32', '/lib64', '/usr/lib', '/usr/lib32', '/usr/lib64']
+
+        # On Debian/Ubuntu /usr/bin/python is linked statically with libpython.
+        # Newer Debian/Ubuntu with multiarch support putsh the libpythonX.Y.so
+        # To paths like /usr/lib/i386-linux-gnu/.
+        try:
+            import sysconfig  # Module available only in Python 2.7.
+            arch_subdir = sysconfig.get_config_var('multiarchsubdir')
+            # Ignore if None is returned.
+            if arch_subdir:
+                arch_subdir = os.path.basename(arch_subdir)
+                paths.extend([
+                    os.path.join('/usr/lib', arch_subdir),
+                    os.path.join('/usr/lib32', arch_subdir),
+                    os.path.join('/usr/lib64', arch_subdir),
+                ])
+        except ImportError:
+            pass
+
         if is_aix:
             paths.append('/opt/freeware/lib')
+
         for path in paths:
             libs = glob(os.path.join(path, name + '*'))
             if libs:
@@ -629,3 +665,85 @@ def getSoname(filename):
     m = re.search(r'\s+SONAME\s+([^\s]+)', compat.exec_command(*cmd))
     if m:
         return m.group(1)
+
+
+def get_python_library_path():
+    """
+    Find dynamic Python library that will be bundled with frozen executable.
+
+    Return  full path to Python dynamic library or None when not found.
+
+
+    We need to know name of the Python dynamic library for the bootloader.
+    Bootloader has to know what library to load and not trying to guess.
+
+    Some linux distributions (e.g. debian-based) statically build the
+    Python executable to the libpython, so bindepend doesn't include
+    it in its output. In this situation let's try to find it.
+
+    Darwin custom builds could possibly also have non-framework style libraries,
+    so this method also checks for that variant as well.
+    """
+    pyver = sys.version_info[:2]
+
+    if is_win:
+        names = ('python%d%d.dll' % pyver,)
+    elif is_cygwin:
+        names = ('libpython%d%d.dll' % pyver,)
+    elif is_darwin:
+        names = ('Python', '.Python', 'libpython%d.%d.dylib' % pyver)
+    elif is_aix:
+        # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
+        names = ('libpython%d.%d.a' % pyver,)
+    elif is_unix:
+        # Other *nix platforms.
+        names = ('libpython%d.%d.so.1.0' % pyver,)
+    else:
+        raise SystemExit('Your platform is not yet supported.')
+
+    # Try to get Python library name from the Python executable. It assumes that Python
+    # library is not statically linked.
+    dlls = getImports(sys.executable)
+    for filename in dlls:
+        for name in names:
+            if os.path.basename(filename) == name:
+                # On Windows filename is just like 'python27.dll'. Convert it
+                # to absolute path.
+                if is_win and not os.path.isabs(filename):
+                    filename = getfullnameof(filename)
+                # Python library found. Return absolute path to it.
+                return filename
+
+    # Python library NOT found. Resume searching using alternative methods.
+    # Applies only to non Windows platforms.
+
+    if is_unix:
+        for name in names:
+            python_libname = findLibrary(name)
+            if python_libname:
+                return python_libname
+
+    elif is_darwin:
+        # On MacPython, Analysis.assemble is able to find the libpython with
+        # no additional help, asking for sys.executable dependencies.
+        # However, this fails on system python, because the shared library
+        # is not listed as a dependency of the binary (most probably it's
+        # opened at runtime using some dlopen trickery).
+        # This happens on Mac OS X when Python is compiled as Framework.
+
+        # Python compiled as Framework contains same values in sys.prefix
+        # and exec_prefix. That's why we can use just sys.prefix.
+        # In virtualenv PyInstaller is not able to find Python library.
+        # We need special care for this case.
+        if compat.is_virtualenv:
+            py_prefix = compat.venv_real_prefix
+        else:
+            py_prefix = sys.prefix
+
+        for name in names:
+            full_path = os.path.join(py_prefix, name)
+            if os.path.exists(full_path):
+                return full_path
+
+    # Python library NOT found. Return just None.
+    return None

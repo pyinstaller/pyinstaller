@@ -1,34 +1,25 @@
-# Copyright (C) 2005, Giovanni Bajo
-# Based on previous work under copyright (c) 2001, 2002 McMillan Enterprises, Inc.
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
-import PyInstaller.depend.modules
 
-hiddenimports = ['win32com.server.policy']
+"""
+pywin32 module supports frozen mode. In frozen mode it is looking
+in sys.path for file pythoncomXX.dll. Include the pythoncomXX.dll
+as a data file. The path to this dll is contained in __file__
+attribute.
+"""
 
+import os.path
+from PyInstaller.hooks.hookutils import get_module_file_attribute
 
 def hook(mod):
-    import sys
-    newname = 'pythoncom%d%d' % sys.version_info[:2]
-    if mod.typ == 'EXTENSION':
-        mod.__name__ = newname
-    else:
-        import win32api
-        h = win32api.LoadLibrary(newname + '.dll')
-        pth = win32api.GetModuleFileName(h)
-        #win32api.FreeLibrary(h)
-        mod = PyInstaller.depend.modules.ExtensionModule(newname, pth)
+    pth = get_module_file_attribute('pythoncom')
+    name = os.path.basename(pth)
+    mod.binaries.extend([(name, pth, 'BINARY')])
     return mod

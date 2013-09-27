@@ -4,15 +4,17 @@
 
 *.py[co]
 /*.egg
-/*.egg-info
+/*.egg-info/
 /*.egg-link
 
 # /
 /AES.pyd
 /AES.so
 /*.bak
-/build
+/build/
+/dist/
 /*.patch
+/MANIFEST
 
 # Temporary vim files
 *.swp
@@ -20,37 +22,41 @@
 # Temporary rope files
 .ropeproject
 
-# /buildtests/
-/buildtests/build*
-/buildtests/dist*
-/buildtests/logdict*.log
-/buildtests/test*.exe
-/buildtests/warn*.txt
-/buildtests/python_exe.build
-/buildtests/report.xml
+# /tests/
+/tests/build*
+/tests/dist*
+/tests/logdict*.log
+/tests/test*.exe
+/tests/warn*.txt
+/tests/python_exe.build
+/tests/report.xml
 
-/buildtests/*/build
-/buildtests/*/dist
+/tests/*/build/
+/tests/*/dist/
 
-# /buildtests/basic/
-/buildtests/basic/python_exe.build
+# ignore generated spec-files
+# NB: You can still add .spec-files to be tracked using `git add`
+/tests/*/*.spec
 
-# /buildtests/basic/ctypes/
-/buildtests/basic/ctypes/testctypes.dylib
-/buildtests/basic/ctypes/testctypes.so
-/buildtests/basic/ctypes/testctypes-win.dll
-/buildtests/basic/ctypes/testctypes-win.exp
-/buildtests/basic/ctypes/testctypes-win.obj
-/buildtests/basic/ctypes/testctypes-win.lib
+# /tests/basic/
+/tests/basic/python_exe.build
 
-# /buildtests/libraries/
-/buildtests/libraries/tinysample.png
-/buildtests/libraries/test_xml.spec
-/buildtests/basic/test_absolute_ld_library_path.spec
-/buildtests/basic/test_absolute_python_path.spec
-/buildtests/libraries/test_sqlalchemy.spec
+# /tests/basic/ctypes/
+/tests/basic/ctypes/testctypes.dylib
+/tests/basic/ctypes/testctypes.so
+/tests/basic/ctypes/testctypes-win.dll
+/tests/basic/ctypes/testctypes-win.exp
+/tests/basic/ctypes/testctypes-win.obj
+/tests/basic/ctypes/testctypes-win.lib
 
-/e2etests/common/hanoi[1-9]
+# /tests/libraries/
+/tests/libraries/tinysample.png
+/tests/libraries/test_xml.spec
+/tests/basic/test_absolute_ld_library_path.spec
+/tests/basic/test_absolute_python_path.spec
+/tests/libraries/test_sqlalchemy.spec
+
+/old/e2etests/common/hanoi[1-9]
 
 # /doc/
 /doc/*.1

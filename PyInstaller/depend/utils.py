@@ -1,33 +1,25 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2005, Giovanni Bajo
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
-# Scan the code object for imports, __all__ and wierd stuff
+"""
+Scan the code object for imports, __all__ and wierd stuff
+"""
 
 
 import dis
 import os
 
 from PyInstaller import compat
-from PyInstaller.compat import set, ctypes
+from PyInstaller.compat import ctypes
 
-from PyInstaller import is_unix, is_darwin, is_py25, is_py27
+from PyInstaller.compat import is_unix, is_darwin, is_py25, is_py27
 
 import PyInstaller.depend.utils
 import PyInstaller.log as logging
@@ -275,10 +267,18 @@ def scan_code_for_ctypes(co, instrs, i):
     # need to patch the compiled pyc file to make it work correctly!
 
     w = []
-    for bin in list(b):
-        if bin != os.path.basename(bin):
-            b.remove(bin)
-            w.append("W: ignoring %s - ctypes imports only supported using bare filenames" % (bin,))
+    for binary in list(b):
+        # 'binary' might be in some cases None. Some Python modules might contain
+        # code like the following. For example PyObjC.objc._bridgesupport contain
+        # code like that.
+        #
+        #     dll = ctypes.CDLL(None)
+        if binary:
+            if binary != os.path.basename(binary):
+                w.append("W: ignoring %s - ctypes imports only supported using bare filenames" % (binary,))
+        else:
+            # None values has to be removed too.
+            b.remove(binary)
 
     return b, w
 

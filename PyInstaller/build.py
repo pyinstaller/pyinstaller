@@ -1,45 +1,39 @@
-#!/usr/bin/env python
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Build packages using spec files
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# Copyright (C) 2005, Giovanni Bajo
-# Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
-import sys
+
+"""
+Build packages using spec files.
+"""
+
+
+import glob
+import imp
 import os
-import shutil
 import pprint
 import py_compile
-import imp
+import shutil
+import sys
 import tempfile
 import UserList
-import bindepend
 
-from PyInstaller.loader import archive, carchive
+from PyInstaller.loader import pyi_archive, pyi_carchive
 
 import PyInstaller.depend.imptracker
 import PyInstaller.depend.modules
 
-from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM
-from PyInstaller import is_win, is_unix, is_aix, is_darwin, is_cygwin
-from PyInstaller import is_py23, is_py24
+from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
+from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin, is_cygwin
 import PyInstaller.compat as compat
+import PyInstaller.bindepend as bindepend
 
-from PyInstaller.compat import hashlib, set
+from PyInstaller.compat import hashlib
 from PyInstaller.depend import dylib
 from PyInstaller.utils import misc
 
@@ -49,18 +43,19 @@ if is_win:
     from PyInstaller.utils import winmanifest
 
 
-logger = logging.getLogger('PyInstaller.build')
+logger = logging.getLogger(__name__)
+
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
 UNCOMPRESSED, COMPRESSED = range(2)
 
-DEFAULT_BUILDPATH = os.path.join('SPECPATH', 'build',
-                                 'pyi.TARGET_PLATFORM', 'SPECNAME')
 
+# Set of global variables that can be used while processing .spec file.
 SPEC = None
 SPECPATH = None
-BUILDPATH = None
+DISTPATH = None
+WORKPATH = None
 WARNFILE = None
 NOCONFIRM = None
 
@@ -86,7 +81,7 @@ def _load_data(filename):
 
 def setupUPXFlags():
     f = compat.getenv("UPX", "")
-    if is_win and is_py24:
+    if is_win:
         # Binaries built with Visual Studio 7.1 require --strip-loadconf
         # or they won't compress. Configure.py makes sure that UPX is new
         # enough to support --strip-loadconf.
@@ -100,9 +95,13 @@ def setupUPXFlags():
 
 def mtime(fnm):
     try:
-        return os.stat(fnm)[8]
-    except:
-        return 0
+        # the file must not only by stat()-able, but also readable
+        if os.access(fnm, os.R_OK):
+            return os.stat(fnm)[8]
+    except OSError:
+        # return 0
+        pass
+    return 0
 
 
 def absnormpath(apath):
@@ -114,11 +113,11 @@ def compile_pycos(toc):
     pyc/pyo files, writing in a local directory if required, and returns the
     list of tuples with the updated pathnames.
     """
-    global BUILDPATH
+    global WORKPATH
 
     # For those modules that need to be rebuilt, use the build directory
     # PyInstaller creates during the build process.
-    basepath = os.path.join(BUILDPATH, "localpycos")
+    basepath = os.path.join(WORKPATH, "localpycos")
 
     new_toc = []
     for (nm, fnm, typ) in toc:
@@ -228,16 +227,16 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
 def _check_path_overlap(path):
     """
-    Check that path does not overlap with BUILDPATH or SPECPATH (i.e.
-    BUILDPATH and SPECPATH may not start with path, which could be
+    Check that path does not overlap with WORKPATH or SPECPATH (i.e.
+    WORKPATH and SPECPATH may not start with path, which could be
     caused by a faulty hand-edited specfile)
 
     Raise SystemExit if there is overlap, return True otherwise
     """
     specerr = 0
-    if BUILDPATH.startswith(path):
+    if WORKPATH.startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
-                     'BUILDPATH (%s)', path, BUILDPATH)
+                     'WORKPATH (%s)', path, WORKPATH)
         specerr += 1
     if SPECPATH.startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
@@ -275,16 +274,11 @@ def _rmtree(path):
 def check_egg(pth):
     """Check if path points to a file inside a python egg file (or to an egg
        directly)."""
-    if is_py23:
-        if os.path.altsep:
-            pth = pth.replace(os.path.altsep, os.path.sep)
-        components = pth.split(os.path.sep)
-        sep = os.path.sep
-    else:
-        components = pth.replace("\\", "/").split("/")
-        sep = "/"
-        if is_win:
-            sep = "\\"
+    if os.path.altsep:
+        pth = pth.replace(os.path.altsep, os.path.sep)
+    components = pth.split(os.path.sep)
+    sep = os.path.sep
+
     for i, name in zip(range(0, len(components)), components):
         if name.lower().endswith(".egg"):
             eggpth = sep.join(components[:i + 1])
@@ -296,7 +290,7 @@ def check_egg(pth):
 #--
 
 
-class Target:
+class Target(object):
     invcnum = 0
 
     def __init__(self):
@@ -304,7 +298,7 @@ class Target:
         # toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        self.out = os.path.join(BUILDPATH, 'out%02d-%s.toc' %
+        self.out = os.path.join(WORKPATH, 'out%02d-%s.toc' %
                                 (self.invcnum, self.__class__.__name__))
         self.outnm = os.path.basename(self.out)
         self.dependencies = TOC()
@@ -342,6 +336,28 @@ class Target:
 
 
 class Analysis(Target):
+    """
+    Class does analysis of the user's main Python scripts.
+
+    An Analysis has five outputs, all TOCs (Table of Contents) accessed as
+    attributes of the analysis.
+
+    scripts
+            The scripts you gave Analysis as input, with any runtime hook scripts
+            prepended.
+    pure
+            The pure Python modules.
+    binaries
+            The extensionmodules and their dependencies. The secondary dependecies
+            are filtered. On Windows files from C:\Windows are excluded by default.
+            On Linux/Unix only system libraries from /lib or /usr/lib are excluded.
+    datas
+            Data-file dependencies. These are data-file that are found to be needed
+            by modules. They can be anything: plugins, font files, images, translations,
+            etc.
+    zipfiles
+            The zipfiles dependencies (usually .egg files).
+    """
     _old_scripts = set((
         absnormpath(os.path.join(HOMEPATH, "support", "_mountzlib.py")),
         absnormpath(os.path.join(CONFIGDIR, "support", "useUnicode.py")),
@@ -353,15 +369,37 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
-                 hookspath=None, excludes=None):
+                 hookspath=None, excludes=None, runtime_hooks=[]):
+        """
+        scripts
+                A list of scripts specified as file names.
+        pathex
+                An optional list of paths to be searched before sys.path.
+        hiddenimport
+                An optional list of additional (hidden) modules to include.
+        hookspath
+                An optional list of additional paths to search for hooks.
+                (hook-modules).
+        excludes
+                An optional list of module or package names (their Python names,
+                not path names) that will be ignored (as though they were not found).
+        runtime_hooks
+                An optional list of scripts to use as users' runtime hooks. Specified
+                as file names.
+        """
         Target.__init__(self)
+
+        sys._PYI_SETTINGS = {}
+        sys._PYI_SETTINGS['scripts'] = scripts
+
         # Include initialization Python code in PyInstaller analysis.
         _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
-            os.path.join(HOMEPATH, "support", "_pyi_bootstrap.py"),
-            os.path.join(_init_code_path, 'archive.py'),
-            os.path.join(_init_code_path, 'carchive.py'),
-            os.path.join(_init_code_path, 'iu.py'),
+            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
+            os.path.join(_init_code_path, 'pyi_importers.py'),
+            os.path.join(_init_code_path, 'pyi_archive.py'),
+            os.path.join(_init_code_path, 'pyi_carchive.py'),
+            os.path.join(_init_code_path, 'pyi_os_path.py'),
             ]
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
@@ -370,15 +408,34 @@ class Analysis(Target):
             if not os.path.exists(script):
                 raise ValueError("script '%s' not found" % script)
             self.inputs.append(script)
+
         self.pathex = []
+
+        # Based on main supplied script - add top-level modules directory to PYTHONPATH.
+        # Sometimes the main app script is not top-level module but submodule like 'mymodule.mainscript.py'.
+        # In that case PyInstaller will not be able find modules in the directory containing 'mymodule'.
+        # Add this directory to PYTHONPATH so PyInstaller could find it.
+        for script in scripts:
+            script_toplevel_dir = misc.get_path_to_toplevel_modules(script)
+            if script_toplevel_dir:
+                self.pathex.append(script_toplevel_dir)
+                logger.info('Extending PYTHONPATH with %s', script_toplevel_dir)
+
+        # Normalize paths in pathex and make them absolute.
         if pathex:
             self.pathex = [absnormpath(path) for path in pathex]
+
 
         self.hiddenimports = hiddenimports or []
         # Include modules detected at build time. Like 'codecs' and encodings.
         self.hiddenimports.extend(HIDDENIMPORTS)
 
         self.hookspath = hookspath
+
+        # Custom runtime hook files that should be included and started before
+        # any existing PyInstaller runtime hooks.
+        self.custom_runtime_hooks = runtime_hooks
+
         self.excludes = excludes
         self.scripts = TOC()
         self.pure = TOC()
@@ -422,6 +479,73 @@ class Analysis(Target):
         self.hiddenimports = hiddenimports
         return False
 
+    # TODO implement same functionality as 'assemble()'
+    # TODO convert output from 'modulegraph' to PyInstaller format - self.modules.
+    # TODO handle hooks properly.
+    #def assemble(self):
+    def assemble_modulegraph(self):
+        """
+        New assemble function based on module 'modulegraph' for resolving
+        dependencies on Python modules.
+
+        PyInstaller is not able to handle some cases of resolving dependencies.
+        Rather try use a module for that than trying to fix current implementation.
+        """
+        from modulegraph.modulegraph import ModuleGraph
+        from modulegraph.find_modules import get_implies, find_needed_modules
+        from PyInstaller import hooks
+
+        # Python scripts for analysis.
+        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+        scripts = [
+            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
+        ]
+
+        #tracker = PyInstaller.depend.imptracker.ImportTrackerModulegraph(
+                #dirs.keys() + self.pathex, self.hookspath, self.excludes)
+
+        # TODO implement the following to get python modules and extension lists:
+        #      process all hooks to get hidden imports and create mapping:
+        def collect_implies():
+            """
+            Collect all hiddenimports from hooks and from modulegraph.
+            """
+            # Dictionary like
+            #   {'mod_name': ['dependent_mod1', dependent_mod2', ...]}
+            implies = get_implies()
+            # TODO implement getting through hooks
+            # TODO use also hook_dir supplied by user
+            hook_dir = os.path.dirname(os.path.abspath(hooks.__file__))
+            files = glob.glob(hook_dir + os.sep + 'hook-*.py')
+            for f in files:
+                # Name of the module this hook is for.
+                mod_name = os.path.basename(f).lstrip('hook-').rstrip('.py')
+                hook_mod_name = 'PyInstaller.hooks.hook-%s' % mod_name
+                # Loaded and initialized hook module.
+                hook_mod = imp.load_source(hook_mod_name, f)
+                if hasattr(hook_mod, 'hiddenimports'):
+                    # Extend the list of implies.
+                    implies[mod_name] = hook_mod.hiddenimports
+            return implies
+
+        #        {'PyQt4.QtGui': ['PyQt4.QtCore', 'sip'], 'another_Mod' ['hidden_import1', 'hidden_import2'], ...}
+        #      supply this mapping as 'implies' keyword to
+        #        modulegraph.modulegraph.ModuleGraph()
+        #      do analysis of scripts - user scripts, pyi_archive, pyi_os_path, pyi_importers, pyi_carchive, _pyi_bootstrap
+        #      find necessary rthooks
+        #      do analysis of rthooks and add it to modulegraph object
+        #      analyze python modules for ctype imports - modulegraph does not do that
+
+        # TODO process other attribute from used pyinstaller hooks.
+        # TODO resolve DLL/so/dylib dependencies.
+        graph = ModuleGraph(
+            path=[_init_code_path] + sys.path,
+            implies=collect_implies(),
+            debug=0)
+        graph = find_needed_modules(graph, scripts=scripts)
+        graph.report()
+
+
     def assemble(self):
         logger.info("running Analysis %s", os.path.basename(self.out))
         # Reset seen variable to correctly discover dependencies
@@ -437,7 +561,7 @@ class Analysis(Target):
             depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
                                                processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
-            depmanifest.filename = os.path.join(BUILDPATH,
+            depmanifest.filename = os.path.join(WORKPATH,
                                                 specnm + ".exe.manifest")
 
         binaries = []  # binaries to bundle
@@ -459,7 +583,7 @@ class Analysis(Target):
                 raise SystemExit("Error: Analysis: script %s not found!" % script)
             d, base = os.path.split(script)
             if not d:
-                d = os.getcwd()
+                d = compat.getcwd()
             d = absnormpath(d)
             pynm, ext = os.path.splitext(base)
             dirs[d] = 1
@@ -467,7 +591,7 @@ class Analysis(Target):
         ###################################################
         # Initialize importTracker and analyze scripts
         importTracker = PyInstaller.depend.imptracker.ImportTracker(
-                dirs.keys() + self.pathex, self.hookspath, self.excludes)
+                dirs.keys() + self.pathex, self.hookspath, self.excludes, workpath=WORKPATH)
         PyInstaller.__pathex__ = self.pathex[:]
         scripts = []  # will contain scripts to bundle
         for i, script in enumerate(self.inputs):
@@ -489,9 +613,23 @@ class Analysis(Target):
         ###################################################
         # Fills pure, binaries and rthookcs lists to TOC
         pure = []     # pure python modules
-        zipfiles = []  # zipfiles to bundle
+        zipfiles = []  # zipfiles to bundle - zipped Python .egg files.
         datas = []    # datafiles to bundle
         rthooks = []  # rthooks if needed
+
+        # Include custom rthooks (runtime hooks).
+        # The runtime hooks are order dependent. First hooks in the list
+        # are executed first.
+        # Custom hooks are added before Pyinstaller rthooks and thus they are
+        # executed first.
+        if self.custom_runtime_hooks:
+            logger.info("Including custom run-time hooks")
+            # Data structure in format:
+            # ('rt_hook_mod_name', '/rt/hook/file/name.py', 'PYSOURCE')
+            for hook_file in self.custom_runtime_hooks:
+                hook_file = os.path.abspath(hook_file)
+                items = (os.path.splitext(os.path.basename(hook_file))[0], hook_file, 'PYSOURCE')
+                rthooks.append(items)
 
         # Find rthooks.
         logger.info("Looking for run-time hooks")
@@ -536,10 +674,11 @@ class Analysis(Target):
                                                manifest=depmanifest))
         if is_win:
             depmanifest.writeprettyxml()
-        self.fixMissingPythonLib(binaries)
+        self._check_python_library(binaries)
         if zipfiles:
-            scripts.insert(-1, ("_pyi_egg_install.py", os.path.join(HOMEPATH, "support/_pyi_egg_install.py"), 'PYSOURCE'))
-        # Add realtime hooks just before the last script (which is
+            _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+            scripts.insert(-1, ('_pyi_egg_install.py', os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
+        # Add runtime hooks just before the last script (which is
         # the entrypoint of the application).
         scripts[-1:-1] = rthooks
         self.scripts = TOC(scripts)
@@ -566,68 +705,26 @@ class Analysis(Target):
         logger.info("%s no change!", self.out)
         return 0
 
-    def fixMissingPythonLib(self, binaries):
-        """Add the Python library if missing from the binaries.
-
-        Some linux distributions (e.g. debian-based) statically build the
-        Python executable to the libpython, so bindepend doesn't include
-        it in its output.
-
-        Darwin custom builds could possibly also have non-framework style libraries,
-        so this method also checks for that variant as well.
+    def _check_python_library(self, binaries):
         """
+        Verify presence of the Python dynamic library in the binary dependencies.
+        Python library is an essential piece that has to be always included.
+        """
+        python_lib = bindepend.get_python_library_path()
 
-        if is_aix:
-            # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
-            names = ('libpython%d.%d.a' % sys.version_info[:2],)
-        elif is_unix:
-            # Other *nix platforms.
-            names = ('libpython%d.%d.so' % sys.version_info[:2],)
-        elif is_darwin:
-            names = ('Python', 'libpython%d.%d.dylib' % sys.version_info[:2])
+        if python_lib:
+            logger.info('Using Python library %s', python_lib)
+            # Presence of library in dependencies.
+            deps = set()
+            for (nm, filename, typ) in binaries:
+                if typ == 'BINARY':
+                    deps.update([filename])
+            # If Python library is missing - append it to dependencies.
+            if python_lib not in deps:
+                logger.info('Adding Python library to binary dependencies')
+                binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
         else:
-            return
-
-        for (nm, fnm, typ) in binaries:
-            for name in names:
-                if typ == 'BINARY' and name in fnm:
-                    # lib found
-                    return
-
-        # Resume search using the first item in names.
-        name = names[0]
-
-        logger.info('Looking for Python library %s', name)
-
-        if is_unix:
-            lib = bindepend.findLibrary(name)
-            if lib is None:
-                raise IOError("Python library not found!")
-
-        elif is_darwin:
-            # On MacPython, Analysis.assemble is able to find the libpython with
-            # no additional help, asking for sys.executable dependencies.
-            # However, this fails on system python, because the shared library
-            # is not listed as a dependency of the binary (most probably it's
-            # opened at runtime using some dlopen trickery).
-            # This happens on Mac OS X when Python is compiled as Framework.
-
-            # Python compiled as Framework contains same values in sys.prefix
-            # and exec_prefix. That's why we can use just sys.prefix.
-            # In virtualenv PyInstaller is not able to find Python library.
-            # We need special care for this case.
-            if compat.is_virtualenv:
-                py_prefix = sys.real_prefix
-            else:
-                py_prefix = sys.prefix
-
-            logger.info('Looking for Python library in %s', py_prefix)
-
-            lib = os.path.join(py_prefix, name)
-            if not os.path.exists(lib):
-                raise IOError("Python library not found!")
-
-        binaries.append((os.path.basename(lib), lib, 'BINARY'))
+            raise IOError("Python library not found!")
 
 
 def _findRTHook(modnm):
@@ -638,15 +735,28 @@ def _findRTHook(modnm):
         if os.path.isabs(script):
             path = script
         else:
-            path = os.path.join(HOMEPATH, script)
+            path = os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks', script)
         rslt.append((nm, path, 'PYSOURCE'))
     return rslt
 
 
 class PYZ(Target):
+    """
+    Creates a ZlibArchive that contains all pure Python modules.
+    """
     typ = 'PYZ'
 
-    def __init__(self, toc, name=None, level=9, crypt=None):
+    def __init__(self, toc, name=None, level=9):
+        """
+        toc
+                A TOC (Table of Contents), normally an Analysis.pure?
+        name
+                A filename for the .pyz. Normally not needed, as the generated
+                name will do fine.
+        level
+                The Zlib compression level to use. If 0, the zlib module is
+                not required.
+        """
         Target.__init__(self)
         self.toc = toc
         self.name = name
@@ -654,16 +764,11 @@ class PYZ(Target):
             self.name = self.out[:-3] + 'pyz'
         # Level of zlib compression.
         self.level = level
-        if config['useCrypt'] and crypt is not None:
-            self.crypt = archive.Keyfile(crypt).key
-        else:
-            self.crypt = None
         self.dependencies = compile_pycos(config['PYZ_dependencies'])
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
             ('level', _check_guts_eq),
-            ('crypt', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
             )
 
@@ -679,11 +784,11 @@ class PYZ(Target):
         return False
 
     def assemble(self):
-        logger.info("building PYZ %s", os.path.basename(self.out))
-        pyz = archive.ZlibArchive(level=self.level, crypt=self.crypt)
+        logger.info("building PYZ (ZlibArchive) %s", os.path.basename(self.out))
+        pyz = pyi_archive.ZlibArchive(level=self.level)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
-        _save_data(self.out, (self.name, self.level, self.crypt, self.toc))
+        _save_data(self.out, (self.name, self.level, self.toc))
         return 1
 
 
@@ -693,7 +798,7 @@ def cacheDigest(fnm):
     return digest
 
 
-def checkCache(fnm, strip=0, upx=0, dist_nm=None):
+def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -710,13 +815,13 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
         or fnm.lower().endswith(".manifest")):
         return fnm
     if strip:
-        strip = 1
+        strip = True
     else:
-        strip = 0
+        strip = False
     if upx:
-        upx = 1
+        upx = True
     else:
-        upx = 0
+        upx = False
 
     # Load cache index
     # Make cachedir per Python major/minor version.
@@ -748,7 +853,7 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
             return cachedfile
     if upx:
         if strip:
-            fnm = checkCache(fnm, 1, 0)
+            fnm = checkCache(fnm, strip=True, upx=False)
         bestopt = "--best"
         # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
         # A better configure-time check is due.
@@ -761,10 +866,14 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
         cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
-            # -S = strip only debug symbols.
-            # The default strip behaviour breaks some shared libraries
-            # under Mac OSX
-            cmd = ["strip", "-S", cachedfile]
+            strip_options = []
+            if is_darwin:
+               # The default strip behaviour breaks some shared libraries
+               # under Mac OSX.
+               # -S = strip only debug symbols.
+               strip_options = ["-S"]
+            cmd = ["strip"] + strip_options + [cachedfile]
+
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
 
@@ -824,6 +933,7 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
 
     if cmd:
         try:
+            logger.info("Executing - " + ' '.join(cmd))
             compat.exec_command(*cmd)
         except OSError, e:
             raise SystemExit("Execution failed: %s" % e)
@@ -839,10 +949,15 @@ def checkCache(fnm, strip=0, upx=0, dist_nm=None):
     return cachedfile
 
 
-UNCOMPRESSED, COMPRESSED, ENCRYPTED = range(3)
+UNCOMPRESSED, COMPRESSED = range(2)
 
 
 class PKG(Target):
+    """
+    Creates a CArchive. CArchive is the data structure that is embedded
+    into the executable. This data structure allows to include various
+    read-only data in a sigle-file deployment.
+    """
     typ = 'PKG'
     xformdict = {'PYMODULE': 'm',
                  'PYSOURCE': 's',
@@ -856,7 +971,24 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=0, upx_binaries=0, crypt=0):
+                 strip_binaries=False, upx_binaries=False):
+        """
+        toc
+                A TOC (Table of Contents)
+        name
+                An optional filename for the PKG.
+        cdict
+                Dictionary that specifies compression by typecode. For Example,
+                PYZ is left uncompressed so that it can be accessed inside the
+                PKG. The default uses sensible values. If zlib is not available,
+                no compression is used.
+        exclude_binaries
+                If True, EXTENSIONs and BINARYs will be left out of the PKG,
+                and forwarded to its container (usually a COLLECT).
+        strip_binaries
+                If True, use 'strip' command to reduce the size of binary files.
+        upx_binaries
+        """
         Target.__init__(self)
         self.toc = toc
         self.cdict = cdict
@@ -864,7 +996,6 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
-        self.crypt = crypt
         if name is None:
             self.name = self.out[:-3] + 'pkg'
         if self.cdict is None:
@@ -874,9 +1005,6 @@ class PKG(Target):
                           'EXECUTABLE': COMPRESSED,
                           'PYSOURCE': COMPRESSED,
                           'PYMODULE': COMPRESSED}
-            if self.crypt:
-                self.cdict['PYSOURCE'] = ENCRYPTED
-                self.cdict['PYMODULE'] = ENCRYPTED
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
@@ -885,7 +1013,6 @@ class PKG(Target):
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
-            ('crypt', _check_guts_eq),
             )
 
     def check_guts(self, last_build):
@@ -901,72 +1028,129 @@ class PKG(Target):
         return False
 
     def assemble(self):
-        logger.info("building PKG %s", os.path.basename(self.name))
+        logger.info("building PKG (CArchive) %s", os.path.basename(self.name))
         trash = []
         mytoc = []
         seen = {}
         toc = addSuffixToExtensions(self.toc)
+        # 'inm'  - relative filename inside a CArchive
+        # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in toc:
-            if not os.path.isfile(fnm) and check_egg(fnm):
+            # Ensure filename 'fnm' is not None or empty string. Otherwise
+            # it will fail in case of 'typ' being type OPTION.
+            if fnm and not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
                 if self.exclude_binaries and typ != 'DEPENDENCY':
                     self.dependencies.append((inm, fnm, typ))
                 else:
-                    fnm = checkCache(fnm, self.strip_binaries,
-                                     self.upx_binaries and (is_win or is_cygwin)
-                                     and config['hasUPX'], dist_nm=inm)
+                    fnm = checkCache(fnm, strip=self.strip_binaries,
+                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     dist_nm=inm)
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
                     if typ == 'BINARY' and fnm in seen:
                         continue
                     seen[fnm] = 1
+
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
             elif typ == 'OPTION':
                 mytoc.append((inm, '', 0, 'o'))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
-        archive = carchive.CArchive()
+
+        # Bootloader has to know the name of Python library. Pass python libname to CArchive.
+        pylib_name = os.path.basename(bindepend.get_python_library_path())
+        archive = pyi_carchive.CArchive(pylib_name=pylib_name)
+
         archive.build(self.name, mytoc)
         _save_data(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
-                    self.strip_binaries, self.upx_binaries, self.crypt))
+                    self.strip_binaries, self.upx_binaries))
         for item in trash:
             os.remove(item)
         return 1
 
 
 class EXE(Target):
+    """
+    Creates the final executable of the frozen app.
+    This bundles all necessary files together.
+    """
     typ = 'EXECUTABLE'
-    exclude_binaries = 0
-    append_pkg = 1
 
-    def __init__(self, *args, **kws):
+    def __init__(self, *args, **kwargs):
+        """
+        args
+                One or more arguments that are either TOCs Targets.
+        kwargs
+            Possible keywork arguments:
+
+            console
+                On Windows or OSX governs whether to use the console executable
+                or the windowed executable. Always True on Linux/Unix (always
+                console executable - it does not matter there).
+            debug
+                Setting to True gives you progress mesages from the executable
+                (for console=False there will be annoying MessageBoxes on Windows).
+            name
+                The filename for the executable.
+            exclude_binaries
+                Forwarded to the PKG the EXE builds.
+            icon
+                Windows or OSX only. icon='myicon.ico' to use an icon file or
+                icon='notepad.exe,0' to grab an icon resource.
+            version
+                Windows only. version='myversion.txt'. Use grab_version.py to get
+                a version resource from an executable and then edit the output to
+                create your own. (The syntax of version resources is so arcane
+                that I wouldn't attempt to write one from scratch).
+        """
         Target.__init__(self)
-        self.console = kws.get('console', 1)
-        self.debug = kws.get('debug', 0)
-        self.name = kws.get('name', None)
-        self.icon = kws.get('icon', None)
-        self.versrsrc = kws.get('version', None)
-        self.manifest = kws.get('manifest', None)
-        self.resources = kws.get('resources', [])
-        self.strip = kws.get('strip', None)
-        self.upx = kws.get('upx', None)
-        self.crypt = kws.get('crypt', 0)
-        self.exclude_binaries = kws.get('exclude_binaries', 0)
-        self.append_pkg = kws.get('append_pkg', self.append_pkg)
-        if self.name is None:
-            self.name = self.out[:-3] + 'exe'
-        if not os.path.isabs(self.name):
-            self.name = os.path.join(SPECPATH, self.name)
-        if is_win or is_cygwin:
-            self.pkgname = self.name[:-3] + 'pkg'
+
+        # TODO could be 'append_pkg' removed? It seems not to be used anymore.
+        self.append_pkg = kwargs.get('append_pkg', True)
+
+        # Available options for EXE in .spec files.
+        self.exclude_binaries = kwargs.get('exclude_binaries', False)
+        self.console = kwargs.get('console', True)
+        self.debug = kwargs.get('debug', False)
+        self.name = kwargs.get('name', None)
+        self.icon = kwargs.get('icon', None)
+        self.versrsrc = kwargs.get('version', None)
+        self.manifest = kwargs.get('manifest', None)
+        self.resources = kwargs.get('resources', [])
+        self.strip = kwargs.get('strip', False)
+
+        if config['hasUPX']: 
+           self.upx = kwargs.get('upx', False)
         else:
-            self.pkgname = self.name + '.pkg'
+           self.upx = False
+
+        # Old .spec format included in 'name' the path where to put created
+        # app. New format includes only exename.
+        #
+        # Ignore fullpath in the 'name' and prepend DISTPATH or WORKPATH.
+        # DISTPATH - onefile 
+        # WORKPATH - onedir
+        if self.exclude_binaries:
+            # onedir mode - create executable in WORKPATH.
+            self.name = os.path.join(WORKPATH, os.path.basename(self.name))
+        else:
+            # onefile mode - create executable in DISTPATH.
+            self.name = os.path.join(DISTPATH, os.path.basename(self.name))
+        
+        # Base name of the EXE file without .exe suffix.
+        base_name = os.path.basename(self.name)
+        if is_win or is_cygwin:
+            base_name = os.path.splitext(base_name)[0]
+        self.pkgname = base_name + '.pkg'
+
         self.toc = TOC()
+
         for arg in args:
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
@@ -976,15 +1160,15 @@ class EXE(Target):
             else:
                 self.toc.extend(arg)
         if is_win:
-            filename = os.path.join(BUILDPATH, specnm + ".exe.manifest")
+            filename = os.path.join(WORKPATH, specnm + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
                 self.console)
             self.toc.append((os.path.basename(self.name) + ".manifest", filename,
                 'BINARY'))
-        self.pkg = PKG(self.toc, cdict=kws.get('cdict', None),
+        self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
-                       crypt=self.crypt)
+                       )
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
@@ -996,7 +1180,6 @@ class EXE(Target):
             ('resources', _check_guts_eq),
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
-            ('crypt', _check_guts_eq),
             ('mtm', None,),  # checked bellow
             )
 
@@ -1020,10 +1203,6 @@ class EXE(Target):
             logger.info("ignoring icon, version, manifest and resources = platform not capable")
 
         mtm = data[-1]
-        crypt = data[-2]
-        if crypt != self.crypt:
-            logger.info("rebuilding %s because crypt option changed", self.outnm)
-            return 1
         if mtm != mtime(self.name):
             logger.info("rebuilding %s because mtimes don't match", self.outnm)
             return True
@@ -1038,7 +1217,7 @@ class EXE(Target):
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
-        return os.path.join("support", "loader", PLATFORM, exe)
+        return os.path.join('PyInstaller', 'bootloader', PLATFORM, exe)
 
     def assemble(self):
         logger.info("building EXE from %s", os.path.basename(self.out))
@@ -1101,7 +1280,7 @@ class EXE(Target):
                         logger.exception(exc)
             trash.append(tmpnm)
             exe = tmpnm
-        exe = checkCache(exe, self.strip, self.upx and config['hasUPX'])
+        exe = checkCache(exe, strip=self.strip, upx=self.upx)
         self.copy(exe, outf)
         if self.append_pkg:
             logger.info("Appending archive to EXE %s", self.name)
@@ -1113,7 +1292,7 @@ class EXE(Target):
         os.chmod(self.name, 0755)
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
-                self.crypt, mtime(self.name))
+                mtime(self.name))
         assert len(guts) == len(self.GUTS)
         _save_data(self.out, guts)
         for item in trash:
@@ -1130,6 +1309,12 @@ class EXE(Target):
 
 
 class DLL(EXE):
+    """
+    On Windows, this provides support for doing in-process COM servers. It is not
+    generalized. However, embedders can follow the same model to build a special
+    purpose process DLL so the Python support in their app is hidden. You will
+    need to write your own dll.
+    """
     def assemble(self):
         logger.info("building DLL %s", os.path.basename(self.out))
         outf = open(self.name, 'wb')
@@ -1146,15 +1331,36 @@ class DLL(EXE):
 
 
 class COLLECT(Target):
+    """
+    In one-dir mode creates the output folder with all necessary files.
+    """
     def __init__(self, *args, **kws):
+        """
+        args
+                One or more arguments that are either TOCs Targets.
+        kws
+            Possible keywork arguments:
+
+                name
+                    The name of the directory to be built.
+        """
         Target.__init__(self)
-        self.name = kws.get('name', None)
-        if self.name is None:
-            self.name = 'dist_' + self.out[:-4]
-        self.strip_binaries = kws.get('strip', 0)
-        self.upx_binaries = kws.get('upx', 0)
-        if not os.path.isabs(self.name):
-            self.name = os.path.join(SPECPATH, self.name)
+        self.strip_binaries = kws.get('strip', False)
+
+        if config['hasUPX']: 
+           self.upx_binaries = kws.get('upx', False)
+        else:
+           self.upx_binaries = False
+
+        self.name = kws.get('name')
+        # Old .spec format included in 'name' the path where to collect files
+        # for the created app.
+        # app. New format includes only directory name.
+        #
+        # The 'name' directory is created in DISTPATH and necessary files are
+        # then collected to this directory.
+        self.name = os.path.join(DISTPATH, os.path.basename(self.name))
+
         self.toc = TOC()
         for arg in args:
             if isinstance(arg, TOC):
@@ -1193,14 +1399,17 @@ class COLLECT(Target):
             if not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
+            if os.pardir in os.path.normpath(inm) or os.path.isabs(inm):
+                raise SystemExit('Security-Alert: try to store file outside '
+                                 'of dist-directory. Aborting. %r' % inm)
             tofnm = os.path.join(self.name, inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, self.strip_binaries,
-                                 self.upx_binaries and (is_win or is_cygwin)
-                                 and config['hasUPX'], dist_nm=inm)
+                fnm = checkCache(fnm, strip=self.strip_binaries,
+                                 upx=(self.upx_binaries and (is_win or is_cygwin)), 
+                                 dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
@@ -1217,24 +1426,42 @@ class BUNDLE(Target):
         if not is_darwin:
             return
 
-        # icns icon for app bundle.
-        self.icon = kws.get('icon', os.path.join(os.path.dirname(__file__),
-            '..', 'source', 'images', 'icon-windowed.icns'))
+        # .icns icon for app bundle.
+        # Use icon supplied by user or just use the default one from PyInstaller.
+        self.icon = kws.get('icon')
+        if not self.icon:
+            self.icon = os.path.join(os.path.dirname(__file__),
+                'bootloader', 'images', 'icon-windowed.icns')
+        # Ensure icon path is absolute.
+        self.icon = os.path.abspath(self.icon)
 
         Target.__init__(self)
+ 
+        # .app bundle is created in DISTPATH.
         self.name = kws.get('name', None)
-        if self.name is not None:
-            self.appname = os.path.splitext(os.path.basename(self.name))[0]
+        base_name = os.path.basename(self.name)
+        self.name = os.path.join(DISTPATH, base_name)
+
+        self.appname = os.path.splitext(base_name)[0]
         self.version = kws.get("version", "0.0.0")
         self.toc = TOC()
+        self.strip = False
+        self.upx = False
+
         for arg in args:
             if isinstance(arg, EXE):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                self.toc.extend(arg.dependencies)
+                self.toc.extend(arg.dependencies) 
+                self.strip = arg.strip
+                self.upx = arg.upx 
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
+                # TOC doesn't have a strip or upx attribute, so there is no way for us to
+                # tell which cache we should draw from.
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
+                self.strip = arg.strip_binaries
+                self.upx = arg.upx_binaries 
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
@@ -1311,7 +1538,7 @@ class BUNDLE(Target):
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, dist_nm=inm)
+                fnm = checkCache(fnm, strip=self.strip, upx=self.upx, dist_nm=inm)
             tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
@@ -1330,6 +1557,23 @@ class BUNDLE(Target):
 
 
 class TOC(UserList.UserList):
+    """
+    TOC (Table of Contents) class is a list of tuples of the form (name, path, tytecode).
+
+    typecode    name                   path                        description
+    --------------------------------------------------------------------------------------
+    EXTENSION   Python internal name.  Full path name in build.    Extension module.
+    PYSOURCE    Python internal name.  Full path name in build.    Script.
+    PYMODULE    Python internal name.  Full path name in build.    Pure Python module (including __init__ modules).
+    PYZ         Runtime name.          Full path name in build.    A .pyz archive (ZlibArchive data structure).
+    PKG         Runtime name.          Full path name in build.    A .pkg archive (Carchive data structure).
+    BINARY      Runtime name.          Full path name in build.    Shared library.
+    DATA        Runtime name.          Full path name in build.    Arbitrary files.
+    OPTION      The option.            Unused.                     Python runtime option (frozen into executable).
+
+    A TOC contains various types of files. A TOC contains no duplicates and preserves order.
+    PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
+    """
     def __init__(self, initlist=None):
         UserList.UserList.__init__(self)
         self.fltr = {}
@@ -1401,7 +1645,25 @@ class TOC(UserList.UserList):
 
 
 class Tree(Target, TOC):
+    """
+    This class is a way of creating a TOC (Table of Contents) that describes
+    some or all of the files within a directory.
+    """
     def __init__(self, root=None, prefix=None, excludes=None):
+        """
+        root
+                The root of the tree (on the build system).
+        prefix
+                Optional prefix to the names of the target system.
+        excludes
+                A list of names to exclude. Two forms are allowed:
+
+                    name
+                        Files with this basename will be excluded (do not
+                        include the path).
+                    *.ext
+                        Any file with the given extension will be excluded.
+        """
         Target.__init__(self)
         TOC.__init__(self)
         self.root = root
@@ -1558,45 +1820,81 @@ def TkPKG():
                      'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
 
 
-def build(spec, buildpath):
-    global SPECPATH, BUILDPATH, WARNFILE, rthooks, SPEC, specnm
-    rthooks = _load_data(os.path.join(HOMEPATH, 'support', 'rthooks.dat'))
-    SPEC = spec
+def build(spec, distpath, workpath, clean_build):
+    """
+    Build the executable according to the created SPEC file.
+    """
+    # Set of global variables that can be used while processing .spec file.
+    global SPECPATH, DISTPATH, WORKPATH, WARNFILE, rthooks, SPEC, specnm
+
+    rthooks = _load_data(os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks.dat'))
+
+    # Ensure starting tilde and environment variables get expanded in distpath / workpath.
+    # '~/path/abc', '${env_var_name}/path/abc/def'
+    distpath = compat.expand_path(distpath)
+    workpath = compat.expand_path(workpath)
+    SPEC = compat.expand_path(spec)
+
     SPECPATH, specnm = os.path.split(spec)
     specnm = os.path.splitext(specnm)[0]
-    if SPECPATH == '':
-        SPECPATH = os.getcwd()
-    BUILDPATH = os.path.join(SPECPATH, 'build',
-                             "pyi." + sys.platform, specnm)
-    # Check and adjustment for build path
-    if buildpath != DEFAULT_BUILDPATH:
-        bpath = buildpath
-        if os.path.isabs(bpath):
-            BUILDPATH = bpath
-        else:
-            BUILDPATH = os.path.join(SPECPATH, bpath)
-    WARNFILE = os.path.join(BUILDPATH, 'warn%s.txt' % specnm)
-    if not os.path.exists(BUILDPATH):
-        os.makedirs(BUILDPATH)
-    # Executing the specfile (it's a valid python file)
+
+    # Add 'specname' to workpath and distpath if they point to PyInstaller homepath.
+    if os.path.dirname(distpath) == HOMEPATH:
+        distpath = os.path.join(HOMEPATH, specnm, os.path.basename(distpath))
+    DISTPATH = distpath
+    if os.path.dirname(workpath) == HOMEPATH:
+        WORKPATH = os.path.join(HOMEPATH, specnm, os.path.basename(workpath), specnm)
+    else:
+        WORKPATH = os.path.join(workpath, specnm)
+
+    WARNFILE = os.path.join(WORKPATH, 'warn%s.txt' % specnm)
+
+    # Clean PyInstaller cache (CONFIGDIR) and temporary files (WORKPATH)
+    # to be able start a clean build.
+    if clean_build:
+        logger.info('Removing temporary files and cleaning cache in %s', CONFIGDIR)
+        for pth in (CONFIGDIR, WORKPATH):
+            if os.path.exists(pth):
+                # Remove all files in 'pth'.
+                for f in glob.glob(pth + '/*'):
+                    # Remove dirs recursively.
+                    if os.path.isdir(f):
+                        shutil.rmtree(f)
+                    else:
+                        os.remove(f)
+
+    # Create DISTPATH and WORKPATH if they does not exist.
+    for pth in (DISTPATH, WORKPATH):
+        if not os.path.exists(WORKPATH):
+            os.makedirs(WORKPATH)
+ 
+    # Executing the specfile. The executed .spec file will use DISTPATH and
+    # WORKPATH values.
     execfile(spec)
 
 
 def __add_options(parser):
-    parser.add_option('--buildpath', default=DEFAULT_BUILDPATH,
-                      help='Buildpath (default: %default)')
+    parser.add_option("--distpath", metavar="DIR",
+                default=DEFAULT_DISTPATH,
+                 help='Where to put the bundled app (default: %default)')
+    parser.add_option('--workpath', default=DEFAULT_WORKPATH,
+                      help='Where to put all the temporary work files, .log, .pyz and etc. (default: %default)')
     parser.add_option('-y', '--noconfirm',
                       action="store_true", default=False,
-                      help='Remove output directory (default: %s) without '
-                      'confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'))
+                      help='Replace output directory (default: %s) without '
+                      'asking for confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'))
     parser.add_option('--upx-dir', default=None,
-                      help='Directory containing UPX (default: search in path)')
+                      help='Path to UPX utility (default: search the execution path)')
     parser.add_option("-a", "--ascii", action="store_true",
-                 help="do NOT include unicode encodings "
+                 help="Do not include unicode encoding support "
                       "(default: included if available)")
+    parser.add_option('--clean', dest='clean_build', action='store_true', default=False,
+                 help='Clean PyInstaller cache and remove temporary files '
+                      'before building.')
 
 
-def main(specfile, buildpath, noconfirm, ascii=False, **kw):
+def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
+    # Set of global variables that can be used while processing .spec file.
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm
     global HIDDENIMPORTS, NOCONFIRM
@@ -1607,8 +1905,12 @@ def main(specfile, buildpath, noconfirm, ascii=False, **kw):
         HIDDENIMPORTS.extend(misc.get_unicode_modules())
 
     # FIXME: this should be a global import, but can't due to recursive imports
-    import PyInstaller.configure as configure
-    config = configure.get_config(kw.get('upx_dir'))
+    # If configuration dict is supplied - skip configuration step.
+    if pyi_config is None:
+        import PyInstaller.configure as configure
+        config = configure.get_config(kw.get('upx_dir'))
+    else:
+        config = pyi_config
 
     if config['hasRsrcUpdate']:
         from PyInstaller.utils import icon, versioninfo, winresource
@@ -1619,7 +1921,4 @@ def main(specfile, buildpath, noconfirm, ascii=False, **kw):
     if config['hasUPX']:
         setupUPXFlags()
 
-    if not config['useELFEXE']:
-        EXE.append_pkg = 0
-
-    build(specfile, buildpath)
+    build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))

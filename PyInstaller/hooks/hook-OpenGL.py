@@ -1,28 +1,23 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2009, Lorenzo Mancini
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
-# Hook for PyOpenGL 3.x versions from 3.0.0b6 up. Previous versions have a
-# plugin system based on pkg_resources which is problematic to handle correctly
-# under pyinstaller; 2.x versions used to run fine without hooks, so this one
-# shouldn't hurt.
+"""
+Hook for PyOpenGL 3.x versions from 3.0.0b6 up. Previous versions have a
+plugin system based on pkg_resources which is problematic to handle correctly
+under pyinstaller; 2.x versions used to run fine without hooks, so this one
+shouldn't hurt.
+"""
 
 
 from PyInstaller.compat import is_win, is_darwin
+from PyInstaller.hooks.hookutils import collect_data_files
 from PyInstaller.hooks.hookutils import opengl_arrays_modules
 
 
@@ -39,3 +34,12 @@ else:
 
 # Arrays modules are needed too.
 hiddenimports += opengl_arrays_modules()
+
+
+# PyOpenGL 3.x uses ctypes to load DLL libraries. PyOpenGL windows installer
+# adds necessary dll files to 
+#   DLL_DIRECTORY = os.path.join( os.path.dirname( OpenGL.__file__ ), 'DLLS')
+# PyInstaller is not able to find these dlls. Just include them all as data
+# files.
+if is_win:
+    datas = collect_data_files('OpenGL')

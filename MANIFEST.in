@@ -1,1 +1,10 @@
-exclude .hgignore
+include pyinstaller.py
+include pyinstaller-gui.py
+recursive-include bootloader *
+recursive-include doc *
+recursive-include old *
+recursive-include PyInstaller *
+recursive-include tests *
+recursive-include utils *
+exclude .gitignore
+global-exclude *.pyc *.pyo

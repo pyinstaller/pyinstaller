@@ -1,29 +1,19 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2012, Martin Zibricky
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 
-import distutils
 import distutils.sysconfig
 import marshal
 import os
 import sys
 
 from PyInstaller import compat
-from PyInstaller.compat import is_win
 
 
 # distutils module requires Makefile and pyconfig.h files from Python
@@ -33,25 +23,35 @@ _CONFIG_H = distutils.sysconfig.get_config_h_filename()
 _MAKEFILE = distutils.sysconfig.get_makefile_filename()
 
 
-# In virtualenv sys.prefix is overridden.
-if hasattr(sys, 'real_prefix'):
-    sys_prefix = sys.real_prefix
-else:
-    sys_prefix = sys.prefix
+# In virtualenv, _CONFIG_H and _MAKEFILE may have same or different
+# prefixes, depending on the version of virtualenv.
+# Try to find the correct one, which is assumed to be the longest one.
+def _find_prefix(filename):
+    if not compat.is_virtualenv:
+        return sys.prefix
+    prefixes = [sys.prefix, compat.venv_real_prefix]
+    possible_prefixes = []
+    for prefix in prefixes:
+        common = os.path.commonprefix([prefix, filename])
+        if common == prefix:
+            possible_prefixes.append(prefix)
+    possible_prefixes.sort(key=lambda p: len(p), reverse=True)
+    return possible_prefixes[0]
 
+def _relpath(filename):
+    # Relative path in the dist directory.
+    prefix = _find_prefix(filename)
+    return compat.relpath(os.path.dirname(filename), prefix)
 
-# Relative path to config_h in the dist directory.
-_frozen_config_h = compat.relpath(os.path.dirname(_CONFIG_H), sys_prefix)
 # Data files in PyInstaller hook format.
 datas = [
-    (_CONFIG_H, _frozen_config_h),
+    (_CONFIG_H, _relpath(_CONFIG_H))
 ]
 
 
-# On Windows Makefile does not exist.
-if not is_win:
-    _frozen_makefile = compat.relpath(os.path.dirname(_MAKEFILE), sys_prefix)
-    datas.append((_MAKEFILE, _frozen_makefile))
+# The Makefile does not exist on all platforms, eg. on Windows
+if os.path.exists(_MAKEFILE):
+    datas.append((_MAKEFILE, _relpath(_MAKEFILE)))
 
 
 def hook(mod):

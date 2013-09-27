@@ -15,8 +15,9 @@ def standaloneApp(path):
     strip_files(files)
 
 def main():
+    print("WARNING: 'macho_standalone' is deprecated, use 'python -mmacholib dump' instead")
     if not sys.argv[1:]:
-        raise SystemExit, 'usage: %s [appbundle ...]' % (sys.argv[0],)
+        raise SystemExit('usage: %s [appbundle ...]' % (sys.argv[0],))
     for fn in sys.argv[1:]:
         standaloneApp(fn)
 

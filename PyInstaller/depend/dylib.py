@@ -1,25 +1,12 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2013, PyInstaller Development Team.
 #
-# Copyright (C) 2005-2011, Giovanni Bajo
-# Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
-# Note also that you should check the results to make sure that the
-# dlls are redistributable. I've listed most of the common MS dlls
-# under "excludes" below; add to this list as necessary (or use the
-# "excludes" option in the INSTALL section of the config file).
 
 """
 Manipulating with dynamic libraries.
@@ -28,15 +15,16 @@ Manipulating with dynamic libraries.
 
 __all__ = ['exclude_list', 'include_list', 'include_library']
 
+
 import os
 import re
 
-from PyInstaller import is_win, is_unix, is_aix, is_darwin
-from PyInstaller.compat import set
+
+from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin
 
 
 import PyInstaller.log as logging
-logger = logging.getLogger('PyInstaller.build.dylib')
+logger = logging.getLogger(__name__)
 
 
 _BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])
