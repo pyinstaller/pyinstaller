@@ -13,7 +13,7 @@ import sys
 
 import PyInstaller.bindepend
 
-from PyInstaller.compat import is_win, is_darwin, is_unix, is_virtualenv
+from PyInstaller.compat import is_win, is_darwin, is_unix, is_virtualenv, venv_real_prefix
 from PyInstaller.build import Tree
 from PyInstaller.hooks.hookutils import exec_statement, logger
 
@@ -31,7 +31,7 @@ def _handle_broken_tk():
     https://github.com/pypa/virtualenv/issues/93
     """
     if is_win and is_virtualenv:
-        basedir = os.path.join(sys.real_prefix, 'tcl')
+        basedir = os.path.join(venv_real_prefix, 'tcl')
         files = os.listdir(basedir)
         v = os.environ
         # Detect Tcl/Tk paths.
@@ -127,6 +127,10 @@ def _collect_tkfiles(mod):
     _handle_broken_tk()
 
     tcl_root, tk_root = _find_tk(mod)
+
+    if not tcl_root:
+        logger.error("TCL/TK seams to be not properly installed on this system")
+        return []
 
     tcldir = "tcl"
     tkdir = "tk"

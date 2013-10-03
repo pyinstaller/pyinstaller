@@ -90,6 +90,18 @@ def setupUPXFlags():
     compat.setenv("UPX", f)
 
 
+# TODO Is this function used anywhere? Could it be removed?
+def mtime(fnm):
+    try:
+        # the file must not only by stat()-able, but also readable
+        if os.access(fnm, os.R_OK):
+            return os.stat(fnm)[8]
+    except OSError:
+        # return 0
+        pass
+    return 0
+
+
 def absnormpath(apath):
     return os.path.abspath(os.path.normpath(apath))
 
@@ -1364,6 +1376,9 @@ class COLLECT(Target):
             if not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
+            if os.pardir in os.path.normpath(inm) or os.path.isabs(inm):
+                raise SystemExit('Security-Alert: try to store file outside '
+                                 'of dist-directory. Aborting. %r' % inm)
             tofnm = os.path.join(self.name, inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):

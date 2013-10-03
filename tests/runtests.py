@@ -20,13 +20,24 @@ import optparse
 import os
 import re
 import shutil
+import subprocess
 import sys
+
+# ignore some warnings which only confuse when running tests
+import warnings
+warnings.filterwarnings('ignore',
+    "Parent module '.*' not found while handling absolute import")
 
 
 # Expand PYTHONPATH with PyInstaller package to support running without
-# installation.
-pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-sys.path.insert(0, pyi_home)
+# installation -- only if not running in a virtualenv.
+if not hasattr(sys, 'real_prefix'):
+    _virtual_env_ = False
+    pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    sys.path.insert(0, pyi_home)
+else:
+    _virtual_env_ = True
+
 
 
 from PyInstaller import HOMEPATH
@@ -36,7 +47,7 @@ from PyInstaller.compat import is_py25, is_py26, is_py33, is_win, is_darwin
 from PyInstaller.hooks import hookutils
 from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml
-from PyInstaller.utils import misc
+from PyInstaller.utils import misc, winutils
 
 
 VERBOSE = False
@@ -99,6 +110,7 @@ class SkipChecker(object):
             # Macs return 'utf-8'.
             'libraries/test_sphinx': is_win or is_darwin,
             }
+
         # Required Python modules for some tests.
         self.MODULES = {
             'basic/test_codecs': ['codecs'],
@@ -109,10 +121,11 @@ class SkipChecker(object):
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_onefile_win32com': ['win32com'],
             'basic/test_pkg_structures': ['pkg_resources'],
+
             'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
-            'libraries/test_Image': ['PIL'],
-            'libraries/test_Image2': ['PIL'],
+            'libraries/test_Image': ['Image'], # PIL allows to use its submodules as top-level modules
+            'libraries/test_Image2': ['Image'], # PIL allows to use its submodules as top-level modules
             'libraries/test_numpy': ['numpy'],
             'libraries/test_onefile_matplotlib': ['matplotlib'],
             'libraries/test_onefile_tkinter': ['Tkinter'],
@@ -122,7 +135,9 @@ class SkipChecker(object):
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
             'libraries/test_pytz': ['pytz'],
+            'libraries/test_sysconfig': ['sysconfig'],
             'libraries/test_scipy': ['numpy', 'scipy'],
+            'libraries/test_sqlite3': ['sqlite3'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
             'libraries/test_twisted_qt4reactor': ['twisted', 'PyQt4'],
             'libraries/test_twisted_reactor': ['twisted'],
@@ -134,6 +149,7 @@ class SkipChecker(object):
             'libraries/test_sphinx': ['sphinx', 'docutils', 'jinja2', 'uuid'],
             'libraries/test_zope': ['zope'],
             'libraries/test_zope_interface': ['zope.interface'],
+
             'import/test_c_extension': ['simplejson'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_eggs2': ['pkg_resources'],
@@ -142,9 +158,18 @@ class SkipChecker(object):
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
             'import/test_pep302_import_protokol': ['sqlite3'],
+
+            'interactive/test_ipython': ['IPython'],
+            'interactive/test_matplotlib': ['matplotlib'],
             'interactive/test_pygame': ['pygame'],
             'interactive/test_pyqt4_multiprocessing': ['multiprocessing', 'PyQt4'],
+            'interactive/test_qt4': ['PyQt4'],
+            'interactive/test_qt5': ['PyQt5'],
+            'interactive/test_tix': ['Tix'],
+            'interactive/test_tkinter': ['Tkinter'],
+            'interactive/test_wx': ['wx'],
             }
+
         # Other dependecies of some tests.
         self.DEPENDENCIES = {
             'basic/test_onefile_ctypes': [depend.c_compiler()],
@@ -258,12 +283,15 @@ class BuildTestRunner(object):
             sys.stdout.write('\n' + 10 * '#' + ' ' + text + ' ' + 10 * '#' + '\n\n')
             sys.stdout.flush()
 
-    def _plain_msg(self, text):
+    def _plain_msg(self, text, newline=True):
         """
         Print text to console only in verbose mode.
         """
         if self.verbose:
-            sys.stdout.write(text + '\n')
+            if newline:
+                sys.stdout.write(text + '\n')
+            else:
+                sys.stdout.write(text)
             sys.stdout.flush()
 
     def _find_exepath(self, test, parent_dir='dist'):
@@ -287,10 +315,16 @@ class BuildTestRunner(object):
         Run executable created by PyInstaller.
         """
         self._msg('EXECUTING TEST ' + self.test_name)
+
         # Run the test in a clean environment to make sure they're
         # really self-contained
         path = compat.getenv('PATH')
         compat.unsetenv('PATH')
+        # For Windows we need to keep minimal PATH for sucessful running of some tests.
+        if is_win:
+            # Minimum Windows PATH is in most cases:   C:\Windows\system32;C:\Windows
+            compat.setenv('PATH', os.pathsep.join(winutils.get_system_path()))
+
         prog = self._find_exepath(test, 'dist')
         if prog is None:
             self._plain_msg('ERROR: no file generated by PyInstaller found!')
@@ -300,15 +334,23 @@ class BuildTestRunner(object):
             self._plain_msg("RUNNING: " + prog)
             old_wd = os.getcwd()
             os.chdir(os.path.dirname(prog))
+            # Run executable.
             prog = os.path.join(os.curdir, os.path.basename(prog))
-            retcode, out, err = compat.exec_command_all(prog)
-            os.chdir(old_wd)
+            proc = subprocess.Popen([prog], stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+            # Prints stdout of subprocess continuously.
             self._msg('STDOUT %s' % self.test_name)
-            self._plain_msg(out)
+            while proc.poll() is None:
+                #line = proc.stdout.readline().strip()
+                line = proc.stdout.read(1)
+                self._plain_msg(line, newline=False)
+            # Print possible stderr at the end.
             self._msg('STDERR %s' % self.test_name)
-            self._plain_msg(err)
+            self._plain_msg(proc.stderr.read())
             compat.setenv("PATH", path)
-            return retcode
+            # Restore current working directory
+            os.chdir(old_wd)
+
+            return proc.returncode
 
     def test_exists(self):
         """
@@ -387,7 +429,7 @@ class BuildTestRunner(object):
         are not defined.
         """
         logsfn = glob.glob(self.test_file + '.toc')
-        # Other main scritps do not start with 'test_'.
+        # Other main scripts do not start with 'test_'.
         logsfn += glob.glob(self.test_file.split('_', 1)[1] + '_?.toc')
         for logfn in logsfn:
             self._msg("EXECUTING MATCHING " + logfn)
@@ -396,9 +438,13 @@ class BuildTestRunner(object):
             if prog is None:
                 prog = self._find_exepath(tmpname,
                         os.path.join('dist', self.test_file))
-            fname_list = compat.exec_python(
-                os.path.join(HOMEPATH, 'utils', 'archive_viewer.py'),
-                '-b', '-r', prog)
+            if _virtual_env_:
+                fname_list = compat.exec_command(
+                    'pyi-archive_viewer', '-b', '-r', prog)
+            else:
+                fname_list = compat.exec_python(
+                    os.path.join(HOMEPATH, 'utils', 'archive_viewer.py'),
+                    '-b', '-r', prog)
             # Fix line-endings so eval() does not fail.
             fname_list = fname_list.replace('\r\n', '\n').replace('\n\r', '\n')
             fname_list = eval(fname_list)
@@ -657,7 +703,8 @@ def main():
             if not test_list:
                 test_list = [arg]
             else:
-                test_list = [x for x in test_list if os.path.splitext(x)[1] == ".py"]
+                test_list = [x for x in test_list
+                             if os.path.splitext(x)[1] in (".py", ".spec")]
             # Sort tests aplhabetically. For example test
             # basic/test_nested_launch1 depends on basic/test_nested_launch0.
             # Otherwise it would fail.

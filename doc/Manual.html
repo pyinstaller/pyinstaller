@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.10: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
 <title>PyInstaller Manual</title>
 <meta name="author" content="David Cortesi (based on structure by Giovanni Bajo &amp; William Caban (based on Gordon McMillan's manual))" />
 <meta name="copyright" content="This document has been placed in the public domain." />
@@ -17,7 +17,7 @@
 <col class="docinfo-content" />
 <tbody valign="top">
 <tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller 2.1dev-ccb6f3d</td></tr>
+<td>PyInstaller 2.1</td></tr>
 <tr class="field"><th class="docinfo-name">Homepage:</th><td class="field-body"><a class="reference external" href="http://www.pyinstaller.org">http://www.pyinstaller.org</a></td>
 </tr>
 <tr><th class="docinfo-name">Author:</th>
@@ -737,9 +737,10 @@ under <a class="reference internal" href="#using-upx">Using UPX</a> below.)</td>
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--version-file=<var>resource_file</var></span></kbd></td>
+<kbd><span class="option">--version-file=<var>version_text_file</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Add a version resource from <em>resource_file</em> to the .exe output.
+<tr><td>&nbsp;</td><td>Add a Version resource to the .exe output
+using a <em>version_text_file</em> as produced by <tt class="docutils literal"><span class="pre">pyi-grab_version</span></tt>.
 See <a class="reference internal" href="#capturing-version-data">Capturing Version Data</a> below.</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">-m <var>file</var></span>, <span class="option">-m <var>xml_string</var></span>, <span class="option">--manifest=<var>file</var></span>, <span class="option">--manifest=<var>xml_string</var></span></kbd></td>
@@ -780,8 +781,7 @@ This option an be used more than once to specify more resources.</td></tr>
 </tr>
 <tr><td>&nbsp;</td><td>Specify a Mac icon-set file to be applied to
 the output <em>name</em>.app that is created when both <tt class="docutils literal"><span class="pre">--onefile</span></tt>
-and <tt class="docutils literal"><span class="pre">--windowed</span></tt> are specified.
-(Not yet implemented.)</td></tr>
+and <tt class="docutils literal"><span class="pre">--windowed</span></tt> are specified.</td></tr>
 </tbody>
 </table>
 </div>
@@ -1684,25 +1684,60 @@ that was launched to start the app.</p>
 <tt class="docutils literal"><span class="pre">pyi-grab_version</span></tt> <em>executable_with_version_resource</em></blockquote>
 <p>The <tt class="docutils literal"><span class="pre">pyi-grab_version</span></tt> command is invoked
 with the full path name of a Windows executable
-that has a version resource.</p>
-<p>It outputs text that represents a standard version resource.
+that has a Version resource.
+(A Version resource contains a group of data structures,
+some containing binary integers and some containing strings,
+that describe the properties of the executable.
+For details see the <a class="reference external" href="http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx">Version Information Structures</a> page.)</p>
+<p>The command writes text that represents
+a Version resource in readable form.
 The version text is written to standard output.
 You can copy it from the console window or redirect it to a file.
-Then you can edit the version information to adapt it to your program.</p>
-<p>The edited text file can be
-eval'ed by <tt class="docutils literal">utils/versioninfo.py</tt> in the <cite>PyInstaller</cite> distribution folder
-to reproduce a standard version resource.
-Or the text file can be given with a <tt class="docutils literal"><span class="pre">--version-file=</span></tt>
-option to <tt class="docutils literal">pyinstaller</tt> or <tt class="docutils literal"><span class="pre">pyi-makespec</span></tt>.</p>
-<p>This approach is used because version resources are strange beasts,
-and it may be impossible to fully understand them.
+Then you can edit the version information to adapt it to your program.
+This approach is used because version resources are complex.
 Some elements are optional, others required.
 When you view the version tab of a Properties dialog,
-there's no straightforward relationship between
-the data displayed and the structure of the resource itself.
-So the easiest thing to do is to find an executable that displays the kind of
-information you want, and grab its resource and edit it.
-This is usually easier than the Version resource wizard in VC++.</p>
+there's no simple relationship between
+the data displayed and the structure of the resource.
+Using <tt class="docutils literal"><span class="pre">pyi-grab_version</span></tt> you can find an executable that displays the kind of
+information you want, copy its resource data, and modify it to suit your package.</p>
+<p>The version text file is encoded UTF-8 and may contain non-ASCII characters.
+(Unicode characters are allowed in Version resource string fields.)
+Be sure to edit and save the text file in UTF-8 unless you are
+certain it contains only ASCII string values.</p>
+<p>The edited version text file can be given with a <tt class="docutils literal"><span class="pre">--version-file=</span></tt>
+option to <tt class="docutils literal">pyinstaller</tt> or <tt class="docutils literal"><span class="pre">pyi-makespec</span></tt>.
+The text data is converted to a Version resource and
+installed in the executable output.</p>
+<p>In a Version resource there are two 64-bit binary values,
+<tt class="docutils literal">FileVersion</tt> and <tt class="docutils literal">ProductVersion</tt>.
+In the version text file these are given as four-element tuples,
+for example:</p>
+<pre class="literal-block">
+filevers=(2, 0, 4, 0),
+prodvers=(2, 0, 4, 0),
+</pre>
+<p>The elements of each tuple represent 16-bit values
+from most-significant to least-significant.
+For example the <tt class="docutils literal">FileVersion</tt> value given resolves to
+<tt class="docutils literal">0002000000040000</tt> in hex.</p>
+<blockquote>
+<tt class="docutils literal">set_version</tt> <em>version_text_file</em> <em>executable_file</em></blockquote>
+<p>The <tt class="docutils literal">set_version</tt> utility reads a version text file as written
+by <tt class="docutils literal"><span class="pre">pyi-grab_version</span></tt>, converts it to a Version resource,
+and installs that resource in the <em>executable_file</em> specified.</p>
+<p>For advanced uses, examine a version text file.
+You find it is Python code that creates a <tt class="docutils literal">VSVersionInfo</tt> object.
+The class definition for <tt class="docutils literal">VSVersionInfo</tt> is found in
+<tt class="docutils literal">utils/versioninfo.py</tt> in the <cite>PyInstaller</cite> distribution folder.
+You can write a program that imports that module.
+In that program you can <tt class="docutils literal">eval</tt>
+the contents of a version info text file to produce a
+<tt class="docutils literal">VSVersionInfo</tt> object.
+You can use the <tt class="docutils literal">.toRaw()</tt> method of that object to
+produce a Version resource in binary form.
+Or you can apply the <tt class="docutils literal">unicode()</tt> function to the object
+to reproduce the version text file.</p>
 </div>
 <div class="section" id="inspecting-archives">
 <h2><a class="toc-backref" href="#id62">Inspecting Archives</a></h2>
@@ -2501,7 +2536,7 @@ were easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2013-05-15 21:56 UTC.
+Generated on: 2013-09-05 08:43 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

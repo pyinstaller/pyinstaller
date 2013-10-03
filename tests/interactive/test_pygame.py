@@ -28,6 +28,8 @@ except ImportError, err:
 
 if not pygame.mixer: print 'Warning, sound disabled'
 
+NUM_SPRITES = 10
+
 ### Klassendefinitionen
 
 class Screen:
@@ -69,8 +71,6 @@ class Screen:
         # Füllt das Surface self.screen mit der übergebenen Farbe
         # Siehe: Allgemeines über Farben
 
-    def quit():
-        sys.exit(0)
 
 class Sprite(pygame.sprite.Sprite): 
     def __init__(self, screen):
@@ -217,7 +217,7 @@ def main():
     # Erstellt eine Instanz der Klasse Screen()
 
     movingSprites = []
-    for i in range(123):
+    for i in range(NUM_SPRITES):
         movingSprites.append(Sprite(screen))
     # Die for-Schleife erstellt 123 Instanzen der Klasse Sprite
     # und fügt sie der Liste movingSprites hinzu

@@ -14,6 +14,7 @@
 /build/
 /dist/
 /*.patch
+/MANIFEST
 
 # Temporary vim files
 *.swp
@@ -32,6 +33,10 @@
 
 /tests/*/build/
 /tests/*/dist/
+
+# Ignore generated spec-files
+# NB: You can still add .spec-files to be tracked using `git add`
+/tests/*/*.spec
 
 # /tests/basic/
 /tests/basic/python_exe.build

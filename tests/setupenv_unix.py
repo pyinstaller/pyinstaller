@@ -19,9 +19,10 @@ import sys
 
 
 # Expand PYTHONPATH with PyInstaller package to support running without
-# installation.
-pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-sys.path.insert(0, pyi_home)
+# installation -- only if not running in a virtualenv.
+if not hasattr(sys, 'real_prefix'):
+    pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    sys.path.insert(0, pyi_home)
 
 
 import PyInstaller.compat as compat
@@ -41,7 +42,15 @@ _PACKAGES = [
     'simplejson',
     'SQLAlchemy',
     #'wxPython',
+    'IPython',
 ]
+
+
+# TODO remove this block when we support Python 2.6+ only.
+# Python 2.4 and 2.5 does not have ssl module. But we need
+# it.
+if sys.version_info[0:2] < (2,6):
+    _PACKAGES.append('ssl')
 
 
 def main():

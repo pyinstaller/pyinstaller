@@ -21,7 +21,7 @@ from glob import glob
 import zipfile
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26
+from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26, is_py27
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
@@ -64,12 +64,21 @@ def getfullnameof(mod, xtrapath=None):
     Return the full path name of MOD.
     Will search the full Windows search path, as well as sys.path
     """
+    # TODO: Allow in import-hooks to specify additional paths where the PyInstaller
+    #       should look for other libraries.
     # SciPy/Numpy Windows builds from http://www.lfd.uci.edu/~gohlke/pythonlibs
     # Contain some dlls in directory like C:\Python27\Lib\site-packages\numpy\core\
     from distutils.sysconfig import get_python_lib
-    numpy_core_path = os.path.join(get_python_lib(), 'numpy', 'core')
+    numpy_core_paths = [os.path.join(get_python_lib(), 'numpy', 'core')]
+    # In virtualenv numpy might be installed directly in real prefix path.
+    # Then include this path too.
+    if hasattr(sys, 'real_prefix'):
+        numpy_core_paths.append(
+            os.path.join(sys.real_prefix, 'Lib', 'site-packages', 'numpy', 'core')
+        )
+
     # Search sys.path first!
-    epath = sys.path + [numpy_core_path] + winutils.get_system_path()
+    epath = sys.path + numpy_core_paths + winutils.get_system_path()
     if xtrapath is not None:
         if type(xtrapath) == type(''):
             epath.insert(0, xtrapath)
@@ -117,20 +126,19 @@ def _extract_from_egg(toc):
     Ensure all binary modules in zipped eggs get extracted and
     included with the frozen executable.
 
-    The supplied toc is directly modified to make changes effective.
-
     return  modified table of content
     """
+    new_toc = []
     for item in toc:
         # Item is a tupple
         #  (mod_name, path, type)
         modname, pth, typ = item
         if not os.path.isfile(pth):
             pth = check_extract_from_egg(pth)[0][0]
-            # Replace value in original data structure.
-            toc.remove(item)
-            toc.append((modname, pth, typ))
-    return toc
+
+        # Add value to new data structure.
+        new_toc.append((modname, pth, typ))
+    return new_toc
 
 
 def Dependencies(lTOC, xtrapath=None, manifest=None):
@@ -415,7 +423,7 @@ def selectImports(pth, xtrapath=None):
                              lib, os.path.basename(pth))
                 rv.append((lib, npth))
         else:
-            logger.error("lib not found: %s dependency of %s", lib, pth)
+            logger.warning("lib not found: %s dependency of %s", lib, pth)
 
     return rv
 
@@ -612,9 +620,28 @@ def findLibrary(name):
 
     # Look in the known safe paths
     if lib is None:
-        paths = ['/lib', '/usr/lib']
+        paths = ['/lib', '/lib32', '/lib64', '/usr/lib', '/usr/lib32', '/usr/lib64']
+
+        # On Debian/Ubuntu /usr/bin/python is linked statically with libpython.
+        # Newer Debian/Ubuntu with multiarch support putsh the libpythonX.Y.so
+        # To paths like /usr/lib/i386-linux-gnu/.
+        try:
+            import sysconfig  # Module available only in Python 2.7.
+            arch_subdir = sysconfig.get_config_var('multiarchsubdir')
+            # Ignore if None is returned.
+            if arch_subdir:
+                arch_subdir = os.path.basename(arch_subdir)
+                paths.extend([
+                    os.path.join('/usr/lib', arch_subdir),
+                    os.path.join('/usr/lib32', arch_subdir),
+                    os.path.join('/usr/lib64', arch_subdir),
+                ])
+        except ImportError:
+            pass
+
         if is_aix:
             paths.append('/opt/freeware/lib')
+
         for path in paths:
             libs = glob(os.path.join(path, name + '*'))
             if libs:
@@ -709,7 +736,7 @@ def get_python_library_path():
         # In virtualenv PyInstaller is not able to find Python library.
         # We need special care for this case.
         if compat.is_virtualenv:
-            py_prefix = sys.real_prefix
+            py_prefix = compat.venv_real_prefix
         else:
             py_prefix = sys.prefix
 

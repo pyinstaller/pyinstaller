@@ -13,7 +13,7 @@ import os
 import sys
 import PyInstaller
 import PyInstaller.compat as compat
-from PyInstaller.compat import is_darwin
+from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils import misc
 
 import PyInstaller.log as logging
@@ -175,7 +175,7 @@ def qt4_phonon_plugins_dir():
 
 
 def qt4_plugins_binaries(plugin_type):
-    """Return list of dynamic libraries formated for mod.binaries."""
+    """Return list of dynamic libraries formatted for mod.binaries."""
     binaries = []
     pdir = qt4_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
@@ -187,13 +187,21 @@ def qt4_plugins_binaries(plugin_type):
 
 
 def qt4_menu_nib_dir():
-    """Return path to Qt resource dir qt_menu.nib."""
+    """Return path to Qt resource dir qt_menu.nib. OSX only"""
     menu_dir = ''
     # Detect MacPorts prefix (usually /opt/local).
     # Suppose that PyInstaller is using python from macports.
     macports_prefix = sys.executable.split('/Library')[0]
-    # list of directories where to look for qt_menu.nib
-    dirs = [
+    
+    # list of directories where to look for qt_menu.nib    
+    dirs = []
+    # If PyQt4 is built against Qt5 look for the qt_menu.nib in a user
+    # specified location, if it exists.
+    if 'QT5DIR' in os.environ:
+        dirs.append(os.path.join(os.environ['QT5DIR'],
+                                 "src", "plugins", "platforms", "cocoa"))
+    
+    dirs += [
         # Qt4 from MacPorts not compiled as framework.
         os.path.join(macports_prefix, 'lib', 'Resources'),
         # Qt4 from MacPorts compiled as framework.
@@ -218,9 +226,141 @@ def qt4_menu_nib_dir():
             break
 
     if not menu_dir:
-        logger.error('Cannont find qt_menu.nib directory')
+        logger.error('Cannot find qt_menu.nib directory')
     return menu_dir
 
+def qt5_plugins_dir():
+    qt5_plugin_dirs = eval_statement(
+        "from PyQt5.QtCore import QCoreApplication;"
+        "app=QCoreApplication([]);"
+        "print map(unicode,app.libraryPaths())")
+    if not qt5_plugin_dirs:
+        logger.error("Cannot find PyQt5 plugin directories")
+        return ""
+    for d in qt5_plugin_dirs:
+        if os.path.isdir(d):
+            return str(d)  # must be 8-bit chars for one-file builds
+    logger.error("Cannot find existing PyQt5 plugin directory")
+    return ""
+
+
+def qt5_phonon_plugins_dir():
+    qt5_plugin_dirs = eval_statement(
+        "from PyQt5.QtGui import QApplication;"
+        "app=QApplication([]); app.setApplicationName('pyinstaller');"
+        "from PyQt5.phonon import Phonon;"
+        "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
+        "print map(unicode,app.libraryPaths())")
+    if not qt5_plugin_dirs:
+        logger.error("Cannot find PyQt5 phonon plugin directories")
+        return ""
+    for d in qt5_plugin_dirs:
+        if os.path.isdir(d):
+            return str(d)  # must be 8-bit chars for one-file builds
+    logger.error("Cannot find existing PyQt5 phonon plugin directory")
+    return ""
+
+
+def qt5_plugins_binaries(plugin_type):
+    """Return list of dynamic libraries formatted for mod.binaries."""
+    binaries = []
+    pdir = qt5_plugins_dir()
+    files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
+    for f in files:
+        binaries.append((
+            os.path.join('qt5_plugins', plugin_type, os.path.basename(f)),
+            f, 'BINARY'))
+    return binaries
+
+def qt5_menu_nib_dir():
+    """Return path to Qt resource dir qt_menu.nib. OSX only"""
+    menu_dir = ''
+    
+    # If the QT5DIR env var is set then look there first. It should be set to the
+    # qtbase dir in the Qt5 distribution.
+    dirs = []
+    if 'QT5DIR' in os.environ:
+        dirs.append(os.path.join(os.environ['QT5DIR'],
+                                 "src", "plugins", "platforms", "cocoa"))
+
+    # As of the time of writing macports doesn't yet support Qt5. So this is
+    # just modified from the Qt4 version.
+    # FIXME: update this when MacPorts supports Qt5
+    # Detect MacPorts prefix (usually /opt/local).
+    # Suppose that PyInstaller is using python from macports.
+    macports_prefix = sys.executable.split('/Library')[0]
+    # list of directories where to look for qt_menu.nib
+    dirs.extend( [
+        # Qt5 from MacPorts not compiled as framework.
+        os.path.join(macports_prefix, 'lib', 'Resources'),
+        # Qt5 from MacPorts compiled as framework.
+        os.path.join(macports_prefix, 'libexec', 'qt5-mac', 'lib',
+            'QtGui.framework', 'Versions', '5', 'Resources'),
+        # Qt5 installed into default location.
+        '/Library/Frameworks/QtGui.framework/Resources',
+        '/Library/Frameworks/QtGui.framework/Versions/5/Resources',
+        '/Library/Frameworks/QtGui.Framework/Versions/Current/Resources',
+    ])
+
+    # Copied verbatim from the Qt4 version with 4 changed to 5
+    # Qt5 from Homebrew compiled as framework
+    globpath = '/usr/local/Cellar/qt/5.*/lib/QtGui.framework/Versions/5/Resources'
+    qt_homebrew_dirs = glob.glob(globpath)
+    dirs += qt_homebrew_dirs
+
+    # Check directory existence
+    for d in dirs:
+        d = os.path.join(d, 'qt_menu.nib')
+        if os.path.exists(d):
+            menu_dir = d
+            break
+
+    if not menu_dir:
+        logger.error('Cannot find qt_menu.nib directory')
+    return menu_dir
+
+def qt5_qml_dir():
+    import subprocess
+    qmldir = subprocess.check_output(["qmake", "-query",
+                                      "QT_INSTALL_QML"]).strip()
+    if len(qmldir) == 0:
+        logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
+                        + 'QT_INSTALL_QML" returned nothing')
+    if not os.path.exists(qmldir):
+        logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
+    
+    # On Windows 'qmake -query' uses / as the path separator
+    # so change it to \\. 
+    if is_win:
+        import string
+        qmldir = string.replace(qmldir, '/', '\\')
+
+    return qmldir
+ 
+def qt5_qml_data(dir):
+    """Return Qml library dir formatted for data"""
+    qmldir = qt5_qml_dir()
+    return (os.path.join(qmldir, dir), 'qml')
+        
+def qt5_qml_plugins_binaries(dir):
+    """Return list of dynamic libraries formatted for mod.binaries."""
+    import string
+    binaries = []
+    qmldir = qt5_qml_dir()
+    dir = string.rstrip(dir, os.sep)
+    files = misc.dlls_in_subdirs(os.path.join(qmldir, dir))
+    if files is not None:
+        for f in files:
+            relpath = os.path.relpath(f, qmldir)
+            instdir, file = os.path.split(relpath)
+            instdir = os.path.join("qml", instdir)
+            logger.debug("qt5_qml_plugins_binaries installing %s in %s"
+                         % (f, instdir) )
+                
+            binaries.append((
+                os.path.join(instdir, os.path.basename(f)),
+                    f, 'BINARY'))
+    return binaries    
 
 def django_dottedstring_imports(django_root_dir):
     """
