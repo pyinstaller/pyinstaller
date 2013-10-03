@@ -351,7 +351,7 @@ def qt5_qml_plugins_binaries(dir):
     files = misc.dlls_in_subdirs(os.path.join(qmldir, dir))
     if files is not None:
         for f in files:
-            relpath = string.lstrip(f, qmldir)
+            relpath = os.path.relpath(f, qmldir)
             instdir, file = os.path.split(relpath)
             instdir = os.path.join("qml", instdir)
             logger.debug("qt5_qml_plugins_binaries installing %s in %s"
