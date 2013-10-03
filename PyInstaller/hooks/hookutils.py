@@ -383,7 +383,8 @@ def qt5_qml_dir():
     import subprocess
     qmake = get_qmake_path('5')
     if qmake is None:
-        logger.error('Could not find qmake version 5.x, try setting QT5DIR.')
+        logger.error('Could not find qmake version 5.x, make sure PATH is ' \
+                   + 'set correctly or try setting QT5DIR.')
     qmldir = subprocess.check_output([qmake, "-query",
                                       "QT_INSTALL_QML"]).strip()
     if len(qmldir) == 0:
