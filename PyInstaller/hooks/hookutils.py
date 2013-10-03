@@ -356,8 +356,7 @@ def get_qmake_path(version = ''):
         return os.path.join(os.environ['QT4DIR'],'bin','qmake')
 
     # try the default $PATH
-    dirs = ['.']
-    
+    dirs = ['']
 
     # try homebrew paths
     for formula in ('qt','qt5'):
