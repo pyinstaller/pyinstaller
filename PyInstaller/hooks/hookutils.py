@@ -341,7 +341,10 @@ def get_homebrew_path(formula = ''):
     return path 
 
 def get_qmake_path(version = ''):
-    '''try to find the path to qmake with version given by the argument as a string'''
+    '''
+    Try to find the path to qmake with version given by the argument
+    as a string.
+    '''
     import subprocess
 
     # Use QT[45]DIR if specified in the environment
@@ -365,9 +368,11 @@ def get_qmake_path(version = ''):
     for dir in dirs:
         try:
             qmake = os.path.join(dir, 'qmake')
-            versionstring = subprocess.check_output([ qmake, '-query', 'QT_VERSION']).strip()
+            versionstring = subprocess.check_output([qmake, '-query', \
+                                                      'QT_VERSION']).strip()
             if versionstring.find(version) == 0:
-                logger.debug('Found qmake version "%s" at "%s".' % (versionstring, qmake))
+                logger.debug('Found qmake version "%s" at "%s".' \
+                             % (versionstring, qmake))
                 return qmake
         except (OSError, subprocess.CalledProcessError):
             pass
