@@ -23,7 +23,7 @@ dirs = [#'Qt',
         #'QtGraphicalEffects',
         #'QtMultiMedia',
         'QtQml',
-        #'QtQuick',
+        'QtQuick',
         'QtQuick.2',
         #'QtSensors',
         #'QtTest'
