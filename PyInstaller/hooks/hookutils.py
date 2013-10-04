@@ -213,10 +213,10 @@ def qt4_menu_nib_dir():
         '/Library/Frameworks/QtGui.Framework/Versions/Current/Resources',
     ]
 
-    # Qt4 from Homebrew compiled as framework
-    globpath = '/usr/local/Cellar/qt/4.*/lib/QtGui.framework/Versions/4/Resources'
-    qt_homebrew_dirs = glob.glob(globpath)
-    dirs += qt_homebrew_dirs
+    # Qt from Homebrew
+    homebrewqtpath = get_homebrew_path('qt')
+    if homebrewqtpath:
+        dirs.append( os.path.join(homebrewqtpath,'lib','QtGui.framework','Versions','4','Resources') )
 
     # Check directory existence
     for d in dirs:
@@ -282,6 +282,8 @@ def qt5_menu_nib_dir():
     if 'QT5DIR' in os.environ:
         dirs.append(os.path.join(os.environ['QT5DIR'],
                                  "src", "plugins", "platforms", "cocoa"))
+        dirs.append(os.path.join(os.environ['QT5DIR'],
+                                 "src", "qtbase", "src", "plugins", "platforms", "cocoa"))
 
     # As of the time of writing macports doesn't yet support Qt5. So this is
     # just modified from the Qt4 version.
@@ -302,11 +304,10 @@ def qt5_menu_nib_dir():
         '/Library/Frameworks/QtGui.Framework/Versions/Current/Resources',
     ])
 
-    # Copied verbatim from the Qt4 version with 4 changed to 5
-    # Qt5 from Homebrew compiled as framework
-    globpath = '/usr/local/Cellar/qt/5.*/lib/QtGui.framework/Versions/5/Resources'
-    qt_homebrew_dirs = glob.glob(globpath)
-    dirs += qt_homebrew_dirs
+    # Qt5 from Homebrew
+    homebrewqtpath = get_homebrew_path('qt5')
+    if homebrewqtpath:
+        dirs.append( os.path.join(homebrewqtpath,'src','qtbase','src','plugins','platforms','cocoa') )
 
     # Check directory existence
     for d in dirs:
@@ -319,9 +320,72 @@ def qt5_menu_nib_dir():
         logger.error('Cannot find qt_menu.nib directory')
     return menu_dir
 
+def get_homebrew_path(formula = ''):
+    '''Return the homebrew path to the requested formula, or the global prefix when
+       called with no argument.  Returns the path as a string or None if not found.'''
+    import subprocess
+    brewcmd = ['brew','--prefix']
+    path = None
+    if formula:
+        brewcmd.append(formula)
+        dbgstr = 'homebrew formula "%s"' %formula
+    else:
+        dbgstr = 'homebrew prefix'
+    try:
+        path = subprocess.check_output(brewcmd).strip()
+        logger.debug('Found %s at "%s"' % (dbgstr, path))
+    except OSError:
+        logger.debug('Detected homebrew not installed')
+    except subprocess.CalledProcessError:
+        logger.debug('homebrew formula "%s" not installed' % formula)
+    return path 
+
+def get_qmake_path(version = ''):
+    '''
+    Try to find the path to qmake with version given by the argument
+    as a string.
+    '''
+    import subprocess
+
+    # Use QT[45]DIR if specified in the environment
+    if 'QT5DIR' in os.environ and version[0] == '5':
+        logger.debug('Using $QT5DIR/bin as qmake path')
+        return os.path.join(os.environ['QT5DIR'],'bin','qmake')
+    if 'QT4DIR' in os.environ and version[0] == '4':
+        logger.debug('Using $QT4DIR/bin as qmake path')
+        return os.path.join(os.environ['QT4DIR'],'bin','qmake')
+
+    # try the default $PATH
+    dirs = ['']
+
+    # try homebrew paths
+    for formula in ('qt','qt5'):
+        homebrewqtpath = get_homebrew_path(formula)
+        if homebrewqtpath:
+            dirs.append(homebrewqtpath)
+
+    for dir in dirs:
+        try:
+            qmake = os.path.join(dir, 'qmake')
+            versionstring = subprocess.check_output([qmake, '-query', \
+                                                      'QT_VERSION']).strip()
+            if versionstring.find(version) == 0:
+                logger.debug('Found qmake version "%s" at "%s".' \
+                             % (versionstring, qmake))
+                return qmake
+        except (OSError, subprocess.CalledProcessError):
+            pass
+    logger.debug('Could not find qmake matching version "%s".' % version)
+    return None
+     
+
 def qt5_qml_dir():
     import subprocess
-    qmldir = subprocess.check_output(["qmake", "-query",
+    qmake = get_qmake_path('5')
+    if qmake is None:
+        logger.error('Could not find qmake version 5.x, make sure PATH is ' \
+                   + 'set correctly or try setting QT5DIR.')
+    qmldir = subprocess.check_output([qmake, "-query",
                                       "QT_INSTALL_QML"]).strip()
     if len(qmldir) == 0:
         logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
