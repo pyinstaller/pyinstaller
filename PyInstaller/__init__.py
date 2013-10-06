@@ -9,10 +9,7 @@
 
 
 __all__ = ('HOMEPATH', 'CONFIGDIR', 'PLATFORM',
-           'VERSION', 'get_version',
-           'is_py25', 'is_py26', 'is_py27',
-           'is_win', 'is_cygwin', 'is_darwin', 'is_unix', 'is_linux',
-           'is_solar', 'is_aix')
+           'VERSION', 'get_version')
 
 import os
 import sys
