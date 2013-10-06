@@ -21,7 +21,7 @@ from glob import glob
 import zipfile
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26, is_py27
+from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py27
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat

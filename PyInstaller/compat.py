@@ -25,7 +25,7 @@ import sys
 is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3
 # Distinguish specific code for various Python versions.
-is_py27 = sys.version_info == (2, 7)
+is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 is_py33 = sys.version_info >= (3, 3)
 
 is_win = sys.platform.startswith('win')

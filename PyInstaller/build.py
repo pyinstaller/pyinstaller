@@ -14,6 +14,7 @@ Build packages using spec files.
 
 
 import glob
+import hashlib
 import os
 import pprint
 import shutil
@@ -31,7 +32,7 @@ from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin, is_cygwin
 import PyInstaller.compat as compat
 import PyInstaller.bindepend as bindepend
 
-from PyInstaller.compat import hashlib
+
 from PyInstaller.depend import dylib
 from PyInstaller.utils import misc
 

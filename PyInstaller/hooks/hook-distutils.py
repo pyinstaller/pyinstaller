@@ -41,7 +41,7 @@ def _find_prefix(filename):
 def _relpath(filename):
     # Relative path in the dist directory.
     prefix = _find_prefix(filename)
-    return compat.relpath(os.path.dirname(filename), prefix)
+    return os.path.relpath(os.path.dirname(filename), prefix)
 
 # Data files in PyInstaller hook format.
 datas = [

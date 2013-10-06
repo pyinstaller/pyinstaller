@@ -14,9 +14,10 @@ If we were importing, these would be hooked to the real module objects
 """
 
 
+import ctypes
 import os
 
-from PyInstaller.compat import ctypes, PYCO
+from PyInstaller.compat import PYCO
 from PyInstaller.depend.utils import _resolveCtypesImports, scan_code
 
 import PyInstaller.depend.impdirector

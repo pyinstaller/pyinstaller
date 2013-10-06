@@ -43,7 +43,7 @@ else:
 from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
-from PyInstaller.compat import is_py25, is_py26, is_py33, is_win, is_darwin
+from PyInstaller.compat import is_py33, is_win, is_darwin
 from PyInstaller.hooks import hookutils
 from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml
@@ -91,15 +91,8 @@ class SkipChecker(object):
         depend = MiscDependencies()
         # Required Python or OS version for some tests.
         self.MIN_VERSION_OR_OS = {
-            'basic/test_celementtree': is_py25,
-            'basic/test_email': is_py25,
             # On Mac DYLD_LIBRARY_PATH is not used.
             'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
-            'import/test_c_extension': is_py25,
-            'import/test_onefile_c_extension': is_py25,
-            'import/test_onefile_relative_import': is_py25,
-            'import/test_onefile_relative_import2': is_py26,
-            'import/test_onefile_relative_import3': is_py25,
             'import/test_nspkg-pep420': is_py33,
             'libraries/test_enchant': is_win,
             # docutils, a sphinx dependency, fails in
