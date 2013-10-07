@@ -13,13 +13,12 @@ Scan the code object for imports, __all__ and wierd stuff
 """
 
 
+import ctypes
 import dis
 import os
 
 from PyInstaller import compat
-from PyInstaller.compat import ctypes
-
-from PyInstaller.compat import is_unix, is_darwin, is_py25, is_py27
+from PyInstaller.compat import is_darwin, is_unix, is_py27
 
 import PyInstaller.depend.utils
 import PyInstaller.log as logging
@@ -51,10 +50,7 @@ except ValueError:
     SET_LINENO = None
 BUILD_LIST = dis.opname.index('BUILD_LIST')
 LOAD_CONST = dis.opname.index('LOAD_CONST')
-if is_py25:
-    LOAD_CONST_level = LOAD_CONST
-else:
-    LOAD_CONST_level = None
+LOAD_CONST_level = LOAD_CONST
 if is_py27:
     COND_OPS = set([dis.opname.index('POP_JUMP_IF_TRUE'),
                     dis.opname.index('POP_JUMP_IF_FALSE'),

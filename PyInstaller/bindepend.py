@@ -21,7 +21,7 @@ from glob import glob
 import zipfile
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26, is_py27
+from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
@@ -33,17 +33,16 @@ logger = logging.getLogger(__file__)
 seen = {}
 
 if is_win:
-    if is_py26:
-        try:
-            # For Portable Python it is required to import pywintypes before
-            # win32api module. See for details:
-            # http://www.voidspace.org.uk/python/movpy/reference/win32ext.html#problems-with-win32api
-            import pywintypes
-            import win32api
-        except ImportError:
-            raise SystemExit("Error: PyInstaller for Python 2.6+ on Windows "
-                 "needs pywin32.\r\nPlease install from "
-                 "http://sourceforge.net/projects/pywin32/")
+    try:
+        # For Portable Python it is required to import pywintypes before
+        # win32api module. See for details:
+        # http://www.voidspace.org.uk/python/movpy/reference/win32ext.html#problems-with-win32api
+        import pywintypes
+        import win32api
+    except ImportError:
+        raise SystemExit("Error: PyInstaller for Python 2.6+ on Windows "
+             "needs pywin32.\r\nPlease install from "
+             "http://sourceforge.net/projects/pywin32/")
 
     from PyInstaller.utils.winmanifest import RT_MANIFEST
     from PyInstaller.utils.winmanifest import GetManifestResources

@@ -2,7 +2,6 @@
     'babel':      ['pyi_rth_babel.py'],
     'django':     ['pyi_rth_django.py'],
     'gst':        ['pyi_rth_gstreamer.py'],
-    'Image':      ['pyi_rth_Image.py'],
     'matplotlib': ['pyi_rth_mplconfig.py', 'pyi_rth_mpldata.py'],
     'PIL.Image':  ['pyi_rth_PIL_Image.py'],
     'pkg_resources':  ['pyi_rth_pkgres.py'],

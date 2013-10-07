@@ -8,7 +8,21 @@
 #-----------------------------------------------------------------------------
 
 
-# Forward to shared code for PIL. PIL can be imported either as a top-level package
-# (from PIL import Image), or not (import Image), because it installs a
-# PIL.pth.
-from PyInstaller.hooks.shared_PIL_SpiderImagePlugin import *
+"""
+PIL's SpiderImagePlugin features a tkPhotoImage() method which imports
+ImageTk (and thus brings the whole Tcl/Tk library in).
+We cheat a little and remove the ImageTk import: I assume that if people
+are really using ImageTk in their application, they will also import it
+directly.
+"""
+
+
+def hook(mod):
+    for i, m in enumerate(mod.imports):
+        # Ignore these two modules to not include whole Tk or Qt stack.
+        # If these modules should be included then they will definitely
+        # be dependency as any other module.
+        if m[0] ==  'ImageTk':
+            del mod.imports[i]
+            break
+    return mod

@@ -31,7 +31,7 @@ if not hasattr(sys, 'real_prefix'):
     sys.path.insert(0, pyi_home)
 
 
-from PyInstaller.compat import is_py25, is_py26
+from PyInstaller.compat import is_py2
 
 
 PYVER = '.'.join([str(x) for x in sys.version_info[0:2]])
@@ -69,13 +69,13 @@ _PACKAGES = {
 }
 
 _PY_VERSION = {
-    'MySQLdb': is_py26,
-    'numpy': is_py26,
-    'PIL': is_py26,
-    'psycopg2': is_py26,
-    'simplejson': is_py25,
+    'MySQLdb': is_py2,
+    'numpy': is_py2,
+    'PIL': is_py2,
+    'psycopg2': is_py2,
+    'simplejson': is_py2,
     # Installers are available only for Python 2.6/2.7.
-    'wx': is_py26,
+    'wx': is_py2,
 }
 
 

@@ -23,7 +23,7 @@ except AttributeError:
 
 def _relpath(filename):
     # Relative path in the dist directory.
-    return compat.relpath(os.path.dirname(filename), sys.prefix)
+    return os.path.relpath(os.path.dirname(filename), sys.prefix)
 
 # The 'sysconfig' module requires Makefile and pyconfig.h files from
 # Python installation. 'sysconfig' parses these files to get some

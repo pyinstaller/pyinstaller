@@ -10,7 +10,7 @@
 
 """
 Various classes and functions to provide some backwards-compatibility
-with previous versions of Python from 2.3 onward.
+with previous versions of Python from 2.6 onward.
 """
 
 
@@ -21,9 +21,11 @@ import subprocess
 import sys
 
 
-is_py25 = sys.version_info >= (2, 5)
-is_py26 = sys.version_info >= (2, 6)
-is_py27 = sys.version_info >= (2, 7)
+# Distinguish code for different major Python version.
+is_py2 = sys.version_info[0] == 2
+is_py3 = sys.version_info[0] == 3
+# Distinguish specific code for various Python versions.
+is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 is_py33 = sys.version_info >= (3, 3)
 
 is_win = sys.platform.startswith('win')
@@ -49,13 +51,6 @@ else:
     PYCO = 'o'
 
 
-# If ctypes is present, specific dependency discovery can be enabled.
-try:
-    import ctypes
-except ImportError:
-    ctypes = None
-
-
 if 'PYTHONCASEOK' not in os.environ:
     def caseOk(filename):
         files = dircache.listdir(os.path.dirname(filename))
@@ -78,34 +73,6 @@ _OLD_OPTIONS = [
 
 # Options for python interpreter when invoked in a subprocess.
 _PYOPTS = __debug__ and '-O' or ''
-
-
-try:
-    # Python 2.5+
-    import hashlib
-except ImportError:
-    class hashlib(object):
-        from md5 import new as md5
-        from sha import new as sha
-
-
-# Function os.path.relpath() available in Python 2.6+.
-if hasattr(os.path, 'relpath'):
-    from os.path import relpath
-# Own implementation of relpath function.
-else:
-    def relpath(path, start=os.curdir):
-        """
-        Return a relative version of a path.
-        """
-        if not path:
-            raise ValueError("no path specified")
-        # Normalize paths.
-        path = os.path.normpath(path)
-        start = os.path.abspath(start) + os.sep  # os.sep has to be here.
-        # Get substring.
-        relative = path[len(start):len(path)]
-        return relative
 
 
 # Some code parts needs to behave different when running in virtualenv.
@@ -284,7 +251,7 @@ def exec_python_all(*args, **kwargs):
     return exec_command_all(*cmdargs, **kwargs)
 
 
-# The function os.getcwd() does not work with unicode paths on Windows.
+# The function os.getcwd() in Python 2 does not work with unicode paths on Windows.
 def getcwd():
     """
     Wrap os.getcwd()

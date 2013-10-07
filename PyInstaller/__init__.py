@@ -9,18 +9,15 @@
 
 
 __all__ = ('HOMEPATH', 'CONFIGDIR', 'PLATFORM',
-           'VERSION', 'get_version',
-           'is_py25', 'is_py26', 'is_py27',
-           'is_win', 'is_cygwin', 'is_darwin', 'is_unix', 'is_linux',
-           'is_solar', 'is_aix')
+           'VERSION', 'get_version')
 
 import os
 import sys
 
 
 # Fail hard if Python does not have minimum required version
-if sys.version_info < (2, 4):
-    raise SystemExit('PyInstaller requires at least Python 2.4, sorry.')
+if sys.version_info < (2, 6):
+    raise SystemExit('PyInstaller requires at least Python 2.6, sorry.')
 
 
 # Extend PYTHONPATH with 3rd party libraries bundled with PyInstaller.
@@ -30,26 +27,11 @@ sys.path.insert(0, lib.__path__[0])
 
 
 from PyInstaller import compat
+from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils import git
 
-# Uncomment this line for development of version 3.0.
-#VERSION = (3, 0, 0, 'dev', git.get_repo_revision())
-VERSION = (2, 1, 0)
 
-
-is_py25 = compat.is_py25
-is_py26 = compat.is_py26
-is_py27 = compat.is_py27
-
-is_win = compat.is_win
-is_cygwin = compat.is_cygwin
-is_darwin = compat.is_darwin
-
-is_linux = compat.is_linux
-is_solar = compat.is_solar
-is_aix = compat.is_aix
-
-is_unix = compat.is_unix
+VERSION = (3, 0, 0, 'dev', git.get_repo_revision())
 
 
 # This ensures PyInstaller will work on Windows with paths containing
