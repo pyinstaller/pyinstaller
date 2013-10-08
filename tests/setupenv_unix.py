@@ -55,10 +55,10 @@ if sys.version_info[0:2] < (2,6):
 
 def main():
     for pkg in _PACKAGES:
-        print 'Installing module... %s' % pkg
+        print('Installing module... %s' % pkg)
         retcode = compat.exec_command_rc('pip', 'install', pkg)
         if retcode:
-            print '  %s installation failed' % pkg
+            print('  %s installation failed' % pkg)
 
 
 if __name__ == '__main__':

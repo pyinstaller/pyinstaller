@@ -28,18 +28,18 @@ if len(backends) < 1:
 if len(dicts) < 1:
     print('W: No dictionary available')
 
-print(80 * '-')
-print('PYTHONPATH: %s' % sys.path)
-print(80 * '-')
-print('Backends: ' + ', '.join(backends))
-print('Languages: %s' % ', '.join(langs))
-print('Dictionaries: %s' % dicts)
-print(80 * '-')
+print((80 * '-'))
+print(('PYTHONPATH: %s' % sys.path))
+print((80 * '-'))
+print(('Backends: ' + ', '.join(backends)))
+print(('Languages: %s' % ', '.join(langs)))
+print(('Dictionaries: %s' % dicts))
+print((80 * '-'))
 
 # Try spell checking if English is availale
 l = 'en_US'
 if l in langs:
     d = enchant.Dict(l)
-    print('d.check("hallo") %s' % d.check('hallo'))
-    print('d.check("halllo") %s' % d.check('halllo'))
-    print('d.suggest("halllo") %s' % d.suggest('halllo'))
+    print(('d.check("hallo") %s' % d.check('hallo')))
+    print(('d.check("halllo") %s' % d.check('halllo')))
+    print(('d.suggest("halllo") %s' % d.suggest('halllo')))

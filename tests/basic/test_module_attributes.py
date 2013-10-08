@@ -55,8 +55,8 @@ def compare(test_name, expect, frozen):
     frozen = str(frozen)
 
     print(test_name)
-    print('  Attributes expected: ' + expect)
-    print('  Attributes current:  ' + frozen)
+    print(('  Attributes expected: ' + expect))
+    print(('  Attributes current:  ' + frozen))
     print('')
     # Compare attributes of frozen module with unfronzen module.
     if not frozen == expect:

@@ -39,7 +39,7 @@ def CreateShortCut(Path, Target,Arguments = "", StartIn = "", Icon = ("",0), Des
 
     # Save the link itself.
     persist.Save(Path, 1)
-    print "Saved to", Path
+    print("Saved to", Path)
 
 if __name__ == "__main__":
     try:
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
         CreateShortCut(Path,Target,Arguments,StartIn,Icon,Description)
     except Exception as e:
-        print "Failed!", e
+        print("Failed!", e)
         import traceback
         traceback.print_exc()
     raw_input("Press any key to continue...")

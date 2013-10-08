@@ -18,4 +18,4 @@ os.chdir(sys._MEIPASS)
 import data_assignment
 
 
-print(os.getcwd())
+print((os.getcwd()))

@@ -17,6 +17,6 @@ import os, sys
 if sys.platform[:3] == 'win':
     print(" sorry, no use / need for the 'f' option on Windows")
 else:
-    print(' LD_LIBRARY_PATH %s' % os.environ.get('LD_LIBRARY_PATH', '<None!>'))
+    print((' LD_LIBRARY_PATH %s' % os.environ.get('LD_LIBRARY_PATH', '<None!>')))
 
 print('test_f_option complete')

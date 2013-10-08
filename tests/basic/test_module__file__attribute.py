@@ -27,10 +27,10 @@ correct_pkg = os.path.join(sys.prefix, 'xml', 'sax', '__init__.pyc')
 
 
 # Print.
-print('  mod.__file__: %s' % module.__file__)
-print('  mod.__file__: %s' % correct_mod)
-print('  pkg.__file__: %s' % package.__file__)
-print('  pkg.__file__: %s' % correct_pkg)
+print(('  mod.__file__: %s' % module.__file__))
+print(('  mod.__file__: %s' % correct_mod))
+print(('  pkg.__file__: %s' % package.__file__))
+print(('  pkg.__file__: %s' % correct_pkg))
 
 
 # Test correct values.

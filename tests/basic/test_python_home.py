@@ -14,9 +14,9 @@
 import sys
 
 
-print('sys._MEIPASS: ' + sys._MEIPASS)
-print('sys.prefix: ' + sys.prefix)
-print('sys.exec_prefix: ' + sys.exec_prefix)
+print(('sys._MEIPASS: ' + sys._MEIPASS))
+print(('sys.prefix: ' + sys.prefix))
+print(('sys.exec_prefix: ' + sys.exec_prefix))
 
 if not sys.prefix == sys._MEIPASS:
     raise SystemExit('sys.prefix is not set to path as in sys._MEIPASS.')

@@ -9,7 +9,7 @@
 
 
 import sys
-print "Argv from python:", sys.argv
+print("Argv from python:", sys.argv)
 
 
 # Testing the argv capturing capability on the Mac is not that easy, but doable.  First, build the app bundle

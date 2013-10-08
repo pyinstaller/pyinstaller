@@ -38,10 +38,10 @@ if sys.platform.startswith('aix'):
 else:
     libpath_var_name = 'LD_LIBRARY_PATH'
 
-print('LD_LIBRARY_PATH expected: ' + libpath)
+print(('LD_LIBRARY_PATH expected: ' + libpath))
 
 libpath_from_env = os.environ.get(libpath_var_name)
-print('LD_LIBRARY_PATH  current: ' + libpath_from_env)
+print(('LD_LIBRARY_PATH  current: ' + libpath_from_env))
 
 if not libpath == libpath_from_env:
     raise SystemExit("Expected LD_LIBRARY_PATH doesn't match.")

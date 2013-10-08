@@ -91,11 +91,11 @@ def create(scripts, debug, verbose, workdir, ascii=0):
     d = {'modules': modimports, 'klasses': klassspecs}
     outf.write(tmplt % d)
     outf.close()
-    print "**********************************"
-    print "Driver script %s created" % outfnm
+    print("**********************************")
+    print("Driver script %s created" % outfnm)
     specfnm = PyInstaller.makespec.main([outfnm], console=debug, debug=debug,
             workdir=workdir, pathex=paths, comserver=1, ascii=ascii)
-    print "Spec file %s created" % specfnm
+    print("Spec file %s created" % specfnm)
 
 
 def analscriptname(script):
@@ -161,7 +161,7 @@ def run():
         parser.error('Requires at least one script filename')
 
     try:
-        print
-        print epilog
+        print()
+        print(epilog)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

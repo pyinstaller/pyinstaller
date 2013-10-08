@@ -22,8 +22,8 @@ from Tkinter import *
 def compare(test_name, expect, frozen):
     expect = os.path.normpath(expect)
     print(test_name)
-    print('  Expected: ' + expect)
-    print('  Current:  ' + frozen)
+    print(('  Expected: ' + expect))
+    print(('  Current:  ' + frozen))
     print('')
     # Path must match.
     if not frozen == expect:

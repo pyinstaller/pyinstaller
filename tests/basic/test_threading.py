@@ -12,9 +12,9 @@ import threading
 
 
 def doit(nm):
-    print('%s started' % nm)
+    print(('%s started' % nm))
     import data7
-    print('%s %s' % (nm, data7.x))
+    print(('%s %s' % (nm, data7.x)))
 
 
 t1 = threading.Thread(target=doit, args=('t1',))

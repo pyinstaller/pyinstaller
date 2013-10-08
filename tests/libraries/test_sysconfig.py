@@ -15,7 +15,7 @@ import sysconfig
 
 
 config_h = sysconfig.get_config_h_filename()
-print('pyconfig.h: ' + config_h)
+print(('pyconfig.h: ' + config_h))
 files = [config_h]
 
 
@@ -27,11 +27,11 @@ if not sys.platform.startswith('win'):
         # In Python 2.7, get_makefile_filename was private
         get_makefile_filename = sysconfig._get_makefile_filename
     makefile = get_makefile_filename()
-    print('Makefile: ' + makefile)
+    print(('Makefile: ' + makefile))
     files.append(makefile)
 
 
 for f in files:
     if not os.path.exists(f):
         raise SystemExit('File does not exist: %s' % f)
-print 'okay'
+print('okay')

@@ -21,7 +21,7 @@ import data_reload
 
 
 orig_x = data_reload.x
-print('data_reload.x is %s' % data_reload.x)
+print(('data_reload.x is %s' % data_reload.x))
 
 txt = """\
 x = %d
@@ -38,7 +38,7 @@ open(module_filename, 'w').write(txt)
 
 
 reload(data_reload)
-print('data_reload.x is now %s' % data_reload.x)
+print(('data_reload.x is now %s' % data_reload.x))
 
 
 # The value of 'x' should be the same as before reloading the module.

@@ -633,7 +633,7 @@ def clean():
                     else:
                         os.remove(pth)
                 except OSError as e:
-                    print e
+                    print(e)
         # Delete *.spec files for tests without spec file.
         for pth in glob.glob(os.path.join(directory, '*.spec')):
             test_name = directory + '/' + os.path.splitext(os.path.basename(pth))[0]
@@ -647,7 +647,7 @@ def run_tests(test_suite, xml_file):
     Run test suite and save output to junit xml file if requested.
     """
     if xml_file:
-        print 'Writting test results to: %s' % xml_file
+        print('Writting test results to: %s' % xml_file)
         fp = open('report.xml', 'w')
         result = junitxml.JUnitXmlResult(fp)
         # Text from stdout/stderr should be added to failed test cases.
@@ -706,15 +706,15 @@ def main():
                 test_dir = os.path.dirname(t)
                 test_script = os.path.basename(os.path.splitext(t)[0])
                 suite.addTest(GenericTestCase(test_dir, test_script))
-                print 'Running test:  %s' % (test_dir + '/' + test_script)
+                print('Running test:  %s' % (test_dir + '/' + test_script))
 
     # Run all tests or all interactive tests.
     else:
         if opts.interactive_tests:
-            print 'Running interactive tests...'
+            print('Running interactive tests...')
             test_classes = [InteractiveTestCase]
         else:
-            print 'Running normal tests (-i for interactive tests)...'
+            print('Running normal tests (-i for interactive tests)...')
             test_classes = [BasicTestCase, ImportTestCase,
                     LibrariesTestCase, MultipackageTestCase]
 

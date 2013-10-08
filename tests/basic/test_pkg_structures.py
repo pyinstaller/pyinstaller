@@ -21,17 +21,17 @@ from pkg1 import *
 
 t1 = a.a_func()
 if t1 != e1:
-    print('expected: %s' % e1)
-    print('     got: %s' % t1)
+    print(('expected: %s' % e1))
+    print(('     got: %s' % t1))
 
 
 t2 = b.b_func()
 if t2 != e2:
-    print('expected: %s' % e2)
-    print('     got: %s' % t2)
+    print(('expected: %s' % e2))
+    print(('     got: %s' % t2))
 
 
 t3 = notamodule()
 if t3 != e3:
-    print('expected: %s' % e3)
-    print('     got: %s' % t3)
+    print(('expected: %s' % e3))
+    print(('     got: %s' % t3))

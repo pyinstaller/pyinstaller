@@ -12,7 +12,7 @@ from numpy.core.numeric import dot
 
 
 def main():
-    print "dot(3, 4):", dot(3, 4)
+    print("dot(3, 4):", dot(3, 4))
 
 
 if __name__ == "__main__":

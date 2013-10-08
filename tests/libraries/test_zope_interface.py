@@ -11,4 +11,4 @@
 # Test inclusion of faked namespace module zope by importing zope.interface
 
 import zope.interface
-print zope.interface
+print(zope.interface)

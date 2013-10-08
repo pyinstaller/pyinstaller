@@ -18,13 +18,13 @@ import os
 import sys
 import tempfile
 
-print(sys.path)
-print('CWD: ' + os.getcwdu())
+print((sys.path))
+print(('CWD: ' + os.getcwdu()))
 
 # Change working directory.
 os.chdir(tempfile.gettempdir())
 print('Changing working directory...')
-print('CWD: ' + os.getcwdu())
+print(('CWD: ' + os.getcwdu()))
 
 # Try import a module. It should fail
 try:

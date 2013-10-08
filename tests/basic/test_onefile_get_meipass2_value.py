@@ -49,7 +49,7 @@ if meipass.startswith(r'%'):
 
 
 print(meipass)
-print('_MEIPASS2 value: %s' % sys._MEIPASS)
+print(('_MEIPASS2 value: %s' % sys._MEIPASS))
 
 
 if meipass:

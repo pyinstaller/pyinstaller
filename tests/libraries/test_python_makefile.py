@@ -18,14 +18,14 @@ from distutils import sysconfig
 
 
 config_h = sysconfig.get_config_h_filename()
-print('pyconfig.h: ' + config_h)
+print(('pyconfig.h: ' + config_h))
 files = [config_h]
 
 
 # On Windows Makefile does not exist.
 if not sys.platform.startswith('win'):
     makefile = sysconfig.get_makefile_filename()
-    print('Makefile: ' + makefile)
+    print(('Makefile: ' + makefile))
     files.append(makefile)
 
 

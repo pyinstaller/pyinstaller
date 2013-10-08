@@ -23,8 +23,8 @@ modpath = os.path.join(sys.prefix, 'simplejson._speedups')
 frozen_modpath = os.path.splitext(_speedups.__file__)[0]
 
 
-print('Module path expected: ' + modpath)
-print('Module path  current: ' + frozen_modpath)
+print(('Module path expected: ' + modpath))
+print(('Module path  current: ' + frozen_modpath))
 
 
 if not frozen_modpath == modpath:

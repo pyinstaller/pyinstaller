@@ -87,9 +87,9 @@ def pefile_read_version(filename):
     #vers = pe.FileInfo[0].StringTable[0].entries
     from pprint import pprint
     pprint(pe.VS_FIXEDFILEINFO)
-    print dir(pe.VS_FIXEDFILEINFO)
-    print repr(pe.VS_FIXEDFILEINFO)
-    print pe.dump_info()
+    print(dir(pe.VS_FIXEDFILEINFO))
+    print(repr(pe.VS_FIXEDFILEINFO))
+    print(pe.dump_info())
     return vers
 
 

@@ -20,10 +20,10 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     read_formats = ', '.join([unicode(format).lower() \
         for format in QtGui.QImageReader.supportedImageFormats()])
-    print("Qt5 plugin paths: " + unicode(list(app.libraryPaths())))
-    print("Qt5 image read support: " + read_formats)
-    print('Qt5 Libraries path: ' + \
-           unicode(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath)))
+    print(("Qt5 plugin paths: " + unicode(list(app.libraryPaths()))))
+    print(("Qt5 image read support: " + read_formats))
+    print(('Qt5 Libraries path: ' + \
+           unicode(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath))))
     label = QtWidgets.QLabel("Hello World from PyQt5", None)
     label.setWindowTitle("Hello World from PyQt5")
     label.resize(300, 300)
