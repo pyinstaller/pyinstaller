@@ -18,7 +18,7 @@ import sys
 import zlib
 
 
-import pyi_archive
+from . import pyi_archive
 
 
 class CTOC(object):
@@ -327,7 +327,7 @@ class CArchive(pyi_archive.Archive):
             else:
                 s = open(pathnm, 'rb').read()
         except IOError:
-            print("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd))
+            print(("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd)))
             raise
         ulen = len(s)
         assert flag in range(3)

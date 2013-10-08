@@ -39,7 +39,7 @@ def debug(msg):
         sys.stderr.flush()
 
 
-_c_suffixes = filter(lambda x: x[2] == imp.C_EXTENSION, imp.get_suffixes())
+_c_suffixes = [x for x in imp.get_suffixes() if x[2] == imp.C_EXTENSION]
 
 for nm in ('nt', 'posix'):
     if nm in sys.builtin_module_names:
@@ -155,7 +155,7 @@ class Archive(object):
         Default implementation assumes self.toc is a dict like object.
         Not required by ArchiveImporter.
         """
-        return self.toc.keys()
+        return list(self.toc.keys())
 
     ########################################################################
     # Building
