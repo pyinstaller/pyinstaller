@@ -45,7 +45,7 @@ def __exec_python_cmd(cmd):
     try:
         try:
             txt = compat.exec_python(*cmd)
-        except OSError, e:
+        except OSError as e:
             raise SystemExit("Execution failed: %s" % e)
     finally:
         if old_pp is not None:

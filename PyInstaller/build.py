@@ -860,7 +860,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         # of cached pyd file because we may need to 'fix it' for pyinstaller
         try:
             res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))
-        except winresource.pywintypes.error, e:
+        except winresource.pywintypes.error as e:
             if e.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
                 # Not a win32 PE file
                 pass
@@ -879,7 +879,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                                           str(language)])
                             manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language],
                                                   False)
-                        except Exception, exc:
+                        except Exception as exc:
                             logger.error("Cannot parse manifest resource %s, "
                                          "%s from", name, language)
                             logger.error(cachedfile)
@@ -905,7 +905,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                     manifest.update_resources(os.path.abspath(cachedfile),
                                                               [name],
                                                               [language])
-                                except Exception, e:
+                                except Exception as e:
                                     logger.error(os.path.abspath(cachedfile))
                                     raise
 
@@ -913,7 +913,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         try:
             logger.info("Executing - " + ' '.join(cmd))
             compat.exec_command(*cmd)
-        except OSError, e:
+        except OSError as e:
             raise SystemExit("Execution failed: %s" % e)
 
     # update cache index
@@ -1236,7 +1236,7 @@ class EXE(Target):
                                                         [restype or "*"],
                                                         [resname or "*"],
                                                         [reslang or "*"])
-                except winresource.pywintypes.error, exc:
+                except winresource.pywintypes.error as exc:
                     if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
                         logger.exception(exc)
                         continue
@@ -1254,7 +1254,7 @@ class EXE(Target):
                                                              restype,
                                                              [resname],
                                                              [reslang or 0])
-                    except winresource.pywintypes.error, exc:
+                    except winresource.pywintypes.error as exc:
                         logger.exception(exc)
             trash.append(tmpnm)
             exe = tmpnm

@@ -632,7 +632,7 @@ def clean():
                         shutil.rmtree(pth)
                     else:
                         os.remove(pth)
-                except OSError, e:
+                except OSError as e:
                     print e
         # Delete *.spec files for tests without spec file.
         for pth in glob.glob(os.path.join(directory, '*.spec')):

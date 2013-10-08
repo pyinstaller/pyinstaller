@@ -42,7 +42,7 @@ def test_RsrcUpdate(config):
     try:
         import win32api
         from PyInstaller.utils import icon, versioninfo
-    except ImportError, detail:
+    except ImportError as detail:
         logger.info('... resource update unavailable - %s', detail)
         return
 
@@ -82,7 +82,7 @@ def test_UPX(config, upx_dir):
             if is_win and hasUPX < (1, 92):
                 logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
                 hasUPX = 0
-    except Exception, e:
+    except Exception as e:
         if isinstance(e, OSError) and e.errno == 2:
             # No such file or directory
             pass

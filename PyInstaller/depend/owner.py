@@ -110,7 +110,7 @@ class BaseDirOwner(Owner):
                 co = compile(stuff.replace("\r\n", "\n"), py[0], 'exec')
                 pth = py[0] + PYCO
                 logger.debug("compiled %s", pth)
-            except SyntaxError, e:
+            except SyntaxError as e:
                 logger.exception(e)
                 raise SystemExit(10)
 

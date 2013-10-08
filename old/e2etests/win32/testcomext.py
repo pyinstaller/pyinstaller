@@ -54,7 +54,7 @@ if __name__ == "__main__":
         Description = "py made shortcut"
 
         CreateShortCut(Path,Target,Arguments,StartIn,Icon,Description)
-    except Exception, e:
+    except Exception as e:
         print "Failed!", e
         import traceback
         traceback.print_exc()

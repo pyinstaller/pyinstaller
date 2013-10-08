@@ -98,7 +98,7 @@ logger = logging.getLogger('PyInstaller.build.winmanifest')
 
 try:
     from PyInstaller.utils import winresource
-except ImportError, detail:
+except ImportError as detail:
     winresource = None
     logger.warn(detail)
     logger.warn("Cannot check for assembly dependencies - resource access ")
@@ -398,7 +398,7 @@ class Manifest(object):
                         logger.info("Found %s", manifestpth)
                         try:
                             policy = ManifestFromXMLFile(manifestpth)
-                        except Exception, exc:
+                        except Exception as exc:
                             logger.error("Could not parse file %s", manifestpth)
                             logger.exception(exc)
                         else:
@@ -475,7 +475,7 @@ class Manifest(object):
                     else:
                         logger.info("Found manifest %s", manifestpth)
                         manifest = ManifestFromXMLFile(manifestpth)
-                except Exception, exc:
+                except Exception as exc:
                     logger.error("Could not parse manifest %s", manifestpth)
                     logger.exception(exc)
                 else:
@@ -698,7 +698,7 @@ class Manifest(object):
             filename = filename_or_file.name
         try:
             domtree = minidom.parse(filename_or_file)
-        except xml.parsers.expat.ExpatError, e:
+        except xml.parsers.expat.ExpatError as e:
             args = [e.args[0]]
             if isinstance(filename, unicode):
                 filename = filename.encode(sys.getdefaultencoding(), "replace")
@@ -713,7 +713,7 @@ class Manifest(object):
         """ Load manifest from XML string """
         try:
             domtree = minidom.parseString(xmlstr)
-        except xml.parsers.expat.ExpatError, e:
+        except xml.parsers.expat.ExpatError as e:
             raise ManifestXMLParseError(e)
         self.load_dom(domtree, initialize)
     

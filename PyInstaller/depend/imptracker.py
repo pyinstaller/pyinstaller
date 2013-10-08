@@ -265,7 +265,7 @@ class ImportTracker:
         try:
             stuff = open(fnm, 'rU').read() + '\n'
             co = compile(stuff, fnm, 'exec')
-        except SyntaxError, e:
+        except SyntaxError as e:
             logger.exception(e)
             raise SystemExit(10)
         mod = depend.modules.PyScript(fnm, co)

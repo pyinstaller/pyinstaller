@@ -113,7 +113,7 @@ def main(opts, args):
     for fnm in cleanup:
         try:
             os.remove(fnm)
-        except Exception, e:
+        except Exception as e:
             print "couldn't delete", fnm, e.args
 
 

@@ -69,7 +69,7 @@ class RegistryImportDirector(ImportDirector):
         for root in (win32con.HKEY_CURRENT_USER, win32con.HKEY_LOCAL_MACHINE):
             try:
                 hkey = win32api.RegOpenKeyEx(root, subkey, 0, win32con.KEY_READ)
-            except Exception, e:
+            except Exception as e:
                 logger.debug('RegistryImportDirector: %s' % e)
                 continue
 
@@ -95,7 +95,7 @@ class RegistryImportDirector(ImportDirector):
                 try:
                     stuff = open(fnm, 'rU').read() + '\n'
                     co = compile(stuff, fnm, 'exec')
-                except SyntaxError, e:
+                except SyntaxError as e:
                     logger.exception(e)
                     raise SystemExit(10)
             else:
@@ -155,7 +155,7 @@ class PathImportDirector(ImportDirector):
                 owner = klass(path)
             except PyInstaller.depend.owner.OwnerError:
                 pass
-            except Exception, e:
+            except Exception as e:
                 #print "FIXME: Wrong exception", e
                 pass
             else:

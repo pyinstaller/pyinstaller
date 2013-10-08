@@ -113,7 +113,7 @@ def get_code_object(filename, new_filename=None):
             filename = new_filename
         code_object = compile(source_code_string, filename, 'exec', 0, True)
         return code_object
-    except SyntaxError, e:
+    except SyntaxError as e:
         logger.exception(e)
         raise SystemExit(10)
 

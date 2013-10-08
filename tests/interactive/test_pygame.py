@@ -22,7 +22,7 @@ try:
     import time
     from pygame.locals import *
 
-except ImportError, err:
+except ImportError as err:
     print "Error, couldn't load module. %s" % (err)
     sys.exit(2)
 
