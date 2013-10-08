@@ -20,7 +20,7 @@ import pprint
 import shutil
 import sys
 import tempfile
-import UserList
+import collections
 import importlib
 from PyInstaller.loader import pyi_archive, pyi_carchive
 
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
-UNCOMPRESSED, COMPRESSED = range(2)
+UNCOMPRESSED, COMPRESSED = list(range(2))
 
 
 # Set of global variables that can be used while processing .spec file.
@@ -193,7 +193,7 @@ def _rmtree(path):
     if NOCONFIRM:
         choice = 'y'
     elif sys.stdout.isatty():
-        choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
+        choice = input('WARNING: The output directory "%s" and ALL ITS '
                            'CONTENTS will be REMOVED! Continue? (y/n)' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
@@ -215,7 +215,7 @@ def check_egg(pth):
     components = pth.split(os.path.sep)
     sep = os.path.sep
 
-    for i, name in zip(range(0, len(components)), components):
+    for i, name in zip(list(range(0, len(components))), components):
         if name.lower().endswith(".egg"):
             eggpth = sep.join(components[:i + 1])
             if os.path.isfile(eggpth):
@@ -389,8 +389,7 @@ class Analysis(Target):
             ('hookspath', _check_guts_eq),
             ('excludes', _check_guts_eq),
             ('scripts', _check_guts_toc_mtime),
-            ('pure', lambda *args: apply(_check_guts_toc_mtime,
-                                              args, {'pyc': 1})),
+            ('pure', lambda *args: _check_guts_toc_mtime(*args, **{'pyc': 1})),
             ('binaries', _check_guts_toc_mtime),
             ('zipfiles', _check_guts_toc_mtime),
             ('datas', _check_guts_toc_mtime),
@@ -405,10 +404,11 @@ class Analysis(Target):
         """
         datas = []
 
-        def _visit((base, dest_dir, datas), dirname, names):
+        def _visit(xxx_todo_changeme, dirname, names):
             """
             Format whole directory tree from 'datas'.
             """
+            (base, dest_dir, datas) = xxx_todo_changeme
             for fn in names:
                 fn = os.path.join(dirname, fn)
                 if os.path.isfile(fn):
@@ -853,7 +853,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
             cmd = ["strip"] + strip_options + [cachedfile]
 
     shutil.copy2(fnm, cachedfile)
-    os.chmod(cachedfile, 0755)
+    os.chmod(cachedfile, 0o755)
 
     if pyasm and fnm.lower().endswith(".pyd"):
         # If python.exe has dependent assemblies, check for embedded manifest
@@ -927,7 +927,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     return cachedfile
 
 
-UNCOMPRESSED, COMPRESSED = range(2)
+UNCOMPRESSED, COMPRESSED = list(range(2))
 
 
 class PKG(Target):
@@ -1211,7 +1211,7 @@ class EXE(Target):
                                         self.resources):
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
-            os.chmod(tmpnm, 0755)
+            os.chmod(tmpnm, 0o755)
             if self.icon:
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
@@ -1267,7 +1267,7 @@ class EXE(Target):
             logger.info("Copying archive to %s", self.pkgname)
             shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
-        os.chmod(self.name, 0755)
+        os.chmod(self.name, 0o755)
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
                 misc.mtime(self.name))
@@ -1301,7 +1301,7 @@ class DLL(EXE):
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)
         outf.close()
-        os.chmod(self.name, 0755)
+        os.chmod(self.name, 0o755)
         _save_data(self.out,
                    (self.name, self.console, self.debug, self.icon,
                     self.versrsrc, self.manifest, self.resources, self.strip, self.upx, misc.mtime(self.name)))
@@ -1391,7 +1391,7 @@ class COLLECT(Target):
             if typ != 'DEPENDENCY':
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
-                os.chmod(tofnm, 0755)
+                os.chmod(tofnm, 0o755)
         _save_data(self.out,
                  (self.name, self.strip_binaries, self.upx_binaries, self.toc))
         return 1
@@ -1503,7 +1503,7 @@ class BUNDLE(Target):
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>"""
-        for k, v in info_plist_dict.items():
+        for k, v in list(info_plist_dict.items()):
             info_plist += "<key>%s</key>\n<string>%s</string>\n" % (k, v)
         info_plist += """</dict>
 </plist>"""
@@ -1534,7 +1534,7 @@ class BUNDLE(Target):
         return 1
 
 
-class TOC(UserList.UserList):
+class TOC(collections.UserList):
     """
     TOC (Table of Contents) class is a list of tuples of the form (name, path, tytecode).
 
@@ -1553,7 +1553,7 @@ class TOC(UserList.UserList):
     PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
     """
     def __init__(self, initlist=None):
-        UserList.UserList.__init__(self)
+        collections.UserList.__init__(self)
         self.fltr = {}
         if initlist:
             for tpl in initlist:
@@ -1890,7 +1890,7 @@ class MERGE(object):
         """
         for toc in (analysis.binaries, analysis.datas):
             for i, tpl in enumerate(toc):
-                if not tpl[1] in self._dependencies.keys():
+                if not tpl[1] in list(self._dependencies.keys()):
                     logger.debug("Adding dependency %s located in %s" % (tpl[1], path))
                     self._dependencies[tpl[1]] = path
                 else:
@@ -1975,7 +1975,7 @@ def build(spec, distpath, workpath, clean_build):
  
     # Executing the specfile. The executed .spec file will use DISTPATH and
     # WORKPATH values.
-    execfile(spec)
+    exec(compile(open(spec).read(), spec, 'exec'))
 
 
 def __add_options(parser):
