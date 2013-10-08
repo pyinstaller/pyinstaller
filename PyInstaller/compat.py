@@ -14,7 +14,6 @@ with previous versions of Python from 2.6 onward.
 """
 
 
-import dircache  # Module removed in Python 3
 import os
 import platform
 import subprocess
@@ -51,15 +50,6 @@ else:
     PYCO = 'o'
 
 
-if 'PYTHONCASEOK' not in os.environ:
-    def caseOk(filename):
-        files = dircache.listdir(os.path.dirname(filename))
-        return os.path.basename(filename) in files
-else:
-    def caseOk(filename):
-        return True
-
-
 # Obsolete command line options (do not exist anymore).
 _OLD_OPTIONS = [
     '--upx', '-X',
@@ -94,7 +84,7 @@ def architecture():
         # returns "64bit" event for the 32bit version of Python's
         # universal binary. So we roll out our own (that works
         # on Darwin).
-        if sys.maxint > 2L ** 32:
+        if sys.maxsize > 2 ** 32:
             return '64bit'
         else:
             return '32bit'
@@ -260,8 +250,8 @@ def getcwd():
     characters.
     """
     cwd = os.getcwd()
-    # TODO os.getcwd should work properly with py3 on windows.
-    if is_win:
+    # os.getcwd works properly with Python 3 on windows.
+    if is_win and is_py2:
         try:
             unicode(cwd)
         except UnicodeDecodeError:
