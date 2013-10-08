@@ -12,9 +12,8 @@ import sys
 import os
 import glob
 import imp
-import UserDict
 
-from PyInstaller import depend, hooks
+from PyInstaller import compat, depend, hooks
 from PyInstaller.compat import is_win
 
 import PyInstaller.log as logging
@@ -77,8 +76,8 @@ class ImportTrackerModulegraph:
         return py_files, extensions
 
     def getwarnings(self):
-        warnings = self.warnings.keys()
-        for nm, mod in self.modules.items():
+        warnings = list(self.warnings.keys())
+        for nm, mod in list(self.modules.items()):
             if mod:
                 for w in mod.warnings:
                     warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
@@ -91,11 +90,11 @@ class ImportTracker:
 
         # In debug mode a .log file is written to WORKPATH.
         if __debug__ and workpath:
-            class LogDict(UserDict.UserDict):
+            class LogDict(compat.UserDict):
                 count = 0
                 #def __init__(self, *args, workpath=''):
                 def __init__(self, *args):
-                    UserDict.UserDict.__init__(self, *args)
+                    compat.UserDict.__init__(self, *args)
                     LogDict.count += 1
                     logfile = "logdict%s-%d.log" % (".".join(map(str, sys.version_info)),
                                                     LogDict.count)
@@ -104,11 +103,11 @@ class ImportTracker:
 
                 def __setitem__(self, key, value):
                     self.logfile.write("%s: %s -> %s\n" % (key, self.data.get(key), value))
-                    UserDict.UserDict.__setitem__(self, key, value)
+                    compat.UserDict.__setitem__(self, key, value)
 
                 def __delitem__(self, key):
                     self.logfile.write("  DEL %s\n" % key)
-                    UserDict.UserDict.__delitem__(self, key)
+                    compat.UserDict.__delitem__(self, key)
             self.modules = LogDict()
         else:
             self.modules = dict()
@@ -167,7 +166,7 @@ class ImportTracker:
                         newnms = map(None, newnms, [nm] * len(newnms))
                         nms[j:j] = newnms
                         j = j + len(newnms)
-        return map(lambda a: a[0], nms)
+        return [a[0] for a in nms]
 
     def analyze_one(self, nm, importernm=None, imptyp=0, level=-1):
         """
@@ -355,20 +354,20 @@ class ImportTracker:
         return mod
 
     def getwarnings(self):
-        warnings = self.warnings.keys()
-        for nm, mod in self.modules.items():
+        warnings = list(self.warnings.keys())
+        for nm, mod in list(self.modules.items()):
             if mod:
                 for w in mod.warnings:
                     warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
         return warnings
 
     def getxref(self):
-        mods = self.modules.items()  # (nm, mod)
+        mods = list(self.modules.items())  # (nm, mod)
         mods.sort()
         rslt = []
         for nm, mod in mods:
             if mod:
-                importers = mod._xref.keys()
+                importers = list(mod._xref.keys())
                 importers.sort()
                 rslt.append((nm, importers))
         return rslt

@@ -23,7 +23,7 @@ import marshal
 import os
 
 from PyInstaller import depend
-from PyInstaller.compat import getcwd, PYCO, caseOk
+from PyInstaller.compat import getcwd, PYCO
 from PyInstaller.loader import pyi_archive
 
 

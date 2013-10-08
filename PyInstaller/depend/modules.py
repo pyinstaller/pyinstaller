@@ -18,7 +18,8 @@ import ctypes
 import os
 
 from PyInstaller.compat import PYCO
-from PyInstaller.depend.utils import _resolveCtypesImports, scan_code
+# TODO Remove ctypes imports and scan_code.
+#from PyInstaller.depend.utils import _resolveCtypesImports, scan_code
 
 import PyInstaller.depend.impdirector
 import PyInstaller.utils.misc

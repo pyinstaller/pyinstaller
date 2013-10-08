@@ -20,7 +20,6 @@ import pprint
 import shutil
 import sys
 import tempfile
-import collections
 import importlib
 from PyInstaller.loader import pyi_archive, pyi_carchive
 
@@ -1534,7 +1533,7 @@ class BUNDLE(Target):
         return 1
 
 
-class TOC(collections.UserList):
+class TOC(compat.UserList):
     """
     TOC (Table of Contents) class is a list of tuples of the form (name, path, tytecode).
 
@@ -1553,7 +1552,7 @@ class TOC(collections.UserList):
     PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
     """
     def __init__(self, initlist=None):
-        collections.UserList.__init__(self)
+        compat.UserList.__init__(self)
         self.fltr = {}
         if initlist:
             for tpl in initlist:

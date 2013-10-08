@@ -43,6 +43,13 @@ is_aix = sys.platform.startswith('aix')
 is_unix = is_linux or is_solar or is_aix
 
 
+# UserList class is moved to 'collections.UserList in Python 3.
+if is_py2:
+    from UserList import UserList
+else:
+    from collections import UserList
+
+
 # Correct extension ending: 'c' or 'o'
 if __debug__:
     PYCO = 'c'

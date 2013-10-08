@@ -18,7 +18,12 @@ import sys
 import zlib
 
 
-from . import pyi_archive
+# Python 3 requires relative import but we need absolute import
+# for the frozen executables where this module is a top-level module.
+try:
+    import pyi_archive
+except ImportError:
+    from . import pyi_archive
 
 
 class CTOC(object):
