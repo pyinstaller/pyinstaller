@@ -43,9 +43,8 @@ else:
 from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
-from PyInstaller.compat import is_py33, is_win, is_darwin
+from PyInstaller.compat import is_py33, is_win, is_darwin, unittest
 from PyInstaller.hooks import hookutils
-from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc, winutils
 
@@ -325,7 +324,7 @@ class BuildTestRunner(object):
             return 1
         else:
             self._plain_msg("RUNNING: " + prog)
-            old_wd = os.getcwd()
+            old_wd = compat.getcwd()
             os.chdir(os.path.dirname(prog))
             # Run executable.
             prog = os.path.join(os.curdir, os.path.basename(prog))
@@ -357,9 +356,9 @@ class BuildTestRunner(object):
 
         Return True if build succeded False otherwise.
         """
-        OPTS = ['--debug', '--noupx', '--specpath', os.getcwd(), '--distpath',
-                os.path.join(os.getcwd(), 'dist'), '--workpath',
-                os.path.join(os.getcwd(), 'build')]
+        OPTS = ['--debug', '--noupx', '--specpath', compat.getcwd(), '--distpath',
+                os.path.join(compat.getcwd(), 'dist'), '--workpath',
+                os.path.join(compat.getcwd(), 'build')]
 
         if self.verbose:
             OPTS.extend(['--debug', '--log-level=INFO'])
@@ -477,7 +476,7 @@ class GenericTestCase(unittest.TestCase):
         super(GenericTestCase, self).__init__(func_name)
 
         # For tests current working directory has to be changed temporaly.
-        self.curr_workdir = os.getcwdu()
+        self.curr_workdir = compat.getcwd()
 
     def setUp(self):
         testdir = os.path.dirname(self.test_name)
