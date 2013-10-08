@@ -103,7 +103,6 @@ Valid attributes
       `graphviz reference <http://www.research.att.com/sw/tools/graphviz/refs.html>`_.
 '''
 import os
-from itertools import imap, ifilter
 import warnings
 
 from altgraph import GraphError
@@ -157,7 +156,7 @@ class Dot(object):
                 seen.add(node)
         if edgefn is not None:
             for head in seen:
-                for tail in ifilter(seen.__contains__, edgefn(head)):
+                for tail in (n for n in edgefn(head) if n in seen):
                     if edgevisitor is None:
                         edgestyle = {}
                     else:
@@ -229,7 +228,7 @@ class Dot(object):
             raise GraphError("unsupported graphtype %s" % (self.type,))
 
         # write overall graph attributes
-        for attr_name, attr_value in self.attr.iteritems():
+        for attr_name, attr_value in sorted(self.attr.items()):
             yield '%s="%s";' % (attr_name, attr_value)
         yield '\n'
 
@@ -238,9 +237,9 @@ class Dot(object):
         epatt  = '];\n'          # to end attributes
 
         # write node attributes
-        for node_name, node_attr in self.nodes.iteritems():
+        for node_name, node_attr in sorted(self.nodes.items()):
             yield '\t"%s" [' % (node_name,)
-            for attr_name, attr_value in node_attr.iteritems():
+            for attr_name, attr_value in sorted(node_attr.items()):
                 yield cpatt % (attr_name, attr_value)
             yield epatt
 
@@ -251,7 +250,7 @@ class Dot(object):
                     yield '\t"%s" -> "%s" [' % (head, tail)
                 else:
                     yield '\t"%s" -- "%s" [' % (head, tail)
-                for attr_name, attr_value in self.edges[head][tail].iteritems():
+                for attr_name, attr_value in sorted(self.edges[head][tail].items()):
                     yield cpatt % (attr_name, attr_value)
                 yield epatt
 

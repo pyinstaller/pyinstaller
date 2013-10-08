@@ -68,16 +68,16 @@ _SETUPTOOLS_NAMESPACEPKG_PTHs=(
 )
 
 
-def _namespace_package_path(fqname, pathnames):
+def _namespace_package_path(fqname, pathnames, path=None):
     """
     Return the __path__ for the python package in *fqname*.
 
     This function uses setuptools metadata to extract information
     about namespace packages from installed eggs.
     """
-    path = list(pathnames)
+    working_set = pkg_resources.WorkingSet(path)
 
-    working_set = pkg_resources.working_set
+    path = list(pathnames)
 
     for dist in working_set:
         if dist.has_metadata('namespace_packages.txt'):
@@ -90,7 +90,8 @@ def _namespace_package_path(fqname, pathnames):
 
     return path
 
-_strs = re.compile(r'''^\s*["']([A-Za-z0-9_]+)["'],?\s*''')
+_strs = re.compile(r'''^\s*["']([A-Za-z0-9_]+)["'],?\s*''') # "<- emacs happy
+
 def _eval_str_tuple(value):
     """
     Input is the repr of a tuple of strings, output
@@ -443,6 +444,9 @@ class CompiledModule(BaseModule):
 class Package(BaseModule):
     pass
 
+class NamespacePackage(Package):
+    pass
+
 class Extension(BaseModule):
     pass
 
@@ -626,13 +630,13 @@ class ModuleGraph(ObjectGraph):
             # name is a --single-version-externally-managed
             # namespace package (setuptools/distribute)
             pathnames = self.nspackages.pop(name)
-            m = self.createNode(Package, name)
+            m = self.createNode(NamespacePackage, name)
 
             # FIXME: The filename must be set to a string to ensure that py2app
             # works, it is not clear yet why that is. Setting to None would be
             # cleaner.
             m.filename = '-'
-            m.packagepath = _namespace_package_path(name, pathnames)
+            m.packagepath = _namespace_package_path(name, pathnames, self.path)
 
             # As per comment at top of file, simulate runtime packagepath additions.
             m.packagepath = m.packagepath + _packagePathMap.get(name, [])
@@ -1079,13 +1083,17 @@ class ModuleGraph(ObjectGraph):
         newname = _replacePackageMap.get(fqname)
         if newname:
             fqname = newname
-        m = self.createNode(Package, fqname)
-        m.filename = pathname
-        m.packagepath = _namespace_package_path(fqname, [pathname])
 
-        if pkgpath:
+        ns_pkgpath = _namespace_package_path(fqname, pkgpath or [], self.path)
+        if ns_pkgpath or pkgpath:
+            # this is a namespace package
+            m = self.createNode(NamespacePackage, fqname)
             m.filename = '-'
-            m.packagepath = _namespace_package_path(fqname, pkgpath)
+            m.packagepath = ns_pkgpath
+        else:
+            m = self.createNode(Package, fqname)
+            m.filename = pathname
+            m.packagepath = [pathname] + ns_pkgpath
 
         # As per comment at top of file, simulate runtime packagepath additions.
         m.packagepath = m.packagepath + _packagePathMap.get(fqname, [])

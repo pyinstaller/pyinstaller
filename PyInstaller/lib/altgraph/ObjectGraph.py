@@ -6,8 +6,6 @@ A graph of objects that have a "graphident" attribute.
 graphident is the key for the object in the graph
 """
 
-from itertools import imap
-
 from altgraph import GraphError
 from altgraph.Graph import Graph
 from altgraph.GraphUtil import filter_stack
@@ -51,7 +49,7 @@ class ObjectGraph(object):
         _, _, outraw, incraw = self.graph.describe_node(start)
         def iter_edges(lst, n):
             seen = set()
-            for tpl in imap(self.graph.describe_edge, lst):
+            for tpl in (self.graph.describe_edge(e) for e in lst):
                 ident = tpl[n]
                 if ident not in seen:
                     yield self.findNode(ident)
@@ -173,7 +171,7 @@ class ObjectGraph(object):
         Print a debug message with the given level
         """
         if s and level <= self.debug:
-            print "%s%s %s" % ("  " * self.indent, s, ' '.join(map(repr, args)))
+            print ("%s%s %s" % ("  " * self.indent, s, ' '.join(map(repr, args))))
 
     def msgin(self, level, s, *args):
         """

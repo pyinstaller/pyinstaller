@@ -9,8 +9,11 @@
 
 import datetime
 import re
-import time
-import unittest2 as unittest
+
+try:
+    import unittest
+except ImportError:
+    import unittest2 as unittest
 
 # same format as sys.version_info: "A tuple containing the five components of
 # the version number: major, minor, micro, releaselevel, and serial. All
@@ -23,7 +26,7 @@ import unittest2 as unittest
 # established at this point, and setup.py will use a version of next-$(revno).
 # If the releaselevel is 'final', then the tarball will be major.minor.micro.
 # Otherwise it is major.minor.micro~$(revno).
-__version__ = (0, 6, 0, 'final', 0)
+__version__ = (0, 7, 0, 'final', 0)
 
 
 def test_suite():
@@ -89,7 +92,7 @@ def _escape_attr(s):
 
 class JUnitXmlResult(unittest.TestResult):
     """A TestResult which outputs JUnit compatible XML."""
-    
+
     def __init__(self, stream):
         """Create a JUnitXmlResult.
 
@@ -163,9 +166,9 @@ class JUnitXmlResult(unittest.TestResult):
         """
         duration = self._duration(self._run_start)
         self._stream.write('<testsuite errors="%d" failures="%d" name="" '
-            'skips="%d" tests="%d" time="%0.3f">\n' % (len(self.errors),
+            'tests="%d" time="%0.3f">\n' % (len(self.errors),
             len(self.failures) + len(getattr(self, "unexpectedSuccesses", ())),
-            len(self.skipped), self.testsRun, duration))
+            self.testsRun, duration))
         self._stream.write(''.join(self._results))
         self._stream.write('</testsuite>\n')
 
@@ -198,6 +201,7 @@ class JUnitXmlResult(unittest.TestResult):
             pass
         self._test_case_string(test)
         self._results.append('>\n')
+        #self._results.append('<skipped>%s</skipped>\n</testcase>\n'% _escape_attr(reason))
         self._results.append('<skipped message="%s"></skipped>\n</testcase>\n'% _escape_attr(reason))
 
     def addUnexpectedSuccess(self, test):
@@ -219,3 +223,6 @@ class JUnitXmlResult(unittest.TestResult):
         self._test_case_string(test)
         self._results.append('/>\n')
 
+if __name__ == '__main__':
+    import junitxml.main
+    junitxml.main.main()
