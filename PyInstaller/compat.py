@@ -176,9 +176,13 @@ def exec_command(*cmdargs):
     Wrap creating subprocesses
 
     Return stdout of the invoked command.
-    Todo: Use module `subprocess` if available, else `os.system()`
     """
-    return subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
+    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
+    # Python 3 returns stdout/stderr as a byte array NOT as string.
+    # Thus we need to convert that to proper encoding.
+    # Let' suppose that stdout/stderr will contain only utf-8 or ascii
+    # characters.
+    return out.decode('utf-8')
 
 
 def exec_command_rc(*cmdargs, **kwargs):
@@ -186,7 +190,6 @@ def exec_command_rc(*cmdargs, **kwargs):
     Wrap creating subprocesses.
 
     Return exit code of the invoked command.
-    Todo: Use module `subprocess` if available, else `os.system()`
     """
     return subprocess.call(cmdargs, **kwargs)
 
@@ -201,8 +204,11 @@ def exec_command_all(*cmdargs, **kwargs):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
     out, err = proc.communicate()
-
-    return proc.returncode, out, err
+    # Python 3 returns stdout/stderr as a byte array NOT as string.
+    # Thus we need to convert that to proper encoding.
+    # Let' suppose that stdout/stderr will contain only utf-8 or ascii
+    # characters.
+    return proc.returncode, out.decode('utf-8'), err.decode('utf-8')
 
 
 def __wrap_python(args, kwargs):
@@ -263,7 +269,8 @@ def getcwd():
     characters.
     """
     cwd = os.getcwd()
-    # os.getcwd works properly with Python 3 on windows.
+    # os.getcwd works properly with Python 3 on Windows.
+    # We need this workaround only for Python 2 on Windows.
     if is_win and is_py2:
         try:
             unicode(cwd)
