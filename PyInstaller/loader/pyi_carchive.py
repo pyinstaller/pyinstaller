@@ -369,7 +369,7 @@ class CArchive(pyi_archive.Archive):
         # Before saving cookie we need to convert it to corresponding
         # C representation.
         cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
-                tocpos, self.toclen, pyvers, self._pylib_name)
+                tocpos, self.toclen, pyvers, str(self._pylib_name))
         self.lib.write(cookie)
 
     def openEmbedded(self, name):

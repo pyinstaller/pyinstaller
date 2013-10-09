@@ -8,4 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['copy_reg']
+# In Python 3 'copy_reg' was renamed to 'copyreg'.
+# TODO Reenable hiddenimports if dependencies are not recognized by modulegraph.
+# hiddenimports = ['copy_reg']
+# TODO Remove this hook file if it proves not being useful anymore.
