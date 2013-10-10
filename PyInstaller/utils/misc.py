@@ -228,7 +228,6 @@ def compile_py_files(toc, workpath):
                 py_compile.compile(src_fnm, obj_fnm)
                 logger.debug("compiled %s", src_fnm)
             except IOError:
-                pass
                 # If we're compiling on a system directory, probably we don't
                 # have write permissions; thus we compile to a local directory
                 # and change the TOC entry accordingly.
@@ -254,8 +253,8 @@ def compile_py_files(toc, workpath):
                                  or
                                  open(obj_fnm, 'rb').read()[:4] != imp.get_magic())
                 if needs_compile:
-                    # TODO see above regarding using node.code
-                    py_compile.compile(src_fnm, fnm)
+                    # TODO see above todo regarding using node.code
+                    py_compile.compile(src_fnm, obj_fnm)
                     logger.debug("compiled %s", src_fnm)
         # if we get to here, obj_fnm is the path to the compiled module nm.py
         new_toc.append((nm, obj_fnm, typ))
