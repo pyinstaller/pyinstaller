@@ -696,7 +696,8 @@ def get_python_library_path():
         names = ('libpython%d.%d.a' % pyver,)
     elif is_unix:
         # Other *nix platforms.
-        names = ('libpython%d.%d.so.1.0' % pyver,)
+        # Python 3 .so library on Linux looks like: 'libpython3.3m.so.1.0'
+        names = ('libpython%d.%d*.so.1.0' % pyver,)
     else:
         raise SystemExit('Your platform is not yet supported.')
 

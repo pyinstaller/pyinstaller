@@ -32,7 +32,7 @@ class CTOC(object):
 
     When written to disk, it is easily read from C.
     """
-    ENTRYSTRUCT = '!iiiibc'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    ENTRYSTRUCT = b'!iiiibc'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
 
     def __init__(self):
         self.data = []
@@ -72,6 +72,8 @@ class CTOC(object):
         entrylen = struct.calcsize(self.ENTRYSTRUCT)
         rslt = []
         for (dpos, dlen, ulen, flag, typcd, nm) in self.data:
+            # Convert name 'nm' to bytes.
+            nm = nm.encode('ascii')
             nmlen = len(nm) + 1       # add 1 for a '\0'
             # FIXME Why are here two versions? Is it safe to remove version 4?
             # version 4
@@ -81,16 +83,23 @@ class CTOC(object):
             #   align to 16 byte boundary so xplatform C can read
             toclen = nmlen + entrylen
             if toclen % 16 == 0:
-                pad = '\0'
+                pad = b'\0'
             else:
                 padlen = 16 - (toclen % 16)
-                pad = '\0' * padlen
+                pad = b'\0' * padlen
                 nmlen = nmlen + padlen
-            rslt.append(struct.pack(self.ENTRYSTRUCT + repr(nmlen) + 's',
-                            nmlen + entrylen, dpos, dlen, ulen, flag, typcd, nm + pad))
             # end version 5
+            rslt.append(struct.pack(self.ENTRYSTRUCT + repr(nmlen).encode('ascii') + b's',
+                            nmlen + entrylen,
+                            dpos,
+                            dlen,
+                            ulen,
+                            flag,
+                            typcd.encode('ascii'),
+                            nm + pad))
 
-        return ''.join(rslt)
+        print(type(rslt))
+        return b''.join(rslt)
 
     def add(self, dpos, dlen, ulen, flag, typcd, nm):
         """
@@ -147,7 +156,7 @@ class CArchive(pyi_archive.Archive):
     """
     # MAGIC is usefull to verify that conversion of Python data types
     # to C structure and back works properly.
-    MAGIC = 'MEI\014\013\012\013\016'
+    MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
     TOCTMPLT = CTOC
     LEVEL = 9
@@ -177,7 +186,7 @@ class CArchive(pyi_archive.Archive):
         #       char pylibname[64];    /* Filename of Python dynamic library. */
         #   } COOKIE;
         #
-        self._cookie_format = '!8siiii64s'
+        self._cookie_format = b'!8siiii64s'
         self._cookie_size = struct.calcsize(self._cookie_format)
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
@@ -327,8 +336,8 @@ class CArchive(pyi_archive.Archive):
             elif typcd == 's':
                 # If it's a source code file, add \0 terminator as it will be
                 # executed as-is by the bootloader.
-                s = open(pathnm, 'rU').read()
-                s = s + '\n\0'
+                s = open(pathnm, 'rb').read()
+                s = s + b'\n\0'
             else:
                 s = open(pathnm, 'rb').read()
         except IOError:
@@ -369,7 +378,7 @@ class CArchive(pyi_archive.Archive):
         # Before saving cookie we need to convert it to corresponding
         # C representation.
         cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
-                tocpos, self.toclen, pyvers, str(self._pylib_name))
+                tocpos, self.toclen, pyvers, self._pylib_name.encode('ascii'))
         self.lib.write(cookie)
 
     def openEmbedded(self, name):
