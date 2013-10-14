@@ -98,7 +98,6 @@ class CTOC(object):
                             typcd.encode('ascii'),
                             nm + pad))
 
-        print(type(rslt))
         return b''.join(rslt)
 
     def add(self, dpos, dlen, ulen, flag, typcd, nm):

@@ -271,7 +271,7 @@ class BuildTestRunner(object):
         Important text. Print it to console only in verbose mode.
         """
         if self.verbose:
-        # This allows to redirect stdout to junit xml report.
+            # This allows to redirect stdout to junit xml report.
             sys.stdout.write('\n' + 10 * '#' + ' ' + text + ' ' + 10 * '#' + '\n\n')
             sys.stdout.flush()
 
@@ -332,12 +332,11 @@ class BuildTestRunner(object):
             # Prints stdout of subprocess continuously.
             self._msg('STDOUT %s' % self.test_name)
             while proc.poll() is None:
-                #line = proc.stdout.readline().strip()
                 line = proc.stdout.read(1)
-                self._plain_msg(line, newline=False)
+                self._plain_msg(line.decode('utf-8'), newline=False)
             # Print possible stderr at the end.
             self._msg('STDERR %s' % self.test_name)
-            self._plain_msg(proc.stderr.read())
+            self._plain_msg(proc.stderr.read().decode('utf-8'))
             compat.setenv("PATH", path)
             # Restore current working directory
             os.chdir(old_wd)
