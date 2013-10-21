@@ -1411,7 +1411,11 @@ class COLLECT(Target):
                                  upx=(self.upx_binaries and (is_win or is_cygwin)), 
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
-                shutil.copy2(fnm, tofnm)
+                shutil.copy(fnm, tofnm)
+                try:
+                    shutil.copystat(fnm, tofnm)
+                except OSError:
+                    logger.warn("failed to copy flags of %s", fnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0755)
         _save_data(self.out,
