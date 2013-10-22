@@ -17,6 +17,7 @@ Bootloader building script.
 import os
 import platform
 import sys
+import sysconfig
 
 import Utils
 import Options
@@ -229,7 +230,10 @@ def configure(conf):
         conf.check_cc(lib='ws2_32', mandatory=True)
 
     else:
-        conf.check_cc(lib='dl', mandatory=True)
+        if not sys.platform.startswith('freebsd'):  # FreeBSD doesn't need libdl
+            conf.check_cc(lib='dl', mandatory=True)
+        elif sysconfig.get_config_vars('HAVE_PTHREAD_H').pop(): # link to libthr on FreeBSD
+            conf.check_cc(lib='thr', mandatory=True)
         conf.check_cc(lib='z', mandatory=True)
         if conf.check_cc(function_name='readlink', header_name='unistd.h'):
             conf.env.append_value('CCFLAGS', '-DHAVE_READLINK')
@@ -466,9 +470,15 @@ def build(bld):
                 includes = ['common', 'windows', 'zlib'],
             )
 
-    else: # linux, darwin (MacOSX)
+    else: # linux, darwin (MacOSX), freebsd
 
         libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
+        if sys.platform.startswith('freebsd'):
+            libs = ['z', 'm']  # freebsd doesn't need libdl
+            # check if python has threads: libthr needs
+            # to be loaded in the main process
+            if sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
+                libs.append('thr')
         if opt.boehmgc:
             libs.append('gc')
 

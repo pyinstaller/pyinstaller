@@ -21,7 +21,7 @@ from glob import glob
 import zipfile
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26, is_py27
+from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26, is_py27, is_freebsd
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
@@ -591,7 +591,8 @@ def findLibrary(name):
     Emulate the algorithm used by dlopen.
     `name`must include the prefix, e.g. ``libpython2.4.so``
     """
-    assert is_unix, "Current implementation for Unix only (Linux, Solaris, AIX)"
+    assert is_unix, ("Current implementation for Unix only (Linux, Solaris, "
+                     "AIX, FreeBSD)")
 
     lib = None
 
@@ -614,7 +615,13 @@ def findLibrary(name):
     # Solaris does not have /sbin/ldconfig. Just check if this file exists.
     if lib is None and os.path.exists('/sbin/ldconfig'):
         expr = r'/[^\(\)\s]*%s\.[^\(\)\s]*' % re.escape(name)
-        m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-p'))
+        if is_freebsd:
+            # This has a slightly different format than on linux, but the
+            # regex still works.
+            m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-r'))
+        else:
+            m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-p'))
+
         if m:
             lib = m.group(0)
 
@@ -641,7 +648,8 @@ def findLibrary(name):
 
         if is_aix:
             paths.append('/opt/freeware/lib')
-
+        elif is_freebsd:
+            paths.append('/usr/local/lib')
         for path in paths:
             libs = glob(os.path.join(path, name + '*'))
             if libs:
@@ -653,8 +661,13 @@ def findLibrary(name):
         return None
 
     # Resolve the file name into the soname
-    dir = os.path.dirname(lib)
-    return os.path.join(dir, getSoname(lib))
+    if is_freebsd:
+        # On FreeBSD objdump doesn't show SONAME, so we just return the lib
+        # we've found
+        return lib
+    else:
+        dir = os.path.dirname(lib)
+        return os.path.join(dir, getSoname(lib))
 
 
 def getSoname(filename):
@@ -695,6 +708,8 @@ def get_python_library_path():
     elif is_aix:
         # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
         names = ('libpython%d.%d.a' % pyver,)
+    elif is_freebsd:
+        names = ('libpython%d.%d.so.1' % pyver,)
     elif is_unix:
         # Other *nix platforms.
         names = ('libpython%d.%d.so.1.0' % pyver,)

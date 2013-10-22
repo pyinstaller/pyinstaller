@@ -47,6 +47,12 @@ Requirements
   * ldd
   * objdump
 
+**FreeBSD**
+  * FreeBSD 9.2 or newer.
+    Tested with FreeBSD 9.2 amd64, with included gcc (version 4.2.1)
+  * ldd
+  * objdump
+
 License
 =======
 

@@ -12,7 +12,7 @@ __all__ = ('HOMEPATH', 'CONFIGDIR', 'PLATFORM',
            'VERSION', 'get_version',
            'is_py25', 'is_py26', 'is_py27',
            'is_win', 'is_cygwin', 'is_darwin', 'is_unix', 'is_linux',
-           'is_solar', 'is_aix')
+           'is_solar', 'is_aix', 'is_freebsd')
 
 import os
 import sys
@@ -48,6 +48,7 @@ is_darwin = compat.is_darwin
 is_linux = compat.is_linux
 is_solar = compat.is_solar
 is_aix = compat.is_aix
+is_freebsd = compat.is_freebsd
 
 is_unix = compat.is_unix
 
