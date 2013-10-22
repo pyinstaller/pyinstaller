@@ -8,13 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.hooks.hookutils import exec_statement
+from PyInstaller.hooks.hookutils import collect_data_files
 
 hiddenimports = ["babel.dates"]
-
-babel_localedata_dir = exec_statement(
-    "import babel.localedata; print babel.localedata._dirname")
-
-datas = [
-    (babel_localedata_dir, ""),
-]
+datas = collect_data_files('babel')
