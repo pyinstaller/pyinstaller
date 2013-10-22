@@ -57,7 +57,7 @@ class ImportTrackerModulegraph:
         self.modules = dict()
 
         if hookspath:
-            hooks.__path__.extend(hookspath)
+            hooks.__path__ = hookspath + hooks.__path__
         if excludes is None:
             self.excludes = set()
         else:
@@ -133,7 +133,7 @@ class ImportTracker:
             ]
 
         if hookspath:
-            hooks.__path__.extend(hookspath)
+            hooks.__path__ = hookspath + hooks.__path__
         if excludes is None:
             self.excludes = set()
         else:
