@@ -43,6 +43,14 @@ is_aix = sys.platform.startswith('aix')
 is_unix = is_linux or is_solar or is_aix
 
 
+# In Python 3 built-in function raw_input() was renamed to just 'input()'.
+try:
+    stdin_input = raw_input
+except NameError:
+    stdin_input = input
+
+
+
 # UserList class is moved to 'collections.UserList in Python 3.
 if is_py2:
     from UserList import UserList

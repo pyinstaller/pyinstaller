@@ -45,7 +45,8 @@ logger = logging.getLogger(__name__)
 
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
-UNCOMPRESSED, COMPRESSED = list(range(2))
+UNCOMPRESSED = 0
+COMPRESSED = 1
 
 
 # Set of global variables that can be used while processing .spec file.
@@ -192,7 +193,7 @@ def _rmtree(path):
     if NOCONFIRM:
         choice = 'y'
     elif sys.stdout.isatty():
-        choice = input('WARNING: The output directory "%s" and ALL ITS '
+        choice = compat.stdin_input('WARNING: The output directory "%s" and ALL ITS '
                            'CONTENTS will be REMOVED! Continue? (y/n)' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
@@ -214,7 +215,7 @@ def check_egg(pth):
     components = pth.split(os.path.sep)
     sep = os.path.sep
 
-    for i, name in zip(list(range(0, len(components))), components):
+    for i, name in zip(range(0, len(components)), components):
         if name.lower().endswith(".egg"):
             eggpth = sep.join(components[:i + 1])
             if os.path.isfile(eggpth):
@@ -926,9 +927,6 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     return cachedfile
 
 
-UNCOMPRESSED, COMPRESSED = list(range(2))
-
-
 class PKG(Target):
     """
     Creates a CArchive. CArchive is the data structure that is embedded
@@ -1502,7 +1500,7 @@ class BUNDLE(Target):
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>"""
-        for k, v in list(info_plist_dict.items()):
+        for k, v in info_plist_dict.items():
             info_plist += "<key>%s</key>\n<string>%s</string>\n" % (k, v)
         info_plist += """</dict>
 </plist>"""
@@ -1889,7 +1887,7 @@ class MERGE(object):
         """
         for toc in (analysis.binaries, analysis.datas):
             for i, tpl in enumerate(toc):
-                if not tpl[1] in list(self._dependencies.keys()):
+                if not tpl[1] in self._dependencies:
                     logger.debug("Adding dependency %s located in %s" % (tpl[1], path))
                     self._dependencies[tpl[1]] = path
                 else:
