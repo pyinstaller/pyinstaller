@@ -195,6 +195,15 @@ def qt4_menu_nib_dir():
     
     # list of directories where to look for qt_menu.nib    
     dirs = []
+
+    # Look into user-specified directory, just in case Qt4 is not installed
+    # in a standard location
+    if 'QTDIR' in os.environ:
+        dirs += [
+            os.path.join(os.environ['QTDIR'], "QtGui.framework/Versions/4/Resources"),
+            os.path.join(os.environ['QTDIR'], "lib", "QtGui.framework/Versions/4/Resources"),
+        ]
+
     # If PyQt4 is built against Qt5 look for the qt_menu.nib in a user
     # specified location, if it exists.
     if 'QT5DIR' in os.environ:
