@@ -30,6 +30,6 @@ void *pyi_path_normalize(char *result, const char *path);
 int pyi_path_executable(char *execfile, const char *appname);
 void pyi_path_homepath(char *homepath, const char *executable);
 void pyi_path_archivefile(char *archivefile, const char *executable);
-
+int pyi_path_executable_locale(char *execfile);
 
 #endif /* PYI_PATH_H */

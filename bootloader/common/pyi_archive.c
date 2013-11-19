@@ -331,7 +331,18 @@ int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char co
 
 	return 0;
 }
+int pyi_arch_set_paths_locale(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
+{
+	/* Get the archive Path */
+	strcpy(status->archivename_lc, archivePath);
+	strcat(status->archivename_lc, archiveName);
 
+	/* Set homepath to where the archive is */
+	strcpy(status->homepath_lc, archivePath);
+
+
+	return 0;
+}
 
 /* Setup the archive with python modules. (this always needs to be done) */
 int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName)
@@ -339,7 +350,7 @@ int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char  const
 	/* Set up paths */
 	if (pyi_arch_set_paths(status, archivePath, archiveName))
 		return -1;
-
+    
 	/* Open the archive */
 	if (pyi_arch_open(status))
 		return -1;

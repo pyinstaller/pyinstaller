@@ -224,6 +224,8 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
     }
 
 	strcpy(tmp, status->homepath);
+	sprintf(cmd, "sys.path.append(r\"%s\")", tmp);    
+	strcpy(tmp, status->homepath_lc);
 	sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
 	PI_PyRun_SimpleString (cmd);
 
@@ -310,13 +312,14 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 /* Install a zlib from a toc entry
  * Return non zero on failure
  */
+
 int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	int rc;
 	int zlibpos = status->pkgstart + ntohl(ptoc->pos);
 	char *tmpl = "sys.path.append(r\"%s?%d\")\n";
 	char *cmd = (char *) malloc(strlen(tmpl) + strlen(status->archivename) + 32);
-	sprintf(cmd, tmpl, status->archivename, zlibpos);
+	sprintf(cmd, tmpl, status->archivename, zlibpos);    
 	/*VS(cmd);*/
 	rc = PI_PyRun_SimpleString(cmd);
 	if (rc != 0)
@@ -327,6 +330,22 @@ int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 	}
 
 	free(cmd);
+    
+    
+
+
+	*cmd = (char *) malloc(strlen(tmpl) + strlen(status->archivename_lc) + 32);
+	sprintf(cmd, tmpl, status->archivename_lc, zlibpos);    
+	/*VS(cmd);*/
+	rc = PI_PyRun_SimpleString(cmd);
+	if (rc != 0)
+	{
+		FATALERROR("Error in command: %s\n", cmd);
+		free(cmd);
+		return -1;
+	}
+
+	free(cmd);    
 	return 0;
 }
 
