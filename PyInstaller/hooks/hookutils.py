@@ -682,7 +682,7 @@ def collect_submodules(package):
 PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
 
 
-def collect_data_files(package):
+def collect_data_files(package, allow_py_extensions = False):
     """
     This routine produces a list of (source, dest) non-Python (i.e. data)
     files which reside in package. Its results can be directly assigned to
@@ -700,7 +700,7 @@ def collect_data_files(package):
     for dirpath, dirnames, files in os.walk(pkg_dir):
         for f in files:
             extension = os.path.splitext(f)[1]
-            if not extension in PY_IGNORE_EXTENSIONS:
+            if allow_py_extensions or (not extension in PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/file.dat)
