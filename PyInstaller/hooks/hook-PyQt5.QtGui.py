@@ -20,4 +20,5 @@ def hook(mod):
     mod.binaries.extend(qt5_plugins_binaries('inputmethods'))
     mod.binaries.extend(qt5_plugins_binaries('graphicssystems'))
     mod.binaries.extend(qt5_plugins_binaries('platforms'))
+    mod.binaries.extend(qt5_plugins_binaries('printsupport')) 
     return mod
