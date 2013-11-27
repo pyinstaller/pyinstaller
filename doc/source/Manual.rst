@@ -1071,38 +1071,42 @@ Each tuple in this TOC has:
 Adding Files to the Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To add files to the bundle, you insert them into the argument list of the
-``COLLECT`` object for a one-folder bundle,
+To add files to the bundle, you insert descriptions of the files
+into the argument list of the ``COLLECT`` object for a one-folder bundle,
 or to the argument list of the ``EXE`` object for a one-file bundle.
 You can add files as single TOC-style tuples,
 or you can add an entire Tree object by name.
 
-To add a README file at the top level of a one-folder bundle::
+To add a single README file at the top level of a one-folder bundle,
+add a single TOC item describing it to the argument list of COLLECT or EXE::
 
       collect = COLLECT(a.binaries +
                 [('README', '/my/project/readme', 'DATA')], ...)
 
-This adds one tuple to the ``a.binaries`` TOC. 
-However, the COLLECT class takes a variable-length list of arguments,
+This appends the README tuple to the ``a.binaries`` TOC.
+(You can use a list of one or more tuples in place of a TOC object in most cases).
+
+The COLLECT and EXE classes take a variable-length list of arguments,
 so it is possible to just append a list of one tuple to the argument list::
 
-      collect = COLLECT(a.binaries,
-                [('README', '/my/project/readme', 'DATA')], ...)
+      exe = EXE(a.scripts, a.binaries, ...
+                [('README', '/my/project/readme', 'DATA')])
 
-(You can use a list of tuples in place of a TOC object in most cases).
-
-To add a folder of files, prepare a Tree and name it to the COLLECT::
+To add a folder of files, prepare a Tree for that folder::
 
     # Include all spellcheck dictionary files, as a folder named dict
     dict_tree = Tree('../../aspell/dict', prefix = 'dict')
-    # add README to that TOC for convenience
-    dict_tree += [('README', '/my/project/readme', 'DATA')]
-    dist = COLLECT(exe, a.binaries, dict_tree)
 
-In this example, you have inserted the first four lines into a
-generated spec file.
-The fifth line is from the generated spec file but with the ``dict_tree`` 
-argument added.
+You could for convenience add single files to that Tree::
+
+    # add README to the Tree TOC for convenience
+    dict_tree += [('README', '/my/project/readme', 'DATA')]
+
+Then simply mention the Tree at any point in the argument list for COLLECT or EXE::
+
+    collect = COLLECT(dict_tree, a.binaries,...)
+
+The topic `Accessing Data Files`_ describes how to find these files at run-time.
 
 Giving Run-time Python Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1536,14 +1540,32 @@ in a bundled app:
 Adapting to being "frozen"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In some apps it is necessary to learn at run-time
+You might want to learn at run-time
 whether the app is running "live" (from source) or "frozen" (part of a bundle).
-For example, you might have a
-configuration file that, when running "live", is found based on a module's
+For example, you might have
+data files that, when running "live", are found based on a module's
 ``__file__`` attribute.
 That won't work when the code is bundled.
 
-When your application needs access to a data file,
+The |PyInstaller| |bootloader| adds the name ``frozen`` to the ``sys`` module.
+So the test for "are we bundled?" is::
+
+	if getattr(sys, 'frozen', False):
+		# running in a bundle
+
+Accessing Data Files
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You can include related files in either type of distribution.
+Data files and folders of files can be included
+by editing the spec file; see `Adding Files to the Bundle`_.
+
+The |bootloader| stores the absolute path to the bundle folder in ``sys._MEIPASS``.
+For a one-folder bundle, this is the path to that folder.
+For a one-file bundle, this is the path to the ``_MEIxxxxxx`` temporary folder
+created by the |bootloader| (see `How the One-File Program Works`_).
+
+When your application needs access to a data file that is bundled with it,
 for example a configuration file or an icon image file,
 you get the path to the file with the following code::
 
@@ -1557,35 +1579,21 @@ you get the path to the file with the following code::
         # we are running in a normal Python environment
         basedir = os.path.dirname(__file__)
 
-The |PyInstaller| |bootloader| adds the attribute ``frozen`` to the ``sys`` module.
-If that attribute exists, your script has been launched by the |bootloader|.
-When that is true, ``sys._MEIPASS`` (note the underscore in the name)
-contains the path to the folder containing
+This code sets ``basedir`` to the path to the folder containing
 your script and any other files or folders bundled with it.
-For one-folder mode this is the distribution folder.
-For one-file mode it is the temporary folder created by the |bootloader| .
-
 When your program was not started by the |bootloader|, the standard Python
 variable ``__file__`` is the full path to the script now executing,
 and ``os.path.dirname()`` extracts the path to the folder that contains it.
-
-
-Accessing Data Files
-~~~~~~~~~~~~~~~~~~~~~~~
-
-You can include related files in either type of distribution.
-Data files and folders of files can be included
-by editing the spec file; see `Adding Files to the Bundle`_.
+When bundled, ``sys._MEIPASS`` provides the path to bundle folder.
 
 In the one-folder distribution,
-bundled files are in the distribution folder.
-You can direct your users to these files, for example
-to see the ``README`` or edit a configuration file.
+bundled data files are in the distribution folder.
 Your code can make useful changes to files in the folder.
 
-In the one-file mode, the ``basedir`` path discovered by the code above
-is the path to a temporary folder that will be deleted.
-Your users cannot easily access any included files.
+In the one-file mode, bundled data files are packaged into the executable.
+The |bootloader| unpacks them into a temporary folder.
+The ``basedir`` path discovered by the code above
+is the path to this temporary folder.
 Any files your code creates or modifies in that folder
 are available only while the app is running.
 When it ends they will be deleted.
@@ -1595,11 +1603,10 @@ refer to ``sys.executable``.
 In an un-bundled app, that is, when running your script
 from the command line or a debugger, ``sys.executable``
 is the path to the Python interpreter.
-In a bundled app, it is the path to the bundled executable.
-The expression
-
-	``os.path.dirname(sys.executable)``
-
+In a bundled app, it is the path to the bundled executable,
+which contains the active interpreter.
+In a "frozen" app only, the expression
+``os.path.dirname(sys.executable)``
 gives the path of the folder containing the executable file
 that was launched to start the app.
 
