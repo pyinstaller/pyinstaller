@@ -283,11 +283,20 @@ you must help it:
 * You can give additional import paths on the command line.
 * You can edit the ``myscript.spec`` file
   that |PyInstaller| writes the first time you run it for your script.
-  In the spec file you can tell |Pyinstaller| about code and data
-  files that are unique to your script.
+  In the spec file you can tell |Pyinstaller| about code modules
+  that are unique to your script.
 * You can write "hook" files that inform |Pyinstaller| of hidden imports.
   If you "hook" imports for a package that other users might also use,
   you can contribute your hook file to |PyInstaller|.
+
+If your program depends on access to certain data files,
+you can tell |PyInstaller| to include them in the bundle as well.
+You do this by modifying the spec file, an advanced topic that is
+covered under `Using Spec Files`_.
+In order to locate these files, your program needs to be able to 
+learn its path at run time in a way that works regardless of 
+whether or not it is running from a bundle.
+This is covered under `Accessing Data Files`_.
 
 Bundling to One Folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -981,8 +990,8 @@ In fact, it acts as an ordered set of tuples; that is, it contains no duplicates
 (where uniqueness is based on the *name* element of each tuple).
 Within this constraint, a TOC preserves the order of tuples added to it.
 
-Besides the normal list methods (appending, indexing, etc),
-a TOC supports taking differences and intersections.
+A TOC behaves like a list object and supports the same methods (appending, indexing, etc).
+A TOC also supports taking differences and intersections like a set.
 For these operations a simple list of tuples can be used as one argument.
 This makes excluding modules quite easy.
 For example,
@@ -1429,7 +1438,7 @@ The bootloader prepares everything for running Python code.
 It begins the setup and then reruns itself in another process.
 This approach of using two processes allows a lot of flexibility
 and is used in all bundles except one-folder mode in Windows.
-So do not be surprised if you will see your frozen app
+So do not be surprised if you will see your bundled app
 as  two processes in your system task manager.
      
 What happens during execution of bootloader:
@@ -1489,7 +1498,7 @@ Running Python code consists of several steps:
 
 4. Run the main script.
 
-Python imports in a frozen app
+Python imports in a bundled app
 -------------------------------------
 
 |PyInstaller| embeds compiled python code
@@ -1501,7 +1510,7 @@ the support is described in `PEP 302`_  "New Import Hooks".
  
 PyInstaller implements the PEP 302 specification for
 importing built-in modules,
-importing frozen modules (compiled python code
+importing "frozen" modules (compiled python code
 bundled with the app) and for C-extensions.
 The code can be read in ``./PyInstaller/loader/pyi_importers.py``.
  
@@ -1541,9 +1550,9 @@ Adapting to being "frozen"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You might want to learn at run-time
-whether the app is running "live" (from source) or "frozen" (part of a bundle).
+whether the app is running "live" (from source) or "frozen" (bundled).
 For example, you might have
-data files that, when running "live", are found based on a module's
+data files that, when running live, are found based on a module's
 ``__file__`` attribute.
 That won't work when the code is bundled.
 
@@ -1598,17 +1607,6 @@ Any files your code creates or modifies in that folder
 are available only while the app is running.
 When it ends they will be deleted.
 
-Another way to access data files in one-file mode is to 
-refer to ``sys.executable``. 
-In an un-bundled app, that is, when running your script
-from the command line or a debugger, ``sys.executable``
-is the path to the Python interpreter.
-In a bundled app, it is the path to the bundled executable,
-which contains the active interpreter.
-In a "frozen" app only, the expression
-``os.path.dirname(sys.executable)``
-gives the path of the folder containing the executable file
-that was launched to start the app.
 
 Capturing Version Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
