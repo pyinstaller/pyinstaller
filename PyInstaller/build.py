@@ -1599,8 +1599,8 @@ class TOC(UserList.UserList):
     def append(self, tpl):
         try:
             fn = tpl[0]
-            if tpl[2] == "BINARY":
-                # Normalize the case for binary files only (to avoid duplicates
+            if tpl[2] in ["BINARY", "DATA"]:
+                # Normalize the case for binary and data files only (to avoid duplicates
                 # for different cases under Windows). We can't do that for
                 # Python files because the import semantic (even at runtime)
                 # depends on the case.
