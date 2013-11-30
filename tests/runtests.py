@@ -125,6 +125,7 @@ class SkipChecker(object):
             'libraries/test_gst': ['gst'],
             'libraries/test_Image': ['Image'], # PIL allows to use its submodules as top-level modules
             'libraries/test_Image2': ['Image'], # PIL allows to use its submodules as top-level modules
+            'libraries/test_markdown': ['markdown'],
             'libraries/test_numpy': ['numpy'],
             'libraries/test_onefile_matplotlib': ['matplotlib'],
             'libraries/test_onefile_tkinter': ['Tkinter'],
