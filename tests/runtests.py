@@ -136,6 +136,7 @@ class SkipChecker(object):
             'libraries/test_pyttsx': ['pyttsx'],
             'libraries/test_pytz': ['pytz'],
             'libraries/test_PyQt4-QtWebKit': ['PyQt4'],
+            'libraries/test_PyQt4-uic': ['PyQt4'],
             'libraries/test_sysconfig': ['sysconfig'],
             'libraries/test_scipy': ['numpy', 'scipy'],
             'libraries/test_sqlite3': ['sqlite3'],
