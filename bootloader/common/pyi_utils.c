@@ -486,10 +486,6 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
 	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	int rc = 0;
-    stb__wchar buffer[PATH_MAX];
-
-    /* Convert file name to wchar_t from utf8. */
-    stb_from_utf8(buffer, thisfile, PATH_MAX);
 
 	// the parent process should ignore all signals it can
 	signal(SIGABRT, SIG_IGN);
@@ -512,9 +508,9 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
 	si.hStdError = (void*)_get_osfhandle(fileno(stderr));
 
 	VS("LOADER: Creating child process\n");
-	if (CreateProcessW( 
-			buffer,  // Pointer to name of executable module.
-			GetCommandLineW(),  // pointer to command line string 
+	if (CreateProcessA( 
+			thisfile,  // Pointer to name of executable module.
+			GetCommandLineA(),  // pointer to command line string 
 			&sa,  // pointer to process security attributes 
 			NULL,  // pointer to thread security attributes 
 			TRUE,  // handle inheritance flag 
