@@ -682,12 +682,18 @@ def collect_submodules(package):
 PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
 
 
-def collect_data_files(package):
+def collect_data_files(package, allow_py_extensions=False):
     """
     This routine produces a list of (source, dest) non-Python (i.e. data)
     files which reside in package. Its results can be directly assigned to
     ``datas`` in a hook script; see, for example, hook-sphinx.py. The
     package parameter must be a string which names the package.
+    By default, all Python executable files (those ending in .py, .pyc,
+    and so on) will NOT be collected; setting the allow_py_extensions
+    argument to True collects these files as well. This is typically used
+    with Python routines (such as those in pkgutil) that search a given
+    directory for Python executable files then load them as extensions or
+    plugins.
 
     This function does not work on zipped Python eggs.
 
@@ -700,7 +706,7 @@ def collect_data_files(package):
     for dirpath, dirnames, files in os.walk(pkg_dir):
         for f in files:
             extension = os.path.splitext(f)[1]
-            if not extension in PY_IGNORE_EXTENSIONS:
+            if allow_py_extensions or (not extension in PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/file.dat)
