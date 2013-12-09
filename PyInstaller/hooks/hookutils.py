@@ -179,10 +179,25 @@ def qt4_plugins_binaries(plugin_type):
     binaries = []
     pdir = qt4_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
+    
+    # Windows:
+    #
+    # dlls_in_dir() grabs all files ending with *.dll, *.so and *.dylib in a certain
+    # directory. On Windows this would grab debug copies of Qt 4 plugins, which then
+    # causes PyInstaller to add a dependency on the Debug CRT __in addition__ to the
+    # release CRT.
+    #
+    # Since debug copies of Qt4 plugins end with "d4.dll" we filter them out of the
+    # list.
+    #
+    if is_win:
+        files = [f for f in files if not f.endswith("d4.dll")]
+    
     for f in files:
         binaries.append((
             os.path.join('qt4_plugins', plugin_type, os.path.basename(f)),
             f, 'BINARY'))
+            
     return binaries
 
 
