@@ -508,9 +508,15 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
 	si.hStdError = (void*)_get_osfhandle(fileno(stderr));
 
 	VS("LOADER: Creating child process\n");
-	if (CreateProcessA( 
+	// the routines we get `thisfile` are:
+	//   `pyi_utils_create_child(executable, argc, argv)`
+	//   `pyi_path_executable(executable, argv[0])`
+	//   `GetModuleFileNameA(NULL, buffer, PATH_MAX)`
+	// This is from one Windows' function to another. So we don't need to do the
+	// conversion here. It should just work.
+	if (CreateProcessA(
 			thisfile,  // Pointer to name of executable module.
-			GetCommandLineA(),  // pointer to command line string 
+			GetCommandLineA(),  // pointer to command line string
 			&sa,  // pointer to process security attributes 
 			NULL,  // pointer to thread security attributes 
 			TRUE,  // handle inheritance flag 

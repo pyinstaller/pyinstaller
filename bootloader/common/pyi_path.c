@@ -131,6 +131,12 @@ int pyi_path_executable(char *execfile, const char *appname)
 
 #ifdef WIN32
     /* Windows has special function to obtain path to executable. */
+    /* Use ANSI API to keep away from the encoding conversion for non-ASCII
+     * characters, or it will generate the wrong result to prevent the
+     * executable, generated in onefile mode, launching successfully in paths
+     * containing non-ASCII characters.
+     * We must alow ensure that we use the same encoding for `CreateProcess` in
+     * `pyi_utils_create_child`. */
 	if (!GetModuleFileNameA(NULL, buffer, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
 		return -1;
