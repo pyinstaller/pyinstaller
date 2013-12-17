@@ -130,49 +130,17 @@ int pyi_path_executable(char *execfile, const char *appname)
     char buffer[PATH_MAX];
 
 #ifdef WIN32
-    char dos83_buffer[PATH_MAX];
-    stb__wchar wchar_buffer[PATH_MAX];
-    stb__wchar wchar_dos83_buffer[PATH_MAX];
-    char basename[PATH_MAX];
-    char dirname[PATH_MAX];
-
     /* Windows has special function to obtain path to executable. */
-	if (!GetModuleFileNameW(NULL, wchar_buffer, PATH_MAX)) {
+    /* Use ANSI API to keep away from the encoding conversion for non-ASCII
+     * characters, or it will generate the wrong result to prevent the
+     * executable, generated in onefile mode, launching successfully in paths
+     * containing non-ASCII characters.
+     * We must alow ensure that we use the same encoding for `CreateProcess` in
+     * `pyi_utils_create_child`. */
+	if (!GetModuleFileNameA(NULL, buffer, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
 		return -1;
 	}
-    /* Convert wchar_t to utf8. Just use type char as usual. */
-    stb_to_utf8(buffer, wchar_buffer, PATH_MAX);
-
-    /*
-     * Use 8.3 filename (dos 8.3 or short filename)
-     * to overcome the Python and PyInstaller limitation
-     * to run with foreign characters in directory names.
-     *
-     * If 8.3 filename does not exist, original vaule is just copied
-     * to the supplied buffer. 8.3 filename might not be available
-     * for some networking file systems.
-     *
-     * This is workaround for <http://www.pyinstaller.org/ticket/298>.
-     */
-    GetShortPathNameW(wchar_buffer, wchar_dos83_buffer, PATH_MAX);
-    /* Convert wchar_t to utf8 just use char as usual. */
-    stb_to_utf8(dos83_buffer, wchar_dos83_buffer, PATH_MAX);
-
-    /*
-     * Construct proper execfile -  83_DIRNAME + full_basename.
-     * GetShortPathName() makes also the basename (appname.exe) shorter.
-     *
-     * However, bootloader code depends on unmodified basename.
-     * Using basename from original path should fix this.
-     * It is supposed that basename does not contain any foreign characters.
-     *
-     * Reuse 'buffer' variable.
-     */
-    pyi_path_basename(basename, buffer);
-    pyi_path_dirname(dirname, dos83_buffer);
-    pyi_path_join(buffer, dirname, basename);
-
 #elif __APPLE__
     uint32_t length = sizeof(buffer);
 

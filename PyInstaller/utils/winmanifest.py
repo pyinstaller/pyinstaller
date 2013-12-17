@@ -676,7 +676,7 @@ class Manifest(object):
                         # Enable search for private assembly by assigning bogus 
                         # filename (only the directory has to be correct)
                         self.dependentAssemblies[-1].filename = ":".join(
-                            (self.filename, manifest.name))
+                            (self.filename, manifest.name.encode(sys.getdefaultencoding())))
             for bindingRedirect in rootElement.getCEByTN("bindingRedirect"):
                 oldVersion = [[int(i) for i in part.split(".")] 
                               for part in 
