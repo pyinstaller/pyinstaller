@@ -700,8 +700,9 @@ For now you can apply your own icon after the app is built in several ways:
   in the Finder, Get Info on your app;
   click the icon in the info display and paste.
 
-GraphicConverter_ is one of several applications
-that can save a JPEG or PNG image in the ``.icns`` format.
+GraphicConverter_ ($$) and makeicns_ (MIT License) are two of several
+applications that can convert a JPEG or PNG image to the ``.icns``
+format.
 
 Setting the Supported Document Types
 --------------------------------------
@@ -2606,6 +2607,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _imputil: http://docs.python.org/2.7/library/imputil.html
 .. _Modulefinder: http://docs.python.org/2.7/library/modulefinder.html
 .. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
+.. _makeicns: https://bitbucket.org/mkae/makeicns
 .. _Django: https://www.djangoproject.com/
 .. _marshalled: http://docs.python.org/library/marshal
 .. _`Visual Studio Express`: http://www.microsoft.com/express/
