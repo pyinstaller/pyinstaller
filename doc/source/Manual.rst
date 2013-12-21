@@ -626,10 +626,12 @@ Options for Windows apps
     or from a string of XML.
 
 -i <FILE.ico>, -i <FILE.exe,ID>, --icon=<FILE.ico>, --icon=<FILE.exe,ID>
-	Add an icon to the output executable.
-	Specify an icon *FILE*.ico to use that icon.
-	Specify an existing ``.exe`` file giving
-	the *ID* to extract the icon with that ID.
+    Add an icon to the output executable. Specify an icon *FILE*.ico
+    to use that icon. Specify an existing ``.exe`` file giving the
+    *ID* to extract the icon with that ID. ImageMagick_ and the
+    ``ppmtowinicon`` program from the `netpbm package`_ are two
+    programs capable of creating Windows ``.ico`` files from other
+    formats.
 
 -r <FILE[,TYPE[,NAME[,LANGUAGE]]]>, --resource=<FILE[,TYPE[,NAME[,LANGUAGE]]]>
     Add or update a resource of the given type, name and
@@ -700,8 +702,11 @@ For now you can apply your own icon after the app is built in several ways:
   in the Finder, Get Info on your app;
   click the icon in the info display and paste.
 
-GraphicConverter_ is one of several applications
-that can save a JPEG or PNG image in the ``.icns`` format.
+The following programs are capable of creating ``.icns`` files from JPEG or PNG images:
+
+* GraphicConverter_ ($$)
+* makeicns_ (MIT License)
+* png2icns_ (GPL)
 
 Setting the Supported Document Types
 --------------------------------------
@@ -2605,7 +2610,11 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. |SE_exeImage| image:: images/SE_exe.png
 .. _imputil: http://docs.python.org/2.7/library/imputil.html
 .. _Modulefinder: http://docs.python.org/2.7/library/modulefinder.html
+.. _ImageMagick: http://www.imagemagick.org/script/index.php
+.. _netpbm package: http://netpbm.sourceforge.net/
 .. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
+.. _makeicns: https://bitbucket.org/mkae/makeicns
+.. _png2icns: http://icns.sourceforge.net/
 .. _Django: https://www.djangoproject.com/
 .. _marshalled: http://docs.python.org/library/marshal
 .. _`Visual Studio Express`: http://www.microsoft.com/express/
