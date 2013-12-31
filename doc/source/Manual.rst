@@ -1152,6 +1152,18 @@ For example::
 
 In this example, you have inserted a list of two tuples into the EXE call.
 
+Spec File Options For Mac OS X Apps
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to create ``.app`` file, create an instance of ``BUNDLE``. You can specify the version number and icon file, add or overwrite default settings in Info.plist. For example, when you use PyQt5, set NSHighResolutionCapable to True to let your app also work in retina screen::
+
+    exe = EXE(pyz, a.scripts, exclude_binaries=True, name='example',
+              debug=False, strip=None, upx=True, console=False )
+    bundle = BUNDLE(exe, a.binaries, a.zipfiles, a.datas,
+                   info_plist={
+                     'NSHighResolutionCapable': 'True'
+                   },
+                   version='0.0.1', icon='example.icns', name='example.app')
 
 When Things Go Wrong
 ====================
