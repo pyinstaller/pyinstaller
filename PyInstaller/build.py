@@ -1452,6 +1452,8 @@ class BUNDLE(Target):
         self.strip = False
         self.upx = False
 
+        self.info_plist = kws.get('info_plist', None)
+
         for arg in args:
             if isinstance(arg, EXE):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
@@ -1525,6 +1527,11 @@ class BUNDLE(Target):
                            "LSBackgroundOnly": "1",
 
                            }
+
+        # Merge info_plist settings from spec file
+        if isinstance(self.info_plist, dict) and self.info_plist:
+            info_plist_dict = dict(info_plist_dict.items() + self.info_plist.items())
+
         info_plist = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
