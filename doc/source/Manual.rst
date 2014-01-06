@@ -1603,7 +1603,7 @@ you get the path to the file with the following code::
         basedir = sys._MEIPASS
     else:
         # we are running in a normal Python environment
-        basedir = os.path.dirname(__file__)
+        basedir = os.path.dirname(os.path.abspath(__file__))
 
 This code sets ``basedir`` to the path to the folder containing
 your script and any other files or folders bundled with it.
