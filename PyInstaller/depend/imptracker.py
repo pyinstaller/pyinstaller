@@ -161,7 +161,7 @@ class ImportTracker:
                 mod = self.modules[nm]
                 if mod:
                     mod.xref(importer)
-                    for name, isdelayed, isconditional, level in mod.imports:
+                    for name, isdelayed, isconditional, level in mod.pyinstaller_imports:
                         imptyp = isdelayed * 2 + isconditional
                         newnms = self.analyze_one(name, nm, imptyp, level)
                         newnms = map(None, newnms, [nm] * len(newnms))
@@ -237,7 +237,7 @@ class ImportTracker:
                 break
         # now nms is the list of modules that went into sys.modules
         # just as result of the structure of the name being imported
-        # however, each mod has been scanned and that list is in mod.imports
+        # however, each mod has been scanned and that list is in mod.pyinstaller_imports
         if i < len(nmparts):
             if ctx:
                 if hasattr(self.modules[ctx], nmparts[i]):
@@ -348,7 +348,7 @@ class ImportTracker:
             mod = hook.hook(mod)
         if hasattr(hook, 'hiddenimports'):
             for impnm in hook.hiddenimports:
-                mod.imports.append((impnm, 0, 0, -1))
+                mod.pyinstaller_imports.append((impnm, 0, 0, -1))
         if hasattr(hook, 'attrs'):
             for attr, val in hook.attrs:
                 setattr(mod, attr, val)

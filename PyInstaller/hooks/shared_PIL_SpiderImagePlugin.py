@@ -18,11 +18,11 @@ directly.
 
 
 def hook(mod):
-    for i, m in enumerate(mod.imports):
+    for i, m in enumerate(mod.pyinstaller_imports):
         # Ignore these two modules to not include whole Tk or Qt stack.
         # If these modules should be included then they will definitely
         # be dependency as any other module.
         if m[0] ==  'ImageTk':
-            del mod.imports[i]
+            del mod.pyinstaller_imports[i]
             break
     return mod
