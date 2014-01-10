@@ -38,7 +38,7 @@ def hook(mod):
             # zmq/__init__.py will look in os.join(sys._MEIPASS, 'zmq'),
             # so libzmq has to land there.
             name = os.path.join('zmq', os.path.basename(bundled[0]))
-            mod.binaries.append((name, bundled[0], 'BINARY'))
+            mod.pyinstaller_binaries.append((name, bundled[0], 'BINARY'))
             break
 
     return mod

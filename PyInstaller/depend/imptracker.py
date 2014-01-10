@@ -258,7 +258,7 @@ class ImportTracker:
                     if mod:
                         nms.append(mod.__name__)
                     else:
-                        bottommod.warnings.append("W: name %s not found" % nm)
+                        bottommod.pyinstaller_warnings.append("W: name %s not found" % nm)
         return nms
 
     def analyze_script(self, fnm):
@@ -362,7 +362,7 @@ class ImportTracker:
                     if os.path.isfile(fn):
                         datas.append((dest_dir + fn[len(base) + 1:], fn, 'DATA'))
 
-            datas = mod.datas  # shortcut
+            datas = mod.pyinstaller_datas  # shortcut
             for g, dest_dir in hook.datas:
                 if dest_dir:
                     dest_dir += os.sep
@@ -378,7 +378,7 @@ class ImportTracker:
         warnings = self.warnings.keys()
         for nm, mod in self.modules.items():
             if mod:
-                for w in mod.warnings:
+                for w in mod.pyinstaller_warnings:
                     warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
         return warnings
 

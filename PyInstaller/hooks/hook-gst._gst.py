@@ -42,7 +42,7 @@ print os.path.dirname(pth)
 
     for f in glob.glob(pattern):
         # 'f' contains absolute path.
-        mod.binaries.append((os.path.join('gst_plugins', os.path.basename(f)),
+        mod.pyinstaller_binaries.append((os.path.join('gst_plugins', os.path.basename(f)),
                 f, 'BINARY'))
 
     return mod

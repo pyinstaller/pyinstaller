@@ -14,5 +14,5 @@ from PyInstaller.hooks.hookutils import qt5_plugins_binaries
 
 
 def hook(mod):
-    mod.binaries.extend(qt5_plugins_binaries('sqldrivers'))
+    mod.pyinstaller_binaries.extend(qt5_plugins_binaries('sqldrivers'))
     return mod

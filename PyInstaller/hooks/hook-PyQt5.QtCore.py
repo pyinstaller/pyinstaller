@@ -14,5 +14,5 @@ from PyInstaller.hooks.hookutils import qt5_plugins_binaries
 
 
 def hook(mod):
-    mod.binaries.extend(qt5_plugins_binaries('codecs'))
+    mod.pyinstaller_binaries.extend(qt5_plugins_binaries('codecs'))
     return mod

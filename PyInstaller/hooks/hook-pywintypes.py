@@ -21,5 +21,5 @@ from PyInstaller.hooks.hookutils import get_module_file_attribute
 def hook(mod):
     pth = get_module_file_attribute('pythoncom')
     name = os.path.basename(pth)
-    mod.binaries.extend([(name, pth, 'BINARY')])
+    mod.pyinstaller_binaries.extend([(name, pth, 'BINARY')])
     return mod
