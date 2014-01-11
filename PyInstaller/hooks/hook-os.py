@@ -18,8 +18,8 @@ def hook(mod):
         removes = ['dos', 'dospath', 'os2', 'mac', 'macpath', 'ce', 'riscos',
                    'riscospath', 'riscosenviron',]
 
-    mod.imports = [m
-                   for m in mod.imports
+    mod.pyinstaller_imports = [m
+                   for m in mod.pyinstaller_imports
                    # if first part of module-name not in removes
                    if m[0].split('.', 1)[0] not in removes
     ]

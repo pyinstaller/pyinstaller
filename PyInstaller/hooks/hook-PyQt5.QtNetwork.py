@@ -15,5 +15,5 @@ from PyInstaller.hooks.hookutils import qt5_plugins_binaries
 
 def hook(mod):
     # Network Bearer Management in qt 4.7+
-    mod.binaries.extend(qt5_plugins_binaries('bearer'))
+    mod.pyinstaller_binaries.extend(qt5_plugins_binaries('bearer'))
     return mod

@@ -30,10 +30,10 @@ class Module:
         self.__name__ = nm
         self.__file__ = None
         self._all = []
-        self.imports = []
-        self.warnings = []
-        self.binaries = []
-        self.datas = []
+        self.pyinstaller_imports = []
+        self.pyinstaller_warnings = []
+        self.pyinstaller_binaries = []
+        self.pyinstaller_datas = []
         self._xref = {}
 
     def ispackage(self):
@@ -48,7 +48,7 @@ class Module:
     def __str__(self):
         return ("<%s %r %s imports=%s binaries=%s datas=%s>" %
                 (self.__class__.__name__, self.__name__, self.__file__,
-                 self.imports, self.binaries, self.datas))
+                 self.pyinstaller_imports, self.pyinstaller_binaries, self.pyinstaller_datas))
 
 
 class BuiltinModule(Module):
@@ -86,19 +86,19 @@ class PyModule(Module):
         return list(set(item_list))
 
     def scancode(self):
-        self.imports, self.warnings, self.binaries, allnms = scan_code(self.co)
+        self.pyinstaller_imports, self.pyinstaller_warnings, self.pyinstaller_binaries, allnms = scan_code(self.co)
         # TODO There has to be some bugs in the 'scan_code()' functions because
-        #      some imports are present twice in the self.imports list.
+        #      some imports are present twice in the self.pyinstaller_imports list.
         #      This could be fixed when scan_code will be replaced by package
         #      modulegraph.
-        self.imports = self._remove_duplicate_entries(self.imports)
+        self.pyinstaller_imports = self._remove_duplicate_entries(self.pyinstaller_imports)
 
         if allnms:
             self._all = allnms
-        if ctypes and self.binaries:
-            self.binaries = _resolveCtypesImports(self.binaries)
+        if ctypes and self.pyinstaller_binaries:
+            self.pyinstaller_binaries = _resolveCtypesImports(self.pyinstaller_binaries)
             # Just to make sure there will be no duplicate entries.
-            self.binaries = self._remove_duplicate_entries(self.binaries)
+            self.pyinstaller_binaries = self._remove_duplicate_entries(self.pyinstaller_binaries)
 
 
 class PyScript(PyModule):

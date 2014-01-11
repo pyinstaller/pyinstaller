@@ -649,7 +649,7 @@ class Analysis(Target):
             if mod is None:
                 continue
 
-            datas.extend(mod.datas)
+            datas.extend(mod.pyinstaller_datas)
 
             if isinstance(mod, PyInstaller.depend.modules.BuiltinModule):
                 pass
@@ -657,7 +657,7 @@ class Analysis(Target):
                 binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
                 # allows hooks to specify additional dependency
                 # on other shared libraries loaded at runtime (by dlopen)
-                binaries.extend(mod.binaries)
+                binaries.extend(mod.pyinstaller_binaries)
             elif isinstance(mod, (PyInstaller.depend.modules.PkgInZipModule, PyInstaller.depend.modules.PyInZipModule)):
                 zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
                                  str(mod.owner), 'ZIPFILE'))
@@ -665,7 +665,7 @@ class Analysis(Target):
                 # mf.PyModule instances expose a list of binary
                 # dependencies, most probably shared libraries accessed
                 # via ctypes. Add them to the overall required binaries.
-                binaries.extend(mod.binaries)
+                binaries.extend(mod.pyinstaller_binaries)
                 if modnm != '__main__':
                     pure.append((modnm, mod.__file__, 'PYMODULE'))
 

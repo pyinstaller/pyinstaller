@@ -91,9 +91,9 @@ def _find_tk(mod):
     if is_darwin:
         # _tkinter depends on system Tcl/Tk frameworks.
         if not bins:
-            # 'mod.binaries' can't be used because on Mac OS X _tkinter.so
+            # 'mod.pyinstaller_binaries' can't be used because on Mac OS X _tkinter.so
             # might depend on system Tcl/Tk frameworks and these are not
-            # included in 'mod.binaries'.
+            # included in 'mod.pyinstaller_binaries'.
             bins = PyInstaller.bindepend.getImports(mod.__file__)
             # Reformat data structure from
             #     set(['lib1', 'lib2', 'lib3'])
@@ -152,7 +152,7 @@ def hook(mod):
     # Get the Tcl/Tk data files for bundling with executable.
     #try:
     tk_files = _collect_tkfiles(mod)
-    mod.datas.extend(tk_files)
+    mod.pyinstaller_datas.extend(tk_files)
     #except:
     #logger.error("could not find TCL/TK")
 

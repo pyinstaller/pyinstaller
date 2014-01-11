@@ -37,8 +37,8 @@ for name in sys.modules:
     out = hookutils.exec_statement(statement)
     hiddenimports = out.strip().splitlines()
     # Ignore 'FixTk' to prevent inclusion of Tcl/Tk library.
-    for i, m in enumerate(mod.imports):
+    for i, m in enumerate(mod.pyinstaller_imports):
         if m[0] == 'FixTk':
-            del mod.imports[i]
+            del mod.pyinstaller_imports[i]
             break
     return mod
