@@ -119,7 +119,7 @@ class my_sdist(sdist):
         return res
 
 setup(
-    install_requires=['distribute'],
+    install_requires=['setuptools'],
 
     name='PyInstaller',
     version=get_version(),
