@@ -140,9 +140,9 @@ int pyi_path_executable(char *execfile, const char *appname)
 	if (!GetModuleFileNameW(NULL, wchar_buffer, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
 		return -1;
-	}
-    /* Convert wchar_t to utf8. Just use type char as usual. */
-    stb_to_utf8(buffer, wchar_buffer, PATH_MAX);
+	}        
+    /* Convert wchar_t to utf8. Just use type char as usual. */        
+    stb_to_utf8(buffer, wchar_buffer, PATH_MAX); 
 
     /*
      * Use 8.3 filename (dos 8.3 or short filename)
@@ -155,10 +155,10 @@ int pyi_path_executable(char *execfile, const char *appname)
      *
      * This is workaround for <http://www.pyinstaller.org/ticket/298>.
      */
-    GetShortPathNameW(wchar_buffer, wchar_dos83_buffer, PATH_MAX);
+    GetShortPathNameW(wchar_buffer, wchar_dos83_buffer, PATH_MAX);        
     /* Convert wchar_t to utf8 just use char as usual. */
+    
     stb_to_utf8(dos83_buffer, wchar_dos83_buffer, PATH_MAX);
-
     /*
      * Construct proper execfile -  83_DIRNAME + full_basename.
      * GetShortPathName() makes also the basename (appname.exe) shorter.
@@ -169,7 +169,7 @@ int pyi_path_executable(char *execfile, const char *appname)
      *
      * Reuse 'buffer' variable.
      */
-    pyi_path_basename(basename, buffer);
+    pyi_path_basename(basename, buffer); 
     pyi_path_dirname(dirname, dos83_buffer);
     pyi_path_join(buffer, dirname, basename);
 
@@ -201,6 +201,7 @@ int pyi_path_executable(char *execfile, const char *appname)
      * for LD_LIBRARY_PATH variavle. Relative LD_LIBRARY_PATH is a security
      * problem.
      */
+    
     if(stb_fullpath(execfile, PATH_MAX, buffer) == false) {
         VS("LOADER: executable is %s\n", execfile);
         return -1;
@@ -213,8 +214,49 @@ int pyi_path_executable(char *execfile, const char *appname)
 
 
 /*
- * Return absolute path to homepath. It is the directory containing executable.
+ * The locale encoding version of pyi_path_executable
+ * execfile - buffer where to put locale encoding path to executable.
  */
+ 
+int pyi_path_executable_locale(char *execfile)
+{
+#ifdef WIN32
+    char buffer[PATH_MAX];
+    char dos83_buffer[PATH_MAX];
+    char basename[PATH_MAX];
+    char dirname[PATH_MAX];
+    
+    if( !GetModuleFileName(NULL, buffer, PATH_MAX)){
+        FATALERROR("System error - unable to load!");
+		return -1;    
+    }
+    
+    GetShortPathName(buffer, dos83_buffer,PATH_MAX);
+    
+    pyi_path_basename(basename, buffer);
+    VS("LOADER: path basename %s\n", basename );    
+    pyi_path_dirname(dirname, dos83_buffer);
+    VS("LOADER: path dirname %s\n", dirname );  
+    pyi_path_join(buffer, dirname, basename);
+    VS("LOADER: path buffer %s\n", buffer );  
+
+    if(stb_fullpath(execfile, PATH_MAX, buffer) == false) {
+        VS("LOADER: executable is %s\n", execfile);
+        return -1;
+    }
+ 
+    VS("LOADER: executable is %s\n", execfile);
+#else
+    // XXX add cygwin, Apple support here
+    return -1
+#endif
+	return 0;    
+    
+}
+
+/*
+ * Return absolute path to homepath. It is the directory containing executable.
+ */ 
 void pyi_path_homepath(char *homepath, const char *thisfile)
 {
     /* Fill in here (directory of thisfile). */

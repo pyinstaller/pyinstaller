@@ -26,6 +26,8 @@
  *
  * #include "stb.h"
  */
+#define UNICODE
+
 #define STB_DEFINE 1
 #define STB_NO_REGISTRY 1  // Disable registry functions.
 #define STB_NO_STB_STRINGS 1  // Disable config read/write functions.
@@ -65,8 +67,11 @@ int main(int argc, char* argv[])
     /*  archive_status contain status information of the main process. */
     ARCHIVE_STATUS *archive_status = NULL;
     char executable[PATH_MAX];
+    char executable_lc[PATH_MAX];
     char homepath[PATH_MAX];
+    char homepath_lc[PATH_MAX];
     char archivefile[PATH_MAX];
+    char archivefile_lc[PATH_MAX];
     char MEIPASS2[PATH_MAX];
     int rc = 0;
     char *extractionpath = NULL;
@@ -85,7 +90,22 @@ int main(int argc, char* argv[])
     pyi_path_executable(executable, argv[0]);
     pyi_path_archivefile(archivefile, executable);
     pyi_path_homepath(homepath, executable);
+    
+    if( !pyi_path_executable_locale(executable_lc)){
+        /* Get the locale encoding path, and  set it to sys.path in python,
+         * to fix bug where it can not run on path contains non-ascii char
+         */
+        pyi_path_archivefile(archivefile_lc, executable_lc);
+        pyi_path_homepath(homepath_lc, executable_lc);
+        pyi_arch_set_paths_locale(archive_status, homepath_lc, &archivefile_lc[strlen(homepath_lc)]);
+        pyi_arch_set_paths_locale(archive_status, homepath_lc, &executable_lc[strlen(homepath_lc)]);
+        
+        VS("LOADER: Locale encoding home path is:%s" , homepath_lc);
+    }
 
+    
+    
+    
     extractionpath = pyi_getenv("_MEIPASS2");
 
     VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
@@ -97,6 +117,8 @@ int main(int argc, char* argv[])
             return -1;
         }
     }
+    
+
 
 #ifdef WIN32
     /* On Windows use single-process for --onedir mode. */

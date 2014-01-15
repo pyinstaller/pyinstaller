@@ -59,8 +59,11 @@ typedef struct _archive_status {
     TOC     *tocend;
     COOKIE  cookie;
     char    archivename[PATH_MAX];
+    char    archivename_lc[PATH_MAX]; /* locale encoding for sys.path in python */
     char    homepath[PATH_MAX];
+    char    homepath_lc[PATH_MAX]; 
     char    temppath[PATH_MAX];
+    //char    temppath[PATH_MAX];
     /*
      * Main path could be homepath or temppath. It will be temppath
      * if temppath is available. Sometimes we do not need to know if temppath
@@ -98,6 +101,8 @@ int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
  * The gory detail level
  */
 int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
+int pyi_arch_set_paths_locale(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
+
 int pyi_arch_open(ARCHIVE_STATUS *status);
 
 
@@ -124,6 +129,8 @@ void pyi_arch_status_free_memory(ARCHIVE_STATUS *status);
  * @return 0 on success, non-zero otherwise.
  */
 int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName);
+
+
 
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
