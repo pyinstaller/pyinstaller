@@ -217,6 +217,7 @@ def configure(conf):
 
     if myplatform.startswith('aix'):
         conf.env.append_value('CCDEFINES', 'AIX')
+        conf.env.append_value('CCDEFINES', '_ALL_SOURCE')
 
     conf.env.append_value('CPPPATH', os.path.join('..', 'common'))
 
