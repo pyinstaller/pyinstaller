@@ -6,12 +6,8 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-from hookutils import collect_submodules
+# Because this is pygments.lexers, note the .. required in order to get back to the hooks subdirectory.
+from ..hookutils import collect_submodules
 
-# Pygments uses a dynamic import for its formatters, lexers,
-# and styles. There's a filter submodule, but nothing there
-# so it's not included in this list.
-hiddenimports = (
-    collect_submodules('pygments.formatters') + 
-    collect_submodules('pygments.lexers') + 
-    collect_submodules('pygments.styles'))
+# Pygments uses a dynamic import for its formatters, so list them all here.
+hiddenimports = collect_submodules('pygments.lexers')
