@@ -466,7 +466,10 @@ class Graph(object):
 
         for node in bfs_list:
             for nbr_id in get_nbrs(node):
-                g.add_edge(node, nbr_id)
+                if forward:
+                    g.add_edge(node, nbr_id)
+                else:
+                    g.add_edge(nbr_id, node)
 
         return g
 
