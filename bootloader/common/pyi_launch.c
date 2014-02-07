@@ -332,7 +332,8 @@ int pyi_pylib_run_scripts(ARCHIVE_STATUS *status)
 			   for full compatibility with normal execution. */
 			strcpy(buf, ptoc->name);
 			strcat(buf, ".py");
-            __file__ = PI_PyString_FromStringAndSize(buf, strlen(buf));
+            //__file__ = PI_PyUnicode_FromStringAndSize(buf, strlen(buf));
+            __file__ = PI_PyUnicode_FromString(buf);
             PI_PyObject_SetAttrString(__main__, "__file__", __file__);
             Py_DECREF(__file__);
 			/* Run it */
@@ -383,7 +384,7 @@ int callSimpleEntryPoint(char *name, int *presult)
 	pyresult = PI_PyObject_CallFunction(func, "");
 	if (pyresult==NULL) goto done;
 	PI_PyErr_Clear();
-	*presult = PI_PyInt_AsLong(pyresult);
+	*presult = PI_PyLong_AsLong(pyresult);
 	rc = PI_PyErr_Occurred() ? -1 : 0;
 	VS( rc ? "LOADER: Finished with failure\n" : "LOADER: Finished OK\n");
 	/* all done! */

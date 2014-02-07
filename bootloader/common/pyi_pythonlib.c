@@ -20,8 +20,10 @@
     #include <io.h>  // _setmode
     #include <winsock.h>  // ntohl
 #else
+    #include <dlfcn.h>  // dlerror
     #include <limits.h>  // PATH_MAX
     #include <netinet/in.h>  // ntohl
+    #include <locale.h>  // setlocale
 #endif
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>
@@ -31,6 +33,7 @@
 /* PyInstaller headers. */
 #include "stb.h"
 #include "pyi_global.h"
+#include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
@@ -184,38 +187,69 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	int i;
 	char cmd[PATH_MAX+1+80];
 	char tmp[PATH_MAX+1];
+    /* Temporary buffer for conversion of string to wide string. */
+	wchar_t wchar_tmp[PATH_MAX+1];
+	wchar_t wchar_tmp2[PATH_MAX+1];
+	wchar_t wchar_tmp3[PATH_MAX+1];
 	PyObject *py_argv;
 	PyObject *val;
 	PyObject *sys;
 
     // TODO set pythonpath by function from Python C API (Python 2.6+)
     /* Set the PYTHONPATH */
-	VS("LOADER: Manipulating evironment\n");
+	VS("LOADER: Manipulating evironment (PYTHONPATH, PYTHONHOME)\n");
     strcpy(pypath, status->mainpath);
-	VS("LOADER: PYTHONPATH=%s\n", pypath);
-	pyi_setenv("PYTHONPATH", pypath);
+    // Append base_library.zip to PYTHONPATH - necessary for Py_Initialize().
+    strcat(pypath, ":");
+    strncat(pypath, status->mainpath, PATH_MAX - strlen(pypath));
+    strcat(pypath, "/base_library.zip");
+	VS("LOADER: PYTHONPATH is %s\n", pypath);
+    // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
+    mbstowcs(wchar_tmp, pypath, PATH_MAX);
+	//pyi_setenv("PYTHONPATH", pypath);
+    PI_Py_SetPath(wchar_tmp);
 
 	/* Clear out PYTHONHOME to avoid clashing with any Python installation. */
 	pyi_unsetenv("PYTHONHOME");
 
     /* Set PYTHONHOME by using function from Python C API. */
     strcpy(pypath, status->mainpath);
-	VS("LOADER: PYTHONHOME=%s\n", pypath);
-    PI_Py_SetPythonHome(pypath);
-
+	VS("LOADER: PYTHONHOME is %s\n", pypath);
+    // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
+    mbstowcs(wchar_tmp2, pypath, PATH_MAX);
+    //PI_Py_SetPythonHome(pypath);
+    PI_Py_SetPythonHome(wchar_tmp2);
 
 	/* Start python. */
-	/* VS("Loading python\n"); */
-	*PI_Py_NoSiteFlag = 1;	/* maybe changed to 0 by pyi_pylib_set_runtime_opts() */
-    *PI_Py_FrozenFlag = 1;
+	VS("LOADER: Initializing python\n");
+
+    /* Startup flags. 1 means enabled, 0 disabled. */
+	*PI_Py_NoSiteFlag = 1;  /* Suppress 'import site'. Maybe changed to 0 by pyi_pylib_set_runtime_opts() */
+    *PI_Py_FrozenFlag = 1;  /* Needed by getpath.c from Python. */
+    *PI_Py_IgnoreEnvironmentFlag = 1;  /* e.g. PYTHONPATH, PYTHONHOME */
+    *PI_Py_DontWriteBytecodeFlag = 1;  /* Suppress writing bytecode files (*.py[co]) */
+    *PI_Py_NoUserSiteDirectory = 1;  /* for -s and site.py */
+
+    /* Enable verbose imports temporarily. */
+    *PI_Py_VerboseFlag = 1;
+
+    /* TODO try to set locale. */
+    setlocale(LC_ALL, "en_US.UTF-8");
+
     pyi_pylib_set_runtime_opts(status);
-	PI_Py_SetProgramName(status->archivename); /*XXX*/
+	VS("LOADER: Initializing python\n");
+    // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
+    mbstowcs(wchar_tmp3, status->archivename, PATH_MAX);
+    //PI_Py_SetProgramName(status->archivename);
+    PI_Py_SetProgramName(wchar_tmp3);
 	PI_Py_Initialize();
 
+	VS("LOADER: Initializing python2\n");
     // TODO set sys.path by function from Python C API (Python 2.6+)
 	/* Set sys.path */
 	VS("LOADER: Manipulating Python's sys.path\n");
 	PI_PyRun_SimpleString("import sys\n");
+	VS("LOADER: Initializing python2\n");
 	PI_PyRun_SimpleString("del sys.path[:]\n");
     if (status->temppath[0] != PYI_NULLCHAR) {
         strcpy(tmp, status->temppath);

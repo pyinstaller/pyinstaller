@@ -37,10 +37,15 @@ DECLVAR(Py_FrozenFlag);
 DECLVAR(Py_NoSiteFlag);
 DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
+DECLVAR(Py_IgnoreEnvironmentFlag);
+DECLVAR(Py_DontWriteBytecodeFlag);
+DECLVAR(Py_NoUserSiteDirectory);
+
 DECLPROC(Py_Initialize);
 DECLPROC(Py_Finalize);
 DECLPROC(Py_IncRef);
 DECLPROC(Py_DecRef);
+DECLPROC(Py_SetPath);
 DECLPROC(Py_SetPythonHome);
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
@@ -52,17 +57,13 @@ DECLPROC(PyObject_SetAttrString);
 DECLPROC(PyList_New);
 DECLPROC(PyList_Append);
 DECLPROC(Py_BuildValue);
-DECLPROC(PyString_FromStringAndSize);
-DECLPROC(PyFile_FromString);
-DECLPROC(PyString_AsString);
+DECLPROC(PyUnicode_FromString);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyModule_GetDict);
 DECLPROC(PyDict_GetItemString);
 DECLPROC(PyErr_Clear);
 DECLPROC(PyErr_Occurred);
 DECLPROC(PyErr_Print);
-DECLPROC(PyObject_CallObject);
-DECLPROC(PyObject_CallMethod);
 DECLPROC(PySys_AddWarnOption);
 DECLPROC(PyEval_InitThreads);
 DECLPROC(PyEval_AcquireThread);
@@ -70,7 +71,7 @@ DECLPROC(PyEval_ReleaseThread);
 DECLPROC(PyThreadState_Swap);
 DECLPROC(Py_NewInterpreter);
 DECLPROC(Py_EndInterpreter);
-DECLPROC(PyInt_AsLong);
+DECLPROC(PyLong_AsLong);
 DECLPROC(PySys_SetObject);
 
 
@@ -84,14 +85,19 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETVAR(dll, Py_NoSiteFlag);
     GETVAR(dll, Py_OptimizeFlag);
     GETVAR(dll, Py_VerboseFlag);
+    GETVAR(dll, Py_IgnoreEnvironmentFlag);
+    GETVAR(dll, Py_DontWriteBytecodeFlag);
+    GETVAR(dll, Py_NoUserSiteDirectory);
+
     GETPROC(dll, Py_Initialize);
     GETPROC(dll, Py_Finalize);
     GETPROCOPT(dll, Py_IncRef);
     GETPROCOPT(dll, Py_DecRef);
+    GETPROC(dll, Py_SetPath);
     GETPROC(dll, Py_SetPythonHome);
     GETPROC(dll, PyImport_ExecCodeModule);
     GETPROC(dll, PyRun_SimpleString);
-    GETPROC(dll, PyString_FromStringAndSize);
+    GETPROC(dll, PyUnicode_FromString);
     GETPROC(dll, PySys_SetArgv);
     GETPROC(dll, Py_SetProgramName);
     GETPROC(dll, PyImport_ImportModule);
@@ -100,16 +106,12 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyList_New);
     GETPROC(dll, PyList_Append);
     GETPROC(dll, Py_BuildValue);
-    GETPROC(dll, PyFile_FromString);
-    GETPROC(dll, PyString_AsString);
     GETPROC(dll, PyObject_CallFunction);
     GETPROC(dll, PyModule_GetDict);
     GETPROC(dll, PyDict_GetItemString);
     GETPROC(dll, PyErr_Clear);
     GETPROC(dll, PyErr_Occurred);
     GETPROC(dll, PyErr_Print);
-    GETPROC(dll, PyObject_CallObject);
-    GETPROC(dll, PyObject_CallMethod);
     GETPROC(dll, PySys_AddWarnOption);
     GETPROC(dll, PyEval_InitThreads);
     GETPROC(dll, PyEval_AcquireThread);
@@ -117,8 +119,10 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyThreadState_Swap);
     GETPROC(dll, Py_NewInterpreter);
     GETPROC(dll, Py_EndInterpreter);
-    GETPROC(dll, PyInt_AsLong);
+    GETPROC(dll, PyLong_AsLong);
     GETPROC(dll, PySys_SetObject);
+
+    VS("LOADER: Loaded functions from Python library.\n");
 
     return 0;
 }

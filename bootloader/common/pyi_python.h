@@ -73,45 +73,75 @@ struct _PyThreadState;
 typedef struct _PyThreadState PyThreadState;
 
 /* The actual declarations of var & function entry points used. */
+
+/* Flags. */
 EXTDECLVAR(int, Py_FrozenFlag);
 EXTDECLVAR(int, Py_NoSiteFlag);
 EXTDECLVAR(int, Py_OptimizeFlag);
 EXTDECLVAR(int, Py_VerboseFlag);
+EXTDECLVAR(int, Py_IgnoreEnvironmentFlag);
+EXTDECLVAR(int, Py_DontWriteBytecodeFlag);
+EXTDECLVAR(int, Py_NoUserSiteDirectory);
+
+/* This initializes the table of loaded modules (sys.modules), and creates the fundamental modules builtins, __main__ and sys. It also initializes the module search path (sys.path). It does not set sys.argv; */
 EXTDECLPROC(int, Py_Initialize, (void));
+/* Undo all initializations made by Py_Initialize() and subsequent use of Python/C API functions, and destroy all sub-interpreters. */
 EXTDECLPROC(int, Py_Finalize, (void));
+
 EXTDECLPROC(void, Py_IncRef, (PyObject *));
 EXTDECLPROC(void, Py_DecRef, (PyObject *));
-EXTDECLPROC(void, Py_SetPythonHome, (char *));
-EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
+
+/* TODO restore compatibility with char for python2 again. It might be necessary to change the type to void to allow compiler to not complain about different types of functions. */
+//EXTDECLPROC(void, Py_SetPythonHome, (char *));  // TODO wchar_t in Py3
+//EXTDECLPROC(void, Py_SetProgramName, (char *)); // TODO wchar_t in Py3
+//EXTDECLPROC(int, PySys_SetArgv, (int, char **));  // TODO wchar_t in Py3
+// TODO workaround for Python 2.6 - this function is only in python 3.
+EXTDECLPROC(void, Py_SetPath, (wchar_t *));  // TODO wchar_t in Py3
+EXTDECLPROC(void, Py_SetPythonHome, (wchar_t *));  // TODO wchar_t in Py3
+EXTDECLPROC(void, Py_SetProgramName, (wchar_t *)); // TODO wchar_t in Py3
+EXTDECLPROC(int, PySys_SetArgv, (int, wchar_t **));  // TODO wchar_t in Py3
 EXTDECLPROC(int, PyRun_SimpleString, (char *));
-EXTDECLPROC(int, PySys_SetArgv, (int, char **));
-EXTDECLPROC(void, Py_SetProgramName, (char *));
+
+EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
 EXTDECLPROC(PyObject *, PyImport_ImportModule, (char *));
 EXTDECLPROC(PyObject *, PyImport_AddModule, (char *));
+
 EXTDECLPROC(int, PyObject_SetAttrString, (PyObject *, char *, PyObject *));
 EXTDECLPROC(PyObject *, PyList_New, (int));
 EXTDECLPROC(int, PyList_Append, (PyObject *, PyObject *));
+/* Create a new value based on a format string similar to those accepted by the PyArg_Parse*() */
 EXTDECLPROC(PyObject *, Py_BuildValue, (char *, ...));
-EXTDECLPROC(PyObject *, PyString_FromStringAndSize, (const char *, size_t));
-EXTDECLPROC(PyObject *, PyFile_FromString, (char *, char *));
-EXTDECLPROC(char *, PyString_AsString, (PyObject *));
+/* Create a Unicode object from the char buffer. The bytes will be interpreted as being UTF-8 encoded. */
+//EXTDECLPROC(PyObject *, PyString_FromStringAndSize, (const char *, size_t));
+EXTDECLPROC(PyObject *, PyUnicode_FromString, (const char *));
 EXTDECLPROC(PyObject *, PyObject_CallFunction, (PyObject *, char *, ...));
 EXTDECLPROC(PyObject *, PyModule_GetDict, (PyObject *));
 EXTDECLPROC(PyObject *, PyDict_GetItemString, (PyObject *, char *));
 EXTDECLPROC(void, PyErr_Clear, (void) );
 EXTDECLPROC(PyObject *, PyErr_Occurred, (void) );
 EXTDECLPROC(void, PyErr_Print, (void) );
-EXTDECLPROC(PyObject *, PyObject_CallObject, (PyObject *, PyObject*) );
-EXTDECLPROC(PyObject *, PyObject_CallMethod, (PyObject *, char *, char *, ...) );
 EXTDECLPROC(void, PySys_AddWarnOption, (char *));
+/* Return a C long representation of the contents of pylong. */
+EXTDECLPROC(long, PyLong_AsLong, (PyObject *) );
+
+
+/* Functions used in dllmain.c on Windows. */
 EXTDECLPROC(void, PyEval_InitThreads, (void) );
 EXTDECLPROC(void, PyEval_AcquireThread, (PyThreadState *) );
 EXTDECLPROC(void, PyEval_ReleaseThread, (PyThreadState *) );
 EXTDECLPROC(PyThreadState *, PyThreadState_Swap, (PyThreadState *) );
 EXTDECLPROC(PyThreadState *, Py_NewInterpreter, (void) );
 EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
-EXTDECLPROC(long, PyInt_AsLong, (PyObject *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
+
+
+/* Functions not used in the code anymore.
+ * TODO Remove them.
+EXTDECLPROC(PyObject *, PyFile_FromString, (char *, char *));  // TODO wchar_t in Py3
+EXTDECLPROC(PyObject *, PyObject_CallObject, (PyObject *, PyObject*) );
+EXTDECLPROC(PyObject *, PyObject_CallMethod, (PyObject *, char *, char *, ...) );
+EXTDECLPROC(char *, PyString_AsString, (PyObject *));
+*/
 
 
 /* 
