@@ -45,12 +45,25 @@ os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.5'
 def set_options(opt):
     myplatform = Utils.detect_platform()
     
+    opt.add_option('--debug',
+            action = 'store_true',
+            help = 'Include debugging info for GDB.',
+            default = False,
+            dest = 'debug')
+
     if not myplatform.startswith('win'):
         opt.add_option('--leak-detector',
                 action = 'store_true',
                 help = 'Link with Boehm garbage collector to detect memory leaks.',
                 default = False,
                 dest = 'boehmgc')
+
+        opt.add_option('--clang',
+                action = 'store_true',
+                help = 'Try to find clang C compiler instead of gcc.',
+                default = False,
+                dest = 'clang')
+
 
     if myplatform.startswith('linux'):
         opt.add_option('--no-lsb',
@@ -183,6 +196,17 @@ def configure(conf):
         lsb_target_flag = '--lsb-target-version=%s' % opt.lsb_version
         conf.env.append_value('CCFLAGS', lsb_target_flag)
         conf.env.append_value('LINKFLAGS', lsb_target_flag)
+
+
+    ### Clang as CC compiler.
+    if not myplatform.startswith('win') and opt.clang:
+        conf.env.CC = conf.find_program('clang', mandatory=True)
+        conf.env.LINK_CC = conf.env.CC
+
+
+    ### Include gcc debugging information for debugging in GDB.
+    if opt.debug:
+        conf.env.append_value('CCFLAGS', '-g')
 
 
     ### Defines, Includes
@@ -469,8 +493,8 @@ def build(bld):
     else: # linux, darwin (MacOSX)
 
         libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
-        if opt.boehmgc:
-            libs.append('gc')
+        #if opt.boehmgc:
+        libs.append('gc')
 
         for key, value in targets.items():
             bld(
