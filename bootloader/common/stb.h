@@ -3931,14 +3931,16 @@ static int STB_(N,addset)(TYPE *a, KEY k, VALUE v,                            \
    unsigned int h = STB_(N, hash)(k);                                         \
    unsigned int n = h & a->mask;                                              \
    int b = -1;                                                                \
-   if (CCOMPARE(k,EMPTY))                                                     \
+   if (CCOMPARE(k,EMPTY)) {                                                   \
       if (a->has_empty ? allow_old : allow_new) {                             \
           n=a->has_empty; a->ev = v; a->has_empty = 1; return !n;             \
       } else return 0;                                                        \
-   if (CCOMPARE(k,DEL))                                                       \
+   }                                                                          \
+   if (CCOMPARE(k,DEL)) {                                                     \
       if (a->has_del ? allow_old : allow_new) {                               \
           n=a->has_del; a->dv = v; a->has_del = 1; return !n;                 \
       } else return 0;                                                        \
+   }                                                                          \
    if (!CCOMPARE(a->table[n].k, EMPTY)) {                                      \
       unsigned int s;                                                         \
       if (CCOMPARE(a->table[n].k, DEL))                                       \
@@ -4090,13 +4092,15 @@ stb_ptrmap *stb_ptrmap_new(void)
 void stb_ptrmap_delete(stb_ptrmap *e, void (*free_func)(void *))
 {
    int i;
-   if (free_func)
+   if (free_func) {
       for (i=0; i < e->limit; ++i)
-         if (e->table[i].k != STB_EMPTY && e->table[i].k != STB_EDEL)
+         if (e->table[i].k != STB_EMPTY && e->table[i].k != STB_EDEL) {
             if (free_func == free)
                free(e->table[i].v); // allow STB_MALLOC_WRAPPER to operate
             else
                free_func(e->table[i].v);
+         }
+   }
    stb_ptrmap_destroy(e);
 }
 
@@ -5257,9 +5261,10 @@ char * stb_fgets(char *buffer, size_t buflen, FILE *f)
    p = fgets(buffer, buflen, f);
    if (p) {
       size_t n = strlen(p)-1;
-      if (n >= 0)
+      if (n > 0) {
          if (p[n] == '\n')
             p[n] = 0;
+      }
    }
    return p;
 }
