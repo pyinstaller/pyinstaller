@@ -3,14 +3,16 @@ PyInstaller
 Official website: http://www.pyinstaller.org
 
 .. image:: http://img.shields.io/pypi/v/PyInstaller.svg
-   :target: https://pypi.python.org/pypi/PyInstaller
+     :target: https://pypi.python.org/pypi/PyInstaller
 
 .. image:: http://img.shields.io/pypi/dm/PyInstaller.svg
-   :target: https://pypi.python.org/pypi/PyInstaller
+     :target: https://pypi.python.org/pypi/PyInstaller
 
 .. image:: http://img.shields.io/travis/pyinstaller/pyinstaller.svg
-   :target: https://travis-ci.org/pyinstaller/pyinstaller/
+     :target: https://travis-ci.org/pyinstaller/pyinstaller/
 
+.. image:: https://badge.fury.io/py/PyInstaller.png
+    :target: http://badge.fury.io/py/PyInstaller
 
 Requirements
 ------------
