@@ -80,7 +80,7 @@ class ImportTrackerModulegraph:
         warnings = self.warnings.keys()
         for nm, mod in self.modules.items():
             if mod:
-                for w in mod.warnings:
+                for w in mod.pyinstaller_warnings:
                     warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
         return warnings
 
