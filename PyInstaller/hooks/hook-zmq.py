@@ -12,33 +12,37 @@
 Hook for PyZMQ. Cython based Python bindings for messaging library ZeroMQ.
 http://www.zeromq.org/
 """
-
-
 import glob
 import os
-import sys
 
-
-hiddenimports = [
-    'zmq.core.pysocket',
-    'zmq.utils.jsonapi',
-    'zmq.utils.strtypes',
-]
 
 
 def hook(mod):
-    # If PyZMQ provides its own copy of libzmq, add it to the
-    # extension-modules TOC so zmq/__init__.py can load it at runtime.
-    # For predictable behavior, the libzmq search here must be identical
-    # to the search in zmq/__init__.py.
-    zmq_directory = os.path.dirname(mod.__file__)
-    for ext in ('pyd', 'so', 'dll', 'dylib'):
-        bundled = glob.glob(os.path.join(zmq_directory, 'libzmq*.%s*' % ext))
-        if bundled:
-            # zmq/__init__.py will look in os.join(sys._MEIPASS, 'zmq'),
-            # so libzmq has to land there.
-            name = os.path.join('zmq', os.path.basename(bundled[0]))
-            mod.pyinstaller_binaries.append((name, bundled[0], 'BINARY'))
-            break
+	global hiddenimports
+	global datas
+	hiddenimports = []
 
-    return mod
+	modpath = mod.__path__[0]
+
+	# Make sure we get the libzmq.pyd file which everything in pyzmq depends upon.
+	datas = [(os.path.join(modpath, 'libzmq.pyd'), '')]
+
+	extensions = ["*.py"]
+
+	# sub-packages of zmq to add modules from
+	path_mods = ["backend.cython", "backend.cffi"]
+	for path_mod in path_mods:
+		for extension in extensions:
+			# Build the file path out of the dotted-notation stored in path_mods
+			paths = path_mod.split(".")
+			path = os.path.join(modpath, *[x for x in paths])
+
+			# Get the files with the current extension
+			for fn in glob.glob(os.path.join(path, extension)):
+				fn = os.path.basename(fn)
+				fn = os.path.splitext(fn)[0]
+
+				# Add the found file to hiddenimports in dotted-notation
+				hiddenimports.append('zmq.{}.'.format(path_mod) + fn)
+
+	return mod
