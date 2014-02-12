@@ -2,6 +2,16 @@ PyInstaller
 ===========
 Official website: http://www.pyinstaller.org
 
+.. image:: http://img.shields.io/pypi/v/PyInstaller.png
+   :target: https://pypi.python.org/pypi/PyInstaller
+
+.. image:: http://img.shields.io/pypi/dm/PyInstaller.png
+   :target: https://pypi.python.org/pypi/PyInstaller
+
+.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller.png
+   :target: https://travis-ci.org/pyinstaller/pyinstaller/
+
+
 Requirements
 ------------
 - Python: 
