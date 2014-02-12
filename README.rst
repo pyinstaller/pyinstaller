@@ -1,3 +1,7 @@
+.. image:: http://www.pyinstaller.org/chrome/site/logo.png
+   :align: right
+   :target: http://www.pyinstaller.org
+
 PyInstaller
 ===========
 Official website: http://www.pyinstaller.org
