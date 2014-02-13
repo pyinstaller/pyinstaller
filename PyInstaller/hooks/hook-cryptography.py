@@ -1,6 +1,17 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2014, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+
 """
 Hook for cryptography module from the Python Cryptography Authority.
 """
+
 import os.path
 import glob
 from hookutils import collect_submodules
