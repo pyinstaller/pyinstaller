@@ -6,8 +6,10 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-# Because this is pygments.formatters, note the .. required in order to get back to the hooks subdirectory.
-from PyInstaller.hook.hookutils import collect_submodules
-
-# Pygments uses a dynamic import for its formatters, so list them all here.
-hiddenimports = collect_submodules('pygments.formatters')
+# This file must exist in order to avoid the following warning,
+# which is produced by the import below in hook-pygments.{lexers, formatters, styles}.py:
+#
+#   PyInstaller\hooks\hook-pygments.formatters.py:10: RuntimeWarning:
+#   Parent module 'PyInstaller.hooks.hook-pygments' not
+#   found while handling absolute import
+#     from PyInstaller.hook.hookutils import collect_submodules
