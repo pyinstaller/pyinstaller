@@ -649,6 +649,12 @@ def get_package_paths(package):
 # All these extension represent Python modules or extension modules
 PY_EXECUTABLE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
 
+# these suffixes represent python extension modules
+try:
+    from importlib.machinery import EXTENSION_SUFFIXES as PY_EXTENSION_SUFFIXES
+except ImportError:
+    import imp
+    PY_EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes() if f[2] == imp.C_EXTENSION]
 
 def collect_submodules(package):
     """
