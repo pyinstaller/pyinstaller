@@ -132,6 +132,7 @@ class SkipChecker(object):
             'libraries/test_PIL': ['PIL'],
             'libraries/test_PIL2': ['PIL'],
             'libraries/test_pycrypto': ['Crypto'],
+            'libraries/test_pygments': ['pygments'],
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
             'libraries/test_pytz': ['pytz'],
@@ -331,7 +332,7 @@ class BuildTestRunner(object):
             os.chdir(os.path.dirname(prog))
             # Run executable.
             prog = os.path.join(os.curdir, os.path.basename(prog))
-            proc = subprocess.Popen([prog], stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+            proc = subprocess.Popen([prog], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             # Prints stdout of subprocess continuously.
             self._msg('STDOUT %s' % self.test_name)
             while proc.poll() is None:
