@@ -68,11 +68,6 @@ Basic usage is very simple, just run it against your main script::
 For more details, see the `manual`_.
 
 
-Manual
-------
-PyInstaller's comprehensive manual is available `here`_.
-
-
 Experimental ports
 ------------------
 - Solaris
