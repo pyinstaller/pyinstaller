@@ -38,26 +38,11 @@ Requirements
    * Mac OS X 10.4 (Tiger) or newer.
 
 
-Installation in brief
----------------------
+Installation
+------------
 PyInstaller is available on PyPI. You can install it through `pip`::
 
       pip install pyinstaller
-      
-This will work on Windows, Linux, and Mac OSX. For other (experimental)
-platforms, download PyInstaller sources, then build the bootloader::
-
-      cd bootloader
-      python ./waf configure build install
-
-then, you can install PyInstaller from sources::
-
-      python setup.py install
-
-
-NOTE: PyInstaller can also be used directly from the source tree, without
-installation. Just run `pyinstaller.py`.
-
 
 Usage
 -----
