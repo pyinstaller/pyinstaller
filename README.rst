@@ -4,8 +4,6 @@
 
 PyInstaller
 ===========
-Official website: http://www.pyinstaller.org
-
 .. image:: http://img.shields.io/pypi/v/PyInstaller.png
    :target: https://pypi.python.org/pypi/PyInstaller
 
@@ -14,6 +12,11 @@ Official website: http://www.pyinstaller.org
 
 .. image:: http://img.shields.io/travis/pyinstaller/pyinstaller.png
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
+
+
+| Official website: http://www.pyinstaller.org
+| Full manual: http://pythonhosted.org/PyInstaller
+| Full changelog: `changelog`_
 
 
 Requirements
@@ -32,13 +35,51 @@ Requirements
      object files.
 
 - Mac OS X (32/64bit):
-   * Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion).
+   * Mac OS X 10.4 (Tiger) or newer.
 
-- Solaris (experimental)
+
+Installation in brief
+---------------------
+PyInstaller is available on PyPI. You can install it through `pip`::
+
+      pip install pyinstaller
+      
+This will work on Windows, Linux, and Mac OSX. For other (experimental)
+platforms, download PyInstaller sources, then build the bootloader::
+
+      cd bootloader
+      python ./waf configure build install
+
+then, you can install PyInstaller from sources::
+
+      python setup.py install
+
+
+NOTE: PyInstaller can also be used directly from the source tree, without
+installation. Just run `pyinstaller.py`.
+
+
+Usage
+-----
+Basic usage is very simple, just run it against your main script::
+
+      pyinstaller /path/to/yourscript.py
+
+For more details, see the `manual`_.
+
+
+Manual
+------
+PyInstaller's comprehensive manual is available `here`_.
+
+
+Experimental ports
+------------------
+- Solaris
    * ldd
    * objdump
 
-- AIX (experimental)
+- AIX
    * AIX 6.1 or newer.
      Python executables created using PyInstaller on AIX 6.1 should
      work on AIX 5.2/5.3. PyInstaller will not work with statically
@@ -47,49 +88,27 @@ Requirements
    * ldd
    * objdump
 
-- FreeBSD (experimental)
+- FreeBSD
    * ldd
    * objdump
-   * Build your own loader:
+
+
+Before using experimental ports, you need to build the PyInstaller
+bootloader, as we do not ship binary packages. Download PyInstaller
+sources, and build the bootloader::
      
-        cd bootloader; python waf configure build install
-
-Usage
------
-
-::
-
-      pyinstaller /path/to/yourscript.py
-
-or the following when using PyInstaller without installation::
-
-      python pyinstaller.py /path/to/yourscript.py
-
-For more details, see the `doc/Manual.html`_.
-
-
-Installation in brief
----------------------
-
-1. Unpack the archive on you path of choice.
-2. For Windows (32/64bit), Linux (32/64bit) and Mac OS X (32/64bit)
-   precompiled boot-loaders are available. So to install PyInstaller::
-   
-        python setup.py install
-
-  For other platforms, users should first try to build the
-  boot-loader before installation::
-
         cd bootloader
         python ./waf configure build install
 
+then install PyInstaller::
 
-Major changes in this release
------------------------------
-See `doc/CHANGES.txt`_.
+        python setup.py install
+        
+or simply use it direclty from the source (pyinstaller.py).
+
 
 
 .. _pywin32: http://sourceforge.net/projects/pywin32/
-.. _`doc/Manual.html`: http://pythonhosted.org//PyInstaller
-.. _`doc/CHANGES.txt`: https://github.com/pyinstaller/pyinstaller/blob/develop/doc/CHANGES.txt
+.. _`manual`: http://pythonhosted.org/PyInstaller
+.. _`changelog`: https://github.com/pyinstaller/pyinstaller/blob/develop/doc/CHANGES.txt
 
