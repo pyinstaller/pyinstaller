@@ -77,7 +77,7 @@ void pyi_path_basename(char *result, char *path)
 #else
     char *base = NULL;
     base = (char *) basename(path);
-    strcpy(result, path);
+    strcpy(result, base);
 #endif
 }
 
@@ -227,6 +227,15 @@ void pyi_path_homepath(char *homepath, const char *thisfile)
 {
     /* Fill in here (directory of thisfile). */
     pyi_path_dirname(homepath, thisfile);
+#ifdef __APPLE__
+    // For .app bundle, executable is in MyApp.app/Contents/MacOS and 
+    // homepath should be MyApp.app/Contents/Resources
+    char withoutMacOS[PATH_MAX];
+    pyi_path_dirname(withoutMacOS, homepath);
+    char buffer[PATH_MAX];
+    pyi_path_join(buffer, withoutMacOS, "Resources");
+    strncpy(homepath, buffer, PATH_MAX);
+#endif
     VS("LOADER: homepath is %s\n", homepath);
 }
 
