@@ -606,7 +606,7 @@ class Analysis(Target):
                 logger.info("Hidden import %r has been found otherwise", modnm)
                 continue
             logger.info("Analyzing hidden import %r", modnm)
-            importTracker.analyze_one(modnm)
+            importTracker.analyze_r(modnm)
             if not modnm in importTracker.modules:
                 logger.error("Hidden import %r not found", modnm)
 
