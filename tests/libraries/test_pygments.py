@@ -6,7 +6,11 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-from hookutils import collect_submodules
 
-# Pygments uses a dynamic import for its formatters, so gather them all here.
-hiddenimports = collect_submodules('pygments.lexers')
+
+# Test import hooks for the following modules.
+from pygments.formatters import HtmlFormatter
+# This line must be included for Pyinstaller to work; Python doesn't require it.
+import pygments.lexers
+from pygments.lexers import PythonLexer
+formatter = HtmlFormatter(style='vim')
