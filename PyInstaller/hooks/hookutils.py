@@ -647,7 +647,7 @@ def get_package_paths(package):
 
 
 # All these extension represent Python modules or extension modules
-PY_EXECUTABLE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
+PY_EXECUTABLE_SUFFIXES = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
 
 # these suffixes represent python extension modules
 try:
@@ -688,7 +688,7 @@ def collect_submodules(package):
             for f in filenames:
                 extension = os.path.splitext(f)[1]
                 if ((remove_file_extension(f) != '__init__') and
-                    extension in PY_EXECUTABLE_EXTENSIONS):
+                    extension in PY_EXECUTABLE_SUFFIXES):
                     mods.add(mod_path + "." + remove_file_extension(f))
         else:
         # If not, nothing here is part of the package; don't visit any of
