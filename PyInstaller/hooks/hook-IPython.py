@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from hookutils import (collect_data_files, collect_submodules)
+from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
 
 
 # IPython (tested with 0.13) requires the following files:

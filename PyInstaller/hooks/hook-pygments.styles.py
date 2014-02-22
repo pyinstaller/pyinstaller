@@ -6,7 +6,7 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-from hookutils import collect_submodules
+from PyInstaller.hooks.hookutils import collect_submodules
 
 # Pygments uses a dynamic import for its formatters, so gather them all here.
 hiddenimports = collect_submodules('pygments.styles')

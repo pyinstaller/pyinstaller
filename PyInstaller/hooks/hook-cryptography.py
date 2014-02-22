@@ -14,8 +14,8 @@ Hook for cryptography module from the Python Cryptography Authority.
 
 import os.path
 import glob
-from hookutils import collect_submodules, get_module_file_attribute
-from hookutils import PY_EXTENSION_SUFFIXES
+from PyInstaller.hooks.hookutils import collect_submodules, get_module_file_attribute
+from PyInstaller.hooks.hookutils import PY_EXTENSION_SUFFIXES
 
 # add the OpenSSL FFI binding modules as hidden imports
 hiddenimports = collect_submodules('cryptography.hazmat.bindings.openssl')

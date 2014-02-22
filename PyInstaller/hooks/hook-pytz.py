@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from hookutils import collect_data_files
+from PyInstaller.hooks.hookutils import collect_data_files
 
 
 # On Linux pytz installed from distribution repository uses zoneinfo
