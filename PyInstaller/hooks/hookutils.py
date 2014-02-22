@@ -28,7 +28,8 @@ try:
     from importlib.machinery import EXTENSION_SUFFIXES as PY_EXTENSION_SUFFIXES
 except ImportError:
     import imp
-    PY_EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes() if f[2] == imp.C_EXTENSION]
+    PY_EXTENSION_SUFFIXES = set([f[0] for f in imp.get_suffixes()
+                                 if f[2] == imp.C_EXTENSION])
 
 # These extensions represent Python executables and should therefore be
 # ignored when collecting data files.
