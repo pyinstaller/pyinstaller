@@ -330,7 +330,7 @@ class ImportTracker:
                 # the module which failed to be imported, but only the
                 # message string.
                 if not hookmodnm in e.message:
-                    logger.error('Import Error in %s: %s', hookmodnm, e.message)
+                    raise ImportError('%s in %s' % (e.message, hookmodnm))
             else:
                 logger.info('Processing hook %s' % hookmodnm)
                 mod = self._handle_hook(mod, hook)
