@@ -16,6 +16,7 @@ Subclass of Archive that can be understood by a C program (see launch.c).
 import struct
 import sys
 import zlib
+import os
 
 
 import pyi_archive
@@ -317,31 +318,55 @@ class CArchive(pyi_archive.Archive):
         # Version 5 - allow type 'o' = runtime option.
         try:
             if typcd in ('o', 'd'):
-                s = ''
+                fh = None
+                ulen = 0
+                postfix = ''
                 flag = 0
             elif typcd == 's':
                 # If it's a source code file, add \0 terminator as it will be
                 # executed as-is by the bootloader.
-                s = open(pathnm, 'rU').read()
-                s = s + '\n\0'
+                fh = open(pathnm, 'rU')
+                postfix = '\n\0'
+                ulen = os.fstat(fh.fileno()).st_size + len(postfix)
             else:
-                s = open(pathnm, 'rb').read()
+                fh = open(pathnm, 'rb')
+                postfix = ''
+                ulen = os.fstat(fh.fileno()).st_size
         except IOError:
             print "Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd)
             raise
-        ulen = len(s)
-        assert flag in range(3)
-        if flag == 1:
-            s = zlib.compress(s, self.LEVEL)
 
-        dlen = len(s)
         where = self.lib.tell()
+        assert flag in range(3)
+        if not fh:
+            # no need to write anything
+            pass
+        elif flag == 1:
+            assert fh
+            comprobj = zlib.compressobj(self.LEVEL)
+            while 1:
+                buf = fh.read(16*1024)
+                if not buf:
+                    break
+                self.lib.write(comprobj.compress(buf))
+            self.lib.write(comprobj.compress(postfix))
+            self.lib.write(comprobj.flush())
+        else:
+            assert fh
+            while 1:
+                buf = fh.read(16*1024)
+                if not buf:
+                    break
+                self.lib.write(buf)
+            self.lib.write(postfix)
+
+        dlen = self.lib.tell() - where
         if typcd == 'm':
             if pathnm.find('.__init__.py') > -1:
                 typcd = 'M'
 
         self.toc.add(where, dlen, ulen, flag, typcd, nm)
-        self.lib.write(s)
+
 
     def save_toc(self, tocpos):
         """
