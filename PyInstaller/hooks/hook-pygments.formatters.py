@@ -6,12 +6,8 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+from PyInstaller.hooks.hookutils import collect_submodules
 
 
-from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
-
-
-# IPython (tested with 0.13) requires the following files:
-#   ./site-packages/IPython/config/profile/README_STARTUP
-datas = collect_data_files('IPython')
-hiddenimports = collect_submodules('IPython')
+# Pygments uses a dynamic import for its formatters, so gather them all here.
+hiddenimports = collect_submodules('pygments.formatters')

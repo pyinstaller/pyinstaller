@@ -11,7 +11,7 @@
 import os
 import sys
 
-from hookutils import eval_script
+from PyInstaller.hooks.hookutils import eval_script
 
 if sys.platform == 'win32':
     files = eval_script('enchant-datafiles-finder.py')

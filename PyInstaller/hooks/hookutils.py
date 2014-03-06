@@ -20,6 +20,22 @@ import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
+# All these extension represent Python modules or extension modules
+PY_EXECUTABLE_SUFFIXES = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
+
+# these suffixes represent python extension modules
+try:
+    from importlib.machinery import EXTENSION_SUFFIXES as PY_EXTENSION_SUFFIXES
+except ImportError:
+    import imp
+    PY_EXTENSION_SUFFIXES = set([f[0] for f in imp.get_suffixes()
+                                 if f[2] == imp.C_EXTENSION])
+
+# These extensions represent Python executables and should therefore be
+# ignored when collecting data files.
+PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
+
+
 # Some hooks need to save some values. This is the dict that can be used for
 # that.
 #
@@ -646,10 +662,6 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-# All these extension represent Python modules or extension modules
-PY_EXECUTABLE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
-
-
 def collect_submodules(package):
     """
     The following two functions were originally written by Ryan Welsh
@@ -682,7 +694,7 @@ def collect_submodules(package):
             for f in filenames:
                 extension = os.path.splitext(f)[1]
                 if ((remove_file_extension(f) != '__init__') and
-                    extension in PY_EXECUTABLE_EXTENSIONS):
+                    extension in PY_EXECUTABLE_SUFFIXES):
                     mods.add(mod_path + "." + remove_file_extension(f))
         else:
         # If not, nothing here is part of the package; don't visit any of
@@ -691,10 +703,6 @@ def collect_submodules(package):
 
     return list(mods)
 
-
-# These extensions represent Python executables and should therefore be
-# ignored.
-PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
 
 
 def collect_data_files(package, allow_py_extensions=False):

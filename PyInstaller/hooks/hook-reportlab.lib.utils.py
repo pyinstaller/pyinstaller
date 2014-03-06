@@ -8,10 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
-
-
-# IPython (tested with 0.13) requires the following files:
-#   ./site-packages/IPython/config/profile/README_STARTUP
-datas = collect_data_files('IPython')
-hiddenimports = collect_submodules('IPython')
+# Needed for ReportLab 3
+hiddenimports = [
+    'reportlab.rl_settings',
+]

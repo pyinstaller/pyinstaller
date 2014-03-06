@@ -80,7 +80,7 @@ class ImportTrackerModulegraph:
         warnings = self.warnings.keys()
         for nm, mod in self.modules.items():
             if mod:
-                for w in mod.warnings:
+                for w in mod.pyinstaller_warnings:
                     warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
         return warnings
 
@@ -323,8 +323,14 @@ class ImportTracker:
                 hookmodnm = 'hook-' + fqname
                 m = imp.find_module(hookmodnm, PyInstaller.hooks.__path__)
                 hook = imp.load_module('PyInstaller.hooks.' + hookmodnm, *m)
-            except ImportError:
-                pass
+            except ImportError, e:
+                # Log an error if the hook fails importing some other
+                # module - which is an error the hook should handle.
+                # Unfortunatly the exception does not hold the name of
+                # the module which failed to be imported, but only the
+                # message string.
+                if not hookmodnm in e.message:
+                    raise ImportError('%s in %s' % (e.message, hookmodnm))
             else:
                 logger.info('Processing hook %s' % hookmodnm)
                 mod = self._handle_hook(mod, hook)

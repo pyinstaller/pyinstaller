@@ -8,10 +8,9 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
-
-
-# IPython (tested with 0.13) requires the following files:
-#   ./site-packages/IPython/config/profile/README_STARTUP
-datas = collect_data_files('IPython')
-hiddenimports = collect_submodules('IPython')
+# Test import hooks for the following modules.
+from pygments.formatters import HtmlFormatter
+# This line must be included for Pyinstaller to work; Python doesn't require it.
+import pygments.lexers
+from pygments.lexers import PythonLexer
+formatter = HtmlFormatter(style='vim')

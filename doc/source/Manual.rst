@@ -1603,7 +1603,7 @@ you get the path to the file with the following code::
         basedir = sys._MEIPASS
     else:
         # we are running in a normal Python environment
-        basedir = os.path.dirname(__file__)
+        basedir = os.path.dirname(os.path.abspath(__file__))
 
 This code sets ``basedir`` to the path to the folder containing
 your script and any other files or folders bundled with it.
@@ -2009,10 +2009,14 @@ define one or more of the following three global names:
 
     A way to simplify adding all submodules of a package is to use::
 
-        from hookutils import collect_submodules
+        from PyInstaller.hooks.hookutils import collect_submodules
         hiddenimports = collect_submodules('package')
 
     For an example see ``hook-docutils.py`` in the hooks folder.
+
+    Note: We suggest alwasy using the fully qualified name
+    ``PyInstaller.hooks.hookutils`` for importing hookutils. This
+    avoids some pitfalls when implementing hooks for sub-modules.
 
 ``datas``
    A list of globs of files or directories to bundle as datafiles. For

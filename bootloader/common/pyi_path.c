@@ -136,7 +136,15 @@ int pyi_path_executable(char *execfile, const char *appname)
     char basename[PATH_MAX];
     char dirname[PATH_MAX];
 
-    /* Windows has special function to obtain path to executable. */
+    /* Windows has special function to obtain path to executable.
+     * We EXPLICTLY use wide-string API in the bootloader because
+     * otherwise it is impossible to represent non-ASCII character
+     * from a different character set. For instance, let's say I have
+     * a Latin-1 (Europe Windows), and I want to run a PyInstaller
+     * program in a path with japanese character; there is no way to
+     * represent that path with ANSI API in Windows, because ANSI API
+     * would only support the local charset (Latin-1).
+     */
 	if (!GetModuleFileNameW(NULL, wchar_buffer, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
 		return -1;

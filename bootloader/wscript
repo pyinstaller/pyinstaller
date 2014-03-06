@@ -218,6 +218,13 @@ def configure(conf):
     if myplatform.startswith('aix'):
         conf.env.append_value('CCDEFINES', 'AIX')
 
+        # On AIX some APIs are restricted if _ALL_SOURCE is not defined.
+        # In the case of PyInstaller, we need the AIX specific flag RTLD_MEMBER
+        # for dlopen() which is used to load a shared object from a library
+        # archive. We need to load the Python library like this:
+        #  dlopen("libpython2.7.a(libpython2.7.so)", RTLD_MEMBER)
+        conf.env.append_value('CCDEFINES', '_ALL_SOURCE')
+
     conf.env.append_value('CPPPATH', os.path.join('..', 'common'))
 
 

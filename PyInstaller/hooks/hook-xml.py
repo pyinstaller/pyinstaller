@@ -14,7 +14,7 @@ def hook(mod):
     # This hook checks for the infamous _xmlcore hack
     # http://www.amk.ca/diary/2003/03/pythons__xmlplus_hack.html
 
-    from hookutils import exec_statement
+    from PyInstaller.hooks.hookutils import exec_statement
     import marshal
 
     txt = exec_statement("import xml;print xml.__file__")

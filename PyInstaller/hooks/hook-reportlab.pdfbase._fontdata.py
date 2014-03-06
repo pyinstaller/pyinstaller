@@ -7,11 +7,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from PyInstaller.hooks.hookutils import collect_submodules
+hiddenimports = []
 
-from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
+# Tested on Windows 7 x64 with Python 2.7.6 x32 using ReportLab 3.0
+# This has been observed to *not* work on ReportLab 2.7
 
-
-# IPython (tested with 0.13) requires the following files:
-#   ./site-packages/IPython/config/profile/README_STARTUP
-datas = collect_data_files('IPython')
-hiddenimports = collect_submodules('IPython')
+for x in collect_submodules('reportlab.pdfbase'):
+    if x.startswith('reportlab.pdfbase._fontdata_'):
+        hiddenimports.append(x)
