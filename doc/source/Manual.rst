@@ -2014,7 +2014,7 @@ define one or more of the following three global names:
 
     For an example see ``hook-docutils.py`` in the hooks folder.
 
-    Note: We suggest alwasy using the fully qualified name
+    Note: We suggest always using the fully qualified name
     ``PyInstaller.hooks.hookutils`` for importing hookutils. This
     avoids some pitfalls when implementing hooks for sub-modules.
 
