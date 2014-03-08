@@ -99,9 +99,9 @@ class BaseDirOwner(Owner):
                     co = loadco(stuff[8:])
                     pth = pyc[0]
                 except (ValueError, EOFError):
-                    pyc = None
                     logger.warn("bad .py%s found (%s), will use .py",
                                 PYCO, pyc[0])
+                    pyc = None
 
         if (co is None and py) or (py and pyc[1] < py[1]):
             # If we have no pyc or py is newer
