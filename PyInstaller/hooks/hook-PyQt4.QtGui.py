@@ -14,6 +14,7 @@ from PyInstaller.hooks.hookutils import qt4_plugins_binaries
 
 
 def hook(mod):
+    # TODO fix this hook to use attribute 'binaries'.
     mod.pyinstaller_binaries.extend(qt4_plugins_binaries('accessible'))
     mod.pyinstaller_binaries.extend(qt4_plugins_binaries('iconengines'))
     mod.pyinstaller_binaries.extend(qt4_plugins_binaries('imageformats'))

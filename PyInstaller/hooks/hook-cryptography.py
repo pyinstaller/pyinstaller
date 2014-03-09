@@ -32,5 +32,6 @@ def hook(mod):
         ffimods = glob.glob(os.path.join(cryptography_dir, '_cffi_*%s*' % ext))
         for f in ffimods:
             name = os.path.join('cryptography', os.path.basename(f))
+            # TODO fix this hook to use attribute 'binaries'.
             mod.pyinstaller_binaries.append((name, f, 'BINARY'))
     return mod
