@@ -18,8 +18,15 @@ attribute.
 import os.path
 from PyInstaller.hooks.hookutils import get_module_file_attribute
 
-def hook(mod):
-    pth = get_module_file_attribute('pythoncom')
-    name = os.path.basename(pth)
-    mod.pyinstaller_binaries.extend([(name, pth, 'BINARY')])
-    return mod
+_pth = get_module_file_attribute('pythoncom')
+
+# Binaries that should be included with the module 'pythoncom'.
+# List mod.pyinstaller_binaries gets extended.
+binaries = [
+    (
+        # Relative path in the ./dist/app_name/ directory.
+        os.path.basename(_pth),
+        # Absolute path on hard disk.
+        _pth,
+    )
+]
