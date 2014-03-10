@@ -211,6 +211,7 @@ def qt4_plugins_binaries(plugin_type):
     
     for f in files:
         binaries.append((
+            # TODO fix this hook to use hook-name.py attribute 'binaries'.
             os.path.join('qt4_plugins', plugin_type, os.path.basename(f)),
             f, 'BINARY'))
             

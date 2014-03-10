@@ -8,13 +8,9 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['sip', 'PyQt4.QtCore', 'PyQt4._qt']
+# Test importing some modules from pywin32 package.
+# All modules from pywin32 depens on module pywintypes.
+# This module should be also included.
 
-from PyInstaller.hooks.hookutils import qt4_plugins_binaries
 
-
-def hook(mod):
-    # Network Bearer Management in Qt4 4.7+
-    # TODO fix this hook to use attribute 'binaries'.
-    mod.pyinstaller_binaries.extend(qt4_plugins_binaries('bearer'))
-    return mod
+import win32com

@@ -18,8 +18,5 @@ attribute.
 import os.path
 from PyInstaller.hooks.hookutils import get_module_file_attribute
 
-def hook(mod):
-    pth = get_module_file_attribute('pythoncom')
-    name = os.path.basename(pth)
-    mod.pyinstaller_binaries.extend([(name, pth, 'BINARY')])
-    return mod
+_pth = get_module_file_attribute('pywintypes')
+binaries = [(os.path.basename(_pth), _pth)]

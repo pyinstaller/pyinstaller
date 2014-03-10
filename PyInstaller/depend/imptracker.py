@@ -350,18 +350,34 @@ class ImportTracker:
         return mod
 
     def _handle_hook(self, mod, hook):
+        # Function hook(mod) has to be called first because this function
+        # could update other attributes - datas, hiddenimports, etc.
         if hasattr(hook, 'hook'):
             mod = hook.hook(mod)
+
+        # hook.hiddenimports is a list of Python module names that PyInstaller
+        # is not able detect.
         if hasattr(hook, 'hiddenimports'):
             for impnm in hook.hiddenimports:
                 mod.pyinstaller_imports.append((impnm, 0, 0, -1))
+        # hook.attrs is a list of tuples (attr_name, value) where 'attr_name'
+        # is name for Python module attribute that should be set/changed.
+        # 'value' is the value of that attribute. PyInstaller will modify
+        # mod.attr_name and set it to 'value' for the created .exe file.
         if hasattr(hook, 'attrs'):
             for attr, val in hook.attrs:
                 setattr(mod, attr, val)
+        # hook.binaries is a list of files to bundle as binaries.
+        # Binaries are special that PyInstaller will check if they
+        # might depend on other dlls (dynamic libraries).
+        if hasattr(hook, 'binaries'):
+            for bundle_name, pth in hook.binaries:
+                mod.pyinstaller_binaries.append((bundle_name, pth, 'BINARY'))
+
+        # hook.datas is a list of globs of files or
+        # directories to bundle as datafiles. For each
+        # glob, a destination directory is specified.
         if hasattr(hook, 'datas'):
-            # hook.datas is a list of globs of files or
-            # directories to bundle as datafiles. For each
-            # glob, a destination directory is specified.
             def _visit((base, dest_dir, datas), dirname, names):
                 for fn in names:
                     fn = os.path.join(dirname, fn)
