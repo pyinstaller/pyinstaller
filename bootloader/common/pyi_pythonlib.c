@@ -244,6 +244,9 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
     PI_Py_SetProgramName(wchar_tmp3);
 	PI_Py_Initialize();
 
+
+
+    // TODO Replace all this sys.path manipulation by function PI_Py_SetPath(). PYTHONPATH should include two items: base_library.zip for python3 and status->mainpath with all python versions.
 	VS("LOADER: Initializing python2\n");
     // TODO set sys.path by function from Python C API (Python 2.6+)
 	/* Set sys.path */
@@ -260,6 +263,11 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	strcpy(tmp, status->homepath);
 	sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
 	PI_PyRun_SimpleString (cmd);
+	sprintf(cmd, "sys.path.append(r\"%s/base_library.zip\")", tmp);
+	PI_PyRun_SimpleString(cmd);
+
+
+
 
 	/* Set argv[0] to be the archiveName */
 	py_argv = PI_PyList_New(0);
@@ -319,8 +327,17 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 			/* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
 			 * data form the right point.
 			 */
-			co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf+8, ntohl(ptoc->ulen)-8);
-			mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
+            // TODO It looks like from python 3.3 the header size was changed to 12 bytes. We might want to put here python version check to make the bootloader working again with previous versions.
+            // co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf+8, ntohl(ptoc->ulen)-8);
+			co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf+12, ntohl(ptoc->ulen)-12);
+			if (co != NULL) {
+				VS("LOADER: callfunction returned...");
+				mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
+			} else {
+                // TODO callfunctions might return NULL - find yout why and foor what modules.
+				VS("LOADER: callfunction returned NULL");
+				mod = NULL;
+			}
 
 			/* Check for errors in loading */
 			if (mod == NULL) {
@@ -341,6 +358,7 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 }
 
 
+// TODO Do we still need this function?
 /* Install a zlib from a toc entry
  * Return non zero on failure
  */

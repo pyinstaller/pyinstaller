@@ -375,9 +375,12 @@ class CExtensionImporter(object):
     def __init__(self):
         # TODO cache directory content for faster module lookup without file system access.
         # Create hashmap of directory content for better performance.
-        files = pyi_os_path.os_listdir(sys.prefix)
-        self._file_cache = set(files)
-
+        # TODO find out why sys.prefix is empty - probably it is not set properly for Python3.
+        if sys.prefix.strip() != '':
+            files = pyi_os_path.os_listdir(sys.prefix)
+            self._file_cache = set(files)
+        else:
+            self._file_cache = []
         self._suffixes = dict()
 
         # Find the platform specific suffixes. On Windows it is .pyd, on Linux/Unix .so.
