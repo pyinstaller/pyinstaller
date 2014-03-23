@@ -636,6 +636,11 @@ class Analysis(Target):
         # Copied from original code
         if is_win:
             depmanifest.writeprettyxml()
+
+        # Verify that Python dynamic library can be found.
+        # Without dynamic Python library PyInstaller cannot continue.
+        self._check_python_library(self.binaries)
+
         # Get the saved details of a prior run, if any. Would not exist if
         # the user erased the work files, or gave a different --workpath
         # or specified --clean.
@@ -676,7 +681,7 @@ class Analysis(Target):
         else :
             logger.info("%s no change!", self.out)
             return 0
-         
+
     def _check_python_library(self, binaries):
         """
         Verify presence of the Python dynamic library in the binary dependencies.
@@ -696,7 +701,12 @@ class Analysis(Target):
                 logger.info('Adding Python library to binary dependencies')
                 binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
         else:
-            raise IOError("Python library not found!")
+            msg = """Python library not found! This usually happens on Debian/Ubuntu
+where you need to install Python library:
+
+  apt-get install libpythonX.Y
+"""
+            raise IOError(msg)
 
 
 def _findRTHook(modnm):

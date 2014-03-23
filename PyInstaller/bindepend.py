@@ -617,26 +617,34 @@ def findLibrary(name):
         if m:
             lib = m.group(0)
 
-    # Look in the known safe paths
+    # Look in the known safe paths.
     if lib is None:
-        paths = ['/lib', '/lib32', '/lib64', '/usr/lib', '/usr/lib32', '/usr/lib64']
+        # Architecture independent locations.
+        paths = ['/lib', '/usr/lib']
+        # Architecture dependent locations.
+        arch = compat.architecture()
+        if arch == '32bit':
+            paths.extend(['/lib32', '/usr/lib32', '/usr/lib/i386-linux-gnu'])
+        else:
+            paths.extend(['/lib64', '/usr/lib64', '/usr/lib/x86_64-linux-gnu'])
+
 
         # On Debian/Ubuntu /usr/bin/python is linked statically with libpython.
         # Newer Debian/Ubuntu with multiarch support putsh the libpythonX.Y.so
         # To paths like /usr/lib/i386-linux-gnu/.
         try:
-            import sysconfig  # Module available only in Python 2.7.
+            # Module available only in Python 2.7+
+            import sysconfig
+            # 'multiarchsubdir' works on Debian/Ubuntu only in Python 2.7 and 3.3+.
             arch_subdir = sysconfig.get_config_var('multiarchsubdir')
             # Ignore if None is returned.
             if arch_subdir:
                 arch_subdir = os.path.basename(arch_subdir)
-                paths.extend([
-                    os.path.join('/usr/lib', arch_subdir),
-                    os.path.join('/usr/lib32', arch_subdir),
-                    os.path.join('/usr/lib64', arch_subdir),
-                ])
+                paths.append(os.path.join('/usr/lib', arch_subdir))
+            else:
+                logger.info('Multiarch directory not detected.')
         except ImportError:
-            pass
+            logger.info('Multiarch directory not detected.')
 
         if is_aix:
             paths.append('/opt/freeware/lib')
@@ -653,17 +661,19 @@ def findLibrary(name):
 
     # Resolve the file name into the soname
     dir = os.path.dirname(lib)
-    return os.path.join(dir, getSoname(lib))
+    return os.path.join(dir, _get_so_name(lib))
 
 
-def getSoname(filename):
+def _get_so_name(filename):
     """
     Return the soname of a library.
+
+    Soname is usefull whene there are multiple symplinks to one library.
     """
-    cmd = ["objdump", "-p", "-j", ".dynamic", filename]
+    # TODO verify that objdump works on other unixes and not Linux only.
+    cmd = ["objdump", "-p", filename]
     m = re.search(r'\s+SONAME\s+([^\s]+)', compat.exec_command(*cmd))
-    if m:
-        return m.group(1)
+    return m.group(1)
 
 
 def get_python_library_path():
@@ -696,7 +706,8 @@ def get_python_library_path():
         names = ('libpython%d.%d.a' % pyver,)
     elif is_unix:
         # Other *nix platforms.
-        # Python 3 .so library on Linux looks like: 'libpython3.3m.so.1.0'
+        # Python 3 .so library on Linux looks like: libpython3.2mu.so.1.0,libpython3.3m.so.1.0
+        # The name might be glob statement.
         names = ('libpython%d.%d*.so.1.0' % pyver,)
     else:
         raise SystemExit('Your platform is not yet supported.')
