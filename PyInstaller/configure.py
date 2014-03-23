@@ -166,26 +166,25 @@ def find_PYZ_dependencies(config):
     mod1 = __import__('_struct')  # C extension.
     mod2 = __import__('struct')
 
+    # Basic modules necessary for the bootstrap process.
+    loader_mods = []
+
     # TODO - these hard-coded paths to struct/_struct are bogus, need to
     # at least get the real platform-dependent ones out of the main graph?
     loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-    # On Windows '_struct' module is a built-in module.
-    if is_win:
-        toc = build.TOC( [
-            ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
-            ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
-            ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
-            ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
-        ] )
-    else:
-         toc = build.TOC( [
-            ('_struct', os.path.abspath(mod1.__file__), 'EXTENSION'),
-            ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
-            ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
-            ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
-            ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
-        ] )       
+    # On some platforms (Windows, Debian/Ubuntu) '_struct' module is a built-in module (linked statically)
+    # and thus does not have attribute __file__.
+    # TODO verify this __file__ check on windows.
+    if hasattr(mod1, '__file__'):
+        loader_mods =[('_struct', os.path.abspath(mod1.__file__), 'EXTENSION')]
 
+    loader_mods +=[
+        ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
+        ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
+        ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
+        ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
+    ]
+    toc = build.TOC(loader_mods)
     config['PYZ_dependencies'] = toc.data
 
 
