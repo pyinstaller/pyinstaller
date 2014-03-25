@@ -25,6 +25,7 @@ from PyInstaller.loader import pyi_archive, pyi_carchive
 
 import PyInstaller.depend.imptracker
 import PyInstaller.depend.modules
+import PyInstaller.depend.utils
 
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin, is_cygwin
@@ -424,6 +425,7 @@ class Analysis(Target):
                     os.path.walk(fn, _visit, (os.path.dirname(fn), dest_dir, datas))
         return datas
 
+    # TODO What are 'check_guts' methods useful for?
     def check_guts(self, last_build):
         if last_build == 0:
             logger.info("building %s because %s non existent", self.__class__.__name__, self.outnm)
@@ -436,6 +438,8 @@ class Analysis(Target):
         data = Target.get_guts(self, last_build)
         if not data:
             return True
+        # TODO What does it mean 'data[-6:]' ?
+        # TODO Do this code really get executed?
         scripts, pure, binaries, zipfiles, datas, hiddenimports = data[-6:]
         self.scripts = TOC(scripts)
         self.pure = {'toc': TOC(pure), 'code': {}}
@@ -446,6 +450,16 @@ class Analysis(Target):
         return False
 
     def assemble(self):
+        # TODO Find a better place where to put 'base_library.zip' and when to created it.
+        # For Python 3 it is necessary to create file 'base_library.zip'
+        # containing core Python modules. In Python 3 some built-in modules
+        # are written in pure Python. base_library.zip is a way how to have
+        # those modules as "built-in".
+        libzip_filename = os.path.join(WORKPATH, 'base_library.zip')
+        PyInstaller.depend.utils.create_py3_base_library(libzip_filename)
+        # Bundle base_library.zip as data file.
+        self.datas.append(('', libzip_filename, 'DATA'))
+
         logger.info("running Analysis %s", os.path.basename(self.out))
         # Get paths to Python and, in Windows, the manifest.
         python = sys.executable

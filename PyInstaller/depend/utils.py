@@ -12,19 +12,87 @@
 Scan the code object for imports, __all__ and wierd stuff
 """
 
-
 import ctypes
 import dis
+
+import imp
+import io
+import marshal
 import os
+import zipfile
+
+from modulegraph import find_modules, modulegraph
 
 from PyInstaller import compat
 from PyInstaller.compat import is_darwin, is_unix, is_py2, is_py27
 
-import PyInstaller.depend.utils
 import PyInstaller.log as logging
 
 
 logger = logging.getLogger(__name__)
+
+
+# TODO ensure modules from base_library.zip are not bundled twice.
+# TODO find out if modules from base_library.zip could be somehow bundled into the .exe file.
+def create_py3_base_library(libzip_filename):
+    """
+    Package basic Python modules into .zip file. The .zip file with basic
+    modules is necessary to have on PYTHONPATH for initializing libpython3
+    in order to run the frozen executable with Python 3.
+    """
+    logger.info('Creating base_library.zip for Python 3')
+
+    # TODO This module list should be somehow dynamically detected.
+    graph = find_modules.find_modules(includes=(
+        'traceback', 'warnings', 'encodings.*', 'importlib._bootstrap',
+    ))
+
+    # TODO Replace this function with something better or something from standard Python library.
+    # Helper functions.
+    def _write_long(f, x):
+        """
+        Write a 32-bit int to a file in little-endian order.
+        """
+        f.write(bytes([x & 0xff,
+                       (x >> 8) & 0xff,
+                       (x >> 16) & 0xff,
+                       (x >> 24) & 0xff]))
+
+    # Constants same for all .pyc files.
+    magic = imp.get_magic()
+
+    try:
+        # Remove .zip from previous run.
+        if os.path.exists(libzip_filename):
+            os.remove(libzip_filename)
+        logger.debug('Adding python files to base_library.zip')
+        # Class zipfile.PyZipFile is not suitable for PyInstaller needs.
+        with zipfile.ZipFile(libzip_filename, mode='w') as zf:
+            zf.debug = 3
+            for mod in graph.flatten():
+                if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
+                    st = os.stat(mod.filename)
+                    timestamp = int(st.st_mtime)
+                    size = st.st_size & 0xFFFFFFFF
+                    # Name inside a zip archive.
+                    # TODO use .pyo suffix if optimize flag is enabled.
+                    if type(mod) is modulegraph.Package:
+                        new_name = mod.identifier.replace('.', os.sep) + os.sep + '__init__' + '.pyc'
+                    else:
+                        new_name = mod.identifier.replace('.', os.sep) + '.pyc'
+
+                    # Write code to a file.
+                    # This code is similar to py_compile.compile().
+                    with io.BytesIO() as fc:
+                        # Prepare all data in byte stream file-like object.
+                        fc.write(magic)
+                        _write_long(fc, timestamp)
+                        _write_long(fc, size)
+                        marshal.dump(mod.code, fc)
+                        zf.writestr(new_name, fc.getvalue())
+
+    except Exception as e:
+        logger.error('base_library.zip could not be created!')
 
 
 ### TODO Minimize this code to only resolving ctypes imports.
@@ -60,11 +128,11 @@ if is_py2:
                         dis.opname.index('POP_JUMP_IF_FALSE'),
                         dis.opname.index('JUMP_IF_TRUE_OR_POP'),
                         dis.opname.index('JUMP_IF_FALSE_OR_POP'),
-                        ])
+        ])
     else:
         COND_OPS = set([dis.opname.index('JUMP_IF_FALSE'),
                         dis.opname.index('JUMP_IF_TRUE'),
-                        ])
+        ])
     JUMP_FORWARD = dis.opname.index('JUMP_FORWARD')
     try:
         STORE_DEREF = dis.opname.index('STORE_DEREF')
@@ -127,7 +195,7 @@ if is_py2:
                     name = lastname = co.co_names[oparg]
                 else:
                     name = lastname = co.co_names[oparg]
-                #print 'import_name', name, `lastname`, level
+                    #print 'import_name', name, `lastname`, level
                 m.append((name, nested, conditional, level))
             elif op == IMPORT_FROM:
                 name = co.co_names[oparg]
@@ -136,7 +204,7 @@ if is_py2:
                     name = lastname + name
                 else:
                     name = lastname + '.' + name
-                #print name
+                    #print name
                 m.append((name, nested, conditional, level))
                 assert lastname is not None
             elif op == IMPORT_STAR:
@@ -340,7 +408,7 @@ if is_py2:
                 # more code to find out the full path.
                 if cpath is None:
                     cpath = cbin
-                # "man ld.so" says that we should first search LD_LIBRARY_PATH
+                    # "man ld.so" says that we should first search LD_LIBRARY_PATH
                 # and then the ldcache
                 for d in compat.getenv(envvar, '').split(os.pathsep):
                     if os.path.isfile(os.path.join(d, cpath)):
