@@ -97,7 +97,7 @@ def configure(conf):
 
     # on 64bit Mac function platform.architecture() returns 64bit even
     # for 32bit Python. This is the workaround for this.
-    if myplatform == 'darwin' and sys.maxint <= 3**32:
+    if myplatform == 'darwin' and sys.maxsize <= 3**32:
         myarch = '32bit'
     else:
         myarch = platform.architecture()[0] # 32bit or 64bit
@@ -145,8 +145,8 @@ def configure(conf):
                 # Do not embed manifest file.
                 # Manifest file will be added in the phase of packaging python application.
                 conf.env.MSVC_MANIFEST = False
-            except Exception, e:
-                print e
+            except Exception as e:
+                print(e)
                 Utils.pprint('RED', str(e))
                 Utils.pprint('RED', 'GCC (MinGW) or MSVC compiler not found.')
                 exit(1)
@@ -493,8 +493,8 @@ def build(bld):
     else: # linux, darwin (MacOSX)
 
         libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
-        #if opt.boehmgc:
-        libs.append('gc')
+        if opt.boehmgc:
+            libs.append('gc')
 
         for key, value in targets.items():
             bld(
