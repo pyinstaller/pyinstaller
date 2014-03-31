@@ -41,7 +41,7 @@ from PyInstaller.utils import git
 
 # Uncomment this line for development of version 3.0.
 #VERSION = (3, 0, 0, 'dev', git.get_repo_revision())
-VERSION = (2, 1, 0)
+VERSION = (2, 1, 1, 'dev')
 
 
 is_py25 = compat.is_py25
