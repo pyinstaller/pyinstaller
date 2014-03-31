@@ -198,15 +198,22 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
     // TODO set pythonpath by function from Python C API (Python 2.6+)
     /* Set the PYTHONPATH */
 	VS("LOADER: Manipulating evironment (PYTHONPATH, PYTHONHOME)\n");
-    strcpy(pypath, status->mainpath);
-    // Append base_library.zip to PYTHONPATH - necessary for Py_Initialize().
-    strcat(pypath, ":");
-    strncat(pypath, status->mainpath, PATH_MAX - strlen(pypath));
-    strcat(pypath, "/base_library.zip");
+	// TODO Check if base_library.zip should be first in sys.path.
+    /* Append base_library.zip to PYTHONPATH - necessary for Py_Initialize() in Python 3. */
+    // TODO Check if base_library.zip does not hurt for Python 2. */
+    strncat(pypath, status->mainpath, strlen(status->mainpath));
+    strncat(pypath, "/base_library.zip", strlen("/base_library.zip"));
+    /* Append status->mainpath to PYTHONPATH. */
+    strncat(pypath, ":", strlen(":"));
+    strncat(pypath, status->mainpath, strlen(status->mainpath));
+    // TODO check if status->homepath should be in PYTHONPATH in onefile mode.
+    /*if (status->temppath[0] != PYI_NULLCHAR) {
+        strcat(pypath, ":");
+        strcpy(pypath, status->homepat);
+    }*/
 	VS("LOADER: PYTHONPATH is %s\n", pypath);
     // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
     mbstowcs(wchar_tmp, pypath, PATH_MAX);
-	//pyi_setenv("PYTHONPATH", pypath);
     PI_Py_SetPath(wchar_tmp);
 
 	/* Clear out PYTHONHOME to avoid clashing with any Python installation. */
@@ -226,6 +233,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
     /* Startup flags. 1 means enabled, 0 disabled. */
 	*PI_Py_NoSiteFlag = 1;  /* Suppress 'import site'. Maybe changed to 0 by pyi_pylib_set_runtime_opts() */
     *PI_Py_FrozenFlag = 1;  /* Needed by getpath.c from Python. */
+    // TODO check that with this flag we could keep variables PYTHONPATH/PYTHONHOME - if running python from frozen executable.
     *PI_Py_IgnoreEnvironmentFlag = 1;  /* e.g. PYTHONPATH, PYTHONHOME */
     *PI_Py_DontWriteBytecodeFlag = 1;  /* Suppress writing bytecode files (*.py[co]) */
     *PI_Py_NoUserSiteDirectory = 1;  /* for -s and site.py */
@@ -244,31 +252,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
     PI_Py_SetProgramName(wchar_tmp3);
 	PI_Py_Initialize();
 
-
-
-    // TODO Replace all this sys.path manipulation by function PI_Py_SetPath(). PYTHONPATH should include two items: base_library.zip for python3 and status->mainpath with all python versions.
-	VS("LOADER: Initializing python2\n");
-    // TODO set sys.path by function from Python C API (Python 2.6+)
-	/* Set sys.path */
-	VS("LOADER: Manipulating Python's sys.path\n");
-	PI_PyRun_SimpleString("import sys\n");
-	VS("LOADER: Initializing python2\n");
-	PI_PyRun_SimpleString("del sys.path[:]\n");
-    if (status->temppath[0] != PYI_NULLCHAR) {
-        strcpy(tmp, status->temppath);
-	    sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
-        PI_PyRun_SimpleString(cmd);
-    }
-
-	strcpy(tmp, status->homepath);
-	sprintf(cmd, "sys.path.append(r\"%s\")", tmp);
-	PI_PyRun_SimpleString (cmd);
-	sprintf(cmd, "sys.path.append(r\"%s/base_library.zip\")", tmp);
-	PI_PyRun_SimpleString(cmd);
-
-
-
-
+    // TODO Better way to set sys.argv[0]. API call? Or is sys.argv[0] set properly when function 'Py_SetProgramName' is called?
 	/* Set argv[0] to be the archiveName */
 	py_argv = PI_PyList_New(0);
 	val = PI_Py_BuildValue("s", status->archivename);
@@ -358,18 +342,24 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 }
 
 
-// TODO Do we still need this function?
-/* Install a zlib from a toc entry
+/*
+ * Install a zlib from a toc entry.
+ *
+ * The installation is done by adding  file like
+ *    absolute_path/dist/hello_world/hello_world?123456
+ * to sys.path. The end number is the offset where the
+ * Python bootstrap code should read the zip data.
  * Return non zero on failure
  */
 int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	int rc;
 	int zlibpos = status->pkgstart + ntohl(ptoc->pos);
-	char *tmpl = "sys.path.append(r\"%s?%d\")\n";
+	// TODO Is there a better way to avoid call python code? Probably any API call?
+	char *tmpl = "import sys; sys.path.append(r\"%s?%d\")\n";
 	char *cmd = (char *) malloc(strlen(tmpl) + strlen(status->archivename) + 32);
 	sprintf(cmd, tmpl, status->archivename, zlibpos);
-	/*VS(cmd);*/
+	VS("LOADER: %s\n", cmd);
 	rc = PI_PyRun_SimpleString(cmd);
 	if (rc != 0)
 	{

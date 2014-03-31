@@ -313,7 +313,7 @@ int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
  * Run scripts
  * Return non zero on failure
  */
-int pyi_pylib_run_scripts(ARCHIVE_STATUS *status)
+int pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 {
 	unsigned char *data;
 	char buf[PATH_MAX];
@@ -443,7 +443,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
 	if (pyi_pylib_start_python(status, argc, argv))
 		return -1;
 
-	/* Import modules from archive - bootstrap */
+	/* Import core pyinstaller modules from the executable - bootstrap */
 	if (pyi_pylib_import_modules(status))
 		return -1;
 
@@ -452,7 +452,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
 		return -1;
 
 	/* Run scripts */
-	rc = pyi_pylib_run_scripts(status);
+	rc = pyi_launch_run_scripts(status);
 
 	VS("LOADER: OK.\n");
 
