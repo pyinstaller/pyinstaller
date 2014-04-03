@@ -80,6 +80,12 @@ typedef struct _archive_status {
      * calling this function would cause segmentation fault.
      */
     bool  is_pylib_loaded;
+    /*
+     * Cached command-line arguments.
+     */
+     int argc;      /* Count of command-line arguments. */
+     // TODO convert arguments to wchar_t type.
+     char **argv;   /* Array of strings. */
 } ARCHIVE_STATUS;
 
 
@@ -107,6 +113,7 @@ int pyi_arch_open(ARCHIVE_STATUS *status);
 // TODO implement alloc function.
 //void pyi_arch_status_alloc_memory(ARCHIVE_STATUS *status)
 void pyi_arch_status_free_memory(ARCHIVE_STATUS *status);
+void pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv);
 
 /*
  * Setup the paths and open the archive

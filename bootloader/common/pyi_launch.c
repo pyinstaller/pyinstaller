@@ -426,7 +426,7 @@ void pyi_launch_initialize(const char *executable, const char *extractionpath)
  * or if there are no binaries to extract, you go on
  * to pyi_launch_execute(), which is the important part.
  */
-int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
+int pyi_launch_execute(ARCHIVE_STATUS *status)
 {
 	int rc = 0;
 
@@ -440,7 +440,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
     }
 
 	/* Start Python. */
-	if (pyi_pylib_start_python(status, argc, argv))
+	if (pyi_pylib_start_python(status))
 		return -1;
 
 	/* Import core pyinstaller modules from the executable - bootstrap */

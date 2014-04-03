@@ -76,13 +76,17 @@ int main(int argc, char* argv[])
 #endif
     int i = 0;
 
+    // TODO create special function to allocate memory for archive status pyi_arch_status_alloc_memory(archive_status);
     archive_status = (ARCHIVE_STATUS *) calloc(1,sizeof(ARCHIVE_STATUS));
     if (archive_status == NULL) {
         FATALERROR("Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
     }
 
-    pyi_path_executable(executable, argv[0]);
+    /* Cache command-line arguments and convert them to wchar_t. */
+    pyi_arch_cache_argv(archive_status, argc, argv);
+
+    pyi_path_executable(executable, archive_status->argv[0]);
     pyi_path_archivefile(archivefile, executable);
     pyi_path_homepath(homepath, executable);
 
@@ -124,7 +128,7 @@ int main(int argc, char* argv[])
 
         /* Main code to initialize Python and run user's code. */
         pyi_launch_initialize(executable, extractionpath);
-        rc = pyi_launch_execute(archive_status, argc, argv);
+        rc = pyi_launch_execute(archive_status);
         pyi_launch_finalize(archive_status);
 
     } else {
@@ -136,8 +140,9 @@ int main(int argc, char* argv[])
             return -1;
         }
 
-        VS("LOADER: Executing self as child\n");
         /* Run the 'child' process, then clean up. */
+
+        VS("LOADER: Executing self as child\n");
         pyi_setenv("_MEIPASS2", archive_status->temppath[0] != 0 ? archive_status->temppath : homepath);
 
         VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));

@@ -55,13 +55,9 @@ void pyi_launch_finalize(ARCHIVE_STATUS *archive_status);
 /*
  * Load Python and execute all scripts in the archive
  *
- * @param argc			Count of "commandline" args
- *
- * @param argv			The "commandline".
- *
  * @return -1 for internal failures, or the rc of the last script.
  */
-int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[]);
+int pyi_launch_execute(ARCHIVE_STATUS *status);
 
 
 /*

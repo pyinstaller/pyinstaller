@@ -175,9 +175,38 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 
 
 /*
+ * Set Python list sys.argv from *argv/argc. (Command-line options).
+ * Ensure sys.argv[0] is the full absolute path to the executable (Derived from
+ * status->archivename).
+ * Ensure all items in sys.argv are unicode objects.
+ */
+static void pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
+{
+        /*
+        TODO
+        ensure we get argc/argv as wchar_t types.
+        convert argv[x] to Py_UNICODE strings - PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
+        create Python string and set this string to sys.path - use Python C api.
+        */
+            // TODO Better way to set sys.argv[0]. API call? Or is sys.argv[0] set properly when function 'Py_SetProgramName' is called?
+	/* Set argv[0] to be the archiveName */
+	/*py_argv = PI_PyList_New(0);
+	val = PI_Py_BuildValue("s", status->archivename);
+	PI_PyList_Append(py_argv, val);
+	for (i = 1; i < argc; ++i) {
+		val = PI_Py_BuildValue ("s", argv[i]);
+		PI_PyList_Append (py_argv, val);
+	}
+	sys = PI_PyImport_ImportModule("sys");*/
+	/* VS("Setting sys.argv\n"); */
+	//PI_PyObject_SetAttrString(sys, "argv", py_argv);
+}
+
+
+/*
  * Start python - return 0 on success
  */
-int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
+int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 {
     /* Set PYTHONPATH so dynamic libs will load.
      * PYTHONHOME for function Py_SetPythonHome() should point
@@ -252,18 +281,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
     PI_Py_SetProgramName(wchar_tmp3);
 	PI_Py_Initialize();
 
-    // TODO Better way to set sys.argv[0]. API call? Or is sys.argv[0] set properly when function 'Py_SetProgramName' is called?
-	/* Set argv[0] to be the archiveName */
-	py_argv = PI_PyList_New(0);
-	val = PI_Py_BuildValue("s", status->archivename);
-	PI_PyList_Append(py_argv, val);
-	for (i = 1; i < argc; ++i) {
-		val = PI_Py_BuildValue ("s", argv[i]);
-		PI_PyList_Append (py_argv, val);
-	}
-	sys = PI_PyImport_ImportModule("sys");
-	/* VS("Setting sys.argv\n"); */
-	PI_PyObject_SetAttrString(sys, "argv", py_argv);
+    pyi_pylib_set_sys_argv(status);
 
 	/* Check for a python error */
 	if (PI_PyErr_Occurred())

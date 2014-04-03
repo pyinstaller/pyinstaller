@@ -375,6 +375,18 @@ int pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
 
 
 /*
+ * Cache command-line arguments and convert them to wchar_t.
+ */
+void pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
+{
+    // TODO convert argv from char to wchar_t
+    // TODO copy argv strings to new allocated array
+    archive_status->argc = argc;
+    archive_status->argv = argv;
+}
+
+
+/*
  * Free memory allocated for archive status.
  */
 void pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
@@ -385,6 +397,7 @@ void pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
         if (archive_status->tocbuff != NULL) {
             free(archive_status->tocbuff);
         }
+        /* TODO Free the argv[] memory. */
         free(archive_status);
     }
 }
