@@ -84,9 +84,11 @@ int main(int argc, char* argv[])
     }
 
     /* Cache command-line arguments and convert them to wchar_t. */
-    pyi_arch_cache_argv(archive_status, argc, argv);
+    if (pyi_arch_cache_argv(archive_status, argc, argv)) {
+        return -1;
+    }
 
-    pyi_path_executable(executable, archive_status->argv[0]);
+    pyi_path_executable(executable, argv[0]);
     pyi_path_archivefile(archivefile, executable);
     pyi_path_homepath(homepath, executable);
 

@@ -22,6 +22,7 @@
     #include <netinet/in.h>  // ntohl
     #include <sys/stat.h>  // fchmod
 #endif
+#include <locale.h>  // setlocale, mbstowcs
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>
 
@@ -375,14 +376,46 @@ int pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
 
 
 /*
- * Cache command-line arguments and convert them to wchar_t.
+ * Cache command-line arguments and convert them to wchar_t (unicode type).
+ *
+ * Return 0 on success.
  */
-void pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
+int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
 {
-    // TODO convert argv from char to wchar_t
-    // TODO copy argv strings to new allocated array
-    archive_status->argc = argc;
-    archive_status->argv = argv;
+    // TODO on Windows use 'wmain' to get argv already as wchar_t if possible.
+    char *old_locale;
+    int i;
+    size_t count;
+
+    /* Allocate memory for argv cache. */
+    archive_status->argv = malloc(sizeof(wchar_t*) * archive_status->argc);
+    for (i = 0; i < argc; i++) {
+        archive_status->argv[i] = malloc(sizeof(wchar_t) * PATH_MAX);
+    }
+
+	/* Set argv[0] to be the absolute path to executable name. Python might need this. */
+	// TODO status->archivename should be passed as wchar_t
+    count = mbstowcs(archive_status->argv[0], archive_status->archivename, PATH_MAX-1);
+    if (count == (size_t)-1) {
+        VS("LOADER: Error converting argument %s to string\n", argv[i]);
+        return 1;
+    }
+
+    /* Reset locale to default. Probably necessary for char/wchar_t conversion. */
+    old_locale = setlocale(LC_ALL, NULL);
+    setlocale(LC_ALL, "");
+    /* Convert other possible arguments. Skip argv[0]. */
+    for (i = 1; i < argc; i++) {
+        count = mbstowcs(archive_status->argv[i], argv[i], PATH_MAX-1);
+        if (count == (size_t)-1) {
+            VS("LOADER: Error converting argument %s to string\n", argv[i]);
+            return 1;
+        }
+    }
+    /* Restore locale settings. */
+    setlocale(LC_ALL, old_locale);
+
+    return 0;
 }
 
 
@@ -391,13 +424,20 @@ void pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
  */
 void pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
 {
+    int i;
+
     if (archive_status != NULL) {
         VS("LOADER: Freeing archive status for %s\n", archive_status->archivename);
         /* Free the TOC memory from the archive status first. */
         if (archive_status->tocbuff != NULL) {
             free(archive_status->tocbuff);
         }
-        /* TODO Free the argv[] memory. */
+        /* Free memory for cached argv[]. */
+        if (archive_status->argv != NULL) {
+            for (i = 0; i < archive_status->argc; i++) {
+                free(archive_status->argv[i]);
+            }
+        }
         free(archive_status);
     }
 }

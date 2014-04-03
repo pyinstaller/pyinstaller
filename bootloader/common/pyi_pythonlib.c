@@ -176,19 +176,18 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 
 /*
  * Set Python list sys.argv from *argv/argc. (Command-line options).
- * Ensure sys.argv[0] is the full absolute path to the executable (Derived from
+ * sys.argv[0] should be full absolute path to the executable (Derived from
  * status->archivename).
- * Ensure all items in sys.argv are unicode objects.
  */
 static void pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
 {
-        /*
-        TODO
-        ensure we get argc/argv as wchar_t types.
-        convert argv[x] to Py_UNICODE strings - PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
-        create Python string and set this string to sys.path - use Python C api.
-        */
-            // TODO Better way to set sys.argv[0]. API call? Or is sys.argv[0] set properly when function 'Py_SetProgramName' is called?
+	VS("LOADER: Setting sys.argv\n"); */
+    /*
+    TODO Python2 find workaround how to set sys.path
+    - convert argv[x] to Py_UNICODE strings - PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
+    - create Python string and set this string to sys.path - use Python C api.
+    */
+        // TODO Better way to set sys.argv[0]. API call? Or is sys.argv[0] set properly when function 'Py_SetProgramName' is called?
 	/* Set argv[0] to be the archiveName */
 	/*py_argv = PI_PyList_New(0);
 	val = PI_Py_BuildValue("s", status->archivename);
@@ -198,7 +197,6 @@ static void pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
 		PI_PyList_Append (py_argv, val);
 	}
 	sys = PI_PyImport_ImportModule("sys");*/
-	/* VS("Setting sys.argv\n"); */
 	//PI_PyObject_SetAttrString(sys, "argv", py_argv);
 }
 
@@ -281,6 +279,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     PI_Py_SetProgramName(wchar_tmp3);
 	PI_Py_Initialize();
 
+    /* Setting sys.argv should be after Py_Initialize() call. */
     pyi_pylib_set_sys_argv(status);
 
 	/* Check for a python error */
