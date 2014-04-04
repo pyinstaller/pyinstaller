@@ -99,7 +99,7 @@ EXTDECLPROC(void, Py_DecRef, (PyObject *));
 EXTDECLPROC(void, Py_SetPath, (wchar_t *));  // TODO wchar_t in Py3
 EXTDECLPROC(void, Py_SetPythonHome, (wchar_t *));  // TODO wchar_t in Py3
 EXTDECLPROC(void, Py_SetProgramName, (wchar_t *)); // TODO wchar_t in Py3
-EXTDECLPROC(int, PySys_SetArgv, (int, wchar_t **));  // TODO wchar_t in Py3
+EXTDECLPROC(int, PySys_SetArgvEx, (int, wchar_t **, int));  // TODO wchar_t in Py3
 EXTDECLPROC(int, PyRun_SimpleString, (char *));
 
 EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));

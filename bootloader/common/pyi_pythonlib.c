@@ -181,23 +181,14 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
  */
 static void pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
 {
-	VS("LOADER: Setting sys.argv\n"); */
+	VS("LOADER: Setting sys.argv\n");
     /*
     TODO Python2 find workaround how to set sys.path
     - convert argv[x] to Py_UNICODE strings - PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
     - create Python string and set this string to sys.path - use Python C api.
     */
-        // TODO Better way to set sys.argv[0]. API call? Or is sys.argv[0] set properly when function 'Py_SetProgramName' is called?
-	/* Set argv[0] to be the archiveName */
-	/*py_argv = PI_PyList_New(0);
-	val = PI_Py_BuildValue("s", status->archivename);
-	PI_PyList_Append(py_argv, val);
-	for (i = 1; i < argc; ++i) {
-		val = PI_Py_BuildValue ("s", argv[i]);
-		PI_PyList_Append (py_argv, val);
-	}
-	sys = PI_PyImport_ImportModule("sys");*/
-	//PI_PyObject_SetAttrString(sys, "argv", py_argv);
+    /* '0' means do not update sys.path. */
+    PI_PySys_SetArgvEx(status->argc, status->argv, 0);
 }
 
 
@@ -266,10 +257,8 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     *PI_Py_NoUserSiteDirectory = 1;  /* for -s and site.py */
 
     /* Enable verbose imports temporarily. */
-    *PI_Py_VerboseFlag = 1;
-
-    /* TODO try to set locale. */
-    setlocale(LC_ALL, "en_US.UTF-8");
+    // TODO dislable verbose imports for official releases.
+    *PI_Py_VerboseFlag = 0;
 
     pyi_pylib_set_runtime_opts(status);
 	VS("LOADER: Initializing python\n");
@@ -332,7 +321,7 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
             // co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf+8, ntohl(ptoc->ulen)-8);
 			co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf+12, ntohl(ptoc->ulen)-12);
 			if (co != NULL) {
-				VS("LOADER: callfunction returned...");
+				VS("LOADER: callfunction returned...\n");
 				mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
 			} else {
                 // TODO callfunctions might return NULL - find yout why and foor what modules.

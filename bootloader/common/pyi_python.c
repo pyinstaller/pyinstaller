@@ -49,7 +49,7 @@ DECLPROC(Py_SetPath);
 DECLPROC(Py_SetPythonHome);
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyRun_SimpleString);
-DECLPROC(PySys_SetArgv);
+DECLPROC(PySys_SetArgvEx);
 DECLPROC(Py_SetProgramName);
 DECLPROC(PyImport_ImportModule);
 DECLPROC(PyImport_AddModule);
@@ -98,7 +98,7 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyImport_ExecCodeModule);
     GETPROC(dll, PyRun_SimpleString);
     GETPROC(dll, PyUnicode_FromString);
-    GETPROC(dll, PySys_SetArgv);
+    GETPROC(dll, PySys_SetArgvEx);
     GETPROC(dll, Py_SetProgramName);
     GETPROC(dll, PyImport_ImportModule);
     GETPROC(dll, PyImport_AddModule);

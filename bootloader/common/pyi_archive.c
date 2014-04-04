@@ -387,9 +387,12 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
     int i;
     size_t count;
 
+    /* Don't forget to cache the count of command-line arguments - argc! */
+    archive_status->argc = argc;
+
     /* Allocate memory for argv cache. */
     archive_status->argv = malloc(sizeof(wchar_t*) * archive_status->argc);
-    for (i = 0; i < argc; i++) {
+    for (i = 0; i < archive_status->argc; i++) {
         archive_status->argv[i] = malloc(sizeof(wchar_t) * PATH_MAX);
     }
 
@@ -405,7 +408,7 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
     old_locale = setlocale(LC_ALL, NULL);
     setlocale(LC_ALL, "");
     /* Convert other possible arguments. Skip argv[0]. */
-    for (i = 1; i < argc; i++) {
+    for (i = 1; i < archive_status->argc; i++) {
         count = mbstowcs(archive_status->argv[i], argv[i], PATH_MAX-1);
         if (count == (size_t)-1) {
             VS("LOADER: Error converting argument %s to string\n", argv[i]);
@@ -437,6 +440,7 @@ void pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
             for (i = 0; i < archive_status->argc; i++) {
                 free(archive_status->argv[i]);
             }
+            free(archive_status->argv);
         }
         free(archive_status);
     }

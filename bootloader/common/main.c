@@ -83,11 +83,6 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    /* Cache command-line arguments and convert them to wchar_t. */
-    if (pyi_arch_cache_argv(archive_status, argc, argv)) {
-        return -1;
-    }
-
     pyi_path_executable(executable, argv[0]);
     pyi_path_archivefile(archivefile, executable);
     pyi_path_homepath(homepath, executable);
@@ -102,6 +97,14 @@ int main(int argc, char* argv[])
                     executable, archivefile);
             return -1;
         }
+    }
+
+    /*
+     * Cache command-line arguments and convert them to wchar_t.
+     * Has to be called after archive_status initialization.
+     */
+    if (pyi_arch_cache_argv(archive_status, argc, argv)) {
+        return -1;
     }
 
 #ifdef WIN32
