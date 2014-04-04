@@ -14,7 +14,13 @@ macholib
 
     # For PyInstaller/lib/ define the version here, since there is no
     # package-resource.
-    __version__ = '0.9.1'
+    __version__ = '0.12'
+
+- add fixed version string to ./altgraph.py::
+
+    # For PyInstaller/lib/ define the version here, since there is no
+    # package-resource.
+    __version__ = '0.12'
 
 - remove the following line from ./macholib/utils.py, ./macholib/MachO.py,
   ./macholib/MachOGraph.py. Otherwise macholib complains about 

@@ -55,7 +55,13 @@ class ObjectGraph(object):
                     yield self.findNode(ident)
                     seen.add(ident)
         return iter_edges(outraw, 3), iter_edges(incraw, 2)
-    
+
+    def edgeData(self, fromNode, toNode):
+        start = self.getRawIdent(fromNode)
+        stop = self.getRawIdent(toNode)
+        edge = self.graph.edge_by_node(start, stop)
+        return self.graph.edge_data(edge)
+
     def filterStack(self, filters):
         """
         Filter the ObjectGraph in-place by removing all edges to nodes that

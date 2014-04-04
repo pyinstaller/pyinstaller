@@ -44,7 +44,10 @@ else:
 
 
 # File open mode for reading (univeral newlines)
-_READ_MODE = "rU"
+if sys.version_info[0] == 2:
+    _READ_MODE = "rU"
+else:
+    _READ_MODE = "r"
 
 
 
@@ -117,6 +120,14 @@ def _eval_str_tuple(value):
 
     return tuple(result)
 
+def _path_from_importerror(exc, default):
+    # This is a hack, but sadly enough the necessary information
+    # isn't available otherwise.
+    m = re.match('^No module named (\S+)$', str(exc))
+    if m is not None:
+        return m.group(1)
+
+    return default
 
 def os_listdir(path):
     """
@@ -238,7 +249,12 @@ def find_module(name, path=None):
             for _sfx, _mode, _type in imp.get_suffixes():
                 if _type == imp.C_EXTENSION:
                     p = loader.prefix + zn + _sfx
-                    if p in loader._files:
+                    if loader._files is None:
+                        loader_files = zipimport._zip_directory_cache[loader.archive]
+                    else:
+                        loader_files = loader._files
+
+                    if p in loader_files:
                         description = (_sfx, 'rb', imp.C_EXTENSION)
                         return (None, pathname + _sfx, description)
 
@@ -438,6 +454,9 @@ class BuiltinModule(BaseModule):
 class SourceModule(BaseModule):
     pass
 
+class InvalidSourceModule(SourceModule):
+    pass
+
 class CompiledModule(BaseModule):
     pass
 
@@ -588,6 +607,78 @@ class ModuleGraph(ObjectGraph):
             others = self._safe_import_hook(other, node, None)
             for other in others:
                 self.createReference(node, other)
+
+    def getReferences(self, fromnode):
+        """
+        Yield all nodes that 'fromnode' dependes on (that is,
+        all modules that 'fromnode' imports.
+        """
+        node = self.findNode(fromnode)
+        out_edges, _ = self.get_edges(node)
+        return out_edges
+
+    def getReferers(self, tonode, collapse_missing_modules=True):
+        node = self.findNode(tonode)
+        _, in_edges = self.get_edges(node)
+
+        if collapse_missing_modules:
+            for n in in_edges:
+                if isinstance(n, MissingModule):
+                    for n in self.getReferers(n, False):
+                        yield n
+
+                else:
+                    yield n
+
+        else:
+            for n in in_edges:
+                yield n
+
+    def hasEdge(self, fromnode, tonode):
+        """ Return True iff there is an edge from 'fromnode' to 'tonode' """
+        fromnode = self.findNode(fromnode)
+        tonode = self.findNode(tonode)
+
+        return self.graph.edge_by_node(fromnode, tonode) is not None
+
+
+    def foldReferences(self, packagenode):
+        """
+        Create edges to/from 'packagenode' based on the
+        edges to/from modules in package. The module nodes
+        are then hidden.
+        """
+        pkg = self.findNode(packagenode)
+
+        for n in self.nodes():
+            if not n.identifier.startswith(pkg.identifier + '.'):
+                continue
+
+            iter_out, iter_inc = n.get_edges()
+            for other in iter_out:
+                if other.identifier.startswith(pkg.identifier + '.'):
+                    continue
+
+                if not self.hasEdge(pkg, other):
+                    # Ignore circular dependencies
+                    self.createReference(pkg, other, 'pkg-internal-import')
+
+            for other in iter_in:
+                if other.identifier.startswith(pkg.identifier + '.'):
+                    # Ignore circular dependencies
+                    continue
+
+                if not self.hasEdge(other, pkg):
+                    self.createReference(other, pkg, 'pkg-import')
+
+            self.graph.hide_node(n)
+
+    # TODO: unfoldReferences(pkg) that restore the submodule nodes and
+    #       removes 'pkg-import' and 'pkg-internal-import' edges. Care should
+    #       be taken to ensure that references are correct if multiple packages
+    #       are folded and then one of them in unfolded
+
+
 
 
     def createReference(self, fromnode, tonode, edge_data='direct'):
@@ -807,6 +898,14 @@ class ModuleGraph(ObjectGraph):
         for sub in fromlist:
             submod = m.get(sub)
             if submod is None:
+                #if hasattr(m, 'code') and m.code is not None and \
+                #        sub in m.code.co_names:
+                if sub in m.globalnames:
+                    # Name is a global in the module
+                    continue
+                # XXX: ^^^ need something simular for names imported
+                #      by 'm'.
+
                 fullname = m.identifier + '.' + sub
                 submod = self.import_module(sub, fullname, m)
                 if submod is None:
@@ -894,8 +993,14 @@ class ModuleGraph(ObjectGraph):
                 contents += '\n'
 
 
-            co = compile(contents, pathname, 'exec', 0, True)
-            cls = SourceModule
+            try:
+                co = compile(contents, pathname, 'exec', 0, True)
+            except SyntaxError:
+                co = None
+                cls = InvalidSourceModule
+
+            else:
+                cls = SourceModule
 
         elif typ == imp.PY_COMPILED:
             if fp.read(4) != imp.get_magic():
@@ -920,6 +1025,7 @@ class ModuleGraph(ObjectGraph):
                 co = self.replace_paths_in_code(co)
 
             m.code = co
+            #m.globalnames.update(co.co_names)
             self.scan_code(co, m)
 
         self.msgout(2, "load_module ->", m)
@@ -931,14 +1037,7 @@ class ModuleGraph(ObjectGraph):
             mods = self.import_hook(name, caller, level=level)
         except ImportError as msg:
             self.msg(2, "ImportError:", str(msg))
-
-            # This is a hack, but sadly enough the necessary information
-            # isn't available otherwise.
-            m = re.match('^No module named (\S+)$', str(msg))
-            if m is not None:
-                m = self.createNode(MissingModule, m.group(1))
-            else:
-                m = self.createNode(MissingModule, name)
+            m = self.createNode(MissingModule, _path_from_importerror(msg, name))
             self.createReference(caller, m)
         else:
             assert len(mods) == 1
@@ -956,20 +1055,24 @@ class ModuleGraph(ObjectGraph):
                 continue
 
             # See if we can load it
-            fullname = name + '.' + sub
+            #    fullname = name + '.' + sub
+            fullname = m.identifier + '.' + sub
+            #else:
+            #    print("XXX", repr(name), repr(sub), repr(caller), repr(m))
             sm = self.findNode(fullname)
             if sm is None:
                 try:
                     sm = self.import_hook(name, caller, [sub], level=level)
                 except ImportError as msg:
                     self.msg(2, "ImportError:", str(msg))
+                    #sm = self.createNode(MissingModule, _path_from_importerror(msg, fullname))
                     sm = self.createNode(MissingModule, fullname)
                 else:
                     sm = self.findNode(fullname)
 
             m[sub] = sm
             if sm is not None:
-                self.createReference(sm, m)
+                self.createReference(m, sm)
                 if sm not in subs:
                     subs.append(sm)
         return subs
@@ -1323,6 +1426,7 @@ class ModuleGraph(ObjectGraph):
             yield s
 
         yield '}\n'
+
 
     def graphreport(self, fileobj=None, flatpackages=()):
         if fileobj is None:
