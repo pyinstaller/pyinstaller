@@ -234,9 +234,6 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     mbstowcs(wchar_tmp, pypath, PATH_MAX);
     PI_Py_SetPath(wchar_tmp);
 
-	/* Clear out PYTHONHOME to avoid clashing with any Python installation. */
-	pyi_unsetenv("PYTHONHOME");
-
     /* Set PYTHONHOME by using function from Python C API. */
     strcpy(pypath, status->mainpath);
 	VS("LOADER: PYTHONHOME is %s\n", pypath);
@@ -251,10 +248,10 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     /* Startup flags. 1 means enabled, 0 disabled. */
 	*PI_Py_NoSiteFlag = 1;  /* Suppress 'import site'. Maybe changed to 0 by pyi_pylib_set_runtime_opts() */
     *PI_Py_FrozenFlag = 1;  /* Needed by getpath.c from Python. */
-    // TODO check that with this flag we could keep variables PYTHONPATH/PYTHONHOME - if running python from frozen executable.
-    *PI_Py_IgnoreEnvironmentFlag = 1;  /* e.g. PYTHONPATH, PYTHONHOME */
     *PI_Py_DontWriteBytecodeFlag = 1;  /* Suppress writing bytecode files (*.py[co]) */
     *PI_Py_NoUserSiteDirectory = 1;  /* for -s and site.py */
+    /* This flag ensures PYTHONPATH and PYTHONHOME are ignored by Python. */
+    *PI_Py_IgnoreEnvironmentFlag = 1;  /* e.g. PYTHONPATH, PYTHONHOME */
 
     /* Enable verbose imports temporarily. */
     // TODO dislable verbose imports for official releases.
