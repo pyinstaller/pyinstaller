@@ -7,5 +7,10 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+import sys
 
-hiddenimports = ['copy_reg']
+# copy_reg module name changed in python 3
+if sys.version_info[0] == 2:
+    hiddenimports = ['copy_reg']
+else:
+    hiddenimports = ['copyreg']
