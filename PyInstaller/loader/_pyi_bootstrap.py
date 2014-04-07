@@ -58,6 +58,18 @@ if MEIPASS2 in os.environ:
     del os.environ[MEIPASS2]
 
 
+# Python 3 C-API function Py_SetPath() resets sys.prefix to empty string.
+# Python 2 was using PYTHONHOME for sys.prefix. Let's do the same for Python 3.
+sys.prefix = sys._MEIPASS
+sys.exec_prefix = sys.prefix
+
+
+# Python 3.3+ defines also sys.base_prefix. Let's set them too.
+# TODO Do these variables does not hurt on Python 3.2 and 2.7?
+sys.base_prefix = sys.prefix
+sys.base_exec_prefix = sys.exec_prefix
+
+
 # Some packages behaves differently when running inside virtual environment.
 # E.g. IPython tries to append path VIRTUAL_ENV to sys.path.
 # For the frozen app we want to prevent this behavior.
