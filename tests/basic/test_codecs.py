@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013, PyInstaller Development Team.
 #
@@ -8,17 +9,21 @@
 #-----------------------------------------------------------------------------
 
 
+# This import forces Python 2 to handle string as unicode - as with prefix 'u'.
+from __future__ import unicode_literals
+
+# Encode unicode string into utf8 and then back to unicode strings.
+# The original string and the result should be equal.
+
 import codecs
 import sys
 
 
-a = 'foo bar'
-au = codecs.getdecoder('utf-8')(a)[0]
-b = codecs.getencoder('utf-8')(au)[0]
+str_a = 'foo bar fóó bář, fěě, ďěž'
+str_a_utf8 = codecs.getencoder('utf-8')(str_a)[0]
+str_b = codecs.getdecoder('utf-8')(str_a_utf8)[0]
 
-
-print(('codecs working: %s' % (a == b)))
-assert a == b
-
+print(('codecs working: %s' % (str_a == str_b)))
+assert str_a == str_b
 
 sys.exit(0)

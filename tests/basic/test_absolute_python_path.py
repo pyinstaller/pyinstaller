@@ -15,16 +15,22 @@
 
 
 import os
+
 import sys
 import tempfile
 
+
+# Python 3 does not have function os.getcwdu() since all strings are unicode.
+getcwd = os.getcwdu if sys.version_info[0] < 3 else os.getcwd
+
+
 print((sys.path))
-print(('CWD: ' + os.getcwdu()))
+print(('CWD: ' + getcwd()))
 
 # Change working directory.
 os.chdir(tempfile.gettempdir())
 print('Changing working directory...')
-print(('CWD: ' + os.getcwdu()))
+print(('CWD: ' + getcwd()))
 
 # Try import a module. It should fail
 try:

@@ -91,14 +91,23 @@ EXTDECLPROC(int, Py_Finalize, (void));
 EXTDECLPROC(void, Py_IncRef, (PyObject *));
 EXTDECLPROC(void, Py_DecRef, (PyObject *));
 
+
+/*
+ * These functions have to be called before Py_Initialize()
+ */
+
 /* TODO restore compatibility with char for python2 again. It might be necessary to change the type to void to allow compiler to not complain about different types of functions. */
 //EXTDECLPROC(void, Py_SetPythonHome, (char *));  // TODO wchar_t in Py3
 //EXTDECLPROC(void, Py_SetProgramName, (char *)); // TODO wchar_t in Py3
 //EXTDECLPROC(int, PySys_SetArgv, (int, char **));  // TODO wchar_t in Py3
 // TODO workaround for Python 2.6 - this function is only in python 3.
-EXTDECLPROC(void, Py_SetPath, (wchar_t *));  // TODO wchar_t in Py3
-EXTDECLPROC(void, Py_SetPythonHome, (wchar_t *));  // TODO wchar_t in Py3
 EXTDECLPROC(void, Py_SetProgramName, (wchar_t *)); // TODO wchar_t in Py3
+EXTDECLPROC(void, Py_SetPythonHome, (wchar_t *));  // TODO wchar_t in Py3
+/* TODO this function 'Py_SetPath' is available only in Python 3. - cannot be used with Python 2 */
+EXTDECLPROC(void, Py_SetPath, (wchar_t *));  // TODO wchar_t in Py3
+
+
+EXTDECLPROC(void, PySys_SetPath, (wchar_t *));  // TODO wchar_t in Py3
 EXTDECLPROC(int, PySys_SetArgvEx, (int, wchar_t **, int));  // TODO wchar_t in Py3
 EXTDECLPROC(int, PyRun_SimpleString, (char *));
 

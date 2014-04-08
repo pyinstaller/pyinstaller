@@ -22,7 +22,8 @@ import xml.etree.cElementTree as cET
 
 if hasattr(sys, 'frozen'):
     # In frozen mode current working dir is the path with final executable.
-    _pyexe_file = os.path.join('..', '..', 'python_exe.build')
+    _exec_dir = os.path.dirname(sys.executable)
+    _pyexe_file = os.path.join(_exec_dir, '..', '..', 'python_exe.build')
 else:
     _pyexe_file = 'python_exe.build'
 
@@ -44,8 +45,10 @@ def exec_python(pycode):
     env['PATH'] = _env_path
     out = subprocess.Popen([_pyexe, '-c', pycode], env=env,
         stdout=subprocess.PIPE, shell=False).stdout.read()
+    # In Python 3 stdout is a byte array and must be converted to string.
+    out = out.decode('ascii').strip()
 
-    return out.strip()
+    return out
 
 
 def compare(test_name, expect, frozen):
@@ -55,8 +58,8 @@ def compare(test_name, expect, frozen):
     frozen = str(frozen)
 
     print(test_name)
-    print(('  Attributes expected: ' + expect))
-    print(('  Attributes current:  ' + frozen))
+    print('  Attributes expected: ' + expect)
+    print('  Attributes current:  ' + frozen)
     print('')
     # Compare attributes of frozen module with unfronzen module.
     if not frozen == expect:
@@ -64,7 +67,7 @@ def compare(test_name, expect, frozen):
 
 
 ## Pure Python module.
-_expect = exec_python('import xml.etree.ElementTree as ET; print dir(ET)')
+_expect = exec_python('import xml.etree.ElementTree as ET; print(dir(ET))')
 _frozen = dir(ET)
 compare('ElementTree', _expect, _frozen)
 

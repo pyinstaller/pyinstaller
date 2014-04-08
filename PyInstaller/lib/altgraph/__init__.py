@@ -10,7 +10,7 @@ altgraph is a python based graph (network) representation and manipulation packa
 It has started out as an extension to the `graph_lib module <http://www.ece.arizona.edu/~denny/python_nest/graph_lib_1.0.1.html>`_
 written by Nathan Denny it has been significantly optimized and expanded.
 
-The :class:`altgraph.Graph.Graph` class is loosely modeled after the `LEDA <http://www.algorithmic-solutions.com/enleda.htm>`_ 
+The :class:`altgraph.Graph.Graph` class is loosely modeled after the `LEDA <http://www.algorithmic-solutions.com/enleda.htm>`_
 (Library of Efficient Datatypes)  representation. The library
 includes methods for constructing graphs, BFS and DFS traversals,
 topological sort, finding connected components, shortest paths as well as a number
@@ -128,8 +128,9 @@ To display the graph we can use the GraphViz backend::
   @contributor: U{Reka Albert <http://www.phys.psu.edu/~ralbert/>}
 
 '''
-
-__version__ = '0.7.0'
+# For PyInstaller/lib/ define the version here, since there is no
+# package-resource.
+__version__ = '0.12'
 
 class GraphError(ValueError):
     pass

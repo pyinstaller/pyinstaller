@@ -2,7 +2,7 @@
 altgraph.Graph - Base Graph class
 =================================
 
-.. 
+..
   #--Version 2.1
   #--Bob Ippolito October, 2004
 
@@ -508,7 +508,7 @@ class Graph(object):
     def iterdata(self, start, end=None, forward=True, condition=None):
         """
         Perform a depth-first walk of the graph (as ``iterdfs``)
-        and yield the item data of every node where condition matches. The 
+        and yield the item data of every node where condition matches. The
         condition callback is only called when node_data is not None.
         """
 

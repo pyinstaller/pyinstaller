@@ -43,7 +43,7 @@ else:
 from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
-from PyInstaller.compat import is_py33, is_win, is_darwin, unittest
+from PyInstaller.compat import is_py2, is_py33, is_win, is_darwin, unittest
 from PyInstaller.hooks import hookutils
 from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc, winutils
@@ -92,6 +92,8 @@ class SkipChecker(object):
         self.MIN_VERSION_OR_OS = {
             # On Mac DYLD_LIBRARY_PATH is not used.
             'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
+            # Old-style email.* subpackages supported only in Python 2.
+            'basic/test_email_oldstyle': is_py2,
             'import/test_nspkg-pep420': is_py33,
             'libraries/test_enchant': is_win,
             # docutils, a sphinx dependency, fails in

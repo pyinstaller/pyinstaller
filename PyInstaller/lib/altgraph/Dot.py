@@ -10,7 +10,7 @@ program. The module is intended to offload the most tedious part of the process
 To display the graphs or to generate image files the `graphviz <http://www.research.att.com/sw/tools/graphviz/>`_
 package needs to be installed on the system, moreover the :command:`dot` and :command:`dotty` programs must
 be accesible in the program path so that they can be ran from processes spawned
-within the module. 
+within the module.
 
 Example usage
 -------------
@@ -72,8 +72,8 @@ Example::
     dot.edge_style(4, 5, arrowsize=2, style='bold')
 
 
-.. note:: 
-  
+.. note::
+
    dotty (invoked via :py:func:`~altgraph.Dot.display`) may not be able to
    display all graphics styles. To verify the output save it to an image file
    and look at it that way.
@@ -123,7 +123,7 @@ class Dot(object):
         Initialization.
         '''
         self.name, self.attr = name, {}
-        
+
         assert graphtype in ['graph', 'digraph']
         self.type = graphtype
 
@@ -244,8 +244,8 @@ class Dot(object):
             yield epatt
 
         # write edge attributes
-        for head in self.edges:
-            for tail in self.edges[head]:
+        for head in sorted(self.edges):
+            for tail in sorted(self.edges[head]):
                 if self.type == 'digraph':
                     yield '\t"%s" -> "%s" [' % (head, tail)
                 else:

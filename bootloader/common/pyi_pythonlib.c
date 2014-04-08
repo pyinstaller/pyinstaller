@@ -213,6 +213,14 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 	PyObject *val;
 	PyObject *sys;
 
+	wchar_t *aabbcc;
+
+    /* In Python 3 Py_SetProgramName() should be called before Py_SetPath(). */
+    // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
+    mbstowcs(wchar_tmp3, status->archivename, PATH_MAX);
+    //PI_Py_SetProgramName(status->archivename);
+    PI_Py_SetProgramName(wchar_tmp3);
+
     // TODO set pythonpath by function from Python C API (Python 2.6+)
     /* Set the PYTHONPATH */
 	VS("LOADER: Manipulating evironment (PYTHONPATH, PYTHONHOME)\n");
@@ -232,41 +240,46 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 	VS("LOADER: PYTHONPATH is %s\n", pypath);
     // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
     mbstowcs(wchar_tmp, pypath, PATH_MAX);
+    // TODO Skip this function for Python2.
     PI_Py_SetPath(wchar_tmp);
-
-	/* Clear out PYTHONHOME to avoid clashing with any Python installation. */
-	pyi_unsetenv("PYTHONHOME");
 
     /* Set PYTHONHOME by using function from Python C API. */
     strcpy(pypath, status->mainpath);
-	VS("LOADER: PYTHONHOME is %s\n", pypath);
     // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
+	//VS("LOADER: PYTHONHOME is %s\n", pypath);
     mbstowcs(wchar_tmp2, pypath, PATH_MAX);
+	VS("LOADER: PYTHONHOME is %S\n", wchar_tmp2);
     //PI_Py_SetPythonHome(pypath);
     PI_Py_SetPythonHome(wchar_tmp2);
 
 	/* Start python. */
-	VS("LOADER: Initializing python\n");
+
+	VS("LOADER: Setting runtime options\n");
 
     /* Startup flags. 1 means enabled, 0 disabled. */
 	*PI_Py_NoSiteFlag = 1;  /* Suppress 'import site'. Maybe changed to 0 by pyi_pylib_set_runtime_opts() */
     *PI_Py_FrozenFlag = 1;  /* Needed by getpath.c from Python. */
-    // TODO check that with this flag we could keep variables PYTHONPATH/PYTHONHOME - if running python from frozen executable.
-    *PI_Py_IgnoreEnvironmentFlag = 1;  /* e.g. PYTHONPATH, PYTHONHOME */
     *PI_Py_DontWriteBytecodeFlag = 1;  /* Suppress writing bytecode files (*.py[co]) */
     *PI_Py_NoUserSiteDirectory = 1;  /* for -s and site.py */
+    /* This flag ensures PYTHONPATH and PYTHONHOME are ignored by Python. */
+    *PI_Py_IgnoreEnvironmentFlag = 1;  /* e.g. PYTHONPATH, PYTHONHOME */
 
     /* Enable verbose imports temporarily. */
     // TODO dislable verbose imports for official releases.
     *PI_Py_VerboseFlag = 0;
-
     pyi_pylib_set_runtime_opts(status);
+
 	VS("LOADER: Initializing python\n");
-    // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
-    mbstowcs(wchar_tmp3, status->archivename, PATH_MAX);
-    //PI_Py_SetProgramName(status->archivename);
-    PI_Py_SetProgramName(wchar_tmp3);
 	PI_Py_Initialize();
+
+	/*
+	 * Set sys.path list. In Python 2 this is the only way to set sys.path.
+	 * Without
+	 * Python 3 requires something on sys.path before calling Py_Initialize.
+	 */
+	// TODO try out if setting sys.path really works in Python 2 with this function.
+	// TODO use directly wchar_t - no char.
+	PI_PySys_SetPath(wchar_tmp);
 
     /* Setting sys.argv should be after Py_Initialize() call. */
     pyi_pylib_set_sys_argv(status);

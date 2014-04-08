@@ -59,6 +59,13 @@ def get_implies():
 
     }
 
+    if sys.version_info[0] == 3:
+        result["_sre"] = ["copy", "re"]
+        result["parser"] = ["copyreg"]
+
+        # _frozen_importlib is part of the interpreter itself
+        result["_frozen_importlib"] = None
+
     if sys.version_info[0] == 2 and sys.version_info[1] >= 5:
         result.update({
             "email.base64MIME":         Alias("email.base64mime"),
@@ -93,6 +100,11 @@ def get_implies():
 
     if sys.version_info[:2] >= (2, 6):
         result['future_builtins'] = ['itertools']
+
+    # os.path is an alias for a platform specific submodule,
+    # ensure that the graph shows this.
+    result['os.path'] = Alias(os.path.__name__)
+
 
     return result
 
@@ -139,10 +151,18 @@ def plat_prepare(includes, packages, excludes):
     # used by Python itself
     includes.update(["warnings", "unicodedata", "weakref"])
 
+    if os.uname()[0] != 'java':
+        # Jython specific imports in the stdlib:
+        excludes.update([
+            'java.lang',
+            'org.python.core',
+        ])
+
     if not sys.platform.startswith('irix'):
         excludes.update([
             'AL',
             'sgi',
+            'vms_lib',
         ])
 
     if not sys.platform in ('mac', 'darwin'):
@@ -157,6 +177,7 @@ def plat_prepare(includes, packages, excludes):
             'macfs',
             'macostools',
             'macpath',
+            '_scproxy',
         ])
 
     if not sys.platform == 'win32':
@@ -178,6 +199,10 @@ def plat_prepare(includes, packages, excludes):
             'winsound',
             'win32',
             '_winreg',
+            '_winapi',
+            'msvcrt',
+            'winreg',
+            '_subprocess',
          ])
 
     if not sys.platform == 'riscos':
@@ -194,10 +219,16 @@ def plat_prepare(includes, packages, excludes):
 
     if not sys.platform == 'os2emx':
         excludes.update([
-            'os2emxpath'
+            'os2emxpath',
+            '_emx_link',
         ])
 
     excludes.update(set(['posix', 'nt', 'os2', 'mac', 'ce', 'riscos']) - set(sys.builtin_module_names))
+
+    # Carbon.Res depends on this, but the module hasn't been present
+    # for a while...
+    excludes.add('OverrideFrom23')
+    excludes.add('OverrideFrom23._Res')
 
     try:
         imp_find_module('poll')
