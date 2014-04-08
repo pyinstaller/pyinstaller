@@ -25,7 +25,11 @@ elif sys.platform.startswith('darwin'):
 # Please note that on Linux the value differs from the value
 # in interactive shell.
 else:
-    encoding = 'None'
+    if sys.version_info[0] < 3:
+        encoding = 'None'
+    else:
+        # Python 3 reports encoding 'utf-8'.
+        encoding = 'utf-8'
 
 
 print(('Encoding expected: ' + encoding))
