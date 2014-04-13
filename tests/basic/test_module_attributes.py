@@ -54,7 +54,8 @@ def exec_python(pycode):
 def compare(test_name, expect, frozen):
     # PyInstaller sets attribute '__lodader'. Remove this attribute from the
     # module properties.
-    frozen.remove('__loader__')
+    # Is the __loader__ defined in Python2 too?
+    #frozen.remove('__loader__')
     frozen = str(frozen)
 
     print(test_name)
@@ -66,13 +67,22 @@ def compare(test_name, expect, frozen):
         raise SystemExit('Frozen module has no same attribuses as unfrozen.')
 
 
+# General Python code for subprocess.
+subproc_code = """
+import {0} as myobject
+lst = dir(myobject)
+# TODO Should bootloader set attributes __cached__ and __initializing__ for frozen imported modjules?
+lst.remove('__cached__')
+lst.remove('__initializing__')
+print(lst)
+"""
+
 ## Pure Python module.
-_expect = exec_python('import xml.etree.ElementTree as ET; print(dir(ET))')
+_expect = exec_python(subproc_code.format('xml.etree.ElementTree'))
 _frozen = dir(ET)
 compare('ElementTree', _expect, _frozen)
 
-
 ## C-extension Python module.
-_expect = exec_python('import xml.etree.cElementTree as cET; print dir(cET)')
+_expect = exec_python(subproc_code.format('xml.etree.cElementTree'))
 _frozen = dir(cET)
 compare('cElementTree', _expect, _frozen)
