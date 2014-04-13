@@ -413,6 +413,7 @@ class Analysis(Target):
                     datas.append((dest_dir + os.path.basename(fn), fn, 'DATA'))
                 else:
                     for root, dirs, files in os.walk(fn):
+                        dest_dir = dest_dir + os.path.basename(fn) + os.sep
                         for file in files:
                             fn = os.path.join(root, file)
                             if os.path.isfile(fn):
