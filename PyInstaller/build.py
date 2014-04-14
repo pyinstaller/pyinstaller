@@ -405,16 +405,6 @@ class Analysis(Target):
         """
         datas = []
 
-        def _visit(xxx_todo_changeme, dirname, names):
-            """
-            Format whole directory tree from 'datas'.
-            """
-            (base, dest_dir, datas) = xxx_todo_changeme
-            for fn in names:
-                fn = os.path.join(dirname, fn)
-                if os.path.isfile(fn):
-                    datas.append((dest_dir + fn[len(base) + 1:], fn, 'DATA'))
-
         for g, dest_dir in getattr(hook, 'datas', []):
             if dest_dir:
                 dest_dir += os.sep
@@ -422,7 +412,12 @@ class Analysis(Target):
                 if os.path.isfile(fn):
                     datas.append((dest_dir + os.path.basename(fn), fn, 'DATA'))
                 else:
-                    os.path.walk(fn, _visit, (os.path.dirname(fn), dest_dir, datas))
+                    for root, dirs, files in os.walk(fn):
+                        dest_dir = dest_dir + os.path.basename(fn) + os.sep
+                        for file in files:
+                            fn = os.path.join(root, file)
+                            if os.path.isfile(fn):
+                                datas.append((dest_dir + os.path.basename(fn), fn, 'DATA'))
         return datas
 
     # TODO What are 'check_guts' methods useful for?

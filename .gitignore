@@ -77,3 +77,6 @@
 # /support/loader/
 /support/loader/run
 /support/loader/run_d
+
+# PyCharm files
+.idea*

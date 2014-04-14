@@ -7,5 +7,10 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from PyInstaller.compat import is_py2
 
-hiddenimports = ['copy_reg', 'types', 'string']
+# copy_reg module name changed in python 3
+if is_py2:
+    hiddenimports = ['copy_reg', 'types', 'string']
+else:
+    hiddenimports = ['copyreg', 'types', 'string']
