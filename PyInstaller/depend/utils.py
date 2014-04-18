@@ -42,10 +42,28 @@ def create_py3_base_library(libzip_filename):
     """
     logger.info('Creating base_library.zip for Python 3')
 
-    # TODO This module list should be somehow dynamically detected.
-    graph = find_modules.find_modules(includes=(
-        'traceback', 'warnings', 'encodings.*', 'importlib._bootstrap',
-    ))
+    graph = modulegraph.ModuleGraph(
+        implies=(), # Do not include any default modules in dependencies.
+        debug=1,
+    )
+    find_modules.find_needed_modules(
+        mf=graph,
+        # TODO Other operating systems might require additional modules for Py_Initialize()
+        includes=(
+            'encodings.latin_1',
+            'encodings.utf_8',
+            'io',
+            # Module 'imp' required by pyi_archive and other PyInstaller bootstrap code.
+            # 'imp' modules is not a built-in module in Python 3 and thus causes a lot of
+            # dependencies from the default Python library.
+            # TODO remove 'imp' module when PyInstaller bootstrap code uses importlib.
+            'imp',
+        ),
+    )
+
+    #print(60*'C')
+    #for i in graph.flatten():
+        #print(i)
 
     # TODO Replace this function with something better or something from standard Python library.
     # Helper functions.

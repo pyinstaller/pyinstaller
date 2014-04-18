@@ -18,6 +18,9 @@ PEP-302 importers for frozen applications.
 ### List of built-in modules: sys.builtin_module_names
 
 
+# TODO use importlib. In Python 3 'imp' is not a built-in module anymore. 'importlib' is built-in module.
+
+
 import imp
 import sys
 import pyi_os_path
