@@ -94,6 +94,16 @@ venv_real_prefix = (getattr(sys, 'real_prefix', None) or
 is_virtualenv = bool(venv_real_prefix)
 
 
+# In Python 3.4 module 'imp' is deprecated and there is another way how
+# to obtain magic value.
+if is_py2:
+    import imp
+    BYTECODE_MAGIC = imp.get_magic()
+else:
+    import importlib._bootstrap
+    # TODO verify this works with Python 3.2 and 3.4.
+    BYTECODE_MAGIC = importlib._bootstrap._MAGIC_BYTES
+
 def architecture():
     """
     Returns the bit depth of the python interpreter's architecture as

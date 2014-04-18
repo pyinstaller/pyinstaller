@@ -19,7 +19,7 @@ import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import is_unix, is_win
+from PyInstaller.compat import is_unix, is_win, BYTECODE_MAGIC
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +217,7 @@ def compile_py_files(toc, workpath):
         # seems inelegant to copy it all then subscript 4 bytes.
         needs_compile = ( (mtime(src_fnm) > mtime(obj_fnm) )
                           or
-                          (open(obj_fnm, 'rb').read()[:4] != imp.get_magic())
+                          (open(obj_fnm, 'rb').read()[:4] != BYTECODE_MAGIC)
                         )
         if needs_compile:
             try:
@@ -251,7 +251,7 @@ def compile_py_files(toc, workpath):
                 # TODO see above regarding read()[:4] versus read(4)
                 needs_compile = (mtime(src_fnm) > mtime(obj_fnm)
                                  or
-                                 open(obj_fnm, 'rb').read()[:4] != imp.get_magic())
+                                 open(obj_fnm, 'rb').read()[:4] != BYTECODE_MAGIC)
                 if needs_compile:
                     # TODO see above todo regarding using node.code
                     py_compile.compile(src_fnm, obj_fnm)

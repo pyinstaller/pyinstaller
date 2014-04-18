@@ -24,7 +24,7 @@ import zipfile
 from modulegraph import find_modules, modulegraph
 
 from PyInstaller import compat
-from PyInstaller.compat import is_darwin, is_unix, is_py2, is_py27
+from PyInstaller.compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC
 
 import PyInstaller.log as logging
 
@@ -57,7 +57,7 @@ def create_py3_base_library(libzip_filename):
             # 'imp' modules is not a built-in module in Python 3 and thus causes a lot of
             # dependencies from the default Python library.
             # TODO remove 'imp' module when PyInstaller bootstrap code uses importlib.
-            'imp',
+            #'imp',
         ),
     )
 
@@ -77,7 +77,6 @@ def create_py3_base_library(libzip_filename):
                        (x >> 24) & 0xff]))
 
     # Constants same for all .pyc files.
-    magic = imp.get_magic()
 
     try:
         # Remove .zip from previous run.
@@ -103,7 +102,7 @@ def create_py3_base_library(libzip_filename):
                     # This code is similar to py_compile.compile().
                     with io.BytesIO() as fc:
                         # Prepare all data in byte stream file-like object.
-                        fc.write(magic)
+                        fc.write(BYTECODE_MAGIC)
                         _write_long(fc, timestamp)
                         _write_long(fc, size)
                         marshal.dump(mod.code, fc)

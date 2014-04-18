@@ -23,7 +23,7 @@ import marshal
 import os
 
 from PyInstaller import depend
-from PyInstaller.compat import getcwd, PYCO
+from PyInstaller.compat import getcwd, PYCO, BYTECODE_MAGIC
 from PyInstaller.loader import pyi_archive
 
 
@@ -91,7 +91,7 @@ class BaseDirOwner(Owner):
             stuff = self._read(pyc[0])
             # If this file was not generated for this version of
             # Python, we need to regenerate it.
-            if stuff[:4] != imp.get_magic():
+            if stuff[:4] != BYTECODE_MAGIC:
                 logger.warn("wrong version .py%s found (%s), will use .py",
                             PYCO, pyc[0])
             else:
