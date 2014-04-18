@@ -29,7 +29,6 @@ _environ = None
 
 import marshal
 import struct
-import imp
 import sys
 
 
@@ -39,8 +38,6 @@ def debug(msg):
         sys.stderr.flush()
 
 
-_c_suffixes = [x for x in imp.get_suffixes() if x[2] == imp.C_EXTENSION]
-
 for nm in ('nt', 'posix'):
     if nm in sys.builtin_module_names:
         mod = __import__(nm)
@@ -48,7 +45,6 @@ for nm in ('nt', 'posix'):
         _environ = mod.environ
         break
 
-versuffix = '%d%d' % sys.version_info[:2]  # :todo: is this still used?
 
 if "-vi" in sys.argv[1:]:
     _verbose = 1
@@ -81,8 +77,18 @@ class Archive(object):
         self.toc = None
         self.path = path
         self.start = start
-        import imp
-        self.pymagic = imp.get_magic()
+
+        # In Python 3 module 'imp' is no longer built-in and we cannot use it.
+        # There is for Python 3 another way how to obtain magic value.
+        if sys.version_info[0] < 3:
+            import imp
+            self.pymagic = imp.get_magic()
+        else:
+            # We cannot use at this bootstrap stage importlib directly
+            # but its frozen variant.
+            import _frozen_importlib
+            self.pymagic = _frozen_importlib._MAGIC_BYTES
+
         if path is not None:
             self.lib = open(self.path, 'rb')
             self.checkmagic()

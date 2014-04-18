@@ -18,16 +18,42 @@ PEP-302 importers for frozen applications.
 ### List of built-in modules: sys.builtin_module_names
 
 
-# TODO use importlib. In Python 3 'imp' is not a built-in module anymore. 'importlib' is built-in module.
 
 
-import imp
 import sys
 import pyi_os_path
 
 from pyi_archive import ArchiveReadError, ZlibArchive
 
 
+# In Python 3.3+ tne locking scheme has changed to per-module locks for the most part.
+# Global locking should not be required in Python 3.3+
+if sys.version_info[0:2] < (3, 3):
+    # TODO Implement locking for Python 3.2 - 'imp' is not a built-in module anymore.
+    import imp
+    imp_lock = imp.acquire_lock
+    imp_unlock = imp.release_lock
+    # TODO Implement EXTENSION_SUFFIXES for Python 3.2. - 'imp' is not a built-in module anymore.
+    EXTENSION_SUFFIXES = []
+    # Find the platform specific extension suffixes. On Windows it is .pyd, on Linux/Unix .so.
+    for ext, mode, typ in imp.get_suffixes():
+        if typ == imp.C_EXTENSION:
+            EXTENSION_SUFFIXES += ext
+    # Function to create a new module object from pyz archive.
+    imp_new_module = imp.new_module
+else:
+    # Dumb locking functions - do nothing.
+    def imp_lock(): pass
+    def imp_unlock(): pass
+    import _frozen_importlib
+    EXTENSION_SUFFIXES = _frozen_importlib.EXTENSION_SUFFIXES
+    # In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.
+    # However, 'types' module is not a built-in module. The 'types' module uses this trick
+    # with using type() function:
+    imp_new_module = type(sys)
+
+
+# TODO Do we still need BuiltintImporter for Python 3 built-in modules?
 class BuiltinImporter(object):
     """
     PEP-302 wrapper of the built-in modules for sys.meta_path.
@@ -36,18 +62,18 @@ class BuiltinImporter(object):
     modules in the bundled ZIP archive.
     """
     def find_module(self, fullname, path=None):
-        imp.acquire_lock()
+        imp_lock()
         module_loader = None  # None means - no module found by this importer.
 
         # Look in the list of built-in modules.
         if fullname in sys.builtin_module_names:
             module_loader = self
 
-        imp.release_lock()
+        imp_unlock()
         return module_loader
 
     def load_module(self, fullname, path=None):
-        imp.acquire_lock()
+        imp_lock()
 
         try:
             # PEP302 If there is an existing module object named 'fullname'
@@ -61,11 +87,11 @@ class BuiltinImporter(object):
             if fullname in sys.modules:
                 sys.modules.pop(fullname)
             # Release the interpreter's import lock.
-            imp.release_lock()
+            imp_unlock()
             raise  # Raise the same exception again.
 
         # Release the interpreter's import lock.
-        imp.release_lock()
+        imp_unlock()
 
         return module
 
@@ -171,7 +197,7 @@ class FrozenImporter(object):
         # Acquire the interpreter's import lock for the current thread. Tis
         # lock should be used by import hooks to ensure thread-safety when
         # importing modules.
-        imp.acquire_lock()
+        imp_lock()
         module_loader = None  # None means - no module found in this importer.
 
         if fullname in self.toc:
@@ -179,7 +205,7 @@ class FrozenImporter(object):
             module_loader = self
 
         # Release the interpreter's import lock.
-        imp.release_lock()
+        imp_unlock()
 
         return module_loader
 
@@ -187,12 +213,12 @@ class FrozenImporter(object):
         """
         PEP-302 loader.load_module() method for the ``sys.meta_path`` hook.
 
-        Return the loaded module (instance of imp.new_module()) or raises
+        Return the loaded module (instance of imp_new_module()) or raises
         an exception, preferably ImportError if an existing exception
         is not being propagated.
         """
         # Acquire the interpreter's import lock.
-        imp.acquire_lock()
+        imp_lock()
         module = None
         try:
             # PEP302 If there is an existing module object named 'fullname'
@@ -204,7 +230,7 @@ class FrozenImporter(object):
                 # Load code object from the bundled ZIP archive.
                 is_pkg, bytecode = self._pyz_archive.extract(fullname)
                 # Create new empty 'module' object.
-                module = imp.new_module(fullname)
+                module = imp_new_module(fullname)
 
                 # TODO Replace bytecode.co_filename by something more meaningful:
                 # e.g. /absolute/path/frozen_executable/path/to/module/module_name.pyc
@@ -281,11 +307,11 @@ class FrozenImporter(object):
             #raise ImportError("Can't load frozen module: %s" % fullname)
 
             # Release the interpreter's import lock.
-            imp.release_lock()
+            imp_unlock()
             raise
 
         # Release the interpreter's import lock.
-        imp.release_lock()
+        imp_unlock()
 
         # Module returned only in case of no exception.
         return module
@@ -374,68 +400,86 @@ class CExtensionImporter(object):
 
         full.module.name.pyd
         full.module.name.so
+        full.module.name.cpython-33m.so
+        full.module.name.abi3.so
     """
     def __init__(self):
         # TODO cache directory content for faster module lookup without file system access.
-        # Create hashmap of directory content for better performance.
-        # TODO find out why sys.prefix is empty - probably it is not set properly for Python3.
-        if sys.prefix.strip() != '':
-            files = pyi_os_path.os_listdir(sys.prefix)
-            self._file_cache = set(files)
-        else:
-            self._file_cache = []
-        self._suffixes = dict()
-
-        # Find the platform specific suffixes. On Windows it is .pyd, on Linux/Unix .so.
-        for ext, mode, typ in imp.get_suffixes():
-            if typ == imp.C_EXTENSION:
-                self._suffixes[ext] = (ext, mode, typ)
+        # Create set() of directory content for better performance.
+        # This cache avoids any file-system access.
+        # Cannnot use sys.prefix (Not set in Python 3) and cannot use even MEIPASS or
+        # sys.executable. Last item (-1) in sys.path should be value of MEIPASS.
+        meipass = sys.path[-1]
+        files = pyi_os_path.os_listdir(meipass)
+        self._file_cache = set(files)
 
     def find_module(self, fullname, path=None):
-        imp.acquire_lock()
+        imp_lock()
         module_loader = None  # None means - no module found by this importer.
 
         # Look in the file list of sys.prefix path (alias PYTHONHOME).
-        for ext, c_ext_tuple in self._suffixes.items():
+        for ext in EXTENSION_SUFFIXES:
             if fullname + ext in self._file_cache:
-                self._c_ext_tuple = c_ext_tuple
-                self._suffix = ext
                 module_loader = self
                 break
 
-        imp.release_lock()
+        imp_unlock()
         return module_loader
 
     def load_module(self, fullname, path=None):
-        imp.acquire_lock()
+        imp_lock()
+
+        module = None
 
         try:
-            # PEP302 If there is an existing module object named 'fullname'
-            # in sys.modules, the loader must use that existing module.
-            module = sys.modules.get(fullname)
+            if sys.version_info[0] == 2:
+                # Python 2 implementation - TODO drop or improve it. 'imp' module is no longer built-in.
+                # PEP302 If there is an existing module object named 'fullname'
+                # in sys.modules, the loader must use that existing module.
+                module = sys.modules.get(fullname)
 
-            if module is None:
-                filename = pyi_os_path.os_path_join(sys.prefix, fullname + self._suffix)
-                fp = open(filename, 'rb')
-                module = imp.load_module(fullname, fp, filename, self._c_ext_tuple)
-                # Set __file__ attribute.
-                if hasattr(module, '__setattr__'):
-                    module.__file__ = filename
-                else:
-                    # Some modules (eg: Python for .NET) have no __setattr__
-                    # and dict entry have to be set.
-                    module.__dict__['__file__'] = filename
+                if module is None:
+                    # TODO fix variables _c_ext_tuple and _suffix.
+                    filename = pyi_os_path.os_path_join(sys.prefix, fullname + self._suffix)
+                    fp = open(filename, 'rb')
+                    module = imp.load_module(fullname, fp, filename, self._c_ext_tuple)
+                    # Set __file__ attribute.
+                    if hasattr(module, '__setattr__'):
+                        module.__file__ = filename
+                    else:
+                        # Some modules (eg: Python for .NET) have no __setattr__
+                        # and dict entry have to be set.
+                        module.__dict__['__file__'] = filename
+            else:
+                # PEP302 If there is an existing module object named 'fullname'
+                # in sys.modules, the loader must use that existing module.
+                module = sys.modules.get(fullname)
+                if module is None:
+                    # Python 3 implementation.
+                    for ext in EXTENSION_SUFFIXES:
+                        # TODO fix ext for other platforms not linux-only.
+                        filename = pyi_os_path.os_path_join(sys.prefix, fullname + '.so')
+                        print(filename)
+                        # TODO find something to check file existance without os.path.exists
+                        #if not os.path.exists(filename):
+                            ## Continue trying new suffix.
+                            #continue
+                        # Load module.
+                        import _frozen_importlib
+                        loader = _frozen_importlib.ExtensionFileLoader(fullname, filename)
+                        module = loader.load_module(fullname)
+                        print(filename)
 
         except Exception:
             # Remove 'fullname' from sys.modules if it was appended there.
             if fullname in sys.modules:
                 sys.modules.pop(fullname)
             # Release the interpreter's import lock.
-            imp.release_lock()
+            imp_unlock()
             raise  # Raise the same exception again.
 
         # Release the interpreter's import lock.
-        imp.release_lock()
+        imp_unlock()
 
         return module
 
@@ -510,11 +554,23 @@ def install():
     1. built-in modules
     2. modules from the bundled ZIP archive
     3. C extension modules
+    4. Modules from sys.path
     """
-    # First look in the built-in modules and not bundled ZIP archive.
-    sys.meta_path.append(BuiltinImporter())
+    # Python 3 already has _frozen_importlib.BuildinImporter on sys.meta_path.
+    if sys.version_info[0] == 2:
+        # First look in the built-in modules and not bundled ZIP archive.
+        sys.meta_path.append(BuiltinImporter())
     # Ensure Python looks in the bundled zip archive for modules before any
     # other places.
     sys.meta_path.append(FrozenImporter())
     # Import hook for the C extension modules.
     sys.meta_path.append(CExtensionImporter())
+    # _frozen_importlib.PathFinder is in Python 3 the last importer on sys.meta_path.
+    # This importer is also able handle Python C extensions. However, PyInstaller
+    # needs own importer to allow extension name 'module.submodle.so'.
+    # Add the pathfinder at the end of sys.meta_path.
+    if sys.version_info[0] > 2:
+        pf_idx = 2  # PathFinder is the 3rd in sys.meta_path.
+        pf = sys.meta_path.pop(pf_idx)
+        sys.meta_path.append(pf)
+        # TODO Do we need for Python 3 _frozen_importlib.FrozenImporter? Could it be also removed?
