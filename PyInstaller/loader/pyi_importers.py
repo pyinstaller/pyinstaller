@@ -26,6 +26,10 @@ import pyi_os_path
 from pyi_archive import ArchiveReadError, ZlibArchive
 
 
+# Cannnot use sys.prefix (Not set in Python 3) and cannot use even MEIPASS or
+# sys.executable. Last item (-1) in sys.path should be value of MEIPASS.
+SYS_PREFIX = sys.path[-1]
+
 # In Python 3.3+ tne locking scheme has changed to per-module locks for the most part.
 # Global locking should not be required in Python 3.3+
 if sys.version_info[0:2] < (3, 3):
@@ -240,13 +244,12 @@ class FrozenImporter(object):
                 # so that data files can be found. The absolute absolute path
                 # to the executable is taken from sys.prefix. In onefile mode it
                 # points to the temp directory where files are unpacked by PyInstaller.
-                abspath = sys.prefix
                 # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
                 if is_pkg:
-                    module.__file__ = pyi_os_path.os_path_join(pyi_os_path.os_path_join(abspath,
+                    module.__file__ = pyi_os_path.os_path_join(pyi_os_path.os_path_join(SYS_PREFIX,
                         fullname.replace('.', pyi_os_path.os_sep)), '__init__.pyc')
                 else:
-                    module.__file__ = pyi_os_path.os_path_join(abspath,
+                    module.__file__ = pyi_os_path.os_path_join(SYS_PREFIX,
                         fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
 
                 ### Set __path__  if 'fullname' is a package.
@@ -380,14 +383,13 @@ class FrozenImporter(object):
         if the named module was loaded. If the module is not found, then
         ImportError should be raised.
         """
-        abspath = sys.prefix
         # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
         # Method is_package() will raise ImportError if module not found.
         if self.is_package(fullname):
-            filename = pyi_os_path.os_path_join(pyi_os_path.os_path_join(abspath,
+            filename = pyi_os_path.os_path_join(pyi_os_path.os_path_join(SYS_PREFIX,
                 fullname.replace('.', pyi_os_path.os_sep)), '__init__.pyc')
         else:
-            filename = pyi_os_path.os_path_join(abspath,
+            filename = pyi_os_path.os_path_join(SYS_PREFIX,
                 fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
         return filename
 
@@ -407,10 +409,7 @@ class CExtensionImporter(object):
         # TODO cache directory content for faster module lookup without file system access.
         # Create set() of directory content for better performance.
         # This cache avoids any file-system access.
-        # Cannnot use sys.prefix (Not set in Python 3) and cannot use even MEIPASS or
-        # sys.executable. Last item (-1) in sys.path should be value of MEIPASS.
-        meipass = sys.path[-1]
-        files = pyi_os_path.os_listdir(meipass)
+        files = pyi_os_path.os_listdir(SYS_PREFIX)
         self._file_cache = set(files)
 
     def find_module(self, fullname, path=None):
@@ -440,7 +439,7 @@ class CExtensionImporter(object):
 
                 if module is None:
                     # TODO fix variables _c_ext_tuple and _suffix.
-                    filename = pyi_os_path.os_path_join(sys.prefix, fullname + self._suffix)
+                    filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname + self._suffix)
                     fp = open(filename, 'rb')
                     module = imp.load_module(fullname, fp, filename, self._c_ext_tuple)
                     # Set __file__ attribute.
@@ -457,18 +456,21 @@ class CExtensionImporter(object):
                 if module is None:
                     # Python 3 implementation.
                     for ext in EXTENSION_SUFFIXES:
-                        # TODO fix ext for other platforms not linux-only.
-                        filename = pyi_os_path.os_path_join(sys.prefix, fullname + '.so')
+                        filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname + ext)
                         print(filename)
-                        # TODO find something to check file existance without os.path.exists
-                        #if not os.path.exists(filename):
-                            ## Continue trying new suffix.
-                            #continue
+                        # Test if a file exists.
+                        # Cannot use os.path.exists. Use workaround with function open().
+                        # No exception means that a file exists.
+                        try:
+                            with open(filename):
+                                pass
+                        except IOError:
+                            # Continue trying new suffix.
+                            continue
                         # Load module.
                         import _frozen_importlib
                         loader = _frozen_importlib.ExtensionFileLoader(fullname, filename)
                         module = loader.load_module(fullname)
-                        print(filename)
 
         except Exception:
             # Remove 'fullname' from sys.modules if it was appended there.
@@ -495,21 +497,19 @@ class CExtensionImporter(object):
         """
         Return None for a C extension module.
         """
-        if fullname + self._suffix in self._file_cache:
-            return None
-        else:
-            # ImportError should be raised if module not found.
-            raise ImportError('No module named ' + fullname)
+        for ext in EXTENSION_SUFFIXES:
+            if fullname + ext in self._file_cache:
+                return None
+        # If module was not found then function still continues.
+        # ImportError should be raised if module not found.
+        raise ImportError('No module named ' + fullname)
 
     def get_source(self, fullname):
         """
         Return None for a C extension module.
         """
-        if fullname + self._suffix in self._file_cache:
-            return None
-        else:
-            # ImportError should be raised if module not found.
-            raise ImportError('No module named ' + fullname)
+        # Same implementation as function self.get_code().
+        return self.get_code(fullname)
 
     def get_data(self, path):
         """
@@ -532,12 +532,11 @@ class CExtensionImporter(object):
         if the named module was loaded. If the module is not found, then
         ImportError should be raised.
         """
-        if fullname + self._suffix in self._file_cache:
-            return pyi_os_path.os_path_join(sys.prefix, fullname + self._suffix)
-        else:
-            # ImportError should be raised if module not found.
-            raise ImportError('No module named ' + fullname)
-
+        for ext in EXTENSION_SUFFIXES:
+            if fullname + ext in self._file_cache:
+                return pyi_os_path.os_path_join(SYS_PREFIX, fullname + self._suffix)
+        # ImportError should be raised if module not found.
+        raise ImportError('No module named ' + fullname)
 
 
 def install():
