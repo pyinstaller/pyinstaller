@@ -52,18 +52,10 @@ def create_py3_base_library(libzip_filename):
         includes=(
             'encodings.latin_1',
             'encodings.utf_8',
+            'encodings.ascii',
             'io',
-            # Module 'imp' required by pyi_archive and other PyInstaller bootstrap code.
-            # 'imp' modules is not a built-in module in Python 3 and thus causes a lot of
-            # dependencies from the default Python library.
-            # TODO remove 'imp' module when PyInstaller bootstrap code uses importlib.
-            #'imp',
         ),
     )
-
-    #print(60*'C')
-    #for i in graph.flatten():
-        #print(i)
 
     # TODO Replace this function with something better or something from standard Python library.
     # Helper functions.
