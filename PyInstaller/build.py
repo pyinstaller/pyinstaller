@@ -453,7 +453,8 @@ class Analysis(Target):
         libzip_filename = os.path.join(WORKPATH, 'base_library.zip')
         PyInstaller.depend.utils.create_py3_base_library(libzip_filename)
         # Bundle base_library.zip as data file.
-        self.datas.append(('', libzip_filename, 'DATA'))
+        # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
+        self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
         logger.info("running Analysis %s", os.path.basename(self.out))
         # Get paths to Python and, in Windows, the manifest.
