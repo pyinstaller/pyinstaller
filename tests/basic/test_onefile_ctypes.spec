@@ -25,7 +25,7 @@ def mac_gcc_architecture():
     # returns "64bit" event for the 32bit version of Python's
     # universal binary. So we roll out our own (that works
     # on Darwin).
-    if sys.maxint > 2L ** 32:
+    if sys.maxint > 2 ** 32:
         # 64bit
         return 'x86_64'
     else:
@@ -86,8 +86,10 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
+          a.zipfiles,
+          a.datas,
           name=__testname__ + '.exe',
-          debug=False,
+          debug=True,
           strip=False,
           upx=False,
-          console=False)
+          console=True)

@@ -1903,7 +1903,7 @@ class MERGE(object):
 
     def _set_dependencies(self, analysis, path):
         """
-        Syncronize the Analysis result with the needed dependencies.
+        Synchronize the Analysis result with the needed dependencies.
         """
         for toc in (analysis.binaries, analysis.datas):
             for i, tpl in enumerate(toc):
