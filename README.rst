@@ -29,10 +29,12 @@ Requirements
    * pywin32_ when using Python 2.6+
     
 - Linux (32bit/64bit)
-   * ldd: console application to print the shared libraries required 
-     by each program or shared library.
+   * ldd: Console application to print the shared libraries required
+     by each program or shared library. This typically can by found in
+     the distribution-package `glibc` or `libc-bin`.
    * objdump: Console application to display information from 
-     object files.
+     object files. This typically can by found in the
+     distribution-package `binutils`.
 
 - Mac OS X (32/64bit):
    * Mac OS X 10.4 (Tiger) or newer.

@@ -31,10 +31,12 @@ Requirements
 **Linux**
   * ldd
     - Console application to print the shared libraries required by each program
-    or shared library.
+    or shared library.  This typically can by found in the
+    distribution-package `glibc` or `libc-bin`.
 
   * objdump
     - Console application to display information from object files.
+      This typically can by found in the distribution-package `binutils`.
 
 **Solaris**
   * ldd
