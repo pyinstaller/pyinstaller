@@ -16,7 +16,9 @@
 # embedded archive.
 
 
-import sys, os
+import imp
+import os
+import sys
 import data_reload
 
 
@@ -37,7 +39,7 @@ else:
 open(module_filename, 'w').write(txt)
 
 
-reload(data_reload)
+imp.reload(data_reload)
 print(('data_reload.x is now %s' % data_reload.x))
 
 
