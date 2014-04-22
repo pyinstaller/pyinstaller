@@ -54,6 +54,7 @@ def create_py3_base_library(libzip_filename):
             'encodings.utf_8',
             'encodings.ascii',
             'io',
+            'warnings',  # Required by run-time option like ('W ignore', None, 'OPTION')
         ),
     )
 

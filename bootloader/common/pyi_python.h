@@ -129,7 +129,8 @@ EXTDECLPROC(PyObject *, PyDict_GetItemString, (PyObject *, char *));
 EXTDECLPROC(void, PyErr_Clear, (void) );
 EXTDECLPROC(PyObject *, PyErr_Occurred, (void) );
 EXTDECLPROC(void, PyErr_Print, (void) );
-EXTDECLPROC(void, PySys_AddWarnOption, (char *));
+//EXTDECLPROC(void, PySys_AddWarnOption, (char *)); TODO wchar_t in Python 3
+EXTDECLPROC(void, PySys_AddWarnOption, (wchar_t *));
 /* Return a C long representation of the contents of pylong. */
 EXTDECLPROC(long, PyLong_AsLong, (PyObject *) );
 

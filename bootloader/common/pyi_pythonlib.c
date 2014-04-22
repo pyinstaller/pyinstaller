@@ -134,6 +134,26 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 {
 	int unbuffered = 0;
 	TOC *ptoc = status->tocbuff;
+	wchar_t wchar_tmp[PATH_MAX+1];
+
+	/*
+     * Startup flags - default values. 1 means enabled, 0 disabled.
+     */
+     /* Suppress 'import site'. */
+	*PI_Py_NoSiteFlag = 1;
+	/* Needed by getpath.c from Python. */
+    *PI_Py_FrozenFlag = 1;
+    /* Suppress writing bytecode files (*.py[co]) */
+    *PI_Py_DontWriteBytecodeFlag = 1;
+    /* Do not try to find any packages in user's site directory. */
+    *PI_Py_NoUserSiteDirectory = 1;
+    /* This flag ensures PYTHONPATH and PYTHONHOME are ignored by Python. */
+    *PI_Py_IgnoreEnvironmentFlag = 1;
+    /* Disalbe verbose imports by default. */
+    *PI_Py_VerboseFlag = 0;
+
+    /* Override some runtime options by custom values from PKG archive.
+     * User is allowed to changes these options. */
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_RUNTIME_OPTION) {
 			VS("LOADER: %s\n", ptoc->name);
@@ -145,10 +165,9 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 				unbuffered = 1;
 			break;
 			case 'W':
-                                PI_PySys_AddWarnOption(&ptoc->name[2]);
-			break;
-			case 's':
-				*PI_Py_NoSiteFlag = 0;
+			    // TODO Python 2 uses 'char' here.
+                mbstowcs(wchar_tmp, &ptoc->name[2], PATH_MAX);
+                PI_PySys_AddWarnOption(wchar_tmp);
 			break;
 			case 'O':
 				*PI_Py_OptimizeFlag = 1;
@@ -256,18 +275,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 
 	VS("LOADER: Setting runtime options\n");
 
-    /* Startup flags. 1 means enabled, 0 disabled. */
-	*PI_Py_NoSiteFlag = 1;  /* Suppress 'import site'. Maybe changed to 0 by pyi_pylib_set_runtime_opts() */
-    *PI_Py_FrozenFlag = 1;  /* Needed by getpath.c from Python. */
-    *PI_Py_DontWriteBytecodeFlag = 1;  /* Suppress writing bytecode files (*.py[co]) */
-    *PI_Py_NoUserSiteDirectory = 1;  /* for -s and site.py */
-    /* This flag ensures PYTHONPATH and PYTHONHOME are ignored by Python. */
-    *PI_Py_IgnoreEnvironmentFlag = 1;  /* e.g. PYTHONPATH, PYTHONHOME */
-
-    /* Enable verbose imports temporarily. */
-    // TODO dislable verbose imports for official releases.
-    *PI_Py_VerboseFlag = 0;
-    pyi_pylib_set_runtime_opts(status);
+   pyi_pylib_set_runtime_opts(status);
 
 	VS("LOADER: Initializing python\n");
 	PI_Py_Initialize();
