@@ -330,7 +330,7 @@ class CArchive(pyi_archive.Archive):
         # Version 5 - allow type 'o' = runtime option.
         try:
             if typcd in ('o', 'd'):
-                s = ''
+                s = b''
                 flag = 0
             elif typcd == 's':
                 # If it's a source code file, add \0 terminator as it will be
