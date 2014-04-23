@@ -28,7 +28,7 @@ import PyInstaller.depend.modules
 import PyInstaller.depend.utils
 
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
-from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin, is_cygwin
+from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin, is_cygwin, EXTENSION_SUFFIXES
 import PyInstaller.compat as compat
 import PyInstaller.bindepend as bindepend
 
@@ -65,6 +65,7 @@ HIDDENIMPORTS = []
 rthooks = {}
 
 
+# TODO find better place for function.
 def _save_data(filename, data):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
@@ -74,10 +75,12 @@ def _save_data(filename, data):
     outf.close()
 
 
+# TODO find better place for function.
 def _load_data(filename):
     return eval(open(filename, 'rU').read())
 
 
+# TODO find better place for function.
 def setupUPXFlags():
     f = compat.getenv("UPX", "")
     if is_win:
@@ -92,29 +95,26 @@ def setupUPXFlags():
     compat.setenv("UPX", f)
 
 
-# TODO Is this function used anywhere? Could it be removed?
-def mtime(fnm):
-    try:
-        # the file must not only by stat()-able, but also readable
-        if os.access(fnm, os.R_OK):
-            return os.stat(fnm)[8]
-    except OSError:
-        # return 0
-        pass
-    return 0
-
-
+# TODO find better place for function.
 def absnormpath(apath):
     return os.path.abspath(os.path.normpath(apath))
 
 
-def addSuffixToExtensions(toc):
+# TODO find better place for function.
+def add_suffix_to_extensions(toc):
     """
     Returns a new TOC with proper library suffix for EXTENSION items.
     """
     new_toc = TOC()
     for inm, fnm, typ in toc:
-        if typ in ('EXTENSION', 'DEPENDENCY'):
+        if typ == 'EXTENSION':
+            # Use first suffix from the Python list of suffixes
+            # for C extensions.
+            inm = inm + EXTENSION_SUFFIXES[0]
+
+        elif typ == 'DEPENDENCY':
+            # Use the suffix from the filename.
+            # TODO Verify what extensions are by DEPENDENCIES.
             binext = os.path.splitext(fnm)[1]
             if not os.path.splitext(inm)[1] == binext:
                 inm = inm + binext
@@ -1040,7 +1040,7 @@ class PKG(Target):
         trash = []
         mytoc = []
         seen = {}
-        toc = addSuffixToExtensions(self.toc)
+        toc = add_suffix_to_extensions(self.toc)
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in toc:
@@ -1402,7 +1402,7 @@ class COLLECT(Target):
             _rmtree(self.name)
         logger.info("building COLLECT %s", os.path.basename(self.out))
         os.makedirs(self.name)
-        toc = addSuffixToExtensions(self.toc)
+        toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
             if not os.path.isfile(fnm) and check_egg(fnm):
                 # file is contained within python egg, it is added with the egg
@@ -1541,7 +1541,7 @@ class BUNDLE(Target):
         f.write(info_plist)
         f.close()
 
-        toc = addSuffixToExtensions(self.toc)
+        toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
