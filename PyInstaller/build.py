@@ -445,6 +445,12 @@ class Analysis(Target):
         return False
 
     def assemble(self):
+        """
+        This method is the MAIN method for finding all necessary files to be bundled.
+        """
+        """
+        :return:
+        """
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
         # containing core Python modules. In Python 3 some built-in modules
@@ -637,6 +643,13 @@ class Analysis(Target):
         self.pure['toc'], code_dict =  self.graph.make_a_TOC(['PYMODULE'])
         self.pure['code'].update(code_dict)
 
+        # Add remaining binary dependencies - analyze Python C-extensions and what
+        # DLLs they depend on.
+        logger.info('Looking for dynamic libraries')
+        self.binaries.extend(bindepend.Dependencies(self.binaries, manifest=depmanifest))
+
+        ### TODO implement including Python eggs. Shoudl be the eggs printed to console as INFO msg?
+        logger.info('Looking for eggs - TODO')
         # TODO: ImpTracker could flag a module as residing in a zip file (because an
         # egg that had not yet been installed??) and the old code would do this:      
         # scripts.insert(-1, ('_pyi_egg_install.py',
