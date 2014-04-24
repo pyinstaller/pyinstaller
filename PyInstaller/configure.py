@@ -25,6 +25,7 @@ from PyInstaller.compat import is_win, is_darwin
 
 import PyInstaller.build as build
 import PyInstaller.compat as compat
+from PyInstaller.depend.graph import TOC
 
 import PyInstaller.log as logging
 import PyInstaller.depend.modules
@@ -184,7 +185,7 @@ def find_PYZ_dependencies(config):
         ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
         ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
     ]
-    toc = build.TOC(loader_mods)
+    toc = TOC(loader_mods)
     config['PYZ_dependencies'] = toc.data
 
 
