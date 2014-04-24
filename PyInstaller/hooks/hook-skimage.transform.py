@@ -8,6 +8,8 @@
 #-----------------------------------------------------------------------------
 
 
+# Hook tested with scikit-image (skimage) 0.9.3 on Mac OS 10.9 and Windows 7
+# 64-bit
 hiddenimports = ['skimage.draw.draw',
                  'skimage._shared.geometry',
                  'skimage._shared.interpolation',
