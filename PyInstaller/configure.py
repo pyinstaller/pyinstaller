@@ -23,13 +23,10 @@ import time
 from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller.compat import is_win, is_darwin
 
-import PyInstaller.build as build
 import PyInstaller.compat as compat
 from PyInstaller.depend.graph import TOC
 
 import PyInstaller.log as logging
-import PyInstaller.depend.modules
-import PyInstaller.depend.imptracker
 
 logger = logging.getLogger(__name__)
 

@@ -21,17 +21,16 @@ import shutil
 import sys
 import tempfile
 import importlib
-from PyInstaller.depend.graph import PyiModuleGraph, TOC
+from PyInstaller.depend.graph import PyiModuleGraph, TOC, FakeModule
 from PyInstaller.loader import pyi_archive, pyi_carchive
 
 import PyInstaller.depend.imptracker
-import PyInstaller.depend.modules
 import PyInstaller.depend.utils
 
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from PyInstaller.compat import is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES
 import PyInstaller.compat as compat
-import PyInstaller.bindepend as bindepend
+import PyInstaller.depend.bindepend as bindepend
 
 
 from PyInstaller.depend import dylib
@@ -617,7 +616,7 @@ class Analysis(Target):
             if hasattr(hook_name_space,'hook'):
                 # Process a hook(mod) function. Create a Module object as its API.
                 # TODO: it won't be called "FakeModule" later on
-                mod = PyInstaller.depend.modules.FakeModule(imported_name,self.graph)
+                mod = FakeModule(imported_name,self.graph)
                 mod = hook_name_space.hook(mod)
                 for item in mod._added_imports :
                     # as with hidden imports, add to graph as called by imported_name

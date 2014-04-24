@@ -17,7 +17,7 @@ import glob
 import optparse
 
 
-import PyInstaller.bindepend
+import PyInstaller.depend.bindepend
 from PyInstaller import is_win
 from PyInstaller.utils import misc
 import PyInstaller.log
@@ -43,9 +43,9 @@ def run():
     try:
         for a in args:
             for fn in glob.glob(a):
-                imports = PyInstaller.bindepend.getImports(fn)
+                imports = PyInstaller.depend.bindepend.getImports(fn)
                 if is_win:
-                    assemblies = PyInstaller.bindepend.getAssemblies(fn)
+                    assemblies = PyInstaller.depend.bindepend.getAssemblies(fn)
                     imports.update([a.getid() for a in assemblies])
                 print(fn, imports)
     except KeyboardInterrupt:

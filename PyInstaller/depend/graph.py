@@ -36,6 +36,7 @@ about them, replacing what the old ImpTracker list could do.
 import logging
 import os
 from PyInstaller import compat as compat
+import PyInstaller.utils
 from modulegraph.modulegraph import ModuleGraph
 
 logger = logging.getLogger(__name__)
@@ -225,3 +226,101 @@ class TOC(compat.UserList):
             if self.fltr.get(tpl[0], 0):
                 rslt.append(tpl)
         return rslt
+
+
+class FakeModule(object):
+    """
+    Create a "mod": an object with info about an imported module.
+    This is the historic API object passed to the hook(mod) method
+    of a hook-modname.py file. Originally a mod object was created
+    by the old ImpTracker, and was similar to a modulegraph node, although
+    with more data. Hooks relied on the following properties:
+         mod.__file__ for the full path to a script
+       * mod.__path__ for the full path to a package or module
+       * mod.co for the compiled code of a script or module
+       * mod.datas for a list of associated data files
+       * mod.imports for a list of things this module imports
+       * mod.binaries for a list of (name,path,'BINARY') tuples (or a TOC)
+    (* means, the hook might modify this member)
+    The new mod provides these members for examination only but has
+    methods for modification:
+       mod.add_binary( (name, path, typecode) ) add a binary dependency
+       mod.add_import( modname ) add a python import
+       mod.del_import( modname ) remove a python dependency
+       mod.retarget( path, code ) retarget to a different piece of code (hook-site)
+
+
+    #########################################################
+    The mod object is just used for communication with hooks.
+    #########################################################
+
+
+    It is constructed before the call from modulegraph info.
+    Afterward, changes are returned to the graph and other dicts.
+    """
+    def __init__(self, identifier, graph) :
+        # Go into the module graph and get the node for this identifier.
+        # It should always exist because the caller should be working
+        # from the graph itself, or a TOC made from the graph.
+        node = graph.findNode(identifier)
+        assert(node is not None) # should not occur
+        self.name = identifier
+        # keep a pointer back to the original node
+        self.node = node
+        # keep a pointer back to the original graph
+        self.graph = graph
+        # Add the __file__ member
+        self.__file__ = node.filename
+        # Add the __path__ member which is either None or, if
+        # the node type is Package, a list of one element, the
+        # path string to the package directory -- just like a mod.
+        # Note that if the hook changes it, it will change in the node proper.
+        self.__path__ = node.packagepath
+        # Stick in the .co (compiled code) member. One hook (hook-distutiles)
+        # wants to change both __path__ and .co. TODO: HOW HANDLE?
+        self.co = node.code
+        # Create the datas member as an empty list
+        self.datas = []
+        # Add the binaries and imports lists and populate with names.
+        # The node imports whatever is reachable in the graph
+        # starting at that node. Put Extension names in binaries.
+        self.binaries = []
+        self.imports = []
+        for impnode in graph.flatten(None,node) :
+            if type(impnode).__name__ != 'Extension' :
+                self.imports.append([impnode.identifier,1,0,-1])
+            else:
+                self.binaries.append( [(impnode.identifier, impnode.filename, 'BINARY')] )
+        # Private members to collect changes.
+        self._added_imports = []
+        self._deleted_imports = []
+        self._added_binaries = []
+
+    def add_import(self,names):
+        if not isinstance(names, list):
+            names = [names]  # Allow passing string or list.
+        self._added_imports.extend(names) # save change to implement in graph later
+        for name in names:
+            self.imports.append([name,1,0,-1]) # make change visible to caller
+
+    def del_import(self,names):
+        # just save to implement in graph later
+        if not isinstance(names, list):
+            names = [names]  # Allow passing string or list.
+        self._deleted_imports.extend(names)
+
+    def add_binary(self,list_of_tuples):
+        self._added_binaries.append(list_of_tuples)
+        self.binaries.append(list_of_tuples)
+
+    def retarget(self, path_to_new_code):
+        # Used by hook-site (and others?) to retarget a module to a simpler one
+        # more suited to being frozen.
+
+        # Keep the original filename in the fake code object.
+        new_code = PyInstaller.utils.misc.get_code_object(path_to_new_code, new_filename=self.node.filename)
+        # Update node.
+        self.node.code = new_code
+        self.node.filename = path_to_new_code
+        # Update dependencies in the graph.
+        self.graph.scan_code(new_code, self.node)

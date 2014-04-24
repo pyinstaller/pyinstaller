@@ -11,7 +11,7 @@
 import os
 import sys
 
-import PyInstaller.bindepend
+import PyInstaller.depend.bindepend
 
 from PyInstaller.compat import is_win, is_darwin, is_unix, is_virtualenv, venv_real_prefix
 from PyInstaller.build import Tree
@@ -86,7 +86,7 @@ def _find_tk(mod):
         tcl_root  path to Tcl data files.
         tk_root   path to Tk data files.
     """
-    bins = PyInstaller.bindepend.selectImports(mod.__file__)
+    bins = PyInstaller.depend.bindepend.selectImports(mod.__file__)
 
     if is_darwin:
         # _tkinter depends on system Tcl/Tk frameworks.
@@ -94,7 +94,7 @@ def _find_tk(mod):
             # 'mod.binaries' can't be used because on Mac OS X _tkinter.so
             # might depend on system Tcl/Tk frameworks and these are not
             # included in 'mod.binaries'.
-            bins = PyInstaller.bindepend.getImports(mod.__file__)
+            bins = PyInstaller.depend.bindepend.getImports(mod.__file__)
             # Reformat data structure from
             #     set(['lib1', 'lib2', 'lib3'])
             # to
