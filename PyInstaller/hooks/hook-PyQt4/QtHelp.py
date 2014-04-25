@@ -13,5 +13,6 @@ hiddenimports = [
     'PyQt4.QtCore',
     'PyQt4.QtGui',
     'PyQt4.QtSql',
-    'PyQt4.QtNetwork'
+    'PyQt4.QtNetwork',
+    'PyQt4._qt'
 ]

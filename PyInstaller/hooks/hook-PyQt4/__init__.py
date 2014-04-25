@@ -13,9 +13,7 @@ from PyInstaller.compat import is_darwin
 
 
 # In the new consolidated mode any PyQt depends on _qt
-hiddenimports = ['sip']
-
-print('test')
+hiddenimports = ['sip', 'PyQt4._qt']
 
 
 # For Qt to work on Mac OS X it is necessary to include directory qt_menu.nib.
