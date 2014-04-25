@@ -8,5 +8,10 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['sip', 'PyQt4.QtCore', 'PyQt4._qt']
-
+hiddenimports = [
+    'sip',
+    'PyQt4.QtCore',
+    'PyQt4.QtGui',
+    'PyQt4.QtSql',
+    'PyQt4.QtNetwork'
+]
