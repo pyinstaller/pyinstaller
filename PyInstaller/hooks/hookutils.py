@@ -193,7 +193,7 @@ def qt4_menu_nib_dir():
     menu_dir = ''
     # Detect MacPorts prefix (usually /opt/local).
     # Suppose that PyInstaller is using python from macports.
-    macports_prefix = sys.executable.split('/Library')[0]
+    macports_prefix = os.path.realpath(sys.executable).split('/Library')[0]
     
     # list of directories where to look for qt_menu.nib    
     dirs = []
@@ -292,7 +292,7 @@ def qt5_menu_nib_dir():
     # FIXME: update this when MacPorts supports Qt5
     # Detect MacPorts prefix (usually /opt/local).
     # Suppose that PyInstaller is using python from macports.
-    macports_prefix = sys.executable.split('/Library')[0]
+    macports_prefix = os.path.realpath(sys.executable).split('/Library')[0]
     # list of directories where to look for qt_menu.nib
     dirs.extend( [
         # Qt5 from MacPorts not compiled as framework.
