@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['sip', 'PyQt4.QtCore', 'PyQt4.QtGui', 'PyQt4._qt']
+hiddenimports = ['sip', 'PyQt4.QtCore', 'PyQt4.QtGui']
 
 from PyInstaller.hooks.hookutils import qt4_plugins_binaries
 

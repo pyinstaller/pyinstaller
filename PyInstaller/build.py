@@ -371,6 +371,10 @@ class Analysis(Target):
         self.hiddenimports.extend(HIDDENIMPORTS)
 
         self.hookspath = hookspath
+        # Add hookspath to python path so hooks can be imported from that path.
+        if self.hookspath:
+            for hook in self.hookspath:
+                sys.path.append(hook)
 
         # Custom runtime hook files that should be included and started before
         # any existing PyInstaller runtime hooks.
@@ -593,11 +597,20 @@ class Analysis(Target):
         temp_toc, code_dict = self.graph.make_a_TOC(['PYMODULE','PYSOURCE','BUILTIN','EXTENSION'])
         self.pure['code'].update(code_dict)
         for (imported_name, path, typecode) in temp_toc :
-            try:
-                hook_name = 'hook-' + imported_name
-                hook_name_space = importlib.import_module('PyInstaller.hooks.' + hook_name)
-            except ImportError:
-                continue
+            hook_name = 'hook-' + imported_name
+            if not self.hookspath:
+                try:
+                    hook_name_space = importlib.import_module('PyInstaller.hooks.' + hook_name)
+                except ImportError:
+                    continue
+            else:
+                try:
+                    hook_name_space = importlib.import_module('PyInstaller.hooks.' + hook_name)
+                except ImportError:
+                    try:
+                        hook_name_space = importlib.import_module(hook_name)
+                    except ImportError:
+                        continue
             # TODO: move the following to a function like imptracker.handle_hook
             logger.info('Processing hook %s' % hook_name)
             from_node = self.graph.findNode(imported_name)
