@@ -310,8 +310,9 @@ class FakeModule(object):
         self._deleted_imports.extend(names)
 
     def add_binary(self,list_of_tuples):
-        self._added_binaries.append(list_of_tuples)
-        self.binaries.append(list_of_tuples)
+        for item in list_of_tuples:
+            self._added_binaries.append(item)
+            self.binaries.append(item)
 
     def retarget(self, path_to_new_code):
         # Used by hook-site (and others?) to retarget a module to a simpler one
