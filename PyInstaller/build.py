@@ -16,7 +16,6 @@ Build packages using spec files.
 import glob
 import hashlib
 import os
-import pprint
 import shutil
 import sys
 import tempfile
@@ -38,6 +37,8 @@ from PyInstaller.utils import misc
 
 
 import PyInstaller.log as logging
+from PyInstaller.utils.misc import save_py_data_struct, load_py_data_struct
+
 if is_win:
     from PyInstaller.utils import winmanifest
 
@@ -63,21 +64,6 @@ NOCONFIRM = None
 HIDDENIMPORTS = []
 
 rthooks = {}
-
-
-# TODO find better place for function.
-def _save_data(filename, data):
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-    outf = open(filename, 'w')
-    pprint.pprint(data, outf)
-    outf.close()
-
-
-# TODO find better place for function.
-def _load_data(filename):
-    return eval(open(filename, 'rU').read())
 
 
 # TODO find better place for function.
@@ -255,7 +241,7 @@ class Target(object):
         returns None if guts have changed
         """
         try:
-            data = _load_data(self.out)
+            data = load_py_data_struct(self.out)
         except:
             logger.info("building because %s %s", os.path.basename(self.out), missing)
             return None
@@ -669,7 +655,7 @@ class Analysis(Target):
         # the user erased the work files, or gave a different --workpath
         # or specified --clean.
         try:
-            oldstuff = _load_data(self.out)
+            oldstuff = load_py_data_struct(self.out)
         except:
             oldstuff = None
 
@@ -678,7 +664,7 @@ class Analysis(Target):
         # If there was no previous, or if it is different, save the new
         if oldstuff != newstuff:
             # Save all the new stuff to avoid regenerating it later, maybe
-            _save_data(self.out, newstuff)
+            save_py_data_struct(self.out, newstuff)
             # Write warnings about missing modules. Get them from the graph
             # and use the graph to figure out who tried to import them.
             # TODO: previously we could say whether an import was top-level,
@@ -800,7 +786,7 @@ class PYZ(Target):
         pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
-        _save_data(self.out, (self.name, self.level, self.toc))
+        save_py_data_struct(self.out, (self.name, self.level, self.toc))
         return 1
 
 
@@ -845,7 +831,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
     if os.path.exists(cacheindexfn):
-        cache_index = _load_data(cacheindexfn)
+        cache_index = load_py_data_struct(cacheindexfn)
     else:
         cache_index = {}
 
@@ -952,7 +938,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
 
     # update cache index
     cache_index[basenm] = digest
-    _save_data(cacheindexfn, cache_index)
+    save_py_data_struct(cacheindexfn, cache_index)
 
     # On Mac OS X we need relative paths to dll dependencies
     # starting with @executable_path
@@ -1076,7 +1062,7 @@ class PKG(Target):
         archive = pyi_carchive.CArchive(pylib_name=pylib_name)
 
         archive.build(self.name, mytoc)
-        _save_data(self.out,
+        save_py_data_struct(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
                     self.strip_binaries, self.upx_binaries))
         for item in trash:
@@ -1303,7 +1289,7 @@ class EXE(Target):
                 self.versrsrc, self.resources, self.strip, self.upx,
                 misc.mtime(self.name))
         assert len(guts) == len(self.GUTS)
-        _save_data(self.out, guts)
+        save_py_data_struct(self.out, guts)
         for item in trash:
             os.remove(item)
         return 1
@@ -1333,7 +1319,7 @@ class DLL(EXE):
         self.copy(self.pkg.name, outf)
         outf.close()
         os.chmod(self.name, 0o755)
-        _save_data(self.out,
+        save_py_data_struct(self.out,
                    (self.name, self.console, self.debug, self.icon,
                     self.versrsrc, self.manifest, self.resources, self.strip, self.upx, misc.mtime(self.name)))
         return 1
@@ -1423,7 +1409,7 @@ class COLLECT(Target):
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)
-        _save_data(self.out,
+        save_py_data_struct(self.out,
                  (self.name, self.strip_binaries, self.upx_binaries, self.toc))
         return 1
 
@@ -1644,12 +1630,12 @@ class Tree(Target, TOC):
                             rslt.append((rfnm, fullfnm, 'DATA'))
         self.data = rslt
         try:
-            oldstuff = _load_data(self.out)
+            oldstuff = load_py_data_struct(self.out)
         except:
             oldstuff = None
         newstuff = (self.root, self.prefix, self.excludes, self.data)
         if oldstuff != newstuff:
-            _save_data(self.out, newstuff)
+            save_py_data_struct(self.out, newstuff)
             return 1
         logger.info("%s no change!", self.out)
         return 0
@@ -1748,7 +1734,7 @@ def build(spec, distpath, workpath, clean_build):
     # Set of global variables that can be used while processing .spec file.
     global SPECPATH, DISTPATH, WORKPATH, WARNFILE, rthooks, SPEC, specnm
 
-    rthooks = _load_data(os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks.dat'))
+    rthooks = load_py_data_struct(os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks.dat'))
 
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'

@@ -145,6 +145,7 @@ class PyiModuleGraph(ModuleGraph):
         Analyze them and update the 'priority_scripts' list.
         """
         logger.info('Analyzing run-time hooks ...')
+        # TODO clean up comments in this method.
         # Process custom runtime hooks (from --runtime-hook options).
         # The runtime hooks are order dependent. First hooks in the list
         # are executed first. Put their graph nodes at the head of the

@@ -15,6 +15,7 @@ This module is for the miscellaneous routines which do not fit somewhere else.
 import glob
 import imp
 import os
+import pprint
 import py_compile
 import sys
 
@@ -260,3 +261,27 @@ def compile_py_files(toc, workpath):
         new_toc.append((nm, obj_fnm, typ))
 
     return new_toc
+
+
+def save_py_data_struct(filename, data):
+    """
+    Save data into text file as Python data structore.
+    :param filename:
+    :param data:
+    :return:
+    """
+    dirname = os.path.dirname(filename)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    outf = open(filename, 'w')
+    pprint.pprint(data, outf)
+    outf.close()
+
+
+def load_py_data_struct(filename):
+    """
+    Load data saved as python code and interpret that code.
+    :param filename:
+    :return:
+    """
+    return eval(open(filename, 'rU').read())
