@@ -561,6 +561,7 @@ class Analysis(Target):
                 priority_scripts.insert( RTH_START_POSITION, self.graph.run_script(hook_file, top_node) )
                 rthook_next_position += 1
 
+        # TODO including run-time hooks should be done after processing regular import hooks.
         # Find runtime hooks that are implied by packages already imported.
         # Get a temporary TOC listing all the scripts and packages graphed
         # so far. Assuming that runtime hooks apply only to modules and packages.
@@ -596,10 +597,13 @@ class Analysis(Target):
         # also because regular hooks can apply to extensions and builtins.
         temp_toc, code_dict = self.graph.make_a_TOC(['PYMODULE','PYSOURCE','BUILTIN','EXTENSION'])
         self.pure['code'].update(code_dict)
+        # TODO optimize looking for hooks by caching the filelist of hooks
         for (imported_name, path, typecode) in temp_toc :
             hook_name = 'hook-' + imported_name
+            # TODO simplify importing hooks even from self.hookspath.
             if not self.hookspath:
                 try:
+                    # TODO Will this work when we replace '.' dots in hook_name by '-' or '_'
                     hook_name_space = importlib.import_module('PyInstaller.hooks.' + hook_name)
                 except ImportError:
                     continue
@@ -615,18 +619,25 @@ class Analysis(Target):
             logger.info('Processing hook %s' % hook_name)
             from_node = self.graph.findNode(imported_name)
             # hook_name_space represents the code of "hook-imported_name.py"
-            if hasattr(hook_name_space,'hiddenimports') :
+            if hasattr(hook_name_space, 'hiddenimports'):
                 # push hidden imports into the graph, as if imported from name
-                for item in hook_name_space.hiddenimports :
-                    to_node = self.graph.findNode(item)
-                    if to_node is None :
-                        self.graph.import_hook(item,from_node)
-                    #else :
-                        #print('hidden import {0} found otherwise'.format(item))
-            if hasattr(hook_name_space,'datas') :
+                for item in hook_name_space.hiddenimports:
+                    try:
+                        to_node = self.graph.findNode(item)
+                        if to_node is None:
+                            self.graph.import_hook(item, from_node)
+                    except ImportError:
+                        # Print warning if a module from hiddenimport could not be found.
+                        # modulegraph raises ImporError when a module is not found.
+                        # Import hook with non-existing hiddenimport is probably a stale hook
+                        # that was not updated for a long time.
+                        logger.warn("Hidden import '%s' not found (probably old hook)" % item)
+
+            if hasattr(hook_name_space, 'datas'):
                 # Add desired data files to our datas TOC
                 self.datas.extend(self._format_hook_datas(hook_name_space))
-            if hasattr(hook_name_space,'hook'):
+            # TODO processing 'hook(mod)' function should be probably before using hiddenimport hook attribute.
+            if hasattr(hook_name_space, 'hook'):
                 # Process a hook(mod) function. Create a Module object as its API.
                 # TODO: it won't be called "FakeModule" later on
                 mod = FakeModule(imported_name,self.graph)
