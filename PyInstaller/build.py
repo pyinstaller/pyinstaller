@@ -540,45 +540,8 @@ class Analysis(Target):
             except :
                 logger.error("Hidden import %r not found", modnm)
 
-        # Process custom runtime hooks (from --runtime-hook options).
-        # The runtime hooks are order dependent. First hooks in the list
-        # are executed first. Put their graph nodes at the head of the
-        # priority_scripts list Pyinstaller-defined rthooks and
-        # thus they are executed first.
 
-        # First priority script has to be '_pyi_bootstrap' and rthooks after
-        # this script. - _pyi_bootstrap is at position 0. First rthook should
-        # be at position 1.
-        RTH_START_POSITION = 1
-        rthook_next_position = RTH_START_POSITION
-
-        if self.custom_runtime_hooks:
-            for hook_file in self.custom_runtime_hooks:
-                logger.info("Including custom run-time hook %r", hook_file)                
-                hook_file = os.path.abspath(hook_file)
-                # Not using "try" here because the path is supposed to
-                # exist, if it does not, the raised error will explain.
-                priority_scripts.insert( RTH_START_POSITION, self.graph.run_script(hook_file, top_node) )
-                rthook_next_position += 1
-
-        # TODO including run-time hooks should be done after processing regular import hooks.
-        # Find runtime hooks that are implied by packages already imported.
-        # Get a temporary TOC listing all the scripts and packages graphed
-        # so far. Assuming that runtime hooks apply only to modules and packages.
-        temp_toc, code_dict = self.graph.make_a_TOC(['PYMODULE','PYSOURCE'])
-        self.pure['code'].update(code_dict)
-        logger.info("Looking for standard run-time hooks")
-        for (name, path, typecode) in temp_toc :
-            for (hook, path, typecode) in _findRTHook(name) :
-                logger.info("Including run-time hook %r", hook)
-                priority_scripts.insert(
-                    rthook_next_position,
-                    self.graph.run_script(path, top_node)
-                )
-        # priority_scripts is now a list of the graph nodes of custom runtime
-        # hooks, then regular runtime hooks, then the PyI loader scripts.
-        # Further on, we will make sure they end up at the front of self.scripts 
-
+        # TODO Do we need the ability to use fake modules?
         # KLUDGE? If any script analyzed so far has imported "site" then,
         # when in the next step we call hook_site.py, it will replace
         # the code of the site node with the code of fake/fake-site.py. 
@@ -652,7 +615,21 @@ class Analysis(Target):
                     # This removes the 'item' node from the graph if no other
                     # links go to it (no other modules import it)
                     self.graph.removeReference(mod.node,item)
-        
+
+
+        # Analyze run-time hooks.
+        self.graph.analyze_runtime_hooks(
+            priority_scripts,
+            self.custom_runtime_hooks,
+            _findRTHook,
+            self.pure,
+            to_node,
+        )
+        # priority_scripts is now a list of the graph nodes of custom runtime
+        # hooks, then regular runtime hooks, then the PyI loader scripts.
+        # Further on, we will make sure they end up at the front of self.scripts
+
+
         # Extract the nodes of the graph as TOCs for further processing.
         # Initialize the scripts list with priority scripts in the proper order.
         self.scripts = self.graph.nodes_to_TOC(priority_scripts)

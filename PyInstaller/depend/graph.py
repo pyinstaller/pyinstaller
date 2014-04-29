@@ -138,6 +138,49 @@ class PyiModuleGraph(ModuleGraph):
         _, iter_inc = self.get_edges(node)
         return [importer.identifier for importer in iter_inc]
 
+    def analyze_runtime_hooks(self, priority_scripts, custom_runhooks, find_rthook_func, pure, top_node):
+        """
+        Analyze custom run-time hooks and run-time hooks implied by found modules.
+
+        Analyze them and update the 'priority_scripts' list.
+        """
+        logger.info('Analyzing run-time hooks ...')
+        # Process custom runtime hooks (from --runtime-hook options).
+        # The runtime hooks are order dependent. First hooks in the list
+        # are executed first. Put their graph nodes at the head of the
+        # priority_scripts list Pyinstaller-defined rthooks and
+        # thus they are executed first.
+
+        # First priority script has to be '_pyi_bootstrap' and rthooks after
+        # this script. - _pyi_bootstrap is at position 0. First rthook should
+        # be at position 1.
+        RTH_START_POSITION = 1
+        rthook_next_position = RTH_START_POSITION
+
+        if custom_runhooks:
+            for hook_file in custom_runhooks:
+                logger.info("Including custom run-time hook %r", hook_file)
+                hook_file = os.path.abspath(hook_file)
+                # Not using "try" here because the path is supposed to
+                # exist, if it does not, the raised error will explain.
+                priority_scripts.insert( RTH_START_POSITION, self.run_script(hook_file, top_node))
+                rthook_next_position += 1
+
+        # TODO including run-time hooks should be done after processing regular import hooks.
+        # Find runtime hooks that are implied by packages already imported.
+        # Get a temporary TOC listing all the scripts and packages graphed
+        # so far. Assuming that runtime hooks apply only to modules and packages.
+        temp_toc, code_dict = self.make_a_TOC(['PYMODULE','PYSOURCE'])
+        pure['code'].update(code_dict)
+        for (name, path, typecode) in temp_toc :
+            for (hook, path, typecode) in find_rthook_func(name):
+                logger.info("Including run-time hook %r", hook)
+                priority_scripts.insert(
+                    rthook_next_position,
+                    self.run_script(path, top_node)
+                )
+
+
 
 # TODO Simplify the representation and use directly Modulegraph objects.
 class TOC(compat.UserList):
