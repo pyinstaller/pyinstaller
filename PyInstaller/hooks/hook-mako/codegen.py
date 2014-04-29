@@ -14,4 +14,4 @@ This Python code imports the following modules.
 """
 
 
-hiddenimports = ['mako.cache', 'make.runtime', 'mako.filters']
+hiddenimports = ['mako.cache', 'mako.runtime', 'mako.filters']
