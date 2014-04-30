@@ -499,7 +499,7 @@ class Analysis(Target):
         # pyi-loader set. TEMP: assume the first/only user script is self.inputs[5]
         script = self.inputs[5]
         logger.info("Analyzing %s", script)
-        top_node = self.graph.run_script(script)
+        self.graph.run_script(script)
         # list to hold graph nodes of loader scripts and runtime hooks in use order        
         priority_scripts = [] 
         # With a caller node in hand, import all the loader set as called by it.
@@ -508,11 +508,11 @@ class Analysis(Target):
         # Save the graph nodes of each in sequence.
         for script in self.inputs[:5] :
             logger.info("Analyzing %s", script)
-            priority_scripts.append( self.graph.run_script(script, top_node) )
+            priority_scripts.append( self.graph.run_script(script))
         # And import any remaining user scripts as if called by the first one.
         for script in self.inputs[6:] :
             logger.info("Analyzing %s", script)
-            node = self.graph.run_script(script,top_node)
+            node = self.graph.run_script(script)
 
         # Analyze the script's hidden imports (named on the command line)
         for modnm in self.hiddenimports:
@@ -522,7 +522,7 @@ class Analysis(Target):
             logger.info("Analyzing hidden import %r", modnm)
             # ModuleGraph throws Import Error if import not found
             try :
-                node = self.graph.import_hook(modnm, top_node)
+                node = self.graph.import_hook(modnm)
             except :
                 logger.error("Hidden import %r not found", modnm)
 
@@ -538,8 +538,7 @@ class Analysis(Target):
         #node = self.graph.findNode('site')
         #if node is not None :
             #self.graph.run_script(
-                #os.path.join(HOMEPATH, 'PyInstaller', 'fake', 'fake-site.py'),
-                #top_node)
+                #os.path.join(HOMEPATH, 'PyInstaller', 'fake', 'fake-site.py'))
 
         # Now find regular hooks and execute them. Get a new TOC, in part
         # because graphing a runtime hook might have added some names, but
@@ -609,7 +608,6 @@ class Analysis(Target):
             self.custom_runtime_hooks,
             _findRTHook,
             self.pure,
-            to_node,
         )
         # priority_scripts is now a list of the graph nodes of custom runtime
         # hooks, then regular runtime hooks, then the PyI loader scripts.

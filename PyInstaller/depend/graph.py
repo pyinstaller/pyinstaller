@@ -57,7 +57,23 @@ class PyiModuleGraph(ModuleGraph):
             'MissingModule' : 'MISSING',
             'does not occur' : 'BINARY'
             }
+        # modulegraph Node for the main python script that is analyzed
+        # by PyInstaller.
+        self._top_script_node = None
 
+    def run_script(self, pathname):
+        """
+        Wrap the parent's 'run_script' method and create graph from the first
+        script in the analysis, and save its node to use as the "caller" node
+        for all others. This gives a connected graph rather than a collection
+        of unrelated trees,
+        """
+        if self._top_script_node is None:
+            # Remember the node for the first script.
+            self._top_script_node = super(PyiModuleGraph, self).run_script(pathname)
+            return self._top_script_node
+        else:
+            return super(PyiModuleGraph, self).run_script(pathname, caller=self._top_script_node)
     # Return the name, path and type of selected nodes as a TOC, or appended
     # to a TOC. The selection is via a list of PyInstaller TOC typecodes.
     # If that list is empty we return the complete flattened graph as a TOC
@@ -138,7 +154,7 @@ class PyiModuleGraph(ModuleGraph):
         _, iter_inc = self.get_edges(node)
         return [importer.identifier for importer in iter_inc]
 
-    def analyze_runtime_hooks(self, priority_scripts, custom_runhooks, find_rthook_func, pure, top_node):
+    def analyze_runtime_hooks(self, priority_scripts, custom_runhooks, find_rthook_func, pure):
         """
         Analyze custom run-time hooks and run-time hooks implied by found modules.
 
@@ -164,7 +180,7 @@ class PyiModuleGraph(ModuleGraph):
                 hook_file = os.path.abspath(hook_file)
                 # Not using "try" here because the path is supposed to
                 # exist, if it does not, the raised error will explain.
-                priority_scripts.insert( RTH_START_POSITION, self.run_script(hook_file, top_node))
+                priority_scripts.insert( RTH_START_POSITION, self.run_script(hook_file))
                 rthook_next_position += 1
 
         # TODO including run-time hooks should be done after processing regular import hooks.
@@ -178,7 +194,7 @@ class PyiModuleGraph(ModuleGraph):
                 logger.info("Including run-time hook %r", hook)
                 priority_scripts.insert(
                     rthook_next_position,
-                    self.run_script(path, top_node)
+                    self.run_script(path)
                 )
 
 
