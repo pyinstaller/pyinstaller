@@ -37,29 +37,36 @@ import logging
 import os
 from PyInstaller import compat as compat
 import PyInstaller.utils
+from PyInstaller.utils.misc import load_py_data_struct
 from modulegraph.modulegraph import ModuleGraph
 
 logger = logging.getLogger(__name__)
 
 
 class PyiModuleGraph(ModuleGraph):
-    def __init__ (self, *args) :
-        super(PyiModuleGraph, self).__init__(*args)
+    def __init__(self, pyi_homepath, *args, **kwargs):
+        super(PyiModuleGraph, self).__init__(*args, **kwargs)
         # Dict to map ModuleGraph node types to TOC typecodes
         self.typedict = {
-            'Module' : 'PYMODULE',
-            'SourceModule' : 'PYMODULE',
-            'CompiledModule' : 'PYMODULE',
-            'Package' : 'PYMODULE',
-            'Extension' : 'EXTENSION',
-            'Script' : 'PYSOURCE',
-            'BuiltinModule' : 'BUILTIN',
-            'MissingModule' : 'MISSING',
-            'does not occur' : 'BINARY'
-            }
+            'Module': 'PYMODULE',
+            'SourceModule': 'PYMODULE',
+            'CompiledModule': 'PYMODULE',
+            'Package': 'PYMODULE',
+            'Extension': 'EXTENSION',
+            'Script': 'PYSOURCE',
+            'BuiltinModule': 'BUILTIN',
+            'MissingModule': 'MISSING',
+            'does not occur': 'BINARY'
+        }
+        # Homepath to the place where is PyInstaller located.
+        self._homepath = pyi_homepath
         # modulegraph Node for the main python script that is analyzed
         # by PyInstaller.
         self._top_script_node = None
+        # Load dict with available run-time hooks.
+        self._available_rthooks = load_py_data_struct(
+            os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
+        )
 
     def run_script(self, pathname):
         """
@@ -74,17 +81,19 @@ class PyiModuleGraph(ModuleGraph):
             return self._top_script_node
         else:
             return super(PyiModuleGraph, self).run_script(pathname, caller=self._top_script_node)
-    # Return the name, path and type of selected nodes as a TOC, or appended
-    # to a TOC. The selection is via a list of PyInstaller TOC typecodes.
-    # If that list is empty we return the complete flattened graph as a TOC
-    # with the ModuleGraph note types in place of typecodes -- meant for
-    # debugging only. Normally we return ModuleGraph nodes whose types map
-    # to the requested PyInstaller typecode(s) as indicated in the typedict.
-    #
-    # We use the ModuleGraph (really, ObjectGraph) flatten() method to
-    # scan all the nodes. This is patterned after ModuleGraph.report().
 
     def make_a_TOC(self, typecode = [], existing_TOC = None ):
+        """
+        Return the name, path and type of selected nodes as a TOC, or appended
+        to a TOC. The selection is via a list of PyInstaller TOC typecodes.
+        If that list is empty we return the complete flattened graph as a TOC
+        with the ModuleGraph note types in place of typecodes -- meant for
+        debugging only. Normally we return ModuleGraph nodes whose types map
+        to the requested PyInstaller typecode(s) as indicated in the typedict.
+
+        We use the ModuleGraph (really, ObjectGraph) flatten() method to
+        scan all the nodes. This is patterned after ModuleGraph.report().
+        """
         result = existing_TOC or TOC()
         # Keep references to module code objects constructed by ModuleGraph
         # to avoid writting .pyc/pyo files to hdd.
@@ -124,7 +133,7 @@ class PyiModuleGraph(ModuleGraph):
     # ones that are runtime hooks. The process is almost the same as
     # make_a_TOC, but the caller guarantees the nodes are
     # valid, so minimal checking.
-    def nodes_to_TOC(self, node_list, existing_TOC = None ):
+    def nodes_to_TOC(self, node_list, existing_TOC = None):
         result = existing_TOC or TOC()
         for node in node_list:
             mg_type = type(node).__name__
@@ -154,7 +163,8 @@ class PyiModuleGraph(ModuleGraph):
         _, iter_inc = self.get_edges(node)
         return [importer.identifier for importer in iter_inc]
 
-    def analyze_runtime_hooks(self, priority_scripts, custom_runhooks, find_rthook_func, pure):
+
+    def analyze_runtime_hooks(self, priority_scripts, custom_runhooks, pure):
         """
         Analyze custom run-time hooks and run-time hooks implied by found modules.
 
@@ -189,14 +199,17 @@ class PyiModuleGraph(ModuleGraph):
         # so far. Assuming that runtime hooks apply only to modules and packages.
         temp_toc, code_dict = self.make_a_TOC(['PYMODULE','PYSOURCE'])
         pure['code'].update(code_dict)
-        for (name, path, typecode) in temp_toc :
-            for (hook, path, typecode) in find_rthook_func(name):
-                logger.info("Including run-time hook %r", hook)
-                priority_scripts.insert(
-                    rthook_next_position,
-                    self.run_script(path)
-                )
-
+        for (mod_name, path, typecode) in temp_toc:
+            # Look if there is any run-time hook for given module.
+            if mod_name in self._available_rthooks:
+                # There could be several run-time hooks for a module.
+                for hook in self._available_rthooks[mod_name]:
+                    logger.info("Including run-time hook %r", hook)
+                    path = os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks', hook)
+                    priority_scripts.insert(
+                        rthook_next_position,
+                        self.run_script(path)
+                    )
 
 
 # TODO Simplify the representation and use directly Modulegraph objects.

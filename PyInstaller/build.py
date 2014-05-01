@@ -63,8 +63,6 @@ NOCONFIRM = None
 # if a command-line argument is specified. (e.g. --ascii)
 HIDDENIMPORTS = []
 
-rthooks = {}
-
 
 # TODO find better place for function.
 def setupUPXFlags():
@@ -487,7 +485,7 @@ class Analysis(Target):
         # Instantiate a ModuleGraph. The class is defined at end of this module.
         # The argument is the set of paths to use for imports: sys.path,
         # plus our loader, plus other paths from e.g. --path option).
-        self.graph = PyiModuleGraph(sys.path + [self.loader_path] + self.pathex)
+        self.graph = PyiModuleGraph(HOMEPATH, sys.path + [self.loader_path] + self.pathex)
         
         # Graph the first script in the analysis, and save its node to use as
         # the "caller" node for all others. This gives a connected graph rather than
@@ -606,7 +604,6 @@ class Analysis(Target):
         self.graph.analyze_runtime_hooks(
             priority_scripts,
             self.custom_runtime_hooks,
-            _findRTHook,
             self.pure,
         )
         # priority_scripts is now a list of the graph nodes of custom runtime
@@ -716,18 +713,6 @@ where you need to install Python library:
 """
             raise IOError(msg)
 
-
-def _findRTHook(modnm):
-    rslt = []
-    for script in rthooks.get(modnm) or []:
-        nm = os.path.basename(script)
-        nm = os.path.splitext(nm)[0]
-        if os.path.isabs(script):
-            path = script
-        else:
-            path = os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks', script)
-        rslt.append((nm, path, 'PYSOURCE'))
-    return rslt
 
 
 class PYZ(Target):
@@ -1730,9 +1715,7 @@ def build(spec, distpath, workpath, clean_build):
     Build the executable according to the created SPEC file.
     """
     # Set of global variables that can be used while processing .spec file.
-    global SPECPATH, DISTPATH, WORKPATH, WARNFILE, rthooks, SPEC, specnm
-
-    rthooks = load_py_data_struct(os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks.dat'))
+    global SPECPATH, DISTPATH, WORKPATH, WARNFILE, SPEC, specnm
 
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
