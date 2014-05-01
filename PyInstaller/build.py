@@ -16,12 +16,11 @@ Build packages using spec files.
 import glob
 import hashlib
 import os
-import pprint
 import shutil
 import sys
 import tempfile
 import importlib
-from PyInstaller.depend.graph import PyiModuleGraph, TOC, FakeModule
+from PyInstaller.depend.analysis import PyiModuleGraph, TOC, FakeModule
 from PyInstaller.loader import pyi_archive, pyi_carchive
 
 import PyInstaller.depend.imptracker
@@ -38,6 +37,8 @@ from PyInstaller.utils import misc
 
 
 import PyInstaller.log as logging
+from PyInstaller.utils.misc import save_py_data_struct, load_py_data_struct
+
 if is_win:
     from PyInstaller.utils import winmanifest
 
@@ -61,23 +62,6 @@ NOCONFIRM = None
 # Some modules are included if they are detected at build-time or
 # if a command-line argument is specified. (e.g. --ascii)
 HIDDENIMPORTS = []
-
-rthooks = {}
-
-
-# TODO find better place for function.
-def _save_data(filename, data):
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-    outf = open(filename, 'w')
-    pprint.pprint(data, outf)
-    outf.close()
-
-
-# TODO find better place for function.
-def _load_data(filename):
-    return eval(open(filename, 'rU').read())
 
 
 # TODO find better place for function.
@@ -255,7 +239,7 @@ class Target(object):
         returns None if guts have changed
         """
         try:
-            data = _load_data(self.out)
+            data = load_py_data_struct(self.out)
         except:
             logger.info("building because %s %s", os.path.basename(self.out), missing)
             return None
@@ -501,7 +485,7 @@ class Analysis(Target):
         # Instantiate a ModuleGraph. The class is defined at end of this module.
         # The argument is the set of paths to use for imports: sys.path,
         # plus our loader, plus other paths from e.g. --path option).
-        self.graph = PyiModuleGraph(sys.path + [self.loader_path] + self.pathex)
+        self.graph = PyiModuleGraph(HOMEPATH, sys.path + [self.loader_path] + self.pathex)
         
         # Graph the first script in the analysis, and save its node to use as
         # the "caller" node for all others. This gives a connected graph rather than
@@ -513,7 +497,7 @@ class Analysis(Target):
         # pyi-loader set. TEMP: assume the first/only user script is self.inputs[5]
         script = self.inputs[5]
         logger.info("Analyzing %s", script)
-        top_node = self.graph.run_script(script)
+        self.graph.run_script(script)
         # list to hold graph nodes of loader scripts and runtime hooks in use order        
         priority_scripts = [] 
         # With a caller node in hand, import all the loader set as called by it.
@@ -522,11 +506,11 @@ class Analysis(Target):
         # Save the graph nodes of each in sequence.
         for script in self.inputs[:5] :
             logger.info("Analyzing %s", script)
-            priority_scripts.append( self.graph.run_script(script, top_node) )
+            priority_scripts.append( self.graph.run_script(script))
         # And import any remaining user scripts as if called by the first one.
         for script in self.inputs[6:] :
             logger.info("Analyzing %s", script)
-            node = self.graph.run_script(script,top_node)
+            node = self.graph.run_script(script)
 
         # Analyze the script's hidden imports (named on the command line)
         for modnm in self.hiddenimports:
@@ -536,49 +520,12 @@ class Analysis(Target):
             logger.info("Analyzing hidden import %r", modnm)
             # ModuleGraph throws Import Error if import not found
             try :
-                node = self.graph.import_hook(modnm, top_node)
+                node = self.graph.import_hook(modnm)
             except :
                 logger.error("Hidden import %r not found", modnm)
 
-        # Process custom runtime hooks (from --runtime-hook options).
-        # The runtime hooks are order dependent. First hooks in the list
-        # are executed first. Put their graph nodes at the head of the
-        # priority_scripts list Pyinstaller-defined rthooks and
-        # thus they are executed first.
 
-        # First priority script has to be '_pyi_bootstrap' and rthooks after
-        # this script. - _pyi_bootstrap is at position 0. First rthook should
-        # be at position 1.
-        RTH_START_POSITION = 1
-        rthook_next_position = RTH_START_POSITION
-
-        if self.custom_runtime_hooks:
-            for hook_file in self.custom_runtime_hooks:
-                logger.info("Including custom run-time hook %r", hook_file)                
-                hook_file = os.path.abspath(hook_file)
-                # Not using "try" here because the path is supposed to
-                # exist, if it does not, the raised error will explain.
-                priority_scripts.insert( RTH_START_POSITION, self.graph.run_script(hook_file, top_node) )
-                rthook_next_position += 1
-
-        # TODO including run-time hooks should be done after processing regular import hooks.
-        # Find runtime hooks that are implied by packages already imported.
-        # Get a temporary TOC listing all the scripts and packages graphed
-        # so far. Assuming that runtime hooks apply only to modules and packages.
-        temp_toc, code_dict = self.graph.make_a_TOC(['PYMODULE','PYSOURCE'])
-        self.pure['code'].update(code_dict)
-        logger.info("Looking for standard run-time hooks")
-        for (name, path, typecode) in temp_toc :
-            for (hook, path, typecode) in _findRTHook(name) :
-                logger.info("Including run-time hook %r", hook)
-                priority_scripts.insert(
-                    rthook_next_position,
-                    self.graph.run_script(path, top_node)
-                )
-        # priority_scripts is now a list of the graph nodes of custom runtime
-        # hooks, then regular runtime hooks, then the PyI loader scripts.
-        # Further on, we will make sure they end up at the front of self.scripts 
-
+        # TODO Do we need the ability to use fake modules?
         # KLUDGE? If any script analyzed so far has imported "site" then,
         # when in the next step we call hook_site.py, it will replace
         # the code of the site node with the code of fake/fake-site.py. 
@@ -589,8 +536,7 @@ class Analysis(Target):
         #node = self.graph.findNode('site')
         #if node is not None :
             #self.graph.run_script(
-                #os.path.join(HOMEPATH, 'PyInstaller', 'fake', 'fake-site.py'),
-                #top_node)
+                #os.path.join(HOMEPATH, 'PyInstaller', 'fake', 'fake-site.py'))
 
         # Now find regular hooks and execute them. Get a new TOC, in part
         # because graphing a runtime hook might have added some names, but
@@ -652,7 +598,19 @@ class Analysis(Target):
                     # This removes the 'item' node from the graph if no other
                     # links go to it (no other modules import it)
                     self.graph.removeReference(mod.node,item)
-        
+
+
+        # Analyze run-time hooks.
+        self.graph.analyze_runtime_hooks(
+            priority_scripts,
+            self.custom_runtime_hooks,
+            self.pure,
+        )
+        # priority_scripts is now a list of the graph nodes of custom runtime
+        # hooks, then regular runtime hooks, then the PyI loader scripts.
+        # Further on, we will make sure they end up at the front of self.scripts
+
+
         # Extract the nodes of the graph as TOCs for further processing.
         # Initialize the scripts list with priority scripts in the proper order.
         self.scripts = self.graph.nodes_to_TOC(priority_scripts)
@@ -692,7 +650,7 @@ class Analysis(Target):
         # the user erased the work files, or gave a different --workpath
         # or specified --clean.
         try:
-            oldstuff = _load_data(self.out)
+            oldstuff = load_py_data_struct(self.out)
         except:
             oldstuff = None
 
@@ -701,7 +659,7 @@ class Analysis(Target):
         # If there was no previous, or if it is different, save the new
         if oldstuff != newstuff:
             # Save all the new stuff to avoid regenerating it later, maybe
-            _save_data(self.out, newstuff)
+            save_py_data_struct(self.out, newstuff)
             # Write warnings about missing modules. Get them from the graph
             # and use the graph to figure out who tried to import them.
             # TODO: previously we could say whether an import was top-level,
@@ -755,18 +713,6 @@ where you need to install Python library:
 """
             raise IOError(msg)
 
-
-def _findRTHook(modnm):
-    rslt = []
-    for script in rthooks.get(modnm) or []:
-        nm = os.path.basename(script)
-        nm = os.path.splitext(nm)[0]
-        if os.path.isabs(script):
-            path = script
-        else:
-            path = os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks', script)
-        rslt.append((nm, path, 'PYSOURCE'))
-    return rslt
 
 
 class PYZ(Target):
@@ -823,7 +769,7 @@ class PYZ(Target):
         pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
-        _save_data(self.out, (self.name, self.level, self.toc))
+        save_py_data_struct(self.out, (self.name, self.level, self.toc))
         return 1
 
 
@@ -868,7 +814,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
     if os.path.exists(cacheindexfn):
-        cache_index = _load_data(cacheindexfn)
+        cache_index = load_py_data_struct(cacheindexfn)
     else:
         cache_index = {}
 
@@ -975,7 +921,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
 
     # update cache index
     cache_index[basenm] = digest
-    _save_data(cacheindexfn, cache_index)
+    save_py_data_struct(cacheindexfn, cache_index)
 
     # On Mac OS X we need relative paths to dll dependencies
     # starting with @executable_path
@@ -1099,7 +1045,7 @@ class PKG(Target):
         archive = pyi_carchive.CArchive(pylib_name=pylib_name)
 
         archive.build(self.name, mytoc)
-        _save_data(self.out,
+        save_py_data_struct(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
                     self.strip_binaries, self.upx_binaries))
         for item in trash:
@@ -1326,7 +1272,7 @@ class EXE(Target):
                 self.versrsrc, self.resources, self.strip, self.upx,
                 misc.mtime(self.name))
         assert len(guts) == len(self.GUTS)
-        _save_data(self.out, guts)
+        save_py_data_struct(self.out, guts)
         for item in trash:
             os.remove(item)
         return 1
@@ -1356,7 +1302,7 @@ class DLL(EXE):
         self.copy(self.pkg.name, outf)
         outf.close()
         os.chmod(self.name, 0o755)
-        _save_data(self.out,
+        save_py_data_struct(self.out,
                    (self.name, self.console, self.debug, self.icon,
                     self.versrsrc, self.manifest, self.resources, self.strip, self.upx, misc.mtime(self.name)))
         return 1
@@ -1446,7 +1392,7 @@ class COLLECT(Target):
                 shutil.copy2(fnm, tofnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)
-        _save_data(self.out,
+        save_py_data_struct(self.out,
                  (self.name, self.strip_binaries, self.upx_binaries, self.toc))
         return 1
 
@@ -1667,12 +1613,12 @@ class Tree(Target, TOC):
                             rslt.append((rfnm, fullfnm, 'DATA'))
         self.data = rslt
         try:
-            oldstuff = _load_data(self.out)
+            oldstuff = load_py_data_struct(self.out)
         except:
             oldstuff = None
         newstuff = (self.root, self.prefix, self.excludes, self.data)
         if oldstuff != newstuff:
-            _save_data(self.out, newstuff)
+            save_py_data_struct(self.out, newstuff)
             return 1
         logger.info("%s no change!", self.out)
         return 0
@@ -1769,9 +1715,7 @@ def build(spec, distpath, workpath, clean_build):
     Build the executable according to the created SPEC file.
     """
     # Set of global variables that can be used while processing .spec file.
-    global SPECPATH, DISTPATH, WORKPATH, WARNFILE, rthooks, SPEC, specnm
-
-    rthooks = _load_data(os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks.dat'))
+    global SPECPATH, DISTPATH, WORKPATH, WARNFILE, SPEC, specnm
 
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
