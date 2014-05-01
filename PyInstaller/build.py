@@ -20,7 +20,7 @@ import shutil
 import sys
 import tempfile
 import importlib
-from PyInstaller.depend.graph import PyiModuleGraph, TOC, FakeModule
+from PyInstaller.depend.analysis import PyiModuleGraph, TOC, FakeModule
 from PyInstaller.loader import pyi_archive, pyi_carchive
 
 import PyInstaller.depend.imptracker
