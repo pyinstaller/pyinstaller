@@ -8,11 +8,5 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['sip', 'PyQt5.QtGui', 'PyQt5._qt']
-
-from PyInstaller.hooks.hookutils import qt5_plugins_binaries
-
-
-def hook(mod):
-    mod.binaries.extend(qt5_plugins_binaries('phonon_backend'))
-    return mod
+# xml.dom.domreg line 54
+hiddenimports = ['xml.dom.minidom']
