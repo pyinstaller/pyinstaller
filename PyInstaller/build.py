@@ -21,6 +21,7 @@ import sys
 import tempfile
 import importlib
 from PyInstaller.depend.analysis import PyiModuleGraph, TOC, FakeModule
+from PyInstaller.depend.utils import is_path_to_egg
 from PyInstaller.loader import pyi_archive, pyi_carchive
 
 import PyInstaller.depend.imptracker
@@ -107,6 +108,9 @@ def add_suffix_to_extensions(toc):
 
 
 #--- functions for checking guts ---
+# NOTE: By GUTS it is meant intermediate files and data structures that
+# PyInstaller creates for bundling files and creating final executable.
+
 
 def _check_guts_eq(attr, old, new, last_build):
     """
@@ -190,23 +194,6 @@ def _rmtree(path):
         shutil.rmtree(path)
     else:
         raise SystemExit('User aborted')
-
-
-def check_egg(pth):
-    """Check if path points to a file inside a python egg file (or to an egg
-       directly)."""
-    if os.path.altsep:
-        pth = pth.replace(os.path.altsep, os.path.sep)
-    components = pth.split(os.path.sep)
-    sep = os.path.sep
-
-    for i, name in zip(range(0, len(components)), components):
-        if name.lower().endswith(".egg"):
-            eggpth = sep.join(components[:i + 1])
-            if os.path.isfile(eggpth):
-                # eggs can also be directories!
-                return True
-    return False
 
 
 class Target(object):
@@ -1001,7 +988,7 @@ class PKG(Target):
         for inm, fnm, typ in toc:
             # Ensure filename 'fnm' is not None or empty string. Otherwise
             # it will fail in case of 'typ' being type OPTION.
-            if fnm and not os.path.isfile(fnm) and check_egg(fnm):
+            if fnm and not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
@@ -1359,7 +1346,7 @@ class COLLECT(Target):
         os.makedirs(self.name)
         toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
-            if not os.path.isfile(fnm) and check_egg(fnm):
+            if not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
             if os.pardir in os.path.normpath(inm) or os.path.isabs(inm):
