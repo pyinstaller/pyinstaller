@@ -29,7 +29,7 @@ def hook(mod):
     """
     cryptography_dir = os.path.dirname(get_module_file_attribute('cryptography'))
     for ext in PY_EXTENSION_SUFFIXES:
-        ffimods = glob.glob(os.path.join(cryptography_dir, '_cffi_*%s*' % ext))
+        ffimods = glob.glob(os.path.join(cryptography_dir, '*_cffi_*%s*' % ext))
         for f in ffimods:
             name = os.path.join('cryptography', os.path.basename(f))
             # TODO fix this hook to use attribute 'binaries'.
