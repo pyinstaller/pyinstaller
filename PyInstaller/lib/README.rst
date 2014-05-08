@@ -1,6 +1,16 @@
 Custom modifications of 3rd party libraries
 ===========================================
 
+pefile
+--------
+
+- There is no official port of pefile to Python 3 yet. We use this branch for PyInstaller
+  https://github.com/BlackXeronic/pefile_py3
+
+- For status of official support for Python3 see
+  https://code.google.com/p/pefile/issues/detail?id=36
+
+
 macholib
 --------
 
