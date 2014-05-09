@@ -13,7 +13,8 @@
 // TODO move this code to file  pyi_win32.c.
 
 
-#define _WIN32_WINNT 0x0500
+/* windows.h will use API for WinServer 2003 with SP1 and WinXP with SP2 */
+#define _WIN32_WINNT 0x0502
 
 
 #include <windows.h>
