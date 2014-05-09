@@ -63,6 +63,9 @@
  */
 // TODO use MSVCR function for file path handling.
 #ifdef WIN32
+    #ifdef PATH_MAX
+        #undef PATH_MAX  /* On Windows override PATH_MAX if defined. */
+    #endif
     #define PATH_MAX 4096  /* Default value on Linux. */
 #elif __APPLE__
     #define PATH_MAX 1024  /* Recommended value for OSX. */
