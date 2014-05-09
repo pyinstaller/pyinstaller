@@ -40,19 +40,6 @@ static ULONG_PTR actToken;
 #endif
  	
  	
-int IsXPOrLater(void)
-{
-    OSVERSIONINFO osvi;
-    
-    ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
-    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-
-    GetVersionEx(&osvi);
-
-    return ((osvi.dwMajorVersion > 5) ||
-       ((osvi.dwMajorVersion == 5) && (osvi.dwMinorVersion >= 1)));
-}
-
 int CreateActContext(char *workpath, char *thisfile)
 {
     char manifestpath[PATH_MAX];
@@ -63,10 +50,6 @@ int CreateActContext(char *workpath, char *thisfile)
     HANDLE (WINAPI *CreateActCtx)(PACTCTX pActCtx);
     BOOL (WINAPI *ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
 
-    // If not XP, nothing to do -- return OK
-    if (!IsXPOrLater())
-        return 1;
-       
     /* Setup activation context */
     pyi_path_basename(basename, thisfile);
     pyi_path_join(manifestpath, workpath, basename);
@@ -109,9 +92,6 @@ void ReleaseActContext(void)
     void (WINAPI *ReleaseActCtx)(HANDLE);
     BOOL (WINAPI *DeactivateActCtx)(DWORD dwFlags, ULONG_PTR ulCookie);
     HANDLE k32;
-
-    if (!IsXPOrLater())
-        return;
 
     k32 = LoadLibrary("kernel32");
     ReleaseActCtx = (void*)GetProcAddress(k32, "ReleaseActCtx");
