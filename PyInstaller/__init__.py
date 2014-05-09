@@ -27,17 +27,17 @@ sys.path.insert(0, lib.__path__[0])
 
 
 from PyInstaller import compat
-from PyInstaller.compat import is_darwin, is_win
+from PyInstaller.compat import is_darwin, is_win, is_py2
 from PyInstaller.utils import git
 
 
 VERSION = (3, 0, 0, 'dev', git.get_repo_revision())
 
 
-# This ensures PyInstaller will work on Windows with paths containing
-# foreign characters.
+# This ensures for Python 2 that PyInstaller will work on Windows with paths
+# containing foreign characters.
 HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-if is_win:
+if is_win and is_py2:
     try:
         unicode(HOMEPATH)
     except UnicodeDecodeError:
