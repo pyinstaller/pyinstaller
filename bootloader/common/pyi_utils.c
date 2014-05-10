@@ -488,8 +488,9 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
 	int rc = 0;
     stb__wchar buffer[PATH_MAX];
 
+    // TODO is there a replacement for this conversion or just use wchar_t everywhere?
     /* Convert file name to wchar_t from utf8. */
-    stb_from_utf8(buffer, thisfile, PATH_MAX);
+    stb_from_utf8(buffer, (char *) thisfile, PATH_MAX);
 
 	// the parent process should ignore all signals it can
 	signal(SIGABRT, SIG_IGN);

@@ -19,7 +19,7 @@
 
 
 /* Path manipulation. Result is added to the supplied buffer. */
-void *pyi_path_basename(char *result, char *path);
+void *pyi_path_basename(char *result, const char *path);
 void *pyi_path_dirname(char *result, const char *path);
 void *pyi_path_join(char *result, const char *path1, const char *path2);
 void *pyi_path_normalize(char *result, const char *path);

@@ -9,12 +9,13 @@
  */
 
 
+// TODO Convert this file to file ./common/pyi_win32_utils.h
 #ifndef UTILS_H
 #define UTILS_H
 
 
 #ifdef WIN32
-int CreateActContext(char *workpath, char *thisfile);
+int CreateActContext(const char *workpath, const char *thisfile);
 void ReleaseActContext(void);
 #endif
 

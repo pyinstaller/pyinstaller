@@ -64,7 +64,7 @@ void pyi_path_dirname(char *result, const char *path)
  * Returns the last component of the path in filename. Return result
  * in new buffer.
  */
-void pyi_path_basename(char *result, char *path)
+void pyi_path_basename(char *result, const char *path)
 {
 #ifdef WIN32
   /* Search for the last directory separator in PATH.  */

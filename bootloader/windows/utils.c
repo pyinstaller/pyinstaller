@@ -13,6 +13,14 @@
 // TODO move this code to file  pyi_win32.c.
 
 
+/*
+ * Functions in this file are windows specific and are mostly related to handle
+ * Side-by-Side assembly:
+ *
+ * https://en.wikipedia.org/wiki/Side-by-side_assembly
+ */
+
+
 /* windows.h will use API for WinServer 2003 with SP1 and WinXP with SP2 */
 #define _WIN32_WINNT 0x0502
 
@@ -40,7 +48,7 @@ static ULONG_PTR actToken;
 #endif
  	
  	
-int CreateActContext(char *workpath, char *thisfile)
+int CreateActContext(const char *workpath, const char *thisfile)
 {
     char manifestpath[PATH_MAX];
     char basename[PATH_MAX];
@@ -101,8 +109,11 @@ void ReleaseActContext(void)
         VS("LOADER: Cannot find ReleaseActCtx/DeactivateActCtx exports in kernel32.dll\n");
         return;
     }
-    __try
-    {
+
+    // TODO mingw (gcc) does not support '__try', '__except' - probably just drop it if there is no other workaround.
+    /*__try
+    {*/
+
         VS("LOADER: Deactivating activation context\n");
         if (!DeactivateActCtx(0, actToken))
             VS("LOADER: Error deactivating context!\n!");
@@ -111,11 +122,13 @@ void ReleaseActContext(void)
         if (hCtx != INVALID_HANDLE_VALUE)
             ReleaseActCtx(hCtx);
         VS("LOADER: Done\n");
-    }
+
+    // TODO mingw (gcc) does not support '__try', '__except' - probably just drop it if there is no other workaround.
+    /*}
     __except (STATUS_SXS_EARLY_DEACTIVATION)
     {
     	VS("LOADER: XS early deactivation; somebody left the activation context dirty, let's ignore the problem\n");
-    }
+    }*/
 }
 
 
