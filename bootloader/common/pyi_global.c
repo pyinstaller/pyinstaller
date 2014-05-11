@@ -94,3 +94,13 @@
         }
     #endif
 #endif
+
+
+// TODO improve following for windows.
+void pyi_global_print(const char *fmt, ...)
+{
+   va_list v;
+   va_start(v,fmt);
+   vprintf(fmt,v);
+   va_end(v);
+}

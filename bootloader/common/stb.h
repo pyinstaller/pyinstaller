@@ -738,7 +738,8 @@ char *stb_mprintf(const char *fmt, ...)
    return strdup(buffer);
 }
 
-#ifdef _WIN32
+//#ifdef _WIN32
+#if 0  // This part won't be compiled.
 
 #ifndef _WINDOWS_
 STB_EXTERN __declspec(dllimport) int __stdcall WriteConsoleA(void *, const void *, unsigned int, unsigned int *, void *);
@@ -1422,7 +1423,8 @@ int32_t stb_is_pow2(uint32_t n)
 
 // tricky use of 4-bit table to identify 5 bit positions (note the '-1')
 // 3-bit table would require another tree level; 5-bit table wouldn't save one
-#ifdef _WIN32
+//#ifdef _WIN32
+#if 0
 #include <intrin.h>  // Replacement functions for inline assembler on 64bit Win
 #pragma warning(push)
 #pragma warning(disable: 4035)  // disable warning about no return value

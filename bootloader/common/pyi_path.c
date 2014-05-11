@@ -14,9 +14,10 @@
  */
 
 
-#ifdef WIN32
+#ifdef _WIN32
     #include <windows.h>  // GetModuleFileNameW
     #include <wchar.h>
+    #include <stdlib.h>  // _fullpath
 #elif __APPLE__
     #include <libgen.h>  // basename()
     #include <mach-o/dyld.h>  // _NSGetExecutablePath()
@@ -119,6 +120,20 @@ void pyi_path_normalize(char *result, const char *path)
 
 
 /*
+ * Return full path to a file. Wraps platform specific function.
+ */
+int pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
+{
+   #ifdef _WIN32
+       // TODO use _wfullpath - wchar_t function.
+       return _fullpath(abs, rel, abs_size) != NULL;
+   #else
+       return realpath(rel, abs) != NULL;
+   #endif
+}
+
+
+/*
  * Return full path to the current executable.
  * Executable is the .exe created by pyinstaller: path/myappname.exe
  *
@@ -144,6 +159,7 @@ int pyi_path_executable(char *execfile, const char *appname)
     /* Convert wchar_t to utf8. Just use type char as usual. */
     stb_to_utf8(buffer, wchar_buffer, PATH_MAX);
 
+    // TODO do not use this workaround for Python 3.
     /*
      * Use 8.3 filename (dos 8.3 or short filename)
      * to overcome the Python and PyInstaller limitation
@@ -201,7 +217,7 @@ int pyi_path_executable(char *execfile, const char *appname)
      * for LD_LIBRARY_PATH variavle. Relative LD_LIBRARY_PATH is a security
      * problem.
      */
-    if(stb_fullpath(execfile, PATH_MAX, buffer) == false) {
+    if(pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {
         VS("LOADER: executable is %s\n", execfile);
         return -1;
     }

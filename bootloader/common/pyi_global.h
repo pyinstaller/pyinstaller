@@ -76,6 +76,9 @@
  * Debug and error macros.
  */
 
+void pyi_global_print(const char *fmt, ...);
+
+
 
 /*
  * On Windows and with windowed mode (no console) show error messages
@@ -89,10 +92,10 @@
     void mbothererror(const char *fmt, ...);
     #define OTHERERROR mbothererror
 #else
-    #define FATALERROR stbprint
-    #define OTHERERROR stbprint
+    // TODO copy over stbprint to bootloader.
+    #define FATALERROR pyi_global_printf
+    #define OTHERERROR pyi_global_printf
 #endif /* WIN32 and WINDOWED */
-
 
 /* Enable or disable debug output. */
 
@@ -101,7 +104,7 @@
         #define VS mbvs
         void mbvs(const char *fmt, ...);
     #else
-        #define VS stbprint
+        #define VS pyi_global_printf
     #endif
 #else
     #ifdef WIN32
