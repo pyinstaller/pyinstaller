@@ -24,19 +24,18 @@
 /* 
  * Use Sean's Tool Box -- public domain -- http://nothings.org/stb.h. 
  */
-#define STB_DEFINE 1
-#define STB_NO_REGISTRY 1  // Disable registry functions.
-#define STB_NO_STB_STRINGS 1  // Disable config read/write functions.
+//#define STB_DEFINE 1
+//#define STB_NO_REGISTRY 1  // Disable registry functions.
+//#define STB_NO_STB_STRINGS 1  // Disable config read/write functions.
 
 
 /* PyInstaller headers. */
-#include "stb.h"
 #include "pyi_global.h"
 #include "pyi_archive.h"
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
 #include "pyi_launch.h"  // callSimpleEntryPoint
-#include "utils.h"  // CreateActContext, ReleaseActContext
+#include "pyi_win32_utils.h"  // CreateActContext, ReleaseActContext
 
 
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
@@ -81,7 +80,7 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
 	if (loadedNew) {
 		/* Start Python with silly command line */
 		PI_PyEval_InitThreads();
-		if (pyi_pylib_start_python(status, 1, (char**)&pathnm))
+		if (pyi_pylib_start_python(status))
 			return -1;
 		VS("Started new Python");
 		thisthread = PI_PyThreadState_Swap(NULL);

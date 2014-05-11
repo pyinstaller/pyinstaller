@@ -38,7 +38,7 @@
 #include "pyi_utils.h"
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
-#include "utils.h"  // TODO eliminate utils.h
+#include "pyi_win32_utils.h"  // CreateActContext, ReleaseActContext
 
 
 /* Max count of possible opened archives in multipackage mode. */

@@ -33,7 +33,6 @@
 
 
 /* PyInstaller headers. */
-#include "stb.h"
 #include "pyi_global.h"  // PATH_MAX
 #include "pyi_archive.h"
 #include "pyi_path.h"
