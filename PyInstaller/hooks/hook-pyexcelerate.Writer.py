@@ -8,8 +8,10 @@
 #-----------------------------------------------------------------------------
 
 import os
+from PyInstaller.hooks.hookutils import exec_statement
 
-from pyexcelerate.Writer import _TEMPLATE_PATH
+template_path = exec_statement('from pyexcelerate.Writer import _TEMPLATE_PATH as tp; print tp')
+
 datas = [
-	(os.path.join(_TEMPLATE_PATH, '*'), os.path.join('pyexcelerate', 'templates'))
+	(os.path.join(template_path, '*'), os.path.join('pyexcelerate', 'templates'))
 ]
