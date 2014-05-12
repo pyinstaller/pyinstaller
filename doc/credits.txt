@@ -92,3 +92,5 @@ please let us know if your name is omitted by accident:
 * David C. Morrill - vtkpython import hook.
 
 * Alan James Salmoni - Tkinter interface to PyInstaller.
+
+* Kevin Zhang - PyExcelerate import hook.
