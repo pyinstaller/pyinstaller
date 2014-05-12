@@ -33,6 +33,7 @@
 
 
 /* PyInstaller headers. */
+#include "msvc_stdint.h"  // int32_t
 #include "pyi_global.h"  // PATH_MAX
 #include "pyi_archive.h"
 #include "pyi_path.h"
@@ -138,3 +139,41 @@ static void init_launcher(void)
 }
 
 
+/*
+ * Convert wchar_t (UTF16) into char (UTF8).
+ */
+char * pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, int n)
+{
+   int i=0;
+   int32_t c;
+   --n;
+   while (*str) {
+      if (*str < 0x80) {
+         if (i+1 > n) return NULL;
+         buffer[i++] = (char) *str++;
+      } else if (*str < 0x800) {
+         if (i+2 > n) return NULL;
+         buffer[i++] = 0xc0 + (*str >> 6);
+         buffer[i++] = 0x80 + (*str & 0x3f);
+         str += 1;
+      } else if (*str >= 0xd800 && *str < 0xdc00) {
+         if (i+4 > n) return NULL;
+         c = ((str[0] - 0xd800) << 10) + ((str[1]) - 0xdc00) + 0x10000;
+         buffer[i++] = 0xf0 + (c >> 18);
+         buffer[i++] = 0x80 + ((c >> 12) & 0x3f);
+         buffer[i++] = 0x80 + ((c >>  6) & 0x3f);
+         buffer[i++] = 0x80 + ((c      ) & 0x3f);
+         str += 2;
+      } else if (*str >= 0xdc00 && *str < 0xe000) {
+         return NULL;
+      } else {
+         if (i+3 > n) return NULL;
+         buffer[i++] = 0xe0 + (*str >> 12);
+         buffer[i++] = 0x80 + ((*str >> 6) & 0x3f);
+         buffer[i++] = 0x80 + ((*str     ) & 0x3f);
+         str += 1;
+      }
+   }
+   buffer[i] = 0;
+   return buffer;
+}
