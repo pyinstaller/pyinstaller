@@ -31,7 +31,6 @@
 
 
 /* PyInstaller headers. */
-#include "stb.h"
 #include "pyi_global.h"
 #include "pyi_path.h"
 #include "pyi_archive.h"

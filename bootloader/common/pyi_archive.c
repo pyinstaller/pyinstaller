@@ -29,7 +29,6 @@
 
 /* PyInstaller headers. */
 #include "zlib.h"
-#include "stb.h"
 #include "pyi_global.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"

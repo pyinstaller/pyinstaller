@@ -25,7 +25,6 @@
 
 
 /* PyInstaller headers. */
-#include "stb.h"
 #include "pyi_global.h"
 #include "pyi_python.h"
 

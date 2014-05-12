@@ -14,22 +14,6 @@
  */
 
 
-/* 
- * Use Sean's Tool Box -- public domain -- http://nothings.org/stb.h. 
- * 
- * This toolbox wraps some standard functions in a portable way and
- * contains some additional utility fuctions.
- * (string, file, utf8, etc.)
- *
- * All functions starting with 'stb_' prefix are from this toolbox.
- * To use this toolbox just do:
- *
- * #include "stb.h"
- */
-//#define STB_DEFINE 1
-//#define STB_NO_REGISTRY 1  // Disable registry functions.
-//#define STB_NO_STB_STRINGS 1  // Disable config read/write functions.
-
 #define _CRT_SECURE_NO_WARNINGS 1
 
 
@@ -45,14 +29,12 @@
 
 
 /* PyInstaller headers. */
-#include "stb.h"
 #include "pyi_global.h" // PATH_MAX for win32
 #include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_pythonlib.h"
 #include "pyi_launch.h"
-
 
 
 #if defined(WIN32) && defined(WINDOWED)

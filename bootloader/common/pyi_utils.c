@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>  // struct stat
+#include <wchar.h>  // wchar_t
 #if defined(__APPLE__) && defined(WINDOWED)
     #include <Carbon/Carbon.h>  // AppleEventsT
 #endif
@@ -50,7 +51,6 @@
 
 
 /* PyInstaller headers. */
-#include "stb.h"
 #include "pyi_global.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
@@ -150,8 +150,8 @@ int pyi_get_temp_path(char *buffer)
     int i;
     char *ret;
     char prefix[16];
-    stb__wchar wchar_buffer[PATH_MAX];
-    stb__wchar wchar_dos83_buffer[PATH_MAX];
+    wchar_t wchar_buffer[PATH_MAX];
+    wchar_t wchar_dos83_buffer[PATH_MAX];
 
     // TODO later when moving to full unicode support - use 83 filename only where really necessary.
     /*
@@ -486,7 +486,7 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
 	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	int rc = 0;
-    stb__wchar buffer[PATH_MAX];
+    wchar_t buffer[PATH_MAX];
 
     // TODO is there a replacement for this conversion or just use wchar_t everywhere?
     /* Convert file name to wchar_t from utf8. */
