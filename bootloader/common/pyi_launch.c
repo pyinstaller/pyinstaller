@@ -19,7 +19,7 @@
 #endif
 
 
-#ifdef WIN32
+#ifdef _WIN32
     #include <windows.h>
 #else
     #include <limits.h>  // PATH_MAX
@@ -462,7 +462,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status)
 
 void pyi_launch_finalize(ARCHIVE_STATUS *status)
 {
-    #ifdef WIN32
+    #ifdef _WIN32
     ReleaseActContext();
     #endif
     pyi_pylib_finalize(status);

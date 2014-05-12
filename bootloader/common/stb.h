@@ -12064,7 +12064,7 @@ static void * stb__io_task(void *p)
       return 0;
    }
    if (dc->f) {
-      #ifdef WIN32
+      #ifdef _WIN32
       f = _fdopen(_dup(_fileno(dc->f)), "rb");
       #else
       f = fdopen(dup(fileno(dc->f)), "rb");

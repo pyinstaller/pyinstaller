@@ -29,7 +29,7 @@
 #include <stdio.h>
 
 
-#ifdef WIN32
+#ifdef _WIN32
  #include <windows.h>
  #include <direct.h>
  #include <process.h>
@@ -97,6 +97,9 @@
 
 
 // TODO improve following for windows.
+/*
+ * Wrap printing debug messages to console.
+ */
 void pyi_global_print(const char *fmt, ...)
 {
    va_list v;

@@ -33,7 +33,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 
-#ifdef WIN32
+#ifdef _WIN32
     #include <windows.h>
     #include <wchar.h>
 #else
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-#ifdef WIN32
+#ifdef _WIN32
     /* On Windows use single-process for --onedir mode. */
     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");

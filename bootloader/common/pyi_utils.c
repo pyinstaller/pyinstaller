@@ -15,7 +15,7 @@
  */
 
 
-#ifdef WIN32
+#ifdef _WIN32
     #include <windows.h>
     #include <direct.h>  // _mkdir, _rmdir
     #include <io.h>  // _finddata_t
@@ -80,7 +80,7 @@ char *pyi_getenv(const char *variable)
 {
     char *env = NULL;
 
-#ifdef WIN32
+#ifdef _WIN32
     char  buf1[PATH_MAX], buf2[PATH_MAX];
     DWORD rc;
 
@@ -119,7 +119,7 @@ char *pyi_getenv(const char *variable)
 // TODO unicode support
 int pyi_setenv(const char *variable, const char *value){
     int rc;
-#ifdef WIN32
+#ifdef _WIN32
     rc = SetEnvironmentVariableA(variable, value);
 #else
     rc = setenv(variable, value, true);
@@ -133,7 +133,7 @@ int pyi_setenv(const char *variable, const char *value){
 int pyi_unsetenv(const char *variable)
 {
     int rc;
-#ifdef WIN32
+#ifdef _WIN32
     rc = SetEnvironmentVariableA(variable, NULL);
 #else
     rc = unsetenv(variable);
@@ -142,7 +142,7 @@ int pyi_unsetenv(const char *variable)
 }
 
 
-#ifdef WIN32
+#ifdef _WIN32
 
 // TODO rename fuction and revisit
 int pyi_get_temp_path(char *buffer)
@@ -261,7 +261,7 @@ int pyi_create_temp_path(ARCHIVE_STATUS *status)
 
 
 // TODO merge unix/win versions of remove_one() and pyi_remove_temp_path()
-#ifdef WIN32
+#ifdef _WIN32
 static void remove_one(char *fnm, int pos, struct _finddata_t finfo)
 {
 	if ( strcmp(finfo.name, ".")==0  || strcmp(finfo.name, "..") == 0 )
@@ -382,7 +382,7 @@ FILE *pyi_open_target(const char *path, const char* name_)
 			break;
 		if (stat(fnm, &sbuf) < 0)
     {
-#ifdef WIN32
+#ifdef _WIN32
 			mkdir(fnm);
 #else
 			mkdir(fnm, 0700);
@@ -442,7 +442,7 @@ int pyi_copy_file(const char *src, const char *dst, const char *filename)
 dylib_t pyi_utils_dlopen(const char *dllpath)
 {
 
-#ifdef WIN32
+#ifdef _WIN32
     //char buff[PATH_MAX] = NULL;
 #else
     int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
@@ -455,7 +455,7 @@ dylib_t pyi_utils_dlopen(const char *dllpath)
     dlopenMode |= RTLD_MEMBER;
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
     /* Use unicode version of function to load  dll file. */
 	//return LoadLibraryExW(stb_to_utf8(buff, dllpath, sizeof(buff)), NULL,
             //LOAD_WITH_ALTERED_SEARCH_PATH);
@@ -472,7 +472,7 @@ dylib_t pyi_utils_dlopen(const char *dllpath)
 ////////////////////////////////////////////////////////////////////
 
 
-#ifdef WIN32
+#ifdef _WIN32
 
 
 int pyi_utils_set_environment(const ARCHIVE_STATUS *status)

@@ -67,7 +67,7 @@ void pyi_path_dirname(char *result, const char *path)
  */
 void pyi_path_basename(char *result, const char *path)
 {
-#ifdef WIN32
+#ifdef _WIN32
   /* Search for the last directory separator in PATH.  */
   char *basename = strrchr (path, '\\');
   if (!basename) basename = strrchr (path, '/');
@@ -144,7 +144,7 @@ int pyi_path_executable(char *execfile, const char *appname)
 {
     char buffer[PATH_MAX];
 
-#ifdef WIN32
+#ifdef _WIN32
     char dos83_buffer[PATH_MAX];
     stb__wchar wchar_buffer[PATH_MAX];
     stb__wchar wchar_dos83_buffer[PATH_MAX];
@@ -243,7 +243,7 @@ void pyi_path_homepath(char *homepath, const char *thisfile)
 void pyi_path_archivefile(char *archivefile, const char *thisfile)
 {
 	strcpy(archivefile, thisfile);
-#ifdef WIN32
+#ifdef _WIN32
 	strcpy(archivefile + strlen(archivefile) - 3, "pkg");
 #else
     strcat(archivefile, ".pkg");

@@ -44,14 +44,14 @@
 
 
 /* Type for dynamic library. */
-#ifdef WIN32
+#ifdef _WIN32
 #define dylib_t   HINSTANCE
 #else
 #define dylib_t   void *
 #endif
 
 /* Wrap some windows specific declarations for Unix. */
-#ifndef WIN32
+#ifndef _WIN32
 #define HMODULE void *
 #endif
 
@@ -62,7 +62,7 @@
  * Redefine PATH_MAX for Windows to support longer path names.
  */
 // TODO use MSVCR function for file path handling.
-#ifdef WIN32
+#ifdef _WIN32
     #ifdef PATH_MAX
         #undef PATH_MAX  /* On Windows override PATH_MAX if defined. */
     #endif
@@ -77,7 +77,6 @@
  */
 
 void pyi_global_print(const char *fmt, ...);
-
 
 
 /*
@@ -107,7 +106,7 @@ void pyi_global_print(const char *fmt, ...);
         #define VS pyi_global_printf
     #endif
 #else
-    #ifdef WIN32
+    #ifdef _WIN32
         #define VS
     #else
         #define VS(...)
@@ -117,7 +116,7 @@ void pyi_global_print(const char *fmt, ...);
 
 /* Path and string macros. */
 
-#ifdef WIN32
+#ifdef _WIN32
     #define PYI_PATHSEP    ';'
     #define PYI_SEP        '\\'
     /*
@@ -136,7 +135,7 @@ void pyi_global_print(const char *fmt, ...);
 
 
 /* Rewrite ANSI/POSIX functions to Win32 equivalents. */
-#ifdef WIN32
+#ifdef _WIN32
     #define fileno           _fileno
     #define getpid           _getpid
     #define mkdir            _mkdir

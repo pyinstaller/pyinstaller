@@ -25,7 +25,7 @@
  * These macros used to define variables to hold dynamically accessed entry
  * points. These are declared 'extern' in this header, and defined fully later.
  */
-#ifdef WIN32
+#ifdef _WIN32
 
 #define EXTDECLPROC(result, name, args)\
     typedef result (__cdecl *__PROC__##name) args;\
@@ -176,7 +176,7 @@ EXTDECLPROC(char *, PyString_AsString, (PyObject *));
 /* Macros to declare and get Python entry points in the C file.
  * Typedefs '__PROC__...' have been done above
  */
-#ifdef WIN32
+#ifdef _WIN32
 
 #define DECLPROC(name)\
     __PROC__##name PI_##name = NULL;

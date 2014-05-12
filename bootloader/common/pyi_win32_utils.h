@@ -14,9 +14,10 @@
 #define UTILS_H
 
 
-#ifdef WIN32
+#ifdef _WIN32
 int CreateActContext(const char *workpath, const char *thisfile);
 void ReleaseActContext(void);
+char * pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, int n)
 #endif
 
 

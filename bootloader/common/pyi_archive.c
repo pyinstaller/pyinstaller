@@ -14,7 +14,7 @@
  */
 
 
-#ifdef WIN32
+#ifdef _WIN32
 // TODO verify windows includes
     #include <winsock.h>  // ntohl
 #else
@@ -189,7 +189,7 @@ static int pyi_arch_check_cookie(ARCHIVE_STATUS *status, int filelen)
 
 static int findDigitalSignature(ARCHIVE_STATUS * const status)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	/* There might be a digital signature attached. Let's see. */
 	char buf[2];
 	int offset = 0, signature_offset = 0;
@@ -236,7 +236,7 @@ static int findDigitalSignature(ARCHIVE_STATUS * const status)
  */
 int pyi_arch_open(ARCHIVE_STATUS *status)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	int i;
 #endif
 	int filelen;

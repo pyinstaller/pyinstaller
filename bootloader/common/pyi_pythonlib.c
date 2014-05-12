@@ -14,7 +14,7 @@
  */
 
 
-#ifdef WIN32
+#ifdef _WIN32
     #include <windows.h>
     #include <fcntl.h>  // O_BINARY
     #include <io.h>  // _setmode
@@ -85,7 +85,7 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
 
     /* Check success of loading Python library. */
 	if (dll == 0) {
-#ifdef WIN32
+#ifdef _WIN32
 		FATALERROR("Error loading Python DLL: %s (error code %d)\n",
 			dllpath, GetLastError());
 #else
@@ -105,7 +105,7 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
  */
 int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	HMODULE dll;
 	char nm[PATH_MAX + 1];
     int pyvers = ntohl(status->cookie.pyvers);
@@ -177,7 +177,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 		ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
 	}
 	if (unbuffered) {
-#ifdef WIN32
+#ifdef _WIN32
 		_setmode(fileno(stdin), _O_BINARY);
 		_setmode(fileno(stdout), _O_BINARY);
 #else
