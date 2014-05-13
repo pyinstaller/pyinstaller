@@ -248,3 +248,80 @@ void pyi_path_archivefile(char *archivefile, const char *thisfile)
     strcat(archivefile, ".pkg");
 #endif
 }
+
+
+#ifdef _WIN32
+   #define pyi_fopen(x,y)    _wfopen(stb__from_utf8(x), stb__from_utf8_alt(y))
+#else
+   #define pyi_fopen(x,y)    fopen(x,y)
+#endif
+
+
+/*
+ * Multiplatform wrapper around function fopen().
+ */
+FILE * pyi_path_fopen(const char *filename, const char *mode)
+{
+   FILE *f;
+   char name_full[4096];
+   char temp_full[sizeof(name_full) + 12];
+   int j,p;
+   #ifndef _MSC_VER
+   int fd;
+   #endif
+   if (mode[0] != 'w' && !strchr(mode, '+'))
+      return pyi_fopen(filename, mode);
+
+   // save away the full path to the file so if the program
+   // changes the cwd everything still works right! unix has
+   // better ways to do this, but we have to work in windows
+   if (pyi_path_fullpath(name_full, sizeof(name_full), filename)==0)
+      return 0;
+
+   // try to generate a temporary file in the same directory
+   p = strlen(name_full)-1;
+   while (p > 0 && name_full[p] != '/' && name_full[p] != '\\'
+                && name_full[p] != ':' && name_full[p] != '~')
+      --p;
+   ++p;
+
+   memcpy(temp_full, name_full, p);
+
+   #ifdef _MSC_VER
+   // try multiple times to make a temp file... just in
+   // case some other process makes the name first
+   for (j=0; j < 32; ++j) {
+      strcpy(temp_full+p, "stmpXXXXXX");
+      if (stb_mktemp(temp_full) == NULL)
+         return 0;
+
+      f = fopen(temp_full, mode);
+      if (f != NULL)
+         break;
+   }
+   #else
+   {
+      strcpy(temp_full+p, "stmpXXXXXX");
+      fd = mkstemp(temp_full);
+      if (fd == -1) return NULL;
+      f = fdopen(fd, mode);
+      if (f == NULL) {
+         unlink(temp_full);
+         close(fd);
+         return NULL;
+      }
+   }
+   #endif
+   if (f != NULL) {
+      stb__file_data *d = (stb__file_data *) malloc(sizeof(*d));
+      if (!d) { assert(0);  /* NOTREACHED */fclose(f); return NULL; }
+      if (stb__files == NULL) stb__files = stb_ptrmap_create();
+      d->temp_name = strdup(temp_full);
+      d->name      = strdup(name_full);
+      d->errors    = 0;
+      stb_ptrmap_add(stb__files, f, d);
+      return f;
+   }
+
+   return NULL;
+}
