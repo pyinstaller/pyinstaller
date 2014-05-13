@@ -100,7 +100,7 @@
 /*
  * Wrap printing debug messages to console.
  */
-void pyi_global_print(const char *fmt, ...)
+void pyi_global_printf(const char *fmt, ...)
 {
    va_list v;
    va_start(v,fmt);

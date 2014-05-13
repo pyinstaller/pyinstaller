@@ -52,6 +52,7 @@
 
 /* PyInstaller headers. */
 #include "pyi_global.h"
+#include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #ifndef WIN32
@@ -168,7 +169,7 @@ int pyi_get_temp_path(char *buffer)
     GetTempPathW(PATH_MAX, wchar_buffer);
     GetShortPathNameW(wchar_buffer, wchar_dos83_buffer, PATH_MAX);
     /* Convert wchar_t to utf8 just use char as usual. */
-    stb_to_utf8(buffer, wchar_dos83_buffer, PATH_MAX);
+    pyi_win32_utils_to_utf8(buffer, wchar_dos83_buffer, PATH_MAX);
 
     sprintf(prefix, "_MEI%d", getpid());
 
@@ -394,16 +395,16 @@ FILE *pyi_open_target(const char *path, const char* name_)
 		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
     }
     /*
-     * stb__fopen() wraps different fopen names. On Windows it uses
+     * pyi_path_fopen() wraps different fopen names. On Windows it uses
      * wide-character version of fopen.
      */
-	return stb__fopen(fnm, "wb");
+	return pyi_path_fopen(fnm, "wb");
 }
 
 /* Copy the file src to dst 4KB per time */
 int pyi_copy_file(const char *src, const char *dst, const char *filename)
 {
-    FILE *in = stb_fopen(src, "rb");
+    FILE *in = pyi_path_fopen(src, "rb");
     FILE *out = pyi_open_target(dst, filename);
     char buf[4096];
     int error = 0;
@@ -457,7 +458,7 @@ dylib_t pyi_utils_dlopen(const char *dllpath)
 
 #ifdef _WIN32
     /* Use unicode version of function to load  dll file. */
-	//return LoadLibraryExW(stb_to_utf8(buff, dllpath, sizeof(buff)), NULL,
+	//return LoadLibraryExW(pyi_win32_utils_to_utf8(buff, dllpath, sizeof(buff)), NULL,
             //LOAD_WITH_ALTERED_SEARCH_PATH);
 	return LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 #else
@@ -490,7 +491,7 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
 
     // TODO is there a replacement for this conversion or just use wchar_t everywhere?
     /* Convert file name to wchar_t from utf8. */
-    stb_from_utf8(buffer, (char *) thisfile, PATH_MAX);  // For mingw use type (char *)
+    pyi_win32_utils_from_utf8(buffer, (char *) thisfile, PATH_MAX);  // For mingw use type (char *)
 
 	// the parent process should ignore all signals it can
 	signal(SIGABRT, SIG_IGN);

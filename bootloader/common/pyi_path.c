@@ -145,8 +145,8 @@ int pyi_path_executable(char *execfile, const char *appname)
 
 #ifdef _WIN32
     char dos83_buffer[PATH_MAX];
-    stb__wchar wchar_buffer[PATH_MAX];
-    stb__wchar wchar_dos83_buffer[PATH_MAX];
+    wchar_t wchar_buffer[PATH_MAX];
+    wchar_t wchar_dos83_buffer[PATH_MAX];
     char basename[PATH_MAX];
     char dirname[PATH_MAX];
 
@@ -155,8 +155,8 @@ int pyi_path_executable(char *execfile, const char *appname)
 		FATALERROR("System error - unable to load!");
 		return -1;
 	}
-    /* Convert wchar_t to utf8. Just use type char as usual. */
-    stb_to_utf8(buffer, wchar_buffer, PATH_MAX);
+    /* Convert wchar_t to utf8 - just use type char as usual. */
+    pyi_win32_utils_to_utf8(buffer, wchar_buffer, PATH_MAX);
 
     // TODO do not use this workaround for Python 3.
     /*
@@ -172,7 +172,7 @@ int pyi_path_executable(char *execfile, const char *appname)
      */
     GetShortPathNameW(wchar_buffer, wchar_dos83_buffer, PATH_MAX);
     /* Convert wchar_t to utf8 just use char as usual. */
-    stb_to_utf8(dos83_buffer, wchar_dos83_buffer, PATH_MAX);
+    pyi_win32_utils_to_utf8(dos83_buffer, wchar_dos83_buffer, PATH_MAX);
 
     /*
      * Construct proper execfile -  83_DIRNAME + full_basename.
@@ -251,7 +251,13 @@ void pyi_path_archivefile(char *archivefile, const char *thisfile)
 
 
 #ifdef _WIN32
-   #define pyi_fopen(x,y)    _wfopen(stb__from_utf8(x), stb__from_utf8_alt(y))
+static FILE* pyi_fopen(const char* filename, const char* mode) {
+    wchar_t wfilename[MAX_PATH];
+    wchar_t wmode[10];
+    pyi_win32_utils_from_utf8(wfilename, filename, MAX_PATH);
+    pyi_win32_utils_from_utf8(wmode, mode, 10);
+    return _wfopen(wfilename, wmode);
+}
 #else
    #define pyi_fopen(x,y)    fopen(x,y)
 #endif
@@ -260,7 +266,7 @@ void pyi_path_archivefile(char *archivefile, const char *thisfile)
 /*
  * Multiplatform wrapper around function fopen().
  */
-FILE * pyi_path_fopen(const char *filename, const char *mode)
+FILE *pyi_path_fopen(const char *filename, const char *mode)
 {
    FILE *f;
    char name_full[4096];
@@ -287,22 +293,22 @@ FILE * pyi_path_fopen(const char *filename, const char *mode)
 
    memcpy(temp_full, name_full, p);
 
-   #ifdef _MSC_VER
+   #ifdef _WIN32
    // try multiple times to make a temp file... just in
    // case some other process makes the name first
    for (j=0; j < 32; ++j) {
       strcpy(temp_full+p, "stmpXXXXXX");
-      if (stb_mktemp(temp_full) == NULL)
+      if ((char *)_mktemp(temp_full) == NULL)
          return 0;
 
-      f = fopen(temp_full, mode);
+      f = pyi_fopen(temp_full, mode);
       if (f != NULL)
          break;
    }
    #else
    {
       strcpy(temp_full+p, "stmpXXXXXX");
-      fd = mkstemp(temp_full);
+      fd = mktemp(temp_full);
       if (fd == -1) return NULL;
       f = fdopen(fd, mode);
       if (f == NULL) {
@@ -312,16 +318,5 @@ FILE * pyi_path_fopen(const char *filename, const char *mode)
       }
    }
    #endif
-   if (f != NULL) {
-      stb__file_data *d = (stb__file_data *) malloc(sizeof(*d));
-      if (!d) { assert(0);  /* NOTREACHED */fclose(f); return NULL; }
-      if (stb__files == NULL) stb__files = stb_ptrmap_create();
-      d->temp_name = strdup(temp_full);
-      d->name      = strdup(name_full);
-      d->errors    = 0;
-      stb_ptrmap_add(stb__files, f, d);
-      return f;
-   }
-
-   return NULL;
+   return f;
 }

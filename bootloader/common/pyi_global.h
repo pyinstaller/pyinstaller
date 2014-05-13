@@ -76,7 +76,7 @@
  * Debug and error macros.
  */
 
-void pyi_global_print(const char *fmt, ...);
+void pyi_global_printf(const char *fmt, ...);
 
 
 /*
@@ -84,7 +84,7 @@ void pyi_global_print(const char *fmt, ...);
  * in message boxes. In windowed mode nothing might be written to console.
  */
 
-#if defined(WIN32) && defined(WINDOWED)
+#if defined(_WIN32) && defined(WINDOWED)
     void mbfatalerror(const char *fmt, ...);
     #define FATALERROR mbfatalerror
 
@@ -99,7 +99,7 @@ void pyi_global_print(const char *fmt, ...);
 /* Enable or disable debug output. */
 
 #ifdef LAUNCH_DEBUG
-    #if defined(WIN32) && defined(WINDOWED)
+    #if defined(_WIN32) && defined(WINDOWED)
         #define VS mbvs
         void mbvs(const char *fmt, ...);
     #else

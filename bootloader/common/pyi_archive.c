@@ -30,6 +30,7 @@
 /* PyInstaller headers. */
 #include "zlib.h"
 #include "pyi_global.h"
+#include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
@@ -241,7 +242,7 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 	int filelen;
     VS("LOADER: archivename is %s\n", status->archivename);
 	/* Physically open the file */
-	status->fp = stb_fopen(status->archivename, "rb");
+	status->fp = pyi_path_fopen(status->archivename, "rb");
 	if (status->fp == NULL) {
 		VS("LOADER: Cannot open archive: %s\n", status->archivename);
 		return -1;

@@ -119,7 +119,7 @@ int launch(ARCHIVE_STATUS *status, char const * archivePath, char  const * archi
         return -1;
 	VS("Installed Zlibs");
     /* Run scripts */
-    if (pyi_pylib_run_scripts(status))
+    if (pyi_launch_run_scripts(status))
         return -1;
 	VS("All scripts run");
     if (PI_PyErr_Occurred()) {
