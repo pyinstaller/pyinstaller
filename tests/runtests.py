@@ -133,6 +133,7 @@ class SkipChecker(object):
             'libraries/test_PIL': ['PIL'],
             'libraries/test_PIL2': ['PIL'],
             'libraries/test_pycrypto': ['Crypto'],
+            'libraries/test_pyexcelerate': ['pyexcelerate'],
             'libraries/test_pygments': ['pygments'],
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
