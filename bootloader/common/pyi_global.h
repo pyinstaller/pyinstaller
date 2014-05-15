@@ -124,10 +124,12 @@ void pyi_global_printf(const char *fmt, ...);
      * string and not only char.
      */
     #define PYI_SEPSTR     "\\"
+    #define PYI_PATHSEPSTR ";"
 #else
     #define PYI_PATHSEP    ':'
     #define PYI_SEP        '/'
     #define PYI_SEPSTR     "/"
+    #define PYI_PATHSEPSTR ":"
 #endif
 
 /* Strings are usually terminated by this character. */

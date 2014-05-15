@@ -24,7 +24,7 @@
 #else
     #include <libgen.h>  // basename()
     #include <limits.h>  // PATH_MAX
-    // TODO Eliminate getpath.c/.h and replace it with functions from stb.h.
+    // TODO Eliminate getpath.c/.h.
     #include "getpath.h"
 #endif
 

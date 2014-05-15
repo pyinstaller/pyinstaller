@@ -149,7 +149,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
     /* This flag ensures PYTHONPATH and PYTHONHOME are ignored by Python. */
     *PI_Py_IgnoreEnvironmentFlag = 1;
     /* Disalbe verbose imports by default. */
-    *PI_Py_VerboseFlag = 0;
+    *PI_Py_VerboseFlag = 1;
 
     /* Override some runtime options by custom values from PKG archive.
      * User is allowed to changes these options. */
@@ -246,13 +246,14 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     /* Append base_library.zip to PYTHONPATH - necessary for Py_Initialize() in Python 3. */
     // TODO Check if base_library.zip does not hurt for Python 2. */
     strncat(pypath, status->mainpath, strlen(status->mainpath));
-    strncat(pypath, "/base_library.zip", strlen("/base_library.zip"));
+    strncat(pypath, PYI_SEPSTR, strlen(PYI_SEPSTR));
+    strncat(pypath, "base_library.zip", strlen("base_library.zip"));
     /* Append status->mainpath to PYTHONPATH. */
-    strncat(pypath, ":", strlen(":"));
+    strncat(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
     strncat(pypath, status->mainpath, strlen(status->mainpath));
     // TODO check if status->homepath should be in PYTHONPATH in onefile mode.
     /*if (status->temppath[0] != PYI_NULLCHAR) {
-        strcat(pypath, ":");
+        strcat(pypath, PYI_PATHSEPSTR);
         strcpy(pypath, status->homepat);
     }*/
 	VS("LOADER: PYTHONPATH is %s\n", pypath);
