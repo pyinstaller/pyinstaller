@@ -53,6 +53,11 @@ def create_py3_base_library(libzip_filename):
             'encodings.latin_1',
             'encodings.utf_8',
             'encodings.ascii',
+            # TODO should we really include all encoding?
+            # Windows encodings.
+            'encodings.mbcs',
+            'encodings.cp850',
+            'encodings.cp852',
             'io',
             'warnings',  # Required by run-time option like ('W ignore', None, 'OPTION')
         ),
