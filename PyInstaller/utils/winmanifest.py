@@ -85,14 +85,14 @@ Updates or adds manifest <xmlpath> as resource in Win32 PE file <dstpath>.
 
 import os
 from glob import glob
-import re
+import hashlib
 import sys
 import xml
 from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
 from PyInstaller import compat
-from PyInstaller.compat import hashlib, architecture
+from PyInstaller.compat import architecture
 from PyInstaller import log as logging
 logger = logging.getLogger('PyInstaller.build.winmanifest')
 
@@ -692,7 +692,7 @@ class Manifest(object):
     
     def parse(self, filename_or_file, initialize=True):
         """ Load manifest from file or file object """
-        if isinstance(filename_or_file, (str, unicode)):
+        if isinstance(filename_or_file, str):
             filename = filename_or_file
         else:
             filename = filename_or_file.name
@@ -700,8 +700,9 @@ class Manifest(object):
             domtree = minidom.parse(filename_or_file)
         except xml.parsers.expat.ExpatError as e:
             args = [e.args[0]]
-            if isinstance(filename, unicode):
-                filename = filename.encode(sys.getdefaultencoding(), "replace")
+            # TODO Keep this for Python 2 - filename might be unicode and should be then converted to str.
+            # if isinstance(filename, unicode):
+                # filename = filename.encode(sys.getdefaultencoding(), "replace")
             args.insert(0, '\n  File "%s"\n   ' % filename)
             raise ManifestXMLParseError(" ".join([str(arg) for arg in args]))
         if initialize:
@@ -852,7 +853,7 @@ class Manifest(object):
             xmlstr = domtree.toprettyxml(indent, newl, encoding)
         else:
             xmlstr = domtree.toprettyxml(indent, newl)
-        xmlstr = xmlstr.strip(os.linesep).replace(
+        xmlstr = xmlstr.decode().strip(os.linesep).replace(
                 '<?xml version="1.0" encoding="%s"?>' % encoding, 
                 '<?xml version="1.0" encoding="%s" standalone="yes"?>' % 
                 encoding)
@@ -882,10 +883,10 @@ class Manifest(object):
         """ Write the manifest as XML to a file or file object """
         if not filename_or_file:
             filename_or_file = self.filename
-        if isinstance(filename_or_file, (str, unicode)):
+        if isinstance(filename_or_file, str):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toprettyxml(indent, newl, encoding)
-        filename_or_file.write(xmlstr)
+        filename_or_file.write(xmlstr.encode())
         filename_or_file.close()
     
     def writexml(self, filename_or_file=None, indent="  ", newl=os.linesep, 
@@ -893,10 +894,10 @@ class Manifest(object):
         """ Write the manifest as XML to a file or file object """
         if not filename_or_file:
             filename_or_file = self.filename
-        if isinstance(filename_or_file, (str, unicode)):
+        if isinstance(filename_or_file, str):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toxml(indent, newl, encoding)
-        filename_or_file.write(xmlstr)
+        filename_or_file.write(xmlstr.encode())
         filename_or_file.close()
 
 
