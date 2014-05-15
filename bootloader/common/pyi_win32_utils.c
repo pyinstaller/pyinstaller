@@ -20,6 +20,7 @@
  * https://en.wikipedia.org/wiki/Side-by-side_assembly
  */
 
+#ifdef _WIN32
 
 /* windows.h will use API for WinServer 2003 with SP1 and WinXP with SP2 */
 #define _WIN32_WINNT 0x0502
@@ -231,3 +232,5 @@ wchar_t * pyi_win32_utils_from_utf8(wchar_t *buffer, char *ostr, int n)
    buffer[i] = 0;
    return buffer;
 }
+
+#endif // _WIN32
