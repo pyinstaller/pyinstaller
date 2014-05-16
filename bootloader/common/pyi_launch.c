@@ -23,10 +23,12 @@
     #include <windows.h>
 #else
     #include <limits.h>  // PATH_MAX
+    #include <stdlib.h>  // malloc
 #endif
 #include <stdarg.h>
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>  // vsnprintf
+#include <string.h>  // strcpy
 #include <sys/stat.h>  // struct stat
 
 

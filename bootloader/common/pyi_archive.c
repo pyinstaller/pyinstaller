@@ -20,6 +20,8 @@
 #else
     #include <limits.h>  // PATH_MAX - not available on windows.
     #include <netinet/in.h>  // ntohl
+    #include <stdlib.h>  // malloc
+    #include <string.h>  // strncmp, strcpy, strcat
     #include <sys/stat.h>  // fchmod
 #endif
 #include <locale.h>  // setlocale, mbstowcs

@@ -24,6 +24,7 @@
     #include <limits.h>  // PATH_MAX
     #include <netinet/in.h>  // ntohl
     #include <locale.h>  // setlocale
+    #include <stdlib.h>  // mbstowcs
 #endif
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>

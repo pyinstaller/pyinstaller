@@ -17,17 +17,19 @@
 #ifdef _WIN32
     #include <windows.h>  // GetModuleFileNameW
     #include <wchar.h>
-    #include <stdlib.h>  // _fullpath
 #elif __APPLE__
     #include <libgen.h>  // basename()
     #include <mach-o/dyld.h>  // _NSGetExecutablePath()
 #else
     #include <libgen.h>  // basename()
     #include <limits.h>  // PATH_MAX
+    #include <unistd.h>  // unlink
     // TODO Eliminate getpath.c/.h.
     #include "getpath.h"
 #endif
 
+#include <stdio.h>  // FILE, fopen
+#include <stdlib.h>  // _fullpath, realpath
 #include <string.h>
 
 
@@ -76,7 +78,7 @@ void pyi_path_basename(char *result, const char *path)
   strcpy(result, basename ? ++basename : (char*)path);
 #else
     char *base = NULL;
-    base = (char *) basename(path);
+    base = (char *) basename((char *) path);  // _XOPEN_SOURCE - no 'const'.
     strcpy(result, path);
 #endif
 }
@@ -308,7 +310,7 @@ FILE *pyi_path_fopen(const char *filename, const char *mode)
    #else
    {
       strcpy(temp_full+p, "stmpXXXXXX");
-      fd = mktemp(temp_full);
+      fd = mkstemp(temp_full);
       if (fd == -1) return NULL;
       f = fdopen(fd, mode);
       if (f == NULL) {
