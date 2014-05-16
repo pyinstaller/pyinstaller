@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.hooks.hookutils import matplotlib_backends
+from PyInstaller.utils.hooks.hookutils import matplotlib_backends
 
 
 # Include only available matplotlib backends.

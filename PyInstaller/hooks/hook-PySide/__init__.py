@@ -9,7 +9,7 @@
 
 
 from PyInstaller.compat import is_darwin
-from PyInstaller.hooks.hookutils import qt4_menu_nib_dir
+from PyInstaller.utils.hooks.hookutils import qt4_menu_nib_dir
 
 
 # For Qt to work on Mac OS X it is necessary to include directory qt_menu.nib.

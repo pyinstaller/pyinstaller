@@ -72,7 +72,7 @@ def exec_script(script_filename, *args):
     To prevent missuse, the script passed to hookutils.exec-script
     must be located in the `hooks/utils` directory.
     """
-    script_filename = os.path.join('utils', os.path.basename(script_filename))
+    script_filename = os.path.join('../../hooks/utils', os.path.basename(script_filename))
     script_filename = os.path.join(os.path.dirname(__file__), script_filename)
     if not os.path.exists(script_filename):
         raise SystemError("To prevent missuse, the script passed to "

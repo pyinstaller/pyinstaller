@@ -13,7 +13,7 @@
 
 import os
 from PyInstaller import log as logging
-from PyInstaller.hooks.hookutils import django_find_root_dir, django_dottedstring_imports, \
+from PyInstaller.utils.hooks.hookutils import django_find_root_dir, django_dottedstring_imports, \
         collect_data_files
 
 

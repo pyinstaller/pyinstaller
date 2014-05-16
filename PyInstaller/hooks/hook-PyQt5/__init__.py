@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.hooks.hookutils import qt5_menu_nib_dir
+from PyInstaller.utils.hooks.hookutils import qt5_menu_nib_dir
 from PyInstaller.compat import is_darwin
 
 

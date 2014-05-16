@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.hooks.hookutils import exec_statement
+from PyInstaller.utils.hooks.hookutils import exec_statement
 
 hiddenimports = ["babel.dates"]
 

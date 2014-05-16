@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.hooks import hookutils
+from PyInstaller.utils.hooks import hookutils
 
 
 def hook(mod):

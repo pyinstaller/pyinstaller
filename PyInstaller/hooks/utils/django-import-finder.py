@@ -9,7 +9,7 @@
 
 
 import PyInstaller.compat as compat
-from PyInstaller.hooks.hookutils import logger
+from PyInstaller.utils.hooks.hookutils import logger
 
 from django.conf import settings
 

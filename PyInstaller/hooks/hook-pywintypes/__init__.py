@@ -16,7 +16,7 @@ attribute.
 """
 
 import os.path
-from PyInstaller.hooks.hookutils import get_module_file_attribute
+from PyInstaller.utils.hooks.hookutils import get_module_file_attribute
 
 def hook(mod):
     pth = get_module_file_attribute('pythoncom')

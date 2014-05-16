@@ -15,7 +15,7 @@ import PyInstaller.depend.bindepend
 
 from PyInstaller.compat import is_win, is_darwin, is_unix, is_virtualenv, venv_real_prefix
 from PyInstaller.build import Tree
-from PyInstaller.hooks.hookutils import exec_statement, logger
+from PyInstaller.utils.hooks.hookutils import exec_statement, logger
 
 
 def _handle_broken_tk():

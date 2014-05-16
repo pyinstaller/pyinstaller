@@ -39,7 +39,7 @@ except ImportError:
 import PyInstaller.lib.unittest2 as unittest
 
 # The function to test
-from PyInstaller.hooks.hookutils import remove_prefix
+from PyInstaller.utils.hooks.hookutils import remove_prefix
 class TestRemovePrefix(unittest.TestCase):
     # Verify that removing a prefix from an empty string is OK.
     def test_0(self):
@@ -62,7 +62,7 @@ class TestRemovePrefix(unittest.TestCase):
         self.assertEqual("atest", remove_prefix("atest", "test"))
 
 # The function to test
-from PyInstaller.hooks.hookutils import remove_suffix
+from PyInstaller.utils.hooks.hookutils import remove_suffix
 class TestRemoveSuffix(unittest.TestCase):
     # Verify that removing a suffix from an empty string is OK.
     def test_0(self):
@@ -85,7 +85,7 @@ class TestRemoveSuffix(unittest.TestCase):
         self.assertEqual("testa", remove_suffix("testa", "test"))
 
 # The function to test
-from PyInstaller.hooks.hookutils import remove_file_extension
+from PyInstaller.utils.hooks.hookutils import remove_file_extension
 class TestRemoveExtension(unittest.TestCase):
     # Removing a suffix from a filename with no extension returns the
     # filename.
@@ -116,7 +116,7 @@ class TestRemoveExtension(unittest.TestCase):
 HOOKUTILS_TEST_FILES = 'hookutils_test_files'
 
 # The function to test
-from PyInstaller.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks.hookutils import collect_submodules
 class TestCollectSubmodules(unittest.TestCase):
     # Use the hookutils_test_files package for testing.
     def setUp(self, package = HOOKUTILS_TEST_FILES):
@@ -177,7 +177,7 @@ class TestCollectSubmodules(unittest.TestCase):
         self.assert_subpackge_equal()
 
 # The function to test
-from PyInstaller.hooks.hookutils import collect_data_files
+from PyInstaller.utils.hooks.hookutils import collect_data_files
 from os.path import join
 class TestCollectDataFiles(unittest.TestCase):
     # Use the hookutils_test_files package for testing.

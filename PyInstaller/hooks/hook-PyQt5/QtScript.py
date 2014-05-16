@@ -10,7 +10,7 @@
 
 hiddenimports = ['sip', 'PyQt5.QtCore']
 
-from PyInstaller.hooks.hookutils import qt5_plugins_binaries
+from PyInstaller.utils.hooks.hookutils import qt5_plugins_binaries
 
 
 def hook(mod):
