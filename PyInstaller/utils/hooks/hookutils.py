@@ -69,15 +69,15 @@ def exec_script(script_filename, *args):
     returns anything that was emitted in the standard output as a
     single string.
 
-    To prevent missuse, the script passed to hookutils.exec-script
-    must be located in the `hooks/utils` directory.
+    To prevent missuse, the script passed to hookutils.exec_script
+    must be located in the `PyInstaller/utils/hooks/subproc` directory.
     """
-    script_filename = os.path.join('../../hooks/utils', os.path.basename(script_filename))
-    script_filename = os.path.join(os.path.dirname(__file__), script_filename)
+    script_filename = os.path.basename(script_filename)
+    script_filename = os.path.join(os.path.dirname(__file__), 'subproc', script_filename)
     if not os.path.exists(script_filename):
         raise SystemError("To prevent missuse, the script passed to "
                           "hookutils.exec-script must be located in "
-                          "the `hooks/utils` directory.")
+                          "the `PyInstaller/utils/hooks/subproc` directory.")
 
     # Scripts might be importing some modules. Add PyInstaller code to pathex.
     pyinstaller_root_dir = os.path.dirname(os.path.abspath(PyInstaller.__path__[0]))
@@ -382,7 +382,7 @@ def django_dottedstring_imports(django_root_dir):
     # Many times Django users do not specify absolute imports in the settings module.
     PyInstaller.__pathex__.append(django_root_dir)
 
-    ret = eval_script('django-import-finder.py')
+    ret = eval_script('django_import_finder.py')
 
     # Unset environment variables again.
     compat.unsetenv('DJANGO_SETTINGS_MODULE')
