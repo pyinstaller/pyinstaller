@@ -8,11 +8,10 @@
 #-----------------------------------------------------------------------------
 
 
-import codecs
 import os
 import sys
 
-import PyInstaller.utils.versioninfo
+import PyInstaller.utils.win32.versioninfo
 from PyInstaller.utils import misc
 
 
@@ -31,7 +30,7 @@ def run():
     exe_file = os.path.abspath(sys.argv[2])
 
     try:
-        vs = PyInstaller.utils.versioninfo.SetVersion(exe_file, info_file)
+        vs = PyInstaller.utils.win32.versioninfo.SetVersion(exe_file, info_file)
         print(('Version info set in: %s' % exe_file))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

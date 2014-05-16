@@ -94,16 +94,9 @@ from xml.dom.minidom import Document, Element
 from PyInstaller import compat
 from PyInstaller.compat import architecture
 from PyInstaller import log as logging
-logger = logging.getLogger('PyInstaller.build.winmanifest')
+from PyInstaller.utils.win32 import winresource
 
-try:
-    from PyInstaller.utils import winresource
-except ImportError as detail:
-    winresource = None
-    logger.warn(detail)
-    logger.warn("Cannot check for assembly dependencies - resource access ")
-    logger.warn("unavailable. To enable resource access, please install ")
-    logger.warn("http://sourceforge.net/projects/pywin32/")
+logger = logging.getLogger(__name__)
 
 
 LANGUAGE_NEUTRAL_NT5 = "x-ww"

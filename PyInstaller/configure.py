@@ -12,8 +12,6 @@
 Configure PyInstaller for the current Python installation.
 """
 
-
-import inspect
 import os
 import shutil
 import sys
@@ -39,7 +37,7 @@ def test_RsrcUpdate(config):
     logger.info("Testing for ability to set icons, version resources...")
     try:
         import win32api
-        from PyInstaller.utils import icon, versioninfo
+        from PyInstaller.utils.win32 import icon, versioninfo
     except ImportError as detail:
         logger.info('... resource update unavailable - %s', detail)
         return
@@ -55,6 +53,7 @@ def test_RsrcUpdate(config):
     rw_test_exe = os.path.join(tempfile.gettempdir(), 'me_test_exe.tmp')
     shutil.copyfile(test_exe, rw_test_exe)
     try:
+        # TODO use CopyIcons() from utils.win32.icon.py.
         hexe = win32api.BeginUpdateResource(rw_test_exe, 0)
     except:
         logger.info('... resource update unavailable - win32api.BeginUpdateResource failed')

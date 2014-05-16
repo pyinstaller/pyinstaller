@@ -11,6 +11,7 @@
 """
 Manipulating with dynamic libraries.
 """
+from PyInstaller.utils.win32 import winutils
 
 
 __all__ = ['exclude_list', 'include_list', 'include_library']
@@ -88,7 +89,6 @@ _aix_excludes = {
 
 if is_win:
     _excludes = _win_excludes
-    from PyInstaller.utils import winutils
     sep = '[%s]' % re.escape(os.sep + os.altsep)
     # Exclude everything from the Windows directory by default.
     windir = re.escape(winutils.get_windows_dir())

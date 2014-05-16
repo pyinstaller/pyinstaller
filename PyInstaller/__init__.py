@@ -16,8 +16,8 @@ import sys
 
 
 # Fail hard if Python does not have minimum required version
-if sys.version_info < (2, 6):
-    raise SystemExit('PyInstaller requires at least Python 2.6, sorry.')
+if sys.version_info < (2, 7):
+    raise SystemExit('PyInstaller requires at least Python 2.7, sorry.')
 
 
 # Extend PYTHONPATH with 3rd party libraries bundled with PyInstaller.
@@ -29,6 +29,16 @@ sys.path.insert(0, lib.__path__[0])
 from PyInstaller import compat
 from PyInstaller.compat import is_darwin, is_win, is_py2
 from PyInstaller.utils import git
+
+
+# Fail hard if Python on Windows does not have pywin32 installed.
+if is_win:
+    try:
+        import pywintypes  # One module from pywin32.
+    except ImportError:
+        raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
+                         'Please install PyWin32.\n'
+                         'http://sourceforge.net/projects/pywin32/')
 
 
 VERSION = (3, 0, 0, 'dev', git.get_repo_revision())

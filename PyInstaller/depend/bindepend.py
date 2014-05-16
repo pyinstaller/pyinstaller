@@ -23,11 +23,12 @@ import zipfile
 
 from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin
 from PyInstaller.depend import dylib
-from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
 
 
 import PyInstaller.log as logging
+from PyInstaller.utils.win32 import winutils
+
 logger = logging.getLogger(__file__)
 
 seen = {}
@@ -44,12 +45,12 @@ if is_win:
              "needs pywin32.\r\nPlease install from "
              "http://sourceforge.net/projects/pywin32/")
 
-    from PyInstaller.utils.winmanifest import RT_MANIFEST
-    from PyInstaller.utils.winmanifest import GetManifestResources
-    from PyInstaller.utils.winmanifest import Manifest
+    from PyInstaller.utils.win32.winmanifest import RT_MANIFEST
+    from PyInstaller.utils.win32.winmanifest import GetManifestResources
+    from PyInstaller.utils.win32.winmanifest import Manifest
 
     try:
-        from PyInstaller.utils.winmanifest import winresource
+        from PyInstaller.utils.win32.winmanifest import winresource
     except ImportError as detail:
         winresource = None
 

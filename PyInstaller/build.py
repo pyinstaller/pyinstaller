@@ -41,7 +41,7 @@ import PyInstaller.log as logging
 from PyInstaller.utils.misc import save_py_data_struct, load_py_data_struct
 
 if is_win:
-    from PyInstaller.utils import winmanifest
+    from PyInstaller.utils.win32 import winmanifest
 
 logger = logging.getLogger(__name__)
 

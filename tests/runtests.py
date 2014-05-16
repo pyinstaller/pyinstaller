@@ -25,6 +25,7 @@ import sys
 
 # ignore some warnings which only confuse when running tests
 import warnings
+
 warnings.filterwarnings('ignore',
     "Parent module '.*' not found while handling absolute import")
 
@@ -46,7 +47,8 @@ from PyInstaller import main as pyi_main
 from PyInstaller.compat import is_py2, is_py33, is_win, is_darwin, unittest
 from PyInstaller.hooks import hookutils
 from PyInstaller.lib import junitxml
-from PyInstaller.utils import misc, winutils
+from PyInstaller.utils import misc
+from PyInstaller.utils.win32 import winutils
 
 
 VERBOSE = False

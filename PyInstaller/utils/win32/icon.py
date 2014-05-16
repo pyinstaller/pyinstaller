@@ -8,6 +8,8 @@
 #-----------------------------------------------------------------------------
 
 
+# TODO Do we still use this module? Could it be remmoved?
+
 RT_ICON = 3
 RT_GROUP_ICON = 14
 LOAD_LIBRARY_AS_DATAFILE = 2
@@ -20,7 +22,7 @@ except AttributeError:
     StringTypes = [ type("") ]
 
 import PyInstaller.log as logging
-logger = logging.getLogger('PyInstaller.icon')
+logger = logging.getLogger(__name__)
 
 class Structure:
     def __init__(self):
