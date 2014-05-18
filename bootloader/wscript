@@ -255,8 +255,6 @@ def configure(conf):
     else:
         conf.check_cc(lib='dl', mandatory=True)
         conf.check_cc(lib='z', mandatory=True)
-        if conf.check_cc(function_name='readlink', header_name='unistd.h'):
-            conf.env.append_value('CCFLAGS', '-DHAVE_READLINK')
 
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
