@@ -39,7 +39,7 @@ PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
 # Some hooks need to save some values. This is the dict that can be used for
 # that.
 #
-# When running tests this variable should be reseted before every test.
+# When running tests this variable should be reset before every test.
 #
 # For example the 'wx' module needs variable 'wxpubsub'. This tells PyInstaller
 # which protocol of the wx module should be bundled.
@@ -129,7 +129,7 @@ def get_pyextension_imports(modname):
 
     Module cannot be imported directly.
 
-    Let's at least try import it in a subprocess and get the diffrence
+    Let's at least try import it in a subprocess and get the difference
     in module list from sys.modules.
 
     This function could be used for 'hiddenimports' in PyInstaller hooks files.
@@ -195,7 +195,7 @@ def qt4_plugins_binaries(plugin_type):
     binaries = []
     pdir = qt4_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
-    
+
     # Windows:
     #
     # dlls_in_dir() grabs all files ending with *.dll, *.so and *.dylib in a certain
@@ -208,13 +208,13 @@ def qt4_plugins_binaries(plugin_type):
     #
     if is_win:
         files = [f for f in files if not f.endswith("d4.dll")]
-    
+
     for f in files:
         binaries.append((
             # TODO fix this hook to use hook-name.py attribute 'binaries'.
             os.path.join('qt4_plugins', plugin_type, os.path.basename(f)),
             f, 'BINARY'))
-            
+
     return binaries
 
 
@@ -224,8 +224,8 @@ def qt4_menu_nib_dir():
     # Detect MacPorts prefix (usually /opt/local).
     # Suppose that PyInstaller is using python from macports.
     macports_prefix = sys.executable.split('/Library')[0]
-    
-    # list of directories where to look for qt_menu.nib    
+
+    # list of directories where to look for qt_menu.nib
     dirs = []
 
     # Look into user-specified directory, just in case Qt4 is not installed
@@ -241,7 +241,7 @@ def qt4_menu_nib_dir():
     if 'QT5DIR' in os.environ:
         dirs.append(os.path.join(os.environ['QT5DIR'],
                                  "src", "plugins", "platforms", "cocoa"))
-    
+
     dirs += [
         # Qt4 from MacPorts not compiled as framework.
         os.path.join(macports_prefix, 'lib', 'Resources'),
@@ -316,7 +316,7 @@ def qt5_plugins_binaries(plugin_type):
 def qt5_menu_nib_dir():
     """Return path to Qt resource dir qt_menu.nib. OSX only"""
     menu_dir = ''
-    
+
     # If the QT5DIR env var is set then look there first. It should be set to the
     # qtbase dir in the Qt5 distribution.
     dirs = []
@@ -379,7 +379,7 @@ def get_homebrew_path(formula = ''):
         logger.debug('Detected homebrew not installed')
     except subprocess.CalledProcessError:
         logger.debug('homebrew formula "%s" not installed' % formula)
-    return path 
+    return path
 
 def get_qmake_path(version = ''):
     '''
@@ -418,7 +418,7 @@ def get_qmake_path(version = ''):
             pass
     logger.debug('Could not find qmake matching version "%s".' % version)
     return None
-     
+
 
 def qt5_qml_dir():
     import subprocess
@@ -433,20 +433,20 @@ def qt5_qml_dir():
                         + 'QT_INSTALL_QML" returned nothing')
     if not os.path.exists(qmldir):
         logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
-    
+
     # On Windows 'qmake -query' uses / as the path separator
-    # so change it to \\. 
+    # so change it to \\.
     if is_win:
         import string
         qmldir = string.replace(qmldir, '/', '\\')
 
     return qmldir
- 
+
 def qt5_qml_data(dir):
     """Return Qml library dir formatted for data"""
     qmldir = qt5_qml_dir()
     return (os.path.join(qmldir, dir), 'qml')
-        
+
 def qt5_qml_plugins_binaries(dir):
     """Return list of dynamic libraries formatted for mod.pyinstaller_binaries."""
     import string
@@ -461,11 +461,11 @@ def qt5_qml_plugins_binaries(dir):
             instdir = os.path.join("qml", instdir)
             logger.debug("qt5_qml_plugins_binaries installing %s in %s"
                          % (f, instdir) )
-                
+
             binaries.append((
                 os.path.join(instdir, os.path.basename(f)),
                     f, 'BINARY'))
-    return binaries    
+    return binaries
 
 def django_dottedstring_imports(django_root_dir):
     """
@@ -521,13 +521,13 @@ def django_find_root_dir():
                 if 'settings.py' in subfiles and 'urls.py' in subfiles:
                     settings_dir = os.path.join(manage_dir, f)
                     break  # Find the first directory.
-    
+
     return settings_dir
 
 
 def matplotlib_backends():
     """
-    Return matplotlib backends availabe in current Python installation.
+    Return matplotlib backends available in current Python installation.
 
     All matplotlib backends are hardcoded. We have to try import them
     and return the list of successfully imported backends.
@@ -549,7 +549,7 @@ except ImportError, e:
     # Try to import every backend in a subprocess.
     for bk in all_bk:
         stdout = exec_statement(import_statement % bk.lower())
-        # Backend import is successfull if there is no text in stdout.
+        # Backend import is successful if there is no text in stdout.
         if not stdout:
             avail_bk.append(bk)
 
@@ -582,7 +582,7 @@ def opengl_arrays_modules():
 
 def remove_prefix(string, prefix):
     """
-    This funtion removes the given prefix from a string, if the string does
+    This function removes the given prefix from a string, if the string does
     indeed begin with the prefix; otherwise, it returns the string
     unmodified.
     """
@@ -594,7 +594,7 @@ def remove_prefix(string, prefix):
 
 def remove_suffix(string, suffix):
     """
-    This funtion removes the given suffix from a string, if the string
+    This function removes the given suffix from a string, if the string
     does indeed end with the prefix; otherwise, it returns the string
     unmodified.
     """
@@ -608,14 +608,14 @@ def remove_suffix(string, suffix):
 
 def remove_file_extension(filename):
     """
-    This funtion returns filename without its extension.
+    This function returns filename without its extension.
     """
     return os.path.splitext(filename)[0]
 
 
 def get_module_file_attribute(package):
     """
-    Given a pacage name, return the value of __file__ attribute.
+    Given a package name, return the value of __file__ attribute.
 
     In PyInstaller process we cannot import directly analyzed modules.
     """
