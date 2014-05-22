@@ -55,10 +55,6 @@
 #include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
-#ifndef WIN32
-    // TODO Eliminate getpath.c/.h and replace it with functions from stb.h.
-    #include "getpath.h"
-#endif
 
 /*
    global variables that are used to copy argc/argv, so that PyIstaller can manipulate them

@@ -24,8 +24,6 @@
     #include <libgen.h>  // basename()
     #include <limits.h>  // PATH_MAX
     #include <unistd.h>  // unlink
-    // TODO Eliminate getpath.c/.h.
-    #include "getpath.h"
 #endif
 
 #include <stdio.h>  // FILE, fopen
@@ -198,18 +196,22 @@ int pyi_path_executable(char *execfile, const char *appname)
         FATALERROR("System error - unable to load!");
 		return -1;
     }
+
 #else
-    /* Fill in thisfile. */
-    #ifdef __CYGWIN__
-    if (strncasecmp(&appname[strlen(appname)-4], ".exe", 4)) {
-        strcpy(execfile, appname);
-        strcat(execfile, ".exe");
-        PI_SetProgramName(execfile);
+    int  numchars;
+    // On Linux absolute path is from symlink /prox/PID/exe
+    char proc_path[PATH_MAX+1];
+    sprintf(proc_path, "/proc/%d/exe", getpid());
+    // Read the real path from symlink.
+    numchars = readlink(proc_path, buffer, PATH_MAX);
+    // readlink() return number of read characters without ending '\0'.
+    if (numchars > 0) {
+        buffer[numchars] = '\0';
     }
-    else
-    #endif /* __CYGWIN__ */
-    PI_SetProgramName(appname);
-    strcpy(buffer, PI_GetProgramFullPath());
+    else {
+        FATALERROR("System error - unable to load!");
+		return -1;
+	}
 #endif
     /*
      * Ensure path to executable is absolute.
