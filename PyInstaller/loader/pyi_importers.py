@@ -534,7 +534,7 @@ class CExtensionImporter(object):
         """
         for ext in EXTENSION_SUFFIXES:
             if fullname + ext in self._file_cache:
-                return pyi_os_path.os_path_join(SYS_PREFIX, fullname + self._suffix)
+                return pyi_os_path.os_path_join(SYS_PREFIX, fullname + ext)
         # ImportError should be raised if module not found.
         raise ImportError('No module named ' + fullname)
 
