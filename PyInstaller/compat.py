@@ -25,7 +25,8 @@ is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3
 # Distinguish specific code for various Python versions.
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
-is_py33 = sys.version_info >= (3, 3)
+is_py33 = sys.version_info >= (3, 3) and sys.version_info < (3, 4)
+is_py34 = sys.version_info >= (3, 4) and sys.version_info < (3, 5)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
@@ -100,9 +101,13 @@ if is_py2:
     import imp
     BYTECODE_MAGIC = imp.get_magic()
 else:
-    import importlib._bootstrap
-    # TODO verify this works with Python 3.2 and 3.4.
-    BYTECODE_MAGIC = importlib._bootstrap._MAGIC_BYTES
+    if is_py34:
+        import importlib.util
+        BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
+    else:
+        import importlib._bootstrap
+        # TODO verify this works with Python 3.2
+        BYTECODE_MAGIC = importlib._bootstrap._MAGIC_BYTES
 
 
 # List of suffixes for Python C extension modules.
