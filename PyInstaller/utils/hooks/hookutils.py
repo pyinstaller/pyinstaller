@@ -131,7 +131,7 @@ diff = set(all_modlist) - set(original_modlist)
 # Module list contain original modname. We do not need it there.
 diff.discard('%(modname)s')
 # Print module list to stdout.
-print list(diff)
+print(list(diff))
 """ % {'modname': modname}
     module_imports = eval_statement(statement)
 
@@ -431,13 +431,13 @@ def matplotlib_backends():
     All matplotlib backends are hardcoded. We have to try import them
     and return the list of successfully imported backends.
     """
-    all_bk = eval_statement('import matplotlib; print matplotlib.rcsetup.all_backends')
+    all_bk = eval_statement('import matplotlib; print(matplotlib.rcsetup.all_backends)')
     avail_bk = []
     import_statement = """
 try:
     __import__('matplotlib.backends.backend_%s')
 except ImportError, e:
-    print str(e)
+    print(str(e))
 """
 
     # CocoaAgg backend causes subprocess to exit and thus detection
@@ -463,7 +463,7 @@ def opengl_arrays_modules():
 
     e.g. 'OpenGL.arrays.vbo'
     """
-    statement = 'import OpenGL; print OpenGL.__path__[0]'
+    statement = 'import OpenGL; print(OpenGL.__path__[0])'
     opengl_mod_path = PyInstaller.hooks.hookutils.exec_statement(statement)
     arrays_mod_path = os.path.join(opengl_mod_path, 'arrays')
     files = glob.glob(arrays_mod_path + '/*.py')
@@ -530,7 +530,7 @@ _fromlist = ['']
 _globals = {}
 _locals = {}
 package = __import__('%s', _globals, _locals, _fromlist)
-print package.__file__
+print(package.__file__)
 """
     return exec_statement(__file__statement % package)
 
@@ -545,7 +545,7 @@ def get_package_paths(package):
     """
     # A package must have a path -- check for this, in case the package
     # parameter is actually a module.
-    is_pkg_statement = 'import %s as p; print hasattr(p, "__path__")'
+    is_pkg_statement = 'import %s as p; print(hasattr(p, "__path__"))'
     is_package = eval_statement(is_pkg_statement % package)
     assert is_package
 
