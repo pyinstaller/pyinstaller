@@ -510,34 +510,57 @@ class Analysis(Target):
                 logger.error("Hidden import %r not found", modnm)
 
 
+        # TODO move code for handling hooks into a class or function.
+        ### Handle hooks.
+
+        logger.info('Looking for import hooks ...')
+        # Implement cache of modules for which there exists a hook.
+        hooks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hooks')
+        hooks_file_list = glob.glob(os.path.join(hooks_dir, 'hook-*.py'))
+        # We have hooks for the following modules.
+        hooks_mod_cache = set([os.path.basename(x)[5:-3] for x in hooks_file_list])
+        print(hooks_mod_cache)
+
         # Now find regular hooks and execute them. Get a new TOC, in part
         # because graphing a runtime hook might have added some names, but
         # also because regular hooks can apply to extensions and builtins.
-        temp_toc, code_dict = self.graph.make_a_TOC(['PYMODULE','PYSOURCE','BUILTIN','EXTENSION'])
+        temp_toc, code_dict = self.graph.make_a_TOC(['PYMODULE', 'PYSOURCE', 'BUILTIN', 'EXTENSION'])
         self.pure['code'].update(code_dict)
         # TODO optimize looking for hooks by caching the filelist of hooks
-        for (imported_name, path, typecode) in temp_toc :
-            hook_name = 'hook-' + imported_name
-            # TODO simplify importing hooks even from self.hookspath.
-            if not self.hookspath:
-                try:
-                    # TODO Will this work when we replace '.' dots in hook_name by '-' or '_'
-                    hook_name_space = importlib.import_module('PyInstaller.hooks.' + hook_name)
-                except ImportError:
-                    continue
-            else:
-                try:
-                    hook_name_space = importlib.import_module('PyInstaller.hooks.' + hook_name)
-                except ImportError:
-                    try:
-                        hook_name_space = importlib.import_module(hook_name)
-                    except ImportError:
-                        continue
-            # TODO: move the following to a function like imptracker.handle_hook
-            logger.info('Processing hook %s' % hook_name)
+        for (imported_name, path, typecode) in temp_toc:
+            # Skip modules for which there is no hook available.
+            if imported_name not in hooks_mod_cache:
+                continue
+            hook_name = 'hook-' + imported_name + '.py'
+
+            # TODO This import machinery won't work on Python 2.
+            # Import module from a file.
+            import importlib.machinery
+            mod_loader = importlib.machinery.SourceFileLoader(
+                'pyi_hook.'+imported_name, os.path.join(hooks_dir, hook_name))
+            hook_name_space = mod_loader.load_module()
+
+
+            # TODO implement custom import hooks from self.hookspath.
+            # if not self.hookspath:
+            #     try:
+            #         # TODO Will this work when we replace '.' dots in hook_name by '-' or '_'
+            #         hook_name_space = importlib.import_module('PyInstaller.hooks.' + hook_name)
+            #     except ImportError:
+            #         continue
+            # else:
+            #     try:
+            #         hook_name_space = importlib.import_module('PyInstaller.hooks.' + hook_name)
+            #     except ImportError:
+            #         try:
+            #             hook_name_space = importlib.import_module(hook_name)
+            #         except ImportError:
+            #             continue
+            logger.info('Processing hook   %s' % hook_name)
             from_node = self.graph.findNode(imported_name)
             # hook_name_space represents the code of "hook-imported_name.py"
             if hasattr(hook_name_space, 'hiddenimports'):
+                print(hook_name_space.hiddenimports)
                 # push hidden imports into the graph, as if imported from name
                 for item in hook_name_space.hiddenimports:
                     try:
