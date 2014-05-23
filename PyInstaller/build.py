@@ -340,10 +340,6 @@ class Analysis(Target):
         self.hiddenimports.extend(HIDDENIMPORTS)
 
         self.hookspath = hookspath
-        # Add hookspath to python path so hooks can be imported from that path.
-        if self.hookspath:
-            for hook in self.hookspath:
-                sys.path.append(hook)
 
         # Custom runtime hook files that should be included and started before
         # any existing PyInstaller runtime hooks.
@@ -521,10 +517,14 @@ class Analysis(Target):
         hooks_mod_cache = set([os.path.basename(x)[5:-3] for x in hooks_file_list])
         print(hooks_mod_cache)
         # Implement cache of modules from custom import hooks.
+        custom_hooks_mod_cache = {}  # key - module name, value - path to hook directory.
         if self.hookspath:
-            custom_hooks_dir = self.hookspath
-            custom_hooks_file_list = glob.glob(os.path.join(custom_hooks_dir, 'hook-*.py'))
-            custom_hooks_mod_cache = set([os.path.basename(x)[5:-3] for x in custom_hooks_file_list])
+            # Hooks path is a list and we need to cache files from multiple directories.
+            for pth in self.hookspath:
+                file_list = glob.glob(os.path.join(pth, 'hook-*.py'))
+                for f in file_list:
+                    name = os.path.basename(f)[5:-3]
+                    custom_hooks_mod_cache[name] = pth
         else:
             custom_hooks_mod_cache = set()
 
@@ -537,9 +537,9 @@ class Analysis(Target):
             if imported_name in hooks_mod_cache:
                 # Hook is bundled with PyInstaller.
                 hook_file_name = os.path.join(hooks_dir, 'hook-' + imported_name + '.py')
-            elif self.hookspath and imported_name in custom_hooks_mod_cache:
-                # Hook is in the custom location.
-                hook_file_name = os.path.join(hooks_dir, 'hook-' + imported_name + '.py')
+            elif imported_name in custom_hooks_mod_cache:
+                # Hook is in any of custom locations.
+                hook_file_name = os.path.join(custom_hooks_mod_cache[imported_name], 'hook-' + imported_name + '.py')
             else:
                 # Skip modules for which there is no hook available.
                 continue
