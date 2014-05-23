@@ -8,6 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
+# TODO does anybody still use this hook? Could it be removed?
 hiddenimports = [
             "allcontrols",
             "asianhotkey",

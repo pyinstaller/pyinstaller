@@ -8,5 +8,9 @@
 #-----------------------------------------------------------------------------
 
 
-# PyQt (qt.pyd) has a secret dependence on sip.pyd
-hiddenimports = ['sip']
+# This is hook for DNS python package dnspython.
+
+hiddenimports = [
+    "dns.rdtypes.*",
+    "dns.rdtypes.ANY.*"
+]
