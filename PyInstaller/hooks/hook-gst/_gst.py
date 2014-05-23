@@ -29,7 +29,7 @@ import gst
 reg = gst.registry_get_default()
 plug = reg.find_plugin('coreelements')
 pth = plug.get_filename()
-print os.path.dirname(pth)
+print(os.path.dirname(pth))
 """
     plugin_path = exec_statement(statement)
 

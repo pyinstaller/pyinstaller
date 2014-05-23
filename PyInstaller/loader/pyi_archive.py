@@ -80,14 +80,17 @@ class Archive(object):
 
         # In Python 3 module 'imp' is no longer built-in and we cannot use it.
         # There is for Python 3 another way how to obtain magic value.
-        if sys.version_info[0] < 3:
+        if sys.version_info[0] == 2:
             import imp
             self.pymagic = imp.get_magic()
         else:
-            # We cannot use at this bootstrap stage importlib directly
-            # but its frozen variant.
             import _frozen_importlib
-            self.pymagic = _frozen_importlib._MAGIC_BYTES
+            if sys.version_info[1] <= 3:
+                # We cannot use at this bootstrap stage importlib directly
+                # but its frozen variant.
+                self.pymagic = _frozen_importlib._MAGIC_BYTES
+            else:
+                self.pymagic = _frozen_importlib.MAGIC_NUMBER
 
         if path is not None:
             self.lib = open(self.path, 'rb')
