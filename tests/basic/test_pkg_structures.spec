@@ -21,9 +21,11 @@ exe = EXE(pyz,
           name= __testname__ + '.exe',
           icon=__testname__+'.ico',
           version=__testname__+'-version.txt',
-          debug=0,
-          console=1)
+          debug=True,
+          console=True)
 
 coll = COLLECT( exe,
                a.binaries,
+               a.zipfiles,
+               a.datas,
                name= __testname__)
