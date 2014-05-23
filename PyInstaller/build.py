@@ -525,8 +525,6 @@ class Analysis(Target):
                 for f in file_list:
                     name = os.path.basename(f)[5:-3]
                     custom_hooks_mod_cache[name] = pth
-        else:
-            custom_hooks_mod_cache = set()
 
         # Now find regular hooks and execute them. Get a new TOC, in part
         # because graphing a runtime hook might have added some names, but
