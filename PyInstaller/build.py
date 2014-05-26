@@ -515,7 +515,6 @@ class Analysis(Target):
         hooks_file_list = glob.glob(os.path.join(hooks_dir, 'hook-*.py'))
         # We have hooks for the following modules.
         hooks_mod_cache = set([os.path.basename(x)[5:-3] for x in hooks_file_list])
-        print(hooks_mod_cache)
         # Implement cache of modules from custom import hooks.
         custom_hooks_mod_cache = {}  # key - module name, value - path to hook directory.
         if self.hookspath:
@@ -553,7 +552,6 @@ class Analysis(Target):
             from_node = self.graph.findNode(imported_name)
             # hook_name_space represents the code of "hook-imported_name.py"
             if hasattr(hook_name_space, 'hiddenimports'):
-                print(hook_name_space.hiddenimports)
                 # push hidden imports into the graph, as if imported from name
                 for item in hook_name_space.hiddenimports:
                     try:

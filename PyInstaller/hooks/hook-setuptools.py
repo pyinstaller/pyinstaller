@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller import is_unix, is_darwin
+from PyInstaller.compat import is_unix, is_darwin
 
 hiddenimports = [
     # Test case import/test_zipimport2 fails during importing
