@@ -43,6 +43,7 @@ _PACKAGES = [
     'SQLAlchemy',
     #'wxPython',
     'IPython',
+    'zope.interface',
 ]
 
 

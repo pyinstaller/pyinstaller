@@ -67,6 +67,7 @@ rthooks = {}
 
 # place where the loader modules and initialization scripts live
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+_fake_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'fake')
 
 def _save_data(filename, data):
     dirname = os.path.dirname(filename)
@@ -661,6 +662,10 @@ class Analysis(Target):
             elif isinstance(mod, (PyInstaller.depend.modules.PkgInZipModule, PyInstaller.depend.modules.PyInZipModule)):
                 zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
                                  str(mod.owner), 'ZIPFILE'))
+            elif isinstance(mod, PyInstaller.depend.modules.NamespaceModule):
+                pure.append((modnm,
+                             os.path.join(_fake_code_path, 'namespace', '__init__.pyc'),
+                             'PYMODULE'))
             else:
                 # mf.PyModule instances expose a list of binary
                 # dependencies, most probably shared libraries accessed

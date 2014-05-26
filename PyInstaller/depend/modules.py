@@ -15,6 +15,7 @@ If we were importing, these would be hooked to the real module objects
 
 
 import os
+import pkgutil
 
 from PyInstaller.compat import ctypes, PYCO
 from PyInstaller.depend.utils import _resolveCtypesImports, scan_code
@@ -131,6 +132,25 @@ class PkgModule(PyModule):
         if mod:
             mod.__name__ = self.__name__ + '.' + mod.__name__
         return mod
+
+
+class NamespaceModule(PkgModule):
+    typ = 'NAMESPACE'
+    _ispkg = 1
+
+    def __init__(self, nm, pth):
+        fnm = os.path.join(pth[0], '__init__.py')
+        co = compile('', fnm, 'exec')
+        PkgModule.__init__(self, nm, fnm, co)
+        self.__path__ = pth
+        self._update_director(force=True)
+
+    def doimport(self, nm):
+        fqname = self.__name__ + '.' + nm
+        self.__path__ = pkgutil.extend_path(self.__path__, fqname)
+        self._update_director(force=True)
+        m =  PkgModule.doimport(self, nm)
+        return m
 
 
 class PkgInPYZModule(PyModule):
