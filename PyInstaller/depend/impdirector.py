@@ -46,8 +46,7 @@ class ImportDirector():
 
 
 class BuiltinImportDirector(ImportDirector):
-    def __init__(self):
-        self.path = 'Builtins'
+    path = 'Builtins'
 
     def getmod(self, nm, isbuiltin=imp.is_builtin):
         if isbuiltin(nm):
@@ -56,9 +55,10 @@ class BuiltinImportDirector(ImportDirector):
 
 
 class RegistryImportDirector(ImportDirector):
+    path = "WindowsRegistry"
+
     # for Windows only
     def __init__(self):
-        self.path = "WindowsRegistry"
         self.map = {}
         try:
             import win32api
