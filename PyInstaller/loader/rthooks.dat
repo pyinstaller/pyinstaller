@@ -7,7 +7,7 @@
     'PIL.Image':  ['pyi_rth_PIL_Image.py'],
     'pkg_resources':  ['pyi_rth_pkgres.py'],
     'PyQt4':      ['pyi_rth_qt4plugins.py'],
-    'PyQt5':      ['pyi_rth_qt5plugins.py'],
+    'PyQt5':      ['pyi_rth_qt5.py', 'pyi_rth_qt5plugins.py'],
     'PyQt5.QtQuick':  ['pyi_rth_qml.py'],
     'Tkinter':    ['pyi_rth_Tkinter.py'],
     'twisted.internet.reactor':        ['pyi_rth_twisted.py'],
