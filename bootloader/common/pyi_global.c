@@ -37,6 +37,10 @@
 #endif
 
 
+/* PyInstaller headers. */
+#include "pyi_global.h"
+
+
 /* Text length of MessageBox(). */
 #define MBTXTLEN 1024
 
@@ -45,7 +49,7 @@
  * in message boxes. In windowed mode nothing is written to console.
  */
 
-#if defined(WIN32) && defined(WINDOWED)
+#if defined(_WIN32) && defined(WINDOWED)
     void mbfatalerror(const char *fmt, ...)
     {
         char msg[MBTXTLEN];
@@ -71,13 +75,13 @@
 
         MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
     }
-#endif /* WIN32 and WINDOWED */
+#endif /* _WIN32 and WINDOWED */
 
 
 /* Enable or disable debug output. */
 
 #ifdef LAUNCH_DEBUG
-    #if defined(WIN32) && defined(WINDOWED)
+    #if defined(_WIN32) && defined(WINDOWED)
         void mbvs(const char *fmt, ...)
         {
             char msg[MBTXTLEN];
