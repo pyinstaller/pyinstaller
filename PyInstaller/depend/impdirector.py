@@ -40,8 +40,9 @@ def getDescr(fnm):
             return (suffix, mode, typ)
 
 
-class ImportDirector(PyInstaller.depend.owner.Owner):
-    pass
+class ImportDirector():
+    def __str__(self):
+        return self.path
 
 
 class BuiltinImportDirector(ImportDirector):
