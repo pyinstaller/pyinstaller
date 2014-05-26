@@ -451,42 +451,43 @@ def build(bld):
                 includes = ['common', 'windows', 'zlib'],
             )
 
-        ## inprocsrvr console
-
-        if bld.env.CC_NAME == 'msvc':
-            linkflags_c = bld.env.CPPFLAGS_CONSOLE
-            linkflags_w = bld.env.CPPFLAGS_WINDOWS
-        else:
-            linkflags_c = ''
-            linkflags_w = ''
-
-        for key, value in dict(release='inprocsrvr', debug='inprocsrvr_d').items():
-            bld(
-                features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_*.c windows/*.c'),
-                target = value,
-                install_path = install_path,
-                uselib_local = 'staticlib_zlib',
-                uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-                env = bld.env_of_name(key).copy(),
-                linkflags = linkflags_c,
-                includes = ['common', 'windows', 'zlib'],
-            )
-
-        ## inprocsrvr windowed
-
-        for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d').items():
-            bld(
-                features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_*.c windows/*.c'),
-                target = value,
-                install_path = install_path,
-                uselib_local = 'staticlib_zlib',
-                uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-                env = bld.env_of_name(key).copy(),
-                linkflags = linkflags_w,
-                includes = ['common', 'windows', 'zlib'],
-            )
+        # TODO Could inprocsrvr be dropped? Does anybody still use that?
+        # ## inprocsrvr console
+        #
+        # if bld.env.CC_NAME == 'msvc':
+        #     linkflags_c = bld.env.CPPFLAGS_CONSOLE
+        #     linkflags_w = bld.env.CPPFLAGS_WINDOWS
+        # else:
+        #     linkflags_c = ''
+        #     linkflags_w = ''
+        #
+        # for key, value in dict(release='inprocsrvr', debug='inprocsrvr_d').items():
+        #     bld(
+        #         features = 'cc cshlib',
+        #         source = bld.path.ant_glob('common/pyi_*.c windows/*.c'),
+        #         target = value,
+        #         install_path = install_path,
+        #         uselib_local = 'staticlib_zlib',
+        #         uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
+        #         env = bld.env_of_name(key).copy(),
+        #         linkflags = linkflags_c,
+        #         includes = ['common', 'windows', 'zlib'],
+        #     )
+        #
+        # ## inprocsrvr windowed
+        #
+        # for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d').items():
+        #     bld(
+        #         features = 'cc cshlib',
+        #         source = bld.path.ant_glob('common/pyi_*.c windows/*.c'),
+        #         target = value,
+        #         install_path = install_path,
+        #         uselib_local = 'staticlib_zlib',
+        #         uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
+        #         env = bld.env_of_name(key).copy(),
+        #         linkflags = linkflags_w,
+        #         includes = ['common', 'windows', 'zlib'],
+        #     )
 
     else: # linux, darwin (MacOSX)
 
