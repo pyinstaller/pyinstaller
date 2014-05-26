@@ -60,10 +60,10 @@ is_freebsd = compat.is_freebsd
 is_unix = compat.is_unix
 
 
-# This ensures PyInstaller will work on Windows with paths containing
-# foreign characters.
 HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 if is_win:
+    # This ensures PyInstaller will work on Windows with paths
+    # containing foreign characters.
     try:
         unicode(HOMEPATH)
     except UnicodeDecodeError:
