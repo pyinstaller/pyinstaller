@@ -564,11 +564,20 @@ def install():
     sys.meta_path.append(FrozenImporter())
     # Import hook for the C extension modules.
     sys.meta_path.append(CExtensionImporter())
-    # _frozen_importlib.PathFinder is in Python 3 the last importer on sys.meta_path.
-    # This importer is also able handle Python C extensions. However, PyInstaller
-    # needs own importer to allow extension name 'module.submodle.so'.
-    # Add the pathfinder at the end of sys.meta_path.
+
     if sys.version_info[0] > 2:
+        # On Windows there is importer _frozen_importlib.WindowsRegistryFinder that
+        # looks for Python modules in Windows registry. The frozen executable should
+        # not look for anything in the Windows registry. Remove this importer from
+        # sys.meta_path.
+        for item in sys.meta_path:
+            if hasattr(item, '__name__') and item.__name__ == 'WindowsRegistryFinder':
+                sys.meta_path.remove(item)
+                break
+        # _frozen_importlib.PathFinder is in Python 3 the last importer on sys.meta_path.
+        # This importer is also able handle Python C extensions. However, PyInstaller
+        # needs own importer to allow extension name 'module.submodle.so'.
+        # Add the pathfinder at the end of sys.meta_path.
         pf_idx = 2  # PathFinder is the 3rd in sys.meta_path.
         pf = sys.meta_path.pop(pf_idx)
         sys.meta_path.append(pf)
