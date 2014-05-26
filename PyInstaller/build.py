@@ -65,6 +65,8 @@ HIDDENIMPORTS = []
 
 rthooks = {}
 
+# place where the loader modules and initialization scripts live
+_init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
 
 def _save_data(filename, data):
     dirname = os.path.dirname(filename)
@@ -393,7 +395,6 @@ class Analysis(Target):
         sys._PYI_SETTINGS['scripts'] = scripts
 
         # Include initialization Python code in PyInstaller analysis.
-        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
             os.path.join(_init_code_path, '_pyi_bootstrap.py'),
             os.path.join(_init_code_path, 'pyi_importers.py'),
@@ -496,7 +497,6 @@ class Analysis(Target):
         from PyInstaller import hooks
 
         # Python scripts for analysis.
-        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         scripts = [
             os.path.join(_init_code_path, '_pyi_bootstrap.py'),
         ]
@@ -676,7 +676,6 @@ class Analysis(Target):
             depmanifest.writeprettyxml()
         self._check_python_library(binaries)
         if zipfiles:
-            _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
             scripts.insert(-1, ('_pyi_egg_install.py', os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
         # Add runtime hooks just before the last script (which is
         # the entrypoint of the application).
