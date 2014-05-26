@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class Structure:
     def __init__(self):
         size = self._sizeInBytes = struct.calcsize(self._format_)
-        self._fields_ = list(struct.unpack(self._format_, '\000' * size))
+        self._fields_ = list(struct.unpack(self._format_, b'\000' * size))
         indexes = self._indexes_ = {}
         for i, nm in enumerate(self._names_):
             indexes[nm] = i
@@ -56,7 +56,7 @@ class Structure:
             self.__dict__[name] = value
 
     def tostring(self):
-        return apply(struct.pack, [self._format_,] + self._fields_)
+        return struct.pack(self._format_, self._fields_)
 
     def fromfile(self, file):
         data = file.read(self._sizeInBytes)
@@ -100,7 +100,7 @@ class IconFile:
         return self.header.tostring()
 
     def grp_icondir_entries(self, id=1):
-        data = ""
+        data = b''
         for entry in self.entries:
             e = GRPICONDIRENTRY()
             for n in e._names_[:-1]:
@@ -144,7 +144,7 @@ def CopyIcons(dstpath, srcpath):
         except ValueError:
             return s, None
 
-    srcpath = map(splitter, srcpath)
+    srcpath = list(map(splitter, srcpath))
     logger.info("SRCPATH %s", srcpath)
 
     if len(srcpath) > 1:
