@@ -546,29 +546,17 @@ class Analysis(Target):
             import importlib.machinery
             mod_loader = importlib.machinery.SourceFileLoader(
                 'pyi_hook.'+imported_name, os.path.join(hooks_dir, hook_file_name))
-            hook_name_space = mod_loader.load_module()
 
             logger.info('Processing hook   %s' % os.path.basename(hook_file_name))
+            # hook_name_space represents the code of 'hook-imported_name.py'
+            hook_name_space = mod_loader.load_module()
             from_node = self.graph.findNode(imported_name)
-            # hook_name_space represents the code of "hook-imported_name.py"
-            if hasattr(hook_name_space, 'hiddenimports'):
-                # push hidden imports into the graph, as if imported from name
-                for item in hook_name_space.hiddenimports:
-                    try:
-                        to_node = self.graph.findNode(item)
-                        if to_node is None:
-                            self.graph.import_hook(item, from_node)
-                    except ImportError:
-                        # Print warning if a module from hiddenimport could not be found.
-                        # modulegraph raises ImporError when a module is not found.
-                        # Import hook with non-existing hiddenimport is probably a stale hook
-                        # that was not updated for a long time.
-                        logger.warn("Hidden import '%s' not found (probably old hook)" % item)
 
-            if hasattr(hook_name_space, 'datas'):
-                # Add desired data files to our datas TOC
-                self.datas.extend(self._format_hook_datas(hook_name_space))
-            # TODO processing 'hook(mod)' function should be probably before using hiddenimport hook attribute.
+            ### Processing hook API.
+
+            # Function hook_name_space.hook(mod) has to be called first because this function
+            # could update other attributes - datas, hiddenimports, etc.
+            # TODO use directly Modulegraph machinery in the 'def hook(mod)' function.
             if hasattr(hook_name_space, 'hook'):
                 # Process a hook(mod) function. Create a Module object as its API.
                 # TODO: it won't be called "FakeModule" later on
@@ -584,6 +572,43 @@ class Analysis(Target):
                     # This removes the 'item' node from the graph if no other
                     # links go to it (no other modules import it)
                     self.graph.removeReference(mod.node,item)
+
+            # hook_name_space.hiddenimports is a list of Python module names that PyInstaller
+            # is not able detect.
+            if hasattr(hook_name_space, 'hiddenimports'):
+                # push hidden imports into the graph, as if imported from name
+                for item in hook_name_space.hiddenimports:
+                    try:
+                        to_node = self.graph.findNode(item)
+                        if to_node is None:
+                            self.graph.import_hook(item, from_node)
+                    except ImportError:
+                        # Print warning if a module from hiddenimport could not be found.
+                        # modulegraph raises ImporError when a module is not found.
+                        # Import hook with non-existing hiddenimport is probably a stale hook
+                        # that was not updated for a long time.
+                        logger.warn("Hidden import '%s' not found (probably old hook)" % item)
+
+            # hook_name_space.datas is a list of globs of files or
+            # directories to bundle as datafiles. For each
+            # glob, a destination directory is specified.
+            if hasattr(hook_name_space, 'datas'):
+                # Add desired data files to our datas TOC
+                self.datas.extend(self._format_hook_datas(hook_name_space))
+
+            # hook_name_space.binaries is a list of files to bundle as binaries.
+            # Binaries are special that PyInstaller will check if they
+            # might depend on other dlls (dynamic libraries).
+            if hasattr(hook_name_space, 'binaries'):
+                for bundle_name, pth in hook_name_space.binaries:
+                    self.binaries.append((bundle_name, pth, 'BINARY'))
+
+            # TODO implement attribute 'hook_name_space.attrs'
+            # hook_name_space.attrs is a list of tuples (attr_name, value) where 'attr_name'
+            # is name for Python module attribute that should be set/changed.
+            # 'value' is the value of that attribute. PyInstaller will modify
+            # mod.attr_name and set it to 'value' for the created .exe file.
+
 
 
         # Analyze run-time hooks.
