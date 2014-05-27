@@ -56,7 +56,7 @@ class Structure:
             self.__dict__[name] = value
 
     def tostring(self):
-        return struct.pack(self._format_, self._fields_)
+        return struct.pack(self._format_, *self._fields_)
 
     def fromfile(self, file):
         data = file.read(self._sizeInBytes)
