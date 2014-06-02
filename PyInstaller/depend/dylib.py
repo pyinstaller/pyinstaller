@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 _BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])
 
 
+# TODO convert _excludes and includes into type 'set()'.
 # Regex excludes
 # Ignoring some system libraries speeds up packaging process
 _excludes = {}
@@ -40,6 +41,26 @@ _excludes = {}
 _includes = {}
 
 
+_win_includes = {
+    # DLLs are from 'Microsoft Visual C++ 2010 Redistributable Package'.
+    # http://msdn.microsoft.com/en-us/library/8kche8ah(v=vs.100).aspx
+    #
+    # Python 3.3 and 3.4 depends use Visual Studio C++ 2010 for Windows builds.
+    # python33.dll depends on msvcr100.dll.
+    #
+    # Visual Studio C++ 2010 does not need Assembly manifests anymore and
+    # uses C++ runtime libraries the old way - pointing to C:\Windows\System32.
+    # It is necessary to allow inclusion of these libraries from C:\Windows\System32.
+    r'atl100.dll$': 1,
+    r'msvcr100.dll$': 1,
+    r'msvcp100.dll$': 1,
+    r'mfc100.dll$': 1,
+    r'mfc100u.dll$': 1,
+    r'mfcmifc80.dll$': 1,
+    r'mfcm100.dll$': 1,
+    r'mfcm100u.dll$': 1,
+
+}
 _win_excludes = {
     # MS assembly excludes
     r'^Microsoft\.Windows\.Common-Controls$': 1,
@@ -88,6 +109,7 @@ _aix_excludes = {
 
 
 if is_win:
+    _includes = _win_includes
     _excludes = _win_excludes
     sep = '[%s]' % re.escape(os.sep + os.altsep)
     # Exclude everything from the Windows directory by default.

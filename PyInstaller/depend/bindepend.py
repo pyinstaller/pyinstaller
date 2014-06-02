@@ -281,9 +281,6 @@ def getAssemblies(pth):
         fd = open(manifestnm, "rb")
         res = {RT_MANIFEST: {1: {0: fd.read()}}}
         fd.close()
-    elif not winresource:
-        # resource access unavailable (needs pywin32)
-        return []
     else:
         # check the binary for embedded manifest
         try:
