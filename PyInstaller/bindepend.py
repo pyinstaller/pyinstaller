@@ -436,9 +436,12 @@ def _getImports_ldd(pth):
     """
     rslt = set()
     if is_aix:
-        # Match libs of the form 'archive.a(sharedobject.so)'
+        # Match libs of the form
+        #   'archivelib.a(objectmember.so/.o)'
+        # or
+        #   'sharedlib.so'
         # Will not match the fake lib '/unix'
-        lddPattern = re.compile(r"\s*(.*?)(\(.*\))")
+        lddPattern = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
     else:
         lddPattern = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
@@ -446,8 +449,18 @@ def _getImports_ldd(pth):
         m = lddPattern.search(line)
         if m:
             if is_aix:
-                lib = m.group(1)
-                name = os.path.basename(lib) + m.group(2)
+                libarchive = m.group('libarchive')
+                if libarchive:
+                    # We matched an archive lib with a request for a particular
+                    # embedded shared object.
+                    #   'archivelib.a(objectmember.so/.o)'
+                    lib = libarchive
+                    name = os.path.basename(lib) + m.group('objectmember')
+                else:
+                    # We matched a stand-alone shared library.
+                    #   'sharedlib.so'
+                    lib = m.group('libshared')
+                    name = os.path.basename(lib)
             else:
                 name, lib = m.group(1), m.group(2)
             if name[:10] in ('linux-gate', 'linux-vdso'):
