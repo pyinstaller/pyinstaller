@@ -68,11 +68,9 @@ Experimental ports
      linked Python libraries which has been encountered in Python 2.2
      installations on AIX 5.x.
    * ldd
-   * objdump
 
 - FreeBSD
    * ldd
-   * objdump
 
 
 Before using experimental ports, you need to build the PyInstaller
