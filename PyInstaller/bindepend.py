@@ -661,9 +661,10 @@ def findLibrary(name):
         return None
 
     # Resolve the file name into the soname
-    if is_freebsd:
-        # On FreeBSD objdump doesn't show SONAME, so we just return the lib
-        # we've found
+    if is_freebsd or is_aix:
+        # On FreeBSD objdump doesn't show SONAME,
+        # and on AIX objdump does not exist,
+        # so we just return the lib we've found
         return lib
     else:
         dir = os.path.dirname(lib)
