@@ -372,7 +372,7 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
-                 hookspath=None, excludes=None, runtime_hooks=[]):
+                 hookspath=None, excludes=None, runtime_hooks=[], cipher=None):
         """
         scripts
                 A list of scripts specified as file names.
@@ -437,6 +437,31 @@ class Analysis(Target):
         # Custom runtime hook files that should be included and started before
         # any existing PyInstaller runtime hooks.
         self.custom_runtime_hooks = runtime_hooks
+
+        if cipher:
+            logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
+
+            # Create a Python module which contains the decryption key which will
+            # be used at runtime by pyi_crypto.PyiBlockCipher.
+            pyi_crypto_key_path = os.path.join(WORKPATH, 'pyi_crypto_key.py')
+
+            with open(pyi_crypto_key_path, 'w') as f:
+                f.write('key = %r\n' % cipher.key)
+
+            # Compile the module so that it ends up in the CArchive and can be
+            # imported by the bootstrap script.
+            import py_compile
+            py_compile.compile(pyi_crypto_key_path)
+
+            logger.info('Adding dependency on pyi_crypto and pyi_crypto_key')
+
+            from PyInstaller.loader import pyi_crypto
+            self.hiddenimports.append(pyi_crypto.HIDDENIMPORT)
+
+            pyi_crypto_path = os.path.join(_init_code_path, 'pyi_crypto.py')
+
+            config['PYZ_dependencies'].append(('pyi_crypto', pyi_crypto_path + 'c', 'PYMODULE'))
+            config['PYZ_dependencies'].append(('pyi_crypto_key', pyi_crypto_key_path + 'c', 'PYMODULE'))
 
         self.excludes = excludes
         self.scripts = TOC()
@@ -750,7 +775,7 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc, name=None, level=9):
+    def __init__(self, toc, name=None, level=9, cipher=None):
         """
         toc
                 A TOC (Table of Contents), normally an Analysis.pure?
@@ -760,6 +785,8 @@ class PYZ(Target):
         level
                 The Zlib compression level to use. If 0, the zlib module is
                 not required.
+        cipher
+                The block cipher that will be used to encrypt Python bytecode.
         """
         Target.__init__(self)
         self.toc = toc
@@ -769,6 +796,8 @@ class PYZ(Target):
         # Level of zlib compression.
         self.level = level
         self.dependencies = compile_pycos(config['PYZ_dependencies'])
+        # Encryption
+        self.cipher = cipher
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
@@ -789,7 +818,7 @@ class PYZ(Target):
 
     def assemble(self):
         logger.info("building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = pyi_archive.ZlibArchive(level=self.level)
+        pyz = pyi_archive.ZlibArchive(level=self.level, cipher=self.cipher)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
         _save_data(self.out, (self.name, self.level, self.toc))

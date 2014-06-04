@@ -58,7 +58,7 @@ _PACKAGES = {
     'numpy': ['numpy-unoptimized-*%s-py%s.exe' % (py_arch(), PYVER)],
     'PIL': ['PIL-*%s-py%s.exe' % (py_arch(), PYVER)],
     'psycopg2': ['psycopg2-*%s-py%s.exe' % (py_arch(), PYVER)],
-    #'pycrypto': ['pycrypto'],
+    #'PyCrypto': ['PyCrypto==2.4.1'],
     'pyodbc': ['pyodbc'],
     #'simplejson': ['simplejson'],
     'sqlalchemy': ['SQLAlchemy-*%s-py%s.exe' % (py_arch(), PYVER)],

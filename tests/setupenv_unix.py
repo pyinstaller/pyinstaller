@@ -34,7 +34,7 @@ _PACKAGES = [
     'MySQL-python',
     'numpy ',
     'PIL',
-    'pycrypto',
+    'PyCrypto==2.4.1',
     #'pyenchant',
     'pyodbc',
     'pytz',
