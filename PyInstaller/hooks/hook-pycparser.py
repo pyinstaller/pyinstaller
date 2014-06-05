@@ -8,4 +8,4 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['lextab', 'yacctab']
+hiddenimports = ['pycparser.lextab', 'pycparser.yacctab']
