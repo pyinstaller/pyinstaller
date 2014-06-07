@@ -11,7 +11,7 @@
 # generates at runtime if they cannot be imported.
 #
 # Those modules are written to the current working directory for which
-# the running process may not have write permissios, leading to a runtime
+# the running process may not have write permissions, leading to a runtime
 # exception.
 #
 # This hook tells pyinstaller about those hidden imports, avoiding the
