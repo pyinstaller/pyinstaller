@@ -132,6 +132,7 @@ class SkipChecker(object):
             'libraries/test_onefile_tkinter': ['Tkinter'],
             'libraries/test_PIL': ['PIL'],
             'libraries/test_PIL2': ['PIL'],
+            'libraries/test_pycparser': ['pycparser'],
             'libraries/test_pycrypto': ['Crypto'],
             'libraries/test_pyexcelerate': ['pyexcelerate'],
             'libraries/test_pygments': ['pygments'],
