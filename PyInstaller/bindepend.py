@@ -21,7 +21,7 @@ from glob import glob
 import zipfile
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26, is_py27, is_freebsd
+from PyInstaller.compat import is_win, is_unix, is_aix, is_solar, is_cygwin, is_darwin, is_py26, is_py27, is_freebsd
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
@@ -442,6 +442,13 @@ def _getImports_ldd(pth):
         #   'sharedlib.so'
         # Will not match the fake lib '/unix'
         lddPattern = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
+    elif is_solar:
+        # Match libs of the form
+        #   'sharedlib.so => full-path-to-lib
+        # e.g.
+        #   'libpython2.7.so.1.0 => /usr/local/lib/libpython2.7.so.1.0'
+        # Will not match the platform specific libs starting with '/platform'
+        lddPattern = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
     else:
         lddPattern = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
