@@ -379,6 +379,9 @@ class BuildTestRunner(object):
         else:
             OPTS.append('--onedir')
 
+        if '_crypto' in self.test_file:
+            OPTS.append('--key=test_key')
+
         self._msg("BUILDING TEST " + self.test_name)
 
         # Use pyinstaller.py for building test_name.
@@ -529,6 +532,13 @@ class BasicTestCase(GenericTestCase):
 
     def __init__(self, func_name):
         super(BasicTestCase, self).__init__(self.test_dir, func_name)
+
+
+class CryptoTestCase(GenericTestCase):
+    test_dir = 'crypto'
+
+    def __init__(self, func_name):
+        super(CryptoTestCase, self).__init__(self.test_dir, func_name)
 
 
 class ImportTestCase(GenericTestCase):
@@ -724,7 +734,7 @@ def main():
             test_classes = [InteractiveTestCase]
         else:
             print 'Running normal tests (-i for interactive tests)...'
-            test_classes = [BasicTestCase, ImportTestCase,
+            test_classes = [BasicTestCase, CryptoTestCase, ImportTestCase,
                     LibrariesTestCase, MultipackageTestCase]
 
         # Create test suite.
