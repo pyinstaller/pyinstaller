@@ -163,12 +163,16 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
         seen[nm.upper()] = 1
         if is_win:
             for ftocnm, fn in selectAssemblies(pth, manifest):
-                lTOC.append((ftocnm, fn, 'BINARY'))
+                # add ftocnm to the TOC in the same relative path as nm
+                relpath_ftocnm = os.path.join(os.path.dirname(nm), ftocnm)
+                lTOC.append((relpath_ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, xtrapath):
             if seen.get(lib.upper(), 0) or seen.get(npth.upper(), 0):
                 continue
             seen[npth.upper()] = 1
-            lTOC.append((lib, npth, 'BINARY'))
+            # add lib to the TOC in the same relative path as nm
+            relpath_lib = os.path.join(os.path.dirname(nm), lib)
+            lTOC.append((relpath_lib, npth, 'BINARY'))
 
     return lTOC
 
