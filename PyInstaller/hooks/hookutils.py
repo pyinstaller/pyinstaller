@@ -271,6 +271,9 @@ def qt4_menu_nib_dir():
     return menu_dir
 
 def qt5_plugins_dir():
+    if 'QT_PLUGIN_PATH' in os.environ and os.path.isdir(os.environ['QT_PLUGIN_PATH']):
+        return str(os.environ['QT_PLUGIN_PATH'])
+
     qt5_plugin_dirs = eval_statement(
         "from PyQt5.QtCore import QCoreApplication;"
         "app=QCoreApplication([]);"
