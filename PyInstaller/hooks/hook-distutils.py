@@ -56,18 +56,17 @@ if os.path.exists(_MAKEFILE):
 
 def hook(mod):
     """
-    Contributed by jkp@kirkconsulting.co.uk
     This hook checks for the distutils hacks present when using the
     virtualenv package.
     """
-    # TODO Fix this for Modulegraph implementation.
     # Non-empty  means PyInstaller is running inside virtualenv.
     # Virtualenv overrides real distutils modules.
     if hasattr(distutils, 'distutils_path'):
-        mod_path = os.path.join(distutils.distutils_path, '__init__.pyc')
-        try:
-            parsed_code = marshal.loads(open(mod_path, 'rb').read()[8:])
-        except IOError:
-            parsed_code = compile(open(mod_path[:-1], 'rU').read(), mod_path, 'exec')
-        mod.__init__('distutils', mod_path, parsed_code)
+        mod_path = os.path.join(distutils.distutils_path, '__init__.py')
+        mod.retarget(mod_path)
+        #try:
+            #parsed_code = marshal.loads(open(mod_path, 'rb').read()[8:])
+        #except IOError:
+            #parsed_code = compile(open(mod_path[:-1], 'rU').read(), mod_path, 'exec')
+        #mod.__init__('distutils', mod_path, parsed_code)
     return mod

@@ -388,8 +388,13 @@ class FakeModule(object):
             self.binaries.append(item)
 
     def retarget(self, path_to_new_code):
-        # Used by hook-site (and others?) to retarget a module to a simpler one
-        # more suited to being frozen.
+        """
+        Used by hook-site, hook-distutils (and others?) to retarget a module to a simpler one
+        more suited to being frozen.
+
+        In virtualenv (virtual environment) some default modules are overriden by some wrappers.
+        those wrappers work in virtualenv but are not suited to being frozen.
+        """
 
         # Keep the original filename in the fake code object.
         new_code = PyInstaller.utils.misc.get_code_object(path_to_new_code, new_filename=self.node.filename)
