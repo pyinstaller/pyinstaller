@@ -660,11 +660,13 @@ def run_tests(test_suite, xml_file):
         # Text from stdout/stderr should be added to failed test cases.
         result.buffer = True
         result.startTestRun()
-        test_suite.run(result)
+        ret = test_suite.run(result)
         result.stopTestRun()
         fp.close()
+
+        return ret
     else:
-        unittest.TextTestRunner(verbosity=2).run(test_suite)
+        return unittest.TextTestRunner(verbosity=2).run(test_suite)
 
 
 def main():
@@ -738,7 +740,10 @@ def main():
 
     # Run created test suite.
     clean()
-    run_tests(suite, opts.junitxml)
+
+    result = run_tests(suite, opts.junitxml)
+
+    sys.exit(int(bool(result.failures or result.errors)))
 
 
 if __name__ == '__main__':
