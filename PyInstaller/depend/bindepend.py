@@ -271,8 +271,15 @@ def check_extract_from_egg(pth, todir=None):
 
 def getAssemblies(pth):
     """
-    Return the dependent assemblies of a binary.
+    On Winodws return the dependent Side-by-Side (SxS) assemblies of a binary.
+
+    Dependent assemblies are required only by binaries compiled with MSVC 9.0.
+    Python 2.7 and 3.2 is compiled with MSVC 9.0 and thus depends on Microsoft
+    Redistributable runtime libraries 9.0.
+
+    Python 3.3+ depends on version 10.0 and does not use SxS assemblies.
     """
+    # TODO use pefile for this implementation.
     if pth.lower().endswith(".manifest"):
         return []
     # check for manifest file
@@ -331,7 +338,8 @@ def selectAssemblies(pth, manifest=None):
         if manifest and not assembly.name in _depNames:
             # Add assembly as dependency to our final output exe's manifest
             logger.info("Adding %s to dependent assemblies "
-                        "of final executable", assembly.name)
+                        "of final executable\n  required by %s",
+                        assembly.name, pth)
             manifest.dependentAssemblies.append(assembly)
             _depNames.add(assembly.name)
         if not dylib.include_library(assembly.name):
@@ -369,6 +377,17 @@ def selectAssemblies(pth, manifest=None):
                     pass
         else:
             logger.error("Assembly %s not found", assembly.getid())
+
+    # Convert items in list from 'bytes' type to 'str' type.
+    # NOTE: With Python 3 we somehow get type 'bytes' and it
+    #       then causes other issues and failures with PyInstaller.
+    new_rv = []
+    for item in rv:
+        a = item[0].decode('ascii')
+        b = item[1].decode('ascii')
+        new_rv.append((a, b))
+    rv = new_rv
+
     return rv
 
 
