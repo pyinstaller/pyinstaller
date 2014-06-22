@@ -8,40 +8,26 @@
 #-----------------------------------------------------------------------------
 
 
+# The 'sysconfig' module requires Makefile and pyconfig.h files from
+# Python installation. 'sysconfig' parses these files to get some
+# information from them.
+
 import sysconfig
 import os
 import sys
 
-from PyInstaller import compat
 
-try:
-    get_makefile_filename = sysconfig.get_makefile_filename
-except AttributeError:
-    # In Python 2.7, get_makefile_filename was private
-    get_makefile_filename = sysconfig._get_makefile_filename
+_CONFIG_H = sysconfig.get_config_h_filename()
+_MAKEFILE = sysconfig.get_makefile_filename()
 
 
 def _relpath(filename):
     # Relative path in the dist directory.
+    #prefix = _find_prefix(filename)
     return os.path.relpath(os.path.dirname(filename), sys.prefix)
 
-# The 'sysconfig' module requires Makefile and pyconfig.h files from
-# Python installation. 'sysconfig' parses these files to get some
-# information from them.
-_CONFIG_H = sysconfig.get_config_h_filename()
-_MAKEFILE = get_makefile_filename()
 
-datas = []
-
-# work around a bug when running in a virtual environment: sysconfig
-# may name a file which actually does not exist, esp. on "multiarch"
-# platforms. In this case, ask distutils.sysconfig
-if os.path.exists(_CONFIG_H):
-    datas.append((_CONFIG_H, _relpath(_CONFIG_H)))
-else:
-    import distutils.sysconfig
-    datas.append((distutils.sysconfig.get_config_h_filename(),
-                  _relpath(_CONFIG_H)))
+datas = [(_CONFIG_H, _relpath(_CONFIG_H))]
 
 # The Makefile does not exist on all platforms, eg. on Windows
 if os.path.exists(_MAKEFILE):
