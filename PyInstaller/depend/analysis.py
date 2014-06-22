@@ -82,7 +82,24 @@ class PyiModuleGraph(ModuleGraph):
         else:
             return super(PyiModuleGraph, self).run_script(pathname, caller=self._top_script_node)
 
-    def make_a_TOC(self, typecode = [], existing_TOC = None ):
+    def get_code_objects(self):
+        """
+        Get code objects from ModuleGraph for pure Pyhton modules. This allows
+        to avoid writing .pyc/pyo files to hdd at later stage.
+
+        :return: Dict with module name and code object.
+        """
+        code_dict = {}
+        mod_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package'])
+        for node in self.flatten():
+            # get node type e.g. Script
+            mg_type = type(node).__name__
+            if mg_type in mod_types:
+                if node.code:
+                    code_dict[node.identifier] = node.code
+        return code_dict
+
+    def make_a_TOC(self, typecode=[], existing_TOC=None):
         """
         Return the name, path and type of selected nodes as a TOC, or appended
         to a TOC. The selection is via a list of PyInstaller TOC typecodes.
@@ -95,10 +112,7 @@ class PyiModuleGraph(ModuleGraph):
         scan all the nodes. This is patterned after ModuleGraph.report().
         """
         result = existing_TOC or TOC()
-        # Keep references to module code objects constructed by ModuleGraph
-        # to avoid writting .pyc/pyo files to hdd.
-        code_dict = {}
-        for node in self.flatten() :
+        for node in self.flatten():
             # get node type e.g. Script
             mg_type = type(node).__name__
             if mg_type is None:
@@ -106,13 +120,13 @@ class PyiModuleGraph(ModuleGraph):
             # translate to the corresponding TOC typecode, or leave as-is
             toc_type = self.typedict.get(mg_type, mg_type)
             # Does the caller care about the typecode?
-            if len(typecode) :
+            if len(typecode):
                 # Caller cares, so if there is a mismatch, skip this one
-                if not (toc_type in typecode) :
+                if not (toc_type in typecode):
                     continue
             # else: caller doesn't care, return ModuleGraph type in typecode
             # Extract the identifier and a path if any.
-            if mg_type == "Script" :
+            if mg_type == 'Script':
                 # for Script nodes only, identifier is a whole path
                 (name, ext) = os.path.splitext(node.filename)
                 name = os.path.basename(name)
@@ -121,12 +135,8 @@ class PyiModuleGraph(ModuleGraph):
             path = node.filename if node.filename is not None else ''
             # TOC.append the data. This checks for a pre-existing name
             # and skips it if it exists.
-            result.append( (name, path, toc_type) )
-            # Keep references to module code objects constructed by ModuleGraph
-            # to avoid compiling and writting .pyc/pyo files to hdd.
-            if node.code:
-                code_dict[name] = node.code
-        return result, code_dict
+            result.append((name, path, toc_type))
+        return result
 
     # Given a list of nodes, create a TOC representing those nodes.
     # This is mainly used to initialize a TOC of scripts with the
@@ -164,7 +174,7 @@ class PyiModuleGraph(ModuleGraph):
         return [importer.identifier for importer in iter_inc]
 
 
-    def analyze_runtime_hooks(self, priority_scripts, custom_runhooks, pure):
+    def analyze_runtime_hooks(self, priority_scripts, custom_runhooks):
         """
         Analyze custom run-time hooks and run-time hooks implied by found modules.
 
@@ -197,8 +207,7 @@ class PyiModuleGraph(ModuleGraph):
         # Find runtime hooks that are implied by packages already imported.
         # Get a temporary TOC listing all the scripts and packages graphed
         # so far. Assuming that runtime hooks apply only to modules and packages.
-        temp_toc, code_dict = self.make_a_TOC(['PYMODULE','PYSOURCE'])
-        pure['code'].update(code_dict)
+        temp_toc = self.make_a_TOC(['PYMODULE','PYSOURCE'])
         for (mod_name, path, typecode) in temp_toc:
             # Look if there is any run-time hook for given module.
             if mod_name in self._available_rthooks:

@@ -528,8 +528,7 @@ class Analysis(Target):
         # Now find regular hooks and execute them. Get a new TOC, in part
         # because graphing a runtime hook might have added some names, but
         # also because regular hooks can apply to extensions and builtins.
-        temp_toc, code_dict = self.graph.make_a_TOC(['PYMODULE', 'PYSOURCE', 'BUILTIN', 'EXTENSION'])
-        self.pure['code'].update(code_dict)
+        temp_toc = self.graph.make_a_TOC(['PYMODULE', 'PYSOURCE', 'BUILTIN', 'EXTENSION'])
         for (imported_name, path, typecode) in temp_toc:
             if imported_name in hooks_mod_cache:
                 # Hook is bundled with PyInstaller.
@@ -545,7 +544,7 @@ class Analysis(Target):
             # Import module from a file.
             import importlib.machinery
             mod_loader = importlib.machinery.SourceFileLoader(
-                'pyi_hook.'+imported_name, os.path.join(hooks_dir, hook_file_name))
+                'pyi_hook.'+imported_name, hook_file_name)
 
             logger.info('Processing hook   %s' % os.path.basename(hook_file_name))
             # hook_name_space represents the code of 'hook-imported_name.py'
@@ -560,18 +559,18 @@ class Analysis(Target):
             if hasattr(hook_name_space, 'hook'):
                 # Process a hook(mod) function. Create a Module object as its API.
                 # TODO: it won't be called "FakeModule" later on
-                mod = FakeModule(imported_name,self.graph)
+                mod = FakeModule(imported_name, self.graph)
                 mod = hook_name_space.hook(mod)
-                for item in mod._added_imports :
+                for item in mod._added_imports:
                     # as with hidden imports, add to graph as called by imported_name
-                    self.graph.run_script(item,from_node)
-                for item in mod._added_binaries :
-                    self.binaries.append(item) # supposed to be TOC form (n,p,'BINARY')
-                for item in mod._deleted_imports :
+                    self.graph.run_script(item, from_node)
+                for item in mod._added_binaries:
+                    self.binaries.append(item)  # Supposed to be TOC form (n,p,'BINARY')
+                for item in mod._deleted_imports:
                     # Remove the graph link between the hooked module and item.
                     # This removes the 'item' node from the graph if no other
                     # links go to it (no other modules import it)
-                    self.graph.removeReference(mod.node,item)
+                    self.graph.removeReference(mod.node, item)
 
             # hook_name_space.hiddenimports is a list of Python module names that PyInstaller
             # is not able detect.
@@ -612,29 +611,26 @@ class Analysis(Target):
 
 
         # Analyze run-time hooks.
-        self.graph.analyze_runtime_hooks(
-            priority_scripts,
-            self.custom_runtime_hooks,
-            self.pure,
-        )
-        # priority_scripts is now a list of the graph nodes of custom runtime
+        self.graph.analyze_runtime_hooks(priority_scripts, self.custom_runtime_hooks)
+
+        # 'priority_scripts' is now a list of the graph nodes of custom runtime
         # hooks, then regular runtime hooks, then the PyI loader scripts.
         # Further on, we will make sure they end up at the front of self.scripts
 
+        ### Extract the nodes of the graph as TOCs for further processing.
 
-        # Extract the nodes of the graph as TOCs for further processing.
         # Initialize the scripts list with priority scripts in the proper order.
         self.scripts = self.graph.nodes_to_TOC(priority_scripts)
         # Put all other script names into the TOC after them. (The rthooks names
         # will be found again, but TOC.append skips duplicates.)
-        self.scripts, code_dict = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
-        self.pure['code'].update(code_dict)
+        self.scripts = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
         # Extend the binaries list with all the Extensions modulegraph has found.
-        self.binaries, code_dict = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
-        self.pure['code'].update(code_dict)
-        # Fill the "pure" list with modules.
-        self.pure['toc'], code_dict =  self.graph.make_a_TOC(['PYMODULE'])
-        self.pure['code'].update(code_dict)
+        self.binaries  = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
+        # Fill the "pure" list with pure Python modules.
+        self.pure['toc'] =  self.graph.make_a_TOC(['PYMODULE'])
+        # And get references to module code objects constructed by ModuleGraph
+        # to avoid writing .pyc/pyo files to hdd.
+        self.pure['code'].update(self.graph.get_code_objects())
 
         # Add remaining binary dependencies - analyze Python C-extensions and what
         # DLLs they depend on.
@@ -679,8 +675,7 @@ class Analysis(Target):
             # When that info is available change this code to write one line for
             # each importer-name, with type of import for that importer
             # "no module named foo conditional/deferred/toplevel importy by bar"
-            miss_toc, code_dict = self.graph.make_a_TOC(['MISSING'])
-            self.pure['code'].update(code_dict)
+            miss_toc = self.graph.make_a_TOC(['MISSING'])
             if len(miss_toc) : # there are some missing modules
                 wf = open(WARNFILE, 'w')
                 for (n, p, t) in miss_toc :
