@@ -529,7 +529,20 @@ class Analysis(Target):
         # because graphing a runtime hook might have added some names, but
         # also because regular hooks can apply to extensions and builtins.
         temp_toc = self.graph.make_a_TOC(['PYMODULE', 'PYSOURCE', 'BUILTIN', 'EXTENSION'])
-        for (imported_name, path, typecode) in temp_toc:
+        module_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package',
+                            'Extension', 'Script', 'BuiltinModule'])
+
+        # Iterate through graph.
+        # We expect that method 'graph.flatten()' will pick up new imports as
+        # they are added from hiddenimports. This assumption should solve issue
+        # where any hiddenimport from hook need to use another hook!
+        for curr_node in self.graph.flatten():
+            # Skip module types that are not interesting.
+            mg_type = type(curr_node).__name__
+            if mg_type not in module_types:
+                continue
+
+            imported_name = curr_node.identifier
             if imported_name in hooks_mod_cache:
                 # Hook is bundled with PyInstaller.
                 hook_file_name = os.path.join(hooks_dir, 'hook-' + imported_name + '.py')
