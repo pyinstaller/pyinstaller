@@ -64,9 +64,4 @@ def hook(mod):
     if hasattr(distutils, 'distutils_path'):
         mod_path = os.path.join(distutils.distutils_path, '__init__.py')
         mod.retarget(mod_path)
-        #try:
-            #parsed_code = marshal.loads(open(mod_path, 'rb').read()[8:])
-        #except IOError:
-            #parsed_code = compile(open(mod_path[:-1], 'rU').read(), mod_path, 'exec')
-        #mod.__init__('distutils', mod_path, parsed_code)
     return mod
