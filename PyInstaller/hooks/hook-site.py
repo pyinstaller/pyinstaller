@@ -23,8 +23,10 @@ def hook(mod):
         if is_win:
             mod_path = os.path.join(sys.real_prefix, 'Lib', 'site.py')
         else:
-            mod_path = os.path.join(sys.real_prefix, 'lib', 'python'+sys.version[:3], 'site.py')
-            mod64_path = os.path.join(sys.real_prefix, 'lib64', 'python'+sys.version[:3], 'site.py')
+            mod_path = os.path.join(sys.real_prefix, 'lib',
+                                    'python'+sys.version[:3], 'site.py')
+            mod64_path = os.path.join(sys.real_prefix, 'lib64',
+                                      'python'+sys.version[:3], 'site.py')
             if os.path.exists(mod64_path):
                 mod_path = mod64_path
         mod.retarget(mod_path)
