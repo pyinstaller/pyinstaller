@@ -88,10 +88,17 @@ _PYOPTS = __debug__ and '-O' or ''
 
 
 # Some code parts needs to behave different when running in virtualenv.
-# 'real_prefix is for virtualenv,
-# 'base_prefix' is for PEP 405 venv (new in Python 3.3)
-venv_real_prefix = (getattr(sys, 'real_prefix', None) or
-                    getattr(sys, 'base_prefix', None))
+if is_py2:
+    # 'real_prefix is for virtualenv,
+    venv_real_prefix = getattr(sys, 'real_prefix', None)
+else:
+    # 'base_prefix' is for PEP 405 venv (new in Python 3.3)
+    # 'base_prefix' equals to sys.prefix outside virtualenv.
+    if sys.base_prefix == sys.prefix:
+        venv_real_prefix = None
+    else:
+        venv_real_prefix = sys.base_prefix
+
 is_virtualenv = bool(venv_real_prefix)
 
 
