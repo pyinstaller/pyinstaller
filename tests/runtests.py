@@ -39,6 +39,9 @@ else:
     _virtual_env_ = True
 
 
+# Unbuffered sys.stdout
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
 
 from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
@@ -265,7 +268,7 @@ SPEC_FILE = set([
 
 class BuildTestRunner(object):
 
-    def __init__(self, test_name, verbose=False, report=False):
+    def __init__(self, test_name, verbose=False, report=False, with_crypto=False):
         # Use path separator '/' even on windows for test_name name.
         self.test_name = test_name.replace('\\', '/')
         self.verbose = verbose
@@ -273,6 +276,8 @@ class BuildTestRunner(object):
         # For junit xml report some behavior is changed.
         # Especially redirecting sys.stdout.
         self.report = report
+        # Build the test executable with bytecode encryption enabled.
+        self.with_crypto = with_crypto
 
     def _msg(self, text):
         """
@@ -379,6 +384,10 @@ class BuildTestRunner(object):
         else:
             OPTS.append('--onedir')
 
+        if self.with_crypto or '_crypto' in self.test_file:
+            print 'NOTE: Bytecode encryption is enabled for this test.',
+            OPTS.append('--key=test_key')
+
         self._msg("BUILDING TEST " + self.test_name)
 
         # Use pyinstaller.py for building test_name.
@@ -472,7 +481,7 @@ class BuildTestRunner(object):
 
 
 class GenericTestCase(unittest.TestCase):
-    def __init__(self, test_dir, func_name):
+    def __init__(self, test_dir, func_name, with_crypto=False):
         """
         test_dir    Directory containing testing python scripts.
         func_name   Name of test function to create.
@@ -485,6 +494,9 @@ class GenericTestCase(unittest.TestCase):
 
         # For tests current working directory has to be changed temporaly.
         self.curr_workdir = os.getcwdu()
+
+        # Whether to enable bytecode encryption for test executable
+        self.with_crypto = with_crypto
 
     def setUp(self):
         testdir = os.path.dirname(self.test_name)
@@ -513,7 +525,7 @@ class GenericTestCase(unittest.TestCase):
         if not req_met:
             raise unittest.SkipTest(msg)
         # Create a build and test it.
-        b = BuildTestRunner(self.test_name, verbose=VERBOSE, report=REPORT)
+        b = BuildTestRunner(self.test_name, verbose=VERBOSE, report=REPORT, with_crypto=self.with_crypto)
         self.assertTrue(b.test_exists(),
                 msg='Test %s not found.' % self.test_name)
         self.assertTrue(b.test_building(),
@@ -527,29 +539,39 @@ class GenericTestCase(unittest.TestCase):
 class BasicTestCase(GenericTestCase):
     test_dir = 'basic'
 
-    def __init__(self, func_name):
-        super(BasicTestCase, self).__init__(self.test_dir, func_name)
+    def __init__(self, func_name, with_crypto=False):
+        super(BasicTestCase, self).__init__(self.test_dir, func_name, with_crypto)
+
+
+class CryptoTestCase(GenericTestCase):
+    test_dir = 'crypto'
+
+    def __init__(self, func_name, with_crypto=False):
+        # Crypto tests MUST NOT run 'with' crypto enabled by default.
+        with_crypto = False
+
+        super(CryptoTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class ImportTestCase(GenericTestCase):
     test_dir = 'import'
 
-    def __init__(self, func_name):
-        super(ImportTestCase, self).__init__(self.test_dir, func_name)
+    def __init__(self, func_name, with_crypto=False):
+        super(ImportTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class LibrariesTestCase(GenericTestCase):
     test_dir = 'libraries'
 
-    def __init__(self, func_name):
-        super(LibrariesTestCase, self).__init__(self.test_dir, func_name)
+    def __init__(self, func_name, with_crypto=False):
+        super(LibrariesTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class MultipackageTestCase(GenericTestCase):
     test_dir = 'multipackage'
 
-    def __init__(self, func_name):
-        super(MultipackageTestCase, self).__init__(self.test_dir, func_name)
+    def __init__(self, func_name, with_crypto=False):
+        super(MultipackageTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class InteractiveTestCase(GenericTestCase):
@@ -576,7 +598,7 @@ class TestCaseGenerator(object):
         tests.sort()
         return tests
 
-    def create_suite(self, test_types):
+    def create_suite(self, test_types, with_crypto=False):
         """
         Create test suite and add test cases to it.
 
@@ -590,7 +612,7 @@ class TestCaseGenerator(object):
             tests = self._detect_tests(_type.test_dir)
             # Create test cases for a specific type.
             for test_name in tests:
-                suite.addTest(_type(test_name))
+                suite.addTest(_type(test_name, with_crypto=with_crypto))
 
         return suite
 
@@ -677,6 +699,8 @@ def main():
     except TypeError:
         parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]')
 
+    parser.add_option('-a', '--all-with-crypto', action='store_true',
+                      help='Run the whole test suite with bytecode encryption enabled.')
     parser.add_option('-c', '--clean', action='store_true',
                       help='Clean up generated files')
     parser.add_option('-i', '--interactive-tests', action='store_true',
@@ -722,14 +746,20 @@ def main():
         if opts.interactive_tests:
             print 'Running interactive tests...'
             test_classes = [InteractiveTestCase]
+        elif opts.all_with_crypto:
+            print 'Running normal tests with bytecode encryption...'
+            # Make sure to exclude CryptoTestCase here since we are building
+            # everything else with crypto enabled.
+            test_classes = [BasicTestCase, ImportTestCase,
+                    LibrariesTestCase, MultipackageTestCase]
         else:
             print 'Running normal tests (-i for interactive tests)...'
-            test_classes = [BasicTestCase, ImportTestCase,
+            test_classes = [BasicTestCase, CryptoTestCase, ImportTestCase,
                     LibrariesTestCase, MultipackageTestCase]
 
         # Create test suite.
         generator = TestCaseGenerator()
-        suite = generator.create_suite(test_classes)
+        suite = generator.create_suite(test_classes, opts.all_with_crypto)
 
     # Set global options
     global VERBOSE, REPORT, PYI_CONFIG

@@ -269,7 +269,7 @@ class ZlibArchive(Archive):
     LEVEL = 9
     NO_COMPRESSION_LEVEL = 0
 
-    def __init__(self, path=None, offset=None, level=9):
+    def __init__(self, path=None, offset=None, level=9, cipher=None):
         if path is None:
             offset = 0
         elif offset is None:
@@ -300,8 +300,11 @@ class ZlibArchive(Archive):
             except ImportError:
                 raise RuntimeError('zlib required but cannot be imported')
 
-        # TODO this attribute is deprecated and not used anymore.
-        self.crypted = 0
+        if cipher:
+            self.crypted = 1
+            self.cipher = cipher
+        else:
+            self.crypted = 0
 
     def extract(self, name):
         (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
@@ -310,7 +313,10 @@ class ZlibArchive(Archive):
         self.lib.seek(self.start + pos)
         obj = self.lib.read(lngth)
         try:
-            obj = self._mod_zlib.decompress(obj)
+            if self.crypted:
+                obj = self._mod_zlib.decompress(self.cipher.decrypt(obj))
+            else:
+                obj = self._mod_zlib.decompress(obj)
         except self._mod_zlib.error:
             raise ImportError("PYZ entry '%s' failed to decompress" % name)
         try:
@@ -335,7 +341,10 @@ class ZlibArchive(Archive):
                 f.seek(8)  # skip magic and timestamp
                 bytecode = f.read()
                 marshal.loads(bytecode).co_filename  # to make sure it's valid
-                obj = self._mod_zlib.compress(bytecode, self.LEVEL)
+                if self.crypted:
+                    obj = self.cipher.encrypt(self._mod_zlib.compress(bytecode, self.LEVEL))
+                else:
+                    obj = self._mod_zlib.compress(bytecode, self.LEVEL)
             except (IOError, ValueError, EOFError, AttributeError):
                 raise ValueError("bad bytecode in %s and no source" % pth)
         else:
@@ -347,7 +356,10 @@ class ZlibArchive(Archive):
                 print "Syntax error in", pth[:-1]
                 print e.args
                 raise
-            obj = self._mod_zlib.compress(marshal.dumps(co), self.LEVEL)
+            if self.crypted:
+                obj = self.cipher.encrypt(self._mod_zlib.compress(marshal.dumps(co), self.LEVEL))
+            else:
+                obj = self._mod_zlib.compress(marshal.dumps(co), self.LEVEL)
         self.toc[nm] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
 
@@ -361,3 +373,8 @@ class ZlibArchive(Archive):
     def checkmagic(self):
         Archive.checkmagic(self)
         self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
+
+        if self.crypted:
+            import pyi_crypto
+
+            self.cipher = pyi_crypto.PyiBlockCipher()

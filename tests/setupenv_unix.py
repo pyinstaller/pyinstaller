@@ -28,13 +28,20 @@ if not hasattr(sys, 'real_prefix'):
 import PyInstaller.compat as compat
 
 
+# Pick a PyCrypto version to use to test bytecode encryption. This is typically
+# used in conjunction with continuous integration.
+if 'PYCRYPTO_VERSION' in os.environ:
+    pycrypto = 'PyCrypto==%s' % os.environ['PYCRYPTO_VERSION']
+else:
+    pycrypto = 'PyCrypto'
+
+
 _PACKAGES = [
     'docutils',
     'jinja2',
     'MySQL-python',
     'numpy ',
     'PIL',
-    'pycrypto',
     #'pyenchant',
     'pyodbc',
     'pytz',
@@ -44,6 +51,7 @@ _PACKAGES = [
     #'wxPython',
     'IPython',
     'zope.interface',
+    pycrypto,
 ]
 
 
