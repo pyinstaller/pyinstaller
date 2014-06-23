@@ -89,10 +89,10 @@ _unix_excludes = {
     r'/libutil\.so\..*': 1,
     # libGL can reference some hw specific libraries (like nvidia libs).
     r'/libGL\..*': 1,
-    # libxcb changes ABI frequently (e.g.: between Ubuntu LTS releases) and is
-    # usually installed as dependency of the graphics stack anyway. No need to
-    # bundle it.
-    r'/libxcb.*\.so\..*': 1,
+    # libxcb-dri changes ABI frequently (e.g.: between Ubuntu LTS releases) and is usually installed
+    # as dependency of the graphics stack anyway. No need to bundle it.
+    r'/libxcb\.so\..*': 1,
+    r'/libxcb-dri.*\.so\..*': 1,
 }
 
 _aix_excludes = {
