@@ -651,7 +651,7 @@ def get_package_paths(package):
     # parameter is actually a module.
     is_pkg_statement = 'import %s as p; print hasattr(p, "__path__")'
     is_package = eval_statement(is_pkg_statement % package)
-    assert is_package
+    assert is_package, 'Package %s does not have __path__ attribute' % package
 
     file_attr = get_module_file_attribute(package)
 
