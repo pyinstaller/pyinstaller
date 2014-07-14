@@ -254,6 +254,15 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 	if (pyi_arch_check_cookie(status, filelen) < 0)
 	{
 		VS("LOADER: %s does not contain an embedded package\n", status->archivename);
+		// Lets try to check signature_offset
+		while (filelen > (int)sizeof(COOKIE)) {
+			filelen -= 1;
+			if (pyi_arch_check_cookie(status, filelen) == 0) {
+				goto succ;
+			}
+		}
+		
+		
 #ifndef WIN32
     return -1;
 #else
@@ -277,6 +286,7 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 		VS("LOADER: package found skipping digital signature in %s\n", status->archivename);
 #endif
 	}
+	succ:
 
     /* Set the flag that Python library was not loaded yet. */
     status->is_pylib_loaded = false;
