@@ -50,6 +50,18 @@ def architecture():
     else:
         return platform.architecture()[0] # 32bit or 64bit
 
+def machine():
+    """
+    Differenciate path to bootloader with machine name if necessary.
+
+    Machine name in bootloader is necessary only for non-x86 architecture.
+    """
+    mach = None  # Assume x86/x86_64 machine.
+    # Different name for arm is necessary.
+    if platform.machine().startswith('arm'):
+        mach = 'arm'
+    return mach
+
 
 def options(ctx):
 
@@ -94,21 +106,7 @@ def options(ctx):
 
 def configure(ctx):
 
-    ctx.env.NAME = 'default'
-
     myplatform = platform.system()
-
-    ctx.env.MYARCH = architecture()
-
-    # Differenciate path to bootloader with machine name if necessary.
-    mymach = platform.machine()
-    if mymach.startswith('arm'):
-        mymach = 'arm'
-    else:
-        # Assume x86/x86_64 machine.
-        mymach = None
-    ctx.env.MYMACHINE = mymach
-
 
     ctx.msg('Platform', '%s-%s detected' % (platform.system(), architecture()))
 
@@ -329,19 +327,17 @@ def configure(ctx):
         ctx.load('winres')
 
     ### DEBUG and RELEASE environments
-    basic_env = ctx.get_env()
+    basic_env = ctx.env
 
     ## setup DEBUG environment
-    ctx.setenv('debug')
-    ctx.set_env(basic_env)  # Ensure environment contains shared values.
+    ctx.setenv('debug', basic_env)  # Ensure env contains shared values.
+    debug_env = ctx.env
     # This define enables verbose console output of the bootloader.
     ctx.env.append_value('CCDEFINES', ['LAUNCH_DEBUG'])
     ctx.env.append_value('CCDEFINES', 'NDEBUG')
-    debug_env = ctx.get_env()
 
     ## setup windowed DEBUG environment
-    ctx.setenv('debugw')
-    ctx.set_env(debug_env)  # Ensure environment contains shared debug values.
+    ctx.setenv('debugw', debug_env)  # Ensure env contains shared values.
     ctx.env.append_value('CCDEFINES', 'WINDOWED')
     # disables console - mingw option
     if myplatform == 'Windows' and ctx.env.CC_NAME == 'gcc':
@@ -357,15 +353,13 @@ def configure(ctx):
         # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
     ## setup RELEASE environment
-    ctx.setenv('release')
-    ctx.set_env(basic_env)  # Ensure environment contains shared values.
+    ctx.setenv('release', basic_env)  # Ensure env contains shared values.
+    release_env = ctx.env
     ctx.env.append_value('CCDEFINES', 'NDEBUG')
     ctx.env.append_value('CCFLAGS', ctx.env.CCFLAGS_RELEASE)
-    release_env = ctx.get_env()
 
     ## setup windowed RELEASE environment
-    ctx.setenv('releasew')
-    ctx.set_env(release_env)  # Copy values from release environment.
+    ctx.setenv('releasew', release_env)  # Ensure env contains shared values.
     ctx.env.append_value('CCDEFINES', 'WINDOWED')
     # disables console
     if myplatform == 'Windows' and ctx.env.CC_NAME == 'gcc':
@@ -392,9 +386,11 @@ def build(ctx):
     # TODO revisit parallel building with switch to waf 1.7
     opt.jobs = 1
 
-    install_path = '../../PyInstaller/bootloader/' + platform.system() + "-" + ctx.env.MYARCH
-    if ctx.env.MYMACHINE:
-        install_path += '-' + ctx.env.MYMACHINE
+    install_path = '../../PyInstaller/bootloader/' + platform.system() + "-" + architecture()
+    if machine():
+        install_path += '-' + machine()
+
+    # File name of compiled bootloaders.
     targets = dict(release='run', debug='run_d', releasew='runw', debugw='runw_d')
 
     if myplatform == 'Windows':
@@ -445,12 +441,14 @@ def build(ctx):
             libs.append('gc')
 
         for key, value in targets.items():
-            ctx(
-                features = 'cc cprogram',
+            print(dir(ctx))
+            ctx.setenv(key)
+            ctx.program(
                 source = ctx.path.ant_glob('linux/*.c common/*.c'),
                 target = value,
-                install_path = install_path,
-                lib = libs,
-                env = ctx.env_of_name(key).copy(),
+                features = ['c', 'cprogram'],
+
                 includes = ['common', 'linux'],
+                lib = libs,
+                install_path = install_path,
             )
