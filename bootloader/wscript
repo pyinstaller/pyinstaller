@@ -18,6 +18,9 @@ import os
 import platform
 import sys
 
+from waflib.Configure import conf
+from waflib import Logs
+
 
 # The following two variables are used by the target "waf dist"
 VERSION=''
@@ -49,6 +52,7 @@ def architecture():
         return '32bit'
     else:
         return platform.architecture()[0] # 32bit or 64bit
+
 
 def machine():
     """
@@ -92,8 +96,10 @@ def options(ctx):
                        dest='nolsb')
         ctx.add_option('--lsbcc-path',
                        action='store',
-                       help='Path to lsbcc. By default PATH is searched for lsbcc otherwise is tried file /opt/lsb/bin/lsbcc. [Default: lsbcc]',
-                       default='lsbcc',
+                       help='Path where to look for lsbcc. By default PATH is '
+                            'searched for lsbcc otherwise is tried file '
+                            '/opt/lsb/bin/lsbcc. [Default: lsbcc]',
+                       default=None,
                        dest='lsbcc_path')
         ctx.add_option('--lsb-target-version',
                        action='store',
@@ -102,6 +108,86 @@ def options(ctx):
                        dest='lsb_version')
 
     ctx.load('compiler_c')
+
+
+# TODO - test compiling lsbcc
+@conf
+def set_lsb_compiler(ctx):
+    """
+    Build LSB (Linux Standard Base) bootloader.
+
+    LSB bootloader allows to build bootloader binary that is compatible
+    with almost every Linux distribution.
+    'lsbcc' just wraps gcc in a special way.
+    """
+    Logs.pprint('CYAN', 'Building LSB (Linux Standard Base) bootloader.')
+    lsb_paths = ['/opt/lsb/bin']
+    if ctx.options.lsbcc_path:
+        lsb_paths.insert(0, ctx.options.lsbcc_path)
+    try:
+        ctx.find_program('lsbcc', var='LSBCC', path_list=lsb_paths)
+    except:
+        # Fail hard and print warning if lsbcc is not available.
+        #if not ctx.env.LSBCC:
+        Logs.pprint('RED', 'LSB (Linux Standard Base) tools >= 4.0 are '
+                    'required.\nTry --no-lsb option if not interested in '
+                    'building LSB binary.')
+        sys.exit(2)
+
+    # lsbcc as CC compiler
+    ctx.env.append_value('CCFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
+    ctx.env.append_value('LINKFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
+    ctx.env.CC = ctx.env.LSBCC
+    ctx.env.LINK_CC = ctx.env.LSBCC
+    ## check LSBCC flags
+    # --lsb-besteffort - binary will work on platforms without LSB stuff
+    # --lsb-besteffort - available in LSB build tools >= 4.0
+    ctx.check_cc(ccflags='--lsb-besteffort',
+            msg='Checking for LSB build tools >= 4.0',
+            errmsg='LSB >= 4.0 is required', mandatory=True)
+    ctx.env.append_value('CCFLAGS', '--lsb-besteffort')
+    ctx.env.append_value('LINKFLAGS', '--lsb-besteffort')
+    # binary compatibility with a specific LSB version
+    # LSB 4.0 can generate binaries compatible with 3.0, 3.1, 3.2, 4.0
+    # however because of using function 'mkdtemp', loader requires
+    # using target version 4.0
+    lsb_target_flag = '--lsb-target-version=%s' % ctx.options.lsb_version
+    ctx.env.append_value('CCFLAGS', lsb_target_flag)
+    ctx.env.append_value('LINKFLAGS', lsb_target_flag)
+
+
+@conf
+def set_arch_cflags(ctx):
+    """
+    Set properly architecture flag (32 or 64 bit) cflags for compiler.
+    """
+    myplatform = architecture()
+    if myplatform == 'Windows' and ctx.env.CC_NAME == 'msvc':
+        if architecture() == '32bit':
+            ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
+        elif architecture() == '64bit':
+            ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
+        # Enable 64bit porting warnings and other warnings too.
+        ctx.env.append_value('CCFLAGS', '/W3')
+        # We use SEH exceptions in winmain.c; make sure they are activated.
+        ctx.env.append_value('CCFLAGS', '/EHa')
+
+    # This ensures proper compilation with 64bit gcc and 32bit Python or vice versa.
+    if ctx.env.CC_NAME == 'gcc':
+        if architecture() == '32bit' and ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32'):
+            ctx.env.append_value('CCFLAGS', '-m32')
+        elif architecture() == '64bit':
+            ctx.env.append_value('CCFLAGS', '-m64')
+
+    # Ensure proper architecture flags on Mac OS X.
+    if myplatform == 'Darwin':
+        if architecture() == '32bit':
+            mac_arch = ['-arch', 'i386']
+        else:
+            mac_arch = ['-arch', 'x86_64']
+        ctx.env.append_value('CCFLAGS', mac_arch)
+        ctx.env.append_value('CXXFLAGS', mac_arch)
+        ctx.env.append_value('LINKFLAGS', mac_arch)
 
 
 def configure(ctx):
@@ -115,83 +201,45 @@ def configure(ctx):
         ctx.msg('CYAN', 'For 32b-bit bootloader prepend the python command with:')
         ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
 
-    if myplatform == 'Linux' and not ctx.options.nolsb:
-        ctx.msg('Building LSB bootloader.')
-
     ### C compiler
 
-    if myplatform == 'Windows':
-        try:
-            # mingw (gcc for Windows)
-            ctx.load('gcc')
-        except:
-            try:
-                # Newest detected MSVC version is used by default.
-                # msvc 7.1 (Visual Studio 2003)
-                # msvc 8.0 (Visual Studio 2005)
-                # msvc 9.0 (Visual Studio 2008)
-                ctx.env['MSVC_VERSIONS'] = ['msvc 7.1', 'msvc 8.0', 'msvc 9.0', 'wsdk 7.0', 'wsdk 7.1']
-                if architecture() == '32bit':
-                    ctx.env['MSVC_TARGETS'] = ['x86', 'ia32']
-                elif architecture() == '64bit':
-                    ctx.env['MSVC_TARGETS'] = ['x64', 'x86_amd64', 'intel64', 'em64t']
-                ctx.load('msvc')
-                ctx.print_all_msvc_detected()
-                # Do not embed manifest file.
-                # Manifest file will be added in the phase of packaging python application.
-                ctx.env.MSVC_MANIFEST = False
-            except Exception as e:
-                print(e)
-                ctx.msg('RED', str(e))
-                ctx.msg('RED', 'GCC (MinGW) or MSVC compiler not found.')
-                exit(1)
-        else:
-            # When using GCC, deactivate declarations after statements
-            # (not supported by Visual Studio)
-            ctx.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
-            ctx.env.append_value('CCFLAGS', '-Werror')
+    # TODO Is the msvc/mingw detected properly on windows? Could we remove this?
+    # if myplatform == 'Windows':
+    #     try:
+    #         # mingw (gcc for Windows)
+    #         ctx.load('gcc')
+    #     except:
+    #         try:
+    #             # Newest detected MSVC version is used by default.
+    #             # msvc 7.1 (Visual Studio 2003)
+    #             # msvc 8.0 (Visual Studio 2005)
+    #             # msvc 9.0 (Visual Studio 2008)
+    #             ctx.env['MSVC_VERSIONS'] = ['msvc 7.1', 'msvc 8.0', 'msvc 9.0', 'wsdk 7.0', 'wsdk 7.1']
+    #             if architecture() == '32bit':
+    #                 ctx.env['MSVC_TARGETS'] = ['x86', 'ia32']
+    #             elif architecture() == '64bit':
+    #                 ctx.env['MSVC_TARGETS'] = ['x64', 'x86_amd64', 'intel64', 'em64t']
+    #             ctx.load('msvc')
+    #             ctx.print_all_msvc_detected()
+    #             # Do not embed manifest file.
+    #             # Manifest file will be added in the phase of packaging python application.
+    #             ctx.env.MSVC_MANIFEST = False
+    #         except Exception as e:
+    #             print(e)
+    #             ctx.msg('RED', str(e))
+    #             ctx.msg('RED', 'GCC (MinGW) or MSVC compiler not found.')
+    #             exit(1)
+    #     else:
+    #         # When using GCC, deactivate declarations after statements
+    #         # (not supported by Visual Studio)
+    #         ctx.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
+    #         ctx.env.append_value('CCFLAGS', '-Werror')
+    #
+    # else:
+    ctx.load('compiler_c')
 
-    else:
-        ctx.load('compiler_c')
-
-
-    ### build LSB (Linux Standard Base) boot loader
     if myplatform == 'Linux' and not ctx.options.nolsb:
-        try:
-            # custom lsbcc path
-            if ctx.options.lsbcc_path != 'lsbcc':
-                ctx.env.LSBCC = ctx.find_program(ctx.options.lsbcc_path, mandatory=True)
-            # default values
-            else:
-                ctx.env.LSBCC = ctx.find_program(ctx.options.lsbcc_path)
-                if not ctx.env.LSBCC:
-                    ctx.env.LSBCC = ctx.find_program('/opt/lsb/bin/lsbcc',
-                            mandatory=True)
-        except:
-            ctx.msg('RED', 'LSB (Linux Standard Base) tools >= 4.0 are required.')
-            ctx.msg('RED', 'Try --no-lsb option if not interested in building LSB binary.')
-            exit(2)
-        # lsbcc as CC compiler
-        ctx.env.append_value('CCFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
-        ctx.env.append_value('LINKFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
-        ctx.env.CC = ctx.env.LSBCC
-        ctx.env.LINK_CC = ctx.env.LSBCC
-        ## check LSBCC flags
-        # --lsb-besteffort - binary will work on platforms without LSB stuff
-        # --lsb-besteffort - available in LSB build tools >= 4.0
-        ctx.check_cc(ccflags='--lsb-besteffort',
-                msg='Checking for LSB build tools >= 4.0',
-                errmsg='LSB >= 4.0 is required', mandatory=True)
-        ctx.env.append_value('CCFLAGS', '--lsb-besteffort')
-        ctx.env.append_value('LINKFLAGS', '--lsb-besteffort')
-        # binary compatibility with a specific LSB version
-        # LSB 4.0 can generate binaries compatible with 3.0, 3.1, 3.2, 4.0
-        # however because of using function 'mkdtemp', loader requires
-        # using target version 4.0
-        lsb_target_flag = '--lsb-target-version=%s' % ctx.options.lsb_version
-        ctx.env.append_value('CCFLAGS', lsb_target_flag)
-        ctx.env.append_value('LINKFLAGS', lsb_target_flag)
-
+        ctx.set_lsb_compiler()
 
     ### Clang as CC compiler.
     if not myplatform == 'Windows' and ctx.options.clang:
@@ -273,45 +321,12 @@ def configure(ctx):
                 msg='Checking for flags -mms-bitfields')
         ctx.env.append_value('CCFLAGS', '-mms-bitfields')
 
-    elif myplatform == 'Windows' and ctx.env.CC_NAME == 'msvc':
-        if architecture() == '32bit':
-            ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
-        elif architecture() == '64bit':
-            ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
-        # Enable 64bit porting warnings and other warnings too.
-        ctx.env.append_value('CCFLAGS', '/W3')
-        # We use SEH exceptions in winmain.c; make sure they are activated.
-        ctx.env.append_value('CCFLAGS', '/EHa')
-    
-    # Compile with 64bit gcc 32bit binaries or vice versa.
-    if ctx.env.CC_NAME == 'gcc':
-        if architecture() == '32bit' and ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32'):
-            ctx.env.append_value('CCFLAGS', '-m32')
-        elif architecture() == '64bit':
-            ctx.env.append_value('CCFLAGS', '-m64')
-
-    # Ensure proper architecture flags on Mac OS X.
-    # TODO Add support for universal binaries.
     if myplatform == 'Darwin':
+        ctx.env.append_value('CCFLAGS', '-mmacosx-version-min=10.6')
 
-        available_archs = {'32bit': 'i386', '64bit': 'x86_64'}
-        mac_arch = available_archs[architecture()]
+    ctx.set_arch_cflags()
 
-        ctx.env.append_value('CCFLAGS', '-arch')
-        ctx.env.append_value('CCFLAGS', mac_arch)
-        ctx.env.append_value('CXXFLAGS', '-arch')
-        ctx.env.append_value('CXXFLAGS', mac_arch)
-        ctx.env.append_value('LINKFLAGS', '-arch')
-        ctx.env.append_value('LINKFLAGS', mac_arch)
 
-        if architecture() == '32bit':
-            ctx.env.append_value('CCFLAGS', '-mmacosx-version-min=10.5')
-        else:
-            ctx.env.append_value('CCFLAGS', '-mmacosx-version-min=10.6')
-
-        
-
-       
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
@@ -379,12 +394,6 @@ def configure(ctx):
 def build(ctx):
     myplatform = platform.system()
     opt = ctx.options
-
-    # Force to run with 1 job (no parallel building).
-    # There are reported build failures on multicore CPUs
-    # with some msvc versions.
-    # TODO revisit parallel building with switch to waf 1.7
-    opt.jobs = 1
 
     install_path = '../../PyInstaller/bootloader/' + platform.system() + "-" + architecture()
     if machine():
