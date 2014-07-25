@@ -36,7 +36,7 @@ try:
     # that first.
     modname = 'Crypto.Cipher._AES'
 
-    AES = import_aes('Crypto.Cipher._AES')
+    AES = import_aes(modname)
     HIDDENIMPORT = modname
 except ImportError:
     # Fallback to AES.so, which should be there in PyCrypto 2.4 and earlier.
