@@ -215,6 +215,12 @@ def configure(conf):
     if myplatform.startswith('sun'):
         conf.env.append_value('CCDEFINES', 'SUNOS')
 
+        if conf.env.CC_NAME == 'gcc':
+            # On Solaris using gcc the linker options for shared and static libraries
+            # are slightly different from other platforms.
+            conf.env['SHLIB_MARKER'] = '-Wl,-Bdynamic'
+            conf.env['STLIB_MARKER'] = '-Wl,-Bstatic'
+
     if myplatform.startswith('aix'):
         conf.env.append_value('CCDEFINES', 'AIX')
 
@@ -494,6 +500,9 @@ def build(bld):
             if sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
                 libs.append('thr')
         elif sys.platform.startswith('aix'):
+            libs = ['dl', 'm']
+            staticlibs = ['z']
+        elif sys.platform.startswith('sun'):
             libs = ['dl', 'm']
             staticlibs = ['z']
 
