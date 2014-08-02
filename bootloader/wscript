@@ -126,13 +126,12 @@ def set_lsb_compiler(ctx):
         lsb_paths.insert(0, ctx.options.lsbcc_path)
     try:
         ctx.find_program('lsbcc', var='LSBCC', path_list=lsb_paths)
-    except:
+    except ctx.errors.ConfigurationError:
         # Fail hard and print warning if lsbcc is not available.
         #if not ctx.env.LSBCC:
-        Logs.pprint('RED', 'LSB (Linux Standard Base) tools >= 4.0 are '
+        ctx.fatal('RED', 'LSB (Linux Standard Base) tools >= 4.0 are '
                     'required.\nTry --no-lsb option if not interested in '
                     'building LSB binary.')
-        sys.exit(2)
 
     # lsbcc as CC compiler
     ctx.env.append_value('CCFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
@@ -399,9 +398,6 @@ def build(ctx):
     if machine():
         install_path += '-' + machine()
 
-    # File name of compiled bootloaders.
-    targets = dict(release='run', debug='run_d', releasew='runw', debugw='runw_d')
-
     if myplatform == 'Windows':
 
         # static lib zlib
@@ -449,15 +445,23 @@ def build(ctx):
         if opt.boehmgc:
             libs.append('gc')
 
-        for key, value in targets.items():
-            print(dir(ctx))
-            ctx.setenv(key)
-            ctx.program(
-                source = ctx.path.ant_glob('linux/*.c common/*.c'),
-                target = value,
-                features = ['c', 'cprogram'],
+        #for key, value in targets.items():
+        ctx.program(
+            source = ctx.path.ant_glob('linux/*.c common/*.c'),
+            target = ctx.exe_name,
+            features = ['c', 'cprogram'],
 
-                includes = ['common', 'linux'],
-                lib = libs,
-                install_path = install_path,
-            )
+            includes = ['common', 'linux'],
+            lib = libs,
+            install_path = install_path,
+        )
+
+from waflib.Build import BuildContext
+
+class debug(BuildContext):
+    cmd = 'debug'
+    variant = 'debug'
+    # File name of compiled bootloaders.
+    #targets = dict(release='run', debug='run_d', releasew='runw', debugw='runw_d')
+    exe_name = 'run'
+
