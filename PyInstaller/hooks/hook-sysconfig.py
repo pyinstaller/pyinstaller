@@ -32,8 +32,11 @@ def _find_prefix(filename):
         common = os.path.commonprefix([prefix, filename])
         if common == prefix:
             possible_prefixes.append(prefix)
-    possible_prefixes.sort(key=lambda p: len(p), reverse=True)
-    return possible_prefixes[0]
+    
+    if possible_prefixes:
+        possible_prefixes.sort(key=lambda p: len(p), reverse=True)
+        return possible_prefixes[0]
+    return sys.prefix
 
 def _relpath(filename):
     # Relative path in the dist directory.
