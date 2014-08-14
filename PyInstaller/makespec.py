@@ -14,19 +14,27 @@ Automatically build spec files containing a description of the project
 
 
 import os
+import sys
 
 
 from PyInstaller import HOMEPATH, DEFAULT_SPECPATH
+from PyInstaller import log as logging
 from PyInstaller.compat import expand_path, is_win, is_cygwin, is_darwin
+
+logger = logging.getLogger(__name__)
 
 
 onefiletmplt = """# -*- mode: python -*-
+%(cipher_init)s
+
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r,
-             runtime_hooks=%(runtime_hooks)r)
-pyz = PYZ(a.pure)
+             runtime_hooks=%(runtime_hooks)r,
+             cipher=block_cipher)
+pyz = PYZ(a.pure,
+             cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
@@ -40,12 +48,16 @@ exe = EXE(pyz,
 """
 
 onedirtmplt = """# -*- mode: python -*-
+%(cipher_init)s
+
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r,
-             runtime_hooks=%(runtime_hooks)r)
-pyz = PYZ(a.pure)
+             runtime_hooks=%(runtime_hooks)r,
+             cipher=block_cipher)
+pyz = PYZ(a.pure,
+             cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
@@ -64,12 +76,16 @@ coll = COLLECT(exe,
 """
 
 comsrvrtmplt = """# -*- mode: python -*-
+%(cipher_init)s
+
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r,
-             runtime_hooks=%(runtime_hooks)r)
-pyz = PYZ(a.pure)
+             runtime_hooks=%(runtime_hooks)r,
+             cipher=block_cipher)
+pyz = PYZ(a.pure,
+             cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
@@ -90,6 +106,16 @@ coll = COLLECT(exe, dll,
                strip=%(strip)s,
                upx=%(upx)s,
                name='%(name)s')
+"""
+
+cipher_absent_template = """
+block_cipher = None
+"""
+
+cipher_init_template = """
+from PyInstaller.loader import pyi_crypto
+
+block_cipher = pyi_crypto.PyiBlockCipher(key=%(key)r)
 """
 
 bundleexetmplt = """app = BUNDLE(exe,
@@ -185,6 +211,8 @@ def __add_options(parser):
             'is executed before any other code or module '
             'to set up special features of the runtime environment. '
             'This option can be used multiple times.')
+    g.add_option('--key', dest='key',
+            help='The key used to encrypt Python bytecode.')
 
     g = parser.add_option_group('How to generate')
     g.add_option("-d", "--debug", action="store_true", default=False,
@@ -239,7 +267,7 @@ def main(scripts, name=None, onefile=False,
          console=True, debug=False, strip=False, noupx=False, comserver=False,
          pathex=[], version_file=None, specpath=DEFAULT_SPECPATH,
          icon_file=None, manifest=None, resources=[],
-         hiddenimports=None, hookspath=None, runtime_hooks=[], **kwargs):
+         hiddenimports=None, hookspath=None, key=None, runtime_hooks=[], **kwargs):
 
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
@@ -293,6 +321,30 @@ def main(scripts, name=None, onefile=False,
     hiddenimports = hiddenimports or []
     scripts = map(Path, scripts)
 
+    if key:
+        # Tries to import PyCrypto since we need it for bytecode obfuscation. Also make sure its
+        # version is >= 2.4.
+        try:
+            import Crypto
+
+            pycrypto_version = map(int, Crypto.__version__.split('.'))
+            is_version_acceptable = pycrypto_version[0] >= 2 and pycrypto_version[1] >= 4
+
+            if not is_version_acceptable:
+                logger.error('PyCrypto version must be >= 2.4, older versions are not supported.')
+
+                sys.exit(1)
+        except ImportError:
+            logger.error('We need PyCrypto >= 2.4 to use byte-code obufscation but we could not')
+            logger.error('find it. You can install it with pip by running:')
+            logger.error('  pip install PyCrypto')
+
+            sys.exit(1)
+
+        cipher_init = cipher_init_template % {'key': key}
+    else:
+        cipher_init = cipher_absent_template
+
     d = {'scripts': scripts,
         'pathex': pathex,
         'hiddenimports': hiddenimports,
@@ -301,6 +353,7 @@ def main(scripts, name=None, onefile=False,
         'strip': strip,
         'upx': not noupx,
         'exe_options': exe_options,
+        'cipher_init': cipher_init,
         # Directory with additional custom import hooks.
         'hookspath': hookspath,
         # List with custom runtime hook files.

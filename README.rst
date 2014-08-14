@@ -23,6 +23,7 @@ Requirements
 ------------
 - Python: 
    * 2.4 - 2.7 (Python 3 is not supported)
+   * PyCrypto_ 2.4+ (only if using bytecode encryption)
 
 - Windows (32bit/64bit):
    * Windows XP or newer.
@@ -88,6 +89,7 @@ or simply use it direclty from the source (pyinstaller.py).
 
 
 
+.. _PyCrypto: https://www.dlitz.net/software/pycrypto/
 .. _pywin32: http://sourceforge.net/projects/pywin32/
 .. _`manual`: http://pythonhosted.org/PyInstaller
 .. _`changelog`: https://github.com/pyinstaller/pyinstaller/blob/develop/doc/CHANGES.txt
