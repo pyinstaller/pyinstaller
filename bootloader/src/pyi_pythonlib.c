@@ -150,7 +150,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
     /* This flag ensures PYTHONPATH and PYTHONHOME are ignored by Python. */
     *PI_Py_IgnoreEnvironmentFlag = 1;
     /* Disalbe verbose imports by default. */
-    *PI_Py_VerboseFlag = 1;
+    *PI_Py_VerboseFlag = 0;
 
     /* Override some runtime options by custom values from PKG archive.
      * User is allowed to changes these options. */
