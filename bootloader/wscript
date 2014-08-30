@@ -32,6 +32,15 @@ top = '.'
 out = 'build'
 
 
+# Platform specific switches.
+is_win = platform.system() == 'Windows'
+is_darwin = platform.system() == 'Darwin'
+is_linux = platform.system() == 'Linux'
+# TODO find out proper value for AIX/Solaris
+is_solar = platform.system() == 'Solaris'
+is_aix = platform.system() == 'AIX'
+
+
 # Build variants of bootloader.
 # PyInstaller provides debug/release bootloaders and console/windowed
 # variants.
@@ -46,10 +55,9 @@ variants = {
 
 # TODO use following variable only on darwin and for 32bit loader.
 # TODO Do we still need this variable on OS X?
-# OS X 10.5 doesn't understand the load command  'LC_DYLD_INFO_ONLY'
-# that is used by the OS X 10.6 linker.
-# The following variable fixes 10.5 compatibility.
-os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.5'
+# OS X 10.6 might not understand some load commands.
+# The following variable fixes 10.6 compatibility.
+os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.6'
 
 
 # TODO strip created binaries.
@@ -60,7 +68,7 @@ def architecture():
     on 64bit Mac function platform.architecture() returns 64bit even
     for 32bit Python. This is the workaround for this.
     """
-    if platform.system() == 'Darwin' and sys.maxsize <= 3**32:
+    if is_darwin and sys.maxsize <= 3**32:
         return '32bit'
     else:
         return platform.architecture()[0] # 32bit or 64bit
@@ -87,21 +95,18 @@ def options(ctx):
                    help='Include debugging info for GDB.',
                    default=False,
                    dest='debug')
+    ctx.add_option('--leak-detector',
+                   action='store_true',
+                   help='Link with Boehm garbage collector to detect memory leaks.',
+                   default=False,
+                   dest='boehmgc')
+    ctx.add_option('--clang',
+                   action='store_true',
+                   help='Try to find clang C compiler instead of gcc.',
+                   default=False,
+                   dest='clang')
 
-    if platform.system() != ('Windows'):
-        ctx.add_option('--leak-detector',
-                       action='store_true',
-                       help='Link with Boehm garbage collector to detect memory leaks.',
-                       default=False,
-                       dest='boehmgc')
-        # TODO Does waf 1.8 detects clang out of the box?
-        ctx.add_option('--clang',
-                       action='store_true',
-                       help='Try to find clang C compiler instead of gcc.',
-                       default=False,
-                       dest='clang')
-
-    if platform.system() == 'Linux':
+    if is_linux:
         ctx.add_option('--no-lsb',
                        action='store_true',
                        help='Prevent building LSB (Linux Standard Base) bootloader.',
@@ -121,7 +126,6 @@ def options(ctx):
                        dest='lsb_version')
 
 
-# TODO - test compiling lsbcc
 @conf
 def set_lsb_compiler(ctx):
     """
@@ -171,8 +175,7 @@ def set_arch_cflags(ctx):
     """
     Set properly architecture flag (32 or 64 bit) cflags for compiler.
     """
-    myplatform = architecture()
-    if myplatform == 'Windows' and ctx.env.CC_NAME == 'msvc':
+    if is_win and ctx.env.CC_NAME == 'msvc':
         if architecture() == '32bit':
             ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
         elif architecture() == '64bit':
@@ -183,14 +186,14 @@ def set_arch_cflags(ctx):
         ctx.env.append_value('CFLAGS', '/EHa')
 
     # This ensures proper compilation with 64bit gcc and 32bit Python or vice versa.
-    if ctx.env.CC_NAME == 'gcc':
+    else:
         if architecture() == '32bit' and ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32'):
             ctx.env.append_value('CFLAGS', '-m32')
         elif architecture() == '64bit':
             ctx.env.append_value('CFLAGS', '-m64')
 
     # Ensure proper architecture flags on Mac OS X.
-    if myplatform == 'Darwin':
+    if is_darwin:
         if architecture() == '32bit':
             mac_arch = ['-arch', 'i386']
         else:
@@ -201,64 +204,38 @@ def set_arch_cflags(ctx):
 
 
 def configure(ctx):
-
-    myplatform = platform.system()
-
     ctx.msg('Platform', '%s-%s detected' % (platform.system(), architecture()))
 
-    if myplatform == 'Darwin' and architecture() == '64bit':
+    if is_darwin and architecture() == '64bit':
         ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
         ctx.msg('CYAN', 'For 32b-bit bootloader prepend the python command with:')
         ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
 
+    if is_win:
+        # Process *.rc* files for C/C++ like icon for exe files.
+        ctx.load('winres')
+
+
     ### C compiler
 
-    # TODO Is the msvc/mingw detected properly on windows? Could we remove this?
-    # if myplatform == 'Windows':
-    #     try:
-    #         # mingw (gcc for Windows)
-    #         ctx.load('gcc')
-    #     except:
-    #         try:
-    #             # Newest detected MSVC version is used by default.
-    #             # msvc 7.1 (Visual Studio 2003)
-    #             # msvc 8.0 (Visual Studio 2005)
-    #             # msvc 9.0 (Visual Studio 2008)
-    #             ctx.env['MSVC_VERSIONS'] = ['msvc 7.1', 'msvc 8.0', 'msvc 9.0', 'wsdk 7.0', 'wsdk 7.1']
-    #             if architecture() == '32bit':
-    #                 ctx.env['MSVC_TARGETS'] = ['x86', 'ia32']
-    #             elif architecture() == '64bit':
-    #                 ctx.env['MSVC_TARGETS'] = ['x64', 'x86_amd64', 'intel64', 'em64t']
-    #             ctx.load('msvc')
-    #             ctx.print_all_msvc_detected()
-    #             # Do not embed manifest file.
-    #             # Manifest file will be added in the phase of packaging python application.
-    #             ctx.env.MSVC_MANIFEST = False
-    #         except Exception as e:
-    #             print(e)
-    #             ctx.msg('RED', str(e))
-    #             ctx.msg('RED', 'GCC (MinGW) or MSVC compiler not found.')
-    #             exit(1)
-    #     else:
-    #         # When using GCC, deactivate declarations after statements
-    #         # (not supported by Visual Studio)
-    #         ctx.env.append_value('CFLAGS', '-Wdeclaration-after-statement')
-    #         ctx.env.append_value('CFLAGS', '-Werror')
-    #
-    # else:
-    ctx.load('compiler_c')
-
-    if myplatform == 'Linux' and not ctx.options.nolsb:
+    # Do not embed manifest file when using MSVC (Visual Studio).
+    if is_win:
+        # Manifest file will be added in the phase of packaging python
+        # application by PyInstaller.
+        ctx.env.MSVC_MANIFEST = False
+    # Allow to use Clang if preferred.
+    if ctx.options.clang:
+        ctx.load('clang')
+    else:
+        ctx.load('compiler_c')  # Any available C compiler.
+    # LSB compatible bootloader only for Linux and without cli option --no-lsb.
+    if is_linux and not ctx.options.nolsb:
         ctx.set_lsb_compiler()
-
-    ### Clang as CC compiler.
-    if not myplatform == 'Windows' and ctx.options.clang:
-        ctx.env.CC = ctx.find_program('clang', mandatory=True)
-        ctx.env.LINK_CC = ctx.env.CC
 
 
     # TODO Set proper optimization flags for MSVC (Visual Studio).
     ### C Compiler optimizations.
+
     if ctx.options.debug:
         # Include gcc debugging information for debugging in GDB.
         ctx.env.append_value('CFLAGS', '-g')
@@ -268,17 +245,18 @@ def configure(ctx):
 
     ### Defines, Includes
 
-    if myplatform == 'Linux':
-        # make sure we don't use declarations after statement (break Visual Studio)
+    if is_linux:
+        # Make sure we don't use declarations after statement. It breaks
+        # MSVC (Visual Studio).
         ctx.env.append_value('CFLAGS', '-Wdeclaration-after-statement')
         ctx.env.append_value('CFLAGS', '-Werror')
 
-    if not myplatform == 'Windows':
+    if not is_win:
         # Defines common for Unix and Unix-like platforms.
         # For details see:
         #   http://man.he.net/man7/feature_test_macros
         #
-        ## Without these definitions compiling maight fail on OSX.
+        ## Without these definitions compiling might fail on OSX.
         ctx.env.append_value('DEFINES', '_POSIX_C_SOURCE=200112L')
         # SUS v2 (UNIX 98) definitions.
         #   Mac OS X 10.5 is UNIX 03 compliant.
@@ -286,35 +264,29 @@ def configure(ctx):
         ctx.env.append_value('DEFINES', '_REENTRANT')
         # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
         ctx.env.append_value('DEFINES', '_BSD_SOURCE')
-        
 
-    if myplatform == 'Windows':
+    if is_win:
         ctx.env.append_value('DEFINES', 'WIN32')
         ctx.env.append_value('CPPPATH', '../zlib')
-
-    # TODO find out proper value.
-    if myplatform == 'Solaris':
+    if is_solar:
         ctx.env.append_value('DEFINES', 'SUNOS')
-
-    # TODO find out proper value.
-    if myplatform == 'AIX':
+    if is_aix:
         ctx.env.append_value('DEFINES', 'AIX')
 
-    ctx.env.append_value('CPPPATH', os.path.join('..', 'src'))
+    # TODO check if this could be removed.
+    #ctx.env.append_value('CPPPATH', os.path.join('..', 'src'))
 
 
     ### Libraries
 
-    if myplatform == 'Windows':
+    if is_win:
         ctx.check_cc(lib='user32', mandatory=True)
         ctx.check_cc(lib='comctl32', mandatory=True)
         ctx.check_cc(lib='kernel32', mandatory=True)
         ctx.check_cc(lib='ws2_32', mandatory=True)
-
     else:
         ctx.check_cc(lib='dl', mandatory=True)
         ctx.check_cc(lib='z', mandatory=True)
-
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
         if ctx.options.boehmgc:
@@ -324,36 +296,25 @@ def configure(ctx):
             ctx.env.append_value('DEFINES', 'GC_DEBUG')
             ctx.env.append_value('DEFINES', 'SAVE_CALL_CHAIN')
 
-    ### ccflags
 
-    if myplatform == 'Windows' and ctx.env.CC_NAME == 'gcc':
-        # Disables console - MinGW option
-        ctx.check_cc(ccflags='-mwindows', mandatory=True,
-                msg='Checking for flags -mwindows')
+    ### CFLAGS
+
+    if is_win and not ctx.env.CC_NAME == 'msvc':
         # Use Visual C++ compatible alignment
-        ctx.check_cc(ccflags='-mms-bitfields', mandatory=True,
-                msg='Checking for flags -mms-bitfields')
         ctx.env.append_value('CFLAGS', '-mms-bitfields')
 
-    if myplatform == 'Darwin':
+    if is_darwin:
         ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.6')
 
     ctx.set_arch_cflags()
 
-
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
-    if myplatform == 'Linux' and ctx.check_cc(ccflags='-Wl,--as-needed',
+    if is_linux and ctx.check_cc(ccflags='-Wl,--as-needed',
             msg='Checking for flags -Wl,--as-needed'):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
-
-    ### Other stuff
-
-    if myplatform == 'Windows':
-        # RC file - icon
-        ctx.load('winres')
 
     ### DEBUG and RELEASE environments
     basic_env = ctx.env
@@ -368,10 +329,12 @@ def configure(ctx):
     ## setup windowed DEBUG environment
     ctx.setenv('debugw', debug_env)  # Ensure env contains shared values.
     ctx.env.append_value('DEFINES', 'WINDOWED')
-    # disables console - mingw option
-    if myplatform == 'Windows' and ctx.env.CC_NAME == 'gcc':
+    # For MinGW disables console window on Windows- MinGW option
+    if is_win and not ctx.env.CC_NAME == 'msvc':
+            # TODO Is it necessary to have -mwindows for C and LINK flags?
             ctx.env.append_value('LINKFLAGS', '-mwindows')
-    elif myplatform == 'Darwin':
+            ctx.env.append_value('CFLAGS', '-mwindows')
+    elif is_darwin:
         #conf.env.append_value('CFLAGS', '-I/Developer/Headers/FlatCarbon')
         # To support catching AppleEvents and running as ordinary OSX GUI app,
         # we have to link against the Carbon framework.
@@ -389,10 +352,13 @@ def configure(ctx):
     ## setup windowed RELEASE environment
     ctx.setenv('releasew', release_env)  # Ensure env contains shared values.
     ctx.env.append_value('DEFINES', 'WINDOWED')
-    # disables console
-    if myplatform == 'Windows' and ctx.env.CC_NAME == 'gcc':
+
+    # For MinGW disables console window on Windows- MinGW option
+    if is_win and not ctx.env.CC_NAME == 'msvc':
+            # TODO Is it necessary to have -mwindows for C and LINK flags?
             ctx.env.append_value('LINKFLAGS', '-mwindows')
-    elif myplatform == 'Windows':
+            ctx.env.append_value('CFLAGS', '-mwindows')
+    elif is_darwin:
         # To support catching AppleEvents and running as ordinary OSX GUI app,
         # we have to link against the Carbon framework.
         # This linkage only needs to be there for the windowed bootloaders.
@@ -414,20 +380,16 @@ def build_bootloader(ctx):
     if machine():
         install_path += '-' + machine()
 
-    if myplatform == 'Windows':
-
-        # static lib zlib
+    if is_win:
+        # Use different RC file (icon) for console/windowed mode - remove '_d'
+        icon_rc = 'windows/' + exe_name.replace('_d') + '.rc'
+        # On Windows we need to link library zlib statically.
         ctx(
             features = 'cc cstaticlib',
             source = ctx.path.ant_glob('zlib/*.c'),
             target = 'staticlib_zlib',
-            #env = ctx.env_of_name(key),
             includes = ['zlib'],
         )
-
-        # Use different RC file (icon) for console/windowed mode - remove '_d'
-        icon_rc = 'windows/' + exe_name.replace('_d') + '.rc'
-
         ctx(
             features = 'cc cprogram',
             source = ctx.path.ant_glob('%s src/*.c' % icon_rc),
@@ -444,7 +406,6 @@ def build_bootloader(ctx):
         if opt.boehmgc:
             libs.append('gc')
 
-        #for key, value in targets.items():
         ctx.program(
             source = ctx.path.ant_glob('src/*.c'),
             target = exe_name,
