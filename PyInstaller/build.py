@@ -1210,8 +1210,17 @@ class EXE(Target):
         return False
 
     def _bootloader_file(self, exe):
-        if not self.console:
-            exe = exe + 'w'
+        """
+        Pick up the right bootloader file - debug, console, windowed.
+        """
+        # Having console/windowed bootolader makes sense only on Windows and
+        # Mac OS X.
+        if is_win or is_darwin:
+            if not self.console:
+                exe = exe + 'w'
+        # There are two types of bootloaders:
+        # run     - release, no verbose messages in console.
+        # run_d   - contains verbose messages in console.
         if self.debug:
             exe = exe + '_d'
         return os.path.join('PyInstaller', 'bootloader', PLATFORM, exe)
