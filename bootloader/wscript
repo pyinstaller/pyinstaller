@@ -273,9 +273,6 @@ def configure(ctx):
     if is_aix:
         ctx.env.append_value('DEFINES', 'AIX')
 
-    # TODO check if this could be removed.
-    #ctx.env.append_value('CPPPATH', os.path.join('..', 'src'))
-
 
     ### Libraries
 
@@ -370,12 +367,14 @@ def configure(ctx):
 
 
 # TODO Use 'strip' command to decrease the size of compiled bootloaders.
-def build_bootloader(ctx):
-    myplatform = platform.system()
-    opt = ctx.options
+def build(ctx):
+    if not ctx.variant:
+        ctx.fatal('Call "python waf all" to compile all bootloaders.')
 
     exe_name = variants[ctx.variant]
-    install_path = '../../PyInstaller/bootloader/' + platform.system() + "-" + architecture()
+    install_path = os.path.join(os.getcwd(), '../PyInstaller/bootloader',
+                                platform.system() + "-" + architecture())
+    install_path = os.path.normpath(install_path)
 
     if machine():
         install_path += '-' + machine()
@@ -384,13 +383,13 @@ def build_bootloader(ctx):
         # Use different RC file (icon) for console/windowed mode - remove '_d'
         icon_rc = 'windows/' + exe_name.replace('_d') + '.rc'
         # On Windows we need to link library zlib statically.
-        ctx(
+        ctx.program(
             features = 'cc cstaticlib',
             source = ctx.path.ant_glob('zlib/*.c'),
             target = 'staticlib_zlib',
             includes = ['zlib'],
         )
-        ctx(
+        ctx.program(
             features = 'cc cprogram',
             source = ctx.path.ant_glob('%s src/*.c' % icon_rc),
             target = exe_name,
@@ -399,13 +398,11 @@ def build_bootloader(ctx):
             uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
             includes = ['src', 'windows', 'zlib'],
         )
-
-    else: # Linux, Darwin (MacOSX), ...
-
+    # Linux, Darwin (MacOSX), ...
+    else:
         libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
-        if opt.boehmgc:
+        if ctx.options.boehmgc:
             libs.append('gc')
-
         ctx.program(
             source = ctx.path.ant_glob('src/*.c'),
             target = exe_name,
@@ -416,25 +413,28 @@ def build_bootloader(ctx):
         )
 
 
-def build(ctx):
-    """
-    Wrab building all types of bootloaders.
-    """
-    from waflib import Options
-    Options.commands = ['build_debug', 'build_debugw', 'build_release', 'build_releasew']
-
-
 def all(ctx):
     """
     Do configure, build, install in one step.
     """
     from waflib import Options
-    Options.commands = ['distclean', 'configure', 'build', 'install']
+    Options.commands = ['distclean', 'configure', 'build_debug', 'build_release']
+    # On Windows and Mac OS X we also need console/windowed bootloaders.
+    # On other platforms they make no sense.
+    if is_win or is_darwin:
+        Options.commands += ['build_debugw', 'build_releasew']
+    # Install bootloaders.
+    Options.commands += ['install_debug','install_release']
+    if is_win or is_darwin:
+        Options.commands += ['install_debugw', 'install_releasew']
 
 
-from waflib.Build import BuildContext
+# Set up building several variants of bootloader.
+from waflib.Build import BuildContext, InstallContext
 for x in variants:
     class BootloaderContext(BuildContext):
         cmd = 'build' + '_' + x
         variant = x
-        fun = 'build_bootloader'
+    class BootloaderInstallContext(InstallContext):
+        cmd = 'install' + '_' + x
+        variant = x
