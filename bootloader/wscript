@@ -300,7 +300,7 @@ def configure(ctx):
     if myplatform == 'AIX':
         ctx.env.append_value('DEFINES', 'AIX')
 
-    ctx.env.append_value('CPPPATH', os.path.join('..', 'common'))
+    ctx.env.append_value('CPPPATH', os.path.join('..', 'src'))
 
 
     ### Libraries
@@ -430,12 +430,12 @@ def build_bootloader(ctx):
 
         ctx(
             features = 'cc cprogram',
-            source = ctx.path.ant_glob('%s common/*.c' % icon_rc),
+            source = ctx.path.ant_glob('%s src/*.c' % icon_rc),
             target = exe_name,
             install_path = install_path,
             uselib_local = 'staticlib_zlib',
             uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-            includes = ['common', 'windows', 'zlib'],
+            includes = ['src', 'windows', 'zlib'],
         )
 
     else: # Linux, Darwin (MacOSX), ...
@@ -446,10 +446,10 @@ def build_bootloader(ctx):
 
         #for key, value in targets.items():
         ctx.program(
-            source = ctx.path.ant_glob('linux/*.c common/*.c'),
+            source = ctx.path.ant_glob('src/*.c'),
             target = exe_name,
             features = ['c', 'cprogram'],
-            includes = ['common', 'linux'],
+            includes = ['src'],
             lib = libs,
             install_path = install_path,
         )
