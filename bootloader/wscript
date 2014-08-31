@@ -225,6 +225,9 @@ def configure(ctx):
         else:
             ctx.env.WINRCFLAGS = ['--target=pe-x86-64']
 
+    # This tool allows reduce the size of executables.
+    ctx.load('strip', tooldir='tools')
+
 
     ### C compiler
 
@@ -405,6 +408,8 @@ def build(ctx):
             install_path = install_path,
             use='USER32 COMCTL32 KERNEL32 WS2_32 zlib',
             includes='src windows zlib',
+            # Strip final executables to make them smaller.
+            features='strip',
         )
     # Linux, Darwin (MacOSX), ...
     else:
@@ -417,6 +422,8 @@ def build(ctx):
             includes='src',
             use=libs,
             install_path=install_path,
+            # Strip final executables to make them smaller.
+            features='strip',
         )
 
 
