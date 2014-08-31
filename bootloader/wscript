@@ -187,10 +187,15 @@ def set_arch_cflags(ctx):
 
     # This ensures proper compilation with 64bit gcc and 32bit Python or vice versa.
     else:
-        if architecture() == '32bit' and ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32'):
+        # Option -m32/-m64 has to be passed to cflags and linkflages.
+        if architecture() == '32bit':
+            ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
             ctx.env.append_value('CFLAGS', '-m32')
+            ctx.env.append_value('LINKFLAGS', '-m32')
         elif architecture() == '64bit':
+            ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
             ctx.env.append_value('CFLAGS', '-m64')
+            ctx.env.append_value('LINKFLAGS', '-m64')
 
     # Ensure proper architecture flags on Mac OS X.
     if is_darwin:
@@ -212,8 +217,13 @@ def configure(ctx):
         ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
 
     if is_win:
-        # Process *.rc* files for C/C++ like icon for exe files.
+        # Load tool to process *.rc* files for C/C++ like icon for exe files.
         ctx.load('winres')
+        # We need to pass architecture switch to the 'windres' tool.
+        if architecture() == '32bit':
+            ctx.env.WINRCFLAGS = ['--target=pe-i386']
+        else:
+            ctx.env.WINRCFLAGS = ['--target=pe-x86-64']
 
 
     ### C compiler
@@ -381,22 +391,20 @@ def build(ctx):
 
     if is_win:
         # Use different RC file (icon) for console/windowed mode - remove '_d'
-        icon_rc = 'windows/' + exe_name.replace('_d') + '.rc'
+        icon_rc = 'windows/' + exe_name.replace('_d', '') + '.rc'
         # On Windows we need to link library zlib statically.
-        ctx.program(
-            features = 'cc cstaticlib',
-            source = ctx.path.ant_glob('zlib/*.c'),
-            target = 'staticlib_zlib',
-            includes = ['zlib'],
+        ctx.stlib(
+            source=ctx.path.ant_glob('zlib/*.c'),
+            target='static_zlib',
+            name='zlib',
+            includes='zlib',
         )
         ctx.program(
-            features = 'cc cprogram',
-            source = ctx.path.ant_glob('%s src/*.c' % icon_rc),
-            target = exe_name,
+            source=ctx.path.ant_glob('%s src/*.c' % icon_rc),
+            target=exe_name,
             install_path = install_path,
-            uselib_local = 'staticlib_zlib',
-            uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-            includes = ['src', 'windows', 'zlib'],
+            use='USER32 COMCTL32 KERNEL32 WS2_32 zlib',
+            includes='src windows zlib',
         )
     # Linux, Darwin (MacOSX), ...
     else:
@@ -404,12 +412,11 @@ def build(ctx):
         if ctx.options.boehmgc:
             libs.append('gc')
         ctx.program(
-            source = ctx.path.ant_glob('src/*.c'),
-            target = exe_name,
-            features = ['c', 'cprogram'],
-            includes = ['src'],
-            lib = libs,
-            install_path = install_path,
+            source=ctx.path.ant_glob('src/*.c'),
+            target=exe_name,
+            includes='src',
+            use=libs,
+            install_path=install_path,
         )
 
 
