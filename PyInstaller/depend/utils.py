@@ -59,6 +59,7 @@ def create_py3_base_library(libzip_filename):
             'encodings.cp850',
             'encodings.cp852',
             'encodings.cp437',
+            'encodings.cp1252',
             'io',
             'warnings',  # Required by run-time option like ('W ignore', None, 'OPTION')
         ),
