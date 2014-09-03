@@ -58,7 +58,7 @@ class CTOC(object):
             # self.data.append((dpos, dlen, ulen, flag, typcd, nm[:-1]))
             # version 5
             # nm may have up to 15 bytes of padding
-            pos = nm.find('\0')
+            pos = nm.find(b'\0')
             if pos < 0:
                 self.data.append((dpos, dlen, ulen, flag, typcd, nm))
             else:

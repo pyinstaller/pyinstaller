@@ -59,7 +59,7 @@ def main(opts, args):
 
     while 1:
         try:
-            toks = raw_input('? ').split(None, 1)
+            toks = input('? ').split(None, 1)
         except EOFError:
             # Ctrl-D
             print()  # Clear line.
@@ -82,7 +82,7 @@ def main(opts, args):
             show(nm, arch)
         elif cmd == 'O':
             if not arg:
-                arg = raw_input('open name? ')
+                arg = input('open name? ')
             arg = arg.strip()
             arch = get_archive(arg)
             if arch is None:
@@ -92,13 +92,13 @@ def main(opts, args):
             show(arg, arch)
         elif cmd == 'X':
             if not arg:
-                arg = raw_input('extract name? ')
+                arg = input('extract name? ')
             arg = arg.strip()
             data = get_data(arg, arch)
             if data is None:
                 print("Not found")
                 continue
-            fnm = raw_input('to filename? ')
+            fnm = input('to filename? ')
             if not fnm:
                 print(repr(data))
             else:
