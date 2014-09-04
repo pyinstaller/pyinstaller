@@ -23,8 +23,8 @@ from waflib import Logs
 
 
 # The following two variables are used by the target "waf dist"
-VERSION=''
-APPNAME=''
+VERSION = ''
+APPNAME = ''
 
 
 # These variables are mandatory ('/' are converted automatically)
@@ -71,7 +71,7 @@ def architecture():
     if is_darwin and sys.maxsize <= 3**32:
         return '32bit'
     else:
-        return platform.architecture()[0] # 32bit or 64bit
+        return platform.architecture()[0]  # 32bit or 64bit
 
 
 def machine():
@@ -145,8 +145,8 @@ def set_lsb_compiler(ctx):
         # Fail hard and print warning if lsbcc is not available.
         #if not ctx.env.LSBCC:
         ctx.fatal('RED', 'LSB (Linux Standard Base) tools >= 4.0 are '
-                    'required.\nTry --no-lsb option if not interested in '
-                    'building LSB binary.')
+                  'required.\nTry --no-lsb option if not interested in '
+                  'building LSB binary.')
 
     # lsbcc as CC compiler
     ctx.env.append_value('CFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
@@ -157,8 +157,8 @@ def set_lsb_compiler(ctx):
     # --lsb-besteffort - binary will work on platforms without LSB stuff
     # --lsb-besteffort - available in LSB build tools >= 4.0
     ctx.check_cc(ccflags='--lsb-besteffort',
-            msg='Checking for LSB build tools >= 4.0',
-            errmsg='LSB >= 4.0 is required', mandatory=True)
+                 msg='Checking for LSB build tools >= 4.0',
+                 errmsg='LSB >= 4.0 is required', mandatory=True)
     ctx.env.append_value('CFLAGS', '--lsb-besteffort')
     ctx.env.append_value('LINKFLAGS', '--lsb-besteffort')
     # binary compatibility with a specific LSB version
@@ -323,7 +323,7 @@ def configure(ctx):
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
     if is_linux and ctx.check_cc(ccflags='-Wl,--as-needed',
-            msg='Checking for flags -Wl,--as-needed'):
+                                 msg='Checking for flags -Wl,--as-needed'):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
 
@@ -406,7 +406,7 @@ def build(ctx):
         ctx.program(
             source=ctx.path.ant_glob('%s src/*.c' % icon_rc),
             target=exe_name,
-            install_path = install_path,
+            install_path=install_path,
             use='USER32 COMCTL32 KERNEL32 WS2_32 zlib',
             includes='src windows zlib',
             # Strip final executables to make them smaller.
@@ -439,7 +439,7 @@ def all(ctx):
     if is_win or is_darwin:
         Options.commands += ['build_debugw', 'build_releasew']
     # Install bootloaders.
-    Options.commands += ['install_debug','install_release']
+    Options.commands += ['install_debug', 'install_release']
     if is_win or is_darwin:
         Options.commands += ['install_debugw', 'install_releasew']
 
