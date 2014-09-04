@@ -296,6 +296,7 @@ def configure(ctx):
         ctx.check_cc(lib='ws2_32', mandatory=True)
     else:
         ctx.check_cc(lib='dl', mandatory=True)
+        ctx.check_cc(lib='m', mandatory=True)
         ctx.check_cc(lib='z', mandatory=True)
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
@@ -413,9 +414,9 @@ def build(ctx):
         )
     # Linux, Darwin (MacOSX), ...
     else:
-        libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
+        libs = ['DL', 'M', 'Z']  # 'z' - zlib, 'm' - math,
         if ctx.options.boehmgc:
-            libs.append('gc')
+            libs.append('GC')
         ctx.program(
             source=ctx.path.ant_glob('src/*.c'),
             target=exe_name,
