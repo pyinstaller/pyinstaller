@@ -25,6 +25,7 @@ from modulegraph import find_modules, modulegraph
 
 from PyInstaller import compat
 from PyInstaller.compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC
+from PyInstaller.utils.hooks.hookutils import collect_submodules
 
 import PyInstaller.log as logging
 
@@ -48,20 +49,11 @@ def create_py3_base_library(libzip_filename):
     )
     find_modules.find_needed_modules(
         mf=graph,
-        # TODO Other operating systems might require additional modules for Py_Initialize()
-        includes=(
-            'encodings.latin_1',
-            'encodings.utf_8',
-            'encodings.ascii',
-            # TODO should we really include all encoding?
-            # Windows encodings.
-            'encodings.mbcs',
-            'encodings.cp850',
-            'encodings.cp852',
-            'encodings.cp437',
+        includes=[
             'io',
             'warnings',  # Required by run-time option like ('W ignore', None, 'OPTION')
-        ),
+        # Include all encodings.
+        ] + collect_submodules('encodings')
     )
 
     # TODO Replace this function with something better or something from standard Python library.
