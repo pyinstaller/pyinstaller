@@ -1144,9 +1144,6 @@ class EXE(Target):
         """
         Target.__init__(self)
 
-        # TODO could be 'append_pkg' removed? It seems not to be used anymore.
-        self.append_pkg = kwargs.get('append_pkg', True)
-
         # Available options for EXE in .spec files.
         self.exclude_binaries = kwargs.get('exclude_binaries', False)
         self.console = kwargs.get('console', True)
@@ -1157,6 +1154,9 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
+        # If ``append_pkg`` is false, the archive will not be appended
+        # to the exe, but copied beside it.
+        self.append_pkg = kwargs.get('append_pkg', True)
 
         if config['hasUPX']: 
            self.upx = kwargs.get('upx', False)

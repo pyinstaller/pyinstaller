@@ -251,6 +251,7 @@ SPEC_FILE = set([
     'basic/test_option_verbose',
     'basic/test_option_wignore',
     'basic/test_pkg_structures',
+    'basic/test_append_pkg',
     'basic/test_threading2',
     'import/test_app_with_plugins',
     'import/test_eggs2',
