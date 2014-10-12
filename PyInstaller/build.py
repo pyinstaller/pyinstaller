@@ -506,7 +506,168 @@ class Analysis(Target):
         self.hiddenimports = hiddenimports
         return False
 
-    # TODO Is this function in the 'python3' branch? Otherwise it is not used.
+
+    def assemble(self):
+        logger.info("running Analysis %s", os.path.basename(self.out))
+        # Reset seen variable to correctly discover dependencies
+        # if there are multiple Analysis in a single specfile.
+        bindepend.seen = {}
+
+        python = sys.executable
+        if not is_win:
+            while os.path.islink(python):
+                python = os.path.join(os.path.dirname(python), os.readlink(python))
+            depmanifest = None
+        else:
+            depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
+                                               processorArchitecture=winmanifest.processor_architecture(),
+                                               version=(1, 0, 0, 0))
+            depmanifest.filename = os.path.join(WORKPATH,
+                                                specnm + ".exe.manifest")
+
+        binaries = []  # binaries to bundle
+
+        # Always add Python's dependencies first
+        # This ensures that its assembly depencies under Windows get pulled in
+        # first, so that .pyd files analyzed later which may not have their own
+        # manifest and may depend on DLLs which are part of an assembly
+        # referenced by Python's manifest, don't cause 'lib not found' messages
+        binaries.extend(bindepend.Dependencies([('', python, '')],
+                                               manifest=depmanifest)[1:])
+
+        ###################################################
+        # Scan inputs and prepare:
+        dirs = {}  # input directories
+        pynms = []  # python filenames with no extension
+        for script in self.inputs:
+            if not os.path.exists(script):
+                raise SystemExit("Error: Analysis: script %s not found!" % script)
+            d, base = os.path.split(script)
+            if not d:
+                d = compat.getcwd()
+            d = absnormpath(d)
+            pynm, ext = os.path.splitext(base)
+            dirs[d] = 1
+            pynms.append(pynm)
+        ###################################################
+        # Initialize importTracker and analyze scripts
+        importTracker = PyInstaller.depend.imptracker.ImportTracker(
+                dirs.keys() + self.pathex, self.hookspath, self.excludes, workpath=WORKPATH)
+        PyInstaller.__pathex__ = self.pathex[:]
+        scripts = []  # will contain scripts to bundle
+        for i, script in enumerate(self.inputs):
+            logger.info("Analyzing %s", script)
+            importTracker.analyze_script(script)
+            scripts.append((pynms[i], script, 'PYSOURCE'))
+        PyInstaller.__pathex__ = []
+
+        # analyze the script's hidden imports
+        for modnm in self.hiddenimports:
+            if modnm in importTracker.modules:
+                logger.info("Hidden import %r has been found otherwise", modnm)
+                continue
+            logger.info("Analyzing hidden import %r", modnm)
+            importTracker.analyze_one(modnm)
+            if not modnm in importTracker.modules:
+                logger.error("Hidden import %r not found", modnm)
+
+        ###################################################
+        # Fills pure, binaries and rthookcs lists to TOC
+        pure = []     # pure python modules
+        zipfiles = []  # zipfiles to bundle - zipped Python .egg files.
+        datas = []    # datafiles to bundle
+        rthooks = []  # rthooks if needed
+
+        # Include custom rthooks (runtime hooks).
+        # The runtime hooks are order dependent. First hooks in the list
+        # are executed first.
+        # Custom hooks are added before Pyinstaller rthooks and thus they are
+        # executed first.
+        if self.custom_runtime_hooks:
+            logger.info("Including custom run-time hooks")
+            # Data structure in format:
+            # ('rt_hook_mod_name', '/rt/hook/file/name.py', 'PYSOURCE')
+            for hook_file in self.custom_runtime_hooks:
+                hook_file = os.path.abspath(hook_file)
+                items = (os.path.splitext(os.path.basename(hook_file))[0], hook_file, 'PYSOURCE')
+                rthooks.append(items)
+
+        # Find rthooks.
+        logger.info("Looking for run-time hooks")
+        for modnm, mod in importTracker.modules.items():
+            rthooks.extend(_findRTHook(modnm))
+
+        # Analyze rthooks. Runtime hooks has to be also analyzed.
+        # Otherwise some dependencies could be missing.
+        # Data structure in format:
+        # ('rt_hook_mod_name', '/rt/hook/file/name.py', 'PYSOURCE')
+        for hook_mod, hook_file, mod_type in rthooks:
+            logger.info("Analyzing rthook %s", hook_file)
+            importTracker.analyze_script(hook_file)
+
+        for modnm, mod in importTracker.modules.items():
+            # FIXME: why can we have a mod == None here?
+            if mod is None:
+                continue
+
+            datas.extend(mod.pyinstaller_datas)
+
+            if isinstance(mod, PyInstaller.depend.modules.BuiltinModule):
+                pass
+            elif isinstance(mod, PyInstaller.depend.modules.ExtensionModule):
+                binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
+                # allows hooks to specify additional dependency
+                # on other shared libraries loaded at runtime (by dlopen)
+                binaries.extend(mod.pyinstaller_binaries)
+            elif isinstance(mod, (PyInstaller.depend.modules.PkgInZipModule, PyInstaller.depend.modules.PyInZipModule)):
+                zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
+                                 str(mod.owner), 'ZIPFILE'))
+            elif isinstance(mod, PyInstaller.depend.modules.NamespaceModule):
+                pure.append((modnm,
+                             os.path.join(_fake_code_path, 'namespace', '__init__.pyc'),
+                             'PYMODULE'))
+            else:
+                # mf.PyModule instances expose a list of binary
+                # dependencies, most probably shared libraries accessed
+                # via ctypes. Add them to the overall required binaries.
+                binaries.extend(mod.pyinstaller_binaries)
+                if modnm != '__main__':
+                    pure.append((modnm, mod.__file__, 'PYMODULE'))
+
+        # Add remaining binary dependencies
+        binaries.extend(bindepend.Dependencies(binaries,
+                                               manifest=depmanifest))
+        if is_win:
+            depmanifest.writeprettyxml()
+        self._check_python_library(binaries)
+        if zipfiles:
+            scripts.insert(-1, ('_pyi_egg_install.py', os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
+        # Add runtime hooks just before the last script (which is
+        # the entrypoint of the application).
+        scripts[-1:-1] = rthooks
+        self.scripts = TOC(scripts)
+        self.pure = TOC(pure)
+        self.binaries = TOC(binaries)
+        self.zipfiles = TOC(zipfiles)
+        self.datas = TOC(datas)
+        try:  # read .toc
+            oldstuff = _load_data(self.out)
+        except:
+            oldstuff = None
+
+        self.pure = TOC(compile_pycos(self.pure))
+
+        newstuff = tuple([getattr(self, g[0]) for g in self.GUTS])
+        if oldstuff != newstuff:
+            _save_data(self.out, newstuff)
+            wf = open(WARNFILE, 'w')
+            for ln in importTracker.getwarnings():
+                wf.write(ln + '\n')
+            wf.close()
+            logger.info("Warnings written to %s", WARNFILE)
+            return 1
+        logger.info("%s no change!", self.out)
+        return 0
     def _check_python_library(self, binaries):
         """
         Verify presence of the Python dynamic library in the binary dependencies.
