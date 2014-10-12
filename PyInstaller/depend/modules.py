@@ -88,10 +88,6 @@ class PyModule(Module):
 
     def scancode(self):
         self.pyinstaller_imports, self.pyinstaller_warnings, self.pyinstaller_binaries, allnms = scan_code(self.co)
-        # TODO There has to be some bugs in the 'scan_code()' functions because
-        #      some imports are present twice in the self.pyinstaller_imports list.
-        #      This could be fixed when scan_code will be replaced by package
-        #      modulegraph.
         self.pyinstaller_imports = self._remove_duplicate_entries(self.pyinstaller_imports)
 
         if allnms:
