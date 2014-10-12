@@ -33,6 +33,7 @@ def degree_dist(graph, limits=(0,0), bin_num=10, mode='out'):
 
     return results
 
+_EPS = 1.0/(2.0**32)
 def _binning(values, limits=(0,0), bin_num=10):
     '''
     Bins data that falls between certain limits, if the limits are (0, 0) the
@@ -42,8 +43,7 @@ def _binning(values, limits=(0,0), bin_num=10):
     and the second element of the tuple are the counts.
     '''
     if limits == (0, 0):
-        eps = 1.0/sys.maxint
-        min_val, max_val = min(values) - eps, max(values) + eps
+        min_val, max_val = min(values) - _EPS, max(values) + _EPS
     else:
         min_val, max_val = limits
 

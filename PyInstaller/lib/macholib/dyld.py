@@ -107,6 +107,13 @@ def dyld_executable_path_search(name, executable_path=None):
     if name.startswith('@executable_path/') and executable_path is not None:
         yield os.path.join(executable_path, name[len('@executable_path/'):])
 
+def dyld_loader_search(name, loader_path=None):
+    # If we haven't done any searching and found a library and the
+    # dylib_name starts with "@loader_path/" then construct the
+    # library name.
+    if name.startswith('@loader_path/') and loader_path is not None:
+        yield os.path.join(loader_path, name[len('@loader_path/'):])
+
 def dyld_default_search(name, env=None):
     yield name
 
@@ -132,7 +139,7 @@ def dyld_default_search(name, env=None):
         for path in _DEFAULT_LIBRARY_FALLBACK:
             yield os.path.join(path, os.path.basename(name))
 
-def dyld_find(name, executable_path=None, env=None):
+def dyld_find(name, executable_path=None, env=None, loader_path=None):
     """
     Find a library or framework using dyld semantics
     """
@@ -141,6 +148,7 @@ def dyld_find(name, executable_path=None, env=None):
     for path in dyld_image_suffix_search(chain(
                 dyld_override_search(name, env),
                 dyld_executable_path_search(name, executable_path),
+                dyld_loader_search(name, loader_path),
                 dyld_default_search(name, env),
             ), env):
         if os.path.isfile(path):

@@ -2,7 +2,7 @@
 altgraph.Graph - Base Graph class
 =================================
 
-.. 
+..
   #--Version 2.1
   #--Bob Ippolito October, 2004
 
@@ -175,7 +175,7 @@ class Graph(object):
         """
         Restores all hidden edges.
         """
-        for edge in self.hidden_edges.keys():
+        for edge in list(self.hidden_edges.keys()):
             try:
                 self.restore_edge(edge)
             except GraphError:
@@ -185,7 +185,7 @@ class Graph(object):
         """
         Restores all hidden nodes.
         """
-        for node in self.hidden_nodes.keys():
+        for node in list(self.hidden_nodes.keys()):
             self.restore_node(node)
 
     def __contains__(self, node):
@@ -237,13 +237,13 @@ class Graph(object):
         """
         Return a list of the node ids for all visible nodes in the graph.
         """
-        return self.nodes.keys()
+        return list(self.nodes.keys())
 
     def edge_list(self):
         """
         Returns an iterator for all visible nodes in the graph.
         """
-        return self.edges.keys()
+        return list(self.edges.keys())
 
     def number_of_hidden_edges(self):
         """
@@ -261,13 +261,13 @@ class Graph(object):
         """
         Returns the list with the hidden nodes
         """
-        return self.hidden_nodes.keys()
+        return list(self.hidden_nodes.keys())
 
     def hidden_edge_list(self):
         """
         Returns a list with the hidden edges
         """
-        return self.hidden_edges.keys()
+        return list(self.hidden_edges.keys())
 
     def describe_node(self, node):
         """
@@ -295,6 +295,12 @@ class Graph(object):
         """
         return self.edges[edge][2]
 
+    def update_edge_data(self, edge, edge_data):
+        """
+        Replace the edge data for a specific edge
+        """
+        self.edges[edge] = self.edges[edge][0:2] + (edge_data,)
+
     def head(self, edge):
         """
         Returns the node of the head of the edge.
@@ -311,16 +317,14 @@ class Graph(object):
         """
         List of nodes connected by outgoing edges
         """
-        l = map(self.tail, self.out_edges(node))
-        #l.sort()
+        l = [self.tail(n) for n in self.out_edges(node)]
         return l
 
     def inc_nbrs(self, node):
         """
         List of nodes connected by incoming edges
         """
-        l = map(self.head, self.inc_edges(node))
-        #l.sort()
+        l = [self.head(n) for n in self.inc_edges(node)]
         return l
 
     def all_nbrs(self, node):
@@ -510,7 +514,7 @@ class Graph(object):
     def iterdata(self, start, end=None, forward=True, condition=None):
         """
         Perform a depth-first walk of the graph (as ``iterdfs``)
-        and yield the item data of every node where condition matches. The 
+        and yield the item data of every node where condition matches. The
         condition callback is only called when node_data is not None.
         """
 
@@ -660,7 +664,7 @@ class Graph(object):
 
         Typical usage::
 
-            >>> print graph.get_hops(1, 8)
+            >>> print (graph.get_hops(1, 8))
             >>> [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3), (7, 4), (8, 5)]
             # node 1 is at 0 hops
             # node 2 is at 1 hop
