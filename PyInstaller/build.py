@@ -1256,6 +1256,14 @@ class EXE(Target):
             logger.info("Copying archive to %s", self.pkgname)
             shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
+
+        if is_darwin:
+            # Fix Mach-O header for codesigning on OS X.
+            logger.info("Fixing EXE for code signing %s", self.name)
+            from PyInstaller.utils import osxutils
+            osxutils.fix_exe_for_code_signing(self.name)
+            pass
+
         os.chmod(self.name, 0755)
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
