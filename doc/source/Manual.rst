@@ -1522,7 +1522,7 @@ Bootloader
 ----------
 
 The bootloader prepares everything for running Python code.
-It begins the setup and then reruns itself in another process.
+It begins the setup and then returns itself in another process.
 This approach of using two processes allows a lot of flexibility
 and is used in all bundles except one-folder mode in Windows.
 So do not be surprised if you will see your bundled app
