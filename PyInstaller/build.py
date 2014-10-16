@@ -1486,6 +1486,13 @@ class BUNDLE(Target):
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,
                            "CFBundleName": self.appname,
+                           # Required by 'codesign' utility.
+                           # It identifies the APP for access to restricted OS X
+                           # areas like Keychain.
+                           # Usually in the form:
+                           #   com.mycompany.department.appname
+                           # TODO add cli option --osx-app-identifier to set this value.
+                           "CFBundleIdentifier": self.appname,
                            # Fix for #156 - 'MacOS' must be in the name - not sure why
                            "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
                            "CFBundleIconFile": os.path.basename(self.icon),
