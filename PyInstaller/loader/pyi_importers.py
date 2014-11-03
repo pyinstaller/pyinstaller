@@ -165,7 +165,7 @@ class FrozenImporter(object):
         Return a loader object if the module was found, or None if it wasn't. If find_module() raises
         an exception, it will be propagated to the caller, aborting the import.
         """
-        # Acquire the interpreter's import lock for the current thread. Tis
+        # Acquire the interpreter's import lock for the current thread. This
         # lock should be used by import hooks to ensure thread-safety when
         # importing modules.
         imp.acquire_lock()
