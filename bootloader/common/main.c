@@ -90,8 +90,11 @@ int main(int argc, char* argv[])
 
     VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
-    if (pyi_arch_setup(archive_status, homepath, &executable[strlen(homepath)])) {
-        if (pyi_arch_setup(archive_status, homepath, &archivefile[strlen(homepath)])) {
+    char archiveName[PATH_MAX] = "";
+    strncpy(archiveName, strrchr(executable, PYI_SEP), sizeof(archiveName)); // e.g. "/myexe"
+    if (pyi_arch_setup(archive_status, homepath, archiveName)) {
+        strncpy(archiveName, strrchr(archivefile, PYI_SEP), sizeof(archiveName)); // e.g. "/myexe.pkg"
+        if (pyi_arch_setup(archive_status, homepath, archiveName)) {
             FATALERROR("Cannot open self %s or archive %s\n",
                     executable, archivefile);
             return -1;

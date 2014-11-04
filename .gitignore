@@ -77,3 +77,7 @@
 # /support/loader/
 /support/loader/run
 /support/loader/run_d
+
+/bootloader/build
+/bootloader/.waf*
+/bootloader/.lock-wscript*
