@@ -1556,7 +1556,7 @@ class BUNDLE(Target):
         include_dest = os.path.join(self.name, 'Contents', 'Resources', 'include')
         if os.path.exists(include_dir):
             shutil.move(include_dir, include_dest)
-            os.symlink(lib_dest, lib_dir)
+            os.symlink(include_dest, include_dir)
 
         return 1
 
