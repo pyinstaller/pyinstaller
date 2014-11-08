@@ -1427,6 +1427,12 @@ class BUNDLE(Target):
         self.strip = False
         self.upx = False
 
+        # .app bundle identifier for Code Signing
+        self.bundle_identifier = kws.get('bundle_identifier')
+        if not self.bundle_identifier:
+            # Fallback to appname.
+            self.bundle_identifier = self.appname
+
         self.info_plist = kws.get('info_plist', None)
 
         for arg in args:
@@ -1486,13 +1492,22 @@ class BUNDLE(Target):
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,
                            "CFBundleName": self.appname,
+
                            # Required by 'codesign' utility.
-                           # It identifies the APP for access to restricted OS X
-                           # areas like Keychain.
-                           # Usually in the form:
+                           # The value for CFBundleIdentifier is used as the default unique
+                           # name of your program for Code Signing purposes.
+                           # It even identifies the APP for access to restricted OS X areas
+                           # like Keychain.
+                           #
+                           # The identifier used for signing must be globally unique. The usal
+                           # form for this identifier is a hierarchical name in reverse DNS
+                           # notation, starting with the toplevel domain, followed by the
+                           # company name, followed by the department within the company, and
+                           # ending with the product name. Usually in the form:
                            #   com.mycompany.department.appname
-                           # TODO add cli option --osx-app-identifier to set this value.
-                           "CFBundleIdentifier": self.appname,
+                           # Cli option --osx-bundle-identifier sets this value.
+                           "CFBundleIdentifier": self.bundle_identifier,
+
                            # Fix for #156 - 'MacOS' must be in the name - not sure why
                            "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
                            "CFBundleIconFile": os.path.basename(self.icon),

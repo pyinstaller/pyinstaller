@@ -120,12 +120,14 @@ block_cipher = pyi_crypto.PyiBlockCipher(key=%(key)r)
 
 bundleexetmplt = """app = BUNDLE(exe,
              name='%(exename)s.app',
-             icon=%(icon)s)
+             icon=%(icon)s,
+             bundle_identifier=%(bundle_identifier)s)
 """
 
 bundletmplt = """app = BUNDLE(coll,
              name='%(name)s.app',
-             icon=%(icon)s)
+             icon=%(icon)s,
+             bundle_identifier=%(bundle_identifier)s)
 """
 
 
@@ -262,12 +264,19 @@ def __add_options(parser):
                       "are omitted or specified as wildcard *."
                       "This option can be used multiple times.")
 
+    g = parser.add_option_group('Mac OS X specific options')
+    g.add_option('--osx-bundle-identifier', dest='bundle_identifier',
+                 help='Mac OS X .app bundle identifier is used as the default unique program '
+                      'name for code signing purposes. The usual form is a hierarchical name '
+                      'in reverse DNS notation. For example: com.mycompany.department.appname '
+                      "(default: first script's basename)")
+
 
 def main(scripts, name=None, onefile=False,
          console=True, debug=False, strip=False, noupx=False, comserver=False,
          pathex=[], version_file=None, specpath=DEFAULT_SPECPATH,
-         icon_file=None, manifest=None, resources=[],
-         hiddenimports=None, hookspath=None, key=None, runtime_hooks=[], **kwargs):
+         icon_file=None, manifest=None, resources=[], bundle_identifier=None,
+         hiddenimports=None, hookspath=None, key=None, runtime_hooks=[],**kwargs):
 
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
@@ -306,6 +315,10 @@ def main(scripts, name=None, onefile=False,
         # On OSX default icon has to be copied into the .app bundle.
         # The the text value 'None' means - use default icon.
         icon_file = 'None'
+
+    if bundle_identifier:
+        # We need to encapsulate it into apostrofes.
+        bundle_identifier = "'%s'" % bundle_identifier
 
     if manifest:
         if "<" in manifest:
@@ -362,6 +375,8 @@ def main(scripts, name=None, onefile=False,
         'console': console,
         # Icon filename. Only OSX uses this item.
         'icon': icon_file,
+        # .app bundle identifier. Only OSX uses this item.
+        'bundle_identifier': bundle_identifier,
     }
 
     if is_win or is_cygwin:

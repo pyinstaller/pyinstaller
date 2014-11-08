@@ -674,6 +674,13 @@ Options for Mac OS X apps
     the output *name*.app that is created when both ``--onefile``
     and ``--windowed`` are specified.
 
+--osx-bundle-identifier=<BUNDLE_IDENTIFIER>
+    Mac OS X .app bundle identifier is used as the default
+    unique program name for code signing purposes. The
+    usual form is a hierarchical name in reverse DNS
+    notation. For example: com.mycompany.department.appname
+    (default: first script's basename)
+
 
 Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
