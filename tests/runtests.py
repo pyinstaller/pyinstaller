@@ -123,7 +123,7 @@ class SkipChecker(object):
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_onefile_win32com': ['win32com'],
             'basic/test_pkg_structures': ['pkg_resources'],
-            'basic/test__win32com': ['win32com'],
+            'basic/test_win32com': ['win32com'],
 
             'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
