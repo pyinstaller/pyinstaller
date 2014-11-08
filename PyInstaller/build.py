@@ -1553,25 +1553,32 @@ class BUNDLE(Target):
                 os.makedirs(todir)
             shutil.copy2(fnm, tofnm)
 
+        logger.info('moving BUNDLE data files to Resource directory')
+
         ## For some hooks move resource to ./Contents/Resources dir.
-        # PyQt4 hook: On Mac Qt requires resources 'qt_menu.nib'.
-        # It is moved from dist directory.
+        # PyQt4/PyQt5 hooks: On Mac Qt requires resources 'qt_menu.nib'.
+        # It is moved from MacOS directory to Resources.
         qt_menu_dir = os.path.join(self.name, 'Contents', 'MacOS', 'qt_menu.nib')
         qt_menu_dest = os.path.join(self.name, 'Contents', 'Resources', 'qt_menu.nib')
         if os.path.exists(qt_menu_dir):
             shutil.move(qt_menu_dir, qt_menu_dest)
 
-        lib_dir = os.path.join(self.name, 'Contents', 'MacOS', 'lib')
-        lib_dest = os.path.join(self.name, 'Contents', 'Resources', 'lib')
-        if os.path.exists(lib_dir):
-            shutil.move(lib_dir, lib_dest)
-            os.symlink(lib_dest, lib_dir)
-
-        include_dir = os.path.join(self.name, 'Contents', 'MacOS', 'include')
-        include_dest = os.path.join(self.name, 'Contents', 'Resources', 'include')
-        if os.path.exists(include_dir):
-            shutil.move(include_dir, include_dest)
-            os.symlink(include_dest, include_dir)
+        # Mac OS X Code Signing does not work when .app bundle contains
+        # data files in dir ./Contents/MacOS.
+        #
+        # Move all directories from ./MacOS/ to ./Resources and create symlinks
+        # in ./MacOS.
+        bin_dir =os.path.join(self.name, 'Contents', 'MacOS')
+        res_dir =os.path.join(self.name, 'Contents', 'Resources')
+        # Qt plugin directories does not contain data files.
+        ignore_dirs = set(['qt4_plugins', 'qt5_plugins'])
+        dirs = os.listdir(bin_dir)
+        for d in dirs:
+            abs_d = os.path.join(bin_dir, d)
+            res_d = os.path.join(res_dir, d)
+            if os.path.isdir(abs_d) and d not in ignore_dirs:
+                shutil.move(abs_d, res_d)
+                os.symlink(res_d, abs_d)
 
         return 1
 
