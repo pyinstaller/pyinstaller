@@ -1553,13 +1553,25 @@ class BUNDLE(Target):
                 os.makedirs(todir)
             shutil.copy2(fnm, tofnm)
 
-        ## For some hooks copy resource to ./Contents/Resources dir.
+        ## For some hooks move resource to ./Contents/Resources dir.
         # PyQt4 hook: On Mac Qt requires resources 'qt_menu.nib'.
-        # It is copied from dist directory.
+        # It is moved from dist directory.
         qt_menu_dir = os.path.join(self.name, 'Contents', 'MacOS', 'qt_menu.nib')
         qt_menu_dest = os.path.join(self.name, 'Contents', 'Resources', 'qt_menu.nib')
         if os.path.exists(qt_menu_dir):
-            shutil.copytree(qt_menu_dir, qt_menu_dest)
+            shutil.move(qt_menu_dir, qt_menu_dest)
+
+        lib_dir = os.path.join(self.name, 'Contents', 'MacOS', 'lib')
+        lib_dest = os.path.join(self.name, 'Contents', 'Resources', 'lib')
+        if os.path.exists(lib_dir):
+            shutil.move(lib_dir, lib_dest)
+            os.symlink(lib_dest, lib_dir)
+
+        include_dir = os.path.join(self.name, 'Contents', 'MacOS', 'include')
+        include_dest = os.path.join(self.name, 'Contents', 'Resources', 'include')
+        if os.path.exists(include_dir):
+            shutil.move(include_dir, include_dest)
+            os.symlink(include_dest, include_dir)
 
         return 1
 
