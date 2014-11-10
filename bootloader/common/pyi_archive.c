@@ -223,6 +223,51 @@ static int findDigitalSignature(ARCHIVE_STATUS * const status)
 		return -1;
   VS("LOADER: %s contains a digital signature\n", status->archivename);
 	return offset;
+#elif defined(__APPLE__)
+    /* We inspect the Mach-O header to find a code signature
+       https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/MachORuntime/
+       1) Determine the length of the header
+       2) Read the Mach-O Header to determine how many commands there are
+       3) Read through the commands and look for a code signature section (command #29)
+       4) If we find a one, return where it starts */
+
+    uint32_t magic_value;
+    uint32_t header_size;
+
+    uint32_t load_size;
+    uint32_t cmd;
+    uint32_t cmd_size;
+    uint32_t offset = -1;
+
+    /* The first 4 bytes determine the header length */
+    fseek(status->fp, 0, SEEK_SET);
+    fread(&magic_value, sizeof(uint32_t), 1, status->fp);
+    if (magic_value == 0xfeedface || magic_value == 0xcefaedfe) {
+        /* 32-bit, so the header size is 28 bytes. */
+        header_size = 28;
+    } else {
+        /* 64-bit, so the header size is 32 bytes. */
+        header_size = 32;
+    }
+
+    /* Determine the total size of all load commands */
+    fseek(status->fp, 20, SEEK_SET);
+    fread(&load_size, sizeof(uint32_t), 1, status->fp);
+
+    fseek(status->fp, header_size, SEEK_SET);
+    while(ftell(status->fp) < (header_size + load_size)) {
+        fread(&cmd, sizeof(uint32_t), 1, status->fp);
+        fread(&cmd_size, sizeof(uint32_t), 1, status->fp);
+        if (cmd == 29) {
+            /* Code signatures are command 29.
+               Our archive ends right before the signature */
+            fread(&offset, sizeof(uint32_t), 1, status->fp);
+            VS("LOADER: %s contains a digital signature\n", status->archivename);
+            break;
+        }
+        fseek(status->fp, cmd_size - 8, SEEK_CUR);
+    }
+    return offset;
 #else
 	return -1;
 #endif
@@ -235,8 +280,12 @@ static int findDigitalSignature(ARCHIVE_STATUS * const status)
  */
 int pyi_arch_open(ARCHIVE_STATUS *status)
 {
-#ifdef WIN32
-	int i;
+#if defined(WIN32)
+    int i;
+    int alignment = 8;
+#elif defined(__APPLE__)
+    int i;
+    int alignment = 4096;
 #endif
 	int filelen;
     VS("LOADER: archivename is %s\n", status->archivename);
@@ -253,28 +302,27 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 
 	if (pyi_arch_check_cookie(status, filelen) < 0)
 	{
-		VS("LOADER: %s does not contain an embedded package\n", status->archivename);
-#ifndef WIN32
-    return -1;
-#else
+#if defined(WIN32) || defined(__APPLE__)
 		filelen = findDigitalSignature(status);
 		if (filelen < 1)
 			return -1;
-		/* The digital signature has been aligned to 8-bytes boundary.
+		/* The digital signature has been aligned to a boundary.
 		   We need to look for our cookie taking into account some
 		   padding. */
-		for (i = 0; i < 8; ++i)
+		for (i = 0; i < alignment; ++i)
 		{
 			if (pyi_arch_check_cookie(status, filelen) >= 0)
 				break;
 			--filelen;
 		}
-		if (i == 8)
+		if (i == alignment)
 		{
 			VS("LOADER: %s does not contain an embedded package, even skipping the signature\n", status->archivename);
 			return -1;
 		}
 		VS("LOADER: package found skipping digital signature in %s\n", status->archivename);
+#else
+        return -1;
 #endif
 	}
 

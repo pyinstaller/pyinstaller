@@ -101,8 +101,8 @@ def filter_stack(graph, head, filters):
     * removes: the list of nodes where the node
       data does not all *filters*
     * orphans: tuples of (last_good, node),
-      where node is not in removes, is directly 
-      reachable from a node in *removes* and 
+      where node is not in removes, is directly
+      reachable from a node in *removes* and
       *last_good* is the closest upstream node that is not
       in *removes*.
     """

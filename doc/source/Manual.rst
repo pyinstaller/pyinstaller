@@ -674,6 +674,13 @@ Options for Mac OS X apps
     the output *name*.app that is created when both ``--onefile``
     and ``--windowed`` are specified.
 
+--osx-bundle-identifier=<BUNDLE_IDENTIFIER>
+    Mac OS X .app bundle identifier is used as the default
+    unique program name for code signing purposes. The
+    usual form is a hierarchical name in reverse DNS
+    notation. For example: com.mycompany.department.appname
+    (default: first script's basename)
+
 
 Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1522,7 +1529,7 @@ Bootloader
 ----------
 
 The bootloader prepares everything for running Python code.
-It begins the setup and then reruns itself in another process.
+It begins the setup and then returns itself in another process.
 This approach of using two processes allows a lot of flexibility
 and is used in all bundles except one-folder mode in Windows.
 So do not be surprised if you will see your bundled app

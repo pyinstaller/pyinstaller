@@ -506,71 +506,6 @@ class Analysis(Target):
         self.hiddenimports = hiddenimports
         return False
 
-    # TODO implement same functionality as 'assemble()'
-    # TODO convert output from 'modulegraph' to PyInstaller format - self.modules.
-    # TODO handle hooks properly.
-    #def assemble(self):
-    def assemble_modulegraph(self):
-        """
-        New assemble function based on module 'modulegraph' for resolving
-        dependencies on Python modules.
-
-        PyInstaller is not able to handle some cases of resolving dependencies.
-        Rather try use a module for that than trying to fix current implementation.
-        """
-        from modulegraph.modulegraph import ModuleGraph
-        from modulegraph.find_modules import get_implies, find_needed_modules
-        from PyInstaller import hooks
-
-        # Python scripts for analysis.
-        scripts = [
-            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
-        ]
-
-        #tracker = PyInstaller.depend.imptracker.ImportTrackerModulegraph(
-                #dirs.keys() + self.pathex, self.hookspath, self.excludes)
-
-        # TODO implement the following to get python modules and extension lists:
-        #      process all hooks to get hidden imports and create mapping:
-        def collect_implies():
-            """
-            Collect all hiddenimports from hooks and from modulegraph.
-            """
-            # Dictionary like
-            #   {'mod_name': ['dependent_mod1', dependent_mod2', ...]}
-            implies = get_implies()
-            # TODO implement getting through hooks
-            # TODO use also hook_dir supplied by user
-            hook_dir = os.path.dirname(os.path.abspath(hooks.__file__))
-            files = glob.glob(hook_dir + os.sep + 'hook-*.py')
-            for f in files:
-                # Name of the module this hook is for.
-                mod_name = os.path.basename(f).lstrip('hook-').rstrip('.py')
-                hook_mod_name = 'PyInstaller.hooks.hook-%s' % mod_name
-                # Loaded and initialized hook module.
-                hook_mod = imp.load_source(hook_mod_name, f)
-                if hasattr(hook_mod, 'hiddenimports'):
-                    # Extend the list of implies.
-                    implies[mod_name] = hook_mod.hiddenimports
-            return implies
-
-        #        {'PyQt4.QtGui': ['PyQt4.QtCore', 'sip'], 'another_Mod' ['hidden_import1', 'hidden_import2'], ...}
-        #      supply this mapping as 'implies' keyword to
-        #        modulegraph.modulegraph.ModuleGraph()
-        #      do analysis of scripts - user scripts, pyi_archive, pyi_os_path, pyi_importers, pyi_carchive, _pyi_bootstrap
-        #      find necessary rthooks
-        #      do analysis of rthooks and add it to modulegraph object
-        #      analyze python modules for ctype imports - modulegraph does not do that
-
-        # TODO process other attribute from used pyinstaller hooks.
-        # TODO resolve DLL/so/dylib dependencies.
-        graph = ModuleGraph(
-            path=[_init_code_path] + sys.path,
-            implies=collect_implies(),
-            debug=0)
-        graph = find_needed_modules(graph, scripts=scripts)
-        graph.report()
-
 
     def assemble(self):
         logger.info("running Analysis %s", os.path.basename(self.out))
@@ -733,7 +668,6 @@ class Analysis(Target):
             return 1
         logger.info("%s no change!", self.out)
         return 0
-
     def _check_python_library(self, binaries):
         """
         Verify presence of the Python dynamic library in the binary dependencies.
@@ -1322,6 +1256,14 @@ class EXE(Target):
             logger.info("Copying archive to %s", self.pkgname)
             shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
+
+        if is_darwin:
+            # Fix Mach-O header for codesigning on OS X.
+            logger.info("Fixing EXE for code signing %s", self.name)
+            from PyInstaller.utils import osxutils
+            osxutils.fix_exe_for_code_signing(self.name)
+            pass
+
         os.chmod(self.name, 0755)
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
@@ -1485,6 +1427,12 @@ class BUNDLE(Target):
         self.strip = False
         self.upx = False
 
+        # .app bundle identifier for Code Signing
+        self.bundle_identifier = kws.get('bundle_identifier')
+        if not self.bundle_identifier:
+            # Fallback to appname.
+            self.bundle_identifier = self.appname
+
         self.info_plist = kws.get('info_plist', None)
 
         for arg in args:
@@ -1544,6 +1492,22 @@ class BUNDLE(Target):
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,
                            "CFBundleName": self.appname,
+
+                           # Required by 'codesign' utility.
+                           # The value for CFBundleIdentifier is used as the default unique
+                           # name of your program for Code Signing purposes.
+                           # It even identifies the APP for access to restricted OS X areas
+                           # like Keychain.
+                           #
+                           # The identifier used for signing must be globally unique. The usal
+                           # form for this identifier is a hierarchical name in reverse DNS
+                           # notation, starting with the toplevel domain, followed by the
+                           # company name, followed by the department within the company, and
+                           # ending with the product name. Usually in the form:
+                           #   com.mycompany.department.appname
+                           # Cli option --osx-bundle-identifier sets this value.
+                           "CFBundleIdentifier": self.bundle_identifier,
+
                            # Fix for #156 - 'MacOS' must be in the name - not sure why
                            "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
                            "CFBundleIconFile": os.path.basename(self.icon),
@@ -1589,13 +1553,32 @@ class BUNDLE(Target):
                 os.makedirs(todir)
             shutil.copy2(fnm, tofnm)
 
-        ## For some hooks copy resource to ./Contents/Resources dir.
-        # PyQt4 hook: On Mac Qt requires resources 'qt_menu.nib'.
-        # It is copied from dist directory.
+        logger.info('moving BUNDLE data files to Resource directory')
+
+        ## For some hooks move resource to ./Contents/Resources dir.
+        # PyQt4/PyQt5 hooks: On Mac Qt requires resources 'qt_menu.nib'.
+        # It is moved from MacOS directory to Resources.
         qt_menu_dir = os.path.join(self.name, 'Contents', 'MacOS', 'qt_menu.nib')
         qt_menu_dest = os.path.join(self.name, 'Contents', 'Resources', 'qt_menu.nib')
         if os.path.exists(qt_menu_dir):
-            shutil.copytree(qt_menu_dir, qt_menu_dest)
+            shutil.move(qt_menu_dir, qt_menu_dest)
+
+        # Mac OS X Code Signing does not work when .app bundle contains
+        # data files in dir ./Contents/MacOS.
+        #
+        # Move all directories from ./MacOS/ to ./Resources and create symlinks
+        # in ./MacOS.
+        bin_dir =os.path.join(self.name, 'Contents', 'MacOS')
+        res_dir =os.path.join(self.name, 'Contents', 'Resources')
+        # Qt plugin directories does not contain data files.
+        ignore_dirs = set(['qt4_plugins', 'qt5_plugins'])
+        dirs = os.listdir(bin_dir)
+        for d in dirs:
+            abs_d = os.path.join(bin_dir, d)
+            res_d = os.path.join(res_dir, d)
+            if os.path.isdir(abs_d) and d not in ignore_dirs:
+                shutil.move(abs_d, res_d)
+                os.symlink(res_d, abs_d)
 
         return 1
 

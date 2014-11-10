@@ -71,7 +71,6 @@ _unix_excludes = {
     r'/libpthread\.so\..*': 1,
     r'/librt\.so\..*': 1,
     r'/libthread_db\.so\..*': 1,
-    r'/libdb-.*\.so': 1,
     # glibc regex excludes.
     r'/ld-linux\.so\..*': 1,
     r'/libBrokenLocale\.so\..*': 1,

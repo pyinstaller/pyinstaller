@@ -123,7 +123,7 @@ class SkipChecker(object):
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_onefile_win32com': ['win32com'],
             'basic/test_pkg_structures': ['pkg_resources'],
-            'basic/test__win32com': ['win32com'],
+            'basic/test_win32com': ['win32com'],
 
             'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
@@ -133,6 +133,7 @@ class SkipChecker(object):
             'libraries/test_numpy': ['numpy'],
             'libraries/test_onefile_matplotlib': ['matplotlib'],
             'libraries/test_onefile_tkinter': ['Tkinter'],
+            'libraries/test_onefile_numpy': ['numpy'],
             'libraries/test_PIL': ['PIL'],
             'libraries/test_PIL2': ['PIL'],
             'libraries/test_pycparser': ['pycparser'],
@@ -156,6 +157,7 @@ class SkipChecker(object):
             'libraries/test_wx_pubsub_arg1': ['wx'],
             'libraries/test_wx_pubsub_kwargs': ['wx'],
             'libraries/test_sphinx': ['sphinx', 'docutils', 'jinja2', 'uuid'],
+            'libraries/test_zmq': ['zmq'],
             'libraries/test_zope_interface': ['zope.interface'],
 
             'import/test_c_extension': ['simplejson'],

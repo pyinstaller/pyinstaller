@@ -34,57 +34,6 @@ UNTRIED = -1
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
 
 
-# TODO Probably just use modulegraph directly in 'assemble()' in build.py
-#      without ImportTracker or with a different api.
-class ImportTrackerModulegraph:
-    """
-    New import tracker based on module 'modulegraph' for resolving
-    dependencies on Python modules.
-
-    PyInstaller is not able to handle some cases of resolving dependencies.
-    Rather try use a module for that than trying to fix current implementation.
-
-    Public api:
-
-        self.analyze_scripts()
-        self.getwarnings()
-    """
-    def __init__(self, xpath=None, hookspath=None, excludes=None):
-        self.warnings = {}
-        if xpath:
-            self.path = xpath
-        self.path.extend(sys.path)
-        self.modules = dict()
-
-        if hookspath:
-            hooks.__path__ = hookspath + hooks.__path__
-        if excludes is None:
-            self.excludes = set()
-        else:
-            self.excludes = set(excludes)
-
-    def analyze_script(self, filenames):
-        """
-        Analyze given scripts and get dependencies on other Python modules.
-
-        return two lists - python modules and python extensions
-        """
-        from modulegraph.find_modules import find_modules, parse_mf_results
-
-        mf = find_modules(filenames, excludes=self.excludes)
-        py_files, extensions = parse_mf_results(mf)
-
-        return py_files, extensions
-
-    def getwarnings(self):
-        warnings = self.warnings.keys()
-        for nm, mod in self.modules.items():
-            if mod:
-                for w in mod.pyinstaller_warnings:
-                    warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
-        return warnings
-
-
 class ImportTracker:
     # really the equivalent of builtin import
     def __init__(self, xpath=None, hookspath=None, excludes=None, workpath=None):

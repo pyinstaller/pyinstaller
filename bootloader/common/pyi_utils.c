@@ -27,7 +27,7 @@
     #include <limits.h>  // PATH_MAX
     #include <signal.h>  // kill,
     #include <sys/wait.h>
-    #include <unistd.h>  // rmdir, unlink
+    #include <unistd.h>  // rmdir, unlink, mkdtemp
 #endif
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>  // FILE

@@ -22,6 +22,9 @@
 # Temporary rope files
 .ropeproject
 
+# PyCharm settings
+.idea
+
 # /tests/
 /tests/build*
 /tests/dist*
@@ -62,18 +65,8 @@
 /doc/*.1
 /doc/source/_definitions.txt
 
-# /source/
-/source/.lock-wscript
-/source/build
-/source/waf-*
-/source/.waf-*
-
-# /source/crypto/
-/source/crypto/build
-
-# /source/linux/
-/source/linux/Makefile
-
-# /support/loader/
-/support/loader/run
-/support/loader/run_d
+# Bootloader source
+/bootloader/.lock-wscript
+/bootloader/build
+/bootloader/waf-*
+/bootloader/.waf-*
