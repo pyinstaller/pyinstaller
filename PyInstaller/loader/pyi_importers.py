@@ -125,6 +125,7 @@ class FrozenImporter(object):
         """
         Load, unzip and initialize the Zip archive bundled with the executable.
         """
+        self._sys_prefix = sys.prefix
         # Examine all items in sys.path and the one like /path/executable_name?117568
         # is the correct executable with bundled zip archive. Use this value
         # for the ZlibArchive class and remove this item from sys.path.
@@ -217,7 +218,7 @@ class FrozenImporter(object):
                 # so that data files can be found. The absolute absolute path
                 # to the executable is taken from sys.prefix. In onefile mode it
                 # points to the temp directory where files are unpacked by PyInstaller.
-                abspath = sys.prefix
+                abspath = self._sys_prefix
                 # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
                 if is_pkg:
                     module.__file__ = pyi_os_path.os_path_join(pyi_os_path.os_path_join(abspath,
@@ -357,7 +358,7 @@ class FrozenImporter(object):
         if the named module was loaded. If the module is not found, then
         ImportError should be raised.
         """
-        abspath = sys.prefix
+        abspath = self._sys_prefix
         # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
         # Method is_package() will raise ImportError if module not found.
         if self.is_package(fullname):
@@ -381,7 +382,8 @@ class CExtensionImporter(object):
     def __init__(self):
         # TODO cache directory content for faster module lookup without file system access.
         # Create hashmap of directory content for better performance.
-        files = pyi_os_path.os_listdir(sys.prefix)
+        self._sys_prefix = sys.prefix
+        files = pyi_os_path.os_listdir(self._sys_prefix)
         self._file_cache = set(files)
 
         self._suffixes = dict()
@@ -415,7 +417,7 @@ class CExtensionImporter(object):
             module = sys.modules.get(fullname)
 
             if module is None:
-                filename = pyi_os_path.os_path_join(sys.prefix, fullname + self._suffix)
+                filename = pyi_os_path.os_path_join(self._sys_prefix, fullname + self._suffix)
                 fp = open(filename, 'rb')
                 module = imp.load_module(fullname, fp, filename, self._c_ext_tuple)
                 # Set __file__ attribute.
@@ -489,7 +491,7 @@ class CExtensionImporter(object):
         ImportError should be raised.
         """
         if fullname + self._suffix in self._file_cache:
-            return pyi_os_path.os_path_join(sys.prefix, fullname + self._suffix)
+            return pyi_os_path.os_path_join(self._sys_prefix, fullname + self._suffix)
         else:
             # ImportError should be raised if module not found.
             raise ImportError('No module named ' + fullname)
