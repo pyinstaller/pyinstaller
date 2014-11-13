@@ -56,8 +56,7 @@
         va_list args;
 
         va_start(args, fmt);
-        _vsnprintf_s(msg, MBTXTLEN, MBTXTLEN, fmt, args);
-        //vsnprintf(msg, MBTXTLEN, fmt, args);
+        vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
 
         MessageBox(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
@@ -69,8 +68,7 @@
         va_list args;
 
         va_start(args, fmt);
-        _vsnprintf_s(msg, MBTXTLEN, MBTXTLEN, fmt, args);
-        //vsnprintf(msg, MBTXTLEN, fmt, args);
+        vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
 
         MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
@@ -88,9 +86,8 @@
             va_list args;
 
             va_start(args, fmt);
-            _vsnprintf_s(msg, MBTXTLEN, MBTXTLEN, fmt, args);
-            //vsnprintf(msg, MBTXTLEN, fmt, args);
-            /* Ensure message is timmed to fit the buffer. */
+            vsnprintf(msg, MBTXTLEN, fmt, args);
+            /* Ensure message is trimmed to fit the buffer. */
             //msg[MBTXTLEN-1] = '\0';
             va_end(args);
 
