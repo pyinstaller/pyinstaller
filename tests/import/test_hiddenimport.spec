@@ -12,7 +12,7 @@
 __testname__ = 'test_hiddenimport'
 
 a = Analysis([__testname__ + '.py'],
-             hiddenimports=['anydbm'])
+             hiddenimports=['a_hidden_import'])
 
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
