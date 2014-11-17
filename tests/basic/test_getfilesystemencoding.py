@@ -21,11 +21,9 @@ if sys.platform.startswith('win'):
 # On Mac OS X the value should be still the same.
 elif sys.platform.startswith('darwin'):
     encoding = 'utf-8'
-# On Linux and other unixes it should be None.
-# Please note that on Linux the value differs from the value
-# in interactive shell.
+# On Linux and other unixes it should be mostly 'UTF-8'.
 else:
-    encoding = 'None'
+    encoding = 'UTF-8'
 
 
 print('Encoding expected: ' + encoding)

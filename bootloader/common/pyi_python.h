@@ -76,6 +76,7 @@ typedef struct _PyThreadState PyThreadState;
 EXTDECLVAR(int, Py_FrozenFlag);
 EXTDECLVAR(int, Py_NoSiteFlag);
 EXTDECLVAR(int, Py_OptimizeFlag);
+EXTDECLVAR(const char*, Py_FileSystemDefaultEncoding);
 EXTDECLVAR(int, Py_VerboseFlag);
 EXTDECLPROC(int, Py_Initialize, (void));
 EXTDECLPROC(int, Py_Finalize, (void));
@@ -114,7 +115,7 @@ EXTDECLPROC(long, PyInt_AsLong, (PyObject *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
 
-/* 
+/*
  * Macros for reference counting through exported functions
  * (that is: without binding to the binary structure of a PyObject.
  * These rely on the Py_IncRef/Py_DecRef API functions on Pyhton 2.4+.
