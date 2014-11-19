@@ -139,6 +139,7 @@ class SkipChecker(object):
             'libraries/test_pycparser': ['pycparser'],
             'libraries/test_pycrypto': ['Crypto'],
             'libraries/test_pyexcelerate': ['pyexcelerate'],
+            'libraries/test_pylint': ['pylint'],
             'libraries/test_pygments': ['pygments'],
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
