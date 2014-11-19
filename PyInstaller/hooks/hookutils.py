@@ -10,6 +10,7 @@
 
 import glob
 import os
+import os.path
 import sys
 import PyInstaller
 import PyInstaller.compat as compat
@@ -659,14 +660,14 @@ def get_package_paths(package):
     # Search for Python files in /abs/path/to/package/subpackage; pkg_dir
     # stores this path.
     pkg_dir = os.path.dirname(file_attr)
-    # When found, remove /abs/path/to/ from the filename; mod_base stores
+    # When found, remove /abs/path/to/ from the filename; pkg_base stores
     # this path to be removed.
     pkg_base = remove_suffix(pkg_dir, package.replace('.', os.sep))
 
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package):
+def collect_submodules(package, subdir=None):
     """
     The following two functions were originally written by Ryan Welsh
     (welchr AT umich.edu).
@@ -674,7 +675,10 @@ def collect_submodules(package):
     This produces a list of strings which specify all the modules in
     package.  Its results can be directly assigned to ``hiddenimports``
     in a hook script; see, for example, hook-sphinx.py. The
-    package parameter must be a string which names the package.
+    package parameter must be a string which names the package. The
+    optional subdir give a subdirectory relative to package to search,
+    which is helpful when submodules are imported at run-time from a
+    directory lacking __init__.py. See hook-astroid.py for an example.
 
     This function does not work on zipped Python eggs.
 
@@ -682,6 +686,8 @@ def collect_submodules(package):
     PyInstaller.
     """
     pkg_base, pkg_dir = get_package_paths(package)
+    if subdir:
+        pkg_dir = os.path.join(pkg_dir, subdir)
     # Walk through all file in the given package, looking for submodules.
     mods = set()
     for dirpath, dirnames, filenames in os.walk(pkg_dir):
@@ -709,7 +715,7 @@ def collect_submodules(package):
 
 
 
-def collect_data_files(package, allow_py_extensions=False):
+def collect_data_files(package, allow_py_extensions=False, subdir=None):
     """
     This routine produces a list of (source, dest) non-Python (i.e. data)
     files which reside in package. Its results can be directly assigned to
@@ -720,7 +726,7 @@ def collect_data_files(package, allow_py_extensions=False):
     argument to True collects these files as well. This is typically used
     with Python routines (such as those in pkgutil) that search a given
     directory for Python executable files then load them as extensions or
-    plugins.
+    plugins. See collect_submodules for a description of the subdir parameter.
 
     This function does not work on zipped Python eggs.
 
@@ -728,6 +734,8 @@ def collect_data_files(package, allow_py_extensions=False):
     PyInstaller.
     """
     pkg_base, pkg_dir = get_package_paths(package)
+    if subdir:
+        pkg_dir = os.path.join(pkg_dir, subdir)
     # Walk through all file in the given package, looking for data files.
     datas = []
     for dirpath, dirnames, files in os.walk(pkg_dir):
