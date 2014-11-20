@@ -80,6 +80,8 @@ What to bundle, where to search
 --hidden-import=MODULENAME
                     import hidden in the script(s). This option can be
                     used multiple times.
+--excludes=excludes
+                    list of modules or pakages that will be ignored.
 
 How to generate
 -------------------
