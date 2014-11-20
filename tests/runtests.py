@@ -255,6 +255,7 @@ SPEC_FILE = set([
     'basic/test_pkg_structures',
     'basic/test_append_pkg',
     'basic/test_threading2',
+    'basic/test_excluded_module'
     'import/test_app_with_plugins',
     'import/test_eggs2',
     'import/test_hiddenimport',
