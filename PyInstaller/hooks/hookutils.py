@@ -624,17 +624,8 @@ def get_module_file_attribute(package):
     """
     # Statement to return __file__ attribute of a package.
     __file__statement = """
-# Fun Python behavior: __import__('mod.submod') returns mod,
-# where as __import__('mod.submod', fromlist = [a non-empty list])
-# returns mod.submod. See the docs on `__import__
-# <http://docs.python.org/library/functions.html#__import__>`_.
-# Keyworded arguments in __import__ function are available
-# in Python 2.5+. Compatibility with Python 2.4 is preserved.
-_fromlist = ['']
-_globals = {}
-_locals = {}
-package = __import__('%s', _globals, _locals, _fromlist)
-print package.__file__
+import %s as p
+print p.__file__
 """
     return exec_statement(__file__statement % package)
 

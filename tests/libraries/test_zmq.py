@@ -9,4 +9,4 @@
 
 
 import zmq
-import zmq.utils.garbage
+import zmq.utils.strtypes
