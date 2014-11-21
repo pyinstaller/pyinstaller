@@ -28,8 +28,14 @@ def _setup_environ(settings_mod, original_settings_path=None):
     return d
 
 
-def _find_commands(_):
-    return """cleanup compilemessages createcachetable dbshell shell runfcgi runserver startproject""".split()
+def _find_commands(path):
+    (head, management_dir) = os.path.split(path)
+    if head.endswith(os.path.join('django', 'core')) :
+        return """compilemessages createcachetable dbshell shell runfcgi runserver""".split()
+    elif head.endswith(os.path.join('django', 'contrib', 'staticfiles')):
+        return """runserver"""           
+    else :
+        return []
 
 old_restart_with_reloader = django.utils.autoreload.restart_with_reloader
 
