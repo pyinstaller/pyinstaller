@@ -139,6 +139,7 @@ class SkipChecker(object):
             'libraries/test_pycparser': ['pycparser'],
             'libraries/test_pycrypto': ['Crypto'],
             'libraries/test_pyexcelerate': ['pyexcelerate'],
+            'libraries/test_pylint': ['pylint'],
             'libraries/test_pygments': ['pygments'],
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
@@ -351,6 +352,8 @@ class BuildTestRunner(object):
                 #line = proc.stdout.readline().strip()
                 line = proc.stdout.read(1)
                 self._plain_msg(line, newline=False)
+            # Print any stdout that wasn't read before the process terminated.
+            self._plain_msg(proc.stdout.read(), newline=False)
             # Print possible stderr at the end.
             self._msg('STDERR %s' % self.test_name)
             self._plain_msg(proc.stderr.read())
