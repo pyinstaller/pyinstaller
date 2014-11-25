@@ -104,13 +104,6 @@ class SkipChecker(object):
             'import/test_onefile_relative_import2': is_py26,
             'import/test_onefile_relative_import3': is_py25,
             'libraries/test_enchant': is_win,
-            # docutils, a sphinx dependency, fails in
-            # docutils.utils.__init__.py, function decode_path, where
-            # sys.getfilesystemencoding() returns None when frozen.
-            # Docutils doesn't expect this and throws an assertion.
-            # Untested on Mac, but this shouldn't be a problem, since
-            # Macs return 'utf-8'.
-            'libraries/test_sphinx': is_win or is_darwin,
             }
 
         # Required Python modules for some tests.
