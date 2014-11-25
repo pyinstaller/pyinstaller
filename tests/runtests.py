@@ -353,6 +353,8 @@ class BuildTestRunner(object):
                 line = proc.stdout.read(1)
                 self._plain_msg(line, newline=False)
             # Print any stdout that wasn't read before the process terminated.
+            # See the conversation in https://github.com/pyinstaller/pyinstaller/pull/1092
+            # for examples of why this is necessary.
             self._plain_msg(proc.stdout.read(), newline=False)
             # Print possible stderr at the end.
             self._msg('STDERR %s' % self.test_name)
