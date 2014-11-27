@@ -80,8 +80,11 @@ What to bundle, where to search
 --hidden-import=MODULENAME
                     import hidden in the script(s). This option can be
                     used multiple times.
---excludes=excludes
-                    list of modules or pakages that will be ignored.
+-e MODULENAME, --exclude=MODULENAME
+                    Optional module or package name (his Python name,
+                    not path names) that will be ignored (as though
+                    it was not found).
+                    This option can be used multiple times.
 
 How to generate
 -------------------
