@@ -18,7 +18,8 @@
 import os
 import sys
 
-d = os.path.abspath(os.path.join(sys._MEIPASS, "qml"))
+meipass_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+d = os.path.abspath(os.path.join(meipass_dir, "qml"))
 
 print d
 

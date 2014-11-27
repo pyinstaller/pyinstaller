@@ -15,11 +15,11 @@
 import os
 import sys
 
-d = "qt4_plugins"
-d = os.path.join(sys._MEIPASS, d)
+meipass_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+d = os.path.join(meipass_dir, "qt4_plugins")
 
 
-# We remove QT_PLUGIN_PATH variable, beasuse we want Qt4 to load
+# We remove QT_PLUGIN_PATH variable, because we want Qt4 to load
 # plugins only from one path.
 if 'QT_PLUGIN_PATH' in os.environ:
     # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then

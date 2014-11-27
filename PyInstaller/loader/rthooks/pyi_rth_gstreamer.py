@@ -18,4 +18,5 @@ os.environ['GST_REGISTRY_FORK'] = 'no'
 
 
 # Tested on OSX only.
-os.environ['GST_PLUGIN_PATH'] = os.path.join(sys._MEIPASS, 'gst_plugins')
+meipass_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+os.environ['GST_PLUGIN_PATH'] = os.path.join(meipass_dir, 'gst_plugins')

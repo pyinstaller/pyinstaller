@@ -31,8 +31,8 @@
 import os
 import sys
 
-d = "eggs"
-d = os.path.join(sys._MEIPASS, d)
+meipass_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+d = os.path.join(meipass_dir, "eggs")
 
 for fn in os.listdir(d):
     sys.path.append(os.path.join(d, fn))

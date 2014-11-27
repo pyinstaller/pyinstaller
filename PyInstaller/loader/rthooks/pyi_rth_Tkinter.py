@@ -12,7 +12,7 @@ import os
 import sys
 
 
-basedir = sys._MEIPASS
+basedir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
 
 
 tcldir = os.path.join(basedir, '_MEI', 'tcl')

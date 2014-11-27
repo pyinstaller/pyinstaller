@@ -15,8 +15,8 @@
 import os
 import sys
 
-d = "qt5_plugins"
-d = os.path.join(sys._MEIPASS, d)
+meipass_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+d = os.path.join(meipass_dir, "qt5_plugins")
 
 
 # We remove QT_PLUGIN_PATH variable, because we want Qt5 to load
