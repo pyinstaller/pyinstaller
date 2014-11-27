@@ -17,3 +17,12 @@ Directory Structure
   for Windows.
 * images
   PyInstaller icons for Windows bootloaders and the .app bundle on Mac OS X.
+
+Build instructions
+----------------------
+
+See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>.
+
+In short::
+
+  ./waf configure build install
