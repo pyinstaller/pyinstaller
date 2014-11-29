@@ -1143,7 +1143,7 @@ class EXE(Target):
                 that I wouldn't attempt to write one from scratch).
             uac_admin
                 Windows only. Setting to True creates a Manifest with will request
-                elevation upon applicatino restart
+                elevation upon application restart
             uac_uiaccess
                 Windows only. Setting to True allows an elevated application to
                 work with Remote Desktop
@@ -1163,8 +1163,8 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
-        self.uac_admin = kwargs.get('uac_admin', False)
-        self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
+        self.uac_admin = kwargs.get('uac_admin', config.get('ui_admin'))
+        self.uac_uiaccess = kwargs.get('uac_uiaccess', config.get('ui_access'))
 
         if config['hasUPX']: 
            self.upx = kwargs.get('upx', False)
@@ -1956,7 +1956,14 @@ def __add_options(parser):
     parser.add_option('--clean', dest='clean_build', action='store_true', default=False,
                  help='Clean PyInstaller cache and remove temporary files '
                       'before building.')
-
+    parser.add_option('--uac_admin',
+                      action="store_true", default=False,
+                      help='Windows only. Setting to True creates a Manifest '
+                      'with will request elevation upon application restart')
+    parser.add_option('--uac_uiaccess',
+                      action="store_true", default=False,
+                      help='Windows only. Setting to True allows an elevated application to '
+                      'work with Remote Desktop')
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # Set of global variables that can be used while processing .spec file.
@@ -1985,5 +1992,8 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
 
     if config['hasUPX']:
         setupUPXFlags()
+
+    config['ui_admin'] = kw.get('ui_admin', False)
+    config['ui_access'] = kw.get('ui_uiaccess', False)
 
     build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))
