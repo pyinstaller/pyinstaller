@@ -531,7 +531,7 @@ General Options
     Do *not* include Python module ``codecs`` and other Unicode support.
     The default is to include them if available, whether the script imports them or not.
 
---distpath=path_to_executable, -o path_to_executable
+--distpath=path_to_executable
 	Specify where to put the bundled app.
 	The default is a ``dist`` folder in
 	the same folder as the first script.
