@@ -17,7 +17,12 @@ Bootloader building script.
 import os
 import platform
 import sys
-import sysconfig
+
+# Workaround for Python 2.6. 'sysconfig' is not available in Python 2.6.
+try:
+    import sysconfig
+except ImportError:
+    import distutils.sysconfig as sysconfig
 
 import Utils
 import Options
