@@ -805,7 +805,12 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         cache_index = {}
 
     # Verify if the file we're looking for is present in the cache.
-    basenm = os.path.normcase(os.path.basename(fnm))
+    # Use the dist_mn if given to avoid different extension modules
+    # sharing the same basename get corrupted.
+    if dist_nm:
+        basenm = os.path.normcase(dist_nm)
+    else:
+        basenm = os.path.normcase(os.path.basename(fnm))
     digest = cacheDigest(fnm)
     cachedfile = os.path.join(cachedir, basenm)
     cmd = None
