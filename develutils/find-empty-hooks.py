@@ -15,6 +15,13 @@ names (eg. hiddenimports). So beside empty hooks, this will print
 hooks which import these name from a shared hook (like PIL.Image) or
 are calling functions in hookutils.
 
+Proposed usage::
+
+  develutils/find-empty-hooks.py | sort | xargs emacs
+  # then in emacs, remove all content in hook which are realy empty
+  # Now delete all hook-file less then 2 bytes in size:
+  find PyInstaller/hooks/ -size -2c -print -delete
+
 """
 
 from __future__ import print_function
