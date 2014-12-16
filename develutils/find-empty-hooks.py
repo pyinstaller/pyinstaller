@@ -42,4 +42,4 @@ for hookfilename in glob.glob(os.path.join(hookspath, 'hook-*.py')):
     co_names = set(mod.co_names)
     if co_names.isdisjoint(EXPECTED_NAMES):
         # none of the meaningful names in a hook is here
-        print(hookfilename)
+        print(os.path.relpath(hookfilename, os.getcwd()))
