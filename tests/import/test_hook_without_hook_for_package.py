@@ -7,5 +7,4 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
-# empty (just to need Python import machinery happy)
+import hook_without_hook_for_package.sub1
