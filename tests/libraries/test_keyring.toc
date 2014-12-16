@@ -1,0 +1,4 @@
+[
+  # check is we have any of the backend-modules
+  'keyring.backends.'
+]
