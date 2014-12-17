@@ -76,6 +76,11 @@ What to bundle, where to search
 --hidden-import=MODULENAME
                     Name an import not visible in the code of the
                     script(s). This option can be used multiple times.
+-e MODULENAME, --exclude=MODULENAME
+                    Optional module or package name (his Python name,
+                    not path names) that will be ignored (as though
+                    it was not found).
+                    This option can be used multiple times.
 --additional-hooks-dir=HOOKSPATH
                     An additional path to search for hooks. This option
                     can be used multiple times.

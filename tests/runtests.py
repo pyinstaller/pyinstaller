@@ -256,6 +256,7 @@ SPEC_FILE = set([
     'basic/test_pkg_structures',
     'basic/test_pyz_as_external_file',
     'basic/test_threading2',
+    'basic/test_excluded_module'
     'import/test_app_with_plugins',
     'import/test_eggs2',
     'import/test_hiddenimport',
