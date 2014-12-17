@@ -216,7 +216,7 @@ def __add_options(parser):
             'is executed before any other code or module '
             'to set up special features of the runtime environment. '
             'This option can be used multiple times.')
-    g.add_option('--exclude-module', dest='exclude', action='append',
+    g.add_option('--exclude-module', dest='excludes', action='append',
                  help='Optional module or package (his Python names,'
                  'not path names) that will be ignored (as though'
                  'it was not found).'
@@ -284,8 +284,8 @@ def main(scripts, name=None, onefile=False,
          console=True, debug=False, strip=False, noupx=False, comserver=False,
          pathex=[], version_file=None, specpath=DEFAULT_SPECPATH,
          icon_file=None, manifest=None, resources=[], bundle_identifier=None,
-         hiddenimports=None, hookspath=None, key=None, runtime_hooks=[], exclude=[],
-         **kwargs):
+         hiddenimports=None, hookspath=None, key=None, runtime_hooks=[],
+         excludes=[], **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -380,7 +380,7 @@ def main(scripts, name=None, onefile=False,
         # List with custom runtime hook files.
         'runtime_hooks': runtime_hooks,
         # List of modules/pakages to ignore.
-        'excludes': exclude,
+        'excludes': excludes,
         # only Windows and Mac OS X distinguish windowed and console apps
         'console': console,
         # Icon filename. Only OSX uses this item.
