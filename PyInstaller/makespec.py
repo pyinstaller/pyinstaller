@@ -216,7 +216,7 @@ def __add_options(parser):
             'is executed before any other code or module '
             'to set up special features of the runtime environment. '
             'This option can be used multiple times.')
-    g.add_option('-e', '--exclude', dest='exclude', action='append',
+    g.add_option('--exclude', dest='exclude', action='append',
                  help='Optional module or package (his Python names,'
                  'not path names) that will be ignored (as though'
                  'it was not found).'
