@@ -76,7 +76,7 @@ What to bundle, where to search
 --hidden-import=MODULENAME
                     Name an import not visible in the code of the
                     script(s). This option can be used multiple times.
---exclude=MODULENAME
+--exclude-module=MODULENAME
                     Optional module or package name (his Python name,
                     not path names) that will be ignored (as though
                     it was not found).

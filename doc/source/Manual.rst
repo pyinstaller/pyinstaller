@@ -589,7 +589,7 @@ Options for Finding Imported Modules and Libraries
     are discussed under `Changing Runtime Behavior`_ below.
     This option may be given more than once.
 
---exclude=modulename
+--exclude-module=MODULENAME
     Optional module or package name (his Python name,
     not path names) that will be ignored.
     This option can be used multiple times.
