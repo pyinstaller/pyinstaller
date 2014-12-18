@@ -16,25 +16,23 @@
 
 NAME = 'hook-scapy.layers.all'
 
+layer_inet = 'scapy.layers.inet'
+
+def testit():
+    try:
+        __import__(layer_inet)
+        raise SystemExit('Self-test of hook %s failed: package module found'
+                         % NAME)
+    except ImportError, e:
+        if not e.args[0].endswith(' inet'):
+            raise SystemExit('Self-test of hook %s failed: package module found'
+                            ' and has import errors: %r' % (NAME, e))
+
 import scapy
-try:
-    import scapy.layers.inet
-    raise Exception('Self-test of hook %s failed: package module found'
-                    % NAME)
-except ImportError, e:
-    if not e.args[0].endswith(' scapy.layers.inet'):
-        raise Exception('Self-test of hook %s failed: package module found '
-                        'and has import errors.' % NAME)
+testit()
 
 import scapy.layers
-try:
-    import scapy.layers.inet
-    raise Exception('Self-test of hook %s failed: package module found'
-                    % NAME)
-except ImportError, e:
-    if not e.args[0].endswith(' scapy.layers.inet'):
-        raise Exception('Self-test of hook %s failed: package module found '
-                        'and has import errors.' % NAME)
+testit()
 
 # Explicitly import a single layer module. Note: This module MUST NOT
 # import inet (neither directly nor indirectly), otherwise the test
