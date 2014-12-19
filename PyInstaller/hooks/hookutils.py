@@ -148,7 +148,7 @@ diff = set(all_modlist) - set(original_modlist)
 # Module list contain original modname. We do not need it there.
 diff.discard('%(modname)s')
 # Print module list to stdout.
-print list(diff)
+print(list(diff))
 """ % {'modname': modname}
     module_imports = eval_statement(statement)
 
@@ -163,7 +163,7 @@ def qt4_plugins_dir():
     qt4_plugin_dirs = eval_statement(
         "from PyQt4.QtCore import QCoreApplication;"
         "app=QCoreApplication([]);"
-        "print map(unicode,app.libraryPaths())")
+        "print(map(unicode,app.libraryPaths()))")
     if not qt4_plugin_dirs:
         logger.error("Cannot find PyQt4 plugin directories")
         return ""
@@ -180,7 +180,7 @@ def qt4_phonon_plugins_dir():
         "app=QApplication([]); app.setApplicationName('pyinstaller');"
         "from PyQt4.phonon import Phonon;"
         "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        "print map(unicode,app.libraryPaths())")
+        "print(map(unicode,app.libraryPaths()))")
     if not qt4_plugin_dirs:
         logger.error("Cannot find PyQt4 phonon plugin directories")
         return ""
@@ -278,7 +278,7 @@ def qt5_plugins_dir():
     qt5_plugin_dirs = eval_statement(
         "from PyQt5.QtCore import QCoreApplication;"
         "app=QCoreApplication([]);"
-        "print map(unicode,app.libraryPaths())")
+        "print(map(unicode,app.libraryPaths()))")
     if not qt5_plugin_dirs:
         logger.error("Cannot find PyQt5 plugin directories")
         return ""
@@ -295,7 +295,7 @@ def qt5_phonon_plugins_dir():
         "app=QApplication([]); app.setApplicationName('pyinstaller');"
         "from PyQt5.phonon import Phonon;"
         "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        "print map(unicode,app.libraryPaths())")
+        "print(map(unicode,app.libraryPaths()))")
     if not qt5_plugin_dirs:
         logger.error("Cannot find PyQt5 phonon plugin directories")
         return ""
@@ -536,13 +536,13 @@ def matplotlib_backends():
     All matplotlib backends are hardcoded. We have to try import them
     and return the list of successfully imported backends.
     """
-    all_bk = eval_statement('import matplotlib; print matplotlib.rcsetup.all_backends')
+    all_bk = eval_statement('import matplotlib; print(matplotlib.rcsetup.all_backends)')
     avail_bk = []
     import_statement = """
 try:
     __import__('matplotlib.backends.backend_%s')
 except ImportError, e:
-    print str(e)
+    print(e)
 """
 
     # CocoaAgg backend causes subprocess to exit and thus detection
@@ -568,7 +568,7 @@ def opengl_arrays_modules():
 
     e.g. 'OpenGL.arrays.vbo'
     """
-    statement = 'import OpenGL; print OpenGL.__path__[0]'
+    statement = 'import OpenGL; print(OpenGL.__path__[0])'
     opengl_mod_path = PyInstaller.hooks.hookutils.exec_statement(statement)
     arrays_mod_path = os.path.join(opengl_mod_path, 'arrays')
     files = glob.glob(arrays_mod_path + '/*.py')
@@ -626,7 +626,7 @@ def get_module_file_attribute(package):
     # Statement to return __file__ attribute of a package.
     __file__statement = """
 import %s as p
-print p.__file__
+print(p.__file__)
 """
     return exec_statement(__file__statement % package)
 
@@ -641,7 +641,7 @@ def get_package_paths(package):
     """
     # A package must have a path -- check for this, in case the package
     # parameter is actually a module.
-    is_pkg_statement = 'import %s as p; print hasattr(p, "__path__")'
+    is_pkg_statement = 'import %s as p; print(hasattr(p, "__path__"))'
     is_package = eval_statement(is_pkg_statement % package)
     assert is_package, 'Package %s does not have __path__ attribute' % package
 

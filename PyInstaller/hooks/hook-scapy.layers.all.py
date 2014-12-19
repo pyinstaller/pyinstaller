@@ -10,7 +10,7 @@
 from PyInstaller.hooks.hookutils import collect_submodules
 
 # The layers to load can be configured using scapy's conf.load_layers.
-#  from scapy.config import conf; print conf.load_layers
+#  from scapy.config import conf; print(conf.load_layers)
 # I decided not to use this, but to include all layer modules. The
 # reason is: When building the package, load_layers may not include
 # all the layer modules the program will use later.

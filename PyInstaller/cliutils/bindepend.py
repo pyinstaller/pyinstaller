@@ -12,6 +12,7 @@
 Show dll dependencies of executable files or other dynamic libraries.
 """
 
+from __future__ import print_function
 
 import glob
 import optparse
@@ -47,6 +48,6 @@ def run():
                 if is_win:
                     assemblies = PyInstaller.bindepend.getAssemblies(fn)
                     imports.update([a.getid() for a in assemblies])
-                print fn, imports
+                print(fn, imports)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

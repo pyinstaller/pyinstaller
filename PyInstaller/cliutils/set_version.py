@@ -22,9 +22,9 @@ def run():
     out_filename = os.path.abspath('file_version_info.txt')
 
     if len(sys.argv) < 3:
-        print 'Usage: python set_version.py  <version_info.txt>  <exe>'
-        print ' where: <version_info.txt> is file containing version info'
-        print ' and <exe> is the fullpathname of a Windows executable.'
+        print('Usage: python set_version.py  <version_info.txt>  <exe>')
+        print(' where: <version_info.txt> is file containing version info')
+        print(' and <exe> is the fullpathname of a Windows executable.')
         raise SystemExit(1)
 
     info_file = os.path.abspath(sys.argv[1])

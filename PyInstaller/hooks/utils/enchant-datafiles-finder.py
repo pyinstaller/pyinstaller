@@ -35,4 +35,4 @@ except:
     # fall back to the function above
     win32_data_files = _win32_data_files
 
-print win32_data_files()
+print(win32_data_files())
