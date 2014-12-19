@@ -42,24 +42,7 @@ things go wrong` in the manual and be sure to read the introduction to
 OPTIONS
 ========
 
--h, --help            show this help message and exit
---distpath=DIR        Where to put the bundled app (default:
-                      /home/hartmut/projekte/software/pyinstaller/dist)
---workpath=WORKPATH   Where to put all the temporary work files, .log, .pyz
-                      and etc. (default:
-                      /home/hartmut/projekte/software/pyinstaller/build)
--y, --noconfirm       Replace output directory (default:
-                      SPECPATH/dist/SPECNAME) without asking for
-                      confirmation
---upx-dir=UPX_DIR     Path to UPX utility (default: search the execution
-                      path)
--a, --ascii           Do not include unicode encoding support (default:
-                      included if available)
---clean               Clean PyInstaller cache and remove temporary files
-                      before building.
---log-level=LOGLEVEL  Amount of detail in build-time console messages
-                      (default: INFO, choose one of DEBUG, INFO, WARN,
-                      ERROR, CRITICAL)
+.. include:: _pyi-build-options.tmp
 
 
 SEE ALSO

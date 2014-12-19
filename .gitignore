@@ -65,6 +65,7 @@ __pycache__/
 # /doc/
 /doc/*.1
 /doc/source/_definitions.txt
+/doc/source/_pyi*.tmp
 
 # Bootloader source
 /bootloader/.lock-wscript
