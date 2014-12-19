@@ -22,4 +22,4 @@ assert t.rstrip() == 'This is data file for `unzipped`.'
 import unzipped_egg
 assert unzipped_egg.data == 'This is data file for `unzipped`.'
 
-print 'Okay.'
+print('Okay.')

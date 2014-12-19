@@ -15,4 +15,4 @@
 from Image import fromstring
 
 
-print fromstring
+print(fromstring)

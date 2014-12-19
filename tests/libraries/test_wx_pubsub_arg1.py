@@ -13,7 +13,7 @@ from wx.lib.pubsub import pub as Publisher
 
 
 def on_message(message):
-    print ("In the handler")
+    print("In the handler")
     # Data is delivered encapsulated in message and
     # not directly as function argument.
     if not message.data == 762:

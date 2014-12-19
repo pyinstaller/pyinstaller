@@ -13,4 +13,4 @@
 
 def a_func():
     return "a_func from pkg2.a"
-print "pkg2.a imported"
+print("pkg2.a imported")

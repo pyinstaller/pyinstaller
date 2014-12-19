@@ -7,12 +7,13 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import print_function
 
 from numpy.core.numeric import dot
 
 
 def main():
-    print "dot(3, 4):", dot(3, 4)
+    print("dot(3, 4):", dot(3, 4))
 
 
 if __name__ == "__main__":
