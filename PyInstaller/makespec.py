@@ -249,7 +249,7 @@ def __add_options(parser):
                       "On Mac OS X this also triggers building an OS X .app bundle."
                       "This option is ignored in *NIX systems.")
     g.add_option("-i", "--icon", dest="icon_file",
-                 metavar="FILE.ico or FILE.exe,ID or FILE.icns",
+                 metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
                  help="FILE.ico: apply that icon to a Windows executable. "
                       "FILE.exe,ID, extract the icon with ID from an exe. "
                       "FILE.icns: apply the icon to the "
@@ -259,10 +259,10 @@ def __add_options(parser):
     g.add_option("--version-file",
                  dest="version_file", metavar="FILE",
                  help="add a version resource from FILE to the exe")
-    g.add_option("-m", "--manifest", metavar="FILE or XML",
+    g.add_option("-m", "--manifest", metavar="<FILE or XML>",
                  help="add manifest FILE or XML to the exe")
     g.add_option("-r", "--resource", default=[], dest="resources",
-                 metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
+                 metavar="<FILE[,TYPE[,NAME[,LANGUAGE]]]>", action="append",
                  help="Add or update a resource of the given type, name and language "
                       "from FILE to a Windows executable. FILE can be a "
                       "data file or an exe/dll. For data files, at least "
