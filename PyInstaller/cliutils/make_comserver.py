@@ -12,8 +12,15 @@ from __future__ import print_function
 import optparse
 import os
 import sys
-import win32api
 
+import PyInstaller
+try:
+    import win32api
+except ImportError:
+    # Avoid raising an import error on other platforms, so we can run
+    # the script to get the usage message.
+    if PyInstaller.is_win:
+        raise
 
 import PyInstaller.makespec
 from PyInstaller.utils import misc
