@@ -72,7 +72,7 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
 
         # Print program version and exit
         if opts.version:
-            print get_version()
+            print(get_version())
             raise SystemExit(0)
 
         if not args:

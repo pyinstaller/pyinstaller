@@ -335,7 +335,7 @@ class CArchive(pyi_archive.Archive):
                 postfix = ''
                 ulen = os.fstat(fh.fileno()).st_size
         except IOError:
-            print "Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd)
+            print("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd))
             raise
 
         where = self.lib.tell()

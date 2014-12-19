@@ -17,7 +17,7 @@ def hook(mod):
     from PyInstaller.hooks.hookutils import exec_statement
     import marshal
 
-    txt = exec_statement("import xml;print xml.__file__")
+    txt = exec_statement("import xml; print(xml.__file__)")
 
     if txt.find('_xmlplus') > -1:
         if txt.endswith(".py"):

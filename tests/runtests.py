@@ -8,11 +8,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # This program will execute any file with name test*<digit>.py. If your test
 # need an aditional dependency name it test*<digit><letter>.py to be ignored
 # by this program but be recognizable by any one as a dependency of that
 # particular test.
+
+from __future__ import print_function
 
 
 import glob
@@ -390,7 +391,7 @@ class BuildTestRunner(object):
             OPTS.append('--onedir')
 
         if self.with_crypto or '_crypto' in self.test_file:
-            print 'NOTE: Bytecode encryption is enabled for this test.',
+            print('NOTE: Bytecode encryption is enabled for this test.', end="")
             OPTS.append('--key=test_key')
 
         self._msg("BUILDING TEST " + self.test_name)
@@ -667,7 +668,7 @@ def clean():
                     else:
                         os.remove(pth)
                 except OSError, e:
-                    print e
+                    print(e)
         # Delete *.spec files for tests without spec file.
         for pth in glob.glob(os.path.join(directory, '*.spec')):
             test_name = directory + '/' + os.path.splitext(os.path.basename(pth))[0]
@@ -681,7 +682,7 @@ def run_tests(test_suite, xml_file):
     Run test suite and save output to junit xml file if requested.
     """
     if xml_file:
-        print 'Writting test results to: %s' % xml_file
+        print('Writting test results to:', xml_file)
         fp = open('report.xml', 'w')
         result = junitxml.JUnitXmlResult(fp)
         # Text from stdout/stderr should be added to failed test cases.
@@ -744,21 +745,21 @@ def main():
                 test_dir = os.path.dirname(t)
                 test_script = os.path.basename(os.path.splitext(t)[0])
                 suite.addTest(GenericTestCase(test_dir, test_script))
-                print 'Running test:  %s' % (test_dir + '/' + test_script)
+                print('Running test: ', (test_dir + '/' + test_script))
 
     # Run all tests or all interactive tests.
     else:
         if opts.interactive_tests:
-            print 'Running interactive tests...'
+            print('Running interactive tests...')
             test_classes = [InteractiveTestCase]
         elif opts.all_with_crypto:
-            print 'Running normal tests with bytecode encryption...'
+            print('Running normal tests with bytecode encryption...')
             # Make sure to exclude CryptoTestCase here since we are building
             # everything else with crypto enabled.
             test_classes = [BasicTestCase, ImportTestCase,
                     LibrariesTestCase, MultipackageTestCase]
         else:
-            print 'Running normal tests (-i for interactive tests)...'
+            print('Running normal tests (-i for interactive tests)...')
             test_classes = [BasicTestCase, CryptoTestCase, ImportTestCase,
                     LibrariesTestCase, MultipackageTestCase]
 

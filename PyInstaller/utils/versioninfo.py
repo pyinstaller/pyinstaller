@@ -82,14 +82,14 @@ def pefile_read_version(filename):
     #ffi = pe.VS_FIXEDFILEINFO
     #vers['FileVersion'] = (ffi.FileVersionMS >> 16, ffi.FileVersionMS & 0xFFFF, ffi.FileVersionLS >> 16, ffi.FileVersionLS & 0xFFFF)
     #vers['ProductVersion'] = (ffi.ProductVersionMS >> 16, ffi.ProductVersionMS & 0xFFFF, ffi.ProductVersionLS >> 16, ffi.ProductVersionLS & 0xFFFF)
-    #print pe.VS_FIXEDFILEINFO.FileVersionMS
+    #print(pe.VS_FIXEDFILEINFO.FileVersionMS)
     # TODO Only first available language is used for now.
     #vers = pe.FileInfo[0].StringTable[0].entries
     from pprint import pprint
     pprint(pe.VS_FIXEDFILEINFO)
-    print dir(pe.VS_FIXEDFILEINFO)
-    print repr(pe.VS_FIXEDFILEINFO)
-    print pe.dump_info()
+    print(dir(pe.VS_FIXEDFILEINFO))
+    print(repr(pe.VS_FIXEDFILEINFO))
+    print(pe.dump_info())
     return vers
 
 

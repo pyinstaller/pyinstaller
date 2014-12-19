@@ -32,7 +32,7 @@ image_mod.init()
 for name in sys.modules:
     if name.endswith('ImagePlugin'):
         # Modules are printed to stdout and the output is then parsed.
-        print name
+        print(name)
 """ % {'modname': mod.__name__}
     out = hookutils.exec_statement(statement)
     hiddenimports = out.strip().splitlines()

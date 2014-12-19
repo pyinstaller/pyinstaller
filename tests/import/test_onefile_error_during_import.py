@@ -12,7 +12,7 @@
 try:
 	import error_during_import2
 except KeyError:
-	print "OK"
+	print("OK")
 else:
 	raise RuntimeError("failure!")
 

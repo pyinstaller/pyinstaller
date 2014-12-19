@@ -15,4 +15,4 @@
 from PIL.Image import fromstring
 
 
-print fromstring
+print(fromstring)

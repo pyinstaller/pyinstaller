@@ -13,6 +13,7 @@
 # https://jenkins.shiningpanda.com/pyinstaller/
 # Python there is mostly 64bit. Only Python 2.4 is 32bit on Windows 7.
 
+from __future__ import print_function
 
 import glob
 import optparse
@@ -104,7 +105,7 @@ def main():
                 continue
         try:
             __import__(k)
-            print 'Already installed... %s' % k
+            print('Already installed...', k)
         # Module is not available - install it.
         except ImportError:
             # If not url or module name then look for installers in download area.
@@ -116,14 +117,14 @@ def main():
                     files += glob.glob(pattern)
                 # No file with that pattern was not found - skip it.
                 if not files:
-                    print 'Skipping module... %s' % k
+                    print('Skipping module...', k)
                     continue
                 # Full path to installers in download directory.
                 v = files
-            print 'Installing module... %s' % k
+            print('Installing module...', k)
             # Some modules might require several .exe files to install.
             for f in v:
-                print '  %s' % f
+                print(' ', f)
                 # Use --no-deps ... installing module dependencies might fail
                 # because easy_install tries to install the same module from
                 # PYPI from source code and if fails because of C code that
@@ -131,7 +132,7 @@ def main():
                 try:
                     easy_install.main(['--no-deps', '--always-unzip', f])
                 except Exception:
-                    print '  %s installation failed' % k
+                    print(' ', k, 'installation failed')
 
 
 if __name__ == '__main__':

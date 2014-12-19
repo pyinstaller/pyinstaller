@@ -46,7 +46,7 @@ def run():
 
     try:
         name = PyInstaller.makespec.main(args, **opts.__dict__)
-        print 'wrote %s' % name
-        print 'now run pyinstaller.py to build the executable'
+        print('wrote %s' % name)
+        print('now run pyinstaller.py to build the executable')
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

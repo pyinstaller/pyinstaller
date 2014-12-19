@@ -19,6 +19,10 @@
 # See pyi_carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
 
+# We MUST NOT use anything from __future__, because this will effect
+# compilation in ZlibArchive.Add() below. While `compile()` has an
+# argument `dont_inherit`, this is not supported in Python 2.7.9.
+#from __future__ import print_function
 
 _verbose = 0
 _listdir = None
@@ -353,8 +357,8 @@ class ZlibArchive(Archive):
                 import os
                 co = compile(txt, self.os.path.join(self.path, nm), 'exec')
             except SyntaxError, e:
-                print "Syntax error in", pth[:-1]
-                print e.args
+                print("Syntax error in " + pth[:-1])
+                print(e.args)
                 raise
             if self.crypted:
                 obj = self.cipher.encrypt(self._mod_zlib.compress(marshal.dumps(co), self.LEVEL))
