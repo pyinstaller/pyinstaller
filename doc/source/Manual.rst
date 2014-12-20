@@ -264,6 +264,12 @@ OS, or for a dfferent version of Python,
 you run |PyInstaller| on that OS, under that version of Python.
 
 
+.. Note::
+
+   Don't assume that your 64-bit based Python will generate
+   executables that work on 32-bit systems.
+
+
 Analysis: Finding the Files Your Program Needs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
