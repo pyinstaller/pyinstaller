@@ -540,16 +540,16 @@ General Options
 --distpath=path_to_executable
 	Specify where to put the bundled app.
 	The default is a ``dist`` folder in
-	the same folder as the first script.
+	the current working directory.
 
 --specpath=path_to_spec_file
 	Specify where to put the *name* `.spec` file.
-	The default is the same folder as the first script.
+	The default is the current working directory.
 
 --workpath=path_to_work_files
     Specify where to put the |PyInstaller| log and work files for this run.
     The default path is a ``build`` folder
-    in the same folder as the first script or spec.
+    in the current working directory.
 
 --clean
 	Tell |PyInstaller| to erase all log and work files before it starts.
