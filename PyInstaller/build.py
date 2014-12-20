@@ -1197,10 +1197,7 @@ class EXE(Target):
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
-        bootloader = os.path.join('PyInstaller', 'bootloader', PLATFORM, exe)
-        if not os.path.exists(bootloader):
-            raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
-        return bootloader
+        return os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
 
     def assemble(self):
         logger.info("building EXE from %s", os.path.basename(self.out))
@@ -1209,9 +1206,10 @@ class EXE(Target):
             os.makedirs(os.path.dirname(self.name))
         outf = open(self.name, 'wb')
         exe = self._bootloader_file('run')
-        exe = os.path.join(HOMEPATH, exe)
         if is_win or is_cygwin:
             exe = exe + '.exe'
+        if not os.path.exists(exe):
+            raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
         if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
                                         self.resources):
             tmpnm = tempfile.mktemp()
@@ -1309,8 +1307,9 @@ class DLL(EXE):
     def assemble(self):
         logger.info("building DLL %s", os.path.basename(self.out))
         outf = open(self.name, 'wb')
-        dll = self._bootloader_file('inprocsrvr')
-        dll = os.path.join(HOMEPATH, dll) + '.dll'
+        dll = self._bootloader_file('inprocsrvr') + '.dll'
+        if not os.path.exists(dll):
+            raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)
         outf.close()
