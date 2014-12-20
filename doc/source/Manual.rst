@@ -727,7 +727,6 @@ Setting a Custom Icon
 The minimal plist provided by |PyInstaller| designates the icon file for the app
 as the  ``icon-windowed.icns`` file in ``Resources``.
 This is the |PyInstaller| logo in icns format.
-Support for the ``--icon-file`` option is promised for the future.
 For now you can apply your own icon after the app is built in several ways:
 
 * Prepare another ``.icns`` file with your own graphic,
