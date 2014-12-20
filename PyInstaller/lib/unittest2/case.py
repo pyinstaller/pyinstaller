@@ -1,22 +1,29 @@
 """Test case implementation"""
 
 import sys
+import collections
+import contextlib
 import difflib
+import logging
 import pprint
 import re
+import traceback
+import types
 import unittest
 import warnings
 
-if sys.version_info[:2] == (2,3):
-    from sets import Set as set
-    from sets import ImmutableSet as frozenset
+import six
+from six.moves import range
 
 from unittest2 import result
-from unittest2.util import\
-    safe_repr, safe_str, strclass,\
-    unorderable_list_difference
+from unittest2.util import (
+    safe_repr, safe_str, strclass,
+    unorderable_list_difference, _common_shorten_repr
+)
 
-from unittest2.compatibility import wraps
+from unittest2.compatibility import (
+    wraps, with_context, catch_warnings, raise_from
+)
 
 __unittest = True
 
@@ -28,41 +35,80 @@ class SkipTest(Exception):
     """
     Raise this exception in a test to skip it.
 
-    Usually you can use TestResult.skip() or one of the skipping decorators
+    Usually you can use TestCase.skipTest() or one of the skipping decorators
     instead of raising this directly.
     """
 
-class _ExpectedFailure(Exception):
+class _ShouldStop(Exception):
     """
-    Raise this when a test is expected to fail.
-
-    This is an implementation detail.
+    The test should stop.
     """
-
-    def __init__(self, exc_info):
-        # can't use super because Python 2.4 exceptions are old style
-        Exception.__init__(self)
-        self.exc_info = exc_info
 
 class _UnexpectedSuccess(Exception):
     """
     The test was supposed to fail, but it didn't!
     """
 
+class _Outcome(object):
+    def __init__(self, result=None):
+        self.expecting_failure = False
+        self.result = result
+        self.result_supports_subtests = hasattr(result, "addSubTest")
+        self.success = True
+        self.skipped = []
+        self.expectedFailure = None
+        self.errors = []
+
+    @contextlib.contextmanager
+    def testPartExecutor(self, test_case, isTest=False):
+        old_success = self.success
+        self.success = True
+        try:
+            yield
+        except KeyboardInterrupt:
+            raise
+        except SkipTest as e:
+            self.success = False
+            self.skipped.append((test_case, str(e)))
+        except _ShouldStop:
+            pass
+        except:
+            exc_info = sys.exc_info()
+            if self.expecting_failure:
+                self.expectedFailure = exc_info
+            else:
+                self.success = False
+                self.errors.append((test_case, exc_info))
+            # explicitly break a reference cycle:
+            # exc_info -> frame -> exc_info
+            exc_info = None
+        else:
+            if self.result_supports_subtests and self.success:
+                self.errors.append((test_case, None))
+        finally:
+            self.success = self.success and old_success
+
 def _id(obj):
     return obj
+
+
+class_types = [type]
+if getattr(types, 'ClassType', None):
+    class_types.append(types.ClassType)
+class_types = tuple(class_types)
+
 
 def skip(reason):
     """
     Unconditionally skip a test.
     """
     def decorator(test_item):
-        if not (isinstance(test_item, type) and issubclass(test_item, TestCase)):
+        if not isinstance(test_item, class_types):
+            @wraps(test_item)
             def skip_wrapper(*args, **kwargs):
                 raise SkipTest(reason)
-            skip_wrapper = wraps(test_item)(skip_wrapper)
             test_item = skip_wrapper
-        
+
         test_item.__unittest_skip__ = True
         test_item.__unittest_skip_why__ = reason
         return test_item
@@ -85,24 +131,55 @@ def skipUnless(condition, reason):
     return _id
 
 
-def expectedFailure(func):
-    def wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception:
-            raise _ExpectedFailure(sys.exc_info())
-        raise _UnexpectedSuccess
-    wrapper = wraps(func)(wrapper)
-    return wrapper
+def expectedFailure(test_item):
+    test_item.__unittest_expecting_failure__ = True
+    return test_item
 
 
-class _AssertRaisesContext(object):
-    """A context manager used to implement TestCase.assertRaises* methods."""
+class _BaseTestCaseContext:
 
-    def __init__(self, expected, test_case, expected_regexp=None):
+    def __init__(self, test_case):
+        self.test_case = test_case
+
+    def _raiseFailure(self, standardMsg):
+        msg = self.test_case._formatMessage(self.msg, standardMsg)
+        raise self.test_case.failureException(msg)
+
+
+class _AssertRaisesBaseContext(_BaseTestCaseContext):
+
+    def __init__(self, expected, test_case, callable_obj=None,
+                 expected_regex=None):
+        _BaseTestCaseContext.__init__(self, test_case)
         self.expected = expected
         self.failureException = test_case.failureException
-        self.expected_regexp = expected_regexp
+        if callable_obj is not None:
+            try:
+                self.obj_name = callable_obj.__name__
+            except AttributeError:
+                self.obj_name = str(callable_obj)
+        else:
+            self.obj_name = None
+        if expected_regex is not None:
+            expected_regex = re.compile(expected_regex)
+        self.expected_regex = expected_regex
+        self.msg = None
+
+    def handle(self, name, callable_obj, args, kwargs):
+        """
+        If callable_obj is None, assertRaises/Warns is being used as a
+        context manager, so check for a 'msg' kwarg and return self.
+        If callable_obj is not None, call it passing args and kwargs.
+        """
+        if callable_obj is None:
+            self.msg = kwargs.pop('msg', None)
+            return self
+        with self:
+            callable_obj(*args, **kwargs)
+
+
+class _AssertRaisesContext(_AssertRaisesBaseContext):
+    """A context manager used to implement TestCase.assertRaises* methods."""
 
     def __enter__(self):
         return self
@@ -115,41 +192,160 @@ class _AssertRaisesContext(object):
                 exc_name = str(self.expected)
             raise self.failureException(
                 "%s not raised" % (exc_name,))
+        #else:
+        #    if getattr(traceback, 'clear_frames', None):
+        #        traceback.clear_frames(tb)
         if not issubclass(exc_type, self.expected):
             # let unexpected exceptions pass through
             return False
         self.exception = exc_value # store for later retrieval
-        if self.expected_regexp is None:
+        if self.expected_regex is None:
             return True
 
-        expected_regexp = self.expected_regexp
-        if isinstance(expected_regexp, basestring):
-            expected_regexp = re.compile(expected_regexp)
-        if not expected_regexp.search(str(exc_value)):
+        expected_regex = self.expected_regex
+        if not expected_regex.search(str(exc_value)):
             raise self.failureException('"%s" does not match "%s"' %
-                     (expected_regexp.pattern, str(exc_value)))
+                     (expected_regex.pattern, str(exc_value)))
         return True
 
 
+class _AssertWarnsContext(_AssertRaisesBaseContext):
+    """A context manager used to implement TestCase.assertWarns* methods."""
+
+    def __enter__(self):
+        # The __warningregistry__'s need to be in a pristine state for tests
+        # to work properly.
+        for v in sys.modules.values():
+            if getattr(v, '__warningregistry__', None):
+                v.__warningregistry__ = {}
+        self.warnings_manager = catch_warnings(record=True)
+        self.warnings = self.warnings_manager.__enter__()
+        warnings.simplefilter("always", self.expected)
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.warnings_manager.__exit__(exc_type, exc_value, tb)
+        if exc_type is not None:
+            # let unexpected exceptions pass through
+            return
+        try:
+            exc_name = self.expected.__name__
+        except AttributeError:
+            exc_name = str(self.expected)
+        first_matching = None
+        for m in self.warnings:
+            w = m.message
+            if not isinstance(w, self.expected):
+                continue
+            if first_matching is None:
+                first_matching = w
+            if (self.expected_regex is not None and
+                not self.expected_regex.search(str(w))):
+                continue
+            # store warning for later retrieval
+            self.warning = w
+            self.filename = m.filename
+            self.lineno = m.lineno
+            return
+        # Now we simply try to choose a helpful failure message
+        if first_matching is not None:
+            raise self.failureException('%r does not match %r' %
+                     (self.expected_regex.pattern, str(first_matching)))
+        if self.obj_name:
+            raise self.failureException("%s not triggered by %s"
+                % (exc_name, self.obj_name))
+        else:
+            raise self.failureException("%s not triggered"
+                % exc_name )
+
+
 class _TypeEqualityDict(object):
-    
+
     def __init__(self, testcase):
         self.testcase = testcase
         self._store = {}
-    
+
     def __setitem__(self, key, value):
         self._store[key] = value
-    
+
     def __getitem__(self, key):
         value = self._store[key]
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             return getattr(self.testcase, value)
         return value
-    
+
     def get(self, key, default=None):
         if key in self._store:
             return self[key]
         return default
+
+
+_LoggingWatcher = collections.namedtuple("_LoggingWatcher",
+                                         ["records", "output"])
+
+
+class _CapturingHandler(logging.Handler):
+    """
+    A logging handler capturing all (raw and formatted) logging output.
+    """
+
+    def __init__(self):
+        logging.Handler.__init__(self)
+        self.watcher = _LoggingWatcher([], [])
+
+    def flush(self):
+        pass
+
+    def emit(self, record):
+        self.watcher.records.append(record)
+        msg = self.format(record)
+        self.watcher.output.append(msg)
+
+
+
+class _AssertLogsContext(_BaseTestCaseContext):
+    """A context manager used to implement TestCase.assertLogs()."""
+
+    LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
+
+    def __init__(self, test_case, logger_name, level):
+        _BaseTestCaseContext.__init__(self, test_case)
+        self.logger_name = logger_name
+        if level:
+            self.level = getattr(logging, str(level), level)
+        else:
+            self.level = logging.INFO
+        self.msg = None
+
+    def __enter__(self):
+        if isinstance(self.logger_name, logging.Logger):
+            logger = self.logger = self.logger_name
+        else:
+            logger = self.logger = logging.getLogger(self.logger_name)
+        formatter = logging.Formatter(self.LOGGING_FORMAT)
+        handler = _CapturingHandler()
+        handler.setFormatter(formatter)
+        self.watcher = handler.watcher
+        self.old_handlers = logger.handlers[:]
+        self.old_level = logger.level
+        self.old_propagate = logger.propagate
+        logger.handlers = [handler]
+        logger.setLevel(self.level)
+        logger.propagate = False
+        return handler.watcher
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.logger.handlers = self.old_handlers
+        self.logger.propagate = self.old_propagate
+        self.logger.setLevel(self.old_level)
+        if exc_type is not None:
+            # let unexpected exceptions pass through
+            return False
+        if len(self.watcher.records) == 0:
+            self._raiseFailure(
+                "no logs of level {0} or higher triggered on {1}"
+                .format(logging.getLevelName(self.level), self.logger.name))
+
 
 
 class TestCase(unittest.TestCase):
@@ -172,28 +368,31 @@ class TestCase(unittest.TestCase):
     should not change the signature of their __init__ method, since instances
     of the classes are instantiated automatically by parts of the framework
     in order to be run.
-    """
 
-    # This attribute determines which exception will be raised when
-    # the instance's assertion methods fail; test methods raising this
-    # exception will be deemed to have 'failed' rather than 'errored'
+    When subclassing TestCase, you can set these attributes:
+    * failureException: determines which exception will be raised when
+        the instance's assertion methods fail; test methods raising this
+        exception will be deemed to have 'failed' rather than 'errored'.
+    * longMessage: determines whether long messages (including repr of
+        objects used in assert methods) will be printed on failure in *addition*
+        to any explicit message passed.
+    * maxDiff: sets the maximum length of a diff in failure messages
+        by assert methods using difflib. It is looked up as an instance
+        attribute so can be configured by individual tests if required.
+    """
 
     failureException = AssertionError
 
-    # This attribute sets the maximum length of a diff in failure messages
-    # by assert methods using difflib. It is looked up as an instance attribute
-    # so can be configured by individual tests if required.
+    longMessage = True
 
     maxDiff = 80*8
 
-    # This attribute determines whether long messages (including repr of
-    # objects used in assert methods) will be printed on failure in *addition*
-    # to any explicit message passed.
+    # If a string is longer than _diffThreshold, use normal comparison instead
+    # of difflib.  See #11763.
+    _diffThreshold = 2**16
 
-    longMessage = True
-    
     # Attribute used by TestSuite for classSetUp
-    
+
     _classSetupFailed = False
 
     def __init__(self, methodName='runTest'):
@@ -202,7 +401,7 @@ class TestCase(unittest.TestCase):
            not have a method with the specified name.
         """
         self._testMethodName = methodName
-        self._resultForDoCleanups = None
+        self._outcome = None
         try:
             testMethod = getattr(self, methodName)
         except AttributeError:
@@ -210,6 +409,7 @@ class TestCase(unittest.TestCase):
                   (self.__class__, methodName))
         self._testMethodDoc = testMethod.__doc__
         self._cleanups = []
+        self._subtest = None
 
         # Map types to custom assertEqual functions that will compare
         # instances of said type in more detail to generate a more useful
@@ -220,7 +420,9 @@ class TestCase(unittest.TestCase):
         self.addTypeEqualityFunc(tuple, 'assertTupleEqual')
         self.addTypeEqualityFunc(set, 'assertSetEqual')
         self.addTypeEqualityFunc(frozenset, 'assertSetEqual')
-        self.addTypeEqualityFunc(unicode, 'assertMultiLineEqual')
+        if six.PY2:
+            self.addTypeEqualityFunc(str, 'assertMultiLineEqual')
+        self.addTypeEqualityFunc(six.text_type, 'assertMultiLineEqual')
 
     def addTypeEqualityFunc(self, typeobj, function):
         """Add a type specific assertEqual style function to compare a type.
@@ -245,22 +447,13 @@ class TestCase(unittest.TestCase):
         Cleanup items are called even if setUp fails (unlike tearDown)."""
         self._cleanups.append((function, args, kwargs))
 
-    def setUp(self):
-        "Hook method for setting up the test fixture before exercising it."
-    
+    @classmethod
     def setUpClass(cls):
         "Hook method for setting up class fixture before running tests in the class."
-    setUpClass = classmethod(setUpClass)
-    
+
+    @classmethod
     def tearDownClass(cls):
         "Hook method for deconstructing the class fixture after running all tests in the class."
-    tearDownClass = classmethod(tearDownClass)
-    
-    def tearDown(self):
-        "Hook method for deconstructing the test fixture after testing it."
-
-    def countTestCases(self):
-        return 1
 
     def defaultTestResult(self):
         return result.TestResult()
@@ -297,15 +490,81 @@ class TestCase(unittest.TestCase):
     def __repr__(self):
         return "<%s testMethod=%s>" % \
                (strclass(self.__class__), self._testMethodName)
-    
-    def _addSkip(self, result, reason):
+
+    def _addSkip(self, result, test_case, reason):
         addSkip = getattr(result, 'addSkip', None)
         if addSkip is not None:
-            addSkip(self, reason)
+            addSkip(test_case, reason)
         else:
-            warnings.warn("Use of a TestResult without an addSkip method is deprecated", 
-                          DeprecationWarning, 2)
+            warnings.warn("TestResult has no addSkip method, skips not reported",
+                          RuntimeWarning, 2)
+            result.addSuccess(test_case)
+
+    @contextlib.contextmanager
+    def subTest(self, msg=None, **params):
+        """Return a context manager that will return the enclosed block
+        of code in a subtest identified by the optional message and
+        keyword parameters.  A failure in the subtest marks the test
+        case as failed but resumes execution at the end of the enclosed
+        block, allowing further test code to be executed.
+        """
+        if not self._outcome.result_supports_subtests:
+            yield
+            return
+        parent = self._subtest
+        if parent is None:
+            params_map = collections.ChainMap(params)
+        else:
+            params_map = parent.params.new_child(params)
+        self._subtest = _SubTest(self, msg, params_map)
+        try:
+            with self._outcome.testPartExecutor(self._subtest, isTest=True):
+                yield
+            if not self._outcome.success:
+                result = self._outcome.result
+                if result is not None and result.failfast:
+                    raise _ShouldStop
+            elif self._outcome.expectedFailure:
+                # If the test is expecting a failure, we really want to
+                # stop now and register the expected failure.
+                raise _ShouldStop
+        finally:
+            self._subtest = parent
+
+    def _feedErrorsToResult(self, result, errors):
+        for test, exc_info in errors:
+            if isinstance(test, _SubTest):
+                result.addSubTest(test.test_case, test, exc_info)
+            elif exc_info is not None:
+                if issubclass(exc_info[0], self.failureException):
+                    result.addFailure(test, exc_info)
+                else:
+                    result.addError(test, exc_info)
+
+    def _addExpectedFailure(self, result, exc_info):
+        try:
+            addExpectedFailure = result.addExpectedFailure
+        except AttributeError:
+            warnings.warn("TestResult has no addExpectedFailure method, reporting as passes",
+                          RuntimeWarning)
             result.addSuccess(self)
+        else:
+            addExpectedFailure(self, exc_info)
+
+    def _addUnexpectedSuccess(self, result):
+        try:
+            addUnexpectedSuccess = result.addUnexpectedSuccess
+        except AttributeError:
+            warnings.warn("TestResult has no addUnexpectedSuccess method, reporting as failure",
+                          RuntimeWarning)
+            # We need to pass an actual exception and traceback to addFailure,
+            # otherwise the legacy result can choke.
+            try:
+                raise_from(_UnexpectedSuccess, None)
+            except _UnexpectedSuccess:
+                result.addFailure(self, sys.exc_info())
+        else:
+            addUnexpectedSuccess(self)
 
     def run(self, result=None):
         orig_result = result
@@ -315,67 +574,48 @@ class TestCase(unittest.TestCase):
             if startTestRun is not None:
                 startTestRun()
 
-        self._resultForDoCleanups = result
         result.startTest(self)
-        
+
         testMethod = getattr(self, self._testMethodName)
-        
-        if (getattr(self.__class__, "__unittest_skip__", False) or 
+        if (getattr(self.__class__, "__unittest_skip__", False) or
             getattr(testMethod, "__unittest_skip__", False)):
             # If the class or method was skipped.
             try:
                 skip_why = (getattr(self.__class__, '__unittest_skip_why__', '')
                             or getattr(testMethod, '__unittest_skip_why__', ''))
-                self._addSkip(result, skip_why)
+                self._addSkip(result, self, skip_why)
             finally:
                 result.stopTest(self)
             return
+        expecting_failure = getattr(testMethod,
+                                    "__unittest_expecting_failure__", False)
+        outcome = _Outcome(result)
         try:
-            success = False
-            try:
+            self._outcome = outcome
+
+            with outcome.testPartExecutor(self):
                 self.setUp()
-            except SkipTest, e:
-                self._addSkip(result, str(e))
-            except Exception:
-                result.addError(self, sys.exc_info())
-            else:
-                try:
+            if outcome.success:
+                outcome.expecting_failure = expecting_failure
+                with outcome.testPartExecutor(self, isTest=True):
                     testMethod()
-                except self.failureException:
-                    result.addFailure(self, sys.exc_info())
-                except _ExpectedFailure, e:
-                    addExpectedFailure = getattr(result, 'addExpectedFailure', None)
-                    if addExpectedFailure is not None:
-                        addExpectedFailure(self, e.exc_info)
-                    else: 
-                        warnings.warn("Use of a TestResult without an addExpectedFailure method is deprecated", 
-                                      DeprecationWarning)
-                        result.addSuccess(self)
-                except _UnexpectedSuccess:
-                    addUnexpectedSuccess = getattr(result, 'addUnexpectedSuccess', None)
-                    if addUnexpectedSuccess is not None:
-                        addUnexpectedSuccess(self)
-                    else:
-                        warnings.warn("Use of a TestResult without an addUnexpectedSuccess method is deprecated", 
-                                      DeprecationWarning)
-                        result.addFailure(self, sys.exc_info())
-                except SkipTest, e:
-                    self._addSkip(result, str(e))
-                except Exception:
-                    result.addError(self, sys.exc_info())
-                else:
-                    success = True
-
-                try:
+                outcome.expecting_failure = False
+                with outcome.testPartExecutor(self):
                     self.tearDown()
-                except Exception:
-                    result.addError(self, sys.exc_info())
-                    success = False
 
-            cleanUpSuccess = self.doCleanups()
-            success = success and cleanUpSuccess
-            if success:
-                result.addSuccess(self)
+            self.doCleanups()
+            for test, reason in outcome.skipped:
+                self._addSkip(result, test, reason)
+            self._feedErrorsToResult(result, outcome.errors)
+            if outcome.success:
+                if expecting_failure:
+                    if outcome.expectedFailure:
+                        self._addExpectedFailure(result, outcome.expectedFailure)
+                    else:
+                        self._addUnexpectedSuccess(result)
+                else:
+                    result.addSuccess(self)
+            return result
         finally:
             result.stopTest(self)
             if orig_result is None:
@@ -383,19 +623,27 @@ class TestCase(unittest.TestCase):
                 if stopTestRun is not None:
                     stopTestRun()
 
+            # explicitly break reference cycles:
+            # outcome.errors -> frame -> outcome -> outcome.errors
+            # outcome.expectedFailure -> frame -> outcome -> outcome.expectedFailure
+            del outcome.errors[:]
+            outcome.expectedFailure = None
+
+            # clear the outcome, no more needed
+            self._outcome = None
+
     def doCleanups(self):
         """Execute all cleanup functions. Normally called for you after
         tearDown."""
-        result = self._resultForDoCleanups
-        ok = True
+        outcome = self._outcome or _Outcome()
         while self._cleanups:
-            function, args, kwargs = self._cleanups.pop(-1)
-            try:
+            function, args, kwargs = self._cleanups.pop()
+            with outcome.testPartExecutor(self):
                 function(*args, **kwargs)
-            except Exception:
-                ok = False
-                result.addError(self, sys.exc_info())
-        return ok
+
+        # return this for backwards compatibility
+        # even though we no longer us it internally
+        return outcome.success
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
@@ -420,13 +668,13 @@ class TestCase(unittest.TestCase):
     def assertFalse(self, expr, msg=None):
         "Fail the test if the expression is true."
         if expr:
-            msg = self._formatMessage(msg, "%s is not False" % safe_repr(expr))
+            msg = self._formatMessage(msg, "%s is not false" % safe_repr(expr))
             raise self.failureException(msg)
 
     def assertTrue(self, expr, msg=None):
         """Fail the test unless the expression is true."""
         if not expr:
-            msg = self._formatMessage(msg, "%s is not True" % safe_repr(expr))
+            msg = self._formatMessage(msg, "%s is not true" % safe_repr(expr))
             raise self.failureException(msg)
 
     def _formatMessage(self, msg, standardMsg):
@@ -450,10 +698,10 @@ class TestCase(unittest.TestCase):
 
 
     def assertRaises(self, excClass, callableObj=None, *args, **kwargs):
-        """Fail unless an exception of class excClass is thrown
+        """Fail unless an exception of class excClass is raised
            by callableObj when invoked with arguments args and keyword
            arguments kwargs. If a different type of exception is
-           thrown, it will not be caught, and the test case will be
+           raised, it will not be caught, and the test case will be
            deemed to have suffered an error, exactly as for an
            unexpected exception.
 
@@ -478,12 +726,73 @@ class TestCase(unittest.TestCase):
             callableObj(*args, **kwargs)
         except excClass:
             return
-        
+
         if hasattr(excClass,'__name__'):
             excName = excClass.__name__
         else:
             excName = str(excClass)
-        raise self.failureException, "%s not raised" % excName
+        raise self.failureException("%s not raised" % excName)
+
+    def assertWarns(self, expected_warning, callable_obj=None, *args, **kwargs):
+        """Fail unless a warning of class warnClass is triggered
+           by callableObj when invoked with arguments args and keyword
+           arguments kwargs.  If a different type of warning is
+           triggered, it will not be handled: depending on the other
+           warning filtering rules in effect, it might be silenced, printed
+           out, or raised as an exception.
+
+           If called with callableObj omitted or None, will return a
+           context object used like this::
+
+                with self.assertWarns(SomeWarning):
+                    do_something()
+
+           The context manager keeps a reference to the first matching
+           warning as the 'warning' attribute; similarly, the 'filename'
+          and 'lineno' attributes give you information about the line
+           of Python code from which the warning was triggered.
+           This allows you to inspect the warning after the assertion::
+
+               with self.assertWarns(SomeWarning) as cm:
+                   do_something()
+               the_warning = cm.warning
+               self.assertEqual(the_warning.some_attribute, 147)
+        """
+        context = _AssertWarnsContext(expected_warning, self, callable_obj)
+        if callable_obj is None:
+            return context
+        context.__enter__()
+        try:
+            callable_obj(*args, **kwargs)
+        except:
+            if not context.__exit__(*sys.exc_info()):
+                raise
+            else:
+                return
+        else:
+            context.__exit__(None, None, None)
+
+    def assertLogs(self, logger=None, level=None):
+        """Fail unless a log message of level *level* or higher is emitted
+        on *logger_name* or its children.  If omitted, *level* defaults to
+        INFO and *logger* defaults to the root logger.
+
+        This method must be used as a context manager, and will yield
+        a recording object with two attributes: `output` and `records`.
+        At the end of the context manager, the `output` attribute will
+        be a list of the matching formatted log messages and the
+        `records` attribute will be a list of the corresponding LogRecord
+        objects.
+
+        Example::
+
+            with self.assertLogs('foo', level='INFO') as cm:
+                logging.getLogger('foo').info('first message')
+                logging.getLogger('foo.bar').error('second message')
+            self.assertEqual(cm.output, ['INFO:foo:first message',
+                                         'ERROR:foo.bar:second message'])
+        """
+        return _AssertLogsContext(self, logger, level)
 
     def _getAssertEqualityFunc(self, first, second):
         """Get a detailed comparison function for the types of the two args.
@@ -512,7 +821,7 @@ class TestCase(unittest.TestCase):
     def _baseAssertEqual(self, first, second, msg=None):
         """The default assertEqual implementation, not type specific."""
         if not first == second:
-            standardMsg = '%s != %s' % (safe_repr(first), safe_repr(second))
+            standardMsg = '%s != %s' % _common_shorten_repr(first, second)
             msg = self._formatMessage(msg, standardMsg)
             raise self.failureException(msg)
 
@@ -524,11 +833,11 @@ class TestCase(unittest.TestCase):
         assertion_func(first, second, msg=msg)
 
     def assertNotEqual(self, first, second, msg=None):
-        """Fail if the two objects are equal as determined by the '=='
+        """Fail if the two objects are equal as determined by the '!='
            operator.
         """
         if not first != second:
-            msg = self._formatMessage(msg, '%s == %s' % (safe_repr(first), 
+            msg = self._formatMessage(msg, '%s == %s' % (safe_repr(first),
                                                            safe_repr(second)))
             raise self.failureException(msg)
 
@@ -549,23 +858,23 @@ class TestCase(unittest.TestCase):
             return
         if delta is not None and places is not None:
             raise TypeError("specify delta or places not both")
-        
+
         if delta is not None:
             if abs(first - second) <= delta:
                 return
-        
-            standardMsg = '%s != %s within %s delta' % (safe_repr(first), 
-                                                        safe_repr(second), 
+
+            standardMsg = '%s != %s within %s delta' % (safe_repr(first),
+                                                        safe_repr(second),
                                                         safe_repr(delta))
         else:
             if places is None:
                 places = 7
-                
+
             if round(abs(second-first), places) == 0:
                 return
-        
-            standardMsg = '%s != %s within %r places' % (safe_repr(first), 
-                                                          safe_repr(second), 
+
+            standardMsg = '%s != %s within %r places' % (safe_repr(first),
+                                                          safe_repr(second),
                                                           places)
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
@@ -586,7 +895,7 @@ class TestCase(unittest.TestCase):
         if delta is not None:
             if not (first == second) and abs(first - second) > delta:
                 return
-            standardMsg = '%s == %s within %s delta' % (safe_repr(first), 
+            standardMsg = '%s == %s within %s delta' % (safe_repr(first),
                                                         safe_repr(second),
                                                         safe_repr(delta))
         else:
@@ -594,44 +903,15 @@ class TestCase(unittest.TestCase):
                 places = 7
             if not (first == second) and round(abs(second-first), places) != 0:
                 return
-            standardMsg = '%s == %s within %r places' % (safe_repr(first), 
+            standardMsg = '%s == %s within %r places' % (safe_repr(first),
                                                          safe_repr(second),
                                                          places)
 
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
 
-    # Synonyms for assertion methods
 
-    # The plurals are undocumented.  Keep them that way to discourage use.
-    # Do not add more.  Do not remove.
-    # Going through a deprecation cycle on these would annoy many people.
-    assertEquals = assertEqual
-    assertNotEquals = assertNotEqual
-    assertAlmostEquals = assertAlmostEqual
-    assertNotAlmostEquals = assertNotAlmostEqual
-    assert_ = assertTrue
-
-    # These fail* assertion method names are pending deprecation and will
-    # be a DeprecationWarning in 3.2; http://bugs.python.org/issue2578
-    def _deprecate(original_func):
-        def deprecated_func(*args, **kwargs):
-            warnings.warn(
-                ('Please use %s instead.' % original_func.__name__),
-                PendingDeprecationWarning, 2)
-            return original_func(*args, **kwargs)
-        return deprecated_func
-
-    failUnlessEqual = _deprecate(assertEqual)
-    failIfEqual = _deprecate(assertNotEqual)
-    failUnlessAlmostEqual = _deprecate(assertAlmostEqual)
-    failIfAlmostEqual = _deprecate(assertNotAlmostEqual)
-    failUnless = _deprecate(assertTrue)
-    failUnlessRaises = _deprecate(assertRaises)
-    failIf = _deprecate(assertFalse)
-
-    def assertSequenceEqual(self, seq1, seq2,
-                            msg=None, seq_type=None, max_diff=80*8):
+    def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None):
         """An equality assertion for ordered sequences (like lists and tuples).
 
         For the purposes of this function, a valid ordered sequence type is one
@@ -644,7 +924,6 @@ class TestCase(unittest.TestCase):
                     datatype should be enforced.
             msg: Optional message to use on failure instead of a list of
                     differences.
-            max_diff: Maximum size off the diff, larger diffs are not shown
         """
         if seq_type is not None:
             seq_type_name = seq_type.__name__
@@ -675,16 +954,11 @@ class TestCase(unittest.TestCase):
             if seq1 == seq2:
                 return
 
-            seq1_repr = repr(seq1)
-            seq2_repr = repr(seq2)
-            if len(seq1_repr) > 30:
-                seq1_repr = seq1_repr[:30] + '...'
-            if len(seq2_repr) > 30:
-                seq2_repr = seq2_repr[:30] + '...'
-            elements = (seq_type_name.capitalize(), seq1_repr, seq2_repr)
-            differing = '%ss differ: %s != %s\n' % elements
+            differing = '%ss differ: %s != %s\n' % (
+                    (seq_type_name.capitalize(),) +
+                    _common_shorten_repr(seq1, seq2))
 
-            for i in xrange(min(len1, len2)):
+            for i in range(min(len1, len2)):
                 try:
                     item1 = seq1[i]
                 except (TypeError, IndexError, NotImplementedError):
@@ -780,16 +1054,20 @@ class TestCase(unittest.TestCase):
         """
         try:
             difference1 = set1.difference(set2)
-        except TypeError, e:
+        except TypeError:
+            e = sys.exc_info()[1]
             self.fail('invalid type when attempting set difference: %s' % e)
-        except AttributeError, e:
+        except AttributeError:
+            e = sys.exc_info()[1]
             self.fail('first argument does not support set difference: %s' % e)
 
         try:
             difference2 = set2.difference(set1)
-        except TypeError, e:
+        except TypeError:
+            e = sys.exc_info()[1]
             self.fail('invalid type when attempting set difference: %s' % e)
-        except AttributeError, e:
+        except AttributeError:
+            e = sys.exc_info()[1]
             self.fail('second argument does not support set difference: %s' % e)
 
         if not (difference1 or difference2):
@@ -811,14 +1089,14 @@ class TestCase(unittest.TestCase):
     def assertIn(self, member, container, msg=None):
         """Just like self.assertTrue(a in b), but with a nicer default message."""
         if member not in container:
-            standardMsg = '%s not found in %s' % (safe_repr(member), 
+            standardMsg = '%s not found in %s' % (safe_repr(member),
                                                    safe_repr(container))
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertNotIn(self, member, container, msg=None):
         """Just like self.assertTrue(a not in b), but with a nicer default message."""
         if member in container:
-            standardMsg = '%s unexpectedly found in %s' % (safe_repr(member), 
+            standardMsg = '%s unexpectedly found in %s' % (safe_repr(member),
                                                             safe_repr(container))
             self.fail(self._formatMessage(msg, standardMsg))
 
@@ -835,11 +1113,11 @@ class TestCase(unittest.TestCase):
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertDictEqual(self, d1, d2, msg=None):
-        self.assert_(isinstance(d1, dict), 'First argument is not a dictionary')
-        self.assert_(isinstance(d2, dict), 'Second argument is not a dictionary')
+        self.assertIsInstance(d1, dict, 'First argument is not a dictionary')
+        self.assertIsInstance(d2, dict, 'Second argument is not a dictionary')
 
         if d1 != d2:
-            standardMsg = '%s != %s' % (safe_repr(d1, True), safe_repr(d2, True))
+            standardMsg = '%s != %s' % _common_shorten_repr(d1, d2)
             diff = ('\n' + '\n'.join(difflib.ndiff(
                            pprint.pformat(d1).splitlines(),
                            pprint.pformat(d2).splitlines())))
@@ -850,26 +1128,21 @@ class TestCase(unittest.TestCase):
         """Checks whether actual is a superset of expected."""
         missing = []
         mismatched = []
-        for key, value in expected.iteritems():
+        for key, value in expected.items():
             if key not in actual:
                 missing.append(key)
-            else:
-                try:
-                    are_equal = (value == actual[key])
-                except UnicodeDecodeError:
-                    are_equal = False
-                if not are_equal:
-                    mismatched.append('%s, expected: %s, actual: %s' %
-                                      (safe_repr(key), safe_repr(value), 
-                                       safe_repr(actual[key])))
+            elif value != actual[key]:
+                mismatched.append('%s, expected: %s, actual: %s' %
+                                  (safe_repr(key), safe_repr(value),
+                                   safe_repr(actual[key])))
 
         if not (missing or mismatched):
             return
 
         standardMsg = ''
         if missing:
-            standardMsg = 'Missing: %s' % ','.join([safe_repr(m) for m in 
-                                                    missing])
+            standardMsg = 'Missing: %s' % ','.join(safe_repr(m) for m in
+                                                    missing)
         if mismatched:
             if standardMsg:
                 standardMsg += '; '
@@ -881,23 +1154,20 @@ class TestCase(unittest.TestCase):
         """An unordered sequence specific comparison. It asserts that
         expected_seq and actual_seq contain the same elements. It is
         the equivalent of::
-        
+
             self.assertEqual(sorted(expected_seq), sorted(actual_seq))
 
         Raises with an error message listing which elements of expected_seq
         are missing from actual_seq and vice versa if any.
-        
+
         Asserts that each element has the same count in both sequences.
         Example:
             - [0, 1, 1] and [1, 0, 1] compare equal.
             - [0, 0, 1] and [0, 1] compare unequal.
         """
         try:
-            
-            expected = expected_seq[:]
-            expected.sort()
-            actual = actual_seq[:]
-            actual.sort()
+            expected = sorted(expected_seq)
+            actual = sorted(actual_seq)
         except TypeError:
             # Unsortable items (example: set(), complex(), ...)
             expected = list(expected_seq)
@@ -910,10 +1180,10 @@ class TestCase(unittest.TestCase):
 
         errors = []
         if missing:
-            errors.append('Expected, but missing:\n    %s' % 
+            errors.append('Expected, but missing:\n    %s' %
                            safe_repr(missing))
         if unexpected:
-            errors.append('Unexpected, but present:\n    %s' % 
+            errors.append('Unexpected, but present:\n    %s' %
                            safe_repr(unexpected))
         if errors:
             standardMsg = '\n'.join(errors)
@@ -921,15 +1191,23 @@ class TestCase(unittest.TestCase):
 
     def assertMultiLineEqual(self, first, second, msg=None):
         """Assert that two multi-line strings are equal."""
-        self.assert_(isinstance(first, basestring), (
+        self.assertIsInstance(first, six.string_types, (
                 'First argument is not a string'))
-        self.assert_(isinstance(second, basestring), (
+        self.assertIsInstance(second, six.string_types, (
                 'Second argument is not a string'))
 
         if first != second:
-            standardMsg = '%s != %s' % (safe_repr(first, True), safe_repr(second, True))
-            diff = '\n' + ''.join(difflib.ndiff(first.splitlines(True),
-                                                       second.splitlines(True)))
+            # don't use difflib if the strings are too long
+            if (len(first) > self._diffThreshold or
+                len(second) > self._diffThreshold):
+                self._baseAssertEqual(first, second, msg)
+            firstlines = first.splitlines(True)
+            secondlines = second.splitlines(True)
+            if len(firstlines) == 1 and first.strip('\r\n') == first:
+                firstlines = [first + '\n']
+                secondlines = [second + '\n']
+            standardMsg = '%s != %s' % _common_shorten_repr(first, second)
+            diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
@@ -982,57 +1260,84 @@ class TestCase(unittest.TestCase):
             standardMsg = '%s is an instance of %r' % (safe_repr(obj), cls)
             self.fail(self._formatMessage(msg, standardMsg))
 
-    def assertRaisesRegexp(self, expected_exception, expected_regexp,
-                           callable_obj=None, *args, **kwargs):
-        """Asserts that the message in a raised exception matches a regexp.
+    def assertRaisesRegex(self, expected_exception, expected_regex,
+                          callable_obj=None, *args, **kwargs):
+        """Asserts that the message in a raised exception matches a regex.
 
         Args:
             expected_exception: Exception class expected to be raised.
-            expected_regexp: Regexp (re pattern object or string) expected
+            expected_regex: Regex (re pattern object or string) expected
                     to be found in error message.
             callable_obj: Function to be called.
             args: Extra args.
             kwargs: Extra kwargs.
         """
-        if callable_obj is None:
-            return _AssertRaisesContext(expected_exception, self, expected_regexp)
-        try:
-            callable_obj(*args, **kwargs)
-        except expected_exception, exc_value:
-            if isinstance(expected_regexp, basestring):
-                expected_regexp = re.compile(expected_regexp)
-            if not expected_regexp.search(str(exc_value)):
-                raise self.failureException('"%s" does not match "%s"' %
-                         (expected_regexp.pattern, str(exc_value)))
-        else:
-            if hasattr(expected_exception, '__name__'): 
-                excName = expected_exception.__name__
-            else: 
-                excName = str(expected_exception)
-            raise self.failureException, "%s not raised" % excName
+        context = _AssertRaisesContext(expected_exception, self, callable_obj,
+                                       expected_regex)
+        return context.handle('assertRaisesRegex', callable_obj, args, kwargs)
+
+    def assertWarnsRegex(self, expected_warning, expected_regex,
+                         callable_obj=None, *args, **kwargs):
+        """Asserts that the message in a triggered warning matches a regex.
+        Basic functioning is similar to assertWarns() with the addition
+        that only warnings whose messages also match the regular expression
+        are considered successful matches.
+
+        Args:
+            expected_warning: Warning class expected to be triggered.
+            expected_regex: Regex (re pattern object or string) expected
+                    to be found in error message.
+            callable_obj: Function to be called.
+            args: Extra args.
+            kwargs: Extra kwargs.
+        """
+        context = _AssertWarnsContext(expected_warning, self, callable_obj,
+                                      expected_regex)
+        return context.handle('assertWarnsRegex', callable_obj, args, kwargs)
 
 
-    def assertRegexpMatches(self, text, expected_regexp, msg=None):
+    def assertRegex(self, text, expected_regex, msg=None):
         """Fail the test unless the text matches the regular expression."""
-        if isinstance(expected_regexp, basestring):
-            expected_regexp = re.compile(expected_regexp)
-        if not expected_regexp.search(text):
-            msg = msg or "Regexp didn't match"
-            msg = '%s: %r not found in %r' % (msg, expected_regexp.pattern, text)
+        if isinstance(expected_regex, six.string_types):
+            expected_regex = re.compile(expected_regex)
+        if not expected_regex.search(text):
+            msg = msg or "Regex didn't match"
+            msg = '%s: %r not found in %r' % (msg, expected_regex.pattern, text)
             raise self.failureException(msg)
 
-    def assertNotRegexpMatches(self, text, unexpected_regexp, msg=None):
+    def assertNotRegex(self, text, unexpected_regex, msg=None):
         """Fail the test if the text matches the regular expression."""
-        if isinstance(unexpected_regexp, basestring):
-            unexpected_regexp = re.compile(unexpected_regexp)
-        match = unexpected_regexp.search(text)
+        if isinstance(unexpected_regex, six.string_types):
+            unexpected_regex = re.compile(unexpected_regex)
+        match = unexpected_regex.search(text)
         if match:
-            msg = msg or "Regexp matched"
+            msg = msg or "Regex matched"
             msg = '%s: %r matches %r in %r' % (msg,
                                                text[match.start():match.end()],
-                                               unexpected_regexp.pattern,
+                                               unexpected_regex.pattern,
                                                text)
             raise self.failureException(msg)
+
+
+    def _deprecate(original_func):
+        def deprecated_func(*args, **kwargs):
+            warnings.warn(
+                ('Please use %s instead.' % original_func.__name__),
+                PendingDeprecationWarning, 2)
+            return original_func(*args, **kwargs)
+        return deprecated_func
+
+    failUnlessEqual = assertEquals = _deprecate(assertEqual)
+    failIfEqual = assertNotEquals = _deprecate(assertNotEqual)
+    failUnlessAlmostEqual = assertAlmostEquals = _deprecate(assertAlmostEqual)
+    failIfAlmostEqual = assertNotAlmostEquals = _deprecate(assertNotAlmostEqual)
+    failUnless = assert_ = _deprecate(assertTrue)
+    failUnlessRaises = _deprecate(assertRaises)
+    failIf = _deprecate(assertFalse)
+    assertRaisesRegexp = _deprecate(assertRaisesRegex)
+    assertRegexpMatches = _deprecate(assertRegex)
+    assertNotRegexpMatches = _deprecate(assertNotRegex)
+
 
 class FunctionTestCase(TestCase):
     """A test case that wraps a test function.
@@ -1093,3 +1398,39 @@ class FunctionTestCase(TestCase):
             return self._description
         doc = self._testFunc.__doc__
         return doc and doc.split("\n")[0].strip() or None
+
+
+class _SubTest(TestCase):
+
+    def __init__(self, test_case, message, params):
+        super(_SubTest, self).__init__()
+        self._message = message
+        self.test_case = test_case
+        self.params = params
+        self.failureException = test_case.failureException
+
+    def runTest(self):
+        raise NotImplementedError("subtests cannot be run directly")
+
+    def _subDescription(self):
+        parts = []
+        if self._message:
+            parts.append("[{0}]".format(self._message))
+        if self.params:
+            params_desc = ', '.join(
+                "{0}={1!r}".format(k, v)
+                for (k, v) in sorted(self.params.items()))
+            parts.append("({0})".format(params_desc))
+        return " ".join(parts) or '(<subtest>)'
+
+    def id(self):
+        return "{0} {1}".format(self.test_case.id(), self._subDescription())
+
+    def shortDescription(self):
+        """Returns a one-line description of the subtest, or None if no
+        description has been provided.
+        """
+        return self.test_case.shortDescription()
+
+    def __str__(self):
+        return "{0} {1}".format(self.test_case, self._subDescription())
