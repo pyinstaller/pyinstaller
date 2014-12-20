@@ -367,6 +367,12 @@ such as README must be distributed separately.
 Another is that the single executable is a little slower to start up than
 the executable in one folder.
 
+.. Note::
+
+  Before bundling your project to one file, make sure it works fine
+  when bundled to one folder. `When Things Go Wrong`_ it's *much* easier to
+  find out what actually went wrong if you bundled to one folder.
+
 
 How the One-Folder Program Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
