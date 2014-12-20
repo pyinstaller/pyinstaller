@@ -69,6 +69,14 @@ rthooks = {}
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
 _fake_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'fake')
 
+
+_MISSING_BOOTLOADER_ERRORMSG = """
+Fatal error: PyInstaller does not include a pre-compiled bootloader for your
+platform. See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>
+for more details and instructions how to build the bootloader.
+"""
+
+
 def _save_data(filename, data):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
@@ -1189,7 +1197,10 @@ class EXE(Target):
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
-        return os.path.join('PyInstaller', 'bootloader', PLATFORM, exe)
+        bootloader = os.path.join('PyInstaller', 'bootloader', PLATFORM, exe)
+        if not os.path.exists(bootloader):
+            raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
+        return bootloader
 
     def assemble(self):
         logger.info("building EXE from %s", os.path.basename(self.out))
