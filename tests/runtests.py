@@ -99,6 +99,7 @@ class SkipChecker(object):
             'basic/test_email': is_py25,
             # On Mac DYLD_LIBRARY_PATH is not used.
             'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
+            'import/test_onefile_pkgutil.get_data': is_py26,
             'import/test_c_extension': is_py25,
             'import/test_onefile_c_extension': is_py25,
             'import/test_onefile_relative_import': is_py25,
@@ -248,6 +249,7 @@ class SkipChecker(object):
 SPEC_FILE = set([
     'basic/test_onefile_ctypes',
     'import/test_onefile_pkg_resources',
+    'import/test_onefile_pkgutil-get_data',
     'basic/test_option_verbose',
     'basic/test_option_wignore',
     'basic/test_pkg_structures',
