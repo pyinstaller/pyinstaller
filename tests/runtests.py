@@ -247,7 +247,7 @@ class SkipChecker(object):
 
 SPEC_FILE = set([
     'basic/test_onefile_ctypes',
-    'basic/test_onefile_pkg_resources',
+    'import/test_onefile_pkg_resources',
     'basic/test_option_verbose',
     'basic/test_option_wignore',
     'basic/test_pkg_structures',
