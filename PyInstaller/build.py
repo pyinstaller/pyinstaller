@@ -1665,12 +1665,18 @@ class TOC(UserList.UserList):
         fd = self.fltr.copy()
         # remove from fd if it's in other
         for tpl in other:
-            if fd.get(tpl[0], 0):
-                del fd[tpl[0]]
+            fn = tpl[0]
+            if tpl[2] == 'BINARY':
+                fn = os.path.normcase(fn)
+            if fd.get(fn, 0):
+                del fd[fn]
         rslt = TOC()
         # return only those things still in fd (preserve order)
         for tpl in self.data:
-            if fd.get(tpl[0], 0):
+            fn = tpl[0]
+            if tpl[2] == 'BINARY':
+                fn = os.path.normcase(fn)
+            if fd.get(fn, 0):
                 rslt.append(tpl)
         return rslt
 
