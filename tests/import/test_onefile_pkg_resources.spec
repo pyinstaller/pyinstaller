@@ -39,7 +39,7 @@ def Datafiles(*filenames, **kw):
 
 
 # Include some data files for testing pkg_resources module.
-datafile = Datafiles('pkg3/pkg_resources-data.txt', strip_path=False)
+datafile = Datafiles('pkg3/sample-data.txt', strip_path=False)
 
 
 exe = EXE(pyz,
