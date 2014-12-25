@@ -1618,72 +1618,71 @@ class TOC(UserList.UserList):
     """
     def __init__(self, initlist=None):
         UserList.UserList.__init__(self)
-        self.fltr = {}
+        self.filenames = set()
         if initlist:
-            for tpl in initlist:
-                self.append(tpl)
+            for entry in initlist:
+                self.append(entry)
 
-    def append(self, tpl):
-        try:
-            fn = tpl[0]
-            if tpl[2] in ["BINARY", "DATA"]:
-                # Normalize the case for binary and data files only (to avoid duplicates
-                # for different cases under Windows). We can't do that for
-                # Python files because the import semantic (even at runtime)
-                # depends on the case.
-                fn = os.path.normcase(fn)
-            if not self.fltr.get(fn):
-                self.data.append(tpl)
-                self.fltr[fn] = 1
-        except TypeError:
-            logger.info("TOC found a %s, not a tuple", tpl)
-            raise
+    def _normentry(self, entry):
+        if not isinstance(entry, tuple):
+            logger.info("TOC found a %s, not a tuple", entry)
+            raise TypeError("Expected tuple, not %s." % type(entry).__name__)
+        name, path, typecode = entry
+        if typecode == "BINARY":
+            # Normalize the case for binary files only (to avoid duplicates
+            # for different cases under Windows). We can't do that for
+            # Python files because the import semantic (even at runtime)
+            # depends on the case.
+            name = os.path.normcase(name)
+        return (name, path, typecode)
 
-    def insert(self, pos, tpl):
-        fn = tpl[0]
-        if tpl[2] == "BINARY":
-            fn = os.path.normcase(fn)
-        if not self.fltr.get(fn):
-            self.data.insert(pos, tpl)
-            self.fltr[fn] = 1
+    def append(self, entry):
+        name, path, typecode = self._normentry(entry)
+        if name not in self.filenames:
+            self.data.append((name, path, typecode))
+            self.filenames.add(name)
+
+    def insert(self, pos, entry):
+        name, path, typecode = self._normentry(entry)
+        if name not in self.filenames:
+            self.data.insert(pos, (name, path, typecode))
+            self.filenames.add(name)
 
     def __add__(self, other):
-        rslt = TOC(self.data)
-        rslt.extend(other)
-        return rslt
+        result = TOC(self)
+        result.extend(other)
+        return result
 
     def __radd__(self, other):
-        rslt = TOC(other)
-        rslt.extend(self.data)
-        return rslt
+        result = TOC(other)
+        result.extend(self)
+        return result
 
     def extend(self, other):
-        for tpl in other:
-            self.append(tpl)
+        for entry in other:
+            self.append(entry)
 
     def __sub__(self, other):
-        fd = self.fltr.copy()
-        # remove from fd if it's in other
-        for tpl in other:
-            if fd.get(tpl[0], 0):
-                del fd[tpl[0]]
-        rslt = TOC()
-        # return only those things still in fd (preserve order)
-        for tpl in self.data:
-            if fd.get(tpl[0], 0):
-                rslt.append(tpl)
-        return rslt
+        other = TOC(other)
+        filenames = self.filenames - other.filenames
+        result = TOC()
+        for name, path, typecode in self:
+            if name in filenames:
+                result.data.append((name, path, typecode))
+        return result
 
     def __rsub__(self, other):
-        rslt = TOC(other)
-        return rslt.__sub__(self)
+        result = TOC(other)
+        return result.__sub__(self)
 
     def intersect(self, other):
-        rslt = TOC()
-        for tpl in other:
-            if self.fltr.get(tpl[0], 0):
-                rslt.append(tpl)
-        return rslt
+        other = TOC(other)
+        filenames = self.filenames.intersection(other.filenames)
+        result = TOC()
+        for name, path, typecode in other:
+            if name in filenames:
+                result.data.append((name, path, typecode))
+        return result
 
 
 class Tree(Target, TOC):
