@@ -38,6 +38,7 @@ else:
 
 
 _PACKAGES = [
+    'six',
     'docutils',
     'jinja2',
     'MySQL-python',
@@ -54,13 +55,6 @@ _PACKAGES = [
     'zope.interface',
     pycrypto,
 ]
-
-
-# TODO remove this block when we support Python 2.6+ only.
-# Python 2.4 and 2.5 does not have ssl module. But we need
-# it.
-if sys.version_info[0:2] < (2,6):
-    _PACKAGES.append('ssl')
 
 
 def main():
