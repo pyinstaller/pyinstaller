@@ -1088,6 +1088,12 @@ class EXE(Target):
                 a version resource from an executable and then edit the output to
                 create your own. (The syntax of version resources is so arcane
                 that I wouldn't attempt to write one from scratch).
+            uac_admin
+                Windows only. Setting to True creates a Manifest with will request
+                elevation upon application restart
+            uac_uiaccess
+                Windows only. Setting to True allows an elevated application to
+                work with Remote Desktop
         """
         Target.__init__(self)
 
@@ -1104,6 +1110,10 @@ class EXE(Target):
         # If ``append_pkg`` is false, the archive will not be appended
         # to the exe, but copied beside it.
         self.append_pkg = kwargs.get('append_pkg', True)
+
+        # On Windows allows the exe to request admin privileges.
+        self.uac_admin = kwargs.get('uac_admin', config.get('ui_admin'))
+        self.uac_uiaccess = kwargs.get('uac_uiaccess', config.get('ui_access'))
 
         if config['hasUPX']: 
            self.upx = kwargs.get('upx', False)
@@ -1139,12 +1149,14 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
+
         if is_win:
             filename = os.path.join(WORKPATH, specnm + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
-                self.console)
+                self.console, self.uac_admin, self.uac_uiaccess)
             self.toc.append((os.path.basename(self.name) + ".manifest", filename,
                 'BINARY'))
+
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
@@ -1208,8 +1220,20 @@ class EXE(Target):
         exe = self._bootloader_file('run')
         if is_win or is_cygwin:
             exe = exe + '.exe'
+
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
+
+        if is_win and not self.exclude_binaries:
+            # Windows and onefile mode - embed manifest into exe.
+            logger.info('Onefile Mode - Embedding Manifest into EXE file')
+            tmpnm = tempfile.mktemp()
+            shutil.copy2(exe, tmpnm)
+            os.chmod(tmpnm, 0755)
+            self.manifest.update_resources(tmpnm, [1]) # 1 for executable
+            trash.append(tmpnm)
+            exe = tmpnm
+
         if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
                                         self.resources):
             tmpnm = tempfile.mktemp()
@@ -1933,7 +1957,14 @@ def __add_options(parser):
     parser.add_option('--clean', dest='clean_build', action='store_true', default=False,
                  help='Clean PyInstaller cache and remove temporary files '
                       'before building.')
-
+    parser.add_option('--uac_admin',
+                      action="store_true", default=False,
+                      help='Windows only. Setting to True creates a Manifest '
+                      'with will request elevation upon application restart')
+    parser.add_option('--uac_uiaccess',
+                      action="store_true", default=False,
+                      help='Windows only. Setting to True allows an elevated application to '
+                      'work with Remote Desktop')
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # Set of global variables that can be used while processing .spec file.
@@ -1962,5 +1993,8 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
 
     if config['hasUPX']:
         setupUPXFlags()
+
+    config['ui_admin'] = kw.get('ui_admin', False)
+    config['ui_access'] = kw.get('ui_uiaccess', False)
 
     build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))
