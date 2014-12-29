@@ -136,6 +136,11 @@ Windows specific options
                     to the final executable if TYPE, NAME and LANGUAGE are
                     omitted or specified as wildcard *.This option can be
                     used multiple times.
+--uac-admin         Using this option creates a Manifest which will request
+                    elevation upon application restart.
+--uac-uiaccess      Using this option allows an elevated application to
+                    work with Remote Desktop.
+
 
 Mac OS X specific options
 -------------------------

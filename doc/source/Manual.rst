@@ -671,6 +671,13 @@ Options for Windows apps
     if *TYPE*, *NAME* and *LANGUAGE* are omitted or given as ``*``.
     This option an be used more than once to specify more resources.
 
+--uac-admin
+    Using this option creates a Manifest which will request elevation upon
+    application restart.
+
+--uac-uiaccess
+    Using this option allows an elevated application to work with Remote Desktop.
+
 Options for Mac OS X apps
 ---------------------------
 

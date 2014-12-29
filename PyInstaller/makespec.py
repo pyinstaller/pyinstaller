@@ -271,6 +271,12 @@ def __add_options(parser):
                       "to the final executable if TYPE, NAME and LANGUAGE "
                       "are omitted or specified as wildcard *."
                       "This option can be used multiple times.")
+    g.add_option('--uac-admin', dest='uac_admin', action="store_true", default=False,
+                 help='Using this option creates a Manifest '
+                      'which will request elevation upon application restart.')
+    g.add_option('--uac-uiaccess', dest='uac_uiaccess', action="store_true", default=False,
+                 help='Using this option allows an elevated application to '
+                      'work with Remote Desktop.')
 
     g = parser.add_option_group('Mac OS X specific options')
     g.add_option('--osx-bundle-identifier', dest='bundle_identifier',
@@ -285,7 +291,7 @@ def main(scripts, name=None, onefile=False,
          pathex=[], version_file=None, specpath=DEFAULT_SPECPATH,
          icon_file=None, manifest=None, resources=[], bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=[],
-         excludes=[], **kwargs):
+         excludes=[], uac_admin=False, uac_uiaccess=False, **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -308,10 +314,14 @@ def main(scripts, name=None, onefile=False,
     pathex = pathex[:]
     pathex.append(specpath)
 
+    # Handle additional EXE options.
     exe_options = ''
     if version_file:
         exe_options = "%s, version='%s'" % (exe_options, quote_win_filepath(version_file))
-
+    if uac_admin:
+        exe_options = "%s, uac_admin=%s" % (exe_options, 'True')
+    if uac_uiaccess:
+        exe_options = "%s, uac_uiaccess=%s" % (exe_options, 'True')
     if icon_file:
         # Icon file for Windows.
         # On Windows default icon is embedded in the bootloader executable.

@@ -106,6 +106,7 @@ class SkipChecker(object):
             'import/test_onefile_relative_import': is_py25,
             'import/test_onefile_relative_import2': is_py26,
             'import/test_onefile_relative_import3': is_py25,
+            'interactive/test_onefile_win32_uac_admin': is_win,
             'libraries/test_enchant': is_win,
             }
 
@@ -262,6 +263,7 @@ SPEC_FILE = set([
     'import/test_hiddenimport',
     'import/test_hook_without_hook_for_package',
     'interactive/test_matplotlib',  # TODO .spec for this test contain win32 specific manifest code. Do we still need it?
+    'interactive/test_onefile_win32_uac_admin',
     'libraries/test_Image',
     'libraries/test_PIL',
     'multipackage/test_multipackage1',
