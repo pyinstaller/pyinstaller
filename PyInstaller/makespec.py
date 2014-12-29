@@ -272,12 +272,11 @@ def __add_options(parser):
                       "are omitted or specified as wildcard *."
                       "This option can be used multiple times.")
     g.add_option('--uac-admin', dest='uac_admin', action="store_true", default=False,
-                 help='Setting to True creates a Manifest '
-                      'which will request elevation upon application restart')
+                 help='Using this option creates a Manifest '
+                      'which will request elevation upon application restart.')
     g.add_option('--uac-uiaccess', dest='uac_uiaccess', action="store_true", default=False,
-                 help='Setting to True allows an elevated application to '
-                      'work with Remote Desktop')
-
+                 help='Using this option allows an elevated application to '
+                      'work with Remote Desktop.')
 
     g = parser.add_option_group('Mac OS X specific options')
     g.add_option('--osx-bundle-identifier', dest='bundle_identifier',

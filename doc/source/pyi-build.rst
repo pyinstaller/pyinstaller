@@ -60,11 +60,6 @@ OPTIONS
 --log-level=LOGLEVEL  Amount of detail in build-time console messages
                       (default: INFO, choose one of DEBUG, INFO, WARN,
                       ERROR, CRITICAL)
---uac_admin           Windows only. Setting to True creates a Manifest with will request
-                      elevation upon application restart
---uac_uiaccess
-                      Windows only. Setting to True allows an elevated application to
-                      work with Remote Desktop
 
 
 SEE ALSO
