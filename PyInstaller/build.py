@@ -203,7 +203,7 @@ def _check_guts_eq(attr, old, new, last_build):
     rebuild is required if values differ
     """
     if old != new:
-        logger.info("building because %s changed", attr)
+        logger.info("Building because %s changed", attr)
         return True
     return False
 
@@ -217,10 +217,10 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     """
     for (nm, fnm, typ) in old:
         if mtime(fnm) > last_build:
-            logger.info("building because %s changed", fnm)
+            logger.info("Building because %s changed", fnm)
             return True
         elif pyc and mtime(fnm[:-1]) > last_build:
-            logger.info("building because %s changed", fnm[:-1])
+            logger.info("Building because %s changed", fnm[:-1])
             return True
     return False
 
@@ -331,11 +331,11 @@ class Target(object):
         try:
             data = _load_data(self.out)
         except:
-            logger.info("building because %s %s", os.path.basename(self.out), missing)
+            logger.info("Building because %s %s", os.path.basename(self.out), missing)
             return None
 
         if len(data) != len(self.GUTS):
-            logger.info("building because %s is bad", self.outnm)
+            logger.info("Building because %s is bad", self.outnm)
             return None
         for i, (attr, func) in enumerate(self.GUTS):
             if func is None:
@@ -495,11 +495,11 @@ class Analysis(Target):
 
     def check_guts(self, last_build):
         if last_build == 0:
-            logger.info("building %s because %s non existent", self.__class__.__name__, self.outnm)
+            logger.info("Building %s because %s non existent", self.__class__.__name__, self.outnm)
             return True
         for fnm in self.inputs:
             if mtime(fnm) > last_build:
-                logger.info("building because %s changed", fnm)
+                logger.info("Building because %s changed", fnm)
                 return True
 
         data = Target.get_guts(self, last_build)
@@ -749,7 +749,7 @@ class PYZ(Target):
 
     def check_guts(self, last_build):
         if not os.path.exists(self.name):
-            logger.info("rebuilding %s because %s is missing",
+            logger.info("Rebuilding %s because %s is missing",
                         self.outnm, os.path.basename(self.name))
             return True
 
@@ -759,7 +759,7 @@ class PYZ(Target):
         return False
 
     def assemble(self):
-        logger.info("building PYZ (ZlibArchive) %s", os.path.basename(self.out))
+        logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
         pyz = pyi_archive.ZlibArchive(level=self.level, cipher=self.cipher)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
@@ -997,7 +997,7 @@ class PKG(Target):
 
     def check_guts(self, last_build):
         if not os.path.exists(self.name):
-            logger.info("rebuilding %s because %s is missing",
+            logger.info("Rebuilding %s because %s is missing",
                         self.outnm, os.path.basename(self.name))
             return 1
 
@@ -1008,7 +1008,7 @@ class PKG(Target):
         return False
 
     def assemble(self):
-        logger.info("building PKG (CArchive) %s", os.path.basename(self.name))
+        logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
         trash = []
         mytoc = []
         seen = {}
@@ -1112,8 +1112,8 @@ class EXE(Target):
         self.append_pkg = kwargs.get('append_pkg', True)
 
         # On Windows allows the exe to request admin privileges.
-        self.uac_admin = kwargs.get('uac_admin', config.get('ui_admin'))
-        self.uac_uiaccess = kwargs.get('uac_uiaccess', config.get('ui_access'))
+        self.uac_admin = kwargs.get('uac_admin', False)
+        self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
 
         if config['hasUPX']: 
            self.upx = kwargs.get('upx', False)
@@ -1177,11 +1177,11 @@ class EXE(Target):
 
     def check_guts(self, last_build):
         if not os.path.exists(self.name):
-            logger.info("rebuilding %s because %s missing",
+            logger.info("Rebuilding %s because %s missing",
                         self.outnm, os.path.basename(self.name))
             return 1
         if not self.append_pkg and not os.path.exists(self.pkgname):
-            logger.info("rebuilding because %s missing",
+            logger.info("Rebuilding because %s missing",
                         os.path.basename(self.pkgname))
             return 1
 
@@ -1196,10 +1196,10 @@ class EXE(Target):
 
         mtm = data[-1]
         if mtm != mtime(self.name):
-            logger.info("rebuilding %s because mtimes don't match", self.outnm)
+            logger.info("Rebuilding %s because mtimes don't match", self.outnm)
             return True
         if mtm < mtime(self.pkg.out):
-            logger.info("rebuilding %s because pkg is more recent", self.outnm)
+            logger.info("Rebuilding %s because pkg is more recent", self.outnm)
             return True
 
         return False
@@ -1212,7 +1212,7 @@ class EXE(Target):
         return os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
 
     def assemble(self):
-        logger.info("building EXE from %s", os.path.basename(self.out))
+        logger.info("Building EXE from %s", os.path.basename(self.out))
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
@@ -1329,7 +1329,7 @@ class DLL(EXE):
     need to write your own dll.
     """
     def assemble(self):
-        logger.info("building DLL %s", os.path.basename(self.out))
+        logger.info("Building DLL %s", os.path.basename(self.out))
         outf = open(self.name, 'wb')
         dll = self._bootloader_file('inprocsrvr') + '.dll'
         if not os.path.exists(dll):
@@ -1406,7 +1406,7 @@ class COLLECT(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("building COLLECT %s", os.path.basename(self.out))
+        logger.info("Building COLLECT %s", os.path.basename(self.out))
         os.makedirs(self.name)
         toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
@@ -1515,7 +1515,7 @@ class BUNDLE(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("building BUNDLE %s", os.path.basename(self.out))
+        logger.info("Building BUNDLE %s", os.path.basename(self.out))
 
         # Create a minimal Mac bundle structure
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
@@ -1754,7 +1754,7 @@ class Tree(Target, TOC):
         while stack:
             d = stack.pop()
             if mtime(d) > last_build:
-                logger.info("building %s because directory %s changed",
+                logger.info("Building %s because directory %s changed",
                             self.outnm, d)
                 return True
             for nm in os.listdir(d):
@@ -1765,7 +1765,7 @@ class Tree(Target, TOC):
         return False
 
     def assemble(self):
-        logger.info("building Tree %s", os.path.basename(self.out))
+        logger.info("Building Tree %s", os.path.basename(self.out))
         stack = [(self.root, self.prefix)]
         excludes = {}
         xexcludes = {}
@@ -1957,14 +1957,7 @@ def __add_options(parser):
     parser.add_option('--clean', dest='clean_build', action='store_true', default=False,
                  help='Clean PyInstaller cache and remove temporary files '
                       'before building.')
-    parser.add_option('--uac_admin',
-                      action="store_true", default=False,
-                      help='Windows only. Setting to True creates a Manifest '
-                      'with will request elevation upon application restart')
-    parser.add_option('--uac_uiaccess',
-                      action="store_true", default=False,
-                      help='Windows only. Setting to True allows an elevated application to '
-                      'work with Remote Desktop')
+
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # Set of global variables that can be used while processing .spec file.
