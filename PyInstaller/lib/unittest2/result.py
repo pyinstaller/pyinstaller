@@ -4,7 +4,7 @@ import sys
 import traceback
 import unittest
 
-from StringIO import StringIO
+from six.moves import StringIO
 
 from unittest2 import util
 from unittest2.compatibility import wraps
@@ -12,11 +12,11 @@ from unittest2.compatibility import wraps
 __unittest = True
 
 def failfast(method):
+    @wraps(method)
     def inner(self, *args, **kw):
         if getattr(self, 'failfast', False):
             self.stop()
         return method(self, *args, **kw)
-    inner = wraps(method)(inner)
     return inner
 
 
@@ -36,8 +36,8 @@ class TestResult(unittest.TestResult):
     """
     _previousTestClass = None
     _moduleSetUpFailed = False
-    
-    def __init__(self):
+
+    def __init__(self, stream=None, descriptions=None, verbosity=None):
         self.failfast = False
         self.failures = []
         self.errors = []
@@ -52,7 +52,7 @@ class TestResult(unittest.TestResult):
         self._original_stdout = sys.stdout
         self._original_stderr = sys.stderr
         self._mirrorOutput = False
-    
+
     def startTest(self, test):
         "Called when the given test is about to be run"
         self.testsRun += 1
@@ -84,7 +84,7 @@ class TestResult(unittest.TestResult):
                     if not error.endswith('\n'):
                         error += '\n'
                     self._original_stderr.write(STDERR_LINE % error)
-                
+
             sys.stdout = self._original_stdout
             sys.stderr = self._original_stderr
             self._stdout_buffer.seek(0)
@@ -92,7 +92,7 @@ class TestResult(unittest.TestResult):
             self._stderr_buffer.seek(0)
             self._stderr_buffer.truncate()
         self._mirrorOutput = False
-        
+
 
     def stopTestRun(self):
         """Called once after all tests are executed.
@@ -100,22 +100,37 @@ class TestResult(unittest.TestResult):
         See stopTest for a method called after each test.
         """
 
-
+    @failfast
     def addError(self, test, err):
         """Called when an error has occurred. 'err' is a tuple of values as
         returned by sys.exc_info().
         """
         self.errors.append((test, self._exc_info_to_string(err, test)))
         self._mirrorOutput = True
-    addError = failfast(addError)
 
+    @failfast
     def addFailure(self, test, err):
         """Called when an error has occurred. 'err' is a tuple of values as
         returned by sys.exc_info()."""
         self.failures.append((test, self._exc_info_to_string(err, test)))
         self._mirrorOutput = True
-    addFailure = failfast(addFailure)
-    
+
+    @failfast
+    def addSubTest(self, test, subtest, err):
+        """Called at the end of a subtest.
+        'err' is None if the subtest ended successfully, otherwise it's a
+        tuple of values as returned by sys.exc_info().
+        """
+        # By default, we don't do anything with successful subtests, but
+        # more sophisticated test results might want to record them.
+        if err is not None:
+            if issubclass(err[0], test.failureException):
+                errors = self.failures
+            else:
+                errors = self.errors
+            errors.append((subtest, self._exc_info_to_string(err, test)))
+            self._mirrorOutput = True
+
     def addSuccess(self, test):
         "Called when a test has completed successfully"
         pass
@@ -129,17 +144,22 @@ class TestResult(unittest.TestResult):
         self.expectedFailures.append(
             (test, self._exc_info_to_string(err, test)))
 
+    @failfast
     def addUnexpectedSuccess(self, test):
         """Called when a test was expected to fail, but succeed."""
         self.unexpectedSuccesses.append(test)
-    addUnexpectedSuccess = failfast(addUnexpectedSuccess)
 
     def wasSuccessful(self):
-        "Tells whether or not this result was a success"
-        return (len(self.failures) + len(self.errors) == 0)
+        """Tells whether or not this result was a success."""
+        # The hasattr check is for test_result's OldResult test.  That
+        # way this method works on objects that lack the attribute.
+        # (where would such result intances come from? old stored pickles?)
+        return ((len(self.failures) == len(self.errors) == 0) and
+                (not hasattr(self, 'unexpectedSuccesses') or
+                 len(self.unexpectedSuccesses) == 0))
 
     def stop(self):
-        "Indicates that the tests should be aborted"
+        """Indicates that the tests should be aborted."""
         self.shouldStop = True
 
     def _exc_info_to_string(self, err, test):
@@ -154,10 +174,10 @@ class TestResult(unittest.TestResult):
             msgLines = traceback.format_exception(exctype, value, tb, length)
         else:
             msgLines = traceback.format_exception(exctype, value, tb)
-        
+
         if self.buffer:
             output = sys.stdout.getvalue()
-            error = sys.stderr.getvalue()            
+            error = sys.stderr.getvalue()
             if output:
                 if not output.endswith('\n'):
                     output += '\n'

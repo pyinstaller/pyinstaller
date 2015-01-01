@@ -7,6 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+import sys
+
 # Not neceesary for the code, but informs PyInstaller of the hidden import of QtWebKit, which is performed inside of uic.loadUi.
 from PyQt4.QtWebKit import QWebView
 

@@ -12,6 +12,7 @@
 Viewer for archives packaged by archive.py
 """
 
+from __future__ import print_function
 
 import optparse
 import os
@@ -46,7 +47,7 @@ def main(opts, args):
     rec_debug = opts.rec
     brief = opts.brief
     if not os.path.isfile(name):
-        print "%s is an invalid file name!" % name
+        print(name, "is an invalid file name!")
         return 1
 
     arch = get_archive(name)
@@ -62,7 +63,7 @@ def main(opts, args):
             toks = raw_input('? ').split(None, 1)
         except EOFError:
             # Ctrl-D
-            print  # Clear line.
+            print()  # Clear line.
             break
         if not toks:
             usage()
@@ -86,7 +87,7 @@ def main(opts, args):
             arg = arg.strip()
             arch = get_archive(arg)
             if arch is None:
-                print arg, "not found"
+                print(arg, "not found")
                 continue
             stack.append((arg, arch))
             show(arg, arch)
@@ -96,11 +97,11 @@ def main(opts, args):
             arg = arg.strip()
             data = get_data(arg, arch)
             if data is None:
-                print "Not found"
+                print("Not found")
                 continue
             fnm = raw_input('to filename? ')
             if not fnm:
-                print repr(data)
+                print(repr(data))
             else:
                 open(fnm, 'wb').write(data)
         elif cmd == 'Q':
@@ -114,14 +115,14 @@ def main(opts, args):
         try:
             os.remove(fnm)
         except Exception, e:
-            print "couldn't delete", fnm, e.args
+            print("couldn't delete", fnm, e.args)
 
 
 def usage():
-    print "U: go Up one level"
-    print "O <nm>: open embedded archive nm"
-    print "X <nm>: extract nm"
-    print "Q: quit"
+    print("U: go Up one level")
+    print("O <nm>: open embedded archive nm")
+    print("X <nm>: extract nm")
+    print("Q: quit")
 
 
 def get_archive(nm):
@@ -162,10 +163,10 @@ def get_data(nm, arch):
 
 def show(nm, arch):
     if type(arch.toc) == type({}):
-        print " Name: (ispkg, pos, len)"
+        print(" Name: (ispkg, pos, len)")
         toc = arch.toc
     else:
-        print " pos, length, uncompressed, iscompressed, type, name"
+        print(" pos, length, uncompressed, iscompressed, type, name")
         toc = arch.toc.data
     pprint.pprint(toc)
 
@@ -204,7 +205,7 @@ class ZlibArchive(pyi_archive.ZlibArchive):
             raise RuntimeError("%s is not a valid %s archive file"
                                % (self.path, self.__class__.__name__))
         if self.lib.read(len(self.pymagic)) != self.pymagic:
-            print "Warning: pyz is from a different Python version"
+            print("Warning: pyz is from a different Python version")
         self.lib.read(4)
 
 

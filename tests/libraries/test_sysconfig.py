@@ -34,4 +34,4 @@ if not sys.platform.startswith('win'):
 for f in files:
     if not os.path.exists(f):
         raise SystemExit('File does not exist: %s' % f)
-print 'okay'
+print('okay')

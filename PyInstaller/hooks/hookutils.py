@@ -10,6 +10,7 @@
 
 import glob
 import os
+import os.path
 import sys
 import PyInstaller
 import PyInstaller.compat as compat
@@ -147,7 +148,7 @@ diff = set(all_modlist) - set(original_modlist)
 # Module list contain original modname. We do not need it there.
 diff.discard('%(modname)s')
 # Print module list to stdout.
-print list(diff)
+print(list(diff))
 """ % {'modname': modname}
     module_imports = eval_statement(statement)
 
@@ -162,7 +163,7 @@ def qt4_plugins_dir():
     qt4_plugin_dirs = eval_statement(
         "from PyQt4.QtCore import QCoreApplication;"
         "app=QCoreApplication([]);"
-        "print map(unicode,app.libraryPaths())")
+        "print(map(unicode,app.libraryPaths()))")
     if not qt4_plugin_dirs:
         logger.error("Cannot find PyQt4 plugin directories")
         return ""
@@ -179,7 +180,7 @@ def qt4_phonon_plugins_dir():
         "app=QApplication([]); app.setApplicationName('pyinstaller');"
         "from PyQt4.phonon import Phonon;"
         "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        "print map(unicode,app.libraryPaths())")
+        "print(map(unicode,app.libraryPaths()))")
     if not qt4_plugin_dirs:
         logger.error("Cannot find PyQt4 phonon plugin directories")
         return ""
@@ -277,7 +278,7 @@ def qt5_plugins_dir():
     qt5_plugin_dirs = eval_statement(
         "from PyQt5.QtCore import QCoreApplication;"
         "app=QCoreApplication([]);"
-        "print map(unicode,app.libraryPaths())")
+        "print(map(unicode,app.libraryPaths()))")
     if not qt5_plugin_dirs:
         logger.error("Cannot find PyQt5 plugin directories")
         return ""
@@ -294,7 +295,7 @@ def qt5_phonon_plugins_dir():
         "app=QApplication([]); app.setApplicationName('pyinstaller');"
         "from PyQt5.phonon import Phonon;"
         "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        "print map(unicode,app.libraryPaths())")
+        "print(map(unicode,app.libraryPaths()))")
     if not qt5_plugin_dirs:
         logger.error("Cannot find PyQt5 phonon plugin directories")
         return ""
@@ -535,13 +536,13 @@ def matplotlib_backends():
     All matplotlib backends are hardcoded. We have to try import them
     and return the list of successfully imported backends.
     """
-    all_bk = eval_statement('import matplotlib; print matplotlib.rcsetup.all_backends')
+    all_bk = eval_statement('import matplotlib; print(matplotlib.rcsetup.all_backends)')
     avail_bk = []
     import_statement = """
 try:
     __import__('matplotlib.backends.backend_%s')
 except ImportError, e:
-    print str(e)
+    print(e)
 """
 
     # CocoaAgg backend causes subprocess to exit and thus detection
@@ -567,7 +568,7 @@ def opengl_arrays_modules():
 
     e.g. 'OpenGL.arrays.vbo'
     """
-    statement = 'import OpenGL; print OpenGL.__path__[0]'
+    statement = 'import OpenGL; print(OpenGL.__path__[0])'
     opengl_mod_path = PyInstaller.hooks.hookutils.exec_statement(statement)
     arrays_mod_path = os.path.join(opengl_mod_path, 'arrays')
     files = glob.glob(arrays_mod_path + '/*.py')
@@ -625,7 +626,7 @@ def get_module_file_attribute(package):
     # Statement to return __file__ attribute of a package.
     __file__statement = """
 import %s as p
-print p.__file__
+print(p.__file__)
 """
     return exec_statement(__file__statement % package)
 
@@ -640,7 +641,7 @@ def get_package_paths(package):
     """
     # A package must have a path -- check for this, in case the package
     # parameter is actually a module.
-    is_pkg_statement = 'import %s as p; print hasattr(p, "__path__")'
+    is_pkg_statement = 'import %s as p; print(hasattr(p, "__path__"))'
     is_package = eval_statement(is_pkg_statement % package)
     assert is_package, 'Package %s does not have __path__ attribute' % package
 
@@ -650,14 +651,14 @@ def get_package_paths(package):
     # Search for Python files in /abs/path/to/package/subpackage; pkg_dir
     # stores this path.
     pkg_dir = os.path.dirname(file_attr)
-    # When found, remove /abs/path/to/ from the filename; mod_base stores
+    # When found, remove /abs/path/to/ from the filename; pkg_base stores
     # this path to be removed.
     pkg_base = remove_suffix(pkg_dir, package.replace('.', os.sep))
 
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package):
+def collect_submodules(package, subdir=None):
     """
     The following two functions were originally written by Ryan Welsh
     (welchr AT umich.edu).
@@ -665,7 +666,10 @@ def collect_submodules(package):
     This produces a list of strings which specify all the modules in
     package.  Its results can be directly assigned to ``hiddenimports``
     in a hook script; see, for example, hook-sphinx.py. The
-    package parameter must be a string which names the package.
+    package parameter must be a string which names the package. The
+    optional subdir give a subdirectory relative to package to search,
+    which is helpful when submodules are imported at run-time from a
+    directory lacking __init__.py. See hook-astroid.py for an example.
 
     This function does not work on zipped Python eggs.
 
@@ -673,6 +677,8 @@ def collect_submodules(package):
     PyInstaller.
     """
     pkg_base, pkg_dir = get_package_paths(package)
+    if subdir:
+        pkg_dir = os.path.join(pkg_dir, subdir)
     # Walk through all file in the given package, looking for submodules.
     mods = set()
     for dirpath, dirnames, filenames in os.walk(pkg_dir):
@@ -700,7 +706,7 @@ def collect_submodules(package):
 
 
 
-def collect_data_files(package, allow_py_extensions=False):
+def collect_data_files(package, allow_py_extensions=False, subdir=None):
     """
     This routine produces a list of (source, dest) non-Python (i.e. data)
     files which reside in package. Its results can be directly assigned to
@@ -711,7 +717,7 @@ def collect_data_files(package, allow_py_extensions=False):
     argument to True collects these files as well. This is typically used
     with Python routines (such as those in pkgutil) that search a given
     directory for Python executable files then load them as extensions or
-    plugins.
+    plugins. See collect_submodules for a description of the subdir parameter.
 
     This function does not work on zipped Python eggs.
 
@@ -719,6 +725,8 @@ def collect_data_files(package, allow_py_extensions=False):
     PyInstaller.
     """
     pkg_base, pkg_dir = get_package_paths(package)
+    if subdir:
+        pkg_dir = os.path.join(pkg_dir, subdir)
     # Walk through all file in the given package, looking for data files.
     datas = []
     for dirpath, dirnames, files in os.walk(pkg_dir):

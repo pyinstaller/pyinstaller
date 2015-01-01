@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import print_function
 
 import binascii
 
@@ -16,11 +17,11 @@ BLOCK_SIZE = 16
 
 
 def main():
-    print "AES null encryption, block size", BLOCK_SIZE
+    print("AES null encryption, block size", BLOCK_SIZE)
     # Just for testing functionality after all
-    print "HEX", binascii.hexlify(AES.new("\0" * 
+    print("HEX", binascii.hexlify(AES.new("\0" * 
                                           BLOCK_SIZE).encrypt("\0" * 
-                                                              BLOCK_SIZE))
+                                                              BLOCK_SIZE)))
 
 
 if __name__ == "__main__":

@@ -38,13 +38,13 @@ def TestWord():
     # Office 97 - _totally_ different object model!
     try:
         # NOTE - using "client.Dispatch" would return an msword8.py instance!
-        print "Starting Word 8 for dynamic test"
+        print("Starting Word 8 for dynamic test")
         word = win32com.client.dynamic.Dispatch("Word.Application")
         TestWord8(word)
 
         word = None
         # Now we will test Dispatch without the new "lazy" capabilities
-        print "Starting Word 8 for non-lazy dynamic test"
+        print("Starting Word 8 for non-lazy dynamic test")
         dispatch = win32com.client.dynamic._GetGoodDispatch("Word.Application")
         typeinfo = dispatch.GetTypeInfo()
         attr = typeinfo.GetTypeAttr()
@@ -54,12 +54,12 @@ def TestWord():
         TestWord8(word)
 
     except pythoncom.com_error:
-        print "Starting Word 7 for dynamic test"
+        print("Starting Word 7 for dynamic test")
         word = win32com.client.Dispatch("Word.Basic")
         TestWord7(word)
 
     try:
-        print "Starting MSWord for generated test"
+        print("Starting MSWord for generated test")
         # Typelib, lcid, major and minor for the typelib
         try:
             o = gencache.EnsureModule("{00020905-0000-0000-C000-000000000046}", 1033, 8, 0, bForDemand=1)
@@ -70,7 +70,7 @@ def TestWord():
         word = win32com.client.Dispatch("Word.Application.8")
         TestWord8(word)
     except ImportError, details:
-        print "Can not test MSWord8 -", details
+        print("Can not test MSWord8 -", details)
 
 def TestWord7(word):
     word.FileNew()
@@ -107,7 +107,7 @@ def TestWord8OldStyle():
     try:
         import win32com.test.Generated4Test.msword8
     except ImportError:
-        print "Can not do old style test"
+        print("Can not do old style test")
 
 
 def TextExcel(xl):
@@ -163,12 +163,12 @@ def TestAll():
     try:
         TestWord()
 
-        print "Starting Excel for Dynamic test..."
+        print("Starting Excel for Dynamic test...")
         xl = win32com.client.dynamic.Dispatch("Excel.Application")
         TextExcel(xl)
 
         try:
-            print "Starting Excel 8 for generated excel8.py test..."
+            print("Starting Excel 8 for generated excel8.py test...")
             try:
                 mod = gencache.EnsureModule("{00020813-0000-0000-C000-000000000046}", 0, 1, 2, bForDemand=1)
             except TypeError:
@@ -176,19 +176,19 @@ def TestAll():
             xl = win32com.client.Dispatch("Excel.Application")
             TextExcel(xl)
         except ImportError:
-            print "Could not import the generated Excel 97 wrapper"
+            print("Could not import the generated Excel 97 wrapper")
 
         try:
             import xl5en32
             mod = gencache.EnsureModule("{00020813-0000-0000-C000-000000000046}", 9, 1, 0)
             xl = win32com.client.Dispatch("Excel.Application.5")
-            print "Starting Excel 95 for makepy test..."
+            print("Starting Excel 95 for makepy test...")
             TextExcel(xl)
         except ImportError:
-            print "Could not import the generated Excel 95 wrapper"
+            print("Could not import the generated Excel 95 wrapper")
 
     except KeyboardInterrupt:
-        print "*** Interrupted MSOffice test ***"
+        print("*** Interrupted MSOffice test ***")
     except:
         traceback.print_exc()
 

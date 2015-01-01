@@ -14,7 +14,7 @@ all:
 doc: html pdf man cleanlogs
 	@echo "Documentation generated: Please see ../*.html, ../*.pdf and ../*.1 for files"
 
-manpages := pyinstaller pyi-makespec pyi-build pyi-makeCOMServer
+manpages := pyinstaller pyi-makespec pyi-build pyi-make_comserver
 
 html: ../Manual.html $(foreach manpage,${manpages},../${manpage}.html)
 pdf: ../Manual.pdf
@@ -40,22 +40,22 @@ Manual.tex: Manual.rst _definitions.txt
 	rm ../_definitions.txt
 
 _definitions.txt:
-	# _definitions.txt is overwritten.
-	echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > $@
-	echo '' >> $@  # Empty line.
-	# Append other lines.
-	echo '.. _PyInstaller: http://www.pyinstaller.org' >> $@
-	echo '' >> $@
-	echo '.. |Homepage| replace:: http://www.pyinstaller.org' >> $@
-	echo '.. |PyInstaller| replace:: `PyInstaller`' >> $@
-	# run `pyinstaller.py -v` to get the version
-	echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> $@
-	echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
-	echo '.. |install_path| replace:: /OBSOLETE-REMOVE/' >> $@
-	# folder name of package after download and unzip
-	echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
-	# how we punctuate boot loader as a proper noun "the bootloader"
-	echo '.. |bootloader| replace:: bootloader' >> $@
+	@echo Overwritung '_definitions.txt'
+	@echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > $@
+	@echo '' >> $@  # Empty line.
+	@# Append other lines.
+	@echo '.. _PyInstaller: http://www.pyinstaller.org' >> $@
+	@echo '' >> $@
+	@echo '.. |Homepage| replace:: http://www.pyinstaller.org' >> $@
+	@echo '.. |PyInstaller| replace:: `PyInstaller`' >> $@
+	@# run `pyinstaller.py -v` to get the version
+	@echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> $@
+	@echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
+	@echo '.. |install_path| replace:: /OBSOLETE-REMOVE/' >> $@
+	@# folder name of package after download and unzip
+	@echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
+	@# how we punctuate boot loader as a proper noun "the bootloader"
+	@echo '.. |bootloader| replace:: bootloader' >> $@
 
 clean:
 	@echo "make cleanall  ===> To clean everything"

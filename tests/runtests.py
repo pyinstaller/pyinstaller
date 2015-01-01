@@ -8,11 +8,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # This program will execute any file with name test*<digit>.py. If your test
 # need an aditional dependency name it test*<digit><letter>.py to be ignored
 # by this program but be recognizable by any one as a dependency of that
 # particular test.
+
+from __future__ import print_function
 
 
 import glob
@@ -98,19 +99,15 @@ class SkipChecker(object):
             'basic/test_email': is_py25,
             # On Mac DYLD_LIBRARY_PATH is not used.
             'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
+            'import/test_onefile_pkgutil.get_data': is_py26,
+            'import/test_onefile_pkgutil.get_data__main__': is_py26 and False,
             'import/test_c_extension': is_py25,
             'import/test_onefile_c_extension': is_py25,
             'import/test_onefile_relative_import': is_py25,
             'import/test_onefile_relative_import2': is_py26,
             'import/test_onefile_relative_import3': is_py25,
+            'interactive/test_onefile_win32_uac_admin': is_win,
             'libraries/test_enchant': is_win,
-            # docutils, a sphinx dependency, fails in
-            # docutils.utils.__init__.py, function decode_path, where
-            # sys.getfilesystemencoding() returns None when frozen.
-            # Docutils doesn't expect this and throws an assertion.
-            # Untested on Mac, but this shouldn't be a problem, since
-            # Macs return 'utf-8'.
-            'libraries/test_sphinx': is_win or is_darwin,
             }
 
         # Required Python modules for some tests.
@@ -139,6 +136,7 @@ class SkipChecker(object):
             'libraries/test_pycparser': ['pycparser'],
             'libraries/test_pycrypto': ['Crypto'],
             'libraries/test_pyexcelerate': ['pyexcelerate'],
+            'libraries/test_pylint': ['pylint'],
             'libraries/test_pygments': ['pygments'],
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
@@ -146,6 +144,9 @@ class SkipChecker(object):
             'libraries/test_PyQt4-QtWebKit': ['PyQt4'],
             'libraries/test_PyQt4-uic': ['PyQt4'],
             'libraries/test_sysconfig': ['sysconfig'],
+            'libraries/test_scapy1': ['scapy'],
+            'libraries/test_scapy2': ['scapy'],
+            'libraries/test_scapy3': ['scapy'],
             'libraries/test_scipy': ['numpy', 'scipy'],
             'libraries/test_sqlite3': ['sqlite3'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
@@ -249,7 +250,9 @@ class SkipChecker(object):
 
 SPEC_FILE = set([
     'basic/test_onefile_ctypes',
-    'basic/test_onefile_pkg_resources',
+    'import/test_onefile_pkg_resources',
+    'import/test_onefile_pkgutil-get_data',
+    'import/test_onefile_pkgutil-get_data__main__',
     'basic/test_option_verbose',
     'basic/test_option_wignore',
     'basic/test_pkg_structures',
@@ -258,7 +261,9 @@ SPEC_FILE = set([
     'import/test_app_with_plugins',
     'import/test_eggs2',
     'import/test_hiddenimport',
+    'import/test_hook_without_hook_for_package',
     'interactive/test_matplotlib',  # TODO .spec for this test contain win32 specific manifest code. Do we still need it?
+    'interactive/test_onefile_win32_uac_admin',
     'libraries/test_Image',
     'libraries/test_PIL',
     'multipackage/test_multipackage1',
@@ -351,6 +356,10 @@ class BuildTestRunner(object):
                 #line = proc.stdout.readline().strip()
                 line = proc.stdout.read(1)
                 self._plain_msg(line, newline=False)
+            # Print any stdout that wasn't read before the process terminated.
+            # See the conversation in https://github.com/pyinstaller/pyinstaller/pull/1092
+            # for examples of why this is necessary.
+            self._plain_msg(proc.stdout.read(), newline=False)
             # Print possible stderr at the end.
             self._msg('STDERR %s' % self.test_name)
             self._plain_msg(proc.stderr.read())
@@ -388,7 +397,7 @@ class BuildTestRunner(object):
             OPTS.append('--onedir')
 
         if self.with_crypto or '_crypto' in self.test_file:
-            print 'NOTE: Bytecode encryption is enabled for this test.',
+            print('NOTE: Bytecode encryption is enabled for this test.', end="")
             OPTS.append('--key=test_key')
 
         self._msg("BUILDING TEST " + self.test_name)
@@ -665,7 +674,7 @@ def clean():
                     else:
                         os.remove(pth)
                 except OSError, e:
-                    print e
+                    print(e)
         # Delete *.spec files for tests without spec file.
         for pth in glob.glob(os.path.join(directory, '*.spec')):
             test_name = directory + '/' + os.path.splitext(os.path.basename(pth))[0]
@@ -679,7 +688,7 @@ def run_tests(test_suite, xml_file):
     Run test suite and save output to junit xml file if requested.
     """
     if xml_file:
-        print 'Writting test results to: %s' % xml_file
+        print('Writting test results to:', xml_file)
         fp = open('report.xml', 'w')
         result = junitxml.JUnitXmlResult(fp)
         # Text from stdout/stderr should be added to failed test cases.
@@ -742,21 +751,21 @@ def main():
                 test_dir = os.path.dirname(t)
                 test_script = os.path.basename(os.path.splitext(t)[0])
                 suite.addTest(GenericTestCase(test_dir, test_script))
-                print 'Running test:  %s' % (test_dir + '/' + test_script)
+                print('Running test: ', (test_dir + '/' + test_script))
 
     # Run all tests or all interactive tests.
     else:
         if opts.interactive_tests:
-            print 'Running interactive tests...'
+            print('Running interactive tests...')
             test_classes = [InteractiveTestCase]
         elif opts.all_with_crypto:
-            print 'Running normal tests with bytecode encryption...'
+            print('Running normal tests with bytecode encryption...')
             # Make sure to exclude CryptoTestCase here since we are building
             # everything else with crypto enabled.
             test_classes = [BasicTestCase, ImportTestCase,
                     LibrariesTestCase, MultipackageTestCase]
         else:
-            print 'Running normal tests (-i for interactive tests)...'
+            print('Running normal tests (-i for interactive tests)...')
             test_classes = [BasicTestCase, CryptoTestCase, ImportTestCase,
                     LibrariesTestCase, MultipackageTestCase]
 

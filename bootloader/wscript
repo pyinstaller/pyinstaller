@@ -139,7 +139,7 @@ def configure(conf):
                 # Manifest file will be added in the phase of packaging python application.
                 conf.env.MSVC_MANIFEST = False
             except Exception, e:
-                print e
+                print(e)
                 Utils.pprint('RED', str(e))
                 Utils.pprint('RED', 'GCC (MinGW) or MSVC compiler not found.')
                 exit(1)

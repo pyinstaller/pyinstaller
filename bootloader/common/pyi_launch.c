@@ -334,6 +334,7 @@ int pyi_pylib_run_scripts(ARCHIVE_STATUS *status)
 			   for full compatibility with normal execution. */
 			strcpy(buf, ptoc->name);
 			strcat(buf, ".py");
+			VS("LOADER: Running %s\n", buf);
             __file__ = PI_PyString_FromStringAndSize(buf, strlen(buf));
             PI_PyObject_SetAttrString(__main__, "__file__", __file__);
             Py_DECREF(__file__);

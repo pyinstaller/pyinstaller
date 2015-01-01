@@ -9,4 +9,4 @@
 
 
 import time
-print time.strptime(time.ctime())
+print(time.strptime(time.ctime()))

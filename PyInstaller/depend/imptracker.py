@@ -127,7 +127,7 @@ class ImportTracker:
         break the name being imported up so we get:
         a.b.c -> [a, b, c] ; ..z -> ['', '', z]
         """
-        #print '## analyze_one', nm, importernm, imptyp, level
+        #print('## analyze_one', nm, importernm, imptyp, level)
         if not nm:
             nm = importernm
             importernm = None
@@ -241,7 +241,7 @@ class ImportTracker:
         Return dict containing collected information about module (
         """
 
-        #print "doimport", nm, ctx, fqname
+        #print("doimport", nm, ctx, fqname)
         # NOTE that nm is NEVER a dotted name at this point
         assert ("." not in nm), nm
         if fqname in self.excludes:

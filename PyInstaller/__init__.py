@@ -21,6 +21,8 @@ import sys
 # Fail hard if Python does not have minimum required version
 if sys.version_info < (2, 4):
     raise SystemExit('PyInstaller requires at least Python 2.4, sorry.')
+elif sys.version_info >= (3,):
+    raise SystemExit('Python 3 is not yet supported, sorry.')
 
 
 # Extend PYTHONPATH with 3rd party libraries bundled with PyInstaller.

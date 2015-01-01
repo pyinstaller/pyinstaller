@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import print_function
 
 # Install necessary 3rd party Python modules to run all tests.
 # This script is supposed to be used in a continuous integration system:
@@ -37,6 +38,7 @@ else:
 
 
 _PACKAGES = [
+    'six',
     'docutils',
     'jinja2',
     'MySQL-python',
@@ -55,19 +57,12 @@ _PACKAGES = [
 ]
 
 
-# TODO remove this block when we support Python 2.6+ only.
-# Python 2.4 and 2.5 does not have ssl module. But we need
-# it.
-if sys.version_info[0:2] < (2,6):
-    _PACKAGES.append('ssl')
-
-
 def main():
     for pkg in _PACKAGES:
-        print 'Installing module... %s' % pkg
+        print('Installing module...', pkg)
         retcode = compat.exec_command_rc('pip', 'install', pkg)
         if retcode:
-            print '  %s installation failed' % pkg
+            print(' ', pkg, 'installation failed')
 
 
 if __name__ == '__main__':

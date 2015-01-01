@@ -15,9 +15,9 @@ hiddenimports = ["PyQt5.QtCore",
                  "PyQt5.QtGui",
                  "PyQt5.QtSvg"]
 
-if eval_statement("from PyQt5 import Qwt5; print hasattr(Qwt5, 'toNumpy')"):
+if eval_statement("from PyQt5 import Qwt5; print(hasattr(Qwt5, 'toNumpy'))"):
     hiddenimports.append("numpy")
-if eval_statement("from PyQt5 import Qwt5; print hasattr(Qwt5, 'toNumeric')"):
+if eval_statement("from PyQt5 import Qwt5; print(hasattr(Qwt5, 'toNumeric'))"):
     hiddenimports.append("Numeric")
-if eval_statement("from PyQt5 import Qwt5; print hasattr(Qwt5, 'toNumarray')"):
+if eval_statement("from PyQt5 import Qwt5; print(hasattr(Qwt5, 'toNumarray'))"):
     hiddenimports.append("numarray")

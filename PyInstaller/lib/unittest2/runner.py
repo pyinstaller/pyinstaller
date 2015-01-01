@@ -11,19 +11,19 @@ try:
 except ImportError:
     def registerResult(_):
         pass
-    
+
 __unittest = True
 
 
 class _WritelnDecorator(object):
     """Used to decorate file-like objects with a handy 'writeln' method"""
-    def __init__(self,stream):
+    def __init__(self, stream):
         self.stream = stream
 
     def __getattr__(self, attr):
         if attr in ('stream', '__getstate__'):
             raise AttributeError(attr)
-        return getattr(self.stream,attr)
+        return getattr(self.stream, attr)
 
     def writeln(self, arg=None):
         if arg:
@@ -40,7 +40,7 @@ class TextTestResult(result.TestResult):
     separator2 = '-' * 70
 
     def __init__(self, stream, descriptions, verbosity):
-        super(TextTestResult, self).__init__()
+        super(TextTestResult, self).__init__(stream, descriptions, verbosity)
         self.stream = stream
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
@@ -153,7 +153,7 @@ class TextTestRunner(unittest.TextTestRunner):
         result.failfast = self.failfast
         result.buffer = self.buffer
         registerResult(result)
-        
+
         startTime = time.time()
         startTestRun = getattr(result, 'startTestRun', None)
         if startTestRun is not None:
@@ -174,15 +174,16 @@ class TextTestRunner(unittest.TextTestRunner):
         self.stream.writeln("Ran %d test%s in %.3fs" %
                             (run, run != 1 and "s" or "", timeTaken))
         self.stream.writeln()
-        
+
         expectedFails = unexpectedSuccesses = skipped = 0
         try:
             results = map(len, (result.expectedFailures,
                                 result.unexpectedSuccesses,
                                 result.skipped))
-            expectedFails, unexpectedSuccesses, skipped = results
         except AttributeError:
             pass
+        else:
+            expectedFails, unexpectedSuccesses, skipped = results
         infos = []
         if not result.wasSuccessful():
             self.stream.write("FAILED")

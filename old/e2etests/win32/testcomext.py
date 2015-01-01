@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+from __future__ import print_function
+
 from win32com.shell import shell
 import win32api
 import pythoncom
@@ -39,7 +42,7 @@ def CreateShortCut(Path, Target,Arguments = "", StartIn = "", Icon = ("",0), Des
 
     # Save the link itself.
     persist.Save(Path, 1)
-    print "Saved to", Path
+    print("Saved to", Path)
 
 if __name__ == "__main__":
     try:
@@ -55,7 +58,7 @@ if __name__ == "__main__":
 
         CreateShortCut(Path,Target,Arguments,StartIn,Icon,Description)
     except Exception, e:
-        print "Failed!", e
+        print("Failed!", e)
         import traceback
         traceback.print_exc()
     raw_input("Press any key to continue...")
