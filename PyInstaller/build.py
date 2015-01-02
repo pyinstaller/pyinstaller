@@ -854,6 +854,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                strip_options = ["-S"]
             cmd = ["strip"] + strip_options + [cachedfile]
 
+    if not os.path.exists(os.path.dirname(cachedfile)):
+        os.makedirs(os.path.dirname(cachedfile))
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
 
