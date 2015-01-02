@@ -339,7 +339,8 @@ def __add_obsolete_options(parser):
 # Site-packages functions - use native function if available.
 if hasattr(site, 'getsitepackages'):
     getsitepackages = site.getsitepackages
-# Backported For Python 2.6.
+# Backported For Python 2.6 and virtualenv.
+# Module 'site' in virtualenv might not have this attribute.
 else:
     def getsitepackages():
         """
@@ -350,7 +351,8 @@ else:
             pths = [os.path.join(sys.prefix, 'Lib', 'site-packages')]
             # Include Real sys.prefix for virtualenv.
             if is_virtualenv:
-                pths.append[os.path.join(venv_real_prefix, 'Lib', 'site-packages')]
+                pths.append(os.path.join(venv_real_prefix, 'Lib', 'site-packages'))
+            return pths
         else:
             # TODO Implement for Python 2.6 on other platforms.
             raise NotImplementedError()
