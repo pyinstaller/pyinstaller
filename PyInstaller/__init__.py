@@ -104,6 +104,6 @@ def get_version():
     if len(VERSION) >= 4 and VERSION[3]:
         version = '%s%s' % (version, VERSION[3])
         # include git revision in version string
-        if VERSION[3] == 'dev' and VERSION[4] > 0:
+        if VERSION[3] == 'dev' and len(VERSION) >= 5 and len(VERSION[4]) > 0:
             version = '%s-%s' % (version, VERSION[4])
     return version
