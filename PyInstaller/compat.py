@@ -17,6 +17,7 @@ with previous versions of Python from 2.3 onward.
 import dircache  # Module removed in Python 3
 import os
 import platform
+import site
 import subprocess
 import sys
 
@@ -333,3 +334,25 @@ def __add_obsolete_options(parser):
                  **{'action': 'callback',
                     'callback': __obsolete_option,
                     'help': 'These options do not exist anymore.'})
+
+
+# Site-packages functions - use native function if available.
+if hasattr(site, 'getsitepackages'):
+    getsitepackages = site.getsitepackages
+# Backported For Python 2.6 and virtualenv.
+# Module 'site' in virtualenv might not have this attribute.
+else:
+    def getsitepackages():
+        """
+        Return only one item as list with one item.
+        """
+        # For now used only on Windows. Raise Exception for other platforms.
+        if is_win:
+            pths = [os.path.join(sys.prefix, 'Lib', 'site-packages')]
+            # Include Real sys.prefix for virtualenv.
+            if is_virtualenv:
+                pths.append(os.path.join(venv_real_prefix, 'Lib', 'site-packages'))
+            return pths
+        else:
+            # TODO Implement for Python 2.6 on other platforms.
+            raise NotImplementedError()

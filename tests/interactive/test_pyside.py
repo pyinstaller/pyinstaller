@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -11,19 +11,18 @@
 
 import sys
 
-from PyQt4 import Qt
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PySide import QtCore
+from PySide import QtGui
 
 class MyDialog(QtGui.QDialog):
 
     def __init__(self):
         super(MyDialog, self).__init__()
 
-        self.label = Qt.QLabel(
+        self.label = QtGui.QLabel(
             u"Press <ESC> to exit. Some non-ascii chars: řčšěíáŘ",
             self)
-        self.setWindowTitle("Hello World from PyQt4")
+        self.setWindowTitle("Hello World from PySide")
         self.resize(400, 200)
         self.show()
 
@@ -36,7 +35,7 @@ class MyDialog(QtGui.QDialog):
 
 
 def main():
-    app = Qt.QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     read_formats = ', '.join([unicode(format).lower() \
         for format in QtGui.QImageReader.supportedImageFormats()])
     print("Qt4 plugin paths: " + unicode(list(app.libraryPaths())))
