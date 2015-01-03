@@ -453,7 +453,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
 	if (pyi_pylib_install_zlibs(status))
 		return -1;
 
-#ifndef WIN32
+    #ifndef WIN32
     /*
      * On Linux sys.getfilesystemencoding() returns None but should not.
      * If it's None(NULL), get the filesystem encoding by using direct
@@ -468,7 +468,8 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
         free(saved_locale);
         *PI_Py_FileSystemDefaultEncoding = loc_codeset;
     }
-#endif /* WIN32 */
+    #endif /* WIN32 */
+
 	/* Run scripts */
 	rc = pyi_pylib_run_scripts(status);
 
