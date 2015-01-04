@@ -240,7 +240,11 @@ def configure(ctx):
     if ctx.options.clang:
         ctx.load('clang')
     else:
-        ctx.load('compiler_c')  # Any available C compiler.
+        if is_win:
+            # On Windows use only MingW (gcc).
+            ctx.load('gcc')
+        else:
+            ctx.load('compiler_c')  # Any available C compiler.
     # LSB compatible bootloader only for Linux and without cli option --no-lsb.
     if is_linux and not ctx.options.nolsb:
         ctx.set_lsb_compiler()

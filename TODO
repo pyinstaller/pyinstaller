@@ -3,3 +3,4 @@ Stuff missing in python3 branch but present in develop branch
 
 * Link zlib witb bootloader statically on Solaris
 * OSX Code Signing support
+* #885 sys.getfilesystemencoding
