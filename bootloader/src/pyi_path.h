@@ -32,7 +32,10 @@ int pyi_path_executable(char *execfile, const char *appname);
 void pyi_path_homepath(char *homepath, const char *executable);
 void pyi_path_archivefile(char *archivefile, const char *executable);
 
-FILE *pyi_path_fopen(const char *filename, const char *mode);
-
+#ifdef _WIN32
+    FILE *pyi_path_fopen(const char *filename, const char *mode);
+#else
+   #define pyi_path_fopen(x,y)    fopen(x,y)
+#endif
 
 #endif /* PYI_PATH_H */
