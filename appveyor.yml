@@ -1,0 +1,37 @@
+environment:
+  global:
+    # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
+    # /E:ON and /V:ON options are not enabled in the batch script intepreter
+    # See: http://stackoverflow.com/a/13751649/163740
+    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
+
+  matrix:
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7.8"
+      PYTHON_ARCH: "32"
+
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7.8"
+      PYTHON_ARCH: "64"
+
+    - PYTHON: "C:\\Python26"
+      PYTHON_VERSION: "2.6.6"
+      PYTHON_ARCH: "32"
+
+    - PYTHON: "C:\\Python26-x64"
+      PYTHON_VERSION: "2.6.6"
+      PYTHON_ARCH: "64"
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+
+install:
+  - "powershell .appveyor\\install.ps1"
+  - "%CMD_IN_ENV% %PYTHON%/Scripts/pip.exe install -e ."
+  - "%CMD_IN_ENV% %PYTHON%/Scripts/pip.exe install -r tests/test-requirements.txt"
+
+build: off
+
+test_script:
+  - "cd tests"
+  - "%PYTHON/python.exe runtests.py"
