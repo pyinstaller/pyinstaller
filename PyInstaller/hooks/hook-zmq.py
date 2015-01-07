@@ -16,9 +16,8 @@ import glob
 import os
 from PyInstaller.hooks.hookutils import collect_submodules
 
-
-hiddenimports = []
-
+hiddenimports = ['zmq.utils.garbage']
+hiddenimports.extend(collect_submodules('zmq.backend'))
 
 def hook(mod):
     # If PyZMQ provides its own copy of libzmq, add it to the
@@ -26,17 +25,14 @@ def hook(mod):
     # For predictable behavior, the libzmq search here must be identical
     # to the search in zmq/__init__.py.
     zmq_directory = os.path.dirname(mod.__file__)
-    for ext in ('pyd', 'so', 'dll', 'dylib'):
-        bundled = glob.glob(os.path.join(zmq_directory, 'libzmq*.%s*' % ext))
+    for libname in ('libzmq', 'libsodium'):
+        bundled = glob.glob(os.path.join(zmq_directory,
+                                         libname + '*.{pyd,so,dll,dylib}*'))
         if bundled:
             # zmq/__init__.py will look in os.join(sys._MEIPASS, 'zmq'),
             # so libzmq has to land there.
             name = os.path.join('zmq', os.path.basename(bundled[0]))
             # TODO fix this hook to use attribute 'binaries'.
             mod.pyinstaller_binaries.append((name, bundled[0], 'BINARY'))
-            break
-
-    hiddenimports.extend(collect_submodules('zmq.backend'))
-    hiddenimports.append('zmq.utils.garbage')
 
     return mod
