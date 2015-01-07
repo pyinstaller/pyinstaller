@@ -12,18 +12,12 @@
 Hook for PyZMQ. Cython based Python bindings for messaging library ZeroMQ.
 http://www.zeromq.org/
 """
-
-
 import glob
 import os
-import sys
+from PyInstaller.hooks.hookutils import collect_submodules
 
 
-hiddenimports = [
-    'zmq.core.pysocket',
-    'zmq.utils.jsonapi',
-    'zmq.utils.strtypes',
-]
+hiddenimports = []
 
 
 def hook(mod):
@@ -41,5 +35,8 @@ def hook(mod):
             # TODO fix this hook to use attribute 'binaries'.
             mod.pyinstaller_binaries.append((name, bundled[0], 'BINARY'))
             break
+
+    hiddenimports.extend(collect_submodules('zmq.backend'))
+    hiddenimports.append('zmq.utils.garbage')
 
     return mod
