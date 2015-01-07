@@ -20,9 +20,9 @@ hiddenimports = ['zmq.utils.garbage']
 hiddenimports.extend(collect_submodules('zmq.backend'))
 
 def hook(mod):
-    # If PyZMQ provides its own copy of libzmq, add it to the
+    # If PyZMQ provides its own copy of libzmq or libsodium, add it to the
     # extension-modules TOC so zmq/__init__.py can load it at runtime.
-    # For predictable behavior, the libzmq search here must be identical
+    # For predictable behavior, the libzmq search here must be equivalent
     # to the search in zmq/__init__.py.
     zmq_directory = os.path.dirname(mod.__file__)
     for libname in ('libzmq', 'libsodium'):
