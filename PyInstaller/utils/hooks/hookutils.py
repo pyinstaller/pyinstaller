@@ -345,10 +345,8 @@ def qt5_qml_data(dir):
         
 def qt5_qml_plugins_binaries(dir):
     """Return list of dynamic libraries formatted for mod.binaries."""
-    import string
     binaries = []
     qmldir = qt5_qml_dir()
-    dir = string.rstrip(dir, os.sep)
     files = misc.dlls_in_subdirs(os.path.join(qmldir, dir))
     if files is not None:
         for f in files:
