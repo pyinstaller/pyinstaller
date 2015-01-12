@@ -348,17 +348,16 @@ def qt5_qml_plugins_binaries(dir):
     binaries = []
     qmldir = qt5_qml_dir()
     files = misc.dlls_in_subdirs(os.path.join(qmldir, dir))
-    if files is not None:
-        for f in files:
-            relpath = os.path.relpath(f, qmldir)
-            instdir, file = os.path.split(relpath)
-            instdir = os.path.join("qml", instdir)
-            logger.debug("qt5_qml_plugins_binaries installing %s in %s"
-                         % (f, instdir) )
-                
-            binaries.append((
-                os.path.join(instdir, os.path.basename(f)),
-                    f, 'BINARY'))
+    for f in files:
+        relpath = os.path.relpath(f, qmldir)
+        instdir, file = os.path.split(relpath)
+        instdir = os.path.join("qml", instdir)
+        logger.debug("qt5_qml_plugins_binaries installing %s in %s"
+                     % (f, instdir) )
+
+        binaries.append((
+            os.path.join(instdir, os.path.basename(f)),
+                f, 'BINARY'))
     return binaries    
 
 def django_dottedstring_imports(django_root_dir):
