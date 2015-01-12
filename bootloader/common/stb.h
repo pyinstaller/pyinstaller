@@ -5713,9 +5713,10 @@ char *stb_fget_string(FILE *f, void *p)
 {
    char *s;
    size_t len = stb_fget_varlenu(f);
+   size_t len2;
    if (len > 4096) return NULL;
    s = p ? stb_malloc_string(p, len+1) : (char *) malloc(len+1);
-   fread(s, 1, len, f);
+   len2 = fread(s, 1, len, f);
    s[len] = 0;
    return s;
 }
@@ -6809,25 +6810,26 @@ static void stb__dirtree_load_db(char *filename, stb_dirtree *data, char *dir)
    char sig[2048];
    int i,n;
    FILE *f = fopen(filename, "rb");
+   size_t len;
 
    if (!f) return;
 
    data->string_pool = stb_malloc(0,1);
 
-   fread(sig, sizeof(stb__signature), 1, f);
+   len = fread(sig, sizeof(stb__signature), 1, f);
    if (memcmp(stb__signature, sig, sizeof(stb__signature))) { fclose(f); return; }
    if (!fread(sig, strlen(dir)+1, 1, f))                    { fclose(f); return; }
    if (stb_stricmp(sig,dir))                                { fclose(f); return; }
 
    // we can just read them straight in, because they're guaranteed to be valid
-   fread(&n, 4, 1, f);
+   len = fread(&n, 4, 1, f);
    stb_arr_setlen(data->dirs, n);
    for(i=0; i < stb_arr_len(data->dirs); ++i) {
       fread(&data->dirs[i].last_modified, 4, 1, f);
       data->dirs[i].path = stb_fget_string(f, data->string_pool);
       if (data->dirs[i].path == NULL) goto bail;
    }
-   fread(&n, 4, 1, f);
+   len = fread(&n, 4, 1, f);
    stb_arr_setlen(data->files, n);
    for (i=0; i < stb_arr_len(data->files); ++i) {
       data->files[i].dir  = stb_fget_ranged(f, 0, stb_arr_len(data->dirs));
@@ -10097,12 +10099,13 @@ char *stb_decompress_fromfile(char *filename, unsigned int *len)
    unsigned int n;
    char *q;
    unsigned char *p;
+   size_t len2;
    FILE *f = fopen(filename, "rb");   if (f == NULL) return NULL;
    fseek(f, 0, SEEK_END);
    n = ftell(f);
    fseek(f, 0, SEEK_SET);
    p = (unsigned char * ) malloc(n); if (p == NULL) return NULL;
-   fread(p, 1, n, f);
+   len2 = fread(p, 1, n, f);
    fclose(f);
    if (p == NULL) return NULL;
    if (p[0] != 0x57 || p[1] != 0xBc || p[2] || p[3]) { free(p); return NULL; }
