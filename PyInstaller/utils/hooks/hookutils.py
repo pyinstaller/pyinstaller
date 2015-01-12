@@ -334,12 +334,8 @@ def qt5_qml_dir():
     elif not os.path.exists(qmldir):
         logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
     
-    # On Windows 'qmake -query' uses / as the path separator
-    # so change it to \\. 
-    if is_win:
-        import string
-        qmldir = string.replace(qmldir, '/', '\\')
-
+    # 'qmake -query' uses / as the path separator, even on Windows
+    qmldir = os.path.normpath(qmldir)
     return qmldir
  
 def qt5_qml_data(dir):
