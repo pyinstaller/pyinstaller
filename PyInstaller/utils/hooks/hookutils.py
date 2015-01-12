@@ -324,9 +324,10 @@ def qt5_menu_nib_dir():
     return menu_dir
 
 def qt5_qml_dir():
-    import subprocess
-    qmldir = subprocess.check_output(["qmake", "-query",
-                                      "QT_INSTALL_QML"]).strip()
+    try:
+        qmldir = compat.exec_command("qmake", "-query", "QT_INSTALL_QML")
+    except IOError,:
+        qmldir = ''
     if len(qmldir) == 0:
         logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
                         + 'QT_INSTALL_QML" returned nothing')
