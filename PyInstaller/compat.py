@@ -58,12 +58,6 @@ if is_py2:
 else:
     from collections import UserList
 
-# Python 2.7+ contains improved unittest module.
-# For Python 2.6 use the bundled unittest2 module.
-if is_py27 or is_py3:
-    import unittest
-else:
-    from PyInstaller.lib import unittest2 as unittest
 
 # Correct extension ending: 'c' or 'o'
 if __debug__:
