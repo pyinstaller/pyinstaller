@@ -22,6 +22,7 @@ import re
 import shutil
 import subprocess
 import sys
+import unittest
 
 # ignore some warnings which only confuse when running tests
 import warnings
@@ -44,7 +45,7 @@ else:
 from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
-from PyInstaller.compat import is_py2, is_py33, is_win, is_darwin, unittest
+from PyInstaller.compat import is_py2, is_py33, is_win, is_darwin
 from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import hookutils
