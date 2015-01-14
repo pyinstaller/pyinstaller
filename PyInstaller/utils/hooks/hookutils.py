@@ -326,7 +326,7 @@ def qt5_menu_nib_dir():
 def qt5_qml_dir():
     try:
         qmldir = compat.exec_command("qmake", "-query", "QT_INSTALL_QML")
-    except IOError,:
+    except IOError:
         qmldir = ''
     if len(qmldir) == 0:
         logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
