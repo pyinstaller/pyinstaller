@@ -144,6 +144,7 @@ class SkipChecker(object):
             'libraries/test_pytz': ['pytz'],
             'libraries/test_PyQt4-QtWebKit': ['PyQt4'],
             'libraries/test_PyQt4-uic': ['PyQt4'],
+            'libraries/test_requests': ['requests'],
             'libraries/test_sysconfig': ['sysconfig'],
             'libraries/test_scipy': ['numpy', 'scipy'],
             'libraries/test_sqlite3': ['sqlite3'],
@@ -258,6 +259,7 @@ SPEC_FILE = set([
     'interactive/test_matplotlib',  # TODO .spec for this test contain win32 specific manifest code. Do we still need it?
     'libraries/test_Image',
     'libraries/test_PIL',
+    'libraries/test_requests',
     'multipackage/test_multipackage1',
     'multipackage/test_multipackage2',
     'multipackage/test_multipackage3',
