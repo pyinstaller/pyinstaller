@@ -457,7 +457,6 @@ class CExtensionImporter(object):
                     # Python 3 implementation.
                     for ext in EXTENSION_SUFFIXES:
                         filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname + ext)
-                        print(filename)
                         # Test if a file exists.
                         # Cannot use os.path.exists. Use workaround with function open().
                         # No exception means that a file exists.
