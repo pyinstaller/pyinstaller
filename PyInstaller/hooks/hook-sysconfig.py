@@ -23,8 +23,8 @@ _MAKEFILE = sysconfig.get_makefile_filename()
 
 def _relpath(filename):
     # Relative path in the dist directory.
-    #prefix = _find_prefix(filename)
-    return os.path.relpath(os.path.dirname(filename), sys.prefix)
+    # base_prefix exists since python3.2 to deal with venv
+    return os.path.relpath(os.path.dirname(filename), sys.base_prefix)
 
 
 datas = [(_CONFIG_H, _relpath(_CONFIG_H))]
