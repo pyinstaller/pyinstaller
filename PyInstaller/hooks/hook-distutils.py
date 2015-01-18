@@ -24,7 +24,7 @@ _MAKEFILE = sysconfig.get_makefile_filename()
 
 def _relpath(filename):
     # Relative path in the dist directory.
-    return os.path.relpath(os.path.dirname(filename), sys.prefix)
+    return os.path.relpath(os.path.dirname(filename), sys.base_prefix)
 
 # Data files in PyInstaller hook format.
 datas = [(_CONFIG_H, _relpath(_CONFIG_H))]
