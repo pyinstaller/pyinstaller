@@ -147,7 +147,6 @@ def hook(mod):
     if is_win or is_darwin or is_unix:
         # Get the Tcl/Tk data files for bundling with executable.
         tk_files = _collect_tkfiles(mod)
-        logger.info(tk_files)
         mod.datas.extend(tk_files)
     else:
         logger.info("... skipping TCL/TK detection on this platform (%s)", sys.platform)
