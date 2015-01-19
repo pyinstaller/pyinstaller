@@ -16,6 +16,8 @@ import sysconfig
 import os
 import sys
 
+from PyInstaller.compat import base_prefix
+
 
 _CONFIG_H = sysconfig.get_config_h_filename()
 _MAKEFILE = sysconfig.get_makefile_filename()
@@ -24,7 +26,7 @@ _MAKEFILE = sysconfig.get_makefile_filename()
 def _relpath(filename):
     # Relative path in the dist directory.
     # base_prefix exists since python3.2 to deal with venv
-    return os.path.relpath(os.path.dirname(filename), sys.base_prefix)
+    return os.path.relpath(os.path.dirname(filename), base_prefix)
 
 
 datas = [(_CONFIG_H, _relpath(_CONFIG_H))]

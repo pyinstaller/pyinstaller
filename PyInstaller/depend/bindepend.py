@@ -22,6 +22,7 @@ import zipfile
 
 
 from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin
+from PyInstaller.compat import is_venv, base_prefix
 from PyInstaller.depend import dylib
 import PyInstaller.compat as compat
 
@@ -66,15 +67,16 @@ def getfullnameof(mod, xtrapath=None):
     """
     # TODO: Allow in import-hooks to specify additional paths where the PyInstaller
     #       should look for other libraries.
+    #       Or allow to automatically look for dlls in directories where are .pyd files.
     # SciPy/Numpy Windows builds from http://www.lfd.uci.edu/~gohlke/pythonlibs
     # Contain some dlls in directory like C:\Python27\Lib\site-packages\numpy\core\
     from distutils.sysconfig import get_python_lib
     numpy_core_paths = [os.path.join(get_python_lib(), 'numpy', 'core')]
     # In virtualenv numpy might be installed directly in real prefix path.
     # Then include this path too.
-    if hasattr(sys, 'real_prefix'):
+    if is_venv:
         numpy_core_paths.append(
-            os.path.join(sys.real_prefix, 'Lib', 'site-packages', 'numpy', 'core')
+            os.path.join(base_prefix, 'Lib', 'site-packages', 'numpy', 'core')
         )
 
     # Search sys.path first!
@@ -763,10 +765,7 @@ def get_python_library_path():
         # and exec_prefix. That's why we can use just sys.prefix.
         # In virtualenv PyInstaller is not able to find Python library.
         # We need special care for this case.
-        if compat.is_virtualenv:
-            py_prefix = compat.venv_real_prefix
-        else:
-            py_prefix = sys.prefix
+        py_prefix = compat.base_prefix
 
         for name in names:
             full_path = os.path.join(py_prefix, name)

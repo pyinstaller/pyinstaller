@@ -33,13 +33,12 @@ warnings.filterwarnings('ignore',
 
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
-if not hasattr(sys, 'real_prefix'):
+if hasattr(sys, 'real_prefix') or not sys.prefix == sys.base_prefix:
+    _virtual_env_ = True
+else:
     _virtual_env_ = False
     pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     sys.path.insert(0, pyi_home)
-else:
-    _virtual_env_ = True
-
 
 
 from PyInstaller import HOMEPATH
