@@ -25,7 +25,7 @@ def mac_gcc_architecture():
     # returns "64bit" event for the 32bit version of Python's
     # universal binary. So we roll out our own (that works
     # on Darwin).
-    if sys.maxint > 2 ** 32:
+    if sys.maxsize > 2 ** 32:
         # 64bit
         return 'x86_64'
     else:
