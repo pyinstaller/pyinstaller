@@ -144,16 +144,12 @@ def _collect_tkfiles(mod):
 
 def hook(mod):
     # If not supported platform, skip TCL/TK detection.
-    if not (is_win or is_darwin or is_unix):
-        logger.info("... skipping TCL/TK detection on this platform (%s)",
-                sys.platform)
-        return mod
-
-    # Get the Tcl/Tk data files for bundling with executable.
-    #try:
-    tk_files = _collect_tkfiles(mod)
-    mod.datas.extend(tk_files)
-    #except:
-    #logger.error("could not find TCL/TK")
+    if is_win or is_darwin or is_unix:
+        # Get the Tcl/Tk data files for bundling with executable.
+        tk_files = _collect_tkfiles(mod)
+        logger.info(tk_files)
+        mod.datas.extend(tk_files)
+    else:
+        logger.info("... skipping TCL/TK detection on this platform (%s)", sys.platform)
 
     return mod
