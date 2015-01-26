@@ -16,10 +16,13 @@ This hook just removes this implicit dependency on Tcl/Tk.
 """
 
 
+from PyInstaller.compat import modname_tkinter
+
+
 def hook(mod):
     # Ignore 'Tkinter' to prevent inclusion of Tcl/Tk library.
     for i, m in enumerate(mod.imports):
-        if m[0] == 'Tkinter':
+        if m[0] == modname_tkinter:
             # new-style mod object, record deletion
             mod.del_import(m[0])
             break

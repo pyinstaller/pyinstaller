@@ -118,6 +118,14 @@ else:
     EXTENSION_SUFFIXES = importlib.machinery.EXTENSION_SUFFIXES
 
 
+# In Python 3 'Tkinter' has been made lowercase - 'tkinter'. Keep Python 2
+# compatibility.
+if is_py2:
+    modname_tkinter = 'Tkinter'
+else:
+    modname_tkinter = 'tkinter'
+
+
 def architecture():
     """
     Returns the bit depth of the python interpreter's architecture as
