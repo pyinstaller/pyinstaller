@@ -13,8 +13,8 @@ import sys
 
 import PyInstaller.depend.bindepend
 
-from PyInstaller.compat import (is_win, is_darwin, is_unix, is_virtualenv,
-                                venv_real_prefix, is_py3)
+from PyInstaller.compat import is_win, is_darwin, is_unix, is_venv, base_prefix
+from PyInstaller.compat import modname_tkinter
 from PyInstaller.build import Tree
 from PyInstaller.utils.hooks.hookutils import exec_statement, logger
 
@@ -31,8 +31,8 @@ def _handle_broken_tk():
 
     https://github.com/pypa/virtualenv/issues/93
     """
-    if is_win and is_virtualenv:
-        basedir = os.path.join(venv_real_prefix, 'tcl')
+    if is_win and is_venv:
+        basedir = os.path.join(base_prefix, 'tcl')
         files = os.listdir(basedir)
         v = os.environ
         # Detect Tcl/Tk paths.
@@ -70,9 +70,7 @@ def _find_tk_tclshell():
     tcl_root = tk_root = None
 
     # Python code to get path to TCL_LIBRARY.
-    code = 'from Tkinter import Tcl; t = Tcl(); print(t.eval("info library"))'
-    if if_py3:
-        code.replace('Tkinter', 'tkinter')
+    code = 'from %s import Tcl; t = Tcl(); print(t.eval("info library"))' % modname_tkinter
 
     tcl_root = exec_statement(code)
     tk_version = exec_statement('from _tkinter import TK_VERSION as v; print(v)')
@@ -93,6 +91,7 @@ def _find_tk(mod):
 
     if is_darwin:
         # _tkinter depends on system Tcl/Tk frameworks.
+        # For example this is the case of Python from homebrew.
         if not bins:
             # 'mod.binaries' can't be used because on Mac OS X _tkinter.so
             # might depend on system Tcl/Tk frameworks and these are not
@@ -114,7 +113,7 @@ def _find_tk(mod):
         path_to_tcl = bins[0][1]
         if 'Library/Frameworks' in path_to_tcl:
             tcl_tk = _find_tk_darwin_frameworks(bins)
-        # Tcl/Tk compiled as on Linux other Unices.
+        # Tcl/Tk compiled as on Linux other Unixes.
         # For example this is the case of Tcl/Tk from macports.
         else:
             tcl_tk = _find_tk_tclshell()
@@ -147,16 +146,11 @@ def _collect_tkfiles(mod):
 
 def hook(mod):
     # If not supported platform, skip TCL/TK detection.
-    if not (is_win or is_darwin or is_unix):
-        logger.info("... skipping TCL/TK detection on this platform (%s)",
-                sys.platform)
-        return mod
-
-    # Get the Tcl/Tk data files for bundling with executable.
-    #try:
-    tk_files = _collect_tkfiles(mod)
-    mod.datas.extend(tk_files)
-    #except:
-    #logger.error("could not find TCL/TK")
+    if is_win or is_darwin or is_unix:
+        # Get the Tcl/Tk data files for bundling with executable.
+        tk_files = _collect_tkfiles(mod)
+        mod.datas.extend(tk_files)
+    else:
+        logger.info("... skipping TCL/TK detection on this platform (%s)", sys.platform)
 
     return mod

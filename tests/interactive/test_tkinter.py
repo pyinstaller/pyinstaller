@@ -9,10 +9,15 @@
 #-----------------------------------------------------------------------------
 
 
-from Tkinter import *
+# In Python 3 module name is 'tkinter'
+try:
+    from tkinter import *
+except ImportError:
+    from Tkinter import *
+
 
 root = Tk()
-root.title("Test for Tkinter")
+root.title("Test for tkinter")
 root.bind("<Escape>", lambda x: root.destroy())
 
 Label(text="Press <ESC> to exit. Some non ascii chars: řčšěíáŘ").pack()

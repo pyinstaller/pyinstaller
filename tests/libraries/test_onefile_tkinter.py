@@ -16,7 +16,12 @@ import glob
 import os
 import sys
 
-from Tkinter import *
+
+# In Python 3 module name is 'tkinter'
+try:
+    from tkinter import *
+except ImportError:
+    from Tkinter import *
 
 
 def compare(test_name, expect, frozen):

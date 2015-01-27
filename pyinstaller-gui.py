@@ -14,8 +14,15 @@
 
 import sys
 import subprocess
-from tkinter import *
-import tkinter.filedialog
+
+# In Python 3 module name is 'tkinter'
+try:
+    from tkinter import *
+    import tkinter.filedialog as filedialog
+except ImportError:
+    from Tkinter import *
+    import Tkinter.filedialog as filedialog
+
 
 class PyInstallerGUI:
 
@@ -92,7 +99,7 @@ class PyInstallerGUI:
         sys.exit(retcode)
 
     def GetFile(self, event):
-        self.fin = tkinter.filedialog.askopenfilename()
+        self.fin = filedialog.askopenfilename()
         self.filein.insert(0, self.fin)
 
 if __name__ == "__main__":

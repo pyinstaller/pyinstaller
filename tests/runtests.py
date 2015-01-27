@@ -33,19 +33,18 @@ warnings.filterwarnings('ignore',
 
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
-if not hasattr(sys, 'real_prefix'):
+if hasattr(sys, 'real_prefix') or not sys.prefix == sys.base_prefix:
+    _virtual_env_ = True
+else:
     _virtual_env_ = False
     pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     sys.path.insert(0, pyi_home)
-else:
-    _virtual_env_ = True
-
 
 
 from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
-from PyInstaller.compat import is_py2, is_py33, is_win, is_darwin
+from PyInstaller.compat import is_py2, is_py33, is_win, is_darwin, modname_tkinter
 from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import hookutils
@@ -125,7 +124,7 @@ class SkipChecker(object):
             'libraries/test_Image2': ['Image'], # PIL allows to use its submodules as top-level modules
             'libraries/test_numpy': ['numpy'],
             'libraries/test_onefile_matplotlib': ['matplotlib'],
-            'libraries/test_onefile_tkinter': ['Tkinter'],
+            'libraries/test_onefile_tkinter': [modname_tkinter],
             'libraries/test_PIL': ['PIL'],
             'libraries/test_PIL2': ['PIL'],
             'libraries/test_pycrypto': ['Crypto'],
@@ -163,7 +162,7 @@ class SkipChecker(object):
             'interactive/test_qt4': ['PyQt4'],
             'interactive/test_qt5': ['PyQt5'],
             'interactive/test_tix': ['Tix'],
-            'interactive/test_tkinter': ['Tkinter'],
+            'interactive/test_tkinter': [modname_tkinter],
             'interactive/test_wx': ['wx'],
             }
 

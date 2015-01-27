@@ -207,7 +207,7 @@ class PyiModuleGraph(ModuleGraph):
         # Find runtime hooks that are implied by packages already imported.
         # Get a temporary TOC listing all the scripts and packages graphed
         # so far. Assuming that runtime hooks apply only to modules and packages.
-        temp_toc = self.make_a_TOC(['PYMODULE','PYSOURCE'])
+        temp_toc = self.make_a_TOC(['EXTENSION', 'PYMODULE', 'PYSOURCE'])
         for (mod_name, path, typecode) in temp_toc:
             # Look if there is any run-time hook for given module.
             if mod_name in self._available_rthooks:

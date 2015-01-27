@@ -14,18 +14,18 @@
 import os
 import sys
 
-from PyInstaller.compat import is_virtualenv, is_win
+from PyInstaller.compat import base_prefix, is_venv, is_win
 
 
 def hook(mod):
-    if is_virtualenv:
+    if is_venv:
         # Workaround to get real path of site.py module.
         if is_win:
-            mod_path = os.path.join(sys.real_prefix, 'Lib', 'site.py')
+            mod_path = os.path.join(base_prefix, 'Lib', 'site.py')
         else:
-            mod_path = os.path.join(sys.real_prefix, 'lib',
+            mod_path = os.path.join(base_prefix, 'lib',
                                     'python'+sys.version[:3], 'site.py')
-            mod64_path = os.path.join(sys.real_prefix, 'lib64',
+            mod64_path = os.path.join(base_prefix, 'lib64',
                                       'python'+sys.version[:3], 'site.py')
             if os.path.exists(mod64_path):
                 mod_path = mod64_path

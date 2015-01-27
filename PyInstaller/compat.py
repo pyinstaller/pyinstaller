@@ -10,7 +10,7 @@
 
 """
 Various classes and functions to provide some backwards-compatibility
-with previous versions of Python from 2.6 onward.
+with previous versions of Python from 2.7 onward.
 """
 
 
@@ -81,9 +81,16 @@ _OLD_OPTIONS = [
 _PYOPTS = __debug__ and '-O' or ''
 
 
+# Python 2 does not have sys.base_prefix
+# 'base_prefix' from PEP 405 venv (new in Python 3.3)
+if is_py2:
+    # sys.real_prefix is available only in Python 2 and virtualenv.
+    base_prefix = getattr(sys, 'real_prefix', sys.prefix)
+else:
+    base_prefix = sys.base_prefix
 # Some code parts needs to behave different when running in virtualenv.
-venv_real_prefix = getattr(sys, 'real_prefix', None)
-is_virtualenv = bool(venv_real_prefix)
+# In virtualenv sys.prefix is different than sys.base_prefix.
+is_venv = not base_prefix == sys.prefix
 
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
@@ -109,6 +116,14 @@ else:
     # In Python 3.3+ There is a list
     import importlib.machinery
     EXTENSION_SUFFIXES = importlib.machinery.EXTENSION_SUFFIXES
+
+
+# In Python 3 'Tkinter' has been made lowercase - 'tkinter'. Keep Python 2
+# compatibility.
+if is_py2:
+    modname_tkinter = 'Tkinter'
+else:
+    modname_tkinter = 'tkinter'
 
 
 def architecture():
