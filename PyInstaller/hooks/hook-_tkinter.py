@@ -13,7 +13,8 @@ import sys
 
 import PyInstaller.depend.bindepend
 
-from PyInstaller.compat import is_win, is_darwin, is_unix, is_virtualenv, venv_real_prefix
+from PyInstaller.compat import (is_win, is_darwin, is_unix, is_virtualenv,
+                                venv_real_prefix, is_py3)
 from PyInstaller.build import Tree
 from PyInstaller.utils.hooks.hookutils import exec_statement, logger
 
@@ -70,6 +71,8 @@ def _find_tk_tclshell():
 
     # Python code to get path to TCL_LIBRARY.
     code = 'from Tkinter import Tcl; t = Tcl(); print(t.eval("info library"))'
+    if if_py3:
+        code.replace('Tkinter', 'tkinter')
 
     tcl_root = exec_statement(code)
     tk_version = exec_statement('from _tkinter import TK_VERSION as v; print(v)')
