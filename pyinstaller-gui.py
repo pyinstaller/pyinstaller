@@ -21,7 +21,7 @@ try:
     import tkinter.filedialog as filedialog
 except ImportError:
     from Tkinter import *
-    import Tkinter.filedialog as filedialog
+    import tkFileDialog as filedialog
 
 
 class PyInstallerGUI:
@@ -83,7 +83,7 @@ class PyInstallerGUI:
         sys.exit(0)
 
     def makePackage(self, event):
-        commands = ['python3', 'pyinstaller.py']
+        commands = [sys.executable, 'pyinstaller.py']
         if self.filetype.get():
             commands.append('--onefile')
         if self.ascii.get():
