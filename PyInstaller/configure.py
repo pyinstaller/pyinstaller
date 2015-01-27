@@ -186,14 +186,6 @@ def find_PYZ_dependencies(config):
 
 
 def get_config(upx_dir, **kw):
-    if is_darwin and compat.architecture() == '64bit':
-        logger.warn('You are running 64-bit Python: created binaries will only'
-            ' work on Mac OS X 10.6+.\nIf you need 10.4-10.5 compatibility,'
-            ' run Python as a 32-bit binary with this command:\n\n'
-            '    VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 %s\n' % sys.executable)
-        # wait several seconds for user to see this message
-        time.sleep(4)
-
     config = {}
     test_RsrcUpdate(config)
     test_UPX(config, upx_dir)

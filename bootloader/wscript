@@ -212,7 +212,7 @@ def configure(ctx):
     ctx.msg('Platform', '%s-%s detected' % (platform.system(), architecture()))
 
     if is_darwin and architecture() == '64bit':
-        ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
+        ctx.msg('CYAN', 'Building bootloader for Python 64-bit on Mac OSX')
         ctx.msg('CYAN', 'For 32b-bit bootloader prepend the python command with:')
         ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
 
