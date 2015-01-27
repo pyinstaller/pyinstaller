@@ -69,7 +69,7 @@ def _find_tk_tclshell():
     tcl_root = tk_root = None
 
     # Python code to get path to TCL_LIBRARY.
-    code = 'from Tkinter import Tcl; t = Tcl(); print(t.eval("info library"))'
+    code = 'from tkinter import Tcl; t = Tcl(); print(t.eval("info library"))'
 
     tcl_root = exec_statement(code)
     tk_version = exec_statement('from _tkinter import TK_VERSION as v; print(v)')
