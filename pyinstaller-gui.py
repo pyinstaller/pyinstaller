@@ -76,7 +76,11 @@ class PyInstallerGUI:
         sys.exit(0)
 
     def makePackage(self, event):
-        commands = ['python3', 'pyinstaller.py']
+        if sys.platform.startswith('win'):
+            pythoncmd = ['py', '-3']
+        else:
+            pythoncmd = ['python3']
+        commands = pythoncmd + ['pyinstaller.py']
         if self.filetype.get():
             commands.append('--onefile')
         if self.ascii.get():
