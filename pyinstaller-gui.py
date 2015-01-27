@@ -14,8 +14,17 @@
 
 import sys
 import subprocess
-from tkinter import *
-import tkinter.filedialog
+
+if sys.version_info[0] == 2:
+    pyversion = 2
+    from Tkinter import *
+    import tkFileDialog as filedialog
+
+elif sys.version_info[0] == 3:
+    pyversion = sys.version_info[:2]
+    from tkinter import *
+    import tkinter.filedialog as filedialog
+
 
 class PyInstallerGUI:
 
@@ -76,7 +85,20 @@ class PyInstallerGUI:
         sys.exit(0)
 
     def makePackage(self, event):
-        commands = ['python3', 'pyinstaller.py']
+        if pyversion == 2:
+            commands = ['python', 'pyinstaller.py']
+
+        elif pyversion[0] == 3:
+            if sys.platform.startswith('win'):
+                if pyversion[1] > 2:  # python3.3+
+                    commands = ['py', '-3', 'pyinstaller.py']
+                else:
+                    commands = [sys.executable, 'pyinstaller.py']
+            else:
+                commands = ['python3', 'pyinstaller.py']
+        else:
+           raise SystemExit("This python version is not supported.") 
+
         if self.filetype.get():
             commands.append('--onefile')
         if self.ascii.get():
@@ -92,7 +114,7 @@ class PyInstallerGUI:
         sys.exit(retcode)
 
     def GetFile(self, event):
-        self.fin = tkinter.filedialog.askopenfilename()
+        self.fin = filedialog.askopenfilename()
         self.filein.insert(0, self.fin)
 
 if __name__ == "__main__":
@@ -101,3 +123,4 @@ if __name__ == "__main__":
         app = PyInstallerGUI()
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
