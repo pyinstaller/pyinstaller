@@ -50,11 +50,11 @@ def _handle_activetcl_install(tcl_root, tcltree):
     Workaround ActiveTcl on OS X
 
     PyInstaller does not package all requirements of ActiveTcl
-    (most notable teapot, which is not typically required), which
+    (most notably teapot, which is not typically required). This
     means packages built against ActiveTcl usually won't run on
     non-host systems.
 
-    This method checks if ActiveTcl is being used, and if so reports
+    This method checks if ActiveTcl is being used, and if so logs
     a warning if the problematic code is not commented out.
 
     https://github.com/pyinstaller/pyinstaller/issues/621
