@@ -1619,7 +1619,7 @@ class BUNDLE(Target):
             res_d = os.path.join(res_dir, d)
             if os.path.isdir(abs_d) and d not in ignore_dirs:
                 shutil.move(abs_d, res_d)
-                os.symlink(res_d, abs_d)
+                os.symlink(os.path.relpath(res_d, os.path.dirname(abs_d)), abs_d)
 
         return 1
 
