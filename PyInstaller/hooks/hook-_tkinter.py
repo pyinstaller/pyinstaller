@@ -45,7 +45,7 @@ def _handle_broken_tk():
                 v['TIX_LIBRARY'] = abs_path
 
 
-def _handle_activetcl_install(tcl_root, tcltree):
+def _warn_if_actvivetcl_or_teapot_install(tcl_root, tcltree):
     """
     Workaround ActiveTcl on OS X
 
@@ -59,9 +59,6 @@ def _handle_activetcl_install(tcl_root, tcltree):
 
     https://github.com/pyinstaller/pyinstaller/issues/621
     """
-    if not is_darwin:
-        # this is only relevant for ActiveTcl/OS X
-        return
 
     from PyInstaller.lib.macholib import util
     if util.in_system_path(tcl_root):
@@ -80,9 +77,11 @@ def _handle_activetcl_install(tcl_root, tcltree):
     with open(init_resource, 'r') as init_file:
         for line in init_file.readlines():
             line = line.strip().lower()
-            if 'activetcl' in line and not line.startswith('#'):
+            if line.startswith('#'):
+                continue
+            if 'activetcl' in line:
                 mentions_activetcl = True
-            if 'teapot' in line and not line.startswith('#'):
+            if 'teapot' in line:
                 mentions_teapot = True
             if mentions_activetcl and mentions_teapot:
                 break
@@ -191,8 +190,9 @@ def _collect_tkfiles(mod):
     tcltree = Tree(tcl_root, os.path.join('_MEI', tcldir),
                    excludes=['demos', '*.lib', 'tclConfig.sh'])
 
-    # handle workaround for ActiveTcl on OS X
-    _handle_activetcl_install(tcl_root, tcltree)
+    if is_darwin:
+        # handle workaround for ActiveTcl on OS X
+        _warn_if_actvivetcl_or_teapot_install(tcl_root, tcltree)
 
     tktree = Tree(tk_root, os.path.join('_MEI', tkdir),
                   excludes=['demos', '*.lib', 'tkConfig.sh'])
