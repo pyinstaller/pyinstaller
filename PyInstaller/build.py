@@ -1232,6 +1232,13 @@ class EXE(Target):
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
             os.chmod(tmpnm, 0755)
+            # In onefile mode, dependencies in the onefile manifest refer to files that are about to be unpacked when
+            # the exe is run. The Windows DLL loader doesn't know that and refuses to run the exe at all. Since the
+            # .exe does not in fact depend on those (the included .dll/.pyds do), we can mark the dependent
+            # assemblies as optional to work around this problem.
+
+            for assembly in self.manifest.dependentAssemblies:
+                assembly.optional = True
             self.manifest.update_resources(tmpnm, [1]) # 1 for executable
             trash.append(tmpnm)
             exe = tmpnm
