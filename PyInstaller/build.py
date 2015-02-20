@@ -547,7 +547,7 @@ class Analysis(Target):
         # Get paths to Python and, in Windows, the manifest.
         python = sys.executable
         if not is_win:
-            # Linux/MacOS: get a real, non-link path to the running Python executable.            
+            # Linux/MacOS: get a real, non-link path to the running Python executable.
             while os.path.islink(python):
                 python = os.path.join(os.path.dirname(python), os.readlink(python))
             depmanifest = None
@@ -574,25 +574,25 @@ class Analysis(Target):
         # referenced by Python's manifest, don't cause 'lib not found' messages
         self.binaries.extend(bindepend.Dependencies([('', python, '')],
                                                manifest=depmanifest)[1:])
-                
+
         # Instantiate a ModuleGraph. The class is defined at end of this module.
         # The argument is the set of paths to use for imports: sys.path,
         # plus our loader, plus other paths from e.g. --path option).
         self.graph = PyiModuleGraph(HOMEPATH, sys.path + [self.loader_path] + self.pathex)
-        
+
         # Graph the first script in the analysis, and save its node to use as
         # the "caller" node for all others. This gives a connected graph rather than
         # a collection of unrelated trees, one for each of self.inputs.
         # The list of scripts, starting with our own bootstrap ones, is in
         # self.inputs, each as a normalized pathname.
-        
+
         # TODO: (S) in __init__ the input scripts should be saved separately from the
         # pyi-loader set. TEMP: assume the first/only user script is self.inputs[5]
         script = self.inputs[5]
         logger.info("Analyzing %s", script)
         self.graph.run_script(script)
-        # list to hold graph nodes of loader scripts and runtime hooks in use order        
-        priority_scripts = [] 
+        # list to hold graph nodes of loader scripts and runtime hooks in use order
+        priority_scripts = []
         # With a caller node in hand, import all the loader set as called by it.
         # The old Analysis checked that the script existed and raised an error,
         # but now just assume that if it does not, Modulegraph will raise error.
@@ -696,6 +696,7 @@ class Analysis(Target):
                     # This removes the 'item' node from the graph if no other
                     # links go to it (no other modules import it)
                     self.graph.removeReference(mod.node, item)
+                # TODO: process mod.datas if not empty, tkinter data files
 
             # hook_name_space.hiddenimports is a list of Python module names that PyInstaller
             # is not able detect.
@@ -765,7 +766,7 @@ class Analysis(Target):
         ### TODO implement including Python eggs. Shoudl be the eggs printed to console as INFO msg?
         logger.info('Looking for eggs - TODO')
         # TODO: ImpTracker could flag a module as residing in a zip file (because an
-        # egg that had not yet been installed??) and the old code would do this:      
+        # egg that had not yet been installed??) and the old code would do this:
         # scripts.insert(-1, ('_pyi_egg_install.py',
         #     os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
         # It appears that Modulegraph will expand an uninstalled egg but need test
@@ -1254,7 +1255,7 @@ class EXE(Target):
         self.uac_admin = kwargs.get('uac_admin', False)
         self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
 
-        if config['hasUPX']: 
+        if config['hasUPX']:
            self.upx = kwargs.get('upx', False)
         else:
            self.upx = False
@@ -1263,7 +1264,7 @@ class EXE(Target):
         # app. New format includes only exename.
         #
         # Ignore fullpath in the 'name' and prepend DISTPATH or WORKPATH.
-        # DISTPATH - onefile 
+        # DISTPATH - onefile
         # WORKPATH - onedir
         if self.exclude_binaries:
             # onedir mode - create executable in WORKPATH.
@@ -1271,7 +1272,7 @@ class EXE(Target):
         else:
             # onefile mode - create executable in DISTPATH.
             self.name = os.path.join(DISTPATH, os.path.basename(self.name))
-        
+
         # Base name of the EXE file without .exe suffix.
         base_name = os.path.basename(self.name)
         if is_win or is_cygwin:
@@ -1509,7 +1510,7 @@ class COLLECT(Target):
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
 
-        if config['hasUPX']: 
+        if config['hasUPX']:
            self.upx_binaries = kws.get('upx', False)
         else:
            self.upx_binaries = False
@@ -1570,7 +1571,7 @@ class COLLECT(Target):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
-                                 upx=(self.upx_binaries and (is_win or is_cygwin)), 
+                                 upx=(self.upx_binaries and (is_win or is_cygwin)),
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy(fnm, tofnm)
@@ -1602,7 +1603,7 @@ class BUNDLE(Target):
         self.icon = os.path.abspath(self.icon)
 
         Target.__init__(self)
- 
+
         # .app bundle is created in DISTPATH.
         self.name = kws.get('name', None)
         base_name = os.path.basename(self.name)
@@ -1625,9 +1626,9 @@ class BUNDLE(Target):
         for arg in args:
             if isinstance(arg, EXE):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                self.toc.extend(arg.dependencies) 
+                self.toc.extend(arg.dependencies)
                 self.strip = arg.strip
-                self.upx = arg.upx 
+                self.upx = arg.upx
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
                 # TOC doesn't have a strip or upx attribute, so there is no way for us to
@@ -1635,7 +1636,7 @@ class BUNDLE(Target):
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
                 self.strip = arg.strip_binaries
-                self.upx = arg.upx_binaries 
+                self.upx = arg.upx_binaries
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
@@ -1992,7 +1993,7 @@ def build(spec, distpath, workpath, clean_build):
     for pth in (DISTPATH, WORKPATH):
         if not os.path.exists(WORKPATH):
             os.makedirs(WORKPATH)
- 
+
     # Executing the specfile. The executed .spec file will use DISTPATH and
     # WORKPATH values.
     exec(compile(open(spec).read(), spec, 'exec'))
@@ -2025,7 +2026,7 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # TEMP-REMOVE 2 lines
     global DEBUG # save debug flag for temp use
     DEBUG = kw['debug']
-    
+
     NOCONFIRM = noconfirm
 
     # Test unicode support.
