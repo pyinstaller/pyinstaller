@@ -312,25 +312,42 @@ class TOC(compat.UserList):
 
 class FakeModule(object):
     """
-    Create a "mod": an object with info about an imported module.
-    This is the historic API object passed to the hook(mod) method
-    of a hook-modname.py file. Originally a mod object was created
-    by the old ImpTracker, and was similar to a modulegraph node, although
-    with more data. Hooks relied on the following properties:
-         mod.__file__ for the full path to a script
-       * mod.__path__ for the full path to a package or module
-       * mod.co for the compiled code of a script or module
-       * mod.datas for a list of associated data files
-       * mod.imports for a list of things this module imports
-       * mod.binaries for a list of (name,path,'BINARY') tuples (or a TOC)
-    (* means, the hook might modify this member)
-    The new mod provides these members for examination only but has
-    methods for modification:
-       mod.add_binary( (name, path, typecode) ) add a binary dependency
-       mod.add_import( modname ) add a python import
-       mod.del_import( modname ) remove a python dependency
-       mod.retarget( path, code ) retarget to a different piece of code (hook-site)
+    Create a "mod": an object with info about an imported module. This is
+    only used to communicate to hooks. It is constructed before calling the
+    hook using modulegraph info. After the call the changes are returned to
+    the graph and other dicts.
 
+    Originally a mod object was created by the old ImpTracker and was similar
+    to a modulegraph node with more data. Existing hooks rely on the
+    following properties and methods:
+
+    mod.retarget( path, code )
+        retarget to a different piece of code (hook-site, -distutils)
+
+    mod.binaries, historically the TOC of binaries to this point,
+    but no existing hooks interrogate it. Formerly:
+            mod.binaries.extend( list of tuples ) several hooks
+            mod.binaries.append( tuple ) several other hooks
+
+    mod.__file__, the full path to a script. A few hooks read it.
+
+    mod.__path__, [ full path to a package or module ] as list
+        several hooks refer to mod.__path__[0]
+        hook-PyQt4/5.uic.* clear it, mod.__path__ = [] :
+        hook-wx.lib.pubsub adds: mod.__path__.append( path-str )
+
+    mod.datas, a TOC of associated data files
+        mod.datas.extend( list of tuples ) hook-_tkinter only
+
+    mod.imports, a TOC of names this module imports
+            for i, m in enumerate(mod.imports) : 2 hooks
+            hook-PIL.SpiderImagePlugin: del mod.imports[i]
+
+    In order to capture the changes we change the hooks to use
+    these methods instead of operating directly on the mod:
+
+    mod.add_binary( list-of-tuples )
+    mod.del_import( modname )
 
     #########################################################
     The mod object is just used for communication with hooks.
@@ -341,9 +358,9 @@ class FakeModule(object):
     Afterward, changes are returned to the graph and other dicts.
     """
     def __init__(self, identifier, graph) :
-        # Go into the module graph and get the node for this identifier.
-        # It should always exist because the caller should be working
-        # from the graph itself, or a TOC made from the graph.
+        # Go into the module graph and get the node for this identifier. It
+        # should always exist because the caller should be working from the
+        # graph itself, or a TOC made from the graph.
         node = graph.findNode(identifier)
         assert(node is not None) # should not occur
         self.name = identifier
@@ -353,19 +370,19 @@ class FakeModule(object):
         self.graph = graph
         # Add the __file__ member
         self.__file__ = node.filename
-        # Add the __path__ member which is either None or, if
-        # the node type is Package, a list of one element, the
-        # path string to the package directory -- just like a mod.
-        # Note that if the hook changes it, it will change in the node proper.
+        # Add the __path__ member which is either None or, if the node type
+        # is Package, a list of one element, the path string to the package
+        # directory -- just like a mod.
+        # NOTE THAT IF THE HOOK CHANGES THIS IT IS CHANGED IN THE NODE.
         self.__path__ = node.packagepath
-        # Stick in the .co (compiled code) member. One hook (hook-distutiles)
+        # Stick in the .co (compiled code) member. One hook (hook-distutils)
         # wants to change both __path__ and .co. TODO: HOW HANDLE?
         self.co = node.code
-        # Create the datas member as an empty list
+        # Create the datas member as an empty list for tkinter to extend.
         self.datas = []
-        # Add the binaries and imports lists and populate with names.
-        # The node imports whatever is reachable in the graph
-        # starting at that node. Put Extension names in binaries.
+        # Add the binaries and imports lists and populate with names. The
+        # node imports whatever is reachable in the graph starting at that
+        # node. Put Extension names in binaries.
         self.binaries = []
         self.imports = []
         for impnode in graph.flatten(None,node) :
@@ -377,13 +394,6 @@ class FakeModule(object):
         self._added_imports = []
         self._deleted_imports = []
         self._added_binaries = []
-
-    def add_import(self,names):
-        if not isinstance(names, list):
-            names = [names]  # Allow passing string or list.
-        self._added_imports.extend(names) # save change to implement in graph later
-        for name in names:
-            self.imports.append([name,1,0,-1]) # make change visible to caller
 
     def del_import(self,names):
         # just save to implement in graph later
@@ -398,11 +408,12 @@ class FakeModule(object):
 
     def retarget(self, path_to_new_code):
         """
-        Used by hook-site, hook-distutils (and others?) to retarget a module to a simpler one
+        Used by hook-site, hook-distutils to retarget a module to a simpler one
         more suited to being frozen.
 
-        In virtualenv (virtual environment) some default modules are overriden by some wrappers.
-        those wrappers work in virtualenv but are not suited to being frozen.
+        In virtualenv (virtual environment) some default modules are
+        overriden by some wrappers. those wrappers work in virtualenv but are
+        not suited to being frozen.
         """
 
         # Keep the original filename in the fake code object.
