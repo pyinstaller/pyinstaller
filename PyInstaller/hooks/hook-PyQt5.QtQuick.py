@@ -35,5 +35,5 @@ for dir in dirs:
 
 def hook(mod):
     for dir in dirs:
-        mod.binaries.extend(qt5_qml_plugins_binaries(dir))
+        mod.add_binary(qt5_qml_plugins_binaries(dir))
     return mod

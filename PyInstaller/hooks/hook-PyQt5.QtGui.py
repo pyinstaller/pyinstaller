@@ -14,10 +14,10 @@ from PyInstaller.utils.hooks.hookutils import qt5_plugins_binaries
 
 
 def hook(mod):
-    mod.binaries.extend(qt5_plugins_binaries('accessible'))
-    mod.binaries.extend(qt5_plugins_binaries('iconengines'))
-    mod.binaries.extend(qt5_plugins_binaries('imageformats'))
-    mod.binaries.extend(qt5_plugins_binaries('inputmethods'))
-    mod.binaries.extend(qt5_plugins_binaries('graphicssystems'))
-    mod.binaries.extend(qt5_plugins_binaries('platforms'))
+    mod.add_binary(qt5_plugins_binaries('accessible'))
+    mod.add_binary(qt5_plugins_binaries('iconengines'))
+    mod.add_binary(qt5_plugins_binaries('imageformats'))
+    mod.add_binary(qt5_plugins_binaries('inputmethods'))
+    mod.add_binary(qt5_plugins_binaries('graphicssystems'))
+    mod.add_binary(qt5_plugins_binaries('platforms'))
     return mod
