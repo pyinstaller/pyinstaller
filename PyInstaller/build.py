@@ -366,6 +366,16 @@ class Analysis(Target):
             ('hiddenimports', _check_guts_eq),
             )
 
+    # TODO Refactor to prohibit empty target directories. As the docstring
+    #below documents, this function currently permits the second item of each
+    #2-tuple in "hook.datas" to be the empty string, in which case the target
+    #directory defaults to the source directory's basename. However, this
+    #functionality is very fragile and hence bad. Instead:
+    #
+    #* An exception should be raised if such item is empty.
+    #* All hooks currently passing the empty string for such item (e.g.,
+    #  "hooks/hook-babel.py", "hooks/hook-matplotlib.py") should be refactored
+    #  to instead pass such basename.
     def _format_hook_datas(self, hook):
         """
         Convert the passed `hook.datas` list to a list of `TOC`-style 3-tuples.
@@ -401,7 +411,7 @@ class Analysis(Target):
                     if not trg_root_dir:
                         trg_root_dir = os.path.basename(src_root_path)
 
-                    for src_dir, src_subdir_basenames, src_file_basenames in\
+                    for src_dir, src_subdir_basenames, src_file_basenames in \
                         os.walk(src_root_path):
                         # Ensure the current source directory is a subdirectory
                         # of the passed top-level source directory. Since
@@ -410,10 +420,17 @@ class Analysis(Target):
                         assert src_dir.startswith(src_root_path)
 
                         # Relative path of the current target directory,
-                        # obtained by removing the top-level source directory
-                        # from the current source directory (e.g., removing
-                        # "/top" from "/top/dir").
-                        trg_dir = trg_root_dir + src_dir[len(src_root_path):]
+                        # obtained by:
+                        #
+                        # * Stripping the top-level source directory from the
+                        #   current source directory (e.g., removing "/top" from
+                        #   "/top/dir").
+                        # * Normalizing the result to remove redundant relative
+                        #   paths (e.g., removing "./" from "trg/./file").
+                        trg_dir = os.path.normpath(
+                            os.path.join(
+                                trg_root_dir,
+                                os.path.relpath(src_dir, src_root_path)))
 
                         for src_file_basename in src_file_basenames:
                             src_file = os.path.join(src_dir, src_file_basename)
