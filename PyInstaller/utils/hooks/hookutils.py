@@ -342,7 +342,9 @@ def qt5_qml_data(dir):
     """Return Qml library dir formatted for data"""
     qmldir = qt5_qml_dir()
     return (os.path.join(qmldir, dir), 'qml')
-        
+
+# TODO Refactor to call collect_binaries() instead, reducing this function to:
+#     return collect_binaries(qt5_qml_dir(), 'qml')
 def qt5_qml_plugins_binaries(dir):
     """Return list of dynamic libraries formatted for mod.binaries."""
     binaries = []
@@ -635,3 +637,59 @@ def collect_data_files(package):
                 datas.append((source, dest))
 
     return datas
+
+
+def collect_package_binaries(package_name):
+    '''
+    Get a `mod.binaries`-formatted list of 3-tuples installing all dynamic
+    libraries recursively found in the source directory for the Python package
+    with the passed name into corresponding subdirectories of a target directory
+    with the same name.
+
+    Examples
+    ----------
+    Within a module hook, add all dynamic libraries installed by `scipy`:
+
+        >>> from PyInstaller.utils.hooks import hookutils
+        >>> def hook(mod):
+        ...     mod.add_binary(hookutils.collect_binaries('scipy')
+        ...     return mod
+    '''
+    # Absolute path of such package's "__init__.py" script.
+    package_init_file = exec_statement(
+        'import {package_name}; print({package_name}.__file__)'.format(
+            package_name = package_name))
+
+    return collect_binaries(
+        os.path.dirname(package_init_file), package_name)
+
+def collect_binaries(src_root_dir, trg_root_dir):
+    '''
+    Get a `mod.binaries`-formatted list of 3-tuples installing all dynamic
+    libraries recursively found in the passed absolute source directory into
+    corresponding subdirectories of the passed relative target directory.
+
+    Examples
+    ----------
+    Within a module hook, add all dynamic libraries installed by `scipy` using
+    absolute paths:
+
+        >>> from PyInstaller.utils.hooks import hookutils
+        >>> def hook(mod):
+        ...     mod.add_binary(hookutils.collect_binaries(
+        ...         '/usr/lib64/python3.4/site-packages/scipy', 'scipy')
+        ...     return mod
+    '''
+    binaries = []
+    src_dlls = misc.dlls_in_subdirs(src_root_dir)
+
+    for src_dll in src_dlls:
+        src_dll_relative = os.path.relpath(src_dll, src_root_dir)
+        src_dll_relative_dir, src_dll_base = os.path.split(src_dll_relative)
+        trg_dll = os.path.join(trg_root_dir, src_dll_relative_dir, src_dll_base)
+
+        binaries.append((trg_dll, src_dll, 'BINARY'))
+        logger.debug(
+            'Dynamic library "%s" installing to "%s".', src_dll, trg_dll)
+
+    return binaries
