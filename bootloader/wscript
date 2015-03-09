@@ -372,6 +372,14 @@ def configure(conf):
         # conf.env.append_value('LINKFLAGS', '-framework')
         # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
+    dbgb = conf.env.copy() # BACKGROUND DEBUG environment
+    dbgb.set_variant('debugb') # separate subfolder for building
+    dbgb.detach()
+
+    ## setup background DEBUG environment
+    conf.set_env_name('debugb', dbgb)
+    conf.setenv('debugb')
+    conf.env.append_value('CCDEFINES', 'BACKGROUND')
 
     ## setup RELEASE environment
     conf.set_env_name('release', rel)
@@ -399,6 +407,14 @@ def configure(conf):
         # conf.env.append_value('LINKFLAGS', '-framework')
         # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
+    relb = conf.env.copy() # BACKGROUND RELEASE environment
+    relb.set_variant('releaseb') # separate subfolder for building
+    relb.detach()
+
+    ## setup background RELEASE environment
+    conf.set_env_name('releaseb', relb)
+    conf.setenv('releaseb')
+    conf.env.append_value('CCDEFINES', 'BACKGROUND')
 
 # TODO Use 'strip' command to decrease the size of compiled bootloaders.
 def build(bld):
@@ -414,7 +430,8 @@ def build(bld):
     install_path = '../../PyInstaller/bootloader/' + platform.system() + "-" + bld.env.MYARCH
     if bld.env.MYMACHINE:
         install_path += '-' + bld.env.MYMACHINE
-    targets = dict(release='run', debug='run_d', releasew='runw', debugw='runw_d')
+    targets = dict(release='run', debug='run_d', releasew='runw', debugw='runw_d',
+                   releaseb='run_b', debugb='runb_d')
 
     if myplatform.startswith('win'):
 
@@ -445,7 +462,7 @@ def build(bld):
 
         # windowed
 
-        for key in ('releasew', 'debugw'):
+        for key in ('releasew', 'debugw', 'releaseb', 'debugb'):
             bld(
                 features = 'cc cprogram',
                 source = bld.path.ant_glob('windows/utils.c windows/runw.rc common/*.c'), # uses different RC file (icon)
@@ -481,7 +498,8 @@ def build(bld):
 
         ## inprocsrvr windowed
 
-        for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d').items():
+        for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d',
+                               releaseb='inprocsrvrw', debugb='inprocsrvrw_d').items():
             bld(
                 features = 'cc cshlib',
                 source = bld.path.ant_glob('common/pyi_*.c windows/*.c'),
