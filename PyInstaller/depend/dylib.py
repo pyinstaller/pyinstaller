@@ -27,7 +27,7 @@ import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
-_BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])
+_BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d', 'runb', 'runb_d'])
 
 
 # Regex excludes

@@ -1101,6 +1101,7 @@ class EXE(Target):
 
         # Available options for EXE in .spec files.
         self.exclude_binaries = kwargs.get('exclude_binaries', False)
+        self.background = kwargs.get('background', False)
         self.console = kwargs.get('console', True)
         self.debug = kwargs.get('debug', False)
         self.name = kwargs.get('name', None)
@@ -1207,7 +1208,9 @@ class EXE(Target):
         return False
 
     def _bootloader_file(self, exe):
-        if not self.console:
+        if self.background and is_darwin:
+            exe = exe + 'b'
+        elif not self.console:
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'

@@ -45,6 +45,7 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          background=%(background)s,
           console=%(console)s %(exe_options)s)
 """
 
@@ -67,6 +68,7 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          background=%(background)s,
           console=%(console)s %(exe_options)s)
 coll = COLLECT(exe,
                a.binaries,
@@ -96,6 +98,7 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          background=%(background)s,
           console=%(console)s %(exe_options)s)
 dll = DLL(pyz,
           a.scripts,
@@ -284,6 +287,12 @@ def __add_options(parser):
                       'name for code signing purposes. The usual form is a hierarchical name '
                       'in reverse DNS notation. For example: com.mycompany.department.appname '
                       "(default: first script's basename)")
+    g.add_option("-b", "--background", dest="background",
+                 action="store_true",
+                 help="Mac OS X: run this app entirely in the background "
+                      "not showing up in the dock or in CMD-Tab."
+                      "This option is ignored on non OS X systems."
+                      "This option enables windowed mode by default.")
 
 
 def main(scripts, name=None, onefile=False,
@@ -291,7 +300,8 @@ def main(scripts, name=None, onefile=False,
          pathex=[], version_file=None, specpath=DEFAULT_SPECPATH,
          icon_file=None, manifest=None, resources=[], bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=[],
-         excludes=[], uac_admin=False, uac_uiaccess=False, **kwargs):
+         excludes=[], uac_admin=False, uac_uiaccess=False, background=False,
+         **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -376,6 +386,9 @@ def main(scripts, name=None, onefile=False,
     else:
         cipher_init = cipher_absent_template
 
+    if background:
+        console = False
+
     d = {'scripts': scripts,
         'pathex': pathex,
         'hiddenimports': hiddenimports,
@@ -393,6 +406,8 @@ def main(scripts, name=None, onefile=False,
         'excludes': excludes,
         # only Windows and Mac OS X distinguish windowed and console apps
         'console': console,
+        # Mac OS X apps show up in the dock bar unless background is set.
+        'background': background,
         # Icon filename. Only OSX uses this item.
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.
