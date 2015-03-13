@@ -453,6 +453,7 @@ except ImportError as e:
     return ['backend_' + x.lower() for x in avail_bk]
 
 
+# TODO Move to "hooks/hook-OpenGL.py", the only place where this is called.
 def opengl_arrays_modules():
     """
     Return list of array modules for OpenGL module.
@@ -460,7 +461,7 @@ def opengl_arrays_modules():
     e.g. 'OpenGL.arrays.vbo'
     """
     statement = 'import OpenGL; print(OpenGL.__path__[0])'
-    opengl_mod_path = PyInstaller.hooks.hookutils.exec_statement(statement)
+    opengl_mod_path = exec_statement(statement)
     arrays_mod_path = os.path.join(opengl_mod_path, 'arrays')
     files = glob.glob(arrays_mod_path + '/*.py')
     modules = []
