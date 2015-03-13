@@ -399,7 +399,16 @@ class Analysis(Target):
         toc_datas = []
 
         for src_root_path_or_glob, trg_root_dir in getattr(hook, 'datas', []):
-            for src_root_path in glob.glob(src_root_path_or_glob):
+            # List of the absolute paths of all source paths matching the
+            # current glob.
+            src_root_paths = glob.glob(src_root_path_or_glob)
+
+            if not src_root_paths:
+                raise FileNotFoundError(
+                    'Path or glob "%s" not found or matches no files.' % (
+                    src_root_path_or_glob))
+
+            for src_root_path in src_root_paths:
                 if os.path.isfile(src_root_path):
                     toc_datas.append((
                         os.path.join(
