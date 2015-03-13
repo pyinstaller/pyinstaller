@@ -310,37 +310,52 @@ class TOC(compat.UserList):
         return rslt
 
 
+# TODO This class should raise exceptions on external callers attempting to
+# modify class attributes (e.g., a hook attempting to set "mod.datas = []").
+# This has been the source of numerous difficult-to-debug issues. The simplest
+# means of ensuring this would be to:
+#
+# * Prefix all attribute names by "_" (e.g., renaming "datas" to "_datas").
+# * Define one @property-decorated getter (but not setter) for each such
+#   attribute, thus permitting access but prohibiting modification.
+# TODO There is no method resembling info() in the ModuleGraph class. Correct
+# the docstring below.
 class FakeModule(object):
     """
-    Create a "mod": an object with info about an imported module.
-    This is the historic API object passed to the hook(mod) method
-    of a hook-modname.py file. Originally a mod object was created
-    by the old ImpTracker, and was similar to a modulegraph node, although
-    with more data. Hooks relied on the following properties:
-         mod.__file__ for the full path to a script
-       * mod.__path__ for the full path to a package or module
-       * mod.co for the compiled code of a script or module
-       * mod.datas for a list of associated data files
-       * mod.imports for a list of things this module imports
-       * mod.binaries for a list of (name,path,'BINARY') tuples (or a TOC)
-    (* means, the hook might modify this member)
-    The new mod provides these members for examination only but has
-    methods for modification:
-       mod.add_binary( (name, path, typecode) ) add a binary dependency
-       mod.add_import( modname ) add a python import
-       mod.del_import( modname ) remove a python dependency
-       mod.retarget( path, code ) retarget to a different piece of code (hook-site)
+    A **mod** (i.e., metadata describing external assets to be frozen with an
+    imported module).
 
+    Mods are both passed to and returned from the `hook(mod)` functions of
+    `hook-{module_name}.py` files. Mods are constructed before the call from
+    `ModuleGraph` info. Changes to mods are propagated back to the current graph
+    and related data structures.
 
-    #########################################################
-    The mod object is just used for communication with hooks.
-    #########################################################
+    .. NOTE::
+       Mods are *only* used for communication with hooks.
 
+    Attributes
+    ----------
+    Hook functions may access but *not* modify the following attributes:
 
-    It is constructed before the call from modulegraph info.
-    Afterward, changes are returned to the graph and other dicts.
+    __file__ : str
+        Absolute path of this module's Python file. (Unlike all other
+        attributes, hook functions may modify this attribute.)
+    __path__ : str
+        Absolute path of this module's parent directory.
+    name : str
+        This module's `.`-delimited name (e.g., `six.moves.tkinter`).
+    co : code
+        Code object compiled from the contents of `__file__` (e.g., via the
+        `compile()` builtin).
+    datas : list
+        List of associated data files.
+    imports : list
+        List of things this module imports.
+    binaries : list
+        List of `(name, path, 'BINARY')` tuples or TOC objects.
     """
-    def __init__(self, identifier, graph) :
+
+    def __init__(self, identifier, graph):
         # Go into the module graph and get the node for this identifier.
         # It should always exist because the caller should be working
         # from the graph itself, or a TOC made from the graph.
@@ -379,6 +394,13 @@ class FakeModule(object):
         self._added_binaries = []
 
     def add_import(self,names):
+        """
+        Add all Python modules whose `.`-delimited names are in the passed list
+        as "hidden imports" upon which the current module depends.
+
+        The passed argument may be either a list of module names *or* a single
+        module name.
+        """
         if not isinstance(names, list):
             names = [names]  # Allow passing string or list.
         self._added_imports.extend(names) # save change to implement in graph later
@@ -386,25 +408,48 @@ class FakeModule(object):
             self.imports.append([name,1,0,-1]) # make change visible to caller
 
     def del_import(self,names):
+        """
+        Remove all Python modules whose `.`-delimited names are in the passed
+        list from the set of imports (either hidden or visible) upon which the
+        current module depends.
+
+        The passed argument may be either a list of module names *or* a single
+        module name.
+        """
         # just save to implement in graph later
         if not isinstance(names, list):
             names = [names]  # Allow passing string or list.
         self._deleted_imports.extend(names)
 
     def add_binary(self,list_of_tuples):
+        """
+        Add all external dynamic libraries in the passed list of TOC-style
+        3-tuples as dependencies of the current module.
+
+        The third element of each such tuple *must* be `BINARY`.
+        """
         for item in list_of_tuples:
             self._added_binaries.append(item)
             self.binaries.append(item)
 
+    def add_data(self, list_of_tuples):
+        """
+        Add all external data files in the passed list of TOC-style 3-tuples as
+        dependencies of the current module.
+
+        The third element of each such tuple *must* be `DATA`.
+        """
+        self.datas.extend(list_of_tuples)
+
     def retarget(self, path_to_new_code):
         """
-        Used by hook-site, hook-distutils (and others?) to retarget a module to a simpler one
-        more suited to being frozen.
+        Recompile this module's code object as the passed Python file.
 
-        In virtualenv (virtual environment) some default modules are overriden by some wrappers.
-        those wrappers work in virtualenv but are not suited to being frozen.
+        This method is intended to "retarget" unfreezable modules into simpler
+        versions well-suited to being frozen. This is especially useful for
+        **venvs** (i.e., virtual environments), which frequently override
+        default modules with wrappers poorly suited to being frozen.
         """
-
         # Keep the original filename in the fake code object.
         new_code = PyInstaller.utils.misc.get_code_object(path_to_new_code, new_filename=self.node.filename)
         # Update node.
