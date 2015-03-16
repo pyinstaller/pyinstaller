@@ -469,8 +469,6 @@ class CExtensionImporter(object):
                         # Load module.
                         import _frozen_importlib
                         loader = _frozen_importlib.ExtensionFileLoader(fullname, filename)
-                        print(fullname)
-                        print(filename)
                         module = loader.load_module(fullname)
 
         except Exception:
