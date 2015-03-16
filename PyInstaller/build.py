@@ -366,28 +366,89 @@ class Analysis(Target):
             ('hiddenimports', _check_guts_eq),
             )
 
+    # TODO Refactor to prohibit empty target directories. As the docstring
+    #below documents, this function currently permits the second item of each
+    #2-tuple in "hook.datas" to be the empty string, in which case the target
+    #directory defaults to the source directory's basename. However, this
+    #functionality is very fragile and hence bad. Instead:
+    #
+    #* An exception should be raised if such item is empty.
+    #* All hooks currently passing the empty string for such item (e.g.,
+    #  "hooks/hook-babel.py", "hooks/hook-matplotlib.py") should be refactored
+    #  to instead pass such basename.
     def _format_hook_datas(self, hook):
         """
-        hook.datas is a list of globs of files or
-        directories to bundle as datafiles. For each
-        glob, a destination directory is specified.
-        """
-        datas = []
+        Convert the passed `hook.datas` list to a list of `TOC`-style 3-tuples.
 
-        for g, dest_dir in getattr(hook, 'datas', []):
-            if dest_dir:
-                dest_dir += os.sep
-            for fn in glob.glob(g):
-                if os.path.isfile(fn):
-                    datas.append((dest_dir + os.path.basename(fn), fn, 'DATA'))
-                else:
-                    for root, dirs, files in os.walk(fn):
-                        dest_dir = dest_dir + os.path.basename(fn) + os.sep
-                        for file in files:
-                            fn = os.path.join(root, file)
-                            if os.path.isfile(fn):
-                                datas.append((dest_dir + os.path.basename(fn), fn, 'DATA'))
-        return datas
+        `hook.datas` is a list of 2-tuples whose:
+
+        * First item is either:
+          * A glob matching only the absolute paths of source non-Python data
+            files.
+          * The absolute path of a directory containing only such files.
+        * Second item is either:
+          * The relative path of the target directory into which such files will
+            be recursively copied.
+          * The empty string. In such case, if the first item was:
+            * A glob, such files will be recursively copied into the top-level
+              target directory. (This is usually *not* what you want.)
+            * A directory, such files will be recursively copied into a new
+              target subdirectory whose name is such directory's basename.
+              (This is usually what you want.)
+        """
+        toc_datas = []
+
+        for src_root_path_or_glob, trg_root_dir in getattr(hook, 'datas', []):
+            # List of the absolute paths of all source paths matching the
+            # current glob.
+            src_root_paths = glob.glob(src_root_path_or_glob)
+
+            if not src_root_paths:
+                raise FileNotFoundError(
+                    'Path or glob "%s" not found or matches no files.' % (
+                    src_root_path_or_glob))
+
+            for src_root_path in src_root_paths:
+                if os.path.isfile(src_root_path):
+                    toc_datas.append((
+                        os.path.join(
+                            trg_root_dir, os.path.basename(src_root_path)),
+                        src_root_path, 'DATA'))
+                elif os.path.isdir(src_root_path):
+                    # If no top-level target directory was passed, default this
+                    # to the basename of the top-level source directory.
+                    if not trg_root_dir:
+                        trg_root_dir = os.path.basename(src_root_path)
+
+                    for src_dir, src_subdir_basenames, src_file_basenames in \
+                        os.walk(src_root_path):
+                        # Ensure the current source directory is a subdirectory
+                        # of the passed top-level source directory. Since
+                        # os.walk() does *NOT* follow symlinks by default, this
+                        # should be the case. (But let's make sure.)
+                        assert src_dir.startswith(src_root_path)
+
+                        # Relative path of the current target directory,
+                        # obtained by:
+                        #
+                        # * Stripping the top-level source directory from the
+                        #   current source directory (e.g., removing "/top" from
+                        #   "/top/dir").
+                        # * Normalizing the result to remove redundant relative
+                        #   paths (e.g., removing "./" from "trg/./file").
+                        trg_dir = os.path.normpath(
+                            os.path.join(
+                                trg_root_dir,
+                                os.path.relpath(src_dir, src_root_path)))
+
+                        for src_file_basename in src_file_basenames:
+                            src_file = os.path.join(src_dir, src_file_basename)
+                            if os.path.isfile(src_file):
+                                toc_datas.append((
+                                    os.path.join(trg_dir, src_file_basename),
+                                    src_file, 'DATA'))
+
+        return toc_datas
 
     # TODO What are 'check_guts' methods useful for?
     def check_guts(self, last_build):
