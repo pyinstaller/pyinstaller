@@ -210,7 +210,9 @@ static void pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
     PI_PySys_SetArgvEx(status->argc, status->argv, 0);
 }
 
-
+/* Required for Py_SetProgramName */
+wchar_t _program_name[PATH_MAX+1];
+	
 /*
  * Start python - return 0 on success
  */
@@ -227,7 +229,6 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     /* Temporary buffer for conversion of string to wide string. */
 	wchar_t wchar_tmp[PATH_MAX+1];
 	wchar_t wchar_tmp2[PATH_MAX+1];
-	wchar_t wchar_tmp3[PATH_MAX+1];
 	PyObject *py_argv;
 	PyObject *val;
 	PyObject *sys;
@@ -236,9 +237,9 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 
     /* In Python 3 Py_SetProgramName() should be called before Py_SetPath(). */
     // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
-    mbstowcs(wchar_tmp3, status->archivename, PATH_MAX);
+    mbstowcs(_program_name, status->archivename, PATH_MAX);
     //PI_Py_SetProgramName(status->archivename);
-    PI_Py_SetProgramName(wchar_tmp3);
+    PI_Py_SetProgramName(_program_name);
 
     // TODO set pythonpath by function from Python C API (Python 2.6+)
     /* Set the PYTHONPATH */
