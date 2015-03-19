@@ -458,7 +458,7 @@ def opengl_arrays_modules():
     e.g. 'OpenGL.arrays.vbo'
     """
     statement = 'import OpenGL; print(OpenGL.__path__[0])'
-    opengl_mod_path = PyInstaller.hooks.hookutils.exec_statement(statement)
+    opengl_mod_path = exec_statement(statement)
     arrays_mod_path = os.path.join(opengl_mod_path, 'arrays')
     files = glob.glob(arrays_mod_path + '/*.py')
     modules = []
