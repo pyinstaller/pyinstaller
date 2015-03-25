@@ -21,14 +21,14 @@ import zipimport
 import re
 from collections import deque
 
-from altgraph.ObjectGraph import ObjectGraph
+from PyInstaller.compat import is_py2, is_py3
+from PyInstaller.lib.altgraph.ObjectGraph import ObjectGraph
+from PyInstaller.lib.modulegraph import util, zipio
 
-from itertools import count
-
-from modulegraph import util
-from modulegraph import zipio
-
-if sys.version_info[0] == 2:
+# TODO This is what the "compat" module is for. The following imports (thus
+# excluding the _Bchr() function definition) should be moved there and then
+# imported above.
+if is_py2:
     from StringIO import StringIO as BytesIO
     from StringIO import StringIO
     from  urllib import pathname2url
@@ -196,6 +196,8 @@ def find_module(name, path=None):
                 return (fp, filename, description)
 
             elif filename.endswith('.py'):
+                # TODO This is what the "compat" module is for. Define a utility
+                # function open_text_file() in that module and call here.
                 if sys.version_info[0] == 2:
                     fp = open(filename, _READ_MODE)
                 else:
@@ -746,6 +748,8 @@ class ModuleGraph(ObjectGraph):
         if m is not None:
             return m
 
+        # TODO This is what the "compat" module is for. Define a utility
+        # function open_text_file() in that module and call here.
         if sys.version_info[0] != 2:
             with open(pathname, 'rb') as fp:
                 encoding = util.guess_encoding(fp)
@@ -915,6 +919,8 @@ class ModuleGraph(ObjectGraph):
     def find_all_submodules(self, m):
         if not m.packagepath:
             return
+
+        # TODO "suffixes" isn't actually used anywhere. Remove.
         # 'suffixes' used to be a list hardcoded to [".py", ".pyc", ".pyo"].
         # But we must also collect Python extension modules - although
         # we cannot separate normal dlls from Python extensions.
