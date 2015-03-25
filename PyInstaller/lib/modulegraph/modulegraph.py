@@ -413,10 +413,32 @@ class Node(object):
         return '%s%r' % (type(self).__name__, self.infoTuple())
 
 class Alias(str):
+    """
+    Placeholder object representing the aliasing of an existing module by an
+    alternative fully-qualified name.
+
+    This object facilitates interaction between the `ModuleGraph` class and the
+    `find_modules.get_implies()` function. Its value is the fully-qualified name
+    of the existing module being aliased.
+    """
     pass
 
 class AliasNode(Node):
+    """
+    Graph node representing the aliasing of an existing module under an
+    alternative module name.
+    """
     def __init__(self, name, node):
+        """
+        Arguments
+        ----------
+        name : str
+            Fully-qualified name of this non-existing **target module** (i.e.,
+            the alias being created).
+        node : Node
+            Graph node for the existing **source module** (i.e., the module
+            being aliased).
+        """
         super(AliasNode, self).__init__(name)
         for k in 'identifier', 'packagepath', '_namespace', 'globalnames', 'starimports':
             setattr(self, k, getattr(node, k, None))
@@ -774,9 +796,43 @@ class ModuleGraph(ObjectGraph):
 
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
         """
-        Import a module
+        Import the module with the passed fully-qualified name and all parent
+        packages of this module from the previously imported caller module
+        signified by the passed graph node.
 
-        Return the set of modules that are imported
+        If `fromlist` is *not* `None`, all submodules whose unqualified names
+        are in this list will also be imported from the module with the passed
+        name. (See below for examples.)
+
+        Arguments
+        ----------
+        name : str
+            Fully-qualified name of the module to be imported (e.g.,
+            `email.mime.text`).
+        caller : Node
+            Graph node for the module whose file contains the `import` statement
+            triggering the call to this method if any *or* `None` otherwise.
+            This is usually an instance of the `SourceModule` class.
+        fromlist : list
+            List of the unqualified names of all modules and attributes to be
+            imported from the module to be imported if any *or* `None`
+            otherwise (e.g., `[encode_base64, encode_noop]` for the statement
+            `from email.encoders import encode_base64, encode_noop`).
+        level : int
+            Whether to perform an absolute or relative import. This argument
+            exactly corresponds to the argument of the same name accepted by
+            the builtin `__import__()` function: "The default is -1 which
+            indicates both absolute and relative imports will be attempted. 0
+            means only perform absolute imports. Positive values for level
+            indicate the number of parent directories to search relative to the
+            directory of the module calling __import__()."
+
+        Returns
+        ----------
+        list
+            List of the graph nodes created for all modules directly imported by
+            this call, including the desired module as well as all modules
+            listed in `fromlist`.
         """
         self.msg(3, "import_hook", name, caller, fromlist, level)
         parent = self.determine_parent(caller)
@@ -818,8 +874,30 @@ class ModuleGraph(ObjectGraph):
 
     def find_head_package(self, parent, name, level=-1):
         """
-        Given a calling parent package and an import name determine the containing
-        package for the name
+        Import the package providing the module with the passed fully-qualified
+        name to be subsquently imported from the previously imported parent
+        module signified by the passed graph node.
+
+        Arguments
+        ----------
+        parent : Package
+            Graph node for the package from which the module whose file contains
+            the `import` statement triggering the call to this method if any
+            *or* `None` otherwise.
+        name : str
+            Fully-qualified name of the module to be imported (e.g.,
+            `email.mime.text`).
+        level : int
+            Whether to perform an absolute or relative import. See the
+            `import_hook()` method for further details.
+
+        Returns
+        ----------
+        (package, module_name)
+            2-tuple describing the imported package, where:
+            * `package` is the graph node created for this package.
+            * `module_name` is unqualified name of the module to be subsequently
+              imported (e.g., `text` if `email.mime.text` was passed).
         """
         self.msgin(4, "find_head_package", parent, name, level)
         if '.' in name:
@@ -879,6 +957,24 @@ class ModuleGraph(ObjectGraph):
         raise ImportError("No module named " + qname)
 
     def load_tail(self, mod, tail):
+        """
+        Import the module with the passed name and all parent packages of this
+        module from the previously imported parent module signified by the
+        passed graph node.
+
+        Arguments
+        ----------
+        mod : Package
+            Graph node for the parent package providing this module.
+        tail : str
+            Name of the module to be imported in either qualified (e.g.,
+            `email.mime.base`) or unqualified (e.g., `base`) form.
+
+        Returns
+        ----------
+        Node
+            Graph node created for this module.
+        """
         self.msgin(4, "load_tail", mod, tail)
         result = mod
         while tail:
@@ -894,6 +990,25 @@ class ModuleGraph(ObjectGraph):
         return result
 
     def ensure_fromlist(self, m, fromlist):
+        """
+        Generator importing each module whose unqualified name is in the passed
+        list from the package signified by the passed graph node and yielding
+        that module.
+
+        Arguments
+        ----------
+        mod : Package
+            Graph node for the package from which to import these modules.
+        fromlist : list
+            List of the unqualified names of all modules to be imported. This
+            list will be internally converted into a set, safely ignoring any
+            duplicates in this list.
+
+        Yields
+        ----------
+        Node
+            Graph node created for the currently imported module.
+        """
         fromlist = set(fromlist)
         self.msg(4, "ensure_fromlist", m, fromlist)
         if '*' in fromlist:
@@ -936,8 +1051,30 @@ class ModuleGraph(ObjectGraph):
                 if info[0] != '__init__':
                     yield info[0]
 
+    # TODO Review me for use with absolute imports.
     def import_module(self, partname, fqname, parent):
-        # XXX: Review me for use with absolute imports.
+        """
+        Import the module with the passed unqualified and fully-qualified names
+        from the previously imported module signified by the passed graph node.
+
+        Arguments
+        ----------
+        partname : str
+            Unqualified name of the module to be imported (e.g., the `text` in
+            the fully-qualified module name `email.mime.text`).
+        fqname : str
+            Fully-qualified name of the module to be imported (e.g.,
+            `email.mime.text`).
+        parent : Node
+            Graph node for the module whose file contains the `import` statement
+            triggering the call to this method if any *or* `None` otherwise.
+            This is usually an instance of the `SourceModule` class.
+
+        Returns
+        ----------
+        Node
+            Graph node created for the module imported by this call.
+        """
         self.msgin(3, "import_module", partname, fqname, parent)
         m = self.findNode(fqname)
         if m is not None:
@@ -1038,7 +1175,21 @@ class ModuleGraph(ObjectGraph):
         return m
 
     def _safe_import_hook(self, name, caller, fromlist, level=-1):
-        # wrapper for self.import_hook() that won't raise ImportError
+        """
+        Import the module with the passed fully-qualified name and all parent
+        packages of this module from the previously imported caller module
+        signified by the passed graph node *without* raising `ImportError`
+        exceptions.
+
+        This method is a safe wrapper around the `import_hook()` method
+        squelching any `ImportError` exceptions raised by that method. See that
+        method for further details on passed arguments.
+
+        Returns
+        ----------
+        list
+            List of graph nodes created for the modules imported by this call.
+        """
         try:
             mods = self.import_hook(name, caller, level=level)
         except ImportError as msg:
