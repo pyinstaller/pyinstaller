@@ -17,6 +17,7 @@ import glob
 import imp
 import os
 import pprint
+import platform
 import py_compile
 import shutil
 import sys
@@ -807,7 +808,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     # This allows parallel building of executables with different
     # Python versions as one user.
     pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
-    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d_%s' % (strip, upx, pyver))
+    arch = platform.architecture()[0]
+    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
