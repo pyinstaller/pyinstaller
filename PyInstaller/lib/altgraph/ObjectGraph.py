@@ -45,6 +45,23 @@ class ObjectGraph(object):
 
 
     def get_edges(self, node):
+        """
+        Get a 2-tuple of all nodes directly connected to the passed node.
+
+        Parameters
+        ----------
+        node : object
+            Graph node to be examined.
+
+        Returns
+        ----------
+        (outgoing_nodes, incoming_nodes)
+            2-tuple whose:
+            * First element is a generator yielding all nodes having an outgoing
+              edge directed to the passed node.
+            * Second element is a generator yielding all nodes having an
+              incoming edge directed from the passed node.
+        """
         start = self.getRawIdent(node)
         _, _, outraw, incraw = self.graph.describe_node(start)
         def iter_edges(lst, n):

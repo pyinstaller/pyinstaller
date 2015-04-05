@@ -44,6 +44,26 @@ logger = logging.getLogger(__name__)
 
 
 class PyiModuleGraph(ModuleGraph):
+    """
+    Directed graph whose nodes represent modules and edges represent
+    dependencies between these modules.
+
+    This high-level subclass wraps the lower-level `ModuleGraph` class with
+    support for graph and runtime hooks. While each instance of `ModuleGraph`
+    represents a set of disconnected trees, each instance of this class *only*
+    represents a single connected tree whose root node is the Python script
+    originally passed by the user on the command line. For that reason, while
+    there may (and typically do) exist more than one `ModuleGraph` instance,
+    there typically exists only a singleton instance of this class.
+
+    Attributes
+    ----------
+    _graph_hooks : dict
+        Dictionary mapping the fully-qualified names of modules having
+        corresponding graph hooks to the absolute paths of these hooks. See the
+        `import_module()` method for details.
+    """
+
     def __init__(self, pyi_homepath, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
         # Dict to map ModuleGraph node types to TOC typecodes
@@ -174,10 +194,26 @@ class PyiModuleGraph(ModuleGraph):
         if node is None : return False
         return type(node).__name__ == 'BuiltinModule'
 
-    # Return a list of the names that import a given name. Basically
-    # just get the iterator for incoming-edges and return the
-    # identifiers from the nodes it reports.
-    def importer_names(self, name) :
+    def importer_names(self, name):
+        """
+        List the names of all modules importing the module with the passed name.
+
+        If this module has yet to be imported and hence added to the graph, this
+        method returns the empty list; else, this method returns a list
+        comprehension over the identifiers of all graph nodes having an outgoing
+        edge directed into the graph node for this module.
+
+        Parameters
+        ----------
+        name : str
+            Fully-qualified name of the module to be examined.
+
+        Returns
+        ----------
+        list
+            List of the fully-qualified names of all modules importing the
+            module with the passed fully-qualified name.
+        """
         node = self.findNode(name)
         if node is None : return []
         _, iter_inc = self.get_edges(node)
