@@ -1144,6 +1144,77 @@ class ModuleGraph(ObjectGraph):
                 if info[0] != '__init__':
                     yield info[0]
 
+    def alias_module(self, src_module_name, trg_module_name):
+        """
+        Alias the source module to the target module with the passed names.
+
+        This method ensures that the next call to findNode() given the target
+        module name will resolve this alias. This includes importing and adding
+        a graph node for the source module if needed as well as adding a
+        reference from the target to source module.
+
+        Parameters
+        ----------
+        src_module_name : str
+            Fully-qualified name of the existing **source module** (i.e., the
+            module being aliased).
+        trg_module_name : str
+            Fully-qualified name of the non-existent **target module** (i.e.,
+            the alias to be created).
+        """
+        self.msg(3, 'alias_module "%s" -> "%s"' % (src_module_name, trg_module_name))
+        # print('alias_module "%s" -> "%s"' % (src_module_name, trg_module_name))
+        assert isinstance(src_module_name, str), '"%s" not a module name.' % str(src_module_name)
+        assert isinstance(trg_module_name, str), '"%s" not a module name.' % str(trg_module_name)
+
+        # If the target module has already been added to the graph as either a
+        # non-alias or as a different alias, raise an exception.
+        trg_module = self.findNode(trg_module_name)
+        if trg_module is not None and not (
+           isinstance(trg_module, AliasNode) and
+           trg_module.identifier == src_module_name):
+            raise ValueError('Target module "%s" already imported as "%s".' % (trg_module_name, trg_module))
+
+        # See findNode() for details.
+        self.lazynodes[trg_module_name] = Alias(src_module_name)
+
+    def add_module(self, module):
+        """
+        Add the passed module node to the graph if not already added.
+
+        If that module has a parent module or package with a previously added
+        node, this method also adds a reference from this module node to its
+        parent node and adds this module node to its parent node's namespace.
+
+        This high-level method wraps the low-level `addNode()` method, but is
+        typically *only* called by graph hooks adding runtime module nodes. For
+        all other node types, the `import_module()` method should be called.
+
+        Parameters
+        ----------
+        module : BaseModule
+            Graph node for the module to be added.
+        """
+        self.msg(3, 'import_module_runtime', module)
+
+        # If no node exists for this module, add such a node.
+        module_added = self.findNode(module.identifier)
+        if module_added is None:
+            self.addNode(module)
+        else:
+            assert module == module_added, 'Newly added module "%s" != previously added module "%s".' % (str(module), str(module_added))
+
+        # If this module has a previously added parent, reference this module to
+        # its parent and add this module to its parent's namespace.
+        parent_name, _, module_basename = module.identifier.rpartition('.')
+        if parent_name:
+            parent = self.findNode(parent_name)
+            if parent is None:
+                self.msg(4, 'import_module_runtime parent not found:', parent_name)
+            else:
+                self.createReference(module, parent)
+                parent[module_basename] = module
+
     # TODO Review me for use with absolute imports.
     def _import_module(self, partname, fqname, parent):
         """
