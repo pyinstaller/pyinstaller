@@ -32,7 +32,7 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
-
+import glob
 import logging
 import os
 from PyInstaller import compat as compat
@@ -42,6 +42,35 @@ from modulegraph.modulegraph import ModuleGraph
 
 logger = logging.getLogger(__name__)
 
+# TODO Move to the "compat" module after generalizing to work under Python 2.
+# TODO Call this function in Analysis.assemble() to load import hooks as well.
+def load_module_file(module_name, filename):
+    """
+    Load the module with the passed fully-qualified name from the file with the
+    passed absolute path.
+
+    This function opens this file for reading, evaluates its contents, and
+    returns a module object encapsulating that module's namespace. This includes
+    all attributes, classes, and functions defined by that module. This function
+    should be called to load PyInstaller hooks but *not* external modules, which
+    should *only* be imported from subprocesses (e.g., via the
+    `hookutils.exec_statement()` function).
+
+    Parameters
+    ----------
+    module_name : str
+        Fully-qualified name of the module to be loaded from that file.
+    filename : str
+        Absolute path of the file to be loaded.
+
+    Returns
+    ----------
+    types.ModuleType
+        Module object encapsulating the loaded module's namespace.
+    """
+    from importlib.machinery import SourceFileLoader
+    mod_loader = SourceFileLoader(module_name, filename)
+    return mod_loader.load_module()
 
 class PyiModuleGraph(ModuleGraph):
     """
@@ -83,10 +112,29 @@ class PyiModuleGraph(ModuleGraph):
         # modulegraph Node for the main python script that is analyzed
         # by PyInstaller.
         self._top_script_node = None
-        # Load dict with available run-time hooks.
+
+        # Define lookup tables for graph and runtime hooks.
+        self._graph_hooks = self._calc_graph_hooks()
         self._available_rthooks = load_py_data_struct(
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
+
+    # TODO Add support for user-defined graph hooks.
+    def _calc_graph_hooks(self):
+        """
+        Initialize the `_graph_hooks` module attribute.
+        """
+        logger.info('Looking for graph hooks ...')
+
+        # Absolute path of the directory containing graph hooks.
+        from PyInstaller.hooks import graph
+        graph_hook_dir = graph.__path__[0]
+
+        return {
+            os.path.basename(graph_hook_file)[5:-3]: graph_hook_file
+            for graph_hook_file in glob.glob(
+                os.path.join(graph_hook_dir, 'hook-*.py'))
+        }
 
     def run_script(self, pathname):
         """
@@ -101,6 +149,51 @@ class PyiModuleGraph(ModuleGraph):
             return self._top_script_node
         else:
             return super(PyiModuleGraph, self).run_script(pathname, caller=self._top_script_node)
+
+    def import_module(self, partname, fqname, parent):
+        """
+        Import the Python module with the passed name from the parent package
+        signified by the passed graph node.
+
+        This method wraps the superclass method of the same name with support
+        for graph hooks. If there exists a corresponding **graph hook** (i.e., a
+        module `PyInstaller.hooks.graph.hook-{fqname}`), that hook is imported
+        and the `hook()` function necessarily defined by that hook called
+        *before* the module with the passed name is imported.
+
+        Parameters
+        ----------
+        partname : str
+            Unqualified name of the module to be imported (e.g., `text`).
+        fqname : str
+            Fully-qualified name of this module (e.g., `email.mime.text`).
+        parent : Package
+            Graph node for the package providing this module *or* `None` if
+            this module is a top-level module.
+
+        Returns
+        ----------
+        Node
+            Graph node created for this module.
+        """
+        # If this module has a graph hook, run that hook first.
+        if fqname in self._graph_hooks:
+            hook_filename = self._graph_hooks[fqname]
+            logger.info('Processing graph hook   %s', os.path.basename(hook_filename))
+            hook_namespace = load_module_file(
+                'pyi_graph_hook.' + fqname, hook_filename)
+
+            # Import hooks are required to define the hook() function.
+            if not hasattr(hook_namespace, 'hook'):
+                raise NameError('Function hook() undefined in graph hook "%s".' % hook_filename)
+
+            # Pass this hook the current module graph.
+            hook_namespace.hook(self)
+
+            # Prevent the next import of this module from rerunning this hook
+            del self._graph_hooks[fqname]
+
+        return super(PyiModuleGraph, self).import_module(partname, fqname, parent)
 
     def get_code_objects(self):
         """
