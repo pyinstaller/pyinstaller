@@ -514,6 +514,20 @@ class BaseModule(Node):
 class BuiltinModule(BaseModule):
     pass
 
+class RuntimeModule(MissingModule):
+    """
+    Graph node representing a Python module dynamically defined at runtime.
+
+    Most modules are statically defined at creation time in external Python
+    files. Some modules, however, are dynamically defined at runtime (e.g.,
+    `six.moves`, dynamically defined by the statically defined `six` module).
+
+    This node represents such a module. To ensure that the parent module of
+    this module is also imported and added to the graph, this node is typically
+    added to the graph by calling the `ModuleGraph.add_module()` method.
+    """
+    pass
+
 class SourceModule(BaseModule):
     pass
 
