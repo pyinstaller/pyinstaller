@@ -924,6 +924,14 @@ class ModuleGraph(ObjectGraph):
                 # excluded module
                 m = self.createNode(ExcludedModule, name)
             elif isinstance(deps, Alias):
+                # Coerce "deps" from an "Alias" to a "str". While the former
+                # already subclasses the latter, only the latter is
+                # marshallable. Since the call to _safe_import_hook() below
+                # ensures that "deps" will be subsequently added to the TOC and
+                # hence marshalled by Archive.save_toc(), this prevents
+                # "ValueError: unmarshallable object" exceptions.
+                deps = str(deps)
+
                 other = self._safe_import_hook(deps, None, None).pop()
                 m = self.createNode(AliasNode, name, other)
                 self.implyNodeReference(m, other)
