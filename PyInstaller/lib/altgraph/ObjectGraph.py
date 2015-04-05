@@ -68,7 +68,16 @@ class ObjectGraph(object):
             seen = set()
             for tpl in (self.graph.describe_edge(e) for e in lst):
                 ident = tpl[n]
-                if ident not in seen:
+
+                # If the identifier for the node at the other end of this edge
+                # is the current graph, skip this node. For example, this occurs
+                # for edges connecting to MissingModule nodes (e.g., the
+                # Windows-specific "winreg" module under OS X and Linux).
+                if ident is self:
+                    self.msg(1, 'Erroneous edge %s for node %s.' % (str(tpl), str(node)))
+                    continue
+                # Else if this node has not yet been yielded, do so.
+                elif ident not in seen:
                     yield self.findNode(ident)
                     seen.add(ident)
         return iter_edges(outraw, 3), iter_edges(incraw, 2)
