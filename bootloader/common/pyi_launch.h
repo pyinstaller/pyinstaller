@@ -65,6 +65,12 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[]);
 
 
 /*
+ * Transform parent process to background (OSX only).
+ */
+void pyi_parent_to_background();
+
+
+/*
  * Call a simple "int func(void)" entry point.  Assumes such a function
  * exists in the main namespace.
  * Return non zero on failure, with -2 if the specific error is
