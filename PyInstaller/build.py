@@ -1783,7 +1783,7 @@ class BUNDLE(Target):
                            # side effect, the main application doesn't get one
                            # as well, but at startup time the loader will take
                            # care of transforming the process type.
-                           "LSBackgroundOnly": "1",
+                           "LSBackgroundOnly": "0",
 
                            }
 
