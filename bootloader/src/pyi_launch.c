@@ -490,4 +490,14 @@ void pyi_launch_finalize(ARCHIVE_STATUS *status)
 }
 
 
-
+/*
+ * On OS X this ensures that the parent process goes to background.
+ * Call TransformProcessType() in the parent process.
+ */
+void pyi_parent_to_background()
+{
+    #if defined(__APPLE__) && defined(WINDOWED)
+    ProcessSerialNumber psn = { 0, kCurrentProcess };
+    OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToBackgroundApplication);
+    #endif
+}
