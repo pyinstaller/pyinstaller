@@ -153,6 +153,15 @@ Mac OS X specific options
                     com.mycompany.department.appname (default: first
                     script's basename)
 
+ENVIRONMENT VARIABLES
+=====================
+
+==================== ========================================================
+PYINSTALLERCONFIGDIR This changes the directory where PyInstaller caches some
+                     files. The default location for this is operating system
+                     dependent, but is typically a subdirectory of the home
+                     directory.
+==================== ========================================================
 
 SEE ALSO
 =============
