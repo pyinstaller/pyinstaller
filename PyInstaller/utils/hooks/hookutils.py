@@ -440,7 +440,7 @@ def qt5_qml_dir():
                         + 'QT_INSTALL_QML" returned nothing')
     elif not os.path.exists(qmldir):
         logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
-    
+
     # 'qmake -query' uses / as the path separator, even on Windows
     qmldir = os.path.normpath(qmldir)
     return qmldir
@@ -523,39 +523,6 @@ def django_find_root_dir():
                     break  # Find the first directory.
 
     return settings_dir
-
-
-def matplotlib_backends():
-    """
-    Return matplotlib backends available in current Python installation.
-
-    All matplotlib backends are hardcoded. We have to try import them
-    and return the list of successfully imported backends.
-    """
-    all_bk = eval_statement('import matplotlib; print(matplotlib.rcsetup.all_backends)')
-    avail_bk = []
-    import_statement = """
-try:
-    __import__('matplotlib.backends.backend_%s')
-except ImportError as e:
-    print(e)
-"""
-
-    # CocoaAgg backend causes subprocess to exit and thus detection
-    # is not reliable. This backend is meaningful only on Mac OS X.
-    if not is_darwin and 'CocoaAgg' in all_bk:
-        all_bk.remove('CocoaAgg')
-
-    # Try to import every backend in a subprocess.
-    for bk in all_bk:
-        stdout = exec_statement(import_statement % bk.lower())
-        # Backend import is successful if there is no text in stdout.
-        if not stdout:
-            avail_bk.append(bk)
-
-    # Convert backend name to module name.
-    # e.g. GTKAgg -> backend_gtkagg
-    return ['backend_' + x.lower() for x in avail_bk]
 
 
 # TODO Move to "hooks/hook-OpenGL.py", the only place where this is called.
