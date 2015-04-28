@@ -92,6 +92,11 @@ class PyiModuleGraph(ModuleGraph):
         code_dict = {}
         mod_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package'])
         for node in self.flatten():
+            # TODO This is terrible. To allow subclassing, types should never be
+            # directly compared. Use isinstance() instead, which is safer,
+            # simpler, and accepts sets. Most other calls to type() in the
+            # codebase should also be refactored to call isinstance() instead.
+
             # get node type e.g. Script
             mg_type = type(node).__name__
             if mg_type in mod_types:
@@ -113,6 +118,11 @@ class PyiModuleGraph(ModuleGraph):
         """
         result = existing_TOC or TOC()
         for node in self.flatten():
+            # TODO This is terrible. Everything in Python has a type. It's
+            # nonsensical to even speak of "nodes [that] are not typed." How
+            # would that even occur? After all, even "None" has a type! (It's
+            # "NoneType", for the curious.) Remove this, please.
+
             # get node type e.g. Script
             mg_type = type(node).__name__
             if mg_type is None:
