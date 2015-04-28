@@ -440,7 +440,7 @@ def qt5_qml_dir():
                         + 'QT_INSTALL_QML" returned nothing')
     elif not os.path.exists(qmldir):
         logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
-    
+
     # 'qmake -query' uses / as the path separator, even on Windows
     qmldir = os.path.normpath(qmldir)
     return qmldir
@@ -616,9 +616,21 @@ def remove_file_extension(filename):
 
 def get_module_file_attribute(package):
     """
-    Given a package name, return the value of __file__ attribute.
+    Get the absolute path of the module with the passed name.
 
-    In PyInstaller process we cannot import directly analyzed modules.
+    Since modules *cannot* be directly imported during analysis, this function
+    spawns a subprocess importing this module and returning the value of this
+    module's `__file__` attribute.
+
+    Parameters
+    ----------
+    module_name : str
+        Fully-qualified name of this module.
+
+    Returns
+    ----------
+    str
+        Absolute path of this module.
     """
     # Statement to return __file__ attribute of a package.
     __file__statement = """
