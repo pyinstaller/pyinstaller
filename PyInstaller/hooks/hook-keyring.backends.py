@@ -7,9 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-"""
-Testing with keyring 3.7 on MacOS.
-"""
+# Tested with keyring 3.7 on MacOS.
 
 from PyInstaller.hooks.hookutils import collect_submodules
 

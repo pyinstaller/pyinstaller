@@ -7,6 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-#this is needed to bundle draft3.json and draft4.json files that come with jsonschema module
+# This is needed to bundle draft3.json and draft4.json files that come
+# with jsonschema module
+
 from PyInstaller.hooks.hookutils import collect_data_files
 datas = collect_data_files('jsonschema')
