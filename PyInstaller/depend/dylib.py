@@ -74,7 +74,6 @@ _unix_excludes = {
     r'/libpthread\.so\..*': 1,
     r'/librt\.so\..*': 1,
     r'/libthread_db\.so\..*': 1,
-    r'/libdb-.*\.so': 1,
     # glibc regex excludes.
     r'/ld-linux\.so\..*': 1,
     r'/libBrokenLocale\.so\..*': 1,
@@ -92,6 +91,10 @@ _unix_excludes = {
     r'/libutil\.so\..*': 1,
     # libGL can reference some hw specific libraries (like nvidia libs).
     r'/libGL\..*': 1,
+    # libxcb-dri changes ABI frequently (e.g.: between Ubuntu LTS releases) and is usually installed
+    # as dependency of the graphics stack anyway. No need to bundle it.
+    r'/libxcb\.so\..*': 1,
+    r'/libxcb-dri.*\.so\..*': 1,
 }
 
 _aix_excludes = {

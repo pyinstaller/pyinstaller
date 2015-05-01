@@ -62,6 +62,12 @@ class ObjectGraph(object):
         edge = self.graph.edge_by_node(start, stop)
         return self.graph.edge_data(edge)
 
+    def updateEdgeData(self, fromNode, toNode, edgeData):
+        start = self.getRawIdent(fromNode)
+        stop = self.getRawIdent(toNode)
+        edge = self.graph.edge_by_node(start, stop)
+        self.graph.update_edge_data(edge, edgeData)
+
     def filterStack(self, filters):
         """
         Filter the ObjectGraph in-place by removing all edges to nodes that

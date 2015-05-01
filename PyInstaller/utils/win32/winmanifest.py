@@ -963,7 +963,7 @@ def UpdateManifestResourcesFromXMLFile(dstpath, srcpath, names=None,
                                          languages or [0, "*"])
 
 
-def create_manifest(filename, manifest, console):
+def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=False):
     """
     Create assembly manifest.
     """
@@ -997,6 +997,10 @@ def create_manifest(filename, manifest, console):
                  version=(6, 0, 0, 0),
                  publicKeyToken="6595b64144ccf1df")
             )
+    if uac_admin:
+        manifest.requestedExecutionLevel = 'requireAdministrator'
+    if uac_uiaccess:
+        manifest.uiAccess = True
     manifest.writeprettyxml(filename)
     return manifest
 

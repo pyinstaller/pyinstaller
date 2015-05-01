@@ -164,6 +164,10 @@ class FrozenImporter(object):
         # It was needed only for FrozenImporter class. Wrong path from sys.path
         # Raises ArchiveReadError exception.
         for pyz_filepath in sys.path:
+            # We need to acquire the interpreter's import lock here
+            # because ZlibArchive() seeks through and reads from the
+            # zip archive.
+            imp_lock()
             try:
                 # Unzip zip archive bundled with the executable.
                 self._pyz_archive = ZlibArchive(pyz_filepath)
@@ -184,6 +188,8 @@ class FrozenImporter(object):
             except ArchiveReadError:
                 # Item from sys.path is not ZlibArchive let's try next.
                 continue
+            finally:
+                imp_unlock()
         # sys.path does not contain filename of executable with bundled zip archive.
         # Raise import error.
         raise ImportError("Can't load frozen modules.")
@@ -198,7 +204,7 @@ class FrozenImporter(object):
         Return a loader object if the module was found, or None if it wasn't. If find_module() raises
         an exception, it will be propagated to the caller, aborting the import.
         """
-        # Acquire the interpreter's import lock for the current thread. Tis
+        # Acquire the interpreter's import lock for the current thread. This
         # lock should be used by import hooks to ensure thread-safety when
         # importing modules.
         imp_lock()

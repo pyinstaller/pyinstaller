@@ -23,7 +23,7 @@ try:
     from pygame.locals import *
 
 except ImportError as err:
-    print("Error, couldn't load module. %s" % (err))
+    print("Error, couldn't load module. %s" % err)
     sys.exit(2)
 
 if not pygame.mixer: print('Warning, sound disabled')

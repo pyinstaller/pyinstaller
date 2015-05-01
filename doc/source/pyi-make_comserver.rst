@@ -34,6 +34,8 @@ Please see the PyInstaller Manual for more information.
 OPTIONS
 ========
 
+-h, --help            show this help message and exit
+
 --debug
     Use the verbose version of the executable.
 

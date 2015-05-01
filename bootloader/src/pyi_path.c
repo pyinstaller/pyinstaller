@@ -150,7 +150,15 @@ int pyi_path_executable(char *execfile, const char *appname)
     char basename[PATH_MAX];
     char dirname[PATH_MAX];
 
-    /* Windows has special function to obtain path to executable. */
+    /* Windows has special function to obtain path to executable.
+     * We EXPLICTLY use wide-string API in the bootloader because
+     * otherwise it is impossible to represent non-ASCII character
+     * from a different character set. For instance, let's say I have
+     * a Latin-1 (Europe Windows), and I want to run a PyInstaller
+     * program in a path with japanese character; there is no way to
+     * represent that path with ANSI API in Windows, because ANSI API
+     * would only support the local charset (Latin-1).
+     */
 	if (!GetModuleFileNameW(NULL, wchar_buffer, PATH_MAX)) {
 		FATALERROR("System error - unable to load!");
 		return -1;
@@ -242,7 +250,13 @@ void pyi_path_homepath(char *homepath, const char *thisfile)
 }
 
 
-// TODO What is the purpose of this function and the variable 'archivefile'?
+/*
+ * Return full path to an external PYZ-archive.
+ * The name is based on the excutable's name: path/myappname.pkg
+ *
+ * archivefile - buffer where to put path the .pkg.
+ * thisfile    - usually the executable's filename.
+ */
 void pyi_path_archivefile(char *archivefile, const char *thisfile)
 {
 	strcpy(archivefile, thisfile);

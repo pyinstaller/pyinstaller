@@ -12,6 +12,7 @@
 Viewer for archives packaged by archive.py
 """
 
+from __future__ import print_function
 
 import optparse
 import os
@@ -46,7 +47,7 @@ def main(opts, args):
     rec_debug = opts.rec
     brief = opts.brief
     if not os.path.isfile(name):
-        print("%s is an invalid file name!" % name)
+        print(name, "is an invalid file name!")
         return 1
 
     arch = get_archive(name)

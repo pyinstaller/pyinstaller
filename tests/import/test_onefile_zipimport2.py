@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import print_function
 
 # Test for zipimport - use a more complex import
 
@@ -22,7 +23,7 @@ if hasattr(sys, 'frozen') and sys.frozen:
     print('dir contents sys._MEIPASS:', os.listdir(sys._MEIPASS))
 
 print('-----------')
-print('now importing pkg_resources') 
+print('now importing pkg_resources')
 import pkg_resources
 
 print('-----------')

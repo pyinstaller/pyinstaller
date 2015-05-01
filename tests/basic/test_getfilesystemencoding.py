@@ -32,8 +32,8 @@ else:
         encoding = 'utf-8'
 
 
-print(('Encoding expected: ' + encoding))
-print(('Encoding current: ' + frozen_encoding))
+print('Encoding expected: ' + encoding)
+print('Encoding current: ' + frozen_encoding)
 
 
 if not frozen_encoding == encoding:

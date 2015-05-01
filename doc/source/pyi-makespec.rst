@@ -49,81 +49,110 @@ OPTIONS
 General Options
 --------------------
 
--h, --help          show this help message and exit
-
---log-level=LOGLEVEL  Log level for MakeSpec.py (default: INFO, choose
-                      one of DEBUG, INFO, WARN, ERROR, CRITICAL)
+-h, --help            show this help message and exit
+--log-level=LOGLEVEL  Amount of detail in build-time console messages
+                      (default: INFO, choose one of DEBUG, INFO, WARN,
+                      ERROR, CRITICAL)
 
 What to generate
 ------------------
 
--F, --onefile       create a single file deployment
--D, --onedir        create a single directory deployment (default)
--o DIR, --out=DIR   generate the spec file in the specified directory
-                    (default: current directory)
+-F, --onefile       Create a one-file bundled executable.
+-D, --onedir        Create a one-folder bundle containing an executable
+                    (default)
+--specpath=DIR      Folder to store the generated spec file (default:
+                    current directory)
 -n NAME, --name=NAME
-                    name to assign to the project (default: first script's
-                    basename)
+                    Name to assign to the bundled app and spec file
+                    (default: first script's basename)
 
 What to bundle, where to search
 ---------------------------------
 
 -p DIR, --paths=DIR
-                    set base path for import (like using PYTHONPATH).
-                    Multiple directories are allowed, separating them with
-                    ':', or using this option multiple times
---additional-hooks-dir=HOOKSPATH
-                    additional path to search for hooks (may be given
-                    several times)
--a, --ascii         do NOT include unicode encodings (default: included if
-                    available)
+                    A path to search for imports (like using PYTHONPATH).
+                    Multiple paths are allowed, separated by ':', or use
+                    this option multiple times
 --hidden-import=MODULENAME
-                    import hidden in the script(s). This option can be
-                    used multiple times.
+                    Name an import not visible in the code of the
+                    script(s). This option can be used multiple times.
+--exclude-module=MODULENAME
+                    Optional module or package name (his Python name,
+                    not path names) that will be ignored (as though
+                    it was not found).
+                    This option can be used multiple times.
+--additional-hooks-dir=HOOKSPATH
+                    An additional path to search for hooks. This option
+                    can be used multiple times.
+--runtime-hook=RUNTIME_HOOKS
+                    Path to a custom runtime hook file. A runtime hook is
+                    code that is bundled with the executable and is
+                    executed before any other code or module to set up
+                    special features of the runtime environment. This
+                    option can be used multiple times.
+--key=KEY           The key used to encrypt Python bytecode.
 
 How to generate
 -------------------
 
--d, --debug         use the debug (verbose) build of the executable for
-                    packaging. This will make the packaged executable be
-                    more verbose when run.
--s, --strip         strip the exe and shared libs (don't try this on
-                    Windows)
--X, --upx           use UPX if available (works differently between
-                    Windows and \*nix)
+-d, --debug         Tell the bootloader to issue progress messages while
+                    initializing and starting the bundled app. Used to
+                    diagnose problems with missing imports.
+-s, --strip         Apply a symbol-table strip to the executable and
+                    shared libs (not recommended for Windows)
+--noupx             Do not use UPX even if it is available (works
+                    differently between Windows and *nix)
+
+Windows and Mac OS X specific options
+--------------------------------------------
+
+-c, --console, --nowindowed
+                    Open a console window for standard i/o (default)
+-w, --windowed, --noconsole
+                    Windows and Mac OS X: do not provide a console window
+                    for standard i/o. On Mac OS X this also triggers
+                    building an OS X .app bundle.This option is ignored in
+                    *NIX systems.
+-i FILE.ico or FILE.exe,ID or FILE.icns, --icon=FILE.ico or FILE.exe,ID or F
+                    FILE.ico: apply that icon to a Windows executable.
+                    FILE.exe,ID, extract the icon with ID from an exe.
+                    FILE.icns: apply the icon to the .app bundle on Mac OS
+                    X
 
 Windows specific options
 -------------------------
-
--c, --console, --nowindowed
-                    use a console subsystem executable (Windows only)
-                    (default)
--w, --windowed, --noconsole
-                    use a Windows subsystem executable (Windows only)
--v FILE, --version=FILE
+--version-file=FILE
                     add a version resource from FILE to the exe
-                    (Windows only)
--i ICON_or_FILE_ID, --icon=ICON_or_FILE_ID
-                    If file is an .ico file, add the icon to the final
-                    executable. Otherwise, the syntax 'file.exe,id' to
-                    extract the icon with the specified id from file.exe
-                    and add it to the final executable
--m FILE_or_XML, --manifest=FILE_or_XML
-                    add manifest FILE or XML to the exe (Windows only)
--r RESOURCE, --resource=RESOURCE
-                    RESOURCE is of format FILE[,TYPE[,NAME[,LANGUAGE]]].
+-m FILE or XML, --manifest=FILE or XML
+                    add manifest FILE or XML to the exe
+-r FILE[,TYPE[,NAME[,LANGUAGE]]], --resource=FILE[,TYPE[,NAME[,LANGUAGE]]]
+                    Add or update a resource of the given type, name and
+                    language from FILE to a Windows executable. FILE can
+                    be a data file or an exe/dll. For data files, at least
+                    TYPE and NAME must be specified. LANGUAGE defaults to
+                    0 or may be specified as wildcard * to update all
+                    resources of the given TYPE and NAME. For exe/dll
+                    files, all resources from FILE will be added/updated
+                    to the final executable if TYPE, NAME and LANGUAGE are
+                    omitted or specified as wildcard *.This option can be
+                    used multiple times.
+--uac-admin         Using this option creates a Manifest which will request
+                    elevation upon application restart.
+--uac-uiaccess      Using this option allows an elevated application to
+                    work with Remote Desktop.
 
-                    Add or update resource of the given type, name and
-                    language from FILE to the final executable. FILE
-                    can be a data file or an exe/dll. For data files,
-                    atleast TYPE and NAME need to be specified,
-                    LANGUAGE defaults to 0 or may be specified as
-                    wildcard \* to update all resources of the given
-                    TYPE and NAME. For exe/dll files, all resources
-                    from FILE will be added/updated to the final
-                    executable if TYPE, NAME and LANGUAGE are omitted
-                    or specified as wildcard \*. Multiple resources
-                    are allowed, using this option multiple times.
+
+Mac OS X specific options
+-------------------------
+
+--osx-bundle-identifier=BUNDLE_IDENTIFIER
+                    Mac OS X .app bundle identifier is used as the default
+                    unique program name for code signing purposes. The
+                    usual form is a hierarchical name in reverse DNS
+                    notation. For example:
+                    com.mycompany.department.appname (default: first
+                    script's basename)
+
 
 SEE ALSO
 =============

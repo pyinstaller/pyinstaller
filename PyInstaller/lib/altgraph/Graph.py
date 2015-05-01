@@ -295,6 +295,12 @@ class Graph(object):
         """
         return self.edges[edge][2]
 
+    def update_edge_data(self, edge, edge_data):
+        """
+        Replace the edge data for a specific edge
+        """
+        self.edges[edge] = self.edges[edge][0:2] + (edge_data,)
+
     def head(self, edge):
         """
         Returns the node of the head of the edge.

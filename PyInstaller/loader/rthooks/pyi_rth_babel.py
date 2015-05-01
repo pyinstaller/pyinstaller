@@ -11,8 +11,15 @@
 import os
 import sys
 
-d = "localedata"
-d = os.path.join(sys._MEIPASS, d)
+babel_root = os.path.join(sys._MEIPASS, "babel")
 
 import babel.localedata
-babel.localedata._dirname = d
+import babel.core
+babel.localedata._dirname = os.path.join(babel_root, "localedata")
+
+filename = os.path.join(babel_root, 'global.dat')
+fileobj = open(filename, 'rb')
+try:
+    babel.core._global_data = babel.core.pickle.load(fileobj)
+finally:
+    fileobj.close()
