@@ -2,7 +2,7 @@
 Testing PyInstaller
 =======================
 
-The test wokflow is not yet documented, but:
+The test workflow is not yet documented, but:
 
  * If those tests will be interactive (user has to click on a button),
    then it should go into `./tests/interactive/`, test for hooks (and
@@ -31,8 +31,8 @@ The test wokflow is not yet documented, but:
  * Test success depends on zero exit status of created binary.
 
 
-For more information pleas see
-http://www.pyinstaller.org/wiki/Development/HowtoContribute.
+For more information please see
+https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute.
 
 ..
   Local Variables:
