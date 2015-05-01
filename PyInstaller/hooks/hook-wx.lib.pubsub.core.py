@@ -19,7 +19,7 @@ def hook(mod):
     if os.path.isdir(pth):
         # If the user imported setuparg1, this is detected
         # by the hook-wx.lib.pubsub.setuparg1.py hook. That
-        # hook sets PyInstaller.hooks.hookutils.wxpubsub
+        # hook sets PyInstaller.utils.hooks.hookutils.wxpubsub
         # to "arg1", and we set the appropriate path here.
         protocol = PyInstaller.utils.hooks.hookutils.hook_variables.get('wxpubsub', 'kwargs')
         logger.info('wx.lib.pubsub: Adding %s protocol path' % protocol)
