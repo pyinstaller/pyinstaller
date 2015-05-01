@@ -1,0 +1,15 @@
+language: python
+env:
+  - PYCRYPTO_VERSION=2.4.1
+  - PYCRYPTO_VERSION=2.6.1
+python:
+  - "2.7"
+  - "3.3"
+  - "3.4"
+install:
+  - pip install -e .
+  - python tests/setupenv_unix.py
+script:
+  - cd tests
+  - ./runtests.py
+  - ./runtests.py --all-with-crypto basic/*.py

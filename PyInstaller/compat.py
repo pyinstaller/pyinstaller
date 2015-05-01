@@ -16,6 +16,7 @@ with previous versions of Python from 2.7 onward.
 
 import os
 import platform
+import site
 import subprocess
 import sys
 
@@ -36,12 +37,13 @@ is_darwin = sys.platform == 'darwin'  # Mac OS X
 is_linux = sys.platform.startswith('linux')
 is_solar = sys.platform.startswith('sun')  # Solaris
 is_aix = sys.platform.startswith('aix')
+is_freebsd = sys.platform.startswith('freebsd')
 
 # Some code parts are similar to several unix platforms
 # (e.g. Linux, Solaris, AIX)
 # Mac OS X is not considered as unix since there are many
 # platform specific details for Mac in PyInstaller.
-is_unix = is_linux or is_solar or is_aix
+is_unix = is_linux or is_solar or is_aix or is_freebsd
 
 
 # In Python 3 built-in function raw_input() was renamed to just 'input()'.
@@ -350,3 +352,25 @@ def __add_obsolete_options(parser):
                  **{'action': 'callback',
                     'callback': __obsolete_option,
                     'help': 'These options do not exist anymore.'})
+
+
+# Site-packages functions - use native function if available.
+if hasattr(site, 'getsitepackages'):
+    getsitepackages = site.getsitepackages
+# Backported For Python 2.6 and virtualenv.
+# Module 'site' in virtualenv might not have this attribute.
+else:
+    def getsitepackages():
+        """
+        Return only one item as list with one item.
+        """
+        # For now used only on Windows. Raise Exception for other platforms.
+        if is_win:
+            pths = [os.path.join(sys.prefix, 'Lib', 'site-packages')]
+            # Include Real sys.prefix for virtualenv.
+            if is_virtualenv:
+                pths.append(os.path.join(base_prefix, 'Lib', 'site-packages'))
+            return pths
+        else:
+            # TODO Implement for Python 2.6 on other platforms.
+            raise NotImplementedError()

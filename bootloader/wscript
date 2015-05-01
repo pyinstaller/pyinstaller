@@ -17,6 +17,7 @@ Bootloader building script.
 import os
 import platform
 import sys
+import sysconfig
 
 from waflib.Configure import conf
 from waflib import Logs
@@ -287,8 +288,24 @@ def configure(ctx):
         ctx.env.append_value('CPPPATH', '../zlib')
     if is_solar:
         ctx.env.append_value('DEFINES', 'SUNOS')
+        if ctx.env.CC_NAME == 'gcc':
+            # On Solaris using gcc the linker options for shared and static
+            # libraries are slightly different from other platforms.
+            ctx.env['SHLIB_MARKER'] = '-Wl,-Bdynamic'
+            ctx.env['STLIB_MARKER'] = '-Wl,-Bstatic'
     if is_aix:
         ctx.env.append_value('DEFINES', 'AIX')
+        # On AIX some APIs are restricted if _ALL_SOURCE is not defined.
+        # In the case of PyInstaller, we need the AIX specific flag RTLD_MEMBER
+        # for dlopen() which is used to load a shared object from a library
+        # archive. We need to load the Python library like this:
+        #  dlopen("libpython2.7.a(libpython2.7.so)", RTLD_MEMBER)
+        ctx.env.append_value('DEFINES', '_ALL_SOURCE')
+        if ctx.env.CC_NAME == 'gcc':
+            # On AIX using gcc the linker options for shared and static
+            # libraries are slightly different from other platforms.
+            ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
+            ctx.env['STATICLIB_MARKER'] = '-Wl,-bstatic'
 
 
     ### Libraries
@@ -299,7 +316,10 @@ def configure(ctx):
         ctx.check_cc(lib='kernel32', mandatory=True)
         ctx.check_cc(lib='ws2_32', mandatory=True)
     else:
-        ctx.check_cc(lib='dl', mandatory=True)
+        if not sys.platform.startswith('freebsd'):  # FreeBSD doesn't need libdl
+            ctx.check_cc(lib='dl', mandatory=True)
+        elif sysconfig.get_config_vars('HAVE_PTHREAD_H').pop(): # link to libthr on FreeBSD
+            ctx.check_cc(lib='thr', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
         ctx.check_cc(lib='z', mandatory=True)
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
@@ -416,9 +436,23 @@ def build(ctx):
             # Strip final executables to make them smaller.
             features='strip',
         )
-    # Linux, Darwin (MacOSX), ...
     else:
+        # Linux, Darwin (MacOSX), ...
         libs = ['DL', 'M', 'Z']  # 'z' - zlib, 'm' - math,
+        staticlibs = []
+        if sys.platform.startswith('freebsd'):
+            libs = ['Z', 'M']  # freebsd doesn't need libdl
+            # check if python has threads: libthr needs
+            # to be loaded in the main process
+            if sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
+                libs.append('THR')
+        elif sys.platform.startswith('aix'):
+            libs = ['DL', 'M']
+            staticlibs = ['Z']
+        elif sys.platform.startswith('sun'):
+            libs = ['DL', 'M']
+            staticlibs = ['Z']
+
         if ctx.options.boehmgc:
             libs.append('GC')
         ctx.program(
@@ -426,6 +460,7 @@ def build(ctx):
             target=exe_name,
             includes='src',
             use=libs,
+            stlib=staticlibs,
             install_path=install_path,
             # Strip final executables to make them smaller.
             features='strip',

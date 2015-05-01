@@ -8,7 +8,10 @@
 #-----------------------------------------------------------------------------
 
 
-# TODO Review this class if we are missing any feature in modulegraph implementation. Then remove this module.
+# TODO Review this class if we are missing any feature in modulegraph
+# implementation. Esp. check for support for name-space pacakges and
+# logging import errors in hooks. Then remove this module.
+
 #
 # #=================Import Tracker============================#
 # # This one doesn't really import, just analyzes

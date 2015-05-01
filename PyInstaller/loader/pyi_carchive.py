@@ -16,6 +16,7 @@ Subclass of Archive that can be understood by a C program (see launch.c).
 import struct
 import sys
 import zlib
+import os
 
 
 # Python 3 requires relative import but we need absolute import
@@ -330,31 +331,58 @@ class CArchive(pyi_archive.Archive):
         # Version 5 - allow type 'o' = runtime option.
         try:
             if typcd in ('o', 'd'):
-                s = b''
+                fh = None
+                ulen = 0
+                postfix = b''
                 flag = 0
             elif typcd == 's':
                 # If it's a source code file, add \0 terminator as it will be
                 # executed as-is by the bootloader.
-                s = open(pathnm, 'rb').read()
-                s = s + b'\n\0'
+                # Must read this in binary-mode, too, because
+                # compression only accepts a binary stream. Further we
+                # do not process it here, so why decode?
+                fh = open(pathnm, 'rb')
+                postfix = b'\n\0'
+                ulen = os.fstat(fh.fileno()).st_size + len(postfix)
             else:
-                s = open(pathnm, 'rb').read()
+                fh = open(pathnm, 'rb')
+                postfix = b''
+                ulen = os.fstat(fh.fileno()).st_size
         except IOError:
-            print(("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd)))
+            print("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd))
             raise
-        ulen = len(s)
-        assert flag in range(3)
-        if flag == 1:
-            s = zlib.compress(s, self.LEVEL)
 
-        dlen = len(s)
         where = self.lib.tell()
+        assert flag in range(3)
+        if not fh:
+            # no need to write anything
+            pass
+        elif flag == 1:
+            assert fh
+            comprobj = zlib.compressobj(self.LEVEL)
+            while 1:
+                buf = fh.read(16*1024)
+                if not buf:
+                    break
+                self.lib.write(comprobj.compress(buf))
+            self.lib.write(comprobj.compress(postfix))
+            self.lib.write(comprobj.flush())
+        else:
+            assert fh
+            while 1:
+                buf = fh.read(16*1024)
+                if not buf:
+                    break
+                self.lib.write(buf)
+            self.lib.write(postfix)
+
+        dlen = self.lib.tell() - where
         if typcd == 'm':
             if pathnm.find('.__init__.py') > -1:
                 typcd = 'M'
 
         self.toc.add(where, dlen, ulen, flag, typcd, nm)
-        self.lib.write(s)
+
 
     def save_toc(self, tocpos):
         """

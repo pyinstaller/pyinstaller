@@ -27,7 +27,7 @@ if is_alch06:
         hiddenimports.append("sqlalchemy.dialects." + n)
 else:
     # sqlalchemy.databases package from pre 0.6 sqlachemy versions
-    databases = exec_statement("import sqlalchemy.databases;print(sqlalchemy.databases.__all__)")
+    databases = exec_statement("import sqlalchemy.databases; print(sqlalchemy.databases.__all__)")
     databases = eval(databases.strip())
 
     for n in databases:

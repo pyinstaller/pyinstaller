@@ -64,6 +64,32 @@ NOCONFIRM = None
 # if a command-line argument is specified. (e.g. --ascii)
 HIDDENIMPORTS = []
 
+rthooks = {}
+
+# place where the loader modules and initialization scripts live
+_init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+_fake_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'fake')
+
+
+_MISSING_BOOTLOADER_ERRORMSG = """
+Fatal error: PyInstaller does not include a pre-compiled bootloader for your
+platform. See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>
+for more details and instructions how to build the bootloader.
+"""
+
+
+def _save_data(filename, data):
+    dirname = os.path.dirname(filename)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    outf = open(filename, 'w')
+    pprint.pprint(data, outf)
+    outf.close()
+
+
+def _load_data(filename):
+    return eval(open(filename, 'rU').read())
+
 
 # TODO find better place for function.
 def setupUPXFlags():
@@ -117,7 +143,7 @@ def _check_guts_eq(attr, old, new, last_build):
     rebuild is required if values differ
     """
     if old != new:
-        logger.info("building because %s changed", attr)
+        logger.info("Building because %s changed", attr)
         return True
     return False
 
@@ -131,10 +157,10 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     """
     for (nm, fnm, typ) in old:
         if misc.mtime(fnm) > last_build:
-            logger.info("building because %s changed", fnm)
+            logger.info("Building because %s changed", fnm)
             return True
         elif pyc and misc.mtime(fnm[:-1]) > last_build:
-            logger.info("building because %s changed", fnm[:-1])
+            logger.info("Building because %s changed", fnm[:-1])
             return True
     return False
 
@@ -226,11 +252,11 @@ class Target(object):
         try:
             data = load_py_data_struct(self.out)
         except:
-            logger.info("building because %s %s", os.path.basename(self.out), missing)
+            logger.info("Building because %s %s", os.path.basename(self.out), missing)
             return None
 
         if len(data) != len(self.GUTS):
-            logger.info("building because %s is bad", self.outnm)
+            logger.info("Building because %s is bad", self.outnm)
             return None
         for i, (attr, func) in enumerate(self.GUTS):
             if func is None:
@@ -275,7 +301,7 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
-                 hookspath=None, excludes=None, runtime_hooks=[]):
+                 hookspath=None, excludes=None, runtime_hooks=[], cipher=None):
         """
         scripts
                 A list of scripts specified as file names.
@@ -299,7 +325,6 @@ class Analysis(Target):
         sys._PYI_SETTINGS['scripts'] = scripts
 
         # Include initialization Python code in PyInstaller analysis.
-        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
             os.path.join(_init_code_path, '_pyi_bootstrap.py'),
             os.path.join(_init_code_path, 'pyi_importers.py'),
@@ -344,6 +369,31 @@ class Analysis(Target):
         # Custom runtime hook files that should be included and started before
         # any existing PyInstaller runtime hooks.
         self.custom_runtime_hooks = runtime_hooks
+
+        if cipher:
+            logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
+
+            # Create a Python module which contains the decryption key which will
+            # be used at runtime by pyi_crypto.PyiBlockCipher.
+            pyi_crypto_key_path = os.path.join(WORKPATH, 'pyi_crypto_key.py')
+
+            with open(pyi_crypto_key_path, 'w') as f:
+                f.write('key = %r\n' % cipher.key)
+
+            # Compile the module so that it ends up in the CArchive and can be
+            # imported by the bootstrap script.
+            import py_compile
+            py_compile.compile(pyi_crypto_key_path)
+
+            logger.info('Adding dependency on pyi_crypto and pyi_crypto_key')
+
+            from PyInstaller.loader import pyi_crypto
+            self.hiddenimports.append(pyi_crypto.HIDDENIMPORT)
+
+            pyi_crypto_path = os.path.join(_init_code_path, 'pyi_crypto.py')
+
+            config['PYZ_dependencies'].append(('pyi_crypto', pyi_crypto_path + 'c', 'PYMODULE'))
+            config['PYZ_dependencies'].append(('pyi_crypto_key', pyi_crypto_key_path + 'c', 'PYMODULE'))
 
         self.excludes = excludes
         self.scripts = TOC()
@@ -453,11 +503,11 @@ class Analysis(Target):
     # TODO What are 'check_guts' methods useful for?
     def check_guts(self, last_build):
         if last_build == 0:
-            logger.info("building %s because %s non existent", self.__class__.__name__, self.outnm)
+            logger.info("Building %s because %s non existent", self.__class__.__name__, self.outnm)
             return True
         for fnm in self.inputs:
             if misc.mtime(fnm) > last_build:
-                logger.info("building because %s changed", fnm)
+                logger.info("Building because %s changed", fnm)
                 return True
 
         data = Target.get_guts(self, last_build)
@@ -473,6 +523,7 @@ class Analysis(Target):
         self.datas = TOC(datas)
         self.hiddenimports = hiddenimports
         return False
+
 
     def assemble(self):
         """
@@ -801,7 +852,7 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc_dict, name=None, level=9):
+    def __init__(self, toc_dict, name=None, level=9, cipher=None):
         """
         toc_dict
             toc_dict['toc']
@@ -814,6 +865,8 @@ class PYZ(Target):
         level
                 The Zlib compression level to use. If 0, the zlib module is
                 not required.
+        cipher
+                The block cipher that will be used to encrypt Python bytecode.
         """
         Target.__init__(self)
         self.toc = toc_dict['toc']
@@ -826,6 +879,7 @@ class PYZ(Target):
         self.level = level
         # Compile top-level modules so we could run them at app startup.
         self.dependencies = misc.compile_py_files(config['PYZ_dependencies'], WORKPATH)
+        self.cipher = cipher
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
@@ -835,7 +889,7 @@ class PYZ(Target):
 
     def check_guts(self, last_build):
         if not os.path.exists(self.name):
-            logger.info("rebuilding %s because %s is missing",
+            logger.info("Rebuilding %s because %s is missing",
                         self.outnm, os.path.basename(self.name))
             return True
 
@@ -845,8 +899,8 @@ class PYZ(Target):
         return False
 
     def assemble(self):
-        logger.info("building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict)
+        logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
+        pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict, cipher=self.cipher)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
         save_py_data_struct(self.out, (self.name, self.level, self.toc))
@@ -899,7 +953,12 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         cache_index = {}
 
     # Verify if the file we're looking for is present in the cache.
-    basenm = os.path.normcase(os.path.basename(fnm))
+    # Use the dist_mn if given to avoid different extension modules
+    # sharing the same basename get corrupted.
+    if dist_nm:
+        basenm = os.path.normcase(dist_nm)
+    else:
+        basenm = os.path.normcase(os.path.basename(fnm))
     digest = cacheDigest(fnm)
     cachedfile = os.path.join(cachedir, basenm)
     cmd = None
@@ -935,6 +994,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                 strip_options = ["-S"]
             cmd = ["strip"] + strip_options + [cachedfile]
 
+    if not os.path.exists(os.path.dirname(cachedfile)):
+        os.makedirs(os.path.dirname(cachedfile))
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0o755)
 
@@ -1075,7 +1136,7 @@ class PKG(Target):
 
     def check_guts(self, last_build):
         if not os.path.exists(self.name):
-            logger.info("rebuilding %s because %s is missing",
+            logger.info("Rebuilding %s because %s is missing",
                         self.outnm, os.path.basename(self.name))
             return 1
 
@@ -1086,7 +1147,7 @@ class PKG(Target):
         return False
 
     def assemble(self):
-        logger.info("building PKG (CArchive) %s", os.path.basename(self.name))
+        logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
         trash = []
         mytoc = []
         seen = {}
@@ -1166,11 +1227,14 @@ class EXE(Target):
                 a version resource from an executable and then edit the output to
                 create your own. (The syntax of version resources is so arcane
                 that I wouldn't attempt to write one from scratch).
+            uac_admin
+                Windows only. Setting to True creates a Manifest with will request
+                elevation upon application restart
+            uac_uiaccess
+                Windows only. Setting to True allows an elevated application to
+                work with Remote Desktop
         """
         Target.__init__(self)
-
-        # TODO could be 'append_pkg' removed? It seems not to be used anymore.
-        self.append_pkg = kwargs.get('append_pkg', True)
 
         # Available options for EXE in .spec files.
         self.exclude_binaries = kwargs.get('exclude_binaries', False)
@@ -1182,6 +1246,13 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
+        # If ``append_pkg`` is false, the archive will not be appended
+        # to the exe, but copied beside it.
+        self.append_pkg = kwargs.get('append_pkg', True)
+
+        # On Windows allows the exe to request admin privileges.
+        self.uac_admin = kwargs.get('uac_admin', False)
+        self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
 
         if config['hasUPX']: 
            self.upx = kwargs.get('upx', False)
@@ -1217,12 +1288,14 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
+
         if is_win:
             filename = os.path.join(WORKPATH, specnm + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
-                self.console)
+                self.console, self.uac_admin, self.uac_uiaccess)
             self.toc.append((os.path.basename(self.name) + ".manifest", filename,
                 'BINARY'))
+
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
@@ -1243,11 +1316,11 @@ class EXE(Target):
 
     def check_guts(self, last_build):
         if not os.path.exists(self.name):
-            logger.info("rebuilding %s because %s missing",
+            logger.info("Rebuilding %s because %s missing",
                         self.outnm, os.path.basename(self.name))
             return 1
         if not self.append_pkg and not os.path.exists(self.pkgname):
-            logger.info("rebuilding because %s missing",
+            logger.info("Rebuilding because %s missing",
                         os.path.basename(self.pkgname))
             return 1
 
@@ -1262,10 +1335,10 @@ class EXE(Target):
 
         mtm = data[-1]
         if mtm != misc.mtime(self.name):
-            logger.info("rebuilding %s because mtimes don't match", self.outnm)
+            logger.info("Rebuilding %s because mtimes don't match", self.outnm)
             return True
         if mtm < misc.mtime(self.pkg.out):
-            logger.info("rebuilding %s because pkg is more recent", self.outnm)
+            logger.info("Rebuilding %s because pkg is more recent", self.outnm)
             return True
 
         return False
@@ -1284,18 +1357,31 @@ class EXE(Target):
         # run_d   - contains verbose messages in console.
         if self.debug:
             exe = exe + '_d'
-        return os.path.join('PyInstaller', 'bootloader', PLATFORM, exe)
+        return os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
 
     def assemble(self):
-        logger.info("building EXE from %s", os.path.basename(self.out))
+        logger.info("Building EXE from %s", os.path.basename(self.out))
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
         outf = open(self.name, 'wb')
         exe = self._bootloader_file('run')
-        exe = os.path.join(HOMEPATH, exe)
         if is_win or is_cygwin:
             exe = exe + '.exe'
+
+        if not os.path.exists(exe):
+            raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
+
+        if is_win and not self.exclude_binaries:
+            # Windows and onefile mode - embed manifest into exe.
+            logger.info('Onefile Mode - Embedding Manifest into EXE file')
+            tmpnm = tempfile.mktemp()
+            shutil.copy2(exe, tmpnm)
+            os.chmod(tmpnm, 0o755)
+            self.manifest.update_resources(tmpnm, [1]) # 1 for executable
+            trash.append(tmpnm)
+            exe = tmpnm
+
         if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
                                         self.resources):
             tmpnm = tempfile.mktemp()
@@ -1356,6 +1442,14 @@ class EXE(Target):
             logger.info("Copying archive to %s", self.pkgname)
             shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
+
+        if is_darwin:
+            # Fix Mach-O header for codesigning on OS X.
+            logger.info("Fixing EXE for code signing %s", self.name)
+            from PyInstaller.utils import osxutils
+            osxutils.fix_exe_for_code_signing(self.name)
+            pass
+
         os.chmod(self.name, 0o755)
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
@@ -1383,10 +1477,11 @@ class DLL(EXE):
     need to write your own dll.
     """
     def assemble(self):
-        logger.info("building DLL %s", os.path.basename(self.out))
+        logger.info("Building DLL %s", os.path.basename(self.out))
         outf = open(self.name, 'wb')
-        dll = self._bootloader_file('inprocsrvr')
-        dll = os.path.join(HOMEPATH, dll) + '.dll'
+        dll = self._bootloader_file('inprocsrvr') + '.dll'
+        if not os.path.exists(dll):
+            raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)
         outf.close()
@@ -1459,7 +1554,7 @@ class COLLECT(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("building COLLECT %s", os.path.basename(self.out))
+        logger.info("Building COLLECT %s", os.path.basename(self.out))
         os.makedirs(self.name)
         toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
@@ -1478,7 +1573,11 @@ class COLLECT(Target):
                                  upx=(self.upx_binaries and (is_win or is_cygwin)), 
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
-                shutil.copy2(fnm, tofnm)
+                shutil.copy(fnm, tofnm)
+                try:
+                    shutil.copystat(fnm, tofnm)
+                except OSError:
+                    logger.warn("failed to copy flags of %s", fnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)
         save_py_data_struct(self.out,
@@ -1514,6 +1613,14 @@ class BUNDLE(Target):
         self.toc = TOC()
         self.strip = False
         self.upx = False
+
+        # .app bundle identifier for Code Signing
+        self.bundle_identifier = kws.get('bundle_identifier')
+        if not self.bundle_identifier:
+            # Fallback to appname.
+            self.bundle_identifier = self.appname
+
+        self.info_plist = kws.get('info_plist', None)
 
         for arg in args:
             if isinstance(arg, EXE):
@@ -1556,7 +1663,7 @@ class BUNDLE(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("building BUNDLE %s", os.path.basename(self.out))
+        logger.info("Building BUNDLE %s", os.path.basename(self.out))
 
         # Create a minimal Mac bundle structure
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
@@ -1572,6 +1679,22 @@ class BUNDLE(Target):
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,
                            "CFBundleName": self.appname,
+
+                           # Required by 'codesign' utility.
+                           # The value for CFBundleIdentifier is used as the default unique
+                           # name of your program for Code Signing purposes.
+                           # It even identifies the APP for access to restricted OS X areas
+                           # like Keychain.
+                           #
+                           # The identifier used for signing must be globally unique. The usal
+                           # form for this identifier is a hierarchical name in reverse DNS
+                           # notation, starting with the toplevel domain, followed by the
+                           # company name, followed by the department within the company, and
+                           # ending with the product name. Usually in the form:
+                           #   com.mycompany.department.appname
+                           # Cli option --osx-bundle-identifier sets this value.
+                           "CFBundleIdentifier": self.bundle_identifier,
+
                            # Fix for #156 - 'MacOS' must be in the name - not sure why
                            "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
                            "CFBundleIconFile": os.path.basename(self.icon),
@@ -1588,6 +1711,11 @@ class BUNDLE(Target):
                            "LSBackgroundOnly": "1",
 
                            }
+
+        # Merge info_plist settings from spec file
+        if isinstance(self.info_plist, dict) and self.info_plist:
+            info_plist_dict = dict(info_plist_dict.items() + self.info_plist.items())
+
         info_plist = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -1612,13 +1740,32 @@ class BUNDLE(Target):
                 os.makedirs(todir)
             shutil.copy2(fnm, tofnm)
 
-        ## For some hooks copy resource to ./Contents/Resources dir.
-        # PyQt4 hook: On Mac Qt requires resources 'qt_menu.nib'.
-        # It is copied from dist directory.
+        logger.info('moving BUNDLE data files to Resource directory')
+
+        ## For some hooks move resource to ./Contents/Resources dir.
+        # PyQt4/PyQt5 hooks: On Mac Qt requires resources 'qt_menu.nib'.
+        # It is moved from MacOS directory to Resources.
         qt_menu_dir = os.path.join(self.name, 'Contents', 'MacOS', 'qt_menu.nib')
         qt_menu_dest = os.path.join(self.name, 'Contents', 'Resources', 'qt_menu.nib')
         if os.path.exists(qt_menu_dir):
-            shutil.copytree(qt_menu_dir, qt_menu_dest)
+            shutil.move(qt_menu_dir, qt_menu_dest)
+
+        # Mac OS X Code Signing does not work when .app bundle contains
+        # data files in dir ./Contents/MacOS.
+        #
+        # Move all directories from ./MacOS/ to ./Resources and create symlinks
+        # in ./MacOS.
+        bin_dir =os.path.join(self.name, 'Contents', 'MacOS')
+        res_dir =os.path.join(self.name, 'Contents', 'Resources')
+        # Qt plugin directories does not contain data files.
+        ignore_dirs = set(['qt4_plugins', 'qt5_plugins'])
+        dirs = os.listdir(bin_dir)
+        for d in dirs:
+            abs_d = os.path.join(bin_dir, d)
+            res_d = os.path.join(res_dir, d)
+            if os.path.isdir(abs_d) and d not in ignore_dirs:
+                shutil.move(abs_d, res_d)
+                os.symlink(os.path.relpath(res_d, os.path.dirname(abs_d)), abs_d)
 
         return 1
 
@@ -1667,7 +1814,7 @@ class Tree(Target, TOC):
         while stack:
             d = stack.pop()
             if misc.mtime(d) > last_build:
-                logger.info("building %s because directory %s changed",
+                logger.info("Building %s because directory %s changed",
                             self.outnm, d)
                 return True
             for nm in os.listdir(d):
@@ -1678,7 +1825,7 @@ class Tree(Target, TOC):
         return False
 
     def assemble(self):
-        logger.info("building Tree %s", os.path.basename(self.out))
+        logger.info("Building Tree %s", os.path.basename(self.out))
         stack = [(self.root, self.prefix)]
         excludes = {}
         xexcludes = {}
@@ -1777,6 +1924,7 @@ class MERGE(object):
 
     # TODO move this function to PyInstaller.compat module (probably improve
     #      function compat.relpath()
+    # TODO use os.path.relpath instead
     def _get_relative_path(self, startpath, topath):
         start = startpath.split(os.sep)[:-1]
         start = ['..'] * len(start)
@@ -1899,5 +2047,8 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
 
     if config['hasUPX']:
         setupUPXFlags()
+
+    config['ui_admin'] = kw.get('ui_admin', False)
+    config['ui_access'] = kw.get('ui_uiaccess', False)
 
     build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))

@@ -24,7 +24,7 @@ class MyDialog(QtGui.QDialog):
             u"Press <ESC> to exit. Some non-ascii chars: řčšěíáŘ",
             self)
         self.setWindowTitle("Hello World from PyQt4")
-        #self.resize(500, 300)
+        self.resize(400, 200)
         self.show()
 
     def sizeHint(self):

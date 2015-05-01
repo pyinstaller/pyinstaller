@@ -14,6 +14,9 @@
 # backends.
 import sqlalchemy
 
+# This import was known to fail with sqlalchemy 0.9.1
+import sqlalchemy.ext.declarative
+
 
 # import mysql and postgreql bindings
 __import__('MySQLdb')

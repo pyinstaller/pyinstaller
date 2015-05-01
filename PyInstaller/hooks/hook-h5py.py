@@ -13,4 +13,4 @@ Hook for http://pypi.python.org/pypi/h5py/
 """
 
 
-hiddenimports = ['_proxy','utils','defs']
+hiddenimports = ['_proxy', 'utils', 'defs', 'h5ac']

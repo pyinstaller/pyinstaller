@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import print_function
 
 # Test for zipimport - minimalistic, just import pgk_resource
 
@@ -21,6 +22,6 @@ print('-----------')
 print('dir contents sys._MEIPASS:', os.listdir(sys._MEIPASS))
 
 print('-----------')
-print('now importing pkg_resources') 
+print('now importing pkg_resources')
 import pkg_resources
 print("dir(pkg_resources)", dir(pkg_resources))

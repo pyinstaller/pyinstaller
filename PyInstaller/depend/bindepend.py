@@ -21,7 +21,7 @@ from glob import glob
 import zipfile
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin
+from PyInstaller.compat import is_win, is_unix, is_aix, is_solar, is_cygwin, is_darwin, is_freebsd
 from PyInstaller.compat import is_venv, base_prefix
 from PyInstaller.depend import dylib
 import PyInstaller.compat as compat
@@ -454,9 +454,19 @@ def _getImports_ldd(pth):
     """
     rslt = set()
     if is_aix:
-        # Match libs of the form 'archive.a(sharedobject.so)'
+        # Match libs of the form
+        #   'archivelib.a(objectmember.so/.o)'
+        # or
+        #   'sharedlib.so'
         # Will not match the fake lib '/unix'
-        lddPattern = re.compile(r"\s*(.*?)(\(.*\))")
+        lddPattern = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
+    elif is_solar:
+        # Match libs of the form
+        #   'sharedlib.so => full-path-to-lib
+        # e.g.
+        #   'libpython2.7.so.1.0 => /usr/local/lib/libpython2.7.so.1.0'
+        # Will not match the platform specific libs starting with '/platform'
+        lddPattern = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
     else:
         lddPattern = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
@@ -464,8 +474,18 @@ def _getImports_ldd(pth):
         m = lddPattern.search(line)
         if m:
             if is_aix:
-                lib = m.group(1)
-                name = os.path.basename(lib) + m.group(2)
+                libarchive = m.group('libarchive')
+                if libarchive:
+                    # We matched an archive lib with a request for a particular
+                    # embedded shared object.
+                    #   'archivelib.a(objectmember.so/.o)'
+                    lib = libarchive
+                    name = os.path.basename(lib) + m.group('objectmember')
+                else:
+                    # We matched a stand-alone shared library.
+                    #   'sharedlib.so'
+                    lib = m.group('libshared')
+                    name = os.path.basename(lib)
             else:
                 name, lib = m.group(1), m.group(2)
             if name[:10] in ('linux-gate', 'linux-vdso'):
@@ -609,7 +629,8 @@ def findLibrary(name):
     Emulate the algorithm used by dlopen.
     `name`must include the prefix, e.g. ``libpython2.4.so``
     """
-    assert is_unix, "Current implementation for Unix only (Linux, Solaris, AIX)"
+    assert is_unix, ("Current implementation for Unix only (Linux, Solaris, "
+                     "AIX, FreeBSD)")
 
     lib = None
 
@@ -632,7 +653,13 @@ def findLibrary(name):
     # Solaris does not have /sbin/ldconfig. Just check if this file exists.
     if lib is None and os.path.exists('/sbin/ldconfig'):
         expr = r'/[^\(\)\s]*%s\.[^\(\)\s]*' % re.escape(name)
-        m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-p'))
+        if is_freebsd:
+            # This has a slightly different format than on linux, but the
+            # regex still works.
+            m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-r'))
+        else:
+            m = re.search(expr, compat.exec_command('/sbin/ldconfig', '-p'))
+
         if m:
             lib = m.group(0)
 
@@ -667,7 +694,8 @@ def findLibrary(name):
 
         if is_aix:
             paths.append('/opt/freeware/lib')
-
+        elif is_freebsd:
+            paths.append('/usr/local/lib')
         for path in paths:
             libs = glob(os.path.join(path, name + '*'))
             if libs:
@@ -679,8 +707,14 @@ def findLibrary(name):
         return None
 
     # Resolve the file name into the soname
-    dir = os.path.dirname(lib)
-    return os.path.join(dir, _get_so_name(lib))
+    if is_freebsd or is_aix:
+        # On FreeBSD objdump doesn't show SONAME,
+        # and on AIX objdump does not exist,
+        # so we just return the lib we've found
+        return lib
+    else:
+        dir = os.path.dirname(lib)
+        return os.path.join(dir, _get_so_name(lib))
 
 
 def _get_so_name(filename):
@@ -723,6 +757,8 @@ def get_python_library_path():
     elif is_aix:
         # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
         names = ('libpython%d.%d.a' % pyver,)
+    elif is_freebsd:
+        names = ('libpython%d.%d.so.1' % pyver,)
     elif is_unix:
         # Other *nix platforms.
         # Python 3 .so library on Linux looks like: libpython3.2mu.so.1.0,libpython3.3m.so.1.0

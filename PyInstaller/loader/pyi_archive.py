@@ -19,7 +19,6 @@
 # See pyi_carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
 
-
 _verbose = 0
 _listdir = None
 _environ = None
@@ -278,7 +277,8 @@ class ZlibArchive(Archive):
     LEVEL = 9
     NO_COMPRESSION_LEVEL = 0
 
-    def __init__(self, path=None, offset=None, level=9, code_dict={}):
+    def __init__(self, path=None, offset=None, level=9, code_dict={},
+                 cipher=None):
         """
         code_dict      dict containing module code objects from ModuleGraph.
         """
@@ -316,8 +316,11 @@ class ZlibArchive(Archive):
             except ImportError:
                 raise RuntimeError('zlib required but cannot be imported')
 
-        # TODO this attribute is deprecated and not used anymore.
-        self.crypted = 0
+        if cipher:
+            self.crypted = 1
+            self.cipher = cipher
+        else:
+            self.crypted = 0
 
     def extract(self, name):
         (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
@@ -326,7 +329,10 @@ class ZlibArchive(Archive):
         self.lib.seek(self.start + pos)
         obj = self.lib.read(lngth)
         try:
-            obj = self._mod_zlib.decompress(obj)
+            if self.crypted:
+                obj = self._mod_zlib.decompress(self.cipher.decrypt(obj))
+            else:
+                obj = self._mod_zlib.decompress(obj)
         except self._mod_zlib.error:
             raise ImportError("PYZ entry '%s' failed to decompress" % name)
         try:
@@ -358,3 +364,8 @@ class ZlibArchive(Archive):
     def checkmagic(self):
         Archive.checkmagic(self)
         self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
+
+        if self.crypted:
+            import pyi_crypto
+
+            self.cipher = pyi_crypto.PyiBlockCipher()

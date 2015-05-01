@@ -9,8 +9,7 @@
 #-----------------------------------------------------------------------------
 
 
-__testname__ = 'test_onefile_pkg_resources'
-
+__testname__ = 'test_onefile_pkgutil-get_data__main__'
 
 a = Analysis([__testname__ + '.py'],
              pathex=['.'],
@@ -39,7 +38,7 @@ def Datafiles(*filenames, **kw):
 
 
 # Include some data files for testing pkg_resources module.
-datafile = Datafiles('pkg3/pkg_resources-data.txt', strip_path=False)
+datafile = Datafiles('pkg3/sample-data.txt', strip_path=False)
 
 
 exe = EXE(pyz,

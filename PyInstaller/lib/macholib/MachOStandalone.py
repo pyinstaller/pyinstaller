@@ -19,8 +19,8 @@ class FilteredMachOGraph(MachOGraph):
         res = super(FilteredMachOGraph, self).createNode(cls, name)
         return res
 
-    def locate(self, filename):
-        newname = super(FilteredMachOGraph, self).locate(filename)
+    def locate(self, filename, loader=None):
+        newname = super(FilteredMachOGraph, self).locate(filename, loader)
         if newname is None:
             return None
         return self.delegate.locate(newname)
@@ -67,7 +67,14 @@ class MachOStandalone(object):
             return res
 
     def copy_dylib(self, filename):
-        dest = os.path.join(self.dest, os.path.basename(filename))
+        # When the filename is a symlink use the basename of the target of the link
+        # as the name in standalone bundle. This avoids problems when two libraries
+        # link to the same dylib but using different symlinks.
+        if os.path.islink(filename):
+            dest = os.path.join(self.dest, os.path.basename(os.path.realpath(filename)))
+        else:
+            dest = os.path.join(self.dest, os.path.basename(filename))
+
         if not os.path.exists(dest):
             self.mergecopy(filename, dest)
         return dest

@@ -16,17 +16,31 @@ import sysconfig
 import os
 import sys
 
-from PyInstaller.compat import base_prefix
+from PyInstaller import compat
 
 
 _CONFIG_H = sysconfig.get_config_h_filename()
 _MAKEFILE = sysconfig.get_makefile_filename()
 
+# In virtualenv, _CONFIG_H and _MAKEFILE may have same or different
+# prefixes, depending on the version of virtualenv.
+# Try to find the correct one, which is assumed to be the longest one.
+def _find_prefix(filename):
+    if not compat.is_venv:
+        return sys.prefix
+    prefixes = [os.path.abspath(sys.prefix), compat.base_prefix]
+    possible_prefixes = []
+    for prefix in prefixes:
+        common = os.path.commonprefix([prefix, filename])
+        if common == prefix:
+            possible_prefixes.append(prefix)
+    possible_prefixes.sort(key=lambda p: len(p), reverse=True)
+    return possible_prefixes[0]
 
 def _relpath(filename):
     # Relative path in the dist directory.
-    # base_prefix exists since python3.2 to deal with venv
-    return os.path.relpath(os.path.dirname(filename), base_prefix)
+    prefix = _find_prefix(filename)
+    return os.path.relpath(os.path.dirname(filename), prefix)
 
 
 datas = [(_CONFIG_H, _relpath(_CONFIG_H))]

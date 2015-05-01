@@ -56,3 +56,15 @@ def get_system_path():
     _bpath = [sys_dir, get_windows_dir()]
     _bpath.extend(compat.getenv('PATH', '').split(os.pathsep))
     return _bpath
+
+
+def extend_system_path(paths):
+    """
+    Add new paths at the beginning of environment variable PATH.
+
+    Some hooks might extend PATH where PyInstaller should look for dlls.
+    """
+    old_PATH = compat.getenv('PATH', '')
+    paths.append(old_PATH)
+    new_PATH = os.pathsep.join(paths)
+    compat.setenv('PATH', new_PATH)

@@ -8,11 +8,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # This program will execute any file with name test*<digit>.py. If your test
 # need an aditional dependency name it test*<digit><letter>.py to be ignored
 # by this program but be recognizable by any one as a dependency of that
 # particular test.
+
+from __future__ import print_function
 
 
 import glob
@@ -39,6 +40,9 @@ else:
     _virtual_env_ = False
     pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     sys.path.insert(0, pyi_home)
+
+# Unbuffered sys.stdout
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 
 from PyInstaller import HOMEPATH
@@ -97,14 +101,9 @@ class SkipChecker(object):
             # Old-style email.* subpackages supported only in Python 2.
             'basic/test_email_oldstyle': is_py2,
             'import/test_nspkg-pep420': is_py33,
+            'import/test_onefile_pkgutil.get_data__main__': False,
+            'interactive/test_onefile_win32_uac_admin': is_win,
             'libraries/test_enchant': is_win,
-            # docutils, a sphinx dependency, fails in
-            # docutils.utils.__init__.py, function decode_path, where
-            # sys.getfilesystemencoding() returns None when frozen.
-            # Docutils doesn't expect this and throws an assertion.
-            # Untested on Mac, but this shouldn't be a problem, since
-            # Macs return 'utf-8'.
-            'libraries/test_sphinx': is_win or is_darwin,
             }
 
         # Required Python modules for some tests.
@@ -117,25 +116,38 @@ class SkipChecker(object):
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_onefile_win32com': ['win32com'],
             'basic/test_pkg_structures': ['pkg_resources'],
+            'basic/test_win32com': ['win32com'],
 
             'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
             'libraries/test_Image': ['Image'], # PIL allows to use its submodules as top-level modules
             'libraries/test_Image2': ['Image'], # PIL allows to use its submodules as top-level modules
+            'libraries/test_markdown': ['markdown'],
             'libraries/test_numpy': ['numpy'],
             'libraries/test_onefile_matplotlib': ['matplotlib'],
             'libraries/test_onefile_tkinter': [modname_tkinter],
+            'libraries/test_onefile_numpy': ['numpy'],
             'libraries/test_PIL': ['PIL'],
             'libraries/test_PIL2': ['PIL'],
+            'libraries/test_pycparser': ['pycparser'],
             'libraries/test_pycrypto': ['Crypto'],
+            'libraries/test_pyexcelerate': ['pyexcelerate'],
+            'libraries/test_pylint': ['pylint'],
+            'libraries/test_pygments': ['pygments'],
             'libraries/test_pyodbc': ['pyodbc'],
             'libraries/test_pyttsx': ['pyttsx'],
             'libraries/test_pytz': ['pytz'],
+            'libraries/test_PyQt4-QtWebKit': ['PyQt4'],
+            'libraries/test_PyQt4-uic': ['PyQt4'],
+            'libraries/test_requests': ['requests'],
             'libraries/test_sysconfig': ['sysconfig'],
+            'libraries/test_scapy1': ['scapy'],
+            'libraries/test_scapy2': ['scapy'],
+            'libraries/test_scapy3': ['scapy'],
             'libraries/test_scipy': ['numpy', 'scipy'],
             'libraries/test_sqlite3': ['sqlite3'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
-            'libraries/test_twisted_qt4reactor': ['twisted', 'PyQt4'],
+            'libraries/test_twisted_qt4reactor': ['twisted', 'PyQt4', 'qt4reactor'],
             'libraries/test_twisted_reactor': ['twisted'],
             'libraries/test_usb': ['ctypes', 'usb'],
             'libraries/test_wx': ['wx'],
@@ -143,6 +155,7 @@ class SkipChecker(object):
             'libraries/test_wx_pubsub_arg1': ['wx'],
             'libraries/test_wx_pubsub_kwargs': ['wx'],
             'libraries/test_sphinx': ['sphinx', 'docutils', 'jinja2', 'uuid'],
+            'libraries/test_zmq': ['zmq'],
             'libraries/test_zope': ['zope'],
             'libraries/test_zope_interface': ['zope.interface'],
 
@@ -235,10 +248,13 @@ class SkipChecker(object):
 
 SPEC_FILE = set([
     'basic/test_onefile_ctypes',
-    'basic/test_onefile_pkg_resources',
+    'import/test_onefile_pkg_resources',
+    'import/test_onefile_pkgutil-get_data',
+    'import/test_onefile_pkgutil-get_data__main__',
     'basic/test_option_verbose',
     'basic/test_option_wignore',
     'basic/test_pkg_structures',
+    'basic/test_pyz_as_external_file',
     'basic/test_threading2',
     'import/test_app_with_plugins',
     'import/test_eggs2',
@@ -248,9 +264,12 @@ SPEC_FILE = set([
     'import/test_nspkg1',
     'import/test_nspkg2',
     'import/test_nspkg-pep420',
+    'import/test_hook_without_hook_for_package',
     'interactive/test_matplotlib',  # TODO .spec for this test contain win32 specific manifest code. Do we still need it?
+    'interactive/test_onefile_win32_uac_admin',
     'libraries/test_Image',
     'libraries/test_PIL',
+    'libraries/test_requests',
     'multipackage/test_multipackage1',
     'multipackage/test_multipackage2',
     'multipackage/test_multipackage3',
@@ -261,7 +280,7 @@ SPEC_FILE = set([
 
 class BuildTestRunner(object):
 
-    def __init__(self, test_name, verbose=False, report=False):
+    def __init__(self, test_name, verbose=False, report=False, with_crypto=False):
         # Use path separator '/' even on windows for test_name name.
         self.test_name = test_name.replace('\\', '/')
         self.verbose = verbose
@@ -269,6 +288,8 @@ class BuildTestRunner(object):
         # For junit xml report some behavior is changed.
         # Especially redirecting sys.stdout.
         self.report = report
+        # Build the test executable with bytecode encryption enabled.
+        self.with_crypto = with_crypto
 
     def _msg(self, text):
         """
@@ -332,12 +353,16 @@ class BuildTestRunner(object):
             os.chdir(os.path.dirname(prog))
             # Run executable.
             prog = os.path.join(os.curdir, os.path.basename(prog))
-            proc = subprocess.Popen([prog], stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+            proc = subprocess.Popen([prog], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             # Prints stdout of subprocess continuously.
             self._msg('STDOUT %s' % self.test_name)
             while proc.poll() is None:
                 line = proc.stdout.read(1)
                 self._plain_msg(line.decode('utf-8'), newline=False)
+            # Print any stdout that wasn't read before the process terminated.
+            # See the conversation in https://github.com/pyinstaller/pyinstaller/pull/1092
+            # for examples of why this is necessary.
+            self._plain_msg(proc.stdout.read().decode('utf-8'), newline=False)
             # Print possible stderr at the end.
             self._msg('STDERR %s' % self.test_name)
             self._plain_msg(proc.stderr.read().decode('utf-8'))
@@ -373,6 +398,10 @@ class BuildTestRunner(object):
             OPTS.append('--onefile')
         else:
             OPTS.append('--onedir')
+
+        if self.with_crypto or '_crypto' in self.test_file:
+            print('NOTE: Bytecode encryption is enabled for this test.', end="")
+            OPTS.append('--key=test_key')
 
         self._msg("BUILDING TEST " + self.test_name)
 
@@ -467,7 +496,7 @@ class BuildTestRunner(object):
 
 
 class GenericTestCase(unittest.TestCase):
-    def __init__(self, test_dir, func_name):
+    def __init__(self, test_dir, func_name, with_crypto=False):
         """
         test_dir    Directory containing testing python scripts.
         func_name   Name of test function to create.
@@ -480,6 +509,9 @@ class GenericTestCase(unittest.TestCase):
 
         # For tests current working directory has to be changed temporaly.
         self.curr_workdir = compat.getcwd()
+
+        # Whether to enable bytecode encryption for test executable
+        self.with_crypto = with_crypto
 
     def setUp(self):
         testdir = os.path.dirname(self.test_name)
@@ -508,7 +540,7 @@ class GenericTestCase(unittest.TestCase):
         if not req_met:
             raise unittest.SkipTest(msg)
         # Create a build and test it.
-        b = BuildTestRunner(self.test_name, verbose=VERBOSE, report=REPORT)
+        b = BuildTestRunner(self.test_name, verbose=VERBOSE, report=REPORT, with_crypto=self.with_crypto)
         self.assertTrue(b.test_exists(),
                 msg='Test %s not found.' % self.test_name)
         self.assertTrue(b.test_building(),
@@ -522,29 +554,39 @@ class GenericTestCase(unittest.TestCase):
 class BasicTestCase(GenericTestCase):
     test_dir = 'basic'
 
-    def __init__(self, func_name):
-        super(BasicTestCase, self).__init__(self.test_dir, func_name)
+    def __init__(self, func_name, with_crypto=False):
+        super(BasicTestCase, self).__init__(self.test_dir, func_name, with_crypto)
+
+
+class CryptoTestCase(GenericTestCase):
+    test_dir = 'crypto'
+
+    def __init__(self, func_name, with_crypto=False):
+        # Crypto tests MUST NOT run 'with' crypto enabled by default.
+        with_crypto = False
+
+        super(CryptoTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class ImportTestCase(GenericTestCase):
     test_dir = 'import'
 
-    def __init__(self, func_name):
-        super(ImportTestCase, self).__init__(self.test_dir, func_name)
+    def __init__(self, func_name, with_crypto=False):
+        super(ImportTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class LibrariesTestCase(GenericTestCase):
     test_dir = 'libraries'
 
-    def __init__(self, func_name):
-        super(LibrariesTestCase, self).__init__(self.test_dir, func_name)
+    def __init__(self, func_name, with_crypto=False):
+        super(LibrariesTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class MultipackageTestCase(GenericTestCase):
     test_dir = 'multipackage'
 
-    def __init__(self, func_name):
-        super(MultipackageTestCase, self).__init__(self.test_dir, func_name)
+    def __init__(self, func_name, with_crypto=False):
+        super(MultipackageTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class InteractiveTestCase(GenericTestCase):
@@ -571,7 +613,7 @@ class TestCaseGenerator(object):
         tests.sort()
         return tests
 
-    def create_suite(self, test_types):
+    def create_suite(self, test_types, with_crypto=False):
         """
         Create test suite and add test cases to it.
 
@@ -585,7 +627,7 @@ class TestCaseGenerator(object):
             tests = self._detect_tests(_type.test_dir)
             # Create test cases for a specific type.
             for test_name in tests:
-                suite.addTest(_type(test_name))
+                suite.addTest(_type(test_name, with_crypto=with_crypto))
 
         return suite
 
@@ -649,17 +691,19 @@ def run_tests(test_suite, xml_file):
     Run test suite and save output to junit xml file if requested.
     """
     if xml_file:
-        print('Writting test results to: %s' % xml_file)
+        print('Writting test results to:', xml_file)
         fp = open('report.xml', 'w')
         result = junitxml.JUnitXmlResult(fp)
         # Text from stdout/stderr should be added to failed test cases.
         result.buffer = True
         result.startTestRun()
-        test_suite.run(result)
+        ret = test_suite.run(result)
         result.stopTestRun()
         fp.close()
+
+        return ret
     else:
-        unittest.TextTestRunner(verbosity=2).run(test_suite)
+        return unittest.TextTestRunner(verbosity=2).run(test_suite)
 
 
 def main():
@@ -670,6 +714,8 @@ def main():
     except TypeError:
         parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]')
 
+    parser.add_option('-a', '--all-with-crypto', action='store_true',
+                      help='Run the whole test suite with bytecode encryption enabled.')
     parser.add_option('-c', '--clean', action='store_true',
                       help='Clean up generated files')
     parser.add_option('-i', '--interactive-tests', action='store_true',
@@ -708,21 +754,27 @@ def main():
                 test_dir = os.path.dirname(t)
                 test_script = os.path.basename(os.path.splitext(t)[0])
                 suite.addTest(GenericTestCase(test_dir, test_script))
-                print('Running test:  %s' % (test_dir + '/' + test_script))
+                print('Running test: ', (test_dir + '/' + test_script))
 
     # Run all tests or all interactive tests.
     else:
         if opts.interactive_tests:
             print('Running interactive tests...')
             test_classes = [InteractiveTestCase]
+        elif opts.all_with_crypto:
+            print('Running normal tests with bytecode encryption...')
+            # Make sure to exclude CryptoTestCase here since we are building
+            # everything else with crypto enabled.
+            test_classes = [BasicTestCase, ImportTestCase,
+                    LibrariesTestCase, MultipackageTestCase]
         else:
             print('Running normal tests (-i for interactive tests)...')
-            test_classes = [BasicTestCase, ImportTestCase,
+            test_classes = [BasicTestCase, CryptoTestCase, ImportTestCase,
                     LibrariesTestCase, MultipackageTestCase]
 
         # Create test suite.
         generator = TestCaseGenerator()
-        suite = generator.create_suite(test_classes)
+        suite = generator.create_suite(test_classes, opts.all_with_crypto)
 
     # Set global options
     global VERBOSE, REPORT, PYI_CONFIG
@@ -733,7 +785,10 @@ def main():
 
     # Run created test suite.
     clean()
-    run_tests(suite, opts.junitxml)
+
+    result = run_tests(suite, opts.junitxml)
+
+    sys.exit(int(bool(result.failures or result.errors)))
 
 
 if __name__ == '__main__':

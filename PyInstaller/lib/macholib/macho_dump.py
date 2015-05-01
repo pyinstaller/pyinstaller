@@ -26,10 +26,10 @@ def print_file(fp, path):
         else:
             sz = '32-bit'
 
-        arch = CPU_TYPE_NAMES.get(header.header.cputype, 
+        arch = CPU_TYPE_NAMES.get(header.header.cputype,
                 header.header.cputype)
 
-        print('    [%s endian=%r size=%r arch=%r]' % (header.__class__.__name__, 
+        print('    [%s endian=%r size=%r arch=%r]' % (header.__class__.__name__,
                 header.endian, sz, arch), file=fp)
         for idx, name, other in header.walkRelocatables():
             if other not in seen:
