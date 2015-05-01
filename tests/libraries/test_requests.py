@@ -28,12 +28,20 @@ openssl req -new -x509 -keyout test_requests_server.pem \
     -nodes -config test_requests_openssl.conf
 """
 
+if getattr(sys, 'frozen', False):
+    # we are running in a |PyInstaller| bundle
+    basedir = sys._MEIPASS
+else:
+    # we are running in a normal Python environment
+    basedir = os.path.dirname(__file__)
+
 
 SERVER_PORT = 8443
-SERVER_CERT = os.path.join(
-    os.path.dirname(sys.executable),
-    u"test_requests_server.pem")
+SERVER_CERT = os.path.join(basedir, u"test_requests_server.pem")
 
+
+if not os.path.exists(SERVER_CERT):
+    raise SystemExit('Certificate-File %s is missing' % SERVER_CERT)
 
 def ssl_server():
     # SSL server copied from here:
