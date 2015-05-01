@@ -40,6 +40,8 @@ SERVER_PORT = 8443
 SERVER_CERT = os.path.join(basedir, u"test_requests_server.pem")
 
 
+if not os.path.exists(SERVER_CERT):
+    raise SystemExit('Certificate-File %s is missing' % SERVER_CERT)
 
 def ssl_server():
     # SSL server copied from here:
