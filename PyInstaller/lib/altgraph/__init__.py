@@ -128,6 +128,8 @@ To display the graph we can use the GraphViz backend::
   @contributor: U{Reka Albert <http://www.phys.psu.edu/~ralbert/>}
 
 '''
+# For PyInstaller/lib/ define the version here, since there is no
+# package-resource.
 __version__ = '0.12'
 
 class GraphError(ValueError):
