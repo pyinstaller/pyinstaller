@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-#this is needed to bundle cacert.pem that comes with requests module
+# This is needed to bundle cacert.pem that comes with requests module
+
 from PyInstaller.hooks.hookutils import collect_data_files
 datas = collect_data_files('requests')
