@@ -21,14 +21,14 @@ import zipimport
 import re
 from collections import deque
 
-from altgraph.ObjectGraph import ObjectGraph
+from PyInstaller.compat import is_py2, is_py3
+from PyInstaller.lib.altgraph.ObjectGraph import ObjectGraph
+from PyInstaller.lib.modulegraph import util, zipio
 
-from itertools import count
-
-from modulegraph import util
-from modulegraph import zipio
-
-if sys.version_info[0] == 2:
+# TODO This is what the "compat" module is for. The following imports (thus
+# excluding the _Bchr() function definition) should be moved there and then
+# imported above.
+if is_py2:
     from StringIO import StringIO as BytesIO
     from StringIO import StringIO
     from  urllib import pathname2url
@@ -196,6 +196,8 @@ def find_module(name, path=None):
                 return (fp, filename, description)
 
             elif filename.endswith('.py'):
+                # TODO This is what the "compat" module is for. Define a utility
+                # function open_text_file() in that module and call here.
                 if sys.version_info[0] == 2:
                     fp = open(filename, _READ_MODE)
                 else:
@@ -411,10 +413,32 @@ class Node(object):
         return '%s%r' % (type(self).__name__, self.infoTuple())
 
 class Alias(str):
+    """
+    Placeholder object representing the aliasing of an existing module by an
+    alternative fully-qualified name.
+
+    This object facilitates interaction between the `ModuleGraph` class and the
+    `find_modules.get_implies()` function. Its value is the fully-qualified name
+    of the existing module being aliased.
+    """
     pass
 
 class AliasNode(Node):
+    """
+    Graph node representing the aliasing of an existing module under an
+    alternative module name.
+    """
     def __init__(self, name, node):
+        """
+        Arguments
+        ----------
+        name : str
+            Fully-qualified name of this non-existing **target module** (i.e.,
+            the alias being created).
+        node : Node
+            Graph node for the existing **source module** (i.e., the module
+            being aliased).
+        """
         super(AliasNode, self).__init__(name)
         for k in 'identifier', 'packagepath', '_namespace', 'globalnames', 'starimports':
             setattr(self, k, getattr(node, k, None))
@@ -746,6 +770,8 @@ class ModuleGraph(ObjectGraph):
         if m is not None:
             return m
 
+        # TODO This is what the "compat" module is for. Define a utility
+        # function open_text_file() in that module and call here.
         if sys.version_info[0] != 2:
             with open(pathname, 'rb') as fp:
                 encoding = util.guess_encoding(fp)
@@ -770,9 +796,43 @@ class ModuleGraph(ObjectGraph):
 
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
         """
-        Import a module
+        Import the module with the passed fully-qualified name and all parent
+        packages of this module from the previously imported caller module
+        signified by the passed graph node.
 
-        Return the set of modules that are imported
+        If `fromlist` is *not* `None`, all submodules whose unqualified names
+        are in this list will also be imported from the module with the passed
+        name. (See below for examples.)
+
+        Arguments
+        ----------
+        name : str
+            Fully-qualified name of the module to be imported (e.g.,
+            `email.mime.text`).
+        caller : Node
+            Graph node for the module whose file contains the `import` statement
+            triggering the call to this method if any *or* `None` otherwise.
+            This is usually an instance of the `SourceModule` class.
+        fromlist : list
+            List of the unqualified names of all modules and attributes to be
+            imported from the module to be imported if any *or* `None`
+            otherwise (e.g., `[encode_base64, encode_noop]` for the statement
+            `from email.encoders import encode_base64, encode_noop`).
+        level : int
+            Whether to perform an absolute or relative import. This argument
+            exactly corresponds to the argument of the same name accepted by
+            the builtin `__import__()` function: "The default is -1 which
+            indicates both absolute and relative imports will be attempted. 0
+            means only perform absolute imports. Positive values for level
+            indicate the number of parent directories to search relative to the
+            directory of the module calling __import__()."
+
+        Returns
+        ----------
+        list
+            List of the graph nodes created for all modules directly imported by
+            this call, including the desired module as well as all modules
+            listed in `fromlist`.
         """
         self.msg(3, "import_hook", name, caller, fromlist, level)
         parent = self.determine_parent(caller)
@@ -814,8 +874,30 @@ class ModuleGraph(ObjectGraph):
 
     def find_head_package(self, parent, name, level=-1):
         """
-        Given a calling parent package and an import name determine the containing
-        package for the name
+        Import the package providing the module with the passed fully-qualified
+        name to be subsquently imported from the previously imported parent
+        module signified by the passed graph node.
+
+        Arguments
+        ----------
+        parent : Package
+            Graph node for the package from which the module whose file contains
+            the `import` statement triggering the call to this method if any
+            *or* `None` otherwise.
+        name : str
+            Fully-qualified name of the module to be imported (e.g.,
+            `email.mime.text`).
+        level : int
+            Whether to perform an absolute or relative import. See the
+            `import_hook()` method for further details.
+
+        Returns
+        ----------
+        (package, module_name)
+            2-tuple describing the imported package, where:
+            * `package` is the graph node created for this package.
+            * `module_name` is unqualified name of the module to be subsequently
+              imported (e.g., `text` if `email.mime.text` was passed).
         """
         self.msgin(4, "find_head_package", parent, name, level)
         if '.' in name:
@@ -875,6 +957,24 @@ class ModuleGraph(ObjectGraph):
         raise ImportError("No module named " + qname)
 
     def load_tail(self, mod, tail):
+        """
+        Import the module with the passed name and all parent packages of this
+        module from the previously imported parent module signified by the
+        passed graph node.
+
+        Arguments
+        ----------
+        mod : Package
+            Graph node for the parent package providing this module.
+        tail : str
+            Name of the module to be imported in either qualified (e.g.,
+            `email.mime.base`) or unqualified (e.g., `base`) form.
+
+        Returns
+        ----------
+        Node
+            Graph node created for this module.
+        """
         self.msgin(4, "load_tail", mod, tail)
         result = mod
         while tail:
@@ -890,6 +990,25 @@ class ModuleGraph(ObjectGraph):
         return result
 
     def ensure_fromlist(self, m, fromlist):
+        """
+        Generator importing each module whose unqualified name is in the passed
+        list from the package signified by the passed graph node and yielding
+        that module.
+
+        Arguments
+        ----------
+        mod : Package
+            Graph node for the package from which to import these modules.
+        fromlist : list
+            List of the unqualified names of all modules to be imported. This
+            list will be internally converted into a set, safely ignoring any
+            duplicates in this list.
+
+        Yields
+        ----------
+        Node
+            Graph node created for the currently imported module.
+        """
         fromlist = set(fromlist)
         self.msg(4, "ensure_fromlist", m, fromlist)
         if '*' in fromlist:
@@ -915,6 +1034,8 @@ class ModuleGraph(ObjectGraph):
     def find_all_submodules(self, m):
         if not m.packagepath:
             return
+
+        # TODO "suffixes" isn't actually used anywhere. Remove.
         # 'suffixes' used to be a list hardcoded to [".py", ".pyc", ".pyo"].
         # But we must also collect Python extension modules - although
         # we cannot separate normal dlls from Python extensions.
@@ -930,8 +1051,30 @@ class ModuleGraph(ObjectGraph):
                 if info[0] != '__init__':
                     yield info[0]
 
+    # TODO Review me for use with absolute imports.
     def import_module(self, partname, fqname, parent):
-        # XXX: Review me for use with absolute imports.
+        """
+        Import the module with the passed unqualified and fully-qualified names
+        from the previously imported module signified by the passed graph node.
+
+        Arguments
+        ----------
+        partname : str
+            Unqualified name of the module to be imported (e.g., the `text` in
+            the fully-qualified module name `email.mime.text`).
+        fqname : str
+            Fully-qualified name of the module to be imported (e.g.,
+            `email.mime.text`).
+        parent : Node
+            Graph node for the module whose file contains the `import` statement
+            triggering the call to this method if any *or* `None` otherwise.
+            This is usually an instance of the `SourceModule` class.
+
+        Returns
+        ----------
+        Node
+            Graph node created for the module imported by this call.
+        """
         self.msgin(3, "import_module", partname, fqname, parent)
         m = self.findNode(fqname)
         if m is not None:
@@ -1032,15 +1175,101 @@ class ModuleGraph(ObjectGraph):
         return m
 
     def _safe_import_hook(self, name, caller, fromlist, level=-1):
-        # wrapper for self.import_hook() that won't raise ImportError
+        """
+        Import the module with the passed fully-qualified name and all parent
+        packages of this module from the previously imported caller module
+        signified by the passed graph node *without* raising `ImportError`
+        exceptions.
+
+        This method is a safe wrapper around the `import_hook()` method
+        squelching any `ImportError` exceptions raised by that method. See that
+        method for further details on passed arguments.
+
+        Returns
+        ----------
+        list
+            List of graph nodes created for the modules imported by this call.
+        """
+        # List of graph nodes created for the modules imported by this call.
+        mods = None
+
+        # True if this is a Python 2-style implicit relative import of a
+        # SWIG-generated C extension.
+        is_swig_import = False
+
+        # Attempt to import this module with Python's standard module importers.
         try:
             mods = self.import_hook(name, caller, level=level)
+        # Failing that, defer to PyInstaller's custom module importers handling
+        # non-standard import schemes (e.g., SWIG, six).
         except ImportError as msg:
             self.msg(2, "ImportError:", str(msg))
-            m = self.createNode(MissingModule, _path_from_importerror(msg, name))
-            self.createReference(caller, m)
-        else:
-            assert len(mods) == 1
+
+            # If this is an absolute top-level import under Python 3 and if the
+            # name to be imported is the caller's name prefixed by "_", this
+            # could be a SWIG-generated Python 2-style implicit relative import.
+            # SWIG-generated files contain functions named swig_import_helper()
+            # importing dynamic libraries residing in the same directory. For
+            # example, a SWIG-generated caller module "csr.py" might resemble:
+            #
+            #     # This file was automatically generated by SWIG (http://www.swig.org).
+            #     ...
+            #     def swig_import_helper():
+            #         ...
+            #         try:
+            #             fp, pathname, description = imp.find_module('_csr', [dirname(__file__)])
+            #         except ImportError:
+            #             import _csr
+            #             return _csr
+            #
+            # While there exists no reasonable means for PyInstaller to parse
+            # the call to imp.find_module(), the subsequent implicit relative
+            # import is trivially parsable. This import is prohibited under
+            # Python 3, however, and thus parsed only if the caller's file is
+            # parsable plaintext (as indicated by a filetype of ".py") and the
+            # first line of this file is the above SWIG header comment.
+            #
+            # The constraint that this library's name be the caller's name
+            # prefixed by '_' is explicitly mandated by SWIG and thus a
+            # reliable indicator of "SWIG-ness". The SWIG documentation states:
+            # "When linking the module, the name of the output file has to match
+            #  the name of the module prefixed by an underscore."
+            if is_py3 and caller is not None and fromlist is None and level == 0 and \
+               caller.filename.endswith('.py') and \
+               name == '_' + caller.identifier.rpartition('.')[2]:
+                self.msg(4, 'SWIG import candidate (name=%r, caller=%r, level=%r)' % (name, caller, level))
+
+                # TODO This is what the "compat" module is for. Define a utility
+                # function open_text_file() in that module and call here.
+                with open(caller.filename, 'rb') as caller_file:
+                    encoding = util.guess_encoding(caller_file)
+                with open(caller.filename, _READ_MODE, encoding=encoding) as caller_file:
+                    first_line = caller_file.readline()
+                    self.msg(5, 'SWIG import candidate shebang: %r' % (first_line))
+                    if first_line == "# This file was automatically generated by SWIG (http://www.swig.org).\n":
+                        is_swig_import = True
+
+                        # Convert this Python 2-style implicit relative import
+                        # into a Python 3-style explicit relative import.
+                        fromlist = [name]
+                        name = ''
+                        level = 1
+                        self.msg(2, 'SWIG import (caller=%r, fromlist=%r, level=%r)' % (caller, fromlist, level))
+
+                        # Import the caller module importing this library.
+                        try:
+                            mods = self.import_hook(name, caller, level=level)
+                        except ImportError as msg:
+                            self.msg(2, "SWIG ImportError:", str(msg))
+
+            # If this module could not be imported, add a MissingModule node.
+            if mods is None:
+                m = self.createNode(MissingModule, _path_from_importerror(msg, name))
+                self.createReference(caller, m)
+
+        # If this module was successfully imported, get its graph node.
+        if mods is not None:
+            assert len(mods) == 1, 'Expected import_hook() to return only one module but received: %r' % str(mods)
             m = list(mods)[0]
 
         subs = [m]
@@ -1069,6 +1298,30 @@ class ModuleGraph(ObjectGraph):
                     sm = self.createNode(MissingModule, fullname)
                 else:
                     sm = self.findNode(fullname)
+
+                    # TODO This is non-ideal. Ideally, SWIG C extensions should
+                    # be frozen into their parent package's directory to avoid
+                    # collision issues (e.g., two SWIG C extensions with the
+                    # same basename in different packages). Since the
+                    # bootloader's C extension importer "CExtensionImporter"
+                    # expects extensions to be frozen into the top-level
+                    # directory, however, these extensions are frozen into that
+                    # directory under their basenames. Fix this, please.
+
+                    # If this is a SWIG C extension, instruct PyInstaller to
+                    # freeze this extension under its unqualified rather than
+                    # qualified name (e.g., as "_csr" rather than
+                    # "scipy.sparse.sparsetools._csr"), permitting the implicit
+                    # relative import in the corresponding SWIG module to
+                    # successfully find this extension.
+                    if is_swig_import:
+                        # If a graph node with that name already exists, avoid
+                        # collisions by emitting an error instead.
+                        if self.findNode(sub):
+                            self.msg(2, 'SWIG import error: %r basename %r already exists' % (fullname, sub))
+                        else:
+                            self.msg(4, 'SWIG import renamed from %r to %r' % (fullname, sub))
+                            sm.identifier = sub
 
             m[sub] = sm
             if sm is not None:
