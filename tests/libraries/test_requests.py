@@ -50,7 +50,9 @@ def ssl_server():
         ('localhost', SERVER_PORT),
         SimpleHTTPServer.SimpleHTTPRequestHandler)
     httpd.socket = ssl.wrap_socket(
-        httpd.socket, certfile=SERVER_CERT, server_side=True)
+        httpd.socket, certfile=SERVER_CERT, server_side=True,
+        ssl_version=ssl.PROTOCOL_TLSv1,
+        )
     httpd.serve_forever()
 
 
