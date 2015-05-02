@@ -9,7 +9,4 @@
 
 from PyInstaller.hooks.hookutils import collect_data_files
 
-files = ['styles.in.content.xml', 
-         'styles.in.styles.xml',]
-
-datas = collect_data_files('appy.pod', files)
+datas = collect_data_files('appy.pod')
