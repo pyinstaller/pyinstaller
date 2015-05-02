@@ -58,6 +58,7 @@ else:
 _PACKAGES = {
     'docutils': ['docutils'],
     'jinja2': ['jinja2'],
+    'requests': ['requests'],
     'sphinx': ['sphinx'],
     'pytz': ['pytz'],
     'zope.interface': ['zope.interface'],
