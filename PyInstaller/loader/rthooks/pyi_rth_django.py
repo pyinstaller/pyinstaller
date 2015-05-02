@@ -11,7 +11,7 @@
 import os
 import sys
 
-d = sys._MEIPASS
+d = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
 
 import django.core.management
 import django.utils.autoreload

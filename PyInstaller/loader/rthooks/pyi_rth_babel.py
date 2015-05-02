@@ -11,7 +11,8 @@
 import os
 import sys
 
-babel_root = os.path.join(sys._MEIPASS, "babel")
+meipass_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+babel_root = os.path.join(meipass_dir, "babel")
 
 import babel.localedata
 import babel.core

@@ -11,4 +11,5 @@
 import os
 import sys
 
-os.environ["MATPLOTLIBDATA"] = os.path.join(sys._MEIPASS, "mpl-data")
+meipass_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+os.environ["MATPLOTLIBDATA"] = os.path.join(meipass_dir, "mpl-data")

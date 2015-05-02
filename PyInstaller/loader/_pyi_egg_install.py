@@ -31,8 +31,8 @@
 import os
 import sys
 
-d = "eggs"
-d = os.path.join(sys._MEIPASS, d)
+meipass_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+d = os.path.join(meipass_dir, "eggs")
 
 # Test if the `eggs´ directory exists. This allows to
 # opportunistically including this script into the packaged exe, even
