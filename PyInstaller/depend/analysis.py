@@ -309,7 +309,6 @@ class TOC(compat.UserList):
                 rslt.append(tpl)
         return rslt
 
-
 class FakeModule(object):
     """
     Create a "mod": an object with info about an imported module.
