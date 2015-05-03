@@ -597,8 +597,8 @@ class InteractiveTestCase(GenericTestCase):
     """
     test_dir = 'interactive'
 
-    def __init__(self, func_name):
-        super(InteractiveTestCase, self).__init__(self.test_dir, func_name)
+    def __init__(self, func_name, with_crypto=False):
+        super(InteractiveTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class TestCaseGenerator(object):
