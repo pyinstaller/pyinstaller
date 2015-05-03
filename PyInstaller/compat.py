@@ -116,6 +116,8 @@ venv_real_prefix = (getattr(sys, 'real_prefix', None) or
                     getattr(sys, 'base_prefix', None))
 is_virtualenv = bool(venv_real_prefix)
 
+# Forward-compatibility with python3-branch.
+modname_tkinter = 'Tkinter'
 
 def architecture():
     """
