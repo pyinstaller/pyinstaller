@@ -47,6 +47,7 @@ _PACKAGES = [
     #'pyenchant',
     'pyodbc',
     'pytz',
+    'requests',
     'sphinx',
     'simplejson',
     'SQLAlchemy',
