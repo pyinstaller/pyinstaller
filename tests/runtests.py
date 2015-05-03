@@ -496,12 +496,11 @@ class BuildTestRunner(object):
 
 
 class GenericTestCase(unittest.TestCase):
-    def __init__(self, test_dir, func_name, with_crypto=False):
+    def __init__(self, func_name, with_crypto=False):
         """
-        test_dir    Directory containing testing python scripts.
         func_name   Name of test function to create.
         """
-        self.test_name = test_dir + '/' + func_name
+        self.test_name = self.test_dir + '/' + func_name
 
         # Create new test fuction. This has to be done before super().
         setattr(self, func_name, self._generic_test_function)
@@ -554,39 +553,25 @@ class GenericTestCase(unittest.TestCase):
 class BasicTestCase(GenericTestCase):
     test_dir = 'basic'
 
-    def __init__(self, func_name, with_crypto=False):
-        super(BasicTestCase, self).__init__(self.test_dir, func_name, with_crypto)
-
 
 class CryptoTestCase(GenericTestCase):
     test_dir = 'crypto'
 
     def __init__(self, func_name, with_crypto=False):
-        # Crypto tests MUST NOT run 'with' crypto enabled by default.
-        with_crypto = False
-
-        super(CryptoTestCase, self).__init__(self.test_dir, func_name, with_crypto)
+        # Crypto tests MUST NOT run 'with' crypto enabled.
+        super(CryptoTestCase, self).__init__(func_name, False)
 
 
 class ImportTestCase(GenericTestCase):
     test_dir = 'import'
 
-    def __init__(self, func_name, with_crypto=False):
-        super(ImportTestCase, self).__init__(self.test_dir, func_name, with_crypto)
-
 
 class LibrariesTestCase(GenericTestCase):
     test_dir = 'libraries'
 
-    def __init__(self, func_name, with_crypto=False):
-        super(LibrariesTestCase, self).__init__(self.test_dir, func_name, with_crypto)
-
 
 class MultipackageTestCase(GenericTestCase):
     test_dir = 'multipackage'
-
-    def __init__(self, func_name, with_crypto=False):
-        super(MultipackageTestCase, self).__init__(self.test_dir, func_name, with_crypto)
 
 
 class InteractiveTestCase(GenericTestCase):
@@ -597,9 +582,6 @@ class InteractiveTestCase(GenericTestCase):
     They can't be run by any continuous integration system.
     """
     test_dir = 'interactive'
-
-    def __init__(self, func_name):
-        super(InteractiveTestCase, self).__init__(self.test_dir, func_name)
 
 
 class TestCaseGenerator(object):
