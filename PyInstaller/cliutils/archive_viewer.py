@@ -30,14 +30,11 @@ stack = []
 cleanup = []
 
 
-def main(opts, args):
+def main(name, brief, debug, rec_debug, **unused_options):
     misc.check_not_running_as_root()
 
     global stack
-    name = args[0]
-    debug = opts.log
-    rec_debug = opts.rec
-    brief = opts.brief
+
     if not os.path.isfile(name):
         print(name, "is an invalid file name!")
         return 1
@@ -206,12 +203,12 @@ def run():
     parser.add_option('-l', '--log',
                       default=False,
                       action='store_true',
-                      dest='log',
+                      dest='debug',
                       help='Print an archive log (default: %default)')
     parser.add_option('-r', '--recursive',
                       default=False,
                       action='store_true',
-                      dest='rec',
+                      dest='rec_debug',
                       help='Recursively print an archive log (default: %default). '
                       'Can be combined with -r')
     parser.add_option('-b', '--brief',
@@ -228,6 +225,6 @@ def run():
         parser.error('Requires exactly one pyinstaller archive')
 
     try:
-        raise SystemExit(main(opts, args))
+        raise SystemExit(main(args[0], **vars(opts)))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
