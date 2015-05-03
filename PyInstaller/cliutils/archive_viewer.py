@@ -42,7 +42,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
     arch = get_archive(name)
     stack.append((name, arch))
     if debug or brief:
-        show_log(name, arch, rec_debug, brief)
+        show_log(arch, rec_debug, brief)
         raise SystemExit(0)
     else:
         show(name, arch)
@@ -160,14 +160,14 @@ def show(nm, arch):
     pprint.pprint(toc)
 
 
-def show_log(nm, arch, rec_debug, brief, output=[]):
-    if type(arch.toc) == type({}):
+def get_content(arch, recursive, brief, output):
+    if isinstance(arch.toc, dict):
         toc = arch.toc
         if brief:
             for name, _ in toc.items():
                 output.append(name)
         else:
-            pprint.pprint(toc)
+            output.append(toc)
     else:
         toc = arch.toc.data
         for el in toc:
@@ -175,11 +175,21 @@ def show_log(nm, arch, rec_debug, brief, output=[]):
                 output.append(el[5])
             else:
                 output.append(el)
-            if rec_debug:
+            if recursive:
                 if el[4] in ('z', 'a'):
-                    show_log(el[5], get_archive(el[5]), rec_debug, brief, output)
+                    get_content(get_archive(el[5]), recursive, brief, output)
                     stack.pop()
-        pprint.pprint(output)
+
+
+def show_log(arch, recursive, brief, output=[]):
+    output = []
+    get_content(arch, recursive, brief, output)
+    # first print all TOCs
+    for out in output:
+        if isinstance(out, dict):
+            pprint.pprint(out)
+    # then print the other entries
+    pprint.pprint([out for out in output if not isinstance(out, dict)])
 
 
 class ZlibArchive(pyi_archive.ZlibArchive):
