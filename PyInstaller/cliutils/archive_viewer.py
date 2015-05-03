@@ -138,7 +138,7 @@ def get_archive(nm):
 
 
 def get_data(nm, arch):
-    if type(arch.toc) is type({}):
+    if isinstance(arch.toc, dict):
         (ispkg, pos, lngth) = arch.toc.get(nm, (0, None, 0))
         if pos is None:
             return None
@@ -151,7 +151,7 @@ def get_data(nm, arch):
 
 
 def show(nm, arch):
-    if type(arch.toc) == type({}):
+    if isinstance(arch.toc, dict):
         print(" Name: (ispkg, pos, len)")
         toc = arch.toc
     else:
