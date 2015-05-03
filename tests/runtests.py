@@ -461,6 +461,8 @@ class BuildTestRunner(object):
                 prog = self._find_exepath(tmpname,
                         os.path.join('dist', self.test_file))
             fname_list = archive_viewer.get_archive_content(prog)
+            # the archive contains byte-data, need to decode them
+            fname_list = [fn.decode('utf-8') for fn in fname_list]
             pattern_list = eval(open(logfn, 'rU').read())
             # Alphabetical order of patterns.
             pattern_list.sort()
