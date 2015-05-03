@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 root_dir = django_find_root_dir()
 if root_dir:
     logger.info('Django root directory %s', root_dir)
-    hiddenimports = django_dottedstring_imports(root_dir)
+    hiddenimports = [django_dottedstring_imports(root_dir), ]
     # Include main django modules - settings.py, urls.py, wsgi.py.
     # Without them the django server won't run.
     package_name = os.path.basename(root_dir)
