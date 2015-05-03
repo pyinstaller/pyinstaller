@@ -33,12 +33,8 @@ warnings.filterwarnings('ignore',
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
 if not hasattr(sys, 'real_prefix'):
-    _virtual_env_ = False
     pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     sys.path.insert(0, pyi_home)
-else:
-    _virtual_env_ = True
-
 
 # Unbuffered sys.stdout
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
@@ -52,6 +48,7 @@ from PyInstaller.hooks import hookutils
 from PyInstaller.lib import unittest2 as unittest
 from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc, winutils
+from PyInstaller.cliutils import archive_viewer
 
 
 VERBOSE = False
@@ -461,16 +458,7 @@ class BuildTestRunner(object):
             if prog is None:
                 prog = self._find_exepath(tmpname,
                         os.path.join('dist', self.test_file))
-            if _virtual_env_:
-                fname_list = compat.exec_command(
-                    'pyi-archive_viewer', '-b', '-r', prog)
-            else:
-                fname_list = compat.exec_python(
-                    os.path.join(HOMEPATH, 'utils', 'archive_viewer.py'),
-                    '-b', '-r', prog)
-            # Fix line-endings so eval() does not fail.
-            fname_list = fname_list.replace('\r\n', '\n').replace('\n\r', '\n')
-            fname_list = eval(fname_list)
+            fname_list = archive_viewer.get_archive_content(prog)
             pattern_list = eval(open(logfn, 'rU').read())
             # Alphabetical order of patterns.
             pattern_list.sort()
