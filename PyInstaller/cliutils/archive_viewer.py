@@ -97,6 +97,11 @@ def main(name, brief, debug, rec_debug, **unused_options):
             break
         else:
             usage()
+    do_cleanup()
+
+
+def do_cleanup():
+    global stack, cleanup
     for (nm, arch) in stack:
         arch.lib.close()
     stack = []
@@ -105,6 +110,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
             os.remove(fnm)
         except Exception, e:
             print("couldn't delete", fnm, e.args)
+    cleanup = []
 
 
 def usage():
