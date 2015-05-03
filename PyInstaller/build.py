@@ -637,6 +637,9 @@ class Analysis(Target):
                     name = os.path.basename(f)[5:-3]
                     custom_hooks_mod_cache[name] = pth
 
+        # TODO "temp_toc" appears to be unused and have no side effects.
+        # Remove, please.
+
         # Now find regular hooks and execute them. Get a new TOC, in part
         # because graphing a runtime hook might have added some names, but
         # also because regular hooks can apply to extensions and builtins.
@@ -690,7 +693,11 @@ class Analysis(Target):
                     # as with hidden imports, add to graph as called by imported_name
                     self.graph.run_script(item, from_node)
                 for item in mod._added_binaries:
+                    assert(item[2] == 'BINARY')
                     self.binaries.append(item)  # Supposed to be TOC form (n,p,'BINARY')
+                for item in mod.datas:
+                    assert(item[2] == 'DATA')
+                    self.datas.append(item)  # Supposed to be TOC form (n,p,'DATA')
                 for item in mod._deleted_imports:
                     # Remove the graph link between the hooked module and item.
                     # This removes the 'item' node from the graph if no other
