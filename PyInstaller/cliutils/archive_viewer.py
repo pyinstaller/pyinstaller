@@ -28,24 +28,13 @@ import PyInstaller.log
 
 stack = []
 cleanup = []
-name = None
-debug = False
-rec_debug = False
-brief = False
 
 
-def main(opts, args):
+def main(name, brief, debug, rec_debug, **unused_options):
     misc.check_not_running_as_root()
 
     global stack
-    global debug
-    global rec_debug
-    global name
-    global brief
-    name = args[0]
-    debug = opts.log
-    rec_debug = opts.rec
-    brief = opts.brief
+
     if not os.path.isfile(name):
         print(name, "is an invalid file name!")
         return 1
@@ -53,7 +42,7 @@ def main(opts, args):
     arch = get_archive(name)
     stack.append((name, arch))
     if debug or brief:
-        show_log(name, arch)
+        show_log(arch, rec_debug, brief)
         raise SystemExit(0)
     else:
         show(name, arch)
@@ -108,6 +97,11 @@ def main(opts, args):
             break
         else:
             usage()
+    do_cleanup()
+
+
+def do_cleanup():
+    global stack, cleanup
     for (nm, arch) in stack:
         arch.lib.close()
     stack = []
@@ -116,6 +110,7 @@ def main(opts, args):
             os.remove(fnm)
         except Exception as e:
             print("couldn't delete", fnm, e.args)
+    cleanup = []
 
 
 def usage():
@@ -149,7 +144,7 @@ def get_archive(nm):
 
 
 def get_data(nm, arch):
-    if type(arch.toc) is type({}):
+    if isinstance(arch.toc, dict):
         (ispkg, pos, lngth) = arch.toc.get(nm, (0, None, 0))
         if pos is None:
             return None
@@ -162,7 +157,7 @@ def get_data(nm, arch):
 
 
 def show(nm, arch):
-    if type(arch.toc) == type({}):
+    if isinstance(arch.toc, dict):
         print(" Name: (ispkg, pos, len)")
         toc = arch.toc
     else:
@@ -171,14 +166,14 @@ def show(nm, arch):
     pprint.pprint(toc)
 
 
-def show_log(nm, arch, output=[]):
-    if type(arch.toc) == type({}):
+def get_content(arch, recursive, brief, output):
+    if isinstance(arch.toc, dict):
         toc = arch.toc
         if brief:
             for name, _ in toc.items():
                 output.append(name)
         else:
-            pprint.pprint(toc)
+            output.append(toc)
     else:
         toc = arch.toc.data
         for el in toc:
@@ -186,11 +181,35 @@ def show_log(nm, arch, output=[]):
                 output.append(el[5])
             else:
                 output.append(el)
-            if rec_debug:
+            if recursive:
                 if el[4] in ('z', 'a'):
-                    show_log(el[5], get_archive(el[5]), output)
+                    get_content(get_archive(el[5]), recursive, brief, output)
                     stack.pop()
-        pprint.pprint(output)
+
+
+def show_log(arch, recursive, brief, output=[]):
+    output = []
+    get_content(arch, recursive, brief, output)
+    # first print all TOCs
+    for out in output:
+        if isinstance(out, dict):
+            pprint.pprint(out)
+    # then print the other entries
+    pprint.pprint([out for out in output if not isinstance(out, dict)])
+
+
+def get_archive_content(filename):
+    """
+    Get a list of the (recursive) content of archive `filename`.
+
+    This function is primary meant to be used by runtests.
+    """
+    archive = get_archive(filename)
+    stack.append((filename, archive))
+    output = []
+    get_content(archive, recursive=True, brief=True, output=output)
+    do_cleanup()
+    return output
 
 
 class ZlibArchive(pyi_archive.ZlibArchive):
@@ -214,12 +233,12 @@ def run():
     parser.add_option('-l', '--log',
                       default=False,
                       action='store_true',
-                      dest='log',
+                      dest='debug',
                       help='Print an archive log (default: %default)')
     parser.add_option('-r', '--recursive',
                       default=False,
                       action='store_true',
-                      dest='rec',
+                      dest='rec_debug',
                       help='Recursively print an archive log (default: %default). '
                       'Can be combined with -r')
     parser.add_option('-b', '--brief',
@@ -236,6 +255,6 @@ def run():
         parser.error('Requires exactly one pyinstaller archive')
 
     try:
-        raise SystemExit(main(opts, args))
+        raise SystemExit(main(args[0], **vars(opts)))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

@@ -34,15 +34,12 @@ warnings.filterwarnings('ignore',
 
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
-if hasattr(sys, 'real_prefix') or not sys.prefix == sys.base_prefix:
-    _virtual_env_ = True
-else:
-    _virtual_env_ = False
+if not (hasattr(sys, 'real_prefix') or sys.prefix != sys.base_prefix):
     pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     sys.path.insert(0, pyi_home)
 
 # Unbuffered sys.stdout
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 
 from PyInstaller import HOMEPATH
@@ -53,6 +50,7 @@ from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import hookutils
 from PyInstaller.utils.win32 import winutils
+from PyInstaller.cliutils import archive_viewer
 
 
 VERBOSE = False
@@ -462,16 +460,7 @@ class BuildTestRunner(object):
             if prog is None:
                 prog = self._find_exepath(tmpname,
                         os.path.join('dist', self.test_file))
-            if _virtual_env_:
-                fname_list = compat.exec_command(
-                    'pyi-archive_viewer', '-b', '-r', prog)
-            else:
-                fname_list = compat.exec_python(
-                    os.path.join(HOMEPATH, 'utils', 'archive_viewer.py'),
-                    '-b', '-r', prog)
-            # Fix line-endings so eval() does not fail.
-            fname_list = fname_list.replace('\r\n', '\n').replace('\n\r', '\n')
-            fname_list = eval(fname_list)
+            fname_list = archive_viewer.get_archive_content(prog)
             pattern_list = eval(open(logfn, 'rU').read())
             # Alphabetical order of patterns.
             pattern_list.sort()
@@ -496,10 +485,12 @@ class BuildTestRunner(object):
 
 
 class GenericTestCase(unittest.TestCase):
-    def __init__(self, func_name, with_crypto=False):
+    def __init__(self, func_name, test_dir=None, with_crypto=False):
         """
         func_name   Name of test function to create.
         """
+        if test_dir is not None:
+            self.test_dir = test_dir
         self.test_name = self.test_dir + '/' + func_name
 
         # Create new test fuction. This has to be done before super().
@@ -559,7 +550,7 @@ class CryptoTestCase(GenericTestCase):
 
     def __init__(self, func_name, with_crypto=False):
         # Crypto tests MUST NOT run 'with' crypto enabled.
-        super(CryptoTestCase, self).__init__(func_name, False)
+        super(CryptoTestCase, self).__init__(func_name, with_crypto=False)
 
 
 class ImportTestCase(GenericTestCase):
@@ -735,7 +726,7 @@ def main():
             for t in test_list:
                 test_dir = os.path.dirname(t)
                 test_script = os.path.basename(os.path.splitext(t)[0])
-                suite.addTest(GenericTestCase(test_dir, test_script))
+                suite.addTest(GenericTestCase(test_script, test_dir=test_dir))
                 print('Running test: ', (test_dir + '/' + test_script))
 
     # Run all tests or all interactive tests.
