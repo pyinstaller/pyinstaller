@@ -495,10 +495,12 @@ class BuildTestRunner(object):
 
 
 class GenericTestCase(unittest.TestCase):
-    def __init__(self, func_name, with_crypto=False):
+    def __init__(self, func_name, test_dir=None, with_crypto=False):
         """
         func_name   Name of test function to create.
         """
+        if test_dir is not None:
+            self.test_dir = test_dir
         self.test_name = self.test_dir + '/' + func_name
 
         # Create new test fuction. This has to be done before super().
@@ -558,7 +560,7 @@ class CryptoTestCase(GenericTestCase):
 
     def __init__(self, func_name, with_crypto=False):
         # Crypto tests MUST NOT run 'with' crypto enabled.
-        super(CryptoTestCase, self).__init__(func_name, False)
+        super(CryptoTestCase, self).__init__(func_name, with_crypto=False)
 
 
 class ImportTestCase(GenericTestCase):
@@ -734,7 +736,7 @@ def main():
             for t in test_list:
                 test_dir = os.path.dirname(t)
                 test_script = os.path.basename(os.path.splitext(t)[0])
-                suite.addTest(GenericTestCase(test_dir, test_script))
+                suite.addTest(GenericTestCase(test_script, test_dir=test_dir))
                 print('Running test: ', (test_dir + '/' + test_script))
 
     # Run all tests or all interactive tests.
