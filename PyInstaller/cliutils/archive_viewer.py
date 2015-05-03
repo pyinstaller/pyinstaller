@@ -28,20 +28,12 @@ import PyInstaller.log
 
 stack = []
 cleanup = []
-name = None
-debug = False
-rec_debug = False
-brief = False
 
 
 def main(opts, args):
     misc.check_not_running_as_root()
 
     global stack
-    global debug
-    global rec_debug
-    global name
-    global brief
     name = args[0]
     debug = opts.log
     rec_debug = opts.rec
@@ -53,7 +45,7 @@ def main(opts, args):
     arch = get_archive(name)
     stack.append((name, arch))
     if debug or brief:
-        show_log(name, arch)
+        show_log(name, arch, rec_debug, brief)
         raise SystemExit(0)
     else:
         show(name, arch)
@@ -171,7 +163,7 @@ def show(nm, arch):
     pprint.pprint(toc)
 
 
-def show_log(nm, arch, output=[]):
+def show_log(nm, arch, rec_debug, brief, output=[]):
     if type(arch.toc) == type({}):
         toc = arch.toc
         if brief:
@@ -188,7 +180,7 @@ def show_log(nm, arch, output=[]):
                 output.append(el)
             if rec_debug:
                 if el[4] in ('z', 'a'):
-                    show_log(el[5], get_archive(el[5]), output)
+                    show_log(el[5], get_archive(el[5]), rec_debug, brief, output)
                     stack.pop()
         pprint.pprint(output)
 
