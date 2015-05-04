@@ -386,7 +386,7 @@ def get_homebrew_path(formula = ''):
         logger.debug('Detected homebrew not installed')
     except subprocess.CalledProcessError:
         logger.debug('homebrew formula "%s" not installed' % formula)
-    return path
+    return str(path,'UTF-8') # subprocess returns BYTES not STR
 
 def get_qmake_path(version = ''):
     '''
@@ -440,7 +440,7 @@ def qt5_qml_dir():
                         + 'QT_INSTALL_QML" returned nothing')
     elif not os.path.exists(qmldir):
         logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
-    
+
     # 'qmake -query' uses / as the path separator, even on Windows
     qmldir = os.path.normpath(qmldir)
     return qmldir
