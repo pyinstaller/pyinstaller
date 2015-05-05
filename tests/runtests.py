@@ -475,29 +475,30 @@ class BuildTestRunner(object):
             tmpname = os.path.splitext(logfn)[0]
             prog = progs.get(tmpname)
             if not prog:
-                return False
+                return False, 'Executable for %s missing' % logfn
             fname_list = archive_viewer.get_archive_content(prog)
             pattern_list = eval(open(logfn, 'rU').read())
             # Alphabetical order of patterns.
             pattern_list.sort()
-            count = 0
+            missing = []
             for pattern in pattern_list:
-                found = False
                 for fname in fname_list:
                     if re.match(pattern, fname):
-                        count += 1
-                        found = True
                         self._plain_msg('MATCH: %s --> %s' % (pattern, fname))
                         break
-                if not found:
+                else:
+                    # no matching entry found
+                    missing.append(pattern)
                     self._plain_msg('MISSING: %s' % pattern)
 
             # Not all modules matched.
             # Stop comparing other .toc files and fail the test.
-            if count < len(pattern_list):
-                return False
+            if missing:
+                msg = '\n'.join('Missing %s in %s' % (m, prog)
+                                for m in missing)
+                return False, msg
 
-        return True
+        return True, ''
 
 
 class GenericTestCase(unittest.TestCase):
@@ -555,8 +556,10 @@ class GenericTestCase(unittest.TestCase):
         if retcode != 0:
             self.fail('Running exe of %s failed with return-code %s.\n\n%s' %
                       (self.test_name, retcode, stderr))
-        self.assertTrue(b.test_logs(),
-                msg='Matching .toc of %s failed.' % self.test_name)
+        okay, msg = b.test_logs()
+        if not okay:
+            self.fail('Matching .toc of %s failed.\n\n%s' %
+                      (self.test_name, msg))
 
 
 class BasicTestCase(GenericTestCase):
