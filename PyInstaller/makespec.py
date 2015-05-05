@@ -23,6 +23,8 @@ from PyInstaller.compat import expand_path, is_win, is_cygwin, is_darwin
 
 logger = logging.getLogger(__name__)
 
+# HACK to be used used in tests
+_EXENAME_FORCED_SUFFIX_ = ''
 
 onefiletmplt = """# -*- mode: python -*-
 %(cipher_init)s
@@ -404,6 +406,10 @@ def main(scripts, name=None, onefile=False,
         d['dllname'] = name + '.dll'
     else:
         d['exename'] = name
+    if _EXENAME_FORCED_SUFFIX_:
+        # HACK to be used used in tests
+        d['exename'] = name + _EXENAME_FORCED_SUFFIX_
+        # but keep the dll name on windows
 
     # Write down .spec file to filesystem.
     specfnm = os.path.join(specpath, name + '.spec')
