@@ -1027,15 +1027,16 @@ class PKG(Target):
                 if self.exclude_binaries and typ != 'DEPENDENCY':
                     self.dependencies.append((inm, fnm, typ))
                 else:
-                    fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
-                                     dist_nm=inm)
                     # Avoid importing the same binary extension twice. This might
                     # happen if they come from different sources (eg. once from
                     # binary dependence, and once from direct import).
-                    if typ == 'BINARY' and fnm in seen:
+                    if typ == 'BINARY' and inm in seen:
                         continue
-                    seen[fnm] = 1
+                    seen[inm] = 1
+
+                    fnm = checkCache(fnm, strip=self.strip_binaries,
+                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     dist_nm=inm)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
