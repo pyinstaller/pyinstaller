@@ -1265,6 +1265,12 @@ class EXE(Target):
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
             os.chmod(tmpnm, 0755)
+
+            # In onefile mode, dependencies in the onefile manifest refer to files that are about to be unpacked when
+            # the exe is run. The Windows DLL loader doesn't know that and refuses to run the exe at all. Since the
+            # .exe does not in fact depend on those, and the actual manifest will be used later when an activation
+            # context is created, all dependencies are removed from the embedded manifest.
+            self.manifest.dependentAssemblies = []
             self.manifest.update_resources(tmpnm, [1]) # 1 for executable
             trash.append(tmpnm)
             exe = tmpnm
