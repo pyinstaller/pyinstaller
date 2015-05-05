@@ -785,10 +785,9 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     # with relative install names. Caching on darwin does not work
     # since we need to modify binary headers to use relative paths
     # to dll depencies and starting with '@loader_path'.
-
-    if ((not strip and not upx and not is_darwin and not is_win)
-        or fnm.lower().endswith(".manifest")):
+    if (not strip and not upx and not is_darwin and not is_win):
         return fnm
+
     if strip:
         strip = True
     else:
@@ -831,6 +830,24 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
             if is_darwin:
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
             return cachedfile
+
+    # Change manifest and its deps to private assemblies
+    if fnm.lower().endswith(".manifest"):
+        manifest = winmanifest.Manifest()
+        manifest.filename = fnm
+        with file(fnm, "rb") as f:
+            manifest.parse_string(f.read())
+        if manifest.publicKeyToken:
+            logger.info("Changing %s into private assembly", os.path.basename(fnm))
+        manifest.publicKeyToken = None
+        for dep in manifest.dependentAssemblies:
+            # Exclude common-controls which is not bundled
+            if dep.name != "Microsoft.Windows.Common-Controls":
+                dep.publicKeyToken = None
+
+        manifest.writeprettyxml(cachedfile)
+        return cachedfile
+
     if upx:
         if strip:
             fnm = checkCache(fnm, strip=True, upx=False)
@@ -859,9 +876,16 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
 
-    if pyasm and fnm.lower().endswith(".pyd"):
-        # If python.exe has dependent assemblies, check for embedded manifest
-        # of cached pyd file because we may need to 'fix it' for pyinstaller
+    if os.path.splitext(fnm.lower())[1] in (".pyd", ".dll"):
+        # When shared assemblies are bundled into the app, they must be
+        # transformed into private assemblies or else the assembly
+        # loader will not search for them in the app folder. To support
+        # this, all manifests in the app must be modified to point to
+        # the private assembly.
+
+        # Also, if python.exe has dependent assemblies, check for
+        # embedded manifest of cached pyd file because we may need to
+        # 'fix it' for pyinstaller
         try:
             res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))
         except winresource.pywintypes.error, e:
@@ -889,12 +913,16 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                             logger.error(cachedfile)
                             logger.exception(exc)
                         else:
+                            # change manifest to private assembly
+                            if manifest.publicKeyToken:
+                                logger.info("Changing %s into a private assembly", os.path.basename(fnm))
+                            manifest.publicKeyToken = None
+
                             # Fix the embedded manifest (if any):
                             # Extension modules built with Python 2.6.5 have
                             # an empty <dependency> element, we need to add
                             # dependentAssemblies from python.exe for
                             # pyinstaller
-                            olen = len(manifest.dependentAssemblies)
                             _depNames = set([dep.name for dep in
                                              manifest.dependentAssemblies])
                             for pydep in pyasm:
@@ -904,14 +932,19 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                                 pydep.name, cachedfile)
                                     manifest.dependentAssemblies.append(pydep)
                                     _depNames.update(pydep.name)
-                            if len(manifest.dependentAssemblies) > olen:
-                                try:
-                                    manifest.update_resources(os.path.abspath(cachedfile),
-                                                              [name],
-                                                              [language])
-                                except Exception, e:
-                                    logger.error(os.path.abspath(cachedfile))
-                                    raise
+
+                            # Change dep to private assembly
+                            for dep in manifest.dependentAssemblies:
+                                # Exclude common-controls which is not bundled
+                                if dep.name != "Microsoft.Windows.Common-Controls":
+                                    dep.publicKeyToken = None
+                            try:
+                                manifest.update_resources(os.path.abspath(cachedfile),
+                                                          [name],
+                                                          [language])
+                            except Exception, e:
+                                logger.error(os.path.abspath(cachedfile))
+                                raise
 
     if cmd:
         try:
