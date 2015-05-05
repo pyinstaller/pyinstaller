@@ -785,7 +785,11 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     # with relative install names. Caching on darwin does not work
     # since we need to modify binary headers to use relative paths
     # to dll depencies and starting with '@loader_path'.
-    if (not strip and not upx and not is_darwin and not is_win):
+    if not strip and not upx and not is_darwin and not is_win:
+        return fnm
+
+    if dist_nm is not None and ":" in dist_nm:
+        # A file embedded in another pyinstaller build via multipackage - no actual file exists to process
         return fnm
 
     if strip:
