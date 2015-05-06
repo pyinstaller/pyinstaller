@@ -839,6 +839,23 @@ class Manifest(object):
                     if val:
                         fE.setA(attr, val)
                 docE.aChild(fE)
+
+        # Add compatibility section: http://stackoverflow.com/a/10158920
+        cE = doc.cE("compatibility")
+        cE.setAttribute("xmlns", "urn:schemas-microsoft-com:compatibility.v1")
+        caE = doc.cE("application")
+        supportedOS_guids = {"Vista":"{e2011457-1546-43c5-a5fe-008deee3d3f0}",
+                             "7"    :"{35138b9a-5d96-4fbd-8e2d-a2440225f93a}",
+                             "8"    :"{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}",
+                             "8.1"  :"{1f676c76-80e1-4239-95bb-83d0f6d0da78}",
+                             "10"   :"{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"}
+        for guid in supportedOS_guids.values():
+            sosE = doc.cE("supportedOS")
+            sosE.setAttribute("Id", guid)
+            caE.aChild(sosE)
+        cE.aChild(caE)
+        docE.aChild(cE)
+
         return doc
     
     def toprettyxml(self, indent="  ", newl=os.linesep, encoding="UTF-8"):
