@@ -22,8 +22,7 @@ dicts = [x[0] for x in enchant.list_dicts()]
 
 # At least one backend should be available
 if len(backends) < 1:
-    print('E: No dictionary backend available')
-    exit(1)
+    raise SystemExit('Error: No dictionary backend available')
 
 if len(dicts) < 1:
     print('W: No dictionary available')

@@ -13,7 +13,7 @@
 # find and copy.
 
 
-import sphinx, sys
+import sphinx
 # See http://sphinx.pocoo.org/invocation.html#invocation for more details of 
 # the options below.
 #
@@ -31,4 +31,4 @@ ret = sphinx.main(['', # First param is name of program (anything is fine)
                    '_build/html' # Output directory for the resulting HTML
                                  # files
                      ])
-sys.exit(ret)
+raise SystemExit(ret)
