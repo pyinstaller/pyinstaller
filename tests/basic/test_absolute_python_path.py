@@ -30,7 +30,7 @@ print('CWD: ' + os.getcwdu())
 try:
     for pth in sys.path:
         if not os.path.isabs(pth):
-            SystemExit('ERROR: sys.path not absolute')
+            raise SystemExit('ERROR: sys.path not absolute')
     import datetime
 except:
-    SystemExit('ERROR: sys.path not absolute')
+    raise SystemExit('ERROR: sys.path not absolute')
