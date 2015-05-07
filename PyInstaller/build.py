@@ -1013,7 +1013,8 @@ class PKG(Target):
         logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
         trash = []
         mytoc = []
-        seen = {}
+        seenInms = {}
+        seenFnms = {}
         toc = addSuffixToExtensions(self.toc)
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
@@ -1027,12 +1028,25 @@ class PKG(Target):
                 if self.exclude_binaries and typ != 'DEPENDENCY':
                     self.dependencies.append((inm, fnm, typ))
                 else:
-                    # Avoid importing the same binary extension twice. This might
-                    # happen if they come from different sources (eg. once from
-                    # binary dependence, and once from direct import).
-                    if typ == 'BINARY' and inm in seen:
-                        continue
-                    seen[inm] = 1
+                    if typ == 'BINARY':
+                        # Avoid importing the same binary extension twice. This might
+                        # happen if they come from different sources (eg. once from
+                        # binary dependence, and once from direct import).
+                        if inm in seenInms:
+                            logger.warn("Two binaries added with the same internal "
+                                        "name. %s was placed at %s previously. "
+                                        "Skipping %s." %
+                                        (seenInms[inm], inm, fnm))
+                            continue
+
+                        # Warn if the same binary extension was included
+                        # with multiple internal names
+                        if fnm in seenFnms:
+                            logger.warn("One binary added with two internal "
+                                        "names. %s was placed at %s previously." %
+                                        (fnm, seenFnms[fnm]))
+                    seenInms[inm] = fnm
+                    seenFnms[fnm] = inm
 
                     fnm = checkCache(fnm, strip=self.strip_binaries,
                                      upx=(self.upx_binaries and (is_win or is_cygwin)),
