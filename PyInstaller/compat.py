@@ -83,16 +83,25 @@ _OLD_OPTIONS = [
 _PYOPTS = __debug__ and '-O' or ''
 
 
-# Python 2 does not have sys.base_prefix
-# 'base_prefix' from PEP 405 venv (new in Python 3.3)
-if is_py2:
-    # sys.real_prefix is available only in Python 2 and virtualenv.
-    base_prefix = getattr(sys, 'real_prefix', sys.prefix)
-else:
-    base_prefix = sys.base_prefix
-# Some code parts needs to behave different when running in virtualenv.
-# In virtualenv sys.prefix is different than sys.base_prefix.
-is_venv = not base_prefix == sys.prefix
+# In a virtual environment created by virtualenv (github.com/pypa/virtualenv)
+# there exists sys.real_prefix with the path to the base Python
+# installation from which the virtual environment was created. This is true regardless of
+# the version of Python used to execute the virtualenv command, 2.x or 3.x.
+#
+# In a virtual environment created by the venv module available in
+# the Python 3 standard lib, there exists sys.base_prefix with the path to
+# the base implementation. This does not exist in Python 2.x or in
+# a virtual environment created by virtualenv.
+#
+# The following code creates compat.is_venv and is.virtualenv
+# that are True when running a virtual environment, and also
+# compat.base_prefix with the path to the
+# base Python installation.
+
+base_prefix = getattr( sys, 'real_prefix',
+                       getattr( sys, 'base_prefix', sys.prefix )
+                        )
+is_venv = is_virtualenv = base_prefix != sys.prefix
 
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
@@ -163,7 +172,7 @@ def machine():
     for bootloader.
 
     PyInstaller is reported to work even on ARM architecture. For that
-    case functions system() and architecture() are not enough. 
+    case functions system() and architecture() are not enough.
     Path to bootloader has to be composed from system(), architecture()
     and machine() like:
         'Linux-32bit-arm'
