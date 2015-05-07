@@ -8,7 +8,6 @@
 #-----------------------------------------------------------------------------
 
 
-import sys
 import os
 
 
@@ -29,7 +28,7 @@ if __name__ == '__main__':
 
     # Confirm no files exist before we start.
     if fnames_found():
-        sys.exit('FAIL: Files present before test.')
+        raise SystemExit('FAIL: Files present before test.')
 
     # Minimal invocation that generates the files.
     from pycparser import c_parser
@@ -51,10 +50,9 @@ if __name__ == '__main__':
     # Fail if any file was generated.
     if fnames_generated:
         if fnames_left:
-            sys.exit('FAIL: Files generated and not removed.')
+            raise SystemExit('FAIL: Files generated and not removed.')
         else:
-            sys.exit('FAIL: Files generated but removed.')
+            raise SystemExit('FAIL: Files generated but removed.')
 
     # Success.
-    sys.exit(0)
 

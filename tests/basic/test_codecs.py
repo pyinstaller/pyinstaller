@@ -16,14 +16,11 @@ from __future__ import unicode_literals
 # The original string and the result should be equal.
 
 import codecs
-import sys
 
 
 str_a = 'foo bar fóó bář, fěě, ďěž'
 str_a_utf8 = codecs.getencoder('utf-8')(str_a)[0]
 str_b = codecs.getdecoder('utf-8')(str_a_utf8)[0]
 
-print(('codecs working: %s' % (str_a == str_b)))
+print((codecs working: %s' % (str_a == str_b))
 assert str_a == str_b
-
-sys.exit(0)

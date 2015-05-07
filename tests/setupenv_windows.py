@@ -56,6 +56,7 @@ else:
 
 
 _PACKAGES = {
+    'keyring': ['keyring'],
     'docutils': ['docutils'],
     'jinja2': ['jinja2'],
     'requests': ['requests'],

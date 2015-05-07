@@ -11,11 +11,10 @@ from pylint.lint import Run
 
 # The following more obvious test doesn't work::
 #
-#   import pylint, sys
-#
+#   import pylint
 #   pylint.run_pylint()
-#   sys.exit(0)
 #
-# because pylint will override the sys.exit value with 32, since a valid command
+# because pylint will exit with 32, since a valid command
 # line wasn't given. Instead, provide a valid command line below.
+
 Run(['-h'])
