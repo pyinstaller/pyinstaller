@@ -10,7 +10,7 @@
 
 import os
 
-from PyInstaller.utils.hooks.hookutils import qt5_menu_nib_dir
+from PyInstaller.utils.win32.winutils import qt5_menu_nib_dir
 from PyInstaller.compat import getsitepackages, is_darwin, is_win
 
 
@@ -23,7 +23,7 @@ if is_win:
 
 
 # In the new consolidated mode any PyQt depends on _qt
-hiddenimports = ['sip']
+hiddenimports = ['sip', 'PyQt5.Qt']
 
 
 # For Qt to work on Mac OS X it is necessary to include directory qt_menu.nib.
