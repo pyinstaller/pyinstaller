@@ -38,6 +38,7 @@ else:
 
 
 _PACKAGES = [
+    'keyring',
     'six',
     'docutils',
     'jinja2',

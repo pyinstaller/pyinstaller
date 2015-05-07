@@ -31,4 +31,5 @@ print('Encoding current: ' + frozen_encoding)
 
 
 if not frozen_encoding == encoding:
-    raise SystemExit('Frozen encoding is not the same as unfrozen.')
+    raise SystemExit('Frozen encoding %s is not the same as unfrozen %s.' %
+                     (frozen_encoding, encoding))

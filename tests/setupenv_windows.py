@@ -56,6 +56,7 @@ else:
 
 
 _PACKAGES = {
+    'keyring': ['keyring'],
     'docutils': ['docutils'],
     'jinja2': ['jinja2'],
     'requests': ['requests'],
@@ -80,6 +81,7 @@ _PACKAGES = {
 }
 
 _PY_VERSION = {
+    'keyring': is_py26,
     'MySQLdb': is_py26,
     'numpy': is_py26,
     'PIL': is_py26,

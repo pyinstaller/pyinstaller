@@ -8,15 +8,9 @@
 #-----------------------------------------------------------------------------
 
 
-import os
-import sys
-import httplib
-import gzip
+# import a very simple and rarely used pure-python lib ...
+import getopt
+# ... and a module importing a shared lib
+import ssl
 
-
-def main():
-    print('Hello World!')
-
-
-if __name__ == '__main__':
-    main()
+print('Hello World!')
