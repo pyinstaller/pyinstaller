@@ -111,6 +111,10 @@ class SkipChecker(object):
             'libraries/test_enchant': is_win,
             }
 
+        # Test-cases failing for a known reason and the reason
+        self.KNOWN_TO_FAIL = {
+        }
+
         # Required Python modules for some tests.
         self.MODULES = {
             'basic/test_codecs': ['codecs'],
@@ -192,6 +196,13 @@ class SkipChecker(object):
             'import/test_eggs1': ['Unzipped eggs not yet implemented.'],
             }
 
+    def _check_known_fail(self, test_name):
+        """
+        Return error message (the reason) when a test is known to fail.
+        Return None otherwise.
+        """
+        return self.KNOWN_TO_FAIL.get(test_name, None)
+
     def _check_python_and_os(self, test_name):
         """
         Return True if test name is not in the list or Python or OS
@@ -229,7 +240,7 @@ class SkipChecker(object):
                     return dep
         return None
 
-    def check(self, test_name):
+    def check(self, test_name, run_known_to_fail):
         """
         Check test requirements if they are any specified.
 
@@ -237,6 +248,11 @@ class SkipChecker(object):
         True if all requirements are met. Then test case may
         be executed.
         """
+        if not run_known_to_fail:
+            reason = self._check_known_fail(test_name)
+            if reason:
+                return (False, 'Known to fail, reason: ' + reason)
+
         if not self._check_python_and_os(test_name):
             return (False, 'Required another Python version or OS.')
 
@@ -503,13 +519,15 @@ class BuildTestRunner(object):
 
 
 class GenericTestCase(unittest.TestCase):
-    def __init__(self, func_name, test_dir=None, with_crypto=False):
+    def __init__(self, func_name, test_dir=None, with_crypto=False,
+                 run_known_fails=False):
         """
         func_name   Name of test function to create.
         """
         if test_dir is not None:
             self.test_dir = test_dir
         self.test_name = self.test_dir + '/' + func_name
+        self.run_known_fails = run_known_fails
 
         # Create new test fuction. This has to be done before super().
         setattr(self, func_name, self._generic_test_function)
@@ -544,7 +562,7 @@ class GenericTestCase(unittest.TestCase):
     def _generic_test_function(self):
         # Skip test case if test requirement are not met.
         s = SkipChecker()
-        req_met, msg = s.check(self.test_name)
+        req_met, msg = s.check(self.test_name, self.run_known_fails)
         if not req_met:
             raise unittest.SkipTest(msg)
         # Create a build and test it.
@@ -570,9 +588,10 @@ class BasicTestCase(GenericTestCase):
 class CryptoTestCase(GenericTestCase):
     test_dir = 'crypto'
 
-    def __init__(self, func_name, with_crypto=False):
+    def __init__(self, func_name, with_crypto=False, run_known_fails=False):
         # Crypto tests MUST NOT run 'with' crypto enabled.
-        super(CryptoTestCase, self).__init__(func_name, with_crypto=False)
+        super(CryptoTestCase, self).__init__(func_name, with_crypto=False,
+                                             run_known_fails=run_known_fails)
 
 
 class ImportTestCase(GenericTestCase):
@@ -608,7 +627,8 @@ class TestCaseGenerator(object):
         tests.sort()
         return tests
 
-    def create_suite(self, test_types, with_crypto=False):
+    def create_suite(self, test_types, with_crypto=False,
+                     run_known_fails=False):
         """
         Create test suite and add test cases to it.
 
@@ -622,7 +642,8 @@ class TestCaseGenerator(object):
             tests = self._detect_tests(_type.test_dir)
             # Create test cases for a specific type.
             for test_name in tests:
-                suite.addTest(_type(test_name, with_crypto=with_crypto))
+                suite.addTest(_type(test_name, with_crypto=with_crypto,
+                                    run_known_fails=run_known_fails))
 
         return suite
 
@@ -719,6 +740,9 @@ def main():
                       action='store_true',
                       default=False,
                       help='Verbose mode (default: %default)')
+    parser.add_option('--known-fails', action='store_true',
+                      dest='run_known_fails',
+                      help='Run tests known to fail, too.')
     parser.add_option('--junitxml', action='store', default=None,
             metavar='FILE', help='Create junit-xml style test report file')
 
@@ -748,7 +772,8 @@ def main():
             for t in test_list:
                 test_dir = os.path.dirname(t)
                 test_script = os.path.basename(os.path.splitext(t)[0])
-                suite.addTest(GenericTestCase(test_script, test_dir=test_dir))
+                suite.addTest(GenericTestCase(test_script, test_dir=test_dir,
+                        run_known_fails=opts.run_known_fails))
                 print('Running test: ', (test_dir + '/' + test_script))
 
     # Run all tests or all interactive tests.
@@ -769,7 +794,8 @@ def main():
 
         # Create test suite.
         generator = TestCaseGenerator()
-        suite = generator.create_suite(test_classes, opts.all_with_crypto)
+        suite = generator.create_suite(test_classes, opts.all_with_crypto,
+                                       opts.run_known_fails)
 
     # Set global options
     global VERBOSE, REPORT, PYI_CONFIG
