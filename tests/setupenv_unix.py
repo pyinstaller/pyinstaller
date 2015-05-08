@@ -38,24 +38,24 @@ else:
 
 
 _PACKAGES = [
-    'keyring',
-    'six',
     'docutils',
+    'IPython',
     'jinja2',
+    'keyring',
     'MySQL-python',
     'numpy ',
     'PIL',
+    pycrypto,
     #'pyenchant',
     'pyodbc',
     'pytz',
     'requests',
-    'sphinx',
     'simplejson',
+    'six',
+    'sphinx',
     'SQLAlchemy',
     #'wxPython',
-    'IPython',
     'zope.interface',
-    pycrypto,
 ]
 
 
