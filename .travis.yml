@@ -27,8 +27,12 @@ before_install:
   - sudo apt-get install -y libespeak1  # required by pyttsx
 
 install:
+  # now install the package itself
   - pip install -e .
+
+  # install pure-python packages (requires PyInstaller to be installed)
   - python tests/setupenv_unix.py
+
 script:
   - cd tests
   - ./runtests.py
