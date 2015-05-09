@@ -56,36 +56,47 @@ else:
 
 
 _PACKAGES = {
-    'keyring': ['keyring'],
-    'docutils': ['docutils'],
-    'jinja2': ['jinja2'],
-    'requests': ['requests'],
-    'sphinx': ['sphinx'],
-    'pytz': ['pytz'],
-    'zope.interface': ['zope.interface'],
-    'IPython': ['IPython'],
     # 'modulename': 'pypi_name_or_url_or_path'
+    'docutils': ['docutils'],
+    'IPython': ['IPython'],
+    'jinja2': ['jinja2'],
+    'keyring': ['keyring'],
+    'markdown': ['markdown'],
     'MySQLdb': ['MySQL-python-*%s-py%s.exe' % (py_arch(), PYVER)],
     'numpy': ['numpy-unoptimized-*%s-py%s.exe' % (py_arch(), PYVER)],
     'PIL': ['PIL-*%s-py%s.exe' % (py_arch(), PYVER)],
-    'psycopg2': ['psycopg2-*%s-py%s.exe' % (py_arch(), PYVER)],
+    'pycparser': ['pycparser'],
     'PyCrypto': [pycrypto],
+    'psycopg2': ['psycopg2-*%s-py%s.exe' % (py_arch(), PYVER)],
+    'pyexcelerate': ['pyexcelerate'],
+    'pylint': ['pylint'],
     'pyodbc': ['pyodbc'],
+    'pyttsx': ['pyttsx'],
+    'pytz': ['pytz'],
+    'pyusb': ['pyusb'], # package usb
+    'qt4reactor': ['qt4reactor'],
+    'requests': ['requests'],
+    'scapy': ['scapy'],
     #'simplejson': ['simplejson'],
+    'sphinx': ['sphinx'],
     'sqlalchemy': ['SQLAlchemy-*%s-py%s.exe' % (py_arch(), PYVER)],
+    'twisted': ['twisted'],
     'wx': ['wxPython-common-*%s-py%s.exe' % (py_arch(), PYVER),
         'wxPython-2*%s-py%s.exe' % (py_arch(), PYVER)],
     # PyWin32 is installed on ShiningPanda hosting.
     'win32api': ['http://downloads.sourceforge.net/project/pywin32/pywin32/Build%%20217/pywin32-217.%s-py%s.exe' %
         (py_arch(), PYVER)],
+    'zope.interface': ['zope.interface'],
 }
 
 _PY_VERSION = {
+    'keyring': is_py2,
     'MySQLdb': is_py2,
     'numpy': is_py2,
     'PIL': is_py2,
     'psycopg2': is_py2,
     'simplejson': is_py2,
+    'twisted': is_py2,  # wheels are avalable for 2.7 only
     # Installers are available only for Python 2.6/2.7.
     'wx': is_py2,
 }
