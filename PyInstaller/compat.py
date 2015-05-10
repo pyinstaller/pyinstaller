@@ -42,6 +42,20 @@ is_freebsd = sys.platform.startswith('freebsd')
 # platform specific details for Mac in PyInstaller.
 is_unix = is_linux or is_solar or is_aix or is_freebsd
 
+# In Python 3 built-in function raw_input() was renamed to just 'input()'.
+try:
+    stdin_input = raw_input
+except NameError:
+    stdin_input = input
+
+
+
+# UserList class is moved to 'collections.UserList in Python 3.
+try:
+    from UserList import UserList
+except:
+    from collections import UserList
+
 
 # Correct extension ending: 'c' or 'o'
 if __debug__:
