@@ -386,7 +386,7 @@ def get_homebrew_path(formula = ''):
         logger.debug('Detected homebrew not installed')
     except subprocess.CalledProcessError:
         logger.debug('homebrew formula "%s" not installed' % formula)
-    return path
+    return str(path,'UTF-8') # subprocess returns BYTES not STR
 
 def get_qmake_path(version = ''):
     '''
@@ -706,3 +706,27 @@ def collect_data_files(package, include_py_files=False, subdir=None):
                 datas.append((source, dest))
 
     return datas
+
+# The following is refactored out of hook-sysconfig and hook-distutils,
+# both of which need to generate "datas" tuples for pyconfig.h and
+# Makefile, under the same conditions.
+
+# In virtualenv, _CONFIG_H and _MAKEFILE may have same or different
+# prefixes, depending on the version of virtualenv.
+# Try to find the correct one, which is assumed to be the longest one.
+def _find_prefix(filename):
+    if not compat.is_venv:
+        return sys.prefix
+    prefixes = [os.path.abspath(sys.prefix), compat.base_prefix]
+    possible_prefixes = []
+    for prefix in prefixes:
+        common = os.path.commonprefix([prefix, filename])
+        if common == prefix:
+            possible_prefixes.append(prefix)
+    possible_prefixes.sort(key=lambda p: len(p), reverse=True)
+    return possible_prefixes[0]
+
+def relpath_to_config_or_make(filename):
+    # Relative path in the dist directory.
+    prefix = _find_prefix(filename)
+    return os.path.relpath(os.path.dirname(filename), prefix)

@@ -18,24 +18,17 @@ import sys
 import sysconfig
 
 from PyInstaller.compat import base_prefix
-
+from PyInstaller.utils.hooks.hookutils import relpath_to_config_or_make
 
 _CONFIG_H = sysconfig.get_config_h_filename()
 _MAKEFILE = sysconfig.get_makefile_filename()
 
-
-def _relpath(filename):
-    # Relative path in the dist directory.
-    return os.path.relpath(os.path.dirname(filename), base_prefix)
-
 # Data files in PyInstaller hook format.
-datas = [(_CONFIG_H, _relpath(_CONFIG_H))]
-
+datas = [(_CONFIG_H, relpath_to_config_or_make(_CONFIG_H))]
 
 # The Makefile does not exist on all platforms, eg. on Windows
 if os.path.exists(_MAKEFILE):
-    datas.append((_MAKEFILE, _relpath(_MAKEFILE)))
-
+    datas.append((_MAKEFILE, relpath_to_config_or_make(_MAKEFILE)))
 
 def hook(mod):
     """
