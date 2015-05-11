@@ -22,7 +22,8 @@ from PyInstaller.hooks.hookutils import relpath_to_config_or_make
 try:
     get_makefile_filename = sysconfig.get_makefile_filename
 except AttributeError:
-    # In Python 2.7, get_makefile_filename was private
+    # Up to Python 2.7.8, get_makefile_filename was private, see
+    # http://bugs.python.org/issue22199
     get_makefile_filename = sysconfig._get_makefile_filename
 
 _CONFIG_H = sysconfig.get_config_h_filename()

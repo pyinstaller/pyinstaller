@@ -16,6 +16,8 @@ import distutils.sysconfig
 import marshal
 import os
 import sys
+# Module `sysconfig` is new in Python 2.7 and 3.2, so we can not
+# assume it' here while supporting older versions.
 
 from PyInstaller.compat import base_prefix
 from PyInstaller.hooks.hookutils import relpath_to_config_or_make
