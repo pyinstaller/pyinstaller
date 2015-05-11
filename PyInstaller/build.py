@@ -433,7 +433,7 @@ class Analysis(Target):
 
         # Normalize paths in pathex and make them absolute.
         if pathex:
-            self.pathex = [absnormpath(path) for path in pathex]
+            self.pathex += [absnormpath(path) for path in pathex]
 
 
         self.hiddenimports = hiddenimports or []
