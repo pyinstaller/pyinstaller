@@ -583,9 +583,21 @@ def remove_file_extension(filename):
 
 def get_module_file_attribute(package):
     """
-    Given a package name, return the value of __file__ attribute.
+    Get the absolute path of the module with the passed name.
 
-    In PyInstaller process we cannot import directly analyzed modules.
+    Since modules *cannot* be directly imported during analysis, this function
+    spawns a subprocess importing this module and returning the value of this
+    module's `__file__` attribute.
+
+    Parameters
+    ----------
+    module_name : str
+        Fully-qualified name of this module.
+
+    Returns
+    ----------
+    str
+        Absolute path of this module.
     """
     # Statement to return __file__ attribute of a package.
     __file__statement = """
@@ -593,6 +605,33 @@ import %s as p
 print(p.__file__)
 """
     return exec_statement(__file__statement % package)
+
+
+def get_pywin32_module_file_attribute(module_name):
+    """
+    Get the absolute path of the PyWin32 module with the passed name.
+
+    Parameters
+    ----------
+    module_name : str
+        Fully-qualified name of this module.
+
+    Returns
+    ----------
+    str
+        Absolute path of this module.
+
+    See Also
+    ----------
+    `PyInstaller.utils.win32.winutils.import_pywin32_module()`
+        For further details.
+    """
+    statement = """
+from PyInstaller.utils.win32 import winutils
+module = winutils.import_pywin32_module('%s')
+print(module.__file__)
+    """
+    return exec_statement(statement % module_name)
 
 
 def get_package_paths(package):

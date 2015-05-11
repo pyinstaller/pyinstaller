@@ -41,7 +41,8 @@ from PyInstaller.utils import git
 # Fail hard if Python on Windows does not have pywin32 installed.
 if is_win:
     try:
-        import pywintypes  # One module from pywin32.
+        from PyInstaller.utils.win32 import winutils
+        pywintypes = winutils.import_pywin32_module('pywintypes')
     except ImportError:
         raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
                          'Please install PyWin32.\n'
