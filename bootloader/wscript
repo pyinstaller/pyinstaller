@@ -293,7 +293,7 @@ def configure(conf):
         conf.env.append_value('CCFLAGS', '/EHa')
     
     # Compile with 64bit gcc 32bit binaries or vice versa.
-    if conf.env.CC_NAME == 'gcc':
+    if conf.env.CC_NAME == 'gcc' and platform.machine() != 'sw_64':
         if myarch == '32bit' and conf.check_cc(ccflags='-m32', msg='Checking for flags -m32'):
             conf.env.append_value('CCFLAGS', '-m32')
         elif myarch == '64bit':
@@ -318,7 +318,8 @@ def configure(conf):
         else:
             conf.env.append_value('CCFLAGS', '-mmacosx-version-min=10.6')
 
-        
+    if platform.machine() == 'sw_64':
+        conf.env.append_value('CCDEFINES', '__x86_64__')
 
        
     # On linux link only with needed libraries.
