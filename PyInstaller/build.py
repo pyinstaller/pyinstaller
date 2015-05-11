@@ -1655,7 +1655,7 @@ class TOC(UserList.UserList):
             raise TypeError("Expected tuple, not %s." % type(entry).__name__)
         name, path, typecode = entry
         if typecode in ["BINARY", "DATA"]:
-            # Normalize the case for binary files only (to avoid duplicates
+            # Normalize the case for binary files and data files only (to avoid duplicates
             # for different cases under Windows). We can't do that for
             # Python files because the import semantic (even at runtime)
             # depends on the case.
