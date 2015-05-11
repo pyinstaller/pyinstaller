@@ -186,6 +186,10 @@ def set_arch_cflags(ctx):
         # We use SEH exceptions in winmain.c; make sure they are activated.
         ctx.env.append_value('CFLAGS', '/EHa')
 
+    elif machine() == 'sw_64':
+        # The gcc has no '-m64' option under sw64 machine, but the
+        # __x86_64__ macro needs to be defined
+        conf.env.append_value('CCDEFINES', '__x86_64__')
     # This ensures proper compilation with 64bit gcc and 32bit Python or vice versa.
     else:
         # Option -m32/-m64 has to be passed to cflags and linkflages.
