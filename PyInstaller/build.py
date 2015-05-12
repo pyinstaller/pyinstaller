@@ -840,7 +840,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     if fnm.lower().endswith(".manifest"):
         manifest = winmanifest.Manifest()
         manifest.filename = fnm
-        with file(fnm, "rb") as f:
+        with open(fnm, "rb") as f:
             manifest.parse_string(f.read())
         if manifest.publicKeyToken:
             logger.info("Changing %s into private assembly", os.path.basename(fnm))
