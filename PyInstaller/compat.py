@@ -79,10 +79,6 @@ _OLD_OPTIONS = [
     ]
 
 
-# Options for python interpreter when invoked in a subprocess.
-_PYOPTS = __debug__ and '-O' or ''
-
-
 # In a virtual environment created by virtualenv (github.com/pypa/virtualenv)
 # there exists sys.real_prefix with the path to the base Python
 # installation from which the virtual environment was created. This is true regardless of
@@ -273,9 +269,6 @@ def __wrap_python(args, kwargs):
         mapping = {'32bit': '-i386', '64bit': '-x86_64'}
         py_prefix = ['arch', mapping[architecture()]]
         cmdargs = py_prefix + cmdargs
-
-    if _PYOPTS:
-        cmdargs.append(_PYOPTS)
 
     cmdargs.extend(args)
     return cmdargs, kwargs
