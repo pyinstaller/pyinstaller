@@ -264,6 +264,12 @@ OS, or for a dfferent version of Python,
 you run |PyInstaller| on that OS, under that version of Python.
 
 
+.. Note::
+
+   Don't assume that your 64-bit based Python will generate
+   executables that work on 32-bit systems.
+
+
 Analysis: Finding the Files Your Program Needs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -360,6 +366,12 @@ One disadvantage is that any related files
 such as README must be distributed separately.
 Another is that the single executable is a little slower to start up than
 the executable in one folder.
+
+.. Note::
+
+  Before bundling your project to one file, make sure it works fine
+  when bundled to one folder. `When Things Go Wrong`_ it's *much* easier to
+  find out what actually went wrong if you bundled to one folder.
 
 
 How the One-Folder Program Works
@@ -534,16 +546,16 @@ General Options
 --distpath=path_to_executable
 	Specify where to put the bundled app.
 	The default is a ``dist`` folder in
-	the same folder as the first script.
+	the current working directory.
 
 --specpath=path_to_spec_file
 	Specify where to put the *name* `.spec` file.
-	The default is the same folder as the first script.
+	The default is the current working directory.
 
 --workpath=path_to_work_files
     Specify where to put the |PyInstaller| log and work files for this run.
     The default path is a ``build`` folder
-    in the same folder as the first script or spec.
+    in the current working directory.
 
 --clean
 	Tell |PyInstaller| to erase all log and work files before it starts.
@@ -728,7 +740,6 @@ Setting a Custom Icon
 The minimal plist provided by |PyInstaller| designates the icon file for the app
 as the  ``icon-windowed.icns`` file in ``Resources``.
 This is the |PyInstaller| logo in icns format.
-Support for the ``--icon-file`` option is promised for the future.
 For now you can apply your own icon after the app is built in several ways:
 
 * Prepare another ``.icns`` file with your own graphic,
