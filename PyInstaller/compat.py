@@ -80,7 +80,11 @@ _OLD_OPTIONS = [
 
 
 # Options for python interpreter when invoked in a subprocess.
-_PYOPTS = __debug__ and '-O' or ''
+if __debug__:
+    # Python started *without* -O
+    _PYOPTS = ''
+else:
+    _PYOPTS = '-O'
 
 
 # In a virtual environment created by virtualenv (github.com/pypa/virtualenv)
