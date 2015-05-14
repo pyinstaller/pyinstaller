@@ -302,6 +302,16 @@ class BuildTestRunner(object):
         self.test_name = test_name.replace('\\', '/')
         self.verbose = verbose
         self.test_dir, self.test_file = os.path.split(self.test_name)
+        runtests_basedir = compat.getenv('PYINSTALLER_RUNTESTS_WORKDIR')
+        if runtests_basedir:
+            runtests_basedir = os.path.join(runtests_basedir, self.test_dir)
+            if not os.path.exists(runtests_basedir):
+                os.makedirs(runtests_basedir)
+        else:
+            runtests_basedir = os.getcwd()
+        self._specdir = runtests_basedir
+        self._distdir = os.path.join(runtests_basedir, 'dist')
+        self._builddir = os.path.join(runtests_basedir, 'build')
         # For junit xml report some behavior is changed.
         # Especially redirecting sys.stdout.
         self.report = report
@@ -338,7 +348,7 @@ class BuildTestRunner(object):
         """
         assert test.startswith('test_')
         name = test[5:] + '_?'
-        parent_dir = 'dist'
+        parent_dir = self._distdir
         patterns = [
             # one-file deploy pattern
             os.path.join(parent_dir, test+'.exe'),
@@ -404,9 +414,10 @@ class BuildTestRunner(object):
 
         Return True if build succeded False otherwise.
         """
-        OPTS = ['--debug', '--noupx', '--specpath', os.getcwd(), '--distpath',
-                os.path.join(os.getcwd(), 'dist'), '--workpath',
-                os.path.join(os.getcwd(), 'build')]
+        OPTS = ['--debug', '--noupx',
+                '--specpath', self._specdir,
+                '--distpath', self._distdir,
+                '--workpath', self._builddir]
 
         if self.verbose:
             OPTS.extend(['--debug', '--log-level=INFO'])
