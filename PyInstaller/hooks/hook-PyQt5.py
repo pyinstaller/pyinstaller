@@ -23,7 +23,7 @@ if is_win:
 
 
 # In the new consolidated mode any PyQt depends on _qt
-hiddenimports = ['sip']
+hiddenimports = ['sip', 'PyQt5.Qt']
 
 
 # For Qt to work on Mac OS X it is necessary to include directory qt_menu.nib.
