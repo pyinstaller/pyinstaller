@@ -28,7 +28,7 @@ class CTOC(object):
 
     When written to disk, it is easily read from C.
     """
-    ENTRYSTRUCT = '!iiiibc'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    ENTRYSTRUCT = '!iiiibb'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
 
     def __init__(self):
         self.data = []
@@ -50,7 +50,7 @@ class CTOC(object):
             (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
             p = p + nmlen
             # nm may have up to 15 bytes of padding
-            nm = nm.rstrip('\0')
+            nm = nm.rstrip(b'\0')
             nm = nm.decode('utf-8')
             self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
@@ -70,13 +70,14 @@ class CTOC(object):
             # align to 16 byte boundary so xplatform C can read
             toclen = nmlen + entrylen
             if toclen % 16 == 0:
-                pad = '\0'
+                pad = b'\0'
             else:
                 padlen = 16 - (toclen % 16)
-                pad = '\0' * padlen
+                pad = b'\0' * padlen
                 nmlen = nmlen + padlen
             rslt.append(struct.pack(self.ENTRYSTRUCT + '%is' % nmlen,
-                            nmlen + entrylen, dpos, dlen, ulen, flag, typcd, nm + pad))
+                                    nmlen + entrylen, dpos, dlen, ulen, flag,
+                                    ord(typcd), nm + pad))
 
         return ''.join(rslt)
 
