@@ -202,7 +202,8 @@ def UpdateResources(dstpath, data, type_, names=None, languages=None):
             for language in res[type_][name]:
                 logger.info("Updating resource type %s name %s language %s",
                             type_, name, language)
-                win32api.UpdateResource(hdst, type_, name, bytes(data, 'UTF-8'), language)
+                win32api.UpdateResource(hdst, type_, name,
+                                        data.decode('UTF-8'), language)
     win32api.EndUpdateResource(hdst, 0)
 
 
