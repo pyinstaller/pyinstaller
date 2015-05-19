@@ -29,6 +29,7 @@ class CTOC(object):
     When written to disk, it is easily read from C.
     """
     ENTRYSTRUCT = '!iiiibb'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    ENTRYLEN = struct.calcsize(ENTRYSTRUCT)
 
     def __init__(self):
         self.data = []
@@ -39,14 +40,13 @@ class CTOC(object):
 
         S is a binary string.
         """
-        entrylen = struct.calcsize(self.ENTRYSTRUCT)
         p = 0
 
         while p < len(s):
             (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT,
-                                                        s[p:p + entrylen])
-            nmlen = slen - entrylen
-            p = p + entrylen
+                                                        s[p:p + self.ENTRYLEN])
+            nmlen = slen - self.ENTRYLEN
+            p = p + self.ENTRYLEN
             (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
             p = p + nmlen
             # nm may have up to 15 bytes of padding
@@ -58,7 +58,6 @@ class CTOC(object):
         """
         Return self as a binary string.
         """
-        entrylen = struct.calcsize(self.ENTRYSTRUCT)
         rslt = []
         for (dpos, dlen, ulen, flag, typcd, nm) in self.data:
             # Encode all names using UTF-8. This should be save as
@@ -68,7 +67,7 @@ class CTOC(object):
             nm = nm.encode('utf-8')
             nmlen = len(nm) + 1       # add 1 for a '\0'
             # align to 16 byte boundary so xplatform C can read
-            toclen = nmlen + entrylen
+            toclen = nmlen + self.ENTRYLEN
             if toclen % 16 == 0:
                 pad = b'\0'
             else:
@@ -76,8 +75,8 @@ class CTOC(object):
                 pad = b'\0' * padlen
                 nmlen = nmlen + padlen
             rslt.append(struct.pack(self.ENTRYSTRUCT + '%is' % nmlen,
-                                    nmlen + entrylen, dpos, dlen, ulen, flag,
-                                    ord(typcd), nm + pad))
+                                    nmlen + self.ENTRYLEN, dpos, dlen, ulen,
+                                    flag, ord(typcd), nm + pad))
 
         return ''.join(rslt)
 
@@ -141,6 +140,22 @@ class CArchive(pyi_archive.Archive):
     TOCTMPLT = CTOC
     LEVEL = 9
 
+    # Cookie - holds some information for the bootloader. C struct format
+    # definition. '!' at the beginning means network byte order.
+    # C struct looks like:
+    #
+    #   typedef struct _cookie {
+    #       char magic[8]; /* 'MEI\014\013\012\013\016' */
+    #       int  len;      /* len of entire package */
+    #       int  TOC;      /* pos (rel to start) of TableOfContents */
+    #       int  TOClen;   /* length of TableOfContents */
+    #       int  pyvers;   /* new in v4 */
+    #       char pylibname[64];    /* Filename of Python dynamic library. */
+    #   } COOKIE;
+    #
+    _cookie_format = '!8siiii64s'
+    _cookie_size = struct.calcsize(_cookie_format)
+
     def __init__(self, archive_path=None, start=0, length=0, pylib_name=''):
         """
         Constructor.
@@ -153,21 +168,6 @@ class CArchive(pyi_archive.Archive):
         self.length = length
         self._pylib_name = pylib_name
 
-        # Cookie - holds some information for the bootloader. C struct format
-        # definition. '!' at the beginning means network byte order.
-        # C struct looks like:
-        #
-        #   typedef struct _cookie {
-        #       char magic[8]; /* 'MEI\014\013\012\013\016' */
-        #       int  len;      /* len of entire package */
-        #       int  TOC;      /* pos (rel to start) of TableOfContents */
-        #       int  TOClen;   /* length of TableOfContents */
-        #       int  pyvers;   /* new in v4 */
-        #       char pylibname[64];    /* Filename of Python dynamic library. */
-        #   } COOKIE;
-        #
-        self._cookie_format = '!8siiii64s'
-        self._cookie_size = struct.calcsize(self._cookie_format)
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
         self.pkg_start = 0
