@@ -50,11 +50,8 @@ class CTOC(object):
             (nm,) = struct.unpack(repr(nmlen) + 's', s[p:p + nmlen])
             p = p + nmlen
             # nm may have up to 15 bytes of padding
-            pos = nm.find('\0')
-            if pos < 0:
-                self.data.append((dpos, dlen, ulen, flag, typcd, nm))
-            else:
-                self.data.append((dpos, dlen, ulen, flag, typcd, nm[:pos]))
+            nm = nm.rstrip('\0')
+            self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
     def tobinary(self):
         """
