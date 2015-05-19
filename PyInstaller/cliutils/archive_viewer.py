@@ -74,7 +74,11 @@ def main(name, brief, debug, rec_debug, **unused_options):
             if not arg:
                 arg = raw_input('open name? ')
             arg = arg.strip()
-            arch = get_archive(arg)
+            try:
+                arch = get_archive(arg)
+            except RuntimeError as e:
+                print(e)
+                continue
             if arch is None:
                 print(arg, "not found")
                 continue
@@ -130,7 +134,7 @@ def get_archive(nm):
         return parent.openEmbedded(nm)
     except KeyError:
         return None
-    except (ValueError, RuntimeError):
+    except ValueError:
         ndx = parent.toc.find(nm)
         dpos, dlen, ulen, flag, typcd, nm = parent.toc[ndx]
         x, data = parent.extract(ndx)

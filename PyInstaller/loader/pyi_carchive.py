@@ -406,6 +406,9 @@ class CArchive(pyi_archive.Archive):
             raise KeyError("Member '%s' not found in %s" % (name, self.path))
         (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
 
+        if typcd not in "zZ":
+            raise RuntimeError('%s is not an archive' % name)
+
         if flag:
             raise ValueError('Cannot open compressed archive %s in place' %
                     name)
