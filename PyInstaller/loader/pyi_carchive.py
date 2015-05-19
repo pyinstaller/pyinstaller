@@ -51,6 +51,7 @@ class CTOC(object):
             p = p + nmlen
             # nm may have up to 15 bytes of padding
             nm = nm.rstrip('\0')
+            nm = nm.decode('utf-8')
             self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
     def tobinary(self):
