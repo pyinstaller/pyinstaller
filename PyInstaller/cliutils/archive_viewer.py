@@ -68,13 +68,17 @@ def main(name, brief, debug, rec_debug, **unused_options):
                 arch = stack[-1][1]
                 arch.lib.close()
                 del stack[-1]
-            nm, arch = stack[-1]
-            show(nm, arch)
+            name, arch = stack[-1]
+            show(name, arch)
         elif cmd == 'O':
             if not arg:
                 arg = raw_input('open name? ')
             arg = arg.strip()
-            arch = get_archive(arg)
+            try:
+                arch = get_archive(arg)
+            except pyi_carchive.NotAnArchiveError as e:
+                print(e)
+                continue
             if arch is None:
                 print(arg, "not found")
                 continue
@@ -88,11 +92,11 @@ def main(name, brief, debug, rec_debug, **unused_options):
             if data is None:
                 print("Not found")
                 continue
-            fnm = raw_input('to filename? ')
-            if not fnm:
+            filename = raw_input('to filename? ')
+            if not filename:
                 print(repr(data))
             else:
-                open(fnm, 'wb').write(data)
+                open(filename, 'wb').write(data)
         elif cmd == 'Q':
             break
         else:
@@ -102,61 +106,61 @@ def main(name, brief, debug, rec_debug, **unused_options):
 
 def do_cleanup():
     global stack, cleanup
-    for (nm, arch) in stack:
+    for (name, arch) in stack:
         arch.lib.close()
     stack = []
-    for fnm in cleanup:
+    for filename in cleanup:
         try:
-            os.remove(fnm)
+            os.remove(filename)
         except Exception, e:
-            print("couldn't delete", fnm, e.args)
+            print("couldn't delete", filename, e.args)
     cleanup = []
 
 
 def usage():
     print("U: go Up one level")
-    print("O <nm>: open embedded archive nm")
-    print("X <nm>: extract nm")
+    print("O <name>: open embedded archive name")
+    print("X <name>: extract name")
     print("Q: quit")
 
 
-def get_archive(nm):
+def get_archive(name):
     if not stack:
-        if nm[-4:].lower() == '.pyz':
-            return ZlibArchive(nm)
-        return pyi_carchive.CArchive(nm)
+        if name[-4:].lower() == '.pyz':
+            return ZlibArchive(name)
+        return pyi_carchive.CArchive(name)
     parent = stack[-1][1]
     try:
-        return parent.openEmbedded(nm)
+        return parent.openEmbedded(name)
     except KeyError:
         return None
     except (ValueError, RuntimeError):
-        ndx = parent.toc.find(nm)
-        dpos, dlen, ulen, flag, typcd, nm = parent.toc[ndx]
+        ndx = parent.toc.find(name)
+        dpos, dlen, ulen, flag, typcd, name = parent.toc[ndx]
         x, data = parent.extract(ndx)
-        tfnm = tempfile.mktemp()
-        cleanup.append(tfnm)
-        open(tfnm, 'wb').write(data)
+        tempfilename = tempfile.mktemp()
+        cleanup.append(tempfilename)
+        open(tempfilename, 'wb').write(data)
         if typcd == 'z':
-            return ZlibArchive(tfnm)
+            return ZlibArchive(tempfilename)
         else:
-            return pyi_carchive.CArchive(tfnm)
+            return pyi_carchive.CArchive(tempfilename)
 
 
-def get_data(nm, arch):
+def get_data(name, arch):
     if isinstance(arch.toc, dict):
-        (ispkg, pos, lngth) = arch.toc.get(nm, (0, None, 0))
+        (ispkg, pos, length) = arch.toc.get(name, (0, None, 0))
         if pos is None:
             return None
         arch.lib.seek(arch.start + pos)
-        return zlib.decompress(arch.lib.read(lngth))
-    ndx = arch.toc.find(nm)
-    dpos, dlen, ulen, flag, typcd, nm = arch.toc[ndx]
+        return zlib.decompress(arch.lib.read(length))
+    ndx = arch.toc.find(name)
+    dpos, dlen, ulen, flag, typcd, name = arch.toc[ndx]
     x, data = arch.extract(ndx)
     return data
 
 
-def show(nm, arch):
+def show(name, arch):
     if isinstance(arch.toc, dict):
         print(" Name: (ispkg, pos, len)")
         toc = arch.toc

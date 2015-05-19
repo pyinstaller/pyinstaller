@@ -21,6 +21,7 @@ import os
 
 import pyi_archive
 
+class NotAnArchiveError(Exception): pass
 
 class CTOC(object):
     """
@@ -28,7 +29,8 @@ class CTOC(object):
 
     When written to disk, it is easily read from C.
     """
-    ENTRYSTRUCT = '!iiiibc'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    ENTRYSTRUCT = '!iiiiBB'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    ENTRYLEN = struct.calcsize(ENTRYSTRUCT)
 
     def __init__(self):
         self.data = []
@@ -39,54 +41,44 @@ class CTOC(object):
 
         S is a binary string.
         """
-        entrylen = struct.calcsize(self.ENTRYSTRUCT)
         p = 0
 
         while p < len(s):
             (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT,
-                                                        s[p:p + entrylen])
-            nmlen = slen - entrylen
-            p = p + entrylen
-            (nm,) = struct.unpack(repr(nmlen) + 's', s[p:p + nmlen])
+                                                        s[p:p + self.ENTRYLEN])
+            nmlen = slen - self.ENTRYLEN
+            p = p + self.ENTRYLEN
+            (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
             p = p + nmlen
-            # FIXME Why are here two versions? Could be one eliminated?
-            # version 4
-            # self.data.append((dpos, dlen, ulen, flag, typcd, nm[:-1]))
-            # version 5
             # nm may have up to 15 bytes of padding
-            pos = nm.find('\0')
-            if pos < 0:
-                self.data.append((dpos, dlen, ulen, flag, typcd, nm))
-            else:
-                self.data.append((dpos, dlen, ulen, flag, typcd, nm[:pos]))
-            #end version 5
+            nm = nm.rstrip(b'\0')
+            nm = nm.decode('utf-8')
+            typcd = chr(typcd)
+            self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
     def tobinary(self):
         """
         Return self as a binary string.
         """
-        entrylen = struct.calcsize(self.ENTRYSTRUCT)
         rslt = []
         for (dpos, dlen, ulen, flag, typcd, nm) in self.data:
-            if isinstance(nm, unicode):
-                nm = nm.encode('utf-8')
+            # Encode all names using UTF-8. This should be save as
+            # standard python modules only contain ascii-characters
+            # (and standard shared libraries should have the same) and
+            # thus the C-code still can handle this correctly.
+            nm = nm.encode('utf-8')
             nmlen = len(nm) + 1       # add 1 for a '\0'
-            # FIXME Why are here two versions? Is it safe to remove version 4?
-            # version 4
-            # rslt.append(struct.pack(self.ENTRYSTRUCT+`nmlen`+'s',
-            #   nmlen+entrylen, dpos, dlen, ulen, flag, typcd, nm+'\0'))
-            # version 5
-            #   align to 16 byte boundary so xplatform C can read
-            toclen = nmlen + entrylen
+            # align to 16 byte boundary so xplatform C can read
+            toclen = nmlen + self.ENTRYLEN
             if toclen % 16 == 0:
-                pad = '\0'
+                pad = b'\0'
             else:
                 padlen = 16 - (toclen % 16)
-                pad = '\0' * padlen
+                pad = b'\0' * padlen
                 nmlen = nmlen + padlen
-            rslt.append(struct.pack(self.ENTRYSTRUCT + repr(nmlen) + 's',
-                            nmlen + entrylen, dpos, dlen, ulen, flag, typcd, nm + pad))
-            # end version 5
+            rslt.append(struct.pack(self.ENTRYSTRUCT + '%is' % nmlen,
+                                    nmlen + self.ENTRYLEN, dpos, dlen, ulen,
+                                    flag, ord(typcd), nm + pad))
 
         return ''.join(rslt)
 
@@ -150,6 +142,22 @@ class CArchive(pyi_archive.Archive):
     TOCTMPLT = CTOC
     LEVEL = 9
 
+    # Cookie - holds some information for the bootloader. C struct format
+    # definition. '!' at the beginning means network byte order.
+    # C struct looks like:
+    #
+    #   typedef struct _cookie {
+    #       char magic[8]; /* 'MEI\014\013\012\013\016' */
+    #       int  len;      /* len of entire package */
+    #       int  TOC;      /* pos (rel to start) of TableOfContents */
+    #       int  TOClen;   /* length of TableOfContents */
+    #       int  pyvers;   /* new in v4 */
+    #       char pylibname[64];    /* Filename of Python dynamic library. */
+    #   } COOKIE;
+    #
+    _cookie_format = '!8siiii64s'
+    _cookie_size = struct.calcsize(_cookie_format)
+
     def __init__(self, archive_path=None, start=0, length=0, pylib_name=''):
         """
         Constructor.
@@ -162,21 +170,6 @@ class CArchive(pyi_archive.Archive):
         self.length = length
         self._pylib_name = pylib_name
 
-        # Cookie - holds some information for the bootloader. C struct format
-        # definition. '!' at the beginning means network byte order.
-        # C struct looks like:
-        #
-        #   typedef struct _cookie {
-        #       char magic[8]; /* 'MEI\014\013\012\013\016' */
-        #       int  len;      /* len of entire package */
-        #       int  TOC;      /* pos (rel to start) of TableOfContents */
-        #       int  TOClen;   /* length of TableOfContents */
-        #       int  pyvers;   /* new in v4 */
-        #       char pylibname[64];    /* Filename of Python dynamic library. */
-        #   } COOKIE;
-        #
-        self._cookie_format = '!8siiii64s'
-        self._cookie_size = struct.calcsize(self._cookie_format)
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
         self.pkg_start = 0
@@ -405,6 +398,9 @@ class CArchive(pyi_archive.Archive):
         if ndx == -1:
             raise KeyError("Member '%s' not found in %s" % (name, self.path))
         (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
+
+        if typcd not in "zZ":
+            raise NotAnArchiveError('%s is not an archive' % name)
 
         if flag:
             raise ValueError('Cannot open compressed archive %s in place' %
