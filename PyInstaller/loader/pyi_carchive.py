@@ -49,17 +49,12 @@ class CTOC(object):
             p = p + entrylen
             (nm,) = struct.unpack(repr(nmlen) + 's', s[p:p + nmlen])
             p = p + nmlen
-            # FIXME Why are here two versions? Could be one eliminated?
-            # version 4
-            # self.data.append((dpos, dlen, ulen, flag, typcd, nm[:-1]))
-            # version 5
             # nm may have up to 15 bytes of padding
             pos = nm.find('\0')
             if pos < 0:
                 self.data.append((dpos, dlen, ulen, flag, typcd, nm))
             else:
                 self.data.append((dpos, dlen, ulen, flag, typcd, nm[:pos]))
-            #end version 5
 
     def tobinary(self):
         """
@@ -71,12 +66,7 @@ class CTOC(object):
             if isinstance(nm, unicode):
                 nm = nm.encode('utf-8')
             nmlen = len(nm) + 1       # add 1 for a '\0'
-            # FIXME Why are here two versions? Is it safe to remove version 4?
-            # version 4
-            # rslt.append(struct.pack(self.ENTRYSTRUCT+`nmlen`+'s',
-            #   nmlen+entrylen, dpos, dlen, ulen, flag, typcd, nm+'\0'))
-            # version 5
-            #   align to 16 byte boundary so xplatform C can read
+            # align to 16 byte boundary so xplatform C can read
             toclen = nmlen + entrylen
             if toclen % 16 == 0:
                 pad = '\0'
@@ -86,7 +76,6 @@ class CTOC(object):
                 nmlen = nmlen + padlen
             rslt.append(struct.pack(self.ENTRYSTRUCT + repr(nmlen) + 's',
                             nmlen + entrylen, dpos, dlen, ulen, flag, typcd, nm + pad))
-            # end version 5
 
         return ''.join(rslt)
 
