@@ -76,7 +76,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
             arg = arg.strip()
             try:
                 arch = get_archive(arg)
-            except RuntimeError as e:
+            except pyi_carchive.NotAnArchiveError as e:
                 print(e)
                 continue
             if arch is None:
@@ -134,7 +134,7 @@ def get_archive(name):
         return parent.openEmbedded(name)
     except KeyError:
         return None
-    except ValueError:
+    except (ValueError, RuntimeError):
         ndx = parent.toc.find(name)
         dpos, dlen, ulen, flag, typcd, name = parent.toc[ndx]
         x, data = parent.extract(ndx)

@@ -21,6 +21,7 @@ import os
 
 import pyi_archive
 
+class NotAnArchiveError(Exception): pass
 
 class CTOC(object):
     """
@@ -399,7 +400,7 @@ class CArchive(pyi_archive.Archive):
         (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
 
         if typcd not in "zZ":
-            raise RuntimeError('%s is not an archive' % name)
+            raise NotAnArchiveError('%s is not an archive' % name)
 
         if flag:
             raise ValueError('Cannot open compressed archive %s in place' %
