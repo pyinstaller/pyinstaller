@@ -47,7 +47,7 @@ class CTOC(object):
                                                         s[p:p + entrylen])
             nmlen = slen - entrylen
             p = p + entrylen
-            (nm,) = struct.unpack(repr(nmlen) + 's', s[p:p + nmlen])
+            (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
             p = p + nmlen
             # nm may have up to 15 bytes of padding
             nm = nm.rstrip('\0')
@@ -75,7 +75,7 @@ class CTOC(object):
                 padlen = 16 - (toclen % 16)
                 pad = '\0' * padlen
                 nmlen = nmlen + padlen
-            rslt.append(struct.pack(self.ENTRYSTRUCT + repr(nmlen) + 's',
+            rslt.append(struct.pack(self.ENTRYSTRUCT + '%is' % nmlen,
                             nmlen + entrylen, dpos, dlen, ulen, flag, typcd, nm + pad))
 
         return ''.join(rslt)
