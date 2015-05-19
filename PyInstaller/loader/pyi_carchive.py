@@ -63,8 +63,11 @@ class CTOC(object):
         entrylen = struct.calcsize(self.ENTRYSTRUCT)
         rslt = []
         for (dpos, dlen, ulen, flag, typcd, nm) in self.data:
-            if isinstance(nm, unicode):
-                nm = nm.encode('utf-8')
+            # Encode all names using UTF-8. This should be save as
+            # standard python modules only contain ascii-characters
+            # (and standard shared libraries should have the same) and
+            # thus the C-code still can handle this correctly.
+            nm = nm.encode('utf-8')
             nmlen = len(nm) + 1       # add 1 for a '\0'
             # align to 16 byte boundary so xplatform C can read
             toclen = nmlen + entrylen
