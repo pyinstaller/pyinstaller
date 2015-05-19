@@ -28,7 +28,7 @@ class CTOC(object):
 
     When written to disk, it is easily read from C.
     """
-    ENTRYSTRUCT = '!iiiibb'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    ENTRYSTRUCT = '!iiiiBB'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
     ENTRYLEN = struct.calcsize(ENTRYSTRUCT)
 
     def __init__(self):
