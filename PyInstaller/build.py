@@ -796,7 +796,15 @@ class Analysis(Target):
             oldstuff = None
 
         # Collect the work-product of this run
-        newstuff = tuple([getattr(self, g[0]) for g in self.GUTS])
+        # Discard self.pure['code'] and only save self.pure['toc']
+        newstuff = []
+        for g in self.GUTS:
+            gutstoc = getattr(self, g[0])
+            if g[0] == 'pure':
+                gutstoc = gutstoc['toc']
+            newstuff.append(gutstoc)
+        newstuff = tuple(newstuff)
+
         # If there was no previous, or if it is different, save the new
         if oldstuff != newstuff:
             # Save all the new stuff to avoid regenerating it later, maybe
