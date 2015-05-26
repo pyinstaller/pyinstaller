@@ -41,6 +41,7 @@
  */
 void pyi_path_dirname(char *result, const char *path)
 {
+// FIXME: This should be somthink like HAVE_DIRNAME
 #ifdef _WIN32
     size_t len = 0;
     char *match = NULL;
@@ -75,6 +76,7 @@ void pyi_path_dirname(char *result, const char *path)
  */
 void pyi_path_basename(char *result, const char *path)
 {
+// FIXME: This should be somthink like HAVE_BASENAME
 #ifdef _WIN32
   /* Search for the last directory separator in PATH.  */
   char *basename = strrchr (path, '\\');
@@ -95,6 +97,8 @@ void pyi_path_basename(char *result, const char *path)
  * Join two path components.
  * Joined path is returned without slash at the end.
  */
+// FIXME: Need to test for absolut path2 -- or mark this function as
+//        only for an relative path2
 void pyi_path_join(char *result, const char *path1, const char *path2)
 { 
     size_t len = 0;
@@ -227,6 +231,9 @@ int pyi_path_executable(char *execfile, const char *appname)
      * for LD_LIBRARY_PATH variavle. Relative LD_LIBRARY_PATH is a security
      * problem.
      */
+    // FIXME: Use pyi_path_normalize (which keeps symlinks) instead of
+    //        pyi_path_fullpath (which removes symlinks) to solve
+    //        issue #1208.
     if(pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {
         VS("LOADER: executable is %s\n", execfile);
         return -1;
