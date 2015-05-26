@@ -77,7 +77,7 @@ void pyi_path_basename(char *result, char *path)
 #else
     char *base = NULL;
     base = (char *) basename(path);
-    strcpy(result, path);
+    strcpy(result, base);
 #endif
 }
 
