@@ -118,6 +118,7 @@ void pyi_global_printf(const char *fmt, ...);
 
 #ifdef _WIN32
     #define PYI_PATHSEP    ';'
+    #define PYI_CURDIR     '.'
     #define PYI_SEP        '\\'
     /*
      * For some functions like strcat() we need to pass
@@ -127,6 +128,7 @@ void pyi_global_printf(const char *fmt, ...);
     #define PYI_PATHSEPSTR ";"
 #else
     #define PYI_PATHSEP    ':'
+    #define PYI_CURDIR     '.'
     #define PYI_SEP        '/'
     #define PYI_SEPSTR     "/"
     #define PYI_PATHSEPSTR ":"

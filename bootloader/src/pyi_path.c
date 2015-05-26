@@ -56,6 +56,10 @@ void pyi_path_dirname(char *result, const char *path)
     match = strrchr(result, PYI_SEP);
     if (match != NULL) {
         *match = PYI_NULLCHAR;
+    } else {
+      // No dir separator found, so no dir-part, so use current dir
+      *result = PYI_CURDIR;
+      result[1] = PYI_NULLCHAR;
     }
 #else
     char *dirpart = NULL;
