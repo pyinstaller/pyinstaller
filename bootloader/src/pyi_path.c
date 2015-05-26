@@ -77,7 +77,7 @@ void pyi_path_basename(char *result, const char *path)
 #else
     char *base = NULL;
     base = (char *) basename((char *) path);  // _XOPEN_SOURCE - no 'const'.
-    strcpy(result, path);
+    strcpy(result, base);
 #endif
 }
 
