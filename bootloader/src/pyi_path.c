@@ -39,9 +39,9 @@
  * Giving a fullpath, it will copy to the buffer a string
  * which contains the path without last component.
  */
-// TODO use for unix function dirname()
 void pyi_path_dirname(char *result, const char *path)
 {
+#ifdef _WIN32
     size_t len = 0;
     char *match = NULL;
 
@@ -57,6 +57,11 @@ void pyi_path_dirname(char *result, const char *path)
     if (match != NULL) {
         *match = PYI_NULLCHAR;
     }
+#else
+    char *dirpart = NULL;
+    dirpart = (char *) dirname((char *) path);  // _XOPEN_SOURCE - no 'const'.
+    strcpy(result, dirpart);
+#endif
 }
 
 
