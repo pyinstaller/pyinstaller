@@ -215,20 +215,10 @@ int pyi_path_executable(char *execfile, const char *appname)
     }
 
 #else
-    int  numchars;
     // On Linux absolute path is from symlink /prox/PID/exe
-    char proc_path[PATH_MAX+1];
-    sprintf(proc_path, "/proc/%d/exe", getpid());
-    // Read the real path from symlink.
-    numchars = readlink(proc_path, buffer, PATH_MAX);
-    // readlink() return number of read characters without ending '\0'.
-    if (numchars > 0) {
-        buffer[numchars] = '\0';
-    }
-    else {
-        FATALERROR("System error - unable to load!");
-		return -1;
-	}
+    strncpy(buffer, appname, PATH_MAX);
+    // TODO: This should be made an absolute path. A for now this is
+    // done by calling pyi_path_fullpath below.
 #endif
     /*
      * Ensure path to executable is absolute.
