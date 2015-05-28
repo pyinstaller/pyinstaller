@@ -46,15 +46,17 @@ _pyi-%-options.tmp: ../../utils/%.py
 Manual.tex: Manual.rst _definitions.txt
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
 
+# rst2pdf need to find some images *and* the include-files in the
+# same dircectory, so copy the include-files up there.
 ../Manual.pdf: srcdir=$(dir $(abspath $<))
-../Manual.pdf: Manual.rst _definitions.txt
-	cp _definitions.txt ..
+../Manual.pdf: Manual.rst _definitions.txt _pyinstaller-options.tmp
+	cp _definitions.txt _pyinstaller-options.tmp ..
 	cd ${srcdir}/.. && \
 	rst2pdf < ${srcdir}/$< -o ${srcdir}/$@ \
 	   --header='###Title### - ###Section###' \
 	   --footer='###Page###' \
 	   --default-dpi=75 
-	rm ../_definitions.txt
+	rm ../_definitions.txt ../_pyinstaller-options.tmp
 
 _definitions.txt:
 	@echo Overwritung '_definitions.txt'
