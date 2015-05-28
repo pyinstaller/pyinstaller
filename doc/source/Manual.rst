@@ -6,10 +6,8 @@ PyInstaller Manual
 
 :Version: |PyInstallerVersion|
 :Homepage: |Homepage|
-:Author: David Cortesi (based on structure by Giovanni Bajo & William Caban (based on Gordon McMillan's manual))
 :Contact: pyinstaller@googlegroups.com
-:Revision: $Rev$
-:Source URL: $HeadURL$
+:Authors: David Cortesi, based on structure by Giovanni Bajo & William Caban, based on Gordon McMillan's manual
 :Copyright: This document has been placed in the public domain.
 
 .. contents::
