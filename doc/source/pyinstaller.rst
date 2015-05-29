@@ -36,9 +36,7 @@ Please see the PyInstaller Manual for more information.
 OPTIONS
 ========
 
-For now, please use ``pyinstaller --help`` to get all options.
-Basically these are the same as for pyi-configure, pyi-makespec and
-pyi-build together.
+.. include:: _pyinstaller-options.tmp
 
 
 SEE ALSO

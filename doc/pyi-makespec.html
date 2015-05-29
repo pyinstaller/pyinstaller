@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
 <title>pyi-makespec</title>
 <meta name="author" content="Giovanni Bajo" />
 <meta name="copyright" content="2005-2011 by Giovanni Bajo, based on previous work under copyright 2002 McMillan Enterprises, Inc." />
@@ -22,7 +22,7 @@
 <tr><th class="docinfo-name">Copyright:</th>
 <td>2005-2011 by Giovanni Bajo, based on previous work under copyright 2002 McMillan Enterprises, Inc.</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller 2.1</td></tr>
+<td>PyInstaller 2.1.1dev-3607bf4</td></tr>
 <tr class="field"><th class="docinfo-name">Manual section:</th><td class="field-body">1</td>
 </tr>
 </tbody>
@@ -50,8 +50,6 @@ read the introduction to <cite>Spec Files</cite>.</p>
 </div>
 <div class="section" id="options">
 <h1>OPTIONS</h1>
-<div class="section" id="general-options">
-<h2>General Options</h2>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
@@ -62,11 +60,11 @@ read the introduction to <cite>Spec Files</cite>.</p>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--log-level=<var>LOGLEVEL</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Log level for MakeSpec.py (default: INFO, choose
-one of DEBUG, INFO, WARN, ERROR, CRITICAL)</td></tr>
+<tr><td>&nbsp;</td><td>Amount of detail in build-time console messages
+(default: INFO, choose one of DEBUG, INFO, WARN,
+ERROR, CRITICAL)</td></tr>
 </tbody>
 </table>
-</div>
 <div class="section" id="what-to-generate">
 <h2>What to generate</h2>
 <table class="docutils option-list" frame="void" rules="none">
@@ -75,20 +73,20 @@ one of DEBUG, INFO, WARN, ERROR, CRITICAL)</td></tr>
 <tbody valign="top">
 <tr><td class="option-group">
 <kbd><span class="option">-F</span>, <span class="option">--onefile</span></kbd></td>
-<td>create a single file deployment</td></tr>
+<td>Create a one-file bundled executable.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">-D</span>, <span class="option">--onedir</span></kbd></td>
-<td>create a single directory deployment (default)</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-o <var>DIR</var></span>, <span class="option">--out=<var>DIR</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>generate the spec file in the specified directory
-(default: current directory)</td></tr>
+<td>Create a one-folder bundle containing an executable
+(default)</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--specpath=<var>DIR</var></span></kbd></td>
+<td>Folder to store the generated spec file (default:
+current directory)</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">-n <var>NAME</var></span>, <span class="option">--name=<var>NAME</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>name to assign to the project (default: first script's
-basename)</td></tr>
+<tr><td>&nbsp;</td><td>Name to assign to the bundled app and spec file
+(default: first script's basename)</td></tr>
 </tbody>
 </table>
 </div>
@@ -101,23 +99,36 @@ basename)</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">-p <var>DIR</var></span>, <span class="option">--paths=<var>DIR</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>set base path for import (like using PYTHONPATH).
-Multiple directories are allowed, separating them with
-':', or using this option multiple times</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--additional-hooks-dir=<var>HOOKSPATH</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>additional path to search for hooks (may be given
-several times)</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-a</span>, <span class="option">--ascii</span></kbd></td>
-<td>do NOT include unicode encodings (default: included if
-available)</td></tr>
+<tr><td>&nbsp;</td><td>A path to search for imports (like using PYTHONPATH).
+Multiple paths are allowed, separated by ':', or use
+this option multiple times</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--hidden-import=<var>MODULENAME</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>import hidden in the script(s). This option can be
-used multiple times.</td></tr>
+<tr><td>&nbsp;</td><td>Name an import not visible in the code of the
+script(s). This option can be used multiple times.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--additional-hooks-dir=<var>HOOKSPATH</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>An additional path to search for hooks. This option
+can be used multiple times.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--runtime-hook=<var>RUNTIME_HOOKS</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to a custom runtime hook file. A runtime hook is
+code that is bundled with the executable and is
+executed before any other code or module to set up
+special features of the runtime environment. This
+option can be used multiple times.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--exclude-module=<var>EXCLUDES</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Optional module or package (his Python names,not path
+names) that will be ignored (as thoughit was not
+found).This option can be used multiple times.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--key=<var>KEY</var></span></kbd></td>
+<td>The key used to encrypt Python bytecode.</td></tr>
 </tbody>
 </table>
 </div>
@@ -129,17 +140,44 @@ used multiple times.</td></tr>
 <tbody valign="top">
 <tr><td class="option-group">
 <kbd><span class="option">-d</span>, <span class="option">--debug</span></kbd></td>
-<td>use the debug (verbose) build of the executable for
-packaging. This will make the packaged executable be
-more verbose when run.</td></tr>
+<td>Tell the bootloader to issue progress messages while
+initializing and starting the bundled app. Used to
+diagnose problems with missing imports.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">-s</span>, <span class="option">--strip</span></kbd></td>
-<td>strip the exe and shared libs (don't try this on
-Windows)</td></tr>
+<td>Apply a symbol-table strip to the executable and
+shared libs (not recommended for Windows)</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">-X</span>, <span class="option">--upx</span></kbd></td>
-<td>use UPX if available (works differently between
-Windows and *nix)</td></tr>
+<kbd><span class="option">--noupx</span></kbd></td>
+<td>Do not use UPX even if it is available (works
+differently between Windows and *nix)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="windows-and-mac-os-x-specific-options">
+<h2>Windows and Mac OS X specific options</h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-c</span>, <span class="option">--console</span>, <span class="option">--nowindowed</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Open a console window for standard i/o (default)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-w</span>, <span class="option">--windowed</span>, <span class="option">--noconsole</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Windows and Mac OS X: do not provide a console window
+for standard i/o. On Mac OS X this also triggers
+building an OS X .app bundle.This option is ignored in
+*NIX systems.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-i <var>&lt;FILE.ico or FILE.exe,ID or FILE.icns&gt;</var></span>, <span class="option">--icon=<var>&lt;FILE.ico or FILE.exe,ID or FILE.icns&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>FILE.ico: apply that icon to a Windows executable.
+FILE.exe,ID, extract the icon with ID from an exe.
+FILE.icns: apply the icon to the .app bundle on Mac OS
+X</td></tr>
 </tbody>
 </table>
 </div>
@@ -150,46 +188,52 @@ Windows and *nix)</td></tr>
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">-c</span>, <span class="option">--console</span>, <span class="option">--nowindowed</span></kbd></td>
+<kbd><span class="option">--version-file=<var>FILE</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>use a console subsystem executable (Windows only)
-(default)</td></tr>
+<tr><td>&nbsp;</td><td>add a version resource from FILE to the exe</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">-w</span>, <span class="option">--windowed</span>, <span class="option">--noconsole</span></kbd></td>
+<kbd><span class="option">-m <var>&lt;FILE or XML&gt;</var></span>, <span class="option">--manifest=<var>&lt;FILE or XML&gt;</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>use a Windows subsystem executable (Windows only)</td></tr>
+<tr><td>&nbsp;</td><td>add manifest FILE or XML to the exe</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">-v <var>FILE</var></span>, <span class="option">--version=<var>FILE</var></span></kbd></td>
+<kbd><span class="option">-r <var>&lt;FILE[,TYPE[,NAME[,LANGUAGE]]]&gt;</var></span>, <span class="option">--resource=<var>&lt;FILE[,TYPE[,NAME[,LANGUAGE]]]&gt;</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>add a version resource from FILE to the exe
-(Windows only)</td></tr>
+<tr><td>&nbsp;</td><td>Add or update a resource of the given type, name and
+language from FILE to a Windows executable. FILE can
+be a data file or an exe/dll. For data files, at least
+TYPE and NAME must be specified. LANGUAGE defaults to
+0 or may be specified as wildcard * to update all
+resources of the given TYPE and NAME. For exe/dll
+files, all resources from FILE will be added/updated
+to the final executable if TYPE, NAME and LANGUAGE are
+omitted or specified as wildcard *.This option can be
+used multiple times.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--uac-admin</span></kbd></td>
+<td>Using this option creates a Manifest which will
+request elevation upon application restart.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--uac-uiaccess</span></kbd></td>
+<td>Using this option allows an elevated application to
+work with Remote Desktop.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="mac-os-x-specific-options">
+<h2>Mac OS X specific options</h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">-i <var>ICON_or_FILE_ID</var></span>, <span class="option">--icon=<var>ICON_or_FILE_ID</var></span></kbd></td>
+<kbd><span class="option">--osx-bundle-identifier=<var>BUNDLE_IDENTIFIER</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>If file is an .ico file, add the icon to the final
-executable. Otherwise, the syntax 'file.exe,id' to
-extract the icon with the specified id from file.exe
-and add it to the final executable</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-m <var>FILE_or_XML</var></span>, <span class="option">--manifest=<var>FILE_or_XML</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>add manifest FILE or XML to the exe (Windows only)</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-r <var>RESOURCE</var></span>, <span class="option">--resource=<var>RESOURCE</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td><p class="first">RESOURCE is of format FILE[,TYPE[,NAME[,LANGUAGE]]].</p>
-<p class="last">Add or update resource of the given type, name and
-language from FILE to the final executable. FILE
-can be a data file or an exe/dll. For data files,
-atleast TYPE and NAME need to be specified,
-LANGUAGE defaults to 0 or may be specified as
-wildcard * to update all resources of the given
-TYPE and NAME. For exe/dll files, all resources
-from FILE will be added/updated to the final
-executable if TYPE, NAME and LANGUAGE are omitted
-or specified as wildcard *. Multiple resources
-are allowed, using this option multiple times.</p>
-</td></tr>
+<tr><td>&nbsp;</td><td>Mac OS X .app bundle identifier is used as the default
+unique program name for code signing purposes. The
+usual form is a hierarchical name in reverse DNS
+notation. For example:
+com.mycompany.department.appname (default: first
+script's basename)</td></tr>
 </tbody>
 </table>
 </div>
@@ -203,7 +247,7 @@ are allowed, using this option multiple times.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/pyi-makespec.rst">View document source</a>.
-Generated on: 2013-09-05 08:43 UTC.
+Generated on: 2015-05-29 12:12 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

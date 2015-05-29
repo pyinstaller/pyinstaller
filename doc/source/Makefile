@@ -26,18 +26,31 @@ man: $(foreach manpage,${manpages},../${manpage}.1)
 ../%.html: %.rst docutils.conf _definitions.txt
 	rst2html --config=docutils.conf $< $@
 
-Manual.tex: Manual.rst _definitions.txt
-	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
+Manual.rst: _pyinstaller-options.tmp
+pyinstaller.rst: _pyinstaller-options.tmp
+pyi-makespec.rst: _pyi-makespec-options.tmp
+pyi-build.rst: _pyi-build-options.tmp
+pyi-make_comserver.rst: _pyi-make_comserver-options.tmp
 
+_pyinstaller-options.tmp: ../../pyinstaller.py
+	./help2rst $< > $@
+
+_pyi-%-options.tmp: ../../utils/%.py
+	./help2rst $< > $@
+
+# rst2pdf need to find some images *and* the include-files in the
+# same dircectory, so copy the include-files up there.
 ../Manual.pdf: srcdir=$(dir $(abspath $<))
-../Manual.pdf: Manual.rst _definitions.txt
-	cp _definitions.txt ..
+../Manual.pdf: Manual.rst _definitions.txt _pyinstaller-options.tmp
+	cp _definitions.txt _pyinstaller-options.tmp ..
 	cd ${srcdir}/.. && \
-	rst2pdf < ${srcdir}/$< -o ${srcdir}/$@ \
+	rst2pdf < ${srcdir}/$< \
 	   --header='###Title### - ###Section###' \
 	   --footer='###Page###' \
-	   --default-dpi=75 
-	rm ../_definitions.txt
+	   --default-dpi=75 | \
+	gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite \
+	   '-sOutputFile=${srcdir}/$@' -c save pop -
+	rm ../_definitions.txt ../_pyinstaller-options.tmp
 
 _definitions.txt:
 	@echo Overwritung '_definitions.txt'
@@ -63,9 +76,11 @@ clean:
 
 
 cleanall: cleanlogs
-	rm -f ../*.pdf ../*.html ../*.1
-	rm _definitions.txt
-	@echo "All logs and documentation removed."
+	@# Checkout last commited version to avoid '-mod' postfix in version
+	git checkout --quiet --force -- ../*.pdf ../*.html
+	rm -f ../*.1
+	rm -f _definitions.txt _*-options.tmp
+	@echo "All generated documentation removed."
 
 
 cleanlogs:

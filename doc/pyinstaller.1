@@ -1,0 +1,219 @@
+.\" Man page generated from reStructuredText.
+.
+.TH PYINSTALLER 1 "" "PyInstaller 2.1.1dev-3607bf4" ""
+.SH NAME
+pyinstaller \- Configure and build y PyInstaller project in one run
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH SYNOPSIS
+.sp
+\fBpyinstaller\fP <options> SCRIPT
+.SH DESCRIPTION
+.sp
+Automatically calls pyi\-configure, pyi\-makespec and pyi\-build in one
+run. In most cases, running \fBpyinstaller\fP will be all you have to
+do.
+.sp
+Please see the PyInstaller Manual for more information.
+.SH OPTIONS
+.INDENT 0.0
+.TP
+.B \-h\fP,\fB  \-\-help
+show this help message and exit
+.TP
+.B \-v\fP,\fB  \-\-version
+Show program version info and exit.
+.TP
+.BI \-\-distpath\fB= DIR
+Where to put the bundled app (default: /home/hartmut/p
+rojekte/software/pyinstaller/doc/source/dist)
+.TP
+.BI \-\-workpath\fB= WORKPATH
+Where to put all the temporary work files, .log, .pyz
+and etc. (default: /home/hartmut/projekte/software/pyi
+nstaller/doc/source/build)
+.TP
+.B \-y\fP,\fB  \-\-noconfirm
+Replace output directory (default:
+SPECPATH/dist/SPECNAME) without asking for
+confirmation
+.TP
+.BI \-\-upx\-dir\fB= UPX_DIR
+Path to UPX utility (default: search the execution
+path)
+.TP
+.B \-a\fP,\fB  \-\-ascii
+Do not include unicode encoding support (default:
+included if available)
+.TP
+.B \-\-clean
+Clean PyInstaller cache and remove temporary files
+before building.
+.TP
+.BI \-\-log\-level\fB= LOGLEVEL
+Amount of detail in build\-time console messages
+(default: INFO, choose one of DEBUG, INFO, WARN,
+ERROR, CRITICAL)
+.UNINDENT
+.SS What to generate
+.INDENT 0.0
+.TP
+.B \-F\fP,\fB  \-\-onefile
+Create a one\-file bundled executable.
+.TP
+.B \-D\fP,\fB  \-\-onedir
+Create a one\-folder bundle containing an executable
+(default)
+.TP
+.BI \-\-specpath\fB= DIR
+Folder to store the generated spec file (default:
+current directory)
+.TP
+.BI \-n \ NAME\fP,\fB \ \-\-name\fB= NAME
+Name to assign to the bundled app and spec file
+(default: first script\(aqs basename)
+.UNINDENT
+.SS What to bundle, where to search
+.INDENT 0.0
+.TP
+.BI \-p \ DIR\fP,\fB \ \-\-paths\fB= DIR
+A path to search for imports (like using PYTHONPATH).
+Multiple paths are allowed, separated by \(aq:\(aq, or use
+this option multiple times
+.TP
+.BI \-\-hidden\-import\fB= MODULENAME
+Name an import not visible in the code of the
+script(s). This option can be used multiple times.
+.TP
+.BI \-\-additional\-hooks\-dir\fB= HOOKSPATH
+An additional path to search for hooks. This option
+can be used multiple times.
+.TP
+.BI \-\-runtime\-hook\fB= RUNTIME_HOOKS
+Path to a custom runtime hook file. A runtime hook is
+code that is bundled with the executable and is
+executed before any other code or module to set up
+special features of the runtime environment. This
+option can be used multiple times.
+.TP
+.BI \-\-exclude\-module\fB= EXCLUDES
+Optional module or package (his Python names,not path
+names) that will be ignored (as thoughit was not
+found).This option can be used multiple times.
+.TP
+.BI \-\-key\fB= KEY
+The key used to encrypt Python bytecode.
+.UNINDENT
+.SS How to generate
+.INDENT 0.0
+.TP
+.B \-d\fP,\fB  \-\-debug
+Tell the bootloader to issue progress messages while
+initializing and starting the bundled app. Used to
+diagnose problems with missing imports.
+.TP
+.B \-s\fP,\fB  \-\-strip
+Apply a symbol\-table strip to the executable and
+shared libs (not recommended for Windows)
+.TP
+.B \-\-noupx
+Do not use UPX even if it is available (works
+differently between Windows and *nix)
+.UNINDENT
+.SS Windows and Mac OS X specific options
+.INDENT 0.0
+.TP
+.B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
+Open a console window for standard i/o (default)
+.TP
+.B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
+Windows and Mac OS X: do not provide a console window
+for standard i/o. On Mac OS X this also triggers
+building an OS X .app bundle.This option is ignored in
+*NIX systems.
+.TP
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fP,\fB \ \-\-icon\fB= <FILE.ico or FILE.exe,ID or FILE.icns>
+FILE.ico: apply that icon to a Windows executable.
+FILE.exe,ID, extract the icon with ID from an exe.
+FILE.icns: apply the icon to the .app bundle on Mac OS
+X
+.UNINDENT
+.SS Windows specific options
+.INDENT 0.0
+.TP
+.BI \-\-version\-file\fB= FILE
+add a version resource from FILE to the exe
+.TP
+.BI \-m \ <FILE or XML>\fP,\fB \ \-\-manifest\fB= <FILE or XML>
+add manifest FILE or XML to the exe
+.TP
+.BI \-r \ <FILE[,TYPE[,NAME[,LANGUAGE]]]>\fP,\fB \ \-\-resource\fB= <FILE[,TYPE[,NAME[,LANGUAGE]]]>
+Add or update a resource of the given type, name and
+language from FILE to a Windows executable. FILE can
+be a data file or an exe/dll. For data files, at least
+TYPE and NAME must be specified. LANGUAGE defaults to
+0 or may be specified as wildcard * to update all
+resources of the given TYPE and NAME. For exe/dll
+files, all resources from FILE will be added/updated
+to the final executable if TYPE, NAME and LANGUAGE are
+omitted or specified as wildcard *.This option can be
+used multiple times.
+.TP
+.B \-\-uac\-admin
+Using this option creates a Manifest which will
+request elevation upon application restart.
+.TP
+.B \-\-uac\-uiaccess
+Using this option allows an elevated application to
+work with Remote Desktop.
+.UNINDENT
+.SS Mac OS X specific options
+.INDENT 0.0
+.TP
+.BI \-\-osx\-bundle\-identifier\fB= BUNDLE_IDENTIFIER
+Mac OS X .app bundle identifier is used as the default
+unique program name for code signing purposes. The
+usual form is a hierarchical name in reverse DNS
+notation. For example:
+com.mycompany.department.appname (default: first
+script\(aqs basename)
+.UNINDENT
+.SH SEE ALSO
+.sp
+\fBpyi\-configure\fP(1), \fBpyi\-makespec\fP(1), \fBpyi\-build\fP(1), The
+PyInstaller Manual, \fBpyinstaller\fP(1)
+.sp
+Project Homepage \fI\%http://www.pyinstaller.org\fP
+.SH AUTHOR
+Giovanni Bajo
+.SH COPYRIGHT
+2005-2011 by Giovanni Bajo, based on previous work under copyright 2002 McMillan Enterprises, Inc.
+.\" Generated by docutils manpage writer.
+.
