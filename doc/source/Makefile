@@ -79,7 +79,7 @@ clean:
 cleanall: cleanlogs
 	rm -f ../*.pdf ../*.html ../*.1
 	rm _definitions.txt
-	@echo "All logs and documentation removed."
+	@echo "All generated documentation removed."
 
 
 cleanlogs:
