@@ -47,10 +47,12 @@ Manual.tex: Manual.rst _definitions.txt
 ../Manual.pdf: Manual.rst _definitions.txt _pyinstaller-options.tmp
 	cp _definitions.txt _pyinstaller-options.tmp ..
 	cd ${srcdir}/.. && \
-	rst2pdf < ${srcdir}/$< -o ${srcdir}/$@ \
+	rst2pdf < ${srcdir}/$< \
 	   --header='###Title### - ###Section###' \
 	   --footer='###Page###' \
-	   --default-dpi=75 
+	   --default-dpi=75 | \
+	gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite \
+	   '-sOutputFile=${srcdir}/$@' -c save pop -
 	rm ../_definitions.txt ../_pyinstaller-options.tmp
 
 _definitions.txt:
