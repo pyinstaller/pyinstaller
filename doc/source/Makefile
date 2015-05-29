@@ -80,7 +80,7 @@ cleanall: cleanlogs
 	@# Checkout last commited version to avoid '-mod' postfix in version
 	git checkout --quiet --force -- ../*.pdf ../*.html
 	rm -f ../*.1
-	rm _definitions.txt
+	rm -f _definitions.txt _*-options.tmp
 	@echo "All generated documentation removed."
 
 
