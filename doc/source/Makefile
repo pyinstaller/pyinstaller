@@ -26,11 +26,6 @@ man: $(foreach manpage,${manpages},../${manpage}.1)
 ../%.html: %.rst docutils.conf _definitions.txt
 	rst2html --config=docutils.conf $< $@
 
-define get-options-from-script
-	@# strip everything up to the 'Options' line and escape stars
-	$1 --help | sed -e '1,/^Options:/d' -e 's!\*!\\\*!g'
-endef
-
 Manual.rst: _pyinstaller-options.tmp
 pyinstaller.rst: _pyinstaller-options.tmp
 pyi-makespec.rst: _pyi-makespec-options.tmp
@@ -38,10 +33,10 @@ pyi-build.rst: _pyi-build-options.tmp
 pyi-make_comserver.rst: _pyi-make_comserver-options.tmp
 
 _pyinstaller-options.tmp: ../../pyinstaller.py
-	$(call get-options-from-script,$<) > $@
+	./help2rst $< > $@
 
 _pyi-%-options.tmp: ../../utils/%.py
-	$(call get-options-from-script,$<) > $@
+	./help2rst $< > $@
 
 Manual.tex: Manual.rst _definitions.txt
 	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
