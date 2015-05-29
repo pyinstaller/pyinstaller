@@ -63,7 +63,6 @@ __pycache__/
 /old/e2etests/common/hanoi[1-9]
 
 # /doc/
-/doc/*.1
 /doc/source/_definitions.txt
 /doc/source/_pyi*.tmp
 
