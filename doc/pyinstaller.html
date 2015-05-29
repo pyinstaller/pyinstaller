@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
 <title>pyinstaller</title>
 <meta name="author" content="Giovanni Bajo" />
 <meta name="copyright" content="2005-2011 by Giovanni Bajo, based on previous work under copyright 2002 McMillan Enterprises, Inc." />
@@ -22,7 +22,7 @@
 <tr><th class="docinfo-name">Copyright:</th>
 <td>2005-2011 by Giovanni Bajo, based on previous work under copyright 2002 McMillan Enterprises, Inc.</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller 2.1</td></tr>
+<td>PyInstaller 2.1.1dev-3607bf4</td></tr>
 <tr class="field"><th class="docinfo-name">Manual section:</th><td class="field-body">1</td>
 </tr>
 </tbody>
@@ -40,9 +40,225 @@ do.</p>
 </div>
 <div class="section" id="options">
 <h1>OPTIONS</h1>
-<p>For now, please use <tt class="docutils literal">pyinstaller <span class="pre">--help</span></tt> to get all options.
-Basically these are the same as for pyi-configure, pyi-makespec and
-pyi-build together.</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-v</span>, <span class="option">--version</span></kbd></td>
+<td>Show program version info and exit.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--distpath=<var>DIR</var></span></kbd></td>
+<td>Where to put the bundled app (default: /home/hartmut/p
+rojekte/software/pyinstaller/doc/source/dist)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--workpath=<var>WORKPATH</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Where to put all the temporary work files, .log, .pyz
+and etc. (default: /home/hartmut/projekte/software/pyi
+nstaller/doc/source/build)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-y</span>, <span class="option">--noconfirm</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Replace output directory (default:
+SPECPATH/dist/SPECNAME) without asking for
+confirmation</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--upx-dir=<var>UPX_DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to UPX utility (default: search the execution
+path)</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-a</span>, <span class="option">--ascii</span></kbd></td>
+<td>Do not include unicode encoding support (default:
+included if available)</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--clean</span></kbd></td>
+<td>Clean PyInstaller cache and remove temporary files
+before building.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--log-level=<var>LOGLEVEL</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Amount of detail in build-time console messages
+(default: INFO, choose one of DEBUG, INFO, WARN,
+ERROR, CRITICAL)</td></tr>
+</tbody>
+</table>
+<div class="section" id="what-to-generate">
+<h2>What to generate</h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-F</span>, <span class="option">--onefile</span></kbd></td>
+<td>Create a one-file bundled executable.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-D</span>, <span class="option">--onedir</span></kbd></td>
+<td>Create a one-folder bundle containing an executable
+(default)</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--specpath=<var>DIR</var></span></kbd></td>
+<td>Folder to store the generated spec file (default:
+current directory)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-n <var>NAME</var></span>, <span class="option">--name=<var>NAME</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Name to assign to the bundled app and spec file
+(default: first script's basename)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="what-to-bundle-where-to-search">
+<h2>What to bundle, where to search</h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-p <var>DIR</var></span>, <span class="option">--paths=<var>DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>A path to search for imports (like using PYTHONPATH).
+Multiple paths are allowed, separated by ':', or use
+this option multiple times</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--hidden-import=<var>MODULENAME</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Name an import not visible in the code of the
+script(s). This option can be used multiple times.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--additional-hooks-dir=<var>HOOKSPATH</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>An additional path to search for hooks. This option
+can be used multiple times.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--runtime-hook=<var>RUNTIME_HOOKS</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to a custom runtime hook file. A runtime hook is
+code that is bundled with the executable and is
+executed before any other code or module to set up
+special features of the runtime environment. This
+option can be used multiple times.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--exclude-module=<var>EXCLUDES</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Optional module or package (his Python names,not path
+names) that will be ignored (as thoughit was not
+found).This option can be used multiple times.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--key=<var>KEY</var></span></kbd></td>
+<td>The key used to encrypt Python bytecode.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="how-to-generate">
+<h2>How to generate</h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-d</span>, <span class="option">--debug</span></kbd></td>
+<td>Tell the bootloader to issue progress messages while
+initializing and starting the bundled app. Used to
+diagnose problems with missing imports.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-s</span>, <span class="option">--strip</span></kbd></td>
+<td>Apply a symbol-table strip to the executable and
+shared libs (not recommended for Windows)</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--noupx</span></kbd></td>
+<td>Do not use UPX even if it is available (works
+differently between Windows and *nix)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="windows-and-mac-os-x-specific-options">
+<h2>Windows and Mac OS X specific options</h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-c</span>, <span class="option">--console</span>, <span class="option">--nowindowed</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Open a console window for standard i/o (default)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-w</span>, <span class="option">--windowed</span>, <span class="option">--noconsole</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Windows and Mac OS X: do not provide a console window
+for standard i/o. On Mac OS X this also triggers
+building an OS X .app bundle.This option is ignored in
+*NIX systems.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-i <var>&lt;FILE.ico or FILE.exe,ID or FILE.icns&gt;</var></span>, <span class="option">--icon=<var>&lt;FILE.ico or FILE.exe,ID or FILE.icns&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>FILE.ico: apply that icon to a Windows executable.
+FILE.exe,ID, extract the icon with ID from an exe.
+FILE.icns: apply the icon to the .app bundle on Mac OS
+X</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="windows-specific-options">
+<h2>Windows specific options</h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--version-file=<var>FILE</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>add a version resource from FILE to the exe</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-m <var>&lt;FILE or XML&gt;</var></span>, <span class="option">--manifest=<var>&lt;FILE or XML&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>add manifest FILE or XML to the exe</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-r <var>&lt;FILE[,TYPE[,NAME[,LANGUAGE]]]&gt;</var></span>, <span class="option">--resource=<var>&lt;FILE[,TYPE[,NAME[,LANGUAGE]]]&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Add or update a resource of the given type, name and
+language from FILE to a Windows executable. FILE can
+be a data file or an exe/dll. For data files, at least
+TYPE and NAME must be specified. LANGUAGE defaults to
+0 or may be specified as wildcard * to update all
+resources of the given TYPE and NAME. For exe/dll
+files, all resources from FILE will be added/updated
+to the final executable if TYPE, NAME and LANGUAGE are
+omitted or specified as wildcard *.This option can be
+used multiple times.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--uac-admin</span></kbd></td>
+<td>Using this option creates a Manifest which will
+request elevation upon application restart.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--uac-uiaccess</span></kbd></td>
+<td>Using this option allows an elevated application to
+work with Remote Desktop.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="mac-os-x-specific-options">
+<h2>Mac OS X specific options</h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--osx-bundle-identifier=<var>BUNDLE_IDENTIFIER</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Mac OS X .app bundle identifier is used as the default
+unique program name for code signing purposes. The
+usual form is a hierarchical name in reverse DNS
+notation. For example:
+com.mycompany.department.appname (default: first
+script's basename)</td></tr>
+</tbody>
+</table>
+</div>
 </div>
 <div class="section" id="see-also">
 <h1>SEE ALSO</h1>
@@ -54,7 +270,7 @@ PyInstaller Manual, <tt class="docutils literal">pyinstaller</tt>(1)</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/pyinstaller.rst">View document source</a>.
-Generated on: 2013-09-05 08:43 UTC.
+Generated on: 2015-05-29 12:12 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
