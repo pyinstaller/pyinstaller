@@ -34,19 +34,7 @@ Please see the PyInstaller Manual for more information.
 OPTIONS
 ========
 
--h, --help            show this help message and exit
-
---debug
-    Use the verbose version of the executable.
-
---verbose
-    Register the COM server(s) with the quiet flag off.
-
---ascii
-    do not include encodings (this is passed through to Makespec).
-
---out <dir>
-    Generate the driver script and spec file in dir.
+.. include:: _pyi-make_comserver-options.tmp
 
 
 SEE ALSO
