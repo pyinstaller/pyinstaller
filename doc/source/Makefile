@@ -38,9 +38,6 @@ _pyinstaller-options.tmp: ../../pyinstaller.py
 _pyi-%-options.tmp: ../../utils/%.py
 	./help2rst $< > $@
 
-Manual.tex: Manual.rst _definitions.txt
-	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
-
 # rst2pdf need to find some images *and* the include-files in the
 # same dircectory, so copy the include-files up there.
 ../Manual.pdf: srcdir=$(dir $(abspath $<))
