@@ -151,12 +151,12 @@ def plat_prepare(includes, packages, excludes):
     # used by Python itself
     includes.update(["warnings", "unicodedata", "weakref"])
 
-    if os.uname()[0] != 'java':
+    #if os.uname()[0] != 'java':
         # Jython specific imports in the stdlib:
-        excludes.update([
-            'java.lang',
-            'org.python.core',
-        ])
+        #excludes.update([
+        #    'java.lang',
+        #    'org.python.core',
+        #])
 
     if not sys.platform.startswith('irix'):
         excludes.update([
@@ -176,14 +176,14 @@ def plat_prepare(includes, packages, excludes):
             'MacOS',
             'macfs',
             'macostools',
-            'macpath',
+            #'macpath',
             '_scproxy',
         ])
 
     if not sys.platform == 'win32':
         # only win32
         excludes.update([
-            'ntpath',
+            #'ntpath',
             'nturl2path',
             'win32api',
             'win32con',
@@ -208,7 +208,7 @@ def plat_prepare(includes, packages, excludes):
     if not sys.platform == 'riscos':
         excludes.update([
              'riscosenviron',
-             'riscospath',
+             #'riscospath',
              'rourl2path',
           ])
 
@@ -219,7 +219,7 @@ def plat_prepare(includes, packages, excludes):
 
     if not sys.platform == 'os2emx':
         excludes.update([
-            'os2emxpath',
+            #'os2emxpath',
             '_emx_link',
         ])
 
@@ -229,6 +229,9 @@ def plat_prepare(includes, packages, excludes):
     # for a while...
     excludes.add('OverrideFrom23')
     excludes.add('OverrideFrom23._Res')
+
+    # import trickery in the dummy_threading module (stdlib)
+    excludes.add('_dummy_threading')
 
     try:
         imp_find_module('poll')

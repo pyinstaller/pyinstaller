@@ -37,7 +37,8 @@ modulegraph
 -----------
 
 - We use customized version of ModuleGraph from
-  https://bitbucket.org/htgoebel/modulegraph/src
+  https://bitbucket.org/leycec/modulegraph/src/1e8f74ef92a5d
+  which inclused Python3-specific SWIG Support
 
 - TODO: Use the official version when customized version is merged
   https://bitbucket.org/ronaldoussoren/modulegraph/pull-request/7/mark-namespace-packages-as-such-by/diff
