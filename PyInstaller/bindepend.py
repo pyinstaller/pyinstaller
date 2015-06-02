@@ -476,6 +476,10 @@ def _getImports_ldd(pth):
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
                 continue
 
+            # try to use dlopen way of searching for the library
+            tlib = findLibrary(name)
+            if tlib:
+                lib = tlib
             if os.path.exists(lib):
                 # Add lib if it is not already found.
                 if lib not in rslt:
