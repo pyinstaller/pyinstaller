@@ -150,7 +150,7 @@ class PyiModuleGraph(ModuleGraph):
         else:
             return super(PyiModuleGraph, self).run_script(pathname, caller=self._top_script_node)
 
-    def import_module(self, partname, fqname, parent):
+    def _import_module(self, partname, fqname, parent):
         """
         Import the Python module with the passed name from the parent package
         signified by the passed graph node.
@@ -183,9 +183,9 @@ class PyiModuleGraph(ModuleGraph):
             hook_namespace = load_module_file(
                 'pyi_graph_hook.' + fqname, hook_filename)
 
-            # Import hooks are required to define the hook() function.
+            # Graph hooks are required to define the hook() function.
             if not hasattr(hook_namespace, 'hook'):
-                raise NameError('Function hook() undefined in graph hook "%s".' % hook_filename)
+                raise NameError('hook() function undefined in graph hook "%s".' % hook_filename)
 
             # Pass this hook the current module graph.
             hook_namespace.hook(self)
@@ -193,7 +193,8 @@ class PyiModuleGraph(ModuleGraph):
             # Prevent the next import of this module from rerunning this hook
             del self._graph_hooks[fqname]
 
-        return super(PyiModuleGraph, self).import_module(partname, fqname, parent)
+        return super(PyiModuleGraph, self)._import_module(
+            partname, fqname, parent)
 
     def get_code_objects(self):
         """
