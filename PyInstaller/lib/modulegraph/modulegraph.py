@@ -24,11 +24,7 @@ import ast
 
 from altgraph.ObjectGraph import ObjectGraph
 from altgraph import GraphError
-
-from itertools import count
-
-from modulegraph import util
-from modulegraph import zipio
+from modulegraph import util, zipio
 
 if sys.version_info[0] == 2:
     from StringIO import StringIO as BytesIO
@@ -682,11 +678,6 @@ class _Visitor (ast.NodeVisitor):
         self._in_tryexcept.pop()
 
     def visit_TryExcept(self, node):
-        self._in_tryexcept.append(True)
-        self.generic_visit(node)
-        self._in_tryexcept.pop()
-
-    def visit_ExceptHandler(self, node):
         self._in_tryexcept.append(True)
         self.generic_visit(node)
         self._in_tryexcept.pop()

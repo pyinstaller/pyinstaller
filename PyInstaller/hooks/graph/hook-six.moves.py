@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.lib.modulegraph.modulegraph import RuntimeModule
+from modulegraph.modulegraph import RuntimeModule
 from PyInstaller.utils.hooks import hookutils
 
 def hook(module_graph):

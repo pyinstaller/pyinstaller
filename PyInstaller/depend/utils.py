@@ -14,19 +14,15 @@ Utility functions related to analyzing/bundling dependencies.
 
 import ctypes
 import dis
-
-import imp
 import io
 import marshal
 import os
 import zipfile
 
 from modulegraph import find_modules, modulegraph
-
 from PyInstaller import compat
 from PyInstaller.compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC
 from PyInstaller.utils.hooks.hookutils import collect_submodules
-
 import PyInstaller.log as logging
 
 

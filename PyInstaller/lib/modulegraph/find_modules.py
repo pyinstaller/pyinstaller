@@ -14,18 +14,18 @@ from __future__ import absolute_import
 # depend.utils.create_py3_base_library() function. That's unfortunate, as most
 # of this module still appears to be relevant to Python 3. For example, the
 # plat_prepare() function excluded modules irrelevant to the current OS and
-# hence guaranteed to not be found (e.g., "winreg" under Linux).
+# hence guaranteed to not be found (e.g., "winreg" under Linux). Either:
 #
-# This module should be removed entirely (and the find_needed_modules() function
-# moved into the depend.utils module) or this module should be resurrected to
-# actually do something meaningful.
+# * This module should be removed entirely and the find_needed_modules()
+#   function moved into the "depend.utils" module *OR*
+# * This module should be resurrected to actually do something meaningful.
 
 import sys
 import os
 import imp
 import warnings
 
-import modulegraph.modulegraph as modulegraph
+from modulegraph import modulegraph
 from modulegraph.modulegraph import Alias, Script, Extension
 from modulegraph.util import imp_find_module
 
