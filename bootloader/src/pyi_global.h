@@ -140,7 +140,6 @@ void pyi_global_printf(const char *fmt, ...);
 
 /* Rewrite ANSI/POSIX functions to Win32 equivalents. */
 #ifdef _WIN32
-    #define fileno           _fileno
     #define getpid           _getpid
     #define mkdir            _mkdir
     #define rmdir            _rmdir
@@ -148,6 +147,13 @@ void pyi_global_printf(const char *fmt, ...);
     #define stat             _stat
     #define strdup           _strdup
     #define vsnprintf        _vsnprintf
+    /*
+     * Mingw on Windows contains the following functions.
+     * Redefine them only if they are not available.
+     */
+    #ifndef fileno
+        #define fileno           _fileno
+    #endif
 #endif
 
 

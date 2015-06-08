@@ -22,11 +22,11 @@
 #ifdef _WIN32
     #include <windows.h>
 #else
+    #include <langinfo.h>  // CODESET, nl_langinfo
     #include <limits.h>  // PATH_MAX
     #include <stdlib.h>  // malloc
 #endif
 #include <locale.h>  // setlocale
-#include <langinfo.h>  // nl_langinfo
 #include <stdarg.h>
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>  // vsnprintf
@@ -460,6 +460,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status)
      * If it's None(NULL), get the filesystem encoding by using direct
      * C calls and override it with correct value.
      */
+    #ifndef _WIN32
     if (!*PI_Py_FileSystemDefaultEncoding) {
         char *saved_locale, *loc_codeset;
         saved_locale = strdup(setlocale(LC_CTYPE, NULL));
@@ -469,6 +470,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status)
         free(saved_locale);
         *PI_Py_FileSystemDefaultEncoding = loc_codeset;
     }
+    #endif
 
 	/* Run scripts */
 	rc = pyi_launch_run_scripts(status);
