@@ -466,4 +466,4 @@ class FakeModule(object):
         self.node.code = new_code
         self.node.filename = path_to_new_code
         # Update dependencies in the graph.
-        self.graph.scan_code(new_code, self.node)
+        self.graph._scan_code(new_code, self.node)
