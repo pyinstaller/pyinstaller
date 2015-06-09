@@ -1,5 +1,13 @@
 (+ user visible changes, * internal stuff)
 
+Changes since PyInstaller 2.1
+-------------------------------
+ + Support for Python 3
+ + Support only Python 2.7 and 3.3+
+ + (Windows 32bit) enable flag LARGEADDRESSAWARE that allows to use 4GB of RAM.
+ * Use library modulegraph for module dependency analysis.
+ * TODO Improve testing infrastructure.
+ 
 Changes since PyInstaller 2.0
 -------------------------------
  + Rewritten manual explaining even very basic topics.
