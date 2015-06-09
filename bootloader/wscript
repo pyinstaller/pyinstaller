@@ -179,6 +179,9 @@ def set_arch_cflags(ctx):
     if is_win and ctx.env.CC_NAME == 'msvc':
         if architecture() == '32bit':
             ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
+            # Set LARGE_ADDRESS_AWARE_FLAG to True.
+            # On Windows this allows 32bit apps to use 4GB of memory and
+            ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
         elif architecture() == '64bit':
             ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
         # Enable 64bit porting warnings and other warnings too.
@@ -198,6 +201,11 @@ def set_arch_cflags(ctx):
             ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
             ctx.env.append_value('CFLAGS', '-m32')
             ctx.env.append_value('LINKFLAGS', '-m32')
+            # Set LARGE_ADDRESS_AWARE_FLAG to True.
+            # On Windows this allows 32bit apps to use 4GB of memory and
+            # not only 2GB.
+            # TODO verify if this option being as default might cause any side effects.
+            ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
         elif architecture() == '64bit':
             ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
             ctx.env.append_value('CFLAGS', '-m64')
