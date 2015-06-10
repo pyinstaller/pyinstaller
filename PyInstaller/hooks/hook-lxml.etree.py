@@ -8,4 +8,4 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['_elementpath', 'gzip']
+hiddenimports = ['lxml._elementpath', 'gzip']
