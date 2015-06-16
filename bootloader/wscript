@@ -60,7 +60,6 @@ variants = {
 # The following variable fixes 10.6 compatibility.
 os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.6'
 
-
 # TODO strip created binaries.
 
 
@@ -69,7 +68,9 @@ def architecture():
     on 64bit Mac function platform.architecture() returns 64bit even
     for 32bit Python. This is the workaround for this.
     """
+    
     if is_darwin and sys.maxsize <= 3**32:
+
         return '32bit'
     else:
         return platform.architecture()[0]  # 32bit or 64bit
@@ -106,6 +107,13 @@ def options(ctx):
                    help='Try to find clang C compiler instead of gcc.',
                    default=False,
                    dest='clang')
+
+    if is_win:
+        ctx.add_option('--target-cpu',
+                       action='store',
+                       help='Target CPU format (x86, amd64).',
+                       default=None,
+                       dest='targetcpu')
 
     if is_linux:
         ctx.add_option('--no-lsb',
@@ -177,13 +185,21 @@ def set_arch_cflags(ctx):
     Set properly architecture flag (32 or 64 bit) cflags for compiler.
     """
     if is_win and ctx.env.CC_NAME == 'msvc':
-        if architecture() == '32bit':
-            ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
-            # Set LARGE_ADDRESS_AWARE_FLAG to True.
-            # On Windows this allows 32bit apps to use 4GB of memory and
-            ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
-        elif architecture() == '64bit':
-            ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
+        if ctx.options.targetcpu is not None:
+            if ctx.options.targetcpu == 'x86':
+                ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
+            if ctx.options.targetcpu == 'amd64':
+                ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
+        else:
+            if architecture() == '32bit':
+                ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
+                # Set LARGE_ADDRESS_AWARE_FLAG to True.
+                # On Windows this allows 32bit apps to use 4GB of memory and
+                ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
+
+            elif architecture() == '64bit':
+                ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
+
         # Enable 64bit porting warnings and other warnings too.
         ctx.env.append_value('CFLAGS', '/W3')
         # We use SEH exceptions in winmain.c; make sure they are activated.
@@ -223,25 +239,20 @@ def set_arch_cflags(ctx):
 
 
 def configure(ctx):
-    ctx.msg('Platform', '%s-%s detected' % (platform.system(), architecture()))
+    if ctx.options.targetcpu == 'amd64':
+        
+        ctx.env['MSVC_TARGETS'] = ['x64']
+        ctx.msg('Platform', 'Architecture manually chosen: x64')
+    elif ctx.options.targetcpu == 'x86':
+        ctx.env['MSVC_TARGETS'] = ['x86']
+        ctx.msg('Platform', 'Architecture manually chosen: x86')
+    else:
+        ctx.msg('Platform', '%s-%s detected' % (platform.system(), architecture()))
 
     if is_darwin and architecture() == '64bit':
         ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
         ctx.msg('CYAN', 'For 32b-bit bootloader prepend the python command with:')
         ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
-
-    if is_win:
-        # Load tool to process *.rc* files for C/C++ like icon for exe files.
-        ctx.load('winres')
-        # We need to pass architecture switch to the 'windres' tool.
-        if architecture() == '32bit':
-            ctx.env.WINRCFLAGS = ['--target=pe-i386']
-        else:
-            ctx.env.WINRCFLAGS = ['--target=pe-x86-64']
-
-    # This tool allows reduce the size of executables.
-    ctx.load('strip', tooldir='tools')
-
 
     ### C compiler
 
@@ -255,10 +266,8 @@ def configure(ctx):
         ctx.load('clang')
     else:
         if is_win:
-            # On Windows use only MingW (gcc).
-            ctx.load('gcc')
-        else:
             ctx.load('compiler_c')  # Any available C compiler.
+			
     # LSB compatible bootloader only for Linux and without cli option --no-lsb.
     if is_linux and not ctx.options.nolsb:
         ctx.set_lsb_compiler()
@@ -272,6 +281,20 @@ def configure(ctx):
         ctx.env.append_value('CFLAGS', '-g')
     else:
         ctx.env.append_value('CFLAGS', '-O2')
+
+    if is_win:
+        # Load tool to process *.rc* files for C/C++ like icon for exe files.
+        ctx.load('winres')
+        if ctx.env.CC_NAME != 'msvc':
+            # We need to pass architecture switch to the 'windres' tool.
+            if architecture() == '32bit':
+                ctx.env.WINRCFLAGS = ['--target=pe-i386']
+            else:
+                ctx.env.WINRCFLAGS = ['--target=pe-x86-64']
+
+    if not is_win:
+        # This tool allows reduce the size of executables.
+        ctx.load('strip', tooldir='tools')
 
 
     ### Defines, Includes
@@ -423,8 +446,16 @@ def build(ctx):
         ctx.fatal('Call "python waf all" to compile all bootloaders.')
 
     exe_name = variants[ctx.variant]
+
+    if ctx.options.targetcpu == 'amd64':
+        tgt = '64bit'
+    elif ctx.options.targetcpu == 'x86':
+        tgt = '32bit'
+    else:
+        tgt = architecture()
+
     install_path = os.path.join(os.getcwd(), '../PyInstaller/bootloader',
-                                platform.system() + "-" + architecture())
+                                platform.system() + "-" + tgt)
     install_path = os.path.normpath(install_path)
 
     if machine():
@@ -447,7 +478,7 @@ def build(ctx):
             use='USER32 COMCTL32 KERNEL32 WS2_32 zlib',
             includes='src windows zlib',
             # Strip final executables to make them smaller.
-            features='strip',
+            #features='strip',
         )
     else:
         # Linux, Darwin (MacOSX), ...
