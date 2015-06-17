@@ -1,0 +1,5 @@
+# For running tests
+nose2
+mock
+
+# TODO Add more dependencies
