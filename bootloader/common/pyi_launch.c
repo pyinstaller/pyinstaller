@@ -23,9 +23,9 @@
     #include <windows.h>
 #else
     #include <limits.h>  // PATH_MAX
+    #include <langinfo.h>  // nl_langinfo
 #endif
 #include <locale.h>  // setlocale
-#include <langinfo.h>  // nl_langinfo
 #include <stdarg.h>
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>  // vsnprintf
@@ -96,7 +96,7 @@ static int copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, co
 }
 
 
-/* 
+/*
  * Look for the archive identified by path into the ARCHIVE_STATUS pool archive_pool.
  * If the archive is found, a pointer to the associated ARCHIVE_STATUS is returned
  * otherwise the needed archive is opened and added to the pool and then returned.
@@ -128,8 +128,8 @@ static ARCHIVE_STATUS *_get_archive(ARCHIVE_STATUS *archive_pool[], const char *
     if (archive == NULL) {
         FATALERROR("Error allocating memory for status\n");
         return NULL;
-    }   
-         
+    }
+
     strcpy(archive->archivename, path);
     strcpy(archive->homepath, archive_pool[SELF]->homepath);
     strcpy(archive->temppath, archive_pool[SELF]->temppath);
@@ -138,13 +138,13 @@ static ARCHIVE_STATUS *_get_archive(ARCHIVE_STATUS *archive_pool[], const char *
      * the directory from the main archive status is used.
      */
     archive->has_temp_directory = archive_pool[SELF]->has_temp_directory;
-         
+
     if (pyi_arch_open(archive)) {
         FATALERROR("Error openning archive %s\n", path);
         free(archive);
         return NULL;
-    }   
-             
+    }
+
     archive_pool[index] = archive;
     return archive;
 }
@@ -453,6 +453,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
 	if (pyi_pylib_install_zlibs(status))
 		return -1;
 
+#ifndef WIN32
     /*
      * On Linux sys.getfilesystemencoding() returns None but should not.
      * If it's None(NULL), get the filesystem encoding by using direct
@@ -467,7 +468,7 @@ int pyi_launch_execute(ARCHIVE_STATUS *status, int argc, char *argv[])
         free(saved_locale);
         *PI_Py_FileSystemDefaultEncoding = loc_codeset;
     }
-
+#endif /* WIN32 */
 	/* Run scripts */
 	rc = pyi_pylib_run_scripts(status);
 
