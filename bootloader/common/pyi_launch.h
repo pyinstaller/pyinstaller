@@ -81,6 +81,10 @@ int callSimpleEntryPoint(char *name, int *presult);
  */
 void cleanUp(ARCHIVE_STATUS *status);
 
+/*
+ * Transform parent process to background
+ */
+void pyi_parent_to_background();
 
 #endif  /* PYI_LAUNCH_H */
 
