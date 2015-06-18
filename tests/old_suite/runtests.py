@@ -35,7 +35,7 @@ warnings.filterwarnings('ignore',
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
 if not (hasattr(sys, 'real_prefix') or sys.prefix != sys.base_prefix):
-    pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
     sys.path.insert(0, pyi_home)
 
 # Unbuffered sys.stdout, so we can follow stdout continuously when
