@@ -174,7 +174,8 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 	return 0;
 }
 
-
+/* Required for Py_SetProgramName */
+char _program_name[PATH_MAX+1];
 /*
  * Start python - return 0 on success
  */
@@ -213,7 +214,8 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status, int argc, char *argv[])
 	*PI_Py_NoSiteFlag = 1;	/* maybe changed to 0 by pyi_pylib_set_runtime_opts() */
     *PI_Py_FrozenFlag = 1;
     pyi_pylib_set_runtime_opts(status);
-	PI_Py_SetProgramName(status->archivename); /*XXX*/
+    strcpy(_program_name, status->archivename);
+	PI_Py_SetProgramName(_program_name); /*XXX*/
 	PI_Py_Initialize();
 
     // TODO set sys.path by function from Python C API (Python 2.6+)
