@@ -3,9 +3,9 @@ Tests for PyInstaller
 
 This directory contains tests for PyInstaller:
 
- - ``unit`` directory contains simple unit tests
- - ``freeze`` directory contains tests where executables are created from Python scripts.
+ - ``functional`` directory contains tests where executables are created from Python scripts.
  - ``old_suite`` directory contains old structure of tests (TODO migrate all tests to a new structure)
+ - ``unit`` directory contains simple unit tests
 
 Prerequisites
 -------------
