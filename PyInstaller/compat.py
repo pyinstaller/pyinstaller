@@ -28,6 +28,7 @@ is_py3 = sys.version_info[0] == 3
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 is_py33 = sys.version_info >= (3, 3) and sys.version_info < (3, 4)
 is_py34 = sys.version_info >= (3, 4) and sys.version_info < (3, 5)
+is_py35 = sys.version_info >= (3, 5) and sys.version_info < (3, 6)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
@@ -114,7 +115,7 @@ if is_py2:
     import imp
     BYTECODE_MAGIC = imp.get_magic()
 else:
-    if is_py34:
+    if is_py34 or is_py35:
         import importlib.util
         BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
     else:
