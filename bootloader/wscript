@@ -37,6 +37,7 @@ out = 'build'
 is_win = platform.system() == 'Windows'
 is_darwin = platform.system() == 'Darwin'
 is_linux = platform.system() == 'Linux'
+is_freebsd = sys.platform.startswith('freebsd')
 # TODO find out proper value for AIX/Solaris
 is_solar = platform.system() == 'Solaris'
 is_aix = platform.system() == 'AIX'
@@ -107,13 +108,18 @@ def options(ctx):
                    help='Try to find clang C compiler instead of gcc.',
                    default=False,
                    dest='clang')
-
-    if is_win:
-        ctx.add_option('--target-cpu',
-                       action='store',
-                       help='Target CPU format (x86, amd64).',
-                       default=None,
-                       dest='targetcpu')
+    ctx.add_option('--target-arch',
+                   action='store',
+                   help='Target architecture format (32bit, 64bit). '
+                        'This option allows to build 32bit bootloader with 64bit compiler '
+                        'and 64bit Python.',
+                   default=None,
+                   dest='target_arch')
+    ctx.add_option('--target-cpu',
+                   action='store',
+                   help='Target CPU format (x86, amd64).',
+                   default=None,
+                   dest='target_cpu')
 
     if is_linux:
         ctx.add_option('--no-lsb',
@@ -180,24 +186,66 @@ def set_lsb_compiler(ctx):
 
 
 @conf
-def set_arch_cflags(ctx):
+def detect_arch_cpu(ctx):
     """
-    Set properly architecture flag (32 or 64 bit) cflags for compiler.
+    Handle options --target-arch and --target-cpu or use the same
+    architecture as the Python interpreter.
+    """
+    # Get arch/cpu values either from CLI or detect it.
+    arch = ctx.options.target_arch or architecture()
+    # 'target_cpu is useful only on Windows for now.
+    cpu = ctx.options.target_cpu or ''  # Use empty string if not specified.
+
+    # Print message based on arch/cpu.
+    if ctx.options.target_arch or ctx.options.target_cpu:
+        if cpu == 'amd64':
+            ctx.env['MSVC_TARGETS'] = ['x64']
+            arch = '64bit'  # Force 64bit for amd64 cpu.
+        elif cpu == 'x86':
+            ctx.env['MSVC_TARGETS'] = ['x86']
+            arch = '64bit'  # Force 32bit for x86 cpu.
+            ctx.msg('Platform', 'Architecture manually chosen: x86')
+        ctx.msg('Platform', '%s-%s %s  manually chosen' % (platform.system(), arch, cpu))
+    else:
+        ctx.msg('Platform', '%s-%s detected' % (platform.system(), arch))
+
+    if is_darwin and arch == '64bit':
+        ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
+        ctx.msg('CYAN', 'For 32b-bit bootloader prepend the python command with:')
+        ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
+
+    # Pass return values as environment variables.
+    ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
+    ctx.env.PYI_CPU = cpu  # 'x86' or 'amd64' or empty string
+
+
+@conf
+def set_arch_flags(ctx):
+    """
+    Set properly architecture flag (32 or 64 bit) cflags for compiler
+    and CPU target for compiler.
     """
     if is_win and ctx.env.CC_NAME == 'msvc':
-        if ctx.options.targetcpu is not None:
+        # Set msvc linkflags based on --target-cpu.
+        if ctx.env.PYI_CPU:
             if ctx.options.targetcpu == 'x86':
                 ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
-            if ctx.options.targetcpu == 'amd64':
+                # Set LARGE_ADDRESS_AWARE_FLAG to True.
+                # On Windows this allows 32bit apps to use 4GB of memory and
+                ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
+            elif ctx.options.targetcpu == 'amd64':
                 ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
+            else:
+                ctx.fatal('RED', 'Unrecognized target CPU: %s' % ctx.env.PYI_CPU)
+        # Set msvc linkflags based on architecture.
         else:
-            if architecture() == '32bit':
+            if ctx.env.PYI_ARCH == '32bit':
                 ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
                 # Set LARGE_ADDRESS_AWARE_FLAG to True.
                 # On Windows this allows 32bit apps to use 4GB of memory and
                 ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
 
-            elif architecture() == '64bit':
+            elif ctx.env.PYI_ARCH == '64bit':
                 ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
 
         # Enable 64bit porting warnings and other warnings too.
@@ -205,31 +253,11 @@ def set_arch_cflags(ctx):
         # We use SEH exceptions in winmain.c; make sure they are activated.
         ctx.env.append_value('CFLAGS', '/EHa')
 
-    elif machine() == 'sw_64':
-        # The gcc has no '-m64' option under sw64 machine, but the
-        # __x86_64__ macro needs to be defined
-        conf.env.append_value('CCDEFINES', '__x86_64__')
-    else:
-        # This ensures proper compilation with 64bit gcc and 32bit Python
-        # or vice versa.
-        # Option -m32/-m64 has to be passed to cflags and linkflages.
-        if architecture() == '32bit':
-            ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
-            ctx.env.append_value('CFLAGS', '-m32')
-            ctx.env.append_value('LINKFLAGS', '-m32')
-            # Set LARGE_ADDRESS_AWARE_FLAG to True.
-            # On Windows this allows 32bit apps to use 4GB of memory and
-            # not only 2GB.
-            # TODO verify if this option being as default might cause any side effects.
-            ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
-        elif architecture() == '64bit':
-            ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
-            ctx.env.append_value('CFLAGS', '-m64')
-            ctx.env.append_value('LINKFLAGS', '-m64')
-
     # Ensure proper architecture flags on Mac OS X.
-    if is_darwin:
-        if architecture() == '32bit':
+    elif is_darwin:
+        # Default compiler on Mac OS X is Clang.
+        # Clang does not have flags '-m32' and '-m64'.
+        if ctx.env.PYI_ARCH == '32bit':
             mac_arch = ['-arch', 'i386']
         else:
             mac_arch = ['-arch', 'x86_64']
@@ -237,22 +265,44 @@ def set_arch_cflags(ctx):
         ctx.env.append_value('CXXFLAGS', mac_arch)
         ctx.env.append_value('LINKFLAGS', mac_arch)
 
+    # Other compiler - not msvc.
+    else:
+        if machine() == 'sw_64':
+            # The gcc has no '-m64' option under sw64 machine, but the
+            # __x86_64__ macro needs to be defined
+            conf.env.append_value('CCDEFINES', '__x86_64__')
+        # This ensures proper compilation with 64bit gcc and 32bit Python
+        # or vice versa or with manually choosen --target-arch.
+        # Option -m32/-m64 has to be passed to cflags and linkflages.
+        elif ctx.env.PYI_ARCH == '32bit':
+            ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
+            ctx.env.append_value('CFLAGS', '-m32')
+            ctx.env.append_value('LINKFLAGS', '-m32')
+            # Set LARGE_ADDRESS_AWARE_FLAG to True.
+            # On Windows this allows 32bit apps to use 4GB of memory and
+            # not only 2GB.
+            # TODO verify if this option being as default might cause any side effects.
+            if is_win:
+                ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
+        elif ctx.env.PYI_ARCH == '64bit':
+            ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
+            ctx.env.append_value('CFLAGS', '-m64')
+            ctx.env.append_value('LINKFLAGS', '-m64')
+        else:
+            ctx.fatal('RED', 'Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
+
+    # We need to pass architecture switch to the 'windres' tool.
+    if is_win and ctx.env.CC_NAME != 'msvc':
+        if ctx.env.PYI_ARCH == '32bit':
+            ctx.env.WINRCFLAGS = ['--target=pe-i386']
+        else:
+            ctx.env.WINRCFLAGS = ['--target=pe-x86-64']
+
 
 def configure(ctx):
-    if ctx.options.targetcpu == 'amd64':
-        
-        ctx.env['MSVC_TARGETS'] = ['x64']
-        ctx.msg('Platform', 'Architecture manually chosen: x64')
-    elif ctx.options.targetcpu == 'x86':
-        ctx.env['MSVC_TARGETS'] = ['x86']
-        ctx.msg('Platform', 'Architecture manually chosen: x86')
-    else:
-        ctx.msg('Platform', '%s-%s detected' % (platform.system(), architecture()))
 
-    if is_darwin and architecture() == '64bit':
-        ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
-        ctx.msg('CYAN', 'For 32b-bit bootloader prepend the python command with:')
-        ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
+    # Detect architecture and CPU
+    ctx.detect_arch_cpu()
 
     ### C compiler
 
@@ -261,16 +311,23 @@ def configure(ctx):
         # Manifest file will be added in the phase of packaging python
         # application by PyInstaller.
         ctx.env.MSVC_MANIFEST = False
+
     # Allow to use Clang if preferred.
     if ctx.options.clang:
         ctx.load('clang')
     else:
-        if is_win:
-            ctx.load('compiler_c')  # Any available C compiler.
+        ctx.load('compiler_c')  # Any available C compiler.
 			
     # LSB compatible bootloader only for Linux and without cli option --no-lsb.
     if is_linux and not ctx.options.nolsb:
         ctx.set_lsb_compiler()
+
+    # Load tool to process *.rc* files for C/C++ like icon for exe files.
+    if is_win:
+        ctx.load('winres')
+
+    # Set proper architecture and CPU for C compiler
+    ctx.set_arch_flags()
 
 
     # TODO Set proper optimization flags for MSVC (Visual Studio).
@@ -281,16 +338,6 @@ def configure(ctx):
         ctx.env.append_value('CFLAGS', '-g')
     else:
         ctx.env.append_value('CFLAGS', '-O2')
-
-    if is_win:
-        # Load tool to process *.rc* files for C/C++ like icon for exe files.
-        ctx.load('winres')
-        if ctx.env.CC_NAME != 'msvc':
-            # We need to pass architecture switch to the 'windres' tool.
-            if architecture() == '32bit':
-                ctx.env.WINRCFLAGS = ['--target=pe-i386']
-            else:
-                ctx.env.WINRCFLAGS = ['--target=pe-x86-64']
 
     if not is_win:
         # This tool allows reduce the size of executables.
@@ -352,9 +399,12 @@ def configure(ctx):
         ctx.check_cc(lib='kernel32', mandatory=True)
         ctx.check_cc(lib='ws2_32', mandatory=True)
     else:
-        if not sys.platform.startswith('freebsd'):  # FreeBSD doesn't need libdl
+        # Mac OS X and FreeBSD do not need libdl.
+        # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
+        if not (is_darwin or is_freebsd):
             ctx.check_cc(lib='dl', mandatory=True)
-        elif sysconfig.get_config_vars('HAVE_PTHREAD_H').pop(): # link to libthr on FreeBSD
+        # Link to libthr on FreeBSD.
+        if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop(): 
             ctx.check_cc(lib='thr', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
         ctx.check_cc(lib='z', mandatory=True)
@@ -377,7 +427,6 @@ def configure(ctx):
     if is_darwin:
         ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.6')
 
-    ctx.set_arch_cflags()
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
@@ -447,15 +496,8 @@ def build(ctx):
 
     exe_name = variants[ctx.variant]
 
-    if ctx.options.targetcpu == 'amd64':
-        tgt = '64bit'
-    elif ctx.options.targetcpu == 'x86':
-        tgt = '32bit'
-    else:
-        tgt = architecture()
-
     install_path = os.path.join(os.getcwd(), '../PyInstaller/bootloader',
-                                platform.system() + "-" + tgt)
+                                platform.system() + "-" + ctx.env.PYI_ARCH)
     install_path = os.path.normpath(install_path)
 
     if machine():
@@ -484,11 +526,12 @@ def build(ctx):
         # Linux, Darwin (MacOSX), ...
         libs = ['DL', 'M', 'Z']  # 'z' - zlib, 'm' - math,
         staticlibs = []
-        if sys.platform.startswith('freebsd'):
-            libs = ['Z', 'M']  # freebsd doesn't need libdl
-            # check if python has threads: libthr needs
+        # Mac OS X and FreeBSD do not need libdl.
+        if is_darwin or is_freebsd:
+            libs = ['Z', 'M']
+            # Check if python has threads: libthr needs
             # to be loaded in the main process
-            if sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
+            if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
                 libs.append('THR')
         elif sys.platform.startswith('aix'):
             libs = ['DL', 'M']
