@@ -66,6 +66,13 @@
 static char **argv_pyi = NULL;
 static int argc_pyi = 0;
 
+/*
+ * Watch for OpenDocument AppleEvents and add the files passed in to the
+ * sys.argv command line on the Python side.
+ *
+ * This allows on Mac OS X to open files when a file is dragged and dropped
+ * on the App icon in the OS X dock.
+ */
 #if defined(__APPLE__) && defined(WINDOWED)
 static void process_apple_events();
 #endif
@@ -684,7 +691,9 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
 
 
 
-
+/*
+ * On Mac OS X this converts files from kAEOpenDocuments events into sys.argv.
+ */
 #if defined(__APPLE__) && defined(WINDOWED)
 static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
 {
@@ -738,22 +747,31 @@ static int gQuit = false;
 
 static void apple_main_event_loop()
 {
-   Boolean gotEvent;
+   OSErr err;
+   EventRef eventRef;
    EventRecord event;
-   UInt32 timeout = 1*60; // number of ticks (1/60th of a second)
+   //UInt32 timeout = 1*60; // number of ticks (1/60th of a second)
    VS("LOADER: Entering AppleEvent main loop.\n");
 
    while (!gQuit)
    {
-      gotEvent = WaitNextEvent(highLevelEventMask, &event, timeout, NULL);
-      if (gotEvent)
+      // Previous func WaitNextEvent() was deprecated and 32-bit only.
+      // Func ReceiveNextEvent() is threadsafe and available even for 64-bit OS X.
+      //gotEvent = WaitNextEvent(highLevelEventMask, &event, timeout, NULL);
+      err = ReceiveNextEvent(0, NULL, kEventDurationNoWait, true, &eventRef);
+      if (err == noErr)
       {
          VS("LOADER: Processing an AppleEvent.\n");
+         // Convert the event ref to the type AEProcessAppleEvent expects.
+         ConvertEventRefToEventRecord(eventRef, &event);
          AEProcessAppleEvent(&event);
+         // Func ReceiveNextEvent() requires releasing event manually.
+         ReleaseEvent(eventRef);
       }
       gQuit = true;
    }
 }
+
 
 static void process_apple_events()
 {
@@ -777,6 +795,37 @@ static void process_apple_events()
 
 }
 
+/* New implementation of handling Apple events - should work even on 64bit Mac OS X. */
+
+static void handle_open_doc_apple_event()
+{
+    // TODO
+}
+
+
+static void process_apple_events()
+{
+    EventTypeSpec event_types[1];  //  List of event types to handle.
+    EventHandlerUPP handler_open_doc;
+    EventHandlerRef handler_ref;  // Reference for later removing the event handler.
+
+    // Event types we are interested in.
+    event_types[0].eventClass = kCoreEventClass;
+    event_types[0].eventKind = kAEOpenDocuments;
+    // Carbon Event Manager requires convert the function pointer to type EventHandlerUPP.
+    // https://developer.apple.com/legacy/library/documentation/Carbon/Conceptual/Carbon_Event_Manager/Tasks/CarbonEventsTasks.html
+    handler_open_doc = NewEventHandlerUPP(handle_open_doc_apple_event);
+    // Install the event handler.
+    // InstallApplicationEventHandler is a macro for 'InstallEventHandler' where the event target
+    // is Application.
+    // We do not have any windows so having Application as event target is fine.
+    // TODO
+    InstallApplicationEventHandler(handler_open_doc, 1, event_types, NULL, handler_ref);
+    // TODO
+    //ReceiveNextEvent();
+    // TODO
+    //RemoveEventHandler(handler_open_doc);
+}
 #endif
 
 
