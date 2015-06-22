@@ -892,7 +892,7 @@ for example both Windows and Mac OS X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
 Should you share the same home directory on multiple platforms, for
-example Linux and OS X, you will need to set the PYINSTALLERCONFIGDIR
+example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
 environment variable to different values on each platform otherwise
 PyInstaller may cache files for one platform and use them on the other
 platform, as by default it uses a subdirectory of your home directory
