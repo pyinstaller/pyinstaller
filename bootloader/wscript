@@ -365,6 +365,9 @@ def configure(ctx):
         ctx.env.append_value('DEFINES', '_REENTRANT')
         # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
         ctx.env.append_value('DEFINES', '_BSD_SOURCE')
+        # On Mac OS X is 'mkdtemp' available only with _DARWIN_C_SOURCE.
+        if is_darwin:
+            ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
 
     if is_win:
         ctx.env.append_value('DEFINES', 'WIN32')
