@@ -4,7 +4,9 @@ Changes since PyInstaller 2.1
 -------------------------------
  + Support for Python 3
  + Support only Python 2.7 and 3.3+
- + (Windows 32bit) enable flag LARGEADDRESSAWARE that allows to use 4GB of RAM.
+ + (OS X) 32bit precompiled bootloader no longer distributed.
+ + (Windows) for 32bit bootloader enable flag LARGEADDRESSAWARE that allows
+   to use 4GB of RAM.
  * Use library modulegraph for module dependency analysis.
  * TODO Improve testing infrastructure.
  

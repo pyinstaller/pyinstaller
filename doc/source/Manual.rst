@@ -21,10 +21,10 @@ Requirements
 **Windows**
   * Windows XP or newer.
   * PyWin32_
-    Python extensions for Windows is needed for users of Python 2.6 and later.
+    Python extensions for Windows.
 
 **Mac OS X**
-  * Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion, Mountain Lion).
+  * Mac OS X 10.6 (Snow Leopard) or newer.
 
 **Linux**
   * ldd:

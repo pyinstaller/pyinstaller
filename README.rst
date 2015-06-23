@@ -22,12 +22,12 @@ PyInstaller
 Requirements
 ------------
 - Python: 
-   * 2.6 - 2.7 (Python 3 is not supported)
+   * 2.7 or 3.3+
    * PyCrypto_ 2.4+ (only if using bytecode encryption)
 
 - Windows (32bit/64bit):
    * Windows XP or newer.
-   * pywin32_ when using Python 2.6+
+   * pywin32_
     
 - Linux (32bit/64bit)
    * ldd: Console application to print the shared libraries required
@@ -37,8 +37,8 @@ Requirements
      object files. This typically can by found in the
      distribution-package `binutils`.
 
-- Mac OS X (32/64bit):
-   * Mac OS X 10.6 (Tiger) or newer.
+- Mac OS X (64bit):
+   * Mac OS X 10.6 (Snow Leopard) or newer.
 
 
 Installation
