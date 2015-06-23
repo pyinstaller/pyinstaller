@@ -47,7 +47,7 @@ import PyInstaller
 from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
-from PyInstaller.compat import is_py2, is_py33, is_win, is_darwin, modname_tkinter
+from PyInstaller.compat import is_py2, is_win, is_darwin, modname_tkinter
 from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import hookutils
@@ -102,7 +102,6 @@ class SkipChecker(object):
             'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
             # Old-style email.* subpackages supported only in Python 2.
             'basic/test_email_oldstyle': is_py2,
-            'import/test_nspkg-pep420': is_py33,
             'import/test_onefile_pkgutil.get_data__main__': False,
             'interactive/test_onefile_win32_uac_admin': is_win,
             'libraries/test_enchant': is_win,
