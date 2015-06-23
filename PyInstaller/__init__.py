@@ -68,7 +68,9 @@ if is_win and is_py2:
             pass
 
 
-if is_win:
+if compat.getenv('PYINSTALLER_CONFIG_DIR'):
+    CONFIGDIR = compat.getenv('PYINSTALLER_CONFIG_DIR')
+elif is_win:
     CONFIGDIR = compat.getenv('APPDATA')
     if not CONFIGDIR:
         CONFIGDIR = os.path.expanduser('~\\Application Data')
