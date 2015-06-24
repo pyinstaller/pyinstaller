@@ -104,7 +104,8 @@
 void pyi_global_printf(const char *fmt, ...)
 {
    va_list v;
-   va_start(v,fmt);
-   vprintf(fmt,v);
+   va_start(v, fmt);
+   // Sent 'LOADER text' messages to stderr.
+   vfprintf(stderr, fmt, v);
    va_end(v);
 }

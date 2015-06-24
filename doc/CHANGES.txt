@@ -9,6 +9,8 @@ Changes since PyInstaller 2.1
    to use 4GB of RAM.
  + Allow override PyInstaller default config directory by environment variable
    PYINSTALLER_CONFIG_DIR.
+ + (Windows 32bit) enable flag LARGEADDRESSAWARE that allows to use 4GB of RAM.
+ + Bootloader debug messages 'LOADER: ...' printed to stderr.
  * Use library modulegraph for module dependency analysis.
  * TODO Improve testing infrastructure.
  
