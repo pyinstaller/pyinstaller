@@ -69,23 +69,30 @@ class ArchiveFile(object):
         self.kwargs = kwargs
         self.pos = 0
         self.fd = None
-        self.auto_open()
+        self.__open()
 
     def __getattr__(self, name):
         """
         Auto open file when access member from file object
         This function only call when member of name not exist in self
         """
-        self.auto_open()
+        assert self.fd
         return getattr(self.fd, name)
 
-    def auto_open(self):
+    def __open(self):
         """
         Open file and seek to pos record from last close
         """
         if self.fd is None:
             self.fd = open(*self.args, **self.kwargs)
             self.fd.seek(self.pos)
+
+    def __enter__(self):
+        self.__open()
+
+    def __exit__(self, type, value, traceback):
+        assert self.fd
+        self.close()
 
     def close(self):
         """
@@ -128,9 +135,9 @@ class Archive(object):
         self.pymagic = imp.get_magic()
         if path is not None:
             self.lib = ArchiveFile(self.path, 'rb')
-            self.checkmagic()
-            self.loadtoc()
-            self.lib.close()
+            with self.lib:
+                self.checkmagic()
+                self.loadtoc()
 
     ####### Sub-methods of __init__ - override as needed #############
     def checkmagic(self):
@@ -187,9 +194,9 @@ class Archive(object):
         ispkg, pos = self.toc.get(name, (0, None))
         if pos is None:
             return None
-        self.lib.seek(self.start + pos)
-        obj = marshal.loads(self.lib.read())
-        self.lib.close()
+        with self.lib:
+            self.lib.seek(self.start + pos)
+            obj = marshal.loads(self.lib.read())
         return ispkg, obj
 
     ########################################################################
@@ -356,9 +363,9 @@ class ZlibArchive(Archive):
         (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
         if pos is None:
             return None
-        self.lib.seek(self.start + pos)
-        obj = self.lib.read(lngth)
-        self.lib.close()
+        with self.lib:
+            self.lib.seek(self.start + pos)
+            obj = self.lib.read(lngth)
         try:
             if self.crypted:
                 obj = self._mod_zlib.decompress(self.cipher.decrypt(obj))

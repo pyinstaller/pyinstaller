@@ -139,7 +139,9 @@ class FrozenImporter(object):
                 # Unzip zip archive bundled with the executable.
                 self._pyz_archive = ZlibArchive(pyz_filepath)
                 # Verify the integrity of the zip archive with Python modules.
-                self._pyz_archive.checkmagic()
+                # This is already done when creating the ZlibArchive instance.
+                #self._pyz_archive.checkmagic()
+
                 # End this method since no Exception was raised we can assume
                 # ZlibArchive was successfully loaded. Let's remove 'pyz_filepath'
                 # from sys.path.
