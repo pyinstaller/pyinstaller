@@ -273,6 +273,7 @@ class CArchive(pyi_archive.Archive):
 
         self.lib.seek(self.pkg_start + dpos)
         rslt = self.lib.read(dlen)
+        self.lib.close()
 
         if flag == 1:
             rslt = zlib.decompress(rslt)

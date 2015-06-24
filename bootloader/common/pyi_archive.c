@@ -53,6 +53,32 @@ TOC *pyi_arch_increment_toc_ptr(ARCHIVE_STATUS *status, TOC* ptoc)
 }
 
 
+/*
+ * Open archive file if needed
+ */
+static int pyi_arch_open_fp(ARCHIVE_STATUS *status)
+{
+	if (status->fp == NULL) {
+		status->fp = stb_fopen(status->archivename, "rb");
+		if (status->fp == NULL)
+			return -1;
+	}
+	return 0;
+}
+
+
+/*
+ * Close archive file
+ * File should close after unused to avoid locking
+ */
+static void pyi_arch_close_fp(ARCHIVE_STATUS *status)
+{
+	if (status->fp != NULL) {
+		stb_fclose(status->fp, FALSE);
+		status->fp = NULL;
+	}
+}
+
 /* 
  * Decompress data in buff, described by ptoc.
  * Return in malloc'ed buffer (needs to be freed)
@@ -107,6 +133,11 @@ unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
 	unsigned char *data;
 	unsigned char *tmp;
 
+	if (pyi_arch_open_fp(status) != 0) {
+		OTHERERROR("Cannot open archive file\n");
+		return NULL;
+	}
+
 	fseek(status->fp, status->pkgstart + ntohl(ptoc->pos), SEEK_SET);
 	data = (unsigned char *)malloc(ntohl(ptoc->len));
 	if (data == NULL) {
@@ -127,6 +158,8 @@ unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
 			return NULL;
 		}
 	}
+	
+	pyi_arch_close_fp(status);
 	return data;
 }
 
@@ -290,8 +323,7 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 	int filelen;
     VS("LOADER: archivename is %s\n", status->archivename);
 	/* Physically open the file */
-	status->fp = stb_fopen(status->archivename, "rb");
-	if (status->fp == NULL) {
+	if (pyi_arch_open_fp(status) != 0) {
 		VS("LOADER: Cannot open archive: %s\n", status->archivename);
 		return -1;
 	}
@@ -353,6 +385,10 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 		FATALERROR("Error on file");
 		return -1;
 	}
+	
+	/* Close file handler
+	 * if file not close here it will be close in pyi_arch_status_free_memory */
+	pyi_arch_close_fp(status);
 	return 0;
 }
 
@@ -433,6 +469,8 @@ void pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
         if (archive_status->tocbuff != NULL) {
             free(archive_status->tocbuff);
         }
+        /* Close file handler */
+        pyi_arch_close_fp(archive_status);
         free(archive_status);
     }
 }

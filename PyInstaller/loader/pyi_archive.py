@@ -58,6 +58,42 @@ if "-vi" in sys.argv[1:]:
     _verbose = 1
 
 
+class ArchiveFile(object):
+	"""File class support auto open when access member from file object
+	This class is use to avoid file locking on windows"""
+	def __init__(self, *args, **kwargs):
+		self.args = args
+		self.kwargs = kwargs
+		self.pos = 0
+		self.fd = None
+		self.auto_open()
+	
+	def __getattr__(self, name):
+		"""
+		Auto open file when access member from file object
+		This function only call when member of name not exist in self
+		"""
+		self.auto_open()
+		return getattr(self.fd, name)
+
+	def auto_open(self):
+		"""
+		Open file and seek to pos record from last close
+		"""
+		if self.fd is None:
+			self.fd = open(*self.args, **self.kwargs)
+			self.fd.seek(self.pos)
+
+	def close(self):
+		"""
+		Close file and record pos
+		"""
+		if self.fd is not None:
+			self.pos = self.fd.tell()
+			self.fd.close()
+			self.fd = None
+
+
 class ArchiveReadError(RuntimeError):
     pass
 
@@ -88,9 +124,10 @@ class Archive(object):
         import imp
         self.pymagic = imp.get_magic()
         if path is not None:
-            self.lib = open(self.path, 'rb')
+            self.lib = ArchiveFile(self.path, 'rb')
             self.checkmagic()
             self.loadtoc()
+            self.lib.close()
 
     ####### Sub-methods of __init__ - override as needed #############
     def checkmagic(self):
@@ -121,7 +158,7 @@ class Archive(object):
         self.lib.seek(self.start + self.TOCPOS)
         (offset,) = struct.unpack('!i', self.lib.read(4))
         self.lib.seek(self.start + offset)
-        self.toc = marshal.load(self.lib)
+        self.toc = marshal.loads(self.lib.read())
 
     ######## This is what is called by FuncImporter #######
     ## Since an Archive is flat, we ignore parent and modname.
@@ -148,7 +185,9 @@ class Archive(object):
         if pos is None:
             return None
         self.lib.seek(self.start + pos)
-        return ispkg, marshal.load(self.lib)
+        obj = marshal.loads(self.lib.read())
+        self.lib.close()
+        return ispkg, obj
 
     ########################################################################
     # Informational methods
@@ -173,7 +212,7 @@ class Archive(object):
         assert(self.path is None)
 
         self.path = path
-        self.lib = open(path, 'wb')
+        self.lib = ArchiveFile(path, 'wb')
         # Reserve space for the header.
         if self.HDRLEN:
             self.lib.write('\0' * self.HDRLEN)
@@ -247,7 +286,7 @@ class Archive(object):
         Default - toc is a dict
         Gets marshaled to self.lib
         """
-        marshal.dump(self.toc, self.lib)
+        self.lib.write(marshal.dumps(self.toc))
 
     def update_headers(self, tocpos):
         """
@@ -316,6 +355,7 @@ class ZlibArchive(Archive):
             return None
         self.lib.seek(self.start + pos)
         obj = self.lib.read(lngth)
+        self.lib.close()
         try:
             if self.crypted:
                 obj = self._mod_zlib.decompress(self.cipher.decrypt(obj))
