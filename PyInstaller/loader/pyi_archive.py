@@ -59,39 +59,42 @@ if "-vi" in sys.argv[1:]:
 
 
 class ArchiveFile(object):
-	"""File class support auto open when access member from file object
-	This class is use to avoid file locking on windows"""
-	def __init__(self, *args, **kwargs):
-		self.args = args
-		self.kwargs = kwargs
-		self.pos = 0
-		self.fd = None
-		self.auto_open()
-	
-	def __getattr__(self, name):
-		"""
-		Auto open file when access member from file object
-		This function only call when member of name not exist in self
-		"""
-		self.auto_open()
-		return getattr(self.fd, name)
+    """
+    File class support auto open when access member from file object
+    This class is use to avoid file locking on windows
+    """
 
-	def auto_open(self):
-		"""
-		Open file and seek to pos record from last close
-		"""
-		if self.fd is None:
-			self.fd = open(*self.args, **self.kwargs)
-			self.fd.seek(self.pos)
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+        self.pos = 0
+        self.fd = None
+        self.auto_open()
 
-	def close(self):
-		"""
-		Close file and record pos
-		"""
-		if self.fd is not None:
-			self.pos = self.fd.tell()
-			self.fd.close()
-			self.fd = None
+    def __getattr__(self, name):
+        """
+        Auto open file when access member from file object
+        This function only call when member of name not exist in self
+        """
+        self.auto_open()
+        return getattr(self.fd, name)
+
+    def auto_open(self):
+        """
+        Open file and seek to pos record from last close
+        """
+        if self.fd is None:
+            self.fd = open(*self.args, **self.kwargs)
+            self.fd.seek(self.pos)
+
+    def close(self):
+        """
+        Close file and record pos
+        """
+        if self.fd is not None:
+            self.pos = self.fd.tell()
+            self.fd.close()
+            self.fd = None
 
 
 class ArchiveReadError(RuntimeError):
