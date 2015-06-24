@@ -484,6 +484,12 @@ def django_dottedstring_imports(django_root_dir):
     PyInstaller.__pathex__.append(django_root_dir)
 
     ret = eval_script('django_import_finder.py')
+    if not isinstance(ret, list):
+        # If the script fails, `ret` is not a list. Handle this here to
+        # avoid crashes laster. See github issues #667, 1067 and #1252.
+        logger.error('script django-import-finder.py failed')
+        assert (not ret), ret # ensure it is an empty value
+        ret = []
 
     # Unset environment variables again.
     compat.unsetenv('DJANGO_SETTINGS_MODULE')
