@@ -36,6 +36,11 @@
  #include <io.h>
 #endif
 
+// On Mac OS X send debug msg also to syslog for gui app in debug mode.
+#if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+ #include <syslog.h>
+#endif
+
 
 /* PyInstaller headers. */
 #include "pyi_global.h"
@@ -103,9 +108,18 @@
  */
 void pyi_global_printf(const char *fmt, ...)
 {
-   va_list v;
-   va_start(v, fmt);
-   // Sent 'LOADER text' messages to stderr.
-   vfprintf(stderr, fmt, v);
-   va_end(v);
+    va_list v;
+    va_start(v, fmt);
+        // Sent 'LOADER text' messages to stderr.
+        vfprintf(stderr, fmt, v);
+    va_end(v);
+    // For Gui apps on Mac OS X send debug messages also to syslog.
+    // This allows to see bootloader debug messages in the Console.app log viewer.
+    // https://en.wikipedia.org/wiki/Console_(OS_X)
+    // Levels DEBUG and INFO are ignored so use level NOTICE.
+    va_start(v, fmt);
+        #if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+            vsyslog(LOG_NOTICE, fmt, v);
+        #endif
+    va_end(v);
 }
