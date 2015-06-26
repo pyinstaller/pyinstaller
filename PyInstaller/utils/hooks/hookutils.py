@@ -139,11 +139,11 @@ def get_pyextension_imports(modname):
 import sys
 # Importing distutils filters common modules, especiall in virtualenv.
 import distutils
-original_modlist = sys.modules.keys()
+original_modlist = set(sys.modules.keys())
 # When importing this module - sys.modules gets updated.
 import %(modname)s
-all_modlist = sys.modules.keys()
-diff = set(all_modlist) - set(original_modlist)
+all_modlist = set(sys.modules.keys())
+diff = all_modlist - original_modlist
 # Module list contain original modname. We do not need it there.
 diff.discard('%(modname)s')
 # Print module list to stdout.
