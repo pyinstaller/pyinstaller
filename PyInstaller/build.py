@@ -1631,7 +1631,7 @@ class COLLECT(Target):
         os.makedirs(self.name)
         toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
-            if not os.path.isfile(fnm) and is_path_to_egg(fnm):
+            if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
             if os.pardir in os.path.normpath(inm) or os.path.isabs(inm):

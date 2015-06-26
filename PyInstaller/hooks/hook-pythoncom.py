@@ -16,9 +16,17 @@ attribute.
 """
 
 import os.path
-from PyInstaller.utils.hooks import hookutils
+from PyInstaller.utils.hooks.hookutils import get_module_file_attribute
 
-# Absolute path of the corresponding DLL. On importation, this module
-# dynamically imports and replaces itself in memory with this DLL.
-_dll_file = hookutils.get_pywin32_module_file_attribute('pythoncom')
-binaries = [(os.path.basename(_dll_file), _dll_file)]
+_pth = get_module_file_attribute('pythoncom')
+
+# Binaries that should be included with the module 'pythoncom'.
+# List mod.pyinstaller_binaries gets extended.
+binaries = [
+    (
+        # Relative path in the ./dist/app_name/ directory.
+        os.path.basename(_pth),
+        # Absolute path on hard disk.
+        _pth,
+    )
+]
