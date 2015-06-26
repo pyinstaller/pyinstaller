@@ -74,7 +74,7 @@ static int argc_pyi = 0;
  * on the App icon in the OS X dock.
  */
 #if defined(__APPLE__) && defined(WINDOWED)
-static void process_apple_events();
+static void process_apple_events_new();
 #endif
 
 
@@ -645,7 +645,7 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
     }
 
 #if defined(__APPLE__) && defined(WINDOWED)
-    process_apple_events();
+    process_apple_events_new();
 #endif
 
 
@@ -695,6 +695,7 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
  * On Mac OS X this converts files from kAEOpenDocuments events into sys.argv.
  */
 #if defined(__APPLE__) && defined(WINDOWED)
+/*
 static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
 {
   AEDescList docList;
@@ -794,37 +795,148 @@ static void process_apple_events()
     }
 
 }
-
-/* New implementation of handling Apple events - should work even on 64bit Mac OS X. */
-
-static void handle_open_doc_apple_event()
+*/
+/*
+ * On Mac OS X converts files from kAEOpenDocuments events into sys.argv.
+ * New implementation of handling Apple events - works even on 64bit Mac OS X.
+ */
+static pascal OSStatus do_filenames_conversion_to_argv(EventHandlerCallRef next_handler,
+                                                       EventRef the_event,
+                                                       void* user_data)
 {
+
+
+///////////////// OLD implementation
+/*
+  AEDescList docList;
+  long index;
+  long count = 0;
+  int i;
+  char *myFileName;
+  Size actualSize;
+  DescType returnedType;
+  AEKeyword keywd;
+  FSRef theRef;
+
+  VS("LOADER: handle_open_doc_ae called.\n");
+
+  OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
+  if (err != noErr) return err;
+
+  err = AECountItems(&docList, &count);
+  if (err != noErr) return err;
+  for (index = 1; index <= count; index++)
+  {
+     err = AEGetNthPtr(&docList, index, typeFSRef, &keywd, &returnedType, &theRef, sizeof(theRef), &actualSize);
+
+     CFURLRef fullURLRef;
+     fullURLRef = CFURLCreateFromFSRef(NULL, &theRef);
+     CFStringRef cfString = CFURLCopyFileSystemPath(fullURLRef, kCFURLPOSIXPathStyle);
+     CFRelease(fullURLRef);
+     CFMutableStringRef cfMutableString = CFStringCreateMutableCopy(NULL, 0, cfString);
+     CFRelease(cfString);
+     CFStringNormalize(cfMutableString, kCFStringNormalizationFormC);
+     int len = CFStringGetLength(cfMutableString);
+     const int bufferSize = (len+1)*6;  // in theory up to six bytes per Unicode code point, for UTF-8.
+     char* buffer = (char*)malloc(bufferSize);
+     CFStringGetCString(cfMutableString, buffer, bufferSize, kCFStringEncodingUTF8);
+
+     argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
+     argv_pyi[argc_pyi++] = strdup(buffer);
+     argv_pyi[argc_pyi] = NULL;
+
+     free(buffer);
+  }
+
+  err = AEDisposeDesc(&docList);
+*/
+//////////////////////////////////////////////
+
+
+
+    // Handle the kAEOpenDocuments event.
+    VS("LOADER: AppleEvent - do_filenames_coversion_to_argv called.\n");
+    // Obtain filenames from event.
+    // Every event type contains different additional information.
     // TODO
+    //GetEventParameter(the_event, )
+    // TODO
+    // Report success.
+    return noErr;
 }
 
 
-static void process_apple_events()
+// TODO Unfinished, issue #1309.
+static void process_apple_events_new()
 {
+    OSStatus handler_install_status;
+    OSStatus handler_remove_status;
+    OSStatus event_received;
     EventTypeSpec event_types[1];  //  List of event types to handle.
     EventHandlerUPP handler_open_doc;
     EventHandlerRef handler_ref;  // Reference for later removing the event handler.
+    EventRef event_ref;  // Event that caused ReceiveNextEvent to return.
+    OSType ev_class;
+    UInt32 ev_kind;
+    EventTimeout timeout = 3.0; // number of ticks (1/60th of a second)
 
+    VS("LOADER: AppleEvent - processing...\n");
     // Event types we are interested in.
     event_types[0].eventClass = kCoreEventClass;
     event_types[0].eventKind = kAEOpenDocuments;
     // Carbon Event Manager requires convert the function pointer to type EventHandlerUPP.
     // https://developer.apple.com/legacy/library/documentation/Carbon/Conceptual/Carbon_Event_Manager/Tasks/CarbonEventsTasks.html
-    handler_open_doc = NewEventHandlerUPP(handle_open_doc_apple_event);
+    handler_open_doc = NewEventHandlerUPP(do_filenames_conversion_to_argv);
     // Install the event handler.
     // InstallApplicationEventHandler is a macro for 'InstallEventHandler' where the event target
     // is Application.
-    // We do not have any windows so having Application as event target is fine.
-    // TODO
-    InstallApplicationEventHandler(handler_open_doc, 1, event_types, NULL, handler_ref);
-    // TODO
-    //ReceiveNextEvent();
-    // TODO
-    //RemoveEventHandler(handler_open_doc);
+    // We do not have any windows so having Application as event target should be fine.
+    handler_install_status = InstallApplicationEventHandler(handler_open_doc, 1, event_types, NULL, &handler_ref);
+    if (handler_install_status == noErr)
+    {
+        VS("LOADER: AppleEvent - installed handler.\n");
+
+        // TODO
+        //ReceiveNextEvent();
+        //RunCurrentEventLoop(timeout);
+        //RunApplicationEventLoop();
+
+        // Previous func WaitNextEvent() was deprecated and 32-bit only.
+        // Func ReceiveNextEvent() is threadsafe and available even for 64-bit OS X.
+        //gotEvent = WaitNextEvent(highLevelEventMask, &event, timeout, NULL);
+        //event_received = ReceiveNextEvent(1, event_types, kEventDurationForever, true, &event_ref);
+        //event_received = ReceiveNextEvent(0, NULL, kEventDurationNoWait, true, &event_ref);
+        // TODO
+        //handler_remove_status = RemoveEventHandler(handler_ref);
+        /*
+        if (event_received == noErr)
+        {
+            VS("LOADER: AppleEvent - received event.\n");
+            ev_class = GetEventClass(event_ref);
+            ev_kind = GetEventKind(event_ref);
+            VS("LOADER: AppleEvent - event type: %u\n", ev_kind);
+            //if (GetEventKind(event_ref) == kAEOpenDocuments)
+            if (ev_class == kCoreEventClass)
+            {
+                VS("LOADER: AppleEvent - right class.\n");
+            }
+
+            ReleaseEvent(event_ref);
+        }
+        else
+        {
+            VS("LOADER: AppleEvent - ERROR receiving events code: %d\n", event_received);
+        }*/
+
+    }
+    else
+    {
+        VS("LOADER: AppleEvent - ERROR installing handler.\n");
+    }
+
+    // Remove handler_ref reference when we are done with EventHandlerUPP.
+    // Carbon Event Manager does not do this automatically.
+    DisposeEventHandlerUPP(handler_open_doc)
 }
 #endif
 
