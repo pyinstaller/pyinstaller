@@ -20,6 +20,7 @@ import optparse
 import os
 import platform
 import sys
+import tempfile
 
 # easy_install command used in a Python script.
 from setuptools.command import easy_install
@@ -105,7 +106,8 @@ _PY_VERSION = {
 def main():
     parser = optparse.OptionParser()
     parser.add_option('-d', '--download-dir',
-        help='Directory with maually downloaded python modules.'
+        help='Directory with maually downloaded python modules.',
+        default=tempfile.gettempdir()
     )
     opts, _ = parser.parse_args()
 
