@@ -33,7 +33,7 @@ if not hasattr(sys, 'real_prefix'):
     sys.path.insert(0, pyi_home)
 
 
-from PyInstaller.compat import is_py25, is_py26
+from PyInstaller.compat import is_py25, is_py26, is_py27
 
 
 PYVER = '.'.join([str(x) for x in sys.version_info[0:2]])
