@@ -9,6 +9,9 @@
 
 
 # Test import hooks for the following modules.
+
+# This line must be included for Pyinstaller to work; Python doesn't require it.
+import pygments.formatters
 from pygments.formatters import HtmlFormatter
 # This line must be included for Pyinstaller to work; Python doesn't require it.
 import pygments.lexers
