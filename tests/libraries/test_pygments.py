@@ -7,13 +7,14 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
-# Test import hooks for the following modules.
-
-# This line must be included for Pyinstaller to work; Python doesn't require it.
+# Pyinstaller executables fail without these imports; Python doesn't need them.
 import pygments.formatters
-from pygments.formatters import HtmlFormatter
-# This line must be included for Pyinstaller to work; Python doesn't require it.
 import pygments.lexers
+
+# This sample code is taken from http://pygments.org/docs/quickstart/.
+from pygments import highlight
 from pygments.lexers import PythonLexer
-formatter = HtmlFormatter(style='vim')
+from pygments.formatters import HtmlFormatter
+
+code = 'print "Hello World"'
+print highlight(code, PythonLexer(), HtmlFormatter())
