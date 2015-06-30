@@ -19,20 +19,8 @@ import logging
 from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
 
 FORMAT = '%(relativeCreated)d %(levelname)s: %(message)s'
-
-try:
-    logging.basicConfig(format=FORMAT, level=logging.INFO)
-except TypeError:
-    # In Python 2.3 basicConfig does not accept arguments
-    # :todo: remove when dropping Python 2.3 compatibility
-    logging.basicConfig()
-    root = logging.getLogger()
-    assert len(root.handlers) == 1
-    root.handlers[0].setFormatter(logging.Formatter(FORMAT))
-    root.setLevel(logging.INFO)
-
+logging.basicConfig(format=FORMAT, level=logging.INFO)
 logger = getLogger('PyInstaller')
-
 
 def __add_options(parser):
     levels = ('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
