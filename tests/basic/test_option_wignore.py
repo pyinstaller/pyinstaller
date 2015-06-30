@@ -10,6 +10,7 @@
 
 print('test5 - W ignore')
 
-import re
+import sys
+assert 'ignore' in sys.warnoptions
 
 print('test5 - done')
