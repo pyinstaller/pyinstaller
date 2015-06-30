@@ -168,6 +168,7 @@ class Archive(object):
         self.lib.seek(self.start + self.TOCPOS)
         (offset,) = struct.unpack('!i', self.lib.read(4))
         self.lib.seek(self.start + offset)
+        # use marshal.loads() since load() arg must be a file object
         self.toc = marshal.loads(self.lib.read())
 
     ######## This is what is called by FuncImporter #######
@@ -196,6 +197,7 @@ class Archive(object):
             return None
         with self.lib:
             self.lib.seek(self.start + pos)
+            # use marshal.loads() sind load() arg must be a file object
             obj = marshal.loads(self.lib.read())
         return ispkg, obj
 
