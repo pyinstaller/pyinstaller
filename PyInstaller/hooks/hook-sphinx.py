@@ -70,7 +70,16 @@ hiddenimports = ( collect_submodules('sphinx.builders') +
                    'StringIO', 'cStringIO', 'cPickle', 'itertools', 'UserString',
                    'urllib', 'urllib2', 'HTMLParser', 'ConfigParser',
 #
+# Finally, two Sphinx themes (I term them external themes) are located outside
+# the Sphinx package. Include them as well.
+                   'alabaster', 'sphinx_rtd_theme'] )
+#
 # Sphinx also relies on a number of data files in its directory hierarchy: for
 # example, *.html and *.conf files in sphinx.themes, translation files in
 # sphinx.locale, etc.
-datas = collect_data_files('sphinx')
+datas = ( collect_data_files('sphinx') +
+#
+# The external themes also need their data files.
+          collect_data_files('alabaster') +
+          collect_data_files('sphinx_rtd_theme') )
+
