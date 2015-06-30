@@ -276,8 +276,9 @@ class CArchive(pyi_archive.Archive):
             ndx = name
         (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
 
-        self.lib.seek(self.pkg_start + dpos)
-        rslt = self.lib.read(dlen)
+        with self.lib:
+            self.lib.seek(self.pkg_start + dpos)
+            rslt = self.lib.read(dlen)
 
         if flag == 1:
             rslt = zlib.decompress(rslt)
