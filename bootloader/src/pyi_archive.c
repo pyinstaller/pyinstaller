@@ -77,7 +77,7 @@ static int pyi_arch_open_fp(ARCHIVE_STATUS *status)
 static void pyi_arch_close_fp(ARCHIVE_STATUS *status)
 {
 	if (status->fp != NULL) {
-		fclose(status->fp);
+		pyi_path_fclose(status->fp);
 		status->fp = NULL;
 	}
 }

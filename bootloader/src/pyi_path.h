@@ -37,5 +37,6 @@ void pyi_path_archivefile(char *archivefile, const char *executable);
 #else
    #define pyi_path_fopen(x,y)    fopen(x,y)
 #endif
+#define pyi_path_fclose(x)    fclose(x)
 
 #endif /* PYI_PATH_H */
