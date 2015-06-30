@@ -20,7 +20,7 @@
 # Therefore, we need all modules in ``sphinx.builders``.
 from PyInstaller.hooks.hookutils import collect_submodules, collect_data_files
 
-hiddenimports = (collect_submodules('sphinx.builders') +
+hiddenimports = ( collect_submodules('sphinx.builders') +
 #
 # From sphinx.application line 429::
 #
@@ -28,7 +28,7 @@ hiddenimports = (collect_submodules('sphinx.builders') +
 #
 # Per http://sphinx-doc.org/extensions.html#builtin-sphinx-extensions,
 # Sphinx extensions are all placed in ``sphinx.ext``. Include these.
-                 collect_submodules('sphinx.ext') +
+                  collect_submodules('sphinx.ext') +
 #
 # From sphinx.search line 228::
 #
@@ -43,7 +43,7 @@ hiddenimports = (collect_submodules('sphinx.builders') +
 #        'en': SearchEnglish,
 #
 # So, we need all the languages in ``sphinx.search``.
-                 collect_submodules('sphinx.search') +
+                  collect_submodules('sphinx.search') +
 #
 # From sphinx.websupport line 100::
 #
@@ -51,7 +51,7 @@ hiddenimports = (collect_submodules('sphinx.builders') +
 #    SearchClass = getattr(__import__(mod, None, None, [cls]), cls)
 #
 # So, include modules under ``sphinx.websupport.search``.
-                 collect_submodules('sphinx.websupport.search') +
+                  collect_submodules('sphinx.websupport.search') +
 #
 # From sphinx.util.inspect line 21::
 #
@@ -62,13 +62,13 @@ hiddenimports = (collect_submodules('sphinx.builders') +
 #    locale = __import__('locale')  # due to submodule of the same name
 #
 # Add these two modules.
-                 ['inspect', 'locale',
+                  ['inspect', 'locale',
 #
 # Plus, there are a HUGE number of imports from six that must be manually
 # listed. At some point, perhaps these can be auto-detected (see efforts
 # at https://github.com/pyinstaller/pyinstaller/pull/1231).
-                  'StringIO', 'cStringIO', 'cPickle', 'itertools', 'UserString',
-                  'urllib', 'urllib2', 'HTMLParser', 'ConfigParser' ] )
+                   'StringIO', 'cStringIO', 'cPickle', 'itertools', 'UserString',
+                   'urllib', 'urllib2', 'HTMLParser', 'ConfigParser',
 #
 # Sphinx also relies on a number of data files in its directory hierarchy: for
 # example, *.html and *.conf files in sphinx.themes, translation files in
