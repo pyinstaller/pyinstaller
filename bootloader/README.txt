@@ -24,4 +24,8 @@ See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>.
 
 In short::
 
-  ./waf configure build install
+  ./waf all
+
+or::
+
+  ./waf --no-lsb all
