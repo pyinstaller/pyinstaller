@@ -1,0 +1,8 @@
+# -*- mode: python -*-
+
+# archive_viewer.get_archive_content() currently only lists the names
+# of each entry, not it's type. So we can only test if `v` is in the
+# list. Gad there is no module named `v` :-)
+[
+    'v',
+]
