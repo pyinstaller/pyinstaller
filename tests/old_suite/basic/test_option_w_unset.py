@@ -8,9 +8,9 @@
 #-----------------------------------------------------------------------------
 
 
-print('test5 - W ignore')
+print('test option W not set')
 
 import sys
-assert 'ignore' in sys.warnoptions
+assert 'ignore' not in sys.warnoptions
 
-print('test5 - done')
+print('test - done')
