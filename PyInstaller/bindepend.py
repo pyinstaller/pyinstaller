@@ -28,7 +28,7 @@ import PyInstaller.compat as compat
 
 
 import PyInstaller.log as logging
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 seen = {}
 
