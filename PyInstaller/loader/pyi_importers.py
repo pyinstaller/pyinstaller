@@ -57,12 +57,11 @@ class BuiltinImporter(object):
             # Remove 'fullname' from sys.modules if it was appended there.
             if fullname in sys.modules:
                 sys.modules.pop(fullname)
-            # Release the interpreter's import lock.
-            imp.release_lock()
             raise  # Raise the same exception again.
 
-        # Release the interpreter's import lock.
-        imp.release_lock()
+        finally:
+            # Release the interpreter's import lock.
+            imp.release_lock()
 
         return module
 
@@ -131,15 +130,13 @@ class FrozenImporter(object):
         # It was needed only for FrozenImporter class. Wrong path from sys.path
         # Raises ArchiveReadError exception.
         for pyz_filepath in sys.path:
-            # We need to acquire the interpreter's import lock here
-            # because ZlibArchive() seeks through and reads from the
-            # zip archive.
-            imp.acquire_lock()
             try:
                 # Unzip zip archive bundled with the executable.
                 self._pyz_archive = ZlibArchive(pyz_filepath)
                 # Verify the integrity of the zip archive with Python modules.
-                self._pyz_archive.checkmagic()
+                # This is already done when creating the ZlibArchive instance.
+                #self._pyz_archive.checkmagic()
+
                 # End this method since no Exception was raised we can assume
                 # ZlibArchive was successfully loaded. Let's remove 'pyz_filepath'
                 # from sys.path.
@@ -155,8 +152,6 @@ class FrozenImporter(object):
             except ArchiveReadError:
                 # Item from sys.path is not ZlibArchive let's try next.
                 continue
-            finally:
-                imp.release_lock()
         # sys.path does not contain filename of executable with bundled zip archive.
         # Raise import error.
         raise ImportError("Can't load frozen modules.")
@@ -283,12 +278,11 @@ class FrozenImporter(object):
             # PEP302 requires to raise ImportError exception.
             #raise ImportError("Can't load frozen module: %s" % fullname)
 
-            # Release the interpreter's import lock.
-            imp.release_lock()
             raise
 
-        # Release the interpreter's import lock.
-        imp.release_lock()
+        finally:
+            # Release the interpreter's import lock.
+            imp.release_lock()
 
         # Module returned only in case of no exception.
         return module
@@ -430,12 +424,11 @@ class CExtensionImporter(object):
             # Remove 'fullname' from sys.modules if it was appended there.
             if fullname in sys.modules:
                 sys.modules.pop(fullname)
-            # Release the interpreter's import lock.
-            imp.release_lock()
             raise  # Raise the same exception again.
 
-        # Release the interpreter's import lock.
-        imp.release_lock()
+        finally:
+            # Release the interpreter's import lock.
+            imp.release_lock()
 
         return module
 
