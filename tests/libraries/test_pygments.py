@@ -18,3 +18,4 @@ from pygments.formatters import HtmlFormatter
 
 code = 'print "Hello World"'
 print highlight(code, PythonLexer(), HtmlFormatter())
+
