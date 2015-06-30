@@ -57,12 +57,11 @@ class BuiltinImporter(object):
             # Remove 'fullname' from sys.modules if it was appended there.
             if fullname in sys.modules:
                 sys.modules.pop(fullname)
-            # Release the interpreter's import lock.
-            imp.release_lock()
             raise  # Raise the same exception again.
 
-        # Release the interpreter's import lock.
-        imp.release_lock()
+        finally:
+            # Release the interpreter's import lock.
+            imp.release_lock()
 
         return module
 
@@ -279,12 +278,11 @@ class FrozenImporter(object):
             # PEP302 requires to raise ImportError exception.
             #raise ImportError("Can't load frozen module: %s" % fullname)
 
-            # Release the interpreter's import lock.
-            imp.release_lock()
             raise
 
-        # Release the interpreter's import lock.
-        imp.release_lock()
+        finally:
+            # Release the interpreter's import lock.
+            imp.release_lock()
 
         # Module returned only in case of no exception.
         return module
@@ -426,12 +424,11 @@ class CExtensionImporter(object):
             # Remove 'fullname' from sys.modules if it was appended there.
             if fullname in sys.modules:
                 sys.modules.pop(fullname)
-            # Release the interpreter's import lock.
-            imp.release_lock()
             raise  # Raise the same exception again.
 
-        # Release the interpreter's import lock.
-        imp.release_lock()
+        finally:
+            # Release the interpreter's import lock.
+            imp.release_lock()
 
         return module
 
