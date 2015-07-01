@@ -1422,7 +1422,6 @@ class EXE(Target):
         if self.debug:
             exe = exe + '_d'
         bootloader_file = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
-        logger.info('debug %s' % self.debug)
         logger.info('Bootloader %s' % bootloader_file)
         return bootloader_file
 
