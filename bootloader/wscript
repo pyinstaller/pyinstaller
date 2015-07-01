@@ -108,6 +108,11 @@ def options(ctx):
                    help='Try to find clang C compiler instead of gcc.',
                    default=False,
                    dest='clang')
+    ctx.add_option('--gcc',
+                   action='store_true',
+                   help='Try to find GNU C compiler.',
+                   default=False,
+                   dest='gcc')
     ctx.add_option('--target-arch',
                    action='store',
                    help='Target architecture format (32bit, 64bit). '
@@ -315,6 +320,9 @@ def configure(ctx):
     # Allow to use Clang if preferred.
     if ctx.options.clang:
         ctx.load('clang')
+    # Allow to use gcc if preferred.
+    elif ctx.options.gcc:
+        ctx.load('gcc')
     else:
         ctx.load('compiler_c')  # Any available C compiler.
 			
