@@ -1421,7 +1421,10 @@ class EXE(Target):
         # run_d   - contains verbose messages in console.
         if self.debug:
             exe = exe + '_d'
-        return os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
+        bootloader_file = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
+        logger.info('debug %s' % self.debug)
+        logger.info('Bootloader %s' % bootloader_file)
+        return bootloader_file
 
     def assemble(self):
         logger.info("Building EXE from %s", os.path.basename(self.out))
