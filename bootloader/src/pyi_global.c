@@ -117,9 +117,9 @@ void pyi_global_printf(const char *fmt, ...)
     // This allows to see bootloader debug messages in the Console.app log viewer.
     // https://en.wikipedia.org/wiki/Console_(OS_X)
     // Levels DEBUG and INFO are ignored so use level NOTICE.
-    va_start(v, fmt);
-        #if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+    #if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+        va_start(v, fmt);
             vsyslog(LOG_NOTICE, fmt, v);
-        #endif
     va_end(v);
+    #endif
 }
