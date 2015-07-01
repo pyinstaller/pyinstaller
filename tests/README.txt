@@ -13,17 +13,14 @@ Prerequisites
 In order to run the tests, you will need the following Python packages/libraries installed:
 
  - Mock
- - Nose2
-
-On Debian/Ubuntu you can simple install the python3-mock and python3-nose2 packages. Most other distributions will also have these
-packages. On Windows and Mac OS X you will need to use ``pip`` or ``easy_install`` to install these packages.
+ - pytest
 
 Running the Tests
 -----------------
 
 To run the tests, navigate to the root directory of the PyInstaller project, and then run the following command::
 
-    nose2 -s tests
+    py.test
 
 Or, to run only the unit or freeze tests, run the following command::
 

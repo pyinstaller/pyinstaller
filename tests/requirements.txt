@@ -1,5 +1,5 @@
 # For running tests
-nose2
+pytest
 mock
 
 # TODO Add more dependencies
