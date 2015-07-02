@@ -8,30 +8,44 @@
 #-----------------------------------------------------------------------------
 
 import os
-import sys
-
 import pytest
-import unittest
-
 
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
 
 
-# Directory with additional files for functional tests. E.g. main scripts, etc.
-SUPPORT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'support')
+# Directory with Python scripts for functional tests. E.g. main scripts, etc.
+_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'support')
 
 
-class BuildAndRunTestHelper(object):
+# TODO pyinst config dir in tmp.
+# TODO move to file conftest.py.
+class AppBuilder(object):
 
-    def __init__(self, script, tmpdir, verbose=False):
-        self.script = script
+    def __init__(self, tmpdir, verbose=True):
         self.verbose = verbose
-        self._tmpdir = tmpdir.strpath
+        self._tmpdir = tmpdir
         self._specdir = self._tmpdir
         self._distdir = os.path.join(self._tmpdir, 'dist')
         self._builddir = os.path.join(self._tmpdir, 'build')
 
+    def test_script(self, script):
+        self.script = os.path.join(_SCRIPT_DIR, script)
+        assert os.path.exists(self.script), 'Script %s not found.' % script
+
+        # TODO
+        assert self._test_building(), 'Building of %s failed.' % script
+        #self._test_execution()
+
+
+        # retcode, stderr = b.test_exe()
+        # if retcode != 0:
+        #     self.fail('Running exe of %s failed with return-code %s.\n\n%s' %
+        #               (self.test_name, retcode, stderr))
+        # okay, msg = b.test_logs()
+        # if not okay:
+        #     self.fail('Matching .toc of %s failed.\n\n%s' %
+        #               (self.test_name, msg))
 
     def _find_exepath(self, test):
         """
@@ -96,7 +110,7 @@ class BuildAndRunTestHelper(object):
         os.chdir(old_wd)
         return proc.returncode, stderr
 
-    def test_building(self):
+    def _test_building(self):
         """
         Run building of test script.
 
@@ -193,32 +207,14 @@ class BuildAndRunTestHelper(object):
         return True, ''
 
 
-class TestHelloworld(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    @pytest.fixture(autouse=True)  # This allows passing tmpdir argument.
-    def test_func(self, tmpdir):
-        # Skip test case if test requirement are not met.
-        # TODO
-
-        script = os.path.join(SUPPORT_DIR, 'helloworld.py')
-        self.assertTrue(os.path.exists(script), msg='Script %s not found.' % script)
-
-        # Create an executable and test it.
-        # TODO use tmpdir
-        # TODO how to handle pyinstaller logging output?
-        b = BuildAndRunTestHelper(script, tmpdir=tmpdir, verbose=True)
-        self.assertTrue(b.test_building(), msg='Build of %s failed.' % script)
-        self.assertTrue(False)
+# TODO run by default test as onedir and onefile.
+@pytest.fixture
+def pyi_builder(tmpdir):
+    return AppBuilder(tmpdir.strpath)
 
 
-        # retcode, stderr = b.test_exe()
-        # if retcode != 0:
-        #     self.fail('Running exe of %s failed with return-code %s.\n\n%s' %
-        #               (self.test_name, retcode, stderr))
-        # okay, msg = b.test_logs()
-        # if not okay:
-        #     self.fail('Matching .toc of %s failed.\n\n%s' %
-        #               (self.test_name, msg))
+# TODO Skip test case if test requirement are not met.
+def test_helloworld(pyi_builder):
+        pyi_builder.test_script('helloworld.py')
+        assert 0
+
