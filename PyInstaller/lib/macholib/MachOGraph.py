@@ -5,13 +5,13 @@ Utilities for reading and writing Mach-O headers
 import os
 import sys
 
-from altgraph.Graph import Graph
-from altgraph.ObjectGraph import ObjectGraph
+from PyInstaller.lib.altgraph.Graph import Graph
+from PyInstaller.lib.altgraph.ObjectGraph import ObjectGraph
 
-from macholib.mach_o import *
-from macholib.dyld import dyld_find
-from macholib.MachO import MachO
-from macholib.itergraphreport import itergraphreport
+from PyInstaller.lib.macholib.mach_o import *
+from PyInstaller.lib.macholib.dyld import dyld_find
+from PyInstaller.lib.macholib.MachO import MachO
+from PyInstaller.lib.macholib.itergraphreport import itergraphreport
 
 __all__ = ['MachOGraph']
 

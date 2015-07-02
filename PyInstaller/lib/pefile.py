@@ -35,7 +35,7 @@ import string
 import array
 import mmap
 import io
-import ordlookup
+import PyInstaller.lib.ordlookup as ordlookup
 
 sha1, sha256, sha512, md5 = None, None, None, None
 

@@ -13,7 +13,7 @@ altgraph.Graph - Base Graph class
   #--Nathan Denny, May 27, 1999
 """
 
-from altgraph import GraphError
+from PyInstaller.lib.altgraph import GraphError
 from collections import deque
 
 class Graph(object):

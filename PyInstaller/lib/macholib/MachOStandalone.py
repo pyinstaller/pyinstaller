@@ -1,9 +1,9 @@
 import os
 
-from macholib.MachOGraph import MachOGraph, MissingMachO
-from macholib.util import iter_platform_files, in_system_path, mergecopy, \
+from PyInstaller.lib.macholib.MachOGraph import MachOGraph, MissingMachO
+from PyInstaller.lib.macholib.util import iter_platform_files, in_system_path, mergecopy, \
     mergetree, flipwritable, has_filename_filter
-from macholib.dyld import framework_info
+from PyInstaller.lib.macholib.dyld import framework_info
 from collections import deque
 
 class ExcludedMachO(MissingMachO):

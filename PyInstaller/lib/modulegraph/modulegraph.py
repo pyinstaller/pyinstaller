@@ -22,13 +22,13 @@ import re
 from collections import deque, namedtuple
 import ast
 
-from altgraph.ObjectGraph import ObjectGraph
-from altgraph import GraphError
+from PyInstaller.lib.altgraph.ObjectGraph import ObjectGraph
+from PyInstaller.lib.altgraph import GraphError
 
 from itertools import count
 
-from modulegraph import util
-from modulegraph import zipio
+from PyInstaller.lib.modulegraph import util
+from PyInstaller.lib.modulegraph import zipio
 
 if sys.version_info[0] == 2:
     from StringIO import StringIO as BytesIO

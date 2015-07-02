@@ -1,6 +1,32 @@
 Custom modifications of 3rd party libraries
 ===========================================
 
+NOTE: PyInstaller does not extend PYTHONPATH (sys.path) with this directory
+that contains bundled 3rd party libraries.
+
+Some users complained that PyInstaller failed because their apps were using
+too old versions of some libraries that PyInstaller uses too and that's why
+extending sys.path was dropped.
+
+All libraries are tweaked to be importable as::
+
+    from PyInstaller.lib.LIB_NAME import xyz
+
+In libraries replace imports like::
+
+    from macholib import x
+    from altgraph import y
+    from modulegraph import z
+    import ordlookup
+
+with PyInstaller prefix::
+
+    from PyInstaller.lib.macholib import x
+    from PyInstaller.lib.altgraph import y
+    from PyInstaller.lib.modulegraph import z
+    import PyInstaller.lib.ordlookup as ordlookup
+
+
 pefile
 --------
 

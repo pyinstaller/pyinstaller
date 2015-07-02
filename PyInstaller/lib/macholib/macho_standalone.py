@@ -3,8 +3,8 @@
 import os
 import sys
 
-from macholib.MachOStandalone import MachOStandalone
-from macholib.util import strip_files
+from PyInstaller.lib.macholib.MachOStandalone import MachOStandalone
+from PyInstaller.lib.macholib.util import strip_files
 
 def standaloneApp(path):
     if not (os.path.isdir(path) and os.path.exists(
