@@ -21,7 +21,7 @@ import marshal
 import os
 import zipfile
 
-from modulegraph import find_modules, modulegraph
+from PyInstaller.lib.modulegraph import find_modules, modulegraph
 
 from PyInstaller import compat
 from PyInstaller.compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC

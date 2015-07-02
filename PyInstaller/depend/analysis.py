@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -38,7 +38,7 @@ import os
 from PyInstaller import compat as compat
 import PyInstaller.utils
 from PyInstaller.utils.misc import load_py_data_struct
-from modulegraph.modulegraph import ModuleGraph
+from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph
 
 logger = logging.getLogger(__name__)
 

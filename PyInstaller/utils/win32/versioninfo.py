@@ -15,7 +15,7 @@ import struct
 import pywintypes
 import win32api
 
-from pefile import RESOURCE_TYPE
+from PyInstaller.lib.pefile import RESOURCE_TYPE
 
 
 

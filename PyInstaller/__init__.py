@@ -20,19 +20,6 @@ if sys.version_info < (2, 7) or sys.version_info < (3, 3):
     raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
 
 
-# Extend PYTHONPATH with 3rd party libraries bundled with PyInstaller.
-# (otherwise e.g. macholib won't work on Mac OS X)
-#
-# Append lib directory at the end of sys.path and not at the beginning.
-# Python will first try necessary libraries from the system and fallback
-# to the lib directory.
-#
-# Some users complained that PyInstaller failed because their apps were
-# using too old versions of some libraries that PyInstaller uses too.
-from PyInstaller import lib
-sys.path.append(lib.__path__[0])
-
-
 from PyInstaller import compat
 from PyInstaller.compat import is_darwin, is_win, is_py2
 from PyInstaller.utils import git
