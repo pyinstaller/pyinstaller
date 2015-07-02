@@ -13,7 +13,7 @@ Utils for Mac OS X platform.
 """
 
 
-from macholib.MachO import MachO
+from PyInstaller.lib.macholib.MachO import MachO
 
 
 def fix_exe_for_code_signing(filename):

@@ -6,8 +6,8 @@ from itertools import chain
 
 import os, sys
 
-from macholib.framework import framework_info
-from macholib.dylib import dylib_info
+from PyInstaller.lib.macholib.framework import framework_info
+from PyInstaller.lib.macholib.dylib import dylib_info
 
 __all__ = [
     'dyld_find', 'framework_find',

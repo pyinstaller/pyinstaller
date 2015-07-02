@@ -192,7 +192,7 @@ def get_config(upx_dir, **kw):
             ' run Python as a 32-bit binary with this command:\n\n'
             '    VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 %s\n' % sys.executable)
         # wait several seconds for user to see this message
-        time.sleep(4)
+        time.sleep(1)
 
     config = {}
     test_RsrcUpdate(config)
