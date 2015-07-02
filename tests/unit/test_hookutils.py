@@ -1,42 +1,17 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
-# Copyright (C) 2012 Bryan A. Jones
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
-# This program will execute any file with name test*<digit>.py. If your test
-# need an aditional dependency name it test*<digit><letter>.py to be ignored
-# by this program but be recognizable by any one as a dependency of that
-# particular test.
 
-# Copied from ../runtests.py
 import os
+import pytest
+import unittest
 
-try:
-    import PyInstaller
-except ImportError:
-    # if importing PyInstaller fails, try to load from parent
-    # directory to support running without installation
-    import imp
-    if not hasattr(os, "getuid") or os.getuid() != 0:
-        imp.load_module('PyInstaller', *imp.find_module('PyInstaller',
-            [os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))]))
-
-# Use unittest2 with PyInstaller tweaks. See
-# http://www.voidspace.org.uk/python/articles/unittest2.shtml for some
-# documentation.
-import PyInstaller.lib.unittest2 as unittest
 
 # The function to test
 from PyInstaller.utils.hooks.hookutils import remove_prefix
@@ -112,77 +87,79 @@ class TestRemoveExtension(unittest.TestCase):
     def test_5(self):
         self.assertEqual("/a/b/c", remove_file_extension("/a/b/c.1"))
 
-# The name of the hookutils test files directory
-HOOKUTILS_TEST_FILES = 'hookutils_test_files'
 
 # The function to test
 from PyInstaller.utils.hooks.hookutils import collect_submodules
-class TestCollectSubmodules(unittest.TestCase):
+
+# The name of the hookutils test files directory
+TEST_MOD = 'hookutils_files'
+
+
+@pytest.fixture
+def mod_list(monkeypatch):
+    # Add path with 'hookutils_files' module to PYTHONPATH so tests
+    # could find this module - useful for subprocesses.
+    pth = os.path.dirname(os.path.abspath(__file__))
+    monkeypatch.setenv('PYTHONPATH', pth)
     # Use the hookutils_test_files package for testing.
-    def setUp(self, package = HOOKUTILS_TEST_FILES):
-        # Fun Python behavior: __import__('mod.submod') returns mod,
-        # where as __import__('mod.submod', fromlist = [a non-empty list])
-        # returns mod.submod. See the docs on `__import__
-        # <http://docs.python.org/library/functions.html#__import__>`_.
-        self.mod_list = collect_submodules(__import__(package,
-                                                      fromlist = ['']))
+    return collect_submodules(TEST_MOD)
 
-    # An error should be thrown if a module, not a package, was passed.
-    def test_0(self):
-        # os is a module, not a package.
-        with self.assertRaises(AttributeError):
-            collect_submodules(__import__('os'))
 
-    # The package name itself should be in the returned list
-    def test_1(self):
-        self.assertTrue(HOOKUTILS_TEST_FILES in self.mod_list)
+# An error should be thrown if a module, not a package, was passed.
+def test_collect_submod_module():
+    # os is a module, not a package.
+    with pytest.raises(AssertionError):
+        collect_submodules(__import__('os'))
 
-    # Subpackages without an __init__.py should not be included
-    def test_2(self):
-        self.assertTrue(HOOKUTILS_TEST_FILES +
-          '.py_files_not_in_package.sub_pkg.three' not in self.mod_list)
 
-    # Check that all packages get included
-    def test_3(self):
-        self.assertItemsEqual(self.mod_list, 
-                              [HOOKUTILS_TEST_FILES,
-                               HOOKUTILS_TEST_FILES + '.two',
-                               HOOKUTILS_TEST_FILES + '.four',
-                               HOOKUTILS_TEST_FILES + '.five',
-                               HOOKUTILS_TEST_FILES + '.eight',
-                               HOOKUTILS_TEST_FILES + '.subpkg',
-                               HOOKUTILS_TEST_FILES + '.subpkg.twelve',
-                              ])
+# The package name itself should be in the returned list
+def test_collect_submod_itself(mod_list):
+    assert TEST_MOD in mod_list
 
-    def assert_subpackge_equal(self):
-        self.assertItemsEqual(self.mod_list,
-                              [HOOKUTILS_TEST_FILES + '.subpkg',
-                               HOOKUTILS_TEST_FILES + '.subpkg.twelve',
-                              ])
 
-    # Test with a subpackage
-    def test_4(self):
-        self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
-        self.assert_subpackge_equal()
+# Python extension is included in the list.
+def test_collect_submod_pyextension(mod_list):
+    assert TEST_MOD + '.pyextension' in mod_list
 
-    # Test with a string for the package name
-    def test_5(self):
-        self.mod_list = collect_submodules(HOOKUTILS_TEST_FILES)
-        self.test_3()
 
-    # Test with a string for the subpackage name
-    def test_6(self):
-        self.mod_list = collect_submodules(HOOKUTILS_TEST_FILES +
-                                           '.subpkg')
-        self.assert_subpackge_equal()
+# Check that all packages get included
+def test_collect_submod_all_included(mod_list):
+    mod_list.sort()
+    print(mod_list)
+    assert mod_list == [TEST_MOD,
+                        # Python extensions on Windows ends with '.pyd' and
+                        # '.so' on Linux, Mac OS X and other operating systems.
+                        TEST_MOD + '.pyextension',
+                        TEST_MOD + '.subpkg',
+                        TEST_MOD + '.subpkg.twelve',
+                        TEST_MOD + '.two']
+
+
+# Dynamic libraries (.dll, .dylib) are not included in the list.
+def test_collect_submod_no_dynamiclib(mod_list):
+    assert TEST_MOD + '.dynamiclib' not in mod_list
+
+
+# Subpackages without an __init__.py should not be included
+def test_collect_submod_subpkg_init(mod_list):
+    assert TEST_MOD + '.py_files_not_in_package.sub_pkg.three' not in mod_list
+
+
+# Test with a subpackage
+def test_collect_submod_subpkg(mod_list):
+    mod_list = collect_submodules(TEST_MOD + '.subpkg')
+    mod_list.sort()
+    assert mod_list == [TEST_MOD + '.subpkg',
+                        TEST_MOD + '.subpkg.twelve']
+
 
 # The function to test
 from PyInstaller.utils.hooks.hookutils import collect_data_files
 from os.path import join
 class TestCollectDataFiles(unittest.TestCase):
     # Use the hookutils_test_files package for testing.
-    def setUp(self, package = HOOKUTILS_TEST_FILES):
-        self.basepath = join(os.getcwd(), HOOKUTILS_TEST_FILES)
+    def setUp(self, package = TEST_MOD):
+        self.basepath = join(os.getcwd(), TEST_MOD)
         # Fun Python behavior: __import__('mod.submod') returns mod,
         # where as __import__('mod.submod', fromlist = [a non-empty list])
         # returns mod.submod. See the docs on `__import__
@@ -208,7 +185,7 @@ class TestCollectDataFiles(unittest.TestCase):
         self.assertSequenceEqual(self.source_list,
           [join(self.basepath, subpath) for subpath in subfiles])
         self.assertSequenceEqual(self.dest_list,
-          [os.path.dirname(join(HOOKUTILS_TEST_FILES, subpath))
+          [os.path.dirname(join(TEST_MOD, subpath))
           for subpath in subfiles])
 
     # Make sure only data files are found
@@ -224,29 +201,18 @@ class TestCollectDataFiles(unittest.TestCase):
     # Test with a subpackage
     subpkg_subfiles = (join('subpkg', 'thirteen.txt'), )
     def test_2(self):
-        self.setUp(HOOKUTILS_TEST_FILES + '.subpkg')
+        self.setUp(TEST_MOD + '.subpkg')
         self.assert_data_list_equal(self.subpkg_subfiles)
 
     # Test with a string package name
     def test_3(self):
-        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES)
+        self.data_list = collect_data_files(TEST_MOD)
         self.split_data_list()
         self.assert_data_list_equal(self.all_subfiles)
 
     # Test with a string package name
     def test_4(self):
-        self.data_list = collect_data_files(HOOKUTILS_TEST_FILES +
+        self.data_list = collect_data_files(TEST_MOD +
                                             '.subpkg')
         self.split_data_list()
         self.assert_data_list_equal(self.subpkg_subfiles)
-
-
-# Provide an easy way to run just one test for debug purposes
-def one_test():
-    suite = unittest.TestSuite()
-    suite.addTest(TestCollectSubmodules('test_4'))
-    unittest.TextTestRunner().run(suite)
-
-if __name__ == '__main__':
-    unittest.main()
-    #one_test()
