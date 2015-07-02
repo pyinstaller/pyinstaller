@@ -153,66 +153,67 @@ def test_collect_submod_subpkg(mod_list):
                         TEST_MOD + '.subpkg.twelve']
 
 
-# The function to test
-from PyInstaller.utils.hooks.hookutils import collect_data_files
 from os.path import join
-class TestCollectDataFiles(unittest.TestCase):
+from PyInstaller.utils.hooks.hookutils import collect_data_files
+
+_DATA_BASEPATH = join(os.path.dirname(os.path.abspath(__file__)), TEST_MOD)
+_DATA_PARAMS = [
+    (TEST_MOD, ('dynamiclib.dll',
+                'dynamiclib.dylib',
+                'nine.dat',
+                join('py_files_not_in_package', 'data', 'eleven.dat'),
+                join('py_files_not_in_package', 'ten.dat'),
+                join('subpkg', 'thirteen.txt'),
+    )),
+    (TEST_MOD + '.subpkg', (
+                join('subpkg', 'thirteen.txt'),
+    ))
+]
+
+@pytest.fixture(params=_DATA_PARAMS)
+def data_lists(monkeypatch, request):
+    def _sort(sequence):
+        l = list(sequence)
+        l.sort()
+        return tuple(l)
+    # Add path with 'hookutils_files' module to PYTHONPATH so tests
+    # could find this module - useful for subprocesses.
+    pth = os.path.dirname(os.path.abspath(__file__))
+    monkeypatch.setenv('PYTHONPATH', pth)
     # Use the hookutils_test_files package for testing.
-    def setUp(self, package = TEST_MOD):
-        self.basepath = join(os.getcwd(), TEST_MOD)
-        # Fun Python behavior: __import__('mod.submod') returns mod,
-        # where as __import__('mod.submod', fromlist = [a non-empty list])
-        # returns mod.submod. See the docs on `__import__
-        # <http://docs.python.org/library/functions.html#__import__>`_.
-        self.data_list = collect_data_files(__import__(package,
-                                                      fromlist = ['']))
-        self.split_data_list()
+    mod_name = request.param[0]
+    data = collect_data_files(mod_name)
+    # Break list of (source, dest) into source and dest lists.
+    subfiles = request.param[1]
+    src = [item[0] for item in data]
+    dst = [item[1] for item in data]
 
-    # Break list of (source, dest) inst source and dest lists
-    def split_data_list(self):
-        self.source_list = [item[0] for item in self.data_list]
-        self.dest_list = [item[1] for item in self.data_list]
+    return subfiles, _sort(src), _sort(dst)
 
-    # An error should be thrown if a module, not a package, was passed.
-    def test_0(self):
-        # os is a module, not a package.
-        with self.assertRaises(AttributeError):
-            collect_data_files(__import__('os'))
 
+# An error should be thrown if a module, not a package, was passed.
+def test_collect_data_module():
+    # 'os' is a module, not a package.
+    with pytest.raises(AssertionError):
+        collect_data_files(__import__('os'))
+
+
+# Make sure only data files are found.
+def test_collect_data_no_extensions(data_lists):
+    subfiles, src, dst = data_lists
+    for item in ['pyextension.pyd', 'pyextension.so']:
+        item = join(_DATA_BASEPATH, item)
+        assert item not in src
+
+
+# Make sure all data files are found.
+def test_collect_data_all_included(data_lists):
+    subfiles, src, dst = data_lists
     # Check the source and dest lists against the correct values in
     # subfiles.
-    def assert_data_list_equal(self, subfiles):
-        self.assertSequenceEqual(self.source_list,
-          [join(self.basepath, subpath) for subpath in subfiles])
-        self.assertSequenceEqual(self.dest_list,
-          [os.path.dirname(join(TEST_MOD, subpath))
-          for subpath in subfiles])
-
-    # Make sure only data files are found
-    all_subfiles = ('nine.dat',
-                    'six.dll',
-                    join('py_files_not_in_package', 'ten.dat'),
-                    join('py_files_not_in_package', 'data', 'eleven.dat'),
-                    join('subpkg', 'thirteen.txt'),
-                   )
-    def test_1(self):
-        self.assert_data_list_equal(self.all_subfiles)
-
-    # Test with a subpackage
-    subpkg_subfiles = (join('subpkg', 'thirteen.txt'), )
-    def test_2(self):
-        self.setUp(TEST_MOD + '.subpkg')
-        self.assert_data_list_equal(self.subpkg_subfiles)
-
-    # Test with a string package name
-    def test_3(self):
-        self.data_list = collect_data_files(TEST_MOD)
-        self.split_data_list()
-        self.assert_data_list_equal(self.all_subfiles)
-
-    # Test with a string package name
-    def test_4(self):
-        self.data_list = collect_data_files(TEST_MOD +
-                                            '.subpkg')
-        self.split_data_list()
-        self.assert_data_list_equal(self.subpkg_subfiles)
+    src_compare = tuple([join(_DATA_BASEPATH, subpath) for subpath in subfiles])
+    dst_compare = [os.path.dirname(join(TEST_MOD, subpath)) for subpath in subfiles]
+    dst_compare.sort()
+    dst_compare = tuple(dst_compare)
+    assert src == src_compare
+    assert dst == dst_compare
