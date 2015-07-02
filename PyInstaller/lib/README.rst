@@ -27,12 +27,6 @@ macholib
     __version__ = '0.12'
 
 
-junitxml
---------
-
-- hacked to support ignored tests in junit xml test report.
-
-
 modulegraph
 -----------
 

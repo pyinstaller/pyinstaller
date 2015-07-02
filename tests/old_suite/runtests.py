@@ -34,9 +34,9 @@ warnings.filterwarnings('ignore',
 
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
-if not (hasattr(sys, 'real_prefix') or sys.prefix != sys.base_prefix):
-    pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
-    sys.path.insert(0, pyi_home)
+#if not (hasattr(sys, 'real_prefix') or sys.prefix != sys.base_prefix):
+pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
+sys.path.insert(0, pyi_home)
 
 # Unbuffered sys.stdout, so we can follow stdout continuously when
 # running the test-cases, esp. the generated executables.
@@ -48,7 +48,6 @@ from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
 from PyInstaller.compat import is_py2, is_win, is_darwin, modname_tkinter
-from PyInstaller.lib import junitxml
 from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import hookutils
 from PyInstaller.utils.win32 import winutils
@@ -719,24 +718,11 @@ def clean():
                     os.remove(pth)
 
 
-def run_tests(test_suite, xml_file):
+def run_tests(test_suite):
     """
-    Run test suite and save output to junit xml file if requested.
+    Run test suite.
     """
-    if xml_file:
-        print('Writting test results to:', xml_file)
-        fp = open('report.xml', 'w')
-        result = junitxml.JUnitXmlResult(fp)
-        # Text from stdout/stderr should be added to failed test cases.
-        result.buffer = True
-        result.startTestRun()
-        ret = test_suite.run(result)
-        result.stopTestRun()
-        fp.close()
-
-        return ret
-    else:
-        return unittest.TextTestRunner(verbosity=2).run(test_suite)
+    return unittest.TextTestRunner(verbosity=2).run(test_suite)
 
 
 def main():
@@ -760,8 +746,6 @@ def main():
     parser.add_option('--known-fails', action='store_true',
                       dest='run_known_fails',
                       help='Run tests known to fail, too.')
-    parser.add_option('--junitxml', action='store', default=None,
-            metavar='FILE', help='Create junit-xml style test report file')
 
     opts, args = parser.parse_args()
 
@@ -817,14 +801,13 @@ def main():
     # Set global options
     global VERBOSE, REPORT, PYI_CONFIG
     VERBOSE = opts.verbose
-    REPORT = opts.junitxml is not None
     PYI_CONFIG = configure.get_config(upx_dir=None)  # Run configure phase only once.
 
 
     # Run created test suite.
     clean()
 
-    result = run_tests(suite, opts.junitxml)
+    result = run_tests(suite)
 
     sys.exit(int(bool(result.failures or result.errors)))
 
