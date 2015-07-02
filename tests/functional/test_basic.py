@@ -31,12 +31,14 @@ class AppBuilder(object):
 
     def test_script(self, script):
         self.script = os.path.join(_SCRIPT_DIR, script)
+        self.toc_files = None
         assert os.path.exists(self.script), 'Script %s not found.' % script
 
         # TODO
         assert self._test_building(), 'Building of %s failed.' % script
         #self._test_execution()
-
+        # TODO implement examining toc files for multipackage tests.
+        assert self._test_created_files(), 'Something wrong in generated files.'
 
         # retcode, stderr = b.test_exe()
         # if retcode != 0:
@@ -46,6 +48,16 @@ class AppBuilder(object):
         # if not okay:
         #     self.fail('Matching .toc of %s failed.\n\n%s' %
         #               (self.test_name, msg))
+
+    def _test_created_files(self):
+        """
+        Examine files that were created by PyInstaller.
+
+        :return: True if everything goes well False otherwise.
+        """
+        if self.toc_files:
+            return self._test_logs()
+        return True
 
     def _find_exepath(self, test):
         """
@@ -131,7 +143,6 @@ class AppBuilder(object):
         pyi_args = [self.script] + OPTS
         # TODO fix return code in running PyInstaller programatically
         PYI_CONFIG = configure.get_config(upx_dir=None)
-        print(PYI_CONFIG)
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
 
@@ -160,7 +171,7 @@ class AppBuilder(object):
         return retcode, stderr.strip()
 
 
-    def test_logs(self):
+    def _test_logs(self):
         """
         Compare log files (now used only by multipackage test_name).
 
@@ -209,12 +220,15 @@ class AppBuilder(object):
 
 # TODO run by default test as onedir and onefile.
 @pytest.fixture
-def pyi_builder(tmpdir):
-    return AppBuilder(tmpdir.strpath)
+def pyi_builder(tmpdir, monkeypatch):
+    tmp = tmpdir.strpath
+    # Override default PyInstaller config dir.
+    monkeypatch.setenv('PYINSTALLER_CONFIG_DIR', tmp)
+    return AppBuilder(tmp)
 
 
 # TODO Skip test case if test requirement are not met.
 def test_helloworld(pyi_builder):
-        pyi_builder.test_script('helloworld.py')
-        assert 0
+    pyi_builder.test_script('helloworld.py')
+    assert 0
 
