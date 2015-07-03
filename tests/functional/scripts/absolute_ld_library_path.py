@@ -27,9 +27,8 @@ import sys
 
 # Bootloader should override set LD_LIBRARY_PATH.
 
-# For Linux, Solaris, AIX only
-
-libpath = os.path.normpath(os.path.abspath(os.path.dirname(sys.executable)))
+# For Linux, Solaris, AIX and other Unixes only
+libpath = sys._MEIPASS
 
 # The name of the environment variable used to define the path where the
 # OS should search for dynamic libraries.

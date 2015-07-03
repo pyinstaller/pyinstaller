@@ -1,5 +1,4 @@
 # For running tests
 pytest
+pytest-xdist
 mock
-
-# TODO Add more dependencies
