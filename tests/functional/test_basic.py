@@ -8,10 +8,10 @@
 #-----------------------------------------------------------------------------
 
 
-# TODO Skip test case if test requirement are not met.
+from PyInstaller.utils.tests import importorskip, skipif_winorosx
 
 
-# TODO test is Linux/unix only, skip for win, osx
+@skipif_winorosx
 def test_absolute_ld_library_path(pyi_builder):
     pyi_builder.test_script('absolute_ld_library_path.py')
 
@@ -24,6 +24,8 @@ def test_celementtree(pyi_builder):
     pyi_builder.test_script('celementtree.py')
 
 
+@importorskip('codecs')
+#@importorskip('email')
 def test_codecs(pyi_builder):
     pyi_builder.test_script('codecs.py')
 
