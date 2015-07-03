@@ -10,86 +10,88 @@
 
 import os
 import pytest
-import unittest
+
+from os.path import join
+from PyInstaller.utils.hooks.hookutils import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks.hookutils import remove_prefix, remove_suffix
+from PyInstaller.utils.hooks.hookutils import remove_file_extension
 
 
-# The function to test
-from PyInstaller.utils.hooks.hookutils import remove_prefix
-class TestRemovePrefix(unittest.TestCase):
+class TestRemovePrefix(object):
     # Verify that removing a prefix from an empty string is OK.
-    def test_0(self):
-        self.assertEqual("", remove_prefix("", "prefix"))
+    def test_empty_string(self):
+        assert '' == remove_prefix('', 'prefix')
 
     # An empty prefix should pass the string through unmodified.
-    def test_1(self):
-        self.assertEqual("test", remove_prefix("test", ""))
+    def test_emptystr_unmodif(self):
+        assert 'test' == remove_prefix('test', '')
 
     # If the string is the prefix, it should be empty at exit.
-    def test_2(self):
-        self.assertEqual("", remove_prefix("test", "test"))
+    def test_string_prefix(self):
+        assert '' == remove_prefix('test', 'test')
 
     # Just the prefix should be removed.
-    def test_3(self):
-        self.assertEqual("ing", remove_prefix("testing", "test"))
+    def test_just_prefix(self):
+        assert 'ing' == remove_prefix('testing', 'test')
 
     # A matching string not as prefix should produce no modifications
-    def test_4(self):
-        self.assertEqual("atest", remove_prefix("atest", "test"))
+    def test_no_modific(self):
+        assert 'atest' == remove_prefix('atest', 'test')
 
-# The function to test
-from PyInstaller.utils.hooks.hookutils import remove_suffix
-class TestRemoveSuffix(unittest.TestCase):
+
+class TestRemoveSuffix(object):
     # Verify that removing a suffix from an empty string is OK.
-    def test_0(self):
-        self.assertEqual("", remove_suffix("", "suffix"))
+    def test_empty_string(self):
+        assert '' == remove_suffix('', 'suffix')
 
     # An empty suffix should pass the string through unmodified.
-    def test_1(self):
-        self.assertEqual("test", remove_suffix("test", ""))
+    def test_emptystr_unmodif(self):
+        assert 'test' == remove_suffix('test', '')
 
     # If the string is the suffix, it should be empty at exit.
-    def test_2(self):
-        self.assertEqual("", remove_suffix("test", "test"))
+    def test_string_suffix(self):
+        assert '' == remove_suffix('test', 'test')
 
     # Just the suffix should be removed.
-    def test_3(self):
-        self.assertEqual("test", remove_suffix("testing", "ing"))
+    def test_just_suffix(self):
+        assert 'test' == remove_suffix('testing', 'ing')
 
     # A matching string not as suffix should produce no modifications
-    def test_4(self):
-        self.assertEqual("testa", remove_suffix("testa", "test"))
+    def test_no_modific(self):
+        assert 'testa' == remove_suffix('testa', 'test')
 
-# The function to test
-from PyInstaller.utils.hooks.hookutils import remove_file_extension
-class TestRemoveExtension(unittest.TestCase):
-    # Removing a suffix from a filename with no extension returns the
-    # filename.
-    def test_0(self):
-        self.assertEqual("file", remove_file_extension("file"))
+
+class TestRemoveExtension(object):
+    # Removing a suffix from a filename with no extension returns the filename.
+    def test_no_extension(self):
+        assert 'file' == remove_file_extension('file')
         
     # A filename with two extensions should have only the first removed.
-    def test_1(self):
-        self.assertEqual("file.1", remove_file_extension("file.1.2"))
+    def test_two_extensions(self):
+        assert 'file.1' == remove_file_extension('file.1.2')
         
     # Standard case - remove an extension
-    def test_2(self):
-        self.assertEqual("file", remove_file_extension("file.1"))
+    def test_remove_ext(self):
+        assert 'file' == remove_file_extension('file.1')
         
     # Unix-style .files are not treated as extensions
-    def test_3(self):
-        self.assertEqual(".file", remove_file_extension(".file"))
+    def test_unixstyle_not_ext(self):
+        assert '.file' == remove_file_extension('.file')
         
     # Unix-style .file.ext works
-    def test_4(self):
-        self.assertEqual(".file", remove_file_extension(".file.1"))
+    def test_unixstyle_ext(self):
+        assert '.file' == remove_file_extension('.file.1')
 
     # Unix-style .file.ext works
-    def test_5(self):
-        self.assertEqual("/a/b/c", remove_file_extension("/a/b/c.1"))
+    def test_unixstyle_path(self):
+        assert '/a/b/c' == remove_file_extension('/a/b/c')
+        assert '/a/b/c' == remove_file_extension('/a/b/c.1')
 
+    # Windows-style .file.ext works
+    def test_win32style_path(self):
+        assert 'C:\\a\\b\\c' == remove_file_extension('C:\\a\\b\\c')
+        assert 'C:\\a\\b\\c' == remove_file_extension('C:\\a\\b\\c.1')
 
-# The function to test
-from PyInstaller.utils.hooks.hookutils import collect_submodules
 
 # The name of the hookutils test files directory
 TEST_MOD = 'hookutils_files'
@@ -153,9 +155,6 @@ def test_collect_submod_subpkg(mod_list):
                         TEST_MOD + '.subpkg.twelve']
 
 
-from os.path import join
-from PyInstaller.utils.hooks.hookutils import collect_data_files
-
 _DATA_BASEPATH = join(os.path.dirname(os.path.abspath(__file__)), TEST_MOD)
 _DATA_PARAMS = [
     (TEST_MOD, ('dynamiclib.dll',
@@ -170,7 +169,8 @@ _DATA_PARAMS = [
     ))
 ]
 
-@pytest.fixture(params=_DATA_PARAMS)
+
+@pytest.fixture(params=_DATA_PARAMS, ids=['package', 'subpackage'])
 def data_lists(monkeypatch, request):
     def _sort(sequence):
         l = list(sequence)
