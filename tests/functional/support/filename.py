@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,8 +8,5 @@
 #-----------------------------------------------------------------------------
 
 
-# Since Python 2.5 email modules were renamed. Test that old-style email naming
-# still works in Python 2.7.
-# In Python 3 the old-style was removed and does not work anymore.
-
-from email.MIMEMultipart import MIMEMultipart
+if __file__ != 'filename.py':
+   raise ValueError(__file__)
