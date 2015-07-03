@@ -26,8 +26,9 @@ _SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'support'
 
 class AppBuilder(object):
 
-    def __init__(self, tmpdir):
+    def __init__(self, tmpdir, bundle_mode):
         self._tmpdir = tmpdir
+        self._mode = bundle_mode
         self._specdir = self._tmpdir
         self._distdir = os.path.join(self._tmpdir, 'dist')
         self._builddir = os.path.join(self._tmpdir, 'build')
@@ -142,7 +143,12 @@ class AppBuilder(object):
                 '--distpath', self._distdir,
                 '--workpath', self._builddir]
         OPTS.extend(['--debug', '--log-level=DEBUG'])
-        OPTS.append('--onedir')
+
+        # Choose bundle mode.
+        if self._mode == 'onedir':
+            OPTS.append('--onedir')
+        elif self._mode == 'onefile':
+            OPTS.append('--onefile')
 
         pyi_args = [self.script] + OPTS
         # TODO fix return code in running PyInstaller programatically
@@ -199,10 +205,10 @@ class AppBuilder(object):
         return True, ''
 
 
-# TODO run by default test as onedir and onefile.
-@pytest.fixture
-def pyi_builder(tmpdir, monkeypatch):
+# Run by default test as onedir and onefile.
+@pytest.fixture(params=['onedir', 'onefile'])
+def pyi_builder(tmpdir, monkeypatch, request):
     tmp = tmpdir.strpath
     # Override default PyInstaller config dir.
     monkeypatch.setenv('PYINSTALLER_CONFIG_DIR', tmp)
-    return AppBuilder(tmp)
+    return AppBuilder(tmp, request.param)
