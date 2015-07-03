@@ -21,7 +21,8 @@ from PyInstaller.utils.win32 import winutils
 
 
 # Directory with Python scripts for functional tests. E.g. main scripts, etc.
-_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'support')
+_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
+# Directory with testing modules used in some tests.
 
 
 class AppBuilder(object):
