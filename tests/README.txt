@@ -22,7 +22,11 @@ To run the tests, navigate to the root directory of the PyInstaller project, and
 
     py.test
 
-Or, to run only the unit or freeze tests, run the following command::
+Or, to speed up test runs by sending tests to multiple CPUs
+
+    py.test -n NUM
+
+Or, to run only the unit or functional tests, run the following command::
 
     TODO
 

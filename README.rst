@@ -1,17 +1,13 @@
-.. image:: http://www.pyinstaller.org/chrome/site/logo.png
-   :align: right
-   :target: http://www.pyinstaller.org
-
 PyInstaller
 ===========
+.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller.png
+   :target: https://travis-ci.org/pyinstaller/pyinstaller/
+
 .. image:: http://img.shields.io/pypi/v/PyInstaller.png
    :target: https://pypi.python.org/pypi/PyInstaller
 
 .. image:: http://img.shields.io/pypi/dm/PyInstaller.png
    :target: https://pypi.python.org/pypi/PyInstaller
-
-.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller.png
-   :target: https://travis-ci.org/pyinstaller/pyinstaller/
 
 
 | Official website: http://www.pyinstaller.org
