@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -16,32 +16,36 @@
 # embedded archive.
 
 
-import imp
+# imp module is deprecated since Python 3.4.
+try:
+    import importlib as imp
+except ImportError:
+    import imp
 import os
 import sys
+
+
+# Create module.
+txt = """
+x = %d
+"""
+mod_filename = os.path.join(sys._MEIPASS, 'data_reload.py')
+with open(mod_filename, 'w') as f:
+    f.write(txt % 2)
+
+
+# Import created module.
 import data_reload
-
-
 orig_x = data_reload.x
 print(('data_reload.x is %s' % data_reload.x))
 
-txt = """\
-x = %d
-""" % (data_reload.x + 1)
 
+# Modify code of module - increment x.
+with open(mod_filename, 'w') as f:
+    f.write(txt % (data_reload.x + 1))
 
-if hasattr(sys, 'frozen'):
-    module_filename = os.path.join(sys._MEIPASS, 'data_reload.py')
-else:
-    module_filename = data_reload.__file__
-
-
-open(module_filename, 'w').write(txt)
-
-
+# Reload module.
 imp.reload(data_reload)
 print(('data_reload.x is now %s' % data_reload.x))
-
-
-# The value of 'x' should be the same as before reloading the module.
-assert orig_x == data_reload.x
+# The value of 'x' should be the orig_x + 1.
+assert data_reload.x == orig_x + 1

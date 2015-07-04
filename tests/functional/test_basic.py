@@ -68,13 +68,13 @@ def test_module_attributes(tmpdir, pyi_builder):
     pyi_builder.test_script('module_attributes.py')
 
 
+def test_module_reload(pyi_builder):
+    pyi_builder.test_script('module_reload.py')
+
+
 @importorskip('multiprocess')
 def test_multiprocess(pyi_builder):
     pyi_builder.test_script('multiprocess.py')
-
-
-def test_(pyi_builder):
-    pyi_builder.test_script('')
 
 
 def test_(pyi_builder):
