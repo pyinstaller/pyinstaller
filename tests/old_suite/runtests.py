@@ -52,6 +52,7 @@ from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import hookutils
 from PyInstaller.utils.win32 import winutils
 from PyInstaller.cliutils import archive_viewer
+import PyInstaller.log as logging
 
 # HACK
 PyInstaller.makespec._EXENAME_FORCED_SUFFIX_ = '.exe'
@@ -801,6 +802,20 @@ def main():
     # Set global options
     global VERBOSE, REPORT, PYI_CONFIG
     VERBOSE = opts.verbose
+    # The function called by configure.get_config uses logging. So, we need to
+    # set a logging level now, in addition to passing it as a "log-level=XXXX"
+    # option in test_building (see the OPTS dict), in order for the logging
+    # level to be consistent. Otherwise, the default logging level of INFO will
+    # produce messages, then be overriden by runtest's default (when the -v /
+    # --verbose option isn't specificed on runtest's command line) of ERROR
+    # (again, see the OPTS dict in test_building).
+    if VERBOSE:
+        # logging's default of INFO is fine.
+        pass
+    else:
+        # Set the logging level to ERROR.
+        logger = logging.getLogger('PyInstaller')
+        logger.setLevel(logging.ERROR)
     PYI_CONFIG = configure.get_config(upx_dir=None)  # Run configure phase only once.
 
 

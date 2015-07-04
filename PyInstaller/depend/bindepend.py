@@ -30,7 +30,7 @@ import PyInstaller.compat as compat
 import PyInstaller.log as logging
 from PyInstaller.utils.win32 import winutils
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 seen = {}
 
