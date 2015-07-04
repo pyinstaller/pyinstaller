@@ -8,6 +8,9 @@
 #-----------------------------------------------------------------------------
 
 
+import os
+import sys
+
 from PyInstaller.utils.tests import importorskip, skipif_winorosx
 
 
@@ -25,7 +28,6 @@ def test_celementtree(pyi_builder):
 
 
 @importorskip('codecs')
-#@importorskip('email')
 def test_codecs(pyi_builder):
     pyi_builder.test_script('codecs.py')
 
@@ -54,11 +56,23 @@ def test_module__file__attribute(pyi_builder):
     pyi_builder.test_script('module__file__attribute.py')
 
 
+def test_module_attributes(tmpdir, pyi_builder):
+    # Create file in tmpdir with path to python executable and if it is running
+    # in debug mode.
+    # Test script uses python interpreter to compare module attributes.
+    with open(os.path.join(tmpdir.strpath, 'python_exe.build'), 'w') as f:
+        f.write(sys.executable + "\n")
+        f.write('debug=%s' % __debug__ + '\n')
+        # On Windows we need to preserve systme PATH for subprocesses in tests.
+        f.write(os.environ.get('PATH') + '\n')
+    pyi_builder.test_script('module_attributes.py')
+
+
+@importorskip('multiprocess')
 def test_multiprocess(pyi_builder):
     pyi_builder.test_script('multiprocess.py')
 
 
-"""
 def test_(pyi_builder):
     pyi_builder.test_script('')
 
@@ -70,4 +84,30 @@ def test_(pyi_builder):
 def test_(pyi_builder):
     pyi_builder.test_script('')
 
-"""
+
+def test_(pyi_builder):
+    pyi_builder.test_script('')
+
+
+def test_(pyi_builder):
+    pyi_builder.test_script('')
+
+
+def test_(pyi_builder):
+    pyi_builder.test_script('')
+
+
+def test_(pyi_builder):
+    pyi_builder.test_script('')
+
+
+def test_(pyi_builder):
+    pyi_builder.test_script('')
+
+
+def test_(pyi_builder):
+    pyi_builder.test_script('')
+
+
+def test_(pyi_builder):
+    pyi_builder.test_script('')

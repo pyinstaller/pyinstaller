@@ -20,12 +20,28 @@ import xml.etree.ElementTree as ET
 import xml.etree.cElementTree as cET
 
 
-if hasattr(sys, 'frozen'):
-    # In frozen mode current working dir is the path with final executable.
-    _exec_dir = os.path.dirname(sys.executable)
-    _pyexe_file = os.path.join(_exec_dir, '..', '..', 'python_exe.build')
+_exec_dir = os.path.dirname(sys.executable)
+# onedir mode:
+# tmpdir
+# ├── python_exe.build
+# ├── build
+# └── dist
+#     └── appname
+#         └── appname.exe
+_pyexe_file_onedir = os.path.join(_exec_dir, '..', '..', 'python_exe.build')
+# onefile mode:
+# tmpdir
+# ├── python_exe.build
+# ├── build
+# └── dist
+#     └── appname.exe
+_pyexe_file_onefile = os.path.join(_exec_dir, '..', 'python_exe.build')
+
+if os.path.exists(_pyexe_file_onedir):
+    _pyexe_file = _pyexe_file_onedir
 else:
-    _pyexe_file = 'python_exe.build'
+    _pyexe_file = _pyexe_file_onefile
+
 
 _lines = open(_pyexe_file).readlines()
 _pyexe = _lines[0].strip()
@@ -52,10 +68,10 @@ def exec_python(pycode):
 
 
 def compare(test_name, expect, frozen):
-    # PyInstaller sets attribute '__lodader'. Remove this attribute from the
-    # module properties.
-    # Is the __loader__ defined in Python2 too?
-    #frozen.remove('__loader__')
+    # Modules in Python might contain attr '__cached__' - add it to the frozen list.
+    if '__cached__' not in frozen:
+        frozen.append('__cached__')
+    frozen.sort()
     frozen = str(frozen)
 
     print(test_name)
@@ -64,16 +80,15 @@ def compare(test_name, expect, frozen):
     print('')
     # Compare attributes of frozen module with unfronzen module.
     if not frozen == expect:
-        raise SystemExit('Frozen module has no same attribuses as unfrozen.')
+        raise SystemExit('Frozen module has no same attributes as unfrozen.')
 
 
 # General Python code for subprocess.
 subproc_code = """
 import {0} as myobject
 lst = dir(myobject)
-# TODO Should bootloader set attributes __cached__ and __initializing__ for frozen imported modjules?
-lst.remove('__cached__')
-lst.remove('__initializing__')
+# Sort attributes.
+lst.sort()
 print(lst)
 """
 

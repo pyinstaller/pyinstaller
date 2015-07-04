@@ -559,15 +559,6 @@ class GenericTestCase(unittest.TestCase):
     def setUp(self):
         testdir = os.path.dirname(self.test_name)
         os.chdir(os.path.join(BASEDIR, testdir))  # go to testdir
-        # For some 'basic' tests we need create file with path to python
-        # executable and if it is running in debug mode.
-        build_python = open(os.path.join(BASEDIR, 'basic', 'python_exe.build'),
-                'w')
-        build_python.write(sys.executable + "\n")
-        build_python.write('debug=%s' % __debug__ + '\n')
-        # On Windows we need to preserve systme PATH for subprocesses in tests.
-        build_python.write(os.environ.get('PATH') + '\n')
-        build_python.close()
         # Clean variables that could be set by PyInstaller import hooks.
         # We need to clean it because some tests might fails.
         # Like 'wx_pubsub' tests'.
