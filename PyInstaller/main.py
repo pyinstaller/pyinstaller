@@ -26,8 +26,10 @@ import PyInstaller.log
 # Warn when old command line option is used
 
 from PyInstaller import get_version
-from PyInstaller.log import logger
 from PyInstaller.utils import misc
+import PyInstaller.log as logging
+
+logger = logging.getLogger(__name__)
 
 
 def run_makespec(opts, args):
