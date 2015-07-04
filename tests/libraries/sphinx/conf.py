@@ -47,7 +47,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Pyinstaller Sphinx hook test'
-copyright = u'2015, Bryan A. Jones'
+copyright = u'2012-2015, Bryan A. Jones'
 author = u'Bryan A. Jones'
 
 # The version info for the project you're documenting, acts as replacement for
