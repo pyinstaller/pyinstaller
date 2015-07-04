@@ -22,7 +22,7 @@ import zipfile
 
 
 from PyInstaller.compat import is_win, is_unix, is_aix, is_solar, is_cygwin, is_darwin, is_freebsd
-from PyInstaller.compat import is_venv, base_prefix
+from PyInstaller.compat import is_venv, base_prefix, PYDYLIB_NAMES
 from PyInstaller.depend import dylib
 import PyInstaller.compat as compat
 
@@ -688,9 +688,9 @@ def findLibrary(name):
                 arch_subdir = os.path.basename(arch_subdir)
                 paths.append(os.path.join('/usr/lib', arch_subdir))
             else:
-                logger.info('Multiarch directory not detected.')
+                logger.debug('Multiarch directory not detected.')
         except ImportError:
-            logger.info('Multiarch directory not detected.')
+            logger.debug('Multiarch directory not detected.')
 
         if is_aix:
             paths.append('/opt/freeware/lib')
@@ -733,6 +733,10 @@ def get_python_library_path():
     """
     Find dynamic Python library that will be bundled with frozen executable.
 
+    NOTOE: This is a fallback option when Python library is probably linked
+    statically with the Python executable and we need to search more for it.
+    On Debian/Ubuntu this is the case.
+
     Return  full path to Python dynamic library or None when not found.
 
 
@@ -746,32 +750,11 @@ def get_python_library_path():
     Darwin custom builds could possibly also have non-framework style libraries,
     so this method also checks for that variant as well.
     """
-    pyver = sys.version_info[:2]
-
-    if is_win:
-        names = ('python%d%d.dll' % pyver,)
-    elif is_cygwin:
-        names = ('libpython%d%d.dll' % pyver,)
-    elif is_darwin:
-        names = ('Python', '.Python', 'libpython%d.%d.dylib' % pyver)
-    elif is_aix:
-        # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
-        names = ('libpython%d.%d.a' % pyver,)
-    elif is_freebsd:
-        names = ('libpython%d.%d.so.1' % pyver,)
-    elif is_unix:
-        # Other *nix platforms.
-        # Python 3 .so library on Linux looks like: libpython3.2mu.so.1.0,libpython3.3m.so.1.0
-        # The name might be glob statement.
-        names = ('libpython%d.%d*.so.1.0' % pyver,)
-    else:
-        raise SystemExit('Your platform is not yet supported.')
-
     # Try to get Python library name from the Python executable. It assumes that Python
     # library is not statically linked.
     dlls = getImports(sys.executable)
     for filename in dlls:
-        for name in names:
+        for name in PYDYLIB_NAMES:
             if os.path.basename(filename) == name:
                 # On Windows filename is just like 'python27.dll'. Convert it
                 # to absolute path.
@@ -784,7 +767,7 @@ def get_python_library_path():
     # Applies only to non Windows platforms.
 
     if is_unix:
-        for name in names:
+        for name in PYDYLIB_NAMES:
             python_libname = findLibrary(name)
             if python_libname:
                 return python_libname
@@ -803,7 +786,7 @@ def get_python_library_path():
         # We need special care for this case.
         py_prefix = compat.base_prefix
 
-        for name in names:
+        for name in PYDYLIB_NAMES:
             full_path = os.path.join(py_prefix, name)
             if os.path.exists(full_path):
                 return full_path

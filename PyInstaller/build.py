@@ -29,7 +29,7 @@ import PyInstaller.depend.imptracker
 import PyInstaller.depend.utils
 
 from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
-from PyInstaller.compat import is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES
+from PyInstaller.compat import is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
 import PyInstaller.compat as compat
 import PyInstaller.depend.bindepend as bindepend
 
@@ -832,24 +832,28 @@ class Analysis(Target):
         Verify presence of the Python dynamic library in the binary dependencies.
         Python library is an essential piece that has to be always included.
         """
-        python_lib = bindepend.get_python_library_path()
+        # First check that libpython is in resolved binary dependencies.
+        for (nm, filename, typ) in binaries:
+            if typ == 'BINARY' and nm in PYDYLIB_NAMES:
+                # Just print its filename and return.
+                logger.info('Using Python library %s', filename)
+                # Checking was successful - end of function.
+                return
 
+        # Python lib not in dependencies - try to find it.
+        logger.info('Python library not in binary depedencies. Doing additional searching...')
+        python_lib = bindepend.get_python_library_path()
         if python_lib:
+            logger.debug('Adding Python library to binary dependencies')
+            binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
             logger.info('Using Python library %s', python_lib)
-            # Presence of library in dependencies.
-            deps = set()
-            for (nm, filename, typ) in binaries:
-                if typ == 'BINARY':
-                    deps.update([filename])
-            # If Python library is missing - append it to dependencies.
-            if python_lib not in deps:
-                logger.info('Adding Python library to binary dependencies')
-                binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
         else:
             msg = """Python library not found! This usually happens on Debian/Ubuntu
 where you need to install Python library:
 
-  apt-get install libpythonX.Y
+  apt-get install python3-dev
+  apt-get install python-dev
+
 """
             raise IOError(msg)
 

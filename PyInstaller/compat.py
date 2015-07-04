@@ -49,6 +49,32 @@ is_freebsd = sys.platform.startswith('freebsd')
 is_unix = is_linux or is_solar or is_aix or is_freebsd
 
 
+# On different platforms is different file for dynamic python library.
+_pyver = sys.version_info[:2]
+if is_win:
+    PYDYLIB_NAMES = set(['python%d%d.dll' % _pyver])
+elif is_cygwin:
+    PYDYLIB_NAMES = set(['libpython%d%d.dll' % _pyver])
+elif is_darwin:
+    PYDYLIB_NAMES = set(['Python', '.Python', 'libpython%d.%d.dylib' % _pyver])
+elif is_aix:
+    # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
+    PYDYLIB_NAMES = set(['libpython%d.%d.a' % _pyver])
+elif is_freebsd:
+    PYDYLIB_NAMES = set(['libpython%d.%d.so.1' % _pyver])
+elif is_unix:
+    # Other *nix platforms.
+    # Python 2 .so library on Linux is: libpython2.7.so.1.0
+    # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
+    PYDYLIB_NAMES = set(['libpython%d.%d.so.1.0' % _pyver,
+                         'libpython%d.%dm.so.1.0' % _pyver,
+                         'libpython%d.%dmu.so.1.0' % _pyver])
+else:
+    raise SystemExit('Your platform is not yet supported. '
+                     'Please define constant PYDYLIB_NAMES for your platform.')
+
+
+
 # In Python 3 built-in function raw_input() was renamed to just 'input()'.
 try:
     stdin_input = raw_input
