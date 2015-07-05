@@ -281,9 +281,24 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 
    pyi_pylib_set_runtime_opts(status);
 
+	/*
+	 * Py_Initialize() may rudely call abort(), and on Windows this triggers the error
+	 * reporting service, which results in a dialog box that says "Close program", "Check
+	 * for a solution", and also "Debug" if Visual Studio is installed. The dialog box
+	 * makes it frustrating to run the test suite.
+	 *
+	 * For debug builds of the bootloader, disable the error reporting before calling
+	 * Py_Initialize and enable it afterward.
+	 */
+
+#if defined(_WIN32) && defined(LAUNCH_DEBUG)
+	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+#endif
 	VS("LOADER: Initializing python\n");
 	PI_Py_Initialize();
-
+#if defined(_WIN32) && defined(LAUNCH_DEBUG)
+	SetErrorMode(0);
+#endif
 	/*
 	 * Set sys.path list. In Python 2 this is the only way to set sys.path.
 	 * Without
