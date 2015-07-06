@@ -10,6 +10,9 @@
 
 """
 Build packages using spec files.
+
+NOTE: All global variables, classes and imported modules create API
+      for .spec files.
 """
 
 
@@ -607,8 +610,15 @@ class Analysis(Target):
             node = self.graph.run_script(script)
 
         # Analyze the script's hidden imports (named on the command line)
+        # TODO remove debug messages
+        logger.debug('HIDDENIMPORTS debugging start')
+        logger.debug('sys.path: %s' % sys.path)
+        logger.debug('PATH: %s' % os.environ.get('PATH', ''))
+        logger.debug('CWD: %s' % os.getcwd())
+        logger.debug('hiddenimports: %s' % self.hiddenimports)
         for modnm in self.hiddenimports:
-            if self.graph.findNode(modnm) is not None :
+            logger.debug('HDIM module: %s' % modnm)
+            if self.graph.findNode(modnm) is not None:
                 logger.info("Hidden import %r has been found otherwise", modnm)
                 continue
             logger.info("Analyzing hidden import %r", modnm)
@@ -617,6 +627,9 @@ class Analysis(Target):
                 node = self.graph.import_hook(modnm)
             except :
                 logger.error("Hidden import %r not found", modnm)
+        logger.debug('sys.path: %s' % sys.path)
+        logger.debug('PATH: %s' % os.environ.get('PATH', ''))
+        logger.debug('HIDDENIMPORTS debugging end')
 
 
         # TODO move code for handling hooks into a class or function.
@@ -2031,6 +2044,13 @@ def TkPKG():
                      'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
 
 
+class ExecutableBuilder(object):
+    """
+    Class that constructs the executable.
+    """
+    # TODO wrap the 'main' and 'build' function into this class.
+
+
 def build(spec, distpath, workpath, clean_build):
     """
     Build the executable according to the created SPEC file.
@@ -2079,6 +2099,9 @@ def build(spec, distpath, workpath, clean_build):
 
     # Executing the specfile. The executed .spec file will use DISTPATH and
     # WORKPATH values.
+    # NOTE: .spec file uses namespace of this module and global variables
+    # from this module.
+    # TODO find a way how to pass the namespace to 'exec' statement without the need of global variables
     exec(compile(open(spec).read(), spec, 'exec'))
 
 
@@ -2102,6 +2125,7 @@ def __add_options(parser):
                       'before building.')
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
+    # TODO eliminate these global variables - they could interfere other PyInstaller tests.
     # Set of global variables that can be used while processing .spec file.
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm

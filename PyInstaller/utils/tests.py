@@ -22,8 +22,6 @@ skipif_notwin = skipif(not is_win, reason='requires Windows')
 skipif_notosx = skipif(not is_darwin, reason='requires Mac OS X')
 skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
 
-xfail = pytest.mark.xfail
-
 
 def importorskip(modules):
     """
