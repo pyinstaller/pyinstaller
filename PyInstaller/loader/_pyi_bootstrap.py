@@ -92,6 +92,9 @@ for pth in sys.path:
 # found this problem for the first time with PyInstaller as they don't
 # usually run their code with "pythonw" (and it's hard to debug anyway).
 class NullWriter:
+    softspace = 0
+    encoding = 'UTF-8'
+
     def write(*args):
         pass
 
