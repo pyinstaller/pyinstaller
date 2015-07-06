@@ -1348,6 +1348,11 @@ class EXE(Target):
 
         self.toc = TOC()
 
+        ### Pass option -S to Python interpreter to disable the 'site' module.
+        # With this option PyInstaller  won't append user-specific sitedirs to
+        # sys.path.
+        args += ([('S', None, 'OPTION')],)
+
         for arg in args:
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
