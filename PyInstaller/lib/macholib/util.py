@@ -1,11 +1,8 @@
 import os
 import sys
 import stat
-import operator
 import struct
 import shutil
-
-#from modulegraph.util import *
 
 from PyInstaller.lib.macholib import mach_o
 
