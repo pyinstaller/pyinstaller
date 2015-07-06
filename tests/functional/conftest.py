@@ -23,6 +23,7 @@ from PyInstaller.utils.win32 import winutils
 # Directory with Python scripts for functional tests. E.g. main scripts, etc.
 _SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
 # Directory with testing modules used in some tests.
+_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 
 
 class AppBuilder(object):
@@ -212,4 +213,7 @@ def pyi_builder(tmpdir, monkeypatch, request):
     tmp = tmpdir.strpath
     # Override default PyInstaller config dir.
     monkeypatch.setenv('PYINSTALLER_CONFIG_DIR', tmp)
+    # Append _MMODULES_DIR to sys.path for building exes.
+    # Some tests need additional test modules.
+    monkeypatch.syspath_prepend(_MODULES_DIR)
     return AppBuilder(tmp, request.param)

@@ -13,8 +13,8 @@ import threading
 
 def doit(nm):
     print(('%s started' % nm))
-    import data7
-    print(('%s %s' % (nm, data7.x)))
+    import pyi_testmod_threading
+    print(('%s %s' % (nm, pyi_testmod_threading.x)))
 
 
 t1 = threading.Thread(target=doit, args=('t1',))
