@@ -116,7 +116,7 @@ class AppBuilder(object):
         Run executable created by PyInstaller.
         """
         # Run the test in a clean environment to make sure they're really self-contained.
-        prog_env = copy.copy(os.environ)
+        prog_env = copy.deepcopy(os.environ)
         prog_env['PATH'] = ''
         del prog_env['PATH']
         # For Windows we need to keep minimal PATH for successful running of some tests.
@@ -125,7 +125,7 @@ class AppBuilder(object):
             prog_env['PATH'] = os.pathsep.join(winutils.get_system_path())
 
         # Run executable in the directory where it is.
-        prog_cwd = os.chdir(os.path.dirname(prog))
+        prog_cwd = os.path.dirname(prog)
         # The executable will be called as relative not absolute path.
         prog = os.path.join(os.curdir, os.path.basename(prog))
 
@@ -215,5 +215,11 @@ def pyi_builder(tmpdir, monkeypatch, request):
     monkeypatch.setenv('PYINSTALLER_CONFIG_DIR', tmp)
     # Append _MMODULES_DIR to sys.path for building exes.
     # Some tests need additional test modules.
+    # This also ensures that sys.path is reseted to original value for every test.
     monkeypatch.syspath_prepend(_MODULES_DIR)
+    # Save/restore environment variable PATH.
+    monkeypatch.setenv('PATH', os.environ['PATH'])
+    # Set current working directory to
+    monkeypatch.chdir(tmp)
+
     return AppBuilder(tmp, request.param)
