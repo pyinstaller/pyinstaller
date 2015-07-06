@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,18 +8,22 @@
 #-----------------------------------------------------------------------------
 
 
-# Test inclusion of fake 'site' module.
+# Test that the Pythons 'site' module is disabled and Python is not searching
+# for any user-specific site directories.
+
+# Check that option -S is passed to Python interpreter.
 
 
 import site
+import sys
 
 
-# Default values in fake 'site' module should be False, None or empty list.
+# Check it is really disabled.
+if not sys.flags.no_site:
+    raise SystemExit('site module is enabled!')
 
-if not site.ENABLE_USER_SITE == False:
+# Default values 'site' module when it is disabled.
+if not site.ENABLE_USER_SITE == None:
     raise SystemExit('ENABLE_USER_SITE not False.')
-if not site.PREFIXES == []:
-    raise SystemExit('PREFIXES not empty list.')
-
 if site.USER_SITE is not None and site.USER_BASE is not None:
     raise SystemExit('USER_SITE or USER_BASE not None.')

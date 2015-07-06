@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,9 +8,10 @@
 #-----------------------------------------------------------------------------
 
 
-# Test importing some modules from pywin32 package.
-# All modules from pywin32 depens on module pywintypes.
-# This module should be also included.
+import os
+import sys
 
 
-import win32com
+# Ensure meipass dir exists.
+os.chdir(sys._MEIPASS)
+print(os.getcwd())

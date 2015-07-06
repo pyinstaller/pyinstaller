@@ -80,9 +80,14 @@ def test_module_reload(pyi_builder):
     pyi_builder.test_script('module_reload.py')
 
 
-@importorskip('multiprocess')
+@importorskip('multiprocessing')
 def test_multiprocess(pyi_builder):
     pyi_builder.test_script('multiprocess.py')
+
+
+@importorskip('multiprocessing')
+def test_multiprocess_forking(pyi_builder):
+    pyi_builder.test_script('multiprocess_forking.py')
 
 
 # TODO skip this test if C compiler is not found.
@@ -132,33 +137,45 @@ def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder):
     pyi_builder.test_script('load_dll_using_ctypes.py')
 
 
+def test_get_meipass_value(pyi_builder):
+    pyi_builder.test_script('get_meipass_value.py')
+
+
+def test_chdir_meipass(pyi_builder):
+    pyi_builder.test_script('chdir_meipass.py')
+
+
+def test_python_makefile(pyi_builder):
+    pyi_builder.test_script('python_makefile.py')
+
+
+def test_python_home(pyi_builder):
+    pyi_builder.test_script('python_home.py')
+
+
+@importorskip('win32com')
+def test_pywin32_win32com(pyi_builder):
+    pyi_builder.test_script('pywin32_win32com.py')
+
+
+def test_site_module_disabled(pyi_builder):
+    pyi_builder.test_script('site_module_disabled.py')
+
+
+def test_time_module(pyi_builder):
+    pyi_builder.test_script('time_module.py')
+
+
+def test_xmldom_module(pyi_builder):
+    pyi_builder.test_script('xmldom_module.py')
+
+
+
+def test_threading_module(pyi_builder):
+    pyi_builder.test_script('threading_module.py')
+
+
+"""
 def test_(pyi_builder):
     pyi_builder.test_script('')
-
-
-def test_(pyi_builder):
-    pyi_builder.test_script('')
-
-
-def test_(pyi_builder):
-    pyi_builder.test_script('')
-
-
-def test_(pyi_builder):
-    pyi_builder.test_script('')
-
-
-def test_(pyi_builder):
-    pyi_builder.test_script('')
-
-
-def test_(pyi_builder):
-    pyi_builder.test_script('')
-
-
-def test_(pyi_builder):
-    pyi_builder.test_script('')
-
-
-def test_(pyi_builder):
-    pyi_builder.test_script('')
+"""

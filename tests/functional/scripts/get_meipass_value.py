@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -16,6 +16,7 @@
 
 
 import os
+import subprocess
 import sys
 
 
@@ -25,27 +26,19 @@ def _get_meipass_value():
     else:
         command = 'echo $_MEIPASS2'
 
-    try:
-        import subprocess
-        proc = subprocess.Popen(command, shell=True,
-                stdout=subprocess.PIPE)
-        proc.wait()
-        stdout, stderr = proc.communicate()
-        meipass = stdout.strip()
-    except ImportError:
-        # Python 2.3 does not have subprocess module.
-        pipe = os.popen(command)
-        meipass = pipe.read().strip()
-        pipe.close()
+    stdout = subprocess.check_output(command, shell=True)
+    meipass = stdout.strip()
+
+    # Win32 fix.
+    if meipass.startswith(b'%'):
+        meipass = ''
+
+
     return meipass
 
 
 meipass = _get_meipass_value()
 
-
-# Win32 fix.
-if meipass.startswith(r'%'):
-    meipass = ''
 
 
 print(meipass)
