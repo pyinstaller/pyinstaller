@@ -82,6 +82,17 @@ for more details and instructions how to build the bootloader.
 """
 
 
+def _old_api_error(obj_name):
+    """
+    Cause PyInstall to exit when .spec file uses old api.
+    :param obj_name: Name of the old api that is no longer suppored.
+    """
+    raise SystemExit('%s has been removed in PyInstaller 2.0. '
+                     'Please update your spec-file. See '
+                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 '
+                     'for details' % obj_name)
+
+
 def _save_data(filename, data):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
@@ -2032,18 +2043,6 @@ class MERGE(object):
             return topath
 
 
-def TkTree():
-    raise SystemExit('TkTree has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file. See '
-                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
-
-
-def TkPKG():
-    raise SystemExit('TkPKG has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file. See '
-                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
-
-
 class ExecutableBuilder(object):
     """
     Class that constructs the executable.
@@ -2097,12 +2096,40 @@ def build(spec, distpath, workpath, clean_build):
         if not os.path.exists(WORKPATH):
             os.makedirs(WORKPATH)
 
+    # Construct NAMESPACE for running the Python code from .SPEC file.
+    # NOTE: Passing NAMESPACE allows to avoid having global variables in this
+    #       module and makes isolated environment for running tests.
+    # NOTE: Defining NAMESPACE allows to map any class to a apecific name.
+    # FIXME: Some symbols might be missing. Add them if there are some failures.
+    spec_namespace = {
+        # Set of global variables that can be used while processing .spec file.
+        # Some of them act as configuration options.
+        'DISTPATH': DISTPATH,
+        'HIDDENIMPORTS': HIDDENIMPORTS,  # Detect these imports.
+        'HOMEPATH': HOMEPATH,
+        'SPEC': SPECPATH,
+        'specnm': specnm,
+        'SPECPATH': SPECPATH,
+        'WARNFILE': WARNFILE,
+        'WORKPATH': WORKPATH,
+        # PyInstaller classes for .spec.
+        'Analysis': Analysis,
+        'BUNDLE': BUNDLE,
+        'COLLECT': COLLECT,
+        'DLL': DLL,
+        'EXE': EXE,
+        'PYZ': PYZ,
+        # Old classes for .spec - raise Exception for user.
+        'TkPKG': lambda *args, **kwargs: _old_api_error('TkPKG'),
+        'TkTree': lambda *args, **kwargs: _old_api_error('TkTree'),
+        # Python modules available for .spec.
+        'os': os,
+    }
+
     # Executing the specfile. The executed .spec file will use DISTPATH and
     # WORKPATH values.
-    # NOTE: .spec file uses namespace of this module and global variables
-    # from this module.
-    # TODO find a way how to pass the namespace to 'exec' statement without the need of global variables
-    exec(compile(open(spec).read(), spec, 'exec'))
+    spec_code = compile(open(spec).read(), spec, 'exec')
+    exec(spec_code, spec_namespace)
 
 
 def __add_options(parser):
