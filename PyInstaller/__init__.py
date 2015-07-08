@@ -16,7 +16,7 @@ import sys
 
 
 # Fail hard if Python does not have minimum required version
-if sys.version_info < (2, 7) or sys.version_info < (3, 3):
+if sys.version_info < (3, 3) and sys.version_info[:2] != (2, 7):
     raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
 
 
