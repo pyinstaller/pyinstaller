@@ -405,8 +405,8 @@ class Analysis(Target):
 
             pyi_crypto_path = os.path.join(_init_code_path, 'pyi_crypto.py')
 
-            config['PYZ_dependencies'].append(('pyi_crypto', pyi_crypto_path + 'c', 'PYMODULE'))
-            config['PYZ_dependencies'].append(('pyi_crypto_key', pyi_crypto_key_path + 'c', 'PYMODULE'))
+            CONF['PYZ_dependencies'].append(('pyi_crypto', pyi_crypto_path + 'c', 'PYMODULE'))
+            CONF['PYZ_dependencies'].append(('pyi_crypto_key', pyi_crypto_key_path + 'c', 'PYMODULE'))
 
         self.excludes = excludes
         self.scripts = TOC()
@@ -903,7 +903,7 @@ class PYZ(Target):
         # Level of zlib compression.
         self.level = level
         # Compile top-level modules so we could run them at app startup.
-        self.dependencies = misc.compile_py_files(config['PYZ_dependencies'], CONF['workpath'])
+        self.dependencies = misc.compile_py_files(CONF['PYZ_dependencies'], CONF['workpath'])
         self.cipher = cipher
         self.__postinit__()
 
@@ -926,7 +926,7 @@ class PYZ(Target):
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
         pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict, cipher=self.cipher)
-        toc = self.toc - config['PYZ_dependencies']
+        toc = self.toc - CONF['PYZ_dependencies']
         pyz.build(self.name, toc)
         save_py_data_struct(self.out, (self.name, self.level, self.toc))
         return 1
@@ -1025,12 +1025,12 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         bestopt = "--best"
         # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
         # A better configure-time check is due.
-        if config["hasUPX"] >= (3,) and os.name == "nt":
+        if CONF["hasUPX"] >= (3,) and os.name == "nt":
             bestopt = "--lzma"
 
         upx_executable = "upx"
-        if config.get('upx_dir'):
-            upx_executable = os.path.join(config['upx_dir'], upx_executable)
+        if CONF.get('upx_dir'):
+            upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
         cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
@@ -1334,7 +1334,7 @@ class EXE(Target):
         self.uac_admin = kwargs.get('uac_admin', False)
         self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
 
-        if config['hasUPX']:
+        if CONF['hasUPX']:
            self.upx = kwargs.get('upx', False)
         else:
            self.upx = False
@@ -1414,7 +1414,7 @@ class EXE(Target):
             return True
 
         icon, versrsrc, resources = data[3:6]
-        if (icon or versrsrc or resources) and not config['hasRsrcUpdate']:
+        if (icon or versrsrc or resources) and not CONF['hasRsrcUpdate']:
             # todo: really ignore :-)
             logger.info("ignoring icon, version, manifest and resources = platform not capable")
 
@@ -1478,7 +1478,7 @@ class EXE(Target):
             trash.append(tmpnm)
             exe = tmpnm
 
-        if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
+        if CONF['hasRsrcUpdate'] and (self.icon or self.versrsrc or
                                         self.resources):
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
@@ -1605,7 +1605,7 @@ class COLLECT(Target):
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
 
-        if config['hasUPX']:
+        if CONF['hasUPX']:
            self.upx_binaries = kws.get('upx', False)
         else:
            self.upx_binaries = False
@@ -2151,9 +2151,9 @@ def __add_options(parser):
                       'before building.')
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
+    from PyInstaller.config import CONF
     # TODO eliminate these global variables - they could interfere other PyInstaller tests.
     # Set of global variables that can be used while processing .spec file.
-    global config
     global icon, versioninfo, winresource, winmanifest, pyasm
     # TEMP-REMOVE 2 lines
     global DEBUG # save debug flag for temp use
@@ -2173,19 +2173,19 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # If configuration dict is supplied - skip configuration step.
     if pyi_config is None:
         import PyInstaller.configure as configure
-        config = configure.get_config(kw.get('upx_dir'))
+        CONF.update(configure.get_config(kw.get('upx_dir')))
     else:
-        config = pyi_config
+        CONF.update(pyi_config)
 
-    if config['hasRsrcUpdate']:
+    if CONF['hasRsrcUpdate']:
         pyasm = bindepend.getAssemblies(sys.executable)
     else:
         pyasm = None
 
-    if config['hasUPX']:
+    if CONF['hasUPX']:
         setupUPXFlags()
 
-    config['ui_admin'] = kw.get('ui_admin', False)
-    config['ui_access'] = kw.get('ui_uiaccess', False)
+    CONF['ui_admin'] = kw.get('ui_admin', False)
+    CONF['ui_access'] = kw.get('ui_uiaccess', False)
 
     build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))
