@@ -65,7 +65,6 @@ SPEC = None
 SPECPATH = None
 DISTPATH = None
 WARNFILE = None
-NOCONFIRM = None
 
 rthooks = {}
 
@@ -219,7 +218,7 @@ def _rmtree(path):
     Remove directory and all its contents, but only after user confirmation,
     or if the -y option is set
     """
-    if NOCONFIRM:
+    if CONF['noconfirm']:
         choice = 'y'
     elif sys.stdout.isatty():
         choice = compat.stdin_input('WARNING: The output directory "%s" and ALL ITS '
@@ -2156,12 +2155,11 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # Set of global variables that can be used while processing .spec file.
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm
-    global NOCONFIRM
     # TEMP-REMOVE 2 lines
     global DEBUG # save debug flag for temp use
     DEBUG = kw['debug']
 
-    NOCONFIRM = noconfirm
+    CONF['noconfirm'] = noconfirm
 
     # Some modules are included if they are detected at build-time or
     # if a command-line argument is specified. (e.g. --ascii)
