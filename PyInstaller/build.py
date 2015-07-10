@@ -64,13 +64,8 @@ COMPRESSED = 1
 SPEC = None
 SPECPATH = None
 DISTPATH = None
-HIDDENIMPORTS = []
 WARNFILE = None
 NOCONFIRM = None
-
-# Some modules are included if they are detected at build-time or
-# if a command-line argument is specified. (e.g. --ascii)
-HIDDENIMPORTS = []
 
 rthooks = {}
 
@@ -381,7 +376,7 @@ class Analysis(Target):
 
         self.hiddenimports = hiddenimports or []
         # Include modules detected when parsing options, like 'codecs' and encodings.
-        self.hiddenimports.extend(HIDDENIMPORTS)
+        self.hiddenimports.extend(CONF['hiddenimports'])
 
         self.hookspath = hookspath
 
@@ -625,12 +620,6 @@ class Analysis(Target):
             node = self.graph.run_script(script)
 
         # Analyze the script's hidden imports (named on the command line)
-        # TODO remove debug messages
-        logger.debug('HIDDENIMPORTS debugging start')
-        logger.debug('sys.path: %s' % sys.path)
-        logger.debug('PATH: %s' % os.environ.get('PATH', ''))
-        logger.debug('CWD: %s' % os.getcwd())
-        logger.debug('hiddenimports: %s' % self.hiddenimports)
         for modnm in self.hiddenimports:
             logger.debug('HDIM module: %s' % modnm)
             if self.graph.findNode(modnm) is not None:
@@ -642,10 +631,6 @@ class Analysis(Target):
                 node = self.graph.import_hook(modnm)
             except :
                 logger.error("Hidden import %r not found", modnm)
-        logger.debug('sys.path: %s' % sys.path)
-        logger.debug('PATH: %s' % os.environ.get('PATH', ''))
-        logger.debug('HIDDENIMPORTS debugging end')
-
 
         # TODO move code for handling hooks into a class or function.
         ### Handle hooks.
@@ -2112,7 +2097,6 @@ def build(spec, distpath, workpath, clean_build):
         # Set of global variables that can be used while processing .spec file.
         # Some of them act as configuration options.
         'DISTPATH': DISTPATH,
-        'HIDDENIMPORTS': HIDDENIMPORTS,
         'HOMEPATH': HOMEPATH,
         'SPEC': SPECPATH,
         'specnm': specnm,
@@ -2172,16 +2156,20 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # Set of global variables that can be used while processing .spec file.
     global config
     global icon, versioninfo, winresource, winmanifest, pyasm
-    global HIDDENIMPORTS, NOCONFIRM
+    global NOCONFIRM
     # TEMP-REMOVE 2 lines
     global DEBUG # save debug flag for temp use
     DEBUG = kw['debug']
 
     NOCONFIRM = noconfirm
 
+    # Some modules are included if they are detected at build-time or
+    # if a command-line argument is specified. (e.g. --ascii)
+    if CONF.get('hiddenimports') is None:
+        CONF['hiddenimports'] = []
     # Test unicode support.
     if not ascii:
-        HIDDENIMPORTS.extend(misc.get_unicode_modules())
+        CONF['hiddenimports'].extend(misc.get_unicode_modules())
 
     # FIXME: this should be a global import, but can't due to recursive imports
     # If configuration dict is supplied - skip configuration step.
