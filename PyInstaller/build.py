@@ -47,6 +47,10 @@ from PyInstaller.utils.misc import save_py_data_struct, load_py_data_struct
 if is_win:
     from PyInstaller.utils.win32 import winmanifest, icon
 
+
+# Global PyInstaller configuration.
+from PyInstaller.config import CONF
+
 logger = logging.getLogger(__name__)
 
 
@@ -200,9 +204,9 @@ def _check_path_overlap(path):
     Raise SystemExit if there is overlap, return True otherwise
     """
     specerr = 0
-    if WORKPATH.startswith(path):
+    if CONF['workpath'].startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
-                     'WORKPATH (%s)', path, WORKPATH)
+                     'WORKPATH (%s)', path, CONF['workpath'])
         specerr += 1
     if SPECPATH.startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
@@ -245,7 +249,7 @@ class Target(object):
         # toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        self.out = os.path.join(WORKPATH, 'out%02d-%s.toc' %
+        self.out = os.path.join(CONF['workpath'], 'out%02d-%s.toc' %
                                 (self.invcnum, self.__class__.__name__))
         self.outnm = os.path.basename(self.out)
         self.dependencies = TOC()
@@ -390,7 +394,7 @@ class Analysis(Target):
 
             # Create a Python module which contains the decryption key which will
             # be used at runtime by pyi_crypto.PyiBlockCipher.
-            pyi_crypto_key_path = os.path.join(WORKPATH, 'pyi_crypto_key.py')
+            pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyi_crypto_key.py')
 
             with open(pyi_crypto_key_path, 'w') as f:
                 f.write('key = %r\n' % cipher.key)
@@ -552,7 +556,7 @@ class Analysis(Target):
         # containing core Python modules. In Python 3 some built-in modules
         # are written in pure Python. base_library.zip is a way how to have
         # those modules as "built-in".
-        libzip_filename = os.path.join(WORKPATH, 'base_library.zip')
+        libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
         PyInstaller.depend.utils.create_py3_base_library(libzip_filename)
         # Bundle base_library.zip as data file.
         # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
@@ -571,7 +575,7 @@ class Analysis(Target):
             depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
                                                processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
-            depmanifest.filename = os.path.join(WORKPATH,
+            depmanifest.filename = os.path.join(CONF['workpath'],
                                                 specnm + ".exe.manifest")
 
         # We record "binaries" separately from the modulegraph, as there
@@ -915,7 +919,7 @@ class PYZ(Target):
         # Level of zlib compression.
         self.level = level
         # Compile top-level modules so we could run them at app startup.
-        self.dependencies = misc.compile_py_files(config['PYZ_dependencies'], WORKPATH)
+        self.dependencies = misc.compile_py_files(config['PYZ_dependencies'], CONF['workpath'])
         self.cipher = cipher
         self.__postinit__()
 
@@ -1359,7 +1363,7 @@ class EXE(Target):
         # WORKPATH - onedir
         if self.exclude_binaries:
             # onedir mode - create executable in WORKPATH.
-            self.name = os.path.join(WORKPATH, os.path.basename(self.name))
+            self.name = os.path.join(CONF['workpath'], os.path.basename(self.name))
         else:
             # onefile mode - create executable in DISTPATH.
             self.name = os.path.join(DISTPATH, os.path.basename(self.name))
@@ -1387,7 +1391,7 @@ class EXE(Target):
                 self.toc.extend(arg)
 
         if is_win:
-            filename = os.path.join(WORKPATH, specnm + ".exe.manifest")
+            filename = os.path.join(CONF['workpath'], specnm + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
                 self.console, self.uac_admin, self.uac_uiaccess)
             self.toc.append((os.path.basename(self.name) + ".manifest", filename,
@@ -2071,17 +2075,17 @@ def build(spec, distpath, workpath, clean_build):
         distpath = os.path.join(HOMEPATH, specnm, os.path.basename(distpath))
     DISTPATH = distpath
     if os.path.dirname(workpath) == HOMEPATH:
-        WORKPATH = os.path.join(HOMEPATH, specnm, os.path.basename(workpath), specnm)
+        workpath = os.path.join(HOMEPATH, specnm, os.path.basename(workpath), specnm)
     else:
-        WORKPATH = os.path.join(workpath, specnm)
+        workpath = os.path.join(workpath, specnm)
 
-    WARNFILE = os.path.join(WORKPATH, 'warn%s.txt' % specnm)
+    WARNFILE = os.path.join(workpath, 'warn%s.txt' % specnm)
 
-    # Clean PyInstaller cache (CONFIGDIR) and temporary files (WORKPATH)
+    # Clean PyInstaller cache (CONFIGDIR) and temporary files (workpath)
     # to be able start a clean build.
     if clean_build:
         logger.info('Removing temporary files and cleaning cache in %s', CONFIGDIR)
-        for pth in (CONFIGDIR, WORKPATH):
+        for pth in (CONFIGDIR, workpath):
             if os.path.exists(pth):
                 # Remove all files in 'pth'.
                 for f in glob.glob(pth + '/*'):
@@ -2091,10 +2095,10 @@ def build(spec, distpath, workpath, clean_build):
                     else:
                         os.remove(f)
 
-    # Create DISTPATH and WORKPATH if they does not exist.
-    for pth in (DISTPATH, WORKPATH):
-        if not os.path.exists(WORKPATH):
-            os.makedirs(WORKPATH)
+    # Create DISTPATH and workpath if they does not exist.
+    for pth in (DISTPATH, workpath):
+        if not os.path.exists(workpath):
+            os.makedirs(workpath)
 
 
 
@@ -2114,7 +2118,7 @@ def build(spec, distpath, workpath, clean_build):
         'specnm': specnm,
         'SPECPATH': SPECPATH,
         'WARNFILE': WARNFILE,
-        'WORKPATH': WORKPATH,
+        'workpath': workpath,
         # PyInstaller classes for .spec.
         'Analysis': Analysis,
         'BUNDLE': BUNDLE,
@@ -2132,7 +2136,7 @@ def build(spec, distpath, workpath, clean_build):
     # Set up module PyInstaller.config for passing some arguments to 'exec'
     # function.
     from PyInstaller.config import CONF
-    PyInstaller.config.CONF['workpath'] = WORKPATH
+    PyInstaller.config.CONF['workpath'] = workpath
 
     # Executing the specfile.
     with open(spec, 'r') as f:
