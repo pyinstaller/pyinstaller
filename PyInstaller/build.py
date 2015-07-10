@@ -2155,9 +2155,6 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # TODO eliminate these global variables - they could interfere other PyInstaller tests.
     # Set of global variables that can be used while processing .spec file.
     global icon, versioninfo, winresource, winmanifest, pyasm
-    # TEMP-REMOVE 2 lines
-    global DEBUG # save debug flag for temp use
-    DEBUG = kw['debug']
 
     CONF['noconfirm'] = noconfirm
 
