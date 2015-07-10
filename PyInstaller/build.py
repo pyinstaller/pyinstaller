@@ -60,7 +60,7 @@ COMPRESSED = 1
 SPEC = None
 SPECPATH = None
 DISTPATH = None
-WORKPATH = None
+HIDDENIMPORTS = []
 WARNFILE = None
 NOCONFIRM = None
 
@@ -334,7 +334,7 @@ class Analysis(Target):
                 An optional list of scripts to use as users' runtime hooks. Specified
                 as file names.
         """
-        Target.__init__(self)
+        super(Analysis, self).__init__()
 
         sys._PYI_SETTINGS = {}
         sys._PYI_SETTINGS['scripts'] = scripts
@@ -376,7 +376,7 @@ class Analysis(Target):
 
 
         self.hiddenimports = hiddenimports or []
-        # Include modules detected when parsing options,l ike 'codecs' and encodings.
+        # Include modules detected when parsing options, like 'codecs' and encodings.
         self.hiddenimports.extend(HIDDENIMPORTS)
 
         self.hookspath = hookspath
@@ -2055,7 +2055,7 @@ def build(spec, distpath, workpath, clean_build):
     Build the executable according to the created SPEC file.
     """
     # Set of global variables that can be used while processing .spec file.
-    global SPECPATH, DISTPATH, WORKPATH, WARNFILE, SPEC, specnm
+    global SPECPATH, DISTPATH, WARNFILE, SPEC, specnm
 
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
@@ -2096,16 +2096,19 @@ def build(spec, distpath, workpath, clean_build):
         if not os.path.exists(WORKPATH):
             os.makedirs(WORKPATH)
 
+
+
     # Construct NAMESPACE for running the Python code from .SPEC file.
     # NOTE: Passing NAMESPACE allows to avoid having global variables in this
     #       module and makes isolated environment for running tests.
-    # NOTE: Defining NAMESPACE allows to map any class to a apecific name.
+    # NOTE: Defining NAMESPACE allows to map any class to a apecific name for .SPEC.
     # FIXME: Some symbols might be missing. Add them if there are some failures.
+    # TODO: What from this .spec API is deprecated and could be removed?
     spec_namespace = {
         # Set of global variables that can be used while processing .spec file.
         # Some of them act as configuration options.
         'DISTPATH': DISTPATH,
-        'HIDDENIMPORTS': HIDDENIMPORTS,  # Detect these imports.
+        'HIDDENIMPORTS': HIDDENIMPORTS,
         'HOMEPATH': HOMEPATH,
         'SPEC': SPECPATH,
         'specnm': specnm,
@@ -2126,10 +2129,19 @@ def build(spec, distpath, workpath, clean_build):
         'os': os,
     }
 
-    # Executing the specfile. The executed .spec file will use DISTPATH and
-    # WORKPATH values.
-    spec_code = compile(open(spec).read(), spec, 'exec')
-    exec(spec_code, spec_namespace)
+    # Set up module PyInstaller.config for passing some arguments to 'exec'
+    # function.
+    from PyInstaller.config import CONF
+    PyInstaller.config.CONF['workpath'] = WORKPATH
+
+    # Executing the specfile.
+    with open(spec, 'r') as f:
+        text = f.read()
+    exec(text, spec_namespace)
+
+    # Clean up configuration and force PyInstaller to do a clean configuration
+    # for another app/test.
+    PyInstaller.config.CONF = {}
 
 
 def __add_options(parser):
