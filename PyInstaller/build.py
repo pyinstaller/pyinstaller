@@ -48,18 +48,10 @@ from .config import CONF
 
 logger = logging.getLogger(__name__)
 
-
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
 UNCOMPRESSED = 0
 COMPRESSED = 1
-
-
-# Set of global variables that can be used while processing .spec file.
-SPEC = None
-SPECPATH = None
-DISTPATH = None
-WARNFILE = None
 
 rthooks = {}
 
@@ -196,14 +188,14 @@ def _check_path_overlap(path):
         logger.error('Specfile error: The output path "%s" contains '
                      'WORKPATH (%s)', path, CONF['workpath'])
         specerr += 1
-    if SPECPATH.startswith(path):
+    if CONF['specpath'].startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
-                     'SPECPATH (%s)', path, SPECPATH)
+                     'SPECPATH (%s)', path, CONF['specpath'])
         specerr += 1
     if specerr:
         raise SystemExit('Error: Please edit/recreate the specfile (%s) '
                          'and set a different output name (e.g. "dist").'
-                         % SPEC)
+                         % CONF['spec'])
     return True
 
 
@@ -560,11 +552,11 @@ class Analysis(Target):
             depmanifest = None
         else:
             # Windows: no links, but "manifestly" need this:
-            depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
+            depmanifest = winmanifest.Manifest(type_="win32", name=CONF['specnm'],
                                                processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
             depmanifest.filename = os.path.join(CONF['workpath'],
-                                                specnm + ".exe.manifest")
+                                                CONF['specnm'] + ".exe.manifest")
 
         # We record "binaries" separately from the modulegraph, as there
         # is no way to record those dependencies in the graph. These include
@@ -817,7 +809,7 @@ class Analysis(Target):
             # "no module named foo conditional/deferred/toplevel importy by bar"
             miss_toc = self.graph.make_a_TOC(['MISSING'])
             if len(miss_toc) : # there are some missing modules
-                wf = open(WARNFILE, 'w')
+                wf = open(CONF['warnfile'], 'w')
                 for (n, p, t) in miss_toc :
                     importer_names = self.graph.importer_names(n)
                     wf.write( 'no module named '
@@ -827,7 +819,7 @@ class Analysis(Target):
                               + '\n'
                               )
                 wf.close()
-                logger.info("Warnings written to %s", WARNFILE)
+                logger.info("Warnings written to %s", CONF['warnfile'])
             return 1
         else :
             logger.info("%s no change!", self.out)
@@ -1344,7 +1336,7 @@ class EXE(Target):
             self.name = os.path.join(CONF['workpath'], os.path.basename(self.name))
         else:
             # onefile mode - create executable in DISTPATH.
-            self.name = os.path.join(DISTPATH, os.path.basename(self.name))
+            self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
 
         # Base name of the EXE file without .exe suffix.
         base_name = os.path.basename(self.name)
@@ -1369,7 +1361,7 @@ class EXE(Target):
                 self.toc.extend(arg)
 
         if is_win:
-            filename = os.path.join(CONF['workpath'], specnm + ".exe.manifest")
+            filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
                 self.console, self.uac_admin, self.uac_uiaccess)
             self.toc.append((os.path.basename(self.name) + ".manifest", filename,
@@ -1611,7 +1603,7 @@ class COLLECT(Target):
         #
         # The 'name' directory is created in DISTPATH and necessary files are
         # then collected to this directory.
-        self.name = os.path.join(DISTPATH, os.path.basename(self.name))
+        self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
 
         self.toc = TOC()
         for arg in args:
@@ -1696,7 +1688,7 @@ class BUNDLE(Target):
         # .app bundle is created in DISTPATH.
         self.name = kws.get('name', None)
         base_name = os.path.basename(self.name)
-        self.name = os.path.join(DISTPATH, base_name)
+        self.name = os.path.join(CONF['distpath'], base_name)
 
         self.appname = os.path.splitext(base_name)[0]
         self.version = kws.get("version", "0.0.0")
@@ -1736,9 +1728,9 @@ class BUNDLE(Target):
                 self.exename = name
                 if self.name is None:
                     self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
-                    self.name = os.path.join(SPECPATH, self.appname + ".app")
+                    self.name = os.path.join(CONF['specpath'], self.appname + ".app")
                 else:
-                    self.name = os.path.join(SPECPATH, self.name)
+                    self.name = os.path.join(CONF['specpath'], self.name)
                 break
         self.__postinit__()
 
@@ -2036,28 +2028,27 @@ def build(spec, distpath, workpath, clean_build):
     """
     Build the executable according to the created SPEC file.
     """
-    # Set of global variables that can be used while processing .spec file.
-    global SPECPATH, DISTPATH, WARNFILE, SPEC, specnm
+    from .config import CONF
 
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
     distpath = compat.expand_path(distpath)
     workpath = compat.expand_path(workpath)
-    SPEC = compat.expand_path(spec)
+    CONF['spec'] = compat.expand_path(spec)
 
-    SPECPATH, specnm = os.path.split(spec)
-    specnm = os.path.splitext(specnm)[0]
+    CONF['specpath'], CONF['specnm'] = os.path.split(spec)
+    CONF['specnm'] = os.path.splitext(CONF['specnm'])[0]
 
     # Add 'specname' to workpath and distpath if they point to PyInstaller homepath.
     if os.path.dirname(distpath) == HOMEPATH:
-        distpath = os.path.join(HOMEPATH, specnm, os.path.basename(distpath))
-    DISTPATH = distpath
+        distpath = os.path.join(HOMEPATH, CONF['specnm'], os.path.basename(distpath))
+    CONF['distpath'] = distpath
     if os.path.dirname(workpath) == HOMEPATH:
-        workpath = os.path.join(HOMEPATH, specnm, os.path.basename(workpath), specnm)
+        workpath = os.path.join(HOMEPATH, CONF['specnm'], os.path.basename(workpath), CONF['specnm'])
     else:
-        workpath = os.path.join(workpath, specnm)
+        workpath = os.path.join(workpath, CONF['specnm'])
 
-    WARNFILE = os.path.join(workpath, 'warn%s.txt' % specnm)
+    CONF['warnfile'] = os.path.join(workpath, 'warn%s.txt' % CONF['specnm'])
 
     # Clean PyInstaller cache (CONFIGDIR) and temporary files (workpath)
     # to be able start a clean build.
@@ -2074,11 +2065,9 @@ def build(spec, distpath, workpath, clean_build):
                         os.remove(f)
 
     # Create DISTPATH and workpath if they does not exist.
-    for pth in (DISTPATH, workpath):
-        if not os.path.exists(workpath):
-            os.makedirs(workpath)
-
-
+    for pth in (CONF['distpath'], workpath):
+        if not os.path.exists(pth):
+            os.makedirs(pth)
 
     # Construct NAMESPACE for running the Python code from .SPEC file.
     # NOTE: Passing NAMESPACE allows to avoid having global variables in this
@@ -2089,12 +2078,12 @@ def build(spec, distpath, workpath, clean_build):
     spec_namespace = {
         # Set of global variables that can be used while processing .spec file.
         # Some of them act as configuration options.
-        'DISTPATH': DISTPATH,
+        'DISTPATH': CONF['distpath'],
         'HOMEPATH': HOMEPATH,
-        'SPEC': SPECPATH,
-        'specnm': specnm,
-        'SPECPATH': SPECPATH,
-        'WARNFILE': WARNFILE,
+        'SPEC': CONF['spec'],
+        'specnm': CONF['specnm'],
+        'SPECPATH': CONF['specpath'],
+        'WARNFILE': CONF['warnfile'],
         'workpath': workpath,
         # PyInstaller classes for .spec.
         'Analysis': Analysis,
@@ -2112,7 +2101,7 @@ def build(spec, distpath, workpath, clean_build):
 
     # Set up module PyInstaller.config for passing some arguments to 'exec'
     # function.
-    from PyInstaller.config import CONF
+    from .config import CONF
     CONF['workpath'] = workpath
 
     # Executing the specfile.
