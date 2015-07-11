@@ -40,7 +40,7 @@ from .utils import misc
 from .utils.misc import save_py_data_struct, load_py_data_struct
 
 if is_win:
-    from .utils.win32 import icon, versioninfo, winmanifest
+    from .utils.win32 import icon, versioninfo, winmanifest, winresource
 
 
 # Global PyInstaller configuration.
@@ -1088,10 +1088,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                             # Extension modules built with Python 2.6.5 have
                             # an empty <dependency> element, we need to add
                             # dependentAssemblies from python.exe for
-                            # pyinstaller
+                            # pyinstaller.
                             _depNames = set([dep.name for dep in
                                              manifest.dependentAssemblies])
-                            for pydep in pyasm:
+                            for pydep in CONF['pylib_assemblies']:
                                 if not pydep.name in _depNames:
                                     logger.info("Adding %r to dependent "
                                                 "assemblies of %r",
@@ -2036,7 +2036,6 @@ def build(spec, distpath, workpath, clean_build):
     """
     Build the executable according to the created SPEC file.
     """
-    from .config import CONF
     # Set of global variables that can be used while processing .spec file.
     global SPECPATH, DISTPATH, WARNFILE, SPEC, specnm
 
@@ -2146,10 +2145,6 @@ def __add_options(parser):
                       'before building.')
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
-    from PyInstaller.config import CONF
-    # TODO eliminate these global variables - they could interfere other PyInstaller tests.
-    # Set of global variables that can be used while processing .spec file.
-    global versioninfo, winresource, winmanifest, pyasm
 
     CONF['noconfirm'] = noconfirm
 
@@ -2170,9 +2165,9 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
         CONF.update(pyi_config)
 
     if CONF['hasRsrcUpdate']:
-        pyasm = bindepend.getAssemblies(sys.executable)
+        CONF['pylib_assemblies'] = bindepend.getAssemblies(sys.executable)
     else:
-        pyasm = None
+        CONF['pylib_assemblies'] = None
 
     if CONF['hasUPX']:
         setupUPXFlags()

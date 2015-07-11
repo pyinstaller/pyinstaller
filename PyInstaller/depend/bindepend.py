@@ -51,7 +51,7 @@ if is_win:
     from PyInstaller.utils.win32.winmanifest import Manifest
 
     try:
-        from PyInstaller.utils.win32.winmanifest import winresource
+        from PyInstaller.utils.win32 import winresource
     except ImportError as detail:
         winresource = None
 
