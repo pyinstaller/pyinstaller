@@ -24,32 +24,27 @@ import shutil
 import sys
 import tempfile
 import importlib
-from PyInstaller.depend.analysis import PyiModuleGraph, TOC, FakeModule
-from PyInstaller.depend.utils import is_path_to_egg
-from PyInstaller.loader import pyi_archive, pyi_carchive
-
-import PyInstaller.depend.imptracker
-import PyInstaller.depend.utils
-
-from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
-from PyInstaller.compat import is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
-import PyInstaller.compat as compat
-import PyInstaller.depend.bindepend as bindepend
 
 
-from PyInstaller.depend import dylib
-from PyInstaller.utils import misc
-
-
-import PyInstaller.log as logging
-from PyInstaller.utils.misc import save_py_data_struct, load_py_data_struct
+# Relative imports to PyInstaller modules.
+from . import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
+from . import compat
+from . import log as logging
+from .compat import is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
+from .depend import bindepend
+from .depend import dylib
+from .depend.analysis import PyiModuleGraph, TOC, FakeModule
+from .depend.utils import create_py3_base_library, is_path_to_egg
+from .loader import pyi_archive, pyi_carchive
+from .utils import misc
+from .utils.misc import save_py_data_struct, load_py_data_struct
 
 if is_win:
-    from PyInstaller.utils.win32 import winmanifest, icon
+    from .utils.win32 import icon, versioninfo, winmanifest
 
 
 # Global PyInstaller configuration.
-from PyInstaller.config import CONF
+from .config import CONF
 
 logger = logging.getLogger(__name__)
 
@@ -550,7 +545,7 @@ class Analysis(Target):
         # are written in pure Python. base_library.zip is a way how to have
         # those modules as "built-in".
         libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
-        PyInstaller.depend.utils.create_py3_base_library(libzip_filename)
+        create_py3_base_library(libzip_filename)
         # Bundle base_library.zip as data file.
         # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
         self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
@@ -2041,6 +2036,7 @@ def build(spec, distpath, workpath, clean_build):
     """
     Build the executable according to the created SPEC file.
     """
+    from .config import CONF
     # Set of global variables that can be used while processing .spec file.
     global SPECPATH, DISTPATH, WARNFILE, SPEC, specnm
 
@@ -2118,7 +2114,7 @@ def build(spec, distpath, workpath, clean_build):
     # Set up module PyInstaller.config for passing some arguments to 'exec'
     # function.
     from PyInstaller.config import CONF
-    PyInstaller.config.CONF['workpath'] = workpath
+    CONF['workpath'] = workpath
 
     # Executing the specfile.
     with open(spec, 'r') as f:
@@ -2127,7 +2123,7 @@ def build(spec, distpath, workpath, clean_build):
 
     # Clean up configuration and force PyInstaller to do a clean configuration
     # for another app/test.
-    PyInstaller.config.CONF = {}
+    CONF = {}
 
 
 def __add_options(parser):
@@ -2153,7 +2149,7 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     from PyInstaller.config import CONF
     # TODO eliminate these global variables - they could interfere other PyInstaller tests.
     # Set of global variables that can be used while processing .spec file.
-    global icon, versioninfo, winresource, winmanifest, pyasm
+    global versioninfo, winresource, winmanifest, pyasm
 
     CONF['noconfirm'] = noconfirm
 
