@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -70,7 +70,6 @@ rthooks = {}
 
 # place where the loader modules and initialization scripts live
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-_fake_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'fake')
 
 
 _MISSING_BOOTLOADER_ERRORMSG = """
