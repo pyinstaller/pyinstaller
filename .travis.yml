@@ -39,6 +39,6 @@ install:
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
-  - py.test -n 9
+  - py.test -n 7
   # TODO run tests with crypto
   #- ./runtests.py --all-with-crypto basic/*.py

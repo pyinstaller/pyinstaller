@@ -43,9 +43,6 @@ if is_win:
     from .utils.win32 import icon, versioninfo, winmanifest, winresource
 
 
-# Global PyInstaller configuration.
-from .config import CONF
-
 logger = logging.getLogger(__name__)
 
 STRINGTYPE = type('')
@@ -183,6 +180,7 @@ def _check_path_overlap(path):
 
     Raise SystemExit if there is overlap, return True otherwise
     """
+    from .config import CONF
     specerr = 0
     if CONF['workpath'].startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
@@ -204,6 +202,7 @@ def _rmtree(path):
     Remove directory and all its contents, but only after user confirmation,
     or if the -y option is set
     """
+    from .config import CONF
     if CONF['noconfirm']:
         choice = 'y'
     elif sys.stdout.isatty():
@@ -225,6 +224,7 @@ class Target(object):
     invcnum = 0
 
     def __init__(self):
+        from .config import CONF
         # Get a (per class) unique number to avoid conflicts between
         # toc objects
         self.invcnum = self.__class__.invcnum
@@ -319,9 +319,8 @@ class Analysis(Target):
                 as file names.
         """
         super(Analysis, self).__init__()
-
-        sys._PYI_SETTINGS = {}
-        sys._PYI_SETTINGS['scripts'] = scripts
+        from .config import CONF
+        CONF['scripts'] = scripts
 
         # Include initialization Python code in PyInstaller analysis.
         self.inputs = [
@@ -528,9 +527,7 @@ class Analysis(Target):
         """
         This method is the MAIN method for finding all necessary files to be bundled.
         """
-        """
-        :return:
-        """
+        from .config import CONF
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
         # containing core Python modules. In Python 3 some built-in modules
@@ -879,6 +876,7 @@ class PYZ(Target):
         cipher
                 The block cipher that will be used to encrypt Python bytecode.
         """
+        from .config import CONF
         Target.__init__(self)
         self.toc = toc_dict['toc']
         # Use code objects directly from ModuleGraph to speed up PyInstaller.
@@ -910,6 +908,7 @@ class PYZ(Target):
         return False
 
     def assemble(self):
+        from .config import CONF
         logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
         pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict, cipher=self.cipher)
         toc = self.toc - CONF['PYZ_dependencies']
@@ -1300,6 +1299,7 @@ class EXE(Target):
                 Windows only. Setting to True allows an elevated application to
                 work with Remote Desktop
         """
+        from .config import CONF
         Target.__init__(self)
 
         # Available options for EXE in .spec files.
@@ -1386,6 +1386,7 @@ class EXE(Target):
             )
 
     def check_guts(self, last_build):
+        from .config import CONF
         if not os.path.exists(self.name):
             logger.info("Rebuilding %s because %s missing",
                         self.outnm, os.path.basename(self.name))
@@ -1433,6 +1434,7 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
+        from .config import CONF
         logger.info("Building EXE from %s", os.path.basename(self.out))
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
@@ -1588,6 +1590,7 @@ class COLLECT(Target):
                 name
                     The name of the directory to be built.
         """
+        from .config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
 
@@ -1669,6 +1672,7 @@ class COLLECT(Target):
 
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
+        from .config import CONF
 
         # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
         if not is_darwin:
@@ -2109,10 +2113,6 @@ def build(spec, distpath, workpath, clean_build):
         text = f.read()
     exec(text, spec_namespace)
 
-    # Clean up configuration and force PyInstaller to do a clean configuration
-    # for another app/test.
-    CONF = {}
-
 
 def __add_options(parser):
     parser.add_option("--distpath", metavar="DIR",
@@ -2135,6 +2135,7 @@ def __add_options(parser):
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
 
+    from .config import CONF
     CONF['noconfirm'] = noconfirm
 
     # Some modules are included if they are detected at build-time or

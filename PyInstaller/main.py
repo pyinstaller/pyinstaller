@@ -26,6 +26,7 @@ import PyInstaller.log
 # Warn when old command line option is used
 
 from PyInstaller import get_version
+from .compat import module_reload
 from PyInstaller.utils import misc
 import PyInstaller.log as logging
 
@@ -58,6 +59,11 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
     pyi_config   allows checking configuration once when running multiple tests
     """
     misc.check_not_running_as_root()
+
+    # Clean up configuration and force PyInstaller to do a clean configuration
+    # for another app/test.
+    from . import config
+    module_reload(config)
 
     try:
         parser = optparse.OptionParser(

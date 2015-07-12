@@ -15,6 +15,7 @@ import PyInstaller
 import PyInstaller.compat as compat
 from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils import misc
+from PyInstaller.config import CONF
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -510,7 +511,7 @@ def django_find_root_dir():
     """
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
-    manage_py = sys._PYI_SETTINGS['scripts'][0]
+    manage_py = CONF['scripts'][0]
     manage_dir = os.path.dirname(os.path.abspath(manage_py))
 
     # Get the Django root directory. The directory that contains settings.py and url.py.

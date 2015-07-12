@@ -416,3 +416,11 @@ else:
         else:
             # TODO Implement for Python 2.6 on other platforms.
             raise NotImplementedError()
+
+
+# Function to reload a module - used to reload module 'PyInstaller.config' for tests.
+# imp module is deprecated since Python 3.4.
+try:
+    from importlib import reload as module_reload
+except ImportError:
+    from imp import reload as module_reload
