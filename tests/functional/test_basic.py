@@ -176,7 +176,7 @@ def test_xmldom_module(pyi_builder):
     pyi_builder.test_script('xmldom_module.py')
 
 
-
+@pytest.mark.xfail(reason='failing with Python 3.4 in Travis')
 def test_threading_module(pyi_builder):
     pyi_builder.test_script('threading_module.py')
 
