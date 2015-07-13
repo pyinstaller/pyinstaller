@@ -39,6 +39,8 @@
 #include "pyi_python.h"
 
 
+bool is_py2; // true if we are loading Python 2.x library
+
 /*
  * Load the Python DLL, and get all of the necessary entry points
  */
@@ -48,6 +50,9 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
 	char dllpath[PATH_MAX];
     char dllname[64];
     int pyvers = ntohl(status->cookie.pyvers);
+
+    // Are we going to load the Python 2.x library?
+    is_py2 = (pyvers / 10) == 2;
 
 /*
  * On AIX Append the shared object member to the library path
@@ -167,10 +172,13 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 				unbuffered = 1;
 			break;
 			case 'W':
-			    // TODO Python 2 uses 'char' here.
-                mbstowcs(wchar_tmp, &ptoc->name[2], PATH_MAX);
-                PI_PySys_AddWarnOption(wchar_tmp);
-			break;
+			  if (is_py2) {
+			    PI_Py2Sys_AddWarnOption(&ptoc->name[2]);
+			  } else {
+			    mbstowcs(wchar_tmp, &ptoc->name[2], PATH_MAX);
+			    PI_PySys_AddWarnOption(wchar_tmp);
+			  };
+			  break;
 			case 'O':
 				*PI_Py_OptimizeFlag = 1;
 			break;
@@ -208,8 +216,13 @@ static void pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
     - convert argv[x] to Py_UNICODE strings - PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
     - create Python string and set this string to sys.path - use Python C api.
     */
-    /* '0' means do not update sys.path. */
-    PI_PySys_SetArgvEx(status->argc, status->argv, 0);
+    /* last parameter '0' means do not update sys.path. */
+    if (is_py2) {
+      // TODO FIXME: For Python2, status->argv must be "char **"
+      // PI_Py2Sys_SetArgvEx(status->argc, status->argv, 0);
+    } else {
+      PI_PySys_SetArgvEx(status->argc, status->argv, 0);
+    };
 }
 
 /* Required for Py_SetProgramName */
@@ -237,22 +250,27 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 
 	wchar_t *aabbcc;
 
-    /* In Python 3 Py_SetProgramName() should be called before Py_SetPath(). */
-    // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
-    mbstowcs(_program_name, status->archivename, PATH_MAX);
-    //PI_Py_SetProgramName(status->archivename);
-    PI_Py_SetProgramName(_program_name);
+    if (is_py2) {
+      PI_Py2_SetProgramName(status->archivename);
+      // TODO is this all, PyInstaller 2.1 did here?
+    } else {
+      mbstowcs(_program_name, status->archivename, PATH_MAX);
+      // In Python 3 Py_SetProgramName() should be called before Py_SetPath().
+      PI_Py_SetProgramName(_program_name);
+    };
 
-    // TODO set pythonpath by function from Python C API (Python 2.6+)
     /* Set the PYTHONPATH */
-	VS("LOADER: Manipulating evironment (PYTHONPATH, PYTHONHOME)\n");
-	// TODO Check if base_library.zip should be first in sys.path.
-    /* Append base_library.zip to PYTHONPATH - necessary for Py_Initialize() in Python 3. */
-    // TODO Check if base_library.zip does not hurt for Python 2. */
+    VS("LOADER: Manipulating evironment (PYTHONPATH, PYTHONHOME)\n");
     strncat(pypath, status->mainpath, strlen(status->mainpath));
-    strncat(pypath, PYI_SEPSTR, strlen(PYI_SEPSTR));
-    strncat(pypath, "base_library.zip", strlen("base_library.zip"));
+    if (! is_py2) {
+      // Append base_library.zip to PYTHONPATH - necessary for
+      // Py_Initialize() in Python 3.
+      // TODO Check if base_library.zip should be first in sys.path.
+      strncat(pypath, PYI_SEPSTR, strlen(PYI_SEPSTR));
+      strncat(pypath, "base_library.zip", strlen("base_library.zip"));
+    };
     /* Append status->mainpath to PYTHONPATH. */
+    // TODO: Why is this done? status->mainpath is already the first element?!
     strncat(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
     strncat(pypath, status->mainpath, strlen(status->mainpath));
     // TODO check if status->homepath should be in PYTHONPATH in onefile mode.
@@ -260,26 +278,31 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
         strcat(pypath, PYI_PATHSEPSTR);
         strcpy(pypath, status->homepat);
     }*/
-	VS("LOADER: PYTHONPATH is %s\n", pypath);
-    // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
-    mbstowcs(wchar_tmp, pypath, PATH_MAX);
-    // TODO Skip this function for Python2.
-    PI_Py_SetPath(wchar_tmp);
+
+    VS("LOADER: PYTHONPATH is %s\n", pypath);
+    if (is_py2) {
+      pyi_setenv("PYTHONPATH", pypath);
+    } else {
+      mbstowcs(wchar_tmp, pypath, PATH_MAX);
+      PI_Py_SetPath(wchar_tmp);
+    };
 
     /* Set PYTHONHOME by using function from Python C API. */
     strcpy(pypath, status->mainpath);
-    // TODO Fix this wchar_t/char thing to work in Python 3 and Python 2 (Py3 requires wchar_t type)
-	//VS("LOADER: PYTHONHOME is %s\n", pypath);
-    mbstowcs(wchar_tmp2, pypath, PATH_MAX);
-	VS("LOADER: PYTHONHOME is %S\n", wchar_tmp2);
-    //PI_Py_SetPythonHome(pypath);
-    PI_Py_SetPythonHome(wchar_tmp2);
+    if (is_py2) {
+      VS("LOADER: PYTHONHOME is %s\n", pypath);
+      // Clear out PYTHONHOME to avoid clashing with any Python installation.
+      pyi_unsetenv("PYTHONHOME");
+      PI_Py2_SetPythonHome(pypath);
+    } else {
+      mbstowcs(wchar_tmp2, pypath, PATH_MAX);
+      VS("LOADER: PYTHONHOME is %S\n", wchar_tmp2);
+      PI_Py_SetPythonHome(wchar_tmp2);
+    };
 
-	/* Start python. */
-
-	VS("LOADER: Setting runtime options\n");
-
-   pyi_pylib_set_runtime_opts(status);
+    /* Start python. */
+    VS("LOADER: Setting runtime options\n");
+    pyi_pylib_set_runtime_opts(status);
 
 	/*
 	 * Py_Initialize() may rudely call abort(), and on Windows this triggers the error
@@ -294,19 +317,25 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 #if defined(_WIN32) && defined(LAUNCH_DEBUG)
 	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
 #endif
+
 	VS("LOADER: Initializing python\n");
 	PI_Py_Initialize();
+
 #if defined(_WIN32) && defined(LAUNCH_DEBUG)
 	SetErrorMode(0);
 #endif
+
 	/*
-	 * Set sys.path list. In Python 2 this is the only way to set sys.path.
-	 * Without
+	 * Set sys.path list.
 	 * Python 3 requires something on sys.path before calling Py_Initialize.
 	 */
-	// TODO try out if setting sys.path really works in Python 2 with this function.
-	// TODO use directly wchar_t - no char.
-	PI_PySys_SetPath(wchar_tmp);
+	if (is_py2) {
+	  // TODO try out if setting sys.path really works in Python 2 with this function.
+	  PI_Py2Sys_SetPath(pypath);
+	} else {
+	  // TODO use directly wchar_t - no char.
+	  PI_PySys_SetPath(wchar_tmp);
+	};
 
     /* Setting sys.argv should be after Py_Initialize() call. */
     pyi_pylib_set_sys_argv(status);
@@ -357,9 +386,13 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 			/* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
 			 * data form the right point.
 			 */
-            // TODO It looks like from python 3.3 the header size was changed to 12 bytes. We might want to put here python version check to make the bootloader working again with previous versions.
-            // co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf+8, ntohl(ptoc->ulen)-8);
-			co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf+12, ntohl(ptoc->ulen)-12);
+			if (is_py2) {
+			  co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf+8, ntohl(ptoc->ulen)-8);
+			} else {
+			  // It looks like from python 3.3 the header
+			  // size was changed to 12 bytes.
+			  co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf+12, ntohl(ptoc->ulen)-12);
+			};
 			if (co != NULL) {
 				VS("LOADER: callfunction returned...\n");
 				mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
