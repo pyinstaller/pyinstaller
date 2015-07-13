@@ -164,6 +164,14 @@ def test_pywin32_win32com(pyi_builder):
     pyi_builder.test_script('pywin32_win32com.py')
 
 
+def test_stderr_encoding(pyi_builder):
+    pyi_builder.test_script('stderr_encoding.py')
+
+
+def test_stdout_encoding(pyi_builder):
+    pyi_builder.test_script('stdout_encoding.py')
+
+
 def test_site_module_disabled(pyi_builder):
     pyi_builder.test_script('site_module_disabled.py')
 

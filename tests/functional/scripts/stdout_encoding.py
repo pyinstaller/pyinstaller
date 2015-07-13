@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -9,7 +9,7 @@
 
 import sys
 # Get the expected stdout/stderr encoding for this platform.
-from expected_stdxxx_encoding import encoding
+from pyi_testmod_stdxxx_encoding import encoding
 
 frozen_encoding = str(sys.stdout.encoding)
 
