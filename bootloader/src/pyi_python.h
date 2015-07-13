@@ -20,6 +20,9 @@
 #ifndef PYI_PYTHON_H
 #define PYI_PYTHON_H
 
+#include "pyi_global.h"
+#include <stdlib.h>  // mbstowcs
+
 
 /*
  * These macros used to define variables to hold dynamically accessed entry
