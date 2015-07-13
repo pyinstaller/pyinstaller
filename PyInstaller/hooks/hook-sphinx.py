@@ -10,6 +10,8 @@
 # ********************************************
 # hook-sphinx.py - Pyinstaller hook for Sphinx
 # ********************************************
+from PyInstaller.compat import is_py2
+#
 # The following analysis applies to Sphinx v. 1.3.1, reported by ``pip show
 # sphinx``.
 #
@@ -64,15 +66,16 @@ hiddenimports = ( collect_submodules('sphinx.builders') +
 # Add these two modules.
                   ['inspect', 'locale',
 #
-# Plus, there are a HUGE number of imports from six that must be manually
-# listed. At some point, perhaps these can be auto-detected (see efforts
-# at https://github.com/pyinstaller/pyinstaller/pull/1231).
-                   'StringIO', 'cStringIO', 'cPickle', 'itertools', 'UserString',
-                   'urllib', 'urllib2', 'HTMLParser', 'ConfigParser',
-#
-# Finally, two Sphinx themes (I term them external themes) are located outside
+# Plus, two Sphinx themes (I term them external themes) are located outside
 # the Sphinx package. Include them as well.
                    'alabaster', 'sphinx_rtd_theme'] )
+#
+# Finally, there are a HUGE number of imports from six that must be manually
+# listed. These will be auto-detected in Python 3, so omit them.
+if is_py2:
+    hiddenimports += ('StringIO', 'cStringIO', 'cPickle', 'itertools',
+                      'UserString', 'urllib', 'urllib2', 'HTMLParser',
+                      'ConfigParser')
 #
 # Sphinx also relies on a number of data files in its directory hierarchy: for
 # example, *.html and *.conf files in sphinx.themes, translation files in
