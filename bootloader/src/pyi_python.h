@@ -22,6 +22,7 @@
 
 #include "pyi_global.h"
 #include <stdlib.h>  // mbstowcs
+#include "pyi_python27_compat.h"
 
 
 /*
@@ -99,12 +100,6 @@ EXTDECLPROC(void, Py_DecRef, (PyObject *));
 /*
  * These functions have to be called before Py_Initialize()
  */
-
-//EXTDECLPROC(void, Py_SetPythonHome, (char *));  // TODO py2.7
-//EXTDECLPROC(void, Py_SetProgramName, (char *));  // TODO py2.7
-//EXTDECLPROC(void, PySys_SetPath, (char *));  // TODO py2.7
-//EXTDECLPROC(int, PySys_SetArgv, (int, char **));  // TODO py2.7: use SetArgvEx
-
 EXTDECLPROC(void, Py_SetProgramName, (wchar_t *));
 EXTDECLPROC(void, Py_SetPythonHome, (wchar_t *));
 EXTDECLPROC(void, Py_SetPath, (wchar_t *));  // new in Python 3
@@ -132,7 +127,6 @@ EXTDECLPROC(PyObject *, PyDict_GetItemString, (PyObject *, char *));
 EXTDECLPROC(void, PyErr_Clear, (void) );
 EXTDECLPROC(PyObject *, PyErr_Occurred, (void) );
 EXTDECLPROC(void, PyErr_Print, (void) );
-//EXTDECLPROC(void, PySys_AddWarnOption, (char *)); // TODO py2.7
 EXTDECLPROC(void, PySys_AddWarnOption, (wchar_t *));
 /* Return a C long representation of the contents of pylong. */
 EXTDECLPROC(long, PyLong_AsLong, (PyObject *) );
