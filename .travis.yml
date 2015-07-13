@@ -27,7 +27,10 @@ before_install:
   #- sudo apt-get install -y python-zmq
   #- sudo apt-get install -y libespeak1  # required by pyttsx
 
-  # TODO Compile bootloader
+  # Compile bootloader
+  - cd bootloader
+  - python waf distclean all --no-lsb
+  - cd ..
 
 # Install dependencies.
 install:
