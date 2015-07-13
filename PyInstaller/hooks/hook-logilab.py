@@ -10,6 +10,7 @@
 # ***************************************************
 # hook-logilab.py - PyInstaller hook file for logilab
 # ***************************************************
+from PyInstaller.compat import is_py2
 #
 # The following was written about logilab, version 0.32.2, based on the contents
 # of logilab.common.__pkginfo__.
@@ -22,5 +23,8 @@
 # module's lazy import structure. The range module is a builtin, so we
 # don't need to list that. The configparser imports as ConfigParser in
 # Python 2.
-hiddenimports = ['ConfigParser']
+#
+# Pyinstaller for Python 3 can auto-detect six imports, so omit it.
+if is_py2:
+    hiddenimports = ['ConfigParser']
 
