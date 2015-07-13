@@ -101,6 +101,7 @@ def create_py3_base_library(libzip_filename):
 
     except Exception as e:
         logger.error('base_library.zip could not be created!')
+        raise
 
 
 ### TODO Minimize this code to only resolving ctypes imports.
