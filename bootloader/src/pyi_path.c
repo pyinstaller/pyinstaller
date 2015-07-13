@@ -18,7 +18,7 @@
     #include <windows.h>  // GetModuleFileNameW
     #include <wchar.h>
 #elif __APPLE__
-    #include <libgen.h>  // basename()
+    #include <libgen.h>  // basename(), dirname()
     #include <mach-o/dyld.h>  // _NSGetExecutablePath()
 #else
     #include <libgen.h>  // basename()
@@ -63,8 +63,13 @@ void pyi_path_dirname(char *result, const char *path)
       result[1] = PYI_NULLCHAR;
     }
 #else
+    // Use dirname() for other platforms.
     char *dirpart = NULL;
-    dirpart = (char *) dirname((char *) path);  // _XOPEN_SOURCE - no 'const'.
+    char tmp[PATH_MAX];
+    // Copy path to 'tmp' because dirname() modifies the original string!
+    strcpy(tmp, path);
+
+    dirpart = (char *) dirname((char *) tmp);  // _XOPEN_SOURCE - no 'const'.
     strcpy(result, dirpart);
 #endif
 }
