@@ -29,6 +29,7 @@ import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
+# TODO Create a test from this function - test update icon on windows.
 def test_RsrcUpdate(config):
     config['hasRsrcUpdate'] = 0
     if not is_win:
@@ -195,7 +196,9 @@ def get_config(upx_dir, **kw):
         time.sleep(1)
 
     config = {}
-    test_RsrcUpdate(config)
+    # TODO Create a test from this function - test update icon on windows. Otherwise it just slows down tests on linux.
+    #test_RsrcUpdate(config)
+    config['hasRsrcUpdate'] = 1
     test_UPX(config, upx_dir)
     find_PYZ_dependencies(config)
     return config
