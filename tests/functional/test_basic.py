@@ -17,7 +17,7 @@ import subprocess
 import pytest
 
 from PyInstaller.compat import architecture, is_darwin, is_win
-from PyInstaller.utils.tests import importorskip, skipif_winorosx
+from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx
 
 
 # Directory with data for some tests.
@@ -26,44 +26,44 @@ _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 @skipif_winorosx
 def test_absolute_ld_library_path(pyi_builder):
-    pyi_builder.test_script('absolute_ld_library_path.py')
+    pyi_builder.test_script('pyi_absolute_ld_library_path.py')
 
 
 def test_absolute_python_path(pyi_builder):
-    pyi_builder.test_script('absolute_python_path.py')
+    pyi_builder.test_script('pyi_absolute_python_path.py')
 
 
 def test_celementtree(pyi_builder):
-    pyi_builder.test_script('celementtree.py')
+    pyi_builder.test_script('pyi_celementtree.py')
 
 
 @importorskip('codecs')
 def test_codecs(pyi_builder):
-    pyi_builder.test_script('codecs.py')
+    pyi_builder.test_script('pyi_codecs.py')
 
 
 def test_decoders_ascii(pyi_builder):
-    pyi_builder.test_script('decoders_ascii.py')
+    pyi_builder.test_script('pyi_decoders_ascii.py')
 
 
 def test_email(pyi_builder):
-    pyi_builder.test_script('email.py')
+    pyi_builder.test_script('pyi_email.py')
 
 
 def test_filename(pyi_builder):
-    pyi_builder.test_script('filename.py')
+    pyi_builder.test_script('pyi_filename.py')
 
 
 def test_getfilesystemencoding(pyi_builder):
-    pyi_builder.test_script('getfilesystemencoding.py')
+    pyi_builder.test_script('pyi_getfilesystemencoding.py')
 
 
 def test_helloworld(pyi_builder):
-    pyi_builder.test_script('helloworld.py')
+    pyi_builder.test_script('pyi_helloworld.py')
 
 
 def test_module__file__attribute(pyi_builder):
-    pyi_builder.test_script('module__file__attribute.py')
+    pyi_builder.test_script('pyi_module__file__attribute.py')
 
 
 @pytest.mark.xfail(reason='failing with Python 3.3 in Travis')
@@ -76,23 +76,23 @@ def test_module_attributes(tmpdir, pyi_builder):
         f.write('debug=%s' % __debug__ + '\n')
         # On Windows we need to preserve systme PATH for subprocesses in tests.
         f.write(os.environ.get('PATH') + '\n')
-    pyi_builder.test_script('module_attributes.py')
+    pyi_builder.test_script('pyi_module_attributes.py')
 
 
 @pytest.mark.xfail(reason='failing with Python 3.3 in Travis')
 def test_module_reload(pyi_builder):
-    pyi_builder.test_script('module_reload.py')
+    pyi_builder.test_script('pyi_module_reload.py')
 
 
 @importorskip('multiprocessing')
 def test_multiprocess(pyi_builder):
-    pyi_builder.test_script('multiprocess.py')
+    pyi_builder.test_script('pyi_multiprocess.py')
 
 
 @pytest.mark.xfail(reason='failing when running with other tests but not standalone')
 @importorskip('multiprocessing')
 def test_multiprocess_forking(pyi_builder):
-    pyi_builder.test_script('multiprocess_forking.py')
+    pyi_builder.test_script('pyi_multiprocess_forking.py')
 
 
 # TODO skip this test if C compiler is not found.
@@ -139,54 +139,55 @@ def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder):
     #     os.environ['LIBPATH'] = CTYPES_DIR
 
     # Build and run the app.
-    pyi_builder.test_script('load_dll_using_ctypes.py')
+    pyi_builder.test_script('pyi_load_dll_using_ctypes.py')
 
 
 def test_get_meipass_value(pyi_builder):
-    pyi_builder.test_script('get_meipass_value.py')
+    pyi_builder.test_script('pyi_get_meipass_value.py')
 
 
 def test_chdir_meipass(pyi_builder):
-    pyi_builder.test_script('chdir_meipass.py')
+    pyi_builder.test_script('pyi_chdir_meipass.py')
 
 
+@skipif_win
 @pytest.mark.xfail(reason='failing when running in Travis')
 def test_python_makefile(pyi_builder):
-    pyi_builder.test_script('python_makefile.py')
+    pyi_builder.test_script('pyi_python_makefile.py')
 
 
 def test_python_home(pyi_builder):
-    pyi_builder.test_script('python_home.py')
+    pyi_builder.test_script('pyi_python_home.py')
 
 
 @importorskip('win32com')
 def test_pywin32_win32com(pyi_builder):
-    pyi_builder.test_script('pywin32_win32com.py')
+    pyi_builder.test_script('pyi_pywin32_win32com.py')
 
 
 def test_stderr_encoding(pyi_builder):
-    pyi_builder.test_script('stderr_encoding.py')
+    pyi_builder.test_script('pyi_stderr_encoding.py')
 
 
 def test_stdout_encoding(pyi_builder):
-    pyi_builder.test_script('stdout_encoding.py')
+    pyi_builder.test_script('pyi_stdout_encoding.py')
 
 
 def test_site_module_disabled(pyi_builder):
-    pyi_builder.test_script('site_module_disabled.py')
+    pyi_builder.test_script('pyi_site_module_disabled.py')
 
 
 def test_time_module(pyi_builder):
-    pyi_builder.test_script('time_module.py')
+    pyi_builder.test_script('pyi_time_module.py')
 
 
 def test_xmldom_module(pyi_builder):
-    pyi_builder.test_script('xmldom_module.py')
+    pyi_builder.test_script('pyi_xmldom_module.py')
 
 
 @pytest.mark.xfail(reason='failing with Python 3.4 in Travis')
 def test_threading_module(pyi_builder):
-    pyi_builder.test_script('threading_module.py')
+    pyi_builder.test_script('pyi_threading_module.py')
 
 
 """
