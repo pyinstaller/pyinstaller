@@ -126,8 +126,13 @@ class AppBuilder(object):
 
         # Run executable in the directory where it is.
         prog_cwd = os.path.dirname(prog)
-        # The executable will be called as relative not absolute path.
-        prog = os.path.join(os.curdir, os.path.basename(prog))
+
+        # On Windows, `subprocess.call` does not search in its `cwd` for the
+        # executable named as the first argument, so it must be passed as an
+        # absolute path. This is documented for the Windows API `CreateProcess`
+        if not is_win:
+            # The executable will be called as relative not absolute path.
+            prog = os.path.join(os.curdir, os.path.basename(prog))
 
         # Run executable. stderr is redirected to stdout.
         print('RUNNING: ' + prog)
