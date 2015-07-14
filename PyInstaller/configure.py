@@ -198,7 +198,10 @@ def get_config(upx_dir, **kw):
     config = {}
     # TODO Create a test from this function - test update icon on windows. Otherwise it just slows down tests on linux.
     #test_RsrcUpdate(config)
-    config['hasRsrcUpdate'] = 1
+    if is_win:
+        config['hasRsrcUpdate'] = 1
+    else:
+        config['hasRsrcUpdate'] = 0
     test_UPX(config, upx_dir)
     find_PYZ_dependencies(config)
     return config
