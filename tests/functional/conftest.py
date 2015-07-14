@@ -136,7 +136,7 @@ class AppBuilder(object):
 
         # Run executable. stderr is redirected to stdout.
         print('RUNNING: ' + prog)
-        retcode = subprocess.call([prog], stderr=subprocess.STDOUT, env=prog_env, cwd=prog_cwd)
+        retcode = subprocess.call([prog], env=prog_env, cwd=prog_cwd)
         return retcode
 
     def _test_building(self):
