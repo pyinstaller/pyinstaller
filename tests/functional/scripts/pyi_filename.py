@@ -8,5 +8,5 @@
 #-----------------------------------------------------------------------------
 
 
-if __file__ != 'filename.py':
+if __file__ != 'pyi_filename.py':
    raise ValueError(__file__)
