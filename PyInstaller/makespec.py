@@ -360,7 +360,7 @@ def main(scripts, name=None, onefile=False,
         try:
             import Crypto
 
-            pycrypto_version = map(int, Crypto.__version__.split('.'))
+            pycrypto_version = list(map(int, Crypto.__version__.split('.')))
             is_version_acceptable = pycrypto_version[0] >= 2 and pycrypto_version[1] >= 4
 
             if not is_version_acceptable:
