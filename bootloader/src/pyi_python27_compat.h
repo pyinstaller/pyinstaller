@@ -13,6 +13,8 @@
 
 #include "pyi_python.h"
 
+bool is_py2; // true if we are loading Python 2.x library
+
 inline void PI_Py2_SetPythonHome(char * str);
 inline void PI_Py2_SetProgramName(char * str);
 inline void PI_Py2Sys_SetPath(char * str);

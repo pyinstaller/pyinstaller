@@ -39,8 +39,6 @@
 #include "pyi_python.h"
 
 
-bool is_py2; // true if we are loading Python 2.x library
-
 /*
  * Load the Python DLL, and get all of the necessary entry points
  */
