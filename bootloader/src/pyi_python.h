@@ -118,8 +118,8 @@ EXTDECLPROC(PyObject *, PyList_New, (int));
 EXTDECLPROC(int, PyList_Append, (PyObject *, PyObject *));
 /* Create a new value based on a format string similar to those accepted by the PyArg_Parse*() */
 EXTDECLPROC(PyObject *, Py_BuildValue, (char *, ...));
+EXTDECLPROC(PyObject *, PyString_FromString, (const char *));
 /* Create a Unicode object from the char buffer. The bytes will be interpreted as being UTF-8 encoded. */
-//EXTDECLPROC(PyObject *, PyString_FromStringAndSize, (const char *, size_t));
 EXTDECLPROC(PyObject *, PyUnicode_FromString, (const char *));
 EXTDECLPROC(PyObject *, PyObject_CallFunction, (PyObject *, char *, ...));
 EXTDECLPROC(PyObject *, PyModule_GetDict, (PyObject *));

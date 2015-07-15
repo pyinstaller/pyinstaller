@@ -58,6 +58,7 @@ DECLPROC(PyObject_SetAttrString);
 DECLPROC(PyList_New);
 DECLPROC(PyList_Append);
 DECLPROC(Py_BuildValue);
+DECLPROC(PyString_FromString);
 DECLPROC(PyUnicode_FromString);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyModule_GetDict);
@@ -95,12 +96,20 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, Py_Finalize);
     GETPROCOPT(dll, Py_IncRef);
     GETPROCOPT(dll, Py_DecRef);
-    GETPROC(dll, Py_SetPath);
+    if (pyvers >= 30) {
+      // new in Python 3
+      GETPROC(dll, Py_SetPath);
+    };
     GETPROC(dll, Py_SetPythonHome);
     GETPROC(dll, PyImport_ExecCodeModule);
     GETPROC(dll, PyRun_SimpleString);
-    GETPROC(dll, PyUnicode_FromString);
-    GETPROC(dll, PySys_SetPath);
+    if (pyvers < 30) {
+      GETPROC(dll, PyString_FromString);
+    } else {
+      // new in Python 2.6, but not reliable available in all Linux distros
+      GETPROC(dll, PyUnicode_FromString);
+    };
+    GETPROC(dll, Py_SetPath);
     GETPROC(dll, PySys_SetArgvEx);
     GETPROC(dll, Py_SetProgramName);
     GETPROC(dll, PyImport_ImportModule);
