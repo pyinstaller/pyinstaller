@@ -2097,6 +2097,7 @@ def build(spec, distpath, workpath, clean_build):
         'DLL': DLL,
         'EXE': EXE,
         'PYZ': PYZ,
+        'Tree': Tree,
         # Old classes for .spec - raise Exception for user.
         'TkPKG': lambda *args, **kwargs: _old_api_error('TkPKG'),
         'TkTree': lambda *args, **kwargs: _old_api_error('TkTree'),
