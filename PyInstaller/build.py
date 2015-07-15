@@ -931,6 +931,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                to determine level of paths for @loader_path like
                '@loader_path/../../' for qt4 plugins.
     """
+    from .config import CONF
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names. Caching on darwin does not work
     # since we need to modify binary headers to use relative paths
