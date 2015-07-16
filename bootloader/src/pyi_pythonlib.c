@@ -442,7 +442,7 @@ int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 	char *tmpl = "import sys; sys.path.append(r\"%s?%d\")\n";
 	char *cmd = (char *) malloc(strlen(tmpl) + strlen(status->archivename) + 32);
 	sprintf(cmd, tmpl, status->archivename, zlibpos);
-	VS("LOADER: %s\n", cmd);
+	VS("LOADER: %s", cmd);
 	rc = PI_PyRun_SimpleString(cmd);
 	if (rc != 0)
 	{
