@@ -16,8 +16,11 @@ Changes since PyInstaller 2.1
  * Use library modulegraph for module dependency analysis.
  * PyInstaller no longer extends sys.path and bundled 3rd-party libraries do not
    interfere with their other versions.
- * Option to exclude Python modules in import hooks. Variable excludedimports
+ * Option to exclude Python modules in import hooks. Variable 'excludedimports'
    can be used in import hook files.
+ * Option to bundle dynamic libraries in import hooks. Variable 'binaries'
+   can be used to do so. PyInstaller then also includes these binaries in to the
+   dependency checking for dynamic libraries.
  * Tests migrated to py.test framework.
  * TODO Improve testing infrastructure.
  
