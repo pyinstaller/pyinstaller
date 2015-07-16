@@ -487,7 +487,7 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
 	// TODO status->archivename should be passed as wchar_t
     count = mbstowcs(archive_status->argv[0], archive_status->archivename, PATH_MAX-1);
     if (count == (size_t)-1) {
-        VS("LOADER: Error converting argument %s to string\n", argv[i]);
+        VS("LOADER: Error converting archive_status->archivename %s to string\n", archive_status->archivename);
         return 1;
     }
 
@@ -498,7 +498,7 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
     for (i = 1; i < archive_status->argc; i++) {
         count = mbstowcs(archive_status->argv[i], argv[i], PATH_MAX-1);
         if (count == (size_t)-1) {
-            VS("LOADER: Error converting argument %s to string\n", argv[i]);
+	     VS("LOADER: Error converting argv[%i] %s to string\n", i, argv[i]);
             return 1;
         }
     }
