@@ -717,6 +717,24 @@ class Analysis(Target):
                         # that was not updated for a long time.
                         logger.warn("Hidden import '%s' not found (probably old hook)" % item)
 
+            # hook_name_space.excludedimports is a list of Python module names that PyInstaller
+            # should not detect as dependency of this module name.
+            if hasattr(hook_name_space, 'excludedimports'):
+                # Remove references between module nodes, as if they are not imported from 'name'
+                for item in hook_name_space.excludedimports:
+                    try:
+                        excluded_node = self.graph.findNode(item)
+                        if excluded_node is not None:
+                            logger.info("Excluding import '%s'" % item)
+                            # Removing the node seems to be the only option here.
+                            self.graph.removeNode(excluded_node)
+                        else:
+                            logger.info("Excluded import '%s' not found" % item)
+                    except ImportError:
+                        # Print excludedimport could not be found.
+                        # modulegraph raises ImporError when a module is not found.
+                        logger.info("Excluded import '%s' not found" % item)
+
             # hook_name_space.datas is a list of globs of files or
             # directories to bundle as datafiles. For each
             # glob, a destination directory is specified.
