@@ -428,11 +428,12 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 /*
  * Install a zlib from a toc entry.
  *
- * The installation is done by adding  file like
+ * The installation is done by adding an entry like
  *    absolute_path/dist/hello_world/hello_world?123456
  * to sys.path. The end number is the offset where the
  * Python bootstrap code should read the zip data.
- * Return non zero on failure
+ * Return non zero on failure.
+ * NB: This entry is removed from sys.path duringby the bootstrap scripts.
  */
 int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
