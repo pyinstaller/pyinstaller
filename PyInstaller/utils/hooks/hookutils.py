@@ -15,7 +15,6 @@ import PyInstaller
 import PyInstaller.compat as compat
 from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils import misc
-from PyInstaller.config import CONF
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -487,7 +486,7 @@ def django_dottedstring_imports(django_root_dir):
     ret = eval_script('django_import_finder.py')
     if not isinstance(ret, list):
         # If the script fails, `ret` is not a list. Handle this here to
-        # avoid crashes laster. See github issues #667, 1067 and #1252.
+        # avoid crashes later. See github issues #667, 1067 and #1252.
         logger.error('script django-import-finder.py failed')
         assert (not ret), ret # ensure it is an empty value
         ret = []
@@ -511,6 +510,7 @@ def django_find_root_dir():
     """
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
+    from PyInstaller.config import CONF
     manage_py = CONF['scripts'][0]
     manage_dir = os.path.dirname(os.path.abspath(manage_py))
 
