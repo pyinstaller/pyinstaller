@@ -209,15 +209,11 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 static void pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
 {
 	VS("LOADER: Setting sys.argv\n");
-    /*
-    TODO Python2 find workaround how to set sys.path
-    - convert argv[x] to Py_UNICODE strings - PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
-    - create Python string and set this string to sys.path - use Python C api.
-    */
     /* last parameter '0' means do not update sys.path. */
     if (is_py2) {
-      // TODO FIXME: For Python2, status->argv must be "char **"
-      // PI_Py2Sys_SetArgvEx(status->argc, status->argv, 0);
+      // For Python2, status->argv must be "char **". In Python 2.7's
+      // `main.c`, argv is used without any other handling, so do we.
+      PI_Py2Sys_SetArgvEx(status->argc, status->argv_char, 0);
     } else {
       PI_PySys_SetArgvEx(status->argc, status->argv, 0);
     };

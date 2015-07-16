@@ -85,6 +85,7 @@ typedef struct _archive_status {
      */
      int argc;      /* Count of command-line arguments. */
      wchar_t **argv;   /* Array of strings. */
+     char **argv_char;   // Plain copy of argv, used for is_py2
 } ARCHIVE_STATUS;
 
 

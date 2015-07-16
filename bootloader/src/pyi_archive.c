@@ -475,6 +475,7 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
 
     /* Don't forget to cache the count of command-line arguments - argc! */
     archive_status->argc = argc;
+    archive_status->argv_char = argv; // Plain copy of argv, used for is_py2
 
     /* Allocate memory for argv cache. */
     archive_status->argv = malloc(sizeof(wchar_t*) * archive_status->argc);
