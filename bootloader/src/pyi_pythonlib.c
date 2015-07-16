@@ -324,8 +324,17 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 	 * Python 3 requires something on sys.path before calling Py_Initialize.
 	 */
 	if (is_py2) {
-	  // TODO try out if setting sys.path really works in Python 2 with this function.
-	  PI_Py2Sys_SetPath(pypath);
+	  // When trying to use PI_Py2Sys_SetPath() for setting the
+	  // path I got memory errors. I do not see any sence in
+	  // spending time on this (as long as it works) since Python 2
+	  // is going to be phased out anyway.
+	  PI_PyRun_SimpleString("import sys ; del sys.path[:]\n");
+	  if (status->temppath[0] != PYI_NULLCHAR) {
+            sprintf(cmd, "sys.path.append(r\"%s\")", status->temppath);
+	    PI_PyRun_SimpleString(cmd);
+	  };
+	  sprintf(cmd, "sys.path.append(r\"%s\")", status->homepath);
+	  PI_PyRun_SimpleString(cmd);
 	} else {
 	  // TODO use directly wchar_t - no char.
 	  PI_PySys_SetPath(wchar_tmp);
