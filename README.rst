@@ -14,22 +14,20 @@ PyInstaller
 
 ---------------------------------------------------------------------
 
-.. image:: https://img.shields.io/badge/docs-pyinstalller-blue.svg
+.. image:: https://img.shields.io/badge/docs-latest-blue.svg
    :target: http://htmlpreview.github.io/?https://github.com/pyinstaller/pyinstaller/blob/python3/doc/Manual.html
    :alt: Manual
 
-.. image:: https://img.shields.io/badge/changes-pyinstalller-blue.svg
+.. image:: https://img.shields.io/badge/changes-latest-blue.svg
    :target: https://github.com/pyinstaller/pyinstaller/blob/python3/doc/CHANGES.txt
    :alt: Changelog
 
 .. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
-   :target:
-   :alt: IRC http://webchat.freenode.net/?channels=%23pyinstaller&uio=d4
+   :target: http://webchat.freenode.net/?channels=%23pyinstaller&uio=d4
+   :alt: IRC
 
 
 | Official website: http://www.pyinstaller.org
-| Full manual: http://pythonhosted.org/PyInstaller
-| Full changelog: `changelog`_
 
 
 Requirements
