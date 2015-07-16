@@ -323,6 +323,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 	 * Set sys.path list.
 	 * Python 3 requires something on sys.path before calling Py_Initialize.
 	 */
+	VS("LOADER: Manipulating Python's sys.path\n");
 	if (is_py2) {
 	  // When trying to use PI_Py2Sys_SetPath() for setting the
 	  // path I got memory errors. I do not see any sence in
