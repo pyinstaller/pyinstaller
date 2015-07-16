@@ -441,18 +441,17 @@ int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 	int zlibpos = status->pkgstart + ntohl(ptoc->pos);
 	// TODO Is there a better way to avoid call python code? Probably any API call?
 	char *tmpl = "import sys; sys.path.append(r\"%s?%d\")\n";
-	char *cmd = (char *) malloc(strlen(tmpl) + strlen(status->archivename) + 32);
+	// +32 for the number, +2 as cushion
+	char cmd[strlen(tmpl) + PATH_MAX + 32 + 2];
 	sprintf(cmd, tmpl, status->archivename, zlibpos);
 	VS("LOADER: %s", cmd);
 	rc = PI_PyRun_SimpleString(cmd);
 	if (rc != 0)
 	{
 		FATALERROR("Error in command: %s\n", cmd);
-		free(cmd);
 		return -1;
 	}
 
-	free(cmd);
 	return 0;
 }
 
