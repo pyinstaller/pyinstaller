@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from modulegraph.modulegraph import RuntimeModule
+from PyInstaller.lib.modulegraph.modulegraph import RuntimeModule
 from PyInstaller.utils.hooks import hookutils
 
 def hook(module_graph):
@@ -17,15 +17,18 @@ def hook(module_graph):
     all modules mapped by `six._SixMetaPathImporter` as aliased module nodes to
     the passed graph.
 
-    This function adds a placeholder node for the dynamically defined
-    `six.moves` module. This adds a reference from that module to its parent
-    `six` module, ensuring that the latter will be frozen into this executable.
+    The `six.moves` module is dynamically defined at runtime by the `six` module
+    and hence cannot be imported in the standard way. Instead, this hook adds a
+    placeholder node for the `six.moves` module to the graph, which implicitly
+    adds an edge from that node to the node for its parent `six` module. This
+    ensures that the `six` module will be frozen into the executable. (Phew!)
 
     `six._SixMetaPathImporter` is a PEP 302-compliant module importer converting
     imports independent of the current Python version into imports specific to
     that version (e.g., under Python 3, from `from six.moves import tkinter_tix`
     to `import tkinter.tix`). For each such mapping, this hook adds a
-    corresponding module alias to the current graph.
+    corresponding module alias to the graph allowing PyInstaller to translate
+    the former to the latter.
     """
     # Dictionary from conventional module names to "six.moves" attribute names
     # (e.g., from `tkinter.tix` to `six.moves.tkinter_tix`).
@@ -41,7 +44,6 @@ for moved_module in six._moved_attributes:
     # If this is a moved attribute rather than module, skip to the next object.
     if not isinstance(moved_module, six.MovedModule):
         continue
-
     print('  %s: %s,' % (
         repr(moved_module.mod), repr('six.moves.' + moved_module.name)))
 
