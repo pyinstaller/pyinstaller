@@ -14,8 +14,9 @@
 import glob
 import os
 from PyInstaller import log as logging
+from PyInstaller import compat
 from PyInstaller.utils.hooks.hookutils import django_find_root_dir, django_dottedstring_imports, \
-        collect_data_files, collect_submodules
+        collect_data_files, collect_submodules, get_module_file_attribute
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ if root_dir:
             'django.template.defaulttags',
             'django.template.loader_tags',
     ]
+    hiddenimports += collect_submodules('django.middleware')
     # Other hidden imports to get Django example startproject working.
     hiddenimports += [
             'django.contrib.messages.storage.fallback',
@@ -61,6 +63,27 @@ if root_dir:
     # Include django data files - localizations, etc.
     datas = collect_data_files('django')
 
+    # Bundle django DB schema migration scripts as data files.
+    # They are necessary for some commands.
+    logger.info('Collecting Django migration scripts.')
+    django_mod_dir = os.path.dirname(get_module_file_attribute('django'))
+    migration_modules = [
+             'conf.app_template.migrations',
+             'contrib.admin.migrations',
+             'contrib.auth.migrations',
+             'contrib.contenttypes.migrations',
+             'contrib.flatpages.migrations',
+             'contrib.redirects.migrations',
+             'contrib.sessions.migrations',
+             'contrib.site.migrations',
+    ]
+    for mod in migration_modules:
+        bundle_dir = mod.replace('.', os.sep)
+        pattern = os.path.join(django_mod_dir, bundle_dir, '*.py')
+        files = glob.glob(pattern)
+        for f in files:
+            datas.append((f, os.path.join('django', bundle_dir)))
+
     # Include data files from your Django project found in your django root package.
     datas += collect_data_files(package_name)
 
@@ -73,6 +96,7 @@ if root_dir:
         for f in files:
             # Place those files next to the executable.
             datas.append((f, '.'))
+
 
 else:
     logger.warn('No django root directory could be found!')
