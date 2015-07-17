@@ -20,9 +20,12 @@ _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 @pytest.mark.xfail(reason='still work in progress')
 @importorskip('django')
-def test_django(pyi_builder):
+def test_django(pyi_builder, monkeypatch):
+    script_dir = os.path.join(_DATA_DIR, 'django_site')
+    # Extend sys.path so PyInstaller could find modules from 'django_site' project.
+    monkeypatch.syspath_prepend(script_dir)
     # Django uses manage.py as the main script.
-    script = os.path.join(_DATA_DIR, 'django_site', 'manage.py')
+    script = os.path.join(script_dir, 'manage.py')
     # Create the exe, run django dev server and keep it running 2 sec.
     pyi_builder.test_script(script, app_name='django_site', pyi_args=['--name=django_site'],
-                            app_args=['runserver'], runtime=2000)
+                            app_args=['runserver'], runtime=2)
