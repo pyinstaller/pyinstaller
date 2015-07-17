@@ -487,9 +487,6 @@ def django_dottedstring_imports(django_root_dir):
     PyInstaller.__pathex__.append(django_root_dir)
 
     ret = eval_script('django_import_finder.py')
-    #ret = exec_script('django_import_finder.py')
-    #logger.warn(ret)
-    #raise
 
     # Unset environment variables again.
     # TODO Pass this env. variable as option 'env' in the subprocess.Popen function.
