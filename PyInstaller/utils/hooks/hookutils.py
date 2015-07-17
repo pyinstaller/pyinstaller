@@ -9,6 +9,7 @@
 
 
 import glob
+import pkgutil
 import os
 import sys
 import PyInstaller
@@ -52,6 +53,7 @@ def __exec_python_cmd(cmd):
     anything that was emitted in the standard output as a single
     string.
     """
+    # TODO pass PYTHONPATH env. variable as option 'env' in the subprocess.Popen function.
     # Prepend PYTHONPATH with pathex
     pp = os.pathsep.join(PyInstaller.__pathex__)
     old_pp = compat.getenv('PYTHONPATH')
@@ -475,6 +477,7 @@ def django_dottedstring_imports(django_root_dir):
     as strings.
     """
     package_name = os.path.basename(django_root_dir)
+    # TODO Pass this env. variable as option 'env' in the subprocess.Popen function.
     compat.setenv('DJANGO_SETTINGS_MODULE', '%s.settings' % package_name)
 
     # Extend PYTHONPATH with parent dir of django_root_dir.
@@ -484,14 +487,12 @@ def django_dottedstring_imports(django_root_dir):
     PyInstaller.__pathex__.append(django_root_dir)
 
     ret = eval_script('django_import_finder.py')
-    if not isinstance(ret, list):
-        # If the script fails, `ret` is not a list. Handle this here to
-        # avoid crashes later. See github issues #667, 1067 and #1252.
-        logger.error('script django-import-finder.py failed')
-        assert (not ret), ret # ensure it is an empty value
-        ret = []
+    #ret = exec_script('django_import_finder.py')
+    #logger.warn(ret)
+    #raise
 
     # Unset environment variables again.
+    # TODO Pass this env. variable as option 'env' in the subprocess.Popen function.
     compat.unsetenv('DJANGO_SETTINGS_MODULE')
 
     return ret
@@ -606,12 +607,8 @@ def get_module_file_attribute(package):
     str
         Absolute path of this module.
     """
-    # Statement to return __file__ attribute of a package.
-    __file__statement = """
-import %s as p
-print(p.__file__)
-"""
-    return exec_statement(__file__statement % package)
+    loader = pkgutil.find_loader(package)
+    return loader.get_filename(package)
 
 
 def get_pywin32_module_file_attribute(module_name):
@@ -641,6 +638,30 @@ print(module.__file__)
     return exec_statement(statement % module_name)
 
 
+def is_package(module_name):
+    """
+    Check if a Python module is realy a module or is a package containing
+    other modules.
+
+    :param module_name: Module name to check.
+    :return: True if module is a package else otherwise.
+    """
+    # This way determines if module is a package without importing the module.
+    try:
+        loader = pkgutil.find_loader(module_name)
+    except Exception:
+        # When it fails to find a module loader then it points probably to a clas
+        # or function and module is not a package. Just return False.
+        return False
+    else:
+        if loader:
+            # A package must have a __path__ attribute.
+            return loader.is_package(module_name)
+        else:
+            # In case of None - modules is probably not a package.
+            return False
+
+
 def get_package_paths(package):
     """
     Given a package, return the path to packages stored on this machine
@@ -649,12 +670,6 @@ def get_package_paths(package):
     returns (/abs/path/to/python/libs,
              /abs/path/to/python/libs/pkg/subpkg).
     """
-    # A package must have a path -- check for this, in case the package
-    # parameter is actually a module.
-    is_pkg_statement = 'import %s as p; print(hasattr(p, "__path__"))'
-    is_package = eval_statement(is_pkg_statement % package)
-    assert is_package, 'Package %s does not have __path__ attribute' % package
-
     file_attr = get_module_file_attribute(package)
 
     # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
@@ -686,6 +701,12 @@ def collect_submodules(package, subdir=None):
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
+    logger.debug('Collecting submodules for %s' % package)
+    # Skip module that is not a package.
+    if not is_package(package):
+        logger.info('collect_submodules: Module %s is not a package.' % package)
+        return []
+
     pkg_base, pkg_dir = get_package_paths(package)
     if subdir:
         pkg_dir = os.path.join(pkg_dir, subdir)
