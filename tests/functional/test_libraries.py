@@ -18,7 +18,6 @@ from PyInstaller.utils.tests import importorskip
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 
-@pytest.mark.xfail(reason='still work in progress')
 @importorskip('django')
 def test_django(pyi_builder, monkeypatch):
     script_dir = os.path.join(_DATA_DIR, 'django_site')
@@ -26,6 +25,6 @@ def test_django(pyi_builder, monkeypatch):
     monkeypatch.syspath_prepend(script_dir)
     # Django uses manage.py as the main script.
     script = os.path.join(script_dir, 'manage.py')
-    # Create the exe, run django dev server and keep it running 2 sec.
-    pyi_builder.test_script(script, app_name='django_site', pyi_args=['--name=django_site'],
-                            app_args=['runserver'], runtime=2)
+    # Create the exe, run django command 'check' to do basic sanity checking of the
+    # executable.
+    pyi_builder.test_script(script, app_name='django_site', app_args=['check'])
