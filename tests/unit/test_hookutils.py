@@ -110,7 +110,7 @@ def mod_list(monkeypatch):
 # An error should be thrown if a module, not a package, was passed.
 def test_collect_submod_module():
     # os is a module, not a package.
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         collect_submodules(__import__('os'))
 
 
@@ -194,7 +194,7 @@ def data_lists(monkeypatch, request):
 # An error should be thrown if a module, not a package, was passed.
 def test_collect_data_module():
     # 'os' is a module, not a package.
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         collect_data_files(__import__('os'))
 
 

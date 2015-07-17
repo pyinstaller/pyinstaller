@@ -698,6 +698,10 @@ def collect_submodules(package, subdir=None):
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
+    # Accept only strings as packages.
+    if type(package) is not str:
+        raise ValueError
+
     logger.debug('Collecting submodules for %s' % package)
     # Skip module that is not a package.
     if not is_package(package):
@@ -752,6 +756,10 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
+    # Accept only strings as packages.
+    if type(package) is not str:
+        raise ValueError
+
     pkg_base, pkg_dir = get_package_paths(package)
     if subdir:
         pkg_dir = os.path.join(pkg_dir, subdir)
