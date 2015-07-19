@@ -21,6 +21,9 @@ import site
 import subprocess
 import sys
 
+# Distinguish code for different major Python version.
+is_py2 = sys.version_info[0] == 2
+is_py3 = sys.version_info[0] == 3
 
 is_py25 = sys.version_info >= (2, 5)
 is_py26 = sys.version_info >= (2, 6)
