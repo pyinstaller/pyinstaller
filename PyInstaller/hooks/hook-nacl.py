@@ -13,8 +13,8 @@
 
 import os.path
 import glob
-from PyInstaller.hooks.hookutils import collect_data_files, get_module_file_attribute
-from PyInstaller.hooks.hookutils import PY_EXTENSION_SUFFIXES
+from PyInstaller.utils.hooks.hookutils import collect_data_files, get_module_file_attribute
+from PyInstaller.utils.hooks.hookutils import PY_EXTENSION_SUFFIXES
 
 
 datas = collect_data_files('nacl')
