@@ -6,8 +6,19 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
+#
+# *****************************************************
+# hook-pygments.py - PyInstaller hook file for pygments
+# *****************************************************
+# The following applies to pygments version 2.0.2, as reported by ``pip show
+# pygments``.
+#
+# From pygments.formatters, line 37::
+#
+#    def _load_formatters(module_name):
+#        """Load a formatter (and all others in the module too)."""
+#        mod = __import__(module_name, None, None, ['__all__'])
+#
+# Therefore, we need all the modules in ``pygments.formatters``.
 from PyInstaller.utils.hooks.hookutils import collect_submodules
-
-# Pygments uses a dynamic import for its formatters, so gather them all here.
 hiddenimports = collect_submodules('pygments.formatters')
