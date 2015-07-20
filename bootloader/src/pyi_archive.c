@@ -481,10 +481,12 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
     archive_status->argv = malloc(sizeof(wchar_t*) * archive_status->argc);
 
     /* Reset locale to default. Necessary for char/wchar_t conversion. */
+    // FIXME: Need to strdup() here? Python 3.3 does!
     old_locale = setlocale(LC_ALL, NULL);
     setlocale(LC_ALL, "");
     /* Convert arguments. */
     for (i = 0; i < archive_status->argc; i++) {
+        // FIXME: calculate size! args may be longer then PATH_MAX
         archive_status->argv[i] = malloc(sizeof(wchar_t) * PATH_MAX);
         count = mbstowcs(archive_status->argv[i], argv[i], PATH_MAX-1);
         if (count == (size_t)-1) {
