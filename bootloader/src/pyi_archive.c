@@ -483,11 +483,9 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
         archive_status->argv[i] = malloc(sizeof(wchar_t) * PATH_MAX);
     }
 
-	/* Set argv[0] to be the absolute path to executable name. Python might need this. */
-	// TODO status->archivename should be passed as wchar_t
-    count = mbstowcs(archive_status->argv[0], archive_status->archivename, PATH_MAX-1);
+    count = mbstowcs(archive_status->argv[0], argv[0], PATH_MAX-1);
     if (count == (size_t)-1) {
-        VS("LOADER: Error converting archive_status->archivename %s to string\n", archive_status->archivename);
+        VS("LOADER: Error converting argv[0] %s to string\n", argv[0]);
         return 1;
     }
 
