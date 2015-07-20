@@ -45,9 +45,10 @@ install:
   # target Python version and architecture
   - "%CMD_IN_ENV% pip install -r tests/requirements.txt"
 
-build:
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
+
+build: off
 
 test_script:
   - "%CMD_IN_ENV% py.test"
