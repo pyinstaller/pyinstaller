@@ -7,14 +7,9 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-# Pyinstaller executables fail without these imports; Python doesn't need them.
-import pygments.formatters
-import pygments.lexers
+# Hook for speech_recognition: https://pypi.python.org/pypi/SpeechRecognition/
+# Tested on Windows 8.1 x64 with SpeechRecognition 1.5
 
-# This sample code is taken from http://pygments.org/docs/quickstart/.
-from pygments import highlight
-from pygments.lexers import PythonLexer
-from pygments.formatters import HtmlFormatter
+from PyInstaller.hooks.hookutils import collect_data_files
 
-code = 'print "Hello World"'
-print highlight(code, PythonLexer(), HtmlFormatter())
+datas = collect_data_files("speech_recognition")

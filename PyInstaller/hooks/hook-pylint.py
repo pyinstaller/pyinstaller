@@ -10,22 +10,22 @@
 # *************************************************
 # hook-pylint.py - PyInstaller hook file for pylint
 # *************************************************
-# The pylint package, in __pkginfo__.py, is version 1.2.1. Looking at its
+# The pylint package, in __pkginfo__.py, is version 1.4.3. Looking at its
 # source:
 #
-# From checkers/__init__.py, starting at line 141::
+# From checkers/__init__.py, starting at line 122::
 #
 #    def initialize(linter):
 #        """initialize linter with checkers in this package """
 #        register_plugins(linter, __path__[0])
 #
-# From reporters/__init__.py, starting at line 136::
+# From reporters/__init__.py, starting at line 131::
 #
 #    def initialize(linter):
 #        """initialize linter with reporters in this package """
 #        utils.register_plugins(linter, __path__[0])
 #
-# From utils.py, starting at line 722::
+# From utils.py, starting at line 881::
 #
 #    def register_plugins(linter, directory):
 #        """load all module and package in the given directory, looking for a
@@ -43,7 +43,7 @@
 #
 #
 # So, we need all the Python source in the ``checkers/`` and ``reporters/``
-# subdirectories, since thiese are run-time discovered and loaded. Therefore,
+# subdirectories, since these are run-time discovered and loaded. Therefore,
 # these files are all data files. In addition, since this is a module, the
 # pylint/__init__.py file must be included, since submodules must be children of
 # a module.

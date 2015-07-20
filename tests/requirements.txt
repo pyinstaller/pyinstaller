@@ -2,3 +2,4 @@
 pytest
 pytest-xdist
 mock
+Django==1.8.3
