@@ -285,8 +285,6 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     strcpy(pypath, status->mainpath);
     if (is_py2) {
       VS("LOADER: PYTHONHOME is %s\n", pypath);
-      // Clear out PYTHONHOME to avoid clashing with any Python installation.
-      pyi_unsetenv("PYTHONHOME");
       PI_Py2_SetPythonHome(pypath);
     } else {
       mbstowcs(wchar_tmp2, pypath, PATH_MAX);
