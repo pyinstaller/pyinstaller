@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import print_function
 
 # sys.path  should contain absolute paths.
 # With relative paths frozen application will
@@ -18,13 +19,14 @@ import os
 import sys
 import tempfile
 
-print(sys.path)
-print('CWD: ' + os.getcwdu())
+print('sys.stderr.encoding:', sys.stderr.encoding)
+print('sys.path', sys.path)
+print('CWD:', repr(os.getcwdu()))
 
 # Change working directory.
 os.chdir(tempfile.gettempdir())
 print('Changing working directory...')
-print('CWD: ' + os.getcwdu())
+print('CWD:', repr(os.getcwdu()))
 
 # Try import a module. It should fail
 try:
