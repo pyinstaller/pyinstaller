@@ -483,17 +483,11 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
         archive_status->argv[i] = malloc(sizeof(wchar_t) * PATH_MAX);
     }
 
-    count = mbstowcs(archive_status->argv[0], argv[0], PATH_MAX-1);
-    if (count == (size_t)-1) {
-        VS("LOADER: Error converting argv[0] %s to string\n", argv[0]);
-        return 1;
-    }
-
-    /* Reset locale to default. Probably necessary for char/wchar_t conversion. */
+    /* Reset locale to default. Necessary for char/wchar_t conversion. */
     old_locale = setlocale(LC_ALL, NULL);
     setlocale(LC_ALL, "");
-    /* Convert other possible arguments. Skip argv[0]. */
-    for (i = 1; i < archive_status->argc; i++) {
+    /* Convert arguments. */
+    for (i = 0; i < archive_status->argc; i++) {
         count = mbstowcs(archive_status->argv[i], argv[i], PATH_MAX-1);
         if (count == (size_t)-1) {
 	     VS("LOADER: Error converting argv[%i] %s to string\n", i, argv[i]);
