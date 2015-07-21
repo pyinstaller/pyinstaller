@@ -335,7 +335,6 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 	  sprintf(cmd, "sys.path.append(r\"%s\")", status->homepath);
 	  PI_PyRun_SimpleString(cmd);
 	} else {
-	  // TODO use directly wchar_t - no char.
 	  PI_PySys_SetPath(wchar_tmp);
 	};
 
