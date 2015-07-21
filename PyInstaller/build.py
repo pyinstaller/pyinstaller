@@ -2109,6 +2109,7 @@ def build(spec, distpath, workpath, clean_build):
         'WARNFILE': CONF['warnfile'],
         'workpath': workpath,
         # PyInstaller classes for .spec.
+        'TOC': TOC,
         'Analysis': Analysis,
         'BUNDLE': BUNDLE,
         'COLLECT': COLLECT,
