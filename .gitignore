@@ -35,12 +35,12 @@ __pycache__/
 /tests/python_exe.build
 /tests/report.xml
 
-/tests/*/build/
-/tests/*/dist/
+/tests/**/build/
+/tests/**/dist/
 
 # Ignore generated spec-files
 # NB: You can still add .spec-files to be tracked using `git add`
-/tests/*/*.spec
+/tests/**/*.spec
 
 # /tests/basic/
 /tests/basic/python_exe.build
