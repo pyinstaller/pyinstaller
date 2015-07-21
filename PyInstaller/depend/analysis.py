@@ -501,7 +501,10 @@ class FakeModule(object):
         # from the graph itself, or a TOC made from the graph.
         node = graph.findNode(identifier)
         assert(node is not None) # should not occur
+        # TODO: Rename self.name into self.__name__, like normal
+        # modules have
         self.name = identifier
+        self.__name__ = identifier
         # keep a pointer back to the original node
         self.node = node
         # keep a pointer back to the original graph
