@@ -109,6 +109,7 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
       // new in Python 2.6, but not reliable available in all Linux distros
       GETPROC(dll, PyUnicode_FromString);
     };
+    GETPROC(dll, PySys_SetPath);
     GETPROC(dll, PySys_SetArgvEx);
     GETPROC(dll, Py_SetProgramName);
     GETPROC(dll, PyImport_ImportModule);
