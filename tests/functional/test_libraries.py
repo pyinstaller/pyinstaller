@@ -28,3 +28,4 @@ def test_django(pyi_builder, monkeypatch):
     # Create the exe, run django command 'check' to do basic sanity checking of the
     # executable.
     pyi_builder.test_script(script, app_name='django_site', app_args=['check'])
+

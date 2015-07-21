@@ -12,7 +12,7 @@ import os
 import pytest
 
 from os.path import join
-from PyInstaller.utils.hooks.hookutils import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks.hookutils import collect_data_files, collect_submodules, get_module_file_attribute
 from PyInstaller.utils.hooks.hookutils import remove_prefix, remove_suffix
 from PyInstaller.utils.hooks.hookutils import remove_file_extension
 
@@ -217,3 +217,9 @@ def test_collect_data_all_included(data_lists):
     dst_compare = tuple(dst_compare)
     assert src == src_compare
     assert dst == dst_compare
+
+
+# An Import error should be thrown if a module is not found.
+def test_get_module_file_attribute_non_exist_module():
+    with pytest.raises(ImportError):
+        get_module_file_attribute('pyinst_nonexisting_module_name')

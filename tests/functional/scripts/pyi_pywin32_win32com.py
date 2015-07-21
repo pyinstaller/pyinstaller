@@ -14,3 +14,5 @@
 
 
 import win32com
+import win32com.client
+import win32com.server

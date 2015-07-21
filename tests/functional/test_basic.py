@@ -188,6 +188,7 @@ def test_threading_module(pyi_builder):
 @importorskip('win32com')
 def test_pywin32_win32com(pyi_builder):
     pyi_builder.test_script('pyi_pywin32_win32com.py')
+    #assert 0
 
 
 @importorskip('win32ui')
