@@ -2,4 +2,8 @@
 pytest
 pytest-xdist
 mock
+# Test libraries
 Django==1.8.3
+
+# Helper tools
+pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
