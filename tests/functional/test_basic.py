@@ -160,11 +160,6 @@ def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
 
-@importorskip('win32com')
-def test_pywin32_win32com(pyi_builder):
-    pyi_builder.test_script('pyi_pywin32_win32com.py')
-
-
 def test_stderr_encoding(pyi_builder):
     pyi_builder.test_script('pyi_stderr_encoding.py')
 
@@ -188,6 +183,16 @@ def test_xmldom_module(pyi_builder):
 @pytest.mark.xfail(reason='failing with Python 3.4 in Travis')
 def test_threading_module(pyi_builder):
     pyi_builder.test_script('pyi_threading_module.py')
+
+
+@importorskip('win32com')
+def test_pywin32_win32com(pyi_builder):
+    pyi_builder.test_script('pyi_pywin32_win32com.py')
+
+
+@importorskip('win32ui')
+def test_pywin32_win32ui(pyi_builder):
+    pyi_builder.test_script('pyi_pywin32_win32ui.py')
 
 
 """
