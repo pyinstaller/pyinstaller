@@ -335,6 +335,8 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 	  sprintf(cmd, "sys.path.append(r\"%s\")", status->homepath);
 	  PI_PyRun_SimpleString(cmd);
 	} else {
+	  // This might not be necessary, since we already pass the
+	  // same value to Py_SetPath.
 	  PI_PySys_SetPath(wchar_tmp);
 	};
 
