@@ -32,49 +32,53 @@
 /*
  * Python Entry point declarations (see macros in pyi_python.h).
  */
-DECLVAR(Py_FrozenFlag);
-DECLVAR(Py_NoSiteFlag);
-DECLVAR(Py_OptimizeFlag);
-DECLVAR(Py_FileSystemDefaultEncoding);
-DECLVAR(Py_VerboseFlag);
-DECLVAR(Py_IgnoreEnvironmentFlag);
+// external variables
 DECLVAR(Py_DontWriteBytecodeFlag);
+DECLVAR(Py_FileSystemDefaultEncoding);
+DECLVAR(Py_FrozenFlag);
+DECLVAR(Py_IgnoreEnvironmentFlag);
+DECLVAR(Py_NoSiteFlag);
 DECLVAR(Py_NoUserSiteDirectory);
+DECLVAR(Py_OptimizeFlag);
+DECLVAR(Py_VerboseFlag);
 
-DECLPROC(Py_Initialize);
+// functions with prefix `Py_`
+DECLPROC(Py_BuildValue);
+DECLPROC(Py_DecRef);
+DECLPROC(Py_EndInterpreter);
 DECLPROC(Py_Finalize);
 DECLPROC(Py_IncRef);
-DECLPROC(Py_DecRef);
+DECLPROC(Py_Initialize);
+DECLPROC(Py_NewInterpreter);
 DECLPROC(Py_SetPath);
-DECLPROC(Py_SetPythonHome);
-DECLPROC(PyImport_ExecCodeModule);
-DECLPROC(PyRun_SimpleString);
-DECLPROC(PySys_SetPath);
-DECLPROC(PySys_SetArgvEx);
 DECLPROC(Py_SetProgramName);
-DECLPROC(PyImport_ImportModule);
-DECLPROC(PyImport_AddModule);
-DECLPROC(PyObject_SetAttrString);
-DECLPROC(PyList_New);
-DECLPROC(PyList_Append);
-DECLPROC(Py_BuildValue);
-DECLPROC(PyString_FromString);
-DECLPROC(PyUnicode_FromString);
-DECLPROC(PyObject_CallFunction);
-DECLPROC(PyModule_GetDict);
+DECLPROC(Py_SetPythonHome);
+
+// other functions
 DECLPROC(PyDict_GetItemString);
 DECLPROC(PyErr_Clear);
 DECLPROC(PyErr_Occurred);
 DECLPROC(PyErr_Print);
-DECLPROC(PySys_AddWarnOption);
-DECLPROC(PyEval_InitThreads);
 DECLPROC(PyEval_AcquireThread);
+DECLPROC(PyEval_InitThreads);
 DECLPROC(PyEval_ReleaseThread);
-DECLPROC(PyThreadState_Swap);
-DECLPROC(Py_NewInterpreter);
-DECLPROC(Py_EndInterpreter);
+DECLPROC(PyImport_AddModule);
+DECLPROC(PyImport_ExecCodeModule);
+DECLPROC(PyImport_ImportModule);
+DECLPROC(PyList_Append);
+DECLPROC(PyList_New);
 DECLPROC(PyLong_AsLong);
+DECLPROC(PyModule_GetDict);
+DECLPROC(PyObject_CallFunction);
+DECLPROC(PyObject_SetAttrString);
+DECLPROC(PyRun_SimpleString);
+DECLPROC(PyString_FromString);
+DECLPROC(PySys_AddWarnOption);
+DECLPROC(PySys_SetArgvEx);
 DECLPROC(PySys_SetObject);
+DECLPROC(PySys_SetPath);
+DECLPROC(PyThreadState_Swap);
+DECLPROC(PyUnicode_FromString);
 
 
 /*
@@ -83,56 +87,60 @@ DECLPROC(PySys_SetObject);
  */
 int pyi_python_map_names(HMODULE dll, int pyvers)
 {
-    GETVAR(dll, Py_FrozenFlag);
-    GETVAR(dll, Py_NoSiteFlag);
-    GETVAR(dll, Py_OptimizeFlag);
-    GETVAR(dll, Py_FileSystemDefaultEncoding);
-    GETVAR(dll, Py_VerboseFlag);
-    GETVAR(dll, Py_IgnoreEnvironmentFlag);
     GETVAR(dll, Py_DontWriteBytecodeFlag);
+    GETVAR(dll, Py_FileSystemDefaultEncoding);
+    GETVAR(dll, Py_FrozenFlag);
+    GETVAR(dll, Py_IgnoreEnvironmentFlag);
+    GETVAR(dll, Py_NoSiteFlag);
     GETVAR(dll, Py_NoUserSiteDirectory);
+    GETVAR(dll, Py_OptimizeFlag);
+    GETVAR(dll, Py_VerboseFlag);
 
-    GETPROC(dll, Py_Initialize);
+    // functions with prefix `Py_`
+    GETPROC(dll, Py_BuildValue);
+    GETPROCOPT(dll, Py_DecRef);
+    GETPROC(dll, Py_EndInterpreter);
     GETPROC(dll, Py_Finalize);
     GETPROCOPT(dll, Py_IncRef);
-    GETPROCOPT(dll, Py_DecRef);
+    GETPROC(dll, Py_Initialize);
+    GETPROC(dll, Py_NewInterpreter);
     if (pyvers >= 30) {
       // new in Python 3
       GETPROC(dll, Py_SetPath);
     };
-    GETPROC(dll, Py_SetPythonHome);
-    GETPROC(dll, PyImport_ExecCodeModule);
-    GETPROC(dll, PyRun_SimpleString);
-    if (pyvers < 30) {
-      GETPROC(dll, PyString_FromString);
-    } else {
-      // new in Python 2.6, but not reliable available in all Linux distros
-      GETPROC(dll, PyUnicode_FromString);
-    };
-    GETPROC(dll, PySys_SetPath);
-    GETPROC(dll, PySys_SetArgvEx);
     GETPROC(dll, Py_SetProgramName);
-    GETPROC(dll, PyImport_ImportModule);
-    GETPROC(dll, PyImport_AddModule);
-    GETPROC(dll, PyObject_SetAttrString);
-    GETPROC(dll, PyList_New);
-    GETPROC(dll, PyList_Append);
-    GETPROC(dll, Py_BuildValue);
-    GETPROC(dll, PyObject_CallFunction);
-    GETPROC(dll, PyModule_GetDict);
+    GETPROC(dll, Py_SetPythonHome);
+
+    // other functions
     GETPROC(dll, PyDict_GetItemString);
     GETPROC(dll, PyErr_Clear);
     GETPROC(dll, PyErr_Occurred);
     GETPROC(dll, PyErr_Print);
-    GETPROC(dll, PySys_AddWarnOption);
-    GETPROC(dll, PyEval_InitThreads);
     GETPROC(dll, PyEval_AcquireThread);
+    GETPROC(dll, PyEval_InitThreads);
     GETPROC(dll, PyEval_ReleaseThread);
-    GETPROC(dll, PyThreadState_Swap);
-    GETPROC(dll, Py_NewInterpreter);
-    GETPROC(dll, Py_EndInterpreter);
+    GETPROC(dll, PyImport_AddModule);
+    GETPROC(dll, PyImport_ExecCodeModule);
+    GETPROC(dll, PyImport_ImportModule);
+    GETPROC(dll, PyList_Append);
+    GETPROC(dll, PyList_New);
     GETPROC(dll, PyLong_AsLong);
+    GETPROC(dll, PyModule_GetDict);
+    GETPROC(dll, PyObject_CallFunction);
+    GETPROC(dll, PyObject_SetAttrString);
+    GETPROC(dll, PyRun_SimpleString);
+    if (pyvers < 30) {
+      GETPROC(dll, PyString_FromString);
+    };
+    GETPROC(dll, PySys_AddWarnOption);
+    GETPROC(dll, PySys_SetArgvEx);
     GETPROC(dll, PySys_SetObject);
+    GETPROC(dll, PySys_SetPath);
+    GETPROC(dll, PyThreadState_Swap);
+    if (pyvers >= 30) {
+      // new in Python 2.6, but not reliable available in all Linux distros
+      GETPROC(dll, PyUnicode_FromString);
+    };
 
     VS("LOADER: Loaded functions from Python library.\n");
 
