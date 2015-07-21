@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -604,8 +604,20 @@ def get_module_file_attribute(package):
     str
         Absolute path of this module.
     """
-    loader = pkgutil.find_loader(package)
-    return loader.get_filename(package)
+    # First try to use 'pkgutil'. - fastest but does not work with pywin32.
+    try:
+        loader = pkgutil.find_loader(package)
+        return loader.get_filename(package)
+    # Second try to import module in a subprocess. Might raise ImportError.
+    except ImportError:
+        # Statement to return __file__ attribute of a package.
+        __file__statement = """
+import %s as p
+print(p.__file__)
+"""
+        attr = exec_statement(__file__statement % package)
+        return attr
+
 
 
 def get_pywin32_module_file_attribute(module_name):
@@ -627,12 +639,18 @@ def get_pywin32_module_file_attribute(module_name):
     `PyInstaller.utils.win32.winutils.import_pywin32_module()`
         For further details.
     """
-    statement = """
+    # Try to use standard function. If that fails try a special function.
+    try:
+        attr = get_module_file_attribute(module_name)
+    except ImportError:
+        statement = """
 from PyInstaller.utils.win32 import winutils
 module = winutils.import_pywin32_module('%s')
 print(module.__file__)
-    """
-    return exec_statement(statement % module_name)
+"""
+        attr = exec_statement(statement % module_name)
+
+    return attr
 
 
 def is_package(module_name):
