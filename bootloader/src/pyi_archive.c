@@ -475,29 +475,22 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
 
     /* Don't forget to cache the count of command-line arguments - argc! */
     archive_status->argc = argc;
+    archive_status->argv_char = argv; // Plain copy of argv, used for is_py2
 
     /* Allocate memory for argv cache. */
     archive_status->argv = malloc(sizeof(wchar_t*) * archive_status->argc);
-    for (i = 0; i < archive_status->argc; i++) {
-        archive_status->argv[i] = malloc(sizeof(wchar_t) * PATH_MAX);
-    }
 
-	/* Set argv[0] to be the absolute path to executable name. Python might need this. */
-	// TODO status->archivename should be passed as wchar_t
-    count = mbstowcs(archive_status->argv[0], archive_status->archivename, PATH_MAX-1);
-    if (count == (size_t)-1) {
-        VS("LOADER: Error converting argument %s to string\n", argv[i]);
-        return 1;
-    }
-
-    /* Reset locale to default. Probably necessary for char/wchar_t conversion. */
+    /* Reset locale to default. Necessary for char/wchar_t conversion. */
+    // FIXME: Need to strdup() here? Python 3.3 does!
     old_locale = setlocale(LC_ALL, NULL);
     setlocale(LC_ALL, "");
-    /* Convert other possible arguments. Skip argv[0]. */
-    for (i = 1; i < archive_status->argc; i++) {
+    /* Convert arguments. */
+    for (i = 0; i < archive_status->argc; i++) {
+        // FIXME: calculate size! args may be longer then PATH_MAX
+        archive_status->argv[i] = malloc(sizeof(wchar_t) * PATH_MAX);
         count = mbstowcs(archive_status->argv[i], argv[i], PATH_MAX-1);
         if (count == (size_t)-1) {
-            VS("LOADER: Error converting argument %s to string\n", argv[i]);
+	     VS("LOADER: Error converting argv[%i] %s to string\n", i, argv[i]);
             return 1;
         }
     }
