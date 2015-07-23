@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -9,21 +9,15 @@
 
 
 """
-Python module 'pydoc' causes the inclusion of Tcl/Tk library even in case
+Python 2 module 'pydoc' causes the inclusion of Tcl/Tk library even in case
 of simple hello_world script. Most of the we do not want this behavior.
+'pydoc' from Python 3 does not have this dependency.
 
 This hook just removes this implicit dependency on Tcl/Tk.
 """
 
-
 from PyInstaller.compat import modname_tkinter
 
 
-def hook(mod):
-    # Ignore 'Tkinter' to prevent inclusion of Tcl/Tk library.
-    for i, m in enumerate(mod.imports):
-        if m[0] == modname_tkinter:
-            # new-style mod object, record deletion
-            mod.del_import(m[0])
-            break
-    return mod
+# Ignore 'Tkinter' to prevent inclusion of Tcl/Tk library.
+excludedimports = [modname_tkinter]
