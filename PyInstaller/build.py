@@ -731,42 +731,30 @@ class Analysis(Target):
                             excluded_node = self.graph.findNode(item)
                             if excluded_node is not None:
                                 logger.info("Excluding import '%s'" % item)
-
-
-                                # TODO FIXME Find the right way to remove implicit module imports (excludedimports).
-                                # # Remove 'imported_module' reference or any submodule reference
-                                # # from the excluded module. For example module 'IPython' is excluded
-                                # # in file hook-django.core.management.py. But 'IPython' is referenced
-                                # # from module django.core.management.commands.shell and not directly
-                                # # django.core.management.
-                                # #
-                                # # The following code should remove IPython references from modules with
-                                # # prefix 'django.core.management.*'.
-                                # #self.graph.foldReferences(excluded_node)
-                                # nds = self.graph.getReferers(excluded_node)
-                                # for ds in nds:
-                                #     logger.warn('referers: %s' % ds.identifier)
-                                # nds = self.graph._find_all_submodules(excluded_node)
-                                # for ds in nds:
-                                #     logger.warn('submod: %s' % ds)
-                                # outgoing_nodes, incoming_nodes = self.graph.get_edges(excluded_node)
-                                # #for o in outgoing_nodes:
-                                #     #logger.warn('OUT node: %s' % o.identifier)
-                                # for n in incoming_nodes:
-                                #     if n.identifier.startswith(imported_name):
-                                #         logger.debug('Removing %s reference to %s' % (n.identifier, item))
-                                #         self.graph.removeReference(n, excluded_node)
-
-
-
-
-
-                                # Removing the node seems to be the only option here.
-                                self.graph.removeNode(excluded_node)
+                                # Remove implicit reference to a module. Also submodules of the hook name
+                                # might reference the module. Remove those references too.
+                                safe_to_remove = True
+                                referers = self.graph.getReferers(excluded_node)
+                                for r in referers:
+                                    r_type = type(r).__name__
+                                    if r_type in module_types:  # Analyze only relevant types.
+                                        if r.identifier.startswith(imported_name):
+                                            logger.debug('Removing reference %s' % r.identifier)
+                                            # Contains prefix of 'imported_name' - remove reference.
+                                            self.graph.removeReference(r, excluded_node)
+                                        elif not r.identifier.startswith(item):
+                                            # Other modules reference the implicit import - DO NOT remove it.
+                                            logger.debug('Excluded import %s referenced by module %s' % (item, r.identifier))
+                                            safe_to_remove = False
+                                # Remove the implicit module from graph in order to not be further analyzed.
+                                # If no other modules reference the implicit import the it is safe to remove
+                                # that module from the graph.
+                                if safe_to_remove:
+                                    self.graph.removeNode(excluded_node)
                             else:
                                 logger.info("Excluded import '%s' not found" % item)
                         except ImportError:
-                            # Print excludedimport could not be found.
+                            # excludedimport could not be found.
                             # modulegraph raises ImporError when a module is not found.
                             logger.info("Excluded import '%s' not found" % item)
 
