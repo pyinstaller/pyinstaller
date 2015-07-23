@@ -16,8 +16,9 @@ of simple hello_world script. Most of the we do not want this behavior.
 This hook just removes this implicit dependency on Tcl/Tk.
 """
 
-from PyInstaller.compat import modname_tkinter
+from PyInstaller.compat import is_py2, modname_tkinter
 
 
 # Ignore 'Tkinter' to prevent inclusion of Tcl/Tk library.
-excludedimports = [modname_tkinter]
+if is_py2:
+    excludedimports = [modname_tkinter]

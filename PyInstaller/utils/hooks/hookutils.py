@@ -725,7 +725,7 @@ def collect_submodules(package, subdir=None):
     logger.debug('Collecting submodules for %s' % package)
     # Skip module that is not a package.
     if not is_package(package):
-        logger.info('collect_submodules: Module %s is not a package.' % package)
+        logger.debug('collect_submodules: Module %s is not a package.' % package)
         return []
 
     pkg_base, pkg_dir = get_package_paths(package)
