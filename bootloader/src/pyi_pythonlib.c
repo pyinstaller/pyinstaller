@@ -15,7 +15,7 @@
 
 
 #ifdef _WIN32
-    #include <windows.h>
+    #include <windows.h>  // HMODULE
     #include <fcntl.h>  // O_BINARY
     #include <io.h>  // _setmode
     #include <winsock.h>  // ntohl
