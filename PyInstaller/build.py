@@ -2151,6 +2151,7 @@ def build(spec, distpath, workpath, clean_build):
         'COLLECT': COLLECT,
         'DLL': DLL,
         'EXE': EXE,
+        'MERGE': MERGE,
         'PYZ': PYZ,
         'Tree': Tree,
         # Old classes for .spec - raise Exception for user.
