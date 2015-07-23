@@ -337,6 +337,7 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 
 	if (pyi_arch_check_cookie(status, filelen) < 0)
 	{
+		VS("LOADER: pyi_arch_check_cookie failed\n");
 #if defined(WIN32) || defined(__APPLE__)
 		filelen = findDigitalSignature(status);
 		if (filelen < 1)
@@ -428,9 +429,13 @@ int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char  const
 		return -1;
 
 	/* Open the archive */
-	if (pyi_arch_open(status))
+	if (pyi_arch_open(status)) {
+	  // If this is not an archive, we MUST close the file,
+	  // otherwise the open file-handle will be reused when
+	  // testing the next file.
+	  pyi_arch_close_fp(status);
 		return -1;
-
+	};
 	return 0;
 }
 
