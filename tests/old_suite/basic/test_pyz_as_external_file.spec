@@ -29,4 +29,6 @@ exe = EXE(pyz,
           console=True)
 coll = COLLECT(exe,
                a.binaries,
+               a.zipfiles,
+               a.datas,
                name=__testname__)
