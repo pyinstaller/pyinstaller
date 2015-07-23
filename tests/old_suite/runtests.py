@@ -387,8 +387,9 @@ class BuildTestRunner(object):
         # Prints stdout of subprocess continuously.
         self._msg('STDOUT %s' % self.test_name)
         while proc.poll() is None:
-            #line = proc.stdout.readline().strip()
-            line = proc.stdout.read(1)
+            # We need to read a line, not single bytes. Otherwise decoding
+            # would ail.
+            line = proc.stdout.readline()
             self._plain_msg(line.decode('utf-8'), newline=False)
         # Print any stdout that wasn't read before the process terminated.
         # See the conversation in https://github.com/pyinstaller/pyinstaller/pull/1092
