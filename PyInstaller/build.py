@@ -30,7 +30,9 @@ import importlib
 from . import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from . import compat
 from . import log as logging
-from .compat import is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
+import collections
+from .compat import is_py2, is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
+from .compat import importlib_load_source
 from .depend import bindepend
 from .depend import dylib
 from .depend.analysis import PyiModuleGraph, TOC, FakeModule
@@ -533,11 +535,12 @@ class Analysis(Target):
         # containing core Python modules. In Python 3 some built-in modules
         # are written in pure Python. base_library.zip is a way how to have
         # those modules as "built-in".
-        libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
-        create_py3_base_library(libzip_filename)
-        # Bundle base_library.zip as data file.
-        # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
-        self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
+        if not is_py2:
+            libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
+            create_py3_base_library(libzip_filename)
+            # Bundle base_library.zip as data file.
+            # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
+            self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
         logger.info("running Analysis %s", os.path.basename(self.out))
         # Get paths to Python and, in Windows, the manifest.
@@ -618,20 +621,21 @@ class Analysis(Target):
         ### Handle hooks.
 
         logger.info('Looking for import hooks ...')
-        # Implement cache of modules for which there exists a hook.
+        # Implement cache of modules for which there exists a hook. Keep order of added items.
+        hooks_mod_cache = collections.OrderedDict()  # key - module name, value - path to hook directory.
+        # PyInstaller import hooks.
         hooks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hooks')
         hooks_file_list = glob.glob(os.path.join(hooks_dir, 'hook-*.py'))
-        # We have hooks for the following modules.
-        hooks_mod_cache = set([os.path.basename(x)[5:-3] for x in hooks_file_list])
-        # Implement cache of modules from custom import hooks.
-        custom_hooks_mod_cache = {}  # key - module name, value - path to hook directory.
+        for f in hooks_file_list:
+            hooks_mod_cache[os.path.basename(f)[5:-3]] = f
+        # Custom import hooks.
         if self.hookspath:
             # Hooks path is a list and we need to cache files from multiple directories.
             for pth in self.hookspath:
                 file_list = glob.glob(os.path.join(pth, 'hook-*.py'))
                 for f in file_list:
                     name = os.path.basename(f)[5:-3]
-                    custom_hooks_mod_cache[name] = pth
+                    hooks_mod_cache[name] = pth
 
         # TODO "temp_toc" appears to be unused and have no side effects.
         # Remove, please.
@@ -643,118 +647,149 @@ class Analysis(Target):
         module_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package',
                             'Extension', 'Script', 'BuiltinModule'])
 
-        # Iterate through graph.
-        # We expect that method 'graph.flatten()' will pick up new imports as
-        # they are added from hiddenimports. This assumption should solve issue
-        # where any hiddenimport from hook need to use another hook!
-        for curr_node in self.graph.flatten():
-            # Skip module types that are not interesting.
-            mg_type = type(curr_node).__name__
-            if mg_type not in module_types:
-                continue
+        # TODO simplify this loop - functions, etc.
+        ### Iterate over import hooks and update ModuleGraph as needed.
+        #
+        # 1. Iterate in infinite 'while' loop.
+        # 2. Apply all possible hooks in one 'while' iteration.
+        # 3. Remove applied hooks from the cache.
+        # 4. The infinite 'while' loop ends when:
+        #    a. hooks cache is empty
+        #    b. no new hook was applied in the 'while' iteration.
+        #
+        while True:
+            applied_hooks = []  # Empty means no hook was applied.
 
-            imported_name = curr_node.identifier
-            if imported_name in hooks_mod_cache:
-                # Hook is bundled with PyInstaller.
-                hook_file_name = os.path.join(hooks_dir, 'hook-' + imported_name + '.py')
-            elif imported_name in custom_hooks_mod_cache:
-                # Hook is in any of custom locations.
-                hook_file_name = os.path.join(custom_hooks_mod_cache[imported_name], 'hook-' + imported_name + '.py')
-            else:
-                # Skip modules for which there is no hook available.
-                continue
+            # Iterate over hooks in cache.
+            for imported_name, hook_file_name in hooks_mod_cache.items():
 
-            # TODO This import machinery won't work on Python 2.
-            # Import module from a file.
-            import importlib.machinery
-            mod_loader = importlib.machinery.SourceFileLoader(
-                'pyi_hook.'+imported_name, hook_file_name)
+                # Skip hook if no module for it is in the graph or the node is not
+                # the right type.
+                from_node = self.graph.findNode(imported_name)
+                node_type = type(from_node).__name__
+                if from_node is None:
+                    continue
+                elif node_type not in module_types:
+                    continue
 
-            logger.info('Processing hook   %s' % os.path.basename(hook_file_name))
-            # hook_name_space represents the code of 'hook-imported_name.py'
-            hook_name_space = mod_loader.load_module()
-            from_node = self.graph.findNode(imported_name)
+                logger.info('Processing hook   %s' % os.path.basename(hook_file_name))
 
-            ### Processing hook API.
+                # Import hook module from a file.
+                # hook_name_space represents the code of 'hook-imported_name.py'
+                hook_name_space = importlib_load_source('pyi_hook.'+imported_name, hook_file_name)
 
-            # Function hook_name_space.hook(mod) has to be called first because this function
-            # could update other attributes - datas, hiddenimports, etc.
-            # TODO use directly Modulegraph machinery in the 'def hook(mod)' function.
-            if hasattr(hook_name_space, 'hook'):
-                # Process a hook(mod) function. Create a Module object as its API.
-                # TODO: it won't be called "FakeModule" later on
-                mod = FakeModule(imported_name, self.graph)
-                mod = hook_name_space.hook(mod)
-                for item in mod._added_imports:
-                    # as with hidden imports, add to graph as called by imported_name
-                    self.graph.run_script(item, from_node)
-                for item in mod._added_binaries:
-                    assert(item[2] == 'BINARY')
-                    self.binaries.append(item)  # Supposed to be TOC form (n,p,'BINARY')
-                for item in mod.datas:
-                    assert(item[2] == 'DATA')
-                    self.datas.append(item)  # Supposed to be TOC form (n,p,'DATA')
-                for item in mod._deleted_imports:
-                    # Remove the graph link between the hooked module and item.
-                    # This removes the 'item' node from the graph if no other
-                    # links go to it (no other modules import it)
-                    self.graph.removeReference(mod.node, item)
-                # TODO: process mod.datas if not empty, tkinter data files
+                ### Processing hook API.
 
-            # hook_name_space.hiddenimports is a list of Python module names that PyInstaller
-            # is not able detect.
-            if hasattr(hook_name_space, 'hiddenimports'):
-                # push hidden imports into the graph, as if imported from name
-                for item in hook_name_space.hiddenimports:
-                    try:
-                        to_node = self.graph.findNode(item)
-                        if to_node is None:
-                            self.graph.import_hook(item, from_node)
-                    except ImportError:
-                        # Print warning if a module from hiddenimport could not be found.
-                        # modulegraph raises ImporError when a module is not found.
-                        # Import hook with non-existing hiddenimport is probably a stale hook
-                        # that was not updated for a long time.
-                        logger.warn("Hidden import '%s' not found (probably old hook)" % item)
+                # Function hook_name_space.hook(mod) has to be called first because this function
+                # could update other attributes - datas, hiddenimports, etc.
+                # TODO use directly Modulegraph machinery in the 'def hook(mod)' function.
+                if hasattr(hook_name_space, 'hook'):
+                    # Process a hook(mod) function. Create a Module object as its API.
+                    # TODO: it won't be called "FakeModule" later on
+                    mod = FakeModule(imported_name, self.graph)
+                    mod = hook_name_space.hook(mod)
+                    for item in mod._added_imports:
+                        # as with hidden imports, add to graph as called by imported_name
+                        self.graph.run_script(item, from_node)
+                    for item in mod._added_binaries:
+                        assert(item[2] == 'BINARY')
+                        self.binaries.append(item)  # Supposed to be TOC form (n,p,'BINARY')
+                    for item in mod.datas:
+                        assert(item[2] == 'DATA')
+                        self.datas.append(item)  # Supposed to be TOC form (n,p,'DATA')
+                    for item in mod._deleted_imports:
+                        # Remove the graph link between the hooked module and item.
+                        # This removes the 'item' node from the graph if no other
+                        # links go to it (no other modules import it)
+                        self.graph.removeReference(mod.node, item)
+                    # TODO: process mod.datas if not empty, tkinter data files
 
-            # hook_name_space.excludedimports is a list of Python module names that PyInstaller
-            # should not detect as dependency of this module name.
-            if hasattr(hook_name_space, 'excludedimports'):
-                # Remove references between module nodes, as if they are not imported from 'name'
-                for item in hook_name_space.excludedimports:
-                    try:
-                        excluded_node = self.graph.findNode(item)
-                        if excluded_node is not None:
-                            logger.info("Excluding import '%s'" % item)
-                            # Removing the node seems to be the only option here.
-                            self.graph.removeNode(excluded_node)
-                        else:
+                # hook_name_space.hiddenimports is a list of Python module names that PyInstaller
+                # is not able detect.
+                if hasattr(hook_name_space, 'hiddenimports'):
+                    # push hidden imports into the graph, as if imported from name
+                    for item in hook_name_space.hiddenimports:
+                        try:
+                            to_node = self.graph.findNode(item)
+                            if to_node is None:
+                                self.graph.import_hook(item, from_node)
+                        except ImportError:
+                            # Print warning if a module from hiddenimport could not be found.
+                            # modulegraph raises ImporError when a module is not found.
+                            # Import hook with non-existing hiddenimport is probably a stale hook
+                            # that was not updated for a long time.
+                            logger.warn("Hidden import '%s' not found (probably old hook)" % item)
+
+                # hook_name_space.excludedimports is a list of Python module names that PyInstaller
+                # should not detect as dependency of this module name.
+                if hasattr(hook_name_space, 'excludedimports'):
+                    # Remove references between module nodes, as if they are not imported from 'name'
+                    for item in hook_name_space.excludedimports:
+                        try:
+                            excluded_node = self.graph.findNode(item)
+                            if excluded_node is not None:
+                                logger.info("Excluding import '%s'" % item)
+                                # Remove implicit reference to a module. Also submodules of the hook name
+                                # might reference the module. Remove those references too.
+                                safe_to_remove = True
+                                referers = self.graph.getReferers(excluded_node)
+                                for r in referers:
+                                    r_type = type(r).__name__
+                                    if r_type in module_types:  # Analyze only relevant types.
+                                        if r.identifier.startswith(imported_name):
+                                            logger.debug('Removing reference %s' % r.identifier)
+                                            # Contains prefix of 'imported_name' - remove reference.
+                                            self.graph.removeReference(r, excluded_node)
+                                        elif not r.identifier.startswith(item):
+                                            # Other modules reference the implicit import - DO NOT remove it.
+                                            logger.debug('Excluded import %s referenced by module %s' % (item, r.identifier))
+                                            safe_to_remove = False
+                                # Remove the implicit module from graph in order to not be further analyzed.
+                                # If no other modules reference the implicit import the it is safe to remove
+                                # that module from the graph.
+                                if safe_to_remove:
+                                    self.graph.removeNode(excluded_node)
+                            else:
+                                logger.info("Excluded import '%s' not found" % item)
+                        except ImportError:
+                            # excludedimport could not be found.
+                            # modulegraph raises ImporError when a module is not found.
                             logger.info("Excluded import '%s' not found" % item)
-                    except ImportError:
-                        # Print excludedimport could not be found.
-                        # modulegraph raises ImporError when a module is not found.
-                        logger.info("Excluded import '%s' not found" % item)
 
-            # hook_name_space.datas is a list of globs of files or
-            # directories to bundle as datafiles. For each
-            # glob, a destination directory is specified.
-            if hasattr(hook_name_space, 'datas'):
-                # Add desired data files to our datas TOC
-                self.datas.extend(self._format_hook_datas(hook_name_space))
+                # hook_name_space.datas is a list of globs of files or
+                # directories to bundle as datafiles. For each
+                # glob, a destination directory is specified.
+                if hasattr(hook_name_space, 'datas'):
+                    # Add desired data files to our datas TOC
+                    self.datas.extend(self._format_hook_datas(hook_name_space))
 
-            # hook_name_space.binaries is a list of files to bundle as binaries.
-            # Binaries are special that PyInstaller will check if they
-            # might depend on other dlls (dynamic libraries).
-            if hasattr(hook_name_space, 'binaries'):
-                for bundle_name, pth in hook_name_space.binaries:
-                    self.binaries.append((bundle_name, pth, 'BINARY'))
+                # hook_name_space.binaries is a list of files to bundle as binaries.
+                # Binaries are special that PyInstaller will check if they
+                # might depend on other dlls (dynamic libraries).
+                if hasattr(hook_name_space, 'binaries'):
+                    for bundle_name, pth in hook_name_space.binaries:
+                        self.binaries.append((bundle_name, pth, 'BINARY'))
 
-            # TODO implement attribute 'hook_name_space.attrs'
-            # hook_name_space.attrs is a list of tuples (attr_name, value) where 'attr_name'
-            # is name for Python module attribute that should be set/changed.
-            # 'value' is the value of that attribute. PyInstaller will modify
-            # mod.attr_name and set it to 'value' for the created .exe file.
+                # TODO implement attribute 'hook_name_space.attrs'
+                # hook_name_space.attrs is a list of tuples (attr_name, value) where 'attr_name'
+                # is name for Python module attribute that should be set/changed.
+                # 'value' is the value of that attribute. PyInstaller will modify
+                # mod.attr_name and set it to 'value' for the created .exe file.
 
+                # Remove hook from the cache - it was applied and it is no longer necessary to be
+                # applied.
+                del hooks_mod_cache[imported_name]
+                # Append applied hooks to the list 'applied_hooks'.
+                # It is a sign that iteration over hooks should continue.
+                applied_hooks.append(imported_name)
+
+            ### All hooks from cache were traversed - stop or run again.
+            if not applied_hooks:  # Empty list.
+                # No new hook was applied - END of hooks processing.
+                break
+            else:
+                # Run again - reset list 'applied_hooks'.
+                applied_hooks = []
 
 
         # Analyze run-time hooks.
@@ -2115,6 +2150,7 @@ def build(spec, distpath, workpath, clean_build):
         'COLLECT': COLLECT,
         'DLL': DLL,
         'EXE': EXE,
+        'MERGE': MERGE,
         'PYZ': PYZ,
         'Tree': Tree,
         # Old classes for .spec - raise Exception for user.

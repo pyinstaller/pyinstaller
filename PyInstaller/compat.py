@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -424,3 +424,16 @@ try:
     from importlib import reload as module_reload
 except ImportError:
     from imp import reload as module_reload
+
+
+# Wrapper to load a module from a Python source file.
+# This function loads import hooks when processing them.
+if is_py2:
+    import imp
+    importlib_load_source = imp.load_source
+else:
+    import importlib.machinery
+    def importlib_load_source(name, pathname):                # Import module from a file.
+        mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
+        return mod_loader.load_module()
+

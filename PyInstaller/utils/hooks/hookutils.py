@@ -607,16 +607,18 @@ def get_module_file_attribute(package):
     # First try to use 'pkgutil'. - fastest but does not work with pywin32.
     try:
         loader = pkgutil.find_loader(package)
-        return loader.get_filename(package)
+        attr = loader.get_filename(package)
     # Second try to import module in a subprocess. Might raise ImportError.
-    except ImportError:
+    except (AttributeError, ImportError):
         # Statement to return __file__ attribute of a package.
         __file__statement = """
 import %s as p
 print(p.__file__)
 """
         attr = exec_statement(__file__statement % package)
-        return attr
+        if not attr.strip():
+            raise ImportError
+    return attr
 
 
 
@@ -723,7 +725,7 @@ def collect_submodules(package, subdir=None):
     logger.debug('Collecting submodules for %s' % package)
     # Skip module that is not a package.
     if not is_package(package):
-        logger.info('collect_submodules: Module %s is not a package.' % package)
+        logger.debug('collect_submodules: Module %s is not a package.' % package)
         return []
 
     pkg_base, pkg_dir = get_package_paths(package)

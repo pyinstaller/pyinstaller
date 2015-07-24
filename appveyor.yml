@@ -12,7 +12,7 @@ environment:
     # a later point release.
 
     - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.x"
+      PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
 
 init:
@@ -38,8 +38,8 @@ install:
   # PyInstaller depends on pywin32 package.
   # This package is not available for 'pip install'.
   # TODO
-  - ps: (new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py3.4.exe', 'C:\Projects\pywin32-219.win32-py3.4.exe')
-  - "%CMD_IN_ENV% easy_install C:\\Projects\\pywin32-219.win32-py3.4.exe"
+  - ps: (new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py'+$env:PYTHON_VERSION+'.exe', 'C:\Projects\pywin32-219.win32-py'+$env:PYTHON_VERSION+'.exe')
+  - "%CMD_IN_ENV% easy_install C:\\Projects\\pywin32-219.win32-py%PYTHON_VERSION%.exe"
 
   # Install the test dependencies of the project. If some dependencies contain
   # compiled extensions and are not provided as pre-built wheel packages,
@@ -53,4 +53,5 @@ install:
 build: off
 
 test_script:
-  - "%CMD_IN_ENV% py.test"
+  # Split tests into several subprocesses.
+  - "%CMD_IN_ENV% py.test -n 3"
