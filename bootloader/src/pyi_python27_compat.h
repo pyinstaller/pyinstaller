@@ -15,10 +15,10 @@
 
 bool is_py2; // true if we are loading Python 2.x library
 
-inline void PI_Py2_SetPythonHome(char * str);
-inline void PI_Py2_SetProgramName(char * str);
-inline void PI_Py2Sys_SetPath(char * str);
-inline int  PI_Py2Sys_SetArgvEx(int argc, char ** argv, int updatepath);
-inline void PI_Py2Sys_AddWarnOption(char * str);
+void PI_Py2_SetPythonHome(char * str);
+void PI_Py2_SetProgramName(char * str);
+void PI_Py2Sys_SetPath(char * str);
+int  PI_Py2Sys_SetArgvEx(int argc, char ** argv, int updatepath);
+void PI_Py2Sys_AddWarnOption(char * str);
 
 #endif /* PYI_PYTHON27_COMPAT_H */
