@@ -40,6 +40,7 @@ from .depend.utils import create_py3_base_library, is_path_to_egg
 from .loader import pyi_archive, pyi_carchive
 from .utils import misc
 from .utils.misc import save_py_data_struct, load_py_data_struct
+from .lib.modulegraph.find_modules import get_implies
 
 if is_win:
     from .utils.win32 import icon, versioninfo, winmanifest, winresource
@@ -577,7 +578,8 @@ class Analysis(Target):
         # Instantiate a ModuleGraph. The class is defined at end of this module.
         # The argument is the set of paths to use for imports: sys.path,
         # plus our loader, plus other paths from e.g. --path option).
-        self.graph = PyiModuleGraph(HOMEPATH, sys.path + [self.loader_path] + self.pathex)
+        self.graph = PyiModuleGraph(HOMEPATH, sys.path + [self.loader_path] + self.pathex,
+                                    implies=get_implies())
 
         # Graph the first script in the analysis, and save its node to use as
         # the "caller" node for all others. This gives a connected graph rather than
