@@ -31,7 +31,8 @@ from . import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from . import compat
 from . import log as logging
 import collections
-from .compat import is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
+from .compat import is_py2, is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
+from .compat import importlib_load_source
 from .depend import bindepend
 from .depend import dylib
 from .depend.analysis import PyiModuleGraph, TOC, FakeModule
@@ -534,11 +535,12 @@ class Analysis(Target):
         # containing core Python modules. In Python 3 some built-in modules
         # are written in pure Python. base_library.zip is a way how to have
         # those modules as "built-in".
-        libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
-        create_py3_base_library(libzip_filename)
-        # Bundle base_library.zip as data file.
-        # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
-        self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
+        if not is_py2:
+            libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
+            create_py3_base_library(libzip_filename)
+            # Bundle base_library.zip as data file.
+            # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
+            self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
         logger.info("running Analysis %s", os.path.basename(self.out))
         # Get paths to Python and, in Windows, the manifest.
@@ -670,15 +672,11 @@ class Analysis(Target):
                 elif node_type not in module_types:
                     continue
 
-                # TODO This import machinery won't work on Python 2.
-                # Import module from a file.
-                import importlib.machinery
-                mod_loader = importlib.machinery.SourceFileLoader(
-                    'pyi_hook.'+imported_name, hook_file_name)
-
                 logger.info('Processing hook   %s' % os.path.basename(hook_file_name))
+
+                # Import hook module from a file.
                 # hook_name_space represents the code of 'hook-imported_name.py'
-                hook_name_space = mod_loader.load_module()
+                hook_name_space = importlib_load_source('pyi_hook.'+imported_name, hook_file_name)
 
                 ### Processing hook API.
 

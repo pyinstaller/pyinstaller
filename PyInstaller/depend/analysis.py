@@ -39,38 +39,11 @@ from PyInstaller import compat as compat
 import PyInstaller.utils
 from PyInstaller.utils.misc import load_py_data_struct
 from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph
+from ..compat import importlib_load_source
+
 
 logger = logging.getLogger(__name__)
 
-# TODO Move to the "compat" module after generalizing to work under Python 2.
-# TODO Call this function in Analysis.assemble() to load import hooks as well.
-def load_module_file(module_name, filename):
-    """
-    Load the module with the passed fully-qualified name from the file with the
-    passed absolute path.
-
-    This function opens this file for reading, evaluates its contents, and
-    returns a module object encapsulating that module's namespace. This includes
-    all attributes, classes, and functions defined by that module. This function
-    should be called to load PyInstaller hooks but *not* external modules, which
-    should *only* be imported from subprocesses (e.g., via the
-    `hookutils.exec_statement()` function).
-
-    Parameters
-    ----------
-    module_name : str
-        Fully-qualified name of the module to be loaded from that file.
-    filename : str
-        Absolute path of the file to be loaded.
-
-    Returns
-    ----------
-    types.ModuleType
-        Module object encapsulating the loaded module's namespace.
-    """
-    from importlib.machinery import SourceFileLoader
-    mod_loader = SourceFileLoader(module_name, filename)
-    return mod_loader.load_module()
 
 class PyiModuleGraph(ModuleGraph):
     """
@@ -180,8 +153,7 @@ class PyiModuleGraph(ModuleGraph):
         if fqname in self._graph_hooks:
             hook_filename = self._graph_hooks[fqname]
             logger.info('Processing graph hook   %s', os.path.basename(hook_filename))
-            hook_namespace = load_module_file(
-                'pyi_graph_hook.' + fqname, hook_filename)
+            hook_namespace = importlib_load_source('pyi_graph_hook.' + fqname, hook_filename)
 
             # Graph hooks are required to define the hook() function.
             if not hasattr(hook_namespace, 'hook'):
