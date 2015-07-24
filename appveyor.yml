@@ -38,7 +38,7 @@ install:
   # PyInstaller depends on pywin32 package.
   # This package is not available for 'pip install'.
   # TODO
-  - ps: (new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py%PYTHON_VERSION%.exe', 'C:\Projects\pywin32-219.win32-py%PYTHON_VERSION%.exe')
+  - ps: (new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py'+$env:PYTHON_VERSION+'.exe', 'C:\Projects\pywin32-219.win32-py'+$env:PYTHON_VERSION+'.exe')
   - "%CMD_IN_ENV% easy_install C:\\Projects\\pywin32-219.win32-py%PYTHON_VERSION%.exe"
 
   # Install the test dependencies of the project. If some dependencies contain
