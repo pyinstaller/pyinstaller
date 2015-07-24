@@ -92,7 +92,7 @@ from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
 from PyInstaller import compat
-from PyInstaller.compat import architecture
+from PyInstaller.compat import architecture, string_types
 from PyInstaller import log as logging
 from PyInstaller.utils.win32 import winresource
 
@@ -685,7 +685,7 @@ class Manifest(object):
     
     def parse(self, filename_or_file, initialize=True):
         """ Load manifest from file or file object """
-        if isinstance(filename_or_file, str):
+        if isinstance(filename_or_file, string_types):
             filename = filename_or_file
         else:
             filename = filename_or_file.name
@@ -893,7 +893,7 @@ class Manifest(object):
         """ Write the manifest as XML to a file or file object """
         if not filename_or_file:
             filename_or_file = self.filename
-        if isinstance(filename_or_file, str):
+        if isinstance(filename_or_file, string_types):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toprettyxml(indent, newl, encoding)
         filename_or_file.write(xmlstr.encode())
@@ -904,7 +904,7 @@ class Manifest(object):
         """ Write the manifest as XML to a file or file object """
         if not filename_or_file:
             filename_or_file = self.filename
-        if isinstance(filename_or_file, str):
+        if isinstance(filename_or_file, string_types):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toxml(indent, newl, encoding)
         filename_or_file.write(xmlstr.encode())
