@@ -624,18 +624,15 @@ class Analysis(Target):
         # Implement cache of modules for which there exists a hook. Keep order of added items.
         hooks_mod_cache = collections.OrderedDict()  # key - module name, value - path to hook directory.
         # PyInstaller import hooks.
-        hooks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hooks')
-        hooks_file_list = glob.glob(os.path.join(hooks_dir, 'hook-*.py'))
-        for f in hooks_file_list:
-            hooks_mod_cache[os.path.basename(f)[5:-3]] = f
-        # Custom import hooks.
+        hooks_pathes = [os.path.join(os.path.dirname(__file__), 'hooks')]
         if self.hookspath:
-            # Hooks path is a list and we need to cache files from multiple directories.
-            for pth in self.hookspath:
-                file_list = glob.glob(os.path.join(pth, 'hook-*.py'))
-                for f in file_list:
-                    name = os.path.basename(f)[5:-3]
-                    hooks_mod_cache[name] = f
+            # Custom import hooks
+            hooks_pathes.extend(self.hookspath)
+        for pth in hooks_pathes:
+            hooks_file_list = glob.glob(os.path.join(pth, 'hook-*.py'))
+            for f in hooks_file_list:
+                name = os.path.basename(f)[5:-3]
+                hooks_mod_cache[name] = os.path.abspath(f)
 
         # TODO "temp_toc" appears to be unused and have no side effects.
         # Remove, please.
