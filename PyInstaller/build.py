@@ -635,7 +635,7 @@ class Analysis(Target):
                 file_list = glob.glob(os.path.join(pth, 'hook-*.py'))
                 for f in file_list:
                     name = os.path.basename(f)[5:-3]
-                    hooks_mod_cache[name] = pth
+                    hooks_mod_cache[name] = f
 
         # TODO "temp_toc" appears to be unused and have no side effects.
         # Remove, please.
