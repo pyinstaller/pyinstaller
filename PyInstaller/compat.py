@@ -153,16 +153,13 @@ else:
 
 
 # List of suffixes for Python C extension modules.
-if is_py2:
-    # TODO implement getting extension suffixes for Python 2 or older Python 3.
-    if is_win:
-        EXTENSION_SUFFIXES = ['.pyd', '.dll']
-    else:
-        EXTENSION_SUFFIXES = ['.so']
-else:
+try:
     # In Python 3.3+ There is a list
-    import importlib.machinery
-    EXTENSION_SUFFIXES = importlib.machinery.EXTENSION_SUFFIXES
+    from importlib.machinery import EXTENSION_SUFFIXES
+except ImportError:
+    import imp
+    EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes()
+                          if f[2] == imp.C_EXTENSION]
 
 
 # In Python 3 'Tkinter' has been made lowercase - 'tkinter'. Keep Python 2

@@ -24,18 +24,12 @@ logger = logging.getLogger(__name__)
 # All these extension represent Python modules or extension modules
 PY_EXECUTABLE_SUFFIXES = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
 
-# these suffixes represent python extension modules
-try:
-    from importlib.machinery import EXTENSION_SUFFIXES as PY_EXTENSION_SUFFIXES
-except ImportError:
-    import imp
-    PY_EXTENSION_SUFFIXES = set([f[0] for f in imp.get_suffixes()
-                                 if f[2] == imp.C_EXTENSION])
+# These suffixes represent Python extension modules
+from PyInstaller.compat import EXTENSION_SUFFIXES as PY_EXTENSION_SUFFIXES
 
 # These extensions represent Python executables and should therefore be
 # ignored when collecting data files.
 PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
-
 
 # Some hooks need to save some values. This is the dict that can be used for
 # that.
