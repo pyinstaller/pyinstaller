@@ -41,7 +41,7 @@ the running Python version.
   https://github.com/BlackXeronic/pefile_py3
 
 - For status of official support for Python3 see
-  https://code.google.com/p/pefile/issues/detail?id=36
+  https://github.com/erocarrera/pefile/issues/36
 
 
 macholib
