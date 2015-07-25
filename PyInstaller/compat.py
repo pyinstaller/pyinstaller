@@ -155,7 +155,10 @@ else:
 # List of suffixes for Python C extension modules.
 if is_py2:
     # TODO implement getting extension suffixes for Python 2 or older Python 3.
-    EXTENSION_SUFFIXES = ['.so']
+    if is_win:
+        EXTENSION_SUFFIXES = ['.pyd', '.dll']
+    else:
+        EXTENSION_SUFFIXES = ['.so']
 else:
     # In Python 3.3+ There is a list
     import importlib.machinery
