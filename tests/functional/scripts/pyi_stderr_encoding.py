@@ -9,7 +9,10 @@
 
 import sys
 # Get the expected stdout/stderr encoding for this platform.
-from pyi_testmod_stdxxx_encoding import encoding
+from pyi_testmod_gettemp import gettemp
+
+with open(gettemp("stderr_encoding.build")) as f:
+    encoding = f.read()
 
 frozen_encoding = str(sys.stderr.encoding)
 

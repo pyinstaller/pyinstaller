@@ -193,11 +193,16 @@ def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
 
-def test_stderr_encoding(pyi_builder):
+def test_stderr_encoding(tmpdir, pyi_builder):
+    with open(os.path.join(tmpdir.strpath, 'stderr_encoding.build'), 'w') as f:
+        f.write(sys.stderr.encoding)
     pyi_builder.test_script('pyi_stderr_encoding.py')
 
 
-def test_stdout_encoding(pyi_builder):
+def test_stdout_encoding(tmpdir, pyi_builder):
+    with open(os.path.join(tmpdir.strpath, 'stdout_encoding.build'), 'w') as f:
+        f.write(sys.stdout.encoding)
+
     pyi_builder.test_script('pyi_stdout_encoding.py')
 
 
