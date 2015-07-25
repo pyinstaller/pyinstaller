@@ -92,12 +92,19 @@ from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
 from PyInstaller import compat
-from PyInstaller.compat import architecture, string_types
+from PyInstaller.compat import architecture, is_py2
 from PyInstaller import log as logging
 from PyInstaller.utils.win32 import winresource
 
 logger = logging.getLogger(__name__)
 
+# String types to replace `isinstance(foo, str)`
+# Use `isinstance(foo, string_types)` instead.
+
+if is_py2:
+    string_types = basestring
+else:
+    string_types = str
 
 LANGUAGE_NEUTRAL_NT5 = "x-ww"
 LANGUAGE_NEUTRAL_NT6 = "none"

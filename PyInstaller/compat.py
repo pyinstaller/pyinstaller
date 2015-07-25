@@ -437,11 +437,4 @@ else:
         mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
         return mod_loader.load_module()
 
-# String types to replace `isinstance(foo, str)`
-# Use `isinstance(foo, string_types)` instead.
-
-if is_py2:
-    string_types = (str, unicode)
-else:
-    string_types = (str,)
 
