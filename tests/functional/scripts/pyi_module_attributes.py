@@ -15,33 +15,12 @@
 import copy
 import os
 import subprocess
-import sys
 import xml.etree.ElementTree as ET
 import xml.etree.cElementTree as cET
 
+from pyi_testmod_gettemp import gettemp
 
-_exec_dir = os.path.dirname(sys.executable)
-# onedir mode:
-# tmpdir
-# ├── python_exe.build
-# ├── build
-# └── dist
-#     └── appname
-#         └── appname.exe
-_pyexe_file_onedir = os.path.join(_exec_dir, '..', '..', 'python_exe.build')
-# onefile mode:
-# tmpdir
-# ├── python_exe.build
-# ├── build
-# └── dist
-#     └── appname.exe
-_pyexe_file_onefile = os.path.join(_exec_dir, '..', 'python_exe.build')
-
-if os.path.exists(_pyexe_file_onedir):
-    _pyexe_file = _pyexe_file_onedir
-else:
-    _pyexe_file = _pyexe_file_onefile
-
+_pyexe_file = gettemp("python_exe.build")
 
 _lines = open(_pyexe_file).readlines()
 _pyexe = _lines[0].strip()
