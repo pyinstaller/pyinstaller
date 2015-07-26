@@ -156,6 +156,19 @@ def test_python_makefile(pyi_builder):
     pyi_builder.test_script('pyi_python_makefile.py')
 
 
+def test_set_icon(pyi_builder):
+    icon_dir = os.path.join(_DATA_DIR, 'icons')
+    if is_win:
+        args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]
+    elif is_darwin:
+        # On OS X icon is applied only for windowed mode.
+        icon = ['--windowed', '--icon', os.path.join(icon_dir, 'pyi_icon.icns')]
+    else:
+        pytest.skip('option --icon works only on Windows and Mac OS X')
+    # Just use helloworld script.
+    pyi_builder.test_script('pyi_helloworld.py', pyi_args=args)
+
+
 def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
@@ -188,7 +201,6 @@ def test_threading_module(pyi_builder):
 @importorskip('win32com')
 def test_pywin32_win32com(pyi_builder):
     pyi_builder.test_script('pyi_pywin32_win32com.py')
-    #assert 0
 
 
 @importorskip('win32ui')
