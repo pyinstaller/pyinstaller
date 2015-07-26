@@ -25,14 +25,14 @@
 import pkgutil
 
 # Import just to get the necessary example modules.
-import httplib
+import compileall
 import sqlite3
 
 
 # Use different types of modules. In frozen state there are import hooks
 # for builtin, frozen and C extension modules.
 builtin_mod = 'sys'
-frozen_mod = 'httplib'
+frozen_mod = 'compileall'
 frozen_pkg = 'encodings'
 c_extension_mod = '_sqlite3'
 
