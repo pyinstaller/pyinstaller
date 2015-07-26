@@ -20,7 +20,7 @@ import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import is_unix, is_win, BYTECODE_MAGIC
+from PyInstaller.compat import is_unix, is_win, BYTECODE_MAGIC, is_py2
 
 logger = logging.getLogger(__name__)
 
@@ -271,9 +271,13 @@ def save_py_data_struct(filename, data):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    outf = open(filename, 'w')
-    pprint.pprint(data, outf)
-    outf.close()
+    if is_py2:
+        import codecs
+        f = codecs.open(filename, 'w', encoding='utf-8')
+    else:
+        f = open(filename, 'w', encoding='utf-8')
+    with f:
+        pprint.pprint(data, f)
 
 
 def load_py_data_struct(filename):
@@ -282,7 +286,13 @@ def load_py_data_struct(filename):
     :param filename:
     :return:
     """
-    return eval(open(filename, 'rU').read())
+    if is_py2:
+        import codecs
+        f = codecs.open(filename, 'rU', encoding='utf-8')
+    else:
+        f = open(filename, 'rU', encoding='utf-8')
+    with f:
+        return eval(f.read())
 
 
 def absnormpath(apath):
