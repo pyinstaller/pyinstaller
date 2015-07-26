@@ -29,42 +29,6 @@ import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
-# TODO Create a test from this function - test update icon on windows.
-def test_RsrcUpdate(config):
-    config['hasRsrcUpdate'] = 0
-    if not is_win:
-        return
-    # only available on windows
-    logger.info("Testing for ability to set icons, version resources...")
-    try:
-        import win32api
-        from PyInstaller.utils.win32 import icon, versioninfo
-    except ImportError as detail:
-        logger.info('... resource update unavailable - %s', detail)
-        return
-
-    test_exe = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, 'runw.exe')
-    if not os.path.exists(test_exe):
-        config['hasRsrcUpdate'] = 0
-        logger.error('... resource update unavailable - %s not found', test_exe)
-        return
-
-    # The test_exe may be read-only
-    # make a writable copy and test using that
-    rw_test_exe = os.path.join(tempfile.gettempdir(), 'me_test_exe.tmp')
-    shutil.copyfile(test_exe, rw_test_exe)
-    try:
-        # TODO use CopyIcons() from utils.win32.icon.py.
-        hexe = win32api.BeginUpdateResource(rw_test_exe, 0)
-    except:
-        logger.info('... resource update unavailable - win32api.BeginUpdateResource failed')
-    else:
-        win32api.EndUpdateResource(hexe, 1)
-        config['hasRsrcUpdate'] = 1
-        logger.info('... resource update available')
-    os.remove(rw_test_exe)
-
-
 def test_UPX(config, upx_dir):
     logger.debug('Testing for UPX ...')
     cmd = "upx"
@@ -196,12 +160,7 @@ def get_config(upx_dir, **kw):
         time.sleep(1)
 
     config = {}
-    # TODO Create a test from this function - test update icon on windows. Otherwise it just slows down tests on linux.
-    #test_RsrcUpdate(config)
-    if is_win:
-        config['hasRsrcUpdate'] = 1
-    else:
-        config['hasRsrcUpdate'] = 0
     test_UPX(config, upx_dir)
+
     find_PYZ_dependencies(config)
     return config

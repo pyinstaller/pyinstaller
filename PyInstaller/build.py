@@ -1457,9 +1457,11 @@ class EXE(Target):
             return True
 
         icon, versrsrc, resources = data[3:6]
-        if (icon or versrsrc or resources) and not CONF['hasRsrcUpdate']:
+        if (versrsrc or resources) and not is_win:
             # todo: really ignore :-)
-            logger.info("ignoring icon, version, manifest and resources = platform not capable")
+            logger.warn('ignoring version, manifest and resources, platform not capable')
+        if icon and not (is_win or is_darwin):
+            logger.warn('ignoring icon, platform not capable')
 
         mtm = data[-1]
         if mtm != misc.mtime(self.name):
@@ -1522,8 +1524,7 @@ class EXE(Target):
             trash.append(tmpnm)
             exe = tmpnm
 
-        if CONF['hasRsrcUpdate'] and (self.icon or self.versrsrc or
-                                        self.resources):
+        if is_win and (self.icon or self.versrsrc or self.resources):
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
@@ -2212,10 +2213,9 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     else:
         CONF.update(pyi_config)
 
-    if CONF['hasRsrcUpdate']:
+    # Append assemblies to dependencies only on Winodws.
+    if is_win:
         CONF['pylib_assemblies'] = bindepend.getAssemblies(sys.executable)
-    else:
-        CONF['pylib_assemblies'] = None
 
     if CONF['hasUPX']:
         setupUPXFlags()
