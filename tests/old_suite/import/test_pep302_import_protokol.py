@@ -21,13 +21,14 @@
 # The return values should be same in frozen/unfrozen state. The only difference for frozen state
 # is that in frozen state are used import hooks from pyi_importers.
 
-
+import sys
 import pkgutil
 
 # Import just to get the necessary example modules.
 import compileall
 import sqlite3
 
+frozen = getattr(sys, 'frozen', False)
 
 # Use different types of modules. In frozen state there are import hooks
 # for builtin, frozen and C extension modules.
@@ -52,15 +53,20 @@ mod = frozen_mod
 ldr = pkgutil.get_loader(mod)
 assert ldr.is_package(mod) == False
 assert ldr.get_code(mod) is not None
-assert ldr.get_source(mod) is None
+if frozen:
+    assert ldr.get_source(mod) is None
+else:
+    assert ldr.get_source(mod) is not None
 
 print('Testing class FrozenImporter - package.')
 mod = frozen_pkg
 ldr = pkgutil.get_loader(mod)
 assert ldr.is_package(mod) == True
 assert ldr.get_code(mod) is not None
-assert ldr.get_source(mod) is None
-
+if frozen:
+    assert ldr.get_source(mod) is None
+else:
+    assert ldr.get_source(mod) is not None
 
 # CExtensionImporter class
 print('Testing class CExtensionImporter.')
