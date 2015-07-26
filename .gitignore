@@ -70,4 +70,6 @@ __pycache__/
 /bootloader/.lock-wscript
 /bootloader/build
 /bootloader/waf-*
+/bootloader/waf3-*
 /bootloader/.waf-*
+/bootloader/.waf3-*

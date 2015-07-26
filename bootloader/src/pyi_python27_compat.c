@@ -36,3 +36,4 @@ inline int PI_Py2Sys_SetArgvEx(int argc, char ** argv, int updatepath) {
 inline void PI_Py2Sys_AddWarnOption(char * str) {
   PI_PySys_AddWarnOption((wchar_t *) str);
 };
+bool is_py2; // true if we are loading Python 2.x library
