@@ -763,6 +763,7 @@ class Analysis(Target):
                 # It is a sign that iteration over hooks should continue.
                 applied_hooks.append(imported_name)
 
+
             ### All hooks from cache were traversed - stop or run again.
             if not applied_hooks:  # Empty list.
                 # No new hook was applied - END of hooks processing.
@@ -1239,7 +1240,7 @@ class PKG(Target):
         mytoc = []
         seenInms = {}
         seenFnms = {}
-        toc = add_suffix_to_extensions(self.toc)
+        toc = self.toc
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in toc:
