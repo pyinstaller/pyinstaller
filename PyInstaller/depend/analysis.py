@@ -35,11 +35,12 @@ about them, replacing what the old ImpTracker list could do.
 import glob
 import logging
 import os
-from PyInstaller import compat as compat
+from .. import compat as compat
 import PyInstaller.utils
-from PyInstaller.utils.misc import load_py_data_struct
-from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph
+from ..utils.misc import load_py_data_struct
+from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..compat import importlib_load_source
+from .. import HOMEPATH
 
 
 logger = logging.getLogger(__name__)
@@ -559,3 +560,32 @@ class FakeModule(object):
         self.node.filename = path_to_new_code
         # Update dependencies in the graph.
         self.graph._scan_code(new_code, self.node)
+
+
+def get_bootstrap_modules():
+    """
+    Get TOC with the bootstrapping modules and their dependencies.
+    :return: TOC with modules
+    """
+    # Import 'struct' modules to get real paths to module file names.
+    mod1 = __import__('_struct')  # C extension.
+    mod2 = __import__('struct')
+    # Basic modules necessary for the bootstrap process.
+    loader_mods = []
+    loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+    # On some platforms (Windows, Debian/Ubuntu) '_struct' module is a built-in module (linked statically)
+    # and thus does not have attribute __file__.
+    if hasattr(mod1, '__file__'):
+        loader_mods =[('_struct', os.path.abspath(mod1.__file__), 'EXTENSION')]
+    # NOTE:These modules should be kept simple without any complicated dependencies.
+    loader_mods +=[
+        ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
+        ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
+        ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
+        ('pyi_carchive',  os.path.join(loaderpath, 'pyi_carchive.pyc'), 'PYMODULE'),
+        ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE'),
+        ('_pyi_bootstrap', os.path.join(loaderpath, '_pyi_bootstrap.py'), 'PYSOURCE'),
+        ('_pyi_egg_install', os.path.join(loaderpath, '_pyi_egg_install.py'), 'PYSOURCE'),
+    ]
+    toc = TOC(loader_mods)
+    return toc.data

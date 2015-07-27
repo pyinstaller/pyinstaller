@@ -35,7 +35,7 @@ from .compat import is_py2, is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PY
 from .compat import importlib_load_source
 from .depend import bindepend
 from .depend import dylib
-from .depend.analysis import PyiModuleGraph, TOC, FakeModule
+from .depend.analysis import PyiModuleGraph, TOC, FakeModule, get_bootstrap_modules
 from .depend.utils import create_py3_base_library, is_path_to_egg
 from .loader import pyi_archive, pyi_carchive
 from .utils import misc
@@ -923,7 +923,7 @@ class PYZ(Target):
         # Level of zlib compression.
         self.level = level
         # Compile top-level modules so we could run them at app startup.
-        self.dependencies = misc.compile_py_files(CONF['PYZ_dependencies'], CONF['workpath'])
+        self.dependencies = misc.compile_py_files(get_bootstrap_modules(), CONF['workpath'])
         self.cipher = cipher
         self.__postinit__()
 
@@ -944,10 +944,10 @@ class PYZ(Target):
         return False
 
     def assemble(self):
-        from .config import CONF
         logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
         pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict, cipher=self.cipher)
-        toc = self.toc - CONF['PYZ_dependencies']
+        # Do not bundle PyInstaller bootstrap modules into PYZ archive.
+        toc = self.toc - self.dependencies
         pyz.build(self.name, toc)
         save_py_data_struct(self.out, (self.name, self.level, self.toc))
         return 1

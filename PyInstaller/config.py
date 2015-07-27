@@ -39,7 +39,6 @@ This is the list of known variables. (Please update it if necessary.)
 hasUPX
 hiddenimports
 noconfirm
-PYZ_dependencies
 ui_admin
 ui_access
 upx_dir
