@@ -23,7 +23,6 @@ import platform
 import shutil
 import sys
 import tempfile
-import importlib
 
 
 # Relative imports to PyInstaller modules.
@@ -31,6 +30,7 @@ from . import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from . import compat
 from . import log as logging
 import collections
+from .utils.misc import absnormpath
 from .compat import is_py2, is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
 from .compat import importlib_load_source
 from .depend import bindepend
@@ -103,11 +103,6 @@ def setupUPXFlags():
     f = "--compress-icons=0 " + f
     f = "--best " + f
     compat.setenv("UPX", f)
-
-
-# TODO find better place for function.
-def absnormpath(apath):
-    return os.path.abspath(os.path.normpath(apath))
 
 
 # TODO find better place for function.
@@ -1424,7 +1419,6 @@ class EXE(Target):
             )
 
     def check_guts(self, last_build):
-        from .config import CONF
         if not os.path.exists(self.name):
             logger.info("Rebuilding %s because %s missing",
                         self.outnm, os.path.basename(self.name))
@@ -1474,7 +1468,6 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
-        from .config import CONF
         logger.info("Building EXE from %s", os.path.basename(self.out))
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
