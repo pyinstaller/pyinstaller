@@ -95,6 +95,7 @@ def test_UPX(config, upx_dir):
                 node_list.append(node)
 '''
 
+# TODO move this into build.py phase.
 def find_PYZ_dependencies(config):
     logger.debug("Computing PYZ dependencies")
     ## We need to import `pyi_importers` from `PyInstaller` directory, but
@@ -144,10 +145,12 @@ def find_PYZ_dependencies(config):
         ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
         ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
         ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
+        ('pyi_carchive',  os.path.join(loaderpath, 'pyi_carchive.pyc'), 'PYMODULE'),
         ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
     ]
     toc = TOC(loader_mods)
     config['PYZ_dependencies'] = toc.data
+    logger.warn(toc)
 
 
 def get_config(upx_dir, **kw):

@@ -328,10 +328,6 @@ class Analysis(Target):
         # Include initialization Python code in PyInstaller analysis.
         self.inputs = [
             os.path.join(_init_code_path, '_pyi_bootstrap.py'),
-            os.path.join(_init_code_path, 'pyi_importers.py'),
-            os.path.join(_init_code_path, 'pyi_archive.py'),
-            os.path.join(_init_code_path, 'pyi_carchive.py'),
-            os.path.join(_init_code_path, 'pyi_os_path.py'),
             ]
         self.loader_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         #TODO: store user scripts in separate variable from init scripts,
@@ -588,8 +584,8 @@ class Analysis(Target):
         # self.inputs, each as a normalized pathname.
 
         # TODO: (S) in __init__ the input scripts should be saved separately from the
-        # pyi-loader set. TEMP: assume the first/only user script is self.inputs[5]
-        script = self.inputs[5]
+        # pyi-loader set. TEMP: assume the first/only user script is self.inputs[1]
+        script = self.inputs[1]
         logger.info("Analyzing %s", script)
         self.graph.run_script(script)
         # list to hold graph nodes of loader scripts and runtime hooks in use order
