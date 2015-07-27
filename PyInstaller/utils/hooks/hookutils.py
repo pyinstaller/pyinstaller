@@ -503,7 +503,7 @@ def django_find_root_dir():
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
     from PyInstaller.config import CONF
-    manage_py = CONF['scripts'][0]
+    manage_py = CONF['main_script']
     manage_dir = os.path.dirname(os.path.abspath(manage_py))
 
     # Get the Django root directory. The directory that contains settings.py and url.py.

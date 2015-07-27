@@ -302,7 +302,7 @@ class Analysis(Target):
         absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py")),
         ))
 
-    def __init__(self, scripts=None, pathex=None, hiddenimports=None,
+    def __init__(self, scripts, pathex=None, hiddenimports=None,
                  hookspath=None, excludes=None, runtime_hooks=[], cipher=None):
         """
         scripts
@@ -323,11 +323,11 @@ class Analysis(Target):
         """
         super(Analysis, self).__init__()
         from .config import CONF
-        CONF['scripts'] = scripts
 
         # Include initialization Python code in PyInstaller analysis.
         self.inputs = [
             os.path.join(_init_code_path, '_pyi_bootstrap.py'),
+            os.path.join(_init_code_path, '_pyi_egg_install.py'),
             ]
         self.loader_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         #TODO: store user scripts in separate variable from init scripts,
@@ -585,7 +585,7 @@ class Analysis(Target):
 
         # TODO: (S) in __init__ the input scripts should be saved separately from the
         # pyi-loader set. TEMP: assume the first/only user script is self.inputs[1]
-        script = self.inputs[1]
+        script = self.inputs[2]
         logger.info("Analyzing %s", script)
         self.graph.run_script(script)
         # list to hold graph nodes of loader scripts and runtime hooks in use order
