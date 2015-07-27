@@ -263,7 +263,7 @@ def compile_py_files(toc, workpath):
 
 def save_py_data_struct(filename, data):
     """
-    Save data into text file as Python data structore.
+    Save data into text file as Python data structure.
     :param filename:
     :param data:
     :return:

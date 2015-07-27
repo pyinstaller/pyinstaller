@@ -892,7 +892,7 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc_dict, name=None, level=9, cipher=None):
+    def __init__(self, toc_dict, name=None, cipher=None):
         """
         toc_dict
             toc_dict['toc']
@@ -902,9 +902,6 @@ class PYZ(Target):
         name
                 A filename for the .pyz. Normally not needed, as the generated
                 name will do fine.
-        level
-                The Zlib compression level to use. If 0, the zlib module is
-                not required.
         cipher
                 The block cipher that will be used to encrypt Python bytecode.
         """
@@ -916,8 +913,6 @@ class PYZ(Target):
         self.name = name
         if name is None:
             self.name = self.out[:-3] + 'pyz'
-        # Level of zlib compression.
-        self.level = level
         # Compile top-level modules so we could run them at app startup.
         self.dependencies = misc.compile_py_files(get_bootstrap_modules(), CONF['workpath'])
         self.cipher = cipher
@@ -941,11 +936,13 @@ class PYZ(Target):
 
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict, cipher=self.cipher)
+        pyz = pyi_archive.ZlibArchive(code_dict=self.code_dict, cipher=self.cipher)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
         pyz.build(self.name, toc)
-        save_py_data_struct(self.out, (self.name, self.level, self.toc))
+        # FIXME compression level was dropped - remove it from the save_py_data_struct
+        compresssion_level = 0
+        save_py_data_struct(self.out, (self.name, compresssion_level, self.toc))
         return 1
 
 

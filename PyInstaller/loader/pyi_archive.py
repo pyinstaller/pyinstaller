@@ -347,15 +347,16 @@ class ZlibArchive(Archive):
     from the executable created by PyInstaller.
 
     This archive is used for bundling python modules inside the executable.
+
+    NOTE: The whole ZlibArchive (PYZ) is compressed so it is not necessary
+          to compress single modules with zlib.
     """
     MAGIC = b'PYZ\0'
     TOCPOS = 8
     HDRLEN = Archive.HDRLEN + 5
     TOCTMPLT = {}
-    LEVEL = 9
-    NO_COMPRESSION_LEVEL = 0
 
-    def __init__(self, path=None, offset=None, level=9, code_dict={},
+    def __init__(self, path=None, offset=None, code_dict={},
                  cipher=None):
         """
         code_dict      dict containing module code objects from ModuleGraph.
@@ -380,19 +381,7 @@ class ZlibArchive(Archive):
         # to avoid writting .pyc/pyo files to hdd.
         self.code_dict = code_dict
 
-        # Zlib compression level.
-        self.LEVEL = level
-
         Archive.__init__(self, path, offset)
-
-        # dynamic import so not imported if not needed
-        self._mod_zlib = None
-
-        if self.LEVEL > self.NO_COMPRESSION_LEVEL:
-            try:
-                self._mod_zlib = __import__('zlib')
-            except ImportError:
-                raise RuntimeError('zlib required but cannot be imported')
 
         if cipher:
             self.crypted = 1
@@ -407,13 +396,8 @@ class ZlibArchive(Archive):
         with self.lib:
             self.lib.seek(self.start + pos)
             obj = self.lib.read(lngth)
-        try:
-            if self.crypted:
-                obj = self._mod_zlib.decompress(self.cipher.decrypt(obj))
-            else:
-                obj = self._mod_zlib.decompress(obj)
-        except self._mod_zlib.error:
-            raise ImportError("PYZ entry '%s' failed to decompress" % name)
+        if self.crypted:
+            obj =self.cipher.decrypt(obj)
         try:
             co = marshal.loads(obj)
         except EOFError:
@@ -429,7 +413,7 @@ class ZlibArchive(Archive):
         base, ext = self.os.path.splitext(self.os.path.basename(pth))
         ispkg = base == '__init__'
 
-        obj = self._mod_zlib.compress(marshal.dumps(self.code_dict[name]), self.LEVEL)
+        obj = marshal.dumps(self.code_dict[name])
         self.toc[name] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
 
@@ -438,11 +422,12 @@ class ZlibArchive(Archive):
         add level
         """
         Archive.update_headers(self, tocpos)
-        self.lib.write(struct.pack('!iB', self.LEVEL, self.crypted))
+        self.lib.write(struct.pack('!B', self.crypted))
 
     def checkmagic(self):
         Archive.checkmagic(self)
-        self.LEVEL, self.crypted = struct.unpack('!iB', self.lib.read(5))
+        # struct.unpack() returns tupple even for just one item.
+        self.crypted = struct.unpack('!B', self.lib.read(1))[0]
 
         if self.crypted:
             import pyi_crypto
