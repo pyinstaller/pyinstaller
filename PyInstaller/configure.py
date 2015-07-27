@@ -141,16 +141,18 @@ def find_PYZ_dependencies(config):
     if hasattr(mod1, '__file__'):
         loader_mods =[('_struct', os.path.abspath(mod1.__file__), 'EXTENSION')]
 
+    # NOTE:These modules should be kept simple without any complicated dependencies.
     loader_mods +=[
         ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
         ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
         ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
         ('pyi_carchive',  os.path.join(loaderpath, 'pyi_carchive.pyc'), 'PYMODULE'),
-        ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE')
+        ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE'),
+        ('_pyi_bootstrap', os.path.join(loaderpath, '_pyi_bootstrap.py'), 'PYSOURCE'),
+        ('_pyi_egg_install', os.path.join(loaderpath, '_pyi_egg_install.py'), 'PYSOURCE'),
     ]
     toc = TOC(loader_mods)
     config['PYZ_dependencies'] = toc.data
-    logger.warn(toc)
 
 
 def get_config(upx_dir, **kw):

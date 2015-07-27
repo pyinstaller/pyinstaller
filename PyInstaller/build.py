@@ -324,14 +324,7 @@ class Analysis(Target):
         super(Analysis, self).__init__()
         from .config import CONF
 
-        # Include initialization Python code in PyInstaller analysis.
-        self.inputs = [
-            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
-            os.path.join(_init_code_path, '_pyi_egg_install.py'),
-            ]
-        self.loader_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-        #TODO: store user scripts in separate variable from init scripts,
-        # see TODO (S) below
+        self.inputs = []
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
                 logger.warn('Ignoring obsolete auto-added script %s', script)
@@ -574,39 +567,28 @@ class Analysis(Target):
         # Instantiate a ModuleGraph. The class is defined at end of this module.
         # The argument is the set of paths to use for imports: sys.path,
         # plus our loader, plus other paths from e.g. --path option).
-        self.graph = PyiModuleGraph(HOMEPATH, sys.path + [self.loader_path] + self.pathex,
+        self.graph = PyiModuleGraph(HOMEPATH, sys.path + self.pathex,
                                     implies=get_implies())
 
-        # Graph the first script in the analysis, and save its node to use as
+        # The first script in the analysis is the main user script. Its node is used as
         # the "caller" node for all others. This gives a connected graph rather than
         # a collection of unrelated trees, one for each of self.inputs.
-        # The list of scripts, starting with our own bootstrap ones, is in
-        # self.inputs, each as a normalized pathname.
+        # The list of scripts is in self.inputs, each as a normalized pathname.
 
-        # TODO: (S) in __init__ the input scripts should be saved separately from the
-        # pyi-loader set. TEMP: assume the first/only user script is self.inputs[1]
-        script = self.inputs[2]
-        logger.info("Analyzing %s", script)
-        self.graph.run_script(script)
-        # list to hold graph nodes of loader scripts and runtime hooks in use order
+        # List to hold graph nodes of scripts and runtime hooks in use order.
         priority_scripts = []
-        # With a caller node in hand, import all the loader set as called by it.
-        # The old Analysis checked that the script existed and raised an error,
-        # but now just assume that if it does not, Modulegraph will raise error.
+
+        # Assume that if the script does not exist, Modulegraph will raise error.
         # Save the graph nodes of each in sequence.
-        for script in self.inputs[:5] :
+        for script in self.inputs:
             logger.info("Analyzing %s", script)
-            priority_scripts.append( self.graph.run_script(script))
-        # And import any remaining user scripts as if called by the first one.
-        for script in self.inputs[6:] :
-            logger.info("Analyzing %s", script)
-            node = self.graph.run_script(script)
+            priority_scripts.append(self.graph.run_script(script))
 
         # Analyze the script's hidden imports (named on the command line)
         for modnm in self.hiddenimports:
-            logger.debug('HDIM module: %s' % modnm)
+            logger.debug('Hidden import: %s' % modnm)
             if self.graph.findNode(modnm) is not None:
-                logger.info("Hidden import %r has been found otherwise", modnm)
+                logger.debug('Hidden import %r already found', modnm)
                 continue
             logger.info("Analyzing hidden import %r", modnm)
             # ModuleGraph throws Import Error if import not found
@@ -791,7 +773,9 @@ class Analysis(Target):
 
 
         # Analyze run-time hooks.
-        self.graph.analyze_runtime_hooks(priority_scripts, self.custom_runtime_hooks)
+        # Run-time hooks has to be executed before user scripts. Add them
+        # to the beginning of 'priority_scripts'.
+        priority_scripts = self.graph.analyze_runtime_hooks(self.custom_runtime_hooks) + priority_scripts
 
         # 'priority_scripts' is now a list of the graph nodes of custom runtime
         # hooks, then regular runtime hooks, then the PyI loader scripts.
@@ -803,7 +787,8 @@ class Analysis(Target):
         self.scripts = self.graph.nodes_to_TOC(priority_scripts)
         # Put all other script names into the TOC after them. (The rthooks names
         # will be found again, but TOC.append skips duplicates.)
-        self.scripts = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
+        #self.scripts = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
+
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries  = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
         # Fill the "pure" list with pure Python modules.

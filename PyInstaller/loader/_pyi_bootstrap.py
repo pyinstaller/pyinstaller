@@ -81,11 +81,6 @@ if VIRTENV in os.environ:
     del os.environ[VIRTENV]
 
 
-# Forces PyInstaller to include fake 'site' module. Fake 'site' module
-# is dummy and does not do any search for additional Python modules.
-import site
-
-
 # Ensure PYTHONPATH contains absolute paths. Otherwise import of other python
 # modules will fail when current working directory is changed by frozen
 # application.
