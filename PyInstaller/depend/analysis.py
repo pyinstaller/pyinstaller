@@ -568,6 +568,8 @@ class FakeModule(object):
         # Keep the original filename in the fake code object.
         new_code = PyInstaller.utils.misc.get_code_object(path_to_new_code, new_filename=self.node.filename)
         # Update node.
+        # TODO Need to update many attributes more, e.g. node.globalnames.
+        # Perhaps it's better to replace the node
         self.node.code = new_code
         self.node.filename = path_to_new_code
         # Update dependencies in the graph.
