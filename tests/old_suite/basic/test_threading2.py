@@ -44,7 +44,7 @@ else:
     # Run subprocess.
     import subprocess
     proc = subprocess.Popen([itself], stdout=subprocess.PIPE,
-                            env={'PYI_THREAD_TEST_CASE': 'any_string'},
+                            env={'PYI_THREAD_TEST_CASE': 'yes'},
                             stderr=subprocess.PIPE, shell=False)
     # Waits for subprocess to complete.
     out, err = proc.communicate()
