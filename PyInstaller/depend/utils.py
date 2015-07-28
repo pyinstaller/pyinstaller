@@ -14,29 +14,22 @@ Utility functions related to analyzing/bundling dependencies.
 
 import ctypes
 import dis
-
-import imp
 import io
 import marshal
 import os
+import re
 import zipfile
 
-from PyInstaller.lib.modulegraph import find_modules, modulegraph
+from ..lib.modulegraph import modulegraph
 
-from PyInstaller import compat
-from PyInstaller.compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC
-from PyInstaller.utils.hooks.hookutils import collect_submodules
-
-import PyInstaller.log as logging
+from .. import compat
+from ..compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC, PY3_BASE_MODULES
+from ..utils.hooks.hookutils import collect_submodules
+from .. import log as logging
 
 
 logger = logging.getLogger(__name__)
 
-                        # (mod.identifier.startswith('encodings') or \
-                        #          mod.identifier.startswith('codecs') or \
-                        #          mod.identifier.startswith('abc') or \
-                        #          mod.identifier.startswith('_weakrefset') or \
-                        #          mod.identifier.startswith('io')):
 
 # TODO ensure modules from base_library.zip are not bundled twice.
 # TODO find out if modules from base_library.zip could be somehow bundled into the .exe file.
@@ -64,7 +57,11 @@ def create_py3_base_library(libzip_filename, graph):
                        (x >> 16) & 0xff,
                        (x >> 24) & 0xff]))
 
-    # Constants same for all .pyc files.
+    # Construct regular expression for matching modules that should be bundled
+    # into base_library.zip.
+    regex_str = '|'.join(['(%s.*)' % x for x in PY3_BASE_MODULES])
+    regex = re.compile(regex_str)
+
 
     try:
         # Remove .zip from previous run.
@@ -76,25 +73,26 @@ def create_py3_base_library(libzip_filename, graph):
             zf.debug = 3
             for mod in graph.flatten():
                 if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
-                    st = os.stat(mod.filename)
-                    timestamp = int(st.st_mtime)
-                    size = st.st_size & 0xFFFFFFFF
-                    # Name inside a zip archive.
-                    # TODO use .pyo suffix if optimize flag is enabled.
-                    if type(mod) is modulegraph.Package:
-                        new_name = mod.identifier.replace('.', os.sep) + os.sep + '__init__' + '.pyc'
-                    else:
-                        new_name = mod.identifier.replace('.', os.sep) + '.pyc'
+                    if regex.match(mod.identifier):
+                        st = os.stat(mod.filename)
+                        timestamp = int(st.st_mtime)
+                        size = st.st_size & 0xFFFFFFFF
+                        # Name inside a zip archive.
+                        # TODO use .pyo suffix if optimize flag is enabled.
+                        if type(mod) is modulegraph.Package:
+                            new_name = mod.identifier.replace('.', os.sep) + os.sep + '__init__' + '.pyc'
+                        else:
+                            new_name = mod.identifier.replace('.', os.sep) + '.pyc'
 
-                    # Write code to a file.
-                    # This code is similar to py_compile.compile().
-                    with io.BytesIO() as fc:
-                        # Prepare all data in byte stream file-like object.
-                        fc.write(BYTECODE_MAGIC)
-                        _write_long(fc, timestamp)
-                        _write_long(fc, size)
-                        marshal.dump(mod.code, fc)
-                        zf.writestr(new_name, fc.getvalue())
+                        # Write code to a file.
+                        # This code is similar to py_compile.compile().
+                        with io.BytesIO() as fc:
+                            # Prepare all data in byte stream file-like object.
+                            fc.write(BYTECODE_MAGIC)
+                            _write_long(fc, timestamp)
+                            _write_long(fc, size)
+                            marshal.dump(mod.code, fc)
+                            zf.writestr(new_name, fc.getvalue())
 
     except Exception as e:
         logger.error('base_library.zip could not be created!')
