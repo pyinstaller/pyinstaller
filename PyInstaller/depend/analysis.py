@@ -35,11 +35,12 @@ about them, replacing what the old ImpTracker list could do.
 import glob
 import logging
 import os
+import re
+
 from .. import compat as compat
-import PyInstaller.utils
-from ..utils.misc import load_py_data_struct
+from ..utils.misc import load_py_data_struct, get_code_object
 from ..lib.modulegraph.modulegraph import ModuleGraph
-from ..compat import importlib_load_source
+from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES
 from .. import HOMEPATH
 
 
@@ -203,12 +204,21 @@ class PyiModuleGraph(ModuleGraph):
         We use the ModuleGraph (really, ObjectGraph) flatten() method to
         scan all the nodes. This is patterned after ModuleGraph.report().
         """
+        # Construct regular expression for matching modules that should be
+        # excluded because they are bundled in base_library.zip.
+        regex_str = '|'.join(['(%s.*)' % x for x in PY3_BASE_MODULES])
+        module_filter = re.compile(regex_str)
+
         result = existing_TOC or TOC()
         for node in self.flatten():
             # TODO This is terrible. Everything in Python has a type. It's
             # nonsensical to even speak of "nodes [that] are not typed." How
             # would that even occur? After all, even "None" has a type! (It's
             # "NoneType", for the curious.) Remove this, please.
+
+            # Skip modules that are in base_library.zip.
+            if not is_py2 and module_filter.match(node.identifier):
+                continue
 
             # get node type e.g. Script
             mg_type = type(node).__name__
@@ -554,7 +564,7 @@ class FakeModule(object):
         default modules with wrappers poorly suited to being frozen.
         """
         # Keep the original filename in the fake code object.
-        new_code = PyInstaller.utils.misc.get_code_object(path_to_new_code, new_filename=self.node.filename)
+        new_code = get_code_object(path_to_new_code, new_filename=self.node.filename)
         # Update node.
         self.node.code = new_code
         self.node.filename = path_to_new_code
