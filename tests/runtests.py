@@ -117,6 +117,25 @@ class SkipChecker(object):
             'import/test_onefile_pkgutil-get_data__main__': 'Our import mechanism returns the wrong loader-class for __main__.'
         }
 
+        # The dependencies for Windows and Mac differ from Linux dependencies
+        # for scapy. The following analysis of scapy's dependencies is based on
+        # examining scapy v2.3.1, where the version is determined by pip show
+        # scapy.
+        #
+        # In Linux, scapy.arch.linux relies on the command-line utility tcpdump
+        # and doesn't by default import from scapy.arch.pcapdnet. In contrast,
+        # scapy.arch.windows sets conf.use_pcap = 1 and conf.use_dnet = 1, then
+        # imports scapy.arch.pcapdnet, which depends on external packages (pcap
+        # or pcapy, along with dnet). Since pcap isn't maintained (per
+        # https://github.com/dugsong/pypcap, the last commit was in 2010),
+        # choose pcapy (https://pypi.python.org/pypi/pcapy shows recent
+        # activity). Likewise, scapy.arch.bsd (how scapy classifies Mac, per
+        # scapy.arch) imports scapy.arch.unix, which sets conf.use_pcap = 1 and
+        # conf.use_dnet = 1, producing the same dependencies as Windows.
+        scapy_modules = ['scapy']
+        if is_win or is_darwin:
+            scapy_modules += ['pcapy', 'dnet']
+
         # Required Python modules for some tests.
         self.MODULES = {
             'basic/test_codecs': ['codecs'],
@@ -153,9 +172,9 @@ class SkipChecker(object):
             'libraries/test_PyQt4-uic': ['PyQt4'],
             'libraries/test_requests': ['requests'],
             'libraries/test_sysconfig': ['sysconfig'],
-            'libraries/test_scapy1': ['scapy'],
-            'libraries/test_scapy2': ['scapy'],
-            'libraries/test_scapy3': ['scapy'],
+            'libraries/test_scapy1': scapy_modules,
+            'libraries/test_scapy2': scapy_modules,
+            'libraries/test_scapy3': scapy_modules,
             'libraries/test_scipy': ['numpy', 'scipy'],
             'libraries/test_sqlite3': ['sqlite3'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
