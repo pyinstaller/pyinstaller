@@ -12,13 +12,10 @@
 # Only python built-in modules can be used.
 
 import sys
-
-import pyi_os_path
-import pyi_archive
-import pyi_importers
+import pyimod04_importers
 
 # Extend Python import machinery by adding PEP302 importers to sys.meta_path.
-pyi_importers.install()
+pyimod04_importers.install()
 
 
 ### Bootstrap process is complete.
@@ -79,11 +76,6 @@ if VIRTENV in os.environ:
     # deleting the var from os.environ does not delete it from the environment.
     os.environ[VIRTENV] = ''
     del os.environ[VIRTENV]
-
-
-# Forces PyInstaller to include fake 'site' module. Fake 'site' module
-# is dummy and does not do any search for additional Python modules.
-import site
 
 
 # Ensure PYTHONPATH contains absolute paths. Otherwise import of other python

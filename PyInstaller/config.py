@@ -36,11 +36,9 @@ And to use this variable in the build phase:
 
 This is the list of known variables. (Please update it if necessary.)
 
-hasRsrcUpdate
 hasUPX
 hiddenimports
 noconfirm
-PYZ_dependencies
 ui_admin
 ui_access
 upx_dir

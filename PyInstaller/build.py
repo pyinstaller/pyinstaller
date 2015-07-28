@@ -23,7 +23,6 @@ import platform
 import shutil
 import sys
 import tempfile
-import importlib
 
 
 # Relative imports to PyInstaller modules.
@@ -31,15 +30,17 @@ from . import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from . import compat
 from . import log as logging
 import collections
+from .utils.misc import absnormpath
 from .compat import is_py2, is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
 from .compat import importlib_load_source
 from .depend import bindepend
 from .depend import dylib
-from .depend.analysis import PyiModuleGraph, TOC, FakeModule
+from .depend.analysis import PyiModuleGraph, TOC, FakeModule, get_bootstrap_modules
 from .depend.utils import create_py3_base_library, is_path_to_egg
-from .loader import pyi_archive, pyi_carchive
+from .loader import pyimod02_archive, pyimod03_carchive, pyimod05_crypto
 from .utils import misc
 from .utils.misc import save_py_data_struct, load_py_data_struct
+from .lib.modulegraph.find_modules import get_implies
 
 if is_win:
     from .utils.win32 import icon, versioninfo, winmanifest, winresource
@@ -105,11 +106,6 @@ def setupUPXFlags():
 
 
 # TODO find better place for function.
-def absnormpath(apath):
-    return os.path.abspath(os.path.normpath(apath))
-
-
-# TODO find better place for function.
 def add_suffix_to_extensions(toc):
     """
     Returns a new TOC with proper library suffix for EXTENSION items.
@@ -117,9 +113,12 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
-            # Use first suffix from the Python list of suffixes
-            # for C extensions.
-            inm = inm + EXTENSION_SUFFIXES[0]
+            # In some rare cases extension might already contain suffix.
+            # Skip it in this case.
+            if not inm.endswith(EXTENSION_SUFFIXES[0]):
+                # Use first suffix from the Python list of suffixes
+                # for C extensions.
+                inm = inm + EXTENSION_SUFFIXES[0]
 
         elif typ == 'DEPENDENCY':
             # Use the suffix from the filename.
@@ -301,7 +300,7 @@ class Analysis(Target):
         absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py")),
         ))
 
-    def __init__(self, scripts=None, pathex=None, hiddenimports=None,
+    def __init__(self, scripts, pathex=None, hiddenimports=None,
                  hookspath=None, excludes=None, runtime_hooks=[], cipher=None):
         """
         scripts
@@ -322,19 +321,8 @@ class Analysis(Target):
         """
         super(Analysis, self).__init__()
         from .config import CONF
-        CONF['scripts'] = scripts
 
-        # Include initialization Python code in PyInstaller analysis.
-        self.inputs = [
-            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
-            os.path.join(_init_code_path, 'pyi_importers.py'),
-            os.path.join(_init_code_path, 'pyi_archive.py'),
-            os.path.join(_init_code_path, 'pyi_carchive.py'),
-            os.path.join(_init_code_path, 'pyi_os_path.py'),
-            ]
-        self.loader_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-        #TODO: store user scripts in separate variable from init scripts,
-        # see TODO (S) below
+        self.inputs = []
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
                 logger.warn('Ignoring obsolete auto-added script %s', script)
@@ -372,28 +360,13 @@ class Analysis(Target):
 
         if cipher:
             logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
-
             # Create a Python module which contains the decryption key which will
             # be used at runtime by pyi_crypto.PyiBlockCipher.
-            pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyi_crypto_key.py')
-
+            pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
             with open(pyi_crypto_key_path, 'w') as f:
                 f.write('key = %r\n' % cipher.key)
-
-            # Compile the module so that it ends up in the CArchive and can be
-            # imported by the bootstrap script.
-            import py_compile
-            py_compile.compile(pyi_crypto_key_path)
-
-            logger.info('Adding dependency on pyi_crypto and pyi_crypto_key')
-
-            from PyInstaller.loader import pyi_crypto
-            self.hiddenimports.append(pyi_crypto.HIDDENIMPORT)
-
-            pyi_crypto_path = os.path.join(_init_code_path, 'pyi_crypto.py')
-
-            CONF['PYZ_dependencies'].append(('pyi_crypto', pyi_crypto_path + 'c', 'PYMODULE'))
-            CONF['PYZ_dependencies'].append(('pyi_crypto_key', pyi_crypto_key_path + 'c', 'PYMODULE'))
+            logger.info('Adding dependencies on pyi_crypto.py module')
+            self.hiddenimports.append(pyimod05_crypto.get_hiddenimport())
 
         self.excludes = excludes
         self.scripts = TOC()
@@ -577,38 +550,28 @@ class Analysis(Target):
         # Instantiate a ModuleGraph. The class is defined at end of this module.
         # The argument is the set of paths to use for imports: sys.path,
         # plus our loader, plus other paths from e.g. --path option).
-        self.graph = PyiModuleGraph(HOMEPATH, sys.path + [self.loader_path] + self.pathex)
+        self.graph = PyiModuleGraph(HOMEPATH, sys.path + self.pathex,
+                                    implies=get_implies())
 
-        # Graph the first script in the analysis, and save its node to use as
+        # The first script in the analysis is the main user script. Its node is used as
         # the "caller" node for all others. This gives a connected graph rather than
         # a collection of unrelated trees, one for each of self.inputs.
-        # The list of scripts, starting with our own bootstrap ones, is in
-        # self.inputs, each as a normalized pathname.
+        # The list of scripts is in self.inputs, each as a normalized pathname.
 
-        # TODO: (S) in __init__ the input scripts should be saved separately from the
-        # pyi-loader set. TEMP: assume the first/only user script is self.inputs[5]
-        script = self.inputs[5]
-        logger.info("Analyzing %s", script)
-        self.graph.run_script(script)
-        # list to hold graph nodes of loader scripts and runtime hooks in use order
+        # List to hold graph nodes of scripts and runtime hooks in use order.
         priority_scripts = []
-        # With a caller node in hand, import all the loader set as called by it.
-        # The old Analysis checked that the script existed and raised an error,
-        # but now just assume that if it does not, Modulegraph will raise error.
+
+        # Assume that if the script does not exist, Modulegraph will raise error.
         # Save the graph nodes of each in sequence.
-        for script in self.inputs[:5] :
+        for script in self.inputs:
             logger.info("Analyzing %s", script)
-            priority_scripts.append( self.graph.run_script(script))
-        # And import any remaining user scripts as if called by the first one.
-        for script in self.inputs[6:] :
-            logger.info("Analyzing %s", script)
-            node = self.graph.run_script(script)
+            priority_scripts.append(self.graph.run_script(script))
 
         # Analyze the script's hidden imports (named on the command line)
         for modnm in self.hiddenimports:
-            logger.debug('HDIM module: %s' % modnm)
+            logger.debug('Hidden import: %s' % modnm)
             if self.graph.findNode(modnm) is not None:
-                logger.info("Hidden import %r has been found otherwise", modnm)
+                logger.debug('Hidden import %r already found', modnm)
                 continue
             logger.info("Analyzing hidden import %r", modnm)
             # ModuleGraph throws Import Error if import not found
@@ -780,6 +743,7 @@ class Analysis(Target):
                 # It is a sign that iteration over hooks should continue.
                 applied_hooks.append(imported_name)
 
+
             ### All hooks from cache were traversed - stop or run again.
             if not applied_hooks:  # Empty list.
                 # No new hook was applied - END of hooks processing.
@@ -790,7 +754,9 @@ class Analysis(Target):
 
 
         # Analyze run-time hooks.
-        self.graph.analyze_runtime_hooks(priority_scripts, self.custom_runtime_hooks)
+        # Run-time hooks has to be executed before user scripts. Add them
+        # to the beginning of 'priority_scripts'.
+        priority_scripts = self.graph.analyze_runtime_hooks(self.custom_runtime_hooks) + priority_scripts
 
         # 'priority_scripts' is now a list of the graph nodes of custom runtime
         # hooks, then regular runtime hooks, then the PyI loader scripts.
@@ -802,7 +768,8 @@ class Analysis(Target):
         self.scripts = self.graph.nodes_to_TOC(priority_scripts)
         # Put all other script names into the TOC after them. (The rthooks names
         # will be found again, but TOC.append skips duplicates.)
-        self.scripts = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
+        #self.scripts = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
+
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries  = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
         # Fill the "pure" list with pure Python modules.
@@ -910,7 +877,7 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc_dict, name=None, level=9, cipher=None):
+    def __init__(self, toc_dict, name=None, cipher=None):
         """
         toc_dict
             toc_dict['toc']
@@ -920,9 +887,6 @@ class PYZ(Target):
         name
                 A filename for the .pyz. Normally not needed, as the generated
                 name will do fine.
-        level
-                The Zlib compression level to use. If 0, the zlib module is
-                not required.
         cipher
                 The block cipher that will be used to encrypt Python bytecode.
         """
@@ -934,11 +898,20 @@ class PYZ(Target):
         self.name = name
         if name is None:
             self.name = self.out[:-3] + 'pyz'
-        # Level of zlib compression.
-        self.level = level
-        # Compile top-level modules so we could run them at app startup.
-        self.dependencies = misc.compile_py_files(CONF['PYZ_dependencies'], CONF['workpath'])
+        # PyInstaller bootstrapping modules.
+        self.dependencies = get_bootstrap_modules()
+        # Bundle the crypto key.
         self.cipher = cipher
+        if cipher:
+            key_file = ('pyimod00_crypto_key',
+                         os.path.join(CONF['workpath'], 'pyimod00_crypto_key.pyc'),
+                         'PYMODULE')
+            # Insert the key as the first module in the list. The key module contains
+            # just variables and does not depend on other modules.
+            self.dependencies.insert(0, key_file)
+        # Compile the top-level modules so that they end up in the CArchive and can be
+        # imported by the bootstrap script.
+        self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
@@ -958,12 +931,14 @@ class PYZ(Target):
         return False
 
     def assemble(self):
-        from .config import CONF
         logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = pyi_archive.ZlibArchive(level=self.level, code_dict=self.code_dict, cipher=self.cipher)
-        toc = self.toc - CONF['PYZ_dependencies']
+        pyz = pyimod02_archive.ZlibArchive(code_dict=self.code_dict, cipher=self.cipher)
+        # Do not bundle PyInstaller bootstrap modules into PYZ archive.
+        toc = self.toc - self.dependencies
         pyz.build(self.name, toc)
-        save_py_data_struct(self.out, (self.name, self.level, self.toc))
+        # FIXME compression level was dropped - remove it from the save_py_data_struct
+        compresssion_level = 0
+        save_py_data_struct(self.out, (self.name, compresssion_level, self.toc))
         return 1
 
 
@@ -1299,7 +1274,7 @@ class PKG(Target):
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
-        archive = pyi_carchive.CArchive(pylib_name=pylib_name)
+        archive = pyimod03_carchive.CArchive(pylib_name=pylib_name)
 
         archive.build(self.name, mytoc)
         save_py_data_struct(self.out,
@@ -1437,7 +1412,6 @@ class EXE(Target):
             )
 
     def check_guts(self, last_build):
-        from .config import CONF
         if not os.path.exists(self.name):
             logger.info("Rebuilding %s because %s missing",
                         self.outnm, os.path.basename(self.name))
@@ -1452,9 +1426,11 @@ class EXE(Target):
             return True
 
         icon, versrsrc, resources = data[3:6]
-        if (icon or versrsrc or resources) and not CONF['hasRsrcUpdate']:
+        if (versrsrc or resources) and not is_win:
             # todo: really ignore :-)
-            logger.info("ignoring icon, version, manifest and resources = platform not capable")
+            logger.warn('ignoring version, manifest and resources, platform not capable')
+        if icon and not (is_win or is_darwin):
+            logger.warn('ignoring icon, platform not capable')
 
         mtm = data[-1]
         if mtm != misc.mtime(self.name):
@@ -1485,7 +1461,6 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
-        from .config import CONF
         logger.info("Building EXE from %s", os.path.basename(self.out))
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
@@ -1517,8 +1492,7 @@ class EXE(Target):
             trash.append(tmpnm)
             exe = tmpnm
 
-        if CONF['hasRsrcUpdate'] and (self.icon or self.versrsrc or
-                                        self.resources):
+        if is_win and (self.icon or self.versrsrc or self.resources):
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
@@ -2155,6 +2129,7 @@ def build(spec, distpath, workpath, clean_build):
         'TkTree': lambda *args, **kwargs: _old_api_error('TkTree'),
         # Python modules available for .spec.
         'os': os,
+        'pyi_crypto': pyimod05_crypto,
     }
 
     # Set up module PyInstaller.config for passing some arguments to 'exec'
@@ -2208,10 +2183,9 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     else:
         CONF.update(pyi_config)
 
-    if CONF['hasRsrcUpdate']:
+    # Append assemblies to dependencies only on Winodws.
+    if is_win:
         CONF['pylib_assemblies'] = bindepend.getAssemblies(sys.executable)
-    else:
-        CONF['pylib_assemblies'] = None
 
     if CONF['hasUPX']:
         setupUPXFlags()

@@ -87,6 +87,12 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
             parser.error('Requires at least one scriptname file '
                          'or exactly one .spec-file')
 
+
+        # TODO find better way how to pass path to manage.py to django hook.
+        # Django hook requires this variable.
+        from .config import CONF
+        CONF['main_script'] = args[0]
+
         # Skip creating .spec when .spec file is supplied
         if args[0].endswith('.spec'):
             spec_file = args[0]

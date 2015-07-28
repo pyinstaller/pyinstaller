@@ -88,13 +88,11 @@ def get_unicode_modules():
     """
     modules = []
     try:
+        # `codecs` depends on `encodings` and this is then included.
         import codecs
         modules.append('codecs')
-        # `encodings` imports `codecs`, so only the first is required.
-        import encodings
-        modules.append('encodings')
     except ImportError:
-        logger.error("Cannot detect modules 'codecs' and 'encodings'.")
+        logger.error("Cannot detect modules 'codecs'.")
 
     return modules
 
@@ -265,7 +263,7 @@ def compile_py_files(toc, workpath):
 
 def save_py_data_struct(filename, data):
     """
-    Save data into text file as Python data structore.
+    Save data into text file as Python data structure.
     :param filename:
     :param data:
     :return:
@@ -285,3 +283,7 @@ def load_py_data_struct(filename):
     :return:
     """
     return eval(open(filename, 'rU').read())
+
+
+def absnormpath(apath):
+    return os.path.abspath(os.path.normpath(apath))

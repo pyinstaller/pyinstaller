@@ -21,7 +21,7 @@ import tempfile
 import zlib
 
 
-from PyInstaller.loader import pyi_archive, pyi_carchive
+from PyInstaller.loader import pyimod02_archive, pyimod03_carchive
 from PyInstaller.utils import misc
 from PyInstaller.compat import stdin_input
 import PyInstaller.log
@@ -77,7 +77,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
             arg = arg.strip()
             try:
                 arch = get_archive(arg)
-            except pyi_carchive.NotAnArchiveError as e:
+            except pyimod03_carchive.NotAnArchiveError as e:
                 print(e)
                 continue
             if arch is None:
@@ -129,7 +129,7 @@ def get_archive(name):
     if not stack:
         if name[-4:].lower() == '.pyz':
             return ZlibArchive(name)
-        return pyi_carchive.CArchive(name)
+        return pyimod03_carchive.CArchive(name)
     parent = stack[-1][1]
     try:
         return parent.openEmbedded(name)
@@ -145,7 +145,7 @@ def get_archive(name):
         if typcd == 'z':
             return ZlibArchive(tempfilename)
         else:
-            return pyi_carchive.CArchive(tempfilename)
+            return pyimod03_carchive.CArchive(tempfilename)
 
 
 def get_data(name, arch):
@@ -217,7 +217,7 @@ def get_archive_content(filename):
     return output
 
 
-class ZlibArchive(pyi_archive.ZlibArchive):
+class ZlibArchive(pyimod02_archive.ZlibArchive):
 
     def checkmagic(self):
         """ Overridable.

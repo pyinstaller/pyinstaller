@@ -16,12 +16,18 @@
 # See http://www.pyinstaller.org/wiki/Recipe/Multiprocessing
 
 
-import multiprocessing.forking
 import os
 import sys
+import multiprocessing
+
+# Module multiprocessing is organized differently for Python 2.7.
+try:
+    import multiprocessing.popen_fork as forking
+except ImportError:
+    import multiprocessing.forking as forking
 
 
-class _Popen(multiprocessing.forking.Popen):
+class _Popen(forking.Popen):
     def __init__(self, *args, **kw):
         if hasattr(sys, 'frozen'):
             # We have to set original _MEIPASS2 value from sys._MEIPASS

@@ -30,11 +30,18 @@ with PyInstaller prefix::
 pefile
 --------
 
+Two versions of pefile are included to make PyInstaller runnable on both
+Python 2 and 3. Importing pefile.py will import the correct version for
+the running Python version.
+
+- Official Python 2 version of pefile is from here:
+  https://github.com/erocarrera/pefile
+
 - There is no official port of pefile to Python 3 yet. We use this branch for PyInstaller
   https://github.com/BlackXeronic/pefile_py3
 
 - For status of official support for Python3 see
-  https://code.google.com/p/pefile/issues/detail?id=36
+  https://github.com/erocarrera/pefile/issues/36
 
 
 macholib

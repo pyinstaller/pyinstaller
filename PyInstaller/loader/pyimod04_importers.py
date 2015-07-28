@@ -21,9 +21,9 @@ PEP-302 importers for frozen applications.
 
 
 import sys
-import pyi_os_path
+import pyimod01_os_path as pyi_os_path
 
-from pyi_archive import ArchiveReadError, ZlibArchive
+from pyimod02_archive import ArchiveReadError, ZlibArchive
 
 
 # Cannnot use sys.prefix (Not set in Python 3) and cannot use even MEIPASS or
@@ -307,6 +307,8 @@ class FrozenImporter(object):
 
                 # Run the module code.
                 exec(bytecode, module.__dict__)
+                # Reread the module from sys.modules in case it's changed itself
+                module = sys.modules[fullname]
 
         except Exception:
             # Remove 'fullname' from sys.modules if it was appended there.

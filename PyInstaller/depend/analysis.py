@@ -35,11 +35,12 @@ about them, replacing what the old ImpTracker list could do.
 import glob
 import logging
 import os
-from PyInstaller import compat as compat
+from .. import compat as compat
 import PyInstaller.utils
-from PyInstaller.utils.misc import load_py_data_struct
-from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph
+from ..utils.misc import load_py_data_struct
+from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..compat import importlib_load_source
+from .. import HOMEPATH
 
 
 logger = logging.getLogger(__name__)
@@ -286,36 +287,27 @@ class PyiModuleGraph(ModuleGraph):
         return [importer.identifier for importer in iter_inc]
 
 
-    def analyze_runtime_hooks(self, priority_scripts, custom_runhooks):
+    def analyze_runtime_hooks(self, custom_runhooks):
         """
         Analyze custom run-time hooks and run-time hooks implied by found modules.
 
-        Analyze them and update the 'priority_scripts' list.
+        :return : list of Graph nodes.
         """
+        rthooks_nodes = []
         logger.info('Analyzing run-time hooks ...')
-        # TODO clean up comments in this method.
         # Process custom runtime hooks (from --runtime-hook options).
         # The runtime hooks are order dependent. First hooks in the list
         # are executed first. Put their graph nodes at the head of the
         # priority_scripts list Pyinstaller-defined rthooks and
         # thus they are executed first.
-
-        # First priority script has to be '_pyi_bootstrap' and rthooks after
-        # this script. - _pyi_bootstrap is at position 0. First rthook should
-        # be at position 1.
-        RTH_START_POSITION = 1
-        rthook_next_position = RTH_START_POSITION
-
         if custom_runhooks:
             for hook_file in custom_runhooks:
                 logger.info("Including custom run-time hook %r", hook_file)
                 hook_file = os.path.abspath(hook_file)
                 # Not using "try" here because the path is supposed to
                 # exist, if it does not, the raised error will explain.
-                priority_scripts.insert( RTH_START_POSITION, self.run_script(hook_file))
-                rthook_next_position += 1
+                rthooks_nodes.append(self.run_script(hook_file))
 
-        # TODO including run-time hooks should be done after processing regular import hooks.
         # Find runtime hooks that are implied by packages already imported.
         # Get a temporary TOC listing all the scripts and packages graphed
         # so far. Assuming that runtime hooks apply only to modules and packages.
@@ -327,10 +319,9 @@ class PyiModuleGraph(ModuleGraph):
                 for hook in self._available_rthooks[mod_name]:
                     logger.info("Including run-time hook %r", hook)
                     path = os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks', hook)
-                    priority_scripts.insert(
-                        rthook_next_position,
-                        self.run_script(path)
-                    )
+                    rthooks_nodes.append(self.run_script(path))
+
+        return rthooks_nodes
 
 
 # TODO Simplify the representation and use directly Modulegraph objects.
@@ -574,3 +565,35 @@ class FakeModule(object):
         self.node.filename = path_to_new_code
         # Update dependencies in the graph.
         self.graph._scan_code(new_code, self.node)
+
+
+def get_bootstrap_modules():
+    """
+    Get TOC with the bootstrapping modules and their dependencies.
+    :return: TOC with modules
+    """
+    # Import 'struct' modules to get real paths to module file names.
+    mod1 = __import__('_struct')  # C extension.
+    mod2 = __import__('struct')
+    # Basic modules necessary for the bootstrap process.
+    loader_mods = []
+    loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+    # On some platforms (Windows, Debian/Ubuntu) '_struct' module is a built-in module (linked statically)
+    # and thus does not have attribute __file__.
+    if hasattr(mod1, '__file__'):
+        loader_mods =[('_struct', os.path.abspath(mod1.__file__), 'EXTENSION')]
+    # NOTE:These modules should be kept simple without any complicated dependencies.
+    loader_mods +=[
+        ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
+        ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.pyc'), 'PYMODULE'),
+        ('pyimod02_archive',  os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
+        ('pyimod03_carchive',  os.path.join(loaderpath, 'pyimod03_carchive.pyc'), 'PYMODULE'),
+        ('pyimod04_importers',  os.path.join(loaderpath, 'pyimod04_importers.pyc'), 'PYMODULE'),
+        # Include crypto module even if it might not be used.
+        ('pyimod05_crypto', os.path.join(loaderpath, 'pyimod05_crypto.pyc'), 'PYMODULE'),
+        ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
+        ('pyiboot02_egg_install', os.path.join(loaderpath, 'pyiboot02_egg_install.py'), 'PYSOURCE'),
+    ]
+    # TODO Why is here the call to TOC()?
+    toc = TOC(loader_mods)
+    return toc.data

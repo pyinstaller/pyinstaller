@@ -46,8 +46,21 @@ def test_decoders_ascii(pyi_builder):
     pyi_builder.test_script('pyi_decoders_ascii.py')
 
 
+def test_dynamic_module(pyi_builder):
+    pyi_builder.test_script('pyi_dynamic_module.py')
+
+
 def test_email(pyi_builder):
     pyi_builder.test_script('pyi_email.py')
+
+
+@importorskip('Crypto')
+def test_feature_crypto(pyi_builder):
+    pyi_builder.test_script('pyi_feature_crypto.py', pyi_args=['--key=test_key'])
+
+
+def test_feature_nocrypto(pyi_builder):
+    pyi_builder.test_script('pyi_feature_nocrypto.py')
 
 
 def test_filename(pyi_builder):
@@ -89,7 +102,6 @@ def test_multiprocess(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess.py')
 
 
-@pytest.mark.xfail(reason='failing when running with other tests but not standalone')
 @importorskip('multiprocessing')
 def test_multiprocess_forking(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_forking.py')
@@ -156,6 +168,19 @@ def test_python_makefile(pyi_builder):
     pyi_builder.test_script('pyi_python_makefile.py')
 
 
+def test_set_icon(pyi_builder):
+    icon_dir = os.path.join(_DATA_DIR, 'icons')
+    if is_win:
+        args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]
+    elif is_darwin:
+        # On OS X icon is applied only for windowed mode.
+        icon = ['--windowed', '--icon', os.path.join(icon_dir, 'pyi_icon.icns')]
+    else:
+        pytest.skip('option --icon works only on Windows and Mac OS X')
+    # Just use helloworld script.
+    pyi_builder.test_script('pyi_helloworld.py', pyi_args=args)
+
+
 def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
@@ -180,7 +205,6 @@ def test_xmldom_module(pyi_builder):
     pyi_builder.test_script('pyi_xmldom_module.py')
 
 
-@pytest.mark.xfail(reason='failing with Python 3.4 in Travis')
 def test_threading_module(pyi_builder):
     pyi_builder.test_script('pyi_threading_module.py')
 
@@ -188,7 +212,6 @@ def test_threading_module(pyi_builder):
 @importorskip('win32com')
 def test_pywin32_win32com(pyi_builder):
     pyi_builder.test_script('pyi_pywin32_win32com.py')
-    #assert 0
 
 
 @importorskip('win32ui')

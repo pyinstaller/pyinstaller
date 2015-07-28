@@ -22,9 +22,9 @@ import os
 # Python 3 requires relative import but we need absolute import
 # for the frozen executables where this module is a top-level module.
 try:
-    import pyi_archive
+    import pyimod02_archive
 except ImportError:
-    from . import pyi_archive
+    from . import pyimod02_archive
 
 class NotAnArchiveError(Exception): pass
 
@@ -130,7 +130,7 @@ class CTOC(object):
         return -1
 
 
-class CArchive(pyi_archive.Archive):
+class CArchive(pyimod02_archive.Archive):
     """
     An Archive subclass that can hold arbitrary data.
 

@@ -230,55 +230,44 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     /* Set PYTHONPATH so dynamic libs will load.
      * PYTHONHOME for function Py_SetPythonHome() should point
      * to a zero-terminated character string in static storage. */
-	static char pypath[2*PATH_MAX + 14];
-	int pathlen = 1;
+	static char pypath[2*PATH_MAX + 14]; /* Statics are zero-initialized */
 	int i;
-	char cmd[PATH_MAX+1+80];
-	char tmp[PATH_MAX+1];
     /* Temporary buffer for conversion of string to wide string. */
-	wchar_t wchar_tmp[PATH_MAX+1];
-	wchar_t wchar_tmp2[PATH_MAX+1];
-	PyObject *py_argv;
-	PyObject *val;
-	PyObject *sys;
-
-	wchar_t *aabbcc;
+	wchar_t wchar_tmp_pypath[PATH_MAX+1];
+	wchar_t wchar_tmp_pyhome[PATH_MAX+1];
 
     if (is_py2) {
       PI_Py2_SetProgramName(status->archivename);
       // TODO is this all, PyInstaller 2.1 did here?
     } else {
+      // TODO archivename is not mbs - #1323
       mbstowcs(_program_name, status->archivename, PATH_MAX);
       // In Python 3 Py_SetProgramName() should be called before Py_SetPath().
       PI_Py_SetProgramName(_program_name);
     };
 
-    /* Set the PYTHONPATH */
-    VS("LOADER: Manipulating evironment (PYTHONPATH, PYTHONHOME)\n");
+    /* Set the PYTHONPATH
+     * On Python 3, we must set PYTHONPATH to have base_library.zip before
+     * calling Py_Initialize as it needs the codecs and other modules.
+     * mainpath must be last because _pyi_bootstrap uses sys.path[-1] as SYS_PREFIX
+     */
+    VS("LOADER: Manipulating environment (PYTHONPATH, PYTHONHOME)\n");
     strncat(pypath, status->mainpath, strlen(status->mainpath));
-    if (! is_py2) {
-      // Append base_library.zip to PYTHONPATH - necessary for
-      // Py_Initialize() in Python 3.
-      // TODO Check if base_library.zip should be first in sys.path.
+    if (!is_py2) {
+      /* Append /base_library.zip to existing mainpath and then add actual mainpath */
       strncat(pypath, PYI_SEPSTR, strlen(PYI_SEPSTR));
       strncat(pypath, "base_library.zip", strlen("base_library.zip"));
+      strncat(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
+      strncat(pypath, status->mainpath, strlen(status->mainpath));
     };
-    /* Append status->mainpath to PYTHONPATH. */
-    // TODO: Why is this done? status->mainpath is already the first element?!
-    strncat(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
-    strncat(pypath, status->mainpath, strlen(status->mainpath));
-    // TODO check if status->homepath should be in PYTHONPATH in onefile mode.
-    /*if (status->temppath[0] != PYI_NULLCHAR) {
-        strcat(pypath, PYI_PATHSEPSTR);
-        strcpy(pypath, status->homepat);
-    }*/
 
-    VS("LOADER: PYTHONPATH is %s\n", pypath);
+    VS("LOADER: Pre-init PYTHONPATH is %s\n", pypath);
     if (is_py2) {
       pyi_setenv("PYTHONPATH", pypath);
     } else {
-      mbstowcs(wchar_tmp, pypath, PATH_MAX);
-      PI_Py_SetPath(wchar_tmp);
+      // TODO: is pypath mbs? probably not.
+      mbstowcs(wchar_tmp_pypath, pypath, PATH_MAX);
+      PI_Py_SetPath(wchar_tmp_pypath);
     };
 
     /* Set PYTHONHOME by using function from Python C API. */
@@ -287,9 +276,9 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
       VS("LOADER: PYTHONHOME is %s\n", pypath);
       PI_Py2_SetPythonHome(pypath);
     } else {
-      mbstowcs(wchar_tmp2, pypath, PATH_MAX);
-      VS("LOADER: PYTHONHOME is %S\n", wchar_tmp2);
-      PI_Py_SetPythonHome(wchar_tmp2);
+      mbstowcs(wchar_tmp_pyhome, pypath, PATH_MAX);
+      VS("LOADER: PYTHONHOME is %S\n", wchar_tmp_pyhome);
+      PI_Py_SetPythonHome(wchar_tmp_pyhome);
     };
 
     /* Start python. */
@@ -319,25 +308,16 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 
 	/*
 	 * Set sys.path list.
-	 * Python 3 requires something on sys.path before calling Py_Initialize.
+	 * Python's default sys.path is no good - it includes the working directory
+	 * and the folder containing the executable. Replace sys.path with only
+	 * the paths we want.
 	 */
-	VS("LOADER: Manipulating Python's sys.path\n");
+	VS("LOADER: Overriding Python's sys.path\n");
+	VS("LOADER: Post-init PYTHONPATH is %s\n", pypath);
 	if (is_py2) {
-	  // When trying to use PI_Py2Sys_SetPath() for setting the
-	  // path I got memory errors. I do not see any sence in
-	  // spending time on this (as long as it works) since Python 2
-	  // is going to be phased out anyway.
-	  PI_PyRun_SimpleString("import sys ; del sys.path[:]\n");
-	  if (status->temppath[0] != PYI_NULLCHAR) {
-            sprintf(cmd, "sys.path.append(r\"%s\")", status->temppath);
-	    PI_PyRun_SimpleString(cmd);
-	  };
-	  sprintf(cmd, "sys.path.append(r\"%s\")", status->homepath);
-	  PI_PyRun_SimpleString(cmd);
+	   PI_Py2Sys_SetPath(pypath);
 	} else {
-	  // This might not be necessary, since we already pass the
-	  // same value to Py_SetPath.
-	  PI_PySys_SetPath(wchar_tmp);
+	   PI_PySys_SetPath(wchar_tmp_pypath);
 	};
 
     /* Setting sys.argv should be after Py_Initialize() call. */
