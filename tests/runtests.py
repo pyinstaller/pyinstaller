@@ -209,7 +209,7 @@ class SkipChecker(object):
             'interactive/test_wx': ['wx'],
             }
 
-        # Other dependecies of some tests.
+        # Other dependencies of some tests.
         self.DEPENDENCIES = {
             'basic/test_onefile_ctypes': [depend.c_compiler()],
             # Support for unzipped eggs is not yet implemented.
