@@ -15,12 +15,12 @@ attrs = [('notamodule','')]
 # See test_pkg_structures.py for more details.
 
 def hook(mod):
-    import os, sys, marshal
-    other = os.path.join(mod.__path__[0], '../pkg2/__init__.pyc')
-    if os.path.exists(other):
-        co = marshal.loads(open(other,'rb').read()[8:])
-    else:
-        co = compile(open(other[:-1],'rU').read()+'\n', other, 'exec')
-    mod.__init__(mod.__name__, other, co)
-    mod.__path__.append(os.path.join(mod.__path__[0], 'extra'))
+    import os
+    # TODO This does not work with modulegraph yet, submodules are not
+    # included.
+    pkg2_path = os.path.normpath(os.path.join(mod.__path__[0], '../pkg2'))
+    mod.retarget(os.path.join(pkg2_path, '__init__.py'))
+    mod.__path__ = [pkg2_path, os.path.join(pkg2_path, 'extra')]
+    mod.node.packagepath = mod.__path__
+    mod.del_import('pkg2')
     return mod
