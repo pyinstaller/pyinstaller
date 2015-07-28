@@ -32,10 +32,15 @@ import PyInstaller.log as logging
 
 logger = logging.getLogger(__name__)
 
+                        # (mod.identifier.startswith('encodings') or \
+                        #          mod.identifier.startswith('codecs') or \
+                        #          mod.identifier.startswith('abc') or \
+                        #          mod.identifier.startswith('_weakrefset') or \
+                        #          mod.identifier.startswith('io')):
 
 # TODO ensure modules from base_library.zip are not bundled twice.
 # TODO find out if modules from base_library.zip could be somehow bundled into the .exe file.
-def create_py3_base_library(libzip_filename):
+def create_py3_base_library(libzip_filename, graph):
     """
     Package basic Python modules into .zip file. The .zip file with basic
     modules is necessary to have on PYTHONPATH for initializing libpython3
@@ -43,18 +48,10 @@ def create_py3_base_library(libzip_filename):
     """
     logger.info('Creating base_library.zip for Python 3')
 
-    graph = modulegraph.ModuleGraph(
-        implies=(), # Do not include any default modules in dependencies.
-        debug=1,
-    )
-    find_modules.find_needed_modules(
-        mf=graph,
-        includes=[
-            'io',
-            'warnings',  # Required by run-time option like ('W ignore', None, 'OPTION')
-        # Include all encodings.
-        ] + collect_submodules('encodings')
-    )
+    # TODO replace this by applying hook-encodings.py here.
+    # To initialize Python 3 dll encodings and codecs are required.
+    for m in collect_submodules('encodings')+['codecs']:
+        graph.import_hook(m)
 
     # TODO Replace this function with something better or something from standard Python library.
     # Helper functions.
