@@ -7,10 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-# Pyinstaller executables fail without these imports; Python doesn't need them.
-import pygments.formatters
-import pygments.lexers
-
 # This sample code is taken from http://pygments.org/docs/quickstart/.
 from pygments import highlight
 from pygments.lexers import PythonLexer
