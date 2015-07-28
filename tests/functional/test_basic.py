@@ -46,6 +46,10 @@ def test_decoders_ascii(pyi_builder):
     pyi_builder.test_script('pyi_decoders_ascii.py')
 
 
+def test_dynamic_module(pyi_builder):
+    pyi_builder.test_script('pyi_dynamic_module.py')
+
+
 def test_email(pyi_builder):
     pyi_builder.test_script('pyi_email.py')
 
@@ -202,7 +206,6 @@ def test_xmldom_module(pyi_builder):
     pyi_builder.test_script('pyi_xmldom_module.py')
 
 
-@pytest.mark.xfail(reason='failing with Python 3.4 in Travis')
 def test_threading_module(pyi_builder):
     pyi_builder.test_script('pyi_threading_module.py')
 
