@@ -9,7 +9,7 @@
 
 
 try:
-    import pyi_crypto
+    import pyimod05_crypto
 except ImportError:
     raise AssertionError('The pyi_crypto module should be there even if crypto is disabled.')
 

@@ -7,10 +7,10 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-import pyi_crypto
-import pyimod00_crypto_key
+import pyimod05_crypto as pyi_crypto
+import pyimod00_crypto_key as pyi_key
 
 
-assert type(pyimod00_crypto_key.key) is str
+assert type(pyi_key.key) is str
 # The test runner uses 'test_key' as key.
-assert pyimod00_crypto_key.key == 'test_key'.zfill(pyi_crypto.BLOCK_SIZE)
+assert pyi_key.key == 'test_key'.zfill(pyi_crypto.BLOCK_SIZE)

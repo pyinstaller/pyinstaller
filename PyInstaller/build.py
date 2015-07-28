@@ -2131,6 +2131,7 @@ def build(spec, distpath, workpath, clean_build):
         'TkTree': lambda *args, **kwargs: _old_api_error('TkTree'),
         # Python modules available for .spec.
         'os': os,
+        'pyi_crypto': pyimod05_crypto,
     }
 
     # Set up module PyInstaller.config for passing some arguments to 'exec'

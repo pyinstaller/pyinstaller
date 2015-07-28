@@ -12,8 +12,6 @@
 # Only python built-in modules can be used.
 
 import sys
-import pyimod01_os_path
-import pyimod02_archive
 import pyimod04_importers
 
 # Extend Python import machinery by adding PEP302 importers to sys.meta_path.
