@@ -118,8 +118,6 @@ block_cipher = None
 """
 
 cipher_init_template = """
-from PyInstaller.loader import pyi_crypto
-
 block_cipher = pyi_crypto.PyiBlockCipher(key=%(key)r)
 """
 

@@ -1065,8 +1065,6 @@ Python modules at build time.
 
 A complete example::
 
-    from PyInstaller.loader import pyi_crypto
-
     block_cipher = pyi_crypto.PyiBlockCipher(key='test_key')
     a = Analysis(['test_onefile_crypto.py'], cipher=block_cipher)
     pyz = PYZ(a.pure, cipher=block_cipher)
