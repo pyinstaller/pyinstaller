@@ -190,13 +190,23 @@ class SkipChecker(object):
             'interactive/test_wx': ['wx'],
             }
 
-        # Other dependecies of some tests.
+        # Other dependecies of some tests. A value of None indicates that the dependency is satisfied; any other value is taken as as failed dependency and should be an string containing an error message.
         self.DEPENDENCIES = {
             'basic/test_onefile_ctypes': [depend.c_compiler()],
             # Support for unzipped eggs is not yet implemented.
             # http://www.pyinstaller.org/ticket/541
             'import/test_eggs1': ['Unzipped eggs not yet implemented.'],
+            'libraries/test_usb': [self._depend_usb()],
             }
+
+    # See if the usb package is supported on this platform.
+    def _depend_usb(self):
+        try:
+            import usb
+            # This will verify that the backend is present; if not, it will raise an exception.
+            usb.core.find(find_all = True)
+        except:
+            return 'Python usb package and its dependencies not installed.'
 
     def _check_known_fail(self, test_name):
         """
