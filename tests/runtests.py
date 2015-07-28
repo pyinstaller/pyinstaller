@@ -203,9 +203,16 @@ class SkipChecker(object):
     def _depend_usb(self):
         try:
             import usb
-            # This will verify that the backend is present; if not, it will raise an exception.
+            # This will verify that the backend is present; if not, it will raise an exception such as::
+            #
+            #   Traceback (most recent call last):
+            #     File "test_usb.py", line 14, in <module>
+            #       devices = usb.core.find(find_all = True)
+            #     File "C:\Python27\lib\site-packages\pyusb-1.0.0b2-py2.7.egg\usb\core.py", line 1199, in find
+            #       raise ValueError('No backend available')
+            #   ValueError: No backend available
             usb.core.find(find_all = True)
-        except:
+        except (ImportError, ValueError):
             return 'Python usb package and its dependencies not installed.'
 
     def _check_known_fail(self, test_name):
