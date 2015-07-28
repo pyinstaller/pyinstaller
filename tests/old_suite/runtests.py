@@ -530,8 +530,7 @@ class BuildTestRunner(object):
             if not prog:
                 return False, 'Executable for %s missing' % logfn
             fname_list = archive_viewer.get_archive_content(prog)
-            # the archive contains byte-data, need to decode them
-            fname_list = [fn.decode('utf-8') for fn in fname_list]
+            fname_list = [fn for fn in fname_list]
             pattern_list = eval(open(logfn, 'rU').read())
             # Alphabetical order of patterns.
             pattern_list.sort()
