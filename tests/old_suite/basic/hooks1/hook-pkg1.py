@@ -9,6 +9,11 @@
 
 
 attrs = [('notamodule','')]
+
+# Replace package `pkg1` the code and content of `pkg2`, while the
+# name `pkg1` is kept. `pkg2` is not contained in the fozen exe.
+# See test_pkg_structures.py for more details.
+
 def hook(mod):
     import os, sys, marshal
     other = os.path.join(mod.__path__[0], '../pkg2/__init__.pyc')
