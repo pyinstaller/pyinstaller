@@ -23,6 +23,7 @@ import zlib
 
 from PyInstaller.loader import pyi_archive, pyi_carchive
 from PyInstaller.utils import misc
+from PyInstaller.compat import stdin_input
 import PyInstaller.log
 
 
@@ -49,7 +50,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
 
     while 1:
         try:
-            toks = input('? ').split(None, 1)
+            toks = stdin_input('? ').split(None, 1)
         except EOFError:
             # Ctrl-D
             print()  # Clear line.
@@ -72,7 +73,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
             show(name, arch)
         elif cmd == 'O':
             if not arg:
-                arg = input('open name? ')
+                arg = stdin_input('open name? ')
             arg = arg.strip()
             try:
                 arch = get_archive(arg)
@@ -86,13 +87,13 @@ def main(name, brief, debug, rec_debug, **unused_options):
             show(arg, arch)
         elif cmd == 'X':
             if not arg:
-                arg = input('extract name? ')
+                arg = stdin_input('extract name? ')
             arg = arg.strip()
             data = get_data(arg, arch)
             if data is None:
                 print("Not found")
                 continue
-            filename = input('to filename? ')
+            filename = stdin_input('to filename? ')
             if not filename:
                 print(repr(data))
             else:
