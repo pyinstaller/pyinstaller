@@ -24,7 +24,7 @@ def import_aes(module_name):
         # Not-so-easy way: at bootstrap time we have to load the module from the
         # temporary directory in a manner similar to
         # pyi_importers.CExtensionImporter.
-        from pyi_importers import CExtensionImporter
+        from pyimod04_importers import CExtensionImporter
 
         # NOTE: We _must_ call find_module first.
         mod = CExtensionImporter().find_module(module_name)

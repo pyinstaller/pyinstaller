@@ -37,7 +37,7 @@ from .depend import bindepend
 from .depend import dylib
 from .depend.analysis import PyiModuleGraph, TOC, FakeModule, get_bootstrap_modules
 from .depend.utils import create_py3_base_library, is_path_to_egg
-from .loader import pyi_archive, pyi_carchive, pyi_crypto
+from .loader import pyimod02_archive, pyimod03_carchive, pyimod05_crypto
 from .utils import misc
 from .utils.misc import save_py_data_struct, load_py_data_struct
 from .lib.modulegraph.find_modules import get_implies
@@ -113,9 +113,12 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
-            # Use first suffix from the Python list of suffixes
-            # for C extensions.
-            inm = inm + EXTENSION_SUFFIXES[0]
+            # In some rare cases extension might already contain suffix.
+            # Skip it in this case.
+            if not inm.endswith(EXTENSION_SUFFIXES[0]):
+                # Use first suffix from the Python list of suffixes
+                # for C extensions.
+                inm = inm + EXTENSION_SUFFIXES[0]
 
         elif typ == 'DEPENDENCY':
             # Use the suffix from the filename.
@@ -363,7 +366,7 @@ class Analysis(Target):
             with open(pyi_crypto_key_path, 'w') as f:
                 f.write('key = %r\n' % cipher.key)
             logger.info('Adding dependencies on pyi_crypto.py module')
-            self.hiddenimports.append(pyi_crypto.get_hiddenimport())
+            self.hiddenimports.append(pyimod05_crypto.get_hiddenimport())
 
         self.excludes = excludes
         self.scripts = TOC()
@@ -932,7 +935,7 @@ class PYZ(Target):
 
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = pyi_archive.ZlibArchive(code_dict=self.code_dict, cipher=self.cipher)
+        pyz = pyimod02_archive.ZlibArchive(code_dict=self.code_dict, cipher=self.cipher)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
         pyz.build(self.name, toc)
@@ -1228,7 +1231,7 @@ class PKG(Target):
         mytoc = []
         seenInms = {}
         seenFnms = {}
-        toc = self.toc
+        toc = add_suffix_to_extensions(self.toc)
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in toc:
@@ -1274,7 +1277,7 @@ class PKG(Target):
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
-        archive = pyi_carchive.CArchive(pylib_name=pylib_name)
+        archive = pyimod03_carchive.CArchive(pylib_name=pylib_name)
 
         archive.build(self.name, mytoc)
         save_py_data_struct(self.out,

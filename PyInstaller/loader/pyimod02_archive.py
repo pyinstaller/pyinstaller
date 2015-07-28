@@ -430,6 +430,6 @@ class ZlibArchive(Archive):
         self.crypted = struct.unpack('!B', self.lib.read(1))[0]
 
         if self.crypted:
-            import pyi_crypto
+            import pyimod05_crypto
 
-            self.cipher = pyi_crypto.PyiBlockCipher()
+            self.cipher = pyimod05_crypto.PyiBlockCipher()

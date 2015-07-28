@@ -12,13 +12,12 @@
 # Only python built-in modules can be used.
 
 import sys
-
-import pyi_os_path
-import pyi_archive
-import pyi_importers
+import pyimod01_os_path
+import pyimod02_archive
+import pyimod04_importers
 
 # Extend Python import machinery by adding PEP302 importers to sys.meta_path.
-pyi_importers.install()
+pyimod04_importers.install()
 
 
 ### Bootstrap process is complete.

@@ -580,13 +580,14 @@ def get_bootstrap_modules():
     # NOTE:These modules should be kept simple without any complicated dependencies.
     loader_mods +=[
         ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
-        ('pyi_os_path', os.path.join(loaderpath, 'pyi_os_path.pyc'), 'PYMODULE'),
-        ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
-        ('pyi_carchive',  os.path.join(loaderpath, 'pyi_carchive.pyc'), 'PYMODULE'),
-        ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE'),
-        ('pyi_crypto', os.path.join(loaderpath, 'pyi_crypto.pyc'), 'PYMODULE'),
-        ('_pyi_bootstrap', os.path.join(loaderpath, '_pyi_bootstrap.py'), 'PYSOURCE'),
-        ('_pyi_egg_install', os.path.join(loaderpath, '_pyi_egg_install.py'), 'PYSOURCE'),
+        ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.pyc'), 'PYMODULE'),
+        ('pyimod02_archive',  os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
+        ('pyimod03_carchive',  os.path.join(loaderpath, 'pyimod03_carchive.pyc'), 'PYMODULE'),
+        ('pyimod04_importers',  os.path.join(loaderpath, 'pyimod04_importers.pyc'), 'PYMODULE'),
+        # Include crypto module even if it might not be used.
+        ('pyimod05_crypto', os.path.join(loaderpath, 'pyimod05_crypto.pyc'), 'PYMODULE'),
+        ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
+        ('pyiboot02_egg_install', os.path.join(loaderpath, 'pyiboot02_egg_install.py'), 'PYSOURCE'),
     ]
     # TODO Why is here the call to TOC()?
     toc = TOC(loader_mods)
