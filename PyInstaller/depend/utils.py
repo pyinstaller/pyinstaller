@@ -73,7 +73,9 @@ def create_py3_base_library(libzip_filename, graph):
             zf.debug = 3
             for mod in graph.flatten():
                 if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
-                    if regex.match(mod.identifier):
+                    # FIXME Bundling just required modules sees to not work with tests test_stdxx - where it then returns ascii encoding and not UTF-8.
+                    #if regex.match(mod.identifier):
+                    if True:
                         st = os.stat(mod.filename)
                         timestamp = int(st.st_mtime)
                         size = st.st_size & 0xFFFFFFFF
