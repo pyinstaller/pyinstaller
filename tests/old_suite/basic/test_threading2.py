@@ -58,6 +58,8 @@ else:
 
     # Make output from subprocess visible.
     print(out)
+    out = out.decode('ascii')
+    print(out)
 
     # Remove empty lines from output.
     out = out.strip().splitlines()
