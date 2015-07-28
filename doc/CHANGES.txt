@@ -13,6 +13,7 @@ Changes since PyInstaller 2.1
    PYINSTALLER_CONFIG_DIR.
  + (Windows 32bit) enable flag LARGEADDRESSAWARE that allows to use 4GB of RAM.
  + Bootloader debug messages 'LOADER: ...' printed to stderr.
+ + Option --key to obfuscate the Python bytecode.
  * Use library modulegraph for module dependency analysis.
  * PyInstaller no longer extends sys.path and bundled 3rd-party libraries do not
    interfere with their other versions.
