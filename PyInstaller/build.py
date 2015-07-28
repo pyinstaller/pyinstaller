@@ -37,7 +37,7 @@ from .depend import bindepend
 from .depend import dylib
 from .depend.analysis import PyiModuleGraph, TOC, FakeModule, get_bootstrap_modules
 from .depend.utils import create_py3_base_library, is_path_to_egg
-from .loader import pyi_archive, pyi_carchive
+from .loader import pyi_archive, pyi_carchive, pyi_crypto
 from .utils import misc
 from .utils.misc import save_py_data_struct, load_py_data_struct
 from .lib.modulegraph.find_modules import get_implies
@@ -357,28 +357,13 @@ class Analysis(Target):
 
         if cipher:
             logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
-
             # Create a Python module which contains the decryption key which will
             # be used at runtime by pyi_crypto.PyiBlockCipher.
-            pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyi_crypto_key.py')
-
+            pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
             with open(pyi_crypto_key_path, 'w') as f:
                 f.write('key = %r\n' % cipher.key)
-
-            # Compile the module so that it ends up in the CArchive and can be
-            # imported by the bootstrap script.
-            import py_compile
-            py_compile.compile(pyi_crypto_key_path)
-
-            logger.info('Adding dependency on pyi_crypto and pyi_crypto_key')
-
-            from PyInstaller.loader import pyi_crypto
-            self.hiddenimports.append(pyi_crypto.HIDDENIMPORT)
-
-            pyi_crypto_path = os.path.join(_init_code_path, 'pyi_crypto.py')
-
-            CONF['PYZ_dependencies'].append(('pyi_crypto', pyi_crypto_path + 'c', 'PYMODULE'))
-            CONF['PYZ_dependencies'].append(('pyi_crypto_key', pyi_crypto_key_path + 'c', 'PYMODULE'))
+            logger.info('Adding dependencies on pyi_crypto.py module')
+            self.hiddenimports.append(pyi_crypto.get_hiddenimport())
 
         self.excludes = excludes
         self.scripts = TOC()
@@ -913,9 +898,20 @@ class PYZ(Target):
         self.name = name
         if name is None:
             self.name = self.out[:-3] + 'pyz'
-        # Compile top-level modules so we could run them at app startup.
-        self.dependencies = misc.compile_py_files(get_bootstrap_modules(), CONF['workpath'])
+        # PyInstaller bootstrapping modules.
+        self.dependencies = get_bootstrap_modules()
+        # Bundle the crypto key.
         self.cipher = cipher
+        if cipher:
+            key_file = ('pyimod00_crypto_key',
+                         os.path.join(CONF['workpath'], 'pyimod00_crypto_key.pyc'),
+                         'PYMODULE')
+            # Insert the key as the first module in the list. The key module contains
+            # just variables and does not depend on other modules.
+            self.dependencies.insert(0, key_file)
+        # Compile the top-level modules so that they end up in the CArchive and can be
+        # imported by the bootstrap script.
+        self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),

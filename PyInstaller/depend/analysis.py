@@ -584,8 +584,10 @@ def get_bootstrap_modules():
         ('pyi_archive',  os.path.join(loaderpath, 'pyi_archive.pyc'), 'PYMODULE'),
         ('pyi_carchive',  os.path.join(loaderpath, 'pyi_carchive.pyc'), 'PYMODULE'),
         ('pyi_importers',  os.path.join(loaderpath, 'pyi_importers.pyc'), 'PYMODULE'),
+        ('pyi_crypto', os.path.join(loaderpath, 'pyi_crypto.pyc'), 'PYMODULE'),
         ('_pyi_bootstrap', os.path.join(loaderpath, '_pyi_bootstrap.py'), 'PYSOURCE'),
         ('_pyi_egg_install', os.path.join(loaderpath, '_pyi_egg_install.py'), 'PYSOURCE'),
     ]
+    # TODO Why is here the call to TOC()?
     toc = TOC(loader_mods)
     return toc.data

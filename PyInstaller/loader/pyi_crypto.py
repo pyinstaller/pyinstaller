@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2014, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -12,7 +12,11 @@ BLOCK_SIZE = 16
 
 
 def import_aes(module_name):
-    """Tries to import the AES module from PyCrypto."""
+    """
+    Tries to import the AES module from PyCrypto.
+
+    PyCrypto 2.4 and 2.6 uses different name of the AES extension.
+    """
     try:
         # Easy way: this should work at build time.
         return __import__(module_name, fromlist=[module_name.split('.')[-1]])
@@ -31,19 +35,21 @@ def import_aes(module_name):
         return mod.load_module(module_name)
 
 
-try:
-    # The _AES.so module exists only in PyCrypto 2.6 and later. Try to import
-    # that first.
-    modname = 'Crypto.Cipher._AES'
-
-    AES = import_aes(modname)
-    HIDDENIMPORT = modname
-except ImportError:
-    # Fallback to AES.so, which should be there in PyCrypto 2.4 and earlier.
-    modname = 'Crypto.Cipher.AES'
-
-    AES = import_aes(modname)
-    HIDDENIMPORT = modname
+def get_hiddenimport():
+    """
+    These module names are appended to the PyInstaller analysis phase.
+    :return: Name of the AES module.
+    """
+    try:
+        # The _AES.so module exists only in PyCrypto 2.6 and later. Try to import
+        # that first.
+        modname = 'Crypto.Cipher._AES'
+        import_aes(modname)
+    except ImportError:
+        # Fallback to AES.so, which should be there in PyCrypto 2.4 and earlier.
+        modname = 'Crypto.Cipher.AES'
+        import_aes(modname)
+    return modname
 
 
 class PyiBlockCipher(object):
@@ -52,9 +58,8 @@ class PyiBlockCipher(object):
             # At build-type the key is given to us from inside the spec file, at
             # bootstrap-time, we must look for it ourselves by trying to import
             # the generated 'pyi_crypto_key' module.
-            import pyi_crypto_key
-
-            key = pyi_crypto_key.key
+            import pyimod00_crypto_key
+            key = pyimod00_crypto_key.key
 
         assert type(key) is str
 
@@ -75,6 +80,9 @@ class PyiBlockCipher(object):
         except ImportError:
             pass
 
+        # Import the right AES module.
+        self._aesmod = import_aes(get_hiddenimport())
+
     def encrypt(self, data):
         # NOTE: This call will fail at bootstrap-time. See note in the
         # constructor.
@@ -89,4 +97,4 @@ class PyiBlockCipher(object):
         # The 'BlockAlgo' class is stateful, this factory method is used to
         # re-initialize the block cipher class with each call to encrypt() and
         # decrypt().
-        return AES.new(self.key, AES.MODE_CFB, iv)
+        return self._aesmod.new(self.key, self._aesmod.MODE_CFB, iv)
