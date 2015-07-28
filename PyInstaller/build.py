@@ -605,16 +605,6 @@ class Analysis(Target):
                     name = os.path.basename(f)[5:-3]
                     hooks_mod_cache[name] = pth
 
-        # TODO "temp_toc" appears to be unused and have no side effects.
-        # Remove, please.
-
-        # Now find regular hooks and execute them. Get a new TOC, in part
-        # because graphing a runtime hook might have added some names, but
-        # also because regular hooks can apply to extensions and builtins.
-        temp_toc = self.graph.make_a_TOC(['PYMODULE', 'PYSOURCE', 'BUILTIN', 'EXTENSION'])
-        module_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package',
-                            'Extension', 'Script', 'BuiltinModule'])
-
         # TODO simplify this loop - functions, etc.
         ### Iterate over import hooks and update ModuleGraph as needed.
         #
@@ -625,6 +615,8 @@ class Analysis(Target):
         #    a. hooks cache is empty
         #    b. no new hook was applied in the 'while' iteration.
         #
+        module_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package',
+                            'Extension', 'Script', 'BuiltinModule'])
         while True:
             applied_hooks = []  # Empty means no hook was applied.
 
@@ -774,9 +766,6 @@ class Analysis(Target):
 
         # Initialize the scripts list with priority scripts in the proper order.
         self.scripts = self.graph.nodes_to_TOC(priority_scripts)
-        # Put all other script names into the TOC after them. (The rthooks names
-        # will be found again, but TOC.append skips duplicates.)
-        #self.scripts = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
 
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries  = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
