@@ -15,8 +15,6 @@ Subclass of Archive that can be understood by a C program (see launch.c).
 
 import struct
 import sys
-import zlib
-import os
 
 
 # Python 3 requires relative import but we need absolute import
@@ -26,7 +24,10 @@ try:
 except ImportError:
     from . import pyimod02_archive
 
-class NotAnArchiveError(Exception): pass
+
+class NotAnArchiveError(Exception):
+    pass
+
 
 class CTOC(object):
     """
@@ -281,6 +282,7 @@ class CArchive(pyimod02_archive.Archive):
             rslt = self.lib.read(dlen)
 
         if flag == 1:
+            import zlib
             rslt = zlib.decompress(rslt)
         if typcd == 'M':
             return (1, rslt)
@@ -318,6 +320,7 @@ class CArchive(pyimod02_archive.Archive):
         # FIXME Could we make the version 5 the default one?
         # Version 5 - allow type 'o' = runtime option.
         try:
+            import os
             if typcd in ('o', 'd'):
                 fh = None
                 ulen = 0
@@ -347,6 +350,7 @@ class CArchive(pyimod02_archive.Archive):
             pass
         elif flag == 1:
             assert fh
+            import zlib
             comprobj = zlib.compressobj(self.LEVEL)
             while 1:
                 buf = fh.read(16*1024)

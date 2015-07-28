@@ -503,6 +503,16 @@ class Analysis(Target):
         This method is the MAIN method for finding all necessary files to be bundled.
         """
         from .config import CONF
+
+
+        # Instantiate a ModuleGraph. The class is defined at end of this module.
+        # The argument is the set of paths to use for imports: sys.path,
+        # plus our loader, plus other paths from e.g. --path option).
+        module_paths = self.pathex + sys.path
+        self.graph = PyiModuleGraph(HOMEPATH, path=module_paths,
+                                    implies=get_implies())
+
+
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
         # containing core Python modules. In Python 3 some built-in modules
@@ -510,7 +520,7 @@ class Analysis(Target):
         # those modules as "built-in".
         if not is_py2:
             libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
-            create_py3_base_library(libzip_filename)
+            create_py3_base_library(libzip_filename, graph=self.graph)
             # Bundle base_library.zip as data file.
             # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
             self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
@@ -547,11 +557,6 @@ class Analysis(Target):
         self.binaries.extend(bindepend.Dependencies([('', python, '')],
                                                manifest=depmanifest)[1:])
 
-        # Instantiate a ModuleGraph. The class is defined at end of this module.
-        # The argument is the set of paths to use for imports: sys.path,
-        # plus our loader, plus other paths from e.g. --path option).
-        self.graph = PyiModuleGraph(HOMEPATH, sys.path + self.pathex,
-                                    implies=get_implies())
 
         # The first script in the analysis is the main user script. Its node is used as
         # the "caller" node for all others. This gives a connected graph rather than
@@ -597,16 +602,6 @@ class Analysis(Target):
                 name = os.path.basename(f)[5:-3]
                 hooks_mod_cache[name] = os.path.abspath(f)
 
-        # TODO "temp_toc" appears to be unused and have no side effects.
-        # Remove, please.
-
-        # Now find regular hooks and execute them. Get a new TOC, in part
-        # because graphing a runtime hook might have added some names, but
-        # also because regular hooks can apply to extensions and builtins.
-        temp_toc = self.graph.make_a_TOC(['PYMODULE', 'PYSOURCE', 'BUILTIN', 'EXTENSION'])
-        module_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package',
-                            'Extension', 'Script', 'BuiltinModule'])
-
         # TODO simplify this loop - functions, etc.
         ### Iterate over import hooks and update ModuleGraph as needed.
         #
@@ -617,6 +612,8 @@ class Analysis(Target):
         #    a. hooks cache is empty
         #    b. no new hook was applied in the 'while' iteration.
         #
+        module_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package',
+                            'Extension', 'Script', 'BuiltinModule'])
         while True:
             applied_hooks = []  # Empty means no hook was applied.
 
@@ -766,9 +763,6 @@ class Analysis(Target):
 
         # Initialize the scripts list with priority scripts in the proper order.
         self.scripts = self.graph.nodes_to_TOC(priority_scripts)
-        # Put all other script names into the TOC after them. (The rthooks names
-        # will be found again, but TOC.append skips duplicates.)
-        #self.scripts = self.graph.make_a_TOC(['PYSOURCE'], self.scripts)
 
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries  = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)

@@ -14,20 +14,18 @@ Utility functions related to analyzing/bundling dependencies.
 
 import ctypes
 import dis
-
-import imp
 import io
 import marshal
 import os
+import re
 import zipfile
 
-from PyInstaller.lib.modulegraph import find_modules, modulegraph
+from ..lib.modulegraph import modulegraph
 
-from PyInstaller import compat
-from PyInstaller.compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC
-from PyInstaller.utils.hooks.hookutils import collect_submodules
-
-import PyInstaller.log as logging
+from .. import compat
+from ..compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC, PY3_BASE_MODULES
+from ..utils.hooks.hookutils import collect_submodules
+from .. import log as logging
 
 
 logger = logging.getLogger(__name__)
@@ -35,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 # TODO ensure modules from base_library.zip are not bundled twice.
 # TODO find out if modules from base_library.zip could be somehow bundled into the .exe file.
-def create_py3_base_library(libzip_filename):
+def create_py3_base_library(libzip_filename, graph):
     """
     Package basic Python modules into .zip file. The .zip file with basic
     modules is necessary to have on PYTHONPATH for initializing libpython3
@@ -43,18 +41,10 @@ def create_py3_base_library(libzip_filename):
     """
     logger.info('Creating base_library.zip for Python 3')
 
-    graph = modulegraph.ModuleGraph(
-        implies=(), # Do not include any default modules in dependencies.
-        debug=1,
-    )
-    find_modules.find_needed_modules(
-        mf=graph,
-        includes=[
-            'io',
-            'warnings',  # Required by run-time option like ('W ignore', None, 'OPTION')
-        # Include all encodings.
-        ] + collect_submodules('encodings')
-    )
+    # TODO replace this by applying hook-encodings.py here.
+    # To initialize Python 3 dll encodings and codecs are required.
+    for m in collect_submodules('encodings')+['codecs']:
+        graph.import_hook(m)
 
     # TODO Replace this function with something better or something from standard Python library.
     # Helper functions.
@@ -67,7 +57,11 @@ def create_py3_base_library(libzip_filename):
                        (x >> 16) & 0xff,
                        (x >> 24) & 0xff]))
 
-    # Constants same for all .pyc files.
+    # Construct regular expression for matching modules that should be bundled
+    # into base_library.zip.
+    regex_str = '|'.join(['(%s.*)' % x for x in PY3_BASE_MODULES])
+    regex = re.compile(regex_str)
+
 
     try:
         # Remove .zip from previous run.
@@ -79,25 +73,28 @@ def create_py3_base_library(libzip_filename):
             zf.debug = 3
             for mod in graph.flatten():
                 if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
-                    st = os.stat(mod.filename)
-                    timestamp = int(st.st_mtime)
-                    size = st.st_size & 0xFFFFFFFF
-                    # Name inside a zip archive.
-                    # TODO use .pyo suffix if optimize flag is enabled.
-                    if type(mod) is modulegraph.Package:
-                        new_name = mod.identifier.replace('.', os.sep) + os.sep + '__init__' + '.pyc'
-                    else:
-                        new_name = mod.identifier.replace('.', os.sep) + '.pyc'
+                    # FIXME Bundling just required modules sees to not work with tests test_stdxx - where it then returns ascii encoding and not UTF-8.
+                    #if regex.match(mod.identifier):
+                    if True:
+                        st = os.stat(mod.filename)
+                        timestamp = int(st.st_mtime)
+                        size = st.st_size & 0xFFFFFFFF
+                        # Name inside a zip archive.
+                        # TODO use .pyo suffix if optimize flag is enabled.
+                        if type(mod) is modulegraph.Package:
+                            new_name = mod.identifier.replace('.', os.sep) + os.sep + '__init__' + '.pyc'
+                        else:
+                            new_name = mod.identifier.replace('.', os.sep) + '.pyc'
 
-                    # Write code to a file.
-                    # This code is similar to py_compile.compile().
-                    with io.BytesIO() as fc:
-                        # Prepare all data in byte stream file-like object.
-                        fc.write(BYTECODE_MAGIC)
-                        _write_long(fc, timestamp)
-                        _write_long(fc, size)
-                        marshal.dump(mod.code, fc)
-                        zf.writestr(new_name, fc.getvalue())
+                        # Write code to a file.
+                        # This code is similar to py_compile.compile().
+                        with io.BytesIO() as fc:
+                            # Prepare all data in byte stream file-like object.
+                            fc.write(BYTECODE_MAGIC)
+                            _write_long(fc, timestamp)
+                            _write_long(fc, size)
+                            marshal.dump(mod.code, fc)
+                            zf.writestr(new_name, fc.getvalue())
 
     except Exception as e:
         logger.error('base_library.zip could not be created!')

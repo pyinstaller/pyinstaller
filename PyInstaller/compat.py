@@ -438,3 +438,11 @@ else:
         return mod_loader.load_module()
 
 
+# Patterns of module names that should be bundled into the base_library.zip.
+PY3_BASE_MODULES = set([
+    '_weakrefset',
+    'abc',
+    'codecs',
+    'encodings',
+    'io',
+])
