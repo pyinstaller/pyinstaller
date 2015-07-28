@@ -307,6 +307,8 @@ class FrozenImporter(object):
 
                 # Run the module code.
                 exec(bytecode, module.__dict__)
+                # Reread the module from sys.modules in case it's changed itself
+                module = sys.modules[fullname]
 
         except Exception:
             # Remove 'fullname' from sys.modules if it was appended there.

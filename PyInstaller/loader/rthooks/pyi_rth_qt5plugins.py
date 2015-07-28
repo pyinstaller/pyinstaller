@@ -29,6 +29,16 @@ if 'QT_PLUGIN_PATH' in os.environ:
     os.environ['QT_PLUGIN_PATH'] = ''
     del os.environ['QT_PLUGIN_PATH']
 
+try:
+    import sip
+except ImportError:
+    # The packaging system may name sip PyQt5.sip, so make it available as "sip"
+    try:
+        import PyQt5.sip as sip
+        sys.modules['sip'] = sip
+    except ImportError:
+        pass  # if this didn't work, there will be a NameError later
+
 
 # We cannot use QT_PLUGIN_PATH here, because it would not work when
 # PyQt5 is compiled with a different CRT from Python (eg: it happens
