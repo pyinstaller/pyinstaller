@@ -10,14 +10,20 @@ environment:
 
     # Pre-installed Python versions, which Appveyor may upgrade to
     # a later point release.
+    - PYTHON: "C:\\Python34-x64"
+      PYTHON_VERSION: "3.4"
+      PYTHON_ARCH: "64"
+      PYWIN_ARCH: "win-amd64"
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
+      PYWIN_ARCH: "win32"
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
+      PYWIN_ARCH: "win32"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -49,8 +55,8 @@ install:
   # PyInstaller depends on pywin32 package.
   # This package is not available for 'pip install'.
   # TODO
-  - ps: (new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py'+$env:PYTHON_VERSION+'.exe', 'C:\Projects\pywin32-219.win32-py'+$env:PYTHON_VERSION+'.exe')
-  - "%CMD_IN_ENV% easy_install C:\\Projects\\pywin32-219.win32-py%PYTHON_VERSION%.exe"
+  - ps: (new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.'+$env:PYWIN_ARCH+'-py'+$env:PYTHON_VERSION+'.exe', 'C:\Projects\pywin32-219.'+$env:PYWIN_ARCH+'-py'+$env:PYTHON_VERSION+'.exe')
+  - "%CMD_IN_ENV% easy_install C:\\Projects\\pywin32-219.%PYWIN_ARCH%-py%PYTHON_VERSION%.exe"
 
   # Install the test dependencies of the project. If some dependencies contain
   # compiled extensions and are not provided as pre-built wheel packages,
