@@ -14,16 +14,21 @@ environment:
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "64"
       PYWIN_ARCH: "win-amd64"
+      # This forces to build bootloader with MSVC.
+      # Appveyor does not have 64-bit mingw.
+      WAF_ARGS: ""
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
       PYWIN_ARCH: "win32"
+      WAF_ARGS: "--gcc"
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
       PYWIN_ARCH: "win32"
+      WAF_ARGS: "--gcc"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -45,10 +50,9 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
   # Compile bootloader, use mingw.
-  # TODO mingw is only 32-bit. Find out how to compile for 64bit platform.
   - "SET PATH=C:\\MinGW\\bin;%PATH%"
   - cd bootloader
-  - python waf distclean all --gcc
+  - "python waf distclean all %WAF_ARGS%"
   - cd ..
 
   # Install the PyInsaller dependencies.
