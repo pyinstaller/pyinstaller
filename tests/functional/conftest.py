@@ -179,6 +179,8 @@ class AppBuilder(object):
         pyi_args = [self.script] + default_args + args
         # TODO fix return code in running PyInstaller programatically
         PYI_CONFIG = configure.get_config(upx_dir=None)
+        # Override CONFIGDIR for PyInstaller and put it into self.tmpdir
+        PYI_CONFIG['configdir'] = self._tmpdir
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
 
@@ -235,8 +237,6 @@ class AppBuilder(object):
 @pytest.fixture(params=['onedir', 'onefile'])
 def pyi_builder(tmpdir, monkeypatch, request):
     tmp = tmpdir.strpath
-    # Override default PyInstaller config dir.
-    monkeypatch.setenv('PYINSTALLER_CONFIG_DIR', tmp)
     # Append _MMODULES_DIR to sys.path for building exes.
     # Some tests need additional test modules.
     # This also ensures that sys.path is reseted to original value for every test.
