@@ -120,7 +120,7 @@ def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder):
     # Compile the ctypes_dylib there.
     monkeypatch.chdir(dst)  # Make dst the CWD directory.
     if is_win:
-        ret = subprocess.call('gcc -shared ctypes_dylib-win.c -o ctypes_dylib.dll', shell=True)
+        ret = subprocess.call('gcc -shared ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
         if ret != 0:
             # Find path to cl.exe file.
             from distutils.msvccompiler import MSVCCompiler
@@ -128,7 +128,7 @@ def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder):
             comp.initialize()
             cl_path = comp.cc
             # Fallback to msvc.
-            ret = subprocess.call('%s /LD ctypes_dylib-win.c' % cl_path, shell=True)
+            ret = subprocess.call([cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
     elif is_darwin:
         # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
         arch = 'i386' if architecture() == '32bit' else 'x86_64'

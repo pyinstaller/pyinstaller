@@ -7,7 +7,21 @@
  * The full license is in the file COPYING.txt, distributed with this software.
  * ****************************************************************************
  */
+
+#ifdef _WIN32
+
+// Windows code
+int __declspec(dllexport) dummy(int arg)
+{
+    return arg;
+}
+
+#else
+
+// Unix code
 int dummy(int arg)
 {
     return arg;
 }
+
+#endif
