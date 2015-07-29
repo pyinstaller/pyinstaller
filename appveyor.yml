@@ -38,6 +38,13 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
+  # Compile bootloader, use mingw.
+  # TODO mingw is only 32-bit. Find out how to compile for 64bit platform.
+  - "SET PATH=C:\\MinGW\\bin;%PATH%"
+  - cd bootloader
+  - python waf distclean all --gcc
+  - cd ..
+
   # Install the PyInsaller dependencies.
   # PyInstaller depends on pywin32 package.
   # This package is not available for 'pip install'.
