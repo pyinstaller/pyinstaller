@@ -18,6 +18,12 @@ environment:
       # Appveyor does not have 64-bit mingw.
       WAF_ARGS: ""
 
+    - PYTHON: "C:\\Python33-x64"
+      PYTHON_VERSION: "3.3"
+      PYTHON_ARCH: "64"
+      PYWIN_ARCH: "win-amd64"
+      WAF_ARGS: ""
+
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
