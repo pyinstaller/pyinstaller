@@ -15,6 +15,10 @@ environment:
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
 
+    - PYTHON: "C:\\Python33"
+      PYTHON_VERSION: "3.3"
+      PYTHON_ARCH: "32"
+
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
@@ -54,4 +58,4 @@ build: off
 
 test_script:
   # Split tests into several subprocesses.
-  - "%CMD_IN_ENV% py.test -n 2"
+  - "%CMD_IN_ENV% py.test -n 3"
