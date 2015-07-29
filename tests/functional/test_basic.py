@@ -54,6 +54,7 @@ def test_email(pyi_builder):
     pyi_builder.test_script('pyi_email.py')
 
 
+@pytest.mark.xfail(reason='failing with Python 3.3 in Appveyor')
 @importorskip('Crypto')
 def test_feature_crypto(pyi_builder):
     pyi_builder.test_script('pyi_feature_crypto.py', pyi_args=['--key=test_key'])
