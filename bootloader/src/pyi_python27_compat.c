@@ -17,23 +17,24 @@ The trick as that the function names are the same for Python 2 and
 Python 3 (only the argument type differs) and are loaded dynamically.
 */
 
-inline void PI_Py2_SetPythonHome(char * str) {
+
+void PI_Py2_SetPythonHome(char * str) {
   PI_Py_SetPythonHome((wchar_t *) str);
 };
 
-inline void PI_Py2_SetProgramName(char * str) {
+void PI_Py2_SetProgramName(char * str) {
   PI_Py_SetProgramName((wchar_t *) str);
 };
 
-inline void PI_Py2Sys_SetPath(char * str) {
+void PI_Py2Sys_SetPath(char * str) {
   PI_PySys_SetPath((wchar_t *) str);
 };
 
-inline int PI_Py2Sys_SetArgvEx(int argc, char ** argv, int updatepath) {
+int PI_Py2Sys_SetArgvEx(int argc, char ** argv, int updatepath) {
   return PI_PySys_SetArgvEx(argc, (wchar_t **) argv, updatepath);
 };
 
-inline void PI_Py2Sys_AddWarnOption(char * str) {
+void PI_Py2Sys_AddWarnOption(char * str) {
   PI_PySys_AddWarnOption((wchar_t *) str);
 };
 bool is_py2; // true if we are loading Python 2.x library
