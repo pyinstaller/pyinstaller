@@ -36,6 +36,7 @@ And to use this variable in the build phase:
 
 This is the list of known variables. (Please update it if necessary.)
 
+configdir
 hasUPX
 hiddenimports
 noconfirm

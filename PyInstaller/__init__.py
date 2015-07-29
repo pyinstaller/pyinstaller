@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-__all__ = ('HOMEPATH', 'CONFIGDIR', 'PLATFORM',
+__all__ = ('HOMEPATH', 'PLATFORM',
            'VERSION', 'get_version')
 
 import os
@@ -55,21 +55,6 @@ if is_win and is_py2:
             pass
 
 
-if compat.getenv('PYINSTALLER_CONFIG_DIR'):
-    CONFIGDIR = compat.getenv('PYINSTALLER_CONFIG_DIR')
-elif is_win:
-    CONFIGDIR = compat.getenv('APPDATA')
-    if not CONFIGDIR:
-        CONFIGDIR = os.path.expanduser('~\\Application Data')
-elif is_darwin:
-    CONFIGDIR = os.path.expanduser('~/Library/Application Support')
-else:
-    # According to XDG specification
-    # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
-    CONFIGDIR = compat.getenv('XDG_DATA_HOME')
-    if not CONFIGDIR:
-        CONFIGDIR = os.path.expanduser('~/.local/share')
-CONFIGDIR = os.path.join(CONFIGDIR, 'pyinstaller')
 
 
 ## Default values of paths where to put files created by PyInstaller.

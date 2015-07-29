@@ -26,7 +26,7 @@ import tempfile
 
 
 # Relative imports to PyInstaller modules.
-from . import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
+from . import HOMEPATH, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from . import compat
 from . import log as logging
 import collections
@@ -292,8 +292,6 @@ class Analysis(Target):
     """
     _old_scripts = set((
         absnormpath(os.path.join(HOMEPATH, "support", "_mountzlib.py")),
-        absnormpath(os.path.join(CONFIGDIR, "support", "useUnicode.py")),
-        absnormpath(os.path.join(CONFIGDIR, "support", "useTK.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useUnicode.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useTK.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "unpackTK.py")),
@@ -981,7 +979,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     # Python versions as one user.
     pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
     arch = platform.architecture()[0]
-    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
+    cachedir = os.path.join(CONF['configdir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
@@ -2076,11 +2074,11 @@ def build(spec, distpath, workpath, clean_build):
 
     CONF['warnfile'] = os.path.join(workpath, 'warn%s.txt' % CONF['specnm'])
 
-    # Clean PyInstaller cache (CONFIGDIR) and temporary files (workpath)
+    # Clean PyInstaller cache (CONF['configdir']) and temporary files (workpath)
     # to be able start a clean build.
     if clean_build:
-        logger.info('Removing temporary files and cleaning cache in %s', CONFIGDIR)
-        for pth in (CONFIGDIR, workpath):
+        logger.info('Removing temporary files and cleaning cache in %s', CONF['configdir'])
+        for pth in (CONF['configdir'], workpath):
             if os.path.exists(pth):
                 # Remove all files in 'pth'.
                 for f in glob.glob(pth + '/*'):
