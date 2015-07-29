@@ -31,11 +31,11 @@ environment:
       PYWIN_ARCH: "win32"
       WAF_ARGS: "--gcc"
 
-    - PYTHON: "C:\\Python33"
-      PYTHON_VERSION: "3.3"
-      PYTHON_ARCH: "32"
-      PYWIN_ARCH: "win32"
-      WAF_ARGS: "--gcc"
+    #- PYTHON: "C:\\Python33"
+      #PYTHON_VERSION: "3.3"
+      #PYTHON_ARCH: "32"
+      #PYWIN_ARCH: "win32"
+      #WAF_ARGS: "--gcc"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
