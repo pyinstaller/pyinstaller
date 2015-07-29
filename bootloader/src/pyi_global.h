@@ -42,14 +42,12 @@
      * They probably have the type 'bool' defined.
      * TODO find out more info.
      */
-    #ifndef __cplusplus
-        typedef int bool;
-        #define true    1
-        #define false   0
-    #else
-        #define true    True
-        #define false   False
-    #endif
+    #undef bool
+    #undef true
+    #undef false
+    typedef int bool;
+    #define true    1
+    #define false   0
 #endif
 
 
