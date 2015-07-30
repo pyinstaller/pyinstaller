@@ -11,11 +11,11 @@
 import os
 import sys
 
-from PyInstaller.compat import is_win, is_darwin, is_unix, is_virtualenv, venv_real_prefix
+from PyInstaller.compat import is_win, is_darwin, is_unix, is_venv, base_prefix
 from PyInstaller.compat import modname_tkinter
-from PyInstaller.bindepend import selectImports, getImports
+from PyInstaller.depend.bindepend import selectImports, getImports
 from PyInstaller.build import Tree
-from PyInstaller.hooks.hookutils import exec_statement, logger
+from PyInstaller.utils.hooks.hookutils import exec_statement, logger
 
 
 def _handle_broken_tcl_tk():
@@ -33,8 +33,8 @@ def _handle_broken_tcl_tk():
     -------
     https://github.com/pypa/virtualenv/issues/93
     """
-    if is_win and is_virtualenv:
-        basedir = os.path.join(venv_real_prefix, 'tcl')
+    if is_win and is_venv:
+        basedir = os.path.join(base_prefix, 'tcl')
         files = os.listdir(basedir)
 
         # Detect Tcl/Tk paths.
@@ -139,6 +139,7 @@ def _find_tcl_tk_dir():
         'from %s import Tcl; print(Tcl().eval("info library"))' % modname_tkinter)
     tk_version = exec_statement(
         'from _tkinter import TK_VERSION; print(TK_VERSION)')
+
     # TK_LIBRARY is in the same prefix as Tcl.
     tk_root = os.path.join(os.path.dirname(tcl_root), 'tk%s' % tk_version)
     return tcl_root, tk_root
@@ -159,10 +160,11 @@ def _find_tcl_tk(mod):
 
     if is_darwin:
         # _tkinter depends on system Tcl/Tk frameworks.
+        # For example this is the case of Python from homebrew.
         if not bins:
-            # 'mod.pyinstaller_binaries' can't be used because on Mac OS X _tkinter.so
+            # 'mod.binaries' can't be used because on Mac OS X _tkinter.so
             # might depend on system Tcl/Tk frameworks and these are not
-            # included in 'mod.pyinstaller_binaries'.
+            # included in 'mod.binaries'.
             bins = getImports(mod.__file__)
             # Reformat data structure from
             #     set(['lib1', 'lib2', 'lib3'])
@@ -235,7 +237,7 @@ def hook(mod):
     log a non-fatal error otherwise.
     """
     if is_win or is_darwin or is_unix:
-        mod.pyinstaller_datas.extend(_collect_tcl_tk_files(mod))
+        mod.add_data(_collect_tcl_tk_files(mod))
     else:
         logger.error("... skipping Tcl/Tk handling on unsupported platform %s", sys.platform)
 

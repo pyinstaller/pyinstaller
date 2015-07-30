@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -10,24 +10,27 @@
 
 """
 Various classes and functions to provide some backwards-compatibility
-with previous versions of Python from 2.3 onward.
+with previous versions of Python from 2.7 onward.
 """
 
 
-import dircache  # Module removed in Python 3
 import os
 import platform
 import site
 import subprocess
 import sys
 
+
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3
-
-is_py25 = sys.version_info >= (2, 5)
-is_py26 = sys.version_info >= (2, 6)
-is_py27 = sys.version_info >= (2, 7)
+# Distinguish specific code for various Python versions.
+is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
+# PyInstaller supports only Python 3.3+
+# Variables 'is_pyXY' mean that Python X.Y and up is supported.
+is_py34 = sys.version_info >= (3, 4)
+is_py35 = sys.version_info >= (3, 5)
+is_py36 = sys.version_info >= (3, 6)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
@@ -45,6 +48,33 @@ is_freebsd = sys.platform.startswith('freebsd')
 # platform specific details for Mac in PyInstaller.
 is_unix = is_linux or is_solar or is_aix or is_freebsd
 
+
+# On different platforms is different file for dynamic python library.
+_pyver = sys.version_info[:2]
+if is_win:
+    PYDYLIB_NAMES = set(['python%d%d.dll' % _pyver])
+elif is_cygwin:
+    PYDYLIB_NAMES = set(['libpython%d%d.dll' % _pyver])
+elif is_darwin:
+    PYDYLIB_NAMES = set(['Python', '.Python', 'libpython%d.%d.dylib' % _pyver])
+elif is_aix:
+    # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
+    PYDYLIB_NAMES = set(['libpython%d.%d.a' % _pyver])
+elif is_freebsd:
+    PYDYLIB_NAMES = set(['libpython%d.%d.so.1' % _pyver])
+elif is_unix:
+    # Other *nix platforms.
+    # Python 2 .so library on Linux is: libpython2.7.so.1.0
+    # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
+    PYDYLIB_NAMES = set(['libpython%d.%d.so.1.0' % _pyver,
+                         'libpython%d.%dm.so.1.0' % _pyver,
+                         'libpython%d.%dmu.so.1.0' % _pyver])
+else:
+    raise SystemExit('Your platform is not yet supported. '
+                     'Please define constant PYDYLIB_NAMES for your platform.')
+
+
+
 # In Python 3 built-in function raw_input() was renamed to just 'input()'.
 try:
     stdin_input = raw_input
@@ -54,9 +84,9 @@ except NameError:
 
 
 # UserList class is moved to 'collections.UserList in Python 3.
-try:
+if is_py2:
     from UserList import UserList
-except:
+else:
     from collections import UserList
 
 
@@ -65,22 +95,6 @@ if __debug__:
     PYCO = 'c'
 else:
     PYCO = 'o'
-
-
-# If ctypes is present, specific dependency discovery can be enabled.
-try:
-    import ctypes
-except ImportError:
-    ctypes = None
-
-
-if 'PYTHONCASEOK' not in os.environ:
-    def caseOk(filename):
-        files = dircache.listdir(os.path.dirname(filename))
-        return os.path.basename(filename) in files
-else:
-    def caseOk(filename):
-        return True
 
 
 # Obsolete command line options (do not exist anymore).
@@ -102,34 +116,6 @@ else:
     _PYOPTS = '-O'
 
 
-try:
-    # Python 2.5+
-    import hashlib
-except ImportError:
-    class hashlib(object):
-        from md5 import new as md5
-        from sha import new as sha
-
-
-# Function os.path.relpath() available in Python 2.6+.
-if hasattr(os.path, 'relpath'):
-    from os.path import relpath
-# Own implementation of relpath function.
-else:
-    def relpath(path, start=os.curdir):
-        """
-        Return a relative version of a path.
-        """
-        if not path:
-            raise ValueError("no path specified")
-        # Normalize paths.
-        path = os.path.normpath(path)
-        start = os.path.abspath(start) + os.sep  # os.sep has to be here.
-        # Get substring.
-        relative = path[len(start):len(path)]
-        return relative
-
-
 # In a virtual environment created by virtualenv (github.com/pypa/virtualenv)
 # there exists sys.real_prefix with the path to the base Python
 # installation from which the virtual environment was created. This is true regardless of
@@ -142,17 +128,47 @@ else:
 #
 # The following code creates compat.is_venv and is.virtualenv
 # that are True when running a virtual environment, and also
-# compat.base_prefix and compat.venv_real_prefix with the path to the
+# compat.base_prefix with the path to the
 # base Python installation.
 
 base_prefix = getattr( sys, 'real_prefix',
                        getattr( sys, 'base_prefix', sys.prefix )
                         )
-venv_real_prefix = base_prefix
 is_venv = is_virtualenv = base_prefix != sys.prefix
 
-# Forward-compatibility with python3-branch.
-modname_tkinter = 'Tkinter'
+
+# In Python 3.4 module 'imp' is deprecated and there is another way how
+# to obtain magic value.
+if is_py2:
+    import imp
+    BYTECODE_MAGIC = imp.get_magic()
+else:
+    if is_py34:
+        import importlib.util
+        BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
+    else:
+        import importlib._bootstrap
+        # TODO verify this works with Python 3.2
+        BYTECODE_MAGIC = importlib._bootstrap._MAGIC_BYTES
+
+
+# List of suffixes for Python C extension modules.
+try:
+    # In Python 3.3+ There is a list
+    from importlib.machinery import EXTENSION_SUFFIXES
+except ImportError:
+    import imp
+    EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes()
+                          if f[2] == imp.C_EXTENSION]
+
+
+# In Python 3 'Tkinter' has been made lowercase - 'tkinter'. Keep Python 2
+# compatibility.
+if is_py2:
+    modname_tkinter = 'Tkinter'
+else:
+    modname_tkinter = 'tkinter'
+
 
 def architecture():
     """
@@ -165,7 +181,7 @@ def architecture():
         # returns "64bit" event for the 32bit version of Python's
         # universal binary. So we roll out our own (that works
         # on Darwin).
-        if sys.maxint > 2L ** 32:
+        if sys.maxsize > 2 ** 32:
             return '64bit'
         else:
             return '32bit'
@@ -244,9 +260,13 @@ def exec_command(*cmdargs):
     Wrap creating subprocesses
 
     Return stdout of the invoked command.
-    Todo: Use module `subprocess` if available, else `os.system()`
     """
-    return subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
+    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
+    # Python 3 returns stdout/stderr as a byte array NOT as string.
+    # Thus we need to convert that to proper encoding.
+    # Let' suppose that stdout/stderr will contain only utf-8 or ascii
+    # characters.
+    return out.decode('utf-8')
 
 
 def exec_command_rc(*cmdargs, **kwargs):
@@ -254,7 +274,6 @@ def exec_command_rc(*cmdargs, **kwargs):
     Wrap creating subprocesses.
 
     Return exit code of the invoked command.
-    Todo: Use module `subprocess` if available, else `os.system()`
     """
     return subprocess.call(cmdargs, **kwargs)
 
@@ -269,8 +288,11 @@ def exec_command_all(*cmdargs, **kwargs):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
     out, err = proc.communicate()
-
-    return proc.returncode, out, err
+    # Python 3 returns stdout/stderr as a byte array NOT as string.
+    # Thus we need to convert that to proper encoding.
+    # Let' suppose that stdout/stderr will contain only utf-8 or ascii
+    # characters.
+    return proc.returncode, out.decode('utf-8'), err.decode('utf-8')
 
 
 def __wrap_python(args, kwargs):
@@ -322,7 +344,7 @@ def exec_python_all(*args, **kwargs):
     return exec_command_all(*cmdargs, **kwargs)
 
 
-# The function os.getcwd() does not work with unicode paths on Windows.
+# The function os.getcwd() in Python 2 does not work with unicode paths on Windows.
 def getcwd():
     """
     Wrap os.getcwd()
@@ -331,8 +353,9 @@ def getcwd():
     characters.
     """
     cwd = os.getcwd()
-    # TODO os.getcwd should work properly with py3 on windows.
-    if is_win:
+    # os.getcwd works properly with Python 3 on Windows.
+    # We need this workaround only for Python 2 on Windows.
+    if is_win and is_py2:
         try:
             unicode(cwd)
         except UnicodeDecodeError:
@@ -388,8 +411,38 @@ else:
             pths = [os.path.join(sys.prefix, 'Lib', 'site-packages')]
             # Include Real sys.prefix for virtualenv.
             if is_virtualenv:
-                pths.append(os.path.join(venv_real_prefix, 'Lib', 'site-packages'))
+                pths.append(os.path.join(base_prefix, 'Lib', 'site-packages'))
             return pths
         else:
             # TODO Implement for Python 2.6 on other platforms.
             raise NotImplementedError()
+
+
+# Function to reload a module - used to reload module 'PyInstaller.config' for tests.
+# imp module is deprecated since Python 3.4.
+try:
+    from importlib import reload as module_reload
+except ImportError:
+    from imp import reload as module_reload
+
+
+# Wrapper to load a module from a Python source file.
+# This function loads import hooks when processing them.
+if is_py2:
+    import imp
+    importlib_load_source = imp.load_source
+else:
+    import importlib.machinery
+    def importlib_load_source(name, pathname):                # Import module from a file.
+        mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
+        return mod_loader.load_module()
+
+
+# Patterns of module names that should be bundled into the base_library.zip.
+PY3_BASE_MODULES = set([
+    '_weakrefset',
+    'abc',
+    'codecs',
+    'encodings',
+    'io',
+])

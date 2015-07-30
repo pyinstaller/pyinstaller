@@ -1,0 +1,9 @@
+setup.py
+nspkg2/__init__.py
+nspkg2/ccc.py
+nspkg2_ccc.egg-info/PKG-INFO
+nspkg2_ccc.egg-info/SOURCES.txt
+nspkg2_ccc.egg-info/dependency_links.txt
+nspkg2_ccc.egg-info/namespace_packages.txt
+nspkg2_ccc.egg-info/not-zip-safe
+nspkg2_ccc.egg-info/top_level.txt

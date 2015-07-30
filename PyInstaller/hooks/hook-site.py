@@ -8,26 +8,26 @@
 #-----------------------------------------------------------------------------
 
 
-"""
-Replace the code of real 'site' module by fake code doing nothing.
-
-The real 'site' does some magic to find paths to other possible
-Python modules. We do not want this behaviour for frozen applications.
-
-Fake 'site' makes PyInstaller to work with distutils and to work inside
-virtualenv environment.
-"""
-
+# In virtualenv, site.py module is overriden. We need to bundle the real
+# site.py module.
 
 import os
+import sys
 
-import PyInstaller
+from PyInstaller.compat import base_prefix, is_venv, is_win
 
 
 def hook(mod):
-    # Replace mod by fake 'site' module.
-    pyi_dir = os.path.abspath(os.path.dirname(PyInstaller.__file__))
-    fake_file = os.path.join(pyi_dir, 'fake', 'fake-site.py')
-    new_code_object = PyInstaller.utils.misc.get_code_object(fake_file)
-    mod = PyInstaller.depend.modules.PyModule('site', fake_file, new_code_object)
+    if is_venv:
+        # Workaround to get real path of site.py module.
+        if is_win:
+            mod_path = os.path.join(base_prefix, 'Lib', 'site.py')
+        else:
+            mod_path = os.path.join(base_prefix, 'lib',
+                                    'python'+sys.version[:3], 'site.py')
+            mod64_path = os.path.join(base_prefix, 'lib64',
+                                      'python'+sys.version[:3], 'site.py')
+            if os.path.exists(mod64_path):
+                mod_path = mod64_path
+        mod.retarget(mod_path)
     return mod

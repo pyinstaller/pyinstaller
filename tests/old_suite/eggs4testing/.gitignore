@@ -1,0 +1,12 @@
+/venv/
+/*.egg-info
+/dist/
+/build/
+/nspkg1-aaa/
+/nspkg1-bbb/
+/nspkg1-ccc/
+/nspkg1-empty/
+/nspkg2-aaa/
+/nspkg2-bbb/
+/nspkg2-ccc/
+/nspkg2-empty/

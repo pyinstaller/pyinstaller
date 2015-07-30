@@ -5,9 +5,9 @@ from __future__ import print_function
 import os
 import sys
 
-from macholib._cmdline import main as _main
-from macholib.MachO import MachO
-from macholib.mach_o import *
+from PyInstaller.lib.macholib._cmdline import main as _main
+from PyInstaller.lib.macholib.MachO import MachO
+from PyInstaller.lib.macholib.mach_o import *
 
 ARCH_MAP={
     ('<', '64-bit'): 'x86_64',

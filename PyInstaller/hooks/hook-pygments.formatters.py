@@ -20,6 +20,5 @@
 #        mod = __import__(module_name, None, None, ['__all__'])
 #
 # Therefore, we need all the modules in ``pygments.formatters``.
-from PyInstaller.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks.hookutils import collect_submodules
 hiddenimports = collect_submodules('pygments.formatters')
-

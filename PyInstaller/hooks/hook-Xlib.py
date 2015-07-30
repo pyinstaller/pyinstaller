@@ -11,6 +11,6 @@ import sys
 
 from PyInstaller import is_unix
 
-import hookutils
+from PyInstaller.utils.hooks import hookutils
 
 hiddenimports = hookutils.collect_submodules('Xlib')

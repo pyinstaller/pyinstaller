@@ -16,7 +16,7 @@
 import glob
 import os
 from PyInstaller.compat import is_win
-from PyInstaller.hooks.hookutils import exec_statement
+from PyInstaller.utils.hooks.hookutils import exec_statement
 
 
 hiddenimports = ['gmodule', 'gobject']
@@ -42,8 +42,7 @@ print(os.path.dirname(pth))
 
     for f in glob.glob(pattern):
         # 'f' contains absolute path.
-        # TODO fix this hook to use attribute 'binaries'.
-        mod.pyinstaller_binaries.append((os.path.join('gst_plugins', os.path.basename(f)),
+        mod.binaries.append((os.path.join('gst_plugins', os.path.basename(f)),
                 f, 'BINARY'))
 
     return mod

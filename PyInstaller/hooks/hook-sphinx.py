@@ -20,7 +20,7 @@ from PyInstaller.compat import is_py2
 #    __import__('sphinx.builders.' + mod, None, None, [cls]), cls)
 #
 # Therefore, we need all modules in ``sphinx.builders``.
-from PyInstaller.hooks.hookutils import collect_submodules, collect_data_files
+from PyInstaller.utils.hooks.hookutils import collect_submodules, collect_data_files
 
 hiddenimports = ( collect_submodules('sphinx.builders') +
 #

@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 import os
-from PyInstaller.hooks.hookutils import exec_statement
+from PyInstaller.utils.hooks.hookutils import exec_statement
 
 template_path = exec_statement('from pyexcelerate.Writer import _TEMPLATE_PATH as tp; print(tp)')
 

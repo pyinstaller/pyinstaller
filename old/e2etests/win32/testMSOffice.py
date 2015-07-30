@@ -69,7 +69,7 @@ def TestWord():
             raise ImportError, "Can not load the Word8 typelibrary."
         word = win32com.client.Dispatch("Word.Application.8")
         TestWord8(word)
-    except ImportError, details:
+    except ImportError as details:
         print("Can not test MSWord8 -", details)
 
 def TestWord7(word):

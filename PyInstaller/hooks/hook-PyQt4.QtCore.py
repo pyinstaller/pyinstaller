@@ -8,12 +8,11 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['sip', "PyQt4._qt"]
+hiddenimports = ['sip', 'PyQT4._qt']
 
-from PyInstaller.hooks.hookutils import qt4_plugins_binaries
+from PyInstaller.utils.hooks.hookutils import qt4_plugins_binaries
 
 
 def hook(mod):
-    # TODO fix this hook to use attribute 'binaries'.
-    mod.pyinstaller_binaries.extend(qt4_plugins_binaries('codecs'))
+    mod.add_binary(qt4_plugins_binaries('codecs'))
     return mod

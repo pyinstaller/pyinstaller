@@ -9,6 +9,6 @@
 
 # This is needed to bundle cacerts.txt that comes with httplib2 module
 
-from PyInstaller.hooks.hookutils import collect_data_files
+from PyInstaller.utils.hooks.hookutils import collect_data_files
 
 datas = collect_data_files('httplib2')

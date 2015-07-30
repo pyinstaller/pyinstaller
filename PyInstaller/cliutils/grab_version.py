@@ -12,7 +12,7 @@ import codecs
 import os
 import sys
 
-import PyInstaller.utils.versioninfo
+import PyInstaller.utils.win32.versioninfo
 from PyInstaller.utils import misc
 
 
@@ -38,10 +38,10 @@ def run():
         out_filename = os.path.abspath(sys.argv[2])
 
     try:
-        vs = PyInstaller.utils.versioninfo.decode(sys.argv[1])
+        vs = PyInstaller.utils.win32.versioninfo.decode(sys.argv[1])
         fp = codecs.open(out_filename, 'w', 'utf-8')
         fp.write(unicode(vs))
         fp.close()
-        print('Version info written to: %s' % out_filename)
+        print(('Version info written to: %s' % out_filename))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

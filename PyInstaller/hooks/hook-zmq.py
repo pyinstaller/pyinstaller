@@ -15,7 +15,7 @@ http://www.zeromq.org/
 import glob
 import os
 import itertools
-from PyInstaller.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks.hookutils import collect_submodules
 
 hiddenimports = ['zmq.utils.garbage']
 hiddenimports.extend(collect_submodules('zmq.backend'))
@@ -35,6 +35,6 @@ def hook(mod):
             # so libzmq has to land there.
             name = os.path.join('zmq', os.path.basename(bundled[0]))
             # TODO fix this hook to use attribute 'binaries'.
-            mod.pyinstaller_binaries.append((name, bundled[0], 'BINARY'))
+            mod.binaries.append((name, bundled[0], 'BINARY'))
 
     return mod

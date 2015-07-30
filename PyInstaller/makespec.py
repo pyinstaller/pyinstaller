@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -118,8 +118,6 @@ block_cipher = None
 """
 
 cipher_init_template = """
-from PyInstaller.loader import pyi_crypto
-
 block_cipher = pyi_crypto.PyiBlockCipher(key=%(key)r)
 """
 
@@ -167,7 +165,7 @@ def make_variable_path(filename, conversions=path_conversions):
 # itself using variable names instead of hard-coded paths.
 class Path:
     def __init__(self, *parts):
-        self.path = apply(os.path.join, parts)
+        self.path = os.path.join(*parts)
         self.variable_prefix = self.filename_suffix = None
 
     def __repr__(self):
@@ -348,11 +346,11 @@ def main(scripts, name=None, onefile=False,
             # Assume filename
             exe_options = "%s, manifest='%s'" % (exe_options, quote_win_filepath(manifest))
     if resources:
-        resources = map(quote_win_filepath, resources)
+        resources = list(map(quote_win_filepath, resources))
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
 
     hiddenimports = hiddenimports or []
-    scripts = map(Path, scripts)
+    scripts = list(map(Path, scripts))
 
     if key:
         # Tries to import PyCrypto since we need it for bytecode obfuscation. Also make sure its
@@ -360,7 +358,7 @@ def main(scripts, name=None, onefile=False,
         try:
             import Crypto
 
-            pycrypto_version = map(int, Crypto.__version__.split('.'))
+            pycrypto_version = list(map(int, Crypto.__version__.split('.')))
             is_version_acceptable = pycrypto_version[0] >= 2 and pycrypto_version[1] >= 4
 
             if not is_version_acceptable:

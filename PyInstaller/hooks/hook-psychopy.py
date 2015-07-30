@@ -9,5 +9,5 @@
 
 # Tested on Windows 7 64bit with python 2.7.6 and PsychoPy 1.81.03
 
-from PyInstaller.hooks import hookutils
+from PyInstaller.utils.hooks import hookutils
 datas = hookutils.collect_data_files('psychopy')

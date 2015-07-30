@@ -1,0 +1,4 @@
+Directories
+
+scripts         Python scripts that are used in tests.
+modules         Python modules used in some tests.

@@ -14,8 +14,8 @@ Hook for cryptography module from the Python Cryptography Authority.
 
 import os.path
 import glob
-from PyInstaller.hooks.hookutils import collect_submodules, get_module_file_attribute
-from PyInstaller.hooks.hookutils import PY_EXTENSION_SUFFIXES
+from PyInstaller.utils.hooks.hookutils import collect_submodules, get_module_file_attribute
+from PyInstaller.utils.hooks.hookutils import PY_EXTENSION_SUFFIXES
 
 # add the OpenSSL FFI binding modules as hidden imports
 hiddenimports = collect_submodules('cryptography.hazmat.bindings.openssl')
@@ -23,7 +23,7 @@ hiddenimports = collect_submodules('cryptography.hazmat.bindings.openssl')
 def hook(mod):
     """
     Include the cffi extensions as binaries in a subfolder named like the package.
-    The cffi verifier expects to find them inside the package directory for 
+    The cffi verifier expects to find them inside the package directory for
     the main module. We cannot use hiddenimports because that would add the modules
 	outside the package.
     """
@@ -33,5 +33,5 @@ def hook(mod):
         for f in ffimods:
             name = os.path.join('cryptography', os.path.basename(f))
             # TODO fix this hook to use attribute 'binaries'.
-            mod.pyinstaller_binaries.append((name, f, 'BINARY'))
+            mod.binaries.append((name, f, 'BINARY'))
     return mod

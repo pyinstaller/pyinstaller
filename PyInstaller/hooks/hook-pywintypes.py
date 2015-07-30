@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -16,7 +16,7 @@ attribute.
 """
 
 import os.path
-from PyInstaller.hooks.hookutils import get_module_file_attribute
+from PyInstaller.utils.hooks.hookutils import get_pywin32_module_file_attribute
 
-_pth = get_module_file_attribute('pywintypes')
+_pth = get_pywin32_module_file_attribute('pywintypes')
 binaries = [(os.path.basename(_pth), _pth)]

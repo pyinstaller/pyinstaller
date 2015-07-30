@@ -26,6 +26,7 @@ import PyInstaller.log
 # Warn when old command line option is used
 
 from PyInstaller import get_version
+from .compat import module_reload
 from PyInstaller.utils import misc
 import PyInstaller.log as logging
 
@@ -59,6 +60,11 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
     """
     misc.check_not_running_as_root()
 
+    # Clean up configuration and force PyInstaller to do a clean configuration
+    # for another app/test.
+    from . import config
+    module_reload(config)
+
     try:
         parser = optparse.OptionParser(
             usage='%prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
@@ -80,6 +86,12 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
         if not args:
             parser.error('Requires at least one scriptname file '
                          'or exactly one .spec-file')
+
+
+        # TODO find better way how to pass path to manage.py to django hook.
+        # Django hook requires this variable.
+        from .config import CONF
+        CONF['main_script'] = args[0]
 
         # Skip creating .spec when .spec file is supplied
         if args[0].endswith('.spec'):

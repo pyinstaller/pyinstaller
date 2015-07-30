@@ -21,8 +21,9 @@ import tempfile
 import zlib
 
 
-from PyInstaller.loader import pyi_archive, pyi_carchive
+from PyInstaller.loader import pyimod02_archive, pyimod03_carchive
 from PyInstaller.utils import misc
+from PyInstaller.compat import stdin_input
 import PyInstaller.log
 
 
@@ -49,7 +50,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
 
     while 1:
         try:
-            toks = raw_input('? ').split(None, 1)
+            toks = stdin_input('? ').split(None, 1)
         except EOFError:
             # Ctrl-D
             print()  # Clear line.
@@ -72,11 +73,11 @@ def main(name, brief, debug, rec_debug, **unused_options):
             show(name, arch)
         elif cmd == 'O':
             if not arg:
-                arg = raw_input('open name? ')
+                arg = stdin_input('open name? ')
             arg = arg.strip()
             try:
                 arch = get_archive(arg)
-            except pyi_carchive.NotAnArchiveError as e:
+            except pyimod03_carchive.NotAnArchiveError as e:
                 print(e)
                 continue
             if arch is None:
@@ -86,13 +87,13 @@ def main(name, brief, debug, rec_debug, **unused_options):
             show(arg, arch)
         elif cmd == 'X':
             if not arg:
-                arg = raw_input('extract name? ')
+                arg = stdin_input('extract name? ')
             arg = arg.strip()
             data = get_data(arg, arch)
             if data is None:
                 print("Not found")
                 continue
-            filename = raw_input('to filename? ')
+            filename = stdin_input('to filename? ')
             if not filename:
                 print(repr(data))
             else:
@@ -112,7 +113,7 @@ def do_cleanup():
     for filename in cleanup:
         try:
             os.remove(filename)
-        except Exception, e:
+        except Exception as e:
             print("couldn't delete", filename, e.args)
     cleanup = []
 
@@ -128,7 +129,7 @@ def get_archive(name):
     if not stack:
         if name[-4:].lower() == '.pyz':
             return ZlibArchive(name)
-        return pyi_carchive.CArchive(name)
+        return pyimod03_carchive.CArchive(name)
     parent = stack[-1][1]
     try:
         return parent.openEmbedded(name)
@@ -144,7 +145,7 @@ def get_archive(name):
         if typcd == 'z':
             return ZlibArchive(tempfilename)
         else:
-            return pyi_carchive.CArchive(tempfilename)
+            return pyimod03_carchive.CArchive(tempfilename)
 
 
 def get_data(name, arch):
@@ -216,7 +217,7 @@ def get_archive_content(filename):
     return output
 
 
-class ZlibArchive(pyi_archive.ZlibArchive):
+class ZlibArchive(pyimod02_archive.ZlibArchive):
 
     def checkmagic(self):
         """ Overridable.

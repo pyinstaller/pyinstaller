@@ -17,7 +17,7 @@
 <col class="docinfo-content" />
 <tbody valign="top">
 <tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller 2.1.1dev-3607bf4</td></tr>
+<td>PyInstaller 3.0</td></tr>
 <tr class="field"><th class="docinfo-name">Homepage:</th><td class="field-body"><a class="reference external" href="http://www.pyinstaller.org">http://www.pyinstaller.org</a></td>
 </tr>
 <tr><th class="docinfo-name">Contact:</th>
@@ -183,12 +183,12 @@
 <dd><ul class="first last simple">
 <li>Windows XP or newer.</li>
 <li><a class="reference external" href="http://sourceforge.net/projects/pywin32/files/">PyWin32</a>
-Python extensions for Windows is needed for users of Python 2.6 and later.</li>
+Python extensions for Windows.</li>
 </ul>
 </dd>
 <dt><strong>Mac OS X</strong></dt>
 <dd><ul class="first last simple">
-<li>Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion, Mountain Lion).</li>
+<li>Mac OS X 10.6 (Snow Leopard) or newer.</li>
 </ul>
 </dd>
 <dt><strong>Linux</strong></dt>
@@ -636,14 +636,14 @@ After you do this, you name the spec file to <cite>PyInstaller</cite> instead of
 <td>Show program version info and exit.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">--distpath=<var>DIR</var></span></kbd></td>
-<td>Where to put the bundled app (default: /home/hartmut/p
-rojekte/software/pyinstaller/doc/source/dist)</td></tr>
+<td>Where to put the bundled app (default: /home/martin/Pr
+ojects/pyinstaller/python3/doc/source/dist)</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--workpath=<var>WORKPATH</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Where to put all the temporary work files, .log, .pyz
-and etc. (default: /home/hartmut/projekte/software/pyi
-nstaller/doc/source/build)</td></tr>
+and etc. (default: /home/martin/Projects/pyinstaller/p
+ython3/doc/source/build)</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">-y</span>, <span class="option">--noconfirm</span></kbd></td>
 </tr>
@@ -1017,6 +1017,12 @@ Under Linux and Mac OS, you switch environments at the command line.</p>
 <p>If you need to distribute your application for more than one OS,
 for example both Windows and Mac OS X, you must install <cite>PyInstaller</cite>
 on each platform and bundle your app separately on each.</p>
+<p>If you share the same home directory on multiple platforms, for
+example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
+environment variable to different values on each platform otherwise
+PyInstaller may cache files for one platform and use them on the other
+platform, as by default it uses a subdirectory of your home directory
+as its cache location.</p>
 <p>You can do this from a single machine using virtualization.
 The free <a class="reference external" href="https://www.virtualbox.org">virtualBox</a> or the paid <a class="reference external" href="http://www.vmware.com/solutions/desktop/">VMWare</a> and <a class="reference external" href="http://www.parallels.com/">Parallels</a>
 allow you to run another complete operating system as a &quot;guest&quot;.
@@ -1352,8 +1358,6 @@ file loaded at bootstrap time, while the latter can use it to encrypt
 Python modules at build time.</p>
 <p>A complete example:</p>
 <pre class="literal-block">
-from PyInstaller.loader import pyi_crypto
-
 block_cipher = pyi_crypto.PyiBlockCipher(key='test_key')
 a = Analysis(['test_onefile_crypto.py'], cipher=block_cipher)
 pyz = PYZ(a.pure, cipher=block_cipher)
@@ -2110,8 +2114,17 @@ please send us the hook file so we can make it available to others.</p>
 <tt class="docutils literal">hooks</tt> folder of the <cite>PyInstaller</cite> folder
 (or in a folder specified with <tt class="docutils literal"><span class="pre">--additional-hooks-dir</span></tt>).</p>
 <p>A hook is executable Python code that should
-define one or more of the following three global names:</p>
+define one or more of the following several global names:</p>
 <dl class="docutils">
+<dt><tt class="docutils literal">excludedimports</tt></dt>
+<dd><p class="first">A list of module names (relative or absolute) that the
+hooked module excludes in some opaque way.
+These names reduce the list of imported modules created
+by scanning the code. Example:</p>
+<pre class="last literal-block">
+excludedimports = ['_proxy', 'utils', 'defs']
+</pre>
+</dd>
 <dt><tt class="docutils literal">hiddenimports</tt></dt>
 <dd><p class="first">A list of module names (relative or absolute) that the
 hooked module imports in some opaque way.
@@ -2122,12 +2135,12 @@ hiddenimports = ['_proxy', 'utils', 'defs']
 </pre>
 <p>A way to simplify adding all submodules of a package is to use:</p>
 <pre class="literal-block">
-from PyInstaller.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks.hookutils import collect_submodules
 hiddenimports = collect_submodules('package')
 </pre>
 <p>For an example see <tt class="docutils literal"><span class="pre">hook-docutils.py</span></tt> in the hooks folder.</p>
 <p class="last">Note: We suggest always using the fully qualified name
-<tt class="docutils literal">PyInstaller.hooks.hookutils</tt> for importing hookutils. This
+<tt class="docutils literal">PyInstaller.utils.hooks.hookutils</tt> for importing hookutils. This
 avoids some pitfalls when implementing hooks for sub-modules.</p>
 </dd>
 <dt><tt class="docutils literal">datas</tt></dt>
@@ -2146,12 +2159,24 @@ and recursively (because of the <tt class="docutils literal">*</tt> wildcard)
 copy the content of <cite>/usr/share/libsmi/mibs</cite> into <cite>mibs</cite>.</p>
 <p>A way to simplify collecting a folder of files is to use:</p>
 <pre class="literal-block">
-from hookutils import collect_data_files
+from PyInstaller.utils.hooks.hookutils import collect_data_files
 datas = collect_data_files('package_name')
 </pre>
 <p class="last">to collect all package-related data files into a folder
 <em>package_name</em> in the app bundle.
 For an example see hook-pytz.py in the hooks folder.</p>
+</dd>
+<dt><tt class="docutils literal">binaries</tt></dt>
+<dd><p class="first">A list of globs of files or directories to bundle as binaries. Binaries is
+a special case of <tt class="docutils literal">datas</tt> in that PyInstaller will check if they depend
+on other possible dynamic libraries. Otherwise it looks the same.</p>
+<p>Example:</p>
+<pre class="last literal-block">
+binaries = [
+     ('/usr/lib/lib*.so', 'libs'),
+     ('C:\\Windows\\System32\\*.dll', 'dlls'),
+     ]
+</pre>
 </dd>
 <dt><tt class="docutils literal">attrs</tt></dt>
 <dd><p class="first">A list of <tt class="docutils literal">(</tt> <em>name</em> <tt class="docutils literal">,</tt> <em>value</em> <tt class="docutils literal">)</tt> pairs
@@ -2641,7 +2666,7 @@ were easy to implement.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2015-05-29 12:12 UTC.
+Generated on: 2015-07-28 11:16 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

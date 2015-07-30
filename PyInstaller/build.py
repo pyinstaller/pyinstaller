@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -10,65 +10,53 @@
 
 """
 Build packages using spec files.
+
+NOTE: All global variables, classes and imported modules create API
+      for .spec files.
 """
 
 
 import glob
-import imp
+import hashlib
 import os
-import pprint
 import platform
-import py_compile
 import shutil
 import sys
 import tempfile
-import UserList
-
-from PyInstaller.loader import pyi_archive, pyi_carchive
-
-import PyInstaller.depend.imptracker
-import PyInstaller.depend.modules
-
-from PyInstaller import HOMEPATH, CONFIGDIR, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
-from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin, is_cygwin
-import PyInstaller.compat as compat
-import PyInstaller.bindepend as bindepend
-
-from PyInstaller.compat import hashlib
-from PyInstaller.depend import dylib
-from PyInstaller.utils import misc
 
 
-import PyInstaller.log as logging
+# Relative imports to PyInstaller modules.
+from . import HOMEPATH, PLATFORM, DEFAULT_DISTPATH, DEFAULT_WORKPATH
+from . import compat
+from . import log as logging
+import collections
+from .utils.misc import absnormpath
+from .compat import is_py2, is_win, is_darwin, is_cygwin, EXTENSION_SUFFIXES, PYDYLIB_NAMES
+from .compat import importlib_load_source
+from .depend import bindepend
+from .depend import dylib
+from .depend.analysis import PyiModuleGraph, TOC, FakeModule, get_bootstrap_modules
+from .depend.utils import create_py3_base_library, is_path_to_egg
+from .loader import pyimod02_archive, pyimod03_carchive, pyimod05_crypto
+from .utils import misc
+from .utils.misc import save_py_data_struct, load_py_data_struct
+from .lib.modulegraph.find_modules import get_implies
+
 if is_win:
-    from PyInstaller.utils import winmanifest
+    from .utils.win32 import icon, versioninfo, winmanifest, winresource
 
 
 logger = logging.getLogger(__name__)
 
-
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
-UNCOMPRESSED, COMPRESSED = range(2)
-
-
-# Set of global variables that can be used while processing .spec file.
-SPEC = None
-SPECPATH = None
-DISTPATH = None
-WORKPATH = None
-WARNFILE = None
-NOCONFIRM = None
-
-# Some modules are included if they are detected at build-time or
-# if a command-line argument is specified. (e.g. --ascii)
-HIDDENIMPORTS = []
+UNCOMPRESSED = 0
+COMPRESSED = 1
 
 rthooks = {}
 
 # place where the loader modules and initialization scripts live
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-_fake_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'fake')
 
 
 _MISSING_BOOTLOADER_ERRORMSG = """
@@ -76,6 +64,17 @@ Fatal error: PyInstaller does not include a pre-compiled bootloader for your
 platform. See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>
 for more details and instructions how to build the bootloader.
 """
+
+
+def _old_api_error(obj_name):
+    """
+    Cause PyInstall to exit when .spec file uses old api.
+    :param obj_name: Name of the old api that is no longer suppored.
+    """
+    raise SystemExit('%s has been removed in PyInstaller 2.0. '
+                     'Please update your spec-file. See '
+                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 '
+                     'for details' % obj_name)
 
 
 def _save_data(filename, data):
@@ -91,6 +90,7 @@ def _load_data(filename):
     return eval(open(filename, 'rU').read())
 
 
+# TODO find better place for function.
 def setupUPXFlags():
     f = compat.getenv("UPX", "")
     if is_win:
@@ -105,91 +105,24 @@ def setupUPXFlags():
     compat.setenv("UPX", f)
 
 
-def mtime(fnm):
-    try:
-        # the file must not only by stat()-able, but also readable
-        if os.access(fnm, os.R_OK):
-            return os.stat(fnm)[8]
-    except OSError:
-        # return 0
-        pass
-    return 0
-
-
-def absnormpath(apath):
-    return os.path.abspath(os.path.normpath(apath))
-
-
-def compile_pycos(toc):
-    """Given a TOC or equivalent list of tuples, generates all the required
-    pyc/pyo files, writing in a local directory if required, and returns the
-    list of tuples with the updated pathnames.
-    """
-    global WORKPATH
-
-    # For those modules that need to be rebuilt, use the build directory
-    # PyInstaller creates during the build process.
-    basepath = os.path.join(WORKPATH, "localpycos")
-
-    new_toc = []
-    for (nm, fnm, typ) in toc:
-        if typ != 'PYMODULE':
-            new_toc.append((nm, fnm, typ))
-            continue
-
-        # Trim the terminal "c" or "o"
-        source_fnm = fnm[:-1]
-
-        # We need to perform a build ourselves if the source is newer
-        # than the compiled, or the compiled doesn't exist, or if it
-        # has been written by a different Python version.
-        needs_compile = (mtime(source_fnm) > mtime(fnm)
-                         or
-                         open(fnm, 'rb').read()[:4] != imp.get_magic())
-        if needs_compile:
-            try:
-                py_compile.compile(source_fnm, fnm)
-                logger.debug("compiled %s", source_fnm)
-            except IOError:
-                # If we're compiling on a system directory, probably we don't
-                # have write permissions; thus we compile to a local directory
-                # and change the TOC entry accordingly.
-                ext = os.path.splitext(fnm)[1]
-
-                if "__init__" not in fnm:
-                    # If it's a normal module, use last part of the qualified
-                    # name as module name and the first as leading path
-                    leading, mod_name = nm.split(".")[:-1], nm.split(".")[-1]
-                else:
-                    # In case of a __init__ module, use all the qualified name
-                    # as leading path and use "__init__" as the module name
-                    leading, mod_name = nm.split("."), "__init__"
-
-                leading = os.path.join(basepath, *leading)
-
-                if not os.path.exists(leading):
-                    os.makedirs(leading)
-
-                fnm = os.path.join(leading, mod_name + ext)
-                needs_compile = (mtime(source_fnm) > mtime(fnm)
-                                 or
-                                 open(fnm, 'rb').read()[:4] != imp.get_magic())
-                if needs_compile:
-                    py_compile.compile(source_fnm, fnm)
-                    logger.debug("compiled %s", source_fnm)
-
-        new_toc.append((nm, fnm, typ))
-
-    return new_toc
-
-
-def addSuffixToExtensions(toc):
+# TODO find better place for function.
+def add_suffix_to_extensions(toc):
     """
     Returns a new TOC with proper library suffix for EXTENSION items.
     """
     new_toc = TOC()
     for inm, fnm, typ in toc:
-        if typ in ('EXTENSION', 'DEPENDENCY'):
+        if typ == 'EXTENSION':
+            # In some rare cases extension might already contain suffix.
+            # Skip it in this case.
+            if not inm.endswith(EXTENSION_SUFFIXES[0]):
+                # Use first suffix from the Python list of suffixes
+                # for C extensions.
+                inm = inm + EXTENSION_SUFFIXES[0]
+
+        elif typ == 'DEPENDENCY':
+            # Use the suffix from the filename.
+            # TODO Verify what extensions are by DEPENDENCIES.
             binext = os.path.splitext(fnm)[1]
             if not os.path.splitext(inm)[1] == binext:
                 inm = inm + binext
@@ -197,7 +130,10 @@ def addSuffixToExtensions(toc):
     return new_toc
 
 
-#--- functons for checking guts ---
+#--- functions for checking guts ---
+# NOTE: By GUTS it is meant intermediate files and data structures that
+# PyInstaller creates for bundling files and creating final executable.
+
 
 def _check_guts_eq(attr, old, new, last_build):
     """
@@ -217,10 +153,10 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     if pyc=1, check for .py files, too
     """
     for (nm, fnm, typ) in old:
-        if mtime(fnm) > last_build:
+        if misc.mtime(fnm) > last_build:
             logger.info("Building because %s changed", fnm)
             return True
-        elif pyc and mtime(fnm[:-1]) > last_build:
+        elif pyc and misc.mtime(fnm[:-1]) > last_build:
             logger.info("Building because %s changed", fnm[:-1])
             return True
     return False
@@ -245,19 +181,20 @@ def _check_path_overlap(path):
 
     Raise SystemExit if there is overlap, return True otherwise
     """
+    from .config import CONF
     specerr = 0
-    if WORKPATH.startswith(path):
+    if CONF['workpath'].startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
-                     'WORKPATH (%s)', path, WORKPATH)
+                     'WORKPATH (%s)', path, CONF['workpath'])
         specerr += 1
-    if SPECPATH.startswith(path):
+    if CONF['specpath'].startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
-                     'SPECPATH (%s)', path, SPECPATH)
+                     'SPECPATH (%s)', path, CONF['specpath'])
         specerr += 1
     if specerr:
         raise SystemExit('Error: Please edit/recreate the specfile (%s) '
                          'and set a different output name (e.g. "dist").'
-                         % SPEC)
+                         % CONF['spec'])
     return True
 
 
@@ -266,11 +203,12 @@ def _rmtree(path):
     Remove directory and all its contents, but only after user confirmation,
     or if the -y option is set
     """
-    if NOCONFIRM:
+    from .config import CONF
+    if CONF['noconfirm']:
         choice = 'y'
     elif sys.stdout.isatty():
-        choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
-                           'CONTENTS will be REMOVED! Continue? (y/n) ' % path)
+        choice = compat.stdin_input('WARNING: The output directory "%s" and ALL ITS '
+                           'CONTENTS will be REMOVED! Continue? (y/n)' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
                          'Please remove all its contents or use the '
@@ -283,41 +221,23 @@ def _rmtree(path):
         raise SystemExit('User aborted')
 
 
-def check_egg(pth):
-    """Check if path points to a file inside a python egg file (or to an egg
-       directly)."""
-    if os.path.altsep:
-        pth = pth.replace(os.path.altsep, os.path.sep)
-    components = pth.split(os.path.sep)
-    sep = os.path.sep
-
-    for i, name in zip(range(0, len(components)), components):
-        if name.lower().endswith(".egg"):
-            eggpth = sep.join(components[:i + 1])
-            if os.path.isfile(eggpth):
-                # eggs can also be directories!
-                return True
-    return False
-
-#--
-
-
 class Target(object):
     invcnum = 0
 
     def __init__(self):
+        from .config import CONF
         # Get a (per class) unique number to avoid conflicts between
         # toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        self.out = os.path.join(WORKPATH, 'out%02d-%s.toc' %
+        self.out = os.path.join(CONF['workpath'], 'out%02d-%s.toc' %
                                 (self.invcnum, self.__class__.__name__))
         self.outnm = os.path.basename(self.out)
         self.dependencies = TOC()
 
     def __postinit__(self):
         logger.info("checking %s", self.__class__.__name__)
-        if self.check_guts(mtime(self.out)):
+        if self.check_guts(misc.mtime(self.out)):
             self.assemble()
 
     GUTS = []
@@ -330,7 +250,7 @@ class Target(object):
         returns None if guts have changed
         """
         try:
-            data = _load_data(self.out)
+            data = load_py_data_struct(self.out)
         except:
             logger.info("Building because %s %s", os.path.basename(self.out), missing)
             return None
@@ -372,15 +292,13 @@ class Analysis(Target):
     """
     _old_scripts = set((
         absnormpath(os.path.join(HOMEPATH, "support", "_mountzlib.py")),
-        absnormpath(os.path.join(CONFIGDIR, "support", "useUnicode.py")),
-        absnormpath(os.path.join(CONFIGDIR, "support", "useTK.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useUnicode.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useTK.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "unpackTK.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py")),
         ))
 
-    def __init__(self, scripts=None, pathex=None, hiddenimports=None,
+    def __init__(self, scripts, pathex=None, hiddenimports=None,
                  hookspath=None, excludes=None, runtime_hooks=[], cipher=None):
         """
         scripts
@@ -399,19 +317,10 @@ class Analysis(Target):
                 An optional list of scripts to use as users' runtime hooks. Specified
                 as file names.
         """
-        Target.__init__(self)
+        super(Analysis, self).__init__()
+        from .config import CONF
 
-        sys._PYI_SETTINGS = {}
-        sys._PYI_SETTINGS['scripts'] = scripts
-
-        # Include initialization Python code in PyInstaller analysis.
-        self.inputs = [
-            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
-            os.path.join(_init_code_path, 'pyi_importers.py'),
-            os.path.join(_init_code_path, 'pyi_archive.py'),
-            os.path.join(_init_code_path, 'pyi_carchive.py'),
-            os.path.join(_init_code_path, 'pyi_os_path.py'),
-            ]
+        self.inputs = []
         for script in scripts:
             if absnormpath(script) in self._old_scripts:
                 logger.warn('Ignoring obsolete auto-added script %s', script)
@@ -438,8 +347,8 @@ class Analysis(Target):
 
 
         self.hiddenimports = hiddenimports or []
-        # Include modules detected at build time. Like 'codecs' and encodings.
-        self.hiddenimports.extend(HIDDENIMPORTS)
+        # Include modules detected when parsing options, like 'codecs' and encodings.
+        self.hiddenimports.extend(CONF['hiddenimports'])
 
         self.hookspath = hookspath
 
@@ -449,32 +358,17 @@ class Analysis(Target):
 
         if cipher:
             logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
-
             # Create a Python module which contains the decryption key which will
             # be used at runtime by pyi_crypto.PyiBlockCipher.
-            pyi_crypto_key_path = os.path.join(WORKPATH, 'pyi_crypto_key.py')
-
+            pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
             with open(pyi_crypto_key_path, 'w') as f:
                 f.write('key = %r\n' % cipher.key)
-
-            # Compile the module so that it ends up in the CArchive and can be
-            # imported by the bootstrap script.
-            import py_compile
-            py_compile.compile(pyi_crypto_key_path)
-
-            logger.info('Adding dependency on pyi_crypto and pyi_crypto_key')
-
-            from PyInstaller.loader import pyi_crypto
-            self.hiddenimports.append(pyi_crypto.HIDDENIMPORT)
-
-            pyi_crypto_path = os.path.join(_init_code_path, 'pyi_crypto.py')
-
-            config['PYZ_dependencies'].append(('pyi_crypto', pyi_crypto_path + 'c', 'PYMODULE'))
-            config['PYZ_dependencies'].append(('pyi_crypto_key', pyi_crypto_key_path + 'c', 'PYMODULE'))
+            logger.info('Adding dependencies on pyi_crypto.py module')
+            self.hiddenimports.append(pyimod05_crypto.get_hiddenimport())
 
         self.excludes = excludes
         self.scripts = TOC()
-        self.pure = TOC()
+        self.pure = {'toc': TOC(), 'code': {}}
         self.binaries = TOC()
         self.zipfiles = TOC()
         self.datas = TOC()
@@ -486,29 +380,115 @@ class Analysis(Target):
             ('hookspath', _check_guts_eq),
             ('excludes', _check_guts_eq),
             ('scripts', _check_guts_toc_mtime),
-            ('pure', lambda *args: apply(_check_guts_toc_mtime,
-                                              args, {'pyc': 1})),
+            ('pure', lambda *args: _check_guts_toc_mtime(*args, **{'pyc': 1})),
             ('binaries', _check_guts_toc_mtime),
             ('zipfiles', _check_guts_toc_mtime),
             ('datas', _check_guts_toc_mtime),
             ('hiddenimports', _check_guts_eq),
             )
 
+    # TODO Refactor to prohibit empty target directories. As the docstring
+    #below documents, this function currently permits the second item of each
+    #2-tuple in "hook.datas" to be the empty string, in which case the target
+    #directory defaults to the source directory's basename. However, this
+    #functionality is very fragile and hence bad. Instead:
+    #
+    #* An exception should be raised if such item is empty.
+    #* All hooks currently passing the empty string for such item (e.g.,
+    #  "hooks/hook-babel.py", "hooks/hook-matplotlib.py") should be refactored
+    #  to instead pass such basename.
+    def _format_hook_datas(self, hook):
+        """
+        Convert the passed `hook.datas` list to a list of `TOC`-style 3-tuples.
+
+        `hook.datas` is a list of 2-tuples whose:
+
+        * First item is either:
+          * A glob matching only the absolute paths of source non-Python data
+            files.
+          * The absolute path of a directory containing only such files.
+        * Second item is either:
+          * The relative path of the target directory into which such files will
+            be recursively copied.
+          * The empty string. In such case, if the first item was:
+            * A glob, such files will be recursively copied into the top-level
+              target directory. (This is usually *not* what you want.)
+            * A directory, such files will be recursively copied into a new
+              target subdirectory whose name is such directory's basename.
+              (This is usually what you want.)
+        """
+        toc_datas = []
+
+        for src_root_path_or_glob, trg_root_dir in getattr(hook, 'datas', []):
+            # List of the absolute paths of all source paths matching the
+            # current glob.
+            src_root_paths = glob.glob(src_root_path_or_glob)
+
+            if not src_root_paths:
+                raise FileNotFoundError(
+                    'Path or glob "%s" not found or matches no files.' % (
+                    src_root_path_or_glob))
+
+            for src_root_path in src_root_paths:
+                if os.path.isfile(src_root_path):
+                    toc_datas.append((
+                        os.path.join(
+                            trg_root_dir, os.path.basename(src_root_path)),
+                        src_root_path, 'DATA'))
+                elif os.path.isdir(src_root_path):
+                    # If no top-level target directory was passed, default this
+                    # to the basename of the top-level source directory.
+                    if not trg_root_dir:
+                        trg_root_dir = os.path.basename(src_root_path)
+
+                    for src_dir, src_subdir_basenames, src_file_basenames in \
+                        os.walk(src_root_path):
+                        # Ensure the current source directory is a subdirectory
+                        # of the passed top-level source directory. Since
+                        # os.walk() does *NOT* follow symlinks by default, this
+                        # should be the case. (But let's make sure.)
+                        assert src_dir.startswith(src_root_path)
+
+                        # Relative path of the current target directory,
+                        # obtained by:
+                        #
+                        # * Stripping the top-level source directory from the
+                        #   current source directory (e.g., removing "/top" from
+                        #   "/top/dir").
+                        # * Normalizing the result to remove redundant relative
+                        #   paths (e.g., removing "./" from "trg/./file").
+                        trg_dir = os.path.normpath(
+                            os.path.join(
+                                trg_root_dir,
+                                os.path.relpath(src_dir, src_root_path)))
+
+                        for src_file_basename in src_file_basenames:
+                            src_file = os.path.join(src_dir, src_file_basename)
+                            if os.path.isfile(src_file):
+                                toc_datas.append((
+                                    os.path.join(trg_dir, src_file_basename),
+                                    src_file, 'DATA'))
+
+        return toc_datas
+
+    # TODO What are 'check_guts' methods useful for?
     def check_guts(self, last_build):
         if last_build == 0:
             logger.info("Building %s because %s non existent", self.__class__.__name__, self.outnm)
             return True
         for fnm in self.inputs:
-            if mtime(fnm) > last_build:
+            if misc.mtime(fnm) > last_build:
                 logger.info("Building because %s changed", fnm)
                 return True
 
         data = Target.get_guts(self, last_build)
         if not data:
             return True
+        # TODO What does it mean 'data[-6:]' ?
+        # TODO Do this code really get executed?
         scripts, pure, binaries, zipfiles, datas, hiddenimports = data[-6:]
         self.scripts = TOC(scripts)
-        self.pure = TOC(pure)
+        self.pure = {'toc': TOC(pure), 'code': {}}
         self.binaries = TOC(binaries)
         self.zipfiles = TOC(zipfiles)
         self.datas = TOC(datas)
@@ -517,199 +497,370 @@ class Analysis(Target):
 
 
     def assemble(self):
-        logger.info("running Analysis %s", os.path.basename(self.out))
-        # Reset seen variable to correctly discover dependencies
-        # if there are multiple Analysis in a single specfile.
-        bindepend.seen = {}
+        """
+        This method is the MAIN method for finding all necessary files to be bundled.
+        """
+        from .config import CONF
 
+
+        # Instantiate a ModuleGraph. The class is defined at end of this module.
+        # The argument is the set of paths to use for imports: sys.path,
+        # plus our loader, plus other paths from e.g. --path option).
+        module_paths = self.pathex + sys.path
+        self.graph = PyiModuleGraph(HOMEPATH, path=module_paths,
+                                    implies=get_implies())
+
+
+        # TODO Find a better place where to put 'base_library.zip' and when to created it.
+        # For Python 3 it is necessary to create file 'base_library.zip'
+        # containing core Python modules. In Python 3 some built-in modules
+        # are written in pure Python. base_library.zip is a way how to have
+        # those modules as "built-in".
+        if not is_py2:
+            libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
+            create_py3_base_library(libzip_filename, graph=self.graph)
+            # Bundle base_library.zip as data file.
+            # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
+            self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
+
+        logger.info("running Analysis %s", os.path.basename(self.out))
+        # Get paths to Python and, in Windows, the manifest.
         python = sys.executable
         if not is_win:
+            # Linux/MacOS: get a real, non-link path to the running Python executable.
             while os.path.islink(python):
                 python = os.path.join(os.path.dirname(python), os.readlink(python))
             depmanifest = None
         else:
-            depmanifest = winmanifest.Manifest(type_="win32", name=specnm,
+            # Windows: no links, but "manifestly" need this:
+            depmanifest = winmanifest.Manifest(type_="win32", name=CONF['specnm'],
                                                processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
-            depmanifest.filename = os.path.join(WORKPATH,
-                                                specnm + ".exe.manifest")
+            depmanifest.filename = os.path.join(CONF['workpath'],
+                                                CONF['specnm'] + ".exe.manifest")
 
-        binaries = []  # binaries to bundle
-
-        # Always add Python's dependencies first
+        # We record "binaries" separately from the modulegraph, as there
+        # is no way to record those dependencies in the graph. These include
+        # the python executable and any binaries added by hooks later.
+        # "binaries" are not the same as "extensions" which are .so or .dylib
+        # that are found and recorded as extension nodes in the graph.
+        # Reset seen variable before running bindepend. We use bindepend only for
+        # the python executable.
+        bindepend.seen = {}
+        # Add Python's dependencies first.
         # This ensures that its assembly depencies under Windows get pulled in
         # first, so that .pyd files analyzed later which may not have their own
         # manifest and may depend on DLLs which are part of an assembly
         # referenced by Python's manifest, don't cause 'lib not found' messages
-        binaries.extend(bindepend.Dependencies([('', python, '')],
+        self.binaries.extend(bindepend.Dependencies([('', python, '')],
                                                manifest=depmanifest)[1:])
 
-        ###################################################
-        # Scan inputs and prepare:
-        dirs = {}  # input directories
-        pynms = []  # python filenames with no extension
-        for script in self.inputs:
-            if not os.path.exists(script):
-                raise SystemExit("Error: Analysis: script %s not found!" % script)
-            d, base = os.path.split(script)
-            if not d:
-                d = compat.getcwd()
-            d = absnormpath(d)
-            pynm, ext = os.path.splitext(base)
-            dirs[d] = 1
-            pynms.append(pynm)
-        ###################################################
-        # Initialize importTracker and analyze scripts
-        importTracker = PyInstaller.depend.imptracker.ImportTracker(
-                dirs.keys() + self.pathex, self.hookspath, self.excludes, workpath=WORKPATH)
-        PyInstaller.__pathex__ = self.pathex[:]
-        scripts = []  # will contain scripts to bundle
-        for i, script in enumerate(self.inputs):
-            logger.info("Analyzing %s", script)
-            importTracker.analyze_script(script)
-            scripts.append((pynms[i], script, 'PYSOURCE'))
-        PyInstaller.__pathex__ = []
 
-        # analyze the script's hidden imports
+        # The first script in the analysis is the main user script. Its node is used as
+        # the "caller" node for all others. This gives a connected graph rather than
+        # a collection of unrelated trees, one for each of self.inputs.
+        # The list of scripts is in self.inputs, each as a normalized pathname.
+
+        # List to hold graph nodes of scripts and runtime hooks in use order.
+        priority_scripts = []
+
+        # Assume that if the script does not exist, Modulegraph will raise error.
+        # Save the graph nodes of each in sequence.
+        for script in self.inputs:
+            logger.info("Analyzing %s", script)
+            priority_scripts.append(self.graph.run_script(script))
+
+        # Analyze the script's hidden imports (named on the command line)
         for modnm in self.hiddenimports:
-            if modnm in importTracker.modules:
-                logger.info("Hidden import %r has been found otherwise", modnm)
+            logger.debug('Hidden import: %s' % modnm)
+            if self.graph.findNode(modnm) is not None:
+                logger.debug('Hidden import %r already found', modnm)
                 continue
             logger.info("Analyzing hidden import %r", modnm)
-            importTracker.analyze_r(modnm)
-            if not modnm in importTracker.modules:
+            # ModuleGraph throws Import Error if import not found
+            try :
+                node = self.graph.import_hook(modnm)
+            except :
                 logger.error("Hidden import %r not found", modnm)
 
-        ###################################################
-        # Fills pure, binaries and rthookcs lists to TOC
-        pure = []     # pure python modules
-        zipfiles = []  # zipfiles to bundle - zipped Python .egg files.
-        datas = []    # datafiles to bundle
-        rthooks = []  # rthooks if needed
+        # TODO move code for handling hooks into a class or function.
+        ### Handle hooks.
 
-        # Include custom rthooks (runtime hooks).
-        # The runtime hooks are order dependent. First hooks in the list
-        # are executed first.
-        # Custom hooks are added before Pyinstaller rthooks and thus they are
-        # executed first.
-        if self.custom_runtime_hooks:
-            logger.info("Including custom run-time hooks")
-            # Data structure in format:
-            # ('rt_hook_mod_name', '/rt/hook/file/name.py', 'PYSOURCE')
-            for hook_file in self.custom_runtime_hooks:
-                hook_file = os.path.abspath(hook_file)
-                items = (os.path.splitext(os.path.basename(hook_file))[0], hook_file, 'PYSOURCE')
-                rthooks.append(items)
+        logger.info('Looking for import hooks ...')
+        # Implement cache of modules for which there exists a hook. Keep order of added items.
+        hooks_mod_cache = collections.OrderedDict()  # key - module name, value - path to hook directory.
+        # PyInstaller import hooks.
+        hooks_pathes = [os.path.join(os.path.dirname(__file__), 'hooks')]
+        if self.hookspath:
+            # Custom import hooks
+            hooks_pathes.extend(self.hookspath)
+        for pth in hooks_pathes:
+            hooks_file_list = glob.glob(os.path.join(pth, 'hook-*.py'))
+            for f in hooks_file_list:
+                name = os.path.basename(f)[5:-3]
+                hooks_mod_cache[name] = os.path.abspath(f)
 
-        # Find rthooks.
-        logger.info("Looking for run-time hooks")
-        for modnm, mod in importTracker.modules.items():
-            rthooks.extend(_findRTHook(modnm))
+        # TODO simplify this loop - functions, etc.
+        ### Iterate over import hooks and update ModuleGraph as needed.
+        #
+        # 1. Iterate in infinite 'while' loop.
+        # 2. Apply all possible hooks in one 'while' iteration.
+        # 3. Remove applied hooks from the cache.
+        # 4. The infinite 'while' loop ends when:
+        #    a. hooks cache is empty
+        #    b. no new hook was applied in the 'while' iteration.
+        #
+        module_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package',
+                            'Extension', 'Script', 'BuiltinModule'])
+        while True:
+            applied_hooks = []  # Empty means no hook was applied.
 
-        # Analyze rthooks. Runtime hooks has to be also analyzed.
-        # Otherwise some dependencies could be missing.
-        # Data structure in format:
-        # ('rt_hook_mod_name', '/rt/hook/file/name.py', 'PYSOURCE')
-        for hook_mod, hook_file, mod_type in rthooks:
-            logger.info("Analyzing rthook %s", hook_file)
-            importTracker.analyze_script(hook_file)
+            # Iterate over hooks in cache.
+            for imported_name, hook_file_name in hooks_mod_cache.items():
 
-        for modnm, mod in importTracker.modules.items():
-            # FIXME: why can we have a mod == None here?
-            if mod is None:
-                continue
+                # Skip hook if no module for it is in the graph or the node is not
+                # the right type.
+                from_node = self.graph.findNode(imported_name)
+                node_type = type(from_node).__name__
+                if from_node is None:
+                    continue
+                elif node_type not in module_types:
+                    continue
 
-            datas.extend(mod.pyinstaller_datas)
+                logger.info('Processing hook   %s' % os.path.basename(hook_file_name))
 
-            if isinstance(mod, PyInstaller.depend.modules.BuiltinModule):
-                pass
-            elif isinstance(mod, PyInstaller.depend.modules.ExtensionModule):
-                binaries.append((mod.__name__, mod.__file__, 'EXTENSION'))
-                # allows hooks to specify additional dependency
-                # on other shared libraries loaded at runtime (by dlopen)
-                binaries.extend(mod.pyinstaller_binaries)
-            elif isinstance(mod, (PyInstaller.depend.modules.PkgInZipModule, PyInstaller.depend.modules.PyInZipModule)):
-                zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
-                                 str(mod.owner), 'ZIPFILE'))
-            elif isinstance(mod, PyInstaller.depend.modules.NamespaceModule):
-                pure.append((modnm,
-                             os.path.join(_fake_code_path, 'namespace', '__init__.pyc'),
-                             'PYMODULE'))
+                # Import hook module from a file.
+                # hook_name_space represents the code of 'hook-imported_name.py'
+                hook_name_space = importlib_load_source('pyi_hook.'+imported_name, hook_file_name)
+
+                ### Processing hook API.
+
+                # Function hook_name_space.hook(mod) has to be called first because this function
+                # could update other attributes - datas, hiddenimports, etc.
+                # TODO use directly Modulegraph machinery in the 'def hook(mod)' function.
+                if hasattr(hook_name_space, 'hook'):
+                    # Process a hook(mod) function. Create a Module object as its API.
+                    # TODO: it won't be called "FakeModule" later on
+                    mod = FakeModule(imported_name, self.graph)
+                    mod = hook_name_space.hook(mod)
+                    for item in mod._added_imports:
+                        # as with hidden imports, add to graph as called by imported_name
+                        self.graph.run_script(item, from_node)
+                    for item in mod._added_binaries:
+                        assert(item[2] == 'BINARY')
+                        self.binaries.append(item)  # Supposed to be TOC form (n,p,'BINARY')
+                    for item in mod.datas:
+                        assert(item[2] == 'DATA')
+                        self.datas.append(item)  # Supposed to be TOC form (n,p,'DATA')
+                    for item in mod._deleted_imports:
+                        # Remove the graph link between the hooked module and item.
+                        # This removes the 'item' node from the graph if no other
+                        # links go to it (no other modules import it)
+                        self.graph.removeReference(mod.node, item)
+                    # TODO: process mod.datas if not empty, tkinter data files
+
+                # hook_name_space.hiddenimports is a list of Python module names that PyInstaller
+                # is not able detect.
+                if hasattr(hook_name_space, 'hiddenimports'):
+                    # push hidden imports into the graph, as if imported from name
+                    for item in hook_name_space.hiddenimports:
+                        try:
+                            to_node = self.graph.findNode(item)
+                            if to_node is None:
+                                self.graph.import_hook(item, from_node)
+                        except ImportError:
+                            # Print warning if a module from hiddenimport could not be found.
+                            # modulegraph raises ImporError when a module is not found.
+                            # Import hook with non-existing hiddenimport is probably a stale hook
+                            # that was not updated for a long time.
+                            logger.warn("Hidden import '%s' not found (probably old hook)" % item)
+
+                # hook_name_space.excludedimports is a list of Python module names that PyInstaller
+                # should not detect as dependency of this module name.
+                if hasattr(hook_name_space, 'excludedimports'):
+                    # Remove references between module nodes, as if they are not imported from 'name'
+                    for item in hook_name_space.excludedimports:
+                        try:
+                            excluded_node = self.graph.findNode(item)
+                            if excluded_node is not None:
+                                logger.info("Excluding import '%s'" % item)
+                                # Remove implicit reference to a module. Also submodules of the hook name
+                                # might reference the module. Remove those references too.
+                                safe_to_remove = True
+                                referers = self.graph.getReferers(excluded_node)
+                                for r in referers:
+                                    r_type = type(r).__name__
+                                    if r_type in module_types:  # Analyze only relevant types.
+                                        if r.identifier.startswith(imported_name):
+                                            logger.debug('Removing reference %s' % r.identifier)
+                                            # Contains prefix of 'imported_name' - remove reference.
+                                            self.graph.removeReference(r, excluded_node)
+                                        elif not r.identifier.startswith(item):
+                                            # Other modules reference the implicit import - DO NOT remove it.
+                                            logger.debug('Excluded import %s referenced by module %s' % (item, r.identifier))
+                                            safe_to_remove = False
+                                # Remove the implicit module from graph in order to not be further analyzed.
+                                # If no other modules reference the implicit import the it is safe to remove
+                                # that module from the graph.
+                                if safe_to_remove:
+                                    self.graph.removeNode(excluded_node)
+                            else:
+                                logger.info("Excluded import '%s' not found" % item)
+                        except ImportError:
+                            # excludedimport could not be found.
+                            # modulegraph raises ImporError when a module is not found.
+                            logger.info("Excluded import '%s' not found" % item)
+
+                # hook_name_space.datas is a list of globs of files or
+                # directories to bundle as datafiles. For each
+                # glob, a destination directory is specified.
+                if hasattr(hook_name_space, 'datas'):
+                    # Add desired data files to our datas TOC
+                    self.datas.extend(self._format_hook_datas(hook_name_space))
+
+                # hook_name_space.binaries is a list of files to bundle as binaries.
+                # Binaries are special that PyInstaller will check if they
+                # might depend on other dlls (dynamic libraries).
+                if hasattr(hook_name_space, 'binaries'):
+                    for bundle_name, pth in hook_name_space.binaries:
+                        self.binaries.append((bundle_name, pth, 'BINARY'))
+
+                # TODO implement attribute 'hook_name_space.attrs'
+                # hook_name_space.attrs is a list of tuples (attr_name, value) where 'attr_name'
+                # is name for Python module attribute that should be set/changed.
+                # 'value' is the value of that attribute. PyInstaller will modify
+                # mod.attr_name and set it to 'value' for the created .exe file.
+
+                # Remove hook from the cache - it was applied and it is no longer necessary to be
+                # applied.
+                del hooks_mod_cache[imported_name]
+                # Append applied hooks to the list 'applied_hooks'.
+                # It is a sign that iteration over hooks should continue.
+                applied_hooks.append(imported_name)
+
+
+            ### All hooks from cache were traversed - stop or run again.
+            if not applied_hooks:  # Empty list.
+                # No new hook was applied - END of hooks processing.
+                break
             else:
-                # mf.PyModule instances expose a list of binary
-                # dependencies, most probably shared libraries accessed
-                # via ctypes. Add them to the overall required binaries.
-                binaries.extend(mod.pyinstaller_binaries)
-                if modnm != '__main__':
-                    pure.append((modnm, mod.__file__, 'PYMODULE'))
+                # Run again - reset list 'applied_hooks'.
+                applied_hooks = []
 
-        # Add remaining binary dependencies
-        binaries.extend(bindepend.Dependencies(binaries,
-                                               manifest=depmanifest))
+
+        # Analyze run-time hooks.
+        # Run-time hooks has to be executed before user scripts. Add them
+        # to the beginning of 'priority_scripts'.
+        priority_scripts = self.graph.analyze_runtime_hooks(self.custom_runtime_hooks) + priority_scripts
+
+        # 'priority_scripts' is now a list of the graph nodes of custom runtime
+        # hooks, then regular runtime hooks, then the PyI loader scripts.
+        # Further on, we will make sure they end up at the front of self.scripts
+
+        ### Extract the nodes of the graph as TOCs for further processing.
+
+        # Initialize the scripts list with priority scripts in the proper order.
+        self.scripts = self.graph.nodes_to_TOC(priority_scripts)
+
+        # Extend the binaries list with all the Extensions modulegraph has found.
+        self.binaries  = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
+        # Fill the "pure" list with pure Python modules.
+        self.pure['toc'] =  self.graph.make_a_TOC(['PYMODULE'])
+        # And get references to module code objects constructed by ModuleGraph
+        # to avoid writing .pyc/pyo files to hdd.
+        self.pure['code'].update(self.graph.get_code_objects())
+
+        # Add remaining binary dependencies - analyze Python C-extensions and what
+        # DLLs they depend on.
+        logger.info('Looking for dynamic libraries')
+        self.binaries.extend(bindepend.Dependencies(self.binaries, manifest=depmanifest))
+
+        ### TODO implement including Python eggs. Shoudl be the eggs printed to console as INFO msg?
+        logger.info('Looking for eggs - TODO')
+        # TODO: ImpTracker could flag a module as residing in a zip file (because an
+        # egg that had not yet been installed??) and the old code would do this:
+        # scripts.insert(-1, ('_pyi_egg_install.py',
+        #     os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
+        # It appears that Modulegraph will expand an uninstalled egg but need test
+        self.zipfiles = TOC()
+        # Copied from original code
         if is_win:
             depmanifest.writeprettyxml()
-        self._check_python_library(binaries)
-        if zipfiles:
-            scripts.insert(-1, ('_pyi_egg_install.py', os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
-        # Add runtime hooks just before the last script (which is
-        # the entrypoint of the application).
-        scripts[-1:-1] = rthooks
-        self.scripts = TOC(scripts)
-        self.pure = TOC(pure)
-        self.binaries = TOC(binaries)
-        self.zipfiles = TOC(zipfiles)
-        self.datas = TOC(datas)
-        try:  # read .toc
-            oldstuff = _load_data(self.out)
+
+        # Verify that Python dynamic library can be found.
+        # Without dynamic Python library PyInstaller cannot continue.
+        self._check_python_library(self.binaries)
+
+        # Get the saved details of a prior run, if any. Would not exist if
+        # the user erased the work files, or gave a different --workpath
+        # or specified --clean.
+        try:
+            oldstuff = load_py_data_struct(self.out)
         except:
             oldstuff = None
 
-        self.pure = TOC(compile_pycos(self.pure))
-
+        # Collect the work-product of this run
         newstuff = tuple([getattr(self, g[0]) for g in self.GUTS])
+        # If there was no previous, or if it is different, save the new
         if oldstuff != newstuff:
-            _save_data(self.out, newstuff)
-            wf = open(WARNFILE, 'w')
-            for ln in importTracker.getwarnings():
-                wf.write(ln + '\n')
-            wf.close()
-            logger.info("Warnings written to %s", WARNFILE)
+            # Save all the new stuff to avoid regenerating it later, maybe
+            save_py_data_struct(self.out, newstuff)
+            # Write warnings about missing modules. Get them from the graph
+            # and use the graph to figure out who tried to import them.
+            # TODO: previously we could say whether an import was top-level,
+            # deferred (in a def'd function) or conditional (in an if stmt).
+            # That information is not available from ModuleGraph at this time.
+            # When that info is available change this code to write one line for
+            # each importer-name, with type of import for that importer
+            # "no module named foo conditional/deferred/toplevel importy by bar"
+            miss_toc = self.graph.make_a_TOC(['MISSING'])
+            if len(miss_toc) : # there are some missing modules
+                wf = open(CONF['warnfile'], 'w')
+                for (n, p, t) in miss_toc :
+                    importer_names = self.graph.importer_names(n)
+                    wf.write( 'no module named '
+                              + n
+                              + ' - imported by '
+                              + ', '.join(importer_names)
+                              + '\n'
+                              )
+                wf.close()
+                logger.info("Warnings written to %s", CONF['warnfile'])
             return 1
-        logger.info("%s no change!", self.out)
-        return 0
+        else :
+            logger.info("%s no change!", self.out)
+            return 0
+
     def _check_python_library(self, binaries):
         """
         Verify presence of the Python dynamic library in the binary dependencies.
         Python library is an essential piece that has to be always included.
         """
+        # First check that libpython is in resolved binary dependencies.
+        for (nm, filename, typ) in binaries:
+            if typ == 'BINARY' and nm in PYDYLIB_NAMES:
+                # Just print its filename and return.
+                logger.info('Using Python library %s', filename)
+                # Checking was successful - end of function.
+                return
+
+        # Python lib not in dependencies - try to find it.
+        logger.info('Python library not in binary depedencies. Doing additional searching...')
         python_lib = bindepend.get_python_library_path()
-
         if python_lib:
+            logger.debug('Adding Python library to binary dependencies')
+            binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
             logger.info('Using Python library %s', python_lib)
-            # Presence of library in dependencies.
-            deps = set()
-            for (nm, filename, typ) in binaries:
-                if typ == 'BINARY':
-                    deps.update([filename])
-            # If Python library is missing - append it to dependencies.
-            if python_lib not in deps:
-                logger.info('Adding Python library to binary dependencies')
-                binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
         else:
-            raise IOError("Python library not found!")
+            msg = """Python library not found! This usually happens on Debian/Ubuntu
+where you need to install Python library:
 
+  apt-get install python3-dev
+  apt-get install python-dev
 
-def _findRTHook(modnm):
-    rslt = []
-    for script in rthooks.get(modnm) or []:
-        nm = os.path.basename(script)
-        nm = os.path.splitext(nm)[0]
-        if os.path.isabs(script):
-            path = script
-        else:
-            path = os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks', script)
-        rslt.append((nm, path, 'PYSOURCE'))
-    return rslt
+"""
+            raise IOError(msg)
+
 
 
 class PYZ(Target):
@@ -718,29 +869,41 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc, name=None, level=9, cipher=None):
+    def __init__(self, toc_dict, name=None, cipher=None):
         """
-        toc
-                A TOC (Table of Contents), normally an Analysis.pure?
+        toc_dict
+            toc_dict['toc']
+                A TOC (Table of Contents), normally an Analysis.pure['toc']?
+            toc_dict['code']
+                A dict of module code objects from ModuleGraph.
         name
                 A filename for the .pyz. Normally not needed, as the generated
                 name will do fine.
-        level
-                The Zlib compression level to use. If 0, the zlib module is
-                not required.
         cipher
                 The block cipher that will be used to encrypt Python bytecode.
         """
+        from .config import CONF
         Target.__init__(self)
-        self.toc = toc
+        self.toc = toc_dict['toc']
+        # Use code objects directly from ModuleGraph to speed up PyInstaller.
+        self.code_dict = toc_dict['code']
         self.name = name
         if name is None:
             self.name = self.out[:-3] + 'pyz'
-        # Level of zlib compression.
-        self.level = level
-        self.dependencies = compile_pycos(config['PYZ_dependencies'])
-        # Encryption
+        # PyInstaller bootstrapping modules.
+        self.dependencies = get_bootstrap_modules()
+        # Bundle the crypto key.
         self.cipher = cipher
+        if cipher:
+            key_file = ('pyimod00_crypto_key',
+                         os.path.join(CONF['workpath'], 'pyimod00_crypto_key.pyc'),
+                         'PYMODULE')
+            # Insert the key as the first module in the list. The key module contains
+            # just variables and does not depend on other modules.
+            self.dependencies.insert(0, key_file)
+        # Compile the top-level modules so that they end up in the CArchive and can be
+        # imported by the bootstrap script.
+        self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
@@ -761,10 +924,13 @@ class PYZ(Target):
 
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = pyi_archive.ZlibArchive(level=self.level, cipher=self.cipher)
-        toc = self.toc - config['PYZ_dependencies']
+        pyz = pyimod02_archive.ZlibArchive(code_dict=self.code_dict, cipher=self.cipher)
+        # Do not bundle PyInstaller bootstrap modules into PYZ archive.
+        toc = self.toc - self.dependencies
         pyz.build(self.name, toc)
-        _save_data(self.out, (self.name, self.level, self.toc))
+        # FIXME compression level was dropped - remove it from the save_py_data_struct
+        compresssion_level = 0
+        save_py_data_struct(self.out, (self.name, compresssion_level, self.toc))
         return 1
 
 
@@ -782,6 +948,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                to determine level of paths for @loader_path like
                '@loader_path/../../' for qt4 plugins.
     """
+    from .config import CONF
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names. Caching on darwin does not work
     # since we need to modify binary headers to use relative paths
@@ -809,12 +976,12 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     # Python versions as one user.
     pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
     arch = platform.architecture()[0]
-    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
+    cachedir = os.path.join(CONF['configdir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
     if os.path.exists(cacheindexfn):
-        cache_index = _load_data(cacheindexfn)
+        cache_index = load_py_data_struct(cacheindexfn)
     else:
         cache_index = {}
 
@@ -861,27 +1028,27 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         bestopt = "--best"
         # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
         # A better configure-time check is due.
-        if config["hasUPX"] >= (3,) and os.name == "nt":
+        if CONF["hasUPX"] >= (3,) and os.name == "nt":
             bestopt = "--lzma"
 
         upx_executable = "upx"
-        if config.get('upx_dir'):
-            upx_executable = os.path.join(config['upx_dir'], upx_executable)
+        if CONF.get('upx_dir'):
+            upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
         cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
             strip_options = []
             if is_darwin:
-               # The default strip behaviour breaks some shared libraries
-               # under Mac OSX.
-               # -S = strip only debug symbols.
-               strip_options = ["-S"]
+                # The default strip behaviour breaks some shared libraries
+                # under Mac OSX.
+                # -S = strip only debug symbols.
+                strip_options = ["-S"]
             cmd = ["strip"] + strip_options + [cachedfile]
 
     if not os.path.exists(os.path.dirname(cachedfile)):
         os.makedirs(os.path.dirname(cachedfile))
     shutil.copy2(fnm, cachedfile)
-    os.chmod(cachedfile, 0755)
+    os.chmod(cachedfile, 0o755)
 
     if os.path.splitext(fnm.lower())[1] in (".pyd", ".dll"):
         # When shared assemblies are bundled into the app, they must be
@@ -895,7 +1062,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         # 'fix it' for pyinstaller
         try:
             res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))
-        except winresource.pywintypes.error, e:
+        except winresource.pywintypes.error as e:
             if e.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
                 # Not a win32 PE file
                 pass
@@ -914,7 +1081,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                                           str(language)])
                             manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language],
                                                   False)
-                        except Exception, exc:
+                        except Exception as exc:
                             logger.error("Cannot parse manifest resource %s, "
                                          "%s from", name, language)
                             logger.error(cachedfile)
@@ -930,10 +1097,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                             # Extension modules built with Python 2.6.5 have
                             # an empty <dependency> element, we need to add
                             # dependentAssemblies from python.exe for
-                            # pyinstaller
+                            # pyinstaller.
                             _depNames = set([dep.name for dep in
                                              manifest.dependentAssemblies])
-                            for pydep in pyasm:
+                            for pydep in CONF['pylib_assemblies']:
                                 if not pydep.name in _depNames:
                                     logger.info("Adding %r to dependent "
                                                 "assemblies of %r",
@@ -950,7 +1117,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                 manifest.update_resources(os.path.abspath(cachedfile),
                                                           [name],
                                                           [language])
-                            except Exception, e:
+                            except Exception as e:
                                 logger.error(os.path.abspath(cachedfile))
                                 raise
 
@@ -958,21 +1125,18 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         try:
             logger.info("Executing - " + ' '.join(cmd))
             compat.exec_command(*cmd)
-        except OSError, e:
+        except OSError as e:
             raise SystemExit("Execution failed: %s" % e)
 
     # update cache index
     cache_index[basenm] = digest
-    _save_data(cacheindexfn, cache_index)
+    save_py_data_struct(cacheindexfn, cache_index)
 
     # On Mac OS X we need relative paths to dll dependencies
     # starting with @executable_path
     if is_darwin:
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
     return cachedfile
-
-
-UNCOMPRESSED, COMPRESSED = range(2)
 
 
 class PKG(Target):
@@ -1056,13 +1220,13 @@ class PKG(Target):
         mytoc = []
         seenInms = {}
         seenFnms = {}
-        toc = addSuffixToExtensions(self.toc)
+        toc = add_suffix_to_extensions(self.toc)
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in toc:
             # Ensure filename 'fnm' is not None or empty string. Otherwise
             # it will fail in case of 'typ' being type OPTION.
-            if fnm and not os.path.isfile(fnm) and check_egg(fnm):
+            if fnm and not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
@@ -1102,10 +1266,10 @@ class PKG(Target):
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
-        archive = pyi_carchive.CArchive(pylib_name=pylib_name)
+        archive = pyimod03_carchive.CArchive(pylib_name=pylib_name)
 
         archive.build(self.name, mytoc)
-        _save_data(self.out,
+        save_py_data_struct(self.out,
                    (self.name, self.cdict, self.toc, self.exclude_binaries,
                     self.strip_binaries, self.upx_binaries))
         for item in trash:
@@ -1153,6 +1317,7 @@ class EXE(Target):
                 Windows only. Setting to True allows an elevated application to
                 work with Remote Desktop
         """
+        from .config import CONF
         Target.__init__(self)
 
         # Available options for EXE in .spec files.
@@ -1173,7 +1338,7 @@ class EXE(Target):
         self.uac_admin = kwargs.get('uac_admin', False)
         self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
 
-        if config['hasUPX']:
+        if CONF['hasUPX']:
            self.upx = kwargs.get('upx', False)
         else:
            self.upx = False
@@ -1186,10 +1351,10 @@ class EXE(Target):
         # WORKPATH - onedir
         if self.exclude_binaries:
             # onedir mode - create executable in WORKPATH.
-            self.name = os.path.join(WORKPATH, os.path.basename(self.name))
+            self.name = os.path.join(CONF['workpath'], os.path.basename(self.name))
         else:
             # onefile mode - create executable in DISTPATH.
-            self.name = os.path.join(DISTPATH, os.path.basename(self.name))
+            self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
 
         # Base name of the EXE file without .exe suffix.
         base_name = os.path.basename(self.name)
@@ -1198,6 +1363,11 @@ class EXE(Target):
         self.pkgname = base_name + '.pkg'
 
         self.toc = TOC()
+
+        ### Pass option -S to Python interpreter to disable the 'site' module.
+        # With this option PyInstaller  won't append user-specific sitedirs to
+        # sys.path.
+        args += ([('S', None, 'OPTION')],)
 
         for arg in args:
             if isinstance(arg, TOC):
@@ -1209,7 +1379,7 @@ class EXE(Target):
                 self.toc.extend(arg)
 
         if is_win:
-            filename = os.path.join(WORKPATH, specnm + ".exe.manifest")
+            filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
                 self.console, self.uac_admin, self.uac_uiaccess)
             self.toc.append((os.path.basename(self.name) + ".manifest", filename,
@@ -1248,26 +1418,39 @@ class EXE(Target):
             return True
 
         icon, versrsrc, resources = data[3:6]
-        if (icon or versrsrc or resources) and not config['hasRsrcUpdate']:
+        if (versrsrc or resources) and not is_win:
             # todo: really ignore :-)
-            logger.info("ignoring icon, version, manifest and resources = platform not capable")
+            logger.warn('ignoring version, manifest and resources, platform not capable')
+        if icon and not (is_win or is_darwin):
+            logger.warn('ignoring icon, platform not capable')
 
         mtm = data[-1]
-        if mtm != mtime(self.name):
+        if mtm != misc.mtime(self.name):
             logger.info("Rebuilding %s because mtimes don't match", self.outnm)
             return True
-        if mtm < mtime(self.pkg.out):
+        if mtm < misc.mtime(self.pkg.out):
             logger.info("Rebuilding %s because pkg is more recent", self.outnm)
             return True
 
         return False
 
     def _bootloader_file(self, exe):
-        if not self.console:
-            exe = exe + 'w'
+        """
+        Pick up the right bootloader file - debug, console, windowed.
+        """
+        # Having console/windowed bootolader makes sense only on Windows and
+        # Mac OS X.
+        if is_win or is_darwin:
+            if not self.console:
+                exe = exe + 'w'
+        # There are two types of bootloaders:
+        # run     - release, no verbose messages in console.
+        # run_d   - contains verbose messages in console.
         if self.debug:
             exe = exe + '_d'
-        return os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
+        bootloader_file = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
+        logger.info('Bootloader %s' % bootloader_file)
+        return bootloader_file
 
     def assemble(self):
         logger.info("Building EXE from %s", os.path.basename(self.out))
@@ -1287,7 +1470,7 @@ class EXE(Target):
             logger.info('Onefile Mode - Embedding Manifest into EXE file')
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
-            os.chmod(tmpnm, 0755)
+            os.chmod(tmpnm, 0o755)
 
             # In onefile mode, dependencies in the onefile manifest
             # refer to files that are about to be unpacked when the exe
@@ -1301,11 +1484,10 @@ class EXE(Target):
             trash.append(tmpnm)
             exe = tmpnm
 
-        if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
-                                        self.resources):
+        if is_win and (self.icon or self.versrsrc or self.resources):
             tmpnm = tempfile.mktemp()
             shutil.copy2(exe, tmpnm)
-            os.chmod(tmpnm, 0755)
+            os.chmod(tmpnm, 0o755)
             if self.icon:
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
@@ -1330,7 +1512,7 @@ class EXE(Target):
                                                         [restype or "*"],
                                                         [resname or "*"],
                                                         [reslang or "*"])
-                except winresource.pywintypes.error, exc:
+                except winresource.pywintypes.error as exc:
                     if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
                         logger.exception(exc)
                         continue
@@ -1348,7 +1530,7 @@ class EXE(Target):
                                                              restype,
                                                              [resname],
                                                              [reslang or 0])
-                    except winresource.pywintypes.error, exc:
+                    except winresource.pywintypes.error as exc:
                         logger.exception(exc)
             trash.append(tmpnm)
             exe = tmpnm
@@ -1369,12 +1551,12 @@ class EXE(Target):
             osxutils.fix_exe_for_code_signing(self.name)
             pass
 
-        os.chmod(self.name, 0755)
+        os.chmod(self.name, 0o755)
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
-                mtime(self.name))
+                misc.mtime(self.name))
         assert len(guts) == len(self.GUTS)
-        _save_data(self.out, guts)
+        save_py_data_struct(self.out, guts)
         for item in trash:
             os.remove(item)
         return 1
@@ -1404,10 +1586,10 @@ class DLL(EXE):
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)
         outf.close()
-        os.chmod(self.name, 0755)
-        _save_data(self.out,
+        os.chmod(self.name, 0o755)
+        save_py_data_struct(self.out,
                    (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, mtime(self.name)))
+                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, misc.mtime(self.name)))
         return 1
 
 
@@ -1425,10 +1607,11 @@ class COLLECT(Target):
                 name
                     The name of the directory to be built.
         """
+        from .config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
 
-        if config['hasUPX']:
+        if CONF['hasUPX']:
            self.upx_binaries = kws.get('upx', False)
         else:
            self.upx_binaries = False
@@ -1440,7 +1623,7 @@ class COLLECT(Target):
         #
         # The 'name' directory is created in DISTPATH and necessary files are
         # then collected to this directory.
-        self.name = os.path.join(DISTPATH, os.path.basename(self.name))
+        self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
 
         self.toc = TOC()
         for arg in args:
@@ -1475,9 +1658,9 @@ class COLLECT(Target):
             _rmtree(self.name)
         logger.info("Building COLLECT %s", os.path.basename(self.out))
         os.makedirs(self.name)
-        toc = addSuffixToExtensions(self.toc)
+        toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
-            if not os.path.isfile(fnm) and check_egg(fnm):
+            if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
             if os.pardir in os.path.normpath(inm) or os.path.isabs(inm):
@@ -1498,14 +1681,15 @@ class COLLECT(Target):
                 except OSError:
                     logger.warn("failed to copy flags of %s", fnm)
             if typ in ('EXTENSION', 'BINARY'):
-                os.chmod(tofnm, 0755)
-        _save_data(self.out,
+                os.chmod(tofnm, 0o755)
+        save_py_data_struct(self.out,
                  (self.name, self.strip_binaries, self.upx_binaries, self.toc))
         return 1
 
 
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
+        from .config import CONF
 
         # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
         if not is_darwin:
@@ -1525,7 +1709,7 @@ class BUNDLE(Target):
         # .app bundle is created in DISTPATH.
         self.name = kws.get('name', None)
         base_name = os.path.basename(self.name)
-        self.name = os.path.join(DISTPATH, base_name)
+        self.name = os.path.join(CONF['distpath'], base_name)
 
         self.appname = os.path.splitext(base_name)[0]
         self.version = kws.get("version", "0.0.0")
@@ -1565,9 +1749,9 @@ class BUNDLE(Target):
                 self.exename = name
                 if self.name is None:
                     self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
-                    self.name = os.path.join(SPECPATH, self.appname + ".app")
+                    self.name = os.path.join(CONF['specpath'], self.appname + ".app")
                 else:
-                    self.name = os.path.join(SPECPATH, self.name)
+                    self.name = os.path.join(CONF['specpath'], self.name)
                 break
         self.__postinit__()
 
@@ -1647,7 +1831,7 @@ class BUNDLE(Target):
         f.write(info_plist)
         f.close()
 
-        toc = addSuffixToExtensions(self.toc)
+        toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
@@ -1687,93 +1871,6 @@ class BUNDLE(Target):
                 os.symlink(os.path.relpath(res_d, os.path.dirname(abs_d)), abs_d)
 
         return 1
-
-
-class TOC(UserList.UserList):
-    """
-    TOC (Table of Contents) class is a list of tuples of the form (name, path, tytecode).
-
-    typecode    name                   path                        description
-    --------------------------------------------------------------------------------------
-    EXTENSION   Python internal name.  Full path name in build.    Extension module.
-    PYSOURCE    Python internal name.  Full path name in build.    Script.
-    PYMODULE    Python internal name.  Full path name in build.    Pure Python module (including __init__ modules).
-    PYZ         Runtime name.          Full path name in build.    A .pyz archive (ZlibArchive data structure).
-    PKG         Runtime name.          Full path name in build.    A .pkg archive (Carchive data structure).
-    BINARY      Runtime name.          Full path name in build.    Shared library.
-    DATA        Runtime name.          Full path name in build.    Arbitrary files.
-    OPTION      The option.            Unused.                     Python runtime option (frozen into executable).
-
-    A TOC contains various types of files. A TOC contains no duplicates and preserves order.
-    PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
-    """
-    def __init__(self, initlist=None):
-        UserList.UserList.__init__(self)
-        self.filenames = set()
-        if initlist:
-            for entry in initlist:
-                self.append(entry)
-
-    def _normentry(self, entry):
-        if not isinstance(entry, tuple):
-            logger.info("TOC found a %s, not a tuple", entry)
-            raise TypeError("Expected tuple, not %s." % type(entry).__name__)
-        name, path, typecode = entry
-        if typecode in ["BINARY", "DATA"]:
-            # Normalize the case for binary files and data files only (to avoid duplicates
-            # for different cases under Windows). We can't do that for
-            # Python files because the import semantic (even at runtime)
-            # depends on the case.
-            name = os.path.normcase(name)
-        return (name, path, typecode)
-
-    def append(self, entry):
-        name, path, typecode = self._normentry(entry)
-        if name not in self.filenames:
-            self.data.append((name, path, typecode))
-            self.filenames.add(name)
-
-    def insert(self, pos, entry):
-        name, path, typecode = self._normentry(entry)
-        if name not in self.filenames:
-            self.data.insert(pos, (name, path, typecode))
-            self.filenames.add(name)
-
-    def __add__(self, other):
-        result = TOC(self)
-        result.extend(other)
-        return result
-
-    def __radd__(self, other):
-        result = TOC(other)
-        result.extend(self)
-        return result
-
-    def extend(self, other):
-        for entry in other:
-            self.append(entry)
-
-    def __sub__(self, other):
-        other = TOC(other)
-        filenames = self.filenames - other.filenames
-        result = TOC()
-        for name, path, typecode in self:
-            if name in filenames:
-                result.data.append((name, path, typecode))
-        return result
-
-    def __rsub__(self, other):
-        result = TOC(other)
-        return result.__sub__(self)
-
-    def intersect(self, other):
-        other = TOC(other)
-        filenames = self.filenames.intersection(other.filenames)
-        result = TOC()
-        for name, path, typecode in other:
-            if name in filenames:
-                result.data.append((name, path, typecode))
-        return result
 
 
 class Tree(Target, TOC):
@@ -1819,7 +1916,7 @@ class Tree(Target, TOC):
         toc = data[3]  # toc
         while stack:
             d = stack.pop()
-            if mtime(d) > last_build:
+            if misc.mtime(d) > last_build:
                 logger.info("Building %s because directory %s changed",
                             self.outnm, d)
                 return True
@@ -1855,12 +1952,12 @@ class Tree(Target, TOC):
                             rslt.append((rfnm, fullfnm, 'DATA'))
         self.data = rslt
         try:
-            oldstuff = _load_data(self.out)
+            oldstuff = load_py_data_struct(self.out)
         except:
             oldstuff = None
         newstuff = (self.root, self.prefix, self.excludes, self.data)
         if oldstuff != newstuff:
-            _save_data(self.out, newstuff)
+            save_py_data_struct(self.out, newstuff)
             return 1
         logger.info("%s no change!", self.out)
         return 0
@@ -1913,11 +2010,11 @@ class MERGE(object):
 
     def _set_dependencies(self, analysis, path):
         """
-        Syncronize the Analysis result with the needed dependencies.
+        Synchronize the Analysis result with the needed dependencies.
         """
         for toc in (analysis.binaries, analysis.datas):
             for i, tpl in enumerate(toc):
-                if not tpl[1] in self._dependencies.keys():
+                if not tpl[1] in self._dependencies:
                     logger.debug("Adding dependency %s located in %s" % (tpl[1], path))
                     self._dependencies[tpl[1]] = path
                 else:
@@ -1930,6 +2027,7 @@ class MERGE(object):
 
     # TODO move this function to PyInstaller.compat module (probably improve
     #      function compat.relpath()
+    # TODO use os.path.relpath instead
     def _get_relative_path(self, startpath, topath):
         start = startpath.split(os.sep)[:-1]
         start = ['..'] * len(start)
@@ -1940,52 +2038,44 @@ class MERGE(object):
             return topath
 
 
-def TkTree():
-    raise SystemExit('TkTree has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file. See '
-                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
-
-
-def TkPKG():
-    raise SystemExit('TkPKG has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file. See '
-                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 for details')
+class ExecutableBuilder(object):
+    """
+    Class that constructs the executable.
+    """
+    # TODO wrap the 'main' and 'build' function into this class.
 
 
 def build(spec, distpath, workpath, clean_build):
     """
     Build the executable according to the created SPEC file.
     """
-    # Set of global variables that can be used while processing .spec file.
-    global SPECPATH, DISTPATH, WORKPATH, WARNFILE, rthooks, SPEC, specnm
-
-    rthooks = _load_data(os.path.join(HOMEPATH, 'PyInstaller', 'loader', 'rthooks.dat'))
+    from .config import CONF
 
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
     distpath = compat.expand_path(distpath)
     workpath = compat.expand_path(workpath)
-    SPEC = compat.expand_path(spec)
+    CONF['spec'] = compat.expand_path(spec)
 
-    SPECPATH, specnm = os.path.split(spec)
-    specnm = os.path.splitext(specnm)[0]
+    CONF['specpath'], CONF['specnm'] = os.path.split(spec)
+    CONF['specnm'] = os.path.splitext(CONF['specnm'])[0]
 
     # Add 'specname' to workpath and distpath if they point to PyInstaller homepath.
     if os.path.dirname(distpath) == HOMEPATH:
-        distpath = os.path.join(HOMEPATH, specnm, os.path.basename(distpath))
-    DISTPATH = distpath
+        distpath = os.path.join(HOMEPATH, CONF['specnm'], os.path.basename(distpath))
+    CONF['distpath'] = distpath
     if os.path.dirname(workpath) == HOMEPATH:
-        WORKPATH = os.path.join(HOMEPATH, specnm, os.path.basename(workpath), specnm)
+        workpath = os.path.join(HOMEPATH, CONF['specnm'], os.path.basename(workpath), CONF['specnm'])
     else:
-        WORKPATH = os.path.join(workpath, specnm)
+        workpath = os.path.join(workpath, CONF['specnm'])
 
-    WARNFILE = os.path.join(WORKPATH, 'warn%s.txt' % specnm)
+    CONF['warnfile'] = os.path.join(workpath, 'warn%s.txt' % CONF['specnm'])
 
-    # Clean PyInstaller cache (CONFIGDIR) and temporary files (WORKPATH)
+    # Clean PyInstaller cache (CONF['configdir']) and temporary files (workpath)
     # to be able start a clean build.
     if clean_build:
-        logger.info('Removing temporary files and cleaning cache in %s', CONFIGDIR)
-        for pth in (CONFIGDIR, WORKPATH):
+        logger.info('Removing temporary files and cleaning cache in %s', CONF['configdir'])
+        for pth in (CONF['configdir'], workpath):
             if os.path.exists(pth):
                 # Remove all files in 'pth'.
                 for f in glob.glob(pth + '/*'):
@@ -1995,14 +2085,54 @@ def build(spec, distpath, workpath, clean_build):
                     else:
                         os.remove(f)
 
-    # Create DISTPATH and WORKPATH if they does not exist.
-    for pth in (DISTPATH, WORKPATH):
-        if not os.path.exists(WORKPATH):
-            os.makedirs(WORKPATH)
+    # Create DISTPATH and workpath if they does not exist.
+    for pth in (CONF['distpath'], workpath):
+        if not os.path.exists(pth):
+            os.makedirs(pth)
 
-    # Executing the specfile. The executed .spec file will use DISTPATH and
-    # WORKPATH values.
-    execfile(spec)
+    # Construct NAMESPACE for running the Python code from .SPEC file.
+    # NOTE: Passing NAMESPACE allows to avoid having global variables in this
+    #       module and makes isolated environment for running tests.
+    # NOTE: Defining NAMESPACE allows to map any class to a apecific name for .SPEC.
+    # FIXME: Some symbols might be missing. Add them if there are some failures.
+    # TODO: What from this .spec API is deprecated and could be removed?
+    spec_namespace = {
+        # Set of global variables that can be used while processing .spec file.
+        # Some of them act as configuration options.
+        'DISTPATH': CONF['distpath'],
+        'HOMEPATH': HOMEPATH,
+        'SPEC': CONF['spec'],
+        'specnm': CONF['specnm'],
+        'SPECPATH': CONF['specpath'],
+        'WARNFILE': CONF['warnfile'],
+        'workpath': workpath,
+        # PyInstaller classes for .spec.
+        'TOC': TOC,
+        'Analysis': Analysis,
+        'BUNDLE': BUNDLE,
+        'COLLECT': COLLECT,
+        'DLL': DLL,
+        'EXE': EXE,
+        'MERGE': MERGE,
+        'PYZ': PYZ,
+        'Tree': Tree,
+        # Old classes for .spec - raise Exception for user.
+        'TkPKG': lambda *args, **kwargs: _old_api_error('TkPKG'),
+        'TkTree': lambda *args, **kwargs: _old_api_error('TkTree'),
+        # Python modules available for .spec.
+        'os': os,
+        'pyi_crypto': pyimod05_crypto,
+    }
+
+    # Set up module PyInstaller.config for passing some arguments to 'exec'
+    # function.
+    from .config import CONF
+    CONF['workpath'] = workpath
+
+    # Executing the specfile.
+    with open(spec, 'r') as f:
+        text = f.read()
+    exec(text, spec_namespace)
 
 
 def __add_options(parser):
@@ -2024,36 +2154,35 @@ def __add_options(parser):
                  help='Clean PyInstaller cache and remove temporary files '
                       'before building.')
 
-
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
-    # Set of global variables that can be used while processing .spec file.
-    global config
-    global icon, versioninfo, winresource, winmanifest, pyasm
-    global HIDDENIMPORTS, NOCONFIRM
-    NOCONFIRM = noconfirm
 
+    from .config import CONF
+    CONF['noconfirm'] = noconfirm
+
+    # Some modules are included if they are detected at build-time or
+    # if a command-line argument is specified. (e.g. --ascii)
+    if CONF.get('hiddenimports') is None:
+        CONF['hiddenimports'] = []
     # Test unicode support.
     if not ascii:
-        HIDDENIMPORTS.extend(misc.get_unicode_modules())
+        CONF['hiddenimports'].extend(misc.get_unicode_modules())
 
     # FIXME: this should be a global import, but can't due to recursive imports
     # If configuration dict is supplied - skip configuration step.
     if pyi_config is None:
         import PyInstaller.configure as configure
-        config = configure.get_config(kw.get('upx_dir'))
+        CONF.update(configure.get_config(kw.get('upx_dir')))
     else:
-        config = pyi_config
+        CONF.update(pyi_config)
 
-    if config['hasRsrcUpdate']:
-        from PyInstaller.utils import icon, versioninfo, winresource
-        pyasm = bindepend.getAssemblies(sys.executable)
-    else:
-        pyasm = None
+    # Append assemblies to dependencies only on Winodws.
+    if is_win:
+        CONF['pylib_assemblies'] = bindepend.getAssemblies(sys.executable)
 
-    if config['hasUPX']:
+    if CONF['hasUPX']:
         setupUPXFlags()
 
-    config['ui_admin'] = kw.get('ui_admin', False)
-    config['ui_access'] = kw.get('ui_uiaccess', False)
+    CONF['ui_admin'] = kw.get('ui_admin', False)
+    CONF['ui_access'] = kw.get('ui_uiaccess', False)
 
     build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))

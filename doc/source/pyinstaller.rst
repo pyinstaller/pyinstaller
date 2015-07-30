@@ -38,6 +38,15 @@ OPTIONS
 
 .. include:: _pyinstaller-options.tmp
 
+ENVIRONMENT VARIABLES
+=====================
+
+====================== ========================================================
+PYINSTALLER_CONFIG_DIR This changes the directory where PyInstaller caches some
+                       files. The default location for this is operating system
+                       dependent, but is typically a subdirectory of the home
+                       directory.
+====================== ========================================================
 
 SEE ALSO
 =============

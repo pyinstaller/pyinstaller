@@ -1,0 +1,9 @@
+[
+ 'package',
+ 'package.sub1',
+ 'package.sub2',
+ 'package.subpackage',
+ 'package.subpackage.sub',
+ 'package.nspkg',
+ 'package.nspkg.mod',
+]

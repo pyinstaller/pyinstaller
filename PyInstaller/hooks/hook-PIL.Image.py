@@ -8,7 +8,33 @@
 #-----------------------------------------------------------------------------
 
 
-# Forward to shared code for PIL. PIL can be imported either as a top-level package
-# (from PIL import Image), or not (import Image), because it installs a
-# PIL.pth.
-from PyInstaller.hooks.shared_PIL_Image import *
+from PyInstaller.utils.hooks import hookutils
+
+
+def hook(mod):
+    global hiddenimports
+    # `PIL.Image` may be imported as `PIL.Image` or as `Image`
+    # (without the prefix). We need to use the same module name to
+    # avoid the same module under two different names.
+    # We cannot import modules directly in PyInstaller.
+    statement = """
+import sys
+__import__('%(modname)s')
+image_mod = sys.modules['%(modname)s']
+# PIL uses lazy initialization.
+# first import the default stuff ...
+image_mod.preinit()
+# ... then every available plugin
+image_mod.init()
+for name in sys.modules:
+    if name.endswith('ImagePlugin'):
+        # Modules are printed to stdout and the output is then parsed.
+        print(name)
+""" % {'modname': mod.name}
+    out = hookutils.exec_statement(statement)
+    mod.add_import = out.strip().splitlines()
+
+    # Ignore 'FixTk' to prevent inclusion of Tcl/Tk library.
+    mod.del_import('FixTk')
+
+    return mod

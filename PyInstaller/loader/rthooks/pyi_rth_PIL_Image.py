@@ -9,7 +9,7 @@
 
 
 import sys
-import pyi_importers
+import pyimod04_importers as pyi_importers
 
 
 # Find FrozenImporter object from sys.meta_path.

@@ -6,9 +6,9 @@ A graph of objects that have a "graphident" attribute.
 graphident is the key for the object in the graph
 """
 
-from altgraph import GraphError
-from altgraph.Graph import Graph
-from altgraph.GraphUtil import filter_stack
+from PyInstaller.lib.altgraph import GraphError
+from PyInstaller.lib.altgraph.Graph import Graph
+from PyInstaller.lib.altgraph.GraphUtil import filter_stack
 
 class ObjectGraph(object):
     """
@@ -45,13 +45,39 @@ class ObjectGraph(object):
 
 
     def get_edges(self, node):
+        """
+        Get a 2-tuple of all nodes directly connected to the passed node.
+
+        Parameters
+        ----------
+        node : object
+            Graph node to be examined.
+
+        Returns
+        ----------
+        (outgoing_nodes, incoming_nodes)
+            2-tuple whose:
+            * First element is a generator yielding all nodes having an outgoing
+              edge directed to the passed node.
+            * Second element is a generator yielding all nodes having an
+              incoming edge directed from the passed node.
+        """
         start = self.getRawIdent(node)
         _, _, outraw, incraw = self.graph.describe_node(start)
         def iter_edges(lst, n):
             seen = set()
             for tpl in (self.graph.describe_edge(e) for e in lst):
                 ident = tpl[n]
-                if ident not in seen:
+
+                # If the identifier for the node at the other end of this edge
+                # is the current graph, skip this node. For example, this occurs
+                # for edges connecting to MissingModule nodes (e.g., the
+                # Windows-specific "winreg" module under OS X and Linux).
+                if ident is self:
+                    self.msg(1, 'Erroneous edge %s for node %s.' % (str(tpl), str(node)))
+                    continue
+                # Else if this node has not yet been yielded, do so.
+                elif ident not in seen:
                     yield self.findNode(ident)
                     seen.add(ident)
         return iter_edges(outraw, 3), iter_edges(incraw, 2)

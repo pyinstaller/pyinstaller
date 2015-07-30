@@ -45,9 +45,9 @@ def hook(mod):
         # Use basename here because Python returns full library path
         # on Mac OSX when using ctypes.util.find_library.
         bins = [os.path.basename(libname)]
-        mod.pyinstaller_binaries.extend(_resolveCtypesImports(bins))
+        mod.binaries.extend(_resolveCtypesImports(bins))
     elif is_cygwin:
         bins = ['cygusb-1.0-0.dll', 'cygusb0.dll']
-        mod.pyinstaller_binaries.extend(_resolveCtypesImports(bins)[0:1])
+        mod.binaries.extend(_resolveCtypesImports(bins)[0:1])
 
     return mod

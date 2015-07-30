@@ -1,33 +1,44 @@
-.. image:: http://www.pyinstaller.org/chrome/site/logo.png
-   :align: right
-   :target: http://www.pyinstaller.org
-
 PyInstaller
-===========
-.. image:: http://img.shields.io/pypi/v/PyInstaller.png
-   :target: https://pypi.python.org/pypi/PyInstaller
-
-.. image:: http://img.shields.io/pypi/dm/PyInstaller.png
-   :target: https://pypi.python.org/pypi/PyInstaller
-
-.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller.png
+***********
+.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller.svg
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
+
+.. image:: https://ci.appveyor.com/api/projects/status/t7o4swychyh94wrs?svg=true
+   :target: https://ci.appveyor.com/project/matysek/pyinstaller
+
+.. image:: http://img.shields.io/pypi/v/PyInstaller.svg
+   :target: https://pypi.python.org/pypi/PyInstaller
+
+.. image:: http://img.shields.io/pypi/dm/PyInstaller.svg
+   :target: https://pypi.python.org/pypi/PyInstaller
+
+---------------------------------------------------------------------
+
+.. image:: https://img.shields.io/badge/docs-latest-blue.svg
+   :target: http://htmlpreview.github.io/?https://github.com/pyinstaller/pyinstaller/blob/python3/doc/Manual.html
+   :alt: Manual
+
+.. image:: https://img.shields.io/badge/changes-latest-blue.svg
+   :target: https://github.com/pyinstaller/pyinstaller/blob/python3/doc/CHANGES.txt
+   :alt: Changelog
+
+.. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
+   :target: http://webchat.freenode.net/?channels=%23pyinstaller&uio=d4
+   :alt: IRC
 
 
 | Official website: http://www.pyinstaller.org
-| Full manual: http://pythonhosted.org/PyInstaller
-| Full changelog: `changelog`_
 
 
 Requirements
 ------------
 - Python: 
-   * 2.6 - 2.7 (Python 3 is not supported)
+   * 2.7 or 3.3+
    * PyCrypto_ 2.4+ (only if using bytecode encryption)
 
 - Windows (32bit/64bit):
    * Windows XP or newer.
-   * pywin32_ when using Python 2.6+
+   * pywin32_
     
 - Linux (32bit/64bit)
    * ldd: Console application to print the shared libraries required
@@ -37,8 +48,8 @@ Requirements
      object files. This typically can by found in the
      distribution-package `binutils`.
 
-- Mac OS X (32/64bit):
-   * Mac OS X 10.6 (Tiger) or newer.
+- Mac OS X (64bit):
+   * Mac OS X 10.6 (Snow Leopard) or newer.
 
 
 Installation
@@ -91,6 +102,6 @@ or simply use it direclty from the source (pyinstaller.py).
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
 .. _pywin32: http://sourceforge.net/projects/pywin32/
-.. _`manual`: http://pythonhosted.org/PyInstaller
-.. _`changelog`: https://github.com/pyinstaller/pyinstaller/blob/develop/doc/CHANGES.txt
+.. _`manual`: http://htmlpreview.github.io/?https://github.com/pyinstaller/pyinstaller/blob/python3/doc/Manual.html
+.. _`changelog`: https://github.com/pyinstaller/pyinstaller/blob/python3/doc/CHANGES.txt
 

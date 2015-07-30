@@ -15,7 +15,7 @@ hiddenimports = ['sip',
                  'PyQt5.QtNetwork'
                  ]
 
-from PyInstaller.hooks.hookutils import qt5_qml_data, qt5_qml_plugins_binaries
+from PyInstaller.utils.hooks.hookutils import qt5_qml_data, qt5_qml_plugins_binaries
 
 # TODO: we should parse the Qml files to see what we need to import.
 dirs = [#'Qt',
@@ -35,6 +35,5 @@ for dir in dirs:
 
 def hook(mod):
     for dir in dirs:
-        # TODO fix this hook to use attribute 'binaries'.
-        mod.pyinstaller_binaries.extend(qt5_qml_plugins_binaries(dir))
+        mod.add_binary(qt5_qml_plugins_binaries(dir))
     return mod

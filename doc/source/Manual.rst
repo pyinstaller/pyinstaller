@@ -21,10 +21,10 @@ Requirements
 **Windows**
   * Windows XP or newer.
   * PyWin32_
-    Python extensions for Windows is needed for users of Python 2.6 and later.
+    Python extensions for Windows.
 
 **Mac OS X**
-  * Mac OS X 10.4 (Tiger) or newer (Leopard, Snow Leopard, Lion, Mountain Lion).
+  * Mac OS X 10.6 (Snow Leopard) or newer.
 
 **Linux**
   * ldd:
@@ -730,7 +730,7 @@ If you need to distribute your application for more than one OS,
 for example both Windows and Mac OS X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
-Should you share the same home directory on multiple platforms, for
+If you share the same home directory on multiple platforms, for
 example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
 environment variable to different values on each platform otherwise
 PyInstaller may cache files for one platform and use them on the other
@@ -1064,8 +1064,6 @@ file loaded at bootstrap time, while the latter can use it to encrypt
 Python modules at build time.
 
 A complete example::
-
-    from PyInstaller.loader import pyi_crypto
 
     block_cipher = pyi_crypto.PyiBlockCipher(key='test_key')
     a = Analysis(['test_onefile_crypto.py'], cipher=block_cipher)
@@ -1940,8 +1938,16 @@ A hook is a module named
 (or in a folder specified with ``--additional-hooks-dir``).
 
 A hook is executable Python code that should
-define one or more of the following three global names:
+define one or more of the following several global names:
 
+
+``excludedimports``
+    A list of module names (relative or absolute) that the
+    hooked module excludes in some opaque way.
+    These names reduce the list of imported modules created
+    by scanning the code. Example::
+
+        excludedimports = ['_proxy', 'utils', 'defs']
 
 ``hiddenimports``
     A list of module names (relative or absolute) that the
@@ -1953,13 +1959,13 @@ define one or more of the following three global names:
 
     A way to simplify adding all submodules of a package is to use::
 
-        from PyInstaller.hooks.hookutils import collect_submodules
+        from PyInstaller.utils.hooks.hookutils import collect_submodules
         hiddenimports = collect_submodules('package')
 
     For an example see ``hook-docutils.py`` in the hooks folder.
 
     Note: We suggest always using the fully qualified name
-    ``PyInstaller.hooks.hookutils`` for importing hookutils. This
+    ``PyInstaller.utils.hooks.hookutils`` for importing hookutils. This
     avoids some pitfalls when implementing hooks for sub-modules.
 
 ``datas``
@@ -1980,12 +1986,24 @@ define one or more of the following three global names:
 
    A way to simplify collecting a folder of files is to use::
 
-      from hookutils import collect_data_files
+      from PyInstaller.utils.hooks.hookutils import collect_data_files
       datas = collect_data_files('package_name')
 
    to collect all package-related data files into a folder
    *package_name* in the app bundle.
    For an example see hook-pytz.py in the hooks folder.
+
+``binaries``
+   A list of globs of files or directories to bundle as binaries. Binaries is
+   a special case of ``datas`` in that PyInstaller will check if they depend
+   on other possible dynamic libraries. Otherwise it looks the same.
+
+   Example::
+
+      binaries = [
+           ('/usr/lib/lib*.so', 'libs'),
+           ('C:\\Windows\\System32\\*.dll', 'dlls'),
+	   ]
 
 ``attrs``
     A list of ``(`` *name* ``,`` *value* ``)`` pairs

@@ -1,5 +1,5 @@
-import ws2_32
-import oleaut32
+from .ws2_32 import *
+from .oleaut32 import *
 
 '''
 A small module for keeping a database of ordinal to symbol

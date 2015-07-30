@@ -6,11 +6,11 @@ from __future__ import print_function
 import sys
 import struct
 
-from macholib.mach_o import *
-from macholib.dyld import dyld_find, framework_info
-from macholib.util import fileview
+from PyInstaller.lib.macholib.mach_o import *
+from PyInstaller.lib.macholib.dyld import dyld_find, framework_info
+from PyInstaller.lib.macholib.util import fileview
 try:
-    from macholib.compat import bytes
+    from PyInstaller.lib.macholib.compat import bytes
 except ImportError:
     pass
 
