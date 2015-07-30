@@ -13,9 +13,10 @@ import pkgutil
 import os
 import sys
 import PyInstaller
-import PyInstaller.compat as compat
-from PyInstaller.compat import is_darwin, is_win
-from PyInstaller.utils import misc
+from ... import compat
+from ...compat import is_win
+from ...utils import misc
+from ... import HOMEPATH
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -23,9 +24,6 @@ logger = logging.getLogger(__name__)
 
 # All these extension represent Python modules or extension modules
 PY_EXECUTABLE_SUFFIXES = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
-
-# These suffixes represent Python extension modules
-from PyInstaller.compat import EXTENSION_SUFFIXES as PY_EXTENSION_SUFFIXES
 
 # These extensions represent Python executables and should therefore be
 # ignored when collecting data files.
@@ -49,7 +47,9 @@ def __exec_python_cmd(cmd):
     """
     # TODO pass PYTHONPATH env. variable as option 'env' in the subprocess.Popen function.
     # Prepend PYTHONPATH with pathex
-    pp = os.pathsep.join(PyInstaller.__pathex__)
+    # Some functions use some PyInstaller code in subprocess so add
+    # PyInstaller HOMEPATH to sys.path too.
+    pp = os.pathsep.join(PyInstaller.__pathex__ + [HOMEPATH])
     old_pp = compat.getenv('PYTHONPATH')
     if old_pp:
         pp = os.pathsep.join([old_pp, pp])
