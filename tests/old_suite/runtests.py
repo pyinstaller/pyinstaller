@@ -186,10 +186,11 @@ class SkipChecker(object):
             'libraries/test_zope': ['zope'],
             'libraries/test_zope_interface': ['zope.interface'],
 
-            'import/test_c_extension': ['simplejson'],
+            # Require the c-extension module to be present, too
+            'import/test_c_extension': ['simplejson._speedups'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_eggs2': ['pkg_resources'],
-            'import/test_onefile_c_extension': ['simplejson'],
+            'import/test_onefile_c_extension': ['simplejson._speedups'],
             'import/test_onefile_ctypes_cdll_c': ['ctypes'],
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
