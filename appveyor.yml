@@ -52,6 +52,7 @@ install:
   - ECHO %PYWIN_FILENAME%
   - ECHO "Filesystem root:"
   - ps: "ls \"C:/\""
+  - ps: "ls \"c:/users/appveyor/appdata/local\""
 
   - ECHO "Installed SDKs:"
   - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
