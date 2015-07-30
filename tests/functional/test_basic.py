@@ -80,7 +80,6 @@ def test_module__file__attribute(pyi_builder):
     pyi_builder.test_script('pyi_module__file__attribute.py')
 
 
-@pytest.mark.xfail(reason='failing with Python 3.3 in Travis')
 def test_module_attributes(tmpdir, pyi_builder):
     # Create file in tmpdir with path to python executable and if it is running
     # in debug mode.
