@@ -109,7 +109,7 @@ def test_multiprocess_forking(pyi_builder):
 
 
 # TODO skip this test if C compiler is not found.
-# TODO test it on Windows and OS X.
+# TODO test it on OS X.
 def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder):
     # Copy code for 'ctypes_dylib' into tmpdir.
     src = os.path.join(_DATA_DIR, 'ctypes_dylib')
@@ -121,7 +121,9 @@ def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder):
     # Compile the ctypes_dylib there.
     monkeypatch.chdir(dst)  # Make dst the CWD directory.
     if is_win:
-        ret = subprocess.call('gcc -shared ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
+        # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
+        march = '-m32' if architecture() == '32bit' else '-m64'
+        ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
         if ret != 0:
             # Find path to cl.exe file.
             from distutils.msvccompiler import MSVCCompiler
