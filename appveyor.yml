@@ -79,7 +79,7 @@ install:
   # PyInstaller depends on pywin32 package.
   # This package is not available for 'pip install'.
   # Download pywin32 only if it is not cached.
-  - ps: If ( -not (Test-Path "C:/downloads/"+$env:PYWIN_FILENAME) )  {(new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/'+$env:PYWIN_FILENAME, 'C:\downloads\'+$env:PYWIN_FILENAME)}
+  - ps: If ( -not (Test-Path "C:/downloads/$env:PYWIN_FILENAME") )  {(new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/'+$env:PYWIN_FILENAME, 'C:\downloads\'+$env:PYWIN_FILENAME)}
   - "%CMD_IN_ENV% easy_install C:\\downloads\\%PYWIN_FILENAME%"
 
   # Install the test dependencies of the project. If some dependencies contain
