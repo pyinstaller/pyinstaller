@@ -71,7 +71,11 @@ install:
   - "python waf distclean all %WAF_ARGS%"
   - cd ..
 
-  # Install the PyInsaller dependencies.
+  ### Install the PyInsaller dependencies.
+
+  # Create directory for downloads if it does not exist already.
+  - ps: If ( -not (Test-Path C:/downloads) )  { mkdir C:/downloads }
+
   # PyInstaller depends on pywin32 package.
   # This package is not available for 'pip install'.
   # Download pywin32 only if it is not cached.
