@@ -23,7 +23,7 @@ if not sys.flags.no_site:
     raise SystemExit('site module is enabled!')
 
 # Default values 'site' module when it is disabled.
-if not site.ENABLE_USER_SITE == None:
+if not site.ENABLE_USER_SITE == False:
     raise SystemExit('ENABLE_USER_SITE not False.')
 if site.USER_SITE is not None and site.USER_BASE is not None:
     raise SystemExit('USER_SITE or USER_BASE not None.')
