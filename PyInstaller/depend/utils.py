@@ -286,6 +286,7 @@ def scan_code_for_ctypes(co, instrs, i):
 def _resolveCtypesImports(cbinaries):
     """Completes ctypes BINARY entries for modules with their full path.
     """
+    cbinaries = list(set(cbinaries))
     from ctypes.util import find_library
 
     if is_unix:
