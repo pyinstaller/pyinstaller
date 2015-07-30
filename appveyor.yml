@@ -48,6 +48,7 @@ init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
 #install:
+  - ps: "ls \"C:/projects\""
   - "SET PYWIN_FILENAME=pywin32-219.%PYWIN_ARCH%-py%PYTHON_VERSION%.exe"
   - ECHO %PYWIN_FILENAME%
   - ECHO "Filesystem root:"
@@ -61,6 +62,7 @@ init:
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - chdir
 
   # Check that we have the expected version and architecture for Python
   - "python --version"
