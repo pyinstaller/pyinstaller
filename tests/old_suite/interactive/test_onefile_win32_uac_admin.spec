@@ -17,6 +17,8 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
+          a.datas,
+          a.zipfiles,
           name=__testname__ + '.exe',
           debug=False,
           strip=False,

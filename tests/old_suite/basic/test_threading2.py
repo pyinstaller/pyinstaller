@@ -42,21 +42,16 @@ else:
     # Differenciate subprocess code.
     itself = sys.argv[0]
     # Run subprocess.
-    try:
-        import subprocess
-        proc = subprocess.Popen([itself], stdout=subprocess.PIPE,
-                env={'PYI_THREAD_TEST_CASE': 'any_string'},
-                stderr=subprocess.PIPE, shell=False)
-        # Waits for subprocess to complete.
-        out, err = proc.communicate()
-    except ImportError:
-        # Python 2.3 does not have subprocess module.
-        command = 'PYI_THREAD_TEST_CASE=any_string ' + itself
-        pipe = os.popen(command)
-        out = pipe.read()
-        pipe.close()
+    import subprocess
+    proc = subprocess.Popen([itself], stdout=subprocess.PIPE,
+                            env={'PYI_THREAD_TEST_CASE': 'yes'},
+                            stderr=subprocess.PIPE, shell=False)
+    # Waits for subprocess to complete.
+    out, err = proc.communicate()
 
     # Make output from subprocess visible.
+    print(out)
+    out = out.decode('ascii')
     print(out)
 
     # Remove empty lines from output.

@@ -23,10 +23,12 @@ exe = EXE(pyz,
           exclude_binaries=1,
           append_pkg=False,
           name= __testname__ + '.exe',
-          debug=False,
+          debug=True, # ease debugging the bootloader
           strip=False,
           upx=False,
           console=True)
 coll = COLLECT(exe,
                a.binaries,
+               a.zipfiles,
+               a.datas,
                name=__testname__)

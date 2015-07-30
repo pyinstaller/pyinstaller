@@ -109,7 +109,8 @@ class SkipChecker(object):
 
         # Test-cases failing for a known reason and the reason
         self.KNOWN_TO_FAIL = {
-            'import/test_onefile_pkgutil-get_data__main__': 'Our import mechanism returns the wrong loader-class for __main__.'
+            'import/test_onefile_pkgutil-get_data__main__': 'Our import mechanism returns the wrong loader-class for __main__.',
+            'import/test_eggs2': 'due to modulegraph egg-data is not included',
         }
 
         # The dependencies for Windows and Mac differ from Linux dependencies
@@ -145,6 +146,7 @@ class SkipChecker(object):
 
             'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
+            'libraries/test_idlelib': ['idlelib'], # some Linux distibs put this into a searate package
             'libraries/test_Image': ['Image'], # PIL allows to use its submodules as top-level modules
             'libraries/test_Image2': ['Image'], # PIL allows to use its submodules as top-level modules
             'libraries/test_keyring': ['keyring'],
@@ -185,10 +187,11 @@ class SkipChecker(object):
             'libraries/test_zope': ['zope'],
             'libraries/test_zope_interface': ['zope.interface'],
 
-            'import/test_c_extension': ['simplejson'],
+            # Require the c-extension module to be present, too
+            'import/test_c_extension': ['simplejson._speedups'],
             'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_eggs2': ['pkg_resources'],
-            'import/test_onefile_c_extension': ['simplejson'],
+            'import/test_onefile_c_extension': ['simplejson._speedups'],
             'import/test_onefile_ctypes_cdll_c': ['ctypes'],
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
@@ -406,8 +409,9 @@ class BuildTestRunner(object):
         # Prints stdout of subprocess continuously.
         self._msg('STDOUT %s' % self.test_name)
         while proc.poll() is None:
-            #line = proc.stdout.readline().strip()
-            line = proc.stdout.read(1)
+            # We need to read a line, not single bytes. Otherwise decoding
+            # would ail.
+            line = proc.stdout.readline()
             self._plain_msg(line.decode('utf-8'), newline=False)
         # Print any stdout that wasn't read before the process terminated.
         # See the conversation in https://github.com/pyinstaller/pyinstaller/pull/1092
@@ -528,8 +532,7 @@ class BuildTestRunner(object):
             if not prog:
                 return False, 'Executable for %s missing' % logfn
             fname_list = archive_viewer.get_archive_content(prog)
-            # the archive contains byte-data, need to decode them
-            fname_list = [fn.decode('utf-8') for fn in fname_list]
+            fname_list = [fn for fn in fname_list]
             pattern_list = eval(open(logfn, 'rU').read())
             # Alphabetical order of patterns.
             pattern_list.sort()
@@ -838,4 +841,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('... aborted by user-request ...')

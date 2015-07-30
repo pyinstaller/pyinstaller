@@ -16,10 +16,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'zipped.egg'))
 
 import pkg_resources
 
+expected_data = 'This is data file for `zipped`.'.encode('ascii')
+
 t = pkg_resources.resource_string('zipped_egg', 'data/datafile.txt')
-assert t.rstrip() == 'This is data file for `zipped`.'
+assert t.rstrip() == expected_data
 
 import zipped_egg
-assert zipped_egg.data == 'This is data file for `zipped`.'
+assert zipped_egg.data == expected_data
 
 print('Okay.')

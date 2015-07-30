@@ -10,10 +10,12 @@
 import pkgutil
 import pkg3
 
+expected_data = 'This is data text for testing the packaging module data.'.encode('ascii')
+
 data = pkgutil.get_data('pkg3', 'sample-data.txt')
 if data:
     data = data.strip()
 
-if data != 'This is data text for testing the packaging module data.':
+if data != expected_data:
     raise SystemExit('Error: Could not read data with pkgutil.get_data().')
 print('Okay: Resource data read.')

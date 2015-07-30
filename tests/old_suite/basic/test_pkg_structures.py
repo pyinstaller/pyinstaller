@@ -9,7 +9,21 @@
 
 
 # Tests - hooks, strange pkg structures, version, icon.
-
+#
+# In this test, the *whole* package `pkg1` is replaced by the code and
+# content of `pkg2`, while the name `pkg1` is kept. `pkg2` is not
+# contained in the frozen exe.
+#
+# Additionally, the code of `pkg2` has a module `pkg2.b`, which
+# resides in file:`pkg2/extra/.py`. So this test checks also if path
+# extension is working for this very special case.
+#
+# The magic for all of this is done in hooks1/hook-pkg1.py.
+#
+# The In PyInstaller 2.1 this was done by simply replacing the
+# code-object and filename in the hook.
+# TODO: In modulegraph this does not yet work.
+#
 
 e1 = 'a_func from pkg2.a'
 e2 = 'b_func from pkg2.b (pkg2/extra/b.py)'
