@@ -1,11 +1,16 @@
 # For running tests
-pytest
-pytest-xdist
+pytest  # Testing framework.
+pytest-xdist  # Plugin allowing running tests in parallel.
+pyreadline  # Colors in ipython on Windows.
+ipython  # Better interactive Python shell.
 mock
 
 # Helper tools
 pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
 
+
 # Test libraries
+# Url for downloading PyCrypto prebuilt Windows binaries:
+# http://www.voidspace.org.uk/python/pycrypto-2.6.1/
 pycrypto==2.6.1  # Required for crypto feature - encrypting bytecode.
 Django==1.8.3
