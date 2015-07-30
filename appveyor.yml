@@ -48,7 +48,7 @@ init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
 install:
-  - "SET PYWINFILENAME=pywin32-219.%PYWIN_ARCH%-py%PYTHON_VERSION%.exe"
+  - "SET PYWIN_FILENAME=pywin32-219.%PYWIN_ARCH%-py%PYTHON_VERSION%.exe"
   - ECHO %PYWIN_FILENAME%
   - ECHO "Filesystem root:"
   - ps: "ls \"C:/\""
