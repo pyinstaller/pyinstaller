@@ -48,7 +48,7 @@ init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
 #install:
-  - ps: "ls \"C:/projects\""
+  - ps: "ls \"C:/projects/pyinstaller-ewwmo\""
   - ps: "ls ."
   - "SET PYWIN_FILENAME=pywin32-219.%PYWIN_ARCH%-py%PYTHON_VERSION%.exe"
   - ECHO %PYWIN_FILENAME%
