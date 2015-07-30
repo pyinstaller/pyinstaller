@@ -37,12 +37,12 @@ environment:
       PYWIN_ARCH: "win32"
       WAF_ARGS: "--gcc"
 
-cache:
+#cache:
   # Cache downloaded pip packages
-  - C:\\Users\\appveyor\\AppData\\Local\\pip\\cache"
+  #- C:\\Users\\appveyor\\AppData\\Local\\pip\\cache"
   # Cache pywin32 packages - downloading again and again is unreliable and
   # causes some failures
-  - C:\\Downloads
+  #- C:\\Downloads
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
