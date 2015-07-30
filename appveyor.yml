@@ -39,7 +39,7 @@ environment:
 
 cache:
   # Cache downloaded pip packages
-  - "%APPDATA%\\pip\\Cache"
+  - C:\\Users\\appveyor\\AppData\\Local\\pip\\cache"
   # Cache pywin32 packages - downloading again and again is unreliable and
   # causes some failures
   - C:\\Projects
