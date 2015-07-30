@@ -638,6 +638,13 @@ def get_pywin32_module_file_attribute(module_name):
     # On import, the pywin32 module imports a DLL and replaces all its attributes with
     # those from the DLL, and also replaces its __file__.
     # Execute module in subprocess to get actual __file__ of the DLL.
+
+    # NOTE: get_pywin32_module_file_attribute requires PyInstaller to be on the default
+    # sys.path for the called python process. Running py.test changes the working dir
+    # to a temp dir, so PyInstaller should be installed via setup.py install or
+    # setup.py develop before running py.test.
+
+
     statement = """
 from PyInstaller.utils.win32 import winutils
 module = winutils.import_pywin32_module('%s')
