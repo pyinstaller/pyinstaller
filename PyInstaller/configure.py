@@ -60,6 +60,25 @@ def test_UPX(config, upx_dir):
     config['upx_dir'] = upx_dir
 
 
+def _get_pyinst_config_dir():
+    if compat.getenv('PYINSTALLER_CONFIG_DIR'):
+        config_dir = compat.getenv('PYINSTALLER_CONFIG_DIR')
+    elif is_win:
+        config_dir = compat.getenv('APPDATA')
+        if not config_dir:
+            config_dir = os.path.expanduser('~\\Application Data')
+    elif is_darwin:
+        config_dir = os.path.expanduser('~/Library/Application Support')
+    else:
+        # According to XDG specification
+        # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
+        config_dir = compat.getenv('XDG_DATA_HOME')
+        if not config_dir:
+            config_dir = os.path.expanduser('~/.local/share')
+    config_dir = os.path.join(config_dir, 'pyinstaller')
+    return config_dir
+
+
 def get_config(upx_dir, **kw):
     if is_darwin and compat.architecture() == '64bit':
         logger.warn('You are running 64-bit Python: created binaries will only'
@@ -71,5 +90,6 @@ def get_config(upx_dir, **kw):
 
     config = {}
     test_UPX(config, upx_dir)
+    config['configdir'] = _get_pyinst_config_dir()
 
     return config

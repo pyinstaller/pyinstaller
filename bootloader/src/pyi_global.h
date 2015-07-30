@@ -37,6 +37,14 @@
 #ifdef __APPLE__
     #include <stdbool.h>  // bool, true, false
 #else
+    /*
+     * It looks like more recent versions of MSVC complains about 'typedef int bool'.
+     * They probably have the type 'bool' defined.
+     * TODO find out more info.
+     */
+    #undef bool
+    #undef true
+    #undef false
     typedef int bool;
     #define true    1
     #define false   0

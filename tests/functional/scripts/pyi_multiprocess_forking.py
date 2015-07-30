@@ -17,12 +17,16 @@
 
 
 import os
+
 import sys
 import multiprocessing
 
 # Module multiprocessing is organized differently for Python 2.7.
 try:
-    import multiprocessing.popen_fork as forking
+    if sys.platform.startswith('win'):
+        import multiprocessing.popen_spawn_win32 as forking
+    else:
+        import multiprocessing.popen_fork as forking
 except ImportError:
     import multiprocessing.forking as forking
 

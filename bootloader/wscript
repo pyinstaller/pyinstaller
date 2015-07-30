@@ -208,7 +208,7 @@ def detect_arch_cpu(ctx):
             arch = '64bit'  # Force 64bit for amd64 cpu.
         elif cpu == 'x86':
             ctx.env['MSVC_TARGETS'] = ['x86']
-            arch = '64bit'  # Force 32bit for x86 cpu.
+            arch = '32bit'  # Force 32bit for x86 cpu.
             ctx.msg('Platform', 'Architecture manually chosen: x86')
         ctx.msg('Platform', '%s-%s %s  manually chosen' % (platform.system(), arch, cpu))
     else:
@@ -223,6 +223,11 @@ def detect_arch_cpu(ctx):
     ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
     ctx.env.PYI_CPU = cpu  # 'x86' or 'amd64' or empty string
 
+    if arch == '64bit':
+        ctx.env['MSVC_TARGETS'] = ['x64']
+    elif arch == '32bit':
+        ctx.env['MSVC_TARGETS'] = ['x86']
+
 
 @conf
 def set_arch_flags(ctx):
@@ -233,12 +238,12 @@ def set_arch_flags(ctx):
     if is_win and ctx.env.CC_NAME == 'msvc':
         # Set msvc linkflags based on --target-cpu.
         if ctx.env.PYI_CPU:
-            if ctx.options.targetcpu == 'x86':
+            if ctx.options.target_cpu == 'x86':
                 ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
                 # Set LARGE_ADDRESS_AWARE_FLAG to True.
                 # On Windows this allows 32bit apps to use 4GB of memory and
                 ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
-            elif ctx.options.targetcpu == 'amd64':
+            elif ctx.options.target_cpu == 'amd64':
                 ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
             else:
                 ctx.fatal('RED', 'Unrecognized target CPU: %s' % ctx.env.PYI_CPU)

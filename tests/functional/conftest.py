@@ -13,6 +13,7 @@ import glob
 import os
 import pytest
 import subprocess
+import sys
 
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
@@ -153,7 +154,11 @@ class AppBuilder(object):
 
         # Run executable. stderr is redirected to stdout.
         print('RUNNING: ' + prog)
-        retcode = subprocess.call([prog] + args, env=prog_env, cwd=prog_cwd)
+        # Using sys.stdout/sys.stderr for subprocess fixes printing messages in
+        # Windows command prompt. Py.test is then able to collect stdout/sterr
+        # messages and display them if a test fails.
+        retcode = subprocess.call([prog] + args, stdout=sys.stdout, stderr=sys.stderr,
+                                  env=prog_env, cwd=prog_cwd)
         return retcode
 
     def _test_building(self, args):
@@ -179,6 +184,8 @@ class AppBuilder(object):
         pyi_args = [self.script] + default_args + args
         # TODO fix return code in running PyInstaller programatically
         PYI_CONFIG = configure.get_config(upx_dir=None)
+        # Override CONFIGDIR for PyInstaller and put it into self.tmpdir
+        PYI_CONFIG['configdir'] = self._tmpdir
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
 
@@ -235,8 +242,6 @@ class AppBuilder(object):
 @pytest.fixture(params=['onedir', 'onefile'])
 def pyi_builder(tmpdir, monkeypatch, request):
     tmp = tmpdir.strpath
-    # Override default PyInstaller config dir.
-    monkeypatch.setenv('PYINSTALLER_CONFIG_DIR', tmp)
     # Append _MMODULES_DIR to sys.path for building exes.
     # Some tests need additional test modules.
     # This also ensures that sys.path is reseted to original value for every test.
