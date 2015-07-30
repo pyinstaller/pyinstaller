@@ -146,6 +146,7 @@ class SkipChecker(object):
 
             'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
+            'libraries/test_idlelib': ['idlelib'], # some Linux distibs put this into a searate package
             'libraries/test_Image': ['Image'], # PIL allows to use its submodules as top-level modules
             'libraries/test_Image2': ['Image'], # PIL allows to use its submodules as top-level modules
             'libraries/test_keyring': ['keyring'],
