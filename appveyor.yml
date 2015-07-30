@@ -50,7 +50,7 @@ init:
 install:
   - cd ..
   - cd ..
-  - ps: "rm \"C:/projects/\" -r"
+  - ps: "rm \"C:/projects/pyinstaller-ewwmo/\" -r"
   - ps: "ls ."
   - "SET PYWIN_FILENAME=pywin32-219.%PYWIN_ARCH%-py%PYTHON_VERSION%.exe"
   - ECHO %PYWIN_FILENAME%
