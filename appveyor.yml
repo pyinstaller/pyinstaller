@@ -47,7 +47,11 @@ cache:
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
-install:
+# Skip install step and have everything in build section.
+# Otherwise caching would not work.
+#install:
+
+build:
   - "SET PYWIN_FILENAME=pywin32-219.%PYWIN_ARCH%-py%PYTHON_VERSION%.exe"
   - ECHO %PYWIN_FILENAME%
   - ECHO "Filesystem root:"
@@ -87,8 +91,6 @@ install:
 
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
-
-build: off
 
 test_script:
   # Split tests into several subprocesses.
