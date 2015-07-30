@@ -182,7 +182,7 @@ def test_set_icon(pyi_builder):
         args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]
     elif is_darwin:
         # On OS X icon is applied only for windowed mode.
-        icon = ['--windowed', '--icon', os.path.join(icon_dir, 'pyi_icon.icns')]
+        args = ['--windowed', '--icon', os.path.join(icon_dir, 'pyi_icon.icns')]
     else:
         pytest.skip('option --icon works only on Windows and Mac OS X')
     # Just use helloworld script.
