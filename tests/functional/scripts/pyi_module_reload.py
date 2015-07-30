@@ -19,6 +19,9 @@
 # imp module is deprecated since Python 3.4.
 try:
     import importlib as imp
+    # Python 3.3 does not have function importlib.reload().
+    if not hasattr(imp, 'reload'):
+        raise ImportError
 except ImportError:
     import imp
 import os
