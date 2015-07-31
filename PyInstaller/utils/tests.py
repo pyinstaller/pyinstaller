@@ -14,7 +14,7 @@ Decorators for skipping PyInstaller tests when specific requirements are not met
 """
 
 import pytest
-from PyInstaller.compat import is_darwin, is_win
+from PyInstaller.compat import is_darwin, is_win, is_py2
 
 # Wrap some pytest decorators to be consistent in tests.
 skipif = pytest.mark.skipif
@@ -22,6 +22,7 @@ skipif_notwin = skipif(not is_win, reason='requires Windows')
 skipif_notosx = skipif(not is_darwin, reason='requires Mac OS X')
 skipif_win = skipif(is_win, reason='does not run on Windows')
 skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
+skipif_py2 = skipif(is_py2, reason='fails with Python 2.7')
 
 
 def importorskip(modules):
