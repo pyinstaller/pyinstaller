@@ -37,12 +37,10 @@ if sys.version_info[0:2] < (3, 3):
     import imp
     imp_lock = imp.acquire_lock
     imp_unlock = imp.release_lock
-    # TODO Implement EXTENSION_SUFFIXES for Python 3.2. - 'imp' is not a built-in module anymore.
-    EXTENSION_SUFFIXES = []
-    # Find the platform specific extension suffixes. On Windows it is .pyd, on Linux/Unix .so.
-    for ext, mode, typ in imp.get_suffixes():
-        if typ == imp.C_EXTENSION:
-            EXTENSION_SUFFIXES += ext
+    # Find the platform specific extension suffixes.
+    # For Python 2 we need the info-tuples for loading
+    EXTENSION_SUFFIXES = dict((f[0], f) for f in imp.get_suffixes()
+                              if f[2] == imp.C_EXTENSION)
     # Function to create a new module object from pyz archive.
     imp_new_module = imp.new_module
 else:
@@ -446,10 +444,17 @@ class CExtensionImporter(object):
                 module = sys.modules.get(fullname)
 
                 if module is None:
+                    # Need to search for the filename again, since to
+                    # be thread-safe we can't store it in find_module().
+                    for ext, ext_tuple in EXTENSION_SUFFIXES.iteritems():
+                        filename = fullname + ext
+                        if filename in self._file_cache:
+                            break
+
                     # TODO fix variables _c_ext_tuple and _suffix.
-                    filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname + self._suffix)
+                    filename = pyi_os_path.os_path_join(SYS_PREFIX, filename)
                     fp = open(filename, 'rb')
-                    module = imp.load_module(fullname, fp, filename, self._c_ext_tuple)
+                    module = imp.load_module(fullname, fp, filename, ext_tuple)
                     # Set __file__ attribute.
                     if hasattr(module, '__setattr__'):
                         module.__file__ = filename
