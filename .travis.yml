@@ -4,6 +4,11 @@ sudo: false
 # Cache pip packages.
 cache: pip
 
+# Try OS X.
+os:
+  - linux
+  - osx
+
 #env:
 #  - PYCRYPTO_VERSION=2.4.1
 #  - PYCRYPTO_VERSION=2.6.1
@@ -11,6 +16,12 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
+
+# Ignore failures from OS X.
+matrix:
+  allow_failures:
+  - os: osx
+
 
 before_install:
   # TODO Review installing dependencies.
