@@ -17,7 +17,7 @@ import sphinx
 # See http://sphinx.pocoo.org/invocation.html#invocation for more details of 
 # the options below.
 #
-# Also, note that this is run in the dist/test_sphihnx direcotry, but uses
+# Also, note that this is run in the dist/test_sphinx directory, but uses
 # conf.py and index.rst from the sphinx/ subdirectory, so the command-line
 # options uses '../../sphinx' to refer to these files.
 ret = sphinx.main(['', # First param is name of program (anything is fine)
