@@ -9,6 +9,7 @@
 
 
 import glob
+import locale
 import os
 import shutil
 import sys
@@ -54,7 +55,6 @@ def test_email(pyi_builder):
     pyi_builder.test_script('pyi_email.py')
 
 
-@pytest.mark.xfail(reason='failing with Python 3.3 in Appveyor')
 @importorskip('Crypto')
 def test_feature_crypto(pyi_builder):
     pyi_builder.test_script('pyi_feature_crypto.py', pyi_args=['--key=test_key'])
@@ -200,14 +200,25 @@ def test_stderr_encoding(tmpdir, pyi_builder):
     #             OEM codepage. spawned subprocess has the same encoding. test passes.
     #
     with open(os.path.join(tmpdir.strpath, 'stderr_encoding.build'), 'w') as f:
-        f.write(sys.stderr.encoding)
+        if sys.stderr.isatty():
+            enc = sys.stderr.encoding
+        else:
+            # For non-interactive stderr use locale encoding - ANSI codepage.
+            # This fixes the test when running with py.test and capturing output.
+            enc = locale.getpreferredencoding(False)
+        f.write(enc)
     pyi_builder.test_script('pyi_stderr_encoding.py')
 
 
 def test_stdout_encoding(tmpdir, pyi_builder):
     with open(os.path.join(tmpdir.strpath, 'stdout_encoding.build'), 'w') as f:
-        f.write(sys.stdout.encoding)
-
+        if sys.stdout.isatty():
+            enc = sys.stdout.encoding
+        else:
+            # For non-interactive stdout use locale encoding - ANSI codepage.
+            # This fixes the test when running with py.test and capturing output.
+            enc = locale.getpreferredencoding(False)
+        f.write(enc)
     pyi_builder.test_script('pyi_stdout_encoding.py')
 
 
