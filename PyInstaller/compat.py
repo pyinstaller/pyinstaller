@@ -81,7 +81,12 @@ try:
 except NameError:
     stdin_input = input
 
+# Safe repr that always outputs ascii
 
+if is_py2:
+    safe_repr = repr
+else:
+    safe_repr = ascii
 
 # UserList class is moved to 'collections.UserList in Python 3.
 if is_py2:

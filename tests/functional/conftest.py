@@ -17,7 +17,7 @@ import sys
 
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
-from PyInstaller.compat import is_darwin, is_win
+from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr
 from PyInstaller.utils.win32 import winutils
 
 
@@ -152,8 +152,22 @@ class AppBuilder(object):
             # The executable will be called as relative not absolute path.
             prog = os.path.join(os.curdir, os.path.basename(prog))
 
+        # Workaround to enable win_codepage_test
+        # If _distdir is 'bytes', PyI build fails with ASCII decode error
+        # when it joins the 'bytes' _distdir with the 'unicode' filenames from bindep and
+        # winmanifest.
+        #
+        # PyI succeeds with _distdir as 'unicode', but subprocess
+        # fails with ASCII encode error. subprocess succeeds if progname is
+        # mbcs-encoded 'bytes'
+        if is_win and is_py2:
+            if isinstance(prog, unicode):
+                prog = prog.encode('mbcs')
+            if isinstance(prog_cwd, unicode):
+                prog_cwd = prog_cwd.encode('mbcs')
+
         # Run executable. stderr is redirected to stdout.
-        print('RUNNING: ' + prog)
+        print('RUNNING: ' + safe_repr(prog))
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
