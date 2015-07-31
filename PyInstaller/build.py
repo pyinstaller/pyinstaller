@@ -882,8 +882,11 @@ class PYZ(Target):
         cipher
                 The block cipher that will be used to encrypt Python bytecode.
         """
+
         from .config import CONF
         Target.__init__(self)
+        # TODO remove this attribute, PYZ items are compressed by default.
+        self.compression_level = 0
         self.toc = toc_dict['toc']
         # Use code objects directly from ModuleGraph to speed up PyInstaller.
         self.code_dict = toc_dict['code']
@@ -907,7 +910,7 @@ class PYZ(Target):
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
-            ('level', _check_guts_eq),
+            ('compression_level', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
             )
 
@@ -929,8 +932,7 @@ class PYZ(Target):
         toc = self.toc - self.dependencies
         pyz.build(self.name, toc)
         # FIXME compression level was dropped - remove it from the save_py_data_struct
-        compresssion_level = 0
-        save_py_data_struct(self.out, (self.name, compresssion_level, self.toc))
+        save_py_data_struct(self.out, (self.name, self.compression_level, self.toc))
         return 1
 
 
@@ -1185,13 +1187,18 @@ class PKG(Target):
         self.upx_binaries = upx_binaries
         if name is None:
             self.name = self.out[:-3] + 'pkg'
+        # This dict tells PyInstaller what items embedded in the executable should
+        # be compressed.
         if self.cdict is None:
             self.cdict = {'EXTENSION': COMPRESSED,
                           'DATA': COMPRESSED,
                           'BINARY': COMPRESSED,
                           'EXECUTABLE': COMPRESSED,
                           'PYSOURCE': COMPRESSED,
-                          'PYMODULE': COMPRESSED}
+                          'PYMODULE': COMPRESSED,
+                          # Do not compress PYZ as a whole. Single modules are
+                          # compressed when creating PYZ archive.
+                          'PYZ': UNCOMPRESSED}
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),

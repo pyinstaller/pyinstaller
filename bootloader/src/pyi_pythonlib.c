@@ -436,15 +436,15 @@ int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 
 
 /*
- * Install zlibs
+ * Install PYZ
  * Return non zero on failure
  */
 int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 {
 	TOC * ptoc;
-	VS("LOADER: Installing import hooks\n");
+	VS("LOADER: Installing PYZ archive with Python modules.\n");
 
-	/* Iterate through toc looking for zlibs (type 'z') */
+	/* Iterate through toc looking for zlibs (PYZ, type 'z') */
 	ptoc = status->tocbuff;
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_PYZ)

@@ -29,6 +29,7 @@ _environ = None
 import marshal
 import struct
 import sys
+import zlib
 
 
 def debug(msg):
@@ -355,6 +356,7 @@ class ZlibArchive(Archive):
     TOCPOS = 8
     HDRLEN = Archive.HDRLEN + 5
     TOCTMPLT = {}
+    COMPRESSION_LEVEL = 6  # Default level of the 'zlib' module from Python.
 
     def __init__(self, path=None, offset=None, code_dict={},
                  cipher=None):
@@ -397,9 +399,9 @@ class ZlibArchive(Archive):
             self.lib.seek(self.start + pos)
             obj = self.lib.read(lngth)
         if self.crypted:
-            obj =self.cipher.decrypt(obj)
+            obj = self.cipher.decrypt(obj)
         try:
-            co = marshal.loads(obj)
+            co = marshal.loads(zlib.decompress(obj))
         except EOFError:
             raise ImportError("PYZ entry '%s' failed to unmarshal" % name)
         return ispkg, co
@@ -413,7 +415,12 @@ class ZlibArchive(Archive):
         base, ext = self.os.path.splitext(self.os.path.basename(pth))
         ispkg = base == '__init__'
 
-        obj = marshal.dumps(self.code_dict[name])
+        obj = zlib.compress(marshal.dumps(self.code_dict[name]), self.COMPRESSION_LEVEL)
+
+        # First compress then encrypt.
+        if self.crypted:
+            obj = self.cipher.encrypt(obj)
+
         self.toc[name] = (ispkg, self.lib.tell(), len(obj))
         self.lib.write(obj)
 
