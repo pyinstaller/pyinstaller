@@ -31,18 +31,18 @@ environment:
       PYWIN_ARCH: "win32"
       WAF_ARGS: "--gcc"
 
-    #- PYTHON: "C:\\Python33"
-      #PYTHON_VERSION: "3.3"
-      #PYTHON_ARCH: "32"
-      #PYWIN_ARCH: "win32"
-      #WAF_ARGS: "--gcc"
+    - PYTHON: "C:\\Python33"
+      PYTHON_VERSION: "3.3"
+      PYTHON_ARCH: "32"
+      PYWIN_ARCH: "win32"
+      WAF_ARGS: "--gcc"
 
 cache:
   # Cache downloaded pip packages
-  - "%APPDATA%\\pip\\Cache"
+  - "%LOCALAPPDATA%\\pip"
   # Cache pywin32 packages - downloading again and again is unreliable and
   # causes some failures
-  - C:\\Projects
+  - C:\downloads
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -71,12 +71,16 @@ install:
   - "python waf distclean all %WAF_ARGS%"
   - cd ..
 
-  # Install the PyInsaller dependencies.
+  ### Install the PyInsaller dependencies.
+
+  # Create directory for downloads if it does not exist already.
+  - ps: If ( -not (Test-Path C:/downloads) )  { mkdir C:/downloads }
+
   # PyInstaller depends on pywin32 package.
   # This package is not available for 'pip install'.
   # Download pywin32 only if it is not cached.
-  - ps: If ( -not (Test-Path $env:PYWIN_FILENAME) )  {(new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/'+$env:PYWIN_FILENAME, 'C:\Projects\'+$env:PYWIN_FILENAME)}
-  - "%CMD_IN_ENV% easy_install C:\\Projects\\%PYWIN_FILENAME%"
+  - ps: If ( -not (Test-Path "C:/downloads/$env:PYWIN_FILENAME") )  {(new-object net.webclient).DownloadFile('https://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/'+$env:PYWIN_FILENAME, 'C:\downloads\'+$env:PYWIN_FILENAME)}
+  - "%CMD_IN_ENV% easy_install C:\\downloads\\%PYWIN_FILENAME%"
 
   # Install the test dependencies of the project. If some dependencies contain
   # compiled extensions and are not provided as pre-built wheel packages,
@@ -87,7 +91,7 @@ install:
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
 
-build: off
+build: none
 
 test_script:
   # Split tests into several subprocesses.
