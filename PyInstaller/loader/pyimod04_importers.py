@@ -450,8 +450,6 @@ class CExtensionImporter(object):
                         filename = fullname + ext
                         if filename in self._file_cache:
                             break
-
-                    # TODO fix variables _c_ext_tuple and _suffix.
                     filename = pyi_os_path.os_path_join(SYS_PREFIX, filename)
                     fp = open(filename, 'rb')
                     module = imp.load_module(fullname, fp, filename, ext_tuple)
