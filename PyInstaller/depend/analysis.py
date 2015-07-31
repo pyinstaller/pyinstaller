@@ -583,18 +583,21 @@ def get_bootstrap_modules():
     :return: TOC with modules
     """
     # Import 'struct' modules to get real paths to module file names.
-    mod1 = __import__('_struct')  # C extension.
-    mod2 = __import__('struct')
+    mod_struct = __import__('struct')
     # Basic modules necessary for the bootstrap process.
     loader_mods = []
     loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-    # On some platforms (Windows, Debian/Ubuntu) '_struct' module is a built-in module (linked statically)
-    # and thus does not have attribute __file__.
-    if hasattr(mod1, '__file__'):
-        loader_mods =[('_struct', os.path.abspath(mod1.__file__), 'EXTENSION')]
+    # On some platforms (Windows, Debian/Ubuntu) '_struct' and zlib modules are
+    # built-in modules (linked statically) and thus does not have attribute __file__.
+    # 'struct' module is required for reading Python bytecode from executable.
+    # 'zlib' is required to decompress this bytecode.
+    for mod_name in ['_struct', 'zlib']:
+        mod = __import__(mod_name)  # C extension.
+        if hasattr(mod, '__file__'):
+            loader_mods.append(('_struct', os.path.abspath(mod.__file__), 'EXTENSION'))
     # NOTE:These modules should be kept simple without any complicated dependencies.
     loader_mods +=[
-        ('struct', os.path.abspath(mod2.__file__), 'PYMODULE'),
+        ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
         ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.pyc'), 'PYMODULE'),
         ('pyimod02_archive',  os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
         ('pyimod03_carchive',  os.path.join(loaderpath, 'pyimod03_carchive.pyc'), 'PYMODULE'),
