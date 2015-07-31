@@ -9,13 +9,16 @@
 
 import sys
 
-# Not neceesary for the code, but informs PyInstaller of the hidden import of QtWebKit, which is performed inside of uic.loadUi.
+# Instead of creating a custom .spec file: inform PyInstaller of the
+# hidden import of QtWebKit, which is performed inside of uic.loadUi.
 from PyQt4.QtWebKit import QWebView
 
 from PyQt4.QtGui import QApplication, QDialog
 from PyQt4 import uic
 
-# Instead of creating a custom .spec file, assume the .ui file is in the same directory as the source .py file, making it two levels up when frozen.
+# Instead of creating a custom .spec file, assume the .ui file is in
+# the same directory as the source .py file, making it two levels up
+# when frozen.
 if getattr(sys, 'frozen', False):
     ui_prefix = '../../'
 else:
