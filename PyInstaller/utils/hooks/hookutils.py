@@ -158,8 +158,10 @@ def qt4_plugins_dir():
     qt4_plugin_dirs = eval_statement(
         "from PyQt4.QtCore import QCoreApplication;"
         "app=QCoreApplication([]);"
-        # TODO make sure python 2 gets a unicode string
-        "print(app.libraryPaths())")
+        # For Python 2 print would give "<PyQt4.QtCore.QStringList
+        # object at 0x....>", so we need to convert each element separately
+        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
+        "print([str(p) for p in app.libraryPaths()])")
     if not qt4_plugin_dirs:
         logger.error("Cannot find PyQt4 plugin directories")
         return ""
@@ -176,8 +178,10 @@ def qt4_phonon_plugins_dir():
         "app=QApplication([]); app.setApplicationName('pyinstaller');"
         "from PyQt4.phonon import Phonon;"
         "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        # TODO make sure python 2 gets a unicode string
-        "print(app.libraryPaths())")
+        # For Python 2 print would give "<PyQt4.QtCore.QStringList
+        # object at 0x....>", so we need to convert each element separately
+        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
+        "print([str(p) for p in app.libraryPaths()])")
     if not qt4_plugin_dirs:
         logger.error("Cannot find PyQt4 phonon plugin directories")
         return ""
@@ -275,8 +279,10 @@ def qt5_plugins_dir():
     qt5_plugin_dirs = eval_statement(
         "from PyQt5.QtCore import QCoreApplication;"
         "app=QCoreApplication([]);"
-        # TODO make sure python 2 gets a unicode string
-        "print(app.libraryPaths())")
+        # For Python 2 print would give "<PyQt4.QtCore.QStringList
+        # object at 0x....>", so we need to convert each element separately
+        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
+        "print([str(p) for p in app.libraryPaths()])")
     if not qt5_plugin_dirs:
         logger.error("Cannot find PyQt5 plugin directories")
         return ""
@@ -293,8 +299,10 @@ def qt5_phonon_plugins_dir():
         "app=QApplication([]); app.setApplicationName('pyinstaller');"
         "from PyQt5.phonon import Phonon;"
         "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        # TODO make sure python 2 gets a unicode string
-        "print(app.libraryPaths())")
+        # For Python 2 print would give "<PyQt4.QtCore.QStringList
+        # object at 0x....>", so we need to convert each element separately
+        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
+        "print([str(p) for p in app.libraryPaths()])")
     if not qt5_plugin_dirs:
         logger.error("Cannot find PyQt5 phonon plugin directories")
         return ""
