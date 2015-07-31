@@ -194,6 +194,13 @@ def test_python_home(pyi_builder):
 
 
 def test_stderr_encoding(tmpdir, pyi_builder):
+    # NOTE: '-s' option to pytest disables output capturing, changing this test's result:
+    # without -s: py.test process changes its own stdout encoding to 'UTF-8' to
+    #             capture output. subprocess spawned by py.test has stdout encoding
+    #             'cp1252', which is an ANSI codepage. test fails as they do not match.
+    # with -s:    py.test process has stdout encoding from windows terminal, which is an
+    #             OEM codepage. spawned subprocess has the same encoding. test passes.
+    #
     with open(os.path.join(tmpdir.strpath, 'stderr_encoding.build'), 'w') as f:
         f.write(sys.stderr.encoding)
     pyi_builder.test_script('pyi_stderr_encoding.py')
