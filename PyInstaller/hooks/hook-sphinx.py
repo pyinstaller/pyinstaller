@@ -11,6 +11,12 @@
 # hook-sphinx.py - Pyinstaller hook for Sphinx
 # ********************************************
 from PyInstaller.compat import is_py2
+
+from PyInstaller import log as logging
+logger = logging.getLogger(__name__)
+
+import pkgutil
+
 #
 # The following analysis applies to Sphinx v. 1.3.1, reported by ``pip show
 # sphinx``.
@@ -80,9 +86,11 @@ if is_py2:
 # Sphinx also relies on a number of data files in its directory hierarchy: for
 # example, *.html and *.conf files in sphinx.themes, translation files in
 # sphinx.locale, etc.
-datas = ( collect_data_files('sphinx') +
-#
-# The external themes also need their data files.
-          collect_data_files('alabaster') +
-          collect_data_files('sphinx_rtd_theme') )
+datas = collect_data_files('sphinx')
 
+# The (optional) external themes also need their data files.
+for theme in ('alabaster', 'sphinx_rtd_theme'):
+    if not pkgutil.find_loader(theme):
+        logger.debug("sphinx-theme %s not found, skipping it's data", theme)
+    else:
+        datas.extend(collect_data_files(theme))
