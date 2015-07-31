@@ -18,7 +18,7 @@ import subprocess
 import pytest
 
 from PyInstaller.compat import architecture, is_darwin, is_win
-from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx
+from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, skipif_py2
 
 
 # Directory with data for some tests.
@@ -55,6 +55,7 @@ def test_email(pyi_builder):
     pyi_builder.test_script('pyi_email.py')
 
 
+@skipif_py2
 @importorskip('Crypto')
 def test_feature_crypto(pyi_builder):
     pyi_builder.test_script('pyi_feature_crypto.py', pyi_args=['--key=test_key'])
@@ -68,6 +69,7 @@ def test_filename(pyi_builder):
     pyi_builder.test_script('pyi_filename.py')
 
 
+@skipif_py2
 def test_getfilesystemencoding(pyi_builder):
     pyi_builder.test_script('pyi_getfilesystemencoding.py')
 
@@ -80,6 +82,7 @@ def test_module__file__attribute(pyi_builder):
     pyi_builder.test_script('pyi_module__file__attribute.py')
 
 
+@skipif_py2
 def test_module_attributes(tmpdir, pyi_builder):
     # Create file in tmpdir with path to python executable and if it is running
     # in debug mode.
@@ -191,6 +194,7 @@ def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
 
+@skipif_py2
 def test_stderr_encoding(tmpdir, pyi_builder):
     # NOTE: '-s' option to pytest disables output capturing, changing this test's result:
     # without -s: py.test process changes its own stdout encoding to 'UTF-8' to
@@ -210,6 +214,7 @@ def test_stderr_encoding(tmpdir, pyi_builder):
     pyi_builder.test_script('pyi_stderr_encoding.py')
 
 
+@skipif_py2
 def test_stdout_encoding(tmpdir, pyi_builder):
     with open(os.path.join(tmpdir.strpath, 'stdout_encoding.build'), 'w') as f:
         if sys.stdout.isatty():
