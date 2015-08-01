@@ -12,6 +12,7 @@
 Subclass of Archive that can be understood by a C program (see launch.c).
 """
 
+# TODO clean up this module
 
 import struct
 import sys
@@ -29,7 +30,7 @@ class NotAnArchiveError(Exception):
     pass
 
 
-class CTOC(object):
+class CTOCReader(object):
     """
     A class encapsulating the table of contents of a CArchive.
 
@@ -62,53 +63,6 @@ class CTOC(object):
             typcd = chr(typcd)
             self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
-    def tobinary(self):
-        """
-        Return self as a binary string.
-        """
-        rslt = []
-        for (dpos, dlen, ulen, flag, typcd, nm) in self.data:
-            # Encode all names using UTF-8. This should be save as
-            # standard python modules only contain ascii-characters
-            # (and standard shared libraries should have the same) and
-            # thus the C-code still can handle this correctly.
-            nm = nm.encode('utf-8')
-            nmlen = len(nm) + 1       # add 1 for a '\0'
-            # align to 16 byte boundary so xplatform C can read
-            toclen = nmlen + self.ENTRYLEN
-            if toclen % 16 == 0:
-                pad = b'\0'
-            else:
-                padlen = 16 - (toclen % 16)
-                pad = b'\0' * padlen
-                nmlen = nmlen + padlen
-            rslt.append(struct.pack(self.ENTRYSTRUCT + '%is' % nmlen,
-                                    nmlen + self.ENTRYLEN, dpos, dlen, ulen,
-                                    flag, ord(typcd), nm + pad))
-
-        return b''.join(rslt)
-
-    def add(self, dpos, dlen, ulen, flag, typcd, nm):
-        """
-        Add an entry to the table of contents.
-
-        DPOS is data position.
-        DLEN is data length.
-        ULEN is the uncompressed data len.
-        FLAG says if the data is compressed.
-        TYPCD is the "type" of the entry (used by the C code)
-        NM is the entry's name.
-
-        This function is used only while creating an executable.
-        """
-        # Import module here since it might not be available during bootstrap
-        # and loading pyi_carchive module could fail.
-        import os.path
-        # Ensure forward slashes in paths are on Windows converted to back
-        # slashes '\\' since on Windows the bootloader works only with back
-        # slashes.
-        nm = os.path.normpath(nm)
-        self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
     def get(self, ndx):
         """
@@ -131,7 +85,7 @@ class CTOC(object):
         return -1
 
 
-class CArchive(pyimod02_archive.Archive):
+class CArchiveReader(pyimod02_archive.ArchiveReader):
     """
     An Archive subclass that can hold arbitrary data.
 
@@ -145,7 +99,7 @@ class CArchive(pyimod02_archive.Archive):
     # to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
-    TOCTMPLT = CTOC
+    TOCTMPLT = CTOCReader
     LEVEL = 9
 
     # Cookie - holds some information for the bootloader. C struct format
@@ -179,43 +133,7 @@ class CArchive(pyimod02_archive.Archive):
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
         self.pkg_start = 0
-        super(CArchive, self).__init__(archive_path, start)
-
-    def _finalize(self):
-        """
-        Finalize an archive which has been opened using _start_add_entries(),
-        writing any needed padding and the table of contents.
-
-        Overrides parent method because we need to save cookie and headers.
-        """
-        toc_pos = self.lib.tell() - self.pkg_start
-        self.save_toc(toc_pos)
-        self.save_cookie(toc_pos)
-
-        if self.HDRLEN:
-            self.update_headers(toc_pos)
-
-        self.lib.close()
-
-    # TODO Verify usefulness of this method.
-    def copy_from(self, arch):
-        """
-        Copy an entire archive into the current archive, updating TOC but
-        NOT writing it, to allow additions of files to end of archive.
-        Must be first action after _start_add_entries() since bootloader is
-        first.
-        """
-        self.pkg_start = arch.pkg_start
-        size = arch.pkg_start + arch.TOCPOS
-        blksize = 4096
-        arch.lib.seek(0)
-        # copy the whole file with some blocking for reads
-        while (size > 0):
-            self.lib.write(arch.lib.read(min(blksize, size)))
-            size -= blksize
-
-        for tocentry in arch.toc:
-            self.toc.add(*tocentry)
+        super(CArchiveReader, self).__init__(archive_path, start)
 
     def checkmagic(self):
         """
@@ -298,108 +216,6 @@ class CArchive(pyimod02_archive.Archive):
             rslt.append(nm)
         return rslt
 
-    def add(self, entry):
-        """
-        Add an ENTRY to the CArchive.
-
-        ENTRY must have:
-          entry[0] is name (under which it will be saved).
-          entry[1] is fullpathname of the file.
-          entry[2] is a flag for it's storage format (0==uncompressed,
-          1==compressed)
-          entry[3] is the entry's type code.
-          Version 5:
-            If the type code is 'o':
-              entry[0] is the runtime option
-              eg: v  (meaning verbose imports)
-                  u  (menaing unbuffered)
-                  W arg (warning option arg)
-                  s  (meaning do site.py processing.
-        """
-        (nm, pathnm, flag, typcd) = entry[:4]
-        # FIXME Could we make the version 5 the default one?
-        # Version 5 - allow type 'o' = runtime option.
-        try:
-            import os
-            if typcd in ('o', 'd'):
-                fh = None
-                ulen = 0
-                postfix = b''
-                flag = 0
-            elif typcd == 's':
-                # If it's a source code file, add \0 terminator as it will be
-                # executed as-is by the bootloader.
-                # Must read this in binary-mode, too, because
-                # compression only accepts a binary stream. Further we
-                # do not process it here, so why decode?
-                fh = open(pathnm, 'rb')
-                postfix = b'\n\0'
-                ulen = os.fstat(fh.fileno()).st_size + len(postfix)
-            else:
-                fh = open(pathnm, 'rb')
-                postfix = b''
-                ulen = os.fstat(fh.fileno()).st_size
-        except IOError:
-            print("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd))
-            raise
-
-        where = self.lib.tell()
-        assert flag in range(3)
-        if not fh:
-            # no need to write anything
-            pass
-        elif flag == 1:
-            assert fh
-            import zlib
-            comprobj = zlib.compressobj(self.LEVEL)
-            while 1:
-                buf = fh.read(16*1024)
-                if not buf:
-                    break
-                self.lib.write(comprobj.compress(buf))
-            self.lib.write(comprobj.compress(postfix))
-            self.lib.write(comprobj.flush())
-        else:
-            assert fh
-            while 1:
-                buf = fh.read(16*1024)
-                if not buf:
-                    break
-                self.lib.write(buf)
-            self.lib.write(postfix)
-
-        dlen = self.lib.tell() - where
-        if typcd == 'm':
-            if pathnm.find('.__init__.py') > -1:
-                typcd = 'M'
-
-        self.toc.add(where, dlen, ulen, flag, typcd, nm)
-
-
-    def save_toc(self, tocpos):
-        """
-        Save the table of contents to disk.
-        """
-        self.tocpos = tocpos
-        tocstr = self.toc.tobinary()
-        self.toclen = len(tocstr)
-        self.lib.write(tocstr)
-
-    def save_cookie(self, tocpos):
-        """
-        Save the cookie for the bootlader to disk.
-
-        CArchives can be opened from the end - the cookie points
-        back to the start.
-        """
-        totallen = tocpos + self.toclen + self._cookie_size
-        pyvers = sys.version_info[0] * 10 + sys.version_info[1]
-        # Before saving cookie we need to convert it to corresponding
-        # C representation.
-        cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
-                tocpos, self.toclen, pyvers, self._pylib_name.encode('ascii'))
-        self.lib.write(cookie)
-
     def openEmbedded(self, name):
         """
         Open a CArchive of name NAME embedded within this CArchive.
@@ -418,4 +234,4 @@ class CArchive(pyimod02_archive.Archive):
         if flag:
             raise ValueError('Cannot open compressed archive %s in place' %
                     name)
-        return CArchive(self.path, self.pkg_start + dpos, dlen)
+        return CArchiveReader(self.path, self.pkg_start + dpos, dlen)

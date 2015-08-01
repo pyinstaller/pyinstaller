@@ -39,7 +39,7 @@ from .depend.analysis import PyiModuleGraph, TOC, FakeModule, get_bootstrap_modu
 from .depend.utils import create_py3_base_library, is_path_to_egg
 from .loader import pyimod02_archive, pyimod03_carchive, pyimod05_crypto
 from .utils import misc
-from .utils.archive import CArchive, ZlibArchive, NotAnArchiveError
+from .utils.archivewriter import CArchiveWriter, ZlibArchiveWriter
 from .utils.misc import save_py_data_struct, load_py_data_struct
 from .lib.modulegraph.find_modules import get_implies
 
@@ -928,7 +928,7 @@ class PYZ(Target):
 
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = ZlibArchive(code_dict=self.code_dict, cipher=self.cipher)
+        pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
         pyz.build(self.name, toc)
@@ -1274,7 +1274,7 @@ class PKG(Target):
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
-        archive = CArchive(pylib_name=pylib_name)
+        archive = CArchiveWriter(pylib_name=pylib_name)
 
         archive.build(self.name, mytoc)
         save_py_data_struct(self.out,

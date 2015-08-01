@@ -129,7 +129,7 @@ def get_archive(name):
     if not stack:
         if name[-4:].lower() == '.pyz':
             return ZlibArchive(name)
-        return pyimod03_carchive.CArchive(name)
+        return pyimod03_carchive.CArchiveReader(name)
     parent = stack[-1][1]
     try:
         return parent.openEmbedded(name)
@@ -145,7 +145,7 @@ def get_archive(name):
         if typcd == 'z':
             return ZlibArchive(tempfilename)
         else:
-            return pyimod03_carchive.CArchive(tempfilename)
+            return pyimod03_carchive.CArchiveReader(tempfilename)
 
 
 def get_data(name, arch):
@@ -217,7 +217,7 @@ def get_archive_content(filename):
     return output
 
 
-class ZlibArchive(pyimod02_archive.ZlibArchive):
+class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
 
     def checkmagic(self):
         """ Overridable.

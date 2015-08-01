@@ -13,6 +13,7 @@ Utilities to create data structures for embedding Python modules and additional
 files into the executable.
 """
 
+# TODO clean up this module
 
 # TODO copied from pyimod02_carchive
 
@@ -27,32 +28,11 @@ files into the executable.
 # See pyi_carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
 
-_verbose = 0
-_listdir = None
-_environ = None
-
 
 import marshal
 import sys
 import zlib
-
-
-def debug(msg):
-    if 0:
-        sys.stderr.write(msg + "\n")
-        sys.stderr.flush()
-
-
-for nm in ('nt', 'posix'):
-    if nm in sys.builtin_module_names:
-        mod = __import__(nm)
-        _listdir = mod.listdir
-        _environ = mod.environ
-        break
-
-
-if "-vi" in sys.argv[1:]:
-    _verbose = 1
+from ..loader.pyimod03_carchive import CArchiveReader
 
 
 class ArchiveFile(object):
@@ -105,7 +85,7 @@ class ArchiveReadError(RuntimeError):
     pass
 
 
-class Archive(object):
+class ArchiveWriter(object):
     """
     A base class for a repository of python code objects.
     The extract method is used by imputil.ArchiveImporter
@@ -347,7 +327,7 @@ class Archive(object):
         self.lib.write(struct.pack('!i', tocpos))
 
 
-class ZlibArchive(Archive):
+class ZlibArchiveWriter(ArchiveWriter):
     """
     ZlibArchive - an archive with compressed entries. Archive is read
     from the executable created by PyInstaller.
@@ -359,7 +339,7 @@ class ZlibArchive(Archive):
     """
     MAGIC = b'PYZ\0'
     TOCPOS = 8
-    HDRLEN = Archive.HDRLEN + 5
+    HDRLEN = ArchiveWriter.HDRLEN + 5
     TOCTMPLT = {}
     COMPRESSION_LEVEL = 6  # Default level of the 'zlib' module from Python.
 
@@ -388,28 +368,13 @@ class ZlibArchive(Archive):
         # to avoid writting .pyc/pyo files to hdd.
         self.code_dict = code_dict
 
-        Archive.__init__(self, path, offset)
+        super(ZlibArchiveWriter, self).__init__(path, offset)
 
         if cipher:
             self.crypted = 1
             self.cipher = cipher
         else:
             self.crypted = 0
-
-    def extract(self, name):
-        (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
-        if pos is None:
-            return None
-        with self.lib:
-            self.lib.seek(self.start + pos)
-            obj = self.lib.read(lngth)
-        if self.crypted:
-            obj = self.cipher.decrypt(obj)
-        try:
-            co = marshal.loads(zlib.decompress(obj))
-        except EOFError:
-            raise ImportError("PYZ entry '%s' failed to unmarshal" % name)
-        return ispkg, co
 
     def add(self, entry):
         if self.os is None:
@@ -433,18 +398,8 @@ class ZlibArchive(Archive):
         """
         add level
         """
-        Archive.update_headers(self, tocpos)
+        ArchiveWriter.update_headers(self, tocpos)
         self.lib.write(struct.pack('!B', self.crypted))
-
-    def checkmagic(self):
-        Archive.checkmagic(self)
-        # struct.unpack() returns tupple even for just one item.
-        self.crypted = struct.unpack('!B', self.lib.read(1))[0]
-
-        if self.crypted:
-            from PyInstaller.loader import pyimod05_crypto
-
-            self.cipher = pyimod05_crypto.PyiBlockCipher()
 
 
 # TODO copied from pyimod03_carchive
@@ -459,7 +414,7 @@ class NotAnArchiveError(Exception):
     pass
 
 
-class CTOC(object):
+class CTOCWriter(object):
     """
     A class encapsulating the table of contents of a CArchive.
 
@@ -470,27 +425,6 @@ class CTOC(object):
 
     def __init__(self):
         self.data = []
-
-    def frombinary(self, s):
-        """
-        Decode the binary string into an in memory list.
-
-        S is a binary string.
-        """
-        p = 0
-
-        while p < len(s):
-            (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT,
-                                                        s[p:p + self.ENTRYLEN])
-            nmlen = slen - self.ENTRYLEN
-            p = p + self.ENTRYLEN
-            (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
-            p = p + nmlen
-            # nm may have up to 15 bytes of padding
-            nm = nm.rstrip(b'\0')
-            nm = nm.decode('utf-8')
-            typcd = chr(typcd)
-            self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
     def tobinary(self):
         """
@@ -561,7 +495,7 @@ class CTOC(object):
         return -1
 
 
-class CArchive(Archive):
+class CArchiveWriter(ArchiveWriter):
     """
     An Archive subclass that can hold arbitrary data.
 
@@ -575,7 +509,7 @@ class CArchive(Archive):
     # to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
-    TOCTMPLT = CTOC
+    TOCTMPLT = CTOCWriter
     LEVEL = 9
 
     # Cookie - holds some information for the bootloader. C struct format
@@ -609,7 +543,7 @@ class CArchive(Archive):
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
         self.pkg_start = 0
-        super(CArchive, self).__init__(archive_path, start)
+        super(CArchiveWriter, self).__init__(archive_path, start)
 
     def _finalize(self):
         """
@@ -626,98 +560,6 @@ class CArchive(Archive):
             self.update_headers(toc_pos)
 
         self.lib.close()
-
-    # TODO Verify usefulness of this method.
-    def copy_from(self, arch):
-        """
-        Copy an entire archive into the current archive, updating TOC but
-        NOT writing it, to allow additions of files to end of archive.
-        Must be first action after _start_add_entries() since bootloader is
-        first.
-        """
-        self.pkg_start = arch.pkg_start
-        size = arch.pkg_start + arch.TOCPOS
-        blksize = 4096
-        arch.lib.seek(0)
-        # copy the whole file with some blocking for reads
-        while (size > 0):
-            self.lib.write(arch.lib.read(min(blksize, size)))
-            size -= blksize
-
-        for tocentry in arch.toc:
-            self.toc.add(*tocentry)
-
-    def checkmagic(self):
-        """
-        Verify that self is a valid CArchive.
-
-        Magic signature is at end of the archive.
-
-        This fuction is used by ArchiveViewer.py utility.
-        """
-        # Magic is at EOF; if we're embedded, we need to figure where that is.
-        if self.length:
-            self.lib.seek(self.start + self.length, 0)
-        else:
-            self.lib.seek(0, 2)
-        filelen = self.lib.tell()
-        if self.length:
-            self.lib.seek(self.start + self.length - self._cookie_size, 0)
-        else:
-            self.lib.seek(-self._cookie_size, 2)
-        (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
-                self._cookie_format, self.lib.read(self._cookie_size))
-        if magic != self.MAGIC:
-            raise RuntimeError("%s is not a valid %s archive file" %
-                    (self.path, self.__class__.__name__))
-        self.pkg_start = filelen - totallen
-        if self.length:
-            if totallen != self.length or self.pkg_start != self.start:
-                raise RuntimeError('Problem with embedded archive in %s' %
-                        self.path)
-        # Verify presence of Python library name.
-        if not pylib_name:
-            raise RuntimeError('Python library filename not defined in archive.')
-        self.tocpos, self.toclen = tocpos, toclen
-
-    def loadtoc(self):
-        """
-        Load the table of contents into memory.
-        """
-        self.toc = self.TOCTMPLT()
-        self.lib.seek(self.pkg_start + self.tocpos)
-        tocstr = self.lib.read(self.toclen)
-        self.toc.frombinary(tocstr)
-
-    def extract(self, name):
-        """
-        Get the contents of an entry.
-
-        NAME is an entry name OR the index to the TOC.
-
-        Return the tuple (ispkg, contents).
-        For non-Python resoures, ispkg is meaningless (and 0).
-        Used by the import mechanism.
-        """
-        if type(name) == type(''):
-            ndx = self.toc.find(name)
-            if ndx == -1:
-                return None
-        else:
-            ndx = name
-        (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
-
-        with self.lib:
-            self.lib.seek(self.pkg_start + dpos)
-            rslt = self.lib.read(dlen)
-
-        if flag == 1:
-            import zlib
-            rslt = zlib.decompress(rslt)
-        if typcd == 'M':
-            return (1, rslt)
-
-        return (typcd == 'M', rslt)
 
     def contents(self):
         """
@@ -834,7 +676,7 @@ class CArchive(Archive):
         """
         Open a CArchive of name NAME embedded within this CArchive.
 
-        This fuction is used by ArchiveViewer.py utility.
+        This fuction is used by archive_viewer.py utility.
         """
         ndx = self.toc.find(name)
 
@@ -848,4 +690,4 @@ class CArchive(Archive):
         if flag:
             raise ValueError('Cannot open compressed archive %s in place' %
                     name)
-        return CArchive(self.path, self.pkg_start + dpos, dlen)
+        return CArchiveReader(self.path, self.pkg_start + dpos, dlen)

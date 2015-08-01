@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -23,7 +23,7 @@ PEP-302 importers for frozen applications.
 import sys
 import pyimod01_os_path as pyi_os_path
 
-from pyimod02_archive import ArchiveReadError, ZlibArchive
+from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 
 
 # Cannnot use sys.prefix (Not set in Python 3) and cannot use even MEIPASS or
@@ -157,23 +157,23 @@ class FrozenImporter(object):
         """
         # Examine all items in sys.path and the one like /path/executable_name?117568
         # is the correct executable with bundled zip archive. Use this value
-        # for the ZlibArchive class and remove this item from sys.path.
+        # for the ZlibArchiveReader class and remove this item from sys.path.
         # It was needed only for FrozenImporter class. Wrong path from sys.path
         # Raises ArchiveReadError exception.
         for pyz_filepath in sys.path:
             # We need to acquire the interpreter's import lock here
-            # because ZlibArchive() seeks through and reads from the
+            # because ZlibArchiveReader() seeks through and reads from the
             # zip archive.
             imp_lock()
             try:
                 # Unzip zip archive bundled with the executable.
-                self._pyz_archive = ZlibArchive(pyz_filepath)
+                self._pyz_archive = ZlibArchiveReader(pyz_filepath)
                 # Verify the integrity of the zip archive with Python modules.
-                # This is already done when creating the ZlibArchive instance.
+                # This is already done when creating the ZlibArchiveReader instance.
                 #self._pyz_archive.checkmagic()
 
                 # End this method since no Exception was raised we can assume
-                # ZlibArchive was successfully loaded. Let's remove 'pyz_filepath'
+                # ZlibArchiveReader was successfully loaded. Let's remove 'pyz_filepath'
                 # from sys.path.
                 sys.path.remove(pyz_filepath)
                 # Some runtime hook might need access to the list of available
@@ -182,10 +182,10 @@ class FrozenImporter(object):
                 # Return - no error was raised.
                 return
             except IOError:
-                # Item from sys.path is not ZlibArchive let's try next.
+                # Item from sys.path is not ZlibArchiveReader let's try next.
                 continue
             except ArchiveReadError:
-                # Item from sys.path is not ZlibArchive let's try next.
+                # Item from sys.path is not ZlibArchiveReader let's try next.
                 continue
             finally:
                 imp_unlock()
