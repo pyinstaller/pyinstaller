@@ -37,6 +37,12 @@ environment:
       PYWIN_ARCH: "win32"
       WAF_ARGS: "--gcc"
 
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "32"
+      PYWIN_ARCH: "win32"
+      WAF_ARGS: "--gcc"
+
 cache:
   # Cache downloaded pip packages
   - "%LOCALAPPDATA%\\pip"
