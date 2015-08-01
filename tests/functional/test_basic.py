@@ -17,7 +17,7 @@ import subprocess
 
 import pytest
 
-from PyInstaller.compat import architecture, is_darwin, is_win, is_py2
+from PyInstaller.compat import architecture, is_darwin, is_win, is_py2, is_py3
 from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, \
     skipif_py2, skipif_notwin, skipif_notosx
 
@@ -289,6 +289,7 @@ def test_win_codepage_path(pyi_builder):
 @skipif_notwin
 @pytest.mark.xfail(is_py2, reason="Python 2's subprocess.Popen calls CreateProcessA which "
                                   "doesn't work with non-codepage paths")
+@pytest.mark.xfail(is_py3, reason="Bootloader sets sys.argv using ANSI argv")
 def test_win_non_codepage_path(pyi_builder):
     # This test is expected to fail on python 2 as it does not have a useful result:
     # On py2 on Windows, subprocess.Popen calls CreateProcessA, which only accepts
