@@ -11,13 +11,10 @@
 # hook-sphinx.py - Pyinstaller hook for Sphinx
 # ********************************************
 from PyInstaller.compat import is_py2
+from PyInstaller.utils.hooks.hookutils import \
+    collect_submodules, collect_data_files, is_module_version
 
-from PyInstaller import log as logging
-logger = logging.getLogger(__name__)
-
-import pkgutil
-
-#
+hiddenimports = (
 # The following analysis applies to Sphinx v. 1.3.1, reported by ``pip show
 # sphinx``.
 #
@@ -26,9 +23,7 @@ import pkgutil
 #    __import__('sphinx.builders.' + mod, None, None, [cls]), cls)
 #
 # Therefore, we need all modules in ``sphinx.builders``.
-from PyInstaller.utils.hooks.hookutils import collect_submodules, collect_data_files
-
-hiddenimports = ( collect_submodules('sphinx.builders') +
+                  collect_submodules('sphinx.builders') +
 #
 # From sphinx.application line 429::
 #
@@ -70,27 +65,26 @@ hiddenimports = ( collect_submodules('sphinx.builders') +
 #    locale = __import__('locale')  # due to submodule of the same name
 #
 # Add these two modules.
-                  ['inspect', 'locale',
-#
-# Plus, two Sphinx themes (I term them external themes) are located outside
-# the Sphinx package. Include them as well.
-                   'alabaster', 'sphinx_rtd_theme'] )
-#
+                  ['inspect', 'locale'] )
+
+# TODO: In theory, we shouldn't need this anymore. PyInstaller now detects "six"
+# imports for both Python 2 and 3. Verify this and remove if true.
+
 # Finally, there are a HUGE number of imports from six that must be manually
 # listed. These will be auto-detected in Python 3, so omit them.
 if is_py2:
     hiddenimports += ('StringIO', 'cStringIO', 'cPickle', 'itertools',
                       'UserString', 'urllib', 'urllib2', 'HTMLParser',
                       'ConfigParser')
-#
+
 # Sphinx also relies on a number of data files in its directory hierarchy: for
 # example, *.html and *.conf files in sphinx.themes, translation files in
 # sphinx.locale, etc.
 datas = collect_data_files('sphinx')
 
-# The (optional) external themes also need their data files.
-for theme in ('alabaster', 'sphinx_rtd_theme'):
-    if not pkgutil.find_loader(theme):
-        logger.debug("sphinx-theme %s not found, skipping it's data", theme)
-    else:
-        datas.extend(collect_data_files(theme))
+# Sphinx 1.3.1 adds additional mandatory dependencies *NOT* detectable by
+# PyInstaller: the external "alabaster" and "sphinx_rtd_theme" themes.
+if is_module_version('sphinx', '>=', '1.3.1'):
+    hiddenimports += ('alabaster', 'sphinx_rtd_theme')
+    datas.extend(collect_data_files('alabaster'))
+    datas.extend(collect_data_files('sphinx_rtd_theme'))

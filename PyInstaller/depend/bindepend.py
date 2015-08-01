@@ -175,7 +175,7 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
     return lTOC
 
 
-def pkg_resouces_get_default_cache():
+def pkg_resources_get_default_cache():
     """
     Determine the default cache location
 
@@ -251,7 +251,7 @@ def check_extract_from_egg(pth, todir=None):
                     # if the specific egg was accessed before (not necessarily
                     # by pyinstaller), the extracted contents already exist
                     # (pkg_resources puts them there) and can be used.
-                    todir = os.path.join(pkg_resouces_get_default_cache(),
+                    todir = os.path.join(pkg_resources_get_default_cache(),
                                          name + "-tmp")
                 if components[i + 1:]:
                     members = ["/".join(components[i + 1:])]

@@ -11,6 +11,7 @@
 import glob
 import pkgutil
 import os
+import pkg_resources
 import sys
 import PyInstaller
 from ... import compat
@@ -661,9 +662,111 @@ print(module.__file__)
     return exec_statement(statement % module_name)
 
 
+def is_module_version(module_name, comparison_name, module_version):
+    """
+    Check the version of the module with the passed name against the passed
+    version string using the comparison operator with the passed name.
+
+    This function provides robust version checking based on the same low-level
+    algorithm leveraged by both `easy_install` and `pip`, and should _always_ be
+    called in lieu of manually comparing version strings. In particular, version
+    strings should _never_ be compared lexicographically (e.g., `'00.5' > '0.6'`
+    is technically `True`, despite being semantically untrue).
+
+    The passed module name should be a fully-qualified `.`-delimited module name
+    (e.g., `PyInstaller.util`). The passed version string should be a PEP
+    0440-compliant `.`-delimited version specifier (e.g., `3.14-rc5`). The
+    passed comparison name should be one of the following eight strings:
+
+    * '>=' or 'ge', performing a greater-than-or-equal-to comparison.
+    * '<=' or 'le', performing a less-than-or-equal-to comparison.
+    * '>' or 'gt', performing a greater-than comparison.
+    * '<' or 'lt', performing a less-than comparison.
+
+    Implementation
+    ----------
+    Specifically, this function:
+
+    . Spawns a subprocess importing this module and getting the value of this
+      module's `__version__` attribute.
+    . Converts both that value and the passed version string to comparable
+      tuples via the `pkg_resources.parse_version()` `setuptools` function.
+    . Returns the boolean returned by dynamically calling the private method of
+      the first such tuple corresponding to the passed comparison operator name
+      (e.g., the `tuple.__lt__()` method if that name is either `<` or `lt`),
+      passed the second such tuple.
+
+    Note that `pkg_resources.parse_version()` is generally considered to be the
+    most robust means of comparing version strings in Python. The
+    alternative `LooseVersion()` and `StrictVersion()` functions provided by the
+    standard `distutils.version` module fail for common edge-cases: e.g.,
+
+        >>> from distutils.version import LooseVersion
+        >>> LooseVersion('1.5') >= LooseVersion('1.5-rc2')
+        False
+        >>> from pkg_resources import parse_version
+        >>> parse_version('1.5') >= parse_version('1.5-rc2')
+        True
+
+    Parameters
+    ----------
+    module_name : str
+        Fully-qualified `.`-delimited module name.
+    comparison_name : str
+        Either '>=', 'ge', '<=', 'le', '>', 'gt', '<', or 'lt'.
+    module_version : str
+        PEP 0440-compliant `.`-delimited version specifier.
+
+    Returns
+    ----------
+    bool
+        Boolean returned by performing the desired module version check.
+
+    Examples
+    ----------
+        # Test whether the local version of Sphinx is 1.3.x or newer.
+        >>> from PyInstaller.utils.hooks.hookutils import is_module_version
+        >>> is_module_version('sphinx', '>=', '1.3.1')
+        True
+    """
+    # Dictionary mapping passed comparison names to private tuple method names.
+    comparison_to_method_name = {
+        '>=': '__ge__',
+        'ge': '__ge__',
+        '<=': '__le__',
+        'le': '__le__',
+        '>':  '__gt__',
+        'gt': '__gt__',
+        '<':  '__lt__',
+        'lt': '__lt__',
+    }
+
+    # If the passed comparison name is unrecognized, raise an exception.
+    if comparison_name not in comparison_to_method_name:
+        raise KeyError('Comparison name "%s" unrecognized.' % comparison_name)
+
+    # String module version obtained by importing this module in a subprocess.
+    statement = """
+import %s as module
+print(module.__version__)
+"""
+    module_version_real = exec_statement(statement % module_name)
+
+    # Convert incomparable version strings to comparable version tuples.
+    module_version_real_tuple = pkg_resources.parse_version(module_version_real)
+    module_version_fake_tuple = pkg_resources.parse_version(module_version)
+
+    # Private tuple method performing this comparison.
+    module_version_real_tuple_comparator = getattr(
+        module_version_real_tuple, comparison_to_method_name[comparison_name])
+
+    # Finally, compare the two versions.
+    return module_version_real_tuple_comparator(module_version_fake_tuple)
+
+
 def is_package(module_name):
     """
-    Check if a Python module is realy a module or is a package containing
+    Check if a Python module is really a module or is a package containing
     other modules.
 
     :param module_name: Module name to check.
