@@ -23,15 +23,14 @@ import zipfile
 from ..lib.modulegraph import modulegraph
 
 from .. import compat
-from ..compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC, PY3_BASE_MODULES
-from ..utils.hooks.hookutils import collect_submodules
+from ..compat import is_darwin, is_unix, is_py2, is_py27, is_py34, BYTECODE_MAGIC, PY3_BASE_MODULES
+from ..utils.hooks.hookutils import collect_submodules, is_package
 from .. import log as logging
 
 
 logger = logging.getLogger(__name__)
 
 
-# TODO ensure modules from base_library.zip are not bundled twice.
 # TODO find out if modules from base_library.zip could be somehow bundled into the .exe file.
 def create_py3_base_library(libzip_filename, graph):
     """
@@ -41,9 +40,15 @@ def create_py3_base_library(libzip_filename, graph):
     """
     logger.info('Creating base_library.zip for Python 3')
 
-    # TODO replace this by applying hook-encodings.py here.
-    # To initialize Python 3 dll encodings and codecs are required.
-    for m in collect_submodules('encodings')+['codecs']:
+    required_mods = []
+    # Collect submodules from required modules in base_library.zip.
+    for m in PY3_BASE_MODULES:
+        if is_package(m):
+            required_mods += collect_submodules(m)
+        else:
+            required_mods.append(m)
+    # Initialize ModuleGraph.
+    for m in required_mods:
         graph.import_hook(m)
 
     # TODO Replace this function with something better or something from standard Python library.

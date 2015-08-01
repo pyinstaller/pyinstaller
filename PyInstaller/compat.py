@@ -439,12 +439,39 @@ else:
 
 
 # Patterns of module names that should be bundled into the base_library.zip.
-PY3_BASE_MODULES = set([
-    # Py_Initialize() function uses module '_bootlocale' to set default stdout/err encodings.
-    '_bootlocale',
-    '_weakrefset',
-    'abc',
-    'codecs',
-    'encodings',
-    'io',
-])
+if is_py34:
+    PY3_BASE_MODULES = set([
+        # Py_Initialize() function uses module '_bootlocale' to set default stdout/err encodings.
+        # Python 3.4
+        # Module _bootlocale is just subset of 'locale' for starting Python interpreter.
+        # More info: https://bugs.python.org/issue9548i
+        '_bootlocale',
+        '_weakrefset',
+        'abc',
+        'codecs',
+        'encodings',
+        'io',  # The 'io' module requires to set stdout/stderr encodings.
+    ])
+else:
+    PY3_BASE_MODULES = set([
+        # Python 3.3
+        # The _bootlocale module is not available in Python 3.3 and whole 'locale' and its
+        # dependencies have to be in base_library.zip.
+        '_weakrefset',
+        'abc',
+        'codecs',
+        'collections',
+        'copyreg',
+        'encodings',
+        'functools',
+        'io',
+        'heapq',
+        'keyword',
+        'locale',
+        're',
+        'reprlib',
+        'sre_compile',
+        'sre_constants',
+        'sre_parse',
+        'weakref',
+    ])
