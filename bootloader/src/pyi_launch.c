@@ -324,6 +324,8 @@ int pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 	TOC * ptoc = status->tocbuff;
 	PyObject *__main__ = PI_PyImport_AddModule("__main__");
 	PyObject *__file__;
+	VS("LOADER: Restoring LC_CTYPE to %s\n", saved_locale);
+	setlocale(LC_CTYPE, saved_locale);
 	VS("LOADER: Running scripts\n");
 
 	/* Iterate through toc looking for scripts (type 's') */
@@ -467,10 +469,12 @@ int pyi_launch_execute(ARCHIVE_STATUS *status)
     if (!*PI_Py_FileSystemDefaultEncoding) {
         char *saved_locale, *loc_codeset;
         saved_locale = strdup(setlocale(LC_CTYPE, NULL));
+        VS("LOADER: LC_CTYPE was %s but resulted in NULL FileSystemDefaultEncoding\n", saved_locale);
         setlocale(LC_CTYPE, "");
         loc_codeset = nl_langinfo(CODESET);
         setlocale(LC_CTYPE, saved_locale);
         free(saved_locale);
+        VS("LOADER: Setting FileSystemDefaultEncoding to %s (was NULL)\n", loc_codeset);
         *PI_Py_FileSystemDefaultEncoding = loc_codeset;
     }
     #endif /* WIN32 */
