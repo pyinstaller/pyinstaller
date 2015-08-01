@@ -37,9 +37,9 @@ from .depend import bindepend
 from .depend import dylib
 from .depend.analysis import PyiModuleGraph, TOC, FakeModule, get_bootstrap_modules
 from .depend.utils import create_py3_base_library, is_path_to_egg
-from .loader import pyimod05_crypto
+from .archive import pyz_crypto
 from .utils import misc
-from PyInstaller.archive.writers import CArchiveWriter, ZlibArchiveWriter
+from .archive.writers import CArchiveWriter, ZlibArchiveWriter
 from .utils.misc import save_py_data_struct, load_py_data_struct
 from .lib.modulegraph.find_modules import get_implies
 
@@ -365,7 +365,7 @@ class Analysis(Target):
             with open(pyi_crypto_key_path, 'w') as f:
                 f.write('key = %r\n' % cipher.key)
             logger.info('Adding dependencies on pyi_crypto.py module')
-            self.hiddenimports.append(pyimod05_crypto.get_hiddenimport())
+            self.hiddenimports.append(pyz_crypto.get_crypto_hiddenimports())
 
         self.excludes = excludes
         self.scripts = TOC()
@@ -2129,7 +2129,7 @@ def build(spec, distpath, workpath, clean_build):
         'TkTree': lambda *args, **kwargs: _old_api_error('TkTree'),
         # Python modules available for .spec.
         'os': os,
-        'pyi_crypto': pyimod05_crypto,
+        'pyi_crypto': pyz_crypto,
     }
 
     # Set up module PyInstaller.config for passing some arguments to 'exec'

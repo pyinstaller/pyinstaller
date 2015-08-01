@@ -35,7 +35,7 @@ def import_aes(module_name):
         return mod.load_module(module_name)
 
 
-def get_hiddenimport():
+def get_crypto_hiddenimports():
     """
     These module names are appended to the PyInstaller analysis phase.
     :return: Name of the AES module.
@@ -53,6 +53,9 @@ def get_hiddenimport():
 
 
 class PyiBlockCipher(object):
+    """
+    This class is used only to encrypt Python modules.
+    """
     def __init__(self, key=None):
         if key is None:
             # At build-type the key is given to us from inside the spec file, at
@@ -81,7 +84,7 @@ class PyiBlockCipher(object):
             pass
 
         # Import the right AES module.
-        self._aesmod = import_aes(get_hiddenimport())
+        self._aesmod = import_aes(get_crypto_hiddenimports())
 
     def encrypt(self, data):
         # NOTE: This call will fail at bootstrap-time. See note in the
