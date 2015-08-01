@@ -32,7 +32,7 @@ files into the executable.
 import marshal
 import zlib
 
-from PyInstaller.utils.archivereaders import CArchiveReader
+from PyInstaller.archive.readers import CArchiveReader
 
 
 class ArchiveFile(object):

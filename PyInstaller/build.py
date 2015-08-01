@@ -39,7 +39,7 @@ from .depend.analysis import PyiModuleGraph, TOC, FakeModule, get_bootstrap_modu
 from .depend.utils import create_py3_base_library, is_path_to_egg
 from .loader import pyimod05_crypto
 from .utils import misc
-from .utils.archivewriter import CArchiveWriter, ZlibArchiveWriter
+from PyInstaller.archive.writers import CArchiveWriter, ZlibArchiveWriter
 from .utils.misc import save_py_data_struct, load_py_data_struct
 from .lib.modulegraph.find_modules import get_implies
 

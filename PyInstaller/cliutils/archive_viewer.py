@@ -21,7 +21,8 @@ import tempfile
 import zlib
 
 from PyInstaller.loader import pyimod02_archive
-from PyInstaller.utils import misc, archivereaders
+from PyInstaller.utils import misc
+from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
 from PyInstaller.compat import stdin_input
 import PyInstaller.log
 
@@ -75,7 +76,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
             arg = arg.strip()
             try:
                 arch = get_archive(arg)
-            except archivereaders.NotAnArchiveError as e:
+            except NotAnArchiveError as e:
                 print(e)
                 continue
             if arch is None:
@@ -127,7 +128,7 @@ def get_archive(name):
     if not stack:
         if name[-4:].lower() == '.pyz':
             return ZlibArchive(name)
-        return archivereaders.CArchiveReader(name)
+        return CArchiveReader(name)
     parent = stack[-1][1]
     try:
         return parent.openEmbedded(name)
@@ -143,7 +144,7 @@ def get_archive(name):
         if typcd == 'z':
             return ZlibArchive(tempfilename)
         else:
-            return archivereaders.CArchiveReader(tempfilename)
+            return CArchiveReader(tempfilename)
 
 
 def get_data(name, arch):
