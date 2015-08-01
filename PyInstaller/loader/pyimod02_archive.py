@@ -30,6 +30,10 @@ import sys
 import zlib
 
 
+# For decrypting Python modules.
+CRYPT_BLOCK_SIZE = 16
+
+
 class ArchiveFile(object):
     """
     File class support auto open when access member from file object
@@ -198,81 +202,59 @@ class ArchiveReader(object):
         self.lib.read(4)
 
 
-
-
-def import_aes(module_name):
+class Cipher(object):
     """
-    Tries to import the AES module from PyCrypto.
-
-    PyCrypto 2.4 and 2.6 uses different name of the AES extension.
+    This class is used only to decrypt Python modules.
     """
-    try:
-        # Easy way: this should work at build time.
-        return __import__(module_name, fromlist=[module_name.split('.')[-1]])
-    except ImportError:
-        # Not-so-easy way: at bootstrap time we have to load the module from the
-        # temporary directory in a manner similar to
-        # pyi_importers.CExtensionImporter.
-        from pyimod04_importers import CExtensionImporter
-
-        # NOTE: We _must_ call find_module first.
-        mod = CExtensionImporter().find_module(module_name)
-
-        if not mod:
-            raise ImportError(module_name)
-
-        return mod.load_module(module_name)
-
-class PyiBlockCipher(object):
-    """
-    This class is used only to encrypt Python modules.
-    """
-    BLOCK_SIZE = 16
-    def __init__(self, key=None):
-        if key is None:
-            # At build-type the key is given to us from inside the spec file, at
-            # bootstrap-time, we must look for it ourselves by trying to import
-            # the generated 'pyi_crypto_key' module.
-            import pyimod00_crypto_key
-            key = pyimod00_crypto_key.key
+    def __init__(self):
+        # At build-type the key is given to us from inside the spec file, at
+        # bootstrap-time, we must look for it ourselves by trying to import
+        # the generated 'pyi_crypto_key' module.
+        import pyimod00_crypto_key
+        key = pyimod00_crypto_key.key
 
         assert type(key) is str
-
-        if len(key) > BLOCK_SIZE:
-            self.key = key[0:BLOCK_SIZE]
+        if len(key) > CRYPT_BLOCK_SIZE:
+            self.key = key[0:CRYPT_BLOCK_SIZE]
         else:
-            self.key = key.zfill(BLOCK_SIZE)
-
-        assert len(self.key) == BLOCK_SIZE
-
-        # Import os.urandom locally since we need it only at build time (i.e.:
-        # when calling self.encrypt(), to provide the IV). We can't regularly
-        # import 'os' just yet because pyi_importers.FrozenImporter hasn't been
-        # installed as import hook during the bootstrap process, thus, the
-        # import would fail.
-        try:
-            self.urandom = __import__('os').urandom
-        except ImportError:
-            pass
+            self.key = key.zfill(CRYPT_BLOCK_SIZE)
+        assert len(self.key) == CRYPT_BLOCK_SIZE
 
         # Import the right AES module.
-        self._aesmod = import_aes(get_crypto_hiddenimports())
+        self._aes = self._import_aesmod()
 
-    def encrypt(self, data):
-        # NOTE: This call will fail at bootstrap-time. See note in the
-        # constructor.
-        iv = self.urandom(BLOCK_SIZE)
+    def _import_aesmod(self):
+        """
+        Tries to import the AES module from PyCrypto.
 
-        return iv + self.__create_cipher(iv).encrypt(data)
-
-    def decrypt(self, data):
-        return self.__create_cipher(data[:BLOCK_SIZE]).decrypt(data[BLOCK_SIZE:])
+        PyCrypto 2.4 and 2.6 uses different name of the AES extension.
+        """
+        # Not-so-easy way: at bootstrap time we have to load the module from the
+        # temporary directory in a manner similar to pyi_importers.CExtensionImporter.
+        from pyimod04_importers import CExtensionImporter
+        importer = CExtensionImporter()
+        # NOTE: We _must_ call find_module first.
+        # The _AES.so module exists only in PyCrypto 2.6 and later. Try to import
+        # that first.
+        modname = 'Crypto.Cipher._AES'
+        mod = importer.find_module(modname)
+        # Fallback to AES.so, which should be there in PyCrypto 2.4 and earlier.
+        if not mod:
+            modname = 'Crypto.Cipher.AES'
+            mod = importer.find_module(modname)
+            if not mod:
+                # Raise import error if none of the AES modules is found.
+                raise ImportError(modname)
+        return mod.load_module(modname)
 
     def __create_cipher(self, iv):
         # The 'BlockAlgo' class is stateful, this factory method is used to
         # re-initialize the block cipher class with each call to encrypt() and
         # decrypt().
-        return self._aesmod.new(self.key, self._aesmod.MODE_CFB, iv)
+        return self._aes.new(self.key, self._aes.MODE_CFB, iv)
+
+    def decrypt(self, data):
+        return self.__create_cipher(data[:CRYPT_BLOCK_SIZE]).decrypt(data[CRYPT_BLOCK_SIZE:])
 
 
 class ZlibArchiveReader(ArchiveReader):
@@ -313,6 +295,7 @@ class ZlibArchiveReader(ArchiveReader):
         # then it means that encryption is disabled.
         try:
             import pyimod00_crypto_key
+            self.cipher = Cipher()
         except ImportError:
             self.cipher = None
 
