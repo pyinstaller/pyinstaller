@@ -600,7 +600,7 @@ def get_bootstrap_modules():
         ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
         ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.pyc'), 'PYMODULE'),
         ('pyimod02_archive',  os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
-        ('pyimod04_importers',  os.path.join(loaderpath, 'pyimod04_importers.pyc'), 'PYMODULE'),
+        ('pyimod03_importers',  os.path.join(loaderpath, 'pyimod03_importers.pyc'), 'PYMODULE'),
         ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
         ('pyiboot02_egg_install', os.path.join(loaderpath, 'pyiboot02_egg_install.py'), 'PYSOURCE'),
     ]
