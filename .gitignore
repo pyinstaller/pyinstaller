@@ -67,6 +67,7 @@ __pycache__/
 /doc/source/_pyi*.tmp
 
 # Bootloader source
+/bootloader/.lock-waf*
 /bootloader/.lock-wscript
 /bootloader/build
 /bootloader/waf-*
