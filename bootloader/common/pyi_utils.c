@@ -23,7 +23,13 @@
     #include <signal.h>  // signal
 #else
     #include <dirent.h>
-    #include <dlfcn.h>
+    #if defined(AIX) && !defined(_ALL_SOURCE)
+    	#define _ALL_SOURCE
+    	#include <dlfcn.h>
+    	#undef  _ALL_SOURCE
+    #else
+    	#include <dlfcn.h>
+    #endif
     #include <limits.h>  // PATH_MAX
     #include <signal.h>  // kill,
     #include <sys/wait.h>
