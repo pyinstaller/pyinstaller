@@ -37,7 +37,7 @@ from .depend import bindepend
 from .depend import dylib
 from .depend.analysis import PyiModuleGraph, TOC, FakeModule, get_bootstrap_modules
 from .depend.utils import create_py3_base_library, is_path_to_egg
-from .loader import pyimod02_archive, pyimod03_carchive, pyimod05_crypto
+from .loader import pyimod05_crypto
 from .utils import misc
 from .utils.archivewriter import CArchiveWriter, ZlibArchiveWriter
 from .utils.misc import save_py_data_struct, load_py_data_struct

@@ -9,21 +9,15 @@
 
 
 """
-Subclass of Archive that can be understood by a C program (see launch.c).
+This CArchiveReader is used only by the archieve_viewer utility.
 """
 
 # TODO clean up this module
 
 import struct
-import sys
 
 
-# Python 3 requires relative import but we need absolute import
-# for the frozen executables where this module is a top-level module.
-try:
-    import pyimod02_archive
-except ImportError:
-    from . import pyimod02_archive
+from ..loader.pyimod02_archive import ArchiveReader
 
 
 class NotAnArchiveError(Exception):
@@ -85,7 +79,7 @@ class CTOCReader(object):
         return -1
 
 
-class CArchiveReader(pyimod02_archive.ArchiveReader):
+class CArchiveReader(ArchiveReader):
     """
     An Archive subclass that can hold arbitrary data.
 

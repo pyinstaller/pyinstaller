@@ -600,7 +600,6 @@ def get_bootstrap_modules():
         ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
         ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.pyc'), 'PYMODULE'),
         ('pyimod02_archive',  os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
-        ('pyimod03_carchive',  os.path.join(loaderpath, 'pyimod03_carchive.pyc'), 'PYMODULE'),
         ('pyimod04_importers',  os.path.join(loaderpath, 'pyimod04_importers.pyc'), 'PYMODULE'),
         # Include crypto module even if it might not be used.
         ('pyimod05_crypto', os.path.join(loaderpath, 'pyimod05_crypto.pyc'), 'PYMODULE'),

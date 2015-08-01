@@ -30,9 +30,9 @@ files into the executable.
 
 
 import marshal
-import sys
 import zlib
-from ..loader.pyimod03_carchive import CArchiveReader
+
+from PyInstaller.utils.archivereaders import CArchiveReader
 
 
 class ArchiveFile(object):
