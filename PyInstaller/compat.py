@@ -440,6 +440,8 @@ else:
 
 # Patterns of module names that should be bundled into the base_library.zip.
 PY3_BASE_MODULES = set([
+    # Py_Initialize() function uses module '_bootlocale' to set default stdout/err encodings.
+    '_bootlocale',
     '_weakrefset',
     'abc',
     'codecs',
