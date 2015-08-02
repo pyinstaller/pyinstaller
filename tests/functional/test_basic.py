@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2005-2015, PyInstaller Development Team.
 #
@@ -265,7 +266,7 @@ def test_ascii_path(pyi_builder):
 def test_osx_linux_unicode_path(pyi_builder):
     # Mac and Linux should handle 'unicode' type filenames without problem.
     distdir = pyi_builder._distdir
-    unicode_filename = u'\u011b\u0161\u010d\u0159\u017e\u00fd\u00e1\u00ed\u00e9\u65e5\u672c\u8a9e'
+    unicode_filename = u'ěščřžýáíé日本語'
     pyi_builder._distdir = os.path.join(distdir, unicode_filename)
     os.makedirs(pyi_builder._distdir)
 
@@ -306,7 +307,9 @@ def test_win_non_codepage_path(pyi_builder):
 
     distdir = pyi_builder._distdir
     # Both eastern European and Japanese characters - no codepage should encode this.
-    non_cp_filename = u'\u011b\u0161\u010d\u0159\u017e\u00fd\u00e1\u00ed\u00e9\u65e5\u672c\u8a9e'
+    non_cp_filename = u'ěščřžýáíé日本語'
+
+    # Codepage encoding would replace some of these chars with "???".
 
     # On py3, distdir and filename are both str; nothing happens.
     # On py2, distdir is decoded to unicode using ASCII - test fails if
