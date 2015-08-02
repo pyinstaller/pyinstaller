@@ -164,5 +164,7 @@ void pyi_global_printf(const char *fmt, ...);
     #endif
 #endif
 
+/* Saved LC_CTYPE locale */
+extern char *saved_locale;
 
 #endif /* PYI_GLOBAL_H */

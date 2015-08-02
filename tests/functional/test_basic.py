@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2005-2015, PyInstaller Development Team.
 #
@@ -6,7 +7,7 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
+import codecs
 
 import glob
 import locale
@@ -17,9 +18,9 @@ import subprocess
 
 import pytest
 
-from PyInstaller.compat import architecture, is_darwin, is_win
-from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, skipif_py2
-
+from PyInstaller.compat import architecture, is_darwin, is_win, is_py2, is_py3
+from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, \
+    skipif_py2, skipif_notwin, skipif_notosx
 
 # Directory with data for some tests.
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
@@ -252,6 +253,71 @@ def test_pywin32_win32com(pyi_builder):
 def test_pywin32_win32ui(pyi_builder):
     pyi_builder.test_script('pyi_pywin32_win32ui.py')
 
+
+def test_ascii_path(pyi_builder):
+    distdir = pyi_builder._distdir
+    dd_ascii = distdir.encode('ascii', 'replace').decode('ascii')
+    if distdir != dd_ascii:
+        pytest.skip(reason="Default build path not ASCII, skipping...")
+
+    pyi_builder.test_script('pyi_path_encoding.py')
+
+@skipif_win
+def test_osx_linux_unicode_path(pyi_builder):
+    # Mac and Linux should handle 'unicode' type filenames without problem.
+    distdir = pyi_builder._distdir
+    unicode_filename = u'ěščřžýáíé日本語'
+    pyi_builder._distdir = os.path.join(distdir, unicode_filename)
+    os.makedirs(pyi_builder._distdir)
+
+    pyi_builder.test_script('pyi_path_encoding.py')
+
+
+@skipif_notwin
+def test_win_codepage_path(pyi_builder):
+    distdir = pyi_builder._distdir
+    # Create some bytes and decode with the current codepage to get a filename that
+    # is guaranteed to encode with the current codepage.
+    # Assumes a one-byte codepage, i.e. not cp937 (shift-JIS) which is multibyte
+    cp_filename = bytes(bytearray(range(0x80, 0x86))).decode('mbcs')
+
+    pyi_builder._distdir = os.path.join(distdir, cp_filename)
+    os.makedirs(pyi_builder._distdir)
+
+    pyi_builder.test_script('pyi_path_encoding.py')
+
+
+if is_py2:
+    _noncp_path_reason = "Python 2's subprocess.Popen calls CreateProcessA which "\
+                         "doesn't work with non-codepage paths"
+else:
+    _noncp_path_reason = "Bootloader sets sys.argv using ANSI argv on Python 3"
+
+@skipif_notwin
+@pytest.mark.xfail(reason=_noncp_path_reason)
+def test_win_non_codepage_path(pyi_builder):
+    # This test is expected to fail on python 2 as it does not have a useful result:
+    # On py2 on Windows, subprocess.Popen calls CreateProcessA, which only accepts
+    # ANSI codepage-encoded filenames (or SFNs). Encoding non_cp_filename as an SFN
+    # will defeat the purpose of this test.
+    #
+    # To make this test give useful results, we need to use ctypes to call CreateProcessW
+    # and replicate most of what the subprocess module does with it (or insert our
+    # CreateProcessW into subprocess)
+
+    distdir = pyi_builder._distdir
+    # Both eastern European and Japanese characters - no codepage should encode this.
+    non_cp_filename = u'ěščřžýáíé日本語'
+
+    # Codepage encoding would replace some of these chars with "???".
+
+    # On py3, distdir and filename are both str; nothing happens.
+    # On py2, distdir is decoded to unicode using ASCII - test fails if
+    # tempdir is non-ascii. Shouldn't happen, we're not testing the test system.
+    pyi_builder._distdir = os.path.join(distdir, non_cp_filename)
+    os.makedirs(pyi_builder._distdir)
+
+    pyi_builder.test_script('pyi_path_encoding.py')
 
 """
 def test_(pyi_builder):

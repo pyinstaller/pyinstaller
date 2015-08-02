@@ -173,7 +173,11 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 			  if (is_py2) {
 			    PI_Py2Sys_AddWarnOption(&ptoc->name[2]);
 			  } else {
-			    mbstowcs(wchar_tmp, &ptoc->name[2], PATH_MAX);
+			    if ((size_t)-1 == mbstowcs(wchar_tmp, &ptoc->name[2], PATH_MAX)) {
+			      FATALERROR("Failed to convert Wflag %s using mbstowcs "
+			                 "(invalid multibyte string)", &ptoc->name[2]);
+			      return -1;
+			    }
 			    PI_PySys_AddWarnOption(wchar_tmp);
 			  };
 			  break;
@@ -231,6 +235,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
      * PYTHONHOME for function Py_SetPythonHome() should point
      * to a zero-terminated character string in static storage. */
 	static char pypath[2*PATH_MAX + 14]; /* Statics are zero-initialized */
+	static char pyhome[PATH_MAX];
 	int i;
     /* Temporary buffer for conversion of string to wide string. */
 	wchar_t wchar_tmp_pypath[PATH_MAX+1];
@@ -240,8 +245,12 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
       PI_Py2_SetProgramName(status->archivename);
       // TODO is this all, PyInstaller 2.1 did here?
     } else {
-      // TODO archivename is not mbs - #1323
-      mbstowcs(_program_name, status->archivename, PATH_MAX);
+      // TODO archivename is not mbs on Windows (is UTF8) - #1323
+      if ((size_t)-1 == mbstowcs(_program_name, status->archivename, PATH_MAX)) {
+        FATALERROR("Failed to convert archivename to wchar_t (invalid multibyte string)\n");
+        return -1;
+      }
+
       // In Python 3 Py_SetProgramName() should be called before Py_SetPath().
       PI_Py_SetProgramName(_program_name);
     };
@@ -265,18 +274,26 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     if (is_py2) {
       pyi_setenv("PYTHONPATH", pypath);
     } else {
-      // TODO: is pypath mbs? probably not.
-      mbstowcs(wchar_tmp_pypath, pypath, PATH_MAX);
+      // TODO: pypath is not mbs on Windows (is UTF8)
+      if ((size_t)-1 == mbstowcs(wchar_tmp_pypath, pypath, PATH_MAX)){
+        FATALERROR("Failed to convert pypath to wchar_t (invalid multibyte string)\n");
+        return -1;
+      }
       PI_Py_SetPath(wchar_tmp_pypath);
     };
 
     /* Set PYTHONHOME by using function from Python C API. */
-    strcpy(pypath, status->mainpath);
+    strcpy(pyhome, status->mainpath);
     if (is_py2) {
-      VS("LOADER: PYTHONHOME is %s\n", pypath);
-      PI_Py2_SetPythonHome(pypath);
+      VS("LOADER: PYTHONHOME is %s\n", pyhome);
+      PI_Py2_SetPythonHome(pyhome);
     } else {
-      mbstowcs(wchar_tmp_pyhome, pypath, PATH_MAX);
+      // TODO: pyhome is not mbs on Windows (is UTF8)
+      if ((size_t)-1 == mbstowcs(wchar_tmp_pyhome, pyhome, PATH_MAX)){
+        FATALERROR("Failed to convert pyhome to wchar_t (invalid multibyte string)\n");
+        return -1;
+      }
+
       VS("LOADER: PYTHONHOME is %S\n", wchar_tmp_pyhome);
       PI_Py_SetPythonHome(wchar_tmp_pyhome);
     };

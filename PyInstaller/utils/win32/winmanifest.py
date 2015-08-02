@@ -996,7 +996,7 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
         # /path/NAME.exe.manifest - split extension twice to get NAME.
         name = os.path.basename(filename)
         manifest.name = os.path.splitext(os.path.splitext(name)[0])[0]
-    elif isinstance(manifest, basestring) and "<" in manifest:
+    elif isinstance(manifest, string_types) and "<" in manifest:
         # Assume XML string
         manifest = ManifestFromXML(manifest)
     elif not isinstance(manifest, Manifest):

@@ -58,6 +58,11 @@ typedef struct _archive_status {
     TOC     *tocbuff;
     TOC     *tocend;
     COOKIE  cookie;
+    /*
+     * On Windows, these strings are UTF-8 encoded (via pyi_win32_utils_to_utf8)
+     * On Linux/OS X, these strings are locale-encoded, which is usually UTF-8, but we
+     * call setlocale(LC_CTYPE, "") in main to be absolutely sure we can decode them.
+     */
     char    archivename[PATH_MAX];
     char    homepath[PATH_MAX];
     char    temppath[PATH_MAX];
@@ -83,9 +88,9 @@ typedef struct _archive_status {
     /*
      * Cached command-line arguments.
      */
-     int argc;      /* Count of command-line arguments. */
-     wchar_t **argv;   /* Array of strings. */
-     char **argv_char;   // Plain copy of argv, used for is_py2
+    int argc;      /* Count of command-line arguments. */
+    wchar_t **argv;   /* Array of strings. */
+    char **argv_char;   // Plain copy of argv, used for is_py2
 } ARCHIVE_STATUS;
 
 
