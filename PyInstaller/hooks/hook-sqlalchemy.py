@@ -8,6 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
+from operator import ge
 from PyInstaller.utils.hooks.hookutils import exec_statement, is_module_version
 
 # include most common database bindings
@@ -16,7 +17,7 @@ from PyInstaller.utils.hooks.hookutils import exec_statement, is_module_version
 hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2']
 
 # sqlalchemy.dialects package from 0.6 and newer sqlachemy versions
-if is_module_version('sqlalchemy', '>=', '0.6'):
+if is_module_version('sqlalchemy', ge, '0.6'):
     dialects = exec_statement("import sqlalchemy.dialects;print(sqlalchemy.dialects.__all__)")
     dialects = eval(dialects.strip())
 
