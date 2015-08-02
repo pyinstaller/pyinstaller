@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     """
     rebuild is required if mtimes of files listed in old toc are newer
-    than ast_build
+    than last_build
 
     if pyc=1, check for .py files, too
     """
@@ -52,8 +52,8 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
 
 def _check_guts_toc(attr, old, toc, last_build, pyc=0):
     """
-    rebuild is required if either toc content changed if mtimes of
-    files listed in old toc are newer than ast_build
+    rebuild is required if either toc content changed or mtimes of
+    files listed in old toc are newer than last_build
 
     if pyc=1, check for .py files, too
     """
