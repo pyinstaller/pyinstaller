@@ -380,13 +380,20 @@ class EXE(Target):
     _GUTS = (('name', _check_guts_eq),
             ('console', _check_guts_eq),
             ('debug', _check_guts_eq),
+            ('exclude_binaries', _check_guts_eq),
             ('icon', _check_guts_eq),
             ('versrsrc', _check_guts_eq),
+            ('uac_admin', _check_guts_eq),
+            ('uac_uiaccess', _check_guts_eq),
+            ('manifest', _check_guts_eq),
+            ('append_pkg', _check_guts_eq),
+            # for the case the directory ius shared between platforms:
+            ('pkgname', _check_guts_eq),
+            ('toc', _check_guts_eq),
             ('resources', _check_guts_eq),
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
-            ('mtm', None,),  # checked bellow
-             # manifest
+            ('mtm', None,),  # checked below
             )
 
     def _check_guts(self, data, last_build):
