@@ -12,11 +12,10 @@
 Automatically build spec files containing a description of the project
 """
 
-
 import optparse
 import os
 
-import PyInstaller.makespec
+import PyInstaller.building.makespec
 import PyInstaller.compat
 import PyInstaller.log
 from PyInstaller.utils import misc
@@ -28,7 +27,7 @@ def run():
     p = optparse.OptionParser(
         usage='python %prog [opts] <scriptname> [<scriptname> ...]'
     )
-    PyInstaller.makespec.__add_options(p)
+    PyInstaller.building.makespec.__add_options(p)
     PyInstaller.log.__add_options(p)
     PyInstaller.compat.__add_obsolete_options(p)
 
@@ -45,7 +44,7 @@ def run():
         p.error('Requires at least one scriptname file')
 
     try:
-        name = PyInstaller.makespec.main(args, **opts.__dict__)
+        name = PyInstaller.building.makespec.main(args, **opts.__dict__)
         print('wrote %s' % name)
         print('now run pyinstaller.py to build the executable')
     except KeyboardInterrupt:

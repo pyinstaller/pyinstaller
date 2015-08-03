@@ -22,7 +22,7 @@ from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller.compat import is_win, is_darwin
 
 import PyInstaller.compat as compat
-from PyInstaller.depend.analysis import TOC
+from PyInstaller.building.datastruct import TOC
 
 import PyInstaller.log as logging
 

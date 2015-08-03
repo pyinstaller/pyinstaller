@@ -44,14 +44,13 @@ sys.path.insert(0, pyi_home)
 
 
 import PyInstaller
-from PyInstaller import HOMEPATH
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
 from PyInstaller.compat import is_py2, is_win, is_darwin, modname_tkinter
 from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import hookutils
 from PyInstaller.utils.win32 import winutils
-from PyInstaller.cliutils import archive_viewer
+from PyInstaller.utils.cliutils import archive_viewer
 import PyInstaller.log as logging
 
 # HACK

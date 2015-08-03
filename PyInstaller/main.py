@@ -12,15 +12,16 @@
 Main command-line interface to PyInstaller.
 """
 
-
 import os
 import optparse
 import sys
 
-import PyInstaller.makespec
-import PyInstaller.build
+import PyInstaller.building.makespec
+import PyInstaller.building.build_main
 import PyInstaller.compat
 import PyInstaller.log
+
+
 
 
 # Warn when old command line option is used
@@ -40,13 +41,13 @@ def run_makespec(opts, args):
     for p in temppaths:
         opts.pathex.extend(p.split(os.pathsep))
 
-    spec_file = PyInstaller.makespec.main(args, **opts.__dict__)
+    spec_file = PyInstaller.building.makespec.main(args, **opts.__dict__)
     logger.info('wrote %s' % spec_file)
     return spec_file
 
 
 def run_build(opts, spec_file, pyi_config):
-    PyInstaller.build.main(pyi_config, spec_file, **opts.__dict__)
+    PyInstaller.building.build_main.main(pyi_config, spec_file, **opts.__dict__)
 
 
 def __add_options(parser):
@@ -70,8 +71,8 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
             usage='%prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
             )
         __add_options(parser)
-        PyInstaller.makespec.__add_options(parser)
-        PyInstaller.build.__add_options(parser)
+        PyInstaller.building.makespec.__add_options(parser)
+        PyInstaller.building.build_main.__add_options(parser)
         PyInstaller.log.__add_options(parser)
         PyInstaller.compat.__add_obsolete_options(parser)
 

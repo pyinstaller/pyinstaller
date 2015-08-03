@@ -14,7 +14,7 @@ Build packages using spec files
 
 import optparse
 
-import PyInstaller.build
+import PyInstaller.building.build_main
 import PyInstaller.compat
 import PyInstaller.log
 from PyInstaller.utils import misc
@@ -24,7 +24,7 @@ def run():
     misc.check_not_running_as_root()
 
     parser = optparse.OptionParser(usage='%prog [options] specfile')
-    PyInstaller.build.__add_options(parser)
+    PyInstaller.building.build_main.__add_options(parser)
     PyInstaller.log.__add_options(parser)
     PyInstaller.compat.__add_obsolete_options(parser)
 
@@ -34,6 +34,6 @@ def run():
         parser.error('Requires exactly one .spec-file')
 
     try:
-        PyInstaller.build.main(None, args[0], **opts.__dict__)
+        PyInstaller.building.build_main.main(None, args[0], **opts.__dict__)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

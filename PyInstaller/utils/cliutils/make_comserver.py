@@ -14,6 +14,7 @@ import os
 import sys
 
 import PyInstaller
+
 try:
     import win32api
 except ImportError:
@@ -22,7 +23,7 @@ except ImportError:
     if PyInstaller.is_win:
         raise
 
-import PyInstaller.makespec
+import PyInstaller.building.makespec
 from PyInstaller.utils import misc
 
 
@@ -101,7 +102,7 @@ def create(scripts, debug, verbose, workdir, ascii=0):
     outf.close()
     print("**********************************")
     print("Driver script", outfnm, "created")
-    specfnm = PyInstaller.makespec.main([outfnm], console=debug, debug=debug,
+    specfnm = PyInstaller.building.makespec.main([outfnm], console=debug, debug=debug,
             workdir=workdir, pathex=paths, comserver=1, ascii=ascii)
     print("Spec file", specfnm, "created")
 
