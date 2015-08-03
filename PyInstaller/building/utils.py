@@ -17,7 +17,9 @@ import os
 import platform
 import shutil
 import sys
+
 from PyInstaller import is_darwin, is_win, compat
+from PyInstaller.building.datastruct import _check_guts_eq
 from PyInstaller.compat import EXTENSION_SUFFIXES
 from PyInstaller.depend import dylib
 from PyInstaller.utils import misc
@@ -29,16 +31,6 @@ if is_win:
     from PyInstaller.utils.win32 import winmanifest, winresource
 
 logger = logging.getLogger(__name__)
-
-
-def _check_guts_eq(attr, old, new, last_build):
-    """
-    rebuild is required if values differ
-    """
-    if old != new:
-        logger.info("Building because %s changed", attr)
-        return True
-    return False
 
 
 def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):

@@ -14,7 +14,7 @@ import sys
 from PyInstaller.compat import is_win, is_darwin, is_unix, is_venv, base_prefix
 from PyInstaller.compat import modname_tkinter
 from PyInstaller.depend.bindepend import selectImports, getImports
-from PyInstaller.building.api import Tree
+from PyInstaller.building.datastruct import Tree
 from PyInstaller.utils.hooks.hookutils import exec_statement, logger
 
 

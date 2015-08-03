@@ -12,10 +12,19 @@ import os
 
 from PyInstaller import compat as compat
 from PyInstaller.utils import misc
-from PyInstaller.utils.misc import load_py_data_struct
+from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
 
 logger = logging.getLogger(__name__)
+
+def _check_guts_eq(attr, old, new, last_build):
+    """
+    rebuild is required if values differ
+    """
+    if old != new:
+        logger.info("Building because %s changed", attr)
+        return True
+    return False
 
 
 class TOC(compat.UserList):
@@ -150,5 +159,95 @@ class Target(object):
             if func(attr, data[i], getattr(self, attr), last_build):
                 return None
         return data
+
+
+class Tree(Target, TOC):
+    """
+    This class is a way of creating a TOC (Table of Contents) that describes
+    some or all of the files within a directory.
+    """
+    def __init__(self, root=None, prefix=None, excludes=None):
+        """
+        root
+                The root of the tree (on the build system).
+        prefix
+                Optional prefix to the names of the target system.
+        excludes
+                A list of names to exclude. Two forms are allowed:
+
+                    name
+                        Files with this basename will be excluded (do not
+                        include the path).
+                    *.ext
+                        Any file with the given extension will be excluded.
+        """
+        Target.__init__(self)
+        TOC.__init__(self)
+        self.root = root
+        self.prefix = prefix
+        self.excludes = excludes
+        if excludes is None:
+            self.excludes = []
+        self.__postinit__()
+
+    GUTS = (('root', _check_guts_eq),
+            ('prefix', _check_guts_eq),
+            ('excludes', _check_guts_eq),
+            ('toc', None),
+            )
+
+    def check_guts(self, last_build):
+        data = Target.get_guts(self, last_build)
+        if not data:
+            return True
+        stack = [data[0]]  # root
+        toc = data[3]  # toc
+        while stack:
+            d = stack.pop()
+            if misc.mtime(d) > last_build:
+                logger.info("Building %s because directory %s changed",
+                            self.outnm, d)
+                return True
+            for nm in os.listdir(d):
+                path = os.path.join(d, nm)
+                if os.path.isdir(path):
+                    stack.append(path)
+        self.data = toc
+        return False
+
+    def assemble(self):
+        logger.info("Building Tree %s", os.path.basename(self.out))
+        stack = [(self.root, self.prefix)]
+        excludes = {}
+        xexcludes = {}
+        for nm in self.excludes:
+            if nm[0] == '*':
+                xexcludes[nm[1:]] = 1
+            else:
+                excludes[nm] = 1
+        rslt = []
+        while stack:
+            dir, prefix = stack.pop()
+            for fnm in os.listdir(dir):
+                if excludes.get(fnm, 0) == 0:
+                    ext = os.path.splitext(fnm)[1]
+                    if xexcludes.get(ext, 0) == 0:
+                        fullfnm = os.path.join(dir, fnm)
+                        rfnm = prefix and os.path.join(prefix, fnm) or fnm
+                        if os.path.isdir(fullfnm):
+                            stack.append((fullfnm, rfnm))
+                        else:
+                            rslt.append((rfnm, fullfnm, 'DATA'))
+        self.data = rslt
+        try:
+            oldstuff = load_py_data_struct(self.out)
+        except:
+            oldstuff = None
+        newstuff = (self.root, self.prefix, self.excludes, self.data)
+        if oldstuff != newstuff:
+            save_py_data_struct(self.out, newstuff)
+            return 1
+        logger.info("%s no change!", self.out)
+        return 0
 
 

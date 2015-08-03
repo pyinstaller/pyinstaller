@@ -27,14 +27,15 @@ from PyInstaller import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from PyInstaller import compat
 from PyInstaller import log as logging
 import collections
-from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc_mtime
+from PyInstaller.building.utils import _check_guts_toc_mtime
 from PyInstaller.utils.misc import absnormpath
 from PyInstaller.compat import is_py2, is_win, PYDYLIB_NAMES
 from PyInstaller.compat import importlib_load_source
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import PyiModuleGraph, FakeModule
-from PyInstaller.building.api import PYZ, EXE, DLL, COLLECT, BUNDLE, MERGE, Tree
-from PyInstaller.building.datastruct import TOC, Target
+from PyInstaller.building.api import PYZ, EXE, DLL, COLLECT, MERGE
+from PyInstaller.building.osx import BUNDLE
+from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
 from PyInstaller.depend.utils import create_py3_base_library
 from PyInstaller.archive import pyz_crypto
 from PyInstaller.utils import misc
