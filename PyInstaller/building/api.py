@@ -70,7 +70,7 @@ class PYZ(Target):
         self.code_dict = getattr(toc_dict, '_code_cache', {})
         self.name = name
         if name is None:
-            self.name = self.tocfilename[:-3] + 'pyz'
+            self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
         # PyInstaller bootstrapping modules.
         self.dependencies = get_bootstrap_modules()
         # Bundle the crypto key.
@@ -173,11 +173,11 @@ class PKG(Target):
         self.toc = toc
         self.cdict = cdict
         self.name = name
+        if name is None:
+            self.name = os.path.splitext(self.tocfilename)[0] + '.pkg'
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
-        if name is None:
-            self.name = self.tocfilename[:-3] + 'pkg'
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
