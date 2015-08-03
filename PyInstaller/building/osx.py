@@ -87,7 +87,7 @@ class BUNDLE(Target):
     GUTS = (('toc', _check_guts_eq),  # additional check below
             )
 
-    def check_guts(self, last_build):
+    def check_guts(self, data, last_build):
         # BUNDLE always needs to be executed, since it will clean the output
         # directory anyway to make sure there is no existing cruft accumulating
         return 1

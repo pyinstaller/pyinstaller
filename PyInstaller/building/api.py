@@ -88,15 +88,10 @@ class PYZ(Target):
             ('toc', _check_guts_toc),  # todo: pyc=1
             )
 
-    def check_guts(self, last_build):
-        if not os.path.exists(self.name):
-            logger.info("Rebuilding %s because %s is missing",
-                        self.outnm, os.path.basename(self.name))
+    def check_guts(self, data, last_build):
+        if Target.check_guts(self, data, last_build):
             return True
-
-        data = Target.get_guts(self, last_build)
-        if not data:
-            return True
+        self.toc = TOC(data[[g[0] for g in self.GUTS].index('toc')])
         return False
 
     def assemble(self):
@@ -178,14 +173,8 @@ class PKG(Target):
             ('upx_binaries', _check_guts_eq),
             )
 
-    def check_guts(self, last_build):
-        if not os.path.exists(self.name):
-            logger.info("Rebuilding %s because %s is missing",
-                        self.outnm, os.path.basename(self.name))
-            return 1
-
-        data = Target.get_guts(self, last_build)
-        if not data:
+    def check_guts(self, data, last_build):
+        if Target.check_guts(self, data, last_build):
             return True
         # todo: toc equal
         return False
@@ -379,7 +368,7 @@ class EXE(Target):
             ('mtm', None,),  # checked bellow
             )
 
-    def check_guts(self, last_build):
+    def check_guts(self, data, last_build):
         if not os.path.exists(self.name):
             logger.info("Rebuilding %s because %s missing",
                         self.outnm, os.path.basename(self.name))
@@ -389,8 +378,7 @@ class EXE(Target):
                         os.path.basename(self.pkgname))
             return 1
 
-        data = Target.get_guts(self, last_build)
-        if not data:
+        if Target.check_guts(self, data, last_build):
             return True
 
         icon, versrsrc, resources = data[3:6]
@@ -625,7 +613,7 @@ class COLLECT(Target):
             ('toc', _check_guts_eq),  # additional check below
             )
 
-    def check_guts(self, last_build):
+    def check_guts(self, data, last_build):
         # COLLECT always needs to be executed, since it will clean the output
         # directory anyway to make sure there is no existing cruft accumulating
         return 1

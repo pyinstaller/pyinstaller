@@ -299,19 +299,14 @@ class Analysis(Target):
 
         return toc_datas
 
-    # TODO What are 'check_guts' methods useful for?
-    def check_guts(self, last_build):
-        if last_build == 0:
-            logger.info("Building %s because %s non existent", self.__class__.__name__, self.outnm)
+
+    def check_guts(self, data, last_build):
+        if Target.check_guts(self, data, last_build):
             return True
         for fnm in self.inputs:
             if misc.mtime(fnm) > last_build:
                 logger.info("Building because %s changed", fnm)
                 return True
-
-        data = Target.get_guts(self, last_build)
-        if not data:
-            return True
         # TODO What does it mean 'data[-6:]' ?
         # TODO Do this code really get executed?
         scripts, pure, binaries, zipfiles, datas, hiddenimports = data[-6:]

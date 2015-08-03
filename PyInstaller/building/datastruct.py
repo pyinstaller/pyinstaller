@@ -131,34 +131,37 @@ class Target(object):
 
     def __postinit__(self):
         logger.info("checking %s", self.__class__.__name__)
-        if self.check_guts(misc.mtime(self.out)):
+        data = None
+        last_build = misc.mtime(self.out)
+        if last_build == 0:
+            logger.info("Building %s because %s is non existent",
+                        self.__class__.__name__, self.outnm)
+        else:
+            try:
+                data = load_py_data_struct(self.out)
+            except:
+                logger.info("Building because %s is bad", self.outnm)
+        # assemble if previous data was not found or is outdated
+        if not data or self.check_guts(data, last_build):
             self.assemble()
+
 
     GUTS = []
 
-    def check_guts(self, last_build):
-        pass
-
-    def get_guts(self, last_build, missing='missing or bad'):
+    def check_guts(self, data, last_build):
         """
-        returns None if guts have changed
+        Returns True if rebuild/assemble is required
         """
-        try:
-            data = load_py_data_struct(self.out)
-        except:
-            logger.info("Building because %s %s", os.path.basename(self.out), missing)
-            return None
-
         if len(data) != len(self.GUTS):
             logger.info("Building because %s is bad", self.outnm)
-            return None
+            return True
         for i, (attr, func) in enumerate(self.GUTS):
             if func is None:
                 # no check for this value
                 continue
             if func(attr, data[i], getattr(self, attr), last_build):
-                return None
-        return data
+                return True
+        return False
 
 
 class Tree(Target, TOC):
@@ -196,9 +199,8 @@ class Tree(Target, TOC):
             ('toc', None),
             )
 
-    def check_guts(self, last_build):
-        data = Target.get_guts(self, last_build)
-        if not data:
+    def check_guts(self, data, last_build):
+        if Target.check_guts(self, data, last_build):
             return True
         stack = [data[0]]  # root
         toc = data[3]  # toc
