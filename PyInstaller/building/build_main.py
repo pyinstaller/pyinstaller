@@ -26,7 +26,6 @@ import sys
 from PyInstaller import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from PyInstaller import compat
 from PyInstaller import log as logging
-import collections
 from PyInstaller.building.utils import _check_guts_toc_mtime
 from PyInstaller.utils.misc import absnormpath
 from PyInstaller.compat import is_py2, is_win, PYDYLIB_NAMES
@@ -416,8 +415,8 @@ class Analysis(Target):
         ### Handle hooks.
 
         logger.info('Looking for import hooks ...')
-        # Implement cache of modules for which there exists a hook. Keep order of added items.
-        hooks_mod_cache = collections.OrderedDict()  # key - module name, value - path to hook directory.
+        # Implement cache of modules for which there exists a hook.
+        hooks_mod_cache = {}  # key - module name, value - path to hook directory.
         # PyInstaller import hooks.
         hooks_pathes = [get_importhooks_dir()]
         if self.hookspath:
