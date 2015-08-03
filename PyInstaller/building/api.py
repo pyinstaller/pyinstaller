@@ -92,7 +92,7 @@ class PYZ(Target):
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
             return True
-        self.toc = TOC(data[[g[0] for g in self._GUTS].index('toc')])
+        self.toc = TOC(data['toc'])
         return False
 
 
@@ -402,21 +402,19 @@ class EXE(Target):
         if Target._check_guts(self, data, last_build):
             return True
 
-        icon, versrsrc, resources = data[3:6]
-        if (versrsrc or resources) and not is_win:
+        if (data['versrsrc'] or data['resources']) and not is_win:
             # todo: really ignore :-)
             logger.warn('ignoring version, manifest and resources, platform not capable')
-        if icon and not (is_win or is_darwin):
+        if data['icon'] and not (is_win or is_darwin):
             logger.warn('ignoring icon, platform not capable')
 
-        mtm = data[-1]
+        mtm = data['mtm']
         if mtm != misc.mtime(self.name):
             logger.info("Rebuilding %s because mtimes don't match", self.tocbasename)
             return True
         if mtm < misc.mtime(self.pkg.tocfilename):
             logger.info("Rebuilding %s because pkg is more recent", self.tocbasename)
             return True
-
         return False
 
     def _bootloader_file(self, exe):

@@ -146,6 +146,9 @@ class Target(object):
                 data = load_py_data_struct(self.tocfilename)
             except:
                 logger.info("Building because %s is bad", self.tocbasename)
+            else:
+                # create a dict for easier access
+                data = dict(zip((g[0] for g in self._GUTS), data))
         # assemble if previous data was not found or is outdated
         if not data or self._check_guts(data, last_build):
             self.assemble()
@@ -161,11 +164,11 @@ class Target(object):
         if len(data) != len(self._GUTS):
             logger.info("Building because %s is bad", self.tocbasename)
             return True
-        for i, (attr, func) in enumerate(self._GUTS):
+        for attr, func in self._GUTS:
             if func is None:
                 # no check for this value
                 continue
-            if func(attr, data[i], getattr(self, attr), last_build):
+            if func(attr, data[attr], getattr(self, attr), last_build):
                 return True
         return False
 
@@ -222,7 +225,7 @@ class Tree(Target, TOC):
         # There is no need to check for the files, since `Tree` is
         # only about the directory contents (which is the list of
         # files).
-        stack = [data[0]]  # root
+        stack = [data['root']]
         while stack:
             d = stack.pop()
             if misc.mtime(d) > last_build:
@@ -233,7 +236,7 @@ class Tree(Target, TOC):
                 path = os.path.join(d, nm)
                 if os.path.isdir(path):
                     stack.append(path)
-        self.data = data[3]  # collected files
+        self.data = data['data']  # collected files
         return False
 
     def assemble(self):

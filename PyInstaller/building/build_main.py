@@ -231,14 +231,12 @@ class Analysis(Target):
                 return True
         # Now we know that none of the input parameters and none of
         # the input files has changed. So take the values calculated
-        # resp. analysed in the last run (which are the last 5
-        # elements in `data`) and store them in `self`.
-        scripts, pure, binaries, zipfiles, datas = data[-5:]
-        self.scripts = TOC(scripts)
-        self.pure = TOC(pure)
-        self.binaries = TOC(binaries)
-        self.zipfiles = TOC(zipfiles)
-        self.datas = TOC(datas)
+        # resp. analysed in the last run and store them in `self`.
+        self.scripts = TOC(data['scripts'])
+        self.pure = TOC(data['pure'])
+        self.binaries = TOC(data['binaries'])
+        self.zipfiles = TOC(data['zipfiles'])
+        self.datas = TOC(data['datas'])
         return False
 
 
