@@ -43,30 +43,32 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc_dict, name=None, cipher=None):
+    def __init__(self, toc, name=None, cipher=None):
         """
-        toc_dict
-            toc_dict['toc']
-                A TOC (Table of Contents), normally an Analysis.pure['toc']?
-            toc_dict['code']
-                A dict of module code objects from ModuleGraph.
+        toc
+                A TOC (Table of Contents), normally an Analysis.pure
+
+                If this TOC has an attribute `_code_cache`, this is
+                expected to be a dict of module code objects from
+                ModuleGraph.
+
         name
                 A filename for the .pyz. Normally not needed, as the generated
                 name will do fine.
         cipher
                 The block cipher that will be used to encrypt Python bytecode.
+
         """
 
         from ..config import CONF
         Target.__init__(self)
-        # TODO remove this attribute, PYZ items are compressed by default.
-        self.compression_level = 0
-        self.toc = toc_dict['toc']
-        # Use code objects directly from ModuleGraph to speed up PyInstaller.
-        self.code_dict = toc_dict['code']
+        self.toc = toc
+        # If available, use code objects directly from ModuleGraph to
+        # speed up PyInstaller.
+        self.code_dict = getattr(toc, '_code_cache', {})
         self.name = name
         if name is None:
-            self.name = self.out[:-3] + 'pyz'
+            self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
         # PyInstaller bootstrapping modules.
         self.dependencies = get_bootstrap_modules()
         # Bundle the crypto key.
@@ -83,31 +85,49 @@ class PYZ(Target):
         self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
         self.__postinit__()
 
-    GUTS = (('name', _check_guts_eq),
-            ('compression_level', _check_guts_eq),
+    _GUTS = (# input parameters
+            ('name', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
+            # no calculated/analysed values
             )
 
-    def check_guts(self, last_build):
-        if not os.path.exists(self.name):
-            logger.info("Rebuilding %s because %s is missing",
-                        self.outnm, os.path.basename(self.name))
-            return True
-
-        data = Target.get_guts(self, last_build)
-        if not data:
+    def _check_guts(self, data, last_build):
+        if Target._check_guts(self, data, last_build):
             return True
         return False
 
+
+    def __compile(self, modname, filename):
+        """
+        Compile a module to a code-object.
+        """
+        # This is a extra-simple version for compiling a module. It's
+        # not worth spending more effort here, as it is only used in
+        # the rare case if outXX-Analysis.toc exists, but
+        # outXX-PYZ.toc does not,
+        # TODO: Use some modulegraph function if available
+        assert filename.endswith('.py')
+        logger.debug('Compiling %s', filename)
+        try:
+            txt = open(filename, 'rU').read() + '\n'
+            return compile(txt, filename, 'exec')
+        except (IOError, OSError):
+            raise ValueError("Source file %s is missing" % filename)
+        except SyntaxError as e:
+            print("Syntax error in ", filename)
+            print(e.args)
+            raise
+
+
     def assemble(self):
-        logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
+        logger.info("Building PYZ (ZlibArchive) %s", self.name)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
+        for entry in toc:
+            if not entry[0] in self.code_dict:
+                self.code_dict[entry[0]] = self.__compile(entry[0], entry[1])
+        pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
         pyz.build(self.name, toc)
-        # FIXME compression level was dropped - remove it from the save_py_data_struct
-        save_py_data_struct(self.out, (self.name, self.compression_level, self.toc))
-        return 1
 
 
 class PKG(Target):
@@ -151,11 +171,11 @@ class PKG(Target):
         self.toc = toc
         self.cdict = cdict
         self.name = name
+        if name is None:
+            self.name = os.path.splitext(self.tocfilename)[0] + '.pkg'
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
-        if name is None:
-            self.name = self.out[:-3] + 'pkg'
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -170,24 +190,19 @@ class PKG(Target):
                           'PYZ': UNCOMPRESSED}
         self.__postinit__()
 
-    GUTS = (('name', _check_guts_eq),
+    _GUTS = (# input parameters
+            ('name', _check_guts_eq),
             ('cdict', _check_guts_eq),
-            ('toc', _check_guts_toc_mtime),
+            ('toc', _check_guts_toc),  # list unchanged and no newer files
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
+            # no calculated/analysed values
             )
 
-    def check_guts(self, last_build):
-        if not os.path.exists(self.name):
-            logger.info("Rebuilding %s because %s is missing",
-                        self.outnm, os.path.basename(self.name))
-            return 1
-
-        data = Target.get_guts(self, last_build)
-        if not data:
+    def _check_guts(self, data, last_build):
+        if Target._check_guts(self, data, last_build):
             return True
-        # todo: toc equal
         return False
 
     def assemble(self):
@@ -245,12 +260,8 @@ class PKG(Target):
         archive = CArchiveWriter(pylib_name=pylib_name)
 
         archive.build(self.name, mytoc)
-        save_py_data_struct(self.out,
-                   (self.name, self.cdict, self.toc, self.exclude_binaries,
-                    self.strip_binaries, self.upx_binaries))
         for item in trash:
             os.remove(item)
-        return 1
 
 
 class EXE(Target):
@@ -368,46 +379,53 @@ class EXE(Target):
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
-    GUTS = (('name', _check_guts_eq),
+    _GUTS = (# input parameters
+            ('name', _check_guts_eq),
             ('console', _check_guts_eq),
             ('debug', _check_guts_eq),
+            ('exclude_binaries', _check_guts_eq),
             ('icon', _check_guts_eq),
             ('versrsrc', _check_guts_eq),
+            ('uac_admin', _check_guts_eq),
+            ('uac_uiaccess', _check_guts_eq),
+            ('manifest', _check_guts_eq),
+            ('append_pkg', _check_guts_eq),
+            # for the case the directory ius shared between platforms:
+            ('pkgname', _check_guts_eq),
+            ('toc', _check_guts_eq),
             ('resources', _check_guts_eq),
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
-            ('mtm', None,),  # checked bellow
+            ('mtm', None,),  # checked below
+            # no calculated/analysed values
             )
 
-    def check_guts(self, last_build):
+    def _check_guts(self, data, last_build):
         if not os.path.exists(self.name):
             logger.info("Rebuilding %s because %s missing",
-                        self.outnm, os.path.basename(self.name))
+                        self.tocbasename, os.path.basename(self.name))
             return 1
         if not self.append_pkg and not os.path.exists(self.pkgname):
             logger.info("Rebuilding because %s missing",
                         os.path.basename(self.pkgname))
             return 1
 
-        data = Target.get_guts(self, last_build)
-        if not data:
+        if Target._check_guts(self, data, last_build):
             return True
 
-        icon, versrsrc, resources = data[3:6]
-        if (versrsrc or resources) and not is_win:
+        if (data['versrsrc'] or data['resources']) and not is_win:
             # todo: really ignore :-)
             logger.warn('ignoring version, manifest and resources, platform not capable')
-        if icon and not (is_win or is_darwin):
+        if data['icon'] and not (is_win or is_darwin):
             logger.warn('ignoring icon, platform not capable')
 
-        mtm = data[-1]
+        mtm = data['mtm']
         if mtm != misc.mtime(self.name):
-            logger.info("Rebuilding %s because mtimes don't match", self.outnm)
+            logger.info("Rebuilding %s because mtimes don't match", self.tocbasename)
             return True
-        if mtm < misc.mtime(self.pkg.out):
-            logger.info("Rebuilding %s because pkg is more recent", self.outnm)
+        if mtm < misc.mtime(self.pkg.tocfilename):
+            logger.info("Rebuilding %s because pkg is more recent", self.tocbasename)
             return True
-
         return False
 
     def _bootloader_file(self, exe):
@@ -429,7 +447,7 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
-        logger.info("Building EXE from %s", os.path.basename(self.out))
+        logger.info("Building EXE from %s", self.tocbasename)
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
@@ -528,14 +546,11 @@ class EXE(Target):
             pass
 
         os.chmod(self.name, 0o755)
-        guts = (self.name, self.console, self.debug, self.icon,
-                self.versrsrc, self.resources, self.strip, self.upx,
-                misc.mtime(self.name))
-        assert len(guts) == len(self.GUTS)
-        save_py_data_struct(self.out, guts)
+        # get mtime for storing into the guts
+        self.mtm = misc.mtime(self.name)
         for item in trash:
             os.remove(item)
-        return 1
+
 
     def copy(self, fnm, outf):
         inf = open(fnm, 'rb')
@@ -555,7 +570,7 @@ class DLL(EXE):
     need to write your own dll.
     """
     def assemble(self):
-        logger.info("Building DLL %s", os.path.basename(self.out))
+        logger.info("Building DLL %s", self.tocbasename)
         outf = open(self.name, 'wb')
         dll = self._bootloader_file('inprocsrvr') + '.dll'
         if not os.path.exists(dll):
@@ -564,10 +579,6 @@ class DLL(EXE):
         self.copy(self.pkg.name, outf)
         outf.close()
         os.chmod(self.name, 0o755)
-        save_py_data_struct(self.out,
-                   (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, misc.mtime(self.name)))
-        return 1
 
 
 class COLLECT(Target):
@@ -619,13 +630,12 @@ class COLLECT(Target):
                 self.toc.extend(arg)
         self.__postinit__()
 
-    GUTS = (('name', _check_guts_eq),
-            ('strip_binaries', _check_guts_eq),
-            ('upx_binaries', _check_guts_eq),
-            ('toc', _check_guts_eq),  # additional check below
-            )
+    _GUTS = (
+        # COLLECT always builds, just want the toc to be written out
+        ('toc', None),
+    )
 
-    def check_guts(self, last_build):
+    def _check_guts(self, data, last_build):
         # COLLECT always needs to be executed, since it will clean the output
         # directory anyway to make sure there is no existing cruft accumulating
         return 1
@@ -633,7 +643,7 @@ class COLLECT(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("Building COLLECT %s", os.path.basename(self.out))
+        logger.info("Building COLLECT %s", self.tocbasename)
         os.makedirs(self.name)
         toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
@@ -659,9 +669,6 @@ class COLLECT(Target):
                     logger.warn("failed to copy flags of %s", fnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)
-        save_py_data_struct(self.out,
-                 (self.name, self.strip_binaries, self.upx_binaries, self.toc))
-        return 1
 
 
 class MERGE(object):

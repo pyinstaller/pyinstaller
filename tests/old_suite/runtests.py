@@ -54,7 +54,7 @@ from PyInstaller.utils.cliutils import archive_viewer
 import PyInstaller.log as logging
 
 # HACK
-PyInstaller.makespec._EXENAME_FORCED_SUFFIX_ = '.exe'
+PyInstaller.building.makespec._EXENAME_FORCED_SUFFIX_ = '.exe'
 
 VERBOSE = False
 REPORT = False

@@ -14,17 +14,9 @@ from PyInstaller import compat as compat
 from PyInstaller.utils import misc
 from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
+from .utils import _check_guts_eq
 
 logger = logging.getLogger(__name__)
-
-def _check_guts_eq(attr, old, new, last_build):
-    """
-    rebuild is required if values differ
-    """
-    if old != new:
-        logger.info("Building because %s changed", attr)
-        return True
-    return False
 
 
 class TOC(compat.UserList):
@@ -124,41 +116,62 @@ class Target(object):
         # toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        self.out = os.path.join(CONF['workpath'], 'out%02d-%s.toc' %
-                                (self.invcnum, self.__class__.__name__))
-        self.outnm = os.path.basename(self.out)
+        # TODO Think about renaming these file into e.g. `.c4che`
+        self.tocfilename = os.path.join(CONF['workpath'], 'out%02d-%s.toc' %
+                                        (self.invcnum, self.__class__.__name__))
+        self.tocbasename = os.path.basename(self.tocfilename)
         self.dependencies = TOC()
 
+
     def __postinit__(self):
+        """
+        Check if the target need to be rebuild and if so, re-assemble.
+        """
         logger.info("checking %s", self.__class__.__name__)
-        if self.check_guts(misc.mtime(self.out)):
+        data = None
+        last_build = misc.mtime(self.tocfilename)
+        if last_build == 0:
+            logger.info("Building %s because %s is non existent",
+                        self.__class__.__name__, self.tocbasename)
+        else:
+            try:
+                data = load_py_data_struct(self.tocfilename)
+            except:
+                logger.info("Building because %s is bad", self.tocbasename)
+            else:
+                # create a dict for easier access
+                data = dict(zip((g[0] for g in self._GUTS), data))
+        # assemble if previous data was not found or is outdated
+        if not data or self._check_guts(data, last_build):
             self.assemble()
+            self._save_guts()
 
-    GUTS = []
 
-    def check_guts(self, last_build):
-        pass
+    _GUTS = []
 
-    def get_guts(self, last_build, missing='missing or bad'):
+    def _check_guts(self, data, last_build):
         """
-        returns None if guts have changed
+        Returns True if rebuild/assemble is required
         """
-        try:
-            data = load_py_data_struct(self.out)
-        except:
-            logger.info("Building because %s %s", os.path.basename(self.out), missing)
-            return None
-
-        if len(data) != len(self.GUTS):
-            logger.info("Building because %s is bad", self.outnm)
-            return None
-        for i, (attr, func) in enumerate(self.GUTS):
+        if len(data) != len(self._GUTS):
+            logger.info("Building because %s is bad", self.tocbasename)
+            return True
+        for attr, func in self._GUTS:
             if func is None:
                 # no check for this value
                 continue
-            if func(attr, data[i], getattr(self, attr), last_build):
-                return None
-        return data
+            if func(attr, data[attr], getattr(self, attr), last_build):
+                return True
+        return False
+
+
+    def _save_guts(self):
+        """
+        Save the input parameters and the work-product of this run to
+        maybe avoid regenerating it later.
+        """
+        data = tuple(getattr(self, g[0]) for g in self._GUTS)
+        save_py_data_struct(self.tocfilename, data)
 
 
 class Tree(Target, TOC):
@@ -190,33 +203,38 @@ class Tree(Target, TOC):
             self.excludes = []
         self.__postinit__()
 
-    GUTS = (('root', _check_guts_eq),
+    _GUTS = (# input parameters
+            ('root', _check_guts_eq),
             ('prefix', _check_guts_eq),
             ('excludes', _check_guts_eq),
-            ('toc', None),
+            ('data', None),  # tested below
+            # no calculated/analysed values
             )
 
-    def check_guts(self, last_build):
-        data = Target.get_guts(self, last_build)
-        if not data:
+    def _check_guts(self, data, last_build):
+        if Target._check_guts(self, data, last_build):
             return True
-        stack = [data[0]]  # root
-        toc = data[3]  # toc
+        # Walk the collected directories as check if they have been
+        # changed - which means files have been added or removed.
+        # There is no need to check for the files, since `Tree` is
+        # only about the directory contents (which is the list of
+        # files).
+        stack = [data['root']]
         while stack:
             d = stack.pop()
             if misc.mtime(d) > last_build:
                 logger.info("Building %s because directory %s changed",
-                            self.outnm, d)
+                            self.tocbasename, d)
                 return True
             for nm in os.listdir(d):
                 path = os.path.join(d, nm)
                 if os.path.isdir(path):
                     stack.append(path)
-        self.data = toc
+        self.data = data['data']  # collected files
         return False
 
     def assemble(self):
-        logger.info("Building Tree %s", os.path.basename(self.out))
+        logger.info("Building Tree %s", self.tocbasename)
         stack = [(self.root, self.prefix)]
         excludes = {}
         xexcludes = {}
@@ -239,15 +257,3 @@ class Tree(Target, TOC):
                         else:
                             rslt.append((rfnm, fullfnm, 'DATA'))
         self.data = rslt
-        try:
-            oldstuff = load_py_data_struct(self.out)
-        except:
-            oldstuff = None
-        newstuff = (self.root, self.prefix, self.excludes, self.data)
-        if oldstuff != newstuff:
-            save_py_data_struct(self.out, newstuff)
-            return 1
-        logger.info("%s no change!", self.out)
-        return 0
-
-

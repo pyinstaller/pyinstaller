@@ -84,10 +84,12 @@ class BUNDLE(Target):
                 break
         self.__postinit__()
 
-    GUTS = (('toc', _check_guts_eq),  # additional check below
-            )
+    _GUTS = (
+        # BUNDLE always builds, just want the toc to be written out
+        ('toc', None),
+    )
 
-    def check_guts(self, last_build):
+    def _check_guts(self, data, last_build):
         # BUNDLE always needs to be executed, since it will clean the output
         # directory anyway to make sure there is no existing cruft accumulating
         return 1
@@ -95,7 +97,7 @@ class BUNDLE(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("Building BUNDLE %s", os.path.basename(self.out))
+        logger.info("Building BUNDLE %s", self.tocbasename)
 
         # Create a minimal Mac bundle structure
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
@@ -198,5 +200,3 @@ class BUNDLE(Target):
             if os.path.isdir(abs_d) and d not in ignore_dirs:
                 shutil.move(abs_d, res_d)
                 os.symlink(os.path.relpath(res_d, os.path.dirname(abs_d)), abs_d)
-
-        return 1

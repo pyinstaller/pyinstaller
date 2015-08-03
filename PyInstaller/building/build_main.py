@@ -26,7 +26,6 @@ import sys
 from PyInstaller import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from PyInstaller import compat
 from PyInstaller import log as logging
-import collections
 from PyInstaller.building.utils import _check_guts_toc_mtime
 from PyInstaller.utils.misc import absnormpath
 from PyInstaller.compat import is_py2, is_win, PYDYLIB_NAMES
@@ -66,19 +65,6 @@ def _old_api_error(obj_name):
                      'Please update your spec-file. See '
                      'http://www.pyinstaller.org/wiki/MigrateTo2.0 '
                      'for details' % obj_name)
-
-
-def _save_data(filename, data):
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-    outf = open(filename, 'w')
-    pprint.pprint(data, outf)
-    outf.close()
-
-
-def _load_data(filename):
-    return eval(open(filename, 'rU').read())
 
 
 # TODO find better place for function.
@@ -197,24 +183,49 @@ class Analysis(Target):
 
         self.excludes = excludes
         self.scripts = TOC()
-        self.pure = {'toc': TOC(), 'code': {}}
+        self.pure = TOC()
         self.binaries = TOC()
         self.zipfiles = TOC()
         self.datas = TOC()
         self.dependencies = TOC()
         self.__postinit__()
 
-    GUTS = (('inputs', _check_guts_eq),
+    _GUTS = (# input parameters
+            ('inputs', _check_guts_eq),  # parameter `scripts`
             ('pathex', _check_guts_eq),
+            ('hiddenimports', _check_guts_eq),
             ('hookspath', _check_guts_eq),
             ('excludes', _check_guts_eq),
+            ('custom_runtime_hooks', _check_guts_eq),
+            #'cipher': no need to check as it is implied by an
+            # additional hidden import
+
+            #calculated/analysed values
             ('scripts', _check_guts_toc_mtime),
             ('pure', lambda *args: _check_guts_toc_mtime(*args, **{'pyc': 1})),
             ('binaries', _check_guts_toc_mtime),
             ('zipfiles', _check_guts_toc_mtime),
             ('datas', _check_guts_toc_mtime),
-            ('hiddenimports', _check_guts_eq),
+            # TODO: Need to add "dependencies"?
             )
+
+    def _check_guts(self, data, last_build):
+        if Target._check_guts(self, data, last_build):
+            return True
+        for fnm in self.inputs:
+            if misc.mtime(fnm) > last_build:
+                logger.info("Building because %s changed", fnm)
+                return True
+        # Now we know that none of the input parameters and none of
+        # the input files has changed. So take the values calculated
+        # resp. analysed in the last run and store them in `self`.
+        self.scripts = TOC(data['scripts'])
+        self.pure = TOC(data['pure'])
+        self.binaries = TOC(data['binaries'])
+        self.zipfiles = TOC(data['zipfiles'])
+        self.datas = TOC(data['datas'])
+        return False
+
 
     # TODO Refactor to prohibit empty target directories. As the docstring
     #below documents, this function currently permits the second item of each
@@ -300,30 +311,6 @@ class Analysis(Target):
 
         return toc_datas
 
-    # TODO What are 'check_guts' methods useful for?
-    def check_guts(self, last_build):
-        if last_build == 0:
-            logger.info("Building %s because %s non existent", self.__class__.__name__, self.outnm)
-            return True
-        for fnm in self.inputs:
-            if misc.mtime(fnm) > last_build:
-                logger.info("Building because %s changed", fnm)
-                return True
-
-        data = Target.get_guts(self, last_build)
-        if not data:
-            return True
-        # TODO What does it mean 'data[-6:]' ?
-        # TODO Do this code really get executed?
-        scripts, pure, binaries, zipfiles, datas, hiddenimports = data[-6:]
-        self.scripts = TOC(scripts)
-        self.pure = {'toc': TOC(pure), 'code': {}}
-        self.binaries = TOC(binaries)
-        self.zipfiles = TOC(zipfiles)
-        self.datas = TOC(datas)
-        self.hiddenimports = hiddenimports
-        return False
-
 
     def assemble(self):
         """
@@ -352,7 +339,7 @@ class Analysis(Target):
             # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
             self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
-        logger.info("running Analysis %s", os.path.basename(self.out))
+        logger.info("running Analysis %s", self.tocbasename)
         # Get paths to Python and, in Windows, the manifest.
         python = sys.executable
         if not is_win:
@@ -416,8 +403,8 @@ class Analysis(Target):
         ### Handle hooks.
 
         logger.info('Looking for import hooks ...')
-        # Implement cache of modules for which there exists a hook. Keep order of added items.
-        hooks_mod_cache = collections.OrderedDict()  # key - module name, value - path to hook directory.
+        # Implement cache of modules for which there exists a hook.
+        hooks_mod_cache = {}  # key - module name, value - path to hook directory.
         # PyInstaller import hooks.
         hooks_pathes = [get_importhooks_dir()]
         if self.hookspath:
@@ -560,11 +547,10 @@ class Analysis(Target):
                 # 'value' is the value of that attribute. PyInstaller will modify
                 # mod.attr_name and set it to 'value' for the created .exe file.
 
-                # Remove hook from the cache - it was applied and it is no longer necessary to be
-                # applied.
-                del hooks_mod_cache[imported_name]
                 # Append applied hooks to the list 'applied_hooks'.
-                # It is a sign that iteration over hooks should continue.
+                # These will be removed after the inner loop finishs.
+                # It also is a marker that iteration over hooks should
+                # continue.
                 applied_hooks.append(imported_name)
 
 
@@ -573,6 +559,10 @@ class Analysis(Target):
                 # No new hook was applied - END of hooks processing.
                 break
             else:
+                # Remove applied hooks from the cache - its not
+                # necessary apply then again.
+                for imported_name in applied_hooks:
+                    del hooks_mod_cache[imported_name]
                 # Run again - reset list 'applied_hooks'.
                 applied_hooks = []
 
@@ -594,10 +584,11 @@ class Analysis(Target):
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries  = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
         # Fill the "pure" list with pure Python modules.
-        self.pure['toc'] =  self.graph.make_a_TOC(['PYMODULE'])
+        assert len(self.pure) == 0
+        self.pure =  self.graph.make_a_TOC(['PYMODULE'])
         # And get references to module code objects constructed by ModuleGraph
         # to avoid writing .pyc/pyo files to hdd.
-        self.pure['code'].update(self.graph.get_code_objects())
+        self.pure._code_cache = self.graph.get_code_objects()
 
         # Add remaining binary dependencies - analyze Python C-extensions and what
         # DLLs they depend on.
@@ -620,45 +611,27 @@ class Analysis(Target):
         # Without dynamic Python library PyInstaller cannot continue.
         self._check_python_library(self.binaries)
 
-        # Get the saved details of a prior run, if any. Would not exist if
-        # the user erased the work files, or gave a different --workpath
-        # or specified --clean.
-        try:
-            oldstuff = load_py_data_struct(self.out)
-        except:
-            oldstuff = None
-
-        # Collect the work-product of this run
-        newstuff = tuple([getattr(self, g[0]) for g in self.GUTS])
-        # If there was no previous, or if it is different, save the new
-        if oldstuff != newstuff:
-            # Save all the new stuff to avoid regenerating it later, maybe
-            save_py_data_struct(self.out, newstuff)
-            # Write warnings about missing modules. Get them from the graph
-            # and use the graph to figure out who tried to import them.
-            # TODO: previously we could say whether an import was top-level,
-            # deferred (in a def'd function) or conditional (in an if stmt).
-            # That information is not available from ModuleGraph at this time.
-            # When that info is available change this code to write one line for
-            # each importer-name, with type of import for that importer
-            # "no module named foo conditional/deferred/toplevel importy by bar"
-            miss_toc = self.graph.make_a_TOC(['MISSING'])
-            if len(miss_toc) : # there are some missing modules
-                wf = open(CONF['warnfile'], 'w')
-                for (n, p, t) in miss_toc :
-                    importer_names = self.graph.importer_names(n)
-                    wf.write( 'no module named '
-                              + n
-                              + ' - imported by '
-                              + ', '.join(importer_names)
-                              + '\n'
-                              )
-                wf.close()
-                logger.info("Warnings written to %s", CONF['warnfile'])
-            return 1
-        else :
-            logger.info("%s no change!", self.out)
-            return 0
+        # Write warnings about missing modules. Get them from the graph
+        # and use the graph to figure out who tried to import them.
+        # TODO: previously we could say whether an import was top-level,
+        # deferred (in a def'd function) or conditional (in an if stmt).
+        # That information is not available from ModuleGraph at this time.
+        # When that info is available change this code to write one line for
+        # each importer-name, with type of import for that importer
+        # "no module named foo conditional/deferred/toplevel importy by bar"
+        miss_toc = self.graph.make_a_TOC(['MISSING'])
+        if len(miss_toc) : # there are some missing modules
+            wf = open(CONF['warnfile'], 'w')
+            for (n, p, t) in miss_toc :
+                importer_names = self.graph.importer_names(n)
+                wf.write( 'no module named '
+                          + n
+                          + ' - imported by '
+                          + ', '.join(importer_names)
+                          + '\n'
+                          )
+            wf.close()
+            logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _check_python_library(self, binaries):
         """

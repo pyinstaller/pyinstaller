@@ -19,13 +19,11 @@ import shutil
 import sys
 
 from PyInstaller import is_darwin, is_win, compat
-from PyInstaller.building.datastruct import _check_guts_eq
 from PyInstaller.compat import EXTENSION_SUFFIXES
 from PyInstaller.depend import dylib
 from PyInstaller.utils import misc
 from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
-from .datastruct import TOC
 
 if is_win:
     from PyInstaller.utils.win32 import winmanifest, winresource
@@ -33,12 +31,29 @@ if is_win:
 logger = logging.getLogger(__name__)
 
 
+#-- Helpers for checking guts.
+#
+# NOTE: By _GUTS it is meant intermediate files and data structures that
+# PyInstaller creates for bundling files and creating final executable.
+
+def _check_guts_eq(attr, old, new, last_build):
+    """
+    rebuild is required if values differ
+    """
+    if old != new:
+        logger.info("Building because %s changed", attr)
+        return True
+    return False
+
+
 def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     """
     rebuild is required if mtimes of files listed in old toc are newer
-    than ast_build
+    than last_build
 
     if pyc=1, check for .py files, too
+
+    Use this for calculated/analysed values read from cache.
     """
     for (nm, fnm, typ) in old:
         if misc.mtime(fnm) > last_build:
@@ -52,19 +67,25 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
 
 def _check_guts_toc(attr, old, toc, last_build, pyc=0):
     """
-    rebuild is required if either toc content changed if mtimes of
-    files listed in old toc are newer than ast_build
+    rebuild is required if either toc content changed or mtimes of
+    files listed in old toc are newer than last_build
 
     if pyc=1, check for .py files, too
+
+    Use this for input parameters.
     """
     return (_check_guts_eq(attr, old, toc, last_build)
             or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc))
 
 
+#---
+
 def add_suffix_to_extensions(toc):
     """
     Returns a new TOC with proper library suffix for EXTENSION items.
     """
+    # TODO: Fix this recursive import
+    from .datastruct import TOC
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
