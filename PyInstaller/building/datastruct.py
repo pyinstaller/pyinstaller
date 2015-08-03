@@ -130,6 +130,9 @@ class Target(object):
         self.dependencies = TOC()
 
     def __postinit__(self):
+        """
+        Check if the target need to be rebuild and if so, re-assemble.
+        """
         logger.info("checking %s", self.__class__.__name__)
         data = None
         last_build = misc.mtime(self.out)
