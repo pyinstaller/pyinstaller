@@ -215,6 +215,25 @@ class Analysis(Target):
             ('hiddenimports', _check_guts_eq),
             )
 
+    def check_guts(self, data, last_build):
+        if Target.check_guts(self, data, last_build):
+            return True
+        for fnm in self.inputs:
+            if misc.mtime(fnm) > last_build:
+                logger.info("Building because %s changed", fnm)
+                return True
+        # TODO What does it mean 'data[-6:]' ?
+        # TODO Do this code really get executed?
+        scripts, pure, binaries, zipfiles, datas, hiddenimports = data[-6:]
+        self.scripts = TOC(scripts)
+        self.pure = {'toc': TOC(pure), 'code': {}}
+        self.binaries = TOC(binaries)
+        self.zipfiles = TOC(zipfiles)
+        self.datas = TOC(datas)
+        self.hiddenimports = hiddenimports
+        return False
+
+
     # TODO Refactor to prohibit empty target directories. As the docstring
     #below documents, this function currently permits the second item of each
     #2-tuple in "hook.datas" to be the empty string, in which case the target
@@ -298,25 +317,6 @@ class Analysis(Target):
                                     src_file, 'DATA'))
 
         return toc_datas
-
-
-    def check_guts(self, data, last_build):
-        if Target.check_guts(self, data, last_build):
-            return True
-        for fnm in self.inputs:
-            if misc.mtime(fnm) > last_build:
-                logger.info("Building because %s changed", fnm)
-                return True
-        # TODO What does it mean 'data[-6:]' ?
-        # TODO Do this code really get executed?
-        scripts, pure, binaries, zipfiles, datas, hiddenimports = data[-6:]
-        self.scripts = TOC(scripts)
-        self.pure = {'toc': TOC(pure), 'code': {}}
-        self.binaries = TOC(binaries)
-        self.zipfiles = TOC(zipfiles)
-        self.datas = TOC(datas)
-        self.hiddenimports = hiddenimports
-        return False
 
 
     def assemble(self):
