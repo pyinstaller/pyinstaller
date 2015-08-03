@@ -547,11 +547,10 @@ class Analysis(Target):
                 # 'value' is the value of that attribute. PyInstaller will modify
                 # mod.attr_name and set it to 'value' for the created .exe file.
 
-                # Remove hook from the cache - it was applied and it is no longer necessary to be
-                # applied.
-                del hooks_mod_cache[imported_name]
                 # Append applied hooks to the list 'applied_hooks'.
-                # It is a sign that iteration over hooks should continue.
+                # These will be removed after the inner loop finishs.
+                # It also is a marker that iteration over hooks should
+                # continue.
                 applied_hooks.append(imported_name)
 
 
@@ -560,6 +559,10 @@ class Analysis(Target):
                 # No new hook was applied - END of hooks processing.
                 break
             else:
+                # Remove applied hooks from the cache - its not
+                # necessary apply then again.
+                for imported_name in applied_hooks:
+                    del hooks_mod_cache[imported_name]
                 # Run again - reset list 'applied_hooks'.
                 applied_hooks = []
 
