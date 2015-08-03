@@ -206,14 +206,18 @@ class Tree(Target, TOC):
     _GUTS = (('root', _check_guts_eq),
             ('prefix', _check_guts_eq),
             ('excludes', _check_guts_eq),
-            ('toc', None),
+            ('data', None),  # tested below
             )
 
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
             return True
+        # Walk the collected directories as check if they have been
+        # changed - which means files have been added or removed.
+        # There is no need to check for the files, since `Tree` is
+        # only about the directory contents (which is the list of
+        # files).
         stack = [data[0]]  # root
-        toc = data[3]  # toc
         while stack:
             d = stack.pop()
             if misc.mtime(d) > last_build:
@@ -224,7 +228,7 @@ class Tree(Target, TOC):
                 path = os.path.join(d, nm)
                 if os.path.isdir(path):
                     stack.append(path)
-        self.data = toc
+        self.data = data[3]  # collected files
         return False
 
     def assemble(self):
