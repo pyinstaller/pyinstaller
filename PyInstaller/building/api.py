@@ -94,7 +94,6 @@ class PYZ(Target):
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
             return True
-        self.toc = TOC(data['toc'])
         return False
 
 
