@@ -39,6 +39,8 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     than last_build
 
     if pyc=1, check for .py files, too
+
+    Use this for calculated/analysed values read from cache.
     """
     for (nm, fnm, typ) in old:
         if misc.mtime(fnm) > last_build:
@@ -56,6 +58,8 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
     files listed in old toc are newer than last_build
 
     if pyc=1, check for .py files, too
+
+    Use this for input parameters.
     """
     return (_check_guts_eq(attr, old, toc, last_build)
             or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc))

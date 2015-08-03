@@ -85,8 +85,10 @@ class PYZ(Target):
         self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
         self.__postinit__()
 
-    _GUTS = (('name', _check_guts_eq),
+    _GUTS = (# input parameters
+            ('name', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
+            # no calculated/analysed values
             )
 
     def _check_guts(self, data, last_build):
@@ -189,12 +191,14 @@ class PKG(Target):
                           'PYZ': UNCOMPRESSED}
         self.__postinit__()
 
-    _GUTS = (('name', _check_guts_eq),
+    _GUTS = (# input parameters
+            ('name', _check_guts_eq),
             ('cdict', _check_guts_eq),
             ('toc', _check_guts_toc),  # list unchanged and no newer files
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
+            # no calculated/analysed values
             )
 
     def _check_guts(self, data, last_build):
@@ -376,7 +380,8 @@ class EXE(Target):
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
-    _GUTS = (('name', _check_guts_eq),
+    _GUTS = (# input parameters
+            ('name', _check_guts_eq),
             ('console', _check_guts_eq),
             ('debug', _check_guts_eq),
             ('exclude_binaries', _check_guts_eq),
@@ -393,6 +398,7 @@ class EXE(Target):
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
             ('mtm', None,),  # checked below
+            # no calculated/analysed values
             )
 
     def _check_guts(self, data, last_build):

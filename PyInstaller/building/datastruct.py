@@ -211,10 +211,12 @@ class Tree(Target, TOC):
             self.excludes = []
         self.__postinit__()
 
-    _GUTS = (('root', _check_guts_eq),
+    _GUTS = (# input parameters
+            ('root', _check_guts_eq),
             ('prefix', _check_guts_eq),
             ('excludes', _check_guts_eq),
             ('data', None),  # tested below
+            # no calculated/analysed values
             )
 
     def _check_guts(self, data, last_build):
