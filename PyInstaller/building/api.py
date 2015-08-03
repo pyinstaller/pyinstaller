@@ -62,8 +62,6 @@ class PYZ(Target):
 
         from ..config import CONF
         Target.__init__(self)
-        # TODO remove this attribute, PYZ items are compressed by default.
-        self.compression_level = 0
         self.toc = toc
         # If available, use code objects directly from ModuleGraph to
         # speed up PyInstaller.
@@ -88,7 +86,6 @@ class PYZ(Target):
         self.__postinit__()
 
     _GUTS = (('name', _check_guts_eq),
-            ('compression_level', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
             )
 
