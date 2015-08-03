@@ -41,6 +41,7 @@ from PyInstaller.archive import pyz_crypto
 from PyInstaller.utils import misc
 from PyInstaller.utils.misc import save_py_data_struct, load_py_data_struct
 from PyInstaller.lib.modulegraph.find_modules import get_implies
+from ..configure import get_importhooks_dir
 
 if is_win:
     from PyInstaller.utils.win32 import winmanifest
@@ -418,7 +419,7 @@ class Analysis(Target):
         # Implement cache of modules for which there exists a hook. Keep order of added items.
         hooks_mod_cache = collections.OrderedDict()  # key - module name, value - path to hook directory.
         # PyInstaller import hooks.
-        hooks_pathes = [os.path.join(os.path.dirname(__file__), 'hooks')]
+        hooks_pathes = [get_importhooks_dir()]
         if self.hookspath:
             # Custom import hooks
             hooks_pathes.extend(self.hookspath)
