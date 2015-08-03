@@ -130,9 +130,6 @@ class PYZ(Target):
                 self.code_dict[entry[0]] = self.__compile(entry[0], entry[1])
         pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
         pyz.build(self.name, toc)
-        # FIXME compression level was dropped - remove it from the save_py_data_struct
-        save_py_data_struct(self.out, (self.name, self.compression_level, self.toc))
-        return 1
 
 
 class PKG(Target):
@@ -264,12 +261,8 @@ class PKG(Target):
         archive = CArchiveWriter(pylib_name=pylib_name)
 
         archive.build(self.name, mytoc)
-        save_py_data_struct(self.out,
-                   (self.name, self.cdict, self.toc, self.exclude_binaries,
-                    self.strip_binaries, self.upx_binaries))
         for item in trash:
             os.remove(item)
-        return 1
 
 
 class EXE(Target):
@@ -396,6 +389,7 @@ class EXE(Target):
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
             ('mtm', None,),  # checked bellow
+             # manifest
             )
 
     def _check_guts(self, data, last_build):
@@ -546,14 +540,11 @@ class EXE(Target):
             pass
 
         os.chmod(self.name, 0o755)
-        guts = (self.name, self.console, self.debug, self.icon,
-                self.versrsrc, self.resources, self.strip, self.upx,
-                misc.mtime(self.name))
-        assert len(guts) == len(self._GUTS)
-        save_py_data_struct(self.out, guts)
+        # get mtime for storing into the guts
+        self.mtm = misc.mtime(self.name)
         for item in trash:
             os.remove(item)
-        return 1
+
 
     def copy(self, fnm, outf):
         inf = open(fnm, 'rb')
@@ -582,10 +573,6 @@ class DLL(EXE):
         self.copy(self.pkg.name, outf)
         outf.close()
         os.chmod(self.name, 0o755)
-        save_py_data_struct(self.out,
-                   (self.name, self.console, self.debug, self.icon,
-                    self.versrsrc, self.manifest, self.resources, self.strip, self.upx, misc.mtime(self.name)))
-        return 1
 
 
 class COLLECT(Target):
@@ -677,9 +664,6 @@ class COLLECT(Target):
                     logger.warn("failed to copy flags of %s", fnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)
-        save_py_data_struct(self.out,
-                 (self.name, self.strip_binaries, self.upx_binaries, self.toc))
-        return 1
 
 
 class MERGE(object):

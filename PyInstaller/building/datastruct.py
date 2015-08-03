@@ -144,6 +144,7 @@ class Target(object):
         # assemble if previous data was not found or is outdated
         if not data or self._check_guts(data, last_build):
             self.assemble()
+            self._save_guts()
 
 
     _GUTS = []
@@ -162,6 +163,15 @@ class Target(object):
             if func(attr, data[i], getattr(self, attr), last_build):
                 return True
         return False
+
+
+    def _save_guts(self):
+        """
+        Save the input parameters and the work-product of this run to
+        maybe avoid regenerating it later.
+        """
+        data = tuple(getattr(self, g[0]) for g in self._GUTS)
+        save_py_data_struct(self.out, data)
 
 
 class Tree(Target, TOC):
@@ -241,15 +251,3 @@ class Tree(Target, TOC):
                         else:
                             rslt.append((rfnm, fullfnm, 'DATA'))
         self.data = rslt
-        try:
-            oldstuff = load_py_data_struct(self.out)
-        except:
-            oldstuff = None
-        newstuff = (self.root, self.prefix, self.excludes, self.data)
-        if oldstuff != newstuff:
-            save_py_data_struct(self.out, newstuff)
-            return 1
-        logger.info("%s no change!", self.out)
-        return 0
-
-

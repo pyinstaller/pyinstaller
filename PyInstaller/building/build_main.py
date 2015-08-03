@@ -623,45 +623,27 @@ class Analysis(Target):
         # Without dynamic Python library PyInstaller cannot continue.
         self._check_python_library(self.binaries)
 
-        # Get the saved details of a prior run, if any. Would not exist if
-        # the user erased the work files, or gave a different --workpath
-        # or specified --clean.
-        try:
-            oldstuff = load_py_data_struct(self.out)
-        except:
-            oldstuff = None
-
-        # Collect the work-product of this run
-        newstuff = tuple([getattr(self, g[0]) for g in self._GUTS])
-        # If there was no previous, or if it is different, save the new
-        if oldstuff != newstuff:
-            # Save all the new stuff to avoid regenerating it later, maybe
-            save_py_data_struct(self.out, newstuff)
-            # Write warnings about missing modules. Get them from the graph
-            # and use the graph to figure out who tried to import them.
-            # TODO: previously we could say whether an import was top-level,
-            # deferred (in a def'd function) or conditional (in an if stmt).
-            # That information is not available from ModuleGraph at this time.
-            # When that info is available change this code to write one line for
-            # each importer-name, with type of import for that importer
-            # "no module named foo conditional/deferred/toplevel importy by bar"
-            miss_toc = self.graph.make_a_TOC(['MISSING'])
-            if len(miss_toc) : # there are some missing modules
-                wf = open(CONF['warnfile'], 'w')
-                for (n, p, t) in miss_toc :
-                    importer_names = self.graph.importer_names(n)
-                    wf.write( 'no module named '
-                              + n
-                              + ' - imported by '
-                              + ', '.join(importer_names)
-                              + '\n'
-                              )
-                wf.close()
-                logger.info("Warnings written to %s", CONF['warnfile'])
-            return 1
-        else :
-            logger.info("%s no change!", self.out)
-            return 0
+        # Write warnings about missing modules. Get them from the graph
+        # and use the graph to figure out who tried to import them.
+        # TODO: previously we could say whether an import was top-level,
+        # deferred (in a def'd function) or conditional (in an if stmt).
+        # That information is not available from ModuleGraph at this time.
+        # When that info is available change this code to write one line for
+        # each importer-name, with type of import for that importer
+        # "no module named foo conditional/deferred/toplevel importy by bar"
+        miss_toc = self.graph.make_a_TOC(['MISSING'])
+        if len(miss_toc) : # there are some missing modules
+            wf = open(CONF['warnfile'], 'w')
+            for (n, p, t) in miss_toc :
+                importer_names = self.graph.importer_names(n)
+                wf.write( 'no module named '
+                          + n
+                          + ' - imported by '
+                          + ', '.join(importer_names)
+                          + '\n'
+                          )
+            wf.close()
+            logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _check_python_library(self, binaries):
         """
