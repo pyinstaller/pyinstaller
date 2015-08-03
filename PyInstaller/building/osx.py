@@ -84,10 +84,10 @@ class BUNDLE(Target):
                 break
         self.__postinit__()
 
-    GUTS = (('toc', _check_guts_eq),  # additional check below
+    _GUTS = (('toc', _check_guts_eq),  # additional check below
             )
 
-    def check_guts(self, data, last_build):
+    def _check_guts(self, data, last_build):
         # BUNDLE always needs to be executed, since it will clean the output
         # directory anyway to make sure there is no existing cruft accumulating
         return 1

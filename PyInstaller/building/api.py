@@ -83,15 +83,15 @@ class PYZ(Target):
         self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
         self.__postinit__()
 
-    GUTS = (('name', _check_guts_eq),
+    _GUTS = (('name', _check_guts_eq),
             ('compression_level', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
             )
 
-    def check_guts(self, data, last_build):
-        if Target.check_guts(self, data, last_build):
+    def _check_guts(self, data, last_build):
+        if Target._check_guts(self, data, last_build):
             return True
-        self.toc = TOC(data[[g[0] for g in self.GUTS].index('toc')])
+        self.toc = TOC(data[[g[0] for g in self._GUTS].index('toc')])
         return False
 
     def assemble(self):
@@ -165,7 +165,7 @@ class PKG(Target):
                           'PYZ': UNCOMPRESSED}
         self.__postinit__()
 
-    GUTS = (('name', _check_guts_eq),
+    _GUTS = (('name', _check_guts_eq),
             ('cdict', _check_guts_eq),
             ('toc', _check_guts_toc_mtime),
             ('exclude_binaries', _check_guts_eq),
@@ -173,8 +173,8 @@ class PKG(Target):
             ('upx_binaries', _check_guts_eq),
             )
 
-    def check_guts(self, data, last_build):
-        if Target.check_guts(self, data, last_build):
+    def _check_guts(self, data, last_build):
+        if Target._check_guts(self, data, last_build):
             return True
         # todo: toc equal
         return False
@@ -357,7 +357,7 @@ class EXE(Target):
         self.dependencies = self.pkg.dependencies
         self.__postinit__()
 
-    GUTS = (('name', _check_guts_eq),
+    _GUTS = (('name', _check_guts_eq),
             ('console', _check_guts_eq),
             ('debug', _check_guts_eq),
             ('icon', _check_guts_eq),
@@ -368,7 +368,7 @@ class EXE(Target):
             ('mtm', None,),  # checked bellow
             )
 
-    def check_guts(self, data, last_build):
+    def _check_guts(self, data, last_build):
         if not os.path.exists(self.name):
             logger.info("Rebuilding %s because %s missing",
                         self.outnm, os.path.basename(self.name))
@@ -378,7 +378,7 @@ class EXE(Target):
                         os.path.basename(self.pkgname))
             return 1
 
-        if Target.check_guts(self, data, last_build):
+        if Target._check_guts(self, data, last_build):
             return True
 
         icon, versrsrc, resources = data[3:6]
@@ -519,7 +519,7 @@ class EXE(Target):
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
                 misc.mtime(self.name))
-        assert len(guts) == len(self.GUTS)
+        assert len(guts) == len(self._GUTS)
         save_py_data_struct(self.out, guts)
         for item in trash:
             os.remove(item)
@@ -607,13 +607,13 @@ class COLLECT(Target):
                 self.toc.extend(arg)
         self.__postinit__()
 
-    GUTS = (('name', _check_guts_eq),
+    _GUTS = (('name', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
             ('toc', _check_guts_eq),  # additional check below
             )
 
-    def check_guts(self, data, last_build):
+    def _check_guts(self, data, last_build):
         # COLLECT always needs to be executed, since it will clean the output
         # directory anyway to make sure there is no existing cruft accumulating
         return 1

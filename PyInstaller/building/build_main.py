@@ -203,7 +203,7 @@ class Analysis(Target):
         self.dependencies = TOC()
         self.__postinit__()
 
-    GUTS = (# input parameters
+    _GUTS = (# input parameters
             ('inputs', _check_guts_eq),  # parameter `scripts`
             ('pathex', _check_guts_eq),
             ('hiddenimports', _check_guts_eq),
@@ -222,8 +222,8 @@ class Analysis(Target):
             # TODO: Need to add "dependencies"?
             )
 
-    def check_guts(self, data, last_build):
-        if Target.check_guts(self, data, last_build):
+    def _check_guts(self, data, last_build):
+        if Target._check_guts(self, data, last_build):
             return True
         for fnm in self.inputs:
             if misc.mtime(fnm) > last_build:
@@ -631,7 +631,7 @@ class Analysis(Target):
             oldstuff = None
 
         # Collect the work-product of this run
-        newstuff = tuple([getattr(self, g[0]) for g in self.GUTS])
+        newstuff = tuple([getattr(self, g[0]) for g in self._GUTS])
         # If there was no previous, or if it is different, save the new
         if oldstuff != newstuff:
             # Save all the new stuff to avoid regenerating it later, maybe

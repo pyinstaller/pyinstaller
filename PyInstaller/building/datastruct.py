@@ -142,20 +142,20 @@ class Target(object):
             except:
                 logger.info("Building because %s is bad", self.outnm)
         # assemble if previous data was not found or is outdated
-        if not data or self.check_guts(data, last_build):
+        if not data or self._check_guts(data, last_build):
             self.assemble()
 
 
-    GUTS = []
+    _GUTS = []
 
-    def check_guts(self, data, last_build):
+    def _check_guts(self, data, last_build):
         """
         Returns True if rebuild/assemble is required
         """
-        if len(data) != len(self.GUTS):
+        if len(data) != len(self._GUTS):
             logger.info("Building because %s is bad", self.outnm)
             return True
-        for i, (attr, func) in enumerate(self.GUTS):
+        for i, (attr, func) in enumerate(self._GUTS):
             if func is None:
                 # no check for this value
                 continue
@@ -193,14 +193,14 @@ class Tree(Target, TOC):
             self.excludes = []
         self.__postinit__()
 
-    GUTS = (('root', _check_guts_eq),
+    _GUTS = (('root', _check_guts_eq),
             ('prefix', _check_guts_eq),
             ('excludes', _check_guts_eq),
             ('toc', None),
             )
 
-    def check_guts(self, data, last_build):
-        if Target.check_guts(self, data, last_build):
+    def _check_guts(self, data, last_build):
+        if Target._check_guts(self, data, last_build):
             return True
         stack = [data[0]]  # root
         toc = data[3]  # toc
