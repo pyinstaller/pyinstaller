@@ -203,16 +203,22 @@ class Analysis(Target):
         self.dependencies = TOC()
         self.__postinit__()
 
-    GUTS = (('inputs', _check_guts_eq),
+    GUTS = (# input parameters
+            ('inputs', _check_guts_eq),  # parameter `scripts`
             ('pathex', _check_guts_eq),
+            ('hiddenimports', _check_guts_eq),
             ('hookspath', _check_guts_eq),
             ('excludes', _check_guts_eq),
+            ('custom_runtime_hooks', _check_guts_eq),
+            #'cipher': no need to check as it is implied by an
+            # additional hidden import
+
+            #calculated/analysed values
             ('scripts', _check_guts_toc_mtime),
             ('pure', lambda *args: _check_guts_toc_mtime(*args, **{'pyc': 1})),
             ('binaries', _check_guts_toc_mtime),
             ('zipfiles', _check_guts_toc_mtime),
             ('datas', _check_guts_toc_mtime),
-            ('hiddenimports', _check_guts_eq),
             )
 
     def check_guts(self, data, last_build):
@@ -230,7 +236,6 @@ class Analysis(Target):
         self.binaries = TOC(binaries)
         self.zipfiles = TOC(zipfiles)
         self.datas = TOC(datas)
-        self.hiddenimports = hiddenimports
         return False
 
 
