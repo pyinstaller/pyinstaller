@@ -84,8 +84,10 @@ class BUNDLE(Target):
                 break
         self.__postinit__()
 
-    _GUTS = (('toc', _check_guts_eq),  # additional check below
-            )
+    _GUTS = (
+        # BUNDLE always builds, just want the toc to be written out
+        ('toc', None),
+    )
 
     def _check_guts(self, data, last_build):
         # BUNDLE always needs to be executed, since it will clean the output

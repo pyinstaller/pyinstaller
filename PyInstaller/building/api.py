@@ -626,11 +626,10 @@ class COLLECT(Target):
                 self.toc.extend(arg)
         self.__postinit__()
 
-    _GUTS = (('name', _check_guts_eq),
-            ('strip_binaries', _check_guts_eq),
-            ('upx_binaries', _check_guts_eq),
-            ('toc', _check_guts_eq),  # additional check below
-            )
+    _GUTS = (
+        # COLLECT always builds, just want the toc to be written out
+        ('toc', None),
+    )
 
     def _check_guts(self, data, last_build):
         # COLLECT always needs to be executed, since it will clean the output
