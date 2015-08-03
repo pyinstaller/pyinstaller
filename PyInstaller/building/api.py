@@ -43,9 +43,9 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc_dict, name=None, cipher=None):
+    def __init__(self, toc, name=None, cipher=None):
         """
-        toc_dict
+        toc
                 A TOC (Table of Contents), normally an Analysis.pure
 
                 If this TOC has an attribute `_code_cache`, this is
@@ -64,10 +64,10 @@ class PYZ(Target):
         Target.__init__(self)
         # TODO remove this attribute, PYZ items are compressed by default.
         self.compression_level = 0
-        self.toc = toc_dict
+        self.toc = toc
         # If available, use code objects directly from ModuleGraph to
         # speed up PyInstaller.
-        self.code_dict = getattr(toc_dict, '_code_cache', {})
+        self.code_dict = getattr(toc, '_code_cache', {})
         self.name = name
         if name is None:
             self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
