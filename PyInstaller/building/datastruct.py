@@ -14,17 +14,9 @@ from PyInstaller import compat as compat
 from PyInstaller.utils import misc
 from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
+from .utils import _check_guts_eq
 
 logger = logging.getLogger(__name__)
-
-def _check_guts_eq(attr, old, new, last_build):
-    """
-    rebuild is required if values differ
-    """
-    if old != new:
-        logger.info("Building because %s changed", attr)
-        return True
-    return False
 
 
 class TOC(compat.UserList):
