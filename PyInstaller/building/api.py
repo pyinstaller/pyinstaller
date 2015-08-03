@@ -191,7 +191,7 @@ class PKG(Target):
 
     _GUTS = (('name', _check_guts_eq),
             ('cdict', _check_guts_eq),
-            ('toc', _check_guts_toc_mtime),
+            ('toc', _check_guts_toc),  # list unchanged and no newer files
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
@@ -200,7 +200,6 @@ class PKG(Target):
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
             return True
-        # todo: toc equal
         return False
 
     def assemble(self):
