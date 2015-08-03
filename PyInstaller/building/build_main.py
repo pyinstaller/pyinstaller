@@ -354,7 +354,7 @@ class Analysis(Target):
             # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
             self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
-        logger.info("running Analysis %s", os.path.basename(self.out))
+        logger.info("running Analysis %s", self.tocbasename)
         # Get paths to Python and, in Windows, the manifest.
         python = sys.executable
         if not is_win:

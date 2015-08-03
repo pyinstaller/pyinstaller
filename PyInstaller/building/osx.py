@@ -95,7 +95,7 @@ class BUNDLE(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("Building BUNDLE %s", os.path.basename(self.out))
+        logger.info("Building BUNDLE %s", self.tocbasename)
 
         # Create a minimal Mac bundle structure
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))

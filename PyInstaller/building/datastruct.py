@@ -124,10 +124,12 @@ class Target(object):
         # toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        self.out = os.path.join(CONF['workpath'], 'out%02d-%s.toc' %
-                                (self.invcnum, self.__class__.__name__))
-        self.outnm = os.path.basename(self.out)
+        # TODO Think about renaming these file into e.g. `.c4che`
+        self.tocfilename = os.path.join(CONF['workpath'], 'out%02d-%s.toc' %
+                                        (self.invcnum, self.__class__.__name__))
+        self.tocbasename = os.path.basename(self.tocfilename)
         self.dependencies = TOC()
+
 
     def __postinit__(self):
         """
@@ -135,15 +137,15 @@ class Target(object):
         """
         logger.info("checking %s", self.__class__.__name__)
         data = None
-        last_build = misc.mtime(self.out)
+        last_build = misc.mtime(self.tocfilename)
         if last_build == 0:
             logger.info("Building %s because %s is non existent",
-                        self.__class__.__name__, self.outnm)
+                        self.__class__.__name__, self.tocbasename)
         else:
             try:
-                data = load_py_data_struct(self.out)
+                data = load_py_data_struct(self.tocfilename)
             except:
-                logger.info("Building because %s is bad", self.outnm)
+                logger.info("Building because %s is bad", self.tocbasename)
         # assemble if previous data was not found or is outdated
         if not data or self._check_guts(data, last_build):
             self.assemble()
@@ -157,7 +159,7 @@ class Target(object):
         Returns True if rebuild/assemble is required
         """
         if len(data) != len(self._GUTS):
-            logger.info("Building because %s is bad", self.outnm)
+            logger.info("Building because %s is bad", self.tocbasename)
             return True
         for i, (attr, func) in enumerate(self._GUTS):
             if func is None:
@@ -174,7 +176,7 @@ class Target(object):
         maybe avoid regenerating it later.
         """
         data = tuple(getattr(self, g[0]) for g in self._GUTS)
-        save_py_data_struct(self.out, data)
+        save_py_data_struct(self.tocfilename, data)
 
 
 class Tree(Target, TOC):
@@ -225,7 +227,7 @@ class Tree(Target, TOC):
             d = stack.pop()
             if misc.mtime(d) > last_build:
                 logger.info("Building %s because directory %s changed",
-                            self.outnm, d)
+                            self.tocbasename, d)
                 return True
             for nm in os.listdir(d):
                 path = os.path.join(d, nm)
@@ -235,7 +237,7 @@ class Tree(Target, TOC):
         return False
 
     def assemble(self):
-        logger.info("Building Tree %s", os.path.basename(self.out))
+        logger.info("Building Tree %s", self.tocbasename)
         stack = [(self.root, self.prefix)]
         excludes = {}
         xexcludes = {}

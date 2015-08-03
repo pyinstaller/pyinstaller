@@ -70,7 +70,7 @@ class PYZ(Target):
         self.code_dict = getattr(toc_dict, '_code_cache', {})
         self.name = name
         if name is None:
-            self.name = self.out[:-3] + 'pyz'
+            self.name = self.tocfilename[:-3] + 'pyz'
         # PyInstaller bootstrapping modules.
         self.dependencies = get_bootstrap_modules()
         # Bundle the crypto key.
@@ -122,7 +122,7 @@ class PYZ(Target):
 
 
     def assemble(self):
-        logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
+        logger.info("Building PYZ (ZlibArchive) %s", self.name)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
         for entry in toc:
@@ -177,7 +177,7 @@ class PKG(Target):
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
         if name is None:
-            self.name = self.out[:-3] + 'pkg'
+            self.name = self.tocfilename[:-3] + 'pkg'
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -395,7 +395,7 @@ class EXE(Target):
     def _check_guts(self, data, last_build):
         if not os.path.exists(self.name):
             logger.info("Rebuilding %s because %s missing",
-                        self.outnm, os.path.basename(self.name))
+                        self.tocbasename, os.path.basename(self.name))
             return 1
         if not self.append_pkg and not os.path.exists(self.pkgname):
             logger.info("Rebuilding because %s missing",
@@ -414,10 +414,10 @@ class EXE(Target):
 
         mtm = data[-1]
         if mtm != misc.mtime(self.name):
-            logger.info("Rebuilding %s because mtimes don't match", self.outnm)
+            logger.info("Rebuilding %s because mtimes don't match", self.tocbasename)
             return True
-        if mtm < misc.mtime(self.pkg.out):
-            logger.info("Rebuilding %s because pkg is more recent", self.outnm)
+        if mtm < misc.mtime(self.pkg.tocfilename):
+            logger.info("Rebuilding %s because pkg is more recent", self.tocbasename)
             return True
 
         return False
@@ -441,7 +441,7 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
-        logger.info("Building EXE from %s", os.path.basename(self.out))
+        logger.info("Building EXE from %s", self.tocbasename)
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
@@ -564,7 +564,7 @@ class DLL(EXE):
     need to write your own dll.
     """
     def assemble(self):
-        logger.info("Building DLL %s", os.path.basename(self.out))
+        logger.info("Building DLL %s", self.tocbasename)
         outf = open(self.name, 'wb')
         dll = self._bootloader_file('inprocsrvr') + '.dll'
         if not os.path.exists(dll):
@@ -638,7 +638,7 @@ class COLLECT(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("Building COLLECT %s", os.path.basename(self.out))
+        logger.info("Building COLLECT %s", self.tocbasename)
         os.makedirs(self.name)
         toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
