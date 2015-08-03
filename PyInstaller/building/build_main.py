@@ -219,6 +219,7 @@ class Analysis(Target):
             ('binaries', _check_guts_toc_mtime),
             ('zipfiles', _check_guts_toc_mtime),
             ('datas', _check_guts_toc_mtime),
+            # TODO: Need to add "dependencies"?
             )
 
     def check_guts(self, data, last_build):
@@ -228,9 +229,11 @@ class Analysis(Target):
             if misc.mtime(fnm) > last_build:
                 logger.info("Building because %s changed", fnm)
                 return True
-        # TODO What does it mean 'data[-6:]' ?
-        # TODO Do this code really get executed?
-        scripts, pure, binaries, zipfiles, datas, hiddenimports = data[-6:]
+        # Now we know that none of the input parameters and none of
+        # the input files has changed. So take the values calculated
+        # resp. analysed in the last run (which are the last 5
+        # elements in `data`) and store them in `self`.
+        scripts, pure, binaries, zipfiles, datas = data[-5:]
         self.scripts = TOC(scripts)
         self.pure = {'toc': TOC(pure), 'code': {}}
         self.binaries = TOC(binaries)
