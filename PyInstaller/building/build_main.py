@@ -196,7 +196,7 @@ class Analysis(Target):
 
         self.excludes = excludes
         self.scripts = TOC()
-        self.pure = {'toc': TOC(), 'code': {}}
+        self.pure = TOC()
         self.binaries = TOC()
         self.zipfiles = TOC()
         self.datas = TOC()
@@ -235,7 +235,7 @@ class Analysis(Target):
         # elements in `data`) and store them in `self`.
         scripts, pure, binaries, zipfiles, datas = data[-5:]
         self.scripts = TOC(scripts)
-        self.pure = {'toc': TOC(pure), 'code': {}}
+        self.pure = TOC(pure)
         self.binaries = TOC(binaries)
         self.zipfiles = TOC(zipfiles)
         self.datas = TOC(datas)
@@ -596,10 +596,11 @@ class Analysis(Target):
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries  = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
         # Fill the "pure" list with pure Python modules.
-        self.pure['toc'] =  self.graph.make_a_TOC(['PYMODULE'])
+        assert len(self.pure) == 0
+        self.pure =  self.graph.make_a_TOC(['PYMODULE'])
         # And get references to module code objects constructed by ModuleGraph
         # to avoid writing .pyc/pyo files to hdd.
-        self.pure['code'].update(self.graph.get_code_objects())
+        self.pure._code_cache = self.graph.get_code_objects()
 
         # Add remaining binary dependencies - analyze Python C-extensions and what
         # DLLs they depend on.

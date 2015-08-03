@@ -46,24 +46,28 @@ class PYZ(Target):
     def __init__(self, toc_dict, name=None, cipher=None):
         """
         toc_dict
-            toc_dict['toc']
-                A TOC (Table of Contents), normally an Analysis.pure['toc']?
-            toc_dict['code']
-                A dict of module code objects from ModuleGraph.
+                A TOC (Table of Contents), normally an Analysis.pure
+
+                If this TOC has an attribute `_code_cache`, this is
+                expected to be a dict of module code objects from
+                ModuleGraph.
+
         name
                 A filename for the .pyz. Normally not needed, as the generated
                 name will do fine.
         cipher
                 The block cipher that will be used to encrypt Python bytecode.
+
         """
 
         from ..config import CONF
         Target.__init__(self)
         # TODO remove this attribute, PYZ items are compressed by default.
         self.compression_level = 0
-        self.toc = toc_dict['toc']
-        # Use code objects directly from ModuleGraph to speed up PyInstaller.
-        self.code_dict = toc_dict['code']
+        self.toc = toc_dict
+        # If available, use code objects directly from ModuleGraph to
+        # speed up PyInstaller.
+        self.code_dict = getattr(toc_dict, '_code_cache', {})
         self.name = name
         if name is None:
             self.name = self.out[:-3] + 'pyz'
@@ -94,11 +98,37 @@ class PYZ(Target):
         self.toc = TOC(data[[g[0] for g in self._GUTS].index('toc')])
         return False
 
+
+    def __compile(self, modname, filename):
+        """
+        Compile a module to a code-object.
+        """
+        # This is a extra-simple version for compiling a module. It's
+        # not worth spending more effort here, as it is only used in
+        # the rare case if outXX-Analysis.toc exists, but
+        # outXX-PYZ.toc does not,
+        # TODO: Use some modulegraph function if available
+        assert filename.endswith('.py')
+        logger.debug('Compiling %s', filename)
+        try:
+            txt = open(filename, 'rU').read() + '\n'
+            return compile(txt, filename, 'exec')
+        except (IOError, OSError):
+            raise ValueError("Source file %s is missing" % filename)
+        except SyntaxError as e:
+            print("Syntax error in ", filename)
+            print(e.args)
+            raise
+
+
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
+        for entry in toc:
+            if not entry[0] in self.code_dict:
+                self.code_dict[entry[0]] = self.__compile(entry[0], entry[1])
+        pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
         pyz.build(self.name, toc)
         # FIXME compression level was dropped - remove it from the save_py_data_struct
         save_py_data_struct(self.out, (self.name, self.compression_level, self.toc))
