@@ -67,19 +67,6 @@ def _old_api_error(obj_name):
                      'for details' % obj_name)
 
 
-def _save_data(filename, data):
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-    outf = open(filename, 'w')
-    pprint.pprint(data, outf)
-    outf.close()
-
-
-def _load_data(filename):
-    return eval(open(filename, 'rU').read())
-
-
 # TODO find better place for function.
 def setupUPXFlags():
     f = compat.getenv("UPX", "")
