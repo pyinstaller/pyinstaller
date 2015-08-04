@@ -236,6 +236,19 @@ def test_time_module(pyi_builder):
     pyi_builder.test_script('pyi_time_module.py')
 
 
+@pytest.mark.xfail(reason='issue #1378')
+@skipif_win
+def test_time_module_localized(pyi_builder, monkeypatch):
+    # This checks that functions 'time.ctime()' and 'time.strptime()'
+    # use the same locale. There was an issue with bootloader where
+    # every function was using different locale:
+    # time.ctime was using 'C'
+    # time.strptime was using 'xx_YY' from the environment.
+    lang = 'cs_CZ' if is_darwin else 'cs_CZ.UTF-8'
+    monkeypatch.setenv('LC_ALL', lang)
+    pyi_builder.test_script('pyi_time_module.py')
+
+
 def test_xmldom_module(pyi_builder):
     pyi_builder.test_script('pyi_xmldom_module.py')
 
