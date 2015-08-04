@@ -1,6 +1,7 @@
 # For running tests
 pytest  # Testing framework.
 pytest-xdist  # Plugin allowing running tests in parallel.
+pytest-timeout # Plugin to abort hanging tests.
 pyreadline  # Colors in ipython on Windows.
 ipython  # Better interactive Python shell.
 mock
