@@ -126,6 +126,11 @@ class Target(object):
     def __postinit__(self):
         """
         Check if the target need to be rebuild and if so, re-assemble.
+
+        `__postinit__` is to be called at the end of `__init__` of
+        every subclass of Target. `__init__` is meant to setup the
+        parameters and `__postinit__` is checking if rebuild is
+        required and in case calls `assemble()`
         """
         logger.info("checking %s", self.__class__.__name__)
         data = None
