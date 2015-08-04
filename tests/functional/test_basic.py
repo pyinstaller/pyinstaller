@@ -236,7 +236,6 @@ def test_time_module(pyi_builder):
     pyi_builder.test_script('pyi_time_module.py')
 
 
-@pytest.mark.xfail(reason='issue #1378')
 @skipif_win
 def test_time_module_localized(pyi_builder, monkeypatch):
     # This checks that functions 'time.ctime()' and 'time.strptime()'
