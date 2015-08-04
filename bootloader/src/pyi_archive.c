@@ -474,7 +474,6 @@ int pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
 int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
 {
     // TODO on Windows use 'wmain' to get argv already as wchar_t if possible.
-    char *old_locale;
     int i;
     size_t count;
 
@@ -485,10 +484,6 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
     /* Allocate memory for argv cache. */
     archive_status->argv = malloc(sizeof(wchar_t*) * archive_status->argc);
 
-    /* Reset locale to default. Necessary for char/wchar_t conversion. */
-    // FIXME: Need to strdup() here? Python 3.3 does!
-    old_locale = setlocale(LC_ALL, NULL);
-    setlocale(LC_ALL, "");
     /* Convert arguments. */
     for (i = 0; i < archive_status->argc; i++) {
         // FIXME: calculate size! args may be longer then PATH_MAX
@@ -499,8 +494,6 @@ int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
             return 1;
         }
     }
-    /* Restore locale settings. */
-    setlocale(LC_ALL, old_locale);
 
     return 0;
 }
