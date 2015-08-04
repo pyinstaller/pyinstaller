@@ -382,8 +382,14 @@ class ZlibArchiveWriter(ArchiveWriter):
             self.os = os
         name = entry[0]
         pth = entry[1]
-        base, ext = self.os.path.splitext(self.os.path.basename(pth))
-        ispkg = base == '__init__'
+        if pth in ('-', None):
+            # This is a NamespacePackage, modulegraph marks them
+            # by using the filename '-'. (But wants to use None,
+            # so check for None, too, to be forward-compatible.)
+            ispkg = True
+        else:
+            base, ext = self.os.path.splitext(self.os.path.basename(pth))
+            ispkg = base == '__init__'
 
         obj = zlib.compress(marshal.dumps(self.code_dict[name]), self.COMPRESSION_LEVEL)
 
