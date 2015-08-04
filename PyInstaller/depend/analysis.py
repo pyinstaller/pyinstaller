@@ -40,8 +40,10 @@ import re
 from PyInstaller.building.datastruct import TOC
 from ..utils.misc import load_py_data_struct, get_code_object
 from ..lib.modulegraph.modulegraph import ModuleGraph
+from ..lib.modulegraph.find_modules import get_implies
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES
 from .. import HOMEPATH
+from ..utils.hooks.hookutils import collect_submodules, is_package
 
 logger = logging.getLogger(__name__)
 
@@ -485,6 +487,32 @@ class FakeModule(object):
         self.node.filename = path_to_new_code
         # Update dependencies in the graph.
         self.graph._scan_code(new_code, self.node)
+
+
+
+def initialize_modgraph():
+    """
+    Create module dependency graph and for Python 3 analyze dependencies
+    for base_library.zip. These are same for every executable.
+
+    :return: PyiModuleGraph object with basic dependencies.
+    """
+    logger.info('Initializing module dependency graph...')
+    graph = PyiModuleGraph(HOMEPATH, implies=get_implies())
+
+    if not is_py2:
+        logger.info('Analyzing base_library.zip ...')
+        required_mods = []
+        # Collect submodules from required modules in base_library.zip.
+        for m in PY3_BASE_MODULES:
+            if is_package(m):
+                required_mods += collect_submodules(m)
+            else:
+                required_mods.append(m)
+        # Initialize ModuleGraph.
+        for m in required_mods:
+            graph.import_hook(m)
+    return graph
 
 
 def get_bootstrap_modules():

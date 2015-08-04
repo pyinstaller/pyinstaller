@@ -16,6 +16,7 @@ NOTE: All global variables, classes and imported modules create API
 """
 
 
+import copy
 import glob
 import os
 import shutil
@@ -31,7 +32,7 @@ from PyInstaller.utils.misc import absnormpath
 from PyInstaller.compat import is_py2, is_win, PYDYLIB_NAMES
 from PyInstaller.compat import importlib_load_source
 from PyInstaller.depend import bindepend
-from PyInstaller.depend.analysis import PyiModuleGraph, FakeModule
+from PyInstaller.depend.analysis import PyiModuleGraph, FakeModule, initialize_modgraph
 from PyInstaller.building.api import PYZ, EXE, DLL, COLLECT, MERGE
 from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
@@ -318,14 +319,13 @@ class Analysis(Target):
         """
         from ..config import CONF
 
-
-        # Instantiate a ModuleGraph. The class is defined at end of this module.
-        # The argument is the set of paths to use for imports: sys.path,
-        # plus our loader, plus other paths from e.g. --path option).
-        module_paths = self.pathex + sys.path
-        self.graph = PyiModuleGraph(HOMEPATH, path=module_paths,
-                                    implies=get_implies())
-
+        # Either instantiate a ModuleGraph object or for tests reuse
+        # dependency graph already created.
+        if 'tests_modgraph' in CONF:
+            logger.info('Reusing basic module graph object.')
+            self.graph = CONF['tests_modgraph']
+        else:
+            self.graph = initialize_modgraph()
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
@@ -338,6 +338,12 @@ class Analysis(Target):
             # Bundle base_library.zip as data file.
             # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
             self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
+
+        # Expand sys.path of module graph.
+        # The attribute is the set of paths to use for imports: sys.path,
+        # plus our loader, plus other paths from e.g. --path option).
+        self.graph.path = self.pathex + self.graph.path
+
 
         logger.info("running Analysis %s", self.tocbasename)
         # Get paths to Python and, in Windows, the manifest.

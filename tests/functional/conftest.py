@@ -18,6 +18,7 @@ import sys
 from PyInstaller import compat, configure
 from PyInstaller import main as pyi_main
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr
+from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
 
@@ -29,12 +30,13 @@ _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules
 
 class AppBuilder(object):
 
-    def __init__(self, tmpdir, bundle_mode):
+    def __init__(self, tmpdir, bundle_mode, module_graph):
         self._tmpdir = tmpdir
         self._mode = bundle_mode
         self._specdir = self._tmpdir
         self._distdir = os.path.join(self._tmpdir, 'dist')
         self._builddir = os.path.join(self._tmpdir, 'build')
+        self._modgraph = module_graph
 
     def test_script(self, script, pyi_args=[], app_name=None, app_args=[], runtime=None):
         """
@@ -200,6 +202,8 @@ class AppBuilder(object):
         PYI_CONFIG = configure.get_config(upx_dir=None)
         # Override CONFIGDIR for PyInstaller and put it into self.tmpdir
         PYI_CONFIG['configdir'] = self._tmpdir
+        # Speed up tests by reusing copy of basic module graph object.
+        PYI_CONFIG['tests_modgraph'] = copy.deepcopy(self._modgraph)
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
 
@@ -252,17 +256,25 @@ class AppBuilder(object):
         return True, ''
 
 
+# Scope 'session' should keep the object unchanged for whole tests.
+# This fixture caches basic module graph dependencies that are same
+# for every executable.
+@pytest.fixture(scope='session')
+def pyi_modgraph():
+    return initialize_modgraph()
+
+
 # Run by default test as onedir and onefile.
 @pytest.fixture(params=['onedir', 'onefile'])
-def pyi_builder(tmpdir, monkeypatch, request):
+def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     tmp = tmpdir.strpath
     # Append _MMODULES_DIR to sys.path for building exes.
     # Some tests need additional test modules.
     # This also ensures that sys.path is reseted to original value for every test.
     monkeypatch.syspath_prepend(_MODULES_DIR)
     # Save/restore environment variable PATH.
-    monkeypatch.setenv('PATH', os.environ['PATH'])
+    monkeypatch.setenv('PATH', os.environ['PATH'], )
     # Set current working directory to
     monkeypatch.chdir(tmp)
 
-    return AppBuilder(tmp, request.param)
+    return AppBuilder(tmp, request.param, pyi_modgraph)

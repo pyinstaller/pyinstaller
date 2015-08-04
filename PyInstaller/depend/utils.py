@@ -23,8 +23,7 @@ import zipfile
 from ..lib.modulegraph import modulegraph
 
 from .. import compat
-from ..compat import is_darwin, is_unix, is_py2, is_py27, is_py34, BYTECODE_MAGIC, PY3_BASE_MODULES
-from ..utils.hooks.hookutils import collect_submodules, is_package
+from ..compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC, PY3_BASE_MODULES
 from .. import log as logging
 
 
@@ -38,19 +37,6 @@ def create_py3_base_library(libzip_filename, graph):
     modules is necessary to have on PYTHONPATH for initializing libpython3
     in order to run the frozen executable with Python 3.
     """
-    logger.info('Creating base_library.zip for Python 3')
-
-    required_mods = []
-    # Collect submodules from required modules in base_library.zip.
-    for m in PY3_BASE_MODULES:
-        if is_package(m):
-            required_mods += collect_submodules(m)
-        else:
-            required_mods.append(m)
-    # Initialize ModuleGraph.
-    for m in required_mods:
-        graph.import_hook(m)
-
     # TODO Replace this function with something better or something from standard Python library.
     # Helper functions.
     def _write_long(f, x):
@@ -66,7 +52,6 @@ def create_py3_base_library(libzip_filename, graph):
     # into base_library.zip.
     regex_str = '|'.join(['(%s.*)' % x for x in PY3_BASE_MODULES])
     regex = re.compile(regex_str)
-
 
     try:
         # Remove .zip from previous run.

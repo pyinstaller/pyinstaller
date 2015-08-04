@@ -44,6 +44,8 @@ ui_admin
 ui_access
 upx_dir
 workpath
+
+tests_modgraph  - cached PyiModuleGraph object to speed up tests
 """
 
 # This
