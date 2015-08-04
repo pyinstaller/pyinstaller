@@ -75,6 +75,7 @@ class PyiModuleGraph(ModuleGraph):
         'SourceModule': 'PYMODULE',
         'CompiledModule': 'PYMODULE',
         'Package': 'PYMODULE',
+        'NamespacePackage': 'PYMODULE',
         'Extension': 'EXTENSION',
         'Script': 'PYSOURCE',
         'BuiltinModule': 'BUILTIN',

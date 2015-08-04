@@ -106,10 +106,17 @@ class PYZ(Target):
         # the rare case if outXX-Analysis.toc exists, but
         # outXX-PYZ.toc does not,
         # TODO: Use some modulegraph function if available
-        assert filename.endswith('.py')
-        logger.debug('Compiling %s', filename)
         try:
-            txt = open(filename, 'rU').read() + '\n'
+            if filename in ('-', None):
+                # This is a NamespacePackage, modulegraph marks them
+                # by using the filename '-'. (But wants to use None,
+                # so check for None, too, to be forward-compatible.)
+                logger.debug('Compiling namespace package %s', modname)
+                txt = '#\n'
+            else:
+                logger.debug('Compiling %s', filename)
+                assert filename.endswith('.py')
+                txt = open(filename, 'rU').read() + '\n'
             return compile(txt, filename, 'exec')
         except (IOError, OSError):
             raise ValueError("Source file %s is missing" % filename)
