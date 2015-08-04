@@ -607,7 +607,9 @@ def get_module_file_attribute(package):
     str
         Absolute path of this module.
     """
-    # First try to use 'pkgutil'. - fastest but does not work with pywin32.
+    # First try to use 'pkgutil'. - fastest but doesn't work on
+    # certain modules in pywin32, which replace all module attributes
+    # with those of the .dll
     try:
         loader = pkgutil.find_loader(package)
         attr = loader.get_filename(package)
