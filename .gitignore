@@ -74,3 +74,6 @@ __pycache__/
 /bootloader/waf3-*
 /bootloader/.waf-*
 /bootloader/.waf3-*
+
+# Mac OS X
+.DS_store
