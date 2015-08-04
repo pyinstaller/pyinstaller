@@ -69,20 +69,21 @@ class PyiModuleGraph(ModuleGraph):
         `import_module()` method for details.
     """
 
+    # Dict to map ModuleGraph node types to TOC typecodes
+    typedict = {
+        'Module': 'PYMODULE',
+        'SourceModule': 'PYMODULE',
+        'CompiledModule': 'PYMODULE',
+        'Package': 'PYMODULE',
+        'Extension': 'EXTENSION',
+        'Script': 'PYSOURCE',
+        'BuiltinModule': 'BUILTIN',
+        'MissingModule': 'MISSING',
+        'does not occur': 'BINARY'
+    }
+
     def __init__(self, pyi_homepath, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
-        # Dict to map ModuleGraph node types to TOC typecodes
-        self.typedict = {
-            'Module': 'PYMODULE',
-            'SourceModule': 'PYMODULE',
-            'CompiledModule': 'PYMODULE',
-            'Package': 'PYMODULE',
-            'Extension': 'EXTENSION',
-            'Script': 'PYSOURCE',
-            'BuiltinModule': 'BUILTIN',
-            'MissingModule': 'MISSING',
-            'does not occur': 'BINARY'
-        }
         # Homepath to the place where is PyInstaller located.
         self._homepath = pyi_homepath
         # modulegraph Node for the main python script that is analyzed
