@@ -1,4 +1,5 @@
 # For running tests
+wheel  # For creating .whl packages in Appveyour to avoid compiling again.
 pytest  # Testing framework.
 pytest-xdist  # Plugin allowing running tests in parallel.
 pytest-timeout # Plugin to abort hanging tests.
