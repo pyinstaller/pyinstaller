@@ -98,7 +98,8 @@ install:
   # pip will build them from source using the MSVC compiler matching the
   # target Python version and architecture
   # TODO check if Appveyour deletes 'wheel' directory when cache is invalidated.
-  - ps: If ( -not (Test-Path "C:/wheel") )  {$env:CMD_IN_ENV "pip wheel --wheel-dir C:/wheel -r tests/requirements.txt"}
+  #- ps: If ( -not (Test-Path "C:/wheel") )  {$env:CMD_IN_ENV "pip wheel --wheel-dir C:/wheel -r tests/requirements.txt"}
+  - "IF NOT EXIST C:/wheel %CMD_IN_ENV% pip wheel --wheel-dir C:/wheel -r tests/requirements.txt"
 
   # Install the PyInstaller test dependencies.
   # Use cached .whl packages.
