@@ -384,6 +384,12 @@ class EXE(Target):
                        strip_binaries=self.strip, upx_binaries=self.upx,
                        )
         self.dependencies = self.pkg.dependencies
+
+        # Get the path of the bootloader and store it in a TOC, so it
+        # can be checked for being changed.
+        exe = self._bootloader_file('run', '.exe' if is_win or is_cygwin else '')
+        self.exefiles = TOC([(os.path.basename(exe), exe, 'EXECUTABLE')])
+
         self.__postinit__()
 
     _GUTS = (# input parameters
@@ -405,6 +411,7 @@ class EXE(Target):
             ('upx', _check_guts_eq),
             ('mtm', None,),  # checked below
             # no calculated/analysed values
+            ('exefiles', _check_guts_toc),
             )
 
     def _check_guts(self, data, last_build):
@@ -435,7 +442,7 @@ class EXE(Target):
             return True
         return False
 
-    def _bootloader_file(self, exe):
+    def _bootloader_file(self, exe, extension=None):
         """
         Pick up the right bootloader file - debug, console, windowed.
         """
@@ -449,6 +456,8 @@ class EXE(Target):
         # run_d   - contains verbose messages in console.
         if self.debug:
             exe = exe + '_d'
+        if extension:
+            exe = exe + extension
         bootloader_file = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
         logger.info('Bootloader %s' % bootloader_file)
         return bootloader_file
@@ -459,10 +468,7 @@ class EXE(Target):
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
         outf = open(self.name, 'wb')
-        exe = self._bootloader_file('run')
-        if is_win or is_cygwin:
-            exe = exe + '.exe'
-
+        exe = self.exefiles[0][1]  # pathname of bootloader
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
@@ -576,10 +582,17 @@ class DLL(EXE):
     purpose process DLL so the Python support in their app is hidden. You will
     need to write your own dll.
     """
+
+    def _bootloader_file(self, dummy, dummy_extension):
+        # Return the path to the inprocsrvr-dll
+        # Input parameter `dummy` is ignored, since this is always called
+        # by `EXE.__init__()` with "run"
+        return super(DLL, self)._bootloader_file('inprocsrvr', '.dll')
+
     def assemble(self):
         logger.info("Building DLL %s", self.tocbasename)
         outf = open(self.name, 'wb')
-        dll = self._bootloader_file('inprocsrvr') + '.dll'
+        dll = self.exefiles[0][1]  # pathname of inprocsrvr-dll
         if not os.path.exists(dll):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
         self.copy(dll, outf)
