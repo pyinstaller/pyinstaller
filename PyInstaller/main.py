@@ -88,6 +88,10 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
             parser.error('Requires at least one scriptname file '
                          'or exactly one .spec-file')
 
+        # Print PyInstaller version as the first line to stdout.
+        # This helps identify PyInstaller version when users report issues.
+        logger.info('PyInstaller version %s' % get_version())
+
 
         # TODO find better way how to pass path to manage.py to django hook.
         # Django hook requires this variable.
