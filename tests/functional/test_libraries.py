@@ -11,14 +11,14 @@
 import os
 import pytest
 
-from PyInstaller.utils.tests import importorskip, skipif_py2
+from PyInstaller.utils.tests import importorskip, xfail_py2
 
 
 # Directory with data for some tests.
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 
-@skipif_py2
+@xfail_py2
 @importorskip('django')
 # Django test might sometimes hang.
 @pytest.mark.timeout(timeout=7*60)
