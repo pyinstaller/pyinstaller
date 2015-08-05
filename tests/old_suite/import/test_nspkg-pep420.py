@@ -11,6 +11,8 @@
 
 import sys
 if not getattr(sys, 'frozen', None):
+    # When running un-frozen, add extend the path like `pathex` does
+    # in the .spec-file.
     import os
     import glob
     sys.path.extend(glob.glob(
