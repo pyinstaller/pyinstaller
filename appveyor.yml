@@ -44,15 +44,14 @@ environment:
       WAF_ARGS: "--gcc"
 
 cache:
-  # Cache downloaded pip packages
-  #- "%LOCALAPPDATA%\\pip" -> tests\requirements.txt
-  - "%LOCALAPPDATA%\\pip"
-  # Cache pywin32 packages - downloading again and again is unreliable and
-  # causes some failures
-  - C:\downloads
   # Cache created Python .whl packages to avoid compiling them again.
   # .whl packages will be recreated only if ./tests/requirements.txt has changed.
   - C:\wheels -> tests\requirements.txt
+  # Cache downloaded pip packages
+  - %LOCALAPPDATA%\\pip -> tests\requirements.txt
+  # Cache pywin32 packages - downloading again and again is unreliable and
+  # causes some failures
+  - C:\downloads
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -102,12 +101,11 @@ install:
   # pip will build them from source using the MSVC compiler matching the
   # target Python version and architecture
   # TODO check if Appveyour deletes 'wheel' directory when cache is invalidated.
-  #- ps: If ( -not (Test-Path "C:/wheel") )  {$env:CMD_IN_ENV "pip wheel --wheel-dir C:/wheel -r tests/requirements.txt"}
-  - "IF NOT EXIST C:/wheel %CMD_IN_ENV% pip wheel --wheel-dir C:/wheel -r tests/requirements.txt"
+  - "IF NOT EXIST C:/wheels %CMD_IN_ENV% pip wheel --wheel-dir C:/wheels -r tests/requirements.txt"
 
   # Install the PyInstaller test dependencies.
   # Use cached .whl packages.
-  - "%CMD_IN_ENV% pip install --no-index --find-links C:\\wheel -r tests/requirements.txt"
+  - "%CMD_IN_ENV% pip install --no-index --find-links C:\\wheels -r tests/requirements.txt"
 
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
