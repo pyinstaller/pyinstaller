@@ -93,6 +93,10 @@ install:
   - "%CMD_IN_ENV% easy_install C:\\downloads\\%PYWIN_FILENAME%"
 
   # Create .whl packages from dependencies for possible caching.
+  # First install 'wheel' package to be able create .whl files.
+  - "%CMD_IN_ENV% pip install wheel"
+
+  # Create .whl packages from dependencies for possible caching.
   # If some dependencies contain
   # compiled extensions and are not provided as pre-built wheel packages,
   # pip will build them from source using the MSVC compiler matching the
