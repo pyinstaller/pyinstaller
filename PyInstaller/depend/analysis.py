@@ -206,7 +206,7 @@ class PyiModuleGraph(ModuleGraph):
                     code_dict[node.identifier] = node.code
         return code_dict
 
-    def make_a_TOC(self, typecode=[], existing_TOC=None):
+    def make_a_TOC(self, typecode=None, existing_TOC=None):
         """
         Return the name, path and type of selected nodes as a TOC, or appended
         to a TOC. The selection is via a list of PyInstaller TOC typecodes.
@@ -236,16 +236,12 @@ class PyiModuleGraph(ModuleGraph):
 
             # get node type e.g. Script
             mg_type = type(node).__name__
-            if mg_type is None:
-                continue # some nodes are not typed?
+            assert mg_type is not None
             # translate to the corresponding TOC typecode, or leave as-is
             toc_type = self.typedict.get(mg_type, mg_type)
-            # Does the caller care about the typecode?
-            if len(typecode):
-                # Caller cares, so if there is a mismatch, skip this one
-                if not (toc_type in typecode):
-                    continue
-            # else: caller doesn't care, return ModuleGraph type in typecode
+            if typecode and not (toc_type in typecode):
+                # Type is not a to be selected one, skip this one
+                continue
             # Extract the identifier and a path if any.
             if mg_type == 'Script':
                 # for Script nodes only, identifier is a whole path
