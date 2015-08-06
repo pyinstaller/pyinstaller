@@ -180,7 +180,7 @@ class PyiModuleGraph(ModuleGraph):
         """
         code_dict = {}
         mod_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package'])
-        for node in self.flatten():
+        for node in self.flatten(start=self._top_script_node):
             # TODO This is terrible. To allow subclassing, types should never be
             # directly compared. Use isinstance() instead, which is safer,
             # simpler, and accepts sets. Most other calls to type() in the
@@ -211,7 +211,7 @@ class PyiModuleGraph(ModuleGraph):
         module_filter = re.compile(regex_str)
 
         result = existing_TOC or TOC()
-        for node in self.flatten():
+        for node in self.flatten(start=self._top_script_node):
             # TODO This is terrible. Everything in Python has a type. It's
             # nonsensical to even speak of "nodes [that] are not typed." How
             # would that even occur? After all, even "None" has a type! (It's
@@ -411,11 +411,11 @@ class FakeModule(object):
         # starting at that node. Put Extension names in binaries.
         self.binaries = []
         self.imports = []
-        for impnode in graph.flatten(None,node) :
+        for impnode in graph.flatten(start=node):
             if type(impnode).__name__ != 'Extension' :
-                self.imports.append([impnode.identifier,1,0,-1])
+                self.imports.append([impnode.identifier, 1, 0, -1])
             else:
-                self.binaries.append( [(impnode.identifier, impnode.filename, 'BINARY')] )
+                self.binaries.append([(impnode.identifier, impnode.filename, 'BINARY')])
         # Private members to collect changes.
         self._added_imports = []
         self._deleted_imports = []
