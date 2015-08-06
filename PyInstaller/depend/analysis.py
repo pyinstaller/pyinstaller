@@ -120,8 +120,15 @@ class PyiModuleGraph(ModuleGraph):
         of unrelated trees,
         """
         if self._top_script_node is None:
+            nodes_without_parent = [x for x in self.flatten()]
             # Remember the node for the first script.
             self._top_script_node = super(PyiModuleGraph, self).run_script(pathname)
+            # Create references from top_script to current modules in graph.
+            # These modules without parents are dependencies that are necessary
+            # for base_library.zip.
+            for node in nodes_without_parent:
+                self.createReference(self._top_script_node, node)
+            # Return top-level script node.
             return self._top_script_node
         else:
             return super(PyiModuleGraph, self).run_script(pathname, caller=self._top_script_node)
