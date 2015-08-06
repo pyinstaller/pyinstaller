@@ -9,8 +9,9 @@
 
 
 import os
+from pkg_resources import Requirement
 
-from PyInstaller.utils.hooks.hookutils import qt5_menu_nib_dir
+from PyInstaller.utils.hooks.hookutils import qt5_menu_nib_dir, exec_statement
 from PyInstaller.compat import getsitepackages, is_darwin, is_win
 
 
@@ -26,10 +27,14 @@ if is_win:
 hiddenimports = ['sip', 'PyQt5.Qt']
 
 
-# For Qt to work on Mac OS X it is necessary to include directory qt_menu.nib.
+# For Qt<5.4 to work on Mac OS X it is necessary to include `qt_menu.nib`.
 # This directory contains some resource files necessary to run PyQt or PySide
 # app.
-if is_darwin:
+qt_version = exec_statement("""
+from PyQt5.QtCore import QT_VERSION_STR
+print(QT_VERSION_STR)
+""")
+if is_darwin and qt_version in Requirement.parse("QT<5.4"):
     datas = [
         (qt5_menu_nib_dir(), ''),
     ]
