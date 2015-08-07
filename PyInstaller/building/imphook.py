@@ -18,13 +18,13 @@ import glob
 import os.path
 
 from .. import log as logging
-from ..compat import importlib_load_source
+from ..compat import importlib_load_source, UserDict
 from ..utils.misc import get_code_object
 
 logger = logging.getLogger(__name__)
 
 
-class HooksCache(collections.UserDict):
+class HooksCache(UserDict):
     """
     Implements cache of module list for which there exists a hook.
     It allows to iterate over import hooks and remove them.
@@ -34,7 +34,7 @@ class HooksCache(collections.UserDict):
         :param hooks_path: File name where to load hook from.
         """
         # Initializes self.data that contains the real dictionary.
-        super(HooksCache, self).__init__()
+        UserDict.__init__(self)
         self._load_file_list(hooks_path)
 
     def _load_file_list(self, path):
@@ -63,7 +63,7 @@ class HooksCache(collections.UserDict):
                 del self.data[n]
 
 
-class AdditionalFilesCache(collections.UserDict):
+class AdditionalFilesCache(UserDict):
     """
     Cache for storing what binaries and datas were pushed by what modules
     when import hooks were processed.

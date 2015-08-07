@@ -89,10 +89,17 @@ else:
     safe_repr = ascii
 
 # UserList class is moved to 'collections.UserList in Python 3.
-if is_py2:
-    from UserList import UserList
-else:
+try:
     from collections import UserList
+except ImportError:
+    from UserList import UserList
+
+# UserDict class is moved to 'collections.UserDict in Python 3.
+try:
+    from collections import UserDict
+except ImportError:
+    # PyInstaller needs iterable dist  'for a in dict'
+    from UserDict import IterableUserDict as UserDict
 
 
 # Correct extension ending: 'c' or 'o'
@@ -480,3 +487,6 @@ else:
         'sre_parse',
         'weakref',
     ])
+
+
+
