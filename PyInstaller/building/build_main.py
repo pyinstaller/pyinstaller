@@ -329,8 +329,18 @@ class Analysis(Target):
         #    b. no new hook was applied in the 'while' iteration.
         #
         logger.info('Looking for import hooks ...')
-        module_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package',
-                            'Extension', 'Script', 'BuiltinModule'])
+        # TODO find out what modules we do not need.
+        module_types = set([
+            # Special nodes.
+            'AliasNode', 'Script', 'RuntimeModule',
+            # BaseModule nodes.
+            'BuiltinModule', 'SourceModule', 'InvalidSourceModule',
+            'CompiledModule', 'InvalidCompiledModule' 'Package',
+            # Package nodes.
+            'Package', 'NamespacePackage', 'Extension',
+            # Deprecated in modulegraph:
+            'FlatPackage', 'ArchiveModule',
+            ])
         hooks_cache = HooksCache(get_importhooks_dir())
         # Custom import hooks
         if self.hookspath:
