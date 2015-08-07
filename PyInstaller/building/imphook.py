@@ -63,6 +63,27 @@ class HooksCache(collections.UserDict):
                 del self.data[n]
 
 
+class AdditionalFilesCache(collections.UserDict):
+    """
+    Cache for storing what binaries and datas were pushed by what modules
+    when import hooks were processed.
+    """
+    def add(self, modname, binaries, datas):
+        self.data[modname] = {'binaries': binaries, 'datas': datas}
+
+    def binaries(self, modname):
+        """
+        Return list of binaries for given module name.
+        """
+        return self.data[modname]['binaries']
+
+    def datas(self, modname):
+        """
+        Return list of datas for given module name.
+        """
+        return self.data[modname]['datas']
+
+
 # TODO Simplify this class and drop useless code.
 # TODO This class should raise exceptions on external callers attempting to
 # modify class attributes (e.g., a hook attempting to set "mod.datas = []").

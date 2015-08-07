@@ -38,7 +38,8 @@ from PyInstaller.depend.utils import create_py3_base_library
 from PyInstaller.archive import pyz_crypto
 from PyInstaller.utils import misc
 from ..configure import get_importhooks_dir
-from .imphook import HooksCache, ImportHook
+from .imphook import AdditionalFilesCache, HooksCache, ImportHook
+from .toc_conversion import DependencyProcessor
 
 if is_win:
     from PyInstaller.utils.win32 import winmanifest
@@ -329,7 +330,7 @@ class Analysis(Target):
         #    b. no new hook was applied in the 'while' iteration.
         #
         logger.info('Looking for import hooks ...')
-        # TODO find out what modules we do not need.
+        # TODO find out what module types we do not need.
         module_types = set([
             # Special nodes.
             'AliasNode', 'Script', 'RuntimeModule',
@@ -345,6 +346,11 @@ class Analysis(Target):
         # Custom import hooks
         if self.hookspath:
             hooks_cache.add_custom_paths(self.hookspath)
+        # Cache with attitional 'datas' and 'binaries' that were
+        # NOTE: This cache is necessary to later decide if those files belong to
+        #       to module which is reachable for top-level script. Or if these
+        #       files belong to a module from dead branch of the graph.
+        additional_files_cache = AdditionalFilesCache()
 
         while True:
             # This ensures that import hooks get applied only once.
@@ -353,25 +359,21 @@ class Analysis(Target):
             # Iterate over hooks in cache.
             for imported_name in hooks_cache:
 
-                # Skip hook if no module for it is in the graph or the node is not
-                # the right type.
+                # Skip hook if no module for it is in the graph.
                 from_node = self.graph.findNode(imported_name)
-                node_type = type(from_node).__name__
                 if from_node is None:
                     continue
-                elif node_type not in module_types:
+                # Skip hook if not the right Node type.
+                node_type = type(from_node).__name__
+                if node_type not in module_types:
                     continue
 
                 # Import hook module from a file.
                 imphook_object = ImportHook(imported_name, hooks_cache[imported_name])
                 # Expad module dependency graph.
                 imphook_object.update_dependencies(self.graph)
-                # Update self.binaries and self.datas by files found in import hook.
-                # TODO do this at once all hooks after they are applied and only for those modules that are reachable from top-level script.
-                for a, b in imphook_object.binaries:
-                    self.binaries.append((a, b, 'BINARY'))
-                for a, b in imphook_object.datas:
-                    self.datas.append((a, b, 'DATA'))
+                # Update cache of binaries and datas.
+                additional_files_cache.add(imported_name, imphook_object.binaries, imphook_object.datas)
 
                 # Append applied hooks to the list 'applied_hooks'.
                 # These will be removed after the inner loop finishs.
@@ -389,6 +391,12 @@ class Analysis(Target):
                 hooks_cache.remove(applied_hooks)
                 # Run again - reset list 'applied_hooks'.
                 applied_hooks = []
+
+
+        # Update 'binaries' TOC and 'datas' TOC.
+        deps_proc = DependencyProcessor(self.graph, additional_files_cache)
+        self.binaries.extend(deps_proc.make_binaries_toc())
+        self.datas.extend(deps_proc.make_datas_toc())
 
 
         # Analyze run-time hooks.
