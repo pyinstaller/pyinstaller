@@ -403,20 +403,6 @@ class Analysis(Target):
             except :
                 logger.error("Hidden import %r not found", modnm)
 
-        # # TODO move code for handling hooks into a class or function.
-        # ### Handle hooks.
-        #
-        # hooks_mod_cache = {}
-        # # PyInstaller import hooks.
-        # hooks_pathes = [get_importhooks_dir()]
-        # if self.hookspath:
-        #     # Custom import hooks
-        #     hooks_pathes.extend(self.hookspath)
-        # for pth in hooks_pathes:
-        #     hooks_file_list = glob.glob(os.path.join(pth, 'hook-*.py'))
-        #     for f in hooks_file_list:
-        #         name = os.path.basename(f)[5:-3]
-        #         hooks_mod_cache[name] = os.path.abspath(f)
 
         ### Handle hooks.
         #
@@ -454,12 +440,8 @@ class Analysis(Target):
                     continue
 
                 # Import hook module from a file.
-                hook_filename = hooks_cache[imported_name]
-                # TODO use this object more.
-                imphook_object = ImportHook(imported_name, hook_filename)
-                # hook_name_space represents the code of 'hook-imported_name.py'
-                logger.info('Processing hook   %s' % os.path.basename(hook_filename))
-                hook_name_space = importlib_load_source('pyi_hook.'+imported_name, hook_filename)
+                imphook_object = ImportHook(imported_name, hooks_cache[imported_name])
+                hook_name_space = imphook_object._module
 
                 ### Processing hook API.
 

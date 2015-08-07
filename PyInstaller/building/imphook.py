@@ -17,7 +17,17 @@ import collections
 import glob
 import os.path
 
+from ..compat import importlib_load_source
+from .. import log as logging
 
+logger = logging.getLogger(__name__)
+
+
+class HooksCache(collections.UserDict):
+    """
+    Implements cache of module list for which there exists a hook.
+    It allows to iterate over import hooks and remove them.
+    """
 class HooksCache(collections.UserDict):
     """
     Implements cache of module list for which there exists a hook.
@@ -65,16 +75,12 @@ class ImportHook(object):
         """
         :param hook_filename: File name where to load hook from.
         """
-        pass
-        # TODO
-        pass
-
-    def load(self):
-        """
-        Load hook from file and parse and interpret it's content.
-        """
-        # TODO
-        pass
+        logger.info('Processing hook   %s' % os.path.basename(hook_filename))
+        self._name = modname
+        self._filename = hook_filename
+        # _module represents the code of 'hook-modname.py'
+        # Load hook from file and parse and interpret it's content.
+        self._module = importlib_load_source('pyi_hook.'+self._name, self._filename)
 
     def update_dependencies(self, mod_graph):
         """
