@@ -493,9 +493,9 @@ class Analysis(Target):
                     # push hidden imports into the graph, as if imported from name
                     for item in hook_name_space.hiddenimports:
                         try:
-                            to_node = self.graph.findNode(item)
-                            if to_node is None:
-                                self.graph.import_hook(item, from_node)
+                            # Do not try to first find out if a module by that name already exist.
+                            # Rely on modulegraph to handle that properly.
+                            self.graph.import_hook(item, caller=from_node)
                         except ImportError:
                             # Print warning if a module from hiddenimport could not be found.
                             # modulegraph raises ImporError when a module is not found.
@@ -518,9 +518,11 @@ class Analysis(Target):
                                 referers = self.graph.getReferers(excluded_node)
 
                                 for r in referers:
-                                    r_type = type(r).__name__
-                                    if r_type in module_types:  # Analyze only relevant types.
-                                        if r.identifier.startswith(imported_name):
+                                    # Remove references to all modules from 'excludedimports'
+                                    # and even submodules.
+                                    not_allowed_references = [imported_name] + hook_name_space.excludedimports
+                                    for not_allowed in not_allowed_references:
+                                        if r.identifier.startswith(not_allowed):
                                             logger.debug('Removing reference %s' % r.identifier)
                                             # Contains prefix of 'imported_name' - remove reference.
                                             self.graph.removeReference(r, excluded_node)
