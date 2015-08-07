@@ -16,7 +16,6 @@ NOTE: All global variables, classes and imported modules create API
 """
 
 
-import copy
 import glob
 import os
 import shutil
@@ -32,16 +31,15 @@ from PyInstaller.utils.misc import absnormpath
 from PyInstaller.compat import is_py2, is_win, PYDYLIB_NAMES
 from PyInstaller.compat import importlib_load_source
 from PyInstaller.depend import bindepend
-from PyInstaller.depend.analysis import PyiModuleGraph, FakeModule, initialize_modgraph
+from PyInstaller.depend.analysis import FakeModule, initialize_modgraph
 from PyInstaller.building.api import PYZ, EXE, DLL, COLLECT, MERGE
 from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
 from PyInstaller.depend.utils import create_py3_base_library
 from PyInstaller.archive import pyz_crypto
 from PyInstaller.utils import misc
-from PyInstaller.utils.misc import save_py_data_struct, load_py_data_struct
-from PyInstaller.lib.modulegraph.find_modules import get_implies
 from ..configure import get_importhooks_dir
+from .imphook import HooksCache, ImportHook
 
 if is_win:
     from PyInstaller.utils.win32 import winmanifest
@@ -405,25 +403,24 @@ class Analysis(Target):
             except :
                 logger.error("Hidden import %r not found", modnm)
 
-        # TODO move code for handling hooks into a class or function.
+        # # TODO move code for handling hooks into a class or function.
+        # ### Handle hooks.
+        #
+        # hooks_mod_cache = {}
+        # # PyInstaller import hooks.
+        # hooks_pathes = [get_importhooks_dir()]
+        # if self.hookspath:
+        #     # Custom import hooks
+        #     hooks_pathes.extend(self.hookspath)
+        # for pth in hooks_pathes:
+        #     hooks_file_list = glob.glob(os.path.join(pth, 'hook-*.py'))
+        #     for f in hooks_file_list:
+        #         name = os.path.basename(f)[5:-3]
+        #         hooks_mod_cache[name] = os.path.abspath(f)
+
         ### Handle hooks.
-
-        logger.info('Looking for import hooks ...')
-        # Implement cache of modules for which there exists a hook.
-        hooks_mod_cache = {}  # key - module name, value - path to hook directory.
-        # PyInstaller import hooks.
-        hooks_pathes = [get_importhooks_dir()]
-        if self.hookspath:
-            # Custom import hooks
-            hooks_pathes.extend(self.hookspath)
-        for pth in hooks_pathes:
-            hooks_file_list = glob.glob(os.path.join(pth, 'hook-*.py'))
-            for f in hooks_file_list:
-                name = os.path.basename(f)[5:-3]
-                hooks_mod_cache[name] = os.path.abspath(f)
-
-        # TODO simplify this loop - functions, etc.
-        ### Iterate over import hooks and update ModuleGraph as needed.
+        #
+        # Iterate over import hooks and update ModuleGraph as needed.
         #
         # 1. Iterate in infinite 'while' loop.
         # 2. Apply all possible hooks in one 'while' iteration.
@@ -432,13 +429,20 @@ class Analysis(Target):
         #    a. hooks cache is empty
         #    b. no new hook was applied in the 'while' iteration.
         #
+        logger.info('Looking for import hooks ...')
         module_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package',
                             'Extension', 'Script', 'BuiltinModule'])
+        hooks_cache = HooksCache(get_importhooks_dir())
+        # Custom import hooks
+        if self.hookspath:
+            hooks_cache.add_custom_paths(self.hookspath)
+
         while True:
+            # This ensures that import hooks get applied only once.
             applied_hooks = []  # Empty means no hook was applied.
 
             # Iterate over hooks in cache.
-            for imported_name, hook_file_name in hooks_mod_cache.items():
+            for imported_name in hooks_cache:
 
                 # Skip hook if no module for it is in the graph or the node is not
                 # the right type.
@@ -449,11 +453,13 @@ class Analysis(Target):
                 elif node_type not in module_types:
                     continue
 
-                logger.info('Processing hook   %s' % os.path.basename(hook_file_name))
-
                 # Import hook module from a file.
+                hook_filename = hooks_cache[imported_name]
+                # TODO use this object more.
+                imphook_object = ImportHook(imported_name, hook_filename)
                 # hook_name_space represents the code of 'hook-imported_name.py'
-                hook_name_space = importlib_load_source('pyi_hook.'+imported_name, hook_file_name)
+                logger.info('Processing hook   %s' % os.path.basename(hook_filename))
+                hook_name_space = importlib_load_source('pyi_hook.'+imported_name, hook_filename)
 
                 ### Processing hook API.
 
@@ -510,6 +516,7 @@ class Analysis(Target):
                                 # might reference the module. Remove those references too.
                                 safe_to_remove = True
                                 referers = self.graph.getReferers(excluded_node)
+
                                 for r in referers:
                                     r_type = type(r).__name__
                                     if r_type in module_types:  # Analyze only relevant types.
@@ -567,8 +574,7 @@ class Analysis(Target):
             else:
                 # Remove applied hooks from the cache - its not
                 # necessary apply then again.
-                for imported_name in applied_hooks:
-                    del hooks_mod_cache[imported_name]
+                hooks_cache.remove(applied_hooks)
                 # Run again - reset list 'applied_hooks'.
                 applied_hooks = []
 
