@@ -38,7 +38,7 @@ import os
 import re
 
 from PyInstaller.building.datastruct import TOC
-from ..utils.misc import load_py_data_struct, get_code_object
+from ..utils.misc import load_py_data_struct
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..lib.modulegraph.find_modules import get_implies
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES
@@ -112,7 +112,7 @@ class PyiModuleGraph(ModuleGraph):
                 os.path.join(graph_hook_dir, 'hook-*.py'))
         }
 
-    def run_script(self, pathname):
+    def run_script(self, pathname, caller=None):
         """
         Wrap the parent's 'run_script' method and create graph from the first
         script in the analysis, and save its node to use as the "caller" node
@@ -131,7 +131,11 @@ class PyiModuleGraph(ModuleGraph):
             # Return top-level script node.
             return self._top_script_node
         else:
-            return super(PyiModuleGraph, self).run_script(pathname, caller=self._top_script_node)
+            if not caller:
+                # Defaults to as any additional script is called from the top-level
+                # script.
+                caller = self._top_script_node
+            return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
 
     def _import_module(self, partname, fqname, parent):
         """
@@ -342,159 +346,6 @@ class PyiModuleGraph(ModuleGraph):
         return rthooks_nodes
 
 
-# TODO This class should raise exceptions on external callers attempting to
-# modify class attributes (e.g., a hook attempting to set "mod.datas = []").
-# This has been the source of numerous difficult-to-debug issues. The simplest
-# means of ensuring this would be to:
-#
-# * Prefix all attribute names by "_" (e.g., renaming "datas" to "_datas").
-# * Define one @property-decorated getter (but not setter) for each such
-#   attribute, thus permitting access but prohibiting modification.
-# TODO There is no method resembling info() in the ModuleGraph class. Correct
-# the docstring below.
-class FakeModule(object):
-    """
-    A **mod** (i.e., metadata describing external assets to be frozen with an
-    imported module).
-
-    Mods are both passed to and returned from the `hook(mod)` functions of
-    `hook-{module_name}.py` files. Mods are constructed before the call from
-    `ModuleGraph` info. Changes to mods are propagated back to the current graph
-    and related data structures.
-
-    .. NOTE::
-       Mods are *only* used for communication with hooks.
-
-    Attributes
-    ----------
-    Hook functions may access but *not* modify the following attributes:
-
-    __file__ : str
-        Absolute path of this module's Python file. (Unlike all other
-        attributes, hook functions may modify this attribute.)
-    __path__ : str
-        Absolute path of this module's parent directory.
-    name : str
-        This module's `.`-delimited name (e.g., `six.moves.tkinter`).
-    co : code
-        Code object compiled from the contents of `__file__` (e.g., via the
-        `compile()` builtin).
-    datas : list
-        List of associated data files.
-    imports : list
-        List of things this module imports.
-    binaries : list
-        List of `(name, path, 'BINARY')` tuples or TOC objects.
-    """
-
-    def __init__(self, identifier, graph):
-        # Go into the module graph and get the node for this identifier.
-        # It should always exist because the caller should be working
-        # from the graph itself, or a TOC made from the graph.
-        node = graph.findNode(identifier)
-        assert(node is not None) # should not occur
-        # TODO: Rename self.name into self.__name__, like normal
-        # modules have
-        self.name = identifier
-        self.__name__ = identifier
-        # keep a pointer back to the original node
-        self.node = node
-        # keep a pointer back to the original graph
-        self.graph = graph
-        # Add the __file__ member
-        self.__file__ = node.filename
-        # Add the __path__ member which is either None or, if
-        # the node type is Package, a list of one element, the
-        # path string to the package directory -- just like a mod.
-        # Note that if the hook changes it, it will change in the node proper.
-        self.__path__ = node.packagepath
-        # Stick in the .co (compiled code) member. One hook (hook-distutiles)
-        # wants to change both __path__ and .co. TODO: HOW HANDLE?
-        self.co = node.code
-        # Create the datas member as an empty list
-        self.datas = []
-        # Add the binaries and imports lists and populate with names.
-        # The node imports whatever is reachable in the graph
-        # starting at that node. Put Extension names in binaries.
-        self.binaries = []
-        self.imports = []
-        for impnode in graph.flatten(start=node):
-            if type(impnode).__name__ != 'Extension' :
-                self.imports.append([impnode.identifier, 1, 0, -1])
-            else:
-                self.binaries.append([(impnode.identifier, impnode.filename, 'BINARY')])
-        # Private members to collect changes.
-        self._added_imports = []
-        self._deleted_imports = []
-        self._added_binaries = []
-
-    def add_import(self,names):
-        """
-        Add all Python modules whose `.`-delimited names are in the passed list
-        as "hidden imports" upon which the current module depends.
-
-        The passed argument may be either a list of module names *or* a single
-        module name.
-        """
-        if not isinstance(names, list):
-            names = [names]  # Allow passing string or list.
-        self._added_imports.extend(names) # save change to implement in graph later
-        for name in names:
-            self.imports.append([name,1,0,-1]) # make change visible to caller
-
-    def del_import(self,names):
-        """
-        Remove all Python modules whose `.`-delimited names are in the passed
-        list from the set of imports (either hidden or visible) upon which the
-        current module depends.
-
-        The passed argument may be either a list of module names *or* a single
-        module name.
-        """
-        # just save to implement in graph later
-        if not isinstance(names, list):
-            names = [names]  # Allow passing string or list.
-        self._deleted_imports.extend(names)
-
-    def add_binary(self,list_of_tuples):
-        """
-        Add all external dynamic libraries in the passed list of TOC-style
-        3-tuples as dependencies of the current module.
-
-        The third element of each such tuple *must* be `BINARY`.
-        """
-        for item in list_of_tuples:
-            self._added_binaries.append(item)
-            self.binaries.append(item)
-
-    def add_data(self, list_of_tuples):
-        """
-        Add all external data files in the passed list of TOC-style 3-tuples as
-        dependencies of the current module.
-
-        The third element of each such tuple *must* be `DATA`.
-        """
-        self.datas.extend(list_of_tuples)
-
-    def retarget(self, path_to_new_code):
-        """
-        Recompile this module's code object as the passed Python file.
-
-        This method is intended to "retarget" unfreezable modules into simpler
-        versions well-suited to being frozen. This is especially useful for
-        **venvs** (i.e., virtual environments), which frequently override
-        default modules with wrappers poorly suited to being frozen.
-        """
-        # Keep the original filename in the fake code object.
-        new_code = get_code_object(path_to_new_code, new_filename=self.node.filename)
-        # Update node.
-        # TODO Need to update many attributes more, e.g. node.globalnames.
-        # Perhaps it's better to replace the node
-        self.node.code = new_code
-        self.node.filename = path_to_new_code
-        # Update dependencies in the graph.
-        self.graph._scan_code(new_code, self.node)
-
 
 
 def initialize_modgraph():
@@ -505,7 +356,7 @@ def initialize_modgraph():
     :return: PyiModuleGraph object with basic dependencies.
     """
     logger.info('Initializing module dependency graph...')
-    graph = PyiModuleGraph(HOMEPATH, implies=get_implies())
+    graph = PyiModuleGraph(HOMEPATH, implies=get_implies(), debug=1)
 
     if not is_py2:
         logger.info('Analyzing base_library.zip ...')
