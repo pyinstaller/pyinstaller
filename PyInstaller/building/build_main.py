@@ -530,10 +530,29 @@ class Analysis(Target):
                                             # Other modules reference the implicit import - DO NOT remove it.
                                             logger.debug('Excluded import %s referenced by module %s' % (item, r.identifier))
                                             safe_to_remove = False
-                                # Remove the implicit module from graph in order to not be further analyzed.
-                                # If no other modules reference the implicit import the it is safe to remove
-                                # that module from the graph.
+                                # If no other modules reference the excluded_node then it is safe to remove
+                                # that module and its submodules from the graph.
+                                # NOTE: Removing modules from graph will keep some dead branches that
+                                #       are not reachable from the top-level script.
+                                # TODO Find out a way to remove unreachable branches in the graph.
                                 if safe_to_remove:
+                                    submodule_list = set()
+                                    # First find submodules.
+                                    for subnode in self.graph.nodes():
+                                        if subnode.identifier.startswith(excluded_node.identifier + '.'):
+                                            submodule_list.add(subnode)
+                                    # Remove references to those submodules.
+                                    for mod in submodule_list:
+                                        mod_referers = self.graph.getReferers(mod)
+                                        for mod_ref in mod_referers:
+                                            self.graph.removeReference(mod_ref, mod)
+                                    # Remove submodules of the excluded_node.
+                                    for mod in submodule_list:
+                                        logger.debug("Removing import '%s'" % mod.identifier)
+                                        self.graph.removeNode(mod)
+                                    #if type(excluded_node).__name__ == 'Package':
+                                    #self.graph.foldReferences(excluded_node)
+                                    # Last remove the top-level module.
                                     self.graph.removeNode(excluded_node)
                             else:
                                 logger.info("Excluded import '%s' not found" % item)
