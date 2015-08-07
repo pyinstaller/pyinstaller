@@ -256,6 +256,9 @@ class Analysis(Target):
         # plus our loader, plus other paths from e.g. --path option).
         self.graph.path = self.pathex + self.graph.path
 
+        # Analyze the script's hidden imports (named on the command line)
+        self.graph.add_hiddenimports(self.hiddenimports)
+
 
         logger.info("running Analysis %s", self.tocbasename)
         # Get paths to Python and, in Windows, the manifest.
@@ -303,19 +306,6 @@ class Analysis(Target):
         for script in self.inputs:
             logger.info("Analyzing %s", script)
             priority_scripts.append(self.graph.run_script(script))
-
-        # Analyze the script's hidden imports (named on the command line)
-        for modnm in self.hiddenimports:
-            logger.debug('Hidden import: %s' % modnm)
-            if self.graph.findNode(modnm) is not None:
-                logger.debug('Hidden import %r already found', modnm)
-                continue
-            logger.info("Analyzing hidden import %r", modnm)
-            # ModuleGraph throws Import Error if import not found
-            try :
-                node = self.graph.import_hook(modnm)
-            except :
-                logger.error("Hidden import %r not found", modnm)
 
 
         ### Handle hooks.

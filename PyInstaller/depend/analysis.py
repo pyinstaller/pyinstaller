@@ -309,6 +309,7 @@ class PyiModuleGraph(ModuleGraph):
         return [importer.identifier for importer in iter_inc]
 
 
+    # TODO create class from this function.
     def analyze_runtime_hooks(self, custom_runhooks):
         """
         Analyze custom run-time hooks and run-time hooks implied by found modules.
@@ -344,6 +345,25 @@ class PyiModuleGraph(ModuleGraph):
                     rthooks_nodes.append(self.run_script(path))
 
         return rthooks_nodes
+
+    def add_hiddenimports(self, module_list):
+        """
+        Add hidden imports that are either supplied as CLI option --hidden-import=MODULENAME
+        or as dependencies from some PyInstaller features when enabled (e.g. crypto feature).
+        """
+        # Analyze the script's hidden imports (named on the command line)
+        for modnm in module_list:
+            logger.debug('Hidden import: %s' % modnm)
+            if self.findNode(modnm) is not None:
+                logger.debug('Hidden import %r already found', modnm)
+                continue
+            logger.info("Analyzing hidden import %r", modnm)
+            # ModuleGraph throws ImportError if import not found
+            try :
+                node = self.import_hook(modnm)
+            except ImportError:
+                logger.error("Hidden import %r not found", modnm)
+
 
 
 
