@@ -34,7 +34,7 @@ def test_django(pyi_builder, monkeypatch):
     pyi_builder.test_script(script, app_name='django_site', app_args=['check'])
 
 
-pytest.mark.xfail(is_win, reason='onefile mode known to fail on Windows')
+@pytest.mark.xfail(is_win, reason='onefile mode known to fail on Windows')
 def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
 
