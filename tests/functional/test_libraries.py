@@ -32,3 +32,7 @@ def test_django(pyi_builder, monkeypatch):
     # executable.
     pyi_builder.test_script(script, app_name='django_site', app_args=['check'])
 
+
+def test_tkinter(pyi_builder):
+    pyi_builder.test_script('pyi_lib_tkinter.py')
+
