@@ -337,27 +337,22 @@ class ImportHook(object):
                                 logger.debug('Excluded import %s referenced by module %s' % (item, r.identifier))
                                 safe_to_remove = False
                     # If no other modules reference the excluded_node then it is safe to remove
-                    # that module and its submodules from the graph.
-                    # NOTE: Removing modules from graph will keep some dead branches that
-                    #       are not reachable from the top-level script.
-                    # TODO Find out a way to remove unreachable branches in the graph.
+                    # all references to excluded_node and its all submodules.
+                    # NOTE: Removing references from graph will keep some dead branches that
+                    #       are not reachable from the top-level script. But import hoosks
+                    #       for modules in dead branches will get processed!
+                    # TODO Find out a way to remove unreachable branches in the graph. - Create a new graph object that will be constructed just from the top-level script?
                     if safe_to_remove:
                         submodule_list = set()
                         # First find submodules.
                         for subnode in mod_graph.nodes():
                             if subnode.identifier.startswith(excluded_node.identifier + '.'):
                                 submodule_list.add(subnode)
-                        # Remove references to those submodules.
+                        # Then remove references to those submodules.
                         for mod in submodule_list:
                             mod_referers = mod_graph.getReferers(mod)
                             for mod_ref in mod_referers:
                                 mod_graph.removeReference(mod_ref, mod)
-                        # Remove submodules of the excluded_node.
-                        for mod in submodule_list:
-                            logger.debug("Removing import '%s'" % mod.identifier)
-                            mod_graph.removeNode(mod)
-                        # Last remove the top-level module.
-                        mod_graph.removeNode(excluded_node)
                 else:
                     logger.info("Excluded import '%s' not found" % item)
             except ImportError:
