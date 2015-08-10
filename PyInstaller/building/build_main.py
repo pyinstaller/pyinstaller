@@ -383,10 +383,21 @@ class Analysis(Target):
                 applied_hooks = []
 
 
+
         # Update 'binaries' TOC and 'datas' TOC.
         deps_proc = DependencyProcessor(self.graph, additional_files_cache)
         self.binaries.extend(deps_proc.make_binaries_toc())
         self.datas.extend(deps_proc.make_datas_toc())
+
+
+        ### Look for dlls that are imported by Python 'ctypes' module.
+        # First get code objects of all modules that import 'ctypes'.
+        logger.info('Looking for ctypes DLLs - TODO')
+        ctypes_code_objs = self.graph.get_co_using_ctypes()  # dict like:  {'module1': code_obj, 'module2': code_obj}
+        for m in ctypes_code_objs:
+            logger.debug('  %s' % m)
+        # TODO Use function PyInstaller.depend.utils:scan_code_for_ctypes() to get dlls that might be needed.
+        # TODO add dlls found in ctypes to self.binaries.
 
 
         # Analyze run-time hooks.

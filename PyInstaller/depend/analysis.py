@@ -365,7 +365,24 @@ class PyiModuleGraph(ModuleGraph):
                 logger.error("Hidden import %r not found", modnm)
 
 
+    def get_co_using_ctypes(self):
+        """
+        Find modules that imports Python module 'ctypes'.
 
+        Modules that imports 'ctypes' probably load a dll that might be required
+        for bundling with the executable. The usual way to load a DLL is using:
+            ctypes.CDLL('libname')
+            ctypes.cdll.LoadLibrary('libname')
+
+        :return: Code objects that might be scanned for module dependencies.
+        """
+        co_dict = {}
+        node = self.findNode('ctypes')
+        if node:
+            referers = self.getReferers(node)
+            for r in referers:
+                co_dict[r.identifier] = r.code
+        return co_dict
 
 
 def initialize_modgraph():
