@@ -191,7 +191,6 @@ def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
 
-@xfail_py2
 def test_stderr_encoding(tmpdir, pyi_builder):
     # NOTE: '-s' option to pytest disables output capturing, changing this test's result:
     # without -s: py.test process changes its own stdout encoding to 'UTF-8' to
@@ -201,8 +200,15 @@ def test_stderr_encoding(tmpdir, pyi_builder):
     #             OEM codepage. spawned subprocess has the same encoding. test passes.
     #
     with open(os.path.join(tmpdir.strpath, 'stderr_encoding.build'), 'w') as f:
-        if sys.stderr.isatty():
-            enc = sys.stderr.encoding
+        if is_py2:
+            if sys.stderr.isatty() and is_win:
+                enc = str(sys.stderr.encoding)
+            else:
+                # In Python 2 on Mac OS X and Linux 'sys.stderr.encoding' is set to None.
+                # On Windows when running in non-interactive terminal it is None.
+                enc = 'None'
+        elif sys.stderr.isatty():
+            enc = str(sys.stderr.encoding)
         else:
             # For non-interactive stderr use locale encoding - ANSI codepage.
             # This fixes the test when running with py.test and capturing output.
@@ -211,13 +217,19 @@ def test_stderr_encoding(tmpdir, pyi_builder):
     pyi_builder.test_script('pyi_stderr_encoding.py')
 
 
-@xfail_py2
 def test_stdout_encoding(tmpdir, pyi_builder):
     with open(os.path.join(tmpdir.strpath, 'stdout_encoding.build'), 'w') as f:
-        if sys.stdout.isatty():
-            enc = sys.stdout.encoding
+        if is_py2:
+            if sys.stdout.isatty() and is_win:
+                enc = str(sys.stdout.encoding)
+            else:
+                # In Python 2 on Mac OS X and Linux 'sys.stdout.encoding' is set to None.
+                # On Windows when running in non-interactive terminal it is None.
+                enc = 'None'
+        elif sys.stdout.isatty():
+            enc = str(sys.stdout.encoding)
         else:
-            # For non-interactive stdout use locale encoding - ANSI codepage.
+            # For non-interactive stderr use locale encoding - ANSI codepage.
             # This fixes the test when running with py.test and capturing output.
             enc = locale.getpreferredencoding(False)
         f.write(enc)
