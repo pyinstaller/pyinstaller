@@ -17,6 +17,8 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 import os
 import shutil
 import tempfile
+import pkgutil
+import sys
 
 from PyInstaller import is_win, is_darwin, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
@@ -97,15 +99,35 @@ class PYZ(Target):
         return False
 
 
-    def __compile(self, modname, filename):
+    def __get_code(self, modname, filename):
         """
-        Compile a module to a code-object.
+        Get the code-object for a module.
         """
         # This is a extra-simple version for compiling a module. It's
         # not worth spending more effort here, as it is only used in
         # the rare case if outXX-Analysis.toc exists, but
         # outXX-PYZ.toc does not,
-        # TODO: Use some modulegraph function if available
+
+        def load_code(modname, filename):
+            path_item = os.path.dirname(filename)
+            if os.path.basename(filename).startswith('__init__.py'):
+                # this is a package
+                path_item = os.path.dirname(path_item)
+            if os.path.basename(path_item) == '__pycache__':
+                path_item = os.path.dirname(path_item)
+            importer = pkgutil.get_importer(path_item)
+            package, _, modname = modname.rpartition('.')
+
+            if sys.version_info >= (3,3) and hasattr(importer, 'find_loader'):
+                loader, portions = importer.find_loader(modname)
+            else:
+                loader = importer.find_module(modname)
+                portions = []
+
+            assert loader and hasattr(loader, 'get_code')
+            logger.debug('Compiling %s', filename)
+            return loader.get_code(modname)
+
         try:
             if filename in ('-', None):
                 # This is a NamespacePackage, modulegraph marks them
@@ -113,13 +135,13 @@ class PYZ(Target):
                 # so check for None, too, to be forward-compatible.)
                 logger.debug('Compiling namespace package %s', modname)
                 txt = '#\n'
+                return compile(txt, filename, 'exec')
             else:
                 logger.debug('Compiling %s', filename)
-                assert filename.endswith('.py')
-                txt = open(filename, 'rU').read() + '\n'
-            return compile(txt, filename, 'exec')
-        except (IOError, OSError):
-            raise ValueError("Source file %s is missing" % filename)
+                co = load_code(modname, filename)
+                if not co:
+                    raise ValueError("Module file %s is missing" % filename)
+                return co
         except SyntaxError as e:
             print("Syntax error in ", filename)
             print(e.args)
@@ -132,7 +154,7 @@ class PYZ(Target):
         toc = self.toc - self.dependencies
         for entry in toc:
             if not entry[0] in self.code_dict:
-                self.code_dict[entry[0]] = self.__compile(entry[0], entry[1])
+                self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])
         pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
         pyz.build(self.name, toc)
 
