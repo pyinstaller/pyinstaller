@@ -391,6 +391,7 @@ def initialize_modgraph():
     :return: PyiModuleGraph object with basic dependencies.
     """
     logger.info('Initializing module dependency graph...')
+    # `get_implies()` are hidden-imports known by modulgraph.
     graph = PyiModuleGraph(HOMEPATH, implies=get_implies(), debug=0)
 
     if not is_py2:
