@@ -9,25 +9,14 @@ Originally (loosely) based on code in py2exe's build_exe.py by Thomas Heller.
 """
 from __future__ import absolute_import
 
-# TODO Most of this module no longer appears to be used, with exception of the
-# find_needed_modules() function called by the
-# depend.utils.create_py3_base_library() function. That's unfortunate, as most
-# of this module still appears to be relevant to Python 3. For example, the
-# plat_prepare() function excluded modules irrelevant to the current OS and
-# hence guaranteed to not be found (e.g., "winreg" under Linux). Either:
-#
-# * This module should be removed entirely and the find_needed_modules()
-#   function moved into the "depend.utils" module *OR*
-# * This module should be resurrected to actually do something meaningful.
-
 import sys
 import os
 import imp
 import warnings
 
-import PyInstaller.lib.modulegraph.modulegraph as modulegraph
-from PyInstaller.lib.modulegraph.modulegraph import Alias, Script, Extension
-from PyInstaller.lib.modulegraph.util import imp_find_module
+import modulegraph.modulegraph as modulegraph
+from modulegraph.modulegraph import Alias, Script, Extension
+from modulegraph.util import imp_find_module
 
 __all__ = [
     'find_modules', 'parse_mf_results'

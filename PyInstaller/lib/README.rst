@@ -63,9 +63,10 @@ macholib
 modulegraph
 -----------
 
-- We use customized version of ModuleGraph from
-  https://bitbucket.org/leycec/modulegraph/src/1e8f74ef92a5d
-  which inclused Python3-specific SWIG Support
+https://bitbucket.org/ronaldoussoren/modulegraph/downloads
 
-- TODO: Use the official version when customized version is merged
-  https://bitbucket.org/ronaldoussoren/modulegraph/pull-request/7/mark-namespace-packages-as-such-by/diff
+- add fixed version string to ./modulegraph/__init__.py::
+
+    # For PyInstaller/lib/ define the version here, since there is no
+    # package-resource.
+    __version__ = '0.12.1'
