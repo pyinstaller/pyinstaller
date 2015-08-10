@@ -18,6 +18,11 @@ a = Analysis([__testname__ + '.py'],
              hiddenimports=[],
              hookspath=None,
              runtime_hooks=None)
+
+# This is an additional test: Remove the code-object, modulegraph
+# created for. This must be compiler again.
+del a.pure._code_cache['nspkg1.bbb.zzz']
+
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
