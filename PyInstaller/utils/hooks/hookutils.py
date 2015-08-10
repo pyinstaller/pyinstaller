@@ -40,32 +40,25 @@ PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
 hook_variables = {}
 
 
-def __exec_python_cmd(cmd):
+def __exec_python_cmd(cmd, env={}):
     """
     Executes an externally spawned Python interpreter and returns
     anything that was emitted in the standard output as a single
     string.
     """
     from ...config import CONF
-    # TODO pass PYTHONPATH env. variable as option 'env' in the subprocess.Popen function.
     # Prepend PYTHONPATH with pathex
     # Some functions use some PyInstaller code in subprocess so add
     # PyInstaller HOMEPATH to sys.path too.
     pp = os.pathsep.join(CONF['pathex'] + [HOMEPATH])
-    old_pp = compat.getenv('PYTHONPATH')
-    if old_pp:
-        pp = os.pathsep.join([old_pp, pp])
-    compat.setenv("PYTHONPATH", pp)
+    # PYTHONPATH might be already defined in the 'env' argument. Prepend it.
+    if 'PYTHONPATH' in env:
+        pp = os.pathsep.join([env.get('PYTHONPATH'), pp])
+    env['PYTHONPATH'] = pp
     try:
-        try:
-            txt = compat.exec_python(*cmd)
-        except OSError as e:
-            raise SystemExit("Execution failed: %s" % e)
-    finally:
-        if old_pp is not None:
-            compat.setenv("PYTHONPATH", old_pp)
-        else:
-            compat.unsetenv("PYTHONPATH")
+        txt = compat.exec_python(*cmd, env=env)
+    except OSError as e:
+        raise SystemExit("Execution failed: %s" % e)
     return txt.strip()
 
 
@@ -77,7 +70,7 @@ def exec_statement(statement):
     return __exec_python_cmd(cmd)
 
 
-def exec_script(script_filename, *args):
+def exec_script(script_filename, *args, env={}):
     """
     Executes a Python script in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a
@@ -93,13 +86,9 @@ def exec_script(script_filename, *args):
                           "hookutils.exec-script must be located in "
                           "the `PyInstaller/utils/hooks/subproc` directory.")
 
-    # Scripts might be importing some modules. Add PyInstaller code to pathex.
-    #pyinstaller_root_dir = os.path.dirname(os.path.abspath(PyInstaller.__path__[0]))
-    #PyInstaller.__pathex__.append(pyinstaller_root_dir)
-
     cmd = [script_filename]
     cmd.extend(args)
-    return __exec_python_cmd(cmd)
+    return __exec_python_cmd(cmd, env=env)
 
 
 def eval_statement(statement):
@@ -110,8 +99,8 @@ def eval_statement(statement):
     return eval(txt)
 
 
-def eval_script(scriptfilename, *args):
-    txt = exec_script(scriptfilename, *args).strip()
+def eval_script(scriptfilename, *args, env={}):
+    txt = exec_script(scriptfilename, *args, env=env).strip()
     if not txt:
         # return an empty string which is "not true" but iterable
         return ''
@@ -473,6 +462,7 @@ def qt5_qml_plugins_binaries(dir):
                 f, 'BINARY'))
     return binaries
 
+
 def django_dottedstring_imports(django_root_dir):
     """
     Get all the necessary Django modules specified in settings.py.
@@ -480,10 +470,6 @@ def django_dottedstring_imports(django_root_dir):
     In the settings.py the modules are specified in several variables
     as strings.
     """
-    package_name = os.path.basename(django_root_dir)
-    # TODO Pass this env. variable as option 'env' in the subprocess.Popen function.
-    compat.setenv('DJANGO_SETTINGS_MODULE', '%s.settings' % package_name)
-
     pths = []
     # Extend PYTHONPATH with parent dir of django_root_dir.
     pths.append(misc.get_path_to_toplevel_modules(django_root_dir))
@@ -491,11 +477,10 @@ def django_dottedstring_imports(django_root_dir):
     # Many times Django users do not specify absolute imports in the settings module.
     pths.append(django_root_dir)
 
-    ret = eval_script('django_import_finder.py', paths=pths)
-
-    # Unset environment variables again.
-    # TODO Pass this env. variable as option 'env' in the subprocess.Popen function.
-    compat.unsetenv('DJANGO_SETTINGS_MODULE')
+    package_name = os.path.basename(django_root_dir) + '.settings'
+    env = {'DJANGO_SETTINGS_MODULE': package_name,
+           'PYTHONPATH': os.pathsep.join(pths)}
+    ret = eval_script('django_import_finder.py', env=env)
 
     return ret
 

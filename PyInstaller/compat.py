@@ -267,13 +267,13 @@ def unsetenv(name):
 # Exec commands in subprocesses.
 
 
-def exec_command(*cmdargs):
+def exec_command(*cmdargs, **kwargs):
     """
     Wrap creating subprocesses
 
     Return stdout of the invoked command.
     """
-    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
+    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
     # Let' suppose that stdout/stderr will contain only utf-8 or ascii
