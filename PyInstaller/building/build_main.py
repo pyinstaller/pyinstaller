@@ -23,26 +23,26 @@ import sys
 
 
 # Relative imports to PyInstaller modules.
-from PyInstaller import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
-from PyInstaller import compat
-from PyInstaller import log as logging
-from PyInstaller.building.utils import _check_guts_toc_mtime
-from PyInstaller.utils.misc import absnormpath
-from PyInstaller.compat import is_py2, is_win, PYDYLIB_NAMES
-from PyInstaller.depend import bindepend
-from PyInstaller.depend.analysis import initialize_modgraph
-from PyInstaller.building.api import PYZ, EXE, DLL, COLLECT, MERGE
-from PyInstaller.building.osx import BUNDLE
-from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
-from PyInstaller.depend.utils import create_py3_base_library
-from PyInstaller.archive import pyz_crypto
-from PyInstaller.utils import misc
-from ..configure import get_importhooks_dir
+from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
+from .. import compat
+from .. import log as logging
+from ..utils.misc import absnormpath
+from ..compat import is_py2, is_win, PYDYLIB_NAMES
+from ..depend import bindepend
+from ..depend.analysis import initialize_modgraph
+from .api import PYZ, EXE, DLL, COLLECT, MERGE
+from .datastruct import TOC, Target, Tree, _check_guts_eq
 from .imphook import AdditionalFilesCache, HooksCache, ImportHook
+from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
+from .utils import _check_guts_toc_mtime
+from ..depend.utils import create_py3_base_library
+from ..archive import pyz_crypto
+from ..utils.misc import get_path_to_toplevel_modules, get_unicode_modules, mtime
+from ..configure import get_importhooks_dir
 
 if is_win:
-    from PyInstaller.utils.win32 import winmanifest
+    from ..utils.win32 import winmanifest
 
 logger = logging.getLogger(__name__)
 
@@ -143,22 +143,10 @@ class Analysis(Target):
                 raise ValueError("script '%s' not found" % script)
             self.inputs.append(script)
 
-        self.pathex = []
-
-        # Based on main supplied script - add top-level modules directory to PYTHONPATH.
-        # Sometimes the main app script is not top-level module but submodule like 'mymodule.mainscript.py'.
-        # In that case PyInstaller will not be able find modules in the directory containing 'mymodule'.
-        # Add this directory to PYTHONPATH so PyInstaller could find it.
-        for script in scripts:
-            script_toplevel_dir = misc.get_path_to_toplevel_modules(script)
-            if script_toplevel_dir:
-                self.pathex.append(script_toplevel_dir)
-                logger.info('Extending PYTHONPATH with %s', script_toplevel_dir)
-
-        # Normalize paths in pathex and make them absolute.
-        if pathex:
-            self.pathex += [absnormpath(path) for path in pathex]
-
+        self.pathex = self._extend_pathex(pathex,scripts)
+        # Set global config variable 'pathex' to make it available for hookutils and
+        # import hooks. Ppath extensions for module search.
+        CONF['pathex'] = self.pathex
 
         self.hiddenimports = hiddenimports or []
         # Include modules detected when parsing options, like 'codecs' and encodings.
@@ -208,11 +196,36 @@ class Analysis(Target):
             # TODO: Need to add "dependencies"?
             )
 
+    def _extend_pathex(self, spec_pathex, scripts):
+        """
+        Normalize additional paths where PyInstaller will look for modules and
+        add paths with scripts to the list of paths.
+
+        :param spec_pathex: Additional paths defined defined in .spec file.
+        :param scripts: Scripts to create executable from.
+        :return: list of updated paths
+        """
+        # Based on main supplied script - add top-level modules directory to PYTHONPATH.
+        # Sometimes the main app script is not top-level module but submodule like 'mymodule.mainscript.py'.
+        # In that case PyInstaller will not be able find modules in the directory containing 'mymodule'.
+        # Add this directory to PYTHONPATH so PyInstaller could find it.
+        pathex = []
+        # Add scripts paths first.
+        for script in scripts:
+            script_toplevel_dir = get_path_to_toplevel_modules(script)
+            if script_toplevel_dir:
+                pathex.append(script_toplevel_dir)
+                logger.info('Extending PYTHONPATH with %s', script_toplevel_dir)
+        # Append paths from .spec.
+        pathex.extend(spec_pathex)
+        # Normalize paths in pathex and make them absolute.
+        return [absnormpath(p) for p in pathex]
+
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
             return True
         for fnm in self.inputs:
-            if misc.mtime(fnm) > last_build:
+            if mtime(fnm) > last_build:
                 logger.info("Building because %s changed", fnm)
                 return True
         # Now we know that none of the input parameters and none of
@@ -624,7 +637,7 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
         CONF['hiddenimports'] = []
     # Test unicode support.
     if not ascii:
-        CONF['hiddenimports'].extend(misc.get_unicode_modules())
+        CONF['hiddenimports'].extend(get_unicode_modules())
 
     # FIXME: this should be a global import, but can't due to recursive imports
     # If configuration dict is supplied - skip configuration step.

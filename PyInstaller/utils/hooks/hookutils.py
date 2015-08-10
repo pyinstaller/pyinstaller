@@ -46,11 +46,12 @@ def __exec_python_cmd(cmd):
     anything that was emitted in the standard output as a single
     string.
     """
+    from ...config import CONF
     # TODO pass PYTHONPATH env. variable as option 'env' in the subprocess.Popen function.
     # Prepend PYTHONPATH with pathex
     # Some functions use some PyInstaller code in subprocess so add
     # PyInstaller HOMEPATH to sys.path too.
-    pp = os.pathsep.join(PyInstaller.__pathex__ + [HOMEPATH])
+    pp = os.pathsep.join(CONF['pathex'] + [HOMEPATH])
     old_pp = compat.getenv('PYTHONPATH')
     if old_pp:
         pp = os.pathsep.join([old_pp, pp])
@@ -93,8 +94,8 @@ def exec_script(script_filename, *args):
                           "the `PyInstaller/utils/hooks/subproc` directory.")
 
     # Scripts might be importing some modules. Add PyInstaller code to pathex.
-    pyinstaller_root_dir = os.path.dirname(os.path.abspath(PyInstaller.__path__[0]))
-    PyInstaller.__pathex__.append(pyinstaller_root_dir)
+    #pyinstaller_root_dir = os.path.dirname(os.path.abspath(PyInstaller.__path__[0]))
+    #PyInstaller.__pathex__.append(pyinstaller_root_dir)
 
     cmd = [script_filename]
     cmd.extend(args)
@@ -483,13 +484,14 @@ def django_dottedstring_imports(django_root_dir):
     # TODO Pass this env. variable as option 'env' in the subprocess.Popen function.
     compat.setenv('DJANGO_SETTINGS_MODULE', '%s.settings' % package_name)
 
+    pths = []
     # Extend PYTHONPATH with parent dir of django_root_dir.
-    PyInstaller.__pathex__.append(misc.get_path_to_toplevel_modules(django_root_dir))
+    pths.append(misc.get_path_to_toplevel_modules(django_root_dir))
     # Extend PYTHONPATH with django_root_dir.
     # Many times Django users do not specify absolute imports in the settings module.
-    PyInstaller.__pathex__.append(django_root_dir)
+    pths.append(django_root_dir)
 
-    ret = eval_script('django_import_finder.py')
+    ret = eval_script('django_import_finder.py', paths=pths)
 
     # Unset environment variables again.
     # TODO Pass this env. variable as option 'env' in the subprocess.Popen function.

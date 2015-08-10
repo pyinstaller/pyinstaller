@@ -40,6 +40,7 @@ configdir
 hasUPX
 hiddenimports
 noconfirm
+pathex
 ui_admin
 ui_access
 upx_dir

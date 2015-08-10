@@ -74,11 +74,6 @@ if compat.machine():
     PLATFORM += '-' + compat.machine()
 
 
-# path extensions for module seach
-# FIXME this should not be a global variable
-__pathex__ = []
-
-
 def get_version():
     version = '%s.%s' % (VERSION[0], VERSION[1])
     if VERSION[2]:

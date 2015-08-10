@@ -356,6 +356,7 @@ if is_py2:
         """Completes ctypes BINARY entries for modules with their full path.
         """
         from ctypes.util import find_library
+        from ..config import CONF
 
         if is_unix:
             envvar = "LD_LIBRARY_PATH"
@@ -365,7 +366,7 @@ if is_py2:
             envvar = "PATH"
 
         def _setPaths():
-            path = os.pathsep.join(PyInstaller.__pathex__)
+            path = os.pathsep.join(CONF['pathex'])
             old = compat.getenv(envvar)
             if old is not None:
                 path = os.pathsep.join((path, old))
