@@ -55,7 +55,6 @@ def test_email(pyi_builder):
     pyi_builder.test_script('pyi_email.py')
 
 
-@xfail_py2
 @importorskip('Crypto')
 def test_feature_crypto(pyi_builder):
     pyi_builder.test_script('pyi_feature_crypto.py', pyi_args=['--key=test_key'])
@@ -69,7 +68,6 @@ def test_filename(pyi_builder):
     pyi_builder.test_script('pyi_filename.py')
 
 
-@xfail_py2
 def test_getfilesystemencoding(pyi_builder):
     pyi_builder.test_script('pyi_getfilesystemencoding.py')
 

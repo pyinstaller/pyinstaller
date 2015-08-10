@@ -21,14 +21,14 @@ if sys.platform.startswith('win'):
 # On Mac OS X the value should be still the same.
 elif sys.platform.startswith('darwin'):
     encoding = 'utf-8'
-# On Linux and other unixes it should be None.
-# Please note that on Linux the value differs from the value
-# in interactive shell.
+# On Linux and other unixes it should be usually 'utf-8'
 else:
-    if sys.version_info[0] < 3:
-        encoding = 'None'
+    # For Python 2 the bootloader sets encoding explicitly.
+    # It should be 'UTF-8'.
+    if sys.version_info[0] == 2:
+        encoding = 'UTF-8'
+    # Python 3 reports encoding 'utf-8'.
     else:
-        # Python 3 reports encoding 'utf-8'.
         encoding = 'utf-8'
 
 
