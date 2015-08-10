@@ -18,8 +18,7 @@ import subprocess
 import pytest
 
 from PyInstaller.compat import architecture, is_darwin, is_win, is_py2
-from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, \
-    xfail_py2, skipif_notwin
+from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, skipif_notwin
 
 # Directory with data for some tests.
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
