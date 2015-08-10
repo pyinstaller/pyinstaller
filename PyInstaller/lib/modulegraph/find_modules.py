@@ -14,9 +14,9 @@ import os
 import imp
 import warnings
 
-import modulegraph.modulegraph as modulegraph
-from modulegraph.modulegraph import Alias, Script, Extension
-from modulegraph.util import imp_find_module
+from . import modulegraph
+from .modulegraph import Alias, Script, Extension
+from .util import imp_find_module
 
 __all__ = [
     'find_modules', 'parse_mf_results'

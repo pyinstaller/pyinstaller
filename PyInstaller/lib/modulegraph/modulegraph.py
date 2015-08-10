@@ -27,8 +27,8 @@ from altgraph import GraphError
 
 from itertools import count
 
-from modulegraph import util
-from modulegraph import zipio
+from . import util
+from . import zipio
 
 if sys.version_info[0] == 2:
     from StringIO import StringIO as BytesIO
