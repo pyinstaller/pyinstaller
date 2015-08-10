@@ -80,7 +80,6 @@ def test_module__file__attribute(pyi_builder):
     pyi_builder.test_script('pyi_module__file__attribute.py')
 
 
-@xfail_py2
 def test_module_attributes(tmpdir, pyi_builder):
     # Create file in tmpdir with path to python executable and if it is running
     # in debug mode.

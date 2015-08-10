@@ -47,8 +47,13 @@ def exec_python(pycode):
 
 
 def compare(test_name, expect, frozen):
-    # Modules in Python might contain attr '__cached__' - add it to the frozen list.
-    if '__cached__' not in frozen:
+    # Modules in Python 2 do not have '__loader__' attribute but
+    # PyInstaller causes that __loader__ is in module attribues.
+    # Remove it for Python 2.
+    if sys.version_info[0] == 2 and '__loader__' in frozen:
+        frozen.remove('__loader__')
+    # Modules in Python 3 contain attr '__cached__' - add it to the frozen list.
+    if sys.version_info[0] == 3 and '__cached__' not in frozen:
         frozen.append('__cached__')
     # Modules in Python 3.3 contain attr '__initializing__'.
     if sys.version_info[0:2] == (3, 3):
