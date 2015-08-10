@@ -42,23 +42,21 @@ __pycache__/
 # NB: You can still add .spec-files to be tracked using `git add`
 /tests/**/*.spec
 
-# /tests/basic/
-/tests/basic/python_exe.build
+# /tests/old_suite/basic/
+/tests/old_suite/basic/python_exe.build
 
-# /tests/basic/ctypes/
-/tests/basic/ctypes/testctypes.dylib
-/tests/basic/ctypes/testctypes.so
-/tests/basic/ctypes/testctypes-win.dll
-/tests/basic/ctypes/testctypes-win.exp
-/tests/basic/ctypes/testctypes-win.obj
-/tests/basic/ctypes/testctypes-win.lib
+# /tests/old_suite/basic/ctypes/
+/tests/old_suite/basic/ctypes/testctypes.dylib
+/tests/old_suite/basic/ctypes/testctypes.so
+/tests/old_suite/basic/ctypes/testctypes-win.dll
+/tests/old_suite/basic/ctypes/testctypes-win.exp
+/tests/old_suite/basic/ctypes/testctypes-win.obj
+/tests/old_suite/basic/ctypes/testctypes-win.lib
 
-# /tests/libraries/
-/tests/libraries/tinysample.png
-/tests/libraries/test_xml.spec
-/tests/basic/test_absolute_ld_library_path.spec
-/tests/basic/test_absolute_python_path.spec
-/tests/libraries/test_sqlalchemy.spec
+tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
+
+# /tests/old_suite/libraries/
+/tests/old_suite/libraries/tinysample.png
 
 /old/e2etests/common/hanoi[1-9]
 
