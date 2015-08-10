@@ -393,7 +393,7 @@ def initialize_modgraph():
     :return: PyiModuleGraph object with basic dependencies.
     """
     logger.info('Initializing module dependency graph...')
-    graph = PyiModuleGraph(HOMEPATH, implies=get_implies(), debug=1)
+    graph = PyiModuleGraph(HOMEPATH, implies=get_implies(), debug=0)
 
     if not is_py2:
         logger.info('Analyzing base_library.zip ...')
