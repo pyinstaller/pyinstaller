@@ -102,11 +102,12 @@ class PYZ(Target):
     def __get_code(self, modname, filename):
         """
         Get the code-object for a module.
+
+        This is a extra-simple version for compiling a module. It's
+        not worth spending more effort here, as it is only used in the
+        rare case if outXX-Analysis.toc exists, but outXX-PYZ.toc does
+        not.
         """
-        # This is a extra-simple version for compiling a module. It's
-        # not worth spending more effort here, as it is only used in
-        # the rare case if outXX-Analysis.toc exists, but
-        # outXX-PYZ.toc does not,
 
         def load_code(modname, filename):
             path_item = os.path.dirname(filename)
@@ -154,6 +155,8 @@ class PYZ(Target):
         toc = self.toc - self.dependencies
         for entry in toc:
             if not entry[0] in self.code_dict:
+                # For some reason the code-object, modulegraph created
+                # is not available. Recreate it
                 self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])
         pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
         pyz.build(self.name, toc)
