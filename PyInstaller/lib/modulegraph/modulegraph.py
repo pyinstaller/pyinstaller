@@ -22,8 +22,9 @@ import re
 from collections import deque, namedtuple
 import ast
 
-from altgraph.ObjectGraph import ObjectGraph
-from altgraph import GraphError
+# PyInstaller: Customized imports to 'altgraph' living next to 'modulegraph'.
+from ..altgraph.ObjectGraph import ObjectGraph
+from ..altgraph import GraphError
 
 from itertools import count
 

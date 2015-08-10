@@ -19,12 +19,12 @@ In libraries replace imports like::
     from modulegraph import z
     import ordlookup
 
-with PyInstaller prefix::
+with relative prefix::
 
-    from PyInstaller.lib.macholib import x
-    from PyInstaller.lib.altgraph import y
-    from PyInstaller.lib.modulegraph import z
-    import PyInstaller.lib.ordlookup as ordlookup
+    from ..macholib import x
+    from ..altgraph import y
+    from ..modulegraph import z
+    from . import ordlookup
 
 
 pefile
