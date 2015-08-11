@@ -26,6 +26,9 @@
 #define _WIN32_WINNT 0x0502
 
 
+// TODO: use safe string functions
+#define _CRT_SECURE_NO_WARNINGS 1
+
 #include <windows.h>
 #include <commctrl.h>  // InitCommonControls
 #include <stdio.h>  // _fileno

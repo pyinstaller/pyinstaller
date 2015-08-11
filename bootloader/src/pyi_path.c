@@ -13,6 +13,8 @@
  * Path manipulation utilities.
  */
 
+// TODO: use safe string functions
+#define _CRT_SECURE_NO_WARNINGS 1
 
 #ifdef _WIN32
     #include <windows.h>  // GetModuleFileNameW

@@ -10,6 +10,9 @@
 
 #include "pyi_python.h"
 
+// TODO: use safe string functions
+#define _CRT_SECURE_NO_WARNINGS 1
+
 /*
 This file implements Python 2.7 compatible wrappers for functions
 expecting "char *" here their Python3-counter-part expects "wchar_t *".
