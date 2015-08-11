@@ -75,3 +75,6 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 
 # Mac OS X
 .DS_store
+
+# Windows debug symbols
+*.pdb

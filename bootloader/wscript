@@ -347,8 +347,14 @@ def configure(ctx):
     ### C Compiler optimizations.
 
     if ctx.options.debug:
-        # Include gcc debugging information for debugging in GDB.
-        ctx.env.append_value('CFLAGS', '-g')
+        if is_win and ctx.env.CC_NAME == 'msvc':
+            # Include information for debugging in MSVC/msdebug
+            ctx.env.append_value('CFLAGS', '/Z7')
+            ctx.env.append_value('CFLAGS', '/Od')
+            ctx.env.append_value('LINKFLAGS', '/DEBUG')
+        else:
+            # Include gcc debugging information for debugging in GDB.
+            ctx.env.append_value('CFLAGS', '-g')
     else:
         ctx.env.append_value('CFLAGS', '-O2')
 
