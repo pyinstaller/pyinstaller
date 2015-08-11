@@ -273,6 +273,7 @@ def test_pywin32_win32ui(pyi_builder):
     pyi_builder.test_script('pyi_pywin32_win32ui.py')
 
 
+@pytest.mark.path_encoding
 def test_ascii_path(pyi_builder):
     distdir = pyi_builder._distdir
     dd_ascii = distdir.encode('ascii', 'replace').decode('ascii')
@@ -281,7 +282,9 @@ def test_ascii_path(pyi_builder):
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
+
 @skipif_win
+@pytest.mark.path_encoding
 def test_osx_linux_unicode_path(pyi_builder):
     # Mac and Linux should handle 'unicode' type filenames without problem.
     distdir = pyi_builder._distdir
@@ -293,6 +296,7 @@ def test_osx_linux_unicode_path(pyi_builder):
 
 
 @skipif_notwin
+@pytest.mark.path_encoding
 def test_win_codepage_path(pyi_builder):
     distdir = pyi_builder._distdir
     # Create some bytes and decode with the current codepage to get a filename that
@@ -313,6 +317,7 @@ else:
     _noncp_path_reason = "Bootloader sets sys.argv using ANSI argv on Python 3"
 
 @skipif_notwin
+@pytest.mark.path_encoding
 @pytest.mark.xfail(reason=_noncp_path_reason)
 def test_win_non_codepage_path(pyi_builder):
     # This test is expected to fail on python 2 as it does not have a useful result:
