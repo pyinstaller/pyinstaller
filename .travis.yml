@@ -16,11 +16,14 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
+  - "3.5-dev"
 
-# Ignore failures from OS X.
 matrix:
   allow_failures:
-  - os: osx
+      # Just tests how PyInstaller performs with upcoming Python 3.5
+      - python: "3.5-dev"
+      # Ignore failures from OS X.
+      - os: osx
 
 
 before_install:
