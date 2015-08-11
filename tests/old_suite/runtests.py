@@ -63,44 +63,13 @@ PYI_CONFIG = {}
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 
 
-class MiscDependencies(object):
-    """
-    Place holder for special requirements of some tests.
-
-    e.g. basic/test_ctypes needs C compiler.
-
-    Every method returns None when successful or a string containing
-    error message to be displayed on console.
-    """
-    def c_compiler(self):
-        """
-        Check availability of C compiler.
-        """
-        compiler = None
-        msg = 'Cannot find GCC, MinGW or Visual Studio in PATH.'
-        if is_win:
-            # Try MSVC.
-            compiler = misc.find_executable('cl')
-        if compiler is None:
-            # Try GCC.
-            compiler = misc.find_executable('gcc')
-            if compiler is None:
-                return msg
-        return None  # C compiler was found.
-
-
 class SkipChecker(object):
     """
     Check conditions if a test case should be skipped.
     """
     def __init__(self):
-        depend = MiscDependencies()
         # Required Python or OS version for some tests.
         self.MIN_VERSION_OR_OS = {
-            # On Mac DYLD_LIBRARY_PATH is not used.
-            'basic/test_absolute_ld_library_path': not is_win and not is_darwin,
-            # Old-style email.* subpackages supported only in Python 2.
-            'basic/test_email_oldstyle': is_py2,
             'import/test_onefile_pkgutil.get_data__main__': False,
             'interactive/test_onefile_win32_uac_admin': is_win,
             'libraries/test_enchant': is_win,
@@ -134,15 +103,8 @@ class SkipChecker(object):
 
         # Required Python modules for some tests.
         self.MODULES = {
-            'basic/test_codecs': ['codecs'],
-            'basic/test_module_attributes': ['xml.etree.cElementTree'],
-            'basic/test_multiprocess': ['multiprocessing'],
-            'basic/test_onefile_ctypes': ['ctypes'],
-            'basic/test_onefile_multiprocess': ['multiprocessing'],
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
-            'basic/test_onefile_win32com': ['win32com'],
             'basic/test_pkg_structures': ['pkg_resources'],
-            'basic/test_win32com': ['win32com'],
 
             'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
@@ -210,7 +172,6 @@ class SkipChecker(object):
 
         # Other dependencies of some tests.
         self.DEPENDENCIES = {
-            'basic/test_onefile_ctypes': [depend.c_compiler()],
             # Support for unzipped eggs is not yet implemented.
             # http://www.pyinstaller.org/ticket/541
             'import/test_eggs1': ['Unzipped eggs not yet implemented.'],
