@@ -21,9 +21,9 @@ import gst
 
 reg = gst.registry_get_default()
 plug = reg.find_plugin('coreelements')
-pth = plug.get_filename()
-print(('coreelements plugin: %s' % pth))
+path = plug.get_filename()
+print('coreelements plugin: %s' % path)
 
-
-if not pth.startswith(sys._MEIPASS):
-    raise SystemExit('GStreamer coreelements plugin not loaded from MEIPASS/gst_plugins.')
+if not path.startswith(sys._MEIPASS):
+    raise SystemExit('GStreamer coreelements plugin not loaded from '
+                     'MEIPASS/gst_plugins, but from %r.' % path)

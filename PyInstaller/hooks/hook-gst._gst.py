@@ -28,8 +28,8 @@ import os
 import gst
 reg = gst.registry_get_default()
 plug = reg.find_plugin('coreelements')
-pth = plug.get_filename()
-print(os.path.dirname(pth))
+path = plug.get_filename()
+print(os.path.dirname(path))
 """
     plugin_path = exec_statement(statement)
 
@@ -41,7 +41,7 @@ print(os.path.dirname(pth))
         pattern = os.path.join(plugin_path, '*.so')
 
     for f in glob.glob(pattern):
-        # 'f' contains absolute path.
+        # 'f' contains the absolute path.
         mod.binaries.append((os.path.join('gst_plugins', os.path.basename(f)),
                 f, 'BINARY'))
 
