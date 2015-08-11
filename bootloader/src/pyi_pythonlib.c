@@ -39,7 +39,7 @@
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
-
+#include "pyi_win32_utils.h"
 
 /*
  * Load the Python DLL, and get all of the necessary entry points

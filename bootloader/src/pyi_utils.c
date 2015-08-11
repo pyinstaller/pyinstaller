@@ -57,6 +57,7 @@
 #include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
+#include "pyi_win32_utils.h"
 
 /*
    global variables that are used to copy argc/argv, so that PyIstaller can manipulate them

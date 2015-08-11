@@ -42,7 +42,7 @@
 #include "pyi_archive.h"
 #include "pyi_path.h"
 #include "pyi_utils.h"
-
+#include "pyi_win32_utils.h"
 
 static HANDLE hCtx = INVALID_HANDLE_VALUE;
 static ULONG_PTR actToken;
