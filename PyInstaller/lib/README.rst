@@ -68,6 +68,7 @@ https://bitbucket.org/ronaldoussoren/modulegraph/downloads
 - TODO Use official modulegraph version when following issue is resolved and pull request merged
   https://bitbucket.org/ronaldoussoren/modulegraph/issues/28/__main__-module-being-analyzed-for-wheel
   https://bitbucket.org/ronaldoussoren/modulegraph/pull-requests/12/
+  https://bitbucket.org/ronaldoussoren/modulegraph/pull-requests/13/
 
 - add fixed version string to ./modulegraph/__init__.py::
 

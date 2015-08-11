@@ -1419,10 +1419,13 @@ class ModuleGraph(ObjectGraph):
             # reliable indicator of "SWIG-ness". The SWIG documentation states:
             # "When linking the module, the name of the output file has to match
             #  the name of the module prefixed by an underscore."
-            if caller is not None and fromlist is None and level == 0 and \
-               caller.filename.endswith('.py') and \
-               name == '_' + caller.identifier.rpartition('.')[2] and \
-               sys.version_info[0] == 3:
+            #
+            # A MissingModule is not a SWIG import candidate.
+            if caller is not None and type(caller) is not MissingModule and \
+                            fromlist is None and level == 0 and \
+                            caller.filename.endswith('.py') and \
+                            name == '_' + caller.identifier.rpartition('.')[2] and \
+                            sys.version_info[0] == 3:
                 self.msg(4, 'SWIG import candidate (name=%r, caller=%r, level=%r)' % (name, caller, level))
 
                 # TODO Define a new function util.open_text_file() performing
