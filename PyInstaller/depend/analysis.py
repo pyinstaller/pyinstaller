@@ -250,6 +250,13 @@ class PyiModuleGraph(ModuleGraph):
             else:
                 name = node.identifier
             path = node.filename if node.filename is not None else ''
+            # Ensure name is really 'str'. Module graph might return
+            # object type 'modulegraph.Alias' which inherits fromm 'str'.
+            # But 'marshal.dumps()' function is able to marshal only 'str'.
+            # Otherwise on Windows PyInstaller might fail with message like:
+            #
+            #   ValueError: unmarshallable object
+            name = str(name)
             # TOC.append the data. This checks for a pre-existing name
             # and skips it if it exists.
             result.append((name, path, toc_type))
