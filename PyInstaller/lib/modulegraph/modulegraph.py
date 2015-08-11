@@ -22,8 +22,8 @@ import re
 from collections import deque, namedtuple
 import ast
 
-from altgraph.ObjectGraph import ObjectGraph
-from altgraph import GraphError
+from ..altgraph.ObjectGraph import ObjectGraph
+from ..altgraph import GraphError
 
 from itertools import count
 
@@ -596,6 +596,8 @@ def _ast_names(names):
             result.append(nm.name)
         else:
             result.append(nm)
+
+    result = [r for r in result if r != '__main__']
     return result
 
 
