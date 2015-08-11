@@ -601,14 +601,16 @@ class GenericTestCase(unittest.TestCase):
                 msg='Test %s not found.' % self.test_name)
         self.assertTrue(b.test_building(),
                 msg='Build of %s failed.' % self.test_name)
-        retcode, stderr = b.test_exe()
-        if retcode != 0:
-            self.fail('Running exe of %s failed with return-code %s.\n\n%s' %
-                      (self.test_name, retcode, stderr))
+
         okay, msg = b.test_logs()
         if not okay:
             self.fail('Matching .toc of %s failed.\n\n%s' %
                       (self.test_name, msg))
+
+        retcode, stderr = b.test_exe()
+        if retcode != 0:
+            self.fail('Running exe of %s failed with return-code %s.\n\n%s' %
+                      (self.test_name, retcode, stderr))
 
 
 class BasicTestCase(GenericTestCase):
