@@ -33,5 +33,7 @@ def hook(mod):
         for f in ffimods:
             name = os.path.join('cryptography', os.path.basename(f))
             # TODO fix this hook to use attribute 'binaries'.
-            mod.binaries.append((name, f, 'BINARY'))
+            mod.add_binary((
+                (name, f, 'BINARY'),
+                ))
     return mod

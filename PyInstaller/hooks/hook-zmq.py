@@ -34,7 +34,8 @@ def hook(mod):
             # zmq/__init__.py will look in os.join(sys._MEIPASS, 'zmq'),
             # so libzmq has to land there.
             name = os.path.join('zmq', os.path.basename(bundled[0]))
-            # TODO fix this hook to use attribute 'binaries'.
-            mod.binaries.append((name, bundled[0], 'BINARY'))
+            mod.add_binary((
+                (name, bundled[0], 'BINARY'),
+            ))
 
     return mod
