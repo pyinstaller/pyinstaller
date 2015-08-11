@@ -8,18 +8,19 @@
 #-----------------------------------------------------------------------------
 
 
+import copy
 import glob
 import pkgutil
 import os
 import pkg_resources
 import sys
-import PyInstaller
+
 from ... import compat
 from ...compat import is_win
 from ...utils import misc
 from ... import HOMEPATH
+from ... import log as logging
 
-import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
@@ -47,6 +48,9 @@ def __exec_python_cmd(cmd, env={}):
     string.
     """
     from ...config import CONF
+    # Update environment. Defaults to 'os.environ'
+    pp_env = copy.deepcopy(os.environ)
+    pp_env.update(env)
     # Prepend PYTHONPATH with pathex
     # Some functions use some PyInstaller code in subprocess so add
     # PyInstaller HOMEPATH to sys.path too.
@@ -54,9 +58,9 @@ def __exec_python_cmd(cmd, env={}):
     # PYTHONPATH might be already defined in the 'env' argument. Prepend it.
     if 'PYTHONPATH' in env:
         pp = os.pathsep.join([env.get('PYTHONPATH'), pp])
-    env['PYTHONPATH'] = pp
+    pp_env['PYTHONPATH'] = pp
     try:
-        txt = compat.exec_python(*cmd, env=env)
+        txt = compat.exec_python(*cmd, env=pp_env)
     except OSError as e:
         raise SystemExit("Execution failed: %s" % e)
     return txt.strip()
