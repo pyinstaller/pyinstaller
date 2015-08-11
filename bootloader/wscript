@@ -365,10 +365,14 @@ def configure(ctx):
 
     ### Defines, Includes
 
-    if is_linux:
+    if ctx.env.CC_NAME != 'msvc':
         # Make sure we don't use declarations after statement. It breaks
         # MSVC (Visual Studio).
         ctx.env.append_value('CFLAGS', '-Wdeclaration-after-statement')
+
+        # Require function declarations to avoid data type length mismatches
+        # Implicit return value is 'int' which is only 32 bits on Windows.
+        ctx.env.append_value('CFLAGS', '-Wimplicit-function-declaration')
         ctx.env.append_value('CFLAGS', '-Werror')
 
     if not is_win:
