@@ -17,9 +17,6 @@ files into the executable.
 
 # TODO copied from pyimod02_carchive
 
-# Subclasses may not need marshal or struct, but since they're
-# builtin, importing is safe.
-#
 # While an Archive is really an abstraction for any "filesystem
 # within a file", it is tuned for use with imputil.FuncImporter.
 # This assumes it contains python code objects, indexed by the
@@ -28,11 +25,29 @@ files into the executable.
 # See pyi_carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
 
-
+import os
+import sys
+from types import CodeType
 import marshal
 import zlib
 
 from PyInstaller.archive.readers import CArchiveReader
+
+
+
+# In Python 3 module 'imp' is no longer built-in and we cannot use it.
+# There is for Python 3 another way how to obtain magic value.
+if sys.version_info[0] == 2:
+    import imp
+    PYMAGIC = imp.get_magic()
+else:
+    import _frozen_importlib
+    if sys.version_info[1] <= 3:
+        # We cannot use at this bootstrap stage importlib directly
+        # but its frozen variant.
+        PYMAGIC = _frozen_importlib._MAGIC_BYTES
+    else:
+        PYMAGIC = _frozen_importlib.MAGIC_NUMBER
 
 
 class ArchiveFile(object):
@@ -109,20 +124,6 @@ class ArchiveWriter(object):
         self.path = path
         self.start = start
 
-        # In Python 3 module 'imp' is no longer built-in and we cannot use it.
-        # There is for Python 3 another way how to obtain magic value.
-        if sys.version_info[0] == 2:
-            import imp
-            self.pymagic = imp.get_magic()
-        else:
-            import _frozen_importlib
-            if sys.version_info[1] <= 3:
-                # We cannot use at this bootstrap stage importlib directly
-                # but its frozen variant.
-                self.pymagic = _frozen_importlib._MAGIC_BYTES
-            else:
-                self.pymagic = _frozen_importlib.MAGIC_NUMBER
-
         if path is not None:
             self.lib = ArchiveFile(self.path, 'rb')
             with self.lib:
@@ -142,7 +143,7 @@ class ArchiveWriter(object):
             raise ArchiveReadError("%s is not a valid %s archive file"
                                    % (self.path, self.__class__.__name__))
 
-        if self.lib.read(len(self.pymagic)) != self.pymagic:
+        if self.lib.read(len(PYMAGIC)) != PYMAGIC:
             raise ArchiveReadError("%s has version mismatch to dll" %
                 (self.path))
 
@@ -270,12 +271,9 @@ class ArchiveWriter(object):
         pth is the name of where we find the object. Overrides of
         get_obj_from can make use of further elements in entry.
         """
-        if self.os is None:
-            import os
-            self.os = os
         nm = entry[0]
         pth = entry[1]
-        pynm, ext = self.os.path.splitext(self.os.path.basename(pth))
+        pynm, ext = os.path.splitext(os.path.basename(pth))
         ispkg = pynm == '__init__'
         assert ext in ('.pyc', '.pyo')
         self.toc[nm] = (ispkg, self.lib.tell())
@@ -296,7 +294,6 @@ class ArchiveWriter(object):
         # unmarshallable objects.
         except ValueError as exception:
             if str(exception) == 'unmarshallable object':
-                from types import CodeType
 
                 # List of all marshallable types.
                 MARSHALLABLE_TYPES = set((
@@ -323,7 +320,7 @@ class ArchiveWriter(object):
         """
         self.lib.seek(self.start)
         self.lib.write(self.MAGIC)
-        self.lib.write(self.pymagic)
+        self.lib.write(PYMAGIC)
         self.lib.write(struct.pack('!i', tocpos))
 
 
@@ -377,9 +374,6 @@ class ZlibArchiveWriter(ArchiveWriter):
             self.crypted = 0
 
     def add(self, entry):
-        if self.os is None:
-            import os
-            self.os = os
         name = entry[0]
         pth = entry[1]
         if pth in ('-', None):
@@ -388,7 +382,7 @@ class ZlibArchiveWriter(ArchiveWriter):
             # so check for None, too, to be forward-compatible.)
             ispkg = True
         else:
-            base, ext = self.os.path.splitext(self.os.path.basename(pth))
+            base, ext = os.path.splitext(os.path.basename(pth))
             ispkg = base == '__init__'
 
         obj = zlib.compress(marshal.dumps(self.code_dict[name]), self.COMPRESSION_LEVEL)
@@ -471,9 +465,6 @@ class CTOCWriter(object):
 
         This function is used only while creating an executable.
         """
-        # Import module here since it might not be available during bootstrap
-        # and loading pyi_carchive module could fail.
-        import os.path
         # Ensure forward slashes in paths are on Windows converted to back
         # slashes '\\' since on Windows the bootloader works only with back
         # slashes.
@@ -546,7 +537,6 @@ class CArchiveWriter(ArchiveWriter):
         self.length = length
         self._pylib_name = pylib_name
 
-
         # A CArchive created from scratch starts at 0, no leading bootloader.
         self.pkg_start = 0
         super(CArchiveWriter, self).__init__(archive_path, start)
@@ -598,7 +588,6 @@ class CArchiveWriter(ArchiveWriter):
         # FIXME Could we make the version 5 the default one?
         # Version 5 - allow type 'o' = runtime option.
         try:
-            import os
             if typcd in ('o', 'd'):
                 fh = None
                 ulen = 0
@@ -628,7 +617,6 @@ class CArchiveWriter(ArchiveWriter):
             pass
         elif flag == 1:
             assert fh
-            import zlib
             comprobj = zlib.compressobj(self.LEVEL)
             while 1:
                 buf = fh.read(16*1024)
