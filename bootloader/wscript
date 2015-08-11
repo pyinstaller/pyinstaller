@@ -446,9 +446,20 @@ def configure(ctx):
 
     ### CFLAGS
 
-    if is_win and not ctx.env.CC_NAME == 'msvc':
-        # Use Visual C++ compatible alignment
-        ctx.env.append_value('CFLAGS', '-mms-bitfields')
+    if is_win:
+        if ctx.env.CC_NAME == 'msvc':
+            # Use Unicode entry point wmain/wWinMain and wchar_t WinAPI
+            ctx.env.append_value('CFLAGS', '-DUNICODE')
+            ctx.env.append_value('CFLAGS', '-D_UNICODE')
+        else:
+            # Use Visual C++ compatible alignment
+            ctx.env.append_value('CFLAGS', '-mms-bitfields')
+
+            # Define UNICODE and _UNICODE for wchar_t WinAPI
+            ctx.env.append_value('CFLAGS', '-municode')
+
+            # Use Unicode entry point wmain/wWinMain
+            ctx.env.append_value('LINKFLAGS', '-municode')
 
     if is_darwin:
         ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.6')
