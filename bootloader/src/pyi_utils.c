@@ -463,10 +463,10 @@ dylib_t pyi_utils_dlopen(const char *dllpath)
 #endif
 
 #ifdef _WIN32
-    /* Use unicode version of function to load  dll file. */
+    /* TODO: Use unicode version of function to load  dll file. */
 	//return LoadLibraryExW(pyi_win32_utils_to_utf8(buff, dllpath, sizeof(buff)), NULL,
             //LOAD_WITH_ALTERED_SEARCH_PATH);
-	return LoadLibraryEx(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+	return LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 #else
 	return dlopen(dllpath, dlopenMode);
 #endif
@@ -698,6 +698,8 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
  * On Mac OS X this converts files from kAEOpenDocuments events into sys.argv.
  */
 #if defined(__APPLE__) && defined(WINDOWED)
+
+// TODO: Why is this commented out?
 /*
 static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
 {

@@ -71,7 +71,7 @@ char *saved_locale;
         vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
 
-        MessageBox(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
+        MessageBoxA(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
     }
 
     void mbothererror(const char *fmt, ...)
@@ -83,7 +83,7 @@ char *saved_locale;
         vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
 
-        MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
+        MessageBoxA(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
     }
 #endif /* _WIN32 and WINDOWED */
 
@@ -103,7 +103,7 @@ char *saved_locale;
             //msg[MBTXTLEN-1] = '\0';
             va_end(args);
 
-            MessageBox(NULL, msg, "Tracing", MB_OK);
+            MessageBoxA(NULL, msg, "Tracing", MB_OK);
         }
     #endif
 #endif

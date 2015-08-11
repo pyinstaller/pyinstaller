@@ -74,10 +74,10 @@ int CreateActContext(const char *workpath, const char *thisfile)
 {
     char manifestpath[PATH_MAX];
     char basename[PATH_MAX];
-    ACTCTX ctx;
+    ACTCTXA ctx;
     BOOL activated;
     HANDLE k32;
-    HANDLE (WINAPI *CreateActCtx)(PACTCTX pActCtx);
+    HANDLE (WINAPI *CreateActCtx)(PACTCTXA pActCtx);
     BOOL (WINAPI *ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
 
     /* Setup activation context */
@@ -86,7 +86,7 @@ int CreateActContext(const char *workpath, const char *thisfile)
     strcat(manifestpath, ".manifest");
     VS("LOADER: manifestpath: %s\n", manifestpath);
     
-    k32 = LoadLibrary("kernel32");
+    k32 = LoadLibraryA("kernel32");
     CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA");
     ActivateActCtx = (void*)GetProcAddress(k32, "ActivateActCtx");
     
@@ -123,7 +123,7 @@ void ReleaseActContext(void)
     BOOL (WINAPI *DeactivateActCtx)(DWORD dwFlags, ULONG_PTR ulCookie);
     HANDLE k32;
 
-    k32 = LoadLibrary("kernel32");
+    k32 = LoadLibraryA("kernel32");
     ReleaseActCtx = (void*)GetProcAddress(k32, "ReleaseActCtx");
     DeactivateActCtx = (void*)GetProcAddress(k32, "DeactivateActCtx");
     if (!ReleaseActCtx || !DeactivateActCtx)
