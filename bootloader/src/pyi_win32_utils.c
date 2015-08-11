@@ -186,9 +186,9 @@ char * pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, int n)
 /*
  * Convert char (UTF8) into wchar_t (UTF16).
  */
-wchar_t * pyi_win32_utils_from_utf8(wchar_t *buffer, char *ostr, int n)
+wchar_t * pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, int n)
 {
-   unsigned char *str = (unsigned char *) ostr;
+   unsigned const char *str = (unsigned const char *) ostr;
    uint32_t c;
    int i=0;
    --n;

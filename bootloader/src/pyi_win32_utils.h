@@ -19,7 +19,7 @@
 int CreateActContext(const char *workpath, const char *thisfile);
 void ReleaseActContext(void);
 char * pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, int n);
-wchar_t * pyi_win32_utils_from_utf8(wchar_t *buffer, char *ostr, int n);
+wchar_t * pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, int n);
 
 #endif
 
