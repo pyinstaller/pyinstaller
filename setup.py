@@ -157,13 +157,13 @@ setup(
     entry_points="""
     [console_scripts]
     pyinstaller=PyInstaller.main:run
-    pyi-archive_viewer=PyInstaller.cliutils.archive_viewer:run
-    pyi-bindepend=PyInstaller.cliutils.bindepend:run
-    pyi-build=PyInstaller.cliutils.build:run
-    pyi-grab_version=PyInstaller.cliutils.grab_version:run
-    pyi-make_comserver=PyInstaller.cliutils.make_comserver:run
-    pyi-makespec=PyInstaller.cliutils.makespec:run
-    pyi-pprint_toc=PyInstaller.cliutils.pprint_toc:run
-    pyi-set_version=PyInstaller.cliutils.set_version:run
+    pyi-archive_viewer=PyInstaller.utils.cliutils.archive_viewer:run
+    pyi-bindepend=PyInstaller.utils.cliutils.bindepend:run
+    pyi-build=PyInstaller.utils.cliutils.build:run
+    pyi-grab_version=PyInstaller.utils.cliutils.grab_version:run
+    pyi-make_comserver=PyInstaller.utils.cliutils.make_comserver:run
+    pyi-makespec=PyInstaller.utils.cliutils.makespec:run
+    pyi-pprint_toc=PyInstaller.utils.cliutils.pprint_toc:run
+    pyi-set_version=PyInstaller.utils.cliutils.set_version:run
     """
 )
