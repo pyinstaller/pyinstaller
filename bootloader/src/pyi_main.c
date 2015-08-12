@@ -14,6 +14,7 @@
  */
 
 
+// TODO: use safe string functions
 #define _CRT_SECURE_NO_WARNINGS 1
 
 
@@ -36,12 +37,8 @@
 #include "pyi_pythonlib.h"
 #include "pyi_launch.h"
 
-#if defined(WIN32) && defined(WINDOWED)
-int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
-						LPSTR lpCmdLine, int nCmdShow )
-#else
-int main(int argc, char* argv[])
-#endif
+
+int pyi_main(int argc, char * argv[])
 {
     /*  archive_status contain status information of the main process. */
     ARCHIVE_STATUS *archive_status = NULL;
@@ -51,10 +48,7 @@ int main(int argc, char* argv[])
     char MEIPASS2[PATH_MAX];
     int rc = 0;
     char *extractionpath = NULL;
-#if defined(WIN32) && defined(WINDOWED)
-    int argc = __argc;
-    char **argv = __argv;
-#endif
+
     int i = 0;
 
 
