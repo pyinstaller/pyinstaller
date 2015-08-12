@@ -263,6 +263,10 @@ def test_threading_module(pyi_builder):
     pyi_builder.test_script('pyi_threading_module.py')
 
 
+def test_argument(pyi_builder):
+    pyi_builder.test_script('pyi_argument.py', app_args=["--argument"])
+
+
 @importorskip('win32com')
 def test_pywin32_win32com(pyi_builder):
     pyi_builder.test_script('pyi_pywin32_win32com.py')
