@@ -98,13 +98,9 @@ int pyi_main(int argc, char * argv[])
         }
     }
 
-    /*
-     * Cache command-line arguments and convert them to wchar_t.
-     * Has to be called after archive_status initialization.
-     */
-    if (pyi_arch_cache_argv(archive_status, argc, argv)) {
-        return -1;
-    }
+    /* These are used only in pyi_pylib_set_sys_argv, which converts to wchar_t */
+    archive_status->argc = argc;
+    archive_status->argv = argv;
 
 #ifdef _WIN32
     /* On Windows use single-process for --onedir mode. */

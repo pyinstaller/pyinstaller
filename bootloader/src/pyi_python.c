@@ -79,7 +79,7 @@ DECLPROC(PySys_SetObject);
 DECLPROC(PySys_SetPath);
 DECLPROC(PyThreadState_Swap);
 DECLPROC(PyUnicode_FromString);
-
+DECLPROC(_Py_char2wchar);
 
 /*
  * Get all of the entry points from libpython
@@ -140,6 +140,9 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     if (pyvers >= 30) {
       // new in Python 2.6, but not reliable available in all Linux distros
       GETPROC(dll, PyUnicode_FromString);
+      // new in Python 3
+      GETPROC(dll, _Py_char2wchar);
+
     };
 
     VS("LOADER: Loaded functions from Python library.\n");

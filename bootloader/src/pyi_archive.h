@@ -59,9 +59,14 @@ typedef struct _archive_status {
     TOC     *tocend;
     COOKIE  cookie;
     /*
-     * On Windows, these strings are UTF-8 encoded (via pyi_win32_utils_to_utf8)
-     * On Linux/OS X, these strings are locale-encoded, which is usually UTF-8, but we
-     * call setlocale(LC_CTYPE, "") in main to be absolutely sure we can decode them.
+     * On Windows:
+     *    These strings are UTF-8 encoded (via pyi_win32_utils_to_utf8). On Python 2,
+     *    they are re-encoded to ANSI with ShortFileNames when passed to Python. On
+     *    Python 3, they are decoded back to wchar_t.
+     *
+     * On Linux/OS X:
+     *    These strings are system-provided. On Python 2, they are passed as-is to Python.
+     *    On Python 3, they are decoded to wchar_t using _Py_char2wchar first.
      */
     char    archivename[PATH_MAX];
     char    homepath[PATH_MAX];
@@ -88,9 +93,9 @@ typedef struct _archive_status {
     /*
      * Cached command-line arguments.
      */
-    int argc;      /* Count of command-line arguments. */
-    wchar_t **argv;   /* Array of strings. */
-    char **argv_char;   // Plain copy of argv, used for is_py2
+    int argc;         /* Count of command-line arguments. */
+    char **argv;      /* On Windows, UTF-8 encoded form of __wargv. */
+                      /* On OS X/Linux, as received in main() */
 } ARCHIVE_STATUS;
 
 
@@ -116,7 +121,6 @@ int pyi_arch_open(ARCHIVE_STATUS *status);
  * Memory allocation wrappers.
  */
 void pyi_arch_status_free_memory(ARCHIVE_STATUS *status);
-int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv);
 
 /*
  * Setup the paths and open the archive

@@ -144,6 +144,9 @@ EXTDECLPROC(PyThreadState *, Py_NewInterpreter, (void) );
 EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
+/* Used to convert argv to wchar_t on Linux/OS X */
+EXTDECLPROC(wchar_t *, _Py_char2wchar, (char *, size_t *));
+
 
 /* Functions not used in the code anymore.
  * TODO Remove them.
@@ -185,7 +188,7 @@ EXTDECLPROC(char *, PyString_AsString, (PyObject *));
 #define GETPROC(dll, name)\
     GETPROCOPT(dll, name); \
     if (!PI_##name) {\
-        FATALERROR ("Cannot GetProcAddress for " #name);\
+        FATALERROR ("Cannot GetProcAddress for " #name "\n");\
         return -1;\
     }
 #define DECLVAR(name)\
@@ -193,7 +196,7 @@ EXTDECLPROC(char *, PyString_AsString, (PyObject *));
 #define GETVAR(dll, name)\
     PI_##name = (__VAR__##name *)GetProcAddress (dll, #name);\
     if (!PI_##name) {\
-        FATALERROR ("Cannot GetProcAddress for " #name);\
+        FATALERROR ("Cannot GetProcAddress for " #name "\n");\
         return -1;\
     }
 
@@ -206,7 +209,7 @@ EXTDECLPROC(char *, PyString_AsString, (PyObject *));
 #define GETPROC(dll, name)\
     GETPROCOPT(dll, name);\
     if (!PI_##name) {\
-        FATALERROR ("Cannot dlsym for " #name);\
+        FATALERROR ("Cannot dlsym for " #name "\n");\
         return -1;\
     }
 #define DECLVAR(name)\
@@ -214,7 +217,7 @@ EXTDECLPROC(char *, PyString_AsString, (PyObject *));
 #define GETVAR(dll, name)\
     PI_##name = (__VAR__##name *)dlsym(dll, #name);\
     if (!PI_##name) {\
-        FATALERROR ("Cannot dlsym for " #name);\
+        FATALERROR ("Cannot dlsym for " #name "\n");\
         return -1;\
     }
 
