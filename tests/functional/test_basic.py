@@ -314,15 +314,10 @@ def test_win_codepage_path(pyi_builder):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
-if is_py2:
-    _noncp_path_reason = "Python 2's subprocess.Popen calls CreateProcessA which "\
-                         "doesn't work with non-codepage paths"
-else:
-    _noncp_path_reason = "Bootloader sets sys.argv using ANSI argv on Python 3"
-
 @skipif_notwin
 @pytest.mark.path_encoding
-@pytest.mark.xfail(reason=_noncp_path_reason)
+@pytest.mark.xfail(is_py2, reason="Python 2's subprocess.Popen calls CreateProcessA "
+                           "which doesn't work with non-codepage paths")
 def test_win_non_codepage_path(pyi_builder):
     # This test is expected to fail on python 2 as it does not have a useful result:
     # On py2 on Windows, subprocess.Popen calls CreateProcessA, which only accepts
