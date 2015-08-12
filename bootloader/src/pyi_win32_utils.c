@@ -50,7 +50,25 @@ static ULONG_PTR actToken;
 #ifndef STATUS_SXS_EARLY_DEACTIVATION
 #define STATUS_SXS_EARLY_DEACTIVATION 0xC015000F
 #endif
- 	
+
+char * GetWinErrorString() {
+    DWORD error_code = GetLastError();
+    char * errorString = NULL;
+    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, // dwFlags
+                   NULL, // lpSource
+                   error_code, // dwMessageID,
+                   0, // dwLanguageID,
+                   (char *)(&errorString), // lpBuffer; see FORMAT_MESSAGE_ALLOCATE_BUFFER
+                   0, // nSize
+                   NULL // Arguments
+                   );
+
+    if(NULL == errorString) {
+        return "FormatMessage failed.";
+    }
+    return errorString;
+
+}
  	
 int CreateActContext(const char *workpath, const char *thisfile)
 {
@@ -135,105 +153,349 @@ void ReleaseActContext(void)
     }*/
 }
 
+/* Convert a wide string to an ANSI string.
 
-// TODO This function is not called anywhere. Do we still need to init common controls? Or is it replaced by CreateActContext() function? Or is it safe to remove that?
-static void init_launcher(void)
-{
-	InitCommonControls();
+   Returns a newly allocated buffer containing the ANSI characters terminated by a null
+   character. The caller is responsible for freeing this buffer with free().
+
+   Returns NULL and logs error reason if encoding fails.
+ */
+
+char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
+    int wlen = wcslen(wstr);
+    int len, ret;
+    char * str;
+
+    /* NOTE: setlocale hysterics are not needed on Windows - this function
+       has an explicit codepage parameter. CP_ACP means "current ANSI codepage"
+       which is set in the "Language for Non-Unicode Programs" control panel setting. */
+
+    /* Get buffer size by passing NULL and 0 for output arguments */
+    len = WideCharToMultiByte(CP_ACP,    // CodePage
+                              0,         // dwFlags
+                              wstr,      // lpWideCharStr
+                              wlen,      // cchWideChar - length in chars
+                              NULL,      // lpMultiByteStr
+                              0,         // cbMultiByte - length in bytes
+                              NULL,      // lpDefaultChar
+                              NULL       // lpUsedDefaultChar
+                              );
+    if(0 == len) {
+        FATALERROR("Failed to get ANSI buffer size"
+                   "(WideCharToMultiByte: %s)",
+                   GetWinErrorString()
+                   );
+        return NULL;
+    }
+
+    str = (char *)malloc(sizeof(char) * wcslen(wstr) + 1);
+
+    ret = WideCharToMultiByte(CP_ACP,    // CodePage
+                              0,         // dwFlags
+                              wstr,      // lpWideCharStr
+                              wlen,      // cchWideChar - length in chars
+                              str,       // lpMultiByteStr
+                              len,       // cbMultiByte - length in bytes
+                              NULL,      // lpDefaultChar
+                              NULL       // lpUsedDefaultChar
+                              );
+    str[len] = '\0';
+
+    if(0 == ret) {
+        FATALERROR("Failed to encode filename as ANSI"
+                   "(WideCharToMultiByte: %s)",
+                   GetWinErrorString()
+                   );
+        return NULL;
+    }
+    return str;
+}
+
+/* Convert a wide string to an ANSI string, also attempting to get the MS-DOS
+   ShortFileName if the string is a filename. ShortFileName allows Python 2.7 to
+   accept filenames which cannot encode in the current ANSI codepage.
+
+   Returns a newly allocated buffer containing the ANSI characters terminated by a null
+   character. The caller is responsible for freeing this buffer with free().
+
+   Returns NULL and logs error reason if encoding fails.
+ */
+
+char * pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr) {
+    int wlen = wcslen(wstr);
+    wchar_t * wstr_sfn = (wchar_t *)malloc(sizeof(wchar_t) * wlen + 1);
+    char * str;
+    int ret;
+
+    ret = GetShortPathNameW(wstr, wstr_sfn, wlen);
+    if(0 == ret) {
+
+        VS("Failed to get short path name for filename. GetShortPathNameW: \n%s",
+                   GetWinErrorString()
+                   );
+        str = pyi_win32_wcs_to_mbs(wstr);
+    } else {
+        str = pyi_win32_wcs_to_mbs(wstr_sfn);
+    }
+    free(wstr_sfn);
+    return str;
+}
+
+/* We shouldn't need to convert ANSI to wchar_t since everything is provided as wchar_t */
+
+/* The following are used to convert the UTF-16 strings provided by Windows
+ * into UTF-8 so we can store them in the `char *` variables and fields
+ * we use on Linux. Storing them like this is a wart, but storing them as `wchar_t *`
+ * and converting back and forth everywhere on Linux/OS X is an even bigger wart
+ */
+
+/* Convert elements of wargv to UTF-8 */
+
+char ** pyi_win32_argv_to_utf8(int argc, wchar_t **wargv) {
+    int i, j;
+    char ** argv;
+
+    argv = (char **)malloc(sizeof(char *) * (argc + 1));
+
+    for(i=0; i<argc; i++) {
+        argv[i] = pyi_win32_utils_to_utf8(NULL, wargv[i], 0);
+        if(NULL == argv[i]) {
+            goto err;
+        }
+    }
+    argv[argc] = NULL;
+
+    return argv;
+  err:
+    for(j=0; j<=i; j++) {
+        free(argv[j]);
+    }
+    free(argv);
+    return NULL;
+}
+
+/* Convert elements of wargv back from UTF-8. Used when calling
+   PySys_SetArgv on Python 3.
+ */
+
+wchar_t ** pyi_win32_wargv_from_utf8(int argc, char **argv) {
+    int i, j;
+    wchar_t ** wargv;
+
+    wargv = (wchar_t **)malloc(sizeof(wchar_t *) * (argc + 1));
+
+    for(i=0; i<argc; i++) {
+        wargv[i] = pyi_win32_utils_from_utf8(NULL, argv[i], 0);
+        if(NULL == wargv[i]) {
+            goto err;
+        }
+    }
+    wargv[argc] = NULL;
+
+    return wargv;
+  err:
+    for(j=0; j<=i; j++) {
+        free(wargv[j]);
+    }
+    free(wargv);
+    return NULL;
+}
+
+/*
+ * Encode wchar_t (UTF16) into char (UTF8).
+ *
+ * `wstr` must be null-terminated.
+ *
+ * If `str` is not NULL, copies the result into the given buffer, which must hold
+ * at least `len` bytes. Returns the given buffer if successful. Returns NULL on
+ * encoding failure, or if the UTF-8 encoding requires more than `len` bytes.
+ *
+ * If `str` is NULL, allocates and returns a new buffer to store the result. The
+ * `len` argument is ignored. Returns NULL on encoding failure. The caller is
+ * responsible for freeing the returned buffer using free().
+ *
+ */
+char * pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len) {
+    char * output;
+    if(NULL == str) {
+        /* Get buffer size by passing NULL and 0 for output arguments
+         * -1 for cchWideChar means string is null-terminated
+         */
+        len = WideCharToMultiByte(CP_UTF8,              // CodePage
+                                  0,                    // dwFlags
+                                  wstr,                 // lpWideCharStr
+                                  -1,                   // cchWideChar - length in chars
+                                  NULL,                 // lpMultiByteStr
+                                  0,                    // cbMultiByte - length in bytes
+                                  NULL,                 // lpDefaultChar
+                                  NULL                  // lpUsedDefaultChar
+                                  );
+        if(0 == len) {
+            FATALERROR("Failed to get UTF-8 buffer size (WideCharToMultiByte: %s)",
+                       GetWinErrorString()
+                       );
+            return NULL;
+        }
+
+        output = (char *)malloc(sizeof(char) * len + 1);
+    } else {
+        output = str;
+    }
+
+    len = WideCharToMultiByte(CP_UTF8,              // CodePage
+                              0,                    // dwFlags
+                              wstr,                 // lpWideCharStr
+                              -1,                   // cchWideChar - length in chars
+                              output,               // lpMultiByteStr
+                              len,                  // cbMultiByte - length in bytes
+                              NULL,                 // lpDefaultChar
+                              NULL                  // lpUsedDefaultChar
+                              );
+    if(len == 0) {
+        FATALERROR("Failed to encode wchar_t as UTF-8 (WideCharToMultiByte: %s)",
+                   GetWinErrorString()
+                   );
+        return NULL;
+    }
+    output[len] = '\0';
+    return output;
 }
 
 
 /*
- * Convert wchar_t (UTF16) into char (UTF8).
+ * Decode char (UTF8) into wchar_t (UTF16).
+ *
+ * `str` must be null-terminated.
+ *
+ * If `wstr` is not NULL, copies the result into the given buffer, which must hold
+ * at least `wlen` characters. Returns the given buffer if successful. Returns NULL on
+ * encoding failure, or if the UTF-16 encoding requires more than `wlen` characters.
+ *
+ * If `wstr` is NULL, allocates and returns a new buffer to store the result. The
+ * `wlen` argument is ignored. Returns NULL on encoding failure. The caller is
+ * responsible for freeing the returned buffer using free().
  */
-char * pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, int n)
-{
-   int i=0;
-   int32_t c;
-   --n;
-   while (*str) {
-      if (*str < 0x80) {
-         if (i+1 > n) return NULL;
-         buffer[i++] = (char) *str++;
-      } else if (*str < 0x800) {
-         if (i+2 > n) return NULL;
-         buffer[i++] = 0xc0 + (*str >> 6);
-         buffer[i++] = 0x80 + (*str & 0x3f);
-         str += 1;
-      } else if (*str >= 0xd800 && *str < 0xdc00) {
-         if (i+4 > n) return NULL;
-         c = ((str[0] - 0xd800) << 10) + ((str[1]) - 0xdc00) + 0x10000;
-         buffer[i++] = 0xf0 + (c >> 18);
-         buffer[i++] = 0x80 + ((c >> 12) & 0x3f);
-         buffer[i++] = 0x80 + ((c >>  6) & 0x3f);
-         buffer[i++] = 0x80 + ((c      ) & 0x3f);
-         str += 2;
-      } else if (*str >= 0xdc00 && *str < 0xe000) {
-         return NULL;
-      } else {
-         if (i+3 > n) return NULL;
-         buffer[i++] = 0xe0 + (*str >> 12);
-         buffer[i++] = 0x80 + ((*str >> 6) & 0x3f);
-         buffer[i++] = 0x80 + ((*str     ) & 0x3f);
-         str += 1;
-      }
-   }
-   buffer[i] = 0;
-   return buffer;
+
+wchar_t * pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen) {
+    wchar_t * output;
+    if(NULL == wstr) {
+        /* Get buffer size by passing NULL and 0 for output arguments
+         * -1 for cbMultiByte means string is null-terminated.
+         */
+        wlen = MultiByteToWideChar(CP_UTF8,              // CodePage
+                                   0,                   // dwFlags
+                                   str,                  // lpMultiByteStr
+                                   -1,                   // cbMultiByte - length in bytes
+                                   NULL,                 // lpWideCharStr
+                                   0                     // cchWideChar - length in chars
+                                   );
+        if(0 == wlen) {
+            FATALERROR("Failed to get UTF-8 buffer size (WideCharToMultiByte: %s)",
+                       GetWinErrorString()
+                       );
+            return NULL;
+        }
+
+        output = (wchar_t *)malloc(sizeof(wchar_t) * wlen + 1);
+    } else {
+        output = wstr;
+    }
+
+    wlen = MultiByteToWideChar(CP_UTF8,              // CodePage
+                               0,                    // dwFlags
+                               str,                  // lpMultiByteStr
+                               -1,                   // cbMultiByte - length in bytes
+                               output,               // lpWideCharStr
+                               wlen                  // cchWideChar - length in chars
+                               );
+    if(wlen == 0) {
+        FATALERROR("Failed to encode wchar_t as UTF-8 (WideCharToMultiByte: %s)",
+                   GetWinErrorString()
+                   );
+        return NULL;
+    }
+    output[wlen] = L'\0';
+    return output;
+}
+
+/* Convenience function to convert UTF-8 to ANSI optionally with SFN.
+ * Calls pyi_win32_utils_from_utf8 followed by pyi_win32_wcs_to_mbs_sfn
+ */
+
+char * pyi_win32_utf8_to_mbs_ex(char * dst, char * src, size_t max, int sfn) {
+    wchar_t * wsrc;
+    char * mbs;
+
+    wsrc = pyi_win32_utils_from_utf8(NULL, src, 0);
+    if(NULL == wsrc) {
+        return NULL;
+    }
+
+    if(sfn) {
+        mbs = pyi_win32_wcs_to_mbs_sfn(wsrc);
+    } else {
+        mbs = pyi_win32_wcs_to_mbs(wsrc);
+    }
+
+    if(NULL == mbs) {
+        free(wsrc);
+        return NULL;
+    }
+    if(dst){
+        strncpy(dst, mbs, max);
+        free(mbs);
+        return dst;
+    } else {
+        return mbs;
+    }
 }
 
 
-/*
- * Convert char (UTF8) into wchar_t (UTF16).
+/* Convenience function to convert UTF-8 argv to ANSI characters for Py2Sys_SetArgv
+   Optionally use ShortFileNames to improve compatibility on Python 2.
+
+   Returns a newly allocated array of pointers to newly allocated buffers containing
+   ANSI characters. The caller is responsible for freeing both the array and the buffers
+   using free()
+
+   Returns NULL and logs the error reason if an error occurs.
  */
-wchar_t * pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, int n)
-{
-   unsigned const char *str = (unsigned const char *) ostr;
-   uint32_t c;
-   int i=0;
-   --n;
-   while (*str) {
-      if (i >= n)
-         return NULL;
-      if (!(*str & 0x80))
-         buffer[i++] = *str++;
-      else if ((*str & 0xe0) == 0xc0) {
-         if (*str < 0xc2) return NULL;
-         c = (*str++ & 0x1f) << 6;
-         if ((*str & 0xc0) != 0x80) return NULL;
-         buffer[i++] = c + (*str++ & 0x3f);
-      } else if ((*str & 0xf0) == 0xe0) {
-         if (*str == 0xe0 && (str[1] < 0xa0 || str[1] > 0xbf)) return NULL;
-         if (*str == 0xed && str[1] > 0x9f) return NULL; // str[1] < 0x80 is checked below
-         c = (*str++ & 0x0f) << 12;
-         if ((*str & 0xc0) != 0x80) return NULL;
-         c += (*str++ & 0x3f) << 6;
-         if ((*str & 0xc0) != 0x80) return NULL;
-         buffer[i++] = c + (*str++ & 0x3f);
-      } else if ((*str & 0xf8) == 0xf0) {
-         if (*str > 0xf4) return NULL;
-         if (*str == 0xf0 && (str[1] < 0x90 || str[1] > 0xbf)) return NULL;
-         if (*str == 0xf4 && str[1] > 0x8f) return NULL; // str[1] < 0x80 is checked below
-         c = (*str++ & 0x07) << 18;
-         if ((*str & 0xc0) != 0x80) return NULL;
-         c += (*str++ & 0x3f) << 12;
-         if ((*str & 0xc0) != 0x80) return NULL;
-         c += (*str++ & 0x3f) << 6;
-         if ((*str & 0xc0) != 0x80) return NULL;
-         c += (*str++ & 0x3f);
-         // utf-8 encodings of values used in surrogate pairs are invalid
-         if ((c & 0xFFFFF800) == 0xD800) return NULL;
-         if (c >= 0x10000) {
-            c -= 0x10000;
-            if (i + 2 > n) return NULL;
-            buffer[i++] = 0xD800 | (0x3ff & (c >> 10));
-            buffer[i++] = 0xDC00 | (0x3ff & (c      ));
-         }
-      } else
-         return NULL;
-   }
-   buffer[i] = 0;
-   return buffer;
+
+char ** pyi_win32_argv_mbcs_from_utf8_ex(int argc, char **argv, int sfn) {
+    int i, j;
+    char ** argv_mbcs;
+
+    argv_mbcs = (char **)malloc(sizeof(char *) * (argc + 1));
+
+    for(i=0; i<argc; i++) {
+        argv_mbcs[i] = pyi_win32_utf8_to_mbs_ex(NULL, argv[i], 0, sfn);
+        if(NULL == argv_mbcs[i]) {
+            goto err;
+        }
+    }
+    argv_mbcs[argc] = NULL;
+
+    return argv_mbcs;
+  err:
+    for(j=0; j<=i; j++) {
+        free(argv_mbcs[j]);
+    }
+    free(argv_mbcs);
+    return NULL;
 }
 
-#endif // _WIN32
+/* Convert elements of __wargv to ANSI characters.
+   See pyi_win32_argv_mbcs_from_utf8_ex
+ */
+char ** pyi_win32_argv_mbcs_from_utf8(int argc, char **argv) {
+    return pyi_win32_argv_mbcs_from_utf8_ex(argc, argv, 0);
+}
+
+/* Convert elements of __wargv to ANSI encoded MS-DOS ShortFileNames.
+   See pyi_win32_argv_mbcs_from_utf8_ex
+ */
+char ** pyi_win32_argv_mbcs_from_utf8_sfn(int argc, char **argv) {
+    return pyi_win32_argv_mbcs_from_utf8_ex(argc, argv, 1);
+}
+
+#endif /* _WIN32 */
