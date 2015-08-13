@@ -351,6 +351,11 @@ def test_win_non_codepage_path(pyi_builder):
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
+@skipif_notwin
+@pytest.mark.skip(not is_py2)
+def test_win_py3_no_shortpathname(pyi_builder):
+    pyi_builder.test_script('pyi_win_py3_no_shortpathname.py')
+
 """
 def test_(pyi_builder):
     pyi_builder.test_script('')
