@@ -322,6 +322,35 @@ def test_win_codepage_path(pyi_builder):
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
+@skipif_notwin
+@pytest.mark.path_encoding
+def test_win_codepage_path_disabled_shortfilename(pyi_builder):
+    distdir = pyi_builder._distdir
+    # Create some bytes and decode with the current codepage to get a filename that
+    # is guaranteed to encode with the current codepage.
+    # Assumes a one-byte codepage, i.e. not cp937 (shift-JIS) which is multibyte
+    cp_filename = bytes(bytearray(range(0x80, 0x86))).decode('mbcs')
+
+    distdir = os.path.join(distdir, cp_filename)
+    os.makedirs(distdir)
+
+    # Try to remove ShortFileName from this folder using `fsutil`
+    # Requires admin privileges, so `xfail` if we don't have them.
+    # `8dot3name strip` only affects subfolders, so pass the folder containing
+    # our codepage filename
+    if is_py2:
+        # Python 2 requires mbcs-encoded args to subprocess
+        fsutil_distdir = pyi_builder._distdir.encode('mbcs')
+    else:
+        # Python 3 accepts 'unicode' type.
+        fsutil_distdir = pyi_builder._distdir
+
+    if(subprocess.call(['fsutil', '8dot3name', 'strip', fsutil_distdir])):
+        pytest.xfail("Administrator privileges required to strip ShortFileName.")
+
+    pyi_builder._distdir = distdir
+    pyi_builder.test_script('pyi_path_encoding.py')
+
 
 @skipif_notwin
 @pytest.mark.path_encoding
