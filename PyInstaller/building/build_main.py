@@ -217,7 +217,8 @@ class Analysis(Target):
                 pathex.append(script_toplevel_dir)
                 logger.info('Extending PYTHONPATH with %s', script_toplevel_dir)
         # Append paths from .spec.
-        pathex.extend(spec_pathex)
+        if spec_pathex is not None:
+            pathex.extend(spec_pathex)
         # Normalize paths in pathex and make them absolute.
         return [absnormpath(p) for p in pathex]
 
