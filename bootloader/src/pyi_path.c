@@ -36,6 +36,7 @@
 /* PyInstaller headers. */
 #include "pyi_global.h"  // PATH_MAX
 #include "pyi_win32_utils.h"
+#include "pyi_python27_compat.h"  // is_py2
 
 /*
  * Giving a fullpath, it will copy to the buffer a string
@@ -162,59 +163,15 @@ int pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
 int pyi_path_executable(char *execfile, const char *appname)
 {
     char buffer[PATH_MAX];
-
 #ifdef _WIN32
-    char dos83_buffer[PATH_MAX];
-    wchar_t wchar_buffer[PATH_MAX];
-    wchar_t wchar_dos83_buffer[PATH_MAX];
-    char basename[PATH_MAX];
-    char dirname[PATH_MAX];
 
-    /* Windows has special function to obtain path to executable.
-     * We EXPLICTLY use wide-string API in the bootloader because
-     * otherwise it is impossible to represent non-ASCII character
-     * from a different character set. For instance, let's say I have
-     * a Latin-1 (Europe Windows), and I want to run a PyInstaller
-     * program in a path with japanese character; there is no way to
-     * represent that path with ANSI API in Windows, because ANSI API
-     * would only support the local charset (Latin-1).
-     */
-	if (!GetModuleFileNameW(NULL, wchar_buffer, PATH_MAX)) {
-		FATALERROR("System error - unable to load!");
-		return -1;
-	}
-    /* Convert wchar_t to utf8 - just use type char as usual. */
-    pyi_win32_utils_to_utf8(buffer, wchar_buffer, PATH_MAX);
-
-    // TODO do not use this workaround for Python 3.
-    /*
-     * Use 8.3 filename (dos 8.3 or short filename)
-     * to overcome the Python and PyInstaller limitation
-     * to run with foreign characters in directory names.
-     *
-     * If 8.3 filename does not exist, original vaule is just copied
-     * to the supplied buffer. 8.3 filename might not be available
-     * for some networking file systems.
-     *
-     * This is workaround for <http://www.pyinstaller.org/ticket/298>.
-     */
-    GetShortPathNameW(wchar_buffer, wchar_dos83_buffer, PATH_MAX);
-    /* Convert wchar_t to utf8 just use char as usual. */
-    pyi_win32_utils_to_utf8(dos83_buffer, wchar_dos83_buffer, PATH_MAX);
-
-    /*
-     * Construct proper execfile -  83_DIRNAME + full_basename.
-     * GetShortPathName() makes also the basename (appname.exe) shorter.
-     *
-     * However, bootloader code depends on unmodified basename.
-     * Using basename from original path should fix this.
-     * It is supposed that basename does not contain any foreign characters.
-     *
-     * Reuse 'buffer' variable.
-     */
-    pyi_path_basename(basename, buffer);
-    pyi_path_dirname(dirname, dos83_buffer);
-    pyi_path_join(buffer, dirname, basename);
+	if (!is_py2) {
+        /* Use utf8 form of argv[0] as is */
+        strncpy(buffer, appname, PATH_MAX);
+    } else {
+        /* Convert argv[0] to ShortFileName, preserving basename of exe */
+        pyi_win32_utf8_to_mbs_sfn_keep_basename(buffer, appname);
+    }
 
 #elif __APPLE__
     uint32_t length = sizeof(buffer);
