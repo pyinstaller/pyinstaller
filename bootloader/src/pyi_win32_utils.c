@@ -162,8 +162,8 @@ void ReleaseActContext(void)
  */
 
 char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
-    int wlen = wcslen(wstr);
-    int len, ret;
+    DWORD wlen = (DWORD)wcslen(wstr);
+    DWORD len, ret;
     char * str;
 
     /* NOTE: setlocale hysterics are not needed on Windows - this function
@@ -222,10 +222,10 @@ char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
  */
 
 char * pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr) {
-    int wlen = wcslen(wstr);
+    DWORD wlen = (DWORD)wcslen(wstr);
     wchar_t * wstr_sfn = (wchar_t *)malloc(sizeof(wchar_t) * wlen + 1);
     char * str;
-    int ret;
+    DWORD ret;
 
     ret = GetShortPathNameW(wstr, wstr_sfn, wlen);
     if(0 == ret) {
@@ -389,7 +389,7 @@ char * pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len) {
                               wstr,                 // lpWideCharStr
                               -1,                   // cchWideChar - length in chars
                               output,               // lpMultiByteStr
-                              len,                  // cbMultiByte - length in bytes
+                              (DWORD)len,           // cbMultiByte - length in bytes
                               NULL,                 // lpDefaultChar
                               NULL                  // lpUsedDefaultChar
                               );
@@ -448,7 +448,7 @@ wchar_t * pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
                                str,                  // lpMultiByteStr
                                -1,                   // cbMultiByte - length in bytes
                                output,               // lpWideCharStr
-                               wlen                  // cchWideChar - length in chars
+                               (DWORD)wlen           // cchWideChar - length in chars
                                );
     if(wlen == 0) {
         FATALERROR("Failed to encode wchar_t as UTF-8 (WideCharToMultiByte: %s)",
@@ -464,7 +464,7 @@ wchar_t * pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
  * Calls pyi_win32_utils_from_utf8 followed by pyi_win32_wcs_to_mbs_sfn
  */
 
-char * pyi_win32_utf8_to_mbs_ex(char * dst, char * src, size_t max, int sfn) {
+char * pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sfn) {
     wchar_t * wsrc;
     char * mbs;
 
