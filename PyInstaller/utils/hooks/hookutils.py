@@ -29,7 +29,7 @@ PY_EXECUTABLE_SUFFIXES = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
 
 # These extensions represent Python executables and should therefore be
 # ignored when collecting data files.
-PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', 'dylib'])
+PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so', '.dylib'])
 
 # Some hooks need to save some values. This is the dict that can be used for
 # that.
