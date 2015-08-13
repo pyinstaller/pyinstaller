@@ -513,31 +513,82 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 /*
  * Install a zlib from a toc entry.
  *
+ * Must be called after Py_Initialize (i.e. after pyi_pylib_start_python)
+ *
  * The installation is done by adding an entry like
  *    absolute_path/dist/hello_world/hello_world?123456
  * to sys.path. The end number is the offset where the
  * Python bootstrap code should read the zip data.
  * Return non zero on failure.
- * NB: This entry is removed from sys.path duringby the bootstrap scripts.
+ * NB: This entry is removed from sys.path by the bootstrap scripts.
  */
 int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
-	int rc;
+	int rc = 0;
 	int zlibpos = status->pkgstart + ntohl(ptoc->pos);
-	// TODO Is there a better way to avoid call python code? Probably any API call?
-	char *tmpl = "import sys; sys.path.append(r\"%s?%d\")\n";
-	// +32 for the number, +2 as cushion
-	char cmd[2*PATH_MAX + 32 + 2];
-	sprintf(cmd, tmpl, status->archivename, zlibpos);
-	VS("LOADER: %s", cmd);
-	rc = PI_PyRun_SimpleString(cmd);
-	if (rc != 0)
-	{
-		FATALERROR("Error in command: %s\n", cmd);
+	PyObject * sys_path, *zlib_entry, *archivename_obj;
+	char *archivename;
+
+	/* Note that sys.path contains PyString on py2, and PyUnicode on py3. Ensure
+	 * that filenames are encoded or decoded correctly.
+	 */
+	if(is_py2) {
+#ifdef _WIN32
+		/* Must be MBCS encoded. Use SFN if possible.
+		 *
+		 * We could instead pass the UTF-8 encoded form and modify FrozenImporter to
+		 * decode it on Windows, but this breaks the convention that `sys.path`
+		 * entries on Windows are MBCS encoded, and may interfere with any code
+		 * that inspects `sys.path`
+		 *
+		 * We could also pass the zlib path through a channel other than `sys.path`
+		 * to sidestep that requirement, but there's not much benefit as this only
+		 * improves non-codepage/non-SFN compatibility for the zlib and not any other
+		 * importable modules.
+		 */
+
+		archivename = pyi_win32_utf8_to_mbs_ex(NULL, status->archivename, 0, 1);
+		if(NULL == archivename) {
+		    FATALERROR("Failed to convert %s to ShortFileName\n", status->archivename);
+			return -1;
+		}
+#else
+		/* Use system-provided path. No encoding required. */
+		archivename = status->archivename;
+#endif
+		zlib_entry = PI_PyString_FromFormat("%s?%d", archivename, zlibpos);
+		if(archivename != status->archivename) free(archivename);
+
+	} else {
+#ifdef _WIN32
+		/* Decode UTF-8 to PyUnicode */
+		archivename_obj = PI_PyUnicode_Decode(status->archivename,
+											  strlen(status->archivename),
+											  "utf-8",
+											  "strict");
+#else
+		/* Decode locale-encoded filename to PyUnicode object using Python's
+		 * preferred decoding method for filenames.
+		 */
+		archivename_obj = PI_PyUnicode_DecodeFSDefault(status->archivename);
+#endif
+		zlib_entry = PI_PyUnicode_FromFormat("%U?%d", archivename_obj, zlibpos);
+		PI_Py_DecRef(archivename_obj);
+	}
+
+	sys_path = PI_PySys_GetObject("path");
+	if(NULL == sys_path) {
+		FATALERROR("Installing PYZ: Could not get sys.path\n");
+		PI_Py_DecRef(zlib_entry);
 		return -1;
 	}
 
-	return 0;
+	rc = PI_PyList_Append(sys_path, zlib_entry);
+	if(rc) {
+		FATALERROR("Failed to append to sys.path\n");
+	}
+
+	return rc;
 }
 
 

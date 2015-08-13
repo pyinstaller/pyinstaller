@@ -106,6 +106,16 @@ int pyi_main(int argc, char * argv[])
     archive_status->argc = argc;
     archive_status->argv = argv;
 
+    /* For the curious:
+     * The UTF-8 form of MEIPASS2 is passed to pyi_setenv, which decodes to UTF-16
+     * before passing it to the Windows API. So the var's value is full unicode.
+     * When Python 2's `os.environ` reads the value, it uses the ANSI API so it gets
+     * the value already as ANSI format - but without SFN.
+     *
+     * Python 3's `os.environ` reads the value using the Unicode API so everything
+     * is peachy.
+     */
+
 #ifdef _WIN32
     /* On Windows use single-process for --onedir mode. */
     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {

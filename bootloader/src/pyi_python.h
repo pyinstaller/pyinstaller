@@ -147,6 +147,12 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 /* Used to convert argv to wchar_t on Linux/OS X */
 EXTDECLPROC(wchar_t *, _Py_char2wchar, (char *, size_t *));
 
+/* Used to add PYZ to sys.path */
+EXTDECLPROC(PyObject *, PySys_GetObject, (const char *));
+EXTDECLPROC(PyObject *, PyString_FromFormat, (const char *, ...));
+EXTDECLPROC(PyObject *, PyUnicode_FromFormat, (const char *, ...));
+EXTDECLPROC(PyObject *, PyUnicode_DecodeFSDefault, (const char *));
+EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, size_t, const char *, const char *)); // Py_ssize_t
 
 /* Functions not used in the code anymore.
  * TODO Remove them.
