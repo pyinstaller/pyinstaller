@@ -96,23 +96,28 @@ static void process_apple_events_new();
 
 
 /* Return string copy of environment variable. */
-// TODO unicode support
 char *pyi_getenv(const char *variable)
 {
     char *env = NULL;
 
 #ifdef _WIN32
-    char  buf1[PATH_MAX], buf2[PATH_MAX];
+    wchar_t * wenv = NULL;
+    wchar_t * wvar = NULL;
+    wchar_t buf1[PATH_MAX], buf2[PATH_MAX];
     DWORD rc;
 
-    rc = GetEnvironmentVariableA(variable, buf1, sizeof(buf1));
+    wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
+    rc = GetEnvironmentVariableW(wvar, buf1, sizeof(buf1));
     if(rc > 0) {
-        env = buf1;
+        wenv = buf1;
         /* Expand environment variables like %VAR% in value. */
-        rc = ExpandEnvironmentStringsA(env, buf2, sizeof(buf2));
+        rc = ExpandEnvironmentStringsW(wenv, buf2, sizeof(buf2));
         if(rc > 0) {
-            env = buf1;
+            wenv = buf1;
         }
+    }
+    if(wenv) {
+        env = pyi_win32_utils_to_utf8(NULL, wenv, 0);
     }
 #else
     /* Standard POSIX function. */
@@ -137,11 +142,16 @@ char *pyi_getenv(const char *variable)
 
 
 /* Set environment variable. */
-// TODO unicode support
 int pyi_setenv(const char *variable, const char *value){
     int rc;
 #ifdef _WIN32
-    rc = SetEnvironmentVariableA(variable, value);
+    wchar_t * wvar, *wval;
+    wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
+    wval = pyi_win32_utils_from_utf8(NULL, value, 0);
+
+    rc = SetEnvironmentVariableW(wvar, wval);
+    free(wvar);
+    free(wval);
 #else
     rc = setenv(variable, value, true);
 #endif
@@ -150,12 +160,14 @@ int pyi_setenv(const char *variable, const char *value){
 
 
 /* Unset environment variable. */
-// TODO unicode support
 int pyi_unsetenv(const char *variable)
 {
     int rc;
 #ifdef _WIN32
-    rc = SetEnvironmentVariableA(variable, NULL);
+    wchar_t * wvar;
+    wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
+    rc = SetEnvironmentVariableW(wvar, NULL);
+    free(wvar);
 #else
     rc = unsetenv(variable);
 #endif
