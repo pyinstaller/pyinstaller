@@ -73,21 +73,24 @@ char * GetWinErrorString() {
 int CreateActContext(const char *workpath, const char *thisfile)
 {
     char manifestpath[PATH_MAX];
+    wchar_t * manifestpath_w;
     char basename[PATH_MAX];
-    ACTCTXA ctx;
+    ACTCTXW ctx;
     BOOL activated;
     HANDLE k32;
-    HANDLE (WINAPI *CreateActCtx)(PACTCTXA pActCtx);
+    HANDLE (WINAPI *CreateActCtx)(PACTCTXW pActCtx);
     BOOL (WINAPI *ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
 
     /* Setup activation context */
+    /* TODO: pyi-option for manifest filename would allow exe to be renamed */
     pyi_path_basename(basename, thisfile);
     pyi_path_join(manifestpath, workpath, basename);
     strcat(manifestpath, ".manifest");
     VS("LOADER: manifestpath: %s\n", manifestpath);
+    manifestpath_w = pyi_win32_utils_from_utf8(NULL, manifestpath, 0);
     
     k32 = LoadLibraryA("kernel32");
-    CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA");
+    CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxW");
     ActivateActCtx = (void*)GetProcAddress(k32, "ActivateActCtx");
     
     if (!CreateActCtx || !ActivateActCtx)
@@ -98,9 +101,10 @@ int CreateActContext(const char *workpath, const char *thisfile)
     
     ZeroMemory(&ctx, sizeof(ctx));
     ctx.cbSize = sizeof(ACTCTX);
-    ctx.lpSource = manifestpath;
+    ctx.lpSource = manifestpath_w;
 
     hCtx = CreateActCtx(&ctx);
+    free(manifestpath_w);
     if (hCtx != INVALID_HANDLE_VALUE)
     {
         VS("LOADER: Activation context created\n");
