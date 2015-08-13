@@ -172,24 +172,12 @@ int pyi_get_temp_path(char *buffer)
     char *ret;
     char prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
-    wchar_t wchar_dos83_buffer[PATH_MAX];
 
-    // TODO later when moving to full unicode support - use 83 filename only where really necessary.
     /*
      * Get path to Windows temporary directory.
-     *
-     * Usually on Windows it points to a user-specific path.
-     * When the username contains foreign characters then
-     * the path to temp dir contains them too and the frozen
-     * app fails to run.
-     *
-     * Converting temppath to 8.3 filename should fix this
-     * when running in --onefile mode.
      */
     GetTempPathW(PATH_MAX, wchar_buffer);
-    GetShortPathNameW(wchar_buffer, wchar_dos83_buffer, PATH_MAX);
-    /* Convert wchar_t to utf8 just use char as usual. */
-    pyi_win32_utils_to_utf8(buffer, wchar_dos83_buffer, PATH_MAX);
+    pyi_win32_utils_to_utf8(buffer, wchar_buffer, PATH_MAX);
 
     sprintf(prefix, "_MEI%d", getpid());
 
