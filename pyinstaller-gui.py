@@ -69,7 +69,6 @@ class PyInstallerGUI:
         cancelbutton.bind("<Button>", self.killapp)
         cancelbutton.pack(side="right")
         self.fin = ''
-        self.fout = ''
 
         ws = root.winfo_screenwidth()
         hs = root.winfo_screenheight()
@@ -100,6 +99,7 @@ class PyInstallerGUI:
 
     def GetFile(self, event):
         self.fin = filedialog.askopenfilename()
+        self.filein.delete(0, 'end')
         self.filein.insert(0, self.fin)
 
 if __name__ == "__main__":
