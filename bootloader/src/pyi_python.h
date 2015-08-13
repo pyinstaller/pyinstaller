@@ -21,10 +21,10 @@
 #define PYI_PYTHON_H
 
 #include "pyi_global.h"
-#include <stdlib.h>  // mbstowcs
 #ifdef _WIN32
     #include <windows.h>  // HMODULE
 #endif
+#include <wchar.h>
 #include "pyi_python27_compat.h"
 
 

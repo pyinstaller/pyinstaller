@@ -27,7 +27,6 @@
 #include <stdio.h>  // FILE
 #include <stdlib.h>  // calloc
 #include <string.h>  // memset
-#include <locale.h>  // setlocale
 
 /* PyInstaller headers. */
 #include "pyi_global.h" // PATH_MAX for win32
@@ -65,26 +64,6 @@ int pyi_main(int argc, char * argv[])
         return -1;
 
     }
-
-    /*
-     * LC_CTYPE is "C" initially.
-     * We must set LC_CTYPE to the current locale to make `mbstowcs` work correctly
-     * We need `mbstowcs` working to convert Linux `char *` filenames to
-     * wchar_t so we can pass them to Python 3 APIs.
-     *
-     * The old locale is saved in the global `saved_locale` and restored immediately
-     * before running scripts to preserve this Python behavior:
-     *
-     * >>> import locale
-     * >>> locale.setlocale(locale.LC_CTYPE, None)
-     * 'C'
-     *
-     */
-    saved_locale = strdup(setlocale(LC_CTYPE, NULL));
-    VS("LOADER: LC_CTYPE is %s\n", saved_locale);
-    VS("LOADER: Setting LC_CTYPE to \"\" (using current locale)\n");
-    setlocale(LC_CTYPE, "");
-    VS("LOADER: LC_CTYPE is now %s\n", setlocale(LC_CTYPE, NULL));
 
     pyi_path_executable(executable, argv[0]);
     pyi_path_archivefile(archivefile, executable);

@@ -26,7 +26,6 @@
     #include <string.h>  // strncmp, strcpy, strcat
     #include <sys/stat.h>  // fchmod
 #endif
-#include <locale.h>  // setlocale, mbstowcs
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>
 

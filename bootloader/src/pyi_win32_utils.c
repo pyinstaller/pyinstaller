@@ -267,13 +267,13 @@ char * pyi_win32_utf8_to_mbs_sfn_keep_basename(char * dest, const char * src) {
     char dirname[PATH_MAX];
 
     /* Convert path to mbs*/
-    mbs_buffer = pyi_win32_utf8_to_mbs_ex(NULL, src, 0, 0);
+    mbs_buffer = pyi_win32_utf8_to_mbs(NULL, src, 0);
     if(NULL == mbs_buffer) {
         return NULL;
     }
 
     /* Convert path again to mbs, this time with SFN */
-    mbs_sfn_buffer = pyi_win32_utf8_to_mbs_ex(NULL, src, 0, 1);
+    mbs_sfn_buffer = pyi_win32_utf8_to_mbs_sfn(NULL, src, 0);
     if(NULL == mbs_sfn_buffer) {
         free(mbs_buffer);
         return NULL;
@@ -496,7 +496,13 @@ char * pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sf
     }
 }
 
+char * pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max) {
+    return pyi_win32_utf8_to_mbs_ex(dst, src, max, 0);
+}
 
+char * pyi_win32_utf8_to_mbs_sfn(char * dst, const char * src, size_t max) {
+    return pyi_win32_utf8_to_mbs_ex(dst, src, max, 1);
+}
 /* Convenience function to convert UTF-8 argv to ANSI characters for Py2Sys_SetArgv
    Optionally use ShortFileNames to improve compatibility on Python 2.
 
