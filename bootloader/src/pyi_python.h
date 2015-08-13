@@ -154,13 +154,6 @@ EXTDECLPROC(PyObject *, PyUnicode_FromFormat, (const char *, ...));
 EXTDECLPROC(PyObject *, PyUnicode_DecodeFSDefault, (const char *));
 EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, size_t, const char *, const char *)); // Py_ssize_t
 
-/* Functions not used in the code anymore.
- * TODO Remove them.
-EXTDECLPROC(PyObject *, PyFile_FromString, (char *, char *));  // TODO py2.7
-EXTDECLPROC(PyObject *, PyObject_CallObject, (PyObject *, PyObject*) );
-EXTDECLPROC(PyObject *, PyObject_CallMethod, (PyObject *, char *, char *, ...) );
-EXTDECLPROC(char *, PyString_AsString, (PyObject *));
-*/
 
 
 /*
