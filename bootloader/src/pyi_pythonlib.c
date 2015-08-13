@@ -31,6 +31,7 @@
 #include <stddef.h>  // ptrdiff_t
 #include <stdio.h>
 #include <string.h>
+#include <locale.h> // setlocale
 
 
 /* PyInstaller headers. */
@@ -207,22 +208,107 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 }
 
 
+/* Convert argv to wchar_t for Python 3. Based on code from Python's main().
+ *
+ * Uses '_Py_char2wchar' function from python lib, so don't call until
+ * after python lib is loaded.
+ *
+ * Returns NULL on failure. Caller is responsible for freeing
+ * both argv and argv[0..argc]
+ */
+
+wchar_t ** pyi_wargv_from_argv(int argc, char ** argv) {
+    wchar_t ** wargv;
+    char *oldloc;
+    int i;
+
+    oldloc = strdup(setlocale(LC_CTYPE, NULL));
+    if (!oldloc) {
+        FATALERROR("out of memory\n");
+        return NULL;
+    }
+
+    wargv = (wchar_t **)malloc(sizeof(wchar_t*) * (argc+1));
+    if (!wargv) {
+        FATALERROR("out of memory\n");
+        return NULL;
+    }
+
+    setlocale(LC_CTYPE, "");
+    for (i = 0; i < argc; i++) {
+        wargv[i] = PI__Py_char2wchar(argv[i], NULL);
+        if (!wargv[i]) {
+            free(oldloc);
+            FATALERROR("Fatal error: "
+                       "unable to decode the command line argument #%i\n",
+                       i + 1);
+            return NULL;
+        }
+    }
+    wargv[argc] = NULL;
+
+    setlocale(LC_CTYPE, oldloc);
+    free(oldloc);
+    return wargv;
+}
+
+void pyi_free_wargv(wchar_t ** wargv) {
+    wchar_t ** arg = wargv;
+    while(arg[0]) {
+        free(arg[0]);
+        arg++;
+    }
+    free(wargv);
+}
+
 /*
  * Set Python list sys.argv from *argv/argc. (Command-line options).
  * sys.argv[0] should be full absolute path to the executable (Derived from
  * status->archivename).
  */
-static void pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
+static int pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
 {
+	char ** mbcs_argv;
+ 	wchar_t ** wargv;
+
 	VS("LOADER: Setting sys.argv\n");
-    /* last parameter '0' means do not update sys.path. */
+
+    /* last parameter '0' to PySys_SetArgv means do not update sys.path. */
     if (is_py2) {
+#ifdef _WIN32
+      /* status->argv is UTF-8, convert to ANSI without SFN */
+      /* TODO: pyi-option to enable SFNs for argv? */
+	  mbcs_argv = pyi_win32_argv_mbcs_from_utf8(status->argc, status->argv);
+	  if(mbcs_argv) {
+		  PI_Py2Sys_SetArgvEx(status->argc, mbcs_argv, 0);
+		  free(mbcs_argv);
+	  } else {
+	  	  FATALERROR("Failed to convert argv to mbcs\n");
+	  	  return -1;
+	  }
+#else /* _WIN32 */
       // For Python2, status->argv must be "char **". In Python 2.7's
       // `main.c`, argv is used without any other handling, so do we.
-      PI_Py2Sys_SetArgvEx(status->argc, status->argv_char, 0);
+      PI_Py2Sys_SetArgvEx(status->argc, status->argv, 0);
+#endif
+
     } else {
-      PI_PySys_SetArgvEx(status->argc, status->argv, 0);
+#ifdef _WIN32
+	  /* Convert UTF-8 argv back to wargv */
+	  wargv = pyi_win32_wargv_from_utf8(status->argc, status->argv);
+#else
+      /* Convert argv to wargv using Python's _Py_char2wchar */
+      wargv = pyi_wargv_from_argv(status->argc, status->argv);
+#endif
+      if(wargv) {
+		  PI_PySys_SetArgvEx(status->argc, wargv, 0);
+		  pyi_free_wargv(wargv);
+	  } else {
+	  	  FATALERROR("Failed to convert argv to wchar_t\n");
+	  	  return -1;
+	  }
     };
+    return 0;
 }
 
 /* Required for Py_SetProgramName */
@@ -340,7 +426,9 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 	};
 
     /* Setting sys.argv should be after Py_Initialize() call. */
-    pyi_pylib_set_sys_argv(status);
+    if(pyi_pylib_set_sys_argv(status)) {
+        return -1;
+    }
 
 	/* Check for a python error */
 	if (PI_PyErr_Occurred())

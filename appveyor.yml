@@ -11,37 +11,37 @@ environment:
     # TODO Fix bootloader compilation of 64bit bootloader - either fix for msvc or install mingw-w64
     # Pre-installed Python versions, which Appveyor may upgrade to
     # a later point release.
-    #- PYTHON: "C:\\Python34-x64"
-      #PYTHON_VERSION: "3.4"
-      #PYTHON_ARCH: "64"
-      #PYWIN_ARCH: "win-amd64"
-      ## This forces to build bootloader with MSVC.
-      ## Appveyor does not have 64-bit mingw.
-      #WAF_ARGS: ""
-
-    #- PYTHON: "C:\\Python33-x64"
-      #PYTHON_VERSION: "3.3"
-      #PYTHON_ARCH: "64"
-      #PYWIN_ARCH: "win-amd64"
-      #WAF_ARGS: ""
+#    - PYTHON: "C:\\Python34-x64"
+#      PYTHON_VERSION: "3.4"
+#      PYTHON_ARCH: "64"
+#      PYWIN_ARCH: "win-amd64"
+#      # This forces to build bootloader with MSVC.
+#      # Appveyor does not have 64-bit mingw.
+#      WAF_ARGS: ""
+#
+#    - PYTHON: "C:\\Python33-x64"
+#      PYTHON_VERSION: "3.3"
+#      PYTHON_ARCH: "64"
+#      PYWIN_ARCH: "win-amd64"
+#      WAF_ARGS: ""
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
       PYWIN_ARCH: "win32"
-      WAF_ARGS: "--gcc"
+      WAF_ARGS: ""
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
       PYWIN_ARCH: "win32"
-      WAF_ARGS: "--gcc"
+      WAF_ARGS: ""
 
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
       PYWIN_ARCH: "win32"
-      WAF_ARGS: "--gcc"
+      WAF_ARGS: ""
 
 cache:
   # Cache created Python .whl packages to avoid compiling them again.

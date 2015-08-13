@@ -467,59 +467,16 @@ int pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
 	return ntohl(status->cookie.pyvers);
 }
 
-
-/*
- * Cache command-line arguments and convert them to wchar_t (unicode type).
- *
- * Return 0 on success.
- */
-int pyi_arch_cache_argv(ARCHIVE_STATUS *archive_status, int argc, char **argv)
-{
-    // TODO on Windows use 'wmain' to get argv already as wchar_t if possible.
-    int i;
-    size_t count;
-
-    /* Don't forget to cache the count of command-line arguments - argc! */
-    archive_status->argc = argc;
-    archive_status->argv_char = argv; // Plain copy of argv, used for is_py2
-
-    /* Allocate memory for argv cache. */
-    archive_status->argv = malloc(sizeof(wchar_t*) * archive_status->argc);
-
-    /* Convert arguments. */
-    for (i = 0; i < archive_status->argc; i++) {
-        // FIXME: calculate size! args may be longer then PATH_MAX
-        archive_status->argv[i] = malloc(sizeof(wchar_t) * PATH_MAX);
-        count = mbstowcs(archive_status->argv[i], argv[i], PATH_MAX-1);
-        if (count == (size_t)-1) {
-	     VS("LOADER: Error converting argv[%i] %s to string\n", i, argv[i]);
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-
 /*
  * Free memory allocated for archive status.
  */
 void pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
 {
-    int i;
-
     if (archive_status != NULL) {
         VS("LOADER: Freeing archive status for %s\n", archive_status->archivename);
         /* Free the TOC memory from the archive status first. */
         if (archive_status->tocbuff != NULL) {
             free(archive_status->tocbuff);
-        }
-        /* Free memory for cached argv[]. */
-        if (archive_status->argv != NULL) {
-            for (i = 0; i < archive_status->argc; i++) {
-                free(archive_status->argv[i]);
-            }
-            free(archive_status->argv);
         }
         /* Close file handler */
         pyi_arch_close_fp(archive_status);
