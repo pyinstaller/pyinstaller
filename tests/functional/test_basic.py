@@ -296,6 +296,20 @@ def test_ascii_path(pyi_builder):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
+@skipif_winorosx
+@pytest.mark.path_encoding
+def test_linux_non_unicode_path(pyi_builder, monkeypatch):
+    # If we set the locale to 'C', mbstowcs should be completely useless. This
+    # test verifies that _Py_char2wchar will decode the "undecodable" bytes and
+    # will decode even filenames that weren't encoded with the locale encoding.
+    distdir = pyi_builder._distdir
+    unicode_filename = u'ěščřžýáíé日本語'
+    pyi_builder._distdir = os.path.join(distdir, unicode_filename)
+    os.makedirs(pyi_builder._distdir)
+
+    monkeypatch.setenv('LC_ALL', 'C')
+    pyi_builder.test_script('pyi_path_encoding.py')
+
 @skipif_win
 @pytest.mark.path_encoding
 def test_osx_linux_unicode_path(pyi_builder):
