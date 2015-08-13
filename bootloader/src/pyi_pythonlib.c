@@ -102,8 +102,7 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
 		return -1;
 	}
 
-	pyi_python_map_names(dll, pyvers);
-	return 0;
+	return pyi_python_map_names(dll, pyvers);
 }
 
 /*
@@ -116,7 +115,7 @@ int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew)
 	HMODULE dll;
 	char nm[PATH_MAX + 1];
     int pyvers = ntohl(status->cookie.pyvers);
-
+	int ret = 0;
 	/* Get python's name */
 	sprintf(nm, "python%02d.dll", pyvers);
 
@@ -126,8 +125,9 @@ int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew)
 		*loadedNew = 1;
 		return pyi_pylib_load(status);
 	}
-	pyi_python_map_names(dll, pyvers);
+	ret = pyi_python_map_names(dll, pyvers);
 	*loadedNew = 0;
+	return ret;
 #endif
 	return 0;
 }
