@@ -169,7 +169,7 @@ class BUNDLE(Target):
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip, upx=self.upx, dist_nm=inm)
-            if typ == 'DATA':
+            if typ == 'DATA':  # add all data files to a list for symlinking later
                 links.append((inm, fnm))
             else:
                 tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
@@ -196,27 +196,30 @@ class BUNDLE(Target):
         bin_dir = os.path.join(self.name, 'Contents', 'MacOS')
         res_dir = os.path.join(self.name, 'Contents', 'Resources')
         for inm, fnm in links:
-            if inm != 'base_library.zip':
+            if inm != 'base_library.zip':  # Don't symlink the base_library.zip for python 3
                 tofnm = os.path.join(res_dir, inm)
                 todir = os.path.dirname(tofnm)
                 if not os.path.exists(todir):
                     os.makedirs(todir)
                 shutil.copy2(fnm, tofnm)
                 path = os.path.split(inm)[0]
-                old_path = inm
+                old_path = inm  # Initialize old_path as the in name
                 if path:
                     while path:
+                        # If the folder already exists but the destination file/folder doesn't symlink the file/folder
                         if os.path.exists(os.path.join(bin_dir, path)) and \
                                 not os.path.exists(os.path.join(bin_dir, inm)):
                             os.symlink(os.path.join(res_dir, old_path), os.path.join(bin_dir, old_path))
-                            break
-                        else:
+                            break  # Continue to the next file
+                        else:  # Folder didn't exist move up a level and try again
                             old_path = path
-                            path = os.path.split(path)[0]
+                            path = os.path.split(path)[0]  # Remove one directory level
                     else:
+                        # If we have tried all directory levels and they all exist then just symlink the file if it
+                        # doesn't exist
                         if not os.path.exists(os.path.join(bin_dir, inm)):
                             os.symlink(os.path.join(res_dir, old_path), os.path.join(bin_dir, old_path))
-                else:
+                else:  # If path is empty, e.g., a top level file, try to just symlink the file
                     os.symlink(os.path.join(res_dir, inm), os.path.join(bin_dir, inm))
             else:
                 shutil.copy2(fnm, bin_dir)
