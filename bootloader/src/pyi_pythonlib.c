@@ -163,7 +163,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
      * User is allowed to changes these options. */
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_RUNTIME_OPTION) {
-			VS("LOADER: %s\n", ptoc->name);
+			VS("LOADER: Runtime option: %s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
 				*PI_Py_VerboseFlag = 1;
@@ -663,7 +663,7 @@ int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 	while (ptoc < status->tocend) {
 		if (ptoc->typcd == ARCHIVE_ITEM_PYZ)
 		{
-			VS("LOADER: %s\n", ptoc->name);
+			VS("LOADER: PYZ archive: %s\n", ptoc->name);
 			pyi_pylib_install_zlib(status, ptoc);
 		}
 
