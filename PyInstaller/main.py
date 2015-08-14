@@ -61,10 +61,6 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
     """
     misc.check_not_running_as_root()
 
-    # Clean up configuration and force PyInstaller to do a clean configuration
-    # for another app/test.
-    from . import config
-    module_reload(config)
 
     try:
         parser = optparse.OptionParser(
@@ -91,12 +87,6 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
         # Print PyInstaller version as the first line to stdout.
         # This helps identify PyInstaller version when users report issues.
         logger.info('PyInstaller version %s' % get_version())
-
-
-        # TODO find better way how to pass path to manage.py to django hook.
-        # Django hook requires this variable.
-        from .config import CONF
-        CONF['main_script'] = args[0]
 
         # Skip creating .spec when .spec file is supplied
         if args[0].endswith('.spec'):

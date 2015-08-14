@@ -143,6 +143,9 @@ class Analysis(Target):
                 raise ValueError("script '%s' not found" % script)
             self.inputs.append(script)
 
+        # Django hook requires this variable to find the script manage.py.
+        CONF['main_script'] = self.inputs[0]
+
         self.pathex = self._extend_pathex(pathex,scripts)
         # Set global config variable 'pathex' to make it available for hookutils and
         # import hooks. Ppath extensions for module search.
@@ -631,6 +634,10 @@ def __add_options(parser):
                       'before building.')
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
+    # Clean up configuration and force PyInstaller to do a clean configuration
+    # for another app/test.
+    from .. import config
+    config.CONF = config.DEFAULT_CONF
 
     from ..config import CONF
     CONF['noconfirm'] = noconfirm
