@@ -113,7 +113,7 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts, pathex=None, hiddenimports=None,
-                 hookspath=None, excludes=None, runtime_hooks=[], cipher=None):
+                 hookspath=None, excludes=[], runtime_hooks=[], cipher=None):
         """
         scripts
                 A list of scripts specified as file names.
@@ -168,7 +168,7 @@ class Analysis(Target):
             logger.info('Adding dependencies on pyi_crypto.py module')
             self.hiddenimports.append(pyz_crypto.get_crypto_hiddenimports())
 
-        self.excludes = excludes
+        self.excludes = excludes if excludes else []
         self.scripts = TOC()
         self.pure = TOC()
         self.binaries = TOC()
