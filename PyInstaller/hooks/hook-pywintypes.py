@@ -19,4 +19,4 @@ import os.path
 from PyInstaller.utils.hooks.hookutils import get_pywin32_module_file_attribute
 
 _pth = get_pywin32_module_file_attribute('pywintypes')
-binaries = [(os.path.basename(_pth), _pth)]
+binaries = [(_pth, '.')]

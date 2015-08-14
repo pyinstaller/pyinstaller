@@ -28,13 +28,13 @@ elif is_darwin:
 from enchant._enchant import e
 print(e._name)""").strip().split()
     for f in files:  # Put the enchant library in lib/ so the enchant plugins can find it
-        binaries.append((os.path.join('lib', os.path.basename(f)), f))
+        binaries.append((f, 'lib'))
     files = exec_statement("""
 from enchant import Broker
 for provider in Broker().describe():
     print(provider.file)""").strip().split()
     for f in files:  # Put enchant plugins in lib/enchant/ so the enchant library can find them
-        binaries.append((os.path.join('lib', 'enchant', os.path.basename(f)), f))
+        binaries.append((f, os.path.join('lib', 'enchant')))
 
     datas = []
     files = collect_data_files('enchant')  # Only works if pyenchant is installed via pip

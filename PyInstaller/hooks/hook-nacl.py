@@ -24,6 +24,6 @@ binaries = []
 nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
 for ext in PY_EXTENSION_SUFFIXES:
     ffimods = glob.glob(os.path.join(nacl_dir, '_lib', '*_cffi_*%s*' % ext))
+    dest_dir = os.path.join('nacl', '_lib')
     for f in ffimods:
-        name = os.path.join('nacl', '_lib', os.path.basename(f))
-        binaries.append((name, f))
+        binaries.append((f, dest_dir))
