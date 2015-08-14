@@ -167,6 +167,15 @@ def test_chdir_meipass(pyi_builder):
     pyi_builder.test_script('pyi_chdir_meipass.py')
 
 
+def test_option_exclude_module(pyi_builder):
+    """
+    Test to ensure that when using option --exclude-module=xml.sax
+    the module 'xml.sax' won't be bundled.
+    """
+    pyi_builder.test_script('pyi_option_exclude_module.py',
+                            pyi_args=['--exclude-module', 'xml.sax'])
+
+
 @skipif_win
 @pytest.mark.xfail(reason='failing when running in Travis')
 def test_python_makefile(pyi_builder):
