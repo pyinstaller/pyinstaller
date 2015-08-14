@@ -237,6 +237,18 @@ class PyiModuleGraph(ModuleGraph):
             # get node type e.g. Script
             mg_type = type(node).__name__
             assert mg_type is not None
+
+            # Skip dynamic libraries that looks like Python C extensions.
+            # For example pyzmq bundles files like:
+            #     libzmq.cpython-34m.so,
+            #     libzmq.cpython-34m.pyd.
+            # These files have to be handled separately.
+            if mg_type == 'Extension':
+                base_nm = os.path.basename(node.filename)
+                ext = os.path.splitext(base_nm)[1]
+                if base_nm.startswith('lib') and ext in ('.pyd', '.so'):
+                    continue
+
             # translate to the corresponding TOC typecode, or leave as-is
             toc_type = self.typedict.get(mg_type, mg_type)
             if typecode and not (toc_type in typecode):
