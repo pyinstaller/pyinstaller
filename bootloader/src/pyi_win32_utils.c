@@ -202,7 +202,6 @@ char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
                               NULL,      // lpDefaultChar
                               NULL       // lpUsedDefaultChar
                               );
-    str[len] = '\0';
 
     if(0 == ret) {
         FATALERROR("Failed to encode filename as ANSI"
@@ -406,7 +405,6 @@ char * pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len) {
                    );
         return NULL;
     }
-    output[len] = '\0';
     return output;
 }
 
@@ -463,7 +461,6 @@ wchar_t * pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
                    );
         return NULL;
     }
-    output[wlen] = L'\0';
     return output;
 }
 
