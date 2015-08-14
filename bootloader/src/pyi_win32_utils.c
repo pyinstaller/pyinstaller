@@ -225,22 +225,28 @@ char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
  */
 
 char * pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr) {
-    DWORD wlen = (DWORD)wcslen(wstr);
-    wchar_t * wstr_sfn = (wchar_t *)malloc(sizeof(wchar_t) * wlen + 1);
+    DWORD wsfnlen;
+    wchar_t * wstr_sfn = NULL;
     char * str;
     DWORD ret;
 
-    ret = GetShortPathNameW(wstr, wstr_sfn, wlen);
-    if(0 == ret) {
+    wsfnlen = GetShortPathNameW(wstr, NULL, 0);
+    if(wsfnlen) {
+        wstr_sfn = (wchar_t *)malloc(sizeof(wchar_t) * wsfnlen + 1);
+        ret = GetShortPathNameW(wstr, wstr_sfn, wsfnlen);
+        if(ret) {
+            str = pyi_win32_wcs_to_mbs(wstr);
+        }
 
+    }
+    if(!wstr_sfn){
         VS("Failed to get short path name for filename. GetShortPathNameW: \n%s",
                    GetWinErrorString()
                    );
-        str = pyi_win32_wcs_to_mbs(wstr);
-    } else {
         str = pyi_win32_wcs_to_mbs(wstr_sfn);
+    } else {
+        free(wstr_sfn);
     }
-    free(wstr_sfn);
     return str;
 }
 
