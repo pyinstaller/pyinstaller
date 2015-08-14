@@ -860,6 +860,48 @@ def collect_submodules(package, subdir=None):
     return list(mods)
 
 
+# Patterns of dynamic library filenames that might be bundled with some
+# installed Python packages.
+PY_DYLIB_PATTERNS = [
+    '*.dll',
+    '*.dylib',
+    # Some packages contain dynamic libraries that ends with the same
+    # suffix as Python C extensions. E.g. zmq:  libzmq.pyd, libsodium.pyd.
+    # Those files usually starts with 'lib' prefix.
+    'lib*.pyd',
+    'lib*.so',
+]
+
+
+def collect_dynamic_libs(package):
+    """
+    This routine produces a list of (source, dest) of dynamic library
+    files which reside in package. Its results can be directly assigned to
+    ``binaries`` in a hook script; see, for example, hook-zmq.py. The
+    package parameter must be a string which names the package.
+    """
+    # Accept only strings as packages.
+    if type(package) is not str:
+        raise ValueError
+
+    logger.debug('Collecting dynamic libraries for %s' % package)
+    pkg_base, pkg_dir = get_package_paths(package)
+    # Walk through all file in the given package, looking for dynamic libraries.
+    dylibs = []
+    for dirpath, _, __ in os.walk(pkg_dir):
+        # Try all file patterns in a given directory.
+        for pattern in PY_DYLIB_PATTERNS:
+            files = glob.glob(os.path.join(dirpath, pattern))
+            for source in files:
+                # Produce the tuple
+                # (/abs/path/to/source/mod/submod/file.pyd,
+                #  mod/submod/file.pyd)
+                dest = remove_prefix(dirpath, os.path.dirname(pkg_base) + os.sep)
+                dest = os.path.join(dest, os.path.basename(source)) # TODO Remove this line when it is implemented formatting of binaries attribute as it is with `datas`
+                logger.debug(' %s, %s' % (source, dest))
+                dylibs.append((dest, source))
+    return dylibs
+
 
 def collect_data_files(package, include_py_files=False, subdir=None):
     """
@@ -902,14 +944,13 @@ def collect_data_files(package, include_py_files=False, subdir=None):
 
     return datas
 
-# The following is refactored out of hook-sysconfig and hook-distutils,
-# both of which need to generate "datas" tuples for pyconfig.h and
-# Makefile, under the same conditions.
 
-# In virtualenv, _CONFIG_H and _MAKEFILE may have same or different
-# prefixes, depending on the version of virtualenv.
-# Try to find the correct one, which is assumed to be the longest one.
 def _find_prefix(filename):
+    """
+    In virtualenv, _CONFIG_H and _MAKEFILE may have same or different
+    prefixes, depending on the version of virtualenv.
+    Try to find the correct one, which is assumed to be the longest one.
+    """
     if not compat.is_venv:
         return sys.prefix
     prefixes = [os.path.abspath(sys.prefix), compat.base_prefix]
@@ -922,6 +963,12 @@ def _find_prefix(filename):
     return possible_prefixes[0]
 
 def relpath_to_config_or_make(filename):
+    """
+    The following is refactored out of hook-sysconfig and hook-distutils,
+    both of which need to generate "datas" tuples for pyconfig.h and
+    Makefile, under the same conditions.
+    """
+
     # Relative path in the dist directory.
     prefix = _find_prefix(filename)
     return os.path.relpath(os.path.dirname(filename), prefix)
