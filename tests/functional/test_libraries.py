@@ -38,3 +38,7 @@ def test_django(pyi_builder, monkeypatch):
 def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
 
+
+@importorskip('zmq')
+def test_zmq(pyi_builder):
+    pyi_builder.test_script('pyi_lib_zmq.py')
