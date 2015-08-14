@@ -195,14 +195,13 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 #ifdef _WIN32
 		_setmode(fileno(stdin), _O_BINARY);
 		_setmode(fileno(stdout), _O_BINARY);
-#else
+#endif
 		fflush(stdout);
 		fflush(stderr);
 
 		setbuf(stdin, (char *)NULL);
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
-#endif
 	}
 	return 0;
 }
