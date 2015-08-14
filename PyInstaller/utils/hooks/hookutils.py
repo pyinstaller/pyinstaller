@@ -897,9 +897,8 @@ def collect_dynamic_libs(package):
                 # (/abs/path/to/source/mod/submod/file.pyd,
                 #  mod/submod/file.pyd)
                 dest = remove_prefix(dirpath, os.path.dirname(pkg_base) + os.sep)
-                dest = os.path.join(dest, os.path.basename(source)) # TODO Remove this line when it is implemented formatting of binaries attribute as it is with `datas`
                 logger.debug(' %s, %s' % (source, dest))
-                dylibs.append((dest, source))
+                dylibs.append((source, dest))
     return dylibs
 
 

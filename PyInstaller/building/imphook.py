@@ -367,7 +367,7 @@ class ImportHook(object):
         glob, a destination directory is specified.
         """
         # Find all files and interpret glob statements.
-        self.datas.update(set(_format_hook_datas(self._module.datas)))
+        self.datas.update(set(_format_hook_binaries_and_datas(self._module.datas)))
 
     def _process_binaries(self, mod_graph):
         """
@@ -376,7 +376,7 @@ class ImportHook(object):
         might depend on other dlls (dynamic libraries).
         """
         print(self._module.binaries)
-        self.binaries.update(set(self._module.binaries))
+        self.binaries.update(set(_format_hook_binaries_and_datas(self._module.binaries)))
 
     def _process_attrs(self, mod_graph):
         # TODO implement attribute 'hook_name_space.attrs'
@@ -417,7 +417,7 @@ class ImportHook(object):
 #* All hooks currently passing the empty string for such item (e.g.,
 #  "hooks/hook-babel.py", "hooks/hook-matplotlib.py") should be refactored
 #  to instead pass such basename.
-def _format_hook_datas(datas):
+def _format_hook_binaries_and_datas(binaries_or_datas):
     """
     Convert the passed `hook.datas` list to a list of `TOC`-style 3-tuples.
 
@@ -439,7 +439,7 @@ def _format_hook_datas(datas):
     """
     toc_datas = []
 
-    for src_root_path_or_glob, trg_root_dir in datas:
+    for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
         # List of the absolute paths of all source paths matching the
         # current glob.
         src_root_paths = glob.glob(src_root_path_or_glob)
