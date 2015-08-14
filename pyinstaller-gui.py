@@ -18,9 +18,11 @@ import subprocess
 # In Python 3 module name is 'tkinter'
 try:
     from tkinter import *
+    from tkinter.ttk import *
     import tkinter.filedialog as filedialog
 except ImportError:
     from Tkinter import *
+    from ttk import *
     import tkFileDialog as filedialog
 
 
