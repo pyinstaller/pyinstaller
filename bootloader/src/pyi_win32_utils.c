@@ -166,7 +166,6 @@ void ReleaseActContext(void)
  */
 
 char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
-    DWORD wlen = (DWORD)wcslen(wstr);
     DWORD len, ret;
     char * str;
 
@@ -178,7 +177,7 @@ char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
     len = WideCharToMultiByte(CP_ACP,    // CodePage
                               0,         // dwFlags
                               wstr,      // lpWideCharStr
-                              wlen,      // cchWideChar - length in chars
+                              -1  ,      // cchWideChar - length in chars
                               NULL,      // lpMultiByteStr
                               0,         // cbMultiByte - length in bytes
                               NULL,      // lpDefaultChar
@@ -197,7 +196,7 @@ char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
     ret = WideCharToMultiByte(CP_ACP,    // CodePage
                               0,         // dwFlags
                               wstr,      // lpWideCharStr
-                              wlen,      // cchWideChar - length in chars
+                              -1,        // cchWideChar - length in chars
                               str,       // lpMultiByteStr
                               len,       // cbMultiByte - length in bytes
                               NULL,      // lpDefaultChar
@@ -253,7 +252,7 @@ char * pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr) {
    the unmodified basename. Assumes that the basename can be encoded using the current
    ANSI codepage.
 
-   This is a workaround for <http://www.pyinstaller.org/ticket/298>.
+   This is a workaround for <https://github.com/pyinstaller/pyinstaller/issues/298>.
 
    Copies the converted string to `dest`, which must be a buffer
    of at least PATH_MAX characters. Returns 'dest' if successful.
