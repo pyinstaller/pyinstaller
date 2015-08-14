@@ -390,7 +390,7 @@ class PyiModuleGraph(ModuleGraph):
         return co_dict
 
 
-def initialize_modgraph():
+def initialize_modgraph(excludes=()):
     """
     Create module dependency graph and for Python 3 analyze dependencies
     for base_library.zip. These are same for every executable.
@@ -399,7 +399,7 @@ def initialize_modgraph():
     """
     logger.info('Initializing module dependency graph...')
     # `get_implies()` are hidden-imports known by modulgraph.
-    graph = PyiModuleGraph(HOMEPATH, implies=get_implies(), debug=0)
+    graph = PyiModuleGraph(HOMEPATH, excludes=excludes, implies=get_implies(), debug=0)
 
     if not is_py2:
         logger.info('Analyzing base_library.zip ...')

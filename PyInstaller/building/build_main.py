@@ -247,11 +247,14 @@ class Analysis(Target):
 
         # Either instantiate a ModuleGraph object or for tests reuse
         # dependency graph already created.
-        if 'tests_modgraph' in CONF:
+        # Do not reuse dependency graph when option --exclude-module was used.
+        if 'tests_modgraph' in CONF and not self.excludes:
             logger.info('Reusing basic module graph object.')
             self.graph = CONF['tests_modgraph']
         else:
-            self.graph = initialize_modgraph()
+            for m in self.excludes:
+                logger.debug("Excluding module '%s'" % m)
+            self.graph = initialize_modgraph(excludes=self.excludes)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
