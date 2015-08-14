@@ -16,3 +16,4 @@ pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
 # http://www.voidspace.org.uk/python/pycrypto-2.6.1/
 pycrypto==2.6.1  # Required for crypto feature - encrypting bytecode.
 Django==1.8.3
+pyzmq
