@@ -488,8 +488,8 @@ char * pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sf
         mbs = pyi_win32_wcs_to_mbs(wsrc);
     }
 
+    free(wsrc);
     if(NULL == mbs) {
-        free(wsrc);
         return NULL;
     }
     if(dst){
