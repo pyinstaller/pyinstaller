@@ -443,6 +443,10 @@ def configure(ctx):
             ctx.env.append_value('DEFINES', 'GC_DEBUG')
             ctx.env.append_value('DEFINES', 'SAVE_CALL_CHAIN')
 
+    ### Functions
+
+    # unsetenv not available on AIX, maybe others.
+    ctx.check_cc(function_name='unsetenv', header_name="stdlib.h", mandatory=False)
 
     ### CFLAGS
 

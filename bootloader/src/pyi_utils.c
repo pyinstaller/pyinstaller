@@ -168,9 +168,13 @@ int pyi_unsetenv(const char *variable)
     wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
     rc = SetEnvironmentVariableW(wvar, NULL);
     free(wvar);
-#else
+#else /* _WIN32 */
+#if HAVE_UNSETENV
     rc = unsetenv(variable);
-#endif
+#else /* HAVE_UNSETENV */
+    rc = setenv(variable, "");
+#endif /* HAVE_UNSETENV */
+#endif /* _WIN32 */
     return rc;
 }
 
