@@ -12,11 +12,13 @@ import copy
 import glob
 import os
 import pytest
+import re
 import subprocess
 import sys
 
-from PyInstaller import compat, configure
+from PyInstaller import configure
 from PyInstaller import main as pyi_main
+from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
@@ -26,6 +28,8 @@ from PyInstaller.utils.win32 import winutils
 _SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
 # Directory with testing modules used in some tests.
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+# Directory with .toc log files.
+_LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 
 
 class AppBuilder(object):
@@ -47,6 +51,7 @@ class AppBuilder(object):
         :param app_name: Name of the executable. This is equivalent to argument --name=APPNAME.
         :param app_args: Additional arguments to pass to
         :param runtime: Time in milliseconds how long to keep executable running.
+        :param toc_log: List of modules that are expected to be bundled with the executable.
         """
         if app_name:
             pyi_args.extend(['--name', app_name])
@@ -56,12 +61,9 @@ class AppBuilder(object):
 
         self.script = os.path.join(_SCRIPT_DIR, script)
         assert os.path.exists(self.script), 'Script %s not found.' % script
-        self.toc_files = None
 
         assert self._test_building(args=pyi_args), 'Building of %s failed.' % script
         self._test_executables(app_name, args=app_args, runtime=runtime)
-        # TODO implement examining toc files for multipackage tests.
-        assert self._test_created_files(), 'Matching .toc of %s failed.' % script
 
     def _test_executables(self, name, args, runtime):
         """
@@ -82,17 +84,10 @@ class AppBuilder(object):
         for exe in exes:
             retcode = self._run_executable(exe, args)
             assert retcode == 0, 'Running exe %s failed with return-code %s.' % (exe, retcode)
-
-    def _test_created_files(self):
-        """
-        Examine files that were created by PyInstaller.
-
-        :return: True if everything goes well False otherwise.
-        """
-        # TODO implement examining toc files for multipackage tests.
-        if self.toc_files:
-            return self._test_logs()
-        return True
+            # Try to find .toc log file. .toc log file has the same basename as exe file.
+            toc_log = os.path.join(_LOGS_DIR, os.path.basename(exe) + '.toc')
+            if os.path.exists(toc_log):
+                assert self._examine_executable(exe, toc_log), 'Matching .toc of %s failed.' % exe
 
     def _find_executables(self, name):
         """
@@ -209,51 +204,39 @@ class AppBuilder(object):
 
         return retcode == 0
 
-    def _test_logs(self):
+    def _examine_executable(self, exe, toc_log):
         """
-        Compare log files (now used only by multipackage test_name).
+        Compare log files (now used mostly by multipackage test_name).
 
-        Return True if .toc files match or when .toc patters
-        are not defined.
+        :return: True if .toc files match
         """
-        logsfn = glob.glob(self.test_file + '.toc')
-        # Other main scripts do not start with 'test_'.
-        assert self.test_file.startswith('test_')
-        logsfn += glob.glob(self.test_file[5:] + '_?.toc')
-        # generate a mapping basename -> pathname
-        progs = dict((os.path.splitext(os.path.basename(nm))[0], nm)
-                     for nm in self._find_exepath(self.test_file))
-        for logfn in logsfn:
-            self._msg("EXECUTING MATCHING " + logfn)
-            tmpname = os.path.splitext(logfn)[0]
-            prog = progs.get(tmpname)
-            if not prog:
-                return False, 'Executable for %s missing' % logfn
-            fname_list = archive_viewer.get_archive_content(prog)
-            # the archive contains byte-data, need to decode them
-            fname_list = [fn.decode('utf-8') for fn in fname_list]
-            pattern_list = eval(open(logfn, 'rU').read())
-            # Alphabetical order of patterns.
-            pattern_list.sort()
-            missing = []
-            for pattern in pattern_list:
-                for fname in fname_list:
-                    if re.match(pattern, fname):
-                        self._plain_msg('MATCH: %s --> %s' % (pattern, fname))
-                        break
-                else:
-                    # no matching entry found
-                    missing.append(pattern)
-                    self._plain_msg('MISSING: %s' % pattern)
+        print('EXECUTING MATCHING: %s' % toc_log)
+        fname_list = archive_viewer.get_archive_content(exe)
+        fname_list = [fn for fn in fname_list]
+        with open(toc_log, 'rU') as f:
+            pattern_list = eval(f.read())
+        # Alphabetical order of patterns.
+        pattern_list.sort()
+        missing = []
+        for pattern in pattern_list:
+            for fname in fname_list:
+                if re.match(pattern, fname):
+                    print('MATCH: %s --> %s' % (pattern, fname))
+                    break
+            else:
+                # No matching entry found
+                missing.append(pattern)
+                print('MISSING: %s' % pattern)
 
-            # Not all modules matched.
-            # Stop comparing other .toc files and fail the test.
-            if missing:
-                msg = '\n'.join('Missing %s in %s' % (m, prog)
-                                for m in missing)
-                return False, msg
-
-        return True, ''
+        # Not all modules matched.
+        # Stop comparing other .toc files and fail the test.
+        if missing:
+            msg = '\n'.join('Missing %s in %s' % (m, exe)
+                            for m in missing)
+            print(msg)
+            return False
+        # All patterns matched.
+        return True
 
 
 # Scope 'session' should keep the object unchanged for whole tests.
