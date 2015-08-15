@@ -69,7 +69,25 @@ int pyi_main(int argc, char * argv[])
     pyi_path_archivefile(archivefile, executable);
     pyi_path_homepath(homepath, executable);
 
+    /* For the curious:
+     * On Windows, the UTF-8 form of MEIPASS2 is passed to pyi_setenv, which
+     * decodes to UTF-16 before passing it to the Windows API. So the var's value
+     * is full unicode.
+     *
+     * On OS X/Linux, the MEIPASS2 value is passed as the bytes received from the OS.
+     * Only Python will care about its encoding, and it is passed to Python using
+     * PyUnicode_DecodeFSDefault.
+     */
+
     extractionpath = pyi_getenv("_MEIPASS2");
+
+    /* If the Python program we are about to run invokes another PyInstaller
+     * one-file program as subprocess, this subprocess must not be fooled into
+     * thinking that it is already unpacked. Therefore, PyInstaller deletes
+     * the _MEIPASS2 variable from the environment.
+     */
+
+    pyi_unsetenv("_MEIPASS2");
 
     VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
@@ -85,23 +103,12 @@ int pyi_main(int argc, char * argv[])
     archive_status->argc = argc;
     archive_status->argv = argv;
 
-    /* For the curious:
-     * The UTF-8 form of MEIPASS2 is passed to pyi_setenv, which decodes to UTF-16
-     * before passing it to the Windows API. So the var's value is full unicode.
-     * When Python 2's `os.environ` reads the value, it uses the ANSI API so it gets
-     * the value already as ANSI format - but without SFN.
-     *
-     * Python 3's `os.environ` reads the value using the Unicode API so everything
-     * is peachy.
-     */
 
 #ifdef _WIN32
     /* On Windows use single-process for --onedir mode. */
     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
-        strcpy(MEIPASS2, homepath);
-        pyi_setenv("_MEIPASS2", MEIPASS2); //Bootstrap sets sys._MEIPASS, plugins rely on it
     }
 #endif
     if (extractionpath) {

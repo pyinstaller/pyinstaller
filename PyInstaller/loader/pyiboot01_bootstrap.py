@@ -29,30 +29,7 @@ import os
 if not hasattr(sys, 'frozen'):
     sys.frozen = True
 
-
-# Now that the startup is complete, we can reset the _MEIPASS2 env
-# so that if the program invokes another PyInstaller one-file program
-# as subprocess, this subprocess will not fooled into thinking that it
-# is already unpacked.
-#
-# But we need to preserve _MEIPASS2 value for cases where reseting it
-# causes some issues (e.g. multiprocess module on Windows).
-# set  sys._MEIPASS
-MEIPASS2 = '_MEIPASS2'
-if MEIPASS2 in os.environ:
-    meipass2_value = os.environ[MEIPASS2]
-
-    # Ensure sys._MEIPASS is absolute path.
-    meipass2_value = os.path.abspath(meipass2_value)
-    sys._MEIPASS = meipass2_value
-
-    # Delete _MEIPASS2 from environment.
-    # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
-    # deleting the var from os.environ does not delete it from the environment.
-    # In those cases we cannot delete the variable but only set it to the
-    # empty string.
-    os.environ[MEIPASS2] = ''
-    del os.environ[MEIPASS2]
+# sys._MEIPASS is now set in the bootloader. Hooray.
 
 
 # Python 3 C-API function Py_SetPath() resets sys.prefix to empty string.

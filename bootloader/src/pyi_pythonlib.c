@@ -507,6 +507,39 @@ int pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 	TOC *ptoc;
 	PyObject *co;
 	PyObject *mod;
+	PyObject *meipass_obj;
+	char * meipass_ansi;
+
+	VS("LOADER: setting sys._MEIPASS\n");
+	// TODO extract function pyi_char_to_pyobject
+	if(is_py2) {
+#ifdef _WIN32
+		meipass_ansi = pyi_win32_utf8_to_mbs_sfn(NULL, status->mainpath, 0);
+		if(!meipass_ansi) {
+			FATALERROR("Failed to encode _MEIPASS as ANSI.\n");
+			return -1;
+		}
+		meipass_obj = PI_PyString_FromString(meipass_ansi);
+		free(meipass_ansi);
+#else
+		meipass_obj = PI_PyString_FromString(status->mainpath);
+#endif
+	} else {
+#ifdef _WIN32
+		meipass_obj = PI_PyUnicode_Decode(status->mainpath,
+									      strlen(status->mainpath),
+										  "utf-8",
+										  "strict");
+#else
+		meipass_obj = PI_PyUnicode_DecodeFSDefault(status->mainpath);
+#endif
+	}
+	if(!meipass_obj) {
+		FATALERROR("Failed to get _MEIPASS as PyObject.\n");
+		return -1;
+	}
+
+	PI_PySys_SetObject("_MEIPASS", meipass_obj);
 
 	VS("LOADER: importing modules from CArchive\n");
 
