@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,11 +8,11 @@
 #-----------------------------------------------------------------------------
 
 
-import relimp.B.C
-from relimp.F import H
-import relimp.relimp1
+import pyi_testmod_relimp.B.C
+from pyi_testmod_relimp.F import H
+import pyi_testmod_relimp.relimp1
 
 
-assert relimp.relimp1.name == 'relimp.relimp1'
-assert relimp.B.C.name == 'relimp.B.C'
-assert relimp.F.H.name == 'relimp.F.H'
+assert pyi_testmod_relimp.relimp1.name == 'pyi_testmod_relimp.relimp1'
+assert pyi_testmod_relimp.B.C.name == 'pyi_testmod_relimp.B.C'
+assert pyi_testmod_relimp.F.H.name == 'pyi_testmod_relimp.F.H'

@@ -8,7 +8,4 @@
 #-----------------------------------------------------------------------------
 
 
-name = 'relimp.F'
-
-class H:
-    name = 'relimp.F.H'
+name = 'pyi_testmod_relimp.E'

@@ -8,4 +8,4 @@
 #-----------------------------------------------------------------------------
 
 
-name = 'relimp.B'
+name = 'pyi_testmod_relimp.pyi_testmod_relimp.relimp3'
