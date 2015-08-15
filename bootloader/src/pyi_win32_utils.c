@@ -73,21 +73,24 @@ char * GetWinErrorString() {
 int CreateActContext(const char *workpath, const char *thisfile)
 {
     char manifestpath[PATH_MAX];
+    wchar_t * manifestpath_w;
     char basename[PATH_MAX];
-    ACTCTXA ctx;
+    ACTCTXW ctx;
     BOOL activated;
     HANDLE k32;
-    HANDLE (WINAPI *CreateActCtx)(PACTCTXA pActCtx);
+    HANDLE (WINAPI *CreateActCtx)(PACTCTXW pActCtx);
     BOOL (WINAPI *ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
 
     /* Setup activation context */
+    /* TODO: pyi-option for manifest filename would allow exe to be renamed */
     pyi_path_basename(basename, thisfile);
     pyi_path_join(manifestpath, workpath, basename);
     strcat(manifestpath, ".manifest");
     VS("LOADER: manifestpath: %s\n", manifestpath);
+    manifestpath_w = pyi_win32_utils_from_utf8(NULL, manifestpath, 0);
     
     k32 = LoadLibraryA("kernel32");
-    CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxA");
+    CreateActCtx = (void*)GetProcAddress(k32, "CreateActCtxW");
     ActivateActCtx = (void*)GetProcAddress(k32, "ActivateActCtx");
     
     if (!CreateActCtx || !ActivateActCtx)
@@ -98,9 +101,10 @@ int CreateActContext(const char *workpath, const char *thisfile)
     
     ZeroMemory(&ctx, sizeof(ctx));
     ctx.cbSize = sizeof(ACTCTX);
-    ctx.lpSource = manifestpath;
+    ctx.lpSource = manifestpath_w;
 
     hCtx = CreateActCtx(&ctx);
+    free(manifestpath_w);
     if (hCtx != INVALID_HANDLE_VALUE)
     {
         VS("LOADER: Activation context created\n");
@@ -162,8 +166,7 @@ void ReleaseActContext(void)
  */
 
 char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
-    int wlen = wcslen(wstr);
-    int len, ret;
+    DWORD len, ret;
     char * str;
 
     /* NOTE: setlocale hysterics are not needed on Windows - this function
@@ -174,7 +177,7 @@ char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
     len = WideCharToMultiByte(CP_ACP,    // CodePage
                               0,         // dwFlags
                               wstr,      // lpWideCharStr
-                              wlen,      // cchWideChar - length in chars
+                              -1  ,      // cchWideChar - length in chars
                               NULL,      // lpMultiByteStr
                               0,         // cbMultiByte - length in bytes
                               NULL,      // lpDefaultChar
@@ -193,13 +196,12 @@ char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
     ret = WideCharToMultiByte(CP_ACP,    // CodePage
                               0,         // dwFlags
                               wstr,      // lpWideCharStr
-                              wlen,      // cchWideChar - length in chars
+                              -1,        // cchWideChar - length in chars
                               str,       // lpMultiByteStr
                               len,       // cbMultiByte - length in bytes
                               NULL,      // lpDefaultChar
                               NULL       // lpUsedDefaultChar
                               );
-    str[len] = '\0';
 
     if(0 == ret) {
         FATALERROR("Failed to encode filename as ANSI"
@@ -222,23 +224,69 @@ char * pyi_win32_wcs_to_mbs(const wchar_t *wstr) {
  */
 
 char * pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr) {
-    int wlen = wcslen(wstr);
-    wchar_t * wstr_sfn = (wchar_t *)malloc(sizeof(wchar_t) * wlen + 1);
-    char * str;
-    int ret;
+    DWORD wsfnlen;
+    wchar_t * wstr_sfn = NULL;
+    char * str = NULL;
+    DWORD ret;
 
-    ret = GetShortPathNameW(wstr, wstr_sfn, wlen);
-    if(0 == ret) {
-
+    wsfnlen = GetShortPathNameW(wstr, NULL, 0);
+    if(wsfnlen) {
+        wstr_sfn = (wchar_t *)malloc(sizeof(wchar_t) * wsfnlen + 1);
+        ret = GetShortPathNameW(wstr, wstr_sfn, wsfnlen);
+        if(ret) {
+            str = pyi_win32_wcs_to_mbs(wstr);
+        }
+        free(wstr_sfn);
+    }
+    if(!str){
         VS("Failed to get short path name for filename. GetShortPathNameW: \n%s",
                    GetWinErrorString()
                    );
-        str = pyi_win32_wcs_to_mbs(wstr);
-    } else {
         str = pyi_win32_wcs_to_mbs(wstr_sfn);
     }
-    free(wstr_sfn);
     return str;
+}
+
+/* Convert a UTF-8 string to an ANSI string, also attempting to get the MS-DOS
+   ShortFileName if the string is a filename. ShortFileName allows Python 2.7 to
+   accept filenames which cannot encode in the current ANSI codepage.
+
+   Preserves the filename's original basename, since the bootloader code depends on
+   the unmodified basename. Assumes that the basename can be encoded using the current
+   ANSI codepage.
+
+   This is a workaround for <https://github.com/pyinstaller/pyinstaller/issues/298>.
+
+   Copies the converted string to `dest`, which must be a buffer
+   of at least PATH_MAX characters. Returns 'dest' if successful.
+
+   Returns NULL and logs error reason if encoding fails.
+ */
+char * pyi_win32_utf8_to_mbs_sfn_keep_basename(char * dest, const char * src) {
+    char * mbs_buffer;
+    char * mbs_sfn_buffer;
+    char basename[PATH_MAX];
+    char dirname[PATH_MAX];
+
+    /* Convert path to mbs*/
+    mbs_buffer = pyi_win32_utf8_to_mbs(NULL, src, 0);
+    if(NULL == mbs_buffer) {
+        return NULL;
+    }
+
+    /* Convert path again to mbs, this time with SFN */
+    mbs_sfn_buffer = pyi_win32_utf8_to_mbs_sfn(NULL, src, 0);
+    if(NULL == mbs_sfn_buffer) {
+        free(mbs_buffer);
+        return NULL;
+    }
+
+    pyi_path_basename(basename, mbs_buffer);
+    pyi_path_dirname(dirname, mbs_sfn_buffer);
+    pyi_path_join(dest, dirname, basename);
+    free(mbs_buffer);
+    free(mbs_sfn_buffer);
+    return dest;
 }
 
 /* We shouldn't need to convert ANSI to wchar_t since everything is provided as wchar_t */
@@ -347,7 +395,7 @@ char * pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len) {
                               wstr,                 // lpWideCharStr
                               -1,                   // cchWideChar - length in chars
                               output,               // lpMultiByteStr
-                              len,                  // cbMultiByte - length in bytes
+                              (DWORD)len,           // cbMultiByte - length in bytes
                               NULL,                 // lpDefaultChar
                               NULL                  // lpUsedDefaultChar
                               );
@@ -357,7 +405,6 @@ char * pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len) {
                    );
         return NULL;
     }
-    output[len] = '\0';
     return output;
 }
 
@@ -406,7 +453,7 @@ wchar_t * pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
                                str,                  // lpMultiByteStr
                                -1,                   // cbMultiByte - length in bytes
                                output,               // lpWideCharStr
-                               wlen                  // cchWideChar - length in chars
+                               (DWORD)wlen           // cchWideChar - length in chars
                                );
     if(wlen == 0) {
         FATALERROR("Failed to encode wchar_t as UTF-8 (WideCharToMultiByte: %s)",
@@ -414,7 +461,6 @@ wchar_t * pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
                    );
         return NULL;
     }
-    output[wlen] = L'\0';
     return output;
 }
 
@@ -422,7 +468,7 @@ wchar_t * pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
  * Calls pyi_win32_utils_from_utf8 followed by pyi_win32_wcs_to_mbs_sfn
  */
 
-char * pyi_win32_utf8_to_mbs_ex(char * dst, char * src, size_t max, int sfn) {
+char * pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sfn) {
     wchar_t * wsrc;
     char * mbs;
 
@@ -437,8 +483,8 @@ char * pyi_win32_utf8_to_mbs_ex(char * dst, char * src, size_t max, int sfn) {
         mbs = pyi_win32_wcs_to_mbs(wsrc);
     }
 
+    free(wsrc);
     if(NULL == mbs) {
-        free(wsrc);
         return NULL;
     }
     if(dst){
@@ -450,7 +496,13 @@ char * pyi_win32_utf8_to_mbs_ex(char * dst, char * src, size_t max, int sfn) {
     }
 }
 
+char * pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max) {
+    return pyi_win32_utf8_to_mbs_ex(dst, src, max, 0);
+}
 
+char * pyi_win32_utf8_to_mbs_sfn(char * dst, const char * src, size_t max) {
+    return pyi_win32_utf8_to_mbs_ex(dst, src, max, 1);
+}
 /* Convenience function to convert UTF-8 argv to ANSI characters for Py2Sys_SetArgv
    Optionally use ShortFileNames to improve compatibility on Python 2.
 

@@ -21,10 +21,10 @@
 #define PYI_PYTHON_H
 
 #include "pyi_global.h"
-#include <stdlib.h>  // mbstowcs
 #ifdef _WIN32
     #include <windows.h>  // HMODULE
 #endif
+#include <wchar.h>
 #include "pyi_python27_compat.h"
 
 
@@ -147,14 +147,13 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 /* Used to convert argv to wchar_t on Linux/OS X */
 EXTDECLPROC(wchar_t *, _Py_char2wchar, (char *, size_t *));
 
+/* Used to add PYZ to sys.path */
+EXTDECLPROC(PyObject *, PySys_GetObject, (const char *));
+EXTDECLPROC(PyObject *, PyString_FromFormat, (const char *, ...));
+EXTDECLPROC(PyObject *, PyUnicode_FromFormat, (const char *, ...));
+EXTDECLPROC(PyObject *, PyUnicode_DecodeFSDefault, (const char *));
+EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, size_t, const char *, const char *)); // Py_ssize_t
 
-/* Functions not used in the code anymore.
- * TODO Remove them.
-EXTDECLPROC(PyObject *, PyFile_FromString, (char *, char *));  // TODO py2.7
-EXTDECLPROC(PyObject *, PyObject_CallObject, (PyObject *, PyObject*) );
-EXTDECLPROC(PyObject *, PyObject_CallMethod, (PyObject *, char *, char *, ...) );
-EXTDECLPROC(char *, PyString_AsString, (PyObject *));
-*/
 
 
 /*

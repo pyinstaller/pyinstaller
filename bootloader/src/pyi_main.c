@@ -27,7 +27,6 @@
 #include <stdio.h>  // FILE
 #include <stdlib.h>  // calloc
 #include <string.h>  // memset
-#include <locale.h>  // setlocale
 
 /* PyInstaller headers. */
 #include "pyi_global.h" // PATH_MAX for win32
@@ -51,6 +50,10 @@ int pyi_main(int argc, char * argv[])
 
     int i = 0;
 
+#ifdef _MSC_VER
+    /* Visual C runtime incorrectly buffers stderr */
+    setbuf(stderr, (char *)NULL);
+#endif /* _MSC_VER */
 
     VS("PyInstaller Bootloader 3.x\n");
 
@@ -62,31 +65,29 @@ int pyi_main(int argc, char * argv[])
 
     }
 
-    /*
-     * LC_CTYPE is "C" initially.
-     * We must set LC_CTYPE to the current locale to make `mbstowcs` work correctly
-     * We need `mbstowcs` working to convert Linux `char *` filenames to
-     * wchar_t so we can pass them to Python 3 APIs.
-     *
-     * The old locale is saved in the global `saved_locale` and restored immediately
-     * before running scripts to preserve this Python behavior:
-     *
-     * >>> import locale
-     * >>> locale.setlocale(locale.LC_CTYPE, None)
-     * 'C'
-     *
-     */
-    saved_locale = strdup(setlocale(LC_CTYPE, NULL));
-    VS("LOADER: LC_CTYPE is %s\n", saved_locale);
-    VS("LOADER: Setting LC_CTYPE to \"\" (using current locale)\n");
-    setlocale(LC_CTYPE, "");
-    VS("LOADER: LC_CTYPE is now %s\n", setlocale(LC_CTYPE, NULL));
-
     pyi_path_executable(executable, argv[0]);
     pyi_path_archivefile(archivefile, executable);
     pyi_path_homepath(homepath, executable);
 
+    /* For the curious:
+     * On Windows, the UTF-8 form of MEIPASS2 is passed to pyi_setenv, which
+     * decodes to UTF-16 before passing it to the Windows API. So the var's value
+     * is full unicode.
+     *
+     * On OS X/Linux, the MEIPASS2 value is passed as the bytes received from the OS.
+     * Only Python will care about its encoding, and it is passed to Python using
+     * PyUnicode_DecodeFSDefault.
+     */
+
     extractionpath = pyi_getenv("_MEIPASS2");
+
+    /* If the Python program we are about to run invokes another PyInstaller
+     * one-file program as subprocess, this subprocess must not be fooled into
+     * thinking that it is already unpacked. Therefore, PyInstaller deletes
+     * the _MEIPASS2 variable from the environment.
+     */
+
+    pyi_unsetenv("_MEIPASS2");
 
     VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
@@ -102,13 +103,12 @@ int pyi_main(int argc, char * argv[])
     archive_status->argc = argc;
     archive_status->argv = argv;
 
+
 #ifdef _WIN32
     /* On Windows use single-process for --onedir mode. */
     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
-        strcpy(MEIPASS2, homepath);
-        pyi_setenv("_MEIPASS2", MEIPASS2); //Bootstrap sets sys._MEIPASS, plugins rely on it
     }
 #endif
     if (extractionpath) {
@@ -156,7 +156,7 @@ int pyi_main(int argc, char * argv[])
         /* Run user's code in a subprocess and pass command line arguments to it. */
         rc = pyi_utils_create_child(executable, argc, argv);
 
-        VS("LOADER: Back to parent\n");
+        VS("LOADER: Back to parent (RC: %d)\n", rc);
 
         VS("LOADER: Doing cleanup\n");
         if (archive_status->has_temp_directory == true)

@@ -326,9 +326,6 @@ int pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 	TOC * ptoc = status->tocbuff;
 	PyObject *__main__ = PI_PyImport_AddModule("__main__");
 	PyObject *__file__;
-	VS("LOADER: Restoring LC_CTYPE to %s\n", saved_locale);
-	setlocale(LC_CTYPE, saved_locale);
-	VS("LOADER: Running scripts\n");
 
 	/* Iterate through toc looking for scripts (type 's') */
 	while (ptoc < status->tocend) {
@@ -339,7 +336,7 @@ int pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 			   for full compatibility with normal execution. */
 			strcpy(buf, ptoc->name);
 			strcat(buf, ".py");
-			//VS("LOADER: Running %s\n", buf);
+			VS("LOADER: Running %s\n", buf);
             if (is_py2) {
 	      __file__ = PI_PyString_FromString(buf);
 	    } else {
@@ -351,7 +348,7 @@ int pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 			rc = PI_PyRun_SimpleString((char *) data);
 			/* log errors and abort */
 			if (rc != 0) {
-				VS("LOADER: RC: %d from %s\n", rc, ptoc->name);
+				FATALERROR("%s returned %d\n", ptoc->name, rc);
 				return rc;
 			}
 			free(data);
@@ -467,6 +464,8 @@ int pyi_launch_execute(ARCHIVE_STATUS *status)
      * On Linux sys.getfilesystemencoding() returns None but should not.
      * If it's None(NULL), get the filesystem encoding by using direct
      * C calls and override it with correct value.
+     *
+     * TODO: This may not be needed any more. Please confirm on Linux.
      */
     if (!*PI_Py_FileSystemDefaultEncoding) {
         char *saved_locale, *loc_codeset;

@@ -75,11 +75,18 @@ DECLPROC(PyRun_SimpleString);
 DECLPROC(PyString_FromString);
 DECLPROC(PySys_AddWarnOption);
 DECLPROC(PySys_SetArgvEx);
+DECLPROC(PySys_GetObject);
 DECLPROC(PySys_SetObject);
 DECLPROC(PySys_SetPath);
 DECLPROC(PyThreadState_Swap);
 DECLPROC(PyUnicode_FromString);
+
 DECLPROC(_Py_char2wchar);
+DECLPROC(PyString_FromFormat);
+DECLPROC(PyUnicode_FromFormat);
+DECLPROC(PyUnicode_DecodeFSDefault);
+DECLPROC(PyUnicode_Decode);
+
 
 /*
  * Get all of the entry points from libpython
@@ -131,9 +138,11 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyRun_SimpleString);
     if (pyvers < 30) {
       GETPROC(dll, PyString_FromString);
+      GETPROC(dll, PyString_FromFormat);
     };
     GETPROC(dll, PySys_AddWarnOption);
     GETPROC(dll, PySys_SetArgvEx);
+    GETPROC(dll, PySys_GetObject);
     GETPROC(dll, PySys_SetObject);
     GETPROC(dll, PySys_SetPath);
     GETPROC(dll, PyThreadState_Swap);
@@ -144,6 +153,18 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
       GETPROC(dll, _Py_char2wchar);
 
     };
+
+    if (pyvers >= 30) {
+        // only used on py3
+        GETPROC(dll, PyUnicode_FromFormat);
+        GETPROC(dll, PyUnicode_Decode);
+    }
+
+
+    if (pyvers >= 32) {
+        // new in Python 3.2
+        GETPROC(dll, PyUnicode_DecodeFSDefault);
+    }
 
     VS("LOADER: Loaded functions from Python library.\n");
 

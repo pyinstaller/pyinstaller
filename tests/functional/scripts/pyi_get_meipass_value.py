@@ -12,7 +12,7 @@
 # invokes another PyInstaller one-file program as subprocess, this
 # subprocess will not fooled into thinking that it is already unpacked.
 #
-# This test checks if it is really unset.
+# This test checks if it is really unset in a subprocess.
 
 
 import os

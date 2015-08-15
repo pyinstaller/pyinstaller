@@ -96,23 +96,28 @@ static void process_apple_events_new();
 
 
 /* Return string copy of environment variable. */
-// TODO unicode support
 char *pyi_getenv(const char *variable)
 {
     char *env = NULL;
 
 #ifdef _WIN32
-    char  buf1[PATH_MAX], buf2[PATH_MAX];
+    wchar_t * wenv = NULL;
+    wchar_t * wvar = NULL;
+    wchar_t buf1[PATH_MAX], buf2[PATH_MAX];
     DWORD rc;
 
-    rc = GetEnvironmentVariableA(variable, buf1, sizeof(buf1));
+    wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
+    rc = GetEnvironmentVariableW(wvar, buf1, sizeof(buf1));
     if(rc > 0) {
-        env = buf1;
+        wenv = buf1;
         /* Expand environment variables like %VAR% in value. */
-        rc = ExpandEnvironmentStringsA(env, buf2, sizeof(buf2));
+        rc = ExpandEnvironmentStringsW(wenv, buf2, sizeof(buf2));
         if(rc > 0) {
-            env = buf1;
+            wenv = buf1;
         }
+    }
+    if(wenv) {
+        env = pyi_win32_utils_to_utf8(NULL, wenv, 0);
     }
 #else
     /* Standard POSIX function. */
@@ -122,7 +127,7 @@ char *pyi_getenv(const char *variable)
     /* If the Python program we are about to run invokes another PyInstaller
      * one-file program as subprocess, this subprocess must not be fooled into
      * thinking that it is already unpacked. Therefore, PyInstaller deletes
-     * the _MEIPASS2 variable from the environment in _pyi_bootstrap.py.
+     * the _MEIPASS2 variable from the environment in pyi_main().
      *
      * However, on some platforms (e.g. AIX) the Python function 'os.unsetenv()'
      * does not always exist. In these cases we cannot delete the _MEIPASS2
@@ -137,11 +142,16 @@ char *pyi_getenv(const char *variable)
 
 
 /* Set environment variable. */
-// TODO unicode support
 int pyi_setenv(const char *variable, const char *value){
     int rc;
 #ifdef _WIN32
-    rc = SetEnvironmentVariableA(variable, value);
+    wchar_t * wvar, *wval;
+    wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
+    wval = pyi_win32_utils_from_utf8(NULL, value, 0);
+
+    rc = SetEnvironmentVariableW(wvar, wval);
+    free(wvar);
+    free(wval);
 #else
     rc = setenv(variable, value, true);
 #endif
@@ -150,12 +160,14 @@ int pyi_setenv(const char *variable, const char *value){
 
 
 /* Unset environment variable. */
-// TODO unicode support
 int pyi_unsetenv(const char *variable)
 {
     int rc;
 #ifdef _WIN32
-    rc = SetEnvironmentVariableA(variable, NULL);
+    wchar_t * wvar;
+    wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
+    rc = SetEnvironmentVariableW(wvar, NULL);
+    free(wvar);
 #else
     rc = unsetenv(variable);
 #endif
@@ -172,24 +184,12 @@ int pyi_get_temp_path(char *buffer)
     char *ret;
     char prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
-    wchar_t wchar_dos83_buffer[PATH_MAX];
 
-    // TODO later when moving to full unicode support - use 83 filename only where really necessary.
     /*
      * Get path to Windows temporary directory.
-     *
-     * Usually on Windows it points to a user-specific path.
-     * When the username contains foreign characters then
-     * the path to temp dir contains them too and the frozen
-     * app fails to run.
-     *
-     * Converting temppath to 8.3 filename should fix this
-     * when running in --onefile mode.
      */
     GetTempPathW(PATH_MAX, wchar_buffer);
-    GetShortPathNameW(wchar_buffer, wchar_dos83_buffer, PATH_MAX);
-    /* Convert wchar_t to utf8 just use char as usual. */
-    pyi_win32_utils_to_utf8(buffer, wchar_dos83_buffer, PATH_MAX);
+    pyi_win32_utils_to_utf8(buffer, wchar_buffer, PATH_MAX);
 
     sprintf(prefix, "_MEI%d", getpid());
 
@@ -464,7 +464,8 @@ dylib_t pyi_utils_dlopen(const char *dllpath)
 {
 
 #ifdef _WIN32
-    //char buff[PATH_MAX] = NULL;
+    wchar_t * dllpath_w;
+    dylib_t ret;
 #else
     int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
 #endif
@@ -477,10 +478,10 @@ dylib_t pyi_utils_dlopen(const char *dllpath)
 #endif
 
 #ifdef _WIN32
-    /* TODO: Use unicode version of function to load  dll file. */
-	//return LoadLibraryExW(pyi_win32_utils_to_utf8(buff, dllpath, sizeof(buff)), NULL,
-            //LOAD_WITH_ALTERED_SEARCH_PATH);
-	return LoadLibraryExA(dllpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    dllpath_w = pyi_win32_utils_from_utf8(NULL, dllpath, 0);
+	ret = LoadLibraryExW(dllpath_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+	free(dllpath_w);
+	return ret;
 #else
 	return dlopen(dllpath, dlopenMode);
 #endif
