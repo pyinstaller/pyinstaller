@@ -1417,7 +1417,7 @@ B. Second process: bootloader itself started as a child process.
        The name of the dynamic library is embedded in the
        executable file.
 
-    3. Initialize Python interpreter: set PYTHONPATH, PYTHONHOME.
+    3. Initialize Python interpreter: set sys.path, sys.prefix, sys.executable.
 
     4. Run python code.
 
@@ -1489,7 +1489,7 @@ in a bundled app:
    *package.subpackage.module*\ ``.pyd`` or
    *package.subpackage.module*\ ``.so``
 
-4. Next examine paths in the ``sys.path`` (PYTHONPATH).
+4. Next examine paths in the ``sys.path``.
    There could be any additional location with python modules
    or ``.egg`` filenames.
 

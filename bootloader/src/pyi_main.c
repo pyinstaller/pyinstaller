@@ -44,7 +44,6 @@ int pyi_main(int argc, char * argv[])
     char executable[PATH_MAX];
     char homepath[PATH_MAX];
     char archivefile[PATH_MAX];
-    char MEIPASS2[PATH_MAX];
     int rc = 0;
     char *extractionpath = NULL;
 

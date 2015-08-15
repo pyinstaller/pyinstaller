@@ -75,7 +75,7 @@ typedef struct _archive_status {
      * Main path could be homepath or temppath. It will be temppath
      * if temppath is available. Sometimes we do not need to know if temppath
      * or homepath should be used. We only need to know the path. This variable
-     * is used for example to set PYTHONPATH or PYTHONHOME, and to set sys._MEIPASS.
+     * is used for example to set sys.path, sys.prefix, and sys._MEIPASS.
      */
     char    mainpath[PATH_MAX];
     /* 

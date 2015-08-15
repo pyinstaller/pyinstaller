@@ -340,10 +340,12 @@ wchar_t * pyi_locale_char2wchar(wchar_t * dst, char * src, size_t len) {
  */
 int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 {
-    /* Set PYTHONPATH so dynamic libs will load.
-     * PYTHONHOME for function Py_SetPythonHome() should point
-     * to a zero-terminated character string in static storage, same for
-     * Py_SetProgramName.
+    /* Set sys.path, sys.prefix, and sys.executable so dynamic libs will load.
+     *
+     * The Python APIs we use here (Py_SetProgramName, Py_SetPythonHome)
+     * specify their argument should be a "string in static storage".
+     * That is, the APIs use the string pointer as given and will neither copy
+     * its contents nor free its memory.
      *
      * NOTE: Statics are zero-initialized. */
 	static char pypath[2*PATH_MAX + 14];
@@ -378,13 +380,8 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
         PI_Py_SetProgramName(progname_w);
     };
 
-    /* Set the PYTHONPATH
-     * On Python 3, we must set PYTHONPATH to have base_library.zip before
-     * calling Py_Initialize as it needs the codecs and other modules.
-     * mainpath must be last because _pyi_bootstrap uses sys.path[-1] as SYS_PREFIX
-     */
-	// TODO: set _MEIPASS earlier. PySys_SetObject?
-    VS("LOADER: Manipulating environment (PYTHONPATH, PYTHONHOME)\n");
+    /* Set sys.path */
+    VS("LOADER: Manipulating environment (sys.path, sys.prefix)\n");
     if(is_py2) {
     	/* sys.path = [mainpath] */
     	strncpy(pypath, status->mainpath, strlen(status->mainpath));
@@ -396,27 +393,21 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 		strncat(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
 		strncat(pypath, status->mainpath, strlen(status->mainpath));
     };
-
-    VS("LOADER: Pre-init PYTHONPATH is %s\n", pypath);
-    if (is_py2) {
-#ifdef _WIN32
-		if(!pyi_win32_utf8_to_mbs_sfn(pypath_sfn, pypath, PATH_MAX)) {
-		    FATALERROR("Failed to convert pypath to ANSI (invalid multibyte string)\n");
-		}
-        pyi_setenv("PYTHONPATH", pypath_sfn);
-#else
-		pyi_setenv("PYTHONPATH", pypath);
-#endif
-    } else {
+    /*
+     * On Python 3, we must set sys.path to have base_library.zip before
+     * calling Py_Initialize as it needs `encodings` and other modules.
+     */
+    if (!is_py2) {
         /* Decode using current locale */
 		if(!pyi_locale_char2wchar(pypath_w, pypath, PATH_MAX)) {
 			FATALERROR("Failed to convert pypath to wchar_t\n");
 			return -1;
 		}
+	    VS("LOADER: Pre-init sys.path is %s\n", pypath);
         PI_Py_SetPath(pypath_w);
     };
 
-    /* Set PYTHONHOME by using function from Python C API. */
+    /* Set sys.prefix and sys.exec_prefix using Py_SetPythonHome */
     if (is_py2) {
 #ifdef _WIN32
     	if(!pyi_win32_utf8_to_mbs_sfn(pyhome, status->mainpath, PATH_MAX)) {
@@ -426,7 +417,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 #else
 	    strcpy(pyhome, status->mainpath);
 #endif
-        VS("LOADER: PYTHONHOME is %s\n", pyhome);
+        VS("LOADER: sys.prefix is %s\n", pyhome);
         PI_Py2_SetPythonHome(pyhome);
     } else {
         /* Decode using current locale */
@@ -434,7 +425,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 			FATALERROR("Failed to convert pypath to wchar_t\n");
 			return -1;
 		}
-        VS("LOADER: PYTHONHOME is %s\n", status->mainpath);
+        VS("LOADER: sys.prefix is %s\n", status->mainpath);
         PI_Py_SetPythonHome(pyhome_w);
     };
 
@@ -470,12 +461,15 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
 	 * the paths we want.
 	 */
 	VS("LOADER: Overriding Python's sys.path\n");
-	VS("LOADER: Post-init PYTHONPATH is %s\n", pypath);
+	VS("LOADER: Post-init sys.path is %s\n", pypath);
 	if (is_py2) {
 #ifdef _WIN32
-	   PI_Py2Sys_SetPath(pypath_sfn);
+	    if(!pyi_win32_utf8_to_mbs_sfn(pypath_sfn, pypath, PATH_MAX)) {
+			FATALERROR("Failed to convert pypath to ANSI (invalid multibyte string)\n");
+		}
+	    PI_Py2Sys_SetPath(pypath_sfn);
 #else
-	   PI_Py2Sys_SetPath(pypath);
+	    PI_Py2Sys_SetPath(pypath);
 #endif
 	} else {
 	   PI_PySys_SetPath(pypath_w);

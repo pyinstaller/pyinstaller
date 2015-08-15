@@ -55,7 +55,7 @@ if VIRTENV in os.environ:
     del os.environ[VIRTENV]
 
 
-# Ensure PYTHONPATH contains absolute paths. Otherwise import of other python
+# Ensure sys.path contains absolute paths. Otherwise import of other python
 # modules will fail when current working directory is changed by frozen
 # application.
 python_path = []
