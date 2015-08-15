@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from relimp3a.aa import a1
+from pyi_testmod_relimp3a.aa import a1
 
 
 if __name__ == '__main__':

@@ -22,3 +22,11 @@ _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 def test_relative_import(pyi_builder):
     pyi_builder.test_script('pyi_import_relative.py')
+
+
+def test_relative_import2(pyi_builder):
+    pyi_builder.test_script('pyi_import_relative2.py')
+
+
+def test_relative_import3(pyi_builder):
+    pyi_builder.test_script('pyi_import_relative3.py')
