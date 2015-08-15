@@ -147,7 +147,7 @@ void pyi_global_printf(const char *fmt, ...);
 
 
 /* Rewrite ANSI/POSIX functions to Win32 equivalents. */
-#ifdef _WIN32
+#if defined(_WIN32) && defined(_MSC_VER)
     #define getpid           _getpid
     #define mkdir            _mkdir
     #define rmdir            _rmdir
