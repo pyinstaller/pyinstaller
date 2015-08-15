@@ -58,7 +58,9 @@ install:
   - pip install -e .
 
   # Install dependencies for tests.
-  - pip install -r tests/requirements.txt
+  # Download-progress bars break Travis's log view. Disable them by piping output
+  # through another program (if output is not a tty, no progress bars)
+  - pip install -r tests/requirements.txt | cat
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
