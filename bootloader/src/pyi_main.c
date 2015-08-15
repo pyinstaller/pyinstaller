@@ -51,6 +51,10 @@ int pyi_main(int argc, char * argv[])
 
     int i = 0;
 
+#ifdef _MSC_VER
+    /* Visual C runtime incorrectly buffers stderr */
+    setbuf(stderr, (char *)NULL);
+#endif /* _MSC_VER */
 
     VS("PyInstaller Bootloader 3.x\n");
 
