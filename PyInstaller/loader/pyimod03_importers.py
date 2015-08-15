@@ -26,9 +26,7 @@ import pyimod01_os_path as pyi_os_path
 from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 
 
-# Cannnot use sys.prefix (Not set in Python 3) and cannot use even MEIPASS or
-# sys.executable. Last item (-1) in sys.path should be value of MEIPASS.
-SYS_PREFIX = sys.path[-1]
+SYS_PREFIX = sys._MEIPASS
 
 # In Python 3.3+ tne locking scheme has changed to per-module locks for the most part.
 # Global locking should not be required in Python 3.3+
