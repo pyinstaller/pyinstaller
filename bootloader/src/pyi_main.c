@@ -156,7 +156,7 @@ int pyi_main(int argc, char * argv[])
         /* Run user's code in a subprocess and pass command line arguments to it. */
         rc = pyi_utils_create_child(executable, argc, argv);
 
-        VS("LOADER: Back to parent\n");
+        VS("LOADER: Back to parent (RC: %d)\n", rc);
 
         VS("LOADER: Doing cleanup\n");
         if (archive_status->has_temp_directory == true)

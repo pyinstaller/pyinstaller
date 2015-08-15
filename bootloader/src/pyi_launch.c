@@ -336,7 +336,7 @@ int pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 			   for full compatibility with normal execution. */
 			strcpy(buf, ptoc->name);
 			strcat(buf, ".py");
-			//VS("LOADER: Running %s\n", buf);
+			VS("LOADER: Running %s\n", buf);
             if (is_py2) {
 	      __file__ = PI_PyString_FromString(buf);
 	    } else {
@@ -348,7 +348,7 @@ int pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 			rc = PI_PyRun_SimpleString((char *) data);
 			/* log errors and abort */
 			if (rc != 0) {
-				VS("LOADER: RC: %d from %s\n", rc, ptoc->name);
+				FATALERROR("%s returned %d\n", ptoc->name, rc);
 				return rc;
 			}
 			free(data);
