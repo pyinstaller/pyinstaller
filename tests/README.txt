@@ -30,10 +30,23 @@ Or, to run only the unit or functional tests, run the following command::
 
     TODO
 
-Or, to run only a particular test suite within a file, run the following command::
+Or, to run only a particular test suite within a file, run the
+following command::
 
     TODO
 
-Finally, to only run a particular test, run the following command::
+Run all tests matching `test_ctypes_CDLL` resp. `ctypes_CDLL`::
 
-    TODO
+    py.test -k test_ctypes_CDLL
+    py.test -k ctypes_CDLL
+
+Run both the onefile and ondir tests for
+`test_ctypes_CDLL_find_library__nss_files`::
+
+    py.test -k test_ctypes_CDLL_find_library__nss_files
+
+Finally, to only run a particular test, run one of the following
+commands::
+
+    py.test -k test_ctypes_CDLL_find_library__nss_files[onedir]
+    py.test -k test_ctypes_CDLL_find_library__nss_files[onefile]
