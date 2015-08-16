@@ -10,9 +10,10 @@
 
 import os
 import pytest
+import ctypes, ctypes.util
 
 from PyInstaller.compat import is_win
-from PyInstaller.utils.tests import importorskip, xfail_py2
+from PyInstaller.utils.tests import skipif, importorskip, xfail_py2
 
 
 # Directory with data for some tests.
@@ -42,5 +43,18 @@ def test_ctypes_CDLL_c(pyi_builder):
         """
         import ctypes, ctypes.util
         lib = ctypes.CDLL(ctypes.util.find_library('c'))
+        assert lib is not None
+        """)
+
+
+# libnss_files.so should be available in most Unix/Linux systems using
+# glibc
+@skipif(not ctypes.CDLL(ctypes.util.find_library('nss_files')),
+        reason="required libnss_files.so missing")
+def test_ctypes_CDLL_find_library__nss_files(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import ctypes, ctypes.util
+        lib = ctypes.CDLL(ctypes.util.find_library('nss_files'))
         assert lib is not None
         """)
