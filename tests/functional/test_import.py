@@ -30,3 +30,7 @@ def test_relative_import2(pyi_builder):
 
 def test_relative_import3(pyi_builder):
     pyi_builder.test_script('pyi_import_relative3.py')
+
+
+def test_ctypes_CDLL_c(pyi_builder):
+    pyi_builder.test_script('pyi_ctypes_CDLL_c.py')

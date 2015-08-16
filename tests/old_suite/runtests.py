@@ -151,10 +151,8 @@ class SkipChecker(object):
 
             # Require the c-extension module to be present, too
             'import/test_c_extension': ['simplejson._speedups'],
-            'import/test_ctypes_cdll_c': ['ctypes'],
             'import/test_eggs2': ['pkg_resources'],
             'import/test_onefile_c_extension': ['simplejson._speedups'],
-            'import/test_onefile_ctypes_cdll_c': ['ctypes'],
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
             'import/test_pep302_import_protokol': ['sqlite3'],
@@ -249,7 +247,6 @@ class SkipChecker(object):
 
 
 SPEC_FILE = set([
-    'basic/test_onefile_ctypes',
     'import/test_onefile_pkg_resources',
     'import/test_onefile_pkgutil-get_data',
     'import/test_onefile_pkgutil-get_data__main__',
