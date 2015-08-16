@@ -49,7 +49,7 @@ def test_ctypes_CDLL_c(pyi_builder):
 
 # libnss_files.so should be available in most Unix/Linux systems using
 # glibc
-@skipif(not ctypes.CDLL(ctypes.util.find_library('nss_files')),
+@skipif(not ctypes.util.find_library('nss_files'),
         reason="required libnss_files.so missing")
 def test_ctypes_CDLL_find_library__nss_files(pyi_builder):
     pyi_builder.test_source(
