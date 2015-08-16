@@ -16,6 +16,8 @@ import pytest
 import re
 import subprocess
 import sys
+import inspect
+import textwrap
 
 from PyInstaller import configure
 from PyInstaller import main as pyi_main
@@ -42,6 +44,33 @@ class AppBuilder(object):
         self._distdir = os.path.join(self._tmpdir, 'dist')
         self._builddir = os.path.join(self._tmpdir, 'build')
         self._modgraph = module_graph
+
+    def test_source(self, source, *args, **kwargs):
+        """
+        Test a Python script given as source code.
+
+        The source will be written into a file named like the
+        test-function. This file will then be passed to `test_script`.
+        If you need other related file, e.g. as `.toc`-file for
+        testing the content, put it at at the normal place. Just mind
+        to take the basnename from the test-function's name.
+
+        :param script: Source code to create executable from. This
+                       will be saved into a temporary file which is
+                       then passed on to `test_script`.
+
+        All other arguments are passed streigth on to `test_script`.
+
+        """
+        testname = inspect.stack()[1][3]
+        scriptfile = os.path.join(os.path.abspath(self._tmpdir),
+                                  testname + '.py')
+        source = textwrap.dedent(source).encode('utf-8')
+        with open(scriptfile, 'w') as ofh:
+            print('# -*- coding: utf-8 -*-', file=ofh)
+            print(source, file=ofh)
+        return self.test_script(scriptfile, *args, **kwargs)
+
 
     def test_script(self, script, pyi_args=[], app_name=None, app_args=[], runtime=None):
         """
