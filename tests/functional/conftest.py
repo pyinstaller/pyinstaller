@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import print_function
 
 import copy
 import glob
@@ -164,7 +165,7 @@ class AppBuilder(object):
                 prog_cwd = prog_cwd.encode('mbcs')
 
         # Run executable. stderr is redirected to stdout.
-        print('RUNNING: ' + safe_repr(prog))
+        print('RUNNING:', safe_repr(prog))
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
@@ -210,7 +211,7 @@ class AppBuilder(object):
 
         :return: True if .toc files match
         """
-        print('EXECUTING MATCHING: %s' % toc_log)
+        print('EXECUTING MATCHING:', toc_log)
         fname_list = archive_viewer.get_archive_content(exe)
         fname_list = [fn for fn in fname_list]
         with open(toc_log, 'rU') as f:
@@ -221,19 +222,18 @@ class AppBuilder(object):
         for pattern in pattern_list:
             for fname in fname_list:
                 if re.match(pattern, fname):
-                    print('MATCH: %s --> %s' % (pattern, fname))
+                    print('MATCH:', pattern, '-->', fname)
                     break
             else:
                 # No matching entry found
                 missing.append(pattern)
-                print('MISSING: %s' % pattern)
+                print('MISSING:', pattern)
 
         # Not all modules matched.
         # Stop comparing other .toc files and fail the test.
         if missing:
-            msg = '\n'.join('Missing %s in %s' % (m, exe)
-                            for m in missing)
-            print(msg)
+            for m in missing:
+                print('Missing', m, 'in', exe)
             return False
         # All patterns matched.
         return True
