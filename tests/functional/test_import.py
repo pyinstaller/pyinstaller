@@ -32,6 +32,8 @@ def test_relative_import3(pyi_builder):
     pyi_builder.test_script('pyi_import_relative3.py')
 
 
+#--- ctypes ----
+
 def test_ctypes_CDLL_c(pyi_builder):
     # Make sure we are able to load the MSVCRXX.DLL resp. libc.so we are
     # currently bound. This is some of a no-brainer since the resp. dll/so
