@@ -28,60 +28,77 @@ except ImportError:
 
 class PyInstallerGUI:
 
-    def make_checkbutton(self, frame, text):
-        var = IntVar()
-        widget = Checkbutton(frame, text=text, variable=var)
-        widget.grid(sticky="NW")
-        return var
-
     def __init__(self):
         root = Tk()
         root.title("PyInstaller GUI")
-        fr1 = Frame(root, width=300, height=100)
-        fr1.pack(side="top")
 
-        fr2 = Frame(root, width=300, height=300,
-                    borderwidth=2, relief="ridge")
-        fr2.pack(ipadx=10, ipady=10)
-        fr4 = Frame(root, width=300, height=100)
-        fr4.pack(side="bottom", pady=10)
+        main = Frame(root)
+        main.pack()
 
-        getFileButton = Button(fr1, text="Script to bundle ...")
+        self.fin = StringVar()
+        getFileButton = Button(main, text="Script to bundle ")
         getFileButton.bind("<Button>", self.GetFile)
-        getFileButton.pack(side="left")
-        self.filein = Entry(fr1)
-        self.filein.pack(side="right")
+        getFileButton.grid(row=0, column=0)
+        self.fileinEntry = Entry(main, textvariable=self.fin)
+        self.fileinEntry.grid(row=0, column=1)
+
+        self.fout = StringVar()
+        getOutputButton = Button(main, text="Output directory")
+        getOutputButton.bind("<Button>", self.GetOutput)
+        getOutputButton.grid(row=1, column=0)
+        self.fileoutEntry = Entry(main, textvariable=self.fout)
+        self.fileoutEntry.grid(row=1, column=1)
+
+        self.icon = StringVar()
+        if sys.platform.startswith('win') or sys.platform == 'darwin':
+            getIconButton = Button(main, text="     Icon to use     ")
+            getIconButton.bind("<Button>", self.GetIcon)
+            getIconButton.grid(row=2, column=0)
+            self.icondirEntry = Entry(main, textvariable=self.icon)
+            self.icondirEntry.grid(row=2, column=1)
+
+        fr2 = Frame(main, borderwidth=2, relief="ridge")
+        fr2.grid(row=3, column=0, columnspan=2, ipadx=10, ipady=10)
         self.filetype = self.make_checkbutton(fr2, "One File Package")
         self.ascii = self.make_checkbutton(fr2, "Do NOT include decodings")
         self.debug = self.make_checkbutton(fr2, "Use debug versions")
         if sys.platform.startswith('win'):
-            self.noconsole = self.make_checkbutton(fr2, "No console (Windows only)")
+            self.noconsole = self.make_checkbutton(fr2,
+                                                   "No console (Windows only)")
         else:
             self.noconsole = IntVar()
         if not sys.platform.startswith('win'):
-            self.strip = self.make_checkbutton(fr2, "Strip the exe and shared libs")
+            self.strip = self.make_checkbutton(fr2,
+                                               "Strip the exe and shared libs")
         else:
             self.strip = IntVar()
 
-        okaybutton = Button(fr4, text="Okay   ")
-        okaybutton.bind("<Button>", self.makePackage)
-        okaybutton.pack(side="left")
+        okayButton = Button(main, text="Okay   ")
+        okayButton.bind("<Button>", self.makePackage)
+        okayButton.grid(row=4, column=0)
 
-        cancelbutton = Button(fr4, text="Cancel")
-        cancelbutton.bind("<Button>", self.killapp)
-        cancelbutton.pack(side="right")
-        self.fin = ''
+        cancelButton = Button(main, text="Cancel")
+        cancelButton.bind("<Button>", self.killapp)
+        cancelButton.grid(row=4, column=1)
 
-        ws = root.winfo_screenwidth()
-        hs = root.winfo_screenheight()
-        x = (ws/2) - (400/2)
-        y = (hs/2) - (250/2)
-        root.geometry('%dx%d+%d+%d' % (400, 250, x, y))
-
+        self.center(root)
         root.mainloop()
+
+    def center(self, window):
+        window.update_idletasks()
+        w, h = window.winfo_width(), window.winfo_height()
+        ws, hs = window.winfo_screenwidth(), window.winfo_screenheight()
+        x, y = (ws // 2) - (w // 2), (hs // 2) - (h // 2)
+        window.geometry('{}x{}+{}+{}'.format(w, h, x, y))
 
     def killapp(self, event):
         sys.exit(0)
+
+    def make_checkbutton(self, frame, text):
+        var = IntVar()
+        widget = Checkbutton(frame, text=text, variable=var)
+        widget.grid(sticky="w")
+        return var
 
     def makePackage(self, event):
         commands = [sys.executable, 'pyinstaller.py']
@@ -95,14 +112,32 @@ class PyInstallerGUI:
             commands.append('--noconsole')
         if self.strip.get():
             commands.append('--strip')
-        commands.append(self.fin)
+        if self.fout.get():
+            commands.append('--distpath={}'.format(self.fout.get()))
+        if self.icon.get():
+            commands.append('--icon={}'.format(self.icon.get()))
+        commands.append(self.fin.get())
         retcode = subprocess.call(commands)
         sys.exit(retcode)
 
     def GetFile(self, event):
-        self.fin = filedialog.askopenfilename()
-        self.filein.delete(0, 'end')
-        self.filein.insert(0, self.fin)
+        file = filedialog.askopenfilename()
+        if file:
+            self.fileinEntry.delete(0, 'end')
+            self.fileinEntry.insert(0, file)
+
+    def GetOutput(self, event):
+        directory = filedialog.askdirectory()
+        if directory:
+            self.fileoutEntry.delete(0, 'end')
+            self.fileoutEntry.insert(0, directory)
+
+    def GetIcon(self, event):
+        file = filedialog.askopenfilename()
+        if file:
+            self.icondirEntry.delete(0, 'end')
+            self.icondirEntry.insert(0, file)
+
 
 if __name__ == "__main__":
     raise SystemExit("Please use just 'pyinstaller.py'. Gui is not maintained.")
