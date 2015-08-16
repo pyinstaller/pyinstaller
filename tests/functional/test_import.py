@@ -33,4 +33,12 @@ def test_relative_import3(pyi_builder):
 
 
 def test_ctypes_CDLL_c(pyi_builder):
-    pyi_builder.test_script('pyi_ctypes_CDLL_c.py')
+    # Make sure we are able to load the MSVCRXX.DLL resp. libc.so we are
+    # currently bound. This is some of a no-brainer since the resp. dll/so
+    # is collected anyway.
+    pyi_builder.test_source(
+        """
+        import ctypes, ctypes.util
+        lib = ctypes.CDLL(ctypes.util.find_library('c'))
+        assert lib is not None
+        """)
