@@ -72,7 +72,7 @@ class AppBuilder(object):
         return self.test_script(scriptfile, *args, **kwargs)
 
 
-    def test_script(self, script, pyi_args=[], app_name=None, app_args=[], runtime=None):
+    def test_script(self, script, pyi_args=None, app_name=None, app_args=None, runtime=None):
         """
         Main method to wrap all phases of testing a Python script.
 
@@ -83,6 +83,11 @@ class AppBuilder(object):
         :param runtime: Time in milliseconds how long to keep executable running.
         :param toc_log: List of modules that are expected to be bundled with the executable.
         """
+        if pyi_args is None:
+            pyi_args = []
+        if app_args is None:
+            app_args = []
+
         if app_name:
             pyi_args.extend(['--name', app_name])
         else:
