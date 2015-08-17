@@ -13,8 +13,9 @@
 
 import os.path
 import glob
+
+from PyInstaller.compat import EXTENSION_SUFFIXES
 from PyInstaller.utils.hooks.hookutils import collect_data_files, get_module_file_attribute
-from PyInstaller.utils.hooks.hookutils import PY_EXTENSION_SUFFIXES
 
 
 datas = collect_data_files('nacl')
@@ -22,7 +23,7 @@ datas = collect_data_files('nacl')
 # Include the cffi extensions as binaries in a subfolder named like the package.
 binaries = []
 nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
-for ext in PY_EXTENSION_SUFFIXES:
+for ext in EXTENSION_SUFFIXES:
     ffimods = glob.glob(os.path.join(nacl_dir, '_lib', '*_cffi_*%s*' % ext))
     dest_dir = os.path.join('nacl', '_lib')
     for f in ffimods:
