@@ -70,7 +70,11 @@ def skip_if_lib_missing(libname, text=None):
 def test_ctypes_CDLL_find_library__gs(pyi_builder):
     pyi_builder.test_source(
         """
-        import ctypes, ctypes.util
+        import ctypes, ctypes.util, sys, os
         lib = ctypes.CDLL(ctypes.util.find_library('gs'))
-        assert lib is not None
+        assert lib is not None and lib._name is not None
+        if getattr(sys, 'frozen'):
+            soname = ctypes.util.find_library('gs')
+            libfile = os.path.join(sys._MEIPASS, soname)
+            assert os.path.isfile(libfile), '%s is missing' % soname
         """)
