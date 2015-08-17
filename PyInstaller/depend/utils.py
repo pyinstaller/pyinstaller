@@ -264,10 +264,10 @@ if is_py2:
     # TODO Port this code to Python 3.
     def scan_code_for_ctypes(co, instrs, i):
         """
-        Detects ctypes dependencies, using reasonable heuristics that should
-        cover most common ctypes usages; returns a tuple of two lists, one
-        containing names of binaries detected as dependencies, the other containing
-        warnings.
+        Detects ctypes dependencies, using reasonable heuristics that
+        should cover most common ctypes usages; returns a tuple of two
+        lists, one containing names of binaries detected as
+        dependencies, the other containing warnings.
         """
 
         def _libFromConst(i):
@@ -277,9 +277,10 @@ if is_py2:
             op, oparg, conditional, curline = instrs[i]
             if op == LOAD_CONST:
                 soname = co.co_consts[oparg]
-                b.append(soname)
+                binaries.append(soname)
 
-        b = []
+        warnings = []
+        binaries = []
 
         op, oparg, conditional, curline = instrs[i]
 
@@ -288,19 +289,17 @@ if is_py2:
 
             if name in ("CDLL", "WinDLL"):
                 # Guesses ctypes imports of this type: CDLL("library.so")
-
+                #
                 # LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
                 # LOAD_CONST 1 ('library.so')
-
                 _libFromConst(i + 1)
 
             elif name == "ctypes":
                 # Guesses ctypes imports of this type: ctypes.DLL("library.so")
-
+                #
                 # LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
                 # LOAD_ATTR 1 (CDLL)
                 # LOAD_CONST 1 ('library.so')
-
                 op2, oparg2, conditional2, curline2 = instrs[i + 1]
                 if op2 == LOAD_ATTR:
                     if co.co_names[oparg2] in ("CDLL", "WinDLL"):
@@ -309,47 +308,46 @@ if is_py2:
 
             elif name in ("cdll", "windll"):
                 # Guesses ctypes imports of these types:
-
+                #
                 #  * cdll.library (only valid on Windows)
-
+                #
                 #     LOAD_GLOBAL 0 (cdll) <--- we "are" here right now
                 #     LOAD_ATTR 1 (library)
-
+                #
                 #  * cdll.LoadLibrary("library.so")
-
-                #     LOAD_GLOBAL              0 (cdll) <--- we "are" here right now
-                #     LOAD_ATTR                1 (LoadLibrary)
-                #     LOAD_CONST               1 ('library.so')
-
+                #
+                #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
+                #     LOAD_ATTR     1 (LoadLibrary)
+                #     LOAD_CONST    1 ('library.so')
                 op2, oparg2, conditional2, curline2 = instrs[i + 1]
                 if op2 == LOAD_ATTR:
                     if co.co_names[oparg2] != "LoadLibrary":
                         # First type
                         soname = co.co_names[oparg2] + ".dll"
-                        b.append(soname)
+                        binaries.append(soname)
                     else:
                         # Second type, needs to fetch one more instruction
                         _libFromConst(i + 2)
 
-        # If any of the libraries has been requested with anything different from
-        # the bare filename, drop that entry and warn the user - pyinstaller would
-        # need to patch the compiled pyc file to make it work correctly!
+        # If any of the libraries has been requested with anything
+        # different then the bare filename, drop that entry and warn
+        # the user - pyinstaller would need to patch the compiled pyc
+        # file to make it work correctly!
 
-        w = []
-        for binary in list(b):
-            # 'binary' might be in some cases None. Some Python modules might contain
-            # code like the following. For example PyObjC.objc._bridgesupport contain
-            # code like that.
-            #
+        for binary in binaries:
+            # 'binary' might be in some cases None. Some Python
+            # modules might contain code like the following. For
+            # example PyObjC.objc._bridgesupport contain code like
+            # that.
             #     dll = ctypes.CDLL(None)
             if binary:
                 if binary != os.path.basename(binary):
-                    w.append("W: ignoring %s - ctypes imports only supported using bare filenames" % (binary,))
+                    warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
             else:
                 # None values has to be removed too.
-                b.remove(binary)
+                binaries.remove(binary)
 
-        return b, w
+        return binaries, warnings
 
 
     # TODO Reuse this code with modulegraph implementation
