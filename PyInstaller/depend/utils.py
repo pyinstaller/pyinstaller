@@ -138,9 +138,11 @@ if is_py2:
     #JUMP_IF_FALSE / JUMP_IF_TRUE / JUMP_FORWARD
     HASJREL = set(dis.hasjrel)
 
-
-    # TODO Drop this function. What is it useful for?
     def pass1(code):
+        """
+        Parse the bytecode int a list of easy-usable tokens:
+          (op, oparg, incondition, curline)
+        """
         instrs = []
         i = 0
         n = len(code)
