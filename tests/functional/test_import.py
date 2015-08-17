@@ -47,14 +47,13 @@ def test_ctypes_CDLL_c(pyi_builder):
         """)
 
 
-# libnss_files.so should be available in most Unix/Linux systems using
-# glibc
-@skipif(not ctypes.CDLL(ctypes.util.find_library('nss_files')),
-        reason="required libnss_files.so missing")
-def test_ctypes_CDLL_find_library__nss_files(pyi_builder):
+# Ghostscript's libgs.so should be available in may Unix/Linux systems
+@skipif(not ctypes.CDLL(ctypes.util.find_library('gs')),
+        reason="required Ghostscript libgs.so missing")
+def test_ctypes_CDLL_find_library__gs(pyi_builder):
     pyi_builder.test_source(
         """
         import ctypes, ctypes.util
-        lib = ctypes.CDLL(ctypes.util.find_library('nss_files'))
+        lib = ctypes.CDLL(ctypes.util.find_library('gs'))
         assert lib is not None
         """)
