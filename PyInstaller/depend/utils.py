@@ -280,6 +280,7 @@ if is_py2:
             elif binary != os.path.basename(binary):
                 warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
 
+        binaries = _resolveCtypesImports(binaries)
         return binaries, warnings
 
 
