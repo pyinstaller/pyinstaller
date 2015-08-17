@@ -340,12 +340,11 @@ if is_py2:
             # example PyObjC.objc._bridgesupport contain code like
             # that.
             #     dll = ctypes.CDLL(None)
-            if binary:
-                if binary != os.path.basename(binary):
-                    warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
-            else:
+            if not binary:
                 # None values has to be removed too.
                 binaries.remove(binary)
+            elif binary != os.path.basename(binary):
+                warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
 
         return binaries, warnings
 
