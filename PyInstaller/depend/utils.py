@@ -93,239 +93,238 @@ def create_py3_base_library(libzip_filename, graph):
 ### TODO Minimize this code to only resolving ctypes imports.
 # This code does not work with Python 3 and is not used
 # with modulegraph.
-if is_py2:
-    LOAD_CONST = dis.opname.index('LOAD_CONST')
-    LOAD_GLOBAL = dis.opname.index('LOAD_GLOBAL')
-    LOAD_NAME = dis.opname.index('LOAD_NAME')
-    LOAD_ATTR = dis.opname.index('LOAD_ATTR')
-    COND_OPS = set([dis.opname.index('POP_JUMP_IF_TRUE'),
-                    dis.opname.index('POP_JUMP_IF_FALSE'),
-                    dis.opname.index('JUMP_IF_TRUE_OR_POP'),
-                    dis.opname.index('JUMP_IF_FALSE_OR_POP'),
-                ])
-    JUMP_FORWARD = dis.opname.index('JUMP_FORWARD')
-    HASJREL = set(dis.hasjrel)
-    assert 'SET_LINENO' not in dis.opname  # safty belt
+LOAD_CONST = dis.opname.index('LOAD_CONST')
+LOAD_GLOBAL = dis.opname.index('LOAD_GLOBAL')
+LOAD_NAME = dis.opname.index('LOAD_NAME')
+LOAD_ATTR = dis.opname.index('LOAD_ATTR')
+COND_OPS = set([dis.opname.index('POP_JUMP_IF_TRUE'),
+                dis.opname.index('POP_JUMP_IF_FALSE'),
+                dis.opname.index('JUMP_IF_TRUE_OR_POP'),
+                dis.opname.index('JUMP_IF_FALSE_OR_POP'),
+            ])
+JUMP_FORWARD = dis.opname.index('JUMP_FORWARD')
+HASJREL = set(dis.hasjrel)
+assert 'SET_LINENO' not in dis.opname  # safty belt
 
-    def pass1(code):
-        """
-        Parse the bytecode int a list of easy-usable tokens:
-          (op, oparg, incondition, curline)
-        """
-        instrs = []
-        i = 0
-        n = len(code)
-        # TODO reestablish line numbers or remove them at all
-        curline = 0
-        incondition = 0
-        out = 0
-        while i < n:
-            if i >= out:
-                incondition = 0
-            c = code[i]
-            i = i + 1
-            op = ord(c)
-            if op >= dis.HAVE_ARGUMENT:
-                oparg = ord(code[i]) + ord(code[i + 1]) * 256
-                i = i + 2
-            else:
-                oparg = None
-            if not incondition and op in COND_OPS:
-                incondition = 1
-                out = oparg
-                if op in HASJREL:
-                    out += i
-            elif incondition and op == JUMP_FORWARD:
-                out = max(out, i + oparg)
-            instrs.append((op, oparg, incondition, curline))
-        return instrs
-
-
-    def scan_code_for_ctypes(co):
-        instrs = pass1(co.co_code)
-        warnings = []
-        binaries = []
-
-        for i in range(len(instrs)):
-            # ctypes scanning requires a scope wider than one bytecode
-            # instruction, so the code resides in a separate function
-            # for clarity.
-            ctypesb, ctypesw = scan_code_instruction_for_ctypes(co, instrs, i)
-            binaries.extend(ctypesb)
-            warnings.extend(ctypesw)
-
-        for c in co.co_consts:
-            if isinstance(c, type(co)):
-                nested_binaries, nested_warnings = scan_code_for_ctypes(c)
-                binaries.extend(nested_binaries)
-                warnings.extend(nested_warnings)
-        return binaries, warnings
-
-
-    # TODO Port this code to Python 3.
-    def scan_code_instruction_for_ctypes(co, instrs, i):
-        """
-        Detects ctypes dependencies, using reasonable heuristics that
-        should cover most common ctypes usages; returns a tuple of two
-        lists, one containing names of binaries detected as
-        dependencies, the other containing warnings.
-        """
-
-        def _libFromConst(i):
-            """Extracts library name from an expected LOAD_CONST instruction and
-            appends it to local binaries list.
-            """
-            op, oparg, conditional, curline = instrs[i]
-            if op == LOAD_CONST:
-                soname = co.co_consts[oparg]
-                binaries.add(soname)
-
-        warnings = []
-        binaries = set()
-
-        op, oparg, conditional, curline = instrs[i]
-
-        if op in (LOAD_GLOBAL, LOAD_NAME):
-            name = co.co_names[oparg]
-
-            if name in ("CDLL", "WinDLL"):
-                # Guesses ctypes imports of this type: CDLL("library.so")
-                #
-                # LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
-                # LOAD_CONST 1 ('library.so')
-                _libFromConst(i + 1)
-
-            elif name == "ctypes":
-                # Guesses ctypes imports of this type: ctypes.DLL("library.so")
-                #
-                # LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
-                # LOAD_ATTR 1 (CDLL)
-                # LOAD_CONST 1 ('library.so')
-                op2, oparg2, conditional2, curline2 = instrs[i + 1]
-                if op2 == LOAD_ATTR:
-                    if co.co_names[oparg2] in ("CDLL", "WinDLL"):
-                        # Fetch next, and finally get the library name
-                        _libFromConst(i + 2)
-
-            elif name in ("cdll", "windll"):
-                # Guesses ctypes imports of these types:
-                #
-                #  * cdll.library (only valid on Windows)
-                #
-                #     LOAD_GLOBAL 0 (cdll) <--- we "are" here right now
-                #     LOAD_ATTR 1 (library)
-                #
-                #  * cdll.LoadLibrary("library.so")
-                #
-                #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
-                #     LOAD_ATTR     1 (LoadLibrary)
-                #     LOAD_CONST    1 ('library.so')
-                op2, oparg2, conditional2, curline2 = instrs[i + 1]
-                if op2 == LOAD_ATTR:
-                    if co.co_names[oparg2] != "LoadLibrary":
-                        # First type
-                        soname = co.co_names[oparg2] + ".dll"
-                        binaries.add(soname)
-                    else:
-                        # Second type, needs to fetch one more instruction
-                        _libFromConst(i + 2)
-
-        # If any of the libraries has been requested with anything
-        # different then the bare filename, drop that entry and warn
-        # the user - pyinstaller would need to patch the compiled pyc
-        # file to make it work correctly!
-
-        for binary in binaries:
-            # 'binary' might be in some cases None. Some Python
-            # modules might contain code like the following. For
-            # example PyObjC.objc._bridgesupport contain code like
-            # that.
-            #     dll = ctypes.CDLL(None)
-            if not binary:
-                # None values has to be removed too.
-                binaries.remove(binary)
-            elif binary != os.path.basename(binary):
-                warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
-
-        binaries = _resolveCtypesImports(binaries)
-        return binaries, warnings
-
-
-    # TODO Reuse this code with modulegraph implementation
-    # TODO Port this code to Python 3.
-    def _resolveCtypesImports(cbinaries):
-        """Completes ctypes BINARY entries for modules with their full path.
-        """
-        from ctypes.util import find_library
-        from ..config import CONF
-
-        if is_unix:
-            envvar = "LD_LIBRARY_PATH"
-        elif is_darwin:
-            envvar = "DYLD_LIBRARY_PATH"
+def pass1(code):
+    """
+    Parse the bytecode int a list of easy-usable tokens:
+      (op, oparg, incondition, curline)
+    """
+    instrs = []
+    i = 0
+    n = len(code)
+    # TODO reestablish line numbers or remove them at all
+    curline = 0
+    incondition = 0
+    out = 0
+    while i < n:
+        if i >= out:
+            incondition = 0
+        c = code[i]
+        i = i + 1
+        op = ord(c)
+        if op >= dis.HAVE_ARGUMENT:
+            oparg = ord(code[i]) + ord(code[i + 1]) * 256
+            i = i + 2
         else:
-            envvar = "PATH"
+            oparg = None
+        if not incondition and op in COND_OPS:
+            incondition = 1
+            out = oparg
+            if op in HASJREL:
+                out += i
+        elif incondition and op == JUMP_FORWARD:
+            out = max(out, i + oparg)
+        instrs.append((op, oparg, incondition, curline))
+    return instrs
 
-        def _setPaths():
-            path = os.pathsep.join(CONF['pathex'])
-            old = compat.getenv(envvar)
-            if old is not None:
-                path = os.pathsep.join((path, old))
-            compat.setenv(envvar, path)
-            return old
 
-        def _restorePaths(old):
-            if old is None:
-                compat.unsetenv(envvar)
+def scan_code_for_ctypes(co):
+    instrs = pass1(co.co_code)
+    warnings = []
+    binaries = []
+
+    for i in range(len(instrs)):
+        # ctypes scanning requires a scope wider than one bytecode
+        # instruction, so the code resides in a separate function
+        # for clarity.
+        ctypesb, ctypesw = scan_code_instruction_for_ctypes(co, instrs, i)
+        binaries.extend(ctypesb)
+        warnings.extend(ctypesw)
+
+    for c in co.co_consts:
+        if isinstance(c, type(co)):
+            nested_binaries, nested_warnings = scan_code_for_ctypes(c)
+            binaries.extend(nested_binaries)
+            warnings.extend(nested_warnings)
+    return binaries, warnings
+
+
+# TODO Port this code to Python 3.
+def scan_code_instruction_for_ctypes(co, instrs, i):
+    """
+    Detects ctypes dependencies, using reasonable heuristics that
+    should cover most common ctypes usages; returns a tuple of two
+    lists, one containing names of binaries detected as
+    dependencies, the other containing warnings.
+    """
+
+    def _libFromConst(i):
+        """Extracts library name from an expected LOAD_CONST instruction and
+        appends it to local binaries list.
+        """
+        op, oparg, conditional, curline = instrs[i]
+        if op == LOAD_CONST:
+            soname = co.co_consts[oparg]
+            binaries.add(soname)
+
+    warnings = []
+    binaries = set()
+
+    op, oparg, conditional, curline = instrs[i]
+
+    if op in (LOAD_GLOBAL, LOAD_NAME):
+        name = co.co_names[oparg]
+
+        if name in ("CDLL", "WinDLL"):
+            # Guesses ctypes imports of this type: CDLL("library.so")
+            #
+            # LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
+            # LOAD_CONST 1 ('library.so')
+            _libFromConst(i + 1)
+
+        elif name == "ctypes":
+            # Guesses ctypes imports of this type: ctypes.DLL("library.so")
+            #
+            # LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
+            # LOAD_ATTR 1 (CDLL)
+            # LOAD_CONST 1 ('library.so')
+            op2, oparg2, conditional2, curline2 = instrs[i + 1]
+            if op2 == LOAD_ATTR:
+                if co.co_names[oparg2] in ("CDLL", "WinDLL"):
+                    # Fetch next, and finally get the library name
+                    _libFromConst(i + 2)
+
+        elif name in ("cdll", "windll"):
+            # Guesses ctypes imports of these types:
+            #
+            #  * cdll.library (only valid on Windows)
+            #
+            #     LOAD_GLOBAL 0 (cdll) <--- we "are" here right now
+            #     LOAD_ATTR 1 (library)
+            #
+            #  * cdll.LoadLibrary("library.so")
+            #
+            #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
+            #     LOAD_ATTR     1 (LoadLibrary)
+            #     LOAD_CONST    1 ('library.so')
+            op2, oparg2, conditional2, curline2 = instrs[i + 1]
+            if op2 == LOAD_ATTR:
+                if co.co_names[oparg2] != "LoadLibrary":
+                    # First type
+                    soname = co.co_names[oparg2] + ".dll"
+                    binaries.add(soname)
+                else:
+                    # Second type, needs to fetch one more instruction
+                    _libFromConst(i + 2)
+
+    # If any of the libraries has been requested with anything
+    # different then the bare filename, drop that entry and warn
+    # the user - pyinstaller would need to patch the compiled pyc
+    # file to make it work correctly!
+
+    for binary in binaries:
+        # 'binary' might be in some cases None. Some Python
+        # modules might contain code like the following. For
+        # example PyObjC.objc._bridgesupport contain code like
+        # that.
+        #     dll = ctypes.CDLL(None)
+        if not binary:
+            # None values has to be removed too.
+            binaries.remove(binary)
+        elif binary != os.path.basename(binary):
+            warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
+
+    binaries = _resolveCtypesImports(binaries)
+    return binaries, warnings
+
+
+# TODO Reuse this code with modulegraph implementation
+# TODO Port this code to Python 3.
+def _resolveCtypesImports(cbinaries):
+    """Completes ctypes BINARY entries for modules with their full path.
+    """
+    from ctypes.util import find_library
+    from ..config import CONF
+
+    if is_unix:
+        envvar = "LD_LIBRARY_PATH"
+    elif is_darwin:
+        envvar = "DYLD_LIBRARY_PATH"
+    else:
+        envvar = "PATH"
+
+    def _setPaths():
+        path = os.pathsep.join(CONF['pathex'])
+        old = compat.getenv(envvar)
+        if old is not None:
+            path = os.pathsep.join((path, old))
+        compat.setenv(envvar, path)
+        return old
+
+    def _restorePaths(old):
+        if old is None:
+            compat.unsetenv(envvar)
+        else:
+            compat.setenv(envvar, old)
+
+    ret = []
+
+    # Try to locate the shared library on disk. This is done by
+    # executing ctypes.utile.find_library prepending ImportTracker's
+    # local paths to library search paths, then replaces original values.
+    old = _setPaths()
+    for cbin in cbinaries:
+        # Ignore annoying warnings like:
+        # 'W: library kernel32.dll required via ctypes not found'
+        # 'W: library coredll.dll required via ctypes not found'
+        if cbin in ['coredll.dll', 'kernel32.dll']:
+            continue
+        ext = os.path.splitext(cbin)[1]
+        # On Windows, only .dll files can be loaded.
+        if os.name == "nt" and ext.lower() in [".so", ".dylib"]:
+            continue
+        cpath = find_library(os.path.splitext(cbin)[0])
+        if is_unix:
+            # CAVEAT: find_library() is not the correct function. Ctype's
+            # documentation says that it is meant to resolve only the filename
+            # (as a *compiler* does) not the full path. Anyway, it works well
+            # enough on Windows and Mac. On Linux, we need to implement
+            # more code to find out the full path.
+            if cpath is None:
+                cpath = cbin
+                # "man ld.so" says that we should first search LD_LIBRARY_PATH
+            # and then the ldcache
+            for d in compat.getenv(envvar, '').split(os.pathsep):
+                if os.path.isfile(os.path.join(d, cpath)):
+                    cpath = os.path.join(d, cpath)
+                    break
             else:
-                compat.setenv(envvar, old)
-
-        ret = []
-
-        # Try to locate the shared library on disk. This is done by
-        # executing ctypes.utile.find_library prepending ImportTracker's
-        # local paths to library search paths, then replaces original values.
-        old = _setPaths()
-        for cbin in cbinaries:
-            # Ignore annoying warnings like:
-            # 'W: library kernel32.dll required via ctypes not found'
-            # 'W: library coredll.dll required via ctypes not found'
-            if cbin in ['coredll.dll', 'kernel32.dll']:
-                continue
-            ext = os.path.splitext(cbin)[1]
-            # On Windows, only .dll files can be loaded.
-            if os.name == "nt" and ext.lower() in [".so", ".dylib"]:
-                continue
-            cpath = find_library(os.path.splitext(cbin)[0])
-            if is_unix:
-                # CAVEAT: find_library() is not the correct function. Ctype's
-                # documentation says that it is meant to resolve only the filename
-                # (as a *compiler* does) not the full path. Anyway, it works well
-                # enough on Windows and Mac. On Linux, we need to implement
-                # more code to find out the full path.
-                if cpath is None:
-                    cpath = cbin
-                    # "man ld.so" says that we should first search LD_LIBRARY_PATH
-                # and then the ldcache
-                for d in compat.getenv(envvar, '').split(os.pathsep):
-                    if os.path.isfile(os.path.join(d, cpath)):
-                        cpath = os.path.join(d, cpath)
+                text = compat.exec_command("/sbin/ldconfig", "-p")
+                for L in text.strip().splitlines():
+                    if cpath in L:
+                        cpath = L.split("=>", 1)[1].strip()
+                        assert os.path.isfile(cpath)
                         break
                 else:
-                    text = compat.exec_command("/sbin/ldconfig", "-p")
-                    for L in text.strip().splitlines():
-                        if cpath in L:
-                            cpath = L.split("=>", 1)[1].strip()
-                            assert os.path.isfile(cpath)
-                            break
-                    else:
-                        cpath = None
-            if cpath is None:
-                logger.warn("library %s required via ctypes not found", cbin)
-            else:
-                ret.append((cbin, cpath, "BINARY"))
-        _restorePaths(old)
-        return ret
+                    cpath = None
+        if cpath is None:
+            logger.warn("library %s required via ctypes not found", cbin)
+        else:
+            ret.append((cbin, cpath, "BINARY"))
+    _restorePaths(old)
+    return ret
 
 
 def is_path_to_egg(pth):
