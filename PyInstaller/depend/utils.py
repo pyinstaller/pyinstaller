@@ -90,7 +90,6 @@ def create_py3_base_library(libzip_filename, graph):
         raise
 
 
-### TODO Minimize this code to only resolving ctypes imports.
 # This code does not work with Python 3 and is not used
 # with modulegraph.
 LOAD_CONST = dis.opname.index('LOAD_CONST')
