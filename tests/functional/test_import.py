@@ -47,9 +47,26 @@ def test_ctypes_CDLL_c(pyi_builder):
         """)
 
 
+def skip_if_lib_missing(libname, text=None):
+    """
+    pytest decorator to evaluate the required shared lib.
+
+    :param libname: Name of the required library.
+    :param text: Text to put into the reason message
+                 (defaults to 'lib%s.so' % libname)
+
+    :return: pytest decorator with a reason.
+    """
+    soname = ctypes.util.find_library(libname)
+    if not text:
+        text = "lib%s.so" % libname
+    # Return pytest decorator.
+    return skipif(not (soname and ctypes.CDLL(soname)),
+                  reason="required %s missing" % text)
+
+
 # Ghostscript's libgs.so should be available in may Unix/Linux systems
-@skipif(not ctypes.CDLL(ctypes.util.find_library('gs')),
-        reason="required Ghostscript libgs.so missing")
+@skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
 def test_ctypes_CDLL_find_library__gs(pyi_builder):
     pyi_builder.test_source(
         """
