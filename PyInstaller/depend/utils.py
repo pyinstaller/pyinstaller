@@ -174,93 +174,27 @@ if is_py2:
         return instrs
 
 
-    # TODO This function could be dropped. Modulegraph is doing code scanning.
-    def scan_code(co, m=None, w=None, b=None, nested=0):
+    def scan_code(co):
         instrs = pass1(co.co_code)
-        if m is None:
-            m = []
-        if w is None:
-            w = []
-        if b is None:
-            b = []
-        all = []
-        lastname = None
-        level = -1  # import-level, same behaviour as up to Python 2.4
-        for i, (op, oparg, conditional, curline) in enumerate(instrs):
-            if op == IMPORT_NAME:
-                if level <= 0:
-                    name = lastname = co.co_names[oparg]
-                else:
-                    name = lastname = co.co_names[oparg]
-                    #print 'import_name', name, `lastname`, level
-                m.append((name, nested, conditional, level))
-            elif op == IMPORT_FROM:
-                name = co.co_names[oparg]
-                #print 'import_from', name, `lastname`, level,
-                if level > 0 and (not lastname or lastname[-1:] == '.'):
-                    name = lastname + name
-                else:
-                    name = lastname + '.' + name
-                    #print name
-                m.append((name, nested, conditional, level))
-                assert lastname is not None
-            elif op == IMPORT_STAR:
-                assert lastname is not None
-                m.append((lastname + '.*', nested, conditional, level))
-            elif op == STORE_NAME:
-                if co.co_names[oparg] == "__all__":
-                    j = i - 1
-                    pop, poparg, pcondtl, pline = instrs[j]
-                    if pop != BUILD_LIST:
-                        w.append("W: __all__ is built strangely at line %s" % pline)
-                    else:
-                        all = []
-                        while j > 0:
-                            j = j - 1
-                            pop, poparg, pcondtl, pline = instrs[j]
-                            if pop == LOAD_CONST:
-                                all.append(co.co_consts[poparg])
-                            else:
-                                break
-            elif op in STORE_OPS:
-                pass
-            elif op == LOAD_CONST_level:
-                # starting with Python 2.5, _each_ import is preceeded with a
-                # LOAD_CONST to indicate the relative level.
-                if isinstance(co.co_consts[oparg], (int, long)):
-                    level = co.co_consts[oparg]
-            elif op == LOAD_GLOBAL:
-                name = co.co_names[oparg]
-                cndtl = ['', 'conditional'][conditional]
-                lvl = ['top-level', 'delayed'][nested]
-                if name == "__import__":
-                    w.append("W: %s %s __import__ hack detected at line %s" % (lvl, cndtl, curline))
-                elif name == "eval":
-                    w.append("W: %s %s eval hack detected at line %s" % (lvl, cndtl, curline))
-            elif op == EXEC_STMT:
-                cndtl = ['', 'conditional'][conditional]
-                lvl = ['top-level', 'delayed'][nested]
-                w.append("W: %s %s exec statement detected at line %s" % (lvl, cndtl, curline))
-            else:
-                lastname = None
+        warnings = []
+        binaries = []
 
-            if ctypes:
-                # ctypes scanning requires a scope wider than one bytecode instruction,
-                # so the code resides in a separate function for clarity.
-                ctypesb, ctypesw = scan_code_for_ctypes(co, instrs, i)
-                b.extend(ctypesb)
-                w.extend(ctypesw)
+        for i in range(len(instrs)):
+            # ctypes scanning requires a scope wider than one bytecode
+            # instruction, so the code resides in a separate function
+            # for clarity.
+            ctypesb, ctypesw = scan_code_for_ctypes(co, instrs, i)
+            binaries.extend(ctypesb)
+            warnings.extend(ctypesw)
 
         for c in co.co_consts:
             if isinstance(c, type(co)):
-                # FIXME: "all" was not updated here nor returned. Was it the desired
-                # behaviour?
-                _, _, _, all_nested = scan_code(c, m, w, b, 1)
-                all.extend(all_nested)
-        return m, w, b, all
+                nested_binaries, nested_warnings = scan_code(c)
+                binaries.extend(nested_binaries)
+                warnings.extend(nested_warnings)
+        return binaries, warnings
 
 
-    # TODO Reuse this code with modulegraph implementation
     # TODO Port this code to Python 3.
     def scan_code_for_ctypes(co, instrs, i):
         """
