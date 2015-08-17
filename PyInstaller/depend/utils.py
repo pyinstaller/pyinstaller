@@ -211,10 +211,10 @@ if is_py2:
             op, oparg, conditional, curline = instrs[i]
             if op == LOAD_CONST:
                 soname = co.co_consts[oparg]
-                binaries.append(soname)
+                binaries.add(soname)
 
         warnings = []
-        binaries = []
+        binaries = set()
 
         op, oparg, conditional, curline = instrs[i]
 
@@ -258,7 +258,7 @@ if is_py2:
                     if co.co_names[oparg2] != "LoadLibrary":
                         # First type
                         soname = co.co_names[oparg2] + ".dll"
-                        binaries.append(soname)
+                        binaries.add(soname)
                     else:
                         # Second type, needs to fetch one more instruction
                         _libFromConst(i + 2)
