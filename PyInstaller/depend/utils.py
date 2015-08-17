@@ -94,49 +94,18 @@ def create_py3_base_library(libzip_filename, graph):
 # This code does not work with Python 3 and is not used
 # with modulegraph.
 if is_py2:
-    IMPORT_NAME = dis.opname.index('IMPORT_NAME')
-    IMPORT_FROM = dis.opname.index('IMPORT_FROM')
-    try:
-        IMPORT_STAR = dis.opname.index('IMPORT_STAR')
-    except:
-        IMPORT_STAR = None
-    STORE_NAME = dis.opname.index('STORE_NAME')
-    STORE_FAST = dis.opname.index('STORE_FAST')
-    STORE_GLOBAL = dis.opname.index('STORE_GLOBAL')
-    try:
-        STORE_MAP = dis.opname.index('STORE_MAP')
-    except:
-        STORE_MAP = None
-    LOAD_GLOBAL = dis.opname.index('LOAD_GLOBAL')
-    LOAD_ATTR = dis.opname.index('LOAD_ATTR')
-    LOAD_NAME = dis.opname.index('LOAD_NAME')
-    EXEC_STMT = dis.opname.index('EXEC_STMT')
-    try:
-        SET_LINENO = dis.opname.index('SET_LINENO')
-    except ValueError:
-        SET_LINENO = None
-    BUILD_LIST = dis.opname.index('BUILD_LIST')
     LOAD_CONST = dis.opname.index('LOAD_CONST')
-    LOAD_CONST_level = LOAD_CONST
-    if is_py27:
-        COND_OPS = set([dis.opname.index('POP_JUMP_IF_TRUE'),
-                        dis.opname.index('POP_JUMP_IF_FALSE'),
-                        dis.opname.index('JUMP_IF_TRUE_OR_POP'),
-                        dis.opname.index('JUMP_IF_FALSE_OR_POP'),
-        ])
-    else:
-        COND_OPS = set([dis.opname.index('JUMP_IF_FALSE'),
-                        dis.opname.index('JUMP_IF_TRUE'),
-        ])
+    LOAD_GLOBAL = dis.opname.index('LOAD_GLOBAL')
+    LOAD_NAME = dis.opname.index('LOAD_NAME')
+    LOAD_ATTR = dis.opname.index('LOAD_ATTR')
+    COND_OPS = set([dis.opname.index('POP_JUMP_IF_TRUE'),
+                    dis.opname.index('POP_JUMP_IF_FALSE'),
+                    dis.opname.index('JUMP_IF_TRUE_OR_POP'),
+                    dis.opname.index('JUMP_IF_FALSE_OR_POP'),
+                ])
     JUMP_FORWARD = dis.opname.index('JUMP_FORWARD')
-    try:
-        STORE_DEREF = dis.opname.index('STORE_DEREF')
-    except ValueError:
-        STORE_DEREF = None
-    STORE_OPS = set([STORE_NAME, STORE_FAST, STORE_GLOBAL, STORE_DEREF, STORE_MAP])
-    #IMPORT_STAR -> IMPORT_NAME mod ; IMPORT_STAR
-    #JUMP_IF_FALSE / JUMP_IF_TRUE / JUMP_FORWARD
     HASJREL = set(dis.hasjrel)
+    assert 'SET_LINENO' not in dis.opname  # safty belt
 
     def pass1(code):
         """
@@ -146,6 +115,7 @@ if is_py2:
         instrs = []
         i = 0
         n = len(code)
+        # TODO reestablish line numbers or remove them at all
         curline = 0
         incondition = 0
         out = 0
@@ -167,10 +137,7 @@ if is_py2:
                     out += i
             elif incondition and op == JUMP_FORWARD:
                 out = max(out, i + oparg)
-            if op == SET_LINENO:
-                curline = oparg
-            else:
-                instrs.append((op, oparg, incondition, curline))
+            instrs.append((op, oparg, incondition, curline))
         return instrs
 
 
