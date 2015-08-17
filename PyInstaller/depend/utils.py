@@ -26,7 +26,6 @@ from .. import compat
 from ..compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC, PY3_BASE_MODULES
 from .. import log as logging
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -105,6 +104,11 @@ JUMP_FORWARD = dis.opmap['JUMP_FORWARD']
 HASJREL = set(dis.hasjrel)
 assert 'SET_LINENO' not in dis.opmap  # safty belt
 
+if is_py2:
+    _cOrd = ord
+else:
+    _cOrd = int
+
 def pass1(code):
     """
     Parse the bytecode int a list of easy-usable tokens:
@@ -122,9 +126,9 @@ def pass1(code):
             incondition = 0
         c = code[i]
         i = i + 1
-        op = ord(c)
+        op = _cOrd(c)
         if op >= dis.HAVE_ARGUMENT:
-            oparg = ord(code[i]) + ord(code[i + 1]) * 256
+            oparg = _cOrd(code[i]) + _cOrd(code[i + 1]) * 256
             i = i + 2
         else:
             oparg = None
