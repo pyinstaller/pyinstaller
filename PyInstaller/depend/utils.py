@@ -174,7 +174,7 @@ if is_py2:
         return instrs
 
 
-    def scan_code(co):
+    def scan_code_for_ctypes(co):
         instrs = pass1(co.co_code)
         warnings = []
         binaries = []
@@ -183,20 +183,20 @@ if is_py2:
             # ctypes scanning requires a scope wider than one bytecode
             # instruction, so the code resides in a separate function
             # for clarity.
-            ctypesb, ctypesw = scan_code_for_ctypes(co, instrs, i)
+            ctypesb, ctypesw = scan_code_instruction_for_ctypes(co, instrs, i)
             binaries.extend(ctypesb)
             warnings.extend(ctypesw)
 
         for c in co.co_consts:
             if isinstance(c, type(co)):
-                nested_binaries, nested_warnings = scan_code(c)
+                nested_binaries, nested_warnings = scan_code_for_ctypes(c)
                 binaries.extend(nested_binaries)
                 warnings.extend(nested_warnings)
         return binaries, warnings
 
 
     # TODO Port this code to Python 3.
-    def scan_code_for_ctypes(co, instrs, i):
+    def scan_code_instruction_for_ctypes(co, instrs, i):
         """
         Detects ctypes dependencies, using reasonable heuristics that
         should cover most common ctypes usages; returns a tuple of two
