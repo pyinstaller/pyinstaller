@@ -18,6 +18,7 @@ import subprocess
 import sys
 import inspect
 import textwrap
+import io
 
 from PyInstaller import configure
 from PyInstaller import main as pyi_main
@@ -65,9 +66,9 @@ class AppBuilder(object):
         testname = inspect.stack()[1][3]
         scriptfile = os.path.join(os.path.abspath(self._tmpdir),
                                   testname + '.py')
-        source = textwrap.dedent(source).encode('utf-8')
-        with open(scriptfile, 'w') as ofh:
-            print('# -*- coding: utf-8 -*-', file=ofh)
+        source = textwrap.dedent(source)
+        with io.open(scriptfile, 'w', encoding='utf-8') as ofh:
+            print(u'# -*- coding: utf-8 -*-', file=ofh)
             print(source, file=ofh)
         return self.test_script(scriptfile, *args, **kwargs)
 
