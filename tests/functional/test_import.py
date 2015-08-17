@@ -66,6 +66,7 @@ def skip_if_lib_missing(libname, text=None):
 
 
 # Ghostscript's libgs.so should be available in may Unix/Linux systems
+@pytest.mark.xfail(reason='fetching dll-name from ctypes.util.find_library() is unsupported')
 @skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
 def test_ctypes_CDLL_find_library__gs(pyi_builder):
     pyi_builder.test_source(
