@@ -65,39 +65,42 @@ def skip_if_lib_missing(libname, text=None):
     return skipif(not (soname and ctypes.CDLL(soname)),
                   reason="required %s missing" % text)
 
+_template_ctypes_CDLL_find_library = """
+    import ctypes, ctypes.util, sys, os
+    lib = ctypes.CDLL(ctypes.util.find_library(%(libname)r))
+    print(lib)
+    assert lib is not None and lib._name is not None
+    if getattr(sys, 'frozen', False):
+        soname = ctypes.util.find_library(%(libname)r)
+        print(soname)
+        libfile = os.path.join(sys._MEIPASS, soname)
+        print(libfile)
+        assert os.path.isfile(libfile), '%%s is missing' %% soname
+        print('>>> file found')
+    """
+
+_template_ctypes_CDLL_const = """
+    import ctypes, ctypes.util, sys, os
+    lib = ctypes.CDLL(%(soname)r)
+    print(lib)
+    assert lib is not None and lib._name is not None
+    if getattr(sys, 'frozen', False):
+        libfile = os.path.join(sys._MEIPASS, %(soname)r)
+        print(libfile)
+        assert os.path.isfile(libfile), '%(soname)s is missing'
+        print('>>> file found')
+    """
 
 # Ghostscript's libgs.so should be available in may Unix/Linux systems
 @pytest.mark.xfail(reason='fetching dll-name from ctypes.util.find_library() is unsupported')
 @skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
 def test_ctypes_CDLL_find_library__gs(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import ctypes, ctypes.util, sys, os
-        lib = ctypes.CDLL(ctypes.util.find_library('gs'))
-        print(lib)
-        assert lib is not None and lib._name is not None
-        if getattr(sys, 'frozen', False):
-            soname = ctypes.util.find_library('gs')
-            print(soname)
-            libfile = os.path.join(sys._MEIPASS, soname)
-            print(libfile)
-            assert os.path.isfile(libfile), '%s is missing' % soname
-            print('>>> file found')
-        """)
+    libname = 'gs'
+    pyi_builder.test_source(_template_ctypes_CDLL_find_library % locals())
+
 
 @skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
 def test_ctypes_CDLL__gs(pyi_builder):
     # evaluate the soname here, so the test-code contains a constant
     soname = ctypes.util.find_library('gs')
-    pyi_builder.test_source(
-        """
-        import ctypes, ctypes.util, sys, os
-        lib = ctypes.CDLL(%(soname)r)
-        print(lib)
-        assert lib is not None and lib._name is not None
-        if getattr(sys, 'frozen', False):
-            libfile = os.path.join(sys._MEIPASS, %(soname)r)
-            print(libfile)
-            assert os.path.isfile(libfile), '%(soname)s is missing'
-            print('>>> file found')
-        """ % locals())
+    pyi_builder.test_source(_template_ctypes_CDLL_const % locals())
