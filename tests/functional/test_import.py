@@ -104,3 +104,17 @@ def test_ctypes_CDLL__gs(pyi_builder):
     # evaluate the soname here, so the test-code contains a constant
     soname = ctypes.util.find_library('gs')
     pyi_builder.test_source(_template_ctypes_CDLL_const % locals())
+
+
+@pytest.mark.xfail(reason='fetching dll-name from ctypes.util.find_library() is unsupported')
+@skip_if_lib_missing('usb-1.0')
+def test_ctypes_CDLL_find_library__usb(pyi_builder):
+    libname = 'usb-1.0'
+    pyi_builder.test_source(_template_ctypes_CDLL_find_library % locals())
+
+
+@skip_if_lib_missing('usb-1.0')
+def test_ctypes_CDLL__usb(pyi_builder):
+    # evaluate the soname here, so the test-code contains a constant
+    soname = ctypes.util.find_library('usb-1.0')
+    pyi_builder.test_source(_template_ctypes_CDLL_const % locals())
