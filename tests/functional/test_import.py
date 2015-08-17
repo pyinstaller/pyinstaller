@@ -73,11 +73,15 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
         """
         import ctypes, ctypes.util, sys, os
         lib = ctypes.CDLL(ctypes.util.find_library('gs'))
+        print(lib)
         assert lib is not None and lib._name is not None
         if getattr(sys, 'frozen'):
             soname = ctypes.util.find_library('gs')
+            print(soname)
             libfile = os.path.join(sys._MEIPASS, soname)
+            print(libfile)
             assert os.path.isfile(libfile), '%s is missing' % soname
+            print('>>> file found')
         """)
 
 @skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
@@ -88,10 +92,11 @@ def test_ctypes_CDLL__gs(pyi_builder):
         """
         import ctypes, ctypes.util, sys, os
         lib = ctypes.CDLL(%(soname)r)
-        assert lib is not None and lib._name is not None
         print(lib)
+        assert lib is not None and lib._name is not None
         if getattr(sys, 'frozen'):
             libfile = os.path.join(sys._MEIPASS, %(soname)r)
             print(libfile)
             assert os.path.isfile(libfile), '%(soname)s is missing'
+            print('>>> file found')
         """ % locals())
