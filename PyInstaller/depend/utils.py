@@ -190,7 +190,7 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
     if op in (LOAD_GLOBAL, LOAD_NAME):
         name = co.co_names[oparg]
 
-        if name in ("CDLL", "WinDLL"):
+        if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
             # Guesses ctypes imports of this type: CDLL("library.so")
             #
             # LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
@@ -198,18 +198,18 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
             _libFromConst(i + 1)
 
         elif name == "ctypes":
-            # Guesses ctypes imports of this type: ctypes.DLL("library.so")
+            # Guesses ctypes imports of this type: ctypes.CDLL("library.so")
             #
             # LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
             # LOAD_ATTR 1 (CDLL)
             # LOAD_CONST 1 ('library.so')
             op2, oparg2, conditional2, curline2 = instrs[i + 1]
             if op2 == LOAD_ATTR:
-                if co.co_names[oparg2] in ("CDLL", "WinDLL"):
+                if co.co_names[oparg2] in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
                     # Fetch next, and finally get the library name
                     _libFromConst(i + 2)
 
-        elif name in ("cdll", "windll"):
+        elif name in ("cdll", "windll", "oledll", "pydll", "pythonapi"):
             # Guesses ctypes imports of these types:
             #
             #  * cdll.library (only valid on Windows)
