@@ -75,7 +75,7 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
         lib = ctypes.CDLL(ctypes.util.find_library('gs'))
         print(lib)
         assert lib is not None and lib._name is not None
-        if getattr(sys, 'frozen'):
+        if getattr(sys, 'frozen', False):
             soname = ctypes.util.find_library('gs')
             print(soname)
             libfile = os.path.join(sys._MEIPASS, soname)
@@ -94,7 +94,7 @@ def test_ctypes_CDLL__gs(pyi_builder):
         lib = ctypes.CDLL(%(soname)r)
         print(lib)
         assert lib is not None and lib._name is not None
-        if getattr(sys, 'frozen'):
+        if getattr(sys, 'frozen', False):
             libfile = os.path.join(sys._MEIPASS, %(soname)r)
             print(libfile)
             assert os.path.isfile(libfile), '%(soname)s is missing'
