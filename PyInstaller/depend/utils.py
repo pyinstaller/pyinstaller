@@ -92,18 +92,18 @@ def create_py3_base_library(libzip_filename, graph):
 
 # This code does not work with Python 3 and is not used
 # with modulegraph.
-LOAD_CONST = dis.opname.index('LOAD_CONST')
-LOAD_GLOBAL = dis.opname.index('LOAD_GLOBAL')
-LOAD_NAME = dis.opname.index('LOAD_NAME')
-LOAD_ATTR = dis.opname.index('LOAD_ATTR')
-COND_OPS = set([dis.opname.index('POP_JUMP_IF_TRUE'),
-                dis.opname.index('POP_JUMP_IF_FALSE'),
-                dis.opname.index('JUMP_IF_TRUE_OR_POP'),
-                dis.opname.index('JUMP_IF_FALSE_OR_POP'),
+LOAD_CONST = dis.opmap['LOAD_CONST']
+LOAD_GLOBAL = dis.opmap['LOAD_GLOBAL']
+LOAD_NAME = dis.opmap['LOAD_NAME']
+LOAD_ATTR = dis.opmap['LOAD_ATTR']
+COND_OPS = set([dis.opmap['POP_JUMP_IF_TRUE'],
+                dis.opmap['POP_JUMP_IF_FALSE'],
+                dis.opmap['JUMP_IF_TRUE_OR_POP'],
+                dis.opmap['JUMP_IF_FALSE_OR_POP'],
             ])
-JUMP_FORWARD = dis.opname.index('JUMP_FORWARD')
+JUMP_FORWARD = dis.opmap['JUMP_FORWARD']
 HASJREL = set(dis.hasjrel)
-assert 'SET_LINENO' not in dis.opname  # safty belt
+assert 'SET_LINENO' not in dis.opmap  # safty belt
 
 def pass1(code):
     """
