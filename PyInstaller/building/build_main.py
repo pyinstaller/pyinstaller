@@ -530,6 +530,16 @@ def build(spec, distpath, workpath, clean_build):
     """
     from ..config import CONF
 
+    # For combatibility with Python < 2.7.9 we can not use `lambda`,
+    # but need to declare _old_api_error as beeing global, see issue #1408
+    def TkPKG(*args, **kwargs):
+        global _old_api_error
+        _old_api_error('TkPKG')
+
+    def TkTree(*args, **kwargs):
+        global _old_api_error
+        _old_api_error('TkTree')
+
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
     distpath = compat.expand_path(distpath)
@@ -596,8 +606,8 @@ def build(spec, distpath, workpath, clean_build):
         'PYZ': PYZ,
         'Tree': Tree,
         # Old classes for .spec - raise Exception for user.
-        'TkPKG': lambda *args, **kwargs: _old_api_error('TkPKG'),
-        'TkTree': lambda *args, **kwargs: _old_api_error('TkTree'),
+        'TkPKG': TkPKG,
+        'TkTree': TkTree,
         # Python modules available for .spec.
         'os': os,
         'pyi_crypto': pyz_crypto,
