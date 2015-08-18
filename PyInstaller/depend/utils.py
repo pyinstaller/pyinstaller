@@ -188,55 +188,57 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
     op, oparg, conditional, curline = instrs[i]
     expected_ops = (LOAD_GLOBAL, LOAD_NAME)
 
-    if op in expected_ops:
+    if op not in expected_ops:
+        return [], []
+
+    name = co.co_names[oparg]
+    if name == "ctypes":
+        # Guesses ctypes has been imported as `import ctypes` and
+        # the members are accessed like: ctypes.CDLL("library.so")
+        #
+        #   LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
+        #   LOAD_ATTR 1 (CDLL)
+        #   LOAD_CONST 1 ('library.so')
+        #
+        # In this case "strip" the `ctypes` by advancing and expecting
+        # `LOAD_ATTR` next.
+        i += 1
+        expected_ops = (LOAD_ATTR,)
+        op, oparg, conditional, curline = instrs[i]
+        if op not in expected_ops:
+            return [], []
         name = co.co_names[oparg]
-        if name == "ctypes":
-            # Guesses ctypes has been imported as `import ctypes` and
-            # the members are accessed like: ctypes.CDLL("library.so")
-            #
-            #   LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
-            #   LOAD_ATTR 1 (CDLL)
-            #   LOAD_CONST 1 ('library.so')
-            #
-            # In this case "strip" the `ctypes` by advancing and expecting
-            # `LOAD_ATTR` next.
-            i += 1
-            op, oparg, conditional, curline = instrs[i]
-            expected_ops = (LOAD_ATTR,)
 
-    if op in expected_ops:
-        name = co.co_names[oparg]
+    if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
+        # Guesses ctypes imports of this type: CDLL("library.so")
+        #
+        #   LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
+        #   LOAD_CONST 1 ('library.so')
+        _libFromConst(i + 1)
 
-        if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
-            # Guesses ctypes imports of this type: CDLL("library.so")
-            #
-            #   LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
-            #   LOAD_CONST 1 ('library.so')
-            _libFromConst(i + 1)
-
-        elif name in ("cdll", "windll", "oledll", "pydll"):
-            # Guesses ctypes imports of these types:
-            #
-            #  * cdll.library (only valid on Windows)
-            #
-            #     LOAD_GLOBAL 0 (cdll) <--- we "are" here right now
-            #     LOAD_ATTR 1 (library)
-            #
-            #  * cdll.LoadLibrary("library.so")
-            #
-            #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
-            #     LOAD_ATTR     1 (LoadLibrary)
-            #     LOAD_CONST    1 ('library.so')
-            i += 1
-            op, oparg, conditional, curline = instrs[i]
-            if op == LOAD_ATTR:
-                if co.co_names[oparg] == "LoadLibrary":
-                    # Second type, needs to fetch one more instruction
-                    _libFromConst(i + 1)
-                else:
-                    # First type
-                    soname = co.co_names[oparg2] + ".dll"
-                    binaries.add(soname)
+    elif name in ("cdll", "windll", "oledll", "pydll"):
+        # Guesses ctypes imports of these types:
+        #
+        #  * cdll.library (only valid on Windows)
+        #
+        #     LOAD_GLOBAL 0 (cdll) <--- we "are" here right now
+        #     LOAD_ATTR 1 (library)
+        #
+        #  * cdll.LoadLibrary("library.so")
+        #
+        #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
+        #     LOAD_ATTR     1 (LoadLibrary)
+        #     LOAD_CONST    1 ('library.so')
+        i += 1
+        op, oparg, conditional, curline = instrs[i]
+        if op == LOAD_ATTR:
+            if co.co_names[oparg] == "LoadLibrary":
+                # Second type, needs to fetch one more instruction
+                _libFromConst(i + 1)
+            else:
+                # First type
+                soname = co.co_names[oparg2] + ".dll"
+                binaries.add(soname)
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
