@@ -16,7 +16,6 @@ import ctypes, ctypes.util
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import skipif, importorskip, xfail_py2
 
-
 # Directory with data for some tests.
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
@@ -105,6 +104,16 @@ def test_ctypes_CDLL__gs(pyi_builder):
     script = """
         import ctypes
         lib = ctypes.CDLL(%(soname)r)
+    """ + _template_ctypes_test
+    pyi_builder.test_source(script % locals())
+
+@skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
+def test_ctypes_cdll_LoadLibrary__gs(pyi_builder):
+    # evaluate the soname here, so the test-code contains a constant
+    soname = ctypes.util.find_library('gs')
+    script = """
+        import ctypes
+        lib = ctypes.cdll.LoadLibrary(%(soname)r)
     """ + _template_ctypes_test
     pyi_builder.test_source(script % locals())
 
