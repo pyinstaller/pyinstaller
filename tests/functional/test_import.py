@@ -98,13 +98,13 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
 
 libname = 'gs'
 reason = 'libgs.so (Ghostscript)'
-for name, import_, prefix, funcnames in (
-        ('ctypes_global',
-         'from ctypes import *',
+for import_, name, prefix, funcnames in (
+        ('from ctypes import *',
+         'ctypes_global',
          '',
          ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary')),
-        ('ctypes',
-         'import ctypes',
+        ('import ctypes',
+         'ctypes_ctypes',
          'ctypes.',
          ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary')),
     ):
