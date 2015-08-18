@@ -103,11 +103,11 @@ for name, import_, prefix, funcnames in (
         ('ctypes_global',
          'from ctypes import *',
          '',
-         ('CDLL', 'PyDLL', 'pythonapi', 'WinDLL', 'OleDLL')),
+         ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL')),
         ('ctypes',
          'import ctypes',
          'ctypes.',
-         ('CDLL', 'PyDLL', 'pythonapi', 'WinDLL', 'OleDLL')),
+         ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL')),
     ):
     for funcname in funcnames:
         testname = 'test_%s_%s__%s' % (name, funcname.replace('.', '_'), libname)

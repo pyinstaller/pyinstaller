@@ -209,7 +209,7 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
                     # Fetch next, and finally get the library name
                     _libFromConst(i + 2)
 
-        elif name in ("cdll", "windll", "oledll", "pydll", "pythonapi"):
+        elif name in ("cdll", "windll", "oledll", "pydll"):
             # Guesses ctypes imports of these types:
             #
             #  * cdll.library (only valid on Windows)
