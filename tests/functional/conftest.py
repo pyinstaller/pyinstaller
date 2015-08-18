@@ -60,14 +60,18 @@ class AppBuilder(object):
                        will be saved into a temporary file which is
                        then passed on to `test_script`.
 
+        :param test_id: Test-id for parametrized tests. If given, it
+                        will be appended to the script filename,
+                        separated by two underscores.
+
         All other arguments are passed streigth on to `test_script`.
 
         """
         testname = inspect.stack()[1][3]
-        if testname == 'func':
-            # Retrieve the testname of test-functions generated at
-            # run-time from the local variable.
-            testname = inspect.stack()[1][0].f_locals['__test_name__']
+        if 'test_id' in kwargs:
+            # For parametrized test append the test-id.
+            testname = testname + '__' + kwargs['test_id']
+            del kwargs['test_id']
 
         scriptfile = os.path.join(os.path.abspath(self._tmpdir),
                                   testname + '.py')
