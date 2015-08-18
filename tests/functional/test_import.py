@@ -133,6 +133,14 @@ for import_, name, prefix, funcnames in (
         globals()[testname] = func
         del func
 
+# TODO: Add test-cases forthe prefabricated library loaders supporting
+# attribute accesses on windows. Example::
+#
+#   cdll.kernel32.GetModuleHandleA(None)
+#
+# Of course we need to use dlls which is not are commony available on
+# windows but mot excluded in PyInstaller.depend.dylib
+
 
 @skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
 def test_ctypes_cdll_LoadLibrary__gs(pyi_builder):
