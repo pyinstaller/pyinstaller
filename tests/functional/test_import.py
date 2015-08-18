@@ -126,7 +126,7 @@ for import_, name, prefix, funcnames in (
             source = source +_template_ctypes_test
             pyi_builder.test_source(source % locals())
 
-        if funcname.lower() in ("windll", "oledll"):
+        if funcname in ("WinDLL", "OleDLL"):
             func = skipif_notwin(func)
 
         globals()[testname] = func
