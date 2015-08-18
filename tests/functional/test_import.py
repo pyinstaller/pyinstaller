@@ -80,14 +80,14 @@ _template_ctypes_CDLL_find_library = """
     """
 
 _template_ctypes_test = """
-    print(lib)
-    assert lib is not None and lib._name is not None
-    import sys, os
-    if getattr(sys, 'frozen', False):
-        libfile = os.path.join(sys._MEIPASS, %(soname)r)
-        print(libfile)
-        assert os.path.isfile(libfile), '%(soname)s is missing'
-        print('>>> file found')
+        print(lib)
+        assert lib is not None and lib._name is not None
+        import sys, os
+        if getattr(sys, 'frozen', False):
+            libfile = os.path.join(sys._MEIPASS, %(soname)r)
+            print(libfile)
+            assert os.path.isfile(libfile), '%(soname)s is missing'
+            print('>>> file found')
     """
 
 # Ghostscript's libgs.so should be available in may Unix/Linux systems
@@ -103,8 +103,8 @@ def test_ctypes_CDLL__gs(pyi_builder):
     # evaluate the soname here, so the test-code contains a constant
     soname = ctypes.util.find_library('gs')
     script = """
-    import ctypes
-    lib = ctypes.CDLL(%(soname)r)
+        import ctypes
+        lib = ctypes.CDLL(%(soname)r)
     """ + _template_ctypes_test
     pyi_builder.test_source(script % locals())
 
