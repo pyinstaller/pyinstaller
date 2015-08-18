@@ -105,16 +105,16 @@ parameters = []
 ids = []
 for prefix in ('', 'ctypes.'):
     for funcname in  ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
-        params = (prefix+funcname, libname, reason)
+        ids.append('%s_%s' % (prefix+funcname, libname))
+        params = (prefix+funcname, libname, reason, ids[-1])
         if funcname in ("WinDLL", "OleDLL"):
             # WinDLL, OleDLL only work on windows.
             params = skipif_notwin(params)
         parameters.append(params)
-        ids.append('%s_%s' % (funcname, libname))
 
-@pytest.mark.parametrize("funcname, libname, reason", parameters, ids=ids)
+@pytest.mark.parametrize("funcname,libname,reason,test_id", parameters, ids=ids)
 @skip_if_lib_missing(libname, reason)
-def test_ctypes_gen(pyi_builder, funcname, libname, reason):
+def test_ctypes_gen(pyi_builder, funcname, libname, reason, test_id):
     # evaluate the soname here, so the test-code contains a constant
     soname = ctypes.util.find_library(libname)
     source = """
@@ -122,7 +122,7 @@ def test_ctypes_gen(pyi_builder, funcname, libname, reason):
         lib = %s(%%(soname)r)
     """ % funcname + _template_ctypes_test
     source = source +_template_ctypes_test
-    pyi_builder.test_source(source % locals())
+    pyi_builder.test_source(source % locals(), test_id=test_id)
 
 
 # TODO: Add test-cases forthe prefabricated library loaders supporting
