@@ -127,6 +127,7 @@ for import_, name, prefix, funcnames in (
             pyi_builder.test_source(source % locals())
 
         if funcname in ("WinDLL", "OleDLL"):
+            # WinDLL, OleDLL only work on windows.
             func = skipif_notwin(func)
 
         globals()[testname] = func
