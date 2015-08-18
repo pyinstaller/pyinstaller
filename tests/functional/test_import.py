@@ -99,6 +99,7 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
 libname = 'gs'
 reason = 'libgs.so (Ghostscript)'
 parameters = []
+ids = []
 for prefix in ('', 'ctypes.'):
     for funcname in  ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
         params = (prefix+funcname, libname, reason)
@@ -106,9 +107,9 @@ for prefix in ('', 'ctypes.'):
             # WinDLL, OleDLL only work on windows.
             params = skipif_notwin(params)
         parameters.append(params)
+        ids.append('%s_%s' % (funcname, libname))
 
-
-@pytest.mark.parametrize("funcname, libname, reason", parameters)
+@pytest.mark.parametrize("funcname, libname, reason", parameters, ids=ids)
 @skip_if_lib_missing(libname, reason)
 def test_ctypes__functions(pyi_builder, funcname, libname, reason):
     # evaluate the soname here, so the test-code contains a constant
