@@ -186,28 +186,33 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
     binaries = set()
 
     op, oparg, conditional, curline = instrs[i]
+    expected_ops = (LOAD_GLOBAL, LOAD_NAME)
 
-    if op in (LOAD_GLOBAL, LOAD_NAME):
+    if op in expected_ops:
+        name = co.co_names[oparg]
+        if name == "ctypes":
+            # Guesses ctypes has been imported as `import ctypes` and
+            # the members are accessed like: ctypes.CDLL("library.so")
+            #
+            #   LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
+            #   LOAD_ATTR 1 (CDLL)
+            #   LOAD_CONST 1 ('library.so')
+            #
+            # In this case "strip" the `ctypes` by advancing and expecting
+            # `LOAD_ATTR` next.
+            i += 1
+            op, oparg, conditional, curline = instrs[i]
+            expected_ops = (LOAD_ATTR,)
+
+    if op in expected_ops:
         name = co.co_names[oparg]
 
         if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
             # Guesses ctypes imports of this type: CDLL("library.so")
             #
-            # LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
-            # LOAD_CONST 1 ('library.so')
+            #   LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
+            #   LOAD_CONST 1 ('library.so')
             _libFromConst(i + 1)
-
-        elif name == "ctypes":
-            # Guesses ctypes imports of this type: ctypes.CDLL("library.so")
-            #
-            # LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
-            # LOAD_ATTR 1 (CDLL)
-            # LOAD_CONST 1 ('library.so')
-            op2, oparg2, conditional2, curline2 = instrs[i + 1]
-            if op2 == LOAD_ATTR:
-                if co.co_names[oparg2] in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
-                    # Fetch next, and finally get the library name
-                    _libFromConst(i + 2)
 
         elif name in ("cdll", "windll", "oledll", "pydll"):
             # Guesses ctypes imports of these types:
@@ -222,15 +227,16 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
             #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
             #     LOAD_ATTR     1 (LoadLibrary)
             #     LOAD_CONST    1 ('library.so')
-            op2, oparg2, conditional2, curline2 = instrs[i + 1]
-            if op2 == LOAD_ATTR:
-                if co.co_names[oparg2] != "LoadLibrary":
+            i += 1
+            op, oparg, conditional, curline = instrs[i]
+            if op == LOAD_ATTR:
+                if co.co_names[oparg] == "LoadLibrary":
+                    # Second type, needs to fetch one more instruction
+                    _libFromConst(i + 1)
+                else:
                     # First type
                     soname = co.co_names[oparg2] + ".dll"
                     binaries.add(soname)
-                else:
-                    # Second type, needs to fetch one more instruction
-                    _libFromConst(i + 2)
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
