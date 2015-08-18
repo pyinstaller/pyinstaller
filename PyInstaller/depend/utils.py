@@ -237,7 +237,7 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
                 _libFromConst(i + 1)
             else:
                 # First type
-                soname = co.co_names[oparg2] + ".dll"
+                soname = co.co_names[oparg] + ".dll"
                 binaries.add(soname)
     elif op == LOAD_ATTR and name in ("util", ):
         # Guesses ctypes imports of these types::
