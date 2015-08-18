@@ -14,7 +14,7 @@ import pytest
 import ctypes, ctypes.util
 
 from PyInstaller.compat import is_win
-from PyInstaller.utils.tests import skipif, importorskip, xfail_py2
+from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, skipif_notwin
 
 # Directory with data for some tests.
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
@@ -97,15 +97,38 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
     pyi_builder.test_source(_template_ctypes_CDLL_find_library % locals())
 
 
-@skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
-def test_ctypes_CDLL__gs(pyi_builder):
-    # evaluate the soname here, so the test-code contains a constant
-    soname = ctypes.util.find_library('gs')
-    script = """
-        import ctypes
-        lib = ctypes.CDLL(%(soname)r)
-    """ + _template_ctypes_test
-    pyi_builder.test_source(script % locals())
+libname = 'gs'
+reason = 'libgs.so (Ghostscript)'
+for name, import_, prefix, funcnames in (
+        ('ctypes_global',
+         'from ctypes import *',
+         '',
+         ('CDLL', 'PyDLL', 'pythonapi', 'WinDLL', 'OleDLL')),
+        ('ctypes',
+         'import ctypes',
+         'ctypes.',
+         ('CDLL', 'PyDLL', 'pythonapi', 'WinDLL', 'OleDLL')),
+    ):
+    for funcname in funcnames:
+        testname = 'test_%s_%s__%s' % (name, funcname.replace('.', '_'), libname)
+        source = """
+        %s
+        lib = %s(%%(soname)r)
+        """ % (import_, prefix+funcname) + _template_ctypes_test
+
+        @skip_if_lib_missing(libname, reason)
+        def func(pyi_builder, libname=libname, source=source):
+            # evaluate the soname here, so the test-code contains a constant
+            soname = ctypes.util.find_library(libname)
+            source = source +_template_ctypes_test
+            pyi_builder.test_source(source % locals())
+
+        if funcname.lower() in ("windll", "oledll"):
+            func = skipif_notwin(func)
+
+        globals()[testname] = func
+        del func
+
 
 @skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
 def test_ctypes_cdll_LoadLibrary__gs(pyi_builder):
