@@ -21,7 +21,10 @@ from PyInstaller.compat import base_prefix
 from PyInstaller.utils.hooks.hookutils import relpath_to_config_or_make
 
 _CONFIG_H = sysconfig.get_config_h_filename()
-_MAKEFILE = sysconfig.get_makefile_filename()
+if hasattr(sysconfig, 'get_makefile_filename'):
+    _MAKEFILE = sysconfig.get_makefile_filename()
+else:
+    _MAKEFILE = sysconfig._get_makefile_filename()
 
 # Data files in PyInstaller hook format.
 datas = [(_CONFIG_H, relpath_to_config_or_make(_CONFIG_H))]
