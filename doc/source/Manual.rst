@@ -1940,6 +1940,12 @@ A hook is a module named
 A hook is executable Python code that should
 define one or more of the following several global names:
 
+.. Note::
+
+   A hook is just a normal Python script. So you can do all things
+   like testing ``sys.version`` and adjust e.g. ``hiddenimports``
+   based on that.
+
 
 ``excludedimports``
     A list of module names (relative or absolute) that the
@@ -2020,22 +2026,26 @@ define one or more of the following several global names:
 
 
 ``def hook(mod):``
+
+    .. Note::
+
+      The need to use this should be rare. Instead, try to use the
+      global names described above first. This will keep the hook's
+      code simple.
+
     Defines a function that takes a ``Module`` object.
     It must return a ``Module`` object, possibly the same one
     unchanged, or a modified one.
     A ``Module`` object is an instance of the class
     ``PyInstaller.depend.modules.Module()`` which you can read.
-    If defined, ``hook(mod)`` is called before |PyInstaller| tests
-    ``hiddenimports``,  ``datas``, or ``attrs``.
-    So one use of a ``hook(mod)``
-    function would be to test ``sys.version`` and adjust
-    ``hiddenimports`` based on that.
+    If defined, ``hook(mod)`` is called before |PyInstaller| processed
+    the global names described above.
 
-This function is supported to handle cases like dynamic modification of a
-package's ``__path__`` variable.
-A static list of names won't suffice
-because the new entry on ``__path__`` may well require computation.
-See ``hook-win32com.py`` in the hooks folder for an example.
+    This function is supported to handle cases like dynamic modification of a
+    package's ``__path__`` variable.
+    A static list of names won't suffice
+    because the new entry on ``__path__`` may well require computation.
+    See ``hook-win32com.py`` in the hooks folder for an example.
 
 
 Building the Bootloader
