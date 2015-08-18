@@ -114,7 +114,7 @@ for prefix in ('', 'ctypes.'):
 
 @pytest.mark.parametrize("funcname, libname, reason", parameters, ids=ids)
 @skip_if_lib_missing(libname, reason)
-def test_ctypes__functions(pyi_builder, funcname, libname, reason):
+def test_ctypes_gen(pyi_builder, funcname, libname, reason):
     # evaluate the soname here, so the test-code contains a constant
     soname = ctypes.util.find_library(libname)
     source = """
