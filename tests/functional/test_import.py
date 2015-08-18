@@ -64,6 +64,7 @@ def skip_if_lib_missing(libname, text=None):
     return skipif(not (soname and ctypes.CDLL(soname)),
                   reason="required %s missing" % text)
 
+
 _template_ctypes_CDLL_find_library = """
     import ctypes, ctypes.util, sys, os
     lib = ctypes.CDLL(ctypes.util.find_library(%(libname)r))
@@ -140,17 +141,6 @@ for import_, name, prefix, funcnames in (
 #
 # Of course we need to use dlls which is not are commony available on
 # windows but mot excluded in PyInstaller.depend.dylib
-
-
-@skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
-def test_ctypes_cdll_LoadLibrary__gs(pyi_builder):
-    # evaluate the soname here, so the test-code contains a constant
-    soname = ctypes.util.find_library('gs')
-    script = """
-        import ctypes
-        lib = ctypes.cdll.LoadLibrary(%(soname)r)
-    """ + _template_ctypes_test
-    pyi_builder.test_source(script % locals())
 
 
 @skip_if_lib_missing('usb-1.0')
