@@ -116,8 +116,12 @@ for name, import_, prefix, funcnames in (
         lib = %s(%%(soname)r)
         """ % (import_, prefix+funcname) + _template_ctypes_test
 
+        # For test_source() to be able to get the real name of the
+        # test-case, this function has to be named "func" and have a
+        # local variable `__test_name__` containing the testname.
         @skip_if_lib_missing(libname, reason)
-        def func(pyi_builder, libname=libname, source=source):
+        def func(pyi_builder, __test_name__=testname,
+                 libname=libname, source=source):
             # evaluate the soname here, so the test-code contains a constant
             soname = ctypes.util.find_library(libname)
             source = source +_template_ctypes_test

@@ -64,6 +64,11 @@ class AppBuilder(object):
 
         """
         testname = inspect.stack()[1][3]
+        if testname == 'func':
+            # Retrieve the testname of test-functions generated at
+            # run-time from the local variable.
+            testname = inspect.stack()[1][0].f_locals['__test_name__']
+
         scriptfile = os.path.join(os.path.abspath(self._tmpdir),
                                   testname + '.py')
         source = textwrap.dedent(source)
