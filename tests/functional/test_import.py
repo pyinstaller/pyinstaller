@@ -129,4 +129,8 @@ def test_ctypes_CDLL_find_library__usb(pyi_builder):
 def test_ctypes_CDLL__usb(pyi_builder):
     # evaluate the soname here, so the test-code contains a constant
     soname = ctypes.util.find_library('usb-1.0')
-    pyi_builder.test_source(_template_ctypes_CDLL_const % locals())
+    script = """
+        import ctypes
+        lib = ctypes.CDLL(%(soname)r)
+    """ + _template_ctypes_test
+    pyi_builder.test_source(script % locals())
