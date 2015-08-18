@@ -181,6 +181,22 @@ p.sidebar-title {
 	font-variant: small-caps;
 }
 
+div.note {
+    border: solid thin black;
+    background-color: #ffffee;
+    width: 90%;
+    padding: 0 0.5em;
+}
+
+div.note p.admonition-title {
+    font-weight: bold;
+    float: left;
+    margin-right: 1em;
+}
+
+div.note p.admonition-title:after {
+    content: ": "
+}
 
 /*
  * END OF FILE
