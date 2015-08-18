@@ -96,6 +96,9 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
     libname = 'gs'
     pyi_builder.test_source(_template_ctypes_CDLL_find_library % locals())
 
+
+#-- Generate test-cases for the different types of ctypes objects.
+
 libname = 'gs'
 reason = 'libgs.so (Ghostscript)'
 parameters = []
