@@ -96,43 +96,30 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
     libname = 'gs'
     pyi_builder.test_source(_template_ctypes_CDLL_find_library % locals())
 
-
 libname = 'gs'
 reason = 'libgs.so (Ghostscript)'
-for import_, name, prefix, funcnames in (
-        ('from ctypes import *',
-         'ctypes_global',
-         '',
-         ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary')),
-        ('import ctypes',
-         'ctypes_ctypes',
-         'ctypes.',
-         ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary')),
-    ):
-    for funcname in funcnames:
-        testname = 'test_%s_%s__%s' % (name, funcname.replace('.', '_'), libname)
-        source = """
-        %s
-        lib = %s(%%(soname)r)
-        """ % (import_, prefix+funcname) + _template_ctypes_test
-
-        # For test_source() to be able to get the real name of the
-        # test-case, this function has to be named "func" and have a
-        # local variable `__test_name__` containing the testname.
-        @skip_if_lib_missing(libname, reason)
-        def func(pyi_builder, __test_name__=testname,
-                 libname=libname, source=source):
-            # evaluate the soname here, so the test-code contains a constant
-            soname = ctypes.util.find_library(libname)
-            source = source +_template_ctypes_test
-            pyi_builder.test_source(source % locals())
-
+parameters = []
+for prefix in ('', 'ctypes.'):
+    for funcname in  ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
+        params = (prefix+funcname, libname, reason)
         if funcname in ("WinDLL", "OleDLL"):
             # WinDLL, OleDLL only work on windows.
-            func = skipif_notwin(func)
+            params = skipif_notwin(params)
+        parameters.append(params)
 
-        globals()[testname] = func
-        del func
+
+@pytest.mark.parametrize("funcname, libname, reason", parameters)
+@skip_if_lib_missing(libname, reason)
+def test_ctypes__functions(pyi_builder, funcname, libname, reason):
+    # evaluate the soname here, so the test-code contains a constant
+    soname = ctypes.util.find_library(libname)
+    source = """
+        import ctypes ; from ctypes import *
+        lib = %s(%%(soname)r)
+    """ % funcname + _template_ctypes_test
+    source = source +_template_ctypes_test
+    pyi_builder.test_source(source % locals())
+
 
 # TODO: Add test-cases forthe prefabricated library loaders supporting
 # attribute accesses on windows. Example::
