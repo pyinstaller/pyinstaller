@@ -264,7 +264,7 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
     # the user - pyinstaller would need to patch the compiled pyc
     # file to make it work correctly!
 
-    for binary in binaries:
+    for binary in list(binaries):
         # 'binary' might be in some cases None. Some Python
         # modules might contain code like the following. For
         # example PyObjC.objc._bridgesupport contain code like
