@@ -79,11 +79,10 @@ _template_ctypes_CDLL_find_library = """
         print('>>> file found')
     """
 
-_template_ctypes_CDLL_const = """
-    import ctypes, ctypes.util, sys, os
-    lib = ctypes.CDLL(%(soname)r)
+_template_ctypes_test = """
     print(lib)
     assert lib is not None and lib._name is not None
+    import sys, os
     if getattr(sys, 'frozen', False):
         libfile = os.path.join(sys._MEIPASS, %(soname)r)
         print(libfile)
@@ -103,7 +102,11 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
 def test_ctypes_CDLL__gs(pyi_builder):
     # evaluate the soname here, so the test-code contains a constant
     soname = ctypes.util.find_library('gs')
-    pyi_builder.test_source(_template_ctypes_CDLL_const % locals())
+    script = """
+    import ctypes
+    lib = ctypes.CDLL(%(soname)r)
+    """ + _template_ctypes_test
+    pyi_builder.test_source(script % locals())
 
 
 @pytest.mark.xfail(reason='fetching dll-name from ctypes.util.find_library() is unsupported')
