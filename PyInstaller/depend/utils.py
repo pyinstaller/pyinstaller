@@ -239,6 +239,25 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
                 # First type
                 soname = co.co_names[oparg2] + ".dll"
                 binaries.add(soname)
+    elif op == LOAD_ATTR and name in ("util", ):
+        # Guesses ctypes imports of these types::
+        #
+        #  ctypes.util.find_library('gs')
+        #
+        #     LOAD_GLOBAL   0 (ctype)
+        #     LOAD_ATTR     1 (util) <--- we "are" here right now
+        #     LOAD_ATTR     1 (find_library)
+        #     LOAD_CONST    1 ('gs')
+        i += 1
+        op, oparg, conditional, curline = instrs[i]
+        if op == LOAD_ATTR:
+            if co.co_names[oparg] == "find_library":
+                i += 1
+                op, oparg, conditional, curline = instrs[i]
+                if op == LOAD_CONST:
+                    libname = co.co_consts[oparg]
+                    soname = ctypes.util.find_library(libname)
+                    binaries.add(soname)
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
