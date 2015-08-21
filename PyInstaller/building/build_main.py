@@ -36,7 +36,7 @@ from .imphook import AdditionalFilesCache, HooksCache, ImportHook
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime
-from ..depend.utils import create_py3_base_library
+from ..depend.utils import create_py3_base_library, scan_code_for_ctypes
 from ..archive import pyz_crypto
 from ..utils.misc import get_path_to_toplevel_modules, get_unicode_modules, mtime
 from ..configure import get_importhooks_dir
@@ -412,13 +412,14 @@ class Analysis(Target):
 
         ### Look for dlls that are imported by Python 'ctypes' module.
         # First get code objects of all modules that import 'ctypes'.
-        logger.info('Looking for ctypes DLLs - TODO')
+        logger.info('Looking for ctypes DLLs')
         ctypes_code_objs = self.graph.get_co_using_ctypes()  # dict like:  {'module1': code_obj, 'module2': code_obj}
-        for m in ctypes_code_objs:
-            logger.debug('  %s' % m)
-        # TODO Use function PyInstaller.depend.utils:scan_code_for_ctypes() to get dlls that might be needed.
-        # TODO add dlls found in ctypes to self.binaries.
-
+        for name, co in ctypes_code_objs.items():
+            # Get dlls that might be needed by ctypes.
+            logger.debug('Scanning %s for shared libraries or dlls', name)
+            ctypes_binaries, ctypes_warnings = scan_code_for_ctypes(co)
+            self.binaries.extend(set(ctypes_binaries))
+            # TODO: print and write ctypes_warnings
 
         # Analyze run-time hooks.
         # Run-time hooks has to be executed before user scripts. Add them

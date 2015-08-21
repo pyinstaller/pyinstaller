@@ -18,6 +18,7 @@ import subprocess
 import sys
 import inspect
 import textwrap
+import io
 
 from PyInstaller import configure
 from PyInstaller import main as pyi_main
@@ -59,15 +60,24 @@ class AppBuilder(object):
                        will be saved into a temporary file which is
                        then passed on to `test_script`.
 
+        :param test_id: Test-id for parametrized tests. If given, it
+                        will be appended to the script filename,
+                        separated by two underscores.
+
         All other arguments are passed streigth on to `test_script`.
 
         """
         testname = inspect.stack()[1][3]
+        if 'test_id' in kwargs:
+            # For parametrized test append the test-id.
+            testname = testname + '__' + kwargs['test_id']
+            del kwargs['test_id']
+
         scriptfile = os.path.join(os.path.abspath(self._tmpdir),
                                   testname + '.py')
-        source = textwrap.dedent(source).encode('utf-8')
-        with open(scriptfile, 'w') as ofh:
-            print('# -*- coding: utf-8 -*-', file=ofh)
+        source = textwrap.dedent(source)
+        with io.open(scriptfile, 'w', encoding='utf-8') as ofh:
+            print(u'# -*- coding: utf-8 -*-', file=ofh)
             print(source, file=ofh)
         return self.test_script(scriptfile, *args, **kwargs)
 
