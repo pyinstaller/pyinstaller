@@ -175,7 +175,7 @@ unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
 int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 {
 	FILE *out;
-	size_t result;
+	size_t result, len;
 	unsigned char *data = pyi_arch_extract(status, ptoc);
 
     /* Create tmp dir _MEIPASSxxx. */
@@ -184,14 +184,15 @@ int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
     }
 
 	out = pyi_open_target(status->temppath, ptoc->name);
+	len = ntohl(ptoc->ulen);
 	if (out == NULL)  {
 		FATALERROR("%s could not be extracted!\n", ptoc->name);
 		return -1;
 	}
 	else {
-		result = fwrite(data, ntohl(ptoc->ulen), 1, out);
-		if(1 != result) {
-			FATALERROR("Failed to write all bytes for %s", ptoc->name);
+		result = fwrite(data, len, 1, out);
+		if((1 != result) && (len > 0)) {
+			FATALERROR("Failed to write all bytes for %s\n", ptoc->name);
 			return -1;
 		}
 #ifndef WIN32
