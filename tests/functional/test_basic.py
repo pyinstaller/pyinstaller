@@ -450,6 +450,22 @@ def test_win_non_codepage_path(pyi_builder, monkeypatch):
 def test_win_py3_no_shortpathname(pyi_builder):
     pyi_builder.test_script('pyi_win_py3_no_shortpathname.py')
 
+@skipif_notwin
+def test_renamed_exe(pyi_builder):
+    _old_find_executables = pyi_builder._find_executables
+    def _find_executables(name):
+        oldexes = _old_find_executables(name)
+        newexes = []
+        for old in oldexes:
+
+            new = os.path.join(os.path.dirname(old), "renamed_" + os.path.basename(old))
+            os.rename(old, new)
+            newexes.append(new)
+        return newexes
+
+    pyi_builder._find_executables = _find_executables
+    pyi_builder.test_script('pyi_helloworld.py')
+
 """
 def test_(pyi_builder):
     pyi_builder.test_script('')
