@@ -104,14 +104,28 @@ void pyi_path_basename(char *result, const char *path)
 /*
  * Join two path components.
  * Joined path is returned without slash at the end.
+ *
+ * If result is NULL, allocates and returns a new buffer which the caller
+ * is responsible for freeing. Otherwise, result should be a buffer of at
+ * least PATH_MAX characters.
+ *
+ * Returns NULL on failure.
  */
 // FIXME: Need to test for absolut path2 -- or mark this function as
 //        only for an relative path2
-void pyi_path_join(char *result, const char *path1, const char *path2)
+char * pyi_path_join(char *result, const char *path1, const char *path2)
 { 
     size_t len = 0;
-    memset(result, 0, PATH_MAX);
-    /* Copy path1 to result null string '\0'. */
+    if(NULL == result) {
+        len = strlen(path1) + strlen(path2) + 2;
+        result = malloc(len);
+        if(NULL == result) return NULL;
+
+        memset(result, 0, len);
+    } else {
+        memset(result, 0, PATH_MAX);
+    }
+    /* Copy path1 to result without null terminator */
     strncpy(result, path1, strlen(path1));
     /* Append trailing slash if missing. */
     len = strlen(result);
@@ -129,6 +143,7 @@ void pyi_path_join(char *result, const char *path1, const char *path2)
         /* path2 does not end with slash. */
         strcat(result, path2);
     }
+    return result;
 }
 
 
