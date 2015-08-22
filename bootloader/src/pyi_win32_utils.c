@@ -70,11 +70,9 @@ char * GetWinErrorString() {
 
 }
  	
-int CreateActContext(const char *workpath, const char *thisfile)
+int CreateActContext(const char *manifestpath)
 {
-    char manifestpath[PATH_MAX];
     wchar_t * manifestpath_w;
-    char basename[PATH_MAX];
     ACTCTXW ctx;
     BOOL activated;
     HANDLE k32;
@@ -82,10 +80,6 @@ int CreateActContext(const char *workpath, const char *thisfile)
     BOOL (WINAPI *ActivateActCtx)(HANDLE hActCtx, ULONG_PTR *lpCookie);
 
     /* Setup activation context */
-    /* TODO: pyi-option for manifest filename would allow exe to be renamed */
-    pyi_path_basename(basename, thisfile);
-    pyi_path_join(manifestpath, workpath, basename);
-    strcat(manifestpath, ".manifest");
     VS("LOADER: manifestpath: %s\n", manifestpath);
     manifestpath_w = pyi_win32_utils_from_utf8(NULL, manifestpath, 0);
     

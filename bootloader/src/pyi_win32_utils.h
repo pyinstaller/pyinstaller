@@ -17,7 +17,7 @@
 #ifdef _WIN32
 
 char * GetWinErrorString();
-int CreateActContext(const char *workpath, const char *thisfile);
+int CreateActContext(const char *manifestpath);
 void ReleaseActContext(void);
 
 char * pyi_win32_wcs_to_mbs(const wchar_t *wstr);

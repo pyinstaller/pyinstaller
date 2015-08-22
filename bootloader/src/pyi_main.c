@@ -126,7 +126,7 @@ int pyi_main(int argc, char * argv[])
         }
 
         /* Main code to initialize Python and run user's code. */
-        pyi_launch_initialize(executable, extractionpath);
+        pyi_launch_initialize(archive_status);
         rc = pyi_launch_execute(archive_status);
         pyi_launch_finalize(archive_status);
 

@@ -412,7 +412,7 @@ done:
 /* For finer grained control. */
 
 
-void pyi_launch_initialize(const char *executable, const char *extractionpath)
+void pyi_launch_initialize(ARCHIVE_STATUS * status)
 {
     #if defined(__APPLE__) && defined(WINDOWED)
     /*
@@ -421,8 +421,14 @@ void pyi_launch_initialize(const char *executable, const char *extractionpath)
      */
     ProcessSerialNumber psn = { 0, kCurrentProcess };
     OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
-    #elif WIN32
-    CreateActContext(extractionpath, executable);
+    #elif defined(_WIN32)
+    char * manifest;
+    manifest = pyi_arch_get_option(status, "pyi-windows-manifest-filename");
+    if(NULL != manifest) {
+        manifest = pyi_path_join(NULL, status->mainpath, manifest);
+        CreateActContext(manifest);
+        free(manifest);
+    }
     #endif
 }
 

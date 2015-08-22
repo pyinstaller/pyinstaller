@@ -42,7 +42,7 @@ int pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status);
  * Wrapped platform specific initialization before loading Python and executing
  * all scripts in the archive.
  */
-void pyi_launch_initialize(const char *executable, const char *extractionpath);
+void pyi_launch_initialize(ARCHIVE_STATUS *archive_status);
 
 
 /*

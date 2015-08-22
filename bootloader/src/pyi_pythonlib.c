@@ -165,7 +165,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 		if (ptoc->typcd == ARCHIVE_ITEM_RUNTIME_OPTION) {
 			if(0 == strncmp(ptoc->name, "pyi-", 4)) {
 				VS("LOADER: Bootloader option: %s\n", ptoc->name);
-				continue;  // Not handled here - use pyi_get_option(status, ...)
+				continue;  // Not handled here - use pyi_arch_get_option(status, ...)
 			}
 			VS("LOADER: Runtime option: %s\n", ptoc->name);
 			switch (ptoc->name[0]) {

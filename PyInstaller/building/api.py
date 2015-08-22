@@ -396,8 +396,13 @@ class EXE(Target):
             filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
                 self.console, self.uac_admin, self.uac_uiaccess)
-            self.toc.append((os.path.basename(self.name) + ".manifest", filename,
-                'BINARY'))
+
+            manifest_filename = os.path.basename(self.name) + ".manifest"
+            self.toc.append((manifest_filename, filename, 'BINARY'))
+            # Store name of manifest file as bootloader option. Allows
+            # the exe to be renamed.
+            self.toc.append(("pyi-windows-manifest-filename " + manifest_filename,
+                             "", "OPTION"))
 
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
