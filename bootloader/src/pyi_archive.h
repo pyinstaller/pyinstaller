@@ -142,5 +142,7 @@ int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char  const
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 
+char * pyi_arch_get_option(ARCHIVE_STATUS * status, char * optname);
+
 
 #endif /* PYI_ARCHIVE_H */
