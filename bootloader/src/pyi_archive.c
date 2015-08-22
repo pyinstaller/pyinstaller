@@ -490,7 +490,8 @@ void pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
 
 /*
  * Returns the value of the pyi bootloader option given by optname. Returns
- * NULL if the option is not present.
+ * NULL if the option is not present. Returns an empty string if the option is present,
+ * but has no associated value.
  *
  * The string returned is owned by the ARCHIVE_STATUS; the caller is NOT responsible
  * for freeing it.
@@ -503,8 +504,14 @@ char * pyi_arch_get_option(ARCHIVE_STATUS * status, char * optname) {
 	for (; ptoc < status->tocend; ptoc = pyi_arch_increment_toc_ptr(status, ptoc)) {
 		if (ptoc->typcd == ARCHIVE_ITEM_RUNTIME_OPTION) {
 			if(0 == strncmp(ptoc->name, optname, optlen)) {
-				// Space separates option name from option value, so add 1.
-				return ptoc->name + optlen + 1;
+				if(0 != ptoc->name[optlen]) {
+					// Space separates option name from option value, so add 1.
+					return ptoc->name + optlen + 1;
+				} else {
+					// No option value, just return the empty string.
+					return ptoc->name + optlen;
+				}
+
 			}
 		}
 	}
