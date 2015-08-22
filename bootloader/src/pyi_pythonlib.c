@@ -161,8 +161,12 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 
     /* Override some runtime options by custom values from PKG archive.
      * User is allowed to changes these options. */
-	while (ptoc < status->tocend) {
+	for (; ptoc < status->tocend; ptoc = pyi_arch_increment_toc_ptr(status, ptoc)) {
 		if (ptoc->typcd == ARCHIVE_ITEM_RUNTIME_OPTION) {
+			if(0 == strncmp(ptoc->name, "pyi-", 4)) {
+				VS("LOADER: Bootloader option: %s\n", ptoc->name);
+				continue;  // Not handled here - use pyi_get_option(status, ...)
+			}
 			VS("LOADER: Runtime option: %s\n", ptoc->name);
 			switch (ptoc->name[0]) {
 			case 'v':
@@ -190,7 +194,6 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 			break;
 			}
 		}
-		ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
 	}
 	if (unbuffered) {
 #ifdef _WIN32
