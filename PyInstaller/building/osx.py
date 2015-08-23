@@ -183,8 +183,7 @@ class BUNDLE(Target):
         # Mac OS X Code Signing does not work when .app bundle contains
         # data files in dir ./Contents/MacOS.
         #
-        # Move all directories from ./MacOS/ to ./Resources and create symlinks
-        # in ./MacOS.
+        # Put all data files in ./Resources and create symlinks in ./MacOS.
         bin_dir = os.path.join(self.name, 'Contents', 'MacOS')
         res_dir = os.path.join(self.name, 'Contents', 'Resources')
         for inm, fnm in links:
@@ -194,24 +193,23 @@ class BUNDLE(Target):
                 if not os.path.exists(todir):
                     os.makedirs(todir)
                 shutil.copy2(fnm, tofnm)
-                path = os.path.split(inm)[0]
-                old_path = inm  # Initialize old_path as the in name
-                if path:
-                    while path:
-                        # If the folder already exists but the destination file/folder doesn't symlink the file/folder
-                        if os.path.exists(os.path.join(bin_dir, path)) and \
-                                not os.path.exists(os.path.join(bin_dir, inm)):
-                            os.symlink(os.path.join(res_dir, old_path), os.path.join(bin_dir, old_path))
-                            break  # Continue to the next file
-                        else:  # Folder didn't exist move up a level and try again
-                            old_path = path
-                            path = os.path.split(path)[0]  # Remove one directory level
-                    else:
-                        # If we have tried all directory levels and they all exist then just symlink the file if it
-                        # doesn't exist
-                        if not os.path.exists(os.path.join(bin_dir, inm)):
-                            os.symlink(os.path.join(res_dir, old_path), os.path.join(bin_dir, old_path))
+                base_path = os.path.split(inm)[0]
+                if base_path:
+                    path = ''
+                    for part in iter(base_path.split(os.path.sep)):
+                        # Build path from previous path and the next part of the base path
+                        path = os.path.join(path, part)
+                        try:
+                            relative_source_path = os.path.relpath(os.path.join(res_dir, path),
+                                                                   os.path.split(os.path.join(bin_dir, path))[0])
+                            dest_path = os.path.join(bin_dir, path)
+                            os.symlink(relative_source_path, dest_path)
+                            break
+                        except FileExistsError:
+                            pass
                 else:  # If path is empty, e.g., a top level file, try to just symlink the file
-                    os.symlink(os.path.join(res_dir, inm), os.path.join(bin_dir, inm))
+                    os.symlink(os.path.relpath(os.path.join(res_dir, inm),
+                                               os.path.split(os.path.join(bin_dir, inm))[0]),
+                               os.path.join(bin_dir, inm))
             else:
                 shutil.copy2(fnm, bin_dir)
