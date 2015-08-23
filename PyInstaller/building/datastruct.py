@@ -243,24 +243,29 @@ class Tree(Target, TOC):
     def assemble(self):
         logger.info("Building Tree %s", self.tocbasename)
         stack = [(self.root, self.prefix)]
-        excludes = {}
-        xexcludes = {}
-        for nm in self.excludes:
-            if nm[0] == '*':
-                xexcludes[nm[1:]] = 1
+        excludes = set()
+        xexcludes = set()
+        for name in self.excludes:
+            if name.startswith('*'):
+                xexcludes.add(name[1:])
             else:
-                excludes[nm] = 1
-        rslt = []
+                excludes.add(name)
+        result = []
         while stack:
             dir, prefix = stack.pop()
-            for fnm in os.listdir(dir):
-                if excludes.get(fnm, 0) == 0:
-                    ext = os.path.splitext(fnm)[1]
-                    if xexcludes.get(ext, 0) == 0:
-                        fullfnm = os.path.join(dir, fnm)
-                        rfnm = prefix and os.path.join(prefix, fnm) or fnm
-                        if os.path.isdir(fullfnm):
-                            stack.append((fullfnm, rfnm))
-                        else:
-                            rslt.append((rfnm, fullfnm, 'DATA'))
-        self.data = rslt
+            for filename in os.listdir(dir):
+                if filename in excludes:
+                    continue
+                ext = os.path.splitext(filename)[1]
+                if ext in xexcludes:
+                    continue
+                fullfilename = os.path.join(dir, filename)
+                if prefix:
+                    resfilename = os.path.join(prefix, filename)
+                else:
+                    resfilename = filename
+                if os.path.isdir(fullfilename):
+                    stack.append((fullfilename, resfilename))
+                else:
+                    result.append((resfilename, fullfilename, 'DATA'))
+        self.data = result
