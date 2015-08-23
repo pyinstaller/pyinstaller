@@ -180,14 +180,6 @@ class BUNDLE(Target):
 
         logger.info('moving BUNDLE data files to Resource directory')
 
-        ## For some hooks move resource to ./Contents/Resources dir.
-        # PyQt4/PyQt5 hooks: On Mac Qt requires resources 'qt_menu.nib'.
-        # It is moved from MacOS directory to Resources.
-        qt_menu_dir = os.path.join(self.name, 'Contents', 'MacOS', 'qt_menu.nib')
-        qt_menu_dest = os.path.join(self.name, 'Contents', 'Resources', 'qt_menu.nib')
-        if os.path.exists(qt_menu_dir):
-            shutil.move(qt_menu_dir, qt_menu_dest)
-
         # Mac OS X Code Signing does not work when .app bundle contains
         # data files in dir ./Contents/MacOS.
         #
