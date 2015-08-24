@@ -195,18 +195,24 @@ class BUNDLE(Target):
                 shutil.copy2(fnm, tofnm)
                 base_path = os.path.split(inm)[0]
                 if base_path:
-                    path = ''
-                    for part in iter(base_path.split(os.path.sep)):
-                        # Build path from previous path and the next part of the base path
-                        path = os.path.join(path, part)
-                        try:
-                            relative_source_path = os.path.relpath(os.path.join(res_dir, path),
-                                                                   os.path.split(os.path.join(bin_dir, path))[0])
-                            dest_path = os.path.join(bin_dir, path)
+                    if not os.path.exists(os.path.join(bin_dir, inm)):
+                        path = ''
+                        for part in iter(base_path.split(os.path.sep)):
+                            # Build path from previous path and the next part of the base path
+                            path = os.path.join(path, part)
+                            try:
+                                relative_source_path = os.path.relpath(os.path.join(res_dir, path),
+                                                                       os.path.split(os.path.join(bin_dir, path))[0])
+                                dest_path = os.path.join(bin_dir, path)
+                                os.symlink(relative_source_path, dest_path)
+                                break
+                            except FileExistsError:
+                                pass
+                        if not os.path.exists(os.path.join(bin_dir, inm)):
+                            relative_source_path = os.path.relpath(os.path.join(res_dir, inm),
+                                                                   os.path.split(os.path.join(bin_dir, inm))[0])
+                            dest_path = os.path.join(bin_dir, inm)
                             os.symlink(relative_source_path, dest_path)
-                            break
-                        except FileExistsError:
-                            pass
                 else:  # If path is empty, e.g., a top level file, try to just symlink the file
                     os.symlink(os.path.relpath(os.path.join(res_dir, inm),
                                                os.path.split(os.path.join(bin_dir, inm))[0]),
