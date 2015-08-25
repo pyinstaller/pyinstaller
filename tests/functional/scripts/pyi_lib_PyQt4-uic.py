@@ -7,25 +7,32 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+# Library imports
+# ---------------
 import sys
+import os
 
+# Third-party imports
+# -------------------
 # Instead of creating a custom .spec file: inform PyInstaller of the
 # hidden import of QtWebKit, which is performed inside of uic.loadUi.
 from PyQt4.QtWebKit import QWebView
-
+# Other Qt imports used in the code below.
 from PyQt4.QtGui import QApplication, QDialog
 from PyQt4 import uic
+from PyQt4.QtCore import QTimer
 
-# Instead of creating a custom .spec file, assume the .ui file is in
-# the same directory as the source .py file, making it two levels up
-# when frozen.
-if getattr(sys, 'frozen', False):
-    ui_prefix = '../../'
-else:
-    ui_prefix = ''
+# Local imports
+# -------------
+from tests.functional.get_data_dir import get_data_dir
 
+# Test code
+# ---------
 app = QApplication([])
 window = QDialog()
-uic.loadUi(ui_prefix + 'test_PyQt4-uic.ui', window)
+uic.loadUi(os.path.join(get_data_dir(), 'PyQt4-uic.ui'), window)
 window.show()
-#app.exec_()
+# Exit Qt when the main loop becomes idle.
+QTimer.singleShot(0, app.exit)
+# Run the main loop, displaying the WebKit widget.
+app.exec_()
