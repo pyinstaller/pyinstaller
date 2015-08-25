@@ -46,8 +46,7 @@ def test_zmq(pyi_builder):
 
 @importorskip('sphinx')
 def test_sphinx(pyi_builder):
-    sphinx_dir = os.path.join(_DATA_DIR, 'sphinx')
-    pyi_builder.test_script('pyi_lib_sphinx.py', app_args=[sphinx_dir])
+    pyi_builder.test_script('pyi_lib_sphinx.py', app_args=[_DATA_DIR])
 
 @importorskip('pylint')
 def test_pylint(pyi_builder):
