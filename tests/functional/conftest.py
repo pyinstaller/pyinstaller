@@ -20,6 +20,12 @@ import inspect
 import textwrap
 import io
 
+
+# Expand sys.path with PyInstaller source.
+_ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+sys.path.append(_ROOT_DIR)
+
+
 from PyInstaller import configure
 from PyInstaller import main as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
