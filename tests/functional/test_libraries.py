@@ -61,3 +61,6 @@ def test_pygments(pyi_builder):
 def test_markdown(pyi_builder):
     pyi_builder.test_script('pyi_lib_markdown.py')
 
+@importorskip('PyQt4')
+def test_PyQt4_QtWebKit(pyi_builder):
+    pyi_builder.test_script('pyi_lib_PyQt4-QtWebKit.py')
