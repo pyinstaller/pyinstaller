@@ -14,16 +14,9 @@
 import sphinx
 import sys
 import os.path
+from tests.functional.get_data_dir import get_data_dir
 
-# Sphinx needs input files to operate on. There are two cases:
-if getattr(sys, 'frozen', False):
-    # 1. Frozen: then the files are in argv[1]/sphinx.
-    sphinx_path = sys.argv[1]
-else:
-    # 2. Not frozen: then the files are in ../data/sphinx.
-    sphinx_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                               '..', 'data')
-sphinx_path = os.path.join(sphinx_path, 'sphinx')
+sphinx_path = os.path.join(get_data_dir(), 'sphinx')
 
 # Invoke Sphinx. See
 # http://sphinx-doc.org/invocation.html#invocation-of-sphinx-build for more
