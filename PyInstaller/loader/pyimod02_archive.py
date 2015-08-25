@@ -120,7 +120,7 @@ class ArchiveReader(object):
             if sys.version_info[1] <= 3:
                 # Python 3.3
                 self.pymagic = _frozen_importlib._MAGIC_BYTES
-            elif sys.version_info[1] = 4:
+            elif sys.version_info[1] == 4:
                 # Python 3.4
                 self.pymagic = _frozen_importlib.MAGIC_NUMBER
             else:
