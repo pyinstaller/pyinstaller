@@ -10,4 +10,4 @@
 
 # Markdown uses __import__ed extensions. Make sure these work by trying to use the 'toc' extension..
 import markdown
-markdown.markdown('testing',  ['toc'])
+print(markdown.markdown('testing',  ['toc']))
