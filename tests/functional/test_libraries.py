@@ -53,3 +53,7 @@ def test_sphinx(pyi_builder):
 def test_pylint(pyi_builder):
     pyi_builder.test_script('pyi_lib_pylint.py')
 
+@importorskip('pygments')
+def test_pygments(pyi_builder):
+    pyi_builder.test_script('pyi_lib_pygments.py')
+
