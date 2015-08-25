@@ -63,3 +63,8 @@ def test_markdown(pyi_builder):
 @importorskip('PyQt4')
 def test_PyQt4_QtWebKit(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt4-QtWebKit.py')
+
+@importorskip('PyQt4')
+def test_PyQt4_uic(pyi_builder):
+    pyi_builder.test_script('pyi_lib_PyQt4-uic.py', app_args=[_DATA_DIR])
+
