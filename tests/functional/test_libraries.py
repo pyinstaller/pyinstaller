@@ -13,10 +13,7 @@ import pytest
 
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import importorskip, xfail_py2
-
-
-# Directory with data for some tests.
-_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+from tests.functional.data_dir import DATA_DIR
 
 
 @xfail_py2
@@ -24,7 +21,7 @@ _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 # Django test might sometimes hang.
 @pytest.mark.timeout(timeout=7*60)
 def test_django(pyi_builder, monkeypatch):
-    script_dir = os.path.join(_DATA_DIR, 'django_site')
+    script_dir = os.path.join(DATA_DIR, 'django_site')
     # Extend sys.path so PyInstaller could find modules from 'django_site' project.
     monkeypatch.syspath_prepend(script_dir)
     # Django uses manage.py as the main script.
@@ -46,7 +43,7 @@ def test_zmq(pyi_builder):
 
 @importorskip('sphinx')
 def test_sphinx(pyi_builder):
-    pyi_builder.test_script('pyi_lib_sphinx.py', app_args=[_DATA_DIR])
+    pyi_builder.test_script('pyi_lib_sphinx.py', app_args=[DATA_DIR])
 
 @importorskip('pylint')
 def test_pylint(pyi_builder):
@@ -66,5 +63,5 @@ def test_PyQt4_QtWebKit(pyi_builder):
 
 @importorskip('PyQt4')
 def test_PyQt4_uic(pyi_builder):
-    pyi_builder.test_script('pyi_lib_PyQt4-uic.py', app_args=[_DATA_DIR])
+    pyi_builder.test_script('pyi_lib_PyQt4-uic.py', app_args=[DATA_DIR])
 

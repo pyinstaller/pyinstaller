@@ -14,7 +14,7 @@
 import sphinx
 import sys
 import os.path
-from tests.functional.get_data_dir import get_data_dir
+from tests.functional.data_dir import get_data_dir
 
 sphinx_path = os.path.join(get_data_dir(), 'sphinx')
 

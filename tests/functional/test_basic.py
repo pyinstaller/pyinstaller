@@ -21,7 +21,7 @@ from PyInstaller.compat import architecture, is_darwin, is_win, is_py2
 from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, skipif_notwin
 
 # Directory with data for some tests.
-_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+from tests.functional.data_dir import DATA_DIR
 
 
 @skipif_winorosx
@@ -114,7 +114,7 @@ def test_multiprocess_forking(pyi_builder):
 # TODO test it on OS X.
 def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder):
     # Copy code for 'ctypes_dylib' into tmpdir.
-    src = os.path.join(_DATA_DIR, 'ctypes_dylib')
+    src = os.path.join(DATA_DIR, 'ctypes_dylib')
     dst = tmpdir.strpath
     files = glob.glob(src + '/*.c')
     for f in files:
@@ -188,7 +188,7 @@ def test_python_makefile(pyi_builder):
 
 
 def test_set_icon(pyi_builder):
-    icon_dir = os.path.join(_DATA_DIR, 'icons')
+    icon_dir = os.path.join(DATA_DIR, 'icons')
     if is_win:
         args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]
     elif is_darwin:

@@ -16,10 +16,6 @@ import ctypes, ctypes.util
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, skipif_notwin
 
-# Directory with data for some tests.
-_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-
-
 
 def test_relative_import(pyi_builder):
     pyi_builder.test_script('pyi_import_relative.py')
