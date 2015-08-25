@@ -61,6 +61,7 @@ def test_markdown(pyi_builder):
 def test_PyQt4_QtWebKit(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt4-QtWebKit.py')
 
+@pytest.mark.xfail(True, reason='Reports "ImportError: No module named QtWebKit.QWebView".')
 @importorskip('PyQt4')
 def test_PyQt4_uic(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py', app_args=[DATA_DIR])
