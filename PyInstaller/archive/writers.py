@@ -31,23 +31,8 @@ from types import CodeType
 import marshal
 import zlib
 
-from PyInstaller.archive.readers import CArchiveReader
-
-
-
-# In Python 3 module 'imp' is no longer built-in and we cannot use it.
-# There is for Python 3 another way how to obtain magic value.
-if sys.version_info[0] == 2:
-    import imp
-    PYMAGIC = imp.get_magic()
-else:
-    import _frozen_importlib
-    if sys.version_info[1] <= 3:
-        # We cannot use at this bootstrap stage importlib directly
-        # but its frozen variant.
-        PYMAGIC = _frozen_importlib._MAGIC_BYTES
-    else:
-        PYMAGIC = _frozen_importlib.MAGIC_NUMBER
+from .readers import CArchiveReader
+from ..compat import BYTECODE_MAGIC
 
 
 class ArchiveFile(object):
@@ -143,7 +128,7 @@ class ArchiveWriter(object):
             raise ArchiveReadError("%s is not a valid %s archive file"
                                    % (self.path, self.__class__.__name__))
 
-        if self.lib.read(len(PYMAGIC)) != PYMAGIC:
+        if self.lib.read(len(BYTECODE_MAGIC)) != BYTECODE_MAGIC:
             raise ArchiveReadError("%s has version mismatch to dll" %
                 (self.path))
 
@@ -320,7 +305,7 @@ class ArchiveWriter(object):
         """
         self.lib.seek(self.start)
         self.lib.write(self.MAGIC)
-        self.lib.write(PYMAGIC)
+        self.lib.write(BYTECODE_MAGIC)
         self.lib.write(struct.pack('!i', tocpos))
 
 

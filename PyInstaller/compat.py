@@ -151,17 +151,13 @@ is_venv = is_virtualenv = base_prefix != sys.prefix
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
-if is_py2:
+if is_py34:
+    import importlib.util
+    BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
+else:
+    # This fallback should work with Python 2.7 and 3.3.
     import imp
     BYTECODE_MAGIC = imp.get_magic()
-else:
-    if is_py34:
-        import importlib.util
-        BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
-    else:
-        import importlib._bootstrap
-        # TODO verify this works with Python 3.2
-        BYTECODE_MAGIC = importlib._bootstrap._MAGIC_BYTES
 
 
 # List of suffixes for Python C extension modules.
