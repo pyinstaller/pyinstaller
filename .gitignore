@@ -42,6 +42,9 @@ __pycache__/
 # NB: You can still add .spec-files to be tracked using `git add`
 /tests/**/*.spec
 
+# /tests/functional/data
+/tests/functional/data/sphinx/_build
+
 # /tests/old_suite/basic/
 /tests/old_suite/basic/python_exe.build
 
