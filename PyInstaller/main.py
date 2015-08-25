@@ -14,6 +14,7 @@ Main command-line interface to PyInstaller.
 
 import os
 import optparse
+import platform
 import sys
 
 import PyInstaller.building.makespec
@@ -22,14 +23,9 @@ import PyInstaller.compat
 import PyInstaller.log
 
 
-
-
-# Warn when old command line option is used
-
-from PyInstaller import get_version
-from .compat import module_reload
-from PyInstaller.utils import misc
-import PyInstaller.log as logging
+from . import get_version
+from .utils import misc
+from . import log as logging
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +80,13 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
             parser.error('Requires at least one scriptname file '
                          'or exactly one .spec-file')
 
-        # Print PyInstaller version as the first line to stdout.
-        # This helps identify PyInstaller version when users report issues.
-        logger.info('PyInstaller version %s' % get_version())
+        # Print PyInstaller version, Python version and platform
+        # as the first line to stdout.
+        # This helps identify PyInstaller, Python and platform version
+        #  when users report issues.
+        logger.info('PyInstaller: %s' % get_version())
+        logger.info('Python: %s' % platform.python_version())
+        logger.info('Platform: %s' % platform.platform())
 
         # Skip creating .spec when .spec file is supplied
         if args[0].endswith('.spec'):
