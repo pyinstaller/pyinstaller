@@ -9,8 +9,12 @@
 
 from PyQt4.QtGui import QApplication
 from PyQt4.QtWebKit import QWebView
+from PyQt4.QtCore import QTimer
 
 app = QApplication([])
 view = QWebView()
 view.show()
-#app.exec_()
+# Exit Qt when the main loop becomes idle.
+QTimer.singleShot(0, app.exit)
+# Run the main loop, displaying the WebKit widget.
+app.exec_()
