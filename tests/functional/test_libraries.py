@@ -43,3 +43,8 @@ def test_tkinter(pyi_builder):
 @importorskip('zmq')
 def test_zmq(pyi_builder):
     pyi_builder.test_script('pyi_lib_zmq.py')
+
+@importorskip('sphinx')
+def test_sphinx(pyi_builder):
+    sphinx_dir = os.path.join(_DATA_DIR, 'sphinx')
+    pyi_builder.test_script('pyi_lib_sphinx.py', app_args=[sphinx_dir])

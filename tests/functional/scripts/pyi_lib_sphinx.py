@@ -14,21 +14,27 @@
 
 
 import sphinx
-# See http://sphinx.pocoo.org/invocation.html#invocation for more details of 
+import sys
+# See http://sphinx.pocoo.org/invocation.html#invocation for more details of
 # the options below.
 #
 # Also, note that this is run in the dist/test_sphinx directory, but uses
 # conf.py and index.rst from the sphinx/ subdirectory, so the command-line
-# options uses '../../sphinx' to refer to these files.
-ret = sphinx.main(['', # First param is name of program (anything is fine)
-                   '-a', '-E',  # Rebuild all files
-                   '-b', 'html', # -b html produces html output
-                   '-d', '_build/doctrees', # Specify an output directory
-                                            # for data files
-                   '-c', '../../sphinx', # Specify the directory where
-                                         #  conf.py lives
-                   '../../sphinx', # Location of the source (index.rst)
-                   '_build/html' # Output directory for the resulting HTML
-                                 # files
-                     ])
+# options uses the path in argv[1] to refer to these files.
+sphinx_path = sys.argv[1]
+ret = sphinx.main([
+   # First param is name of program (anything is fine).
+   '',
+   # Rebuild all files.
+   '-a', '-E',
+   # Produce html output.
+   '-b', 'html',
+   # Specify an output directory for data files
+   '-d', '_build/doctrees',
+   # Specify the directory where conf.py lives.
+   '-c', sphinx_path,
+   # Specify the location of the source (index.rst).
+   sphinx_path,
+   # Output directory for the resulting HTML files.
+   '_build/html'])
 raise SystemExit(ret)
