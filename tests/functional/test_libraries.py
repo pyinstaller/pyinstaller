@@ -57,3 +57,7 @@ def test_pylint(pyi_builder):
 def test_pygments(pyi_builder):
     pyi_builder.test_script('pyi_lib_pygments.py')
 
+@importorskip('markdown')
+def test_markdown(pyi_builder):
+    pyi_builder.test_script('pyi_lib_markdown.py')
+
