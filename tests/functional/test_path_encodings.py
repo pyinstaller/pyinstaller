@@ -18,7 +18,6 @@ from PyInstaller.compat import is_py2
 from PyInstaller.utils.tests import skipif_win, skipif_winorosx, skipif_notwin
 
 
-@pytest.mark.path_encoding
 def test_ascii_path(pyi_builder):
     distdir = pyi_builder._distdir
     dd_ascii = distdir.encode('ascii', 'replace').decode('ascii')
@@ -29,7 +28,6 @@ def test_ascii_path(pyi_builder):
 
 
 @skipif_winorosx
-@pytest.mark.path_encoding
 def test_linux_non_unicode_path(pyi_builder, monkeypatch):
     # If we set the locale to 'C', mbstowcs should be completely useless. This
     # test verifies that _Py_char2wchar will decode the "undecodable" bytes and
@@ -53,7 +51,6 @@ def test_linux_non_unicode_path(pyi_builder, monkeypatch):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 @skipif_win
-@pytest.mark.path_encoding
 def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
     # Mac and Linux should handle 'unicode' type filenames without problem.
     distdir = pyi_builder._distdir
@@ -74,7 +71,6 @@ def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
 
 
 @skipif_notwin
-@pytest.mark.path_encoding
 def test_win_codepage_path(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
     # Create some bytes and decode with the current codepage to get a filename that
@@ -97,7 +93,6 @@ def test_win_codepage_path(pyi_builder, monkeypatch):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 @skipif_notwin
-@pytest.mark.path_encoding
 def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
     # Create some bytes and decode with the current codepage to get a filename that
@@ -136,7 +131,6 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
 
 
 @skipif_notwin
-@pytest.mark.path_encoding
 @pytest.mark.xfail(is_py2, reason="Python 2's subprocess.Popen calls CreateProcessA "
                            "which doesn't work with non-codepage paths")
 def test_win_non_codepage_path(pyi_builder, monkeypatch):
