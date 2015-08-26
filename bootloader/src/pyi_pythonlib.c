@@ -425,7 +425,7 @@ int pyi_pylib_start_python(ARCHIVE_STATUS *status)
     } else {
         /* Decode using current locale */
 		if(!pyi_locale_char2wchar(pyhome_w, status->mainpath, PATH_MAX)) {
-			FATALERROR("Failed to convert pypath to wchar_t\n");
+			FATALERROR("Failed to convert pyhome to wchar_t\n");
 			return -1;
 		}
         VS("LOADER: sys.prefix is %s\n", status->mainpath);
