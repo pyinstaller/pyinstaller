@@ -48,6 +48,7 @@ def test_zmq(pyi_builder):
 
 @importorskip('sphinx')
 def test_sphinx(tmpdir, pyi_builder):
+    # Copy the data/sphix directory to the tempdir used by this test.
     shutil.copytree(os.path.join(DATA_DIR, 'sphinx'),
                     os.path.join(tmpdir.strpath, 'data', 'sphinx'))
     pyi_builder.test_script('pyi_lib_sphinx.py')
@@ -68,8 +69,13 @@ def test_markdown(pyi_builder):
 def test_PyQt4_QtWebKit(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt4-QtWebKit.py')
 
-@pytest.mark.xfail(True, reason='Reports "ImportError: No module named QtWebKit.QWebView".')
+@pytest.mark.xfail(reason='Reports "ImportError: No module named QtWebKit.QWebView".')
 @importorskip('PyQt4')
-def test_PyQt4_uic(pyi_builder):
-    pyi_builder.test_script('pyi_lib_PyQt4-uic.py', app_args=[DATA_DIR])
+def test_PyQt4_uic(tmpdir, pyi_builder):
+    # Copy the data/PyQt4-uic.ui file to the tempdir used by this test.
+    os.mkdir(os.path.join(tmpdir.strpath, 'data'))
+    shutil.copy(os.path.join(DATA_DIR, 'PyQt4-uic.ui'),
+                os.path.join(tmpdir.strpath, 'data'))
+
+    pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
