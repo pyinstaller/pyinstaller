@@ -24,6 +24,10 @@ from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, s
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 
+def test_run_from_path_environ(pyi_builder):
+    pyi_builder.test_script('pyi_absolute_python_path.py', run_from_path=True)
+
+
 @skipif_winorosx
 def test_absolute_ld_library_path(pyi_builder):
     pyi_builder.test_script('pyi_absolute_ld_library_path.py')

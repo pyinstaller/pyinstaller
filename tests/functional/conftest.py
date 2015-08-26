@@ -88,7 +88,8 @@ class AppBuilder(object):
         return self.test_script(scriptfile, *args, **kwargs)
 
 
-    def test_script(self, script, pyi_args=None, app_name=None, app_args=None, runtime=None):
+    def test_script(self, script, pyi_args=None, app_name=None,
+                    app_args=None, runtime=None, run_from_path=False):
         """
         Main method to wrap all phases of testing a Python script.
 
@@ -114,9 +115,10 @@ class AppBuilder(object):
         assert os.path.exists(self.script), 'Script %s not found.' % script
 
         assert self._test_building(args=pyi_args), 'Building of %s failed.' % script
-        self._test_executables(app_name, args=app_args, runtime=runtime)
+        self._test_executables(app_name, args=app_args,
+                               runtime=runtime, run_from_path=run_from_path)
 
-    def _test_executables(self, name, args, runtime):
+    def _test_executables(self, name, args, runtime, run_from_path):
         """
         Run created executable to make sure it works.
 
@@ -133,7 +135,7 @@ class AppBuilder(object):
         # Empty list means that PyInstaller probably failed to create any executable.
         assert exes != [], 'No executable file was found.'
         for exe in exes:
-            retcode = self._run_executable(exe, args)
+            retcode = self._run_executable(exe, args, run_from_path)
             assert retcode == 0, 'Running exe %s failed with return-code %s.' % (exe, retcode)
             # Try to find .toc log file. .toc log file has the same basename as exe file.
             toc_log = os.path.join(_LOGS_DIR, os.path.basename(exe) + '.toc')
@@ -175,7 +177,7 @@ class AppBuilder(object):
                     exes.append(prog)
         return exes
 
-    def _run_executable(self, prog, args):
+    def _run_executable(self, prog, args, run_from_path):
         """
         Run executable created by PyInstaller.
 
@@ -190,15 +192,20 @@ class AppBuilder(object):
             # Minimum Windows PATH is in most cases:   C:\Windows\system32;C:\Windows
             prog_env['PATH'] = os.pathsep.join(winutils.get_system_path())
 
-        # Run executable in the directory where it is.
-        prog_cwd = os.path.dirname(prog)
+        exe_path = prog
+        if(run_from_path):
+            # Run executable in the temp directory
+            # Add the directory containing the executable to $PATH
+            # Basically, pretend we are a shell executing the program from $PATH.
+            prog_cwd = self._tmpdir
+            prog_name = os.path.basename(prog)
+            prog_env['PATH'] = os.pathsep.join([prog_env['PATH'], os.path.dirname(prog)])
 
-        # On Windows, `subprocess.call` does not search in its `cwd` for the
-        # executable named as the first argument, so it must be passed as an
-        # absolute path. This is documented for the Windows API `CreateProcess`
-        if not is_win:
-            # The executable will be called as relative not absolute path.
-            prog = os.path.join(os.curdir, os.path.basename(prog))
+        else:
+            # Run executable in the directory where it is.
+            prog_cwd = os.path.dirname(prog)
+            # The executable will be called with argv[0] as relative not absolute path.
+            prog_name = os.path.join(os.curdir, os.path.basename(prog))
 
         # Workaround to enable win_codepage_test
         # If _distdir is 'bytes', PyI build fails with ASCII decode error
@@ -209,17 +216,21 @@ class AppBuilder(object):
         # fails with ASCII encode error. subprocess succeeds if progname is
         # mbcs-encoded 'bytes'
         if is_win and is_py2:
-            if isinstance(prog, unicode):
-                prog = prog.encode('mbcs')
+            if isinstance(exe_path, unicode):
+                exe_path = exe_path.encode('mbcs')
+            if isinstance(prog_name, unicode):
+                prog_name = prog_name.encode('mbcs')
             if isinstance(prog_cwd, unicode):
                 prog_cwd = prog_cwd.encode('mbcs')
 
+        args = [prog_name] + args
         # Run executable. stderr is redirected to stdout.
-        print('RUNNING:', safe_repr(prog))
+        print('RUNNING: ', safe_repr(exe_path), ", args: ", safe_repr(args))
+
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
-        retcode = subprocess.call([prog] + args, stdout=sys.stdout, stderr=sys.stderr,
+        retcode = subprocess.call(args, executable=exe_path, stdout=sys.stdout, stderr=sys.stderr,
                                   env=prog_env, cwd=prog_cwd)
         return retcode
 
