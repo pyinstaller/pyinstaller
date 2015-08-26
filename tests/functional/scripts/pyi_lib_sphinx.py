@@ -11,10 +11,18 @@
 # docutils rely on data files in their module directories, which their
 # respective hook scripts must find and copy.
 
-import sphinx
+# Library imports
+# ---------------
 import sys
 import os.path
-from tests.functional.data_dir import get_data_dir
+
+# Third-party imports
+# -------------------
+import sphinx
+
+# Local imports
+# -------------
+from pyi_get_datadir import get_data_dir
 
 sphinx_path = os.path.join(get_data_dir(), 'sphinx')
 

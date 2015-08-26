@@ -24,7 +24,7 @@ from PyQt4.QtCore import QTimer
 
 # Local imports
 # -------------
-from tests.functional.data_dir import get_data_dir
+from pyi_get_datadir import get_data_dir
 
 # Test code
 # ---------
