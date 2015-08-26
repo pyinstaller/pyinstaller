@@ -29,10 +29,11 @@ DATA_DIR = os.path.join(_FILE_DIR, 'data')
 def get_data_dir():
     # Some tests need input files to operate on. There are two cases:
     if getattr(sys, 'frozen', False):
+        # This local import only works when frozen.
+        from pyi_testmod_gettemp import gettemp
         # 1. Frozen: the tests are run in tmpdir/dist/<testname>/tests; data is in
         #    tmpdir/data. Note that dirname(__file__) gives tmpdir/dist/testname.
-        print(_FILE_DIR)
-        return os.path.join(_FILE_DIR, '..', '..', '..', '..', 'data')
+        return gettemp('data')
     else:
         # 2. Not frozen:
         return DATA_DIR
