@@ -167,10 +167,43 @@ int pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
    #endif
 }
 
+/* Search $PATH for the program named 'appname' and return its full path.
+ * 'result' should be a buffer of at least PATH_MAX characters.
+ */
+int pyi_search_path(char * result, const char * appname) {
+    char * path = getenv("PATH");
+    char dirname[PATH_MAX+1];
+    if (NULL == path) {
+        return -1;
+    }
+    while (1) {
+        char *delim = strchr(path, PYI_PATHSEP);
+
+        if (delim) {
+            size_t len = delim - path;
+            if (len > PATH_MAX)
+                len = PATH_MAX;
+            strncpy(dirname, path, len);
+            *(dirname + len) = '\0';
+        }
+        else {  // last $PATH element
+            strncpy(dirname, path, PATH_MAX);
+        }
+        pyi_path_join(result, dirname, appname);
+
+        if (!delim) {
+            break;
+        }
+        path = delim + 1;
+    }
+    return 0;
+}
 
 /*
  * Return full path to the current executable.
  * Executable is the .exe created by pyinstaller: path/myappname.exe
+ * Because the calling process can set argv[0] to whatever it wants,
+ * we use a few alternate methods to get the executable path.
  *
  * execfile - buffer where to put path to executable.
  * appname - usually the item argv[0].
@@ -178,48 +211,77 @@ int pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
 int pyi_path_executable(char *execfile, const char *appname)
 {
     char buffer[PATH_MAX];
+    size_t result = -1;
 #ifdef _WIN32
+    wchar_t modulename_w[PATH_MAX];
 
-	if (!is_py2) {
-        /* Use utf8 form of argv[0] as is */
-        strncpy(buffer, appname, PATH_MAX);
-    } else {
-        /* Convert argv[0] to ShortFileName, preserving basename of exe */
-        pyi_win32_utf8_to_mbs_sfn_keep_basename(buffer, appname);
-    }
+    /* GetModuleFileNameW returns an absolute, fully qualified path
+     */
+	if (!GetModuleFileNameW(NULL, modulename_w, PATH_MAX)) {
+		FATALERROR("Failed to get executable path. \nGetModuleFileNameW: %s",
+		           GetWinErrorString());
+		return -1;
+	}
+	if(!pyi_win32_utils_to_utf8(execfile, modulename_w, PATH_MAX)) {
+		FATALERROR("Failed to convert executable path to UTF-8.",
+		           GetWinErrorString());
+		return -1;
+	}
 
 #elif __APPLE__
     uint32_t length = sizeof(buffer);
 
-    /* Mac OS X has special function to obtain path to executable. */
+    /* Mac OS X has special function to obtain path to executable.
+     * This may return a symlink.
+     */
     if (_NSGetExecutablePath(buffer, &length) != 0) {
         FATALERROR("System error - unable to load!");
 		return -1;
     }
-
-#else
-    // On Linux absolute path is from symlink /prox/PID/exe
-    strncpy(buffer, appname, PATH_MAX);
-    // TODO: This should be made an absolute path. A for now this is
-    // done by calling pyi_path_fullpath below.
-#endif
-    /*
-     * Ensure path to executable is absolute.
-     * 'execfile' starting with ./ might break some modules when changing
-     * the CWD.From 'execfile' is constructed 'homepath' and homepath is used
-     * for LD_LIBRARY_PATH variavle. Relative LD_LIBRARY_PATH is a security
-     * problem.
-     */
-    // FIXME: Use pyi_path_normalize (which keeps symlinks) instead of
-    //        pyi_path_fullpath (which removes symlinks) to solve
-    //        issue #1208.
     if(pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {
-        VS("LOADER: executable is %s\n", execfile);
+        VS("LOADER: Cannot get fullpath for %s\n", execfile);
         return -1;
     }
- 
-    VS("LOADER: executable is %s\n", execfile);
 
+#else
+    result = -1;
+    /* On Linux, FreeBSD, and Solaris, we try these /proc paths first
+     */
+#if defined(__linux__)
+    result = readlink("/proc/self/exe", execfile, PATH_MAX);  // Linux
+#elif defined(__FreeBSD__)
+    result = readlink("/proc/curproc/file", execfile, PATH_MAX);  // FreeBSD
+#elif defined(__sun)
+    result = readlink("/proc/self/path/a.out", execfile, PATH_MAX);  // Solaris
+#endif
+    if(-1 == result) {
+        /* No /proc path found or provided
+         */
+        if(appname[0] == PYI_SEP || strchr(appname, PYI_SEP)) {
+            /* Absolute or relative path.
+             * Convert to absolute and resolve symlinks.
+             */
+            if(pyi_path_fullpath(execfile, PATH_MAX, appname) == false) {
+                VS("LOADER: Cannot get fullpath for %s\n", execfile);
+                return -1;
+            }
+        } else {
+            /* Not absolute or relative path, just program name. Search $PATH
+             */
+            result = pyi_search_path(buffer, appname);
+            if(-1 == result) {
+                /* Searching $PATH failed, user is crazy. */
+                VS("LOADER: Searching $PATH failed for %s", appname);
+                strcpy(buffer, appname);
+            }
+            if(pyi_path_fullpath(execfile, PATH_MAX, appname) == false) {
+                VS("LOADER: Cannot get fullpath for %s\n", execfile);
+                return -1;
+            }
+        }
+    }
+#endif
+    VS("LOADER: executable is %s\n", execfile);
 	return 0;
 }
 
