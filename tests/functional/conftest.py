@@ -199,7 +199,7 @@ class AppBuilder(object):
             # Basically, pretend we are a shell executing the program from $PATH.
             prog_cwd = self._tmpdir
             prog_name = os.path.basename(prog)
-            prog_env['PATH'] = os.pathsep.join([prog_env['PATH'], os.path.dirname(prog)])
+            prog_env['PATH'] = os.pathsep.join([prog_env.get('PATH', ''), os.path.dirname(prog)])
 
         else:
             # Run executable in the directory where it is.
