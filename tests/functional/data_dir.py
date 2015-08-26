@@ -17,7 +17,9 @@ import os.path
 
 # Global variables
 # ----------------
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Return the subdirectory data/ of the current file's directory.
+DATA_DIR = os.path.join(_FILE_DIR, 'data')
 
 # Functions
 # ---------
@@ -27,10 +29,11 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 def get_data_dir():
     # Some tests need input files to operate on. There are two cases:
     if getattr(sys, 'frozen', False):
-        # 1. Frozen: then the location of the data/ directory is passed in
-        #    argv[1].
-        return sys.argv[1]
+        # 1. Frozen: the tests are run in tmpdir/dist/<testname>/tests; data is in
+        #    tmpdir/data. Note that dirname(__file__) gives tmpdir/dist/testname.
+        print(_FILE_DIR)
+        return os.path.join(_FILE_DIR, '..', '..', '..', '..', 'data')
     else:
-        # 2. Not frozen: then the files are in data/.
+        # 2. Not frozen:
         return DATA_DIR
 

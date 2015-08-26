@@ -8,9 +8,14 @@
 #-----------------------------------------------------------------------------
 
 
+# Library imports
+# ---------------
 import os
 import pytest
+import shutil
 
+# Local imports
+# -------------
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import importorskip, xfail_py2
 from tests.functional.data_dir import DATA_DIR
@@ -42,7 +47,8 @@ def test_zmq(pyi_builder):
     pyi_builder.test_script('pyi_lib_zmq.py')
 
 @importorskip('sphinx')
-def test_sphinx(pyi_builder):
+def test_sphinx(tmpdir, pyi_builder):
+    shutil.copytree(os.path.join(DATA_DIR, 'sphinx'), os.path.join(tmpdir.strpath, 'data/sphinx'))
     pyi_builder.test_script('pyi_lib_sphinx.py', app_args=[DATA_DIR])
 
 @importorskip('pylint')
