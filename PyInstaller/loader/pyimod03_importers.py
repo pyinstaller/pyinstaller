@@ -46,7 +46,13 @@ else:
     def imp_lock(): pass
     def imp_unlock(): pass
     import _frozen_importlib
-    EXTENSION_SUFFIXES = _frozen_importlib.EXTENSION_SUFFIXES
+    if sys.version_info[1] == 4:
+        # Python 3.4
+        EXTENSION_SUFFIXES = _frozen_importlib.EXTENSION_SUFFIXES
+    else:
+        # Python 3.5+
+        EXTENSION_SUFFIXES = _frozen_importlib._bootstrap_external.EXTENSION_SUFFIXES
+
     # In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.
     # However, 'types' module is not a built-in module. The 'types' module uses this trick
     # with using type() function:
