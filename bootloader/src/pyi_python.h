@@ -28,6 +28,9 @@
 #include "pyi_python27_compat.h"
 
 
+bool is_py35; // true if we are loading Python 3.5 library (e.g. Py_DecodeLocale)
+
+
 /*
  * These macros used to define variables to hold dynamically accessed entry
  * points. These are declared 'extern' in this header, and defined fully later.
@@ -145,7 +148,8 @@ EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
 /* Used to convert argv to wchar_t on Linux/OS X */
-EXTDECLPROC(wchar_t *, _Py_char2wchar, (char *, size_t *));
+EXTDECLPROC(wchar_t *, _Py_char2wchar, (char *, size_t *)); // For Python 3.0-3.4
+EXTDECLPROC(wchar_t *, Py_DecodeLocale, (char *, size_t *)); // For Python 3.5+
 
 /* Used to add PYZ to sys.path */
 EXTDECLPROC(PyObject *, PySys_GetObject, (const char *));

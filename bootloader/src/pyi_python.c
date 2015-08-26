@@ -82,6 +82,7 @@ DECLPROC(PyThreadState_Swap);
 DECLPROC(PyUnicode_FromString);
 
 DECLPROC(_Py_char2wchar);
+DECLPROC(Py_DecodeLocale);
 DECLPROC(PyString_FromFormat);
 DECLPROC(PyUnicode_FromFormat);
 DECLPROC(PyUnicode_DecodeFSDefault);
@@ -149,9 +150,13 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     if (pyvers >= 30) {
       // new in Python 2.6, but not reliable available in all Linux distros
       GETPROC(dll, PyUnicode_FromString);
-      // new in Python 3
-      GETPROC(dll, _Py_char2wchar);
-
+      // _Py_char2wchar is new in Python 3, in Python 3.5 renamed to Py_DecodeLocale
+      if (pyvers >= 35) {
+        GETPROC(dll, Py_DecodeLocale);
+      }
+      else {
+        GETPROC(dll, _Py_char2wchar);
+      };
     };
 
     if (pyvers >= 30) {

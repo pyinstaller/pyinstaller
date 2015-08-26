@@ -53,6 +53,9 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
 
     // Are we going to load the Python 2.x library?
     is_py2 = (pyvers / 10) == 2;
+    // Are we going to load some Python 3.5+ API (e.g. 'Py_DecodeLocale')?
+    is_py35 = (pyvers / 35) == 1;
+
 
 /*
  * On AIX Append the shared object member to the library path
@@ -214,7 +217,7 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 /* Convert argv to wchar_t for Python 3. Based on code from Python's main().
  *
  * Uses '_Py_char2wchar' function from python lib, so don't call until
- * after python lib is loaded.
+ * after python lib is loaded. For Python 3.5+ it uses 'Py_DecodeLocale'.
  *
  * Returns NULL on failure. Caller is responsible for freeing
  * both argv and argv[0..argc]
@@ -239,7 +242,14 @@ wchar_t ** pyi_wargv_from_argv(int argc, char ** argv) {
 
     setlocale(LC_CTYPE, "");
     for (i = 0; i < argc; i++) {
-        wargv[i] = PI__Py_char2wchar(argv[i], NULL);
+
+        if (is_py35) {
+            wargv[i] = PI_Py_DecodeLocale(argv[i], NULL);
+        }
+        else {
+            wargv[i] = PI__Py_char2wchar(argv[i], NULL);
+        }
+
         if (!wargv[i]) {
             free(oldloc);
             FATALERROR("Fatal error: "
@@ -327,7 +337,15 @@ wchar_t * pyi_locale_char2wchar(wchar_t * dst, char * src, size_t len) {
 	wchar_t * buffer;
 	saved_locale = strdup(setlocale(LC_CTYPE, NULL));
     setlocale(LC_CTYPE, "");
-	buffer = PI__Py_char2wchar(src, &len);
+
+
+    if (is_py35) {
+	    buffer = PI_Py_DecodeLocale(src, &len);
+    }
+    else {
+	    buffer = PI__Py_char2wchar(src, &len);
+    }
+ 
 	setlocale(LC_CTYPE, saved_locale);
 	if(!buffer) {
 		return NULL;
