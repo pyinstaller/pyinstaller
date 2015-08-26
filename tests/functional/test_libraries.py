@@ -18,7 +18,7 @@ import shutil
 # -------------
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import importorskip, xfail_py2
-from tests.functional.data_dir import DATA_DIR
+from tests.functional.conftest import DATA_DIR
 
 
 @xfail_py2

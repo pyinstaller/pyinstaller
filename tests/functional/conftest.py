@@ -7,8 +7,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+# Futures
+# -------
 from __future__ import print_function
 
+# Library imports
+# ---------------
 import copy
 import glob
 import os
@@ -20,11 +24,11 @@ import inspect
 import textwrap
 import io
 
-
+# Local imports
+# -------------
 # Expand sys.path with PyInstaller source.
 _ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 sys.path.append(_ROOT_DIR)
-
 
 from PyInstaller import configure
 from PyInstaller import main as pyi_main
@@ -33,14 +37,16 @@ from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
-
+# Globals
+# -------
 # Directory with Python scripts for functional tests. E.g. main scripts, etc.
 _SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
 # Directory with testing modules used in some tests.
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 # Directory with .toc log files.
 _LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
-
+# Directory storing test-specific data.
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 class AppBuilder(object):
 

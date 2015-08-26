@@ -8,6 +8,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+# Library imports
+# ---------------
 import glob
 import locale
 import os
@@ -15,13 +17,15 @@ import shutil
 import sys
 import subprocess
 
+# Third-party imports
+# -------------------
 import pytest
 
+# Local imports
+# -------------
 from PyInstaller.compat import architecture, is_darwin, is_win, is_py2
 from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, skipif_notwin
-
-# Directory with data for some tests.
-from tests.functional.data_dir import DATA_DIR
+from tests.functional.conftest import DATA_DIR
 
 
 @skipif_winorosx
