@@ -1,10 +1,10 @@
 PyInstaller
 ***********
-.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller.svg
+.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller/python3.svg
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
 
-.. image:: https://ci.appveyor.com/api/projects/status/t7o4swychyh94wrs?svg=true
-   :target: https://ci.appveyor.com/project/matysek/pyinstaller
+.. image:: https://ci.appveyor.com/api/projects/status/t7o4swychyh94wrs/branch/python3?svg=true
+   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/python3
 
 .. image:: http://img.shields.io/pypi/v/PyInstaller.svg
    :target: https://pypi.python.org/pypi/PyInstaller
