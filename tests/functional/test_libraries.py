@@ -43,7 +43,6 @@ def test_zmq(pyi_builder):
     pyi_builder.test_script('pyi_lib_zmq.py')
 
 
-@pytest.mark.xfail(is_win, reason='sphinx fails on Windows for unknown reason.')
 @importorskip('sphinx')
 def test_sphinx(pyi_builder):
     sphinx_dir = os.path.join(_DATA_DIR, 'sphinx')
