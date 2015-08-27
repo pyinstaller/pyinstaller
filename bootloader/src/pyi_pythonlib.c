@@ -53,9 +53,6 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
 
     // Are we going to load the Python 2.x library?
     is_py2 = (pyvers / 10) == 2;
-    // Are we going to load some Python 3.5+ API (e.g. 'Py_DecodeLocale')?
-    is_py35 = (pyvers / 35) == 1;
-
 
 /*
  * On AIX Append the shared object member to the library path
@@ -216,8 +213,8 @@ static int pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
 
 /* Convert argv to wchar_t for Python 3. Based on code from Python's main().
  *
- * Uses '_Py_char2wchar' function from python lib, so don't call until
- * after python lib is loaded. For Python 3.5+ it uses 'Py_DecodeLocale'.
+ * Uses 'Py_DecodeLocale' ('_Py_char2wchar' in 3.0-3.4) function from python lib,
+ * so don't call until after python lib is loaded.
  *
  * Returns NULL on failure. Caller is responsible for freeing
  * both argv and argv[0..argc]
@@ -243,12 +240,7 @@ wchar_t ** pyi_wargv_from_argv(int argc, char ** argv) {
     setlocale(LC_CTYPE, "");
     for (i = 0; i < argc; i++) {
 
-        if (is_py35) {
-            wargv[i] = PI_Py_DecodeLocale(argv[i], NULL);
-        }
-        else {
-            wargv[i] = PI__Py_char2wchar(argv[i], NULL);
-        }
+		wargv[i] = PI_Py_DecodeLocale(argv[i], NULL);
 
         if (!wargv[i]) {
             free(oldloc);
@@ -310,7 +302,7 @@ static int pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
 	  /* Convert UTF-8 argv back to wargv */
 	  wargv = pyi_win32_wargv_from_utf8(status->argc, status->argv);
 #else
-      /* Convert argv to wargv using Python's _Py_char2wchar */
+      /* Convert argv to wargv using Python's Py_DecodeLocale (formerly _Py_char2wchar) */
       wargv = pyi_wargv_from_argv(status->argc, status->argv);
 #endif
       if(wargv) {
@@ -339,13 +331,8 @@ wchar_t * pyi_locale_char2wchar(wchar_t * dst, char * src, size_t len) {
     setlocale(LC_CTYPE, "");
 
 
-    if (is_py35) {
-	    buffer = PI_Py_DecodeLocale(src, &len);
-    }
-    else {
-	    buffer = PI__Py_char2wchar(src, &len);
-    }
- 
+	buffer = PI_Py_DecodeLocale(src, &len);
+
 	setlocale(LC_CTYPE, saved_locale);
 	if(!buffer) {
 		return NULL;

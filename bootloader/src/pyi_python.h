@@ -28,9 +28,6 @@
 #include "pyi_python27_compat.h"
 
 
-bool is_py35; // true if we are loading Python 3.5 library (e.g. Py_DecodeLocale)
-
-
 /*
  * These macros used to define variables to hold dynamically accessed entry
  * points. These are declared 'extern' in this header, and defined fully later.
@@ -148,8 +145,8 @@ EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
 /* Used to convert argv to wchar_t on Linux/OS X */
-EXTDECLPROC(wchar_t *, _Py_char2wchar, (char *, size_t *)); // For Python 3.0-3.4
-EXTDECLPROC(wchar_t *, Py_DecodeLocale, (char *, size_t *)); // For Python 3.5+
+/* On Python 3.0-3.4, this function was called _Py_char2wchar */
+EXTDECLPROC(wchar_t *, Py_DecodeLocale, (char *, size_t *));
 
 /* Used to add PYZ to sys.path */
 EXTDECLPROC(PyObject *, PySys_GetObject, (const char *));
@@ -181,17 +178,27 @@ EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, size_t, const char *, c
 
 /* Macros to declare and get Python entry points in the C file.
  * Typedefs '__PROC__...' have been done above
+ *
+ * GETPROC_RENAMED is to support Python APIs that are simply renamed. We use
+ * the new name, and when loading an old Python lib, load the old symbol into the
+ * new name.
  */
 #ifdef _WIN32
 
 #define DECLPROC(name)\
     __PROC__##name PI_##name = NULL;
-#define GETPROCOPT(dll, name)\
-    PI_##name = (__PROC__##name)GetProcAddress (dll, #name)
+#define GETPROCOPT(dll, name, sym)\
+    PI_##name = (__PROC__##name)GetProcAddress (dll, #sym)
 #define GETPROC(dll, name)\
-    GETPROCOPT(dll, name); \
+    GETPROCOPT(dll, name, name); \
     if (!PI_##name) {\
         FATALERROR ("Cannot GetProcAddress for " #name "\n");\
+        return -1;\
+    }
+#define GETPROC_RENAMED(dll, name, sym)\
+    GETPROCOPT(dll, name, sym); \
+    if (!PI_##name) {\
+        FATALERROR ("Cannot GetProcAddress for " #sym "\n");\
         return -1;\
     }
 #define DECLVAR(name)\
@@ -207,12 +214,18 @@ EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, size_t, const char *, c
 
 #define DECLPROC(name)\
     __PROC__##name PI_##name = NULL;
-#define GETPROCOPT(dll, name)\
-    PI_##name = (__PROC__##name)dlsym (dll, #name)
+#define GETPROCOPT(dll, name, sym)\
+    PI_##name = (__PROC__##name)dlsym (dll, #sym)
 #define GETPROC(dll, name)\
-    GETPROCOPT(dll, name);\
+    GETPROCOPT(dll, name, name);\
     if (!PI_##name) {\
         FATALERROR ("Cannot dlsym for " #name "\n");\
+        return -1;\
+    }
+#define GETPROC_RENAMED(dll, name, sym)\
+    GETPROCOPT(dll, name, sym);\
+    if (!PI_##name) {\
+        FATALERROR ("Cannot dlsym for " #sym "\n");\
         return -1;\
     }
 #define DECLVAR(name)\

@@ -81,7 +81,6 @@ DECLPROC(PySys_SetPath);
 DECLPROC(PyThreadState_Swap);
 DECLPROC(PyUnicode_FromString);
 
-DECLPROC(_Py_char2wchar);
 DECLPROC(Py_DecodeLocale);
 DECLPROC(PyString_FromFormat);
 DECLPROC(PyUnicode_FromFormat);
@@ -106,10 +105,10 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
 
     // functions with prefix `Py_`
     GETPROC(dll, Py_BuildValue);
-    GETPROCOPT(dll, Py_DecRef);
+    GETPROC(dll, Py_DecRef);
     GETPROC(dll, Py_EndInterpreter);
     GETPROC(dll, Py_Finalize);
-    GETPROCOPT(dll, Py_IncRef);
+    GETPROC(dll, Py_IncRef);
     GETPROC(dll, Py_Initialize);
     GETPROC(dll, Py_NewInterpreter);
     if (pyvers >= 30) {
@@ -155,7 +154,7 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
         GETPROC(dll, Py_DecodeLocale);
       }
       else {
-        GETPROC(dll, _Py_char2wchar);
+        GETPROC_RENAMED(dll, Py_DecodeLocale, _Py_char2wchar);
       };
     };
 

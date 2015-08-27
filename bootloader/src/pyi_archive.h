@@ -66,7 +66,8 @@ typedef struct _archive_status {
      *
      * On Linux/OS X:
      *    These strings are system-provided. On Python 2, they are passed as-is to Python.
-     *    On Python 3, they are decoded to wchar_t using _Py_char2wchar first.
+     *    On Python 3, they are decoded to wchar_t using Py_DecodeLocale
+     *    (formerly called _Py_char2wchar) first.
      */
     char    archivename[PATH_MAX];
     char    homepath[PATH_MAX];
