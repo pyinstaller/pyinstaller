@@ -46,8 +46,8 @@ else:
     def imp_lock(): pass
     def imp_unlock(): pass
     import _frozen_importlib
-    if sys.version_info[1] == 4:
-        # Python 3.4
+    if sys.version_info[1] <= 4:
+        # Python 3.3, 3.4
         EXTENSION_SUFFIXES = _frozen_importlib.EXTENSION_SUFFIXES
     else:
         # Python 3.5+
