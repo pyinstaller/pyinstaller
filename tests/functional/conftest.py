@@ -46,7 +46,12 @@ _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules
 # Directory with .toc log files.
 _LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 # Directory storing test-specific data.
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+
+# Provide test access to _DATA_DIR via a fixture.
+@pytest.fixture
+def data_dir():
+    return _DATA_DIR
 
 class AppBuilder(object):
 

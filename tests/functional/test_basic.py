@@ -25,7 +25,6 @@ import pytest
 # -------------
 from PyInstaller.compat import architecture, is_darwin, is_win, is_py2
 from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, skipif_notwin
-from tests.functional.conftest import DATA_DIR
 
 
 @skipif_winorosx
@@ -116,9 +115,9 @@ def test_multiprocess_forking(pyi_builder):
 
 # TODO skip this test if C compiler is not found.
 # TODO test it on OS X.
-def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder):
+def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder, data_dir):
     # Copy code for 'ctypes_dylib' into tmpdir.
-    src = os.path.join(DATA_DIR, 'ctypes_dylib')
+    src = os.path.join(data_dir, 'ctypes_dylib')
     dst = tmpdir.strpath
     files = glob.glob(src + '/*.c')
     for f in files:
@@ -191,8 +190,8 @@ def test_python_makefile(pyi_builder):
     pyi_builder.test_script('pyi_python_makefile.py')
 
 
-def test_set_icon(pyi_builder):
-    icon_dir = os.path.join(DATA_DIR, 'icons')
+def test_set_icon(pyi_builder, data_dir):
+    icon_dir = os.path.join(data_dir, 'icons')
     if is_win:
         args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]
     elif is_darwin:

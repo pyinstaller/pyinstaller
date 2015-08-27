@@ -18,15 +18,14 @@ import shutil
 # -------------
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import importorskip, xfail_py2
-from tests.functional.conftest import DATA_DIR
 
 
 @xfail_py2
 @importorskip('django')
 # Django test might sometimes hang.
 @pytest.mark.timeout(timeout=7*60)
-def test_django(pyi_builder, monkeypatch):
-    script_dir = os.path.join(DATA_DIR, 'django_site')
+def test_django(pyi_builder, monkeypatch, data_dir):
+    script_dir = os.path.join(data_dir, 'django_site')
     # Extend sys.path so PyInstaller could find modules from 'django_site' project.
     monkeypatch.syspath_prepend(script_dir)
     # Django uses manage.py as the main script.
@@ -47,9 +46,9 @@ def test_zmq(pyi_builder):
     pyi_builder.test_script('pyi_lib_zmq.py')
 
 @importorskip('sphinx')
-def test_sphinx(tmpdir, pyi_builder):
+def test_sphinx(tmpdir, pyi_builder, data_dir):
     # Copy the data/sphix directory to the tempdir used by this test.
-    shutil.copytree(os.path.join(DATA_DIR, 'sphinx'),
+    shutil.copytree(os.path.join(data_dir, 'sphinx'),
                     os.path.join(tmpdir.strpath, 'data', 'sphinx'))
     pyi_builder.test_script('pyi_lib_sphinx.py')
 
@@ -71,10 +70,10 @@ def test_PyQt4_QtWebKit(pyi_builder):
 
 @pytest.mark.xfail(reason='Reports "ImportError: No module named QtWebKit.QWebView".')
 @importorskip('PyQt4')
-def test_PyQt4_uic(tmpdir, pyi_builder):
+def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
     # Copy the data/PyQt4-uic.ui file to the tempdir used by this test.
     os.mkdir(os.path.join(tmpdir.strpath, 'data'))
-    shutil.copy(os.path.join(DATA_DIR, 'PyQt4-uic.ui'),
+    shutil.copy(os.path.join(data_dir, 'PyQt4-uic.ui'),
                 os.path.join(tmpdir.strpath, 'data'))
 
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
