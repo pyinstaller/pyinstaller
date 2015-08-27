@@ -485,4 +485,12 @@ else:
     ])
 
 
-
+# Object types of Pure Python modules in modulegraph dependency graph.
+PURE_PYTHON_MODULE_TYPES = set([
+        'Script',
+        'RuntimeModule',
+        'SourceModule',
+        'CompiledModule',
+        'Package',
+        'NamespacePackage',
+    ])

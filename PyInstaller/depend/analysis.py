@@ -41,7 +41,7 @@ from PyInstaller.building.datastruct import TOC
 from ..utils.misc import load_py_data_struct
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..lib.modulegraph.find_modules import get_implies
-from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES
+from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES, PURE_PYTHON_MODULE_TYPES
 from .. import HOMEPATH
 from ..utils.hooks.hookutils import collect_submodules, is_package
 
@@ -398,7 +398,10 @@ class PyiModuleGraph(ModuleGraph):
         if node:
             referers = self.getReferers(node)
             for r in referers:
-                co_dict[r.identifier] = r.code
+                r_type = type(node).__name__
+                # Ensure that modulegraph objects has attribute 'code'.
+                if r_type in PURE_PYTHON_MODULE_TYPES:
+                    co_dict[r.identifier] = r.code
         return co_dict
 
 
