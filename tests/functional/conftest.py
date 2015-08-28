@@ -77,8 +77,9 @@ class DataDir(object):
         # Copy _DATA_DIR/<name> if it exists to the tmpdir.
         source_data = os.path.join(_DATA_DIR, name)
         if os.path.exists(source_data):
-            shutil.copytree(source_data,
-                            os.path.join(tmpdir.strpath, 'data', name))
+            # Provide access to the location to which the directory was copied.
+            self.dest_strpath = os.path.join(tmpdir.strpath, 'data', name)
+            shutil.copytree(source_data, self.dest_strpath)
 
 # Define a fixure for the DataDir object.
 @pytest.fixture
