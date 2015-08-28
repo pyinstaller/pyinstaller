@@ -312,7 +312,8 @@ class Analysis(Target):
                 python = os.path.join(os.path.dirname(python), os.readlink(python))
             depmanifest = None
         else:
-            # Windows: no links, but "manifestly" need this:
+            # Windows: Create a manifest to embed into built .exe, similar to
+            # the one embedded into python.exe.
             depmanifest = winmanifest.Manifest(type_="win32", name=CONF['specnm'],
                                                processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
@@ -327,7 +328,8 @@ class Analysis(Target):
         # Reset seen variable before running bindepend. We use bindepend only for
         # the python executable.
         bindepend.seen = {}
-        # Add Python's dependencies first.
+
+        # Add binary and assembly dependencies of Python.exe.
         # This ensures that its assembly depencies under Windows get pulled in
         # first, so that .pyd files analyzed later which may not have their own
         # manifest and may depend on DLLs which are part of an assembly
@@ -460,7 +462,7 @@ class Analysis(Target):
         # Add remaining binary dependencies - analyze Python C-extensions and what
         # DLLs they depend on.
         logger.info('Looking for dynamic libraries')
-        self.binaries.extend(bindepend.Dependencies(self.binaries, manifest=depmanifest))
+        self.binaries.extend(bindepend.Dependencies(self.binaries))
 
         ### Include zipped Python eggs.
         logger.info('Looking for eggs')
