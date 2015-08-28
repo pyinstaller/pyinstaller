@@ -188,6 +188,8 @@ def test_python_makefile(pyi_builder):
 
 
 def test_set_icon(pyi_builder, data_dir):
+    # Note that the name test_set_icon (not just test_icon) for prevents
+    # data_dir from copying data/icon to the tmpdir.
     icon_dir = os.path.join(data_dir.strpath, 'icons')
     if is_win:
         args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]

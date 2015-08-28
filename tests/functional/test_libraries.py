@@ -25,8 +25,8 @@ from PyInstaller.utils.tests import importorskip, xfail_py2
 # Django test might sometimes hang.
 @pytest.mark.timeout(timeout=7*60)
 def test_django(pyi_builder, monkeypatch, data_dir):
-    # Note that the name django_site (not just django) for prevents data_dir
-    # copying it to the tmpdir.
+    # Note that the name test_django_site (not just test_django) for prevents
+    # data_dir from copying data/django_site it to the tmpdir.
     script_dir = os.path.join(data_dir.strpath, 'django_site')
     # Extend sys.path so PyInstaller could find modules from 'django_site' project.
     monkeypatch.syspath_prepend(script_dir)
