@@ -486,11 +486,67 @@ else:
 
 
 # Object types of Pure Python modules in modulegraph dependency graph.
+# Pure Python modules have code object (attribute co_code).
 PURE_PYTHON_MODULE_TYPES = set([
-        'Script',
-        'RuntimeModule',
-        'SourceModule',
-        'CompiledModule',
-        'Package',
-        'NamespacePackage',
-    ])
+    'Script',
+    'RuntimeModule',
+    'SourceModule',
+    'CompiledModule',
+    'Package',
+    # Deprecated.
+    # TODO Could these module types be removed?
+    'FlatPackage',
+    'ArchiveModule',
+])
+# Object types of special Python modules (built-in, run-time, namespace package)
+# in modulegraph dependency graph that do not have code object.
+SPECIAL_MODULE_TYPES = set([
+    'AliasNode',
+    'BuiltinModule',
+    'NamespacePackage',
+])
+# Object types of Binary Python modules (extensions, etc) in modulegraph
+# dependency graph.
+BINARY_MODULE_TYPES = set([
+    'Extension',
+])
+# Object types of valid Python modules in modulegraph dependency graph.
+VALID_MODULE_TYPES = PURE_PYTHON_MODULE_TYPES and SPECIAL_MODULE_TYPES and BINARY_MODULE_TYPES
+# Object types of bad/missing/invalid Python modules in modulegraph
+# dependency graph.
+# TODO Should be 'Invalid' module types also in the 'MISSING' set?
+BAD_MODULE_TYPES = set([
+    'BadModule',
+    'ExcludedModule',
+    'InvalidSourceModule',
+    'InvalidCompiledModule',
+    'MissingModule',
+])
+ALL_MODULE_TYPES = VALID_MODULE_TYPES and BAD_MODULE_TYPES
+# TODO Review this mapping to TOC, remove useless entries.
+# Dict to map ModuleGraph node types to TOC typecodes
+MODULE_TYPES_TO_TOC_DICT = {
+    # Pure modules.
+    'AliasNode': 'PYMODULE',
+    'Script': 'PYSOURCE',
+    'RuntimeModule': 'PYMODULE',
+    'SourceModule': 'PYMODULE',
+    'CompiledModule': 'PYMODULE',
+    'Package': 'PYMODULE',
+    # Binary modules.
+    'Extension': 'EXTENSION',
+    # Special valid modules.
+    'BuiltinModule': 'BUILTIN',
+    'NamespacePackage': 'PYMODULE',
+    # Bad modules.
+    'BadModule': 'MISSING',
+    'ExcludedModule': 'MISSING',
+    'InvalidSourceModule': 'MISSING',
+    'InvalidCompiledModule': 'MISSING',
+    'MissingModule': 'MISSING',
+    # Other.
+    'FlatPackage': 'PYMODULE',
+    'ArchiveModule': 'PYMODULE',
+    'does not occur': 'BINARY',
+}
+
