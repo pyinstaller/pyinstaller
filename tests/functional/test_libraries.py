@@ -51,9 +51,6 @@ def test_zmq(pyi_builder):
 
 @importorskip('sphinx')
 def test_sphinx(tmpdir, pyi_builder, data_dir):
-    # Copy the data/sphix directory to the tempdir used by this test.
-    shutil.copytree(os.path.join(data_dir, 'sphinx'),
-                    os.path.join(tmpdir.strpath, 'data', 'sphinx'))
     pyi_builder.test_script('pyi_lib_sphinx.py')
 
 @pytest.mark.xfail(reason='pkg_resources is not supported yet.')
