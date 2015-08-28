@@ -120,13 +120,7 @@ def test_multiprocess_forking(pyi_builder):
 # TODO skip this test if C compiler is not found.
 # TODO test it on OS X.
 def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder, data_dir):
-    # Copy code for 'ctypes_dylib' into tmpdir.
-    src = os.path.join(data_dir, 'ctypes_dylib')
-    dst = tmpdir.strpath
-    files = glob.glob(src + '/*.c')
-    for f in files:
-        shutil.copy(f, dst)
-
+    # Note that including the data_dir fixture copies files needed by this test.
     # Compile the ctypes_dylib there.
     monkeypatch.chdir(dst)  # Make dst the CWD directory.
     if is_win:
