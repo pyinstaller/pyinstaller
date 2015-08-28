@@ -487,7 +487,6 @@ else:
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
 PURE_PYTHON_MODULE_TYPES = set([
-    'Script',
     'SourceModule',
     'CompiledModule',
     'Package',
@@ -503,6 +502,8 @@ SPECIAL_MODULE_TYPES = set([
     'BuiltinModule',
     'RuntimeModule',
     'NamespacePackage',
+    # PyInstaller handles scripts differently and not as standard Python modules.
+    'Script',
 ])
 # Object types of Binary Python modules (extensions, etc) in modulegraph
 # dependency graph.
