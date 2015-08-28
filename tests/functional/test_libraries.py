@@ -53,6 +53,7 @@ def test_zmq(pyi_builder):
 
 @importorskip('sphinx')
 def test_sphinx(tmpdir, pyi_builder, data_dir):
+    # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_sphinx.py')
 
 @pytest.mark.xfail(reason='pkg_resources is not supported yet.')
@@ -75,6 +76,7 @@ def test_PyQt4_QtWebKit(pyi_builder):
 @pytest.mark.xfail(reason='Reports "ImportError: No module named QtWebKit.QWebView".')
 @importorskip('PyQt4')
 def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
+    # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
 
