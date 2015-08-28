@@ -412,6 +412,9 @@ class PyiModuleGraph(ModuleGraph):
                 r_type = type(node).__name__
                 # Ensure that modulegraph objects has attribute 'code'.
                 if r_type in PURE_PYTHON_MODULE_TYPES:
+                    if r.identifier.startswith('ctypes'):
+                        # Skip modules of 'ctypes' package.
+                        continue
                     co_dict[r.identifier] = r.code
         return co_dict
 
