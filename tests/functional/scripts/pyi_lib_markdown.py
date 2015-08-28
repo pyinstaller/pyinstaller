@@ -7,10 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-from PyQt4.QtGui import QApplication
-from PyQt4.QtWebKit import QWebView
 
-app = QApplication([])
-view = QWebView()
-view.show()
-#app.exec_()
+# Markdown uses __import__ed extensions. Make sure these work by trying to use the 'toc' extension..
+import markdown
+print(markdown.markdown('testing',  ['toc']))

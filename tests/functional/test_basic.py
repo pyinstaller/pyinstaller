@@ -8,6 +8,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+# Library imports
+# ---------------
 import glob
 import locale
 import os
@@ -15,13 +17,14 @@ import shutil
 import sys
 import subprocess
 
+# Third-party imports
+# -------------------
 import pytest
 
+# Local imports
+# -------------
 from PyInstaller.compat import architecture, is_darwin, is_win, is_py2
 from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, skipif_notwin
-
-# Directory with data for some tests.
-_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -116,9 +119,9 @@ def test_multiprocess_forking(pyi_builder):
 
 # TODO skip this test if C compiler is not found.
 # TODO test it on OS X.
-def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder):
+def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder, data_dir):
     # Copy code for 'ctypes_dylib' into tmpdir.
-    src = os.path.join(_DATA_DIR, 'ctypes_dylib')
+    src = os.path.join(data_dir, 'ctypes_dylib')
     dst = tmpdir.strpath
     files = glob.glob(src + '/*.c')
     for f in files:
@@ -191,8 +194,8 @@ def test_python_makefile(pyi_builder):
     pyi_builder.test_script('pyi_python_makefile.py')
 
 
-def test_set_icon(pyi_builder):
-    icon_dir = os.path.join(_DATA_DIR, 'icons')
+def test_set_icon(pyi_builder, data_dir):
+    icon_dir = os.path.join(data_dir, 'icons')
     if is_win:
         args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]
     elif is_darwin:

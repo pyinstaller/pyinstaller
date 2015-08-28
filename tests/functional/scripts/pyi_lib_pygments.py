@@ -6,8 +6,12 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+from __future__ import print_function
 
+# This sample code is taken from http://pygments.org/docs/quickstart/.
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import HtmlFormatter
 
-# Markdown uses __import__ed extensions. Make sure these work by trying to use the 'toc' extension..
-import markdown
-markdown.markdown('testing',  ['toc'])
+code = 'print "Hello World"'
+print(highlight(code, PythonLexer(), HtmlFormatter()))

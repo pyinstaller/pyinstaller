@@ -8,23 +8,24 @@
 #-----------------------------------------------------------------------------
 
 
+# Library imports
+# ---------------
 import os
 import pytest
+import shutil
 
+# Local imports
+# -------------
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import importorskip, xfail_py2
-
-
-# Directory with data for some tests.
-_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 
 @xfail_py2
 @importorskip('django')
 # Django test might sometimes hang.
 @pytest.mark.timeout(timeout=7*60)
-def test_django(pyi_builder, monkeypatch):
-    script_dir = os.path.join(_DATA_DIR, 'django_site')
+def test_django(pyi_builder, monkeypatch, data_dir):
+    script_dir = os.path.join(data_dir, 'django_site')
     # Extend sys.path so PyInstaller could find modules from 'django_site' project.
     monkeypatch.syspath_prepend(script_dir)
     # Django uses manage.py as the main script.
@@ -44,6 +45,35 @@ def test_zmq(pyi_builder):
 
 
 @importorskip('sphinx')
-def test_sphinx(pyi_builder):
-    sphinx_dir = os.path.join(_DATA_DIR, 'sphinx')
-    pyi_builder.test_script('pyi_lib_sphinx.py', app_args=[sphinx_dir])
+def test_sphinx(tmpdir, pyi_builder, data_dir):
+    # Copy the data/sphix directory to the tempdir used by this test.
+    shutil.copytree(os.path.join(data_dir, 'sphinx'),
+                    os.path.join(tmpdir.strpath, 'data', 'sphinx'))
+    pyi_builder.test_script('pyi_lib_sphinx.py')
+
+@importorskip('pylint')
+def test_pylint(pyi_builder):
+    pyi_builder.test_script('pyi_lib_pylint.py')
+
+@importorskip('pygments')
+def test_pygments(pyi_builder):
+    pyi_builder.test_script('pyi_lib_pygments.py')
+
+@importorskip('markdown')
+def test_markdown(pyi_builder):
+    pyi_builder.test_script('pyi_lib_markdown.py')
+
+@importorskip('PyQt4')
+def test_PyQt4_QtWebKit(pyi_builder):
+    pyi_builder.test_script('pyi_lib_PyQt4-QtWebKit.py')
+
+@pytest.mark.xfail(reason='Reports "ImportError: No module named QtWebKit.QWebView".')
+@importorskip('PyQt4')
+def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
+    # Copy the data/PyQt4-uic.ui file to the tempdir used by this test.
+    os.mkdir(os.path.join(tmpdir.strpath, 'data'))
+    shutil.copy(os.path.join(data_dir, 'PyQt4-uic.ui'),
+                os.path.join(tmpdir.strpath, 'data'))
+
+    pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
+
