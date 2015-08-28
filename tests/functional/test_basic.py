@@ -119,9 +119,9 @@ def test_multiprocess_forking(pyi_builder):
 
 # TODO skip this test if C compiler is not found.
 # TODO test it on OS X.
-def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder, data_dir):
+def test_load_dll_using_ctypes(monkeypatch, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
-    # Compile the ctypes_dylib in the tmpdir: Make tmpdir the CWD.
+    # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD.
     monkeypatch.chdir(data_dir.dest_strpath)
     if is_win:
         # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
