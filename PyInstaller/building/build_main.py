@@ -433,13 +433,13 @@ class Analysis(Target):
         ### Extract the nodes of the graph as TOCs for further processing.
 
         # Initialize the scripts list with priority scripts in the proper order.
-        self.scripts = self.graph.nodes_to_TOC(priority_scripts)
+        self.scripts = self.graph.nodes_to_toc(priority_scripts)
 
         # Extend the binaries list with all the Extensions modulegraph has found.
-        self.binaries  = self.graph.make_a_TOC(['EXTENSION', 'BINARY'],self.binaries)
+        self.binaries  = self.graph.make_binaries_toc(self.binaries)
         # Fill the "pure" list with pure Python modules.
         assert len(self.pure) == 0
-        self.pure =  self.graph.make_a_TOC(['PYMODULE'])
+        self.pure = self.graph.make_pure_toc()
         # And get references to module code objects constructed by ModuleGraph
         # to avoid writing .pyc/pyo files to hdd.
         self.pure._code_cache = self.graph.get_code_objects()
@@ -473,7 +473,7 @@ class Analysis(Target):
         # When that info is available change this code to write one line for
         # each importer-name, with type of import for that importer
         # "no module named foo conditional/deferred/toplevel importy by bar"
-        miss_toc = self.graph.make_a_TOC(['MISSING'])
+        miss_toc = self.graph.make_missing_toc()
         if len(miss_toc) : # there are some missing modules
             wf = open(CONF['warnfile'], 'w')
             for (n, p, t) in miss_toc :

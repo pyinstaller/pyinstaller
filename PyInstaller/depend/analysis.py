@@ -43,7 +43,7 @@ from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..lib.modulegraph.find_modules import get_implies
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
-        SPECIAL_MODULE_TYPES, BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
+        BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from .. import HOMEPATH
 from ..utils.hooks.hookutils import collect_submodules, is_package
 
@@ -268,7 +268,7 @@ class PyiModuleGraph(ModuleGraph):
         Return all pure Python modules formatted as TOC.
         """
         # PyInstaller should handle special module types without code object.
-        return self._make_toc(PURE_PYTHON_MODULE_TYPES and SPECIAL_MODULE_TYPES)
+        return self._make_toc(PURE_PYTHON_MODULE_TYPES)
 
     def make_binaries_toc(self, existing_toc):
         """
@@ -282,12 +282,14 @@ class PyiModuleGraph(ModuleGraph):
         """
         return self._make_toc(BAD_MODULE_TYPES)
 
-    # Given a list of nodes, create a TOC representing those nodes.
-    # This is mainly used to initialize a TOC of scripts with the
-    # ones that are runtime hooks. The process is almost the same as
-    # make_a_TOC, but the caller guarantees the nodes are
-    # valid, so minimal checking.
     def nodes_to_toc(self, node_list, existing_TOC=None):
+        """
+        Given a list of nodes, create a TOC representing those nodes.
+        This is mainly used to initialize a TOC of scripts with the
+        ones that are runtime hooks. The process is almost the same as
+        _make_toc(), but the caller guarantees the nodes are
+        valid, so minimal checking.
+        """
         result = existing_TOC or TOC()
         for node in node_list:
             mg_type = type(node).__name__
