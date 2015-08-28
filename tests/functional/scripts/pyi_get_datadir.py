@@ -29,12 +29,13 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 def get_data_dir():
     # Some tests need input files to operate on. There are two cases:
     if getattr(sys, 'frozen', False):
-        # This local import only works when frozen.
+        # This local import only works when frozen, since this directory's path
+        # is added to the Python path. Hence, its placement here.
         from pyi_testmod_gettemp import gettemp
-        # 1. Frozen: the tests are run in tmpdir/dist/<testname>/tests; data is in
-        #    tmpdir/data. Note that dirname(__file__) gives tmpdir/dist/testname.
+        # 1. Frozen: rely on gettemp to find the correct directory both in
+        #    onefile and in onedir modes.
         return gettemp('data')
     else:
-        # 2. Not frozen:
+        # 2. Not frozen: rely on the filesystem layout of this git repository.
         return DATA_DIR
 
