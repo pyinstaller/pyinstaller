@@ -69,8 +69,8 @@ class DataDir(object):
       # https://pytest.org/latest/tmpdir.html.
       tmpdir):
 
-        # Provide access to _DATA_DIR.
-        self.data_dir = _DATA_DIR
+        # Provide access to _DATA_DIR, using the same nomenclature as tmpdir.
+        self.strpath = _DATA_DIR
 
         # Strip the leading "test_' from the test's name.
         name = request.function.__name__[5:]
