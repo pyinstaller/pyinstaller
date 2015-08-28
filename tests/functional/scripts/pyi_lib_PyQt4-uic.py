@@ -30,7 +30,7 @@ from pyi_get_datadir import get_data_dir
 # ---------
 app = QApplication([])
 window = QDialog()
-uic.loadUi(os.path.join(get_data_dir(), 'PyQt4-uic.ui'), window)
+uic.loadUi(os.path.join(get_data_dir(), 'PyQt4_uic', 'PyQt4-uic.ui'), window)
 window.show()
 # Exit Qt when the main loop becomes idle.
 QTimer.singleShot(0, app.exit)
