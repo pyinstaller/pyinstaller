@@ -16,10 +16,12 @@ Code related to processing of import hooks.
 import collections
 import glob
 import os.path
+import re
 
 from .. import log as logging
 from ..compat import importlib_load_source, UserDict
 from ..utils.misc import get_code_object
+from ..lib.altgraph.GraphUtil import filter_stack
 
 logger = logging.getLogger(__name__)
 
@@ -307,35 +309,57 @@ class ImportHook(object):
                 # that was not updated for a long time.
                 logger.warn("Hidden import '%s' not found (probably old hook)" % item)
 
+    def _remove_module_references(self, node, graph, mod_filter=None):
+        """
+        Remove implicit reference to a module. Also submodules of the hook name
+        might reference the module. Remove those references too.
+
+        :param node:
+        :param mod_filter: List of module name prefixes to remove reference to.
+        :return: True if all references were removed False otherwise
+        """
+        result = True  # First assume it is possible to remove all references.
+        referers = graph.getReferers(node)  # Nodes that reference 'node'.
+
+        if not mod_filter:
+            # Just remove reference, nothing special filtering.
+            for r in referers:
+                logger.debug('Removing reference %s' % r.identifier)
+                graph.removeReference(r, node)
+            return True
+
+        # Remove only references that starts with any prefix from 'mod_filter'.
+        regex_str = '|'.join(['(%s.*)' % x for x in mod_filter])
+        is_allowed = re.compile(regex_str)
+        for r in referers:
+            if is_allowed.match(r.identifier):
+                logger.debug('Removing reference %s' % r.identifier)
+                # Contains prefix of 'imported_name' - remove reference.
+                graph.removeReference(r, node)
+            else:
+                # Other modules reference the implicit import - DO NOT remove it.
+                # Any module name was not specified in the filder and cannot be
+                # removed.
+                logger.debug('Removing reference %s failed' % r.identifier)
+                result = False
+
+        return result
+
     def _process_excludedimports(self, mod_graph):
         """
         'excludedimports' is a list of Python module names that PyInstaller
         should not detect as dependency of this module name.
         """
+        not_allowed_references = set(self._module.excludedimports)
         # Remove references between module nodes, as if they are not imported from 'name'
-        for item in self._module.excludedimports:
+        for item in not_allowed_references:
             try:
                 excluded_node = mod_graph.findNode(item)
                 if excluded_node is not None:
                     logger.info("Excluding import '%s'" % item)
-                    # Remove implicit reference to a module. Also submodules of the hook name
-                    # might reference the module. Remove those references too.
-                    safe_to_remove = True
-                    referers = mod_graph.getReferers(excluded_node)
 
-                    for r in referers:
-                        # Remove references to all modules from 'excludedimports'
-                        # and even submodules.
-                        not_allowed_references = [self._name] + self._module.excludedimports
-                        for not_allowed in not_allowed_references:
-                            if r.identifier.startswith(not_allowed):
-                                logger.debug('Removing reference %s' % r.identifier)
-                                # Contains prefix of 'imported_name' - remove reference.
-                                mod_graph.removeReference(r, excluded_node)
-                            elif not r.identifier.startswith(item):
-                                # Other modules reference the implicit import - DO NOT remove it.
-                                logger.debug('Excluded import %s referenced by module %s' % (item, r.identifier))
-                                safe_to_remove = False
+                    safe_to_remove = self._remove_module_references(excluded_node, mod_graph,
+                                                                    mod_filter=not_allowed_references)
                     # If no other modules reference the excluded_node then it is safe to remove
                     # all references to excluded_node and its all submodules.
                     # NOTE: Removing references from graph will keep some dead branches that
@@ -353,6 +377,12 @@ class ImportHook(object):
                             mod_referers = mod_graph.getReferers(mod)
                             for mod_ref in mod_referers:
                                 mod_graph.removeReference(mod_ref, mod)
+                            logger.warn("  Removing import '%s'" % mod.identifier)
+                            mod_graph.removeNode(mod)
+                        # Remove the parent node itself.
+                        logger.warn("  Removing import '%s'" % item)
+                        mod_graph.removeNode(excluded_node)
+
                 else:
                     logger.info("Excluded import '%s' not found" % item)
             except ImportError:
