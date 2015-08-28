@@ -27,7 +27,7 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath
-from ..compat import is_py2, is_win, PYDYLIB_NAMES
+from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, DLL, COLLECT, MERGE
@@ -340,18 +340,6 @@ class Analysis(Target):
         #    b. no new hook was applied in the 'while' iteration.
         #
         logger.info('Looking for import hooks ...')
-        # TODO find out what module types we do not need.
-        module_types = set([
-            # Special nodes.
-            'AliasNode', 'Script', 'RuntimeModule',
-            # BaseModule nodes.
-            'BuiltinModule', 'SourceModule', 'InvalidSourceModule',
-            'CompiledModule', 'InvalidCompiledModule' 'Package',
-            # Package nodes.
-            'Package', 'NamespacePackage', 'Extension',
-            # Deprecated in modulegraph:
-            'FlatPackage', 'ArchiveModule',
-            ])
         hooks_cache = HooksCache(get_importhooks_dir())
         # Custom import hooks
         if self.hookspath:
@@ -375,7 +363,7 @@ class Analysis(Target):
                     continue
                 # Skip hook if not the right Node type.
                 node_type = type(from_node).__name__
-                if node_type not in module_types:
+                if node_type not in VALID_MODULE_TYPES:
                     continue
 
                 # Import hook module from a file.

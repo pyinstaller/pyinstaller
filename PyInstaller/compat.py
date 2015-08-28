@@ -484,7 +484,6 @@ else:
         'weakref',
     ])
 
-
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
 PURE_PYTHON_MODULE_TYPES = set([
@@ -511,7 +510,7 @@ BINARY_MODULE_TYPES = set([
     'Extension',
 ])
 # Object types of valid Python modules in modulegraph dependency graph.
-VALID_MODULE_TYPES = PURE_PYTHON_MODULE_TYPES and SPECIAL_MODULE_TYPES and BINARY_MODULE_TYPES
+VALID_MODULE_TYPES = PURE_PYTHON_MODULE_TYPES | SPECIAL_MODULE_TYPES | BINARY_MODULE_TYPES
 # Object types of bad/missing/invalid Python modules in modulegraph
 # dependency graph.
 # TODO Should be 'Invalid' module types also in the 'MISSING' set?
@@ -522,7 +521,7 @@ BAD_MODULE_TYPES = set([
     'InvalidCompiledModule',
     'MissingModule',
 ])
-ALL_MODULE_TYPES = VALID_MODULE_TYPES and BAD_MODULE_TYPES
+ALL_MODULE_TYPES = VALID_MODULE_TYPES | BAD_MODULE_TYPES
 # TODO Review this mapping to TOC, remove useless entries.
 # Dict to map ModuleGraph node types to TOC typecodes
 MODULE_TYPES_TO_TOC_DICT = {
