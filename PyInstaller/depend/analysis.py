@@ -41,7 +41,9 @@ from PyInstaller.building.datastruct import TOC
 from ..utils.misc import load_py_data_struct
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..lib.modulegraph.find_modules import get_implies
-from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES, PURE_PYTHON_MODULE_TYPES
+from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
+        PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
+        SPECIAL_MODULE_TYPES, BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from .. import HOMEPATH
 from ..utils.hooks.hookutils import collect_submodules, is_package
 
@@ -69,19 +71,6 @@ class PyiModuleGraph(ModuleGraph):
         `import_module()` method for details.
     """
 
-    # Dict to map ModuleGraph node types to TOC typecodes
-    typedict = {
-        'Module': 'PYMODULE',
-        'SourceModule': 'PYMODULE',
-        'CompiledModule': 'PYMODULE',
-        'Package': 'PYMODULE',
-        'NamespacePackage': 'PYMODULE',
-        'Extension': 'EXTENSION',
-        'Script': 'PYSOURCE',
-        'BuiltinModule': 'BUILTIN',
-        'MissingModule': 'MISSING',
-        'does not occur': 'BINARY'
-    }
 
     def __init__(self, pyi_homepath, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
@@ -192,7 +181,7 @@ class PyiModuleGraph(ModuleGraph):
         :return: Dict with module name and code object.
         """
         code_dict = {}
-        mod_types = set(['Module', 'SourceModule', 'CompiledModule', 'Package'])
+        mod_types = PURE_PYTHON_MODULE_TYPES
         for node in self.flatten(start=self._top_script_node):
             # TODO This is terrible. To allow subclassing, types should never be
             # directly compared. Use isinstance() instead, which is safer,
@@ -206,14 +195,14 @@ class PyiModuleGraph(ModuleGraph):
                     code_dict[node.identifier] = node.code
         return code_dict
 
-    def make_a_TOC(self, typecode=None, existing_TOC=None):
+    def _make_toc(self, typecode=None, existing_TOC=None):
         """
         Return the name, path and type of selected nodes as a TOC, or appended
         to a TOC. The selection is via a list of PyInstaller TOC typecodes.
         If that list is empty we return the complete flattened graph as a TOC
         with the ModuleGraph note types in place of typecodes -- meant for
         debugging only. Normally we return ModuleGraph nodes whose types map
-        to the requested PyInstaller typecode(s) as indicated in the typedict.
+        to the requested PyInstaller typecode(s) as indicated in the MODULE_TYPES_TO_TOC_DICT.
 
         We use the ModuleGraph (really, ObjectGraph) flatten() method to
         scan all the nodes. This is patterned after ModuleGraph.report().
@@ -249,9 +238,7 @@ class PyiModuleGraph(ModuleGraph):
                 if base_nm.startswith('lib') and ext in ('.pyd', '.so'):
                     continue
 
-            # translate to the corresponding TOC typecode, or leave as-is
-            toc_type = self.typedict.get(mg_type, mg_type)
-            if typecode and not (toc_type in typecode):
+            if typecode and not (mg_type in typecode):
                 # Type is not a to be selected one, skip this one
                 continue
             # Extract the identifier and a path if any.
@@ -269,21 +256,42 @@ class PyiModuleGraph(ModuleGraph):
             #
             #   ValueError: unmarshallable object
             name = str(name)
+            # Translate to the corresponding TOC typecode.
+            toc_type = MODULE_TYPES_TO_TOC_DICT[mg_type]
             # TOC.append the data. This checks for a pre-existing name
             # and skips it if it exists.
             result.append((name, path, toc_type))
         return result
+
+    def make_pure_toc(self):
+        """
+        Return all pure Python modules formatted as TOC.
+        """
+        # PyInstaller should handle special module types without code object.
+        return self._make_toc(PURE_PYTHON_MODULE_TYPES and SPECIAL_MODULE_TYPES)
+
+    def make_binaries_toc(self, existing_toc):
+        """
+        Return all binary Python modules formatted as TOC.
+        """
+        return self._make_toc(BINARY_MODULE_TYPES, existing_toc)
+
+    def make_missing_toc(self):
+        """
+        Return all MISSING Python modules formatted as TOC.
+        """
+        return self._make_toc(BAD_MODULE_TYPES)
 
     # Given a list of nodes, create a TOC representing those nodes.
     # This is mainly used to initialize a TOC of scripts with the
     # ones that are runtime hooks. The process is almost the same as
     # make_a_TOC, but the caller guarantees the nodes are
     # valid, so minimal checking.
-    def nodes_to_TOC(self, node_list, existing_TOC = None):
+    def nodes_to_toc(self, node_list, existing_TOC=None):
         result = existing_TOC or TOC()
         for node in node_list:
             mg_type = type(node).__name__
-            toc_type = self.typedict[mg_type]
+            toc_type = MODULE_TYPES_TO_TOC_DICT[mg_type]
             if mg_type == "Script" :
                 (name, ext) = os.path.splitext(node.filename)
                 name = os.path.basename(name)
@@ -297,7 +305,8 @@ class PyiModuleGraph(ModuleGraph):
     # The passed name is a basename.
     def is_a_builtin(self, name) :
         node = self.findNode(name)
-        if node is None : return False
+        if node is None:
+            return False
         return type(node).__name__ == 'BuiltinModule'
 
     def importer_names(self, name):
@@ -351,7 +360,7 @@ class PyiModuleGraph(ModuleGraph):
         # Find runtime hooks that are implied by packages already imported.
         # Get a temporary TOC listing all the scripts and packages graphed
         # so far. Assuming that runtime hooks apply only to modules and packages.
-        temp_toc = self.make_a_TOC(['EXTENSION', 'PYMODULE', 'PYSOURCE'])
+        temp_toc = self._make_toc(VALID_MODULE_TYPES)
         for (mod_name, path, typecode) in temp_toc:
             # Look if there is any run-time hook for given module.
             if mod_name in self._available_rthooks:
