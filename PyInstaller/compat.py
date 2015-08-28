@@ -489,7 +489,6 @@ else:
 # Pure Python modules have code object (attribute co_code).
 PURE_PYTHON_MODULE_TYPES = set([
     'Script',
-    'RuntimeModule',
     'SourceModule',
     'CompiledModule',
     'Package',
@@ -503,6 +502,7 @@ PURE_PYTHON_MODULE_TYPES = set([
 SPECIAL_MODULE_TYPES = set([
     'AliasNode',
     'BuiltinModule',
+    'RuntimeModule',
     'NamespacePackage',
 ])
 # Object types of Binary Python modules (extensions, etc) in modulegraph
