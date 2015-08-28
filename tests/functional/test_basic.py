@@ -188,7 +188,7 @@ def test_python_makefile(pyi_builder):
 
 
 def test_set_icon(pyi_builder, data_dir):
-    icon_dir = os.path.join(data_dir, 'icons')
+    icon_dir = os.path.join(data_dir.strpath, 'icons')
     if is_win:
         args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]
     elif is_darwin:
