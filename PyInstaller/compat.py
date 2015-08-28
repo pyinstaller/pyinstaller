@@ -490,6 +490,7 @@ PURE_PYTHON_MODULE_TYPES = set([
     'SourceModule',
     'CompiledModule',
     'Package',
+    'NamespacePackage',
     # Deprecated.
     # TODO Could these module types be removed?
     'FlatPackage',
@@ -501,7 +502,6 @@ SPECIAL_MODULE_TYPES = set([
     'AliasNode',
     'BuiltinModule',
     'RuntimeModule',
-    'NamespacePackage',
     # PyInstaller handles scripts differently and not as standard Python modules.
     'Script',
 ])
