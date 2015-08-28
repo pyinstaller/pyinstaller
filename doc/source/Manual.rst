@@ -371,6 +371,11 @@ the executable in one folder.
   when bundled to one folder. `When Things Go Wrong`_ it's *much* easier to
   find out what actually went wrong if you bundled to one folder.
 
+.. Note::
+  Applications that use `os.setuid()` may encounter permissions errors due to the
+  temporary folder not being readable after `setuid` is called. If your app needs to
+  call `setuid`, it may be better to use a one-folder build to have more control
+  over the permissions on your application's files. 
 
 How the One-Folder Program Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
