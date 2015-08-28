@@ -29,9 +29,9 @@ exec_dir = os.path.dirname(sys.executable)
 # ├── ctypes_dylib.dylib
 # ├── build
 # └── dist
-#     └── appname
-#         └── appname.exe
-pth_onedir = os.path.join(exec_dir, '..', '..', name)
+#     └── appname
+#         └── appname.exe
+pth_onedir = os.path.join(exec_dir, '..', '..', 'data', 'load_dll_using_ctypes', name)
 # onefile mode:
 # tmpdir
 # ├── ctypes_dylib.dll
@@ -39,8 +39,8 @@ pth_onedir = os.path.join(exec_dir, '..', '..', name)
 # ├── ctypes_dylib.dylib
 # ├── build
 # └── dist
-#     └── appname.exe
-pth_onefile = os.path.join(exec_dir, '..', name)
+#     └── appname.exe
+pth_onefile = os.path.join(exec_dir, '..', 'data', 'load_dll_using_ctypes', name)
 lib_filename = pth_onedir if os.path.exists(pth_onedir) else pth_onefile
 
 
