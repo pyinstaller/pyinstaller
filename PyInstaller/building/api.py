@@ -740,7 +740,7 @@ class MERGE(object):
 
         self._id_to_path = {}
         for _, i, p in args:
-            self._id_to_path[i] = p
+            self._id_to_path[os.path.normcase(i)] = p
 
         # Get the longest common path
         self._common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a, _, _ in args]))
@@ -757,8 +757,8 @@ class MERGE(object):
         for analysis, _, _ in args:
             path = os.path.abspath(analysis.scripts[-1][1]).replace(self._common_prefix, "", 1)
             path = os.path.splitext(path)[0]
-            if path in self._id_to_path:
-                path = self._id_to_path[path]
+            if os.path.normcase(path) in self._id_to_path:
+                path = self._id_to_path[os.path.normcase(path)]
             self._set_dependencies(analysis, path)
 
     def _set_dependencies(self, analysis, path):
