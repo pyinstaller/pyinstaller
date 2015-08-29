@@ -117,6 +117,17 @@ def test_multiprocess_forking(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_forking.py')
 
 
+@importorskip('zope.interface')
+def test_namespace_package(pyi_builder):
+    # Tests that modules without __init__.py file are bundled properly.
+    pyi_builder.test_source(
+        """
+        # Package 'zope' does not contain __init__.py file.
+        # Just importing 'zope.interface' is sufficient.
+        import zope.interface
+        """)
+
+
 # TODO skip this test if C compiler is not found.
 # TODO test it on OS X.
 def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder, data_dir):
@@ -189,7 +200,7 @@ def test_option_exclude_module(pyi_builder):
 
 
 @skipif_win
-@pytest.mark.xfail(reason='failing when running in Travis')
+@importorskip('sysconfig')  # Module sysconfig is not available in Travis CI.
 def test_python_makefile(pyi_builder):
     pyi_builder.test_script('pyi_python_makefile.py')
 
