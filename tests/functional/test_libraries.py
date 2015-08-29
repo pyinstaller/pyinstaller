@@ -51,6 +51,7 @@ def test_sphinx(tmpdir, pyi_builder, data_dir):
                     os.path.join(tmpdir.strpath, 'data', 'sphinx'))
     pyi_builder.test_script('pyi_lib_sphinx.py')
 
+@pytest.mark.xfail(reason='pkg_resources is not supported yet.')
 @importorskip('pylint')
 def test_pylint(pyi_builder):
     pyi_builder.test_script('pyi_lib_pylint.py')
