@@ -60,6 +60,11 @@ _win_includes = {
     r'mfcm100.dll$': 1,
     r'mfcm100u.dll$': 1,
 
+    # Python 3.5 uses the Univeral C Runtime which consists of these DLLs:
+
+    r'api-ms-win-core.*$': 1,
+    r'api-ms-win-crt.*$': 1,
+    r'ucrtbase.dll': 1,
 }
 _win_excludes = {
     # MS assembly excludes
