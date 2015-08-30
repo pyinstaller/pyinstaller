@@ -14,8 +14,7 @@
 
 import os
 import sys
-import time
-from distutils import sysconfig
+import sysconfig
 
 
 config_h = sysconfig.get_config_h_filename()

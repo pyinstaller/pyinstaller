@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -11,12 +11,11 @@
 # The 'sysconfig' module requires Makefile and pyconfig.h files from
 # Python installation. 'sysconfig' parses these files to get some
 # information from them.
+# TODO Verify that bundling Makefile and pyconfig.h is still required for Python 3.
 
 import sysconfig
 import os
-import sys
 
-from PyInstaller import compat
 from PyInstaller.utils.hooks.hookutils import relpath_to_config_or_make
 
 _CONFIG_H = sysconfig.get_config_h_filename()

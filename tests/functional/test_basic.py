@@ -189,7 +189,6 @@ def test_option_exclude_module(pyi_builder):
 
 
 @skipif_win
-@importorskip('sysconfig')  # Module sysconfig is not available in Travis CI.
 def test_python_makefile(pyi_builder):
     pyi_builder.test_script('pyi_python_makefile.py')
 
