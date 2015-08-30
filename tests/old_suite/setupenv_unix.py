@@ -64,7 +64,6 @@ _PACKAGES = [
     'SQLAlchemy',
     'twisted',
     #'wxPython',
-    'zope.interface',
 ]
 
 

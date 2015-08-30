@@ -13,7 +13,6 @@ IPython
 pyttsx
 
 # extension modules which do not require external headers
-zope.interface # required by twisted
 simplejson
 SQLAlchemy
 multiprocessing

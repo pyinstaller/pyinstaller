@@ -86,7 +86,6 @@ _PACKAGES = {
     # PyWin32 is installed on ShiningPanda hosting.
     'win32api': ['http://downloads.sourceforge.net/project/pywin32/pywin32/Build%%20217/pywin32-217.%s-py%s.exe' %
         (py_arch(), PYVER)],
-    'zope.interface': ['zope.interface'],
 }
 
 _PY_VERSION = {

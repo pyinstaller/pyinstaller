@@ -144,10 +144,6 @@ class SkipChecker(object):
             'libraries/test_wx_pubsub': ['wx'],
             'libraries/test_wx_pubsub_arg1': ['wx'],
             'libraries/test_wx_pubsub_kwargs': ['wx'],
-            'libraries/test_sphinx': ['sphinx', 'docutils', 'jinja2', 'uuid'],
-            'libraries/test_zmq': ['zmq'],
-            'libraries/test_zope': ['zope'],
-            'libraries/test_zope_interface': ['zope.interface'],
 
             # Require the c-extension module to be present, too
             'import/test_c_extension': ['simplejson._speedups'],
