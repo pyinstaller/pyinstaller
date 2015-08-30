@@ -78,3 +78,13 @@ def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
 
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
+
+@importorskip('zope.interface')
+def test_zope_interface(pyi_builder):
+    # Tests that modules without __init__.py file are bundled properly.
+    pyi_builder.test_source(
+        """
+        # Package 'zope' does not contain __init__.py file.
+        # Just importing 'zope.interface' is sufficient.
+        import zope.interface
+        """)

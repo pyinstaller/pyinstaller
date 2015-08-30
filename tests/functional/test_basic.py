@@ -117,17 +117,6 @@ def test_multiprocess_forking(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_forking.py')
 
 
-@importorskip('zope.interface')
-def test_namespace_package(pyi_builder):
-    # Tests that modules without __init__.py file are bundled properly.
-    pyi_builder.test_source(
-        """
-        # Package 'zope' does not contain __init__.py file.
-        # Just importing 'zope.interface' is sufficient.
-        import zope.interface
-        """)
-
-
 # TODO skip this test if C compiler is not found.
 # TODO test it on OS X.
 def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder, data_dir):
