@@ -32,7 +32,7 @@ for name in sys.modules:
         print(name)
 """ % {'modname': mod.name}
     out = hookutils.exec_statement(statement)
-    mod.add_import = out.strip().splitlines()
+    mod.add_import(out.strip().splitlines())
 
     # Ignore 'FixTk' to prevent inclusion of Tcl/Tk library.
     mod.del_import('FixTk')
