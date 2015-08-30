@@ -25,13 +25,10 @@ from PyInstaller.utils.tests import importorskip, xfail_py2
 # Django test might sometimes hang.
 @pytest.mark.timeout(timeout=7*60)
 def test_django(pyi_builder, monkeypatch, data_dir):
-    # Note that the name test_django_site (not just test_django) for prevents
-    # data_dir from copying data/django_site it to the tmpdir.
-    script_dir = os.path.join(data_dir.strpath, 'django_site')
-    # Extend sys.path so PyInstaller could find modules from 'django_site' project.
-    monkeypatch.syspath_prepend(script_dir)
+    # Extend sys.path so PyInstaller could find modules from 'tmpdir/django/'.
+    monkeypatch.syspath_prepend(data_dir.strpath)
     # Django uses manage.py as the main script.
-    script = os.path.join(script_dir, 'manage.py')
+    script = os.path.join(data_dir.strpath, 'manage.py')
     # Create the exe, run django command 'check' to do basic sanity checking of the
     # executable.
     pyi_builder.test_script(script, app_name='django_site', app_args=['check'])

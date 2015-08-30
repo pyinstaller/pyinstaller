@@ -69,17 +69,12 @@ class DataDir(object):
       # https://pytest.org/latest/tmpdir.html.
       tmpdir):
 
-        # Provide access to _DATA_DIR, using the same nomenclature as tmpdir.
-        self.strpath = _DATA_DIR
-
         # Strip the leading "test_' from the test's name.
         name = request.function.__name__[5:]
         # Copy _DATA_DIR/<name> if it exists to the tmpdir.
         source_data = os.path.join(_DATA_DIR, name)
-        if os.path.exists(source_data):
-            # Provide access to the location to which the directory was copied.
-            self.dest_strpath = os.path.join(tmpdir.strpath, 'data', name)
-            shutil.copytree(source_data, self.dest_strpath)
+        self.strpath = os.path.join(tmpdir.strpath, 'data', name)
+        shutil.copytree(source_data, self.strpath)
 
 # Define a fixure for the DataDir object.
 @pytest.fixture

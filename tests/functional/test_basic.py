@@ -122,7 +122,7 @@ def test_multiprocess_forking(pyi_builder):
 def test_load_dll_using_ctypes(monkeypatch, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
     # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD.
-    monkeypatch.chdir(data_dir.dest_strpath)
+    monkeypatch.chdir(data_dir.strpath)
     if is_win:
         # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
         march = '-m32' if architecture() == '32bit' else '-m64'
@@ -188,14 +188,11 @@ def test_python_makefile(pyi_builder):
 
 
 def test_set_icon(pyi_builder, data_dir):
-    # Note that the name test_set_icon (not just test_icon) for prevents
-    # data_dir from copying data/icon to the tmpdir.
-    icon_dir = os.path.join(data_dir.strpath, 'icons')
     if is_win:
-        args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]
+        args = ['--icon', os.path.join(data_dir.strpath, 'pyi_icon.ico')]
     elif is_darwin:
         # On OS X icon is applied only for windowed mode.
-        args = ['--windowed', '--icon', os.path.join(icon_dir, 'pyi_icon.icns')]
+        args = ['--windowed', '--icon', os.path.join(data_dir.strpath, 'pyi_icon.icns')]
     else:
         pytest.skip('option --icon works only on Windows and Mac OS X')
     # Just use helloworld script.
