@@ -112,14 +112,29 @@ def _getImports_pe(pth):
     # We are only interested in the list of dependent dlls.
     # Performance is improved by reading only needed information.
     # https://code.google.com/p/pefile/wiki/UsageExamples
+
     pe = pefile.PE(pth, fast_load=True)
     pe.parse_data_directories(directories=[
-        pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT']])
+        pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
+        pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXPORT'],
+        ])
+
     # Some libraries have no other binary dependencies. Use empty list
     # in that case. Otherwise pefile would return None.
     # e.g. C:\windows\system32\kernel32.dll on Wine
     for entry in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', []):
         dlls.add(entry.dll)
+
+    # We must also read the exports table to find forwarded symbols:
+    # http://blogs.msdn.com/b/oldnewthing/archive/2006/07/19/671238.aspx
+    exportSymbols = getattr(pe, 'DIRECTORY_ENTRY_EXPORT', None)
+    if exportSymbols:
+        for sym in exportSymbols.symbols:
+            if sym.forwarder is not None:
+                # sym.forwarder is for example 'KERNEL32.EnterCriticalSection'
+                dll, _ = sym.forwarder.split('.')
+                dlls.add(dll + ".dll")
+
     return dlls
 
 
