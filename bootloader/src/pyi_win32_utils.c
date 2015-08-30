@@ -111,7 +111,7 @@ int CreateActContext(const char *manifestpath)
     }
 
     hCtx = INVALID_HANDLE_VALUE;
-    VS("LOADER: Error activating the context\n");
+    VS("LOADER: Error activating the context: ActivateActCtx: \n%s\n", GetWinErrorString());
     return 0;
 }
 
