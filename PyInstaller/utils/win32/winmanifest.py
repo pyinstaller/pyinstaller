@@ -471,12 +471,15 @@ class Manifest(object):
             paths = []
             if os.path.isdir(manifests):
                 # Add winsxs search paths
+                # Search for manifests in Windows\WinSxS\Manifests
                 paths.extend(glob(os.path.join(manifests, 
                                                self.getid(language=language, 
                                                           version=version) + 
                                                "_*.manifest")))
             if self.filename:
                 # Add private assembly search paths
+                # Search for manifests inside assembly folders that are in
+                # the same folder as the depending manifest.
                 dirnm = os.path.dirname(self.filename)
                 if language in (LANGUAGE_NEUTRAL_NT5, 
                                 LANGUAGE_NEUTRAL_NT6):
@@ -512,12 +515,15 @@ class Manifest(object):
                     logger.exception(exc)
                 else:
                     if manifestpth.startswith(winsxs):
+                        # Manifest is in Windows\WinSxS\Manifests, so assembly
+                        # dir is in Windows\WinSxS
                         assemblydir = os.path.join(winsxs, assemblynm)
                         if not os.path.isdir(assemblydir):
                             logger.warn("No such dir %s", assemblydir)
                             logger.warn("Assembly incomplete")
                             return []
                     else:
+                        # Manifest is inside assembly dir.
                         assemblydir = os.path.dirname(manifestpth)
                     files.append(manifestpth)
                     for file_ in self.files or manifest.files:
