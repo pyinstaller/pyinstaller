@@ -115,8 +115,10 @@ and upgrade to a newer version in one command::
 Installing in Windows
 ------------------------
 
-For Windows, PyWin32_ is a prerequisite.
-Follow that link and carefully read the instructions; there
+For Windows, PyWin32_ is a prerequisite. It should get installed automatically
+when using ``pip`` or ``setup.py install`` to install PyInstaller.
+
+For other scenarios follow that link to install it manually; there
 is a different version of PyWin32 for each version of Python.
 With this done you can continue to install ``pip`` using the
 MS-DOS command line.
