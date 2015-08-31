@@ -7,6 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import unicode_literals
+
 
 """
 Decorators for skipping PyInstaller tests when specific requirements are not met.
@@ -34,8 +36,12 @@ def importorskip(modules):
     """
     mods_avail = True
     # Convert string to a list with one item.
-    if type(modules) is str:
-        modules = [modules]
+    if is_py2:
+        if type(modules) in (str, unicode):
+            modules = [modules]
+    else:
+        if type(modules) is str:
+            modules = [modules]
     for m in modules:
         try:
             __import__(m)
