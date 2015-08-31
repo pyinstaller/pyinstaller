@@ -11,12 +11,21 @@
 
 import os
 import stat
+import sys
+
 from setuptools import setup, find_packages
 from distutils.command.build_py import build_py
 from distutils.command.sdist import sdist
 
 from PyInstaller import get_version
 import PyInstaller.utils.git
+
+
+REQUIREMENTS = ['setuptools']
+if sys.platform.startswith('win'):
+    # 'pypiwin32' is PyWin32 package made installable by 'pip install'
+    # command.
+    REQUIREMENTS.append('pypiwin32')
 
 
 DESC = ('Converts (packages) Python programs into stand-alone executables, '
@@ -119,7 +128,7 @@ class my_sdist(sdist):
         return res
 
 setup(
-    install_requires=['setuptools'],
+    install_requires=REQUIREMENTS,
 
     name='PyInstaller',
     version=get_version(),
