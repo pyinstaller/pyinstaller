@@ -1,4 +1,4 @@
-# Include common dependencies for tests.
+# Include some common dependencies for tests.
 -r requirements.txt
 
 # This package is a pip-installable version of PyWin32.

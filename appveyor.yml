@@ -43,7 +43,7 @@ cache:
   # .whl packages will be recreated only if ./tests/requirements-win.txt has changed.
   - C:\wheels -> tests\requirements-win.txt
   # Cache downloaded pip packages
-  #- "%LOCALAPPDATA%\\pip" -> tests\requirements.txt
+  #- "%LOCALAPPDATA%\\pip" -> tests\requirements-win.txt
   # Cache some downloaded packages - downloading again and again is unreliable and
   # causes some failures
   - C:\downloads
