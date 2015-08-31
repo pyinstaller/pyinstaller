@@ -16,7 +16,7 @@ import pkg_resources
 import sys
 
 from ... import compat
-from ...compat import is_win
+from ...compat import is_py2, is_win
 from ...utils import misc
 from ... import HOMEPATH
 from ... import log as logging
@@ -60,6 +60,13 @@ def __exec_python_cmd(cmd, env={}):
     if 'PYTHONPATH' in env:
         pp = os.pathsep.join([env.get('PYTHONPATH'), pp])
     pp_env['PYTHONPATH'] = pp
+    # 'env' for Windows and Python 2 in subprocess might contain only 'str' and
+    # not 'unicode'.
+    if is_win and is_py2:
+        for k, v in pp_env.items():
+            if type(v) is unicode:
+                pp_env[k] = v.encode('UTF-8')
+
     try:
         txt = compat.exec_python(*cmd, env=pp_env)
     except OSError as e:
