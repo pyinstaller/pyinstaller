@@ -40,8 +40,8 @@ environment:
 
 cache:
   # Cache created Python .whl packages to avoid compiling them again.
-  # .whl packages will be recreated only if ./tests/requirements.txt has changed.
-  - C:\wheels -> tests\requirements.txt
+  # .whl packages will be recreated only if ./tests/requirements-win.txt has changed.
+  - C:\wheels -> tests\requirements-win.txt
   # Cache downloaded pip packages
   #- "%LOCALAPPDATA%\\pip" -> tests\requirements.txt
   # Cache some downloaded packages - downloading again and again is unreliable and
