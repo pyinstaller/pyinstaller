@@ -463,7 +463,7 @@ def get_bootstrap_modules():
     for mod_name in ['_struct', 'zlib']:
         mod = __import__(mod_name)  # C extension.
         if hasattr(mod, '__file__'):
-            loader_mods.append(('_struct', os.path.abspath(mod.__file__), 'EXTENSION'))
+            loader_mods.append((mod_name, os.path.abspath(mod.__file__), 'EXTENSION'))
     # NOTE:These modules should be kept simple without any complicated dependencies.
     loader_mods +=[
         ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
