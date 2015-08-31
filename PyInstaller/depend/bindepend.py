@@ -34,26 +34,12 @@ logger = logging.getLogger(__name__)
 
 seen = {}
 
+# Import windows specific stuff.
 if is_win:
-    try:
-        # For Portable Python it is required to import pywintypes before
-        # win32api module. See for details:
-        # http://www.voidspace.org.uk/python/movpy/reference/win32ext.html#problems-with-win32api
-        import pywintypes
-        import win32api
-    except ImportError:
-        raise SystemExit("Error: PyInstaller for Python 2.6+ on Windows "
-             "needs pywin32.\r\nPlease install from "
-             "http://sourceforge.net/projects/pywin32/")
-
-    from PyInstaller.utils.win32.winmanifest import RT_MANIFEST
-    from PyInstaller.utils.win32.winmanifest import GetManifestResources
-    from PyInstaller.utils.win32.winmanifest import Manifest
-
-    try:
-        from PyInstaller.utils.win32 import winresource
-    except ImportError as detail:
-        winresource = None
+    from ..utils.win32.winmanifest import RT_MANIFEST
+    from ..utils.win32.winmanifest import GetManifestResources
+    from ..utils.win32.winmanifest import Manifest
+    from ..utils.win32 import winresource
 
 
 def getfullnameof(mod, xtrapath=None):

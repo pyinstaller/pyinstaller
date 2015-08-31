@@ -12,28 +12,10 @@ __all__ = ('HOMEPATH', 'PLATFORM',
            'VERSION', 'get_version')
 
 import os
-import sys
-
-
-# Fail hard if Python does not have minimum required version
-if sys.version_info < (3, 3) and sys.version_info[:2] != (2, 7):
-    raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
-
 
 from PyInstaller import compat
 from PyInstaller.compat import is_darwin, is_win, is_py2
 from PyInstaller.utils import git
-
-
-# Fail hard if Python on Windows does not have pywin32 installed.
-if is_win:
-    try:
-        from PyInstaller.utils.win32 import winutils
-        pywintypes = winutils.import_pywin32_module('pywintypes')
-    except ImportError:
-        raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
-                         'Please install PyWin32.\n'
-                         'http://sourceforge.net/projects/pywin32/')
 
 
 VERSION = (3, 0, 0, 'dev', git.get_repo_revision())

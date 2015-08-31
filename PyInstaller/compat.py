@@ -550,3 +550,23 @@ MODULE_TYPES_TO_TOC_DICT = {
     'does not occur': 'BINARY',
 }
 
+
+def check_requirements():
+    """
+    Verify that all requirements to run PyInstaller are met. Especially
+    PyWin32 is installed on Windows.
+
+    Fail hard if any requirement is not met.
+    """
+    # Fail hard if Python does not have minimum required version
+    if sys.version_info < (3, 3) and sys.version_info[:2] != (2, 7):
+        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
+
+    if is_win:
+        try:
+            from PyInstaller.utils.win32 import winutils
+            pywintypes = winutils.import_pywin32_module('pywintypes')
+        except ImportError:
+            raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
+                             'Please install PyWin32.\n\n'
+                             'pip install pypiwin32\n')

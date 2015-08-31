@@ -24,6 +24,7 @@ import PyInstaller.log
 
 
 from . import get_version
+from .compat import check_requirements
 from .utils import misc
 from . import log as logging
 
@@ -56,6 +57,7 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
     pyi_config   allows checking configuration once when running multiple tests
     """
     misc.check_not_running_as_root()
+    check_requirements()
 
 
     try:
@@ -101,4 +103,4 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
 
 
 if __name__ == '__main__':
-        run()
+    run()
