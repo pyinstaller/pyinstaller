@@ -1,0 +1,5 @@
+# Include common dependencies for tests.
+-r requirements.txt
+
+# This package is a pip-installable version of PyWin32.
+pypiwin32
