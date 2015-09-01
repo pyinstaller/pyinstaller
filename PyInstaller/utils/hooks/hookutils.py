@@ -42,13 +42,15 @@ PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
 hook_variables = {}
 
 
-def __exec_python_cmd(cmd, env={}):
+def __exec_python_cmd(cmd, env=None):
     """
     Executes an externally spawned Python interpreter and returns
     anything that was emitted in the standard output as a single
     string.
     """
     from ...config import CONF
+    if env is None:
+        env = {}
     # Update environment. Defaults to 'os.environ'
     pp_env = copy.deepcopy(os.environ)
     pp_env.update(env)
