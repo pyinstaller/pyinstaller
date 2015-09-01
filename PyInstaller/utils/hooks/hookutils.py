@@ -56,16 +56,18 @@ def __exec_python_cmd(cmd, env={}):
     # Some functions use some PyInstaller code in subprocess so add
     # PyInstaller HOMEPATH to sys.path too.
     pp = os.pathsep.join(CONF['pathex'] + [HOMEPATH])
+
+    # On Python 2, `os.environ` may only contain bytes.
+    # Encode unicode filenames using FS encoding.
+    # TODO: `os.environ` wrapper that encodes automatically?
+    if is_py2:
+        if isinstance(pp, unicode):
+            pp = pp.encode(sys.getfilesystemencoding())
+
     # PYTHONPATH might be already defined in the 'env' argument. Prepend it.
     if 'PYTHONPATH' in env:
         pp = os.pathsep.join([env.get('PYTHONPATH'), pp])
     pp_env['PYTHONPATH'] = pp
-    # 'env' for Windows and Python 2 in subprocess might contain only 'str' and
-    # not 'unicode'.
-    if is_win and is_py2:
-        for k, v in pp_env.items():
-            if type(v) is unicode:
-                pp_env[k] = v.encode('UTF-8')
 
     try:
         txt = compat.exec_python(*cmd, env=pp_env)
