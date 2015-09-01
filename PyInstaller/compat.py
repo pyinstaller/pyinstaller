@@ -267,14 +267,23 @@ def exec_command(*cmdargs, **kwargs):
     """
     Wrap creating subprocesses
 
-    Return stdout of the invoked command.
+    Return stdout of the invoked command. On Python 3, the 'encoding' kwarg controls
+    how the output is decoded to 'str'
     """
+    encoding = kwargs.pop('encoding', None)
     out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
-    # Let' suppose that stdout/stderr will contain only utf-8 or ascii
-    # characters.
-    return out.decode('utf-8')
+
+    if is_py3:
+        if encoding:
+            out = out.decode(encoding)
+        else:
+            # If no encoding is given, assume we're reading filenames from stdout
+            # only because it's the common case.
+            out = os.fsdecode(out)
+
+    return out
 
 
 def exec_command_rc(*cmdargs, **kwargs):
@@ -291,6 +300,8 @@ def exec_command_all(*cmdargs, **kwargs):
     Wrap creating subprocesses
 
     Return tuple (exit_code, stdout, stderr) of the invoked command.
+
+    On Python 3, the 'encoding' kwarg controls how stdout and stderr are decoded to 'str'
     """
     proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
@@ -298,9 +309,19 @@ def exec_command_all(*cmdargs, **kwargs):
     out, err = proc.communicate()
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
-    # Let' suppose that stdout/stderr will contain only utf-8 or ascii
-    # characters.
-    return proc.returncode, out.decode('utf-8'), err.decode('utf-8')
+    if is_py3:
+        encoding = kwargs.get('encoding')
+        if encoding:
+            out = out.decode(encoding)
+            err = err.decode(encoding)
+        else:
+            # If no encoding is given, assume we're reading filenames from stdout
+            # only because it's the common case.
+            out = os.fsdecode(out)
+            err = os.fsdecode(err)
+
+
+    return proc.returncode, out, err
 
 
 def __wrap_python(args, kwargs):
@@ -319,6 +340,17 @@ def __wrap_python(args, kwargs):
         cmdargs.append(_PYOPTS)
 
     cmdargs.extend(args)
+
+    env = kwargs.get('env')
+    if env is None:
+        env = dict(**os.environ)
+
+    if is_py3:
+        # Ensure python 3 subprocess writes 'str' as utf-8
+        env['PYTHONIOENCODING'] = 'UTF-8'
+        # ... and ensure we read output as utf-8
+        kwargs['encoding'] = 'UTF-8'
+     
     return cmdargs, kwargs
 
 
