@@ -27,6 +27,10 @@ import textwrap
 import io
 import shutil
 
+# Third-party imports
+# -------------------
+import py
+
 # Local imports
 # -------------
 # Expand sys.path with PyInstaller source.
@@ -55,31 +59,27 @@ _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 # ====
 # Fixtures
 # --------
-# This class provides access to the _DATA_DIR, and also copies correctly-named
-# directories in the _DATA_DIR to the tmpdir.
-class DataDir(object):
-    # Optionally copy from _DATA_DIR to tmpdir.
-    def __init__(self,
-      # The request object for this test. See
-      # https://pytest.org/latest/builtin.html#_pytest.python.FixtureRequest
-      # and
-      # https://pytest.org/latest/fixture.html#fixtures-can-introspect-the-requesting-test-context.
-      request,
-      # The tmpdir object for this test. See
-      # https://pytest.org/latest/tmpdir.html.
-      tmpdir):
-
-        # Strip the leading "test_' from the test's name.
-        name = request.function.__name__[5:]
-        # Copy _DATA_DIR/<name> if it exists to the tmpdir.
-        source_data = os.path.join(_DATA_DIR, name)
-        self.strpath = os.path.join(tmpdir.strpath, 'data', name)
-        shutil.copytree(source_data, self.strpath)
-
 # Define a fixure for the DataDir object.
 @pytest.fixture
-def data_dir(request, tmpdir):
-    return DataDir(request, tmpdir)
+def data_dir(
+  # The request object for this test. See
+  # https://pytest.org/latest/builtin.html#_pytest.python.FixtureRequest
+  # and
+  # https://pytest.org/latest/fixture.html#fixtures-can-introspect-the-requesting-test-context.
+  request,
+  # The tmpdir object for this test. See
+  # https://pytest.org/latest/tmpdir.html.
+  tmpdir):
+
+    # Strip the leading 'test_' from the test's name.
+    name = request.function.__name__[5:]
+    # Copy _DATA_DIR/<name> to the tmpdir.
+    source_data = os.path.join(_DATA_DIR, name)
+    tmp_data = os.path.join(tmpdir.strpath, 'data', name)
+    shutil.copytree(source_data, tmp_data)
+
+    # Return a py.path.local object representing this directory.
+    return py.path.local(tmp_data)
 
 class AppBuilder(object):
 
