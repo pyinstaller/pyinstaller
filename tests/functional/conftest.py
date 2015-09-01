@@ -83,7 +83,13 @@ class AppBuilder(object):
 
         All other arguments are passed streigth on to `test_script`.
 
+        Ensure that the caller of `test_source` is in a UTF-8
+        encoded file with the correct "# -*- coding: utf-8 -*-" marker.
+
         """
+        if is_py2:
+            if isinstance(source, str):
+                source = source.decode('UTF-8')
         testname = inspect.stack()[1][3]
         if 'test_id' in kwargs:
             # For parametrized test append the test-id.
