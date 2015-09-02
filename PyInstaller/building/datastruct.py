@@ -81,6 +81,8 @@ class TOC(compat.UserList):
         return result
 
     def extend(self, other):
+        # TODO: look if this can be done more efficient with out the
+        # loop, e.g. by not using a UserList as base at all
         for entry in other:
             self.append(entry)
 
