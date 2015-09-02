@@ -1,0 +1,12 @@
+#!/bin/bash
+SCRIPT_DIR=$( dirname "$0" )
+cd $SCRIPT_DIR/../  # Root directory of PyInstaller
+# Remove previous files.
+rm -r dist
+# Create tar.gz for distribution.
+python setup.py sdist
+python setup.py check
+# TODO Sign it.
+# Uplad it to PYPI.
+# Use tool twine for that because it uses encrypted connection.
+twine upload dist/*.tar.gz

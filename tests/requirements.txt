@@ -9,6 +9,7 @@ mock
 
 # Helper tools
 pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
+twine  # For secure upload of tar.gz to PYPI.
 
 
 # Test libraries
