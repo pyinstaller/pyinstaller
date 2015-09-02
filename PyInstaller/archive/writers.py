@@ -359,18 +359,23 @@ class ZlibArchiveWriter(ArchiveWriter):
             self.crypted = 0
 
     def add(self, entry):
-        name = entry[0]
-        pth = entry[1]
-        if pth in ('-', None):
-            # This is a NamespacePackage, modulegraph marks them
-            # by using the filename '-'. (But wants to use None,
-            # so check for None, too, to be forward-compatible.)
-            ispkg = True
+        name, path, typ = entry
+        if typ == 'PYMODULE':
+            if path in ('-', None):
+                # This is a NamespacePackage, modulegraph marks them
+                # by using the filename '-'. (But wants to use None,
+                # so check for None, too, to be forward-compatible.)
+                ispkg = True
+            else:
+                base, ext = os.path.splitext(os.path.basename(path))
+                ispkg = base == '__init__'
+            data = marshal.dumps(self.code_dict[name])
         else:
-            base, ext = os.path.splitext(os.path.basename(pth))
-            ispkg = base == '__init__'
+            ispkg = False
+            with open(path, 'rb') as fh:
+                data = fh.read()
 
-        obj = zlib.compress(marshal.dumps(self.code_dict[name]), self.COMPRESSION_LEVEL)
+        obj = zlib.compress(data, self.COMPRESSION_LEVEL)
 
         # First compress then encrypt.
         if self.crypted:
