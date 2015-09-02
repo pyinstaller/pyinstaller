@@ -272,9 +272,10 @@ class ImportHook(object):
         # Process a hook(mod) function. Create a Module object as its API.
         mod = FakeModule(self._name, mod_graph)
         mod = self._module.hook(mod)
+
         for item in mod._added_imports:
-            # As with hidden imports, add to graph as called by self._name.
-            mod_graph.run_script(item, mod_graph.findNode(self._name))
+            self._process_one_hiddenimport(item, mod_graph)
+
         for item in mod._added_binaries:
             # Supposed to be TOC form (n,p,'BINARY')
             assert(item[2] == 'BINARY')
@@ -297,17 +298,20 @@ class ImportHook(object):
         """
         # push hidden imports into the graph, as if imported from self._name
         for item in self._module.hiddenimports:
-            try:
-                # Do not try to first find out if a module by that name already exist.
-                # Rely on modulegraph to handle that properly.
-                caller = mod_graph.findNode(self._name)
-                mod_graph.import_hook(item, caller=caller)
-            except ImportError:
-                # Print warning if a module from hiddenimport could not be found.
-                # modulegraph raises ImporError when a module is not found.
-                # Import hook with non-existing hiddenimport is probably a stale hook
-                # that was not updated for a long time.
-                logger.warn("Hidden import '%s' not found (probably old hook)" % item)
+            self._process_one_hiddenimport(item, mod_graph)
+
+    def _process_one_hiddenimport(self, item, mod_graph):
+        try:
+            # Do not try to first find out if a module by that name already exist.
+            # Rely on modulegraph to handle that properly.
+            caller = mod_graph.findNode(self._name)
+            mod_graph.import_hook(item, caller=caller)
+        except ImportError:
+            # Print warning if a module from hiddenimport could not be found.
+            # modulegraph raises ImporError when a module is not found.
+            # Import hook with non-existing hiddenimport is probably a stale hook
+            # that was not updated for a long time.
+            logger.warn("Hidden import '%s' not found (probably old hook)" % item)
 
     def _remove_module_references(self, node, graph, mod_filter=None):
         """
