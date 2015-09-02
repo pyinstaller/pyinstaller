@@ -176,6 +176,7 @@ class Analysis(Target):
         self.pure = TOC()
         self.binaries = TOC()
         self.zipfiles = TOC()
+        self.zipped_data = TOC()
         self.datas = TOC()
         self.dependencies = TOC()
         self.__postinit__()
@@ -195,6 +196,7 @@ class Analysis(Target):
             ('pure', lambda *args: _check_guts_toc_mtime(*args, **{'pyc': 1})),
             ('binaries', _check_guts_toc_mtime),
             ('zipfiles', _check_guts_toc_mtime),
+            ('zipped_data', None),  # TODO check this, too
             ('datas', _check_guts_toc_mtime),
             # TODO: Need to add "dependencies"?
             )
@@ -239,6 +241,7 @@ class Analysis(Target):
         self.pure = TOC(data['pure'])
         self.binaries = TOC(data['binaries'])
         self.zipfiles = TOC(data['zipfiles'])
+        self.zipped_data = TOC(data['zipped_data'])
         self.datas = TOC(data['datas'])
         return False
 
@@ -396,6 +399,7 @@ class Analysis(Target):
         deps_proc = DependencyProcessor(self.graph, additional_files_cache)
         self.binaries.extend(deps_proc.make_binaries_toc())
         self.datas.extend(deps_proc.make_datas_toc())
+        self.zipped_data.extend(deps_proc.make_zipped_data_toc())
         # Note: zipped eggs are collected below
 
 

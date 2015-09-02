@@ -169,9 +169,6 @@ class SkipChecker(object):
 
         # Other dependencies of some tests.
         self.DEPENDENCIES = {
-            # Support for unzipped eggs is not yet implemented.
-            # http://www.pyinstaller.org/ticket/541
-            'import/test_eggs1': ['Unzipped eggs not yet implemented.'],
             }
 
     def _check_known_fail(self, test_name):

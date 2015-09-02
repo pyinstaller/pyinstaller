@@ -368,7 +368,7 @@ def get_path_to_egg(path):
     lastpath = None  # marker to stop recursion
     while path and path != lastpath:
         if os.path.splitext(path)[1].lower() == (".egg"):
-            if os.path.isfile(path):
+            if os.path.isfile(path) or os.path.isdir(path):
                 return path
         lastpath = path
         path = os.path.dirname(path)

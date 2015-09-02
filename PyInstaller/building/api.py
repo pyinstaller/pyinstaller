@@ -162,7 +162,7 @@ class PYZ(Target):
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
         for entry in toc:
-            if not entry[0] in self.code_dict:
+            if not entry[0] in self.code_dict and entry[2] == 'PYMODULE':
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
                 self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])

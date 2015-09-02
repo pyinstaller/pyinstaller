@@ -11,6 +11,13 @@ import os
 import zipfile
 import pkg_resources
 from ..depend.utils import get_path_to_egg
+from .datastruct import TOC, Tree
+
+# create a list of excludes suitable for Tree
+from ..utils.hooks.hookutils import PY_IGNORE_EXTENSIONS, PY_EXECUTABLE_SUFFIXES
+PY_IGNORE_EXTENSIONS = set(
+    '*'+s for s in PY_IGNORE_EXTENSIONS | PY_EXECUTABLE_SUFFIXES)
+
 
 class DependencyProcessor(object):
     """
@@ -70,6 +77,12 @@ class DependencyProcessor(object):
         self.__seen_distribution_paths.add(distpath)
         dists = list(pkg_resources.find_distributions(distpath))
         assert len(dists) == 1
+        dist = dists[0]
+        dist._pyinstaller_info = info = {
+            'zipped': zipfile.is_zipfile(dist.location),
+            'egg': True,  # TODO when supporting other types
+            'zip-safe': dist.has_metadata('zip-safe'),
+        }
         return dists
 
 
@@ -87,7 +100,32 @@ class DependencyProcessor(object):
         # TODO create a real TOC when handling of more files is added.
         toc = []
         for dist in self._distributions:
-            if zipfile.is_zipfile(dist.location):
+            if (dist._pyinstaller_info['zipped'] and
+                not dist._pyinstaller_info['egg']):
+                # Hmm, this should never happen as normal zip-files
+                # are not associated with an distribution, are they?
                 toc.append(("eggs/" + os.path.basename(dist.location),
                             dist.location, 'ZIPFILE'))
-        return toc #(x, y, 'DATA') for x, y in self._datas]
+        return toc
+
+    @staticmethod
+    def __collect_data_files_from_zip(zipfilename):
+        pass
+
+    def make_zipped_data_toc(self):
+        toc = TOC()
+        for dist in self._distributions:
+            if dist._pyinstaller_info['egg']:
+                # TODO: check in docu if top_level.txt always exists
+                toplevel = dist.get_metadata('top_level.txt').strip()
+                if dist._pyinstaller_info['zipped']:
+                    # this is a zipped egg
+                    pass
+                elif dist._pyinstaller_info['zip-safe']:
+                    # this is a un-zipped, zip-safe egg
+                    basedir = dist.location
+                    if toplevel:
+                        os.path.join(basedir, toplevel)
+                    tree = Tree(dist.location, excludes=PY_IGNORE_EXTENSIONS)
+                    toc.extend(tree)
+        return toc
