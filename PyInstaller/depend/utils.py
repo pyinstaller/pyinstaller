@@ -368,7 +368,7 @@ def is_path_to_egg(pth):
     components = pth.split(os.path.sep)
     sep = os.path.sep
 
-    for i, name in zip(range(0, len(components)), components):
+    for i, name in enumerate(components):
         if name.lower().endswith(".egg"):
             eggpth = sep.join(components[:i + 1])
             if os.path.isfile(eggpth):
