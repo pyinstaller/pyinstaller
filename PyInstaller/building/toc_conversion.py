@@ -40,6 +40,7 @@ class DependencyProcessor(object):
 
         Bug: This currently only handles packages in eggs.
         """
+        # TODO: Modulegraph could flag a module as residing in a zip file
         # TODO add support for single modules in eggs (e.g. mock-1.0.1)
         # TODO add support for egg-info:
         # TODO add support for wheels (dist-info)
