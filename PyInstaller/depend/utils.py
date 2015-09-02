@@ -361,7 +361,9 @@ def get_path_to_egg(path):
     """
     Return the path to the python egg file, if the path points to a
     file inside a (or to an egg directly).
+    Return `None` otherwise.
     """
+    # This assumes, eggs are not nested.
     # TODO add support for unpacked eggs and for new .whl packages.
     lastpath = None  # marker to stop recursion
     while path and path != lastpath:
