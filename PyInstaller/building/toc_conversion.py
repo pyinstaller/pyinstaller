@@ -18,7 +18,9 @@ from ..config import CONF
 from ..utils.hooks.hookutils import PY_IGNORE_EXTENSIONS, PY_EXECUTABLE_SUFFIXES
 PY_IGNORE_EXTENSIONS = set(
     '*'+s for s in PY_IGNORE_EXTENSIONS | PY_EXECUTABLE_SUFFIXES)
-
+# Exclude EGG-INFO, too, as long as we do not have a way to hold several
+# in one archive
+PY_IGNORE_EXTENSIONS = PY_IGNORE_EXTENSIONS | set(['EGG-INFO'])
 
 class DependencyProcessor(object):
     """
