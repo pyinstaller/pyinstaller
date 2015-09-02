@@ -381,11 +381,17 @@ class FrozenImporter(object):
         The 'path' argument is a path that can be constructed by munging
         module.__file__ (or pkg.__path__ items)
         """
-        # Since __file__ attribute works properly just try to open and read it.
-        fp = open(path, 'rb')
-        content = fp.read()
-        fp.close()
-        return content
+        assert path.startswith(SYS_PREFIX + pyi_os_path.os_sep)
+        fullname = path[len(SYS_PREFIX)+1:]
+        if fullname in self.toc:
+            # If the file is in the archive, return this
+            return self._pyz_archive.extract(fullname)[1]
+        else:
+            # Otherwise try to fetch it from the filesystem. Since
+            # __file__ attribute works properly just try to open and
+            # read it.
+            with open(path, 'rb') as fp:
+                return fp.read()
 
     # TODO Do we really need to implement this method?
     def get_filename(self, fullname):
