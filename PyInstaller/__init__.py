@@ -13,12 +13,12 @@ __all__ = ('HOMEPATH', 'PLATFORM',
 
 import os
 
-from PyInstaller import compat
-from PyInstaller.compat import is_darwin, is_win, is_py2
-from PyInstaller.utils import git
+from . import compat
+from .compat import is_darwin, is_win, is_py2
+from .utils.git import get_repo_revision
 
 
-VERSION = (3, 0, 0, 'dev', git.get_repo_revision())
+VERSION = (3, 0, 0, 'dev0', get_repo_revision())
 
 
 # This ensures for Python 2 that PyInstaller will work on Windows with paths
@@ -58,11 +58,11 @@ if compat.machine():
 
 def get_version():
     version = '%s.%s' % (VERSION[0], VERSION[1])
-    if VERSION[2]:
+    if VERSION[2]:  # It has to be number >= 1.
         version = '%s.%s' % (version, VERSION[2])
     if len(VERSION) >= 4 and VERSION[3]:
-        version = '%s%s' % (version, VERSION[3])
+        version = '%s.%s' % (version, VERSION[3])
         # include git revision in version string
-        if VERSION[3] == 'dev' and len(VERSION) >= 5 and len(VERSION[4]) > 0:
-            version = '%s-%s' % (version, VERSION[4])
+        if VERSION[3].startswith('dev') and len(VERSION) >= 5 and len(VERSION[4]) > 0:
+            version = '%s+%s' % (version, VERSION[4])
     return version
