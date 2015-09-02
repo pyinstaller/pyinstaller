@@ -94,8 +94,20 @@ class DependencyProcessor(object):
         return [(x, y, 'BINARY') for x, y in self._binaries]
 
     def make_datas_toc(self):
-        # TODO create a real TOC when handling of more files is added.
-        return [(x, y, 'DATA') for x, y in self._datas]
+        toc = TOC((x, y, 'DATA') for x, y in self._datas)
+        for dist in self._distributions:
+            if (dist._pyinstaller_info['egg'] and
+                not dist._pyinstaller_info['zipped'] and
+                not dist._pyinstaller_info['zip-safe']):
+                # this is a un-zipped, not-zip-safe egg
+                toplevel = dist.get_metadata('top_level.txt').strip()
+                basedir = dist.location
+                if toplevel:
+                    os.path.join(basedir, toplevel)
+                tree = Tree(dist.location, excludes=PY_IGNORE_EXTENSIONS)
+                toc.extend(tree)
+        return toc
+
 
     def make_zipfiles_toc(self):
         # TODO create a real TOC when handling of more files is added.
@@ -137,4 +149,8 @@ class DependencyProcessor(object):
                         os.path.join(basedir, toplevel)
                     tree = Tree(dist.location, excludes=PY_IGNORE_EXTENSIONS)
                     toc.extend(tree)
+                else:
+                    # this is a un-zipped, not-zip-safe egg, handled in
+                    # make_datas_toc()
+                    pass
         return toc
