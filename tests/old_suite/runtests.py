@@ -150,6 +150,7 @@ class SkipChecker(object):
 
             # Require the c-extension module to be present, too
             'import/test_c_extension': ['simplejson._speedups'],
+            'import/test_eggs1': ['pkg_resources'],
             'import/test_eggs2': ['pkg_resources'],
             'import/test_onefile_c_extension': ['simplejson._speedups'],
             'import/test_onefile_zipimport': ['pkg_resources'],
@@ -256,6 +257,7 @@ SPEC_FILE = set([
     'basic/test_pyz_as_external_file',
     'basic/test_threading2',
     'import/test_app_with_plugins',
+    'import/test_eggs1',
     'import/test_eggs2',
     'import/test_hiddenimport',
     'import/test_nspkg1-bbb-zzz',
