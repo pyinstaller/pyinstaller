@@ -374,6 +374,10 @@ class ZlibArchiveWriter(ArchiveWriter):
             ispkg = False
             with open(path, 'rb') as fh:
                 data = fh.read()
+            # Use forward slash as path-separator in PYZ (like in zipfiles)
+            if os.path.altsep:
+                name = name.replace(os.path.altsep, os.path.sep)
+            name = name.replace(os.path.sep, '/')
 
         obj = zlib.compress(data, self.COMPRESSION_LEVEL)
 
