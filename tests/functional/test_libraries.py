@@ -341,17 +341,3 @@ def test_usb(pyi_builder):
         if not devices:
             raise SystemExit('No USB device found.')
         """)
-
-
-@importorskip('')
-def test_(pyi_builder):
-    pyi_builder.test_source(
-        """
-        """)
-
-
-@importorskip('')
-def test_(pyi_builder):
-    pyi_builder.test_source(
-        """
-        """)
