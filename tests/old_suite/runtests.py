@@ -79,7 +79,6 @@ class SkipChecker(object):
         # Test-cases failing for a known reason and the reason
         self.KNOWN_TO_FAIL = {
             'import/test_onefile_pkgutil-get_data__main__': 'Our import mechanism returns the wrong loader-class for __main__.',
-            'import/test_eggs2': 'due to modulegraph egg-data is not included',
             'import/test_nspkg3': 'due to missing support for extendpath in modulegraph',
             'import/test_nspkg3-bbb-zzz': 'due to missing support for extendpath in modulegraph',
             'import/test_nspkg3-empty': 'due to missing support for extendpath in modulegraph',
