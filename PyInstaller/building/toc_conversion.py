@@ -7,6 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+import os
+import zipfile
 import pkg_resources
 from ..depend.utils import get_path_to_egg
 
@@ -80,3 +82,11 @@ class DependencyProcessor(object):
         # TODO create a real TOC when handling of more files is added.
         return [(x, y, 'DATA') for x, y in self._datas]
 
+    def make_zipfiles_toc(self):
+        # TODO create a real TOC when handling of more files is added.
+        toc = []
+        for dist in self._distributions:
+            if zipfile.is_zipfile(dist.location):
+                toc.append(("eggs/" + os.path.basename(dist.location),
+                            dist.location, 'ZIPFILE'))
+        return toc #(x, y, 'DATA') for x, y in self._datas]
