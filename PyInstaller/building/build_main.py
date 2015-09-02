@@ -396,6 +396,7 @@ class Analysis(Target):
         deps_proc = DependencyProcessor(self.graph, additional_files_cache)
         self.binaries.extend(deps_proc.make_binaries_toc())
         self.datas.extend(deps_proc.make_datas_toc())
+        # Note: zipped eggs are collected below
 
 
         ### Look for dlls that are imported by Python 'ctypes' module.
@@ -437,14 +438,12 @@ class Analysis(Target):
         logger.info('Looking for dynamic libraries')
         self.binaries.extend(bindepend.Dependencies(self.binaries, manifest=depmanifest))
 
-        ### TODO implement including Python eggs. Shoudl be the eggs printed to console as INFO msg?
-        logger.info('Looking for eggs - TODO')
-        # TODO: ImpTracker could flag a module as residing in a zip file (because an
-        # egg that had not yet been installed??) and the old code would do this:
-        # scripts.insert(-1, ('_pyi_egg_install.py',
-        #     os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
-        # It appears that Modulegraph will expand an uninstalled egg but need test
-        self.zipfiles = TOC()
+        ### Include zipped Python eggs.
+        logger.info('Looking for eggs')
+        self.zipfiles.extend(deps_proc.make_zipfiles_toc())
+        # Note: pyiboot02_egg_install is included unconditionally in
+        # ``depend.analysis``.
+
         # Copied from original code
         if is_win:
             depmanifest.writeprettyxml()
