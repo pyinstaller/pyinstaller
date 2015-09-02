@@ -17,7 +17,8 @@ This CArchiveReader is used only by the archieve_viewer utility.
 import struct
 
 
-from PyInstaller.loader.pyimod02_archive import ArchiveReader
+from PyInstaller.loader.pyimod02_archive import (
+    ArchiveReader, PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA)
 
 
 class NotAnArchiveError(Exception):
