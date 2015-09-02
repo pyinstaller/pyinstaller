@@ -13,18 +13,13 @@ Configure PyInstaller for the current Python installation.
 """
 
 import os
-import shutil
+
 import sys
-import tempfile
 import time
 
-from PyInstaller import HOMEPATH, PLATFORM
-from PyInstaller.compat import is_win, is_darwin
-
-import PyInstaller.compat as compat
-from PyInstaller.building.datastruct import TOC
-
-import PyInstaller.log as logging
+from . import  compat
+from . import log as logging
+from .compat import is_win, is_darwin
 
 logger = logging.getLogger(__name__)
 
