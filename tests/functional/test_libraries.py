@@ -324,7 +324,7 @@ def test_matplotlib(pyi_builder):
 
 
 @importorskip('pyexcelerate')
-@pytest.mark.xfail('TODO - known to fail')
+@pytest.mark.xfail(reason='TODO - known to fail')
 def test_pyexcelerate(pyi_builder):
     pyi_builder.test_source(
         """
