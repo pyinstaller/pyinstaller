@@ -12,6 +12,7 @@ import zipfile
 import pkg_resources
 from ..depend.utils import get_path_to_egg
 from .datastruct import TOC, Tree
+from ..config import CONF
 
 # create a list of excludes suitable for Tree
 from ..utils.hooks.hookutils import PY_IGNORE_EXTENSIONS, PY_EXECUTABLE_SUFFIXES
@@ -108,9 +109,16 @@ class DependencyProcessor(object):
                             dist.location, 'ZIPFILE'))
         return toc
 
+
     @staticmethod
     def __collect_data_files_from_zip(zipfilename):
-        pass
+        workpath = os.path.join(CONF['workpath'], os.path.basename(zipfilename))
+        os.makedirs(workpath)
+        # TODO extract only those file which whould then be included
+        with zipfile.ZipFile(zipfilename) as zfh:
+            zfh.extractall(workpath)
+        return Tree(workpath, excludes=PY_IGNORE_EXTENSIONS)
+
 
     def make_zipped_data_toc(self):
         toc = TOC()
@@ -120,7 +128,8 @@ class DependencyProcessor(object):
                 toplevel = dist.get_metadata('top_level.txt').strip()
                 if dist._pyinstaller_info['zipped']:
                     # this is a zipped egg
-                    pass
+                    tree = self.__collect_data_files_from_zip(dist.location)
+                    toc.extend(tree)
                 elif dist._pyinstaller_info['zip-safe']:
                     # this is a un-zipped, zip-safe egg
                     basedir = dist.location
