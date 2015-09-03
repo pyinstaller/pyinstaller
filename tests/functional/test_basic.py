@@ -120,43 +120,9 @@ def test_multiprocess_forking(pyi_builder):
 
 # TODO skip this test if C compiler is not found.
 # TODO test it on OS X.
-def test_load_dll_using_ctypes(monkeypatch, pyi_builder, data_dir):
+def test_load_dll_using_ctypes(monkeypatch, pyi_builder, compiled_dylib):
     # Note that including the data_dir fixture copies files needed by this test.
     #
-    # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD. Don't
-    # use monkeypatch.chdir to change, then monkeypatch.undo() to restore the
-    # CWD, since this will undo ALL monkeypatches (such as the pyi_builder's
-    # additions to sys.path), breaking the test.
-    old_wd = os.getcwd()
-    os.chdir(data_dir.strpath)
-    try:
-        if is_win:
-            # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
-            march = '-m32' if architecture() == '32bit' else '-m64'
-            ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
-            if ret != 0:
-                # Find path to cl.exe file.
-                from distutils.msvccompiler import MSVCCompiler
-                comp = MSVCCompiler()
-                comp.initialize()
-                cl_path = comp.cc
-                # Fallback to msvc.
-                ret = subprocess.call([cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
-        elif is_darwin:
-            # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
-            arch = 'i386' if architecture() == '32bit' else 'x86_64'
-            cmd = ('gcc -arch ' + arch + ' -Wall -dynamiclib '
-                'ctypes_dylib.c -o ctypes_dylib.dylib -headerpad_max_install_names')
-            ret = subprocess.call(cmd, shell=True)
-            id_dylib = os.path.abspath('ctypes_dylib.dylib')
-            ret = subprocess.call('install_name_tool -id %s ctypes_dylib.dylib' % (id_dylib,), shell=True)
-        else:
-            ret = subprocess.call('gcc -fPIC -shared ctypes_dylib.c -o ctypes_dylib.so', shell=True)
-        assert ret == 0, 'Compile ctypes_dylib failed.'
-    finally:
-        # Reset the CWD directory.
-        os.chdir(old_wd)
-
     # TODO Make sure PyInstaller is able to find the library and bundle it with the app.
     # # If the required dylib does not reside in the current directory, the Analysis
     # # class machinery, based on ctypes.util.find_library, will not find it. This
