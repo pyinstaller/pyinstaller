@@ -23,7 +23,7 @@ import PyInstaller.compat
 import PyInstaller.log
 
 
-from . import get_version
+from . import __version__
 from .compat import check_requirements
 from .utils import misc
 from . import log as logging
@@ -75,7 +75,7 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
 
         # Print program version and exit
         if opts.version:
-            print(get_version())
+            print(__version__)
             raise SystemExit(0)
 
         if not args:
@@ -86,7 +86,7 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
         # as the first line to stdout.
         # This helps identify PyInstaller, Python and platform version
         #  when users report issues.
-        logger.info('PyInstaller: %s' % get_version())
+        logger.info('PyInstaller: %s' % __version__)
         logger.info('Python: %s' % platform.python_version())
         logger.info('Platform: %s' % platform.platform())
 

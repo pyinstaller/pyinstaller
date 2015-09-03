@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,8 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-__all__ = ('HOMEPATH', 'PLATFORM',
-           'VERSION', 'get_version')
+__all__ = ('HOMEPATH', 'PLATFORM', '__version__')
 
 import os
 
@@ -17,8 +16,6 @@ from . import compat
 from .compat import is_darwin, is_win, is_py2
 from .utils.git import get_repo_revision
 
-
-VERSION = (3, 0, 0, 'dev0', get_repo_revision())
 
 
 # This ensures for Python 2 that PyInstaller will work on Windows with paths
@@ -37,6 +34,14 @@ if is_win and is_py2:
             pass
 
 
+if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
+    # PyInstaller is run directly of source without installation.
+    # Fixed version and appended repo revision if '.git' dir exists.
+    __version__ = '3.4.dev0' + get_repo_revision()  # Empty str if no revision.
+else:
+    # PyInstaller was installed by `python setup.py install'.
+    import pkg_resources
+    __version__ = pkg_resources.get_distribution('PyInstaller').version
 
 
 ## Default values of paths where to put files created by PyInstaller.
@@ -54,15 +59,3 @@ PLATFORM = compat.system() + '-' + compat.architecture()
 # e.g. 'arm'
 if compat.machine():
     PLATFORM += '-' + compat.machine()
-
-
-def get_version():
-    version = '%s.%s' % (VERSION[0], VERSION[1])
-    if VERSION[2]:  # It has to be number >= 1.
-        version = '%s.%s' % (version, VERSION[2])
-    if len(VERSION) >= 4 and VERSION[3]:
-        version = '%s.%s' % (version, VERSION[3])
-        # include git revision in version string
-        if VERSION[3].startswith('dev') and len(VERSION) >= 5 and len(VERSION[4]) > 0:
-            version = '%s+%s' % (version, VERSION[4])
-    return version

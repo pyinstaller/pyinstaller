@@ -28,7 +28,8 @@ def get_repo_revision():
             changed = compat.exec_command_rc('git', 'diff-index', '--quiet', 'HEAD')
             if changed:
                 rev = rev + '-mod'
-            return rev
+            # According to pep440 local version identifier starts with '+'.
+            return '+' + rev
     except:
         pass
     return ''

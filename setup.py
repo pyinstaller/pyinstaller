@@ -9,16 +9,9 @@
 #-----------------------------------------------------------------------------
 
 
-import os
-import stat
 import sys
-
 from setuptools import setup, find_packages
-from distutils.command.build_py import build_py
-from distutils.command.sdist import sdist
-
-from PyInstaller import get_version
-import PyInstaller.utils.git
+from PyInstaller import __version__ as version
 
 
 REQUIREMENTS = ['setuptools']
@@ -81,57 +74,12 @@ Classifier: Topic :: System :: Software Distribution
 Classifier: Topic :: Utilities
 """.splitlines()
 
-# Make the distribution files to always report the git-revision used
-# then building the distribution packages. This is done by replacing
-# PyInstaller/utils/git.py within the dist/build by a fake-module
-# which always returns the current git-revision. The original
-# source-file is unchanged.
-#
-# This has to be done in 'build_py' for bdist-commands and in 'sdist'
-# for sdist-commands.
-
-def _write_git_version_file(filename):
-    """
-    Fake PyInstaller.utils.git.py to always return the current revision.
-    """
-    git_version = PyInstaller.utils.git.get_repo_revision()
-    st = os.stat(filename)
-    # remove the file first for the case it's hard-linked to the
-    # original file
-    os.remove(filename)
-    git_mod = open(filename, 'w')
-    template = "def get_repo_revision(): return %r"
-    try:
-        git_mod.write(template % git_version)
-    finally:
-        git_mod.close()
-    os.chmod(filename, stat.S_IMODE(st.st_mode))
-
-
-class my_build_py(build_py):
-    def build_module(self, module, module_file, package):
-        res = build_py.build_module(self, module, module_file, package)
-        if module == 'git' and package == 'PyInstaller.utils':
-            filename = self.get_module_outfile(
-                self.build_lib, package.split('.'), module)
-            _write_git_version_file(filename)
-        return res
-
-
-class my_sdist(sdist):
-    def make_release_tree(self, base_dir, files):
-        res = sdist.make_release_tree(self, base_dir, files)
-        build_py = self.get_finalized_command('build_py')
-        filename = build_py.get_module_outfile(
-            base_dir, ['PyInstaller', 'utils'], 'git')
-        _write_git_version_file(filename)
-        return res
 
 setup(
     install_requires=REQUIREMENTS,
 
     name='PyInstaller',
-    version=get_version(),
+    version=version,
 
     description=DESC,
     long_description=LONG_DESC,
@@ -158,10 +106,6 @@ setup(
         'PyInstaller.loader': ['rthooks.dat'],
         },
     include_package_data=True,
-    cmdclass = {
-        'sdist': my_sdist,
-        'build_py': my_build_py,
-        },
 
     entry_points="""
     [console_scripts]
