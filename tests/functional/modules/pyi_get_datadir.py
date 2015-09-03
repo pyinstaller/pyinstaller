@@ -15,12 +15,6 @@
 import sys
 import os.path
 
-# Globals
-# -------
-# Directory storing test-specific data.
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        '..', 'data')
-
 # Functions
 # ---------
 # This function returns the location of the
@@ -37,5 +31,6 @@ def get_data_dir():
         return gettemp('data')
     else:
         # 2. Not frozen: rely on the filesystem layout of this git repository.
-        return DATA_DIR
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            '..', 'data')
 
