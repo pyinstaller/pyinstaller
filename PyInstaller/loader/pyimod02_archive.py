@@ -34,6 +34,12 @@ import zlib
 CRYPT_BLOCK_SIZE = 16
 
 
+# content types for PYZ
+PYZ_TYPE_MODULE = 0
+PYZ_TYPE_PKG = 1
+PYZ_TYPE_DATA = 2
+
+
 class ArchiveFile(object):
     """
     File class support auto open when access member from file object
@@ -305,16 +311,18 @@ class ZlibArchiveReader(ArchiveReader):
             self.cipher = None
 
     def extract(self, name):
-        (ispkg, pos, lngth) = self.toc.get(name, (0, None, 0))
+        (typ, pos, length) = self.toc.get(name, (0, None, 0))
         if pos is None:
             return None
         with self.lib:
             self.lib.seek(self.start + pos)
-            obj = self.lib.read(lngth)
+            obj = self.lib.read(length)
         try:
             if self.cipher:
                 obj = self.cipher.decrypt(obj)
-            co = marshal.loads(zlib.decompress(obj))
+            obj = zlib.decompress(obj)
+            if typ in (PYZ_TYPE_MODULE, PYZ_TYPE_PKG):
+                obj = marshal.loads(obj)
         except EOFError:
             raise ImportError("PYZ entry '%s' failed to unmarshal" % name)
-        return ispkg, co
+        return typ, obj

@@ -10,7 +10,7 @@
 
 import sys
 
-__testname__ = 'test_eggs2'
+__testname__ = 'test_eggs1'
 
 a = Analysis([__testname__ + '.py'],
              pathex=['unzipped.egg', 'zipped.egg'])

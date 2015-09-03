@@ -31,7 +31,7 @@ from types import CodeType
 import marshal
 import zlib
 
-from .readers import CArchiveReader
+from .readers import CArchiveReader, PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA
 from ..compat import BYTECODE_MAGIC
 
 
@@ -359,24 +359,35 @@ class ZlibArchiveWriter(ArchiveWriter):
             self.crypted = 0
 
     def add(self, entry):
-        name = entry[0]
-        pth = entry[1]
-        if pth in ('-', None):
-            # This is a NamespacePackage, modulegraph marks them
-            # by using the filename '-'. (But wants to use None,
-            # so check for None, too, to be forward-compatible.)
-            ispkg = True
+        name, path, typ = entry
+        if typ == 'PYMODULE':
+            typ = PYZ_TYPE_MODULE
+            if path in ('-', None):
+                # This is a NamespacePackage, modulegraph marks them
+                # by using the filename '-'. (But wants to use None,
+                # so check for None, too, to be forward-compatible.)
+                typ = PYZ_TYPE_PKG
+            else:
+                base, ext = os.path.splitext(os.path.basename(path))
+                if base == '__init__':
+                    typ = PYZ_TYPE_PKG
+            data = marshal.dumps(self.code_dict[name])
         else:
-            base, ext = os.path.splitext(os.path.basename(pth))
-            ispkg = base == '__init__'
+            typ = PYZ_TYPE_DATA
+            with open(path, 'rb') as fh:
+                data = fh.read()
+            # Use forward slash as path-separator in PYZ (like in zipfiles)
+            if os.path.altsep:
+                name = name.replace(os.path.altsep, os.path.sep)
+            name = name.replace(os.path.sep, '/')
 
-        obj = zlib.compress(marshal.dumps(self.code_dict[name]), self.COMPRESSION_LEVEL)
+        obj = zlib.compress(data, self.COMPRESSION_LEVEL)
 
         # First compress then encrypt.
         if self.crypted:
             obj = self.cipher.encrypt(obj)
 
-        self.toc[name] = (ispkg, self.lib.tell(), len(obj))
+        self.toc[name] = (typ, self.lib.tell(), len(obj))
         self.lib.write(obj)
 
     def update_headers(self, tocpos):

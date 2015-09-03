@@ -79,7 +79,6 @@ class SkipChecker(object):
         # Test-cases failing for a known reason and the reason
         self.KNOWN_TO_FAIL = {
             'import/test_onefile_pkgutil-get_data__main__': 'Our import mechanism returns the wrong loader-class for __main__.',
-            'import/test_eggs2': 'due to modulegraph egg-data is not included',
             'import/test_nspkg3': 'due to missing support for extendpath in modulegraph',
             'import/test_nspkg3-bbb-zzz': 'due to missing support for extendpath in modulegraph',
             'import/test_nspkg3-empty': 'due to missing support for extendpath in modulegraph',
@@ -150,6 +149,7 @@ class SkipChecker(object):
 
             # Require the c-extension module to be present, too
             'import/test_c_extension': ['simplejson._speedups'],
+            'import/test_eggs1': ['pkg_resources'],
             'import/test_eggs2': ['pkg_resources'],
             'import/test_onefile_c_extension': ['simplejson._speedups'],
             'import/test_onefile_zipimport': ['pkg_resources'],
@@ -169,9 +169,6 @@ class SkipChecker(object):
 
         # Other dependencies of some tests.
         self.DEPENDENCIES = {
-            # Support for unzipped eggs is not yet implemented.
-            # http://www.pyinstaller.org/ticket/541
-            'import/test_eggs1': ['Unzipped eggs not yet implemented.'],
             }
 
     def _check_known_fail(self, test_name):
@@ -247,6 +244,7 @@ class SkipChecker(object):
 
 SPEC_FILE = set([
     'import/test_onefile_pkg_resources',
+    'import/test_pkgutil-get_data',
     'import/test_onefile_pkgutil-get_data',
     'import/test_onefile_pkgutil-get_data__main__',
     'basic/test_option_verbose',
@@ -255,6 +253,7 @@ SPEC_FILE = set([
     'basic/test_pyz_as_external_file',
     'basic/test_threading2',
     'import/test_app_with_plugins',
+    'import/test_eggs1',
     'import/test_eggs2',
     'import/test_hiddenimport',
     'import/test_nspkg1-bbb-zzz',

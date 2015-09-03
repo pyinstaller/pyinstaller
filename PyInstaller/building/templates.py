@@ -22,7 +22,7 @@ a = Analysis(%(scripts)s,
              runtime_hooks=%(runtime_hooks)r,
              excludes=%(excludes)s,
              cipher=block_cipher)
-pyz = PYZ(a.pure,
+pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
@@ -45,7 +45,7 @@ a = Analysis(%(scripts)s,
              runtime_hooks=%(runtime_hooks)r,
              excludes=%(excludes)s,
              cipher=block_cipher)
-pyz = PYZ(a.pure,
+pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
@@ -73,7 +73,7 @@ a = Analysis(%(scripts)s,
              runtime_hooks=%(runtime_hooks)r,
              excludes=%(excludes)s,
              cipher=block_cipher)
-pyz = PYZ(a.pure,
+pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,

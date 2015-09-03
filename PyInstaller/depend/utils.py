@@ -357,21 +357,27 @@ def _resolveCtypesImports(cbinaries):
     return ret
 
 
-def is_path_to_egg(pth):
+def get_path_to_egg(path):
+    """
+    Return the path to the python egg file, if the path points to a
+    file inside a (or to an egg directly).
+    Return `None` otherwise.
+    """
+    # This assumes, eggs are not nested.
+    # TODO add support for unpacked eggs and for new .whl packages.
+    lastpath = None  # marker to stop recursion
+    while path and path != lastpath:
+        if os.path.splitext(path)[1].lower() == (".egg"):
+            if os.path.isfile(path) or os.path.isdir(path):
+                return path
+        lastpath = path
+        path = os.path.dirname(path)
+    return None
+
+
+def is_path_to_egg(path):
     """
     Check if path points to a file inside a python egg file (or to an egg
        directly).
     """
-    # TODO add support for unpacked eggs and for new .whl packages.
-    if os.path.altsep:
-        pth = pth.replace(os.path.altsep, os.path.sep)
-    components = pth.split(os.path.sep)
-    sep = os.path.sep
-
-    for i, name in zip(range(0, len(components)), components):
-        if name.lower().endswith(".egg"):
-            eggpth = sep.join(components[:i + 1])
-            if os.path.isfile(eggpth):
-                # eggs can also be directories!
-                return True
-    return False
+    return get_path_to_egg(path) is not None

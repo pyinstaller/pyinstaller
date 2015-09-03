@@ -45,29 +45,38 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc, name=None, cipher=None):
+    def __init__(self, *tocs, **kwargs):
         """
-        toc
-                A TOC (Table of Contents), normally an Analysis.pure
+        tocs
+                One or more TOCs (Tables of Contents), normally an
+                Analysis.pure.
 
                 If this TOC has an attribute `_code_cache`, this is
                 expected to be a dict of module code objects from
                 ModuleGraph.
 
-        name
+        kwargs
+            Possible keywork arguments:
+
+            name
                 A filename for the .pyz. Normally not needed, as the generated
                 name will do fine.
-        cipher
+            cipher
                 The block cipher that will be used to encrypt Python bytecode.
 
         """
 
         from ..config import CONF
         Target.__init__(self)
-        self.toc = toc
+        name = kwargs.get('name', None)
+        cipher = kwargs.get('cipher', None)
+        self.toc = TOC()
         # If available, use code objects directly from ModuleGraph to
         # speed up PyInstaller.
-        self.code_dict = getattr(toc, '_code_cache', {})
+        self.code_dict = {}
+        for t in tocs:
+            self.toc.extend(t)
+            self.code_dict.update(getattr(t, '_code_cache', {}))
         self.name = name
         if name is None:
             self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
@@ -154,7 +163,7 @@ class PYZ(Target):
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
         for entry in toc:
-            if not entry[0] in self.code_dict:
+            if not entry[0] in self.code_dict and entry[2] == 'PYMODULE':
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
                 self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])
