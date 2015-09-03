@@ -70,11 +70,12 @@ class PYZ(Target):
         Target.__init__(self)
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
-        self.toc = reduce(lambda t1, t2: t1+t2, tocs)
+        self.toc = TOC()
         # If available, use code objects directly from ModuleGraph to
         # speed up PyInstaller.
         self.code_dict = {}
         for t in tocs:
+            self.toc.extend(t)
             self.code_dict.update(getattr(t, '_code_cache', {}))
         self.name = name
         if name is None:
