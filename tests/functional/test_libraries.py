@@ -25,11 +25,10 @@ from PyInstaller.utils.tests import importorskip, xfail_py2
 # Django test might sometimes hang.
 @pytest.mark.timeout(timeout=7*60)
 def test_django(pyi_builder, monkeypatch, data_dir):
-    script_dir = os.path.join(data_dir, 'django_site')
-    # Extend sys.path so PyInstaller could find modules from 'django_site' project.
-    monkeypatch.syspath_prepend(script_dir)
+    # Extend sys.path so PyInstaller could find modules from 'tmpdir/django/'.
+    monkeypatch.syspath_prepend(data_dir.strpath)
     # Django uses manage.py as the main script.
-    script = os.path.join(script_dir, 'manage.py')
+    script = os.path.join(data_dir.strpath, 'manage.py')
     # Create the exe, run django command 'check' to do basic sanity checking of the
     # executable.
     pyi_builder.test_script(script, app_name='django_site', app_args=['check'])
@@ -51,9 +50,7 @@ def test_zmq(pyi_builder):
 
 @importorskip('sphinx')
 def test_sphinx(tmpdir, pyi_builder, data_dir):
-    # Copy the data/sphix directory to the tempdir used by this test.
-    shutil.copytree(os.path.join(data_dir, 'sphinx'),
-                    os.path.join(tmpdir.strpath, 'data', 'sphinx'))
+    # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_sphinx.py')
 
 @pytest.mark.xfail(reason='pkg_resources is not supported yet.')
@@ -76,11 +73,7 @@ def test_PyQt4_QtWebKit(pyi_builder):
 @pytest.mark.xfail(reason='Reports "ImportError: No module named QtWebKit.QWebView".')
 @importorskip('PyQt4')
 def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
-    # Copy the data/PyQt4-uic.ui file to the tempdir used by this test.
-    os.mkdir(os.path.join(tmpdir.strpath, 'data'))
-    shutil.copy(os.path.join(data_dir, 'PyQt4-uic.ui'),
-                os.path.join(tmpdir.strpath, 'data'))
-
+    # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
 

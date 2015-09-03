@@ -119,41 +119,42 @@ def test_multiprocess_forking(pyi_builder):
 
 # TODO skip this test if C compiler is not found.
 # TODO test it on OS X.
-def test_load_dll_using_ctypes(tmpdir, monkeypatch, pyi_builder, data_dir):
-    # Copy code for 'ctypes_dylib' into tmpdir.
-    src = os.path.join(data_dir, 'ctypes_dylib')
-    dst = tmpdir.strpath
-    files = glob.glob(src + '/*.c')
-    for f in files:
-        shutil.copy(f, dst)
-
-    # Compile the ctypes_dylib there.
-    monkeypatch.chdir(dst)  # Make dst the CWD directory.
-    if is_win:
-        # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
-        march = '-m32' if architecture() == '32bit' else '-m64'
-        ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
-        if ret != 0:
-            # Find path to cl.exe file.
-            from distutils.msvccompiler import MSVCCompiler
-            comp = MSVCCompiler()
-            comp.initialize()
-            cl_path = comp.cc
-            # Fallback to msvc.
-            ret = subprocess.call([cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
-    elif is_darwin:
-        # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
-        arch = 'i386' if architecture() == '32bit' else 'x86_64'
-        cmd = ('gcc -arch ' + arch + ' -Wall -dynamiclib '
-            'ctypes_dylib.c -o ctypes_dylib.dylib -headerpad_max_install_names')
-        ret = subprocess.call(cmd, shell=True)
-        id_dylib = os.path.abspath('ctypes_dylib.dylib')
-        ret = subprocess.call('install_name_tool -id %s ctypes_dylib.dylib' % (id_dylib,), shell=True)
-    else:
-        ret = subprocess.call('gcc -fPIC -shared ctypes_dylib.c -o ctypes_dylib.so', shell=True)
-    assert ret == 0, 'Compile ctypes_dylib failed.'
-    # Reset the CWD directory.
-    monkeypatch.undo()
+def test_load_dll_using_ctypes(monkeypatch, pyi_builder, data_dir):
+    # Note that including the data_dir fixture copies files needed by this test.
+    #
+    # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD. Don't
+    # use monkeypatch.chdir to change, then monkeypatch.undo() to restore the
+    # CWD, since this will undo ALL monkeypatches (such as the pyi_builder's
+    # additions to sys.path), breaking the test.
+    old_wd = os.getcwd()
+    os.chdir(data_dir.strpath)
+    try:
+        if is_win:
+            # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
+            march = '-m32' if architecture() == '32bit' else '-m64'
+            ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
+            if ret != 0:
+                # Find path to cl.exe file.
+                from distutils.msvccompiler import MSVCCompiler
+                comp = MSVCCompiler()
+                comp.initialize()
+                cl_path = comp.cc
+                # Fallback to msvc.
+                ret = subprocess.call([cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
+        elif is_darwin:
+            # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
+            arch = 'i386' if architecture() == '32bit' else 'x86_64'
+            cmd = ('gcc -arch ' + arch + ' -Wall -dynamiclib '
+                'ctypes_dylib.c -o ctypes_dylib.dylib -headerpad_max_install_names')
+            ret = subprocess.call(cmd, shell=True)
+            id_dylib = os.path.abspath('ctypes_dylib.dylib')
+            ret = subprocess.call('install_name_tool -id %s ctypes_dylib.dylib' % (id_dylib,), shell=True)
+        else:
+            ret = subprocess.call('gcc -fPIC -shared ctypes_dylib.c -o ctypes_dylib.so', shell=True)
+        assert ret == 0, 'Compile ctypes_dylib failed.'
+    finally:
+        # Reset the CWD directory.
+        os.chdir(old_wd)
 
     # TODO Make sure PyInstaller is able to find the library and bundle it with the app.
     # # If the required dylib does not reside in the current directory, the Analysis
@@ -194,12 +195,11 @@ def test_python_makefile(pyi_builder):
 
 
 def test_set_icon(pyi_builder, data_dir):
-    icon_dir = os.path.join(data_dir, 'icons')
     if is_win:
-        args = ['--icon', os.path.join(icon_dir, 'pyi_icon.ico')]
+        args = ['--icon', os.path.join(data_dir.strpath, 'pyi_icon.ico')]
     elif is_darwin:
         # On OS X icon is applied only for windowed mode.
-        args = ['--windowed', '--icon', os.path.join(icon_dir, 'pyi_icon.icns')]
+        args = ['--windowed', '--icon', os.path.join(data_dir.strpath, 'pyi_icon.icns')]
     else:
         pytest.skip('option --icon works only on Windows and Mac OS X')
     # Just use helloworld script.

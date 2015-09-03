@@ -7,6 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+# Imports
+# =======
 # Futures
 # -------
 from __future__ import print_function
@@ -23,6 +25,11 @@ import sys
 import inspect
 import textwrap
 import io
+import shutil
+
+# Third-party imports
+# -------------------
+import py
 
 # Local imports
 # -------------
@@ -38,7 +45,7 @@ from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
 # Globals
-# -------
+# =======
 # Directory with Python scripts for functional tests. E.g. main scripts, etc.
 _SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
 # Directory with testing modules used in some tests.
@@ -48,10 +55,31 @@ _LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 # Directory storing test-specific data.
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
-# Provide test access to _DATA_DIR via a fixture.
+# Code
+# ====
+# Fixtures
+# --------
+# Define a fixure for the DataDir object.
 @pytest.fixture
-def data_dir():
-    return _DATA_DIR
+def data_dir(
+  # The request object for this test. See
+  # https://pytest.org/latest/builtin.html#_pytest.python.FixtureRequest
+  # and
+  # https://pytest.org/latest/fixture.html#fixtures-can-introspect-the-requesting-test-context.
+  request,
+  # The tmpdir object for this test. See
+  # https://pytest.org/latest/tmpdir.html.
+  tmpdir):
+
+    # Strip the leading 'test_' from the test's name.
+    name = request.function.__name__[5:]
+    # Copy _DATA_DIR/<name> to the tmpdir.
+    source_data = os.path.join(_DATA_DIR, name)
+    tmp_data = os.path.join(tmpdir.strpath, 'data', name)
+    shutil.copytree(source_data, tmp_data)
+
+    # Return a py.path.local object representing this directory.
+    return py.path.local(tmp_data)
 
 class AppBuilder(object):
 
