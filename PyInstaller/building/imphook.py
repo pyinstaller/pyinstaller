@@ -17,6 +17,7 @@ import collections
 import glob
 import os.path
 import re
+import warnings
 
 from .. import log as logging
 from ..compat import importlib_load_source, UserDict
@@ -181,6 +182,8 @@ class FakeModule(object):
         The passed argument may be either a list of module names *or* a single
         module name.
         """
+        warnings.warn("Deprecated: Use the hook's attribute `hiddenimports'",
+                      DeprecationWarning)
         if not isinstance(names, list):
             names = [names]  # Allow passing string or list.
         self._added_imports.extend(names) # save change to implement in graph later
@@ -196,6 +199,8 @@ class FakeModule(object):
         The passed argument may be either a list of module names *or* a single
         module name.
         """
+        warnings.warn("Deprecated: Use the hook's attribute `excludedimports'",
+                      DeprecationWarning)
         # just save to implement in graph later
         if not isinstance(names, list):
             names = [names]  # Allow passing string or list.
@@ -208,6 +213,8 @@ class FakeModule(object):
 
         The third element of each such tuple *must* be `BINARY`.
         """
+        warnings.warn("Deprecated: Use the hook's attribute `binaries'",
+                      DeprecationWarning)
         for item in list_of_tuples:
             self._added_binaries.append(item)
             self.binaries.append(item)
@@ -219,6 +226,8 @@ class FakeModule(object):
 
         The third element of each such tuple *must* be `DATA`.
         """
+        warnings.warn("Deprecated: Use the hook's attribute `datas'",
+                      DeprecationWarning)
         self.datas.extend(list_of_tuples)
 
     def retarget(self, path_to_new_code):
