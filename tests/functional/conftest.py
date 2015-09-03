@@ -464,4 +464,4 @@ def compiled_dylib(tmpdir):
         # Reset the CWD directory.
         old_wd.chdir()
 
-    return tmpdir
+    return tmp_data_dir
