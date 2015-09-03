@@ -571,11 +571,11 @@ MODULE_TYPES_TO_TOC_DICT = {
     'BuiltinModule': 'BUILTIN',
     'NamespacePackage': 'PYMODULE',
     # Bad modules.
-    'BadModule': 'MISSING',
-    'ExcludedModule': 'MISSING',
-    'InvalidSourceModule': 'MISSING',
-    'InvalidCompiledModule': 'MISSING',
-    'MissingModule': 'MISSING',
+    'BadModule': 'bad',
+    'ExcludedModule': 'excluded',
+    'InvalidSourceModule': 'invalid',
+    'InvalidCompiledModule': 'invalid',
+    'MissingModule': 'missing',
     # Other.
     'FlatPackage': 'PYMODULE',
     'ArchiveModule': 'PYMODULE',
