@@ -15,6 +15,10 @@
 import sys
 import os.path
 
+# Local imports
+# -------------
+from pyi_testmod_gettemp import gettemp
+
 # Functions
 # ---------
 # This function returns the location of the
@@ -23,9 +27,6 @@ import os.path
 def get_data_dir():
     # Some tests need input files to operate on. There are two cases:
     if getattr(sys, 'frozen', False):
-        # This local import only works when frozen, since this directory's path
-        # is added to the Python path. Hence, its placement here.
-        from pyi_testmod_gettemp import gettemp
         # 1. Frozen: rely on gettemp to find the correct directory both in
         #    onefile and in onedir modes.
         return gettemp('data')
