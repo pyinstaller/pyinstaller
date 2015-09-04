@@ -107,7 +107,7 @@ class PYZ(Target):
             return True
         return False
 
-
+    # TODO Could this function be merged with 'PyInstaller.utils.misc:get_code_object()'?
     def __get_code(self, modname, filename):
         """
         Get the code-object for a module.
