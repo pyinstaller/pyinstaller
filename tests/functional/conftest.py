@@ -180,7 +180,7 @@ class AppBuilder(object):
         # Empty list means that PyInstaller probably failed to create any executable.
         assert exes != [], 'No executable file was found.'
         for exe in exes:
-            retcode = self._run_executable(exe, args, run_from_path)
+            retcode = self._run_executable(exe, args, run_from_path, runtime)
             assert retcode == 0, 'Running exe %s failed with return-code %s.' % (exe, retcode)
             # Try to find .toc log file. .toc log file has the same basename as exe file.
             toc_log = os.path.join(_LOGS_DIR, os.path.basename(exe) + '.toc')
@@ -222,7 +222,7 @@ class AppBuilder(object):
                     exes.append(prog)
         return exes
 
-    def _run_executable(self, prog, args, run_from_path):
+    def _run_executable(self, prog, args, run_from_path, runtime):
         """
         Run executable created by PyInstaller.
 
@@ -275,8 +275,19 @@ class AppBuilder(object):
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
-        retcode = subprocess.call(args, executable=exe_path, stdout=sys.stdout, stderr=sys.stderr,
-                                  env=prog_env, cwd=prog_cwd)
+        if is_py2:  # Timeout keyword supported only in Python 3.3+
+            # TODO use module 'subprocess32' which implements timeout for Python 2.7.
+            retcode = subprocess.call(args, executable=exe_path, stdout=sys.stdout,
+                                      stderr=sys.stderr, env=prog_env, cwd=prog_cwd)
+        else:
+            try:
+                retcode = subprocess.call(args, executable=exe_path, stdout=sys.stdout, stderr=sys.stderr,
+                                      env=prog_env, cwd=prog_cwd, timeout=runtime)
+            except subprocess.TimeoutExpired:
+                # When 'timeout' is set then expired timeout is a good sing
+                # that the executable was running successfully for a specified time.
+                # TODO Is there a better way return success than 'retcode = 0'?
+                retcode = 0
         return retcode
 
     def _test_building(self, args):
