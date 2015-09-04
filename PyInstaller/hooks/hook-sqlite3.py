@@ -11,3 +11,5 @@
 from PyInstaller.hooks.hookutils import collect_submodules
 
 hiddenimports = collect_submodules('sqlite3')
+# Exclude the test submodule as this causes Tkinter to be included
+hiddenimports = [x for x in hiddenimports if 'test.' not in x]
