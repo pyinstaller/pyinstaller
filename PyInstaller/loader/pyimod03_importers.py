@@ -574,7 +574,7 @@ def install():
     3. C extension modules
     4. Modules from sys.path
     """
-    # Python 3 already has _frozen_importlib.BuildinImporter on sys.meta_path.
+    # Python 3 already has _frozen_importlib.BuiltinImporter on sys.meta_path.
     if sys.version_info[0] == 2:
         # First look in the built-in modules and not bundled ZIP archive.
         sys.meta_path.append(BuiltinImporter())
