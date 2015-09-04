@@ -29,16 +29,16 @@ TEST_MOD = 'Tree_files'
 _DATA_BASEPATH = join(os.path.dirname(os.path.abspath(__file__)), TEST_MOD)
 
 _TEST_FILES = sorted([
-    'subpkg/twelve.py',
-    'subpkg/thirteen.txt',
-    'subpkg/init__.py',
+    join('subpkg', 'twelve.py'),
+    join('subpkg', 'thirteen.txt'),
+    join('subpkg', 'init__.py'),
     'two.py',
     'dynamiclib.dylib',
-    'py_files_not_in_package/sub_pkg/three.py',
-    'py_files_not_in_package/sub_pkg/init__.py',
-    'py_files_not_in_package/one.py',
-    'py_files_not_in_package/data/eleven.dat',
-    'py_files_not_in_package/ten.dat',
+    join('py_files_not_in_package', 'sub_pkg', 'three.py'),
+    join('py_files_not_in_package', 'sub_pkg', 'init__.py'),
+    join('py_files_not_in_package', 'one.py'),
+    join('py_files_not_in_package', 'data', 'eleven.dat'),
+    join('py_files_not_in_package', 'ten.dat'),
     'dynamiclib.dll',
     'pyextension.pyd',
     'nine.dat',
@@ -58,10 +58,10 @@ _PARAMETERS = (
       if not f.startswith('subpkg')]),
     (None, ['subpkg', 'sub_pkg'],
      [f for f in _TEST_FILES 
-      if not (f.startswith('subpkg') or '/sub_pkg/' in f)]),
+      if not (f.startswith('subpkg') or os.sep+'sub_pkg'+os.sep in f)]),
     ('klm', ['subpkg', 'sub_pkg', '*.py', '*.pyd'],
      [join('klm', f) for f in _TEST_FILES 
-      if not (f.startswith('subpkg') or '/sub_pkg/' in f or 
+      if not (f.startswith('subpkg') or os.sep+'sub_pkg'+os.sep in f or
               f.endswith(('.py', '.pyd')))]),
 )
 
