@@ -9,7 +9,6 @@
 
 
 import os
-import shutil
 import pytest
 
 from os.path import join
@@ -96,35 +95,13 @@ class TestRemoveExtension(object):
 
 # The name of the hookutils test files directory
 TEST_MOD = 'hookutils_files'
-# Directory where test-specific data is stored
-_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-
-@pytest.fixture
-def hookutils_files(request, tmpdir, scope='module'):
-    """
-    Copy hookutils_file to a temporary directory to avoid bytecode-files
-    being there.
-    """
-    # `tmpdir` is the tmpdir object for this test. See
-    # https://pytest.org/latest/tmpdir.html.
-
-    # Copy _DATA_DIR/TEST_MOD to tmpdir/TEST_MOD.
-    source_data = os.path.join(_DATA_DIR, TEST_MOD)
-    tmp_data = tmpdir.join('data', TEST_MOD).strpath
-    shutil.copytree(source_data, tmp_data)
-    # Return a py.path.local object representing this directory.
-    return tmp_data
 
 
 @pytest.fixture
-def mod_list(monkeypatch, hookutils_files):
-    """
-    Add path with 'hookutils_files' module to PYTHONPATH so tests
-    could find this module - useful for subprocesses.
-    """
-    # `hookutils_files`` is the fixture to copy the file to a
-    # temporary directory.
-    pth = os.path.dirname(hookutils_files)
+def mod_list(monkeypatch):
+    # Add path with 'hookutils_files' module to PYTHONPATH so tests
+    # could find this module - useful for subprocesses.
+    pth = os.path.dirname(os.path.abspath(__file__))
     monkeypatch.setenv('PYTHONPATH', pth)
     # Use the hookutils_test_files package for testing.
     return collect_submodules(TEST_MOD)
