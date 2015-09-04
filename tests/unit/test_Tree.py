@@ -25,26 +25,24 @@ class Tree(PyInstaller.building.datastruct.Tree):
         self.tocbasename = ''
         self.assemble()
 
-# Reuse the hookutils test files directory
-TEST_MOD = 'hookutils_files'
+TEST_MOD = 'Tree_files'
 _DATA_BASEPATH = join(os.path.dirname(os.path.abspath(__file__)), TEST_MOD)
-# :todo: This will fail if some ``__pychace__`` file exists for any
-# reason
+
 _TEST_FILES = sorted([
     'subpkg/twelve.py',
     'subpkg/thirteen.txt',
-    'subpkg/__init__.py',
+    'subpkg/init__.py',
     'two.py',
     'dynamiclib.dylib',
     'py_files_not_in_package/sub_pkg/three.py',
-    'py_files_not_in_package/sub_pkg/__init__.py',
+    'py_files_not_in_package/sub_pkg/init__.py',
     'py_files_not_in_package/one.py',
     'py_files_not_in_package/data/eleven.dat',
     'py_files_not_in_package/ten.dat',
     'dynamiclib.dll',
     'pyextension.pyd',
     'nine.dat',
-    '__init__.py',
+    'init__.py',
     'pyextension.so',
 ])
 
