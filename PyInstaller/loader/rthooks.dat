@@ -8,6 +8,7 @@
     'PyQt4':      ['pyi_rth_qt4plugins.py'],
     'PyQt5':      ['pyi_rth_qt5.py', 'pyi_rth_qt5plugins.py'],
     'PyQt5.QtQuick':  ['pyi_rth_qml.py'],
+    'ssl':        ['pyi_rth_ssl.py'],
     '_tkinter':    ['pyi_rth__tkinter.py'],
     'twisted.internet.reactor':        ['pyi_rth_twisted.py'],
     'usb':        ['pyi_rth_usb.py'],
