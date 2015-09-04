@@ -314,6 +314,8 @@ def test_matplotlib(pyi_builder):
         print(('MATPLOTLIBDATA: %s' % datadir))
         if not datadir.startswith(sys._MEIPASS):
             raise SystemExit('MATPLOTLIBDATA not pointing to sys._MEIPASS.')
+        # This import was reported to fail with matplotlib 1.3.0.
+        from mpl_toolkits import axes_grid1
         """)
 
 
