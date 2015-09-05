@@ -22,9 +22,9 @@ from PyInstaller.utils.tests import importorskip, xfail_py2
 _RUNTIME = 3  # In seconds.
 
 
-@pytest.mark.xfail(reason='TODO')
-@xfail_py2
+#@xfail_py2
 @importorskip('IPython')
+@pytest.mark.xfail(reason='TODO - known to fail')
 def test_ipython(pyi_builder):
     pyi_builder.test_source(
         """
