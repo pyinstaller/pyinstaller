@@ -32,7 +32,7 @@ from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, DLL, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache, HooksCache, ImportHook
+from .imphook import AdditionalFilesCache, HooksCache, ImportHook, format_binaries_and_datas
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime
@@ -112,13 +112,17 @@ class Analysis(Target):
         absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py")),
         ))
 
-    def __init__(self, scripts, pathex=None, hiddenimports=None,
-                 hookspath=None, excludes=[], runtime_hooks=[], cipher=None):
+    def __init__(self, scripts, pathex=None, binaries=None, datas=None,
+                 hiddenimports=None, hookspath=None, excludes=[], runtime_hooks=[], cipher=None):
         """
         scripts
                 A list of scripts specified as file names.
         pathex
                 An optional list of paths to be searched before sys.path.
+        binaries
+                An optional list of additional binaries (dlls, etc.) to include.
+        datas
+                An optional list of additional data files to include.
         hiddenimport
                 An optional list of additional (hidden) modules to include.
         hookspath
@@ -180,6 +184,16 @@ class Analysis(Target):
         self.datas = TOC()
         self.dependencies = TOC()
         self.__postinit__()
+
+        # Initialise 'binaries' and 'datas' with lists specified in .spec file.
+        if binaries:
+            logger.info("Appending 'binaries' from .spec")
+            for name, pth in format_binaries_and_datas(binaries):
+                self.binaries.append((name, pth, 'BINARY'))
+        if datas:
+            logger.info("Appending 'datas' from .spec")
+            for name, pth in format_binaries_and_datas(datas):
+                self.binaries.append((name, pth, 'DATA'))
 
     _GUTS = (# input parameters
             ('inputs', _check_guts_eq),  # parameter `scripts`
