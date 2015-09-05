@@ -15,12 +15,14 @@ the executable for some time. Otherwise it is marked as fail.
 Note: All tests in this file should use the argument 'runtime'.
 """
 
+import pytest
 # TODO 'runtime' argument does not work for Python 2.7.
 from PyInstaller.utils.tests import importorskip, xfail_py2
 
 _RUNTIME = 3  # In seconds.
 
 
+@pytest.mark.xfail(reason='TODO')
 @xfail_py2
 @importorskip('IPython')
 def test_ipython(pyi_builder):
