@@ -7,6 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+# This contains tests for the class:``Tree``, see
+# https://pythonhosted.org/PyInstaller/#the-tree-class
 
 import os
 import pytest
