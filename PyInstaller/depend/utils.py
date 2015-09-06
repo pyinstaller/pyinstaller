@@ -164,7 +164,6 @@ def scan_code_for_ctypes(co):
     return binaries, warnings
 
 
-# TODO Port this code to Python 3.
 def scan_code_instruction_for_ctypes(co, instrs, i):
     """
     Detects ctypes dependencies, using reasonable heuristics that
@@ -281,7 +280,6 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
 
 
 # TODO Reuse this code with modulegraph implementation
-# TODO Port this code to Python 3.
 def _resolveCtypesImports(cbinaries):
     """Completes ctypes BINARY entries for modules with their full path.
     """
