@@ -185,6 +185,8 @@ class Analysis(Target):
         self.dependencies = TOC()
         self.__postinit__()
 
+
+        # TODO create function to convert datas/binaries from 'hook format' to TOC.
         # Initialise 'binaries' and 'datas' with lists specified in .spec file.
         if binaries:
             logger.info("Appending 'binaries' from .spec")
