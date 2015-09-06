@@ -4,14 +4,14 @@ Changes since PyInstaller 2.1
 -------------------------------
  + Support for Python 3
  + Support only Python 2.7 and 3.3+
- + (OS X) 32bit precompiled bootloader no longer distributed.
+ + (Windows) Bootloader is now built with full Unicode support.
  + (OS X) Executables built with PyInstaller under OS X can now be digitally
    signed.
  + (Windows) for 32bit bootloader enable flag LARGEADDRESSAWARE that allows
    to use 4GB of RAM.
+ + (OS X) 32bit precompiled bootloader no longer distributed, only 64bit.
  + Allow override PyInstaller default config directory by environment variable
    PYINSTALLER_CONFIG_DIR.
- + (Windows 32bit) enable flag LARGEADDRESSAWARE that allows to use 4GB of RAM.
  + Bootloader debug messages 'LOADER: ...' printed to stderr.
  + Option --key to obfuscate the Python bytecode.
  * Use library modulegraph for module dependency analysis.
@@ -23,7 +23,8 @@ Changes since PyInstaller 2.1
    can be used to do so. PyInstaller then also includes these binaries in to the
    dependency checking for dynamic libraries.
  * Tests migrated to py.test framework.
- * TODO Improve testing infrastructure.
+ * Improved testing infrastructure with continuous integration (Travis - Linux,
+   Appveyor - Windows)
  
 Changes since PyInstaller 2.0
 -------------------------------
