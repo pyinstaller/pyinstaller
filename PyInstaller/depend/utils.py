@@ -281,7 +281,17 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
 
 # TODO Reuse this code with modulegraph implementation
 def _resolveCtypesImports(cbinaries):
-    """Completes ctypes BINARY entries for modules with their full path.
+    """
+    Completes ctypes BINARY entries for modules with their full path.
+
+    Input is a list of c-binary-names (as found by
+    `scan_code_instruction_for_ctypes`). Output is a list of tuples
+    ready to be appended to the ``binaries`` of a modules.
+
+    Example:
+    >>> _resolveCtypesImports(['libgs.so'])
+    [('/usr/lib/libgs.so', 'libgs.so', 'BINARY')]
+
     """
     from ctypes.util import find_library
     from ..config import CONF
