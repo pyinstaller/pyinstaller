@@ -54,6 +54,8 @@ _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules
 _LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 # Directory storing test-specific data.
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+# Directory with .spec files used in some tests.
+_SPEC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs')
 
 # Code
 # ====
@@ -90,6 +92,16 @@ class AppBuilder(object):
         self._distdir = os.path.join(self._tmpdir, 'dist')
         self._builddir = os.path.join(self._tmpdir, 'build')
         self._modgraph = module_graph
+
+
+    def test_spec(self, specfile, *args, **kwargs):
+        """
+        Test a Python script that is referenced in the supplied .spec file.
+        """
+        specfile = os.path.join(_SPEC_DIR, specfile)
+        # 'test_script' should handle .spec properly as script.
+        return self.test_script(specfile, *args, **kwargs)
+
 
     def test_source(self, source, *args, **kwargs):
         """
@@ -156,7 +168,10 @@ class AppBuilder(object):
             # Derive name from script name.
             app_name = os.path.splitext(os.path.basename(script))[0]
 
-        self.script = os.path.join(_SCRIPT_DIR, script)
+        # Relative path means that a script from _script_dir is referenced.
+        if not os.path.isabs(script):
+            script = os.path.join(_SCRIPT_DIR, script)
+        self.script = script
         assert os.path.exists(self.script), 'Script %s not found.' % script
 
         assert self._test_building(args=pyi_args), 'Building of %s failed.' % script
@@ -309,6 +324,7 @@ class AppBuilder(object):
             default_args.append('--onedir')
         elif self._mode == 'onefile':
             default_args.append('--onefile')
+        # if self._mode is None then just the spec file was supplied.
 
         pyi_args = [self.script] + default_args + args
         # TODO fix return code in running PyInstaller programatically
@@ -378,3 +394,20 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     monkeypatch.chdir(tmp)
 
     return AppBuilder(tmp, request.param, pyi_modgraph)
+
+
+# Fixture for .spec based tests.
+# With .spec it does not make sense to differentiate onefile/onedir mode.
+@pytest.fixture
+def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
+    tmp = tmpdir.strpath
+    # Append _MMODULES_DIR to sys.path for building exes.
+    # Some tests need additional test modules.
+    # This also ensures that sys.path is reseted to original value for every test.
+    monkeypatch.syspath_prepend(_MODULES_DIR)
+    # Save/restore environment variable PATH.
+    monkeypatch.setenv('PATH', os.environ['PATH'], )
+    # Set current working directory to
+    monkeypatch.chdir(tmp)
+
+    return AppBuilder(tmp, None, pyi_modgraph)
