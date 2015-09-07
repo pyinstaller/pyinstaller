@@ -24,7 +24,8 @@ import pytest
 # Local imports
 # -------------
 from PyInstaller.compat import architecture, is_darwin, is_win, is_py2
-from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, skipif_notwin
+from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, \
+    skipif_notwin, skipif_notosx
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -313,7 +314,7 @@ def test_renamed_exe(pyi_builder):
     pyi_builder._find_executables = _find_executables
     pyi_builder.test_script('pyi_helloworld.py')
 
-"""
-def test_(pyi_builder):
-    pyi_builder.test_script('')
-"""
+
+@skipif_notosx
+def test_osx_override_info_plist(pyi_builder_spec):
+    pyi_builder_spec.test_spec('pyi_osx_override_info_plist.spec')

@@ -40,7 +40,7 @@ __pycache__/
 
 # Ignore generated spec-files
 # NB: You can still add .spec-files to be tracked using `git add`
-/tests/**/*.spec
+/tests/old_suite/**/*.spec
 
 # /tests/functional/data
 /tests/functional/data/sphinx/_build
