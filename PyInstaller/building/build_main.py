@@ -139,7 +139,11 @@ class Analysis(Target):
         from ..config import CONF
 
         self.inputs = []
+        spec_dir = os.path.dirname(CONF['spec'])
         for script in scripts:
+            # If path is relative, it is relative to the location of .spec file.
+            if not os.path.isabs(script):
+                script = os.path.join(spec_dir, script)
             if absnormpath(script) in self._old_scripts:
                 logger.warn('Ignoring obsolete auto-added script %s', script)
                 continue

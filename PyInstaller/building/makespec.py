@@ -32,6 +32,20 @@ def quote_win_filepath(path):
     return os.path.normpath(path).replace('\\', '\\\\')
 
 
+def make_path_spec_relative(filename, spec_dir):
+    """
+    Make the filename relative to the directory containing .spec file if filename
+    is relative and not absolute. Otherwise keep filename untouched.
+    """
+    if os.path.isabs(filename):
+        return filename
+    else:
+        filename = os.path.abspath(filename)
+        # Make it relative.
+        filename = os.path.relpath(filename, start=spec_dir)
+        return filename
+
+
 # Support for trying to avoid hard-coded paths in the .spec files.
 # Eg, all files rooted in the Installer directory tree will be
 # written using "HOMEPATH", thus allowing this spec file to
@@ -243,6 +257,10 @@ def main(scripts, name=None, onefile=False,
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
 
     hiddenimports = hiddenimports or []
+
+    # If script paths are relative, make them relative to the directory containing .spec file.
+    scripts = [make_path_spec_relative(x, specpath) for x in scripts]
+    # With absolute paths replace prefix with variable HOMEPATH.
     scripts = list(map(Path, scripts))
 
     if key:
