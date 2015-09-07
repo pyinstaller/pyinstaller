@@ -201,7 +201,6 @@ def qt4_phonon_plugins_dir():
 
 def qt4_plugins_binaries(plugin_type):
     """Return list of dynamic libraries formatted for mod.binaries."""
-    binaries = []
     pdir = qt4_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
 
@@ -218,12 +217,9 @@ def qt4_plugins_binaries(plugin_type):
     if is_win:
         files = [f for f in files if not f.endswith("d4.dll")]
 
-    for f in files:
-        binaries.append((
-            # TODO fix this hook to use hook-name.py attribute 'binaries'.
-            os.path.join('qt4_plugins', plugin_type, os.path.basename(f)),
-            f, 'BINARY'))
-
+    binaries = [
+        (os.path.join('qt4_plugins', plugin_type, os.path.basename(f)), f)
+        for f in files]
     return binaries
 
 
@@ -322,14 +318,13 @@ def qt5_phonon_plugins_dir():
 
 def qt5_plugins_binaries(plugin_type):
     """Return list of dynamic libraries formatted for mod.binaries."""
-    binaries = []
     pdir = qt5_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
-    for f in files:
-        binaries.append((
-            os.path.join('qt5_plugins', plugin_type, os.path.basename(f)),
-            f, 'BINARY'))
+    binaries = [
+        (os.path.join('qt5_plugins', plugin_type, os.path.basename(f)), f)
+        for f in files]
     return binaries
+
 
 def qt5_menu_nib_dir():
     """Return path to Qt resource dir qt_menu.nib. OSX only"""
@@ -475,10 +470,7 @@ def qt5_qml_plugins_binaries(dir):
         instdir = os.path.join("qml", instdir)
         logger.debug("qt5_qml_plugins_binaries installing %s in %s"
                      % (f, instdir) )
-
-        binaries.append((
-            os.path.join(instdir, os.path.basename(f)),
-                f, 'BINARY'))
+        binaries.append((os.path.join(instdir, os.path.basename(f)), f))
     return binaries
 
 

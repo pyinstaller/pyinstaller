@@ -12,8 +12,5 @@ hiddenimports = ['sip', 'PyQt5.QtCore']
 
 from PyInstaller.utils.hooks.hookutils import qt5_plugins_binaries
 
-
-def hook(mod):
-    # Network Bearer Management in qt 4.7+
-    mod.add_binary(qt5_plugins_binaries('bearer'))
-    return mod
+# Network Bearer Management in qt 4.7+
+binaries = qt5_plugins_binaries('bearer')

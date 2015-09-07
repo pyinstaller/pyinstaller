@@ -29,11 +29,8 @@ dirs = [#'Qt',
         #'QtTest'
         ]
 
-datas = []
-for dir in dirs:
-    datas.append(qt5_qml_data(dir))
+datas = [qt5_qml_data(dir) for dir in dirs]
 
-def hook(mod):
-    for dir in dirs:
-        mod.add_binary(qt5_qml_plugins_binaries(dir))
-    return mod
+binaries = []
+for dir in dirs:
+    binaries.extend(qt5_qml_plugins_binaries(dir))
