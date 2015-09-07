@@ -206,30 +206,6 @@ class FakeModule(object):
             names = [names]  # Allow passing string or list.
         self._deleted_imports.extend(names)
 
-    def add_binary(self,list_of_tuples):
-        """
-        Add all external dynamic libraries in the passed list of TOC-style
-        3-tuples as dependencies of the current module.
-
-        The third element of each such tuple *must* be `BINARY`.
-        """
-        warnings.warn("Deprecated: Use the hook's attribute `binaries'",
-                      DeprecationWarning)
-        for item in list_of_tuples:
-            self._added_binaries.append(item)
-            self.binaries.append(item)
-
-    def add_data(self, list_of_tuples):
-        """
-        Add all external data files in the passed list of TOC-style 3-tuples as
-        dependencies of the current module.
-
-        The third element of each such tuple *must* be `DATA`.
-        """
-        warnings.warn("Deprecated: Use the hook's attribute `datas'",
-                      DeprecationWarning)
-        self.datas.extend(list_of_tuples)
-
     def retarget(self, path_to_new_code):
         """
         Recompile this module's code object as the passed Python file.
@@ -284,11 +260,6 @@ class ImportHook(object):
 
         for item in mod._added_imports:
             self._process_one_hiddenimport(item, mod_graph)
-
-        for item in mod._added_binaries:
-            # Supposed to be TOC form (n,p,'BINARY')
-            assert(item[2] == 'BINARY')
-            self.binaries.add(item[0:2])  # Drop element 'BINARY'
         for item in mod.datas:
             # Supposed to be TOC form (n,p,'DATA')
             assert(item[2] == 'DATA')
