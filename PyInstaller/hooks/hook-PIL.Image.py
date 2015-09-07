@@ -12,7 +12,6 @@ from PyInstaller.utils.hooks import hookutils
 
 
 def hook(mod):
-    global hiddenimports
     # `PIL.Image` may be imported as `PIL.Image` or as `Image`
     # (without the prefix). We need to use the same module name to
     # avoid the same module under two different names.
