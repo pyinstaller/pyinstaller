@@ -28,7 +28,7 @@ class BUNDLE(Target):
         # Use icon supplied by user or just use the default one from PyInstaller.
         self.icon = kws.get('icon')
         if not self.icon:
-            self.icon = os.path.join(os.path.dirname(__file__),
+            self.icon = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                 'bootloader', 'images', 'icon-windowed.icns')
         # Ensure icon path is absolute.
         self.icon = os.path.abspath(self.icon)
