@@ -21,9 +21,7 @@ from PyInstaller.utils.hooks.hookutils import exec_statement
 
 hiddenimports = ['gmodule', 'gobject']
 
-
-def hook(mod):
-    statement = """
+statement = """
 import os
 import gst
 reg = gst.registry_get_default()
@@ -31,19 +29,17 @@ plug = reg.find_plugin('coreelements')
 path = plug.get_filename()
 print(os.path.dirname(path))
 """
-    plugin_path = exec_statement(statement)
 
-    if is_win:
-        # TODO Verify that on Windows gst plugins really end with .dll.
-        pattern = os.path.join(plugin_path, '*.dll')
-    else:
-        # Even on OSX plugins end with '.so'.
-        pattern = os.path.join(plugin_path, '*.so')
+plugin_path = exec_statement(statement)
 
-    for f in glob.glob(pattern):
-        # 'f' contains the absolute path.
-        mod.add_binary((
-            (os.path.join('gst_plugins', os.path.basename(f)), f, 'BINARY'),
-        ))
+if is_win:
+    # TODO Verify that on Windows gst plugins really end with .dll.
+    pattern = os.path.join(plugin_path, '*.dll')
+else:
+    # Even on OSX plugins end with '.so'.
+    pattern = os.path.join(plugin_path, '*.so')
 
-    return mod
+binaries = [
+    (os.path.join('gst_plugins', os.path.basename(f)), f)
+    # 'f' contains the absolute path
+    for f in glob.glob(pattern)]
