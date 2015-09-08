@@ -217,8 +217,9 @@ def qt4_plugins_binaries(plugin_type):
     if is_win:
         files = [f for f in files if not f.endswith("d4.dll")]
 
+    dest_dir = os.path.join('qt4_plugins', plugin_type)
     binaries = [
-        (os.path.join('qt4_plugins', plugin_type, os.path.basename(f)), f)
+        (f, dest_dir)
         for f in files]
     return binaries
 
@@ -320,8 +321,9 @@ def qt5_plugins_binaries(plugin_type):
     """Return list of dynamic libraries formatted for mod.binaries."""
     pdir = qt5_plugins_dir()
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
+    dest_dir = os.path.join('qt5_plugins', plugin_type)
     binaries = [
-        (os.path.join('qt5_plugins', plugin_type, os.path.basename(f)), f)
+        (f, dest_dir)
         for f in files]
     return binaries
 
@@ -470,7 +472,7 @@ def qt5_qml_plugins_binaries(dir):
         instdir = os.path.join("qml", instdir)
         logger.debug("qt5_qml_plugins_binaries installing %s in %s"
                      % (f, instdir) )
-        binaries.append((os.path.join(instdir, os.path.basename(f)), f))
+        binaries.append((f, instdir))
     return binaries
 
 
