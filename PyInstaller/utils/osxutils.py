@@ -12,8 +12,57 @@
 Utils for Mac OS X platform.
 """
 
+import os
+import sys
 
-from PyInstaller.lib.macholib.MachO import MachO
+from ..compat import base_prefix, exec_command
+from ..lib.macholib.MachO import MachO
+
+
+def is_homebrew_env():
+    """
+    Check if Python interpreter was installed via Homebrew command 'brew'.
+
+    :return: True if Homebrew else otherwise.
+    """
+    # Python path prefix should start with Homebrew prefix.
+    env_prefix = get_homebrew_prefix()
+    if env_prefix and base_prefix.startswith(env_prefix):
+        return True
+    return False
+
+
+def is_macports_env():
+    """
+    Check if Python interpreter was installed via Macports command 'port'.
+
+    :return: True if Macports else otherwise.
+    """
+    # Python path prefix should start with Macports prefix.
+    env_prefix = get_macports_prefix()
+    if env_prefix and base_prefix.startswith(env_prefix):
+        return True
+    return False
+
+
+def get_homebrew_prefix():
+    """
+    :return: Root path of the Homebrew environment.
+    """
+    prefix = exec_command(['/bin/bash', '-c', 'which brew']).strip()
+    # Conversion:  /usr/local/bin/brew -> /usr/local
+    prefix = os.path.dirname(os.path.dirname(prefix))
+    return prefix
+
+
+def get_macports_prefix():
+    """
+    :return: Root path of the Macports environment.
+    """
+    prefix = exec_command(['/bin/bash', '-c', 'which port']).strip()
+    # Conversion:  /usr/local/bin/brew -> /usr/local
+    prefix = os.path.dirname(os.path.dirname(prefix))
+    return prefix
 
 
 def fix_exe_for_code_signing(filename):
