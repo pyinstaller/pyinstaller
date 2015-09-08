@@ -332,6 +332,15 @@ def test_pyexcelerate(pyi_builder):
 
 @importorskip('usb')
 def test_usb(pyi_builder):
+    # See if the usb package is supported on this platform.
+    try:
+        import usb
+        # This will verify that the backend is present; if not, it will
+        # skip this test.
+        usb.core.find(find_all = True)
+    except (ImportError, ValueError):
+        pytest.skip('USB backnd not found.')
+
     pyi_builder.test_source(
         """
         import usb.core
