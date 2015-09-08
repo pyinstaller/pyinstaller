@@ -437,6 +437,8 @@ class BuildTestRunner(object):
         #else:
             #retcode = compat.exec_python_rc(pyinst_script,
                   #testfile_spec, *OPTS)
+        # abspath is required due to makespec.make_path_spec_relative()
+        testfile_spec = os.path.abspath(testfile_spec)
         pyi_args = [testfile_spec] + OPTS
         # TODO fix return code in running PyInstaller programatically
         pyi_main.run(pyi_args, PYI_CONFIG)
