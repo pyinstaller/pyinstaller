@@ -8,21 +8,31 @@
 #-----------------------------------------------------------------------------
 
 
+"""
+Import hook for PyEnchant.
+
+Tested with PyEnchatn 1.6.6.
+"""
+
 import os
 
-from PyInstaller.compat import is_win, is_darwin
+from PyInstaller.compat import is_darwin
 from PyInstaller.utils.hooks.hookutils import exec_statement, collect_data_files, eval_script
 
 
-if is_win:
-    files = eval_script('enchant_datafiles_finder.py')
-    datas = []  # data files in PyInstaller hook format
-    for d in files:
-        for f in d[1]:
-            datas.append((f, d[0]))
-elif is_darwin:
+# TODO Add Linux support
+# Collect first all files that were installed directly into pyenchant
+# package directory and this includes:
+# - Windows: libenchat-1.dll, libenchat_ispell.dll, libenchant_myspell.dll, other
+#            dependent dlls and dictionaries for several languages (de, en, fr)
+# - Mac OS X: usually libenchant.dylib and several dictionaries when installed via pip.
+datas = collect_data_files('enchant')
+
+
+# On OS X try to find files from Homebrew or Macports environments.
+if is_darwin:
     # Collecting dictionaries only works when pyenchant is installed via pip since the dictionaries installed via pip
-    # are stored next to the enchant library
+    #
     binaries = []
     files = exec_statement("""
 from enchant._enchant import e
