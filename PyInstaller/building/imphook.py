@@ -418,7 +418,6 @@ class ImportHook(object):
         Binaries are special that PyInstaller will check if they
         might depend on other dlls (dynamic libraries).
         """
-        print(self._module.binaries)
         self.binaries.update(set(format_binaries_and_datas(self._module.binaries)))
 
     def _process_attrs(self, mod_graph):
