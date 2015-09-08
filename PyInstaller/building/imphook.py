@@ -20,7 +20,7 @@ import re
 import warnings
 
 from .. import log as logging
-from ..compat import importlib_load_source, UserDict
+from ..compat import importlib_load_source, UserDict, FileNotFoundError
 from ..utils.misc import get_code_object
 from ..lib.altgraph.GraphUtil import filter_stack
 

@@ -478,6 +478,17 @@ else:
         return mod_loader.load_module()
 
 
+try:
+    # new in Python 3
+    FileNotFoundError_ = FileNotFoundError
+except NameError:
+    class FileNotFoundError(OSError):
+        pass
+else:
+    FileNotFoundError = FileNotFoundError_
+    del FileNotFoundError_
+
+
 # Patterns of module names that should be bundled into the base_library.zip.
 if is_py34:
     PY3_BASE_MODULES = set([
