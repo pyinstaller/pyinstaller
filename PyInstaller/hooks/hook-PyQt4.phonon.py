@@ -12,7 +12,4 @@ hiddenimports = ['sip', 'PyQt4.QtGui', 'PyQt4._qt']
 
 from PyInstaller.utils.hooks.hookutils import qt4_plugins_binaries
 
-
-def hook(mod):
-    mod.add_binary(qt4_plugins_binaries('phonon_backend'))
-    return mod
+binaries = qt4_plugins_binaries('phonon_backend')

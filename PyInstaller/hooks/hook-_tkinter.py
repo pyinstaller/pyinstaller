@@ -232,12 +232,17 @@ def _collect_tcl_tk_files(mod):
 
 
 def hook(mod):
+    # Use a hook-function to get the module's attr:`__file__` easily.
     """
     Freeze all external Tcl/Tk data files if this is a supported platform *or*
     log a non-fatal error otherwise.
     """
     if is_win or is_darwin or is_unix:
-        mod.add_data(_collect_tcl_tk_files(mod))
+        # _collect_tcl_tk_files(mod) returns a Tree (which is okay),
+        # so we need to store it into `mod.datas` to prevent
+        # `building.imphook.format_binaries_and_datas` from crashing
+        # with "too many values to unpack".
+        mod.datas = _collect_tcl_tk_files(mod)
     else:
         logger.error("... skipping Tcl/Tk handling on unsupported platform %s", sys.platform)
 
