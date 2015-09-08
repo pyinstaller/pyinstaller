@@ -100,8 +100,8 @@ parameters = []
 ids = []
 for prefix in ('', 'ctypes.'):
     for funcname in  ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
-        ids.append('%s_%s' % (prefix+funcname, libname))
-        params = (prefix+funcname, libname, reason, ids[-1])
+        ids.append(prefix+funcname)
+        params = (prefix+funcname, ids[-1])
         # Workaround a problem in pytest: skipif on a parameter will
         # completely replace the skipif on the test function. See
         # https://github.com/pytest-dev/pytest/issues/954
@@ -111,22 +111,28 @@ for prefix in ('', 'ctypes.'):
         #    params = skipif_notwin(params)
         parameters.append(params)
 
-@pytest.mark.parametrize("funcname,libname,reason,test_id", parameters, ids=ids)
-@skip_if_lib_missing(libname, reason)
-def test_ctypes_gen(pyi_builder, funcname, libname, reason, test_id):
+@pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
+def test_ctypes_gen(pyi_builder, funcname, compiled_dylib, test_id):
     # Workaround, see above.
     # :todo: remove this workaround (see above)
     if not is_win and funcname.endswith(("WinDLL", "OleDLL")):
         pytest.skip('%s requires windows' % funcname)
-    # evaluate the soname here, so the test-code contains a constant
-    soname = ctypes.util.find_library(libname)
+    # Add the path to ctypes_dylib to the OS path.
+    old_path = os.environ['PATH']
+    try:
+        os.environ['PATH'] += os.pathsep + compiled_dylib.strpath
+        # evaluate the soname here, so the test-code contains a constant
+        soname = ctypes.util.find_library('ctypes_dylib')
+    finally:
+        os.environ['PATH'] = old_path
+    assert soname
+    print(soname)
     source = """
         import ctypes ; from ctypes import *
         lib = %s(%%(soname)r)
     """ % funcname + _template_ctypes_test
     source = source +_template_ctypes_test
     pyi_builder.test_source(source % locals(), test_id=test_id)
-
 
 # TODO: Add test-cases forthe prefabricated library loaders supporting
 # attribute accesses on windows. Example::
