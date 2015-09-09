@@ -321,6 +321,9 @@ def _resolveCtypesImports(cbinaries):
         # 'W: library coredll.dll required via ctypes not found'
         if cbin in ['coredll.dll', 'kernel32.dll']:
             continue
+        # On unix ignore the libc
+        if is_unix and cbin in ['libc.so', 'libc.so.6']:
+            continue
         ext = os.path.splitext(cbin)[1]
         # On Windows, only .dll files can be loaded.
         if os.name == "nt" and ext.lower() in [".so", ".dylib"]:
