@@ -34,6 +34,10 @@ datas = collect_data_files('enchant')
 
 # On OS X try to find files from Homebrew or Macports environments.
 if is_darwin:
+    # Note: env. var. ENCHANT_PREFIX_DIR is implemented only in the development version:
+    #    https://github.com/AbiWord/enchant
+    #    https://github.com/AbiWord/enchant/pull/2
+    # TODO Test this hook with development version of enchant.
     libenchant = exec_statement("""
 from enchant._enchant import e
 print(e._name)
@@ -42,30 +46,22 @@ print(e._name)
     # Check libenchant was not installed via pip but is somewhere on disk.
     # Probably it was installed from Homebrew or Macports.
     if not libenchant.startswith(sys.prefix):
-        # 'libenchant' was not installed via pip - do not append it to 'binaries'.
+        # 'libenchant' was not installed via pip.
         # Note: Name of detected enchant library is 'libenchant.dylib'. However, it
         #       is just symlink to 'libenchant.1.dylib'.
-        #       Duplication is avoided by not adding 'libenchant' to binaries here.
-        #       'libenchant.1.dylib' will be resolved as a dependency of any enchant
-        #       backends.
+        binaries.append((libenchant, ''))
 
-        # Collect enchant backends from Macports.
+        # Collect enchant backends from Macports. Using same file structure as on Windows.
+        backends = exec_statement("""
+from enchant import Broker
+for provider in Broker().describe():
+    print(provider.file)""").strip().split()
+        binaries.extend([(b, 'enchant/lib/enchant') for b in backends])
+
+        # Collect all available dictionaries from Macports. Using same file structure as on Windows.
+        # In Macports are available mostly hunspell (myspell) and aspell dictionaries.
         libdir = os.path.dirname(libenchant)  # e.g. /opt/local/lib
-        binaries.append((os.path.join(libdir, 'enchant/libenchant_*.so'), 'enchant/lib/enchant'))
-        # Collect all available dictionaries from Macports.
-
-#
-#     for f in files:  # Put the enchant library in lib/ so the enchant plugins can find it
-#         binaries.append((f, 'lib'))
-#     files = exec_statement("""
-# from enchant import Broker
-# for provider in Broker().describe():
-#     print(provider.file)""").strip().split()
-#     for f in files:  # Put enchant plugins in lib/enchant/ so the enchant library can find them
-#         binaries.append((f, os.path.join('lib', 'enchant')))
-#
-#     datas = []
-#     files = collect_data_files('enchant')  # Only works if pyenchant is installed via pip
-#     for file in files:
-#         if 'share' in file[0] and not file[0].endswith('.zip') and 'man' not in file[0]:
-#             datas.append((file[0], os.sep.join(file[1].split(os.sep)[1:])))
+        sharedir = os.path.join(os.path.dirname(libdir), 'share')  # e.g. /opt/local/share
+        datas.append((os.path.join(sharedir, 'enchant'), 'enchant/share/enchant'))
+        datas.append((os.path.join(sharedir, 'hunspell'), 'enchant/share/enchant/hunspell'))
+        datas.append((os.path.join(sharedir, 'aspell'), 'enchant/share/enchant/aspell'))
