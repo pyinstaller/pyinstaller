@@ -40,11 +40,18 @@ print(e._name)
 """).strip()
 
     # Check libenchant was not installed via pip but is somewhere on disk.
+    # Probably it was installed from Homebrew or Macports.
     if not libenchant.startswith(sys.prefix):
-        # 'libenchant' was not installed via pip - append it to 'binaries'.
-        binaries.append((libenchant, 'enchant'))
+        # 'libenchant' was not installed via pip - do not append it to 'binaries'.
+        # Note: Name of detected enchant library is 'libenchant.dylib'. However, it
+        #       is just symlink to 'libenchant.1.dylib'.
+        #       Duplication is avoided by not adding 'libenchant' to binaries here.
+        #       'libenchant.1.dylib' will be resolved as a dependency of any enchant
+        #       backends.
 
         # Collect enchant backends from Macports.
+        libdir = os.path.dirname(libenchant)  # e.g. /opt/local/lib
+        binaries.append((os.path.join(libdir, 'enchant/libenchant_*.so'), 'enchant/lib/enchant'))
         # Collect all available dictionaries from Macports.
 
 #
