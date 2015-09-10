@@ -16,6 +16,7 @@ If we were importing, these would be hooked to the real module objects
 
 import os
 import pkgutil
+from collections import OrderedDict
 
 from PyInstaller.compat import ctypes, PYCO
 from PyInstaller.depend.utils import _resolveCtypesImports, scan_code
@@ -82,9 +83,10 @@ class PyModule(Module):
         """
         Remove duplicate entries from the list.
         """
-        # The strategy is to convert a list to a set and then back.
-        # This conversion will eliminate duplicate entries.
-        return list(set(item_list))
+        # The strategy is to convert a list to anOrderedDict and then
+        # back. This conversion will eliminate duplicate entries. Do
+        # not use a set, as this will change the order of elements.
+        return list(OrderedDict(map(None, item_list, [])))
 
     def scancode(self):
         self.pyinstaller_imports, self.pyinstaller_warnings, self.pyinstaller_binaries, allnms = scan_code(self.co)
