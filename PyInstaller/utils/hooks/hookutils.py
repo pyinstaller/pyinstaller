@@ -161,25 +161,25 @@ print(list(diff))
     return module_imports
 
 
-def qt4_plugins_dir():
+def qt4_plugins_dir(ns='PyQt4'):
     qt4_plugin_dirs = eval_statement(
-        "from PyQt4.QtCore import QCoreApplication;"
+        "from %s.QtCore import QCoreApplication;"
         "app=QCoreApplication([]);"
         # For Python 2 print would give "<PyQt4.QtCore.QStringList
         # object at 0x....>", so we need to convert each element separately
         "str=getattr(__builtins__, 'unicode', str);" # for Python 2
-        "print([str(p) for p in app.libraryPaths()])")
+        "print([str(p) for p in app.libraryPaths()])" % ns)
     if not qt4_plugin_dirs:
-        logger.error("Cannot find PyQt4 plugin directories")
+        logger.error('Cannot find %s plugin directories' % ns)
         return ""
     for d in qt4_plugin_dirs:
         if os.path.isdir(d):
             return str(d)  # must be 8-bit chars for one-file builds
-    logger.error("Cannot find existing PyQt4 plugin directory")
+    logger.error('Cannot find existing %s plugin directory' % ns)
     return ""
 
 
-def qt4_phonon_plugins_dir():
+def qt4_phonon_plugins_dir(ns='PyQt4'):
     qt4_plugin_dirs = eval_statement(
         "from PyQt4.QtGui import QApplication;"
         "app=QApplication([]); app.setApplicationName('pyinstaller');"
@@ -199,9 +199,9 @@ def qt4_phonon_plugins_dir():
     return ""
 
 
-def qt4_plugins_binaries(plugin_type):
+def qt4_plugins_binaries(plugin_type, ns='PyQt4'):
     """Return list of dynamic libraries formatted for mod.binaries."""
-    pdir = qt4_plugins_dir()
+    pdir = qt4_plugins_dir(ns=ns)
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
 
     # Windows:
