@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 """
 PEP-302 importers for frozen applications.
 """
@@ -16,7 +15,6 @@ PEP-302 importers for frozen applications.
 ### **NOTE** This module is used during bootstrap.
 ### Import *ONLY* builtin modules.
 ### List of built-in modules: sys.builtin_module_names
-
 
 
 
@@ -135,6 +133,22 @@ class BuiltinImporter(object):
             raise ImportError('No module named ' + fullname)
 
 
+class FrozenPackageImporter(object):
+    """
+    Wrapper class for FrozenImporter that imports one specific fullname from
+    a module named by an alternate fullname. The alternate fullname is derived from the
+    __path__ of the package module containing that module.
+
+    This is called by FrozenImporter.find_module whenever a module is found as a result
+    of searching module.__path__
+    """
+    def __init__(self, importer, fullname):
+        self._fullname = fullname
+        self._importer = importer
+
+    def load_module(self, fullname):
+        return self._importer.load_module(fullname, self._fullname)
+
 class FrozenImporter(object):
     """
     Load bytecode of Python modules from the executable created by PyInstaller.
@@ -212,29 +226,53 @@ class FrozenImporter(object):
         # Acquire the interpreter's import lock for the current thread. This
         # lock should be used by import hooks to ensure thread-safety when
         # importing modules.
+
         imp_lock()
         module_loader = None  # None means - no module found in this importer.
 
         if fullname in self.toc:
             # Tell the import machinery to use self.load_module() to load the module.
             module_loader = self
+        elif path is not None:
+            # Try to handle module.__path__ modifications by the modules themselves
+            # Reverse the fake __path__ we added to the package module to a
+            # dotted module name and add the tail module from fullname onto that
+            # to synthesize a new fullname
+            modname = fullname.split('.')[-1]
 
+            for p in path:
+                p = p.replace(SYS_PREFIX, "")
+                parts = p.split(pyi_os_path.os_sep)
+                if not len(parts): continue
+                if not parts[0]:
+                    parts = parts[1:]
+                parts.append(modname)
+                fullname = ".".join(parts)
+                if fullname in self.toc:
+                    module_loader = FrozenPackageImporter(self, fullname)
+                    break
         # Release the interpreter's import lock.
         imp_unlock()
 
         return module_loader
 
-    def load_module(self, fullname, path=None):
+    def load_module(self, fullname, real_fullname=None):
         """
         PEP-302 loader.load_module() method for the ``sys.meta_path`` hook.
 
         Return the loaded module (instance of imp_new_module()) or raises
         an exception, preferably ImportError if an existing exception
         is not being propagated.
+
+        When called from FrozenPackageImporter, `real_fullname` is the name of the
+        module as it is stored in the archive. This module will be loaded and installed
+        into sys.modules using `fullname` as its name
         """
         # Acquire the interpreter's import lock.
         imp_lock()
         module = None
+        if real_fullname is None:
+            real_fullname=fullname
         try:
             # PEP302 If there is an existing module object named 'fullname'
             # in sys.modules, the loader must use that existing module.
@@ -243,7 +281,7 @@ class FrozenImporter(object):
             # Module not in sys.modules - load it and it to sys.modules.
             if module is None:
                 # Load code object from the bundled ZIP archive.
-                is_pkg, bytecode = self._pyz_archive.extract(fullname)
+                is_pkg, bytecode = self._pyz_archive.extract(real_fullname)
                 # Create new empty 'module' object.
                 module = imp_new_module(fullname)
 
