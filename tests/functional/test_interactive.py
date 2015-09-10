@@ -32,3 +32,9 @@ def test_ipython(pyi_builder):
         embed()
         """, runtime=_RUNTIME)
 
+
+@importorskip('PySide')
+def test_pyside(pyi_builder):
+    pyi_builder.test_script('pyi_interact_pyside.py', #pyi_args=['--windowed'],
+                            runtime=_RUNTIME)
+
