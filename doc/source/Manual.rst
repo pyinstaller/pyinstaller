@@ -4,20 +4,6 @@
 PyInstaller Manual
 ==================
 
-In Brief
-=========
-
-|PyInstaller| bundles a Python application and all its dependencies into
-a single package.
-The user can run the packaged app without installing a Python interpreter or any modules.
-|PyInstaller| supports Python 2.7 and Python 3.4+.
-|PyInstaller| is not a cross-compiler.
-To make a Windows app you must run |PyInstaller| in Windows;
-to make a Linux app you must run it in Linux, and so on.
-
-Contents
-=========
-
 :Version: |PyInstallerVersion|
 :Homepage: |Homepage|
 :Contact: pyinstaller@googlegroups.com
@@ -26,46 +12,73 @@ Contents
 
 .. contents::
 
+In Brief
+=========
+
+|PyInstaller| bundles a Python application and all its dependencies into
+a single package.
+The user can run the packaged app without installing a Python interpreter or any modules.
+|PyInstaller| supports Python 2.7 and Python 3.4+.
+
+|PyInstaller| is not a cross-compiler.
+To make a Windows app you must run |PyInstaller| in Windows;
+to make a Linux app you must run it in Linux, and so on.
 
 Requirements
 ============
 
 .. Keep this list in sync with the README.txt
 
-**Windows**
-  * Windows XP or newer.
-  * PyWin32_
-    Python extensions for Windows.
+Windows
+~~~~~~~~
 
-**Mac OS X**
-  * Mac OS X 10.6 (Snow Leopard) or newer.
+|PyInstaller| runs in Windows XP or newer.
+It can create graphical windowed apps (no command line).
 
-**Linux**
-  * ldd:
-    Console application to print the shared libraries required by
-    each program or shared library. This typically can by found in the
-    distribution-package `glibc` or `libc-bin`.
+It requires the PyWin32_ Python extensions for Windows.
+(This package is installed automatically if you install |PyInstaller|
+using pip.)
+The pip-Win_ package is recommended, but not required.
 
-  * objdump:
-    Console application to display information from object files. This
-    typically can by found in the distribution-package `binutils`.
+Mac OS X
+~~~~~~~~~
 
-**Solaris**
-  * ldd
-  * objdump
+|PyInstaller| runs in Mac OS X 10.6 (Snow Leopard) or newer.
+It builds 64-bit executables by default, but can create 32-bit executables.
+It can  build graphical windowed apps (no terminal window).
 
-**AIX**
-  * AIX 6.1 or newer.
-    Python executables created using PyInstaller on AIX 6.1 should work
-    on AIX 5.2/5.3.
-  * ldd
-  * objdump
+Linux
+~~~~~~
 
-**FreeBSD**
-  * FreeBSD 9.2 or newer.
-    Tested with FreeBSD 9.2 amd64, with included gcc (version 4.2.1)
-  * ldd
-  * objdump
+|PyInstaller| requires the ``ldd`` terminal application to print
+the shared libraries required by each program or shared library.
+It is typically found in the distribution-package ``glibc`` or ``libc-bin``.
+
+It also requires the ``objdump`` terminal application to display
+information from object files.
+This is typically found in the distribution-package ``binutils``.
+
+Solaris
+~~~~~~~~
+
+As with Linux, |PyInstaller| requires the ``ldd`` and ``objdump``
+terminal applications.
+
+AIX
+~~~
+
+|PyInstaller| supports AIX 6.1 or newer.
+Python executables created by |PyInstaller| on AIX 6.1 should work
+on AIX 5.2/5.3.
+As with Linux, |PyInstaller| requires the ``ldd`` and ``objdump``
+terminal applications.
+
+FreeBSD
+~~~~~~~~
+
+|PyInstaller| supports FreeBSD 9.2 or newer
+(tested with FreeBSD 9.2 amd64, with included gcc version 4.2.1.)
+It also requires the ``ldd`` and ``objdump`` terminal applications.
 
 
 License
