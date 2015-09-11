@@ -41,6 +41,26 @@ def test_ctypes_CDLL_c(pyi_builder):
         assert lib is not None
         """)
 
+import PyInstaller.depend.utils
+__orig_resolveCtypesImports = PyInstaller.depend.utils._resolveCtypesImports
+
+def __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib):
+
+    def mocked_resolveCtypesImports(*args, **kwargs):
+        from PyInstaller.config import CONF
+        old_pathex = CONF['pathex']
+        CONF['pathex'].append(str(compiled_dylib))
+        res = __orig_resolveCtypesImports(*args, **kwargs)
+        CONF['pathex'] = old_pathex
+        return res
+
+    # Add the path to ctypes_dylib to pathex, only for
+    # _resolveCtypesImports. We can not monkeypath CONF['pathex']
+    # here, as it will be overwritten when pyi_builder is starting up.
+    # So be monkeypatch _resolveCtypesImports by a wrapper.
+    monkeypatch.setattr(PyInstaller.depend.utils, "_resolveCtypesImports",
+                        mocked_resolveCtypesImports)
+
 
 def skip_if_lib_missing(libname, text=None):
     """
@@ -131,22 +151,7 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
     """ % funcname + _template_ctypes_test
     source = source +_template_ctypes_test
 
-    def mocked_resolveCtypesImports(*args, **kwargs):
-        from PyInstaller.config import CONF
-        old_pathex = CONF['pathex']
-        CONF['pathex'].append(str(compiled_dylib))
-        res = orig_resolveCtypesImports(*args, **kwargs)
-        CONF['pathex'] = old_pathex
-        return res
-
-    # Add the path to ctypes_dylib to pathex, only for
-    # _resolveCtypesImports. We can not monkeypath CONF['pathex']
-    # here, as it will be overwritten when pyi_builder is starting up.
-    # So be monkeypatch _resolveCtypesImports by a wrapper.
-    import PyInstaller.depend.utils
-    orig_resolveCtypesImports = PyInstaller.depend.utils._resolveCtypesImports
-    monkeypatch.setattr(PyInstaller.depend.utils, "_resolveCtypesImports",
-                        mocked_resolveCtypesImports)
+    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib)
     pyi_builder.test_source(source % locals(), test_id=test_id)
 
 
