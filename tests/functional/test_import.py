@@ -125,6 +125,7 @@ def test_ctypes_gen(pyi_builder, funcname, compiled_dylib, test_id):
         soname = ctypes.util.find_library('ctypes_dylib')
     finally:
         os.environ['PATH'] = old_path
+    soname = str(compiled_dylib.join('ctypes_dylib.so'))
     assert soname
     print(soname)
     source = """
