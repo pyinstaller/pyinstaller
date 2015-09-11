@@ -44,7 +44,15 @@ div#contents p.topic-title.first {
 	font-family: 'Trebuchet MS',sans-serif;
 	font-weight: normal;
 }
-
+div.contents {
+	margin-left: -1em;
+	width: 35%;
+	float:left;
+	background: white;
+	margin-right: 2em;
+	padding-right: 0.5em;
+	border: 1px solid black;
+	}
 a:link, a:visited { color: #006699; }
 a:hover { background-color:#006699; color:white; }
 
