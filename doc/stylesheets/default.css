@@ -16,9 +16,9 @@ tt, span.literal {
 }
 
 div.document {
-	padding-left: 2em;
-	padding-right: 2em;
-	padding: 0 20px 30px;
+	padding-left: 1em;
+	padding-right: 1em;
+	/* padding: 0 20px 30px;  this overrides the prior 2 lines */
 }
 dl, table {
 	margin-left: 2em;
