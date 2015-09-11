@@ -106,6 +106,12 @@ _template_ctypes_test = """
     """
 
 # Ghostscript's libgs.so should be available in may Unix/Linux systems
+#
+# At least on Linux, we can not use our own `ctypes_dylib` because
+# `find_library` does not consult LD_LIBRARY_PATH and hence does not
+# find our lib. Anyway, this test tests the pth of the loaded lib and
+# thus checks if libgs.so is included into the frozen exe.
+# TODO: Check how this behaves on other platforms.
 @skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
 def test_ctypes_CDLL_find_library__gs(pyi_builder):
     libname = 'gs'
