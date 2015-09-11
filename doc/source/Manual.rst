@@ -4,6 +4,20 @@
 PyInstaller Manual
 ==================
 
+In Brief
+=========
+
+|PyInstaller| bundles a Python application and all its dependencies into
+a single package.
+The user of the package does not need a Python interpreter or any modules.
+|PyInstaller| supports Python 2.7 and Python 3.4+.
+|PyInstaller| is not a cross-compiler.
+To make a Windows app you must run |PyInstaller| in Windows;
+to make a Linux app you must run it in Linux, and so on.
+
+Contents
+=========
+
 :Version: |PyInstallerVersion|
 :Homepage: |Homepage|
 :Contact: pyinstaller@googlegroups.com
