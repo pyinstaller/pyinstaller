@@ -112,28 +112,43 @@ for prefix in ('', 'ctypes.'):
         parameters.append(params)
 
 @pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
-def test_ctypes_gen(pyi_builder, funcname, compiled_dylib, test_id):
+def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id):
     # Workaround, see above.
     # :todo: remove this workaround (see above)
     if not is_win and funcname.endswith(("WinDLL", "OleDLL")):
         pytest.skip('%s requires windows' % funcname)
-    # Add the path to ctypes_dylib to the OS path.
-    old_path = os.environ['PATH']
-    try:
-        os.environ['PATH'] += os.pathsep + compiled_dylib.strpath
-        # evaluate the soname here, so the test-code contains a constant
-        soname = ctypes.util.find_library('ctypes_dylib')
-    finally:
-        os.environ['PATH'] = old_path
-    soname = str(compiled_dylib.join('ctypes_dylib.so'))
-    assert soname
-    print(soname)
+
+    # evaluate the soname here, so the test-code contains a constant
+    # TODO get the correct filename from compiled_dylib, see comment there
+    if is_win:
+        soname = 'ctypes_dylib.dll'
+    else:
+        soname = 'ctypes_dylib.so'
+
     source = """
         import ctypes ; from ctypes import *
         lib = %s(%%(soname)r)
     """ % funcname + _template_ctypes_test
     source = source +_template_ctypes_test
+
+    def mocked_resolveCtypesImports(*args, **kwargs):
+        from PyInstaller.config import CONF
+        old_pathex = CONF['pathex']
+        CONF['pathex'].append(str(compiled_dylib))
+        res = orig_resolveCtypesImports(*args, **kwargs)
+        CONF['pathex'] = old_pathex
+        return res
+
+    # Add the path to ctypes_dylib to pathex, only for
+    # _resolveCtypesImports. We can not monkeypath CONF['pathex']
+    # here, as it will be overwritten when pyi_builder is starting up.
+    # So be monkeypatch _resolveCtypesImports by a wrapper.
+    import PyInstaller.depend.utils
+    orig_resolveCtypesImports = PyInstaller.depend.utils._resolveCtypesImports
+    monkeypatch.setattr(PyInstaller.depend.utils, "_resolveCtypesImports",
+                        mocked_resolveCtypesImports)
     pyi_builder.test_source(source % locals(), test_id=test_id)
+
 
 # TODO: Add test-cases forthe prefabricated library loaders supporting
 # attribute accesses on windows. Example::
