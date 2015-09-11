@@ -120,8 +120,6 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
 
 #-- Generate test-cases for the different types of ctypes objects.
 
-libname = 'gs'
-reason = 'libgs.so (Ghostscript)'
 parameters = []
 ids = []
 for prefix in ('', 'ctypes.'):
