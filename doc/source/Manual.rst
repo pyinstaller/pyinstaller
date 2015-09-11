@@ -2659,7 +2659,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _Django: https://www.djangoproject.com/
 .. _marshalled: http://docs.python.org/library/marshal
 .. _`Visual Studio Express`: http://www.microsoft.com/express/
-.. _PyInstaller.org: http://www.pyinstaller.org/
+.. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
 .. _Parallels: http://www.parallels.com/
 .. _virtualBox: https://www.virtualbox.org
 .. _VMWare: http://www.vmware.com/solutions/desktop/
@@ -2671,6 +2671,6 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
 .. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
 .. _`PEP 302`: http://www.python.org/dev/peps/pep-0302/
-.. _`How to Contribute`: http://www.pyinstaller.org/wiki/Development/HowtoContribute
+.. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
 .. _`Version Information Structures`: http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx
 .. include:: _definitions.txt
