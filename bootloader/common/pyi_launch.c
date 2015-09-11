@@ -408,7 +408,7 @@ done:
 
 void pyi_launch_initialize(const char *executable, const char *extractionpath)
 {
-    #if defined(__APPLE__) && defined(WINDOWED)
+    #if defined(__APPLE__) && defined(WINDOWED) && !defined(BACKGROUND)
     /*
      * On OS X this ensures that the application is handled as GUI app.
      * Call TransformProcessType() in the child process.
