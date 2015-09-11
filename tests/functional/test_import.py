@@ -168,20 +168,3 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
 #
 # Of course we need to use dlls which is not are commony available on
 # windows but mot excluded in PyInstaller.depend.dylib
-
-
-@skip_if_lib_missing('usb-1.0')
-def test_ctypes_CDLL_find_library__usb(pyi_builder):
-    libname = 'usb-1.0'
-    pyi_builder.test_source(_template_ctypes_CDLL_find_library % locals())
-
-
-@skip_if_lib_missing('usb-1.0')
-def test_ctypes_CDLL__usb(pyi_builder):
-    # evaluate the soname here, so the test-code contains a constant
-    soname = ctypes.util.find_library('usb-1.0')
-    script = """
-        import ctypes
-        lib = ctypes.CDLL(%(soname)r)
-    """ + _template_ctypes_test
-    pyi_builder.test_source(script % locals())
