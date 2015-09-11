@@ -177,6 +177,7 @@ def scan_code_for_ctypes(co):
             # None values has to be removed too.
             binaries.remove(binary)
         elif binary != os.path.basename(binary):
+            # TODO make these arning show up somewhere
             warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
 
     binaries = _resolveCtypesImports(binaries)
