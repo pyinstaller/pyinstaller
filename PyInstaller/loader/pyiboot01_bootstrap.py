@@ -115,5 +115,9 @@ if sys.warnoptions:
 # On Mac OS X insert sys._MEIPASS in the first position of the list of paths
 # that ctypes uses to search for libraries.
 if sys.platform.startswith('darwin'):
-    from ctypes.macholib import dyld
-    dyld.DEFAULT_LIBRARY_FALLBACK.insert(0, sys._MEIPASS)
+    try:
+        from ctypes.macholib import dyld
+        dyld.DEFAULT_LIBRARY_FALLBACK.insert(0, sys._MEIPASS)
+    except ImportError:
+        # Do nothing when module 'ctypes' is not available.
+        pass
