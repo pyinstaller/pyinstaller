@@ -45,34 +45,36 @@ external data files manually.
 
 
 CLASSIFIERS = """
-Classifier: Development Status :: 5 - Production/Stable
-Classifier: Environment :: Console
-Classifier: Intended Audience :: Developers
-Classifier: Intended Audience :: Other Audience
-Classifier: Intended Audience :: System Administrators
-Classifier: License :: OSI Approved :: GNU General Public License v2 (GPLv2)
-Classifier: Natural Language :: English
-Classifier: Operating System :: MacOS :: MacOS X
-Classifier: Operating System :: Microsoft :: Windows
-Classifier: Operating System :: POSIX
-Classifier: Operating System :: POSIX :: AIX
-Classifier: Operating System :: POSIX :: Linux
-Classifier: Operating System :: POSIX :: SunOS/Solaris
-Classifier: Programming Language :: C
-Classifier: Programming Language :: Python
-Classifier: Programming Language :: Python :: 2
-Classifier: Programming Language :: Python :: 2.4
-Classifier: Programming Language :: Python :: 2.5
-Classifier: Programming Language :: Python :: 2.6
-Classifier: Programming Language :: Python :: 2.7
-Classifier: Programming Language :: Python :: 2 :: Only
-Classifier: Programming Language :: Python :: Implementation :: CPython
-Classifier: Topic :: Software Development
-Classifier: Topic :: Software Development :: Build Tools
-Classifier: Topic :: System :: Installation/Setup
-Classifier: Topic :: System :: Software Distribution
-Classifier: Topic :: Utilities
-""".splitlines()
+Development Status :: 5 - Production/Stable
+Environment :: Console
+Intended Audience :: Developers
+Intended Audience :: Other Audience
+Intended Audience :: System Administrators
+License :: OSI Approved :: GNU General Public License v2 (GPLv2)
+Natural Language :: English
+Operating System :: MacOS :: MacOS X
+Operating System :: Microsoft :: Windows
+Operating System :: POSIX
+Operating System :: POSIX :: AIX
+Operating System :: POSIX :: Linux
+Operating System :: POSIX :: SunOS/Solaris
+Programming Language :: C
+Programming Language :: Python
+Programming Language :: Python :: 2
+Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3
+Programming Language :: Python :: 3.3
+Programming Language :: Python :: 3.4
+Programming Language :: Python :: 3.5
+Programming Language :: Python :: Implementation :: CPython
+Topic :: Software Development
+Topic :: Software Development :: Build Tools
+Topic :: Software Development :: Interpreters
+Topic :: Software Development :: Libraries :: Python Modules
+Topic :: System :: Installation/Setup
+Topic :: System :: Software Distribution
+Topic :: Utilities
+""".strip().splitlines()
 
 
 setup(
