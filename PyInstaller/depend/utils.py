@@ -162,6 +162,24 @@ def scan_code_for_ctypes(co):
             nested_binaries, nested_warnings = scan_code_for_ctypes(c)
             binaries.extend(nested_binaries)
             warnings.extend(nested_warnings)
+
+    # If any of the libraries has been requested with anything
+    # different then the bare filename, drop that entry and warn
+    # the user - pyinstaller would need to patch the compiled pyc
+    # file to make it work correctly!
+    for binary in list(binaries):
+        # 'binary' might be in some cases None. Some Python
+        # modules might contain code like the following. For
+        # example PyObjC.objc._bridgesupport contain code like
+        # that.
+        #     dll = ctypes.CDLL(None)
+        if not binary:
+            # None values has to be removed too.
+            binaries.remove(binary)
+        elif binary != os.path.basename(binary):
+            warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
+
+    binaries = _resolveCtypesImports(binaries)
     return binaries, warnings
 
 
@@ -258,25 +276,6 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
                     libname = co.co_consts[oparg]
                     soname = ctypes.util.find_library(libname)
                     binaries.add(soname)
-
-    # If any of the libraries has been requested with anything
-    # different then the bare filename, drop that entry and warn
-    # the user - pyinstaller would need to patch the compiled pyc
-    # file to make it work correctly!
-
-    for binary in list(binaries):
-        # 'binary' might be in some cases None. Some Python
-        # modules might contain code like the following. For
-        # example PyObjC.objc._bridgesupport contain code like
-        # that.
-        #     dll = ctypes.CDLL(None)
-        if not binary:
-            # None values has to be removed too.
-            binaries.remove(binary)
-        elif binary != os.path.basename(binary):
-            warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
-
-    binaries = _resolveCtypesImports(binaries)
     return binaries, warnings
 
 
