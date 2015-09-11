@@ -289,9 +289,13 @@ def _resolveCtypesImports(cbinaries):
     `scan_code_instruction_for_ctypes`). Output is a list of tuples
     ready to be appended to the ``binaries`` of a modules.
 
+    This function temporary extents PATH, LD_LIBRARY_PATH or
+    DYLD_LIBRARY_PATH (depending on teh plattform) by CONF['pathex']
+    so shared libs will be search there, too.
+
     Example:
     >>> _resolveCtypesImports(['libgs.so'])
-    [('/usr/lib/libgs.so', 'libgs.so', 'BINARY')]
+    [(libgs.so', ''/usr/lib/libgs.so', 'BINARY')]
 
     """
     from ctypes.util import find_library
@@ -334,7 +338,7 @@ def _resolveCtypesImports(cbinaries):
             # more code to find out the full path.
             if cpath is None:
                 cpath = cbin
-                # "man ld.so" says that we should first search LD_LIBRARY_PATH
+            # "man ld.so" says that we should first search LD_LIBRARY_PATH
             # and then the ldcache
             for d in compat.getenv(envvar, '').split(os.pathsep):
                 if os.path.isfile(os.path.join(d, cpath)):
