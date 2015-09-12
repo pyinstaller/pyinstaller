@@ -13,7 +13,7 @@ Decorators for skipping PyInstaller tests when specific requirements are not met
 """
 
 import pytest
-from PyInstaller.compat import is_darwin, is_win, is_py2
+from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3
 
 # Wrap some pytest decorators to be consistent in tests.
 skipif = pytest.mark.skipif
@@ -22,8 +22,12 @@ skipif_notosx = skipif(not is_darwin, reason='requires Mac OS X')
 skipif_win = skipif(is_win, reason='does not run on Windows')
 skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
 xfail_py2 = pytest.mark.xfail(is_py2, reason='fails with Python 2.7')
+xfail_py3 = pytest.mark.xfail(is_py3, reason='fails with Python 3')
 
 
+# TODO: Rename to importerskip(). That said, is even that really the best name?
+# skipif_modules_not_found() or something similar would probably be more
+# self-explanatory.
 def importorskip(modules):
     """
     This wraps the pytest decorator to evaluate all modules that are required
