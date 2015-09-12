@@ -299,7 +299,118 @@ class Manifest(object):
         """ Shortcut for manifest.files.append """
         self.files.append(File(name, hashalg, hash, comClasses, 
                           typelibs, comInterfaceProxyStubs, windowClasses))
-    
+
+    @classmethod
+    def get_winsxs_dir(cls):
+        return os.path.join(compat.getenv("SystemRoot"), "WinSxS")
+
+    @classmethod
+    def get_manifest_dir(cls):
+        winsxs = cls.get_winsxs_dir()
+        if not os.path.isdir(winsxs):
+            logger.warn("No such dir %s", winsxs)
+        manifests = os.path.join(winsxs, "Manifests")
+        if not os.path.isdir(manifests):
+            logger.warn("No such dir %s", manifests)
+        return manifests
+
+    @classmethod
+    def get_policy_dir(cls):
+        winsxs = os.path.join(compat.getenv("SystemRoot"), "WinSxS")
+        if sys.getwindowsversion() < (6, ):
+            # Windows XP
+            pcfiles = os.path.join(winsxs, "Policies")
+            if not os.path.isdir(pcfiles):
+                logger.warn("No such dir %s", pcfiles)
+        else:
+            # Vista or later
+            pcfiles = cls.get_manifest_dir()
+        return pcfiles
+
+
+    def get_policy_redirect(self, language=None, version=None):
+        # Publisher Configuration (aka policy)
+        # A publisher configuration file globally redirects
+        # applications and assemblies having a dependence on one
+        # version of a side-by-side assembly to use another version of
+        # the same assembly. This enables applications and assemblies
+        # to use the updated assembly without having to rebuild all of
+        # the affected applications.
+        # http://msdn.microsoft.com/en-us/library/aa375680%28VS.85%29.aspx
+        #
+        # Under Windows XP and 2003, policies are stored as
+        # <version>.policy files inside
+        # %SystemRoot%\WinSxS\Policies\<name>
+        # Under Vista and later, policies are stored as
+        # <name>.manifest files inside %SystemRoot%\winsxs\Manifests
+        redirected = False
+        pcfiles = self.get_policy_dir()
+        if version is None:
+            version = self.version
+        if language is None:
+            language = self.language
+
+        if os.path.isdir(pcfiles):
+            logger.info("Searching for publisher configuration %s ...",
+                        self.getpolicyid(True, language=language))
+            if sys.getwindowsversion() < (6, ):
+                # Windows XP
+                policies = os.path.join(pcfiles,
+                                        self.getpolicyid(True,
+                                                         language=language) +
+                                        ".policy")
+            else:
+                # Vista or later
+                policies = os.path.join(pcfiles,
+                                        self.getpolicyid(True,
+                                                         language=language) +
+                                        ".manifest")
+            for manifestpth in glob(policies):
+                if not os.path.isfile(manifestpth):
+                    logger.warn("Not a file %s", manifestpth)
+                    continue
+                logger.info("Found %s", manifestpth)
+                try:
+                    policy = ManifestFromXMLFile(manifestpth)
+                except Exception as exc:
+                    logger.error("Could not parse file %s", manifestpth)
+                    logger.exception(exc)
+                else:
+                    logger.info("Checking publisher policy for "
+                                "binding redirects")
+                    for assembly in policy.dependentAssemblies:
+                        if (not assembly.same_id(self, True) or
+                            assembly.optional):
+                            continue
+                        for redirect in assembly.bindingRedirects:
+                            if logger.isEnabledFor(logging.INFO):
+                                old = "-".join([".".join([str(i)
+                                                          for i in
+                                                          part])
+                                                for part in
+                                                redirect[0]])
+                                new = ".".join([str(i)
+                                                for i in
+                                                redirect[1]])
+                                logger.info("Found redirect for "
+                                            "version(s) %s -> %n",
+                                            old, new)
+                            if (version >= redirect[0][0] and
+                                version <= redirect[0][-1] and
+                                version != redirect[1]):
+                                logger.info("Applying redirect "
+                                            "%s -> %s",
+                                            ".".join([str(i)
+                                                      for i in
+                                                      version]),
+                                            new)
+                                version = redirect[1]
+                                redirected = True
+            if not redirected:
+                logger.info("Publisher configuration not used")
+
+        return version
+
     def find_files(self, ignore_policies=True):
         """ Search shared and private assemblies and return a list of files.
         
@@ -340,100 +451,15 @@ class Manifest(object):
                 languages.append("en")
         languages.append(self.getlanguage("*"))
         
-        winsxs = os.path.join(compat.getenv("SystemRoot"), "WinSxS")
-        if not os.path.isdir(winsxs):
-            logger.warn("No such dir %s", winsxs)
-        manifests = os.path.join(winsxs, "Manifests")
-        if not os.path.isdir(manifests):
-            logger.warn("No such dir %s", manifests)
-        if not ignore_policies and self.version:
-            if sys.getwindowsversion() < (6, ):
-                # Windows XP
-                pcfiles = os.path.join(winsxs, "Policies")
-                if not os.path.isdir(pcfiles):
-                    logger.warn("No such dir %s", pcfiles)
-            else:
-                # Vista or later
-                pcfiles = manifests
+        manifests = self.get_manifest_dir()
+        winsxs = self.get_winsxs_dir()
         
         for language in languages:
             version = self.version
             
             # Search for publisher configuration
             if not ignore_policies and version:
-                # Publisher Configuration (aka policy)
-                # A publisher configuration file globally redirects 
-                # applications and assemblies having a dependence on one 
-                # version of a side-by-side assembly to use another version of 
-                # the same assembly. This enables applications and assemblies 
-                # to use the updated assembly without having to rebuild all of 
-                # the affected applications.
-                # http://msdn.microsoft.com/en-us/library/aa375680%28VS.85%29.aspx
-                #
-                # Under Windows XP and 2003, policies are stored as 
-                # <version>.policy files inside 
-                # %SystemRoot%\WinSxS\Policies\<name>
-                # Under Vista and later, policies are stored as 
-                # <name>.manifest files inside %SystemRoot%\winsxs\Manifests
-                redirected = False
-                if os.path.isdir(pcfiles):
-                    logger.info("Searching for publisher configuration %s ...",
-                                self.getpolicyid(True, language=language))
-                    if sys.getwindowsversion() < (6, ):
-                        # Windows XP
-                        policies = os.path.join(pcfiles, 
-                                                self.getpolicyid(True,
-                                                                 language=language) + 
-                                                ".policy")
-                    else:
-                        # Vista or later
-                        policies = os.path.join(pcfiles, 
-                                                self.getpolicyid(True,
-                                                                 language=language) + 
-                                                ".manifest")
-                    for manifestpth in glob(policies):
-                        if not os.path.isfile(manifestpth):
-                            logger.warn("Not a file %s", manifestpth)
-                            continue
-                        logger.info("Found %s", manifestpth)
-                        try:
-                            policy = ManifestFromXMLFile(manifestpth)
-                        except Exception as exc:
-                            logger.error("Could not parse file %s", manifestpth)
-                            logger.exception(exc)
-                        else:
-                            logger.info("Checking publisher policy for "
-                                        "binding redirects")
-                            for assembly in policy.dependentAssemblies:
-                                if (not assembly.same_id(self, True) or
-                                    assembly.optional):
-                                    continue
-                                for redirect in assembly.bindingRedirects:
-                                    if logger.isEnabledFor(logging.INFO):
-                                        old = "-".join([".".join([str(i) 
-                                                                  for i in 
-                                                                  part]) 
-                                                        for part in 
-                                                        redirect[0]])
-                                        new = ".".join([str(i) 
-                                                        for i in
-                                                        redirect[1]])
-                                        logger.info("Found redirect for "
-                                                    "version(s) %s -> %n",
-                                                    old, new)
-                                    if (version >= redirect[0][0] and
-                                        version <= redirect[0][-1] and
-                                        version != redirect[1]):
-                                        logger.info("Applying redirect "
-                                                    "%s -> %s",
-                                                    ".".join([str(i) 
-                                                              for i in
-                                                              version]),
-                                                    new)
-                                        version = redirect[1]
-                                        redirected = True
-                    if not redirected:
-                        logger.info("Publisher configuration not used")
+                version = self.get_policy_redirect(language, version)
             
             # Search for assemblies according to assembly searching sequence
             paths = []
