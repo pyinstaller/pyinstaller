@@ -159,6 +159,9 @@ class Analysis(Target):
         # import hooks. Ppath extensions for module search.
         CONF['pathex'] = self.pathex
 
+        # Set global variable to hold assembly binding redirects
+        CONF['binding_redirects'] = []
+
         self.hiddenimports = hiddenimports or []
         # Include modules detected when parsing options, like 'codecs' and encodings.
         self.hiddenimports.extend(CONF['hiddenimports'])
@@ -187,6 +190,7 @@ class Analysis(Target):
         self.zipped_data = TOC()
         self.datas = TOC()
         self.dependencies = TOC()
+        self.binding_redirects = []
         self.__postinit__()
 
 
@@ -219,6 +223,9 @@ class Analysis(Target):
             ('zipped_data', None),  # TODO check this, too
             ('datas', _check_guts_toc_mtime),
             # TODO: Need to add "dependencies"?
+
+            # cached binding redirects - loaded into CONF for PYZ/COLLECT to find.
+            ('binding_redirects', None),
             )
 
     def _extend_pathex(self, spec_pathex, scripts):
@@ -263,6 +270,11 @@ class Analysis(Target):
         self.zipfiles = TOC(data['zipfiles'])
         self.zipped_data = TOC(data['zipped_data'])
         self.datas = TOC(data['datas'])
+
+        # Store previously found binding redirects in CONF for later use by PKG/COLLECT
+        from ..config import CONF
+        self.binding_redirects = CONF['binding_redirects'] = data['binding_redirects']
+
         return False
 
     def assemble(self):
@@ -335,7 +347,8 @@ class Analysis(Target):
         # manifest and may depend on DLLs which are part of an assembly
         # referenced by Python's manifest, don't cause 'lib not found' messages
         self.binaries.extend(bindepend.Dependencies([('', python, '')],
-                                                    manifest=depmanifest)[1:])
+                                                    manifest=depmanifest,
+                                                    redirects=self.binding_redirects)[1:])
 
 
         # The first script in the analysis is the main user script. Its node is used as
@@ -451,7 +464,7 @@ class Analysis(Target):
         self.scripts = self.graph.nodes_to_toc(priority_scripts)
 
         # Extend the binaries list with all the Extensions modulegraph has found.
-        self.binaries  = self.graph.make_binaries_toc(self.binaries)
+        self.binaries = self.graph.make_binaries_toc(self.binaries)
         # Fill the "pure" list with pure Python modules.
         assert len(self.pure) == 0
         self.pure = self.graph.make_pure_toc()
@@ -462,7 +475,8 @@ class Analysis(Target):
         # Add remaining binary dependencies - analyze Python C-extensions and what
         # DLLs they depend on.
         logger.info('Looking for dynamic libraries')
-        self.binaries.extend(bindepend.Dependencies(self.binaries))
+        self.binaries.extend(bindepend.Dependencies(self.binaries,
+                                                    redirects=self.binding_redirects))
 
         ### Include zipped Python eggs.
         logger.info('Looking for eggs')
