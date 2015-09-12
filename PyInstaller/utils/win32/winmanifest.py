@@ -393,7 +393,7 @@ class Manifest(object):
                                                 for i in
                                                 redirect[1]])
                                 logger.info("Found redirect for "
-                                            "version(s) %s -> %n",
+                                            "version(s) %s -> %s",
                                             old, new)
                             if (version >= redirect[0][0] and
                                 version <= redirect[0][-1] and
