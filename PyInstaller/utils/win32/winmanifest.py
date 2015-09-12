@@ -681,7 +681,7 @@ class Manifest(object):
                     "processorArchitecture") or None
                 version = assemblyIdentity.getA("version")
                 if version:
-                    self.version = [int(i) for i in version.split(".")]
+                    self.version = tuple(int(i) for i in version.split("."))
                 self.publicKeyToken = assemblyIdentity.getA("publicKeyToken") or None
             for publisherPolicy in rootElement.getCEByTN("publisherPolicy"):
                 self.applyPublisherPolicy = (publisherPolicy.getA("apply") or 
@@ -716,12 +716,12 @@ class Manifest(object):
                         self.dependentAssemblies[-1].filename = ":".join(
                             (self.filename, manifest.name))
             for bindingRedirect in rootElement.getCEByTN("bindingRedirect"):
-                oldVersion = [[int(i) for i in part.split(".")] 
-                              for part in 
-                              bindingRedirect.getA("oldVersion").split("-")]
-                newVersion = [int(i) 
-                              for i in 
-                              bindingRedirect.getA("newVersion").split(".")]
+                oldVersion = tuple(tuple(int(i) for i in part.split("."))
+                                   for part in
+                                   bindingRedirect.getA("oldVersion").split("-"))
+                newVersion = tuple(int(i)
+                                   for i in
+                                   bindingRedirect.getA("newVersion").split("."))
                 self.bindingRedirects.append((oldVersion, newVersion))
             for file_ in rootElement.getCEByTN("file"):
                 self.add_file(name=file_.getA("name"),
