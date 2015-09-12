@@ -520,6 +520,10 @@ class EXE(Target):
             # fact depend on those, and the actual manifest will be used
             # later when an activation context is created, all
             # dependencies are removed from the embedded manifest.
+            #
+            # This allows the embedded manifest to still specify UAC options
+            # while the manifest that will be unpacked from the archive will
+            # specify assembly dependencies
             self.manifest.dependentAssemblies = []
             self.manifest.update_resources(tmpnm, [1]) # 1 for executable
             trash.append(tmpnm)

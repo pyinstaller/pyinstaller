@@ -165,7 +165,7 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
         logger.debug("Analyzing %s", pth)
         seen[nm.upper()] = 1
         if is_win:
-            for ftocnm, fn in selectAssemblies(pth, manifest):
+            for ftocnm, fn in getAssemblyFiles(pth, manifest):
                 lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, xtrapath):
             if seen.get(lib.upper(), 0) or seen.get(npth.upper(), 0):
@@ -274,13 +274,14 @@ def check_extract_from_egg(pth, todir=None):
 
 def getAssemblies(pth):
     """
-    On Winodws return the dependent Side-by-Side (SxS) assemblies of a binary.
+    On Windows return the dependent Side-by-Side (SxS) assemblies of a binary as a
+    list of Manifest objects.
 
     Dependent assemblies are required only by binaries compiled with MSVC 9.0.
     Python 2.7 and 3.2 is compiled with MSVC 9.0 and thus depends on Microsoft
     Redistributable runtime libraries 9.0.
 
-    Python 3.3+ depends on version 10.0 and does not use SxS assemblies.
+    Python 3.3+ is compiled with version 10.0 and does not use SxS assemblies.
     """
     # TODO use pefile for this implementation.
     if pth.lower().endswith(".manifest"):
@@ -326,19 +327,24 @@ def getAssemblies(pth):
     return rv
 
 
-def selectAssemblies(pth, manifest=None):
+def getAssemblyFiles(pth, manifest=None):
     """
-    Return a binary's dependent assemblies files that should be included.
+    Find all assemblies that are dependencies of the given binary and return the files
+    that make up the assemblies as (name, fullpath) tuples.
+
+    If a WinManifest object is passed as `manifest`, also updates that manifest to
+    reference the returned assemblies. This is done only to update the built app's .exe
+    with the dependencies of python.exe
 
     Return a list of pairs (name, fullpath)
     """
     rv = []
     if manifest:
-        _depNames = set([dep.name for dep in manifest.dependentAssemblies])
+        _depNames = set(dep.name for dep in manifest.dependentAssemblies)
     for assembly in getAssemblies(pth):
         if seen.get(assembly.getid().upper(), 0):
             continue
-        if manifest and not assembly.name in _depNames:
+        if manifest and assembly.name not in _depNames:
             # Add assembly as dependency to our final output exe's manifest
             logger.info("Adding %s to dependent assemblies "
                         "of final executable\n  required by %s",
