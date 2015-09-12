@@ -253,6 +253,10 @@ def load_py_data_struct(filename):
     else:
         f = open(filename, 'rU', encoding='utf-8')
     with f:
+        # Binding redirects are stored as a named tuple, so bring the namedtuple
+        # class into scope for parsing the TOC.
+        from ..depend.bindepend import BindingRedirect
+
         return eval(f.read())
 
 
