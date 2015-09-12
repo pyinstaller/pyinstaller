@@ -324,8 +324,8 @@ class Analysis(Target):
                 python = os.path.join(os.path.dirname(python), os.readlink(python))
             depmanifest = None
         else:
-            # Windows: Create a manifest to embed into built .exe, similar to
-            # the one embedded into python.exe.
+            # Windows: Create a manifest to embed into built .exe, containing the same
+            # dependencies as python.exe.
             depmanifest = winmanifest.Manifest(type_="win32", name=CONF['specnm'],
                                                processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
@@ -342,14 +342,14 @@ class Analysis(Target):
         bindepend.seen = {}
 
         # Add binary and assembly dependencies of Python.exe.
-        # This ensures that its assembly depencies under Windows get pulled in
-        # first, so that .pyd files analyzed later which may not have their own
-        # manifest and may depend on DLLs which are part of an assembly
-        # referenced by Python's manifest, don't cause 'lib not found' messages
+        # This also ensures that its assembly depencies under Windows get added to the
+        # built .exe's manifest. Python 2.7 extension modules have no assembly
+        # dependencies, and rely on the app-global dependencies set by the .exe.
         self.binaries.extend(bindepend.Dependencies([('', python, '')],
                                                     manifest=depmanifest,
                                                     redirects=self.binding_redirects)[1:])
-
+        if is_win:
+            depmanifest.writeprettyxml()
 
         # The first script in the analysis is the main user script. Its node is used as
         # the "caller" node for all others. This gives a connected graph rather than
@@ -483,10 +483,6 @@ class Analysis(Target):
         self.zipfiles.extend(deps_proc.make_zipfiles_toc())
         # Note: pyiboot02_egg_install is included unconditionally in
         # ``depend.analysis``.
-
-        # Copied from original code
-        if is_win:
-            depmanifest.writeprettyxml()
 
         # Verify that Python dynamic library can be found.
         # Without dynamic Python library PyInstaller cannot continue.
