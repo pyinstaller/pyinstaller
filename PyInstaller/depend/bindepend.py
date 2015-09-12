@@ -19,7 +19,7 @@ from glob import glob
 
 # Required for extracting eggs.
 import zipfile
-
+import collections
 
 from PyInstaller.compat import is_win, is_unix, is_aix, is_solar, is_cygwin, is_darwin, is_freebsd
 from PyInstaller.compat import is_venv, base_prefix, PYDYLIB_NAMES
@@ -144,16 +144,32 @@ def _extract_from_egg(toc):
     return new_toc
 
 
-def Dependencies(lTOC, xtrapath=None, manifest=None):
+BindingRedirect = collections.namedtuple('BindingRedirect',
+                                         'name language arch oldVersion newVersion publicKeyToken')
+
+def match_binding_redirect(manifest, redirect):
+    return all([
+        manifest.name == redirect.name,
+        manifest.version == redirect.oldVersion,
+        manifest.language == redirect.language,
+        manifest.processorArchitecture == redirect.arch,
+        manifest.publicKeyToken == redirect.publicKeyToken,
+    ])
+
+def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
     Expand LTOC to include all the closure of binary dependencies.
 
-    LTOC is a logical table of contents, ie, a seq of tuples (name, path).
+    `LTOC` is a logical table of contents, ie, a seq of tuples (name, path).
     Return LTOC expanded by all the binary dependencies of the entries
     in LTOC, except those listed in the module global EXCLUDES
 
-    manifest should be a winmanifest.Manifest instance on Windows, so
-    that all dependent assemblies can be added
+    `manifest` may be a winmanifest.Manifest instance for a program manifest, so
+    that all dependent assemblies of python.exe can be added to the built exe.
+
+    `redirects` may be a list. Any assembly redirects found via policy files will
+    be added to the list as BindingRedirect objects so they can later be used
+    to modify any manifests that reference the redirected assembly.
     """
     # Extract all necessary binary modules from Python eggs to be included
     # directly with PyInstaller.
@@ -165,7 +181,7 @@ def Dependencies(lTOC, xtrapath=None, manifest=None):
         logger.debug("Analyzing %s", pth)
         seen[nm.upper()] = 1
         if is_win:
-            for ftocnm, fn in selectAssemblies(pth, manifest):
+            for ftocnm, fn in getAssemblyFiles(pth, manifest, redirects):
                 lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, xtrapath):
             if seen.get(lib.upper(), 0) or seen.get(npth.upper(), 0):
@@ -274,15 +290,15 @@ def check_extract_from_egg(pth, todir=None):
 
 def getAssemblies(pth):
     """
-    On Winodws return the dependent Side-by-Side (SxS) assemblies of a binary.
+    On Windows return the dependent Side-by-Side (SxS) assemblies of a binary as a
+    list of Manifest objects.
 
     Dependent assemblies are required only by binaries compiled with MSVC 9.0.
     Python 2.7 and 3.2 is compiled with MSVC 9.0 and thus depends on Microsoft
     Redistributable runtime libraries 9.0.
 
-    Python 3.3+ depends on version 10.0 and does not use SxS assemblies.
+    Python 3.3+ is compiled with version 10.0 and does not use SxS assemblies.
     """
-    # TODO use pefile for this implementation.
     if pth.lower().endswith(".manifest"):
         return []
     # check for manifest file
@@ -326,19 +342,28 @@ def getAssemblies(pth):
     return rv
 
 
-def selectAssemblies(pth, manifest=None):
+def getAssemblyFiles(pth, manifest=None, redirects=None):
     """
-    Return a binary's dependent assemblies files that should be included.
+    Find all assemblies that are dependencies of the given binary and return the files
+    that make up the assemblies as (name, fullpath) tuples.
+
+    If a WinManifest object is passed as `manifest`, also updates that manifest to
+    reference the returned assemblies. This is done only to update the built app's .exe
+    with the dependencies of python.exe
+
+    If a list is passed as `redirects`, and binding redirects in policy files are
+    applied when searching for assemblies, BindingRedirect objects are appended to this
+    list.
 
     Return a list of pairs (name, fullpath)
     """
     rv = []
     if manifest:
-        _depNames = set([dep.name for dep in manifest.dependentAssemblies])
+        _depNames = set(dep.name for dep in manifest.dependentAssemblies)
     for assembly in getAssemblies(pth):
         if seen.get(assembly.getid().upper(), 0):
             continue
-        if manifest and not assembly.name in _depNames:
+        if manifest and assembly.name not in _depNames:
             # Add assembly as dependency to our final output exe's manifest
             logger.info("Adding %s to dependent assemblies "
                         "of final executable\n  required by %s",
@@ -351,7 +376,33 @@ def selectAssemblies(pth, manifest=None):
         if assembly.optional:
             logger.debug("Skipping optional assembly %s", assembly.getid())
             continue
-        files = assembly.find_files()
+
+        from ..config import CONF
+        if CONF.get("win_no_prefer_redirects"):
+            files = assembly.find_files()
+        else:
+            files = []
+        if not len(files):
+            # If no files were found, it may be the case that the required version
+            # of the assembly is not installed, and the policy file is redirecting it
+            # to a newer version. So, we collect the newer version instead.
+            files = assembly.find_files(ignore_policies=False)
+            if len(files) and redirects is not None:
+                # New version was found, old version was not. Add a redirect in the
+                # app configuration
+                old_version = assembly.version
+                new_version = assembly.get_policy_redirect()
+                logger.info("Adding redirect %s version %s -> %s",
+                            assembly.name, old_version, new_version)
+                redirects.append(BindingRedirect(
+                    name=assembly.name,
+                    language=assembly.language,
+                    arch=assembly.processorArchitecture,
+                    publicKeyToken=assembly.publicKeyToken,
+                    oldVersion=old_version,
+                    newVersion=new_version,
+                ))
+
         if files:
             seen[assembly.getid().upper()] = 1
             for fn in files:

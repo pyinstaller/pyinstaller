@@ -113,7 +113,8 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
-                 hiddenimports=None, hookspath=None, excludes=[], runtime_hooks=[], cipher=None):
+                 hiddenimports=None, hookspath=None, excludes=[], runtime_hooks=[],
+                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False):
         """
         scripts
                 A list of scripts specified as file names.
@@ -134,6 +135,13 @@ class Analysis(Target):
         runtime_hooks
                 An optional list of scripts to use as users' runtime hooks. Specified
                 as file names.
+        win_no_prefer_redirects
+                If True, prefers not to follow version redirects when searching for
+                Windows SxS Assemblies.
+        win_private_assemblies
+                If True, changes all bundled Windows SxS Assemblies into Private
+                Assemblies to enforce assembly versions.
+
         """
         super(Analysis, self).__init__()
         from ..config import CONF
@@ -158,6 +166,9 @@ class Analysis(Target):
         # Set global config variable 'pathex' to make it available for hookutils and
         # import hooks. Ppath extensions for module search.
         CONF['pathex'] = self.pathex
+
+        # Set global variable to hold assembly binding redirects
+        CONF['binding_redirects'] = []
 
         self.hiddenimports = hiddenimports or []
         # Include modules detected when parsing options, like 'codecs' and encodings.
@@ -187,6 +198,10 @@ class Analysis(Target):
         self.zipped_data = TOC()
         self.datas = TOC()
         self.dependencies = TOC()
+        self.binding_redirects = CONF['binding_redirects'] = []
+        self.win_no_prefer_redirects = win_no_prefer_redirects
+        self.win_private_assemblies = win_private_assemblies
+
         self.__postinit__()
 
 
@@ -208,6 +223,9 @@ class Analysis(Target):
             ('hookspath', _check_guts_eq),
             ('excludes', _check_guts_eq),
             ('custom_runtime_hooks', _check_guts_eq),
+            ('win_no_prefer_redirects', _check_guts_eq),
+            ('win_private_assemblies', _check_guts_eq),
+
             #'cipher': no need to check as it is implied by an
             # additional hidden import
 
@@ -219,6 +237,9 @@ class Analysis(Target):
             ('zipped_data', None),  # TODO check this, too
             ('datas', _check_guts_toc_mtime),
             # TODO: Need to add "dependencies"?
+
+            # cached binding redirects - loaded into CONF for PYZ/COLLECT to find.
+            ('binding_redirects', None),
             )
 
     def _extend_pathex(self, spec_pathex, scripts):
@@ -263,6 +284,11 @@ class Analysis(Target):
         self.zipfiles = TOC(data['zipfiles'])
         self.zipped_data = TOC(data['zipped_data'])
         self.datas = TOC(data['datas'])
+
+        # Store previously found binding redirects in CONF for later use by PKG/COLLECT
+        from ..config import CONF
+        self.binding_redirects = CONF['binding_redirects'] = data['binding_redirects']
+
         return False
 
     def assemble(self):
@@ -312,7 +338,8 @@ class Analysis(Target):
                 python = os.path.join(os.path.dirname(python), os.readlink(python))
             depmanifest = None
         else:
-            # Windows: no links, but "manifestly" need this:
+            # Windows: Create a manifest to embed into built .exe, containing the same
+            # dependencies as python.exe.
             depmanifest = winmanifest.Manifest(type_="win32", name=CONF['specnm'],
                                                processorArchitecture=winmanifest.processor_architecture(),
                                                version=(1, 0, 0, 0))
@@ -327,14 +354,16 @@ class Analysis(Target):
         # Reset seen variable before running bindepend. We use bindepend only for
         # the python executable.
         bindepend.seen = {}
-        # Add Python's dependencies first.
-        # This ensures that its assembly depencies under Windows get pulled in
-        # first, so that .pyd files analyzed later which may not have their own
-        # manifest and may depend on DLLs which are part of an assembly
-        # referenced by Python's manifest, don't cause 'lib not found' messages
-        self.binaries.extend(bindepend.Dependencies([('', python, '')],
-                                               manifest=depmanifest)[1:])
 
+        # Add binary and assembly dependencies of Python.exe.
+        # This also ensures that its assembly depencies under Windows get added to the
+        # built .exe's manifest. Python 2.7 extension modules have no assembly
+        # dependencies, and rely on the app-global dependencies set by the .exe.
+        self.binaries.extend(bindepend.Dependencies([('', python, '')],
+                                                    manifest=depmanifest,
+                                                    redirects=self.binding_redirects)[1:])
+        if is_win:
+            depmanifest.writeprettyxml()
 
         # The first script in the analysis is the main user script. Its node is used as
         # the "caller" node for all others. This gives a connected graph rather than
@@ -449,7 +478,7 @@ class Analysis(Target):
         self.scripts = self.graph.nodes_to_toc(priority_scripts)
 
         # Extend the binaries list with all the Extensions modulegraph has found.
-        self.binaries  = self.graph.make_binaries_toc(self.binaries)
+        self.binaries = self.graph.make_binaries_toc(self.binaries)
         # Fill the "pure" list with pure Python modules.
         assert len(self.pure) == 0
         self.pure = self.graph.make_pure_toc()
@@ -460,7 +489,8 @@ class Analysis(Target):
         # Add remaining binary dependencies - analyze Python C-extensions and what
         # DLLs they depend on.
         logger.info('Looking for dynamic libraries')
-        self.binaries.extend(bindepend.Dependencies(self.binaries, manifest=depmanifest))
+        self.binaries.extend(bindepend.Dependencies(self.binaries,
+                                                    redirects=self.binding_redirects))
 
         ### Include zipped Python eggs.
         logger.info('Looking for eggs')
@@ -468,13 +498,14 @@ class Analysis(Target):
         # Note: pyiboot02_egg_install is included unconditionally in
         # ``depend.analysis``.
 
-        # Copied from original code
-        if is_win:
-            depmanifest.writeprettyxml()
-
         # Verify that Python dynamic library can be found.
         # Without dynamic Python library PyInstaller cannot continue.
         self._check_python_library(self.binaries)
+
+        if is_win:
+            # Remove duplicate redirects
+            self.binding_redirects[:] = list(set(self.binding_redirects))
+            logger.info("Found binding redirects: \n%s", self.binding_redirects)
 
         # Write warnings about missing modules.
         self._write_warnings()
@@ -663,6 +694,7 @@ def __add_options(parser):
                  help='Clean PyInstaller cache and remove temporary files '
                       'before building.')
 
+
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # Clean up configuration and force PyInstaller to do a clean configuration
     # for another app/test.
@@ -687,10 +719,6 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
         CONF.update(configure.get_config(kw.get('upx_dir')))
     else:
         CONF.update(pyi_config)
-
-    # Append assemblies to dependencies only on Winodws.
-    if is_win:
-        CONF['pylib_assemblies'] = bindepend.getAssemblies(sys.executable)
 
     if CONF['hasUPX']:
         setupUPXFlags()
