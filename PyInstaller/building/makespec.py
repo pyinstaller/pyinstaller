@@ -118,18 +118,18 @@ def __add_options(parser):
                  help="An additional path to search for hooks. "
                       "This option can be used multiple times.")
     g.add_option('--runtime-hook', action='append', dest='runtime_hooks',
-            help='Path to a custom runtime hook file. A runtime hook '
-            'is code that is bundled with the executable and '
-            'is executed before any other code or module '
-            'to set up special features of the runtime environment. '
-            'This option can be used multiple times.')
+                 help='Path to a custom runtime hook file. A runtime hook '
+                 'is code that is bundled with the executable and '
+                 'is executed before any other code or module '
+                 'to set up special features of the runtime environment. '
+                 'This option can be used multiple times.')
     g.add_option('--exclude-module', dest='excludes', action='append',
                  help='Optional module or package (his Python names,'
                  'not path names) that will be ignored (as though'
                  'it was not found).'
                  'This option can be used multiple times.')
     g.add_option('--key', dest='key',
-            help='The key used to encrypt Python bytecode.')
+                 help='The key used to encrypt Python bytecode.')
 
     g = parser.add_option_group('How to generate')
     g.add_option("-d", "--debug", action="store_true", default=False,
@@ -185,6 +185,22 @@ def __add_options(parser):
                  help='Using this option allows an elevated application to '
                       'work with Remote Desktop.')
 
+    g = parser.add_option_group('Windows Side-by-side Assembly searching options (advanced)')
+    g.add_option("--win-private-assemblies", dest="win_private_assemblies",
+                 action="store_true",
+                 help="Any Shared Assemblies bundled into the application "
+                      "will be changed into Private Assemblies. This means "
+                      "the exact versions of these assemblies will always "
+                      "be used, and any newer versions installed on user "
+                      "machines at the system level will be ignored.")
+    g.add_option("--win-no-prefer-redirects", dest="win_no_prefer_redirects",
+                 action="store_true",
+                 help="While searching for Shared or Private Assemblies to "
+                      "bundle into the application, PyInstaller will prefer "
+                      "not to follow policies that redirect to newer versions, "
+                      "and will try to bundle the exact versions of the assembly.")
+
+
     g = parser.add_option_group('Mac OS X specific options')
     g.add_option('--osx-bundle-identifier', dest='bundle_identifier',
                  help='Mac OS X .app bundle identifier is used as the default unique program '
@@ -198,7 +214,9 @@ def main(scripts, name=None, onefile=False,
          pathex=[], version_file=None, specpath=DEFAULT_SPECPATH,
          icon_file=None, manifest=None, resources=[], bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=[],
-         excludes=[], uac_admin=False, uac_uiaccess=False, **kwargs):
+         excludes=[], uac_admin=False, uac_uiaccess=False,
+         win_no_prefer_redirects=False, win_private_assemblies=False,
+         **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -287,7 +305,8 @@ def main(scripts, name=None, onefile=False,
     else:
         cipher_init = cipher_absent_template
 
-    d = {'scripts': scripts,
+    d = {
+        'scripts': scripts,
         'pathex': pathex,
         'hiddenimports': hiddenimports,
         'name': name,
@@ -308,6 +327,9 @@ def main(scripts, name=None, onefile=False,
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.
         'bundle_identifier': bundle_identifier,
+        # Windows assembly searching options
+        'win_no_prefer_redirects': win_no_prefer_redirects,
+        'win_private_assemblies': win_private_assemblies,
     }
 
     if is_win or is_cygwin:

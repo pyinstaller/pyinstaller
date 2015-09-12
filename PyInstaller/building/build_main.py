@@ -113,7 +113,8 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
-                 hiddenimports=None, hookspath=None, excludes=[], runtime_hooks=[], cipher=None):
+                 hiddenimports=None, hookspath=None, excludes=[], runtime_hooks=[],
+                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False):
         """
         scripts
                 A list of scripts specified as file names.
@@ -134,6 +135,13 @@ class Analysis(Target):
         runtime_hooks
                 An optional list of scripts to use as users' runtime hooks. Specified
                 as file names.
+        win_no_prefer_redirects
+                If True, prefers not to follow version redirects when searching for
+                Windows SxS Assemblies.
+        win_private_assemblies
+                If True, changes all bundled Windows SxS Assemblies into Private
+                Assemblies to enforce assembly versions.
+
         """
         super(Analysis, self).__init__()
         from ..config import CONF
@@ -191,6 +199,9 @@ class Analysis(Target):
         self.datas = TOC()
         self.dependencies = TOC()
         self.binding_redirects = CONF['binding_redirects'] = []
+        self.win_no_prefer_redirects = win_no_prefer_redirects
+        self.win_private_assemblies = win_private_assemblies
+
         self.__postinit__()
 
 
@@ -212,6 +223,9 @@ class Analysis(Target):
             ('hookspath', _check_guts_eq),
             ('excludes', _check_guts_eq),
             ('custom_runtime_hooks', _check_guts_eq),
+            ('win_no_prefer_redirects', _check_guts_eq),
+            ('win_private_assemblies', _check_guts_eq),
+
             #'cipher': no need to check as it is implied by an
             # additional hidden import
 
@@ -679,6 +693,7 @@ def __add_options(parser):
     parser.add_option('--clean', dest='clean_build', action='store_true', default=False,
                  help='Clean PyInstaller cache and remove temporary files '
                       'before building.')
+
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # Clean up configuration and force PyInstaller to do a clean configuration

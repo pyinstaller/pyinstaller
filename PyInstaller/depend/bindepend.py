@@ -378,7 +378,7 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
             continue
 
         from ..config import CONF
-        if CONF.get("win_prefer_no_redirects"):
+        if CONF.get("win_no_prefer_redirects"):
             files = assembly.find_files()
         else:
             files = []
