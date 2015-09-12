@@ -367,7 +367,12 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
         if assembly.optional:
             logger.debug("Skipping optional assembly %s", assembly.getid())
             continue
-        files = assembly.find_files()
+
+        from ..config import CONF
+        if CONF.get("win_prefer_no_redirects"):
+            files = assembly.find_files()
+        else:
+            files = []
         if not len(files):
             # If no files were found, it may be the case that the required version
             # of the assembly is not installed, and the policy file is redirecting it
