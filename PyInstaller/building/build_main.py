@@ -335,7 +335,7 @@ class Analysis(Target):
         # manifest and may depend on DLLs which are part of an assembly
         # referenced by Python's manifest, don't cause 'lib not found' messages
         self.binaries.extend(bindepend.Dependencies([('', python, '')],
-                                               manifest=depmanifest)[1:])
+                                                    manifest=depmanifest)[1:])
 
 
         # The first script in the analysis is the main user script. Its node is used as
@@ -689,10 +689,6 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
         CONF.update(configure.get_config(kw.get('upx_dir')))
     else:
         CONF.update(pyi_config)
-
-    # Append assemblies to dependencies only on Winodws.
-    if is_win:
-        CONF['pylib_assemblies'] = bindepend.getAssemblies(sys.executable)
 
     if CONF['hasUPX']:
         setupUPXFlags()

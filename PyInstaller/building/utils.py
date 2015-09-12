@@ -259,21 +259,6 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                             os.path.basename(fnm))
                             manifest.publicKeyToken = None
 
-                            # Fix the embedded manifest (if any):
-                            # Extension modules built with Python 2.6.5 have
-                            # an empty <dependency> element, we need to add
-                            # dependentAssemblies from python.exe for
-                            # pyinstaller.
-                            _depNames = set([dep.name for dep in
-                                             manifest.dependentAssemblies])
-                            for pydep in CONF['pylib_assemblies']:
-                                if not pydep.name in _depNames:
-                                    logger.info("Adding %r to dependent "
-                                                "assemblies of %r",
-                                                pydep.name, cachedfile)
-                                    manifest.dependentAssemblies.append(pydep)
-                                    _depNames.update(pydep.name)
-
                             # Change dep to private assembly
                             for dep in manifest.dependentAssemblies:
                                 # Exclude common-controls which is not bundled
