@@ -21,6 +21,7 @@ import sys
 from PyInstaller import is_darwin, is_win, compat
 from PyInstaller.compat import EXTENSION_SUFFIXES
 from PyInstaller.depend import dylib
+from PyInstaller.depend.bindepend import match_binding_redirect
 from PyInstaller.utils import misc
 from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
@@ -105,6 +106,24 @@ def add_suffix_to_extensions(toc):
         new_toc.append((inm, fnm, typ))
     return new_toc
 
+def applyRedirects(manifest, redirects):
+    """
+    Apply the binding redirects specified by 'redirects' to the dependent assemblies
+    of 'manifest'.
+
+    :param manifest:
+    :type manifest:
+    :param redirects:
+    :type redirects:
+    :return:
+    :rtype:
+    """
+    for binding in redirects:
+        for dep in manifest.dependentAssemblies:
+            if match_binding_redirect(dep, binding):
+                logger.info("Redirecting %s version %s -> %s",
+                            binding.name, dep.version, binding.newVersion)
+                dep.version = binding.newVersion
 
 def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
@@ -171,6 +190,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
             return cachedfile
 
+    redirects = CONF.get('binding_redirects', [])
+
     # Optionally change manifest and its deps to private assemblies
     if fnm.lower().endswith(".manifest"):
         manifest = winmanifest.Manifest()
@@ -185,6 +206,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                 # Exclude common-controls which is not bundled
                 if dep.name != "Microsoft.Windows.Common-Controls":
                     dep.publicKeyToken = None
+
+        applyRedirects(manifest, redirects)
 
         manifest.writeprettyxml(cachedfile)
         return cachedfile
@@ -259,6 +282,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                     # Exclude common-controls which is not bundled
                                     if dep.name != "Microsoft.Windows.Common-Controls":
                                         dep.publicKeyToken = None
+                            applyRedirects(manifest, redirects)
                             try:
                                 manifest.update_resources(os.path.abspath(cachedfile),
                                                           [name],

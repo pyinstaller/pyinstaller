@@ -190,7 +190,7 @@ class Analysis(Target):
         self.zipped_data = TOC()
         self.datas = TOC()
         self.dependencies = TOC()
-        self.binding_redirects = []
+        self.binding_redirects = CONF['binding_redirects'] = []
         self.__postinit__()
 
 
@@ -491,6 +491,11 @@ class Analysis(Target):
         # Verify that Python dynamic library can be found.
         # Without dynamic Python library PyInstaller cannot continue.
         self._check_python_library(self.binaries)
+
+        if is_win:
+            # Remove duplicate redirects
+            self.binding_redirects[:] = list(set(self.binding_redirects))
+            logger.info("Found binding redirects: \n%s", self.binding_redirects)
 
         # Write warnings about missing modules.
         self._write_warnings()

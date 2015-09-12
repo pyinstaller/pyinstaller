@@ -147,6 +147,15 @@ def _extract_from_egg(toc):
 BindingRedirect = collections.namedtuple('BindingRedirect',
                                          'name language arch oldVersion newVersion publicKeyToken')
 
+def match_binding_redirect(manifest, redirect):
+    return all([
+        manifest.name == redirect.name,
+        manifest.version == redirect.oldVersion,
+        manifest.language == redirect.language,
+        manifest.processorArchitecture == redirect.arch,
+        manifest.publicKeyToken == redirect.publicKeyToken,
+    ])
+
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
     Expand LTOC to include all the closure of binary dependencies.
@@ -383,6 +392,8 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
                 # app configuration
                 old_version = assembly.version
                 new_version = assembly.get_policy_redirect()
+                logger.info("Adding redirect %s version %s -> %s",
+                            assembly.name, old_version, new_version)
                 redirects.append(BindingRedirect(
                     name=assembly.name,
                     language=assembly.language,
