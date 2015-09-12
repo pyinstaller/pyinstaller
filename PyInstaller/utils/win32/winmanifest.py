@@ -415,12 +415,18 @@ class Manifest(object):
         """ Search shared and private assemblies and return a list of files.
         
         If any files are not found, return an empty list.
-        
-        IMPORTANT NOTE: For the purpose of getting the dependent assembly 
-        files of an executable, the publisher configuration (aka policy)
-        should be ignored (which is the default). Setting ignore_policies=False 
-        is only useful to find out which files are actually loaded at
-        runtime.
+
+        IMPORTANT NOTE: On some Windows systems, the dependency listed in the manifest
+        will not actually be present, and finding its files will fail. This is because
+        a newer version of the dependency is installed, and the manifest's dependency
+        is being redirected to a newer version. To properly bundle the newer version of
+        the assembly, you need to find the newer version by setting
+        ignore_policies=False, and then either create a .config file for each bundled
+        assembly, or modify each bundled assembly to point to the newer version.
+
+        This is important because Python 2.7's app manifest depends on version 21022
+        of the VC90 assembly, but the Python 2.7.9 installer will install version
+        30729 of the assembly along with a policy file that enacts the version redirect.
         
         """
         
@@ -453,7 +459,7 @@ class Manifest(object):
         
         manifests = self.get_manifest_dir()
         winsxs = self.get_winsxs_dir()
-        
+
         for language in languages:
             version = self.version
             
