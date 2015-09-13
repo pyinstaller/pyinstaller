@@ -40,13 +40,8 @@ environment:
 
 cache:
   # Cache created Python .whl packages to avoid compiling them again.
-  # .whl packages will be recreated only if ./tests/requirements-win.txt has changed.
-  - C:\wheels -> tests\requirements-win.txt
-  # Cache downloaded pip packages
-  #- "%LOCALAPPDATA%\\pip" -> tests\requirements-win.txt
-  # Cache some downloaded packages - downloading again and again is unreliable and
-  # causes some failures
-  - C:\downloads
+  # Wheels are built with --use-wheel to avoid recompiling already-built wheels.
+  - C:\wheels
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -75,20 +70,27 @@ install:
 
   ### Install the PyInsaller dependencies.
 
-  # Create directory for downloads if it does not exist already.
-  - ps: If ( -not (Test-Path C:/downloads) )  { mkdir C:/downloads }
-
   # Create .whl packages from dependencies for possible caching.
   # First install 'wheel' package to be able create .whl files.
   - "%CMD_IN_ENV% pip install wheel"
+
+  # Create c:/wheels if it does not exist.
+  - ps: If ( -not (Test-Path C:/wheels) )  { mkdir C:/wheels }
+
+  - ECHO "Cached wheels:"
+  - ps: "ls \"C:/wheels\""
 
   # Create .whl packages from dependencies for possible caching.
   # If some dependencies contain
   # compiled extensions and are not provided as pre-built wheel packages,
   # pip will build them from source using the MSVC compiler matching the
   # target Python version and architecture
-  # TODO check if Appveyour deletes 'wheel' directory when cache is invalidated.
-  - "IF NOT EXIST C:/wheels %CMD_IN_ENV% pip wheel --wheel-dir C:/wheels -r tests/requirements-win.txt"
+  # If we have previously built a wheel and stored it in C:/wheels,
+  # the --find-links option will find the previously built wheel and
+  # skip rebuilding it. The wheel will still be rebuilt if a newer version is
+  # available on PyPI.
+  # TODO: remove out-of-date wheels to avoid overflowing the build cache
+  - "%CMD_IN_ENV% pip wheel --use-wheel --wheel-dir C:/wheels --find-links c:/wheels -r tests/requirements-win.txt"
 
   # Install the PyInstaller test dependencies.
   # Use cached .whl packages.
