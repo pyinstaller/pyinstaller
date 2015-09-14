@@ -316,22 +316,25 @@ They do not need to have Python installed at all.
 Analysis: Finding the Files Your Program Needs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-What does your script need in order to run, besides a Python interpreter?
-To find out, |PyInstaller| looks at all the ``import`` statements
+What does your script need in order to run?
+(These are sometimes called its "dependencies".)
+
+To find out, |PyInstaller| finds all the ``import`` statements
 in your script.
-It finds those Python modules and looks in them for ``import``
-statements, and so on recursively, until it has a complete list of Python
-modules your
-script requires.
+It finds the imported modules and looks in them for ``import``
+statements, and so on recursively, until it has a complete list of
+modules your script may use.
 
 |PyInstaller| understands the "egg" distribution format often used
 for Python packages.
-If your script imports a module from an "egg" |PyInstaller| adds
+If your script imports a module from an "egg", |PyInstaller| adds
 the egg and its dependencies to the set of needed files.
 
-|PyInstaller| also knows about the GUI packages
+|PyInstaller| also knows about many major Python packages,
+including the GUI packages
 Qt_ (imported via PyQt_ or PySide_), WxPython_, TkInter_, Django_,
 and other major packages.
+(For a complete list of supported packages see LINK HERE)
 
 Some Python scripts import modules in ways that |PyInstaller| cannot detect:
 for example, by using the ``__import__()`` function with variable data,
@@ -339,7 +342,7 @@ or manipulating the ``sys.path`` value at run time.
 If your script requires files that |PyInstaller| does not know about,
 you must help it:
 
-* You can give additional files on the |PyInstaller| command line.
+* You can give additional files on the ``pyinstaller`` command line.
 * You can give additional import paths on the command line.
 * You can edit the ``myscript.spec`` file
   that |PyInstaller| writes the first time you run it for your script.
@@ -352,9 +355,11 @@ you must help it:
 If your program depends on access to certain data files,
 you can tell |PyInstaller| to include them in the bundle as well.
 You do this by modifying the spec file, an advanced topic that is
-covered under `Using Spec Files`_.
-In order to locate these files, your program needs to be able to
-learn its path at run time in a way that works regardless of
+covered under `Using Spec Files`_. (LINK TARGET TO CHANGE).
+
+In order to locate included files at run time,
+your program needs to be able to learn its path at run time
+in a way that works regardless of
 whether or not it is running from a bundle.
 This is covered under `Accessing Data Files`_.
 
@@ -374,24 +379,24 @@ They install the program simply by unzipping it.
 A user runs your app by
 opening the folder and launching the ``myscript`` executable inside it.
 
-A small advantage of one-folder mode is that it is easier to debug
-a failure in building the app.
-You can see exactly what files |PyInstaller| collected.
+Using one-folder mode, it is easier to debug
+any problems in building the app.
+You can see exactly what files |PyInstaller| collected into the folder.
 
-Another small advantage
+Another advantage of a one-folder bundle
 is that when you change your code, as long
 as it imports `exactly the same set of support files`, you could send out
 only the updated ``myscript`` executable.
 That is typically much smaller
 than the entire folder.
-(Of course, if you change the script so that it imports more
-or different support files, or if the support libraries
+(If you change the script so that it imports more
+or different dependencies, or if the dependencies
 are upgraded, you must redistribute the whole bundle.)
 
 A small disadvantage of the one-folder format is that the one folder contains
 a large number of files.
 Your user must find the ``myscript`` executable
-in a long list of names or a big array of icons.
+in a long list of names or among a big array of icons.
 Also your user can create
 a problem by accidentally dragging files out of the folder.
 
