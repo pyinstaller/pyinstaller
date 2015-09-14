@@ -9,4 +9,7 @@
 
 from PyInstaller.utils.hooks.hookutils import collect_data_files
 
+# pycountry requires the ISO databases for country data.
+# Tested v1.15 on Linux/Ubuntu.
+# https://pypi.python.org/pypi/pycountry
 datas = collect_data_files('pycountry')
