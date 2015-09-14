@@ -400,48 +400,19 @@ in a long list of names or among a big array of icons.
 Also your user can create
 a problem by accidentally dragging files out of the folder.
 
-
-Bundling to One File
-~~~~~~~~~~~~~~~~~~~~~
-
-An option of |PyInstaller| is to produce a single executable named
-``myscript`` (``myscript.exe`` in Windows).
-All the support files needed to run your program are embedded in the one program file.
-
-The advantage of this is that your users get something they understand,
-a single executable to launch.
-One disadvantage is that any related files
-such as README must be distributed separately.
-Another is that the single executable is a little slower to start up than
-the executable in one folder.
-
-.. Note::
-
-  Before bundling your project to one file, make sure it works fine
-  when bundled to one folder. `When Things Go Wrong`_ it's *much* easier to
-  find out what actually went wrong if you bundled to one folder.
-
-.. Note::
-  Applications that use `os.setuid()` may encounter permissions errors due to the
-  temporary folder not being readable after `setuid` is called. If your app needs to
-  call `setuid`, it may be better to use a one-folder build to have more control
-  over the permissions on your application's files. 
-
 How the One-Folder Program Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A bundled program always starts execution in the |PyInstaller| |bootloader|.
-This is the heart of the ``myscript`` executable in the one folder,
-and of the one-file executable.
+This is the heart of the ``myscript`` executable in the folder.
 
 The |PyInstaller| |bootloader| is a binary
 executable program for the active platform
 (Windows, Linux, Mac OS X, etc.).
 When the user launches your program, it is the |bootloader| that runs.
-For a one-folder program, the |bootloader|
-creates a temporary Python environment
-such that the Python interpreter will find all imported modules and libraries
-in the ``myscript`` folder.
+The |bootloader| creates a temporary Python environment
+such that the Python interpreter will find all imported modules and
+libraries in the ``myscript`` folder.
 
 The |bootloader| starts a copy of the Python interpreter
 to execute your script.
@@ -450,6 +421,31 @@ that all the necessary support files were included.
 
 (This is an overview.
 For more detail, see `The Bootstrap Process in Detail`_ below.)
+
+
+Bundling to One File
+~~~~~~~~~~~~~~~~~~~~~
+
+|PyInstaller| can bundle your script and all its dependencies into a single
+executable named ``myscript`` (``myscript.exe`` in Windows).
+
+The advantage is that your users get something they understand,
+a single executable to launch.
+A disadvantage is that any related files
+such as a README must be distributed separately.
+Also, the single executable is a little slower to start up than
+the one-folder bundle.
+
+Before you attempt to bundle to one file, make sure your app
+works correctly when bundled to one folder.
+It is is *much* easier to debug problems in one-folder mode.
+
+.. Note::
+    Applications that use `os.setuid()` may encounter permissions errors.
+    The temporary folder where the bundled app runs may not being readable
+    after `setuid` is called. If your script needs to
+    call `setuid`, it may be better to use one-folder mode
+    so as to have more control over the permissions on its files. 
 
 
 How the One-File Program Works
