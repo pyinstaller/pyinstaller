@@ -74,7 +74,7 @@ if root_dir:
              'contrib.flatpages.migrations',
              'contrib.redirects.migrations',
              'contrib.sessions.migrations',
-             'contrib.site.migrations',
+             'contrib.sites.migrations',
     ]
     for mod in migration_modules:
         bundle_dir = mod.replace('.', os.sep)
