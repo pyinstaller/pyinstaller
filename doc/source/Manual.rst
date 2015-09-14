@@ -36,7 +36,8 @@ and resolutions for many old issues.
 
 Functional changes include an easier way to include data files
 in the bundle (LINK HERE)
-and changes to the "hook" API (LINK HERE). 
+changes to the "hook" API (LINK HERE),
+and removal of support for Python prior to 2.7.
 
 Requirements
 ============
