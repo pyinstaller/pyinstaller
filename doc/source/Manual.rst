@@ -256,14 +256,15 @@ The complete installation places these commands on the execution path:
 * ``pyi-make_comserver`` is used to build a Windows COM server.
   See `Windows COM Server Support`_.
 
-If you do not perform the complete installation (``setup.py`` or
-installing via ``pip``), these commands will not exist as commands.
-However you can still execute all the functions documented below
+If you do not perform a complete installation
+(installing via ``pip`` or executing ``setup.py``),
+these commands will not be installed as commands.
+However, you can still execute all the functions documented below
 by running Python scripts found in the distribution folder.
 The equivalent of the ``pyinstaller`` command is
 *pyinstaller-folder* ``/pyinstaller.py``.
 The other commands are found in *pyinstaller-folder* ``/cliutils/``
-with obvious names (``makespec.py``, etc.)
+with meaningful names (``makespec.py``, etc.)
 
 
 Overview: What |PyInstaller| Does and How It Does It
@@ -2350,14 +2351,6 @@ are still present in the code but are rarely used and may no longer work.
 
 Windows COM Server Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		Recent rename:
-		  ./utils/MakeComServer.py  - ./utils/make_comserver.py
-
-		and after python setup.py install there will be command
-		'pyi-make_comserver'
-
-
 
 A Windows COM server is a Windows program the uses
 `Microsoft COM`_ (Component Object Model) technology.
