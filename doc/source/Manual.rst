@@ -440,22 +440,15 @@ Before you attempt to bundle to one file, make sure your app
 works correctly when bundled to one folder.
 It is is *much* easier to debug problems in one-folder mode.
 
-.. Note::
-    Applications that use `os.setuid()` may encounter permissions errors.
-    The temporary folder where the bundled app runs may not being readable
-    after `setuid` is called. If your script needs to
-    call `setuid`, it may be better to use one-folder mode
-    so as to have more control over the permissions on its files. 
-
-
 How the One-File Program Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For a one-file program, the |bootloader| first creates a temporary folder
+The |bootloader| is the heart of the one-file bundle also.
+When started it creates a temporary folder
 in the appropriate temp-folder location for this OS.
 The folder is named ``_MEI``\ *xxxxxx*, where *xxxxxx* is a random number.
 
-The one file contains an embedded archive of all the Python
+The one executable file contains an embedded archive of all the Python
 modules used by your script, as well as
 compressed copies of any non-Python support files (e.g. ``.so`` files).
 The |bootloader| uncompresses the support files and writes copies
@@ -465,19 +458,21 @@ That is why a one-file app is a little slower to start
 than a one-folder app.
 
 After creating the temporary folder, the |bootloader|
-proceeds exactly as for the one-folder
-bundle, in the context of the temporary folder.
+proceeds exactly as for the one-folder bundle,
+in the context of the temporary folder.
 When the bundled code terminates,
-it deletes the temporary folder.
+the |bootloader| deletes the temporary folder.
 
-(Note that in Linux and related systems, it is possible
+(In Linux and related systems, it is possible
 to mount the ``/tmp`` folder with a "no-execution" option.
 That option is not compatible with a |PyInstaller|
 one-file bundle. It needs to execute code out of ``/tmp``.)
 
 Because the program makes a temporary folder with a unique name,
-you can run multiple copies; they won't interfere with each other.
-However, running multiple copies is expensive in disk space because nothing is shared.
+you can run multiple copies of the app;
+they won't interfere with each other.
+However, running multiple copies is expensive in disk space because
+nothing is shared.
 
 The ``_MEI``\ *xxxxxx* folder is not removed if the program crashes
 or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
@@ -485,28 +480,37 @@ or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
 Thus if your app crashes frequently, your users will lose disk space to
 multiple ``_MEI``\ *xxxxxx* temporary folders.
 
-Do *not* give administrator privileges to a one-file executable
-(setuid root in Unix/Linux, "Run this program as an administrator"
-property in Windows 7).
-There is an unlikely but not impossible way in which a malicious attacker could
-corrupt one of the shared libraries in the temp folder
-while the |bootloader| is preparing it.
-Distribute a privileged program in one-folder mode instead.
+.. Note::
+
+    Do *not* give administrator privileges to a one-file executable
+    (setuid root in Unix/Linux, or the "Run this program as an administrator"
+    property in Windows 7).
+    There is an unlikely but not impossible way in which a malicious attacker could
+    corrupt one of the shared libraries in the temp folder
+    while the |bootloader| is preparing it.
+    Distribute a privileged program in one-folder mode instead.
+
+.. Note::
+    Applications that use `os.setuid()` may encounter permissions errors.
+    The temporary folder where the bundled app runs may not being readable
+    after `setuid` is called. If your script needs to
+    call `setuid`, it may be better to use one-folder mode
+    so as to have more control over the permissions on its files. 
 
 
-Console or not?
-~~~~~~~~~~~~~~~~~~~~~
+Using a Console Window
+~~~~~~~~~~~~~~~~~~~~~~~
 
 By default the |bootloader| creates a command-line console
 (a terminal window in Linux and Mac OS, a command window in Windows).
 It gives this window to the Python interpreter for its standard input and output.
-Error messages from Python and
-print statements in your script will appear in the console window.
-If your script reads from standard input, the user can enter data in the window.
+Your script's use of ``print`` and ``input()`` are directed here.
+Error messages from Python and default logging output
+also appear in the console window.
 
 An option for Windows and Mac OS is to tell |PyInstaller| to not provide a console window.
 The |bootloader| starts Python with no target for standard output or input.
-Do this if your script has a graphical interface for user input and can properly
+Do this when your script has a graphical interface for user input and can properly
 report its own diagnostics.
 
 
