@@ -24,6 +24,7 @@ from ..lib.modulegraph import modulegraph
 
 from .. import compat
 from ..compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC, PY3_BASE_MODULES
+from .dylib import include_library
 from .. import log as logging
 
 logger = logging.getLogger(__name__)
@@ -324,14 +325,7 @@ def _resolveCtypesImports(cbinaries):
     # local paths to library search paths, then replaces original values.
     old = _setPaths()
     for cbin in cbinaries:
-        # Ignore annoying warnings like:
-        # 'W: library kernel32.dll required via ctypes not found'
-        # 'W: library coredll.dll required via ctypes not found'
-        if cbin in ['coredll.dll', 'kernel32.dll']:
-            continue
-        ext = os.path.splitext(cbin)[1]
-        # On Windows, only .dll files can be loaded.
-        if os.name == "nt" and ext.lower() in [".so", ".dylib"]:
+        if not include_library(cbin):
             continue
         cpath = find_library(os.path.splitext(cbin)[0])
         if is_unix:
