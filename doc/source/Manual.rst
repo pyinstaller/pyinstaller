@@ -272,33 +272,45 @@ Overview: What |PyInstaller| Does and How It Does It
 
 This section covers the basic ideas of |PyInstaller|.
 These ideas apply to all platforms.
-There are many options, exceptions, and special cases covered under `Using PyInstaller`_.
+The many options and special cases are covered below, under `Using PyInstaller`_.
+
 |PyInstaller| reads a Python script written by you.
-First it analyzes your code to discover every other file
+It analyzes your code to discover every other file
 your script needs in order to execute.
-Then it finds, copies, and collects all those other
-files -- including the active Python interpreter! -- and
-puts them with
+Then it collects copies of all those files -- including
+the active Python interpreter! -- and puts them with
 your script in a single folder,
 or optionally in a single executable file.
 
-You distribute this folder or file to other people, and they can execute
+For the great majority of programs, this can be done with one short command,
+
+	pyinstaller myscript.py
+
+or with a few added options, for example a windowed application
+as a single-file executable,
+
+    pyinstaller --onefile --windowed myscript.py
+
+You distribute the bundle as a folder or file to other people,
+and they can execute
 your program.
-As far as your users can tell, your app is self-contained;
-they do not need to install any support packages,
-or any particular version of Python.
+To your users, the app is self-contained.
+They do not need to install any particular version of Python or any modules.
 They do not need to have Python installed at all.
-
-The output of  |PyInstaller| is specific to the active operating system
-and the active version of Python. To prepare a distribution for a different
-OS, or for a dfferent version of Python,
-you run |PyInstaller| on that OS, under that version of Python.
-
 
 .. Note::
 
-   Don't assume that your 64-bit based Python will generate
-   executables that work on 32-bit systems.
+    The output of  |PyInstaller| is specific to the active operating system
+    and the active version of Python.
+    This means that to prepare a distribution for:
+
+        * a different OS
+        * a different version of Python
+        * a 32-bit or 64-bit OS
+
+    you run |PyInstaller| on that OS, under that version of Python.
+    The Python interpreter that executes |PyInstaller| is part of
+    the bundle, and it is specific to the OS and the word size.
 
 
 Analysis: Finding the Files Your Program Needs
