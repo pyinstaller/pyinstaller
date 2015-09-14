@@ -130,7 +130,7 @@ How to Install |PyInstaller|
 ===============================
 
 |PyInstaller| is a normal Python package.
-You can download the archive from pypi_,
+You can download the archive from PyPi_,
 but it is easier to install using pip_ where pip_ is available,
 for example::
 
@@ -143,7 +143,7 @@ or upgrade to a newer version::
 Installing from the archive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can also install |PyInstaller| by downloading the compressed archive
+You can install |PyInstaller| by downloading the compressed archive
 from PyPI_.
 
 Expand the archive.
@@ -213,15 +213,15 @@ execution path. To verify this, enter the command
 
   ``pyinstaller --version``
 
-The result should resemble ``2.n`` for a released version,
-and ``2.1dev-xxxxxx`` for a development branch.
+The result should resemble ``3.n`` for a released version,
+and ``3.ndev-xxxxxx`` for a development branch.
 
 If the command is not found, make sure the execution path includes
 the proper directory:
 
-* Windows: ``C:\PythonXY\Scripts`` (where *XY* stands for the
-  major and minor Python verysion number, for example ``C:\Python27\Scripts``
-  for Python 2.7)
+* Windows: ``C:\PythonXY\Scripts`` where *XY* stands for the
+  major and minor Python verysion number,
+  for example ``C:\Python34\Scripts`` for Python 3.4)
 * Linux: ``/usr/bin/``
 * OS X (using the default Apple-supplied Python) ``/usr/local/bin``
 * OS X (using Python installed by macports) ``/opt/local/bin``
