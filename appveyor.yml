@@ -65,7 +65,7 @@ install:
   # Compile bootloader, use mingw.
   - "SET PATH=C:\\MinGW\\bin;%PATH%"
   - cd bootloader
-  - "python waf distclean all %WAF_ARGS%"
+  - "python waf --msvc_version="msvc 12.0" distclean all %WAF_ARGS%"
   - cd ..
 
   ### Install the PyInsaller dependencies.
