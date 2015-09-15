@@ -717,9 +717,9 @@ UPX has been used with |PyInstaller| output often, usually with no problems.
 Encrypting Python Bytecode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Python bytecode can be encrypted by specifying the '--key' argument on
-the command line. For this to work, you will need PyCrypto 2.4 (or later) to be
-installed on the system where the package is built.
+Python bytecode can be encrypted by specifying the ``--key`` argument on
+the command line. For this to work, you must have the PyCrypto_
+module installed.
 
 
 Supporting Multiple Platforms
@@ -2599,6 +2599,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _pip: http://www.pip-installer.org/
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
 .. _png2icns: http://icns.sourceforge.net/
+.. _PyCrypto: https://pypi.python.org/pypi/pycrypto/
 .. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
 .. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
