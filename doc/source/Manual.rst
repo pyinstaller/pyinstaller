@@ -2627,57 +2627,59 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
       >>>
 
 
-.. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
-.. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
-.. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
-.. _UPX: http://upx.sourceforge.net/
-.. _Qt: http://www.qt-project.org
-.. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
-.. _PySide: http://qt-project.org/wiki/About-PySide
-.. _WxPython: http://www.wxpython.org/
-.. _TkInter: http://wiki.python.org/moin/TkInter
-.. _setup_tools: https://pypi.python.org/pypi/setuptools
-.. _pip: http://www.pip-installer.org/
-.. _virtualenv:  http://www.virtualenv.org/
-.. _pypi: https://pypi.python.org/pypi/PyInstaller/
-.. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
-.. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
-.. _PIL: http://www.pythonware.com/products/pil/
-.. _PyWin32: http://sourceforge.net/projects/pywin32/files/
-.. _Xcode: http://developer.apple.com/xcode
-.. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt
-.. _FAQ: http://www.pyinstaller.org/wiki/FAQ
-.. _wiki: http://www.pyinstaller.org/wiki
-.. _Recipe: http://www.pyinstaller.org/wiki/Recipe
-.. _MinGW: http://sourceforge.net/downloads/mingw/
-.. _MinGW-w64: http://mingw-w64.sourceforge.net/
-.. _TDM-GCC: http://tdm-gcc.tdragon.net/
-.. _`LSB sdk 4.0`: http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/
-.. |ZlibArchiveImage| image:: images/ZlibArchive.png
 .. |CArchiveImage| image:: images/CArchive.png
 .. |SE_exeImage| image:: images/SE_exe.png
-.. _imputil: http://docs.python.org/2.7/library/imputil.html
-.. _Modulefinder: http://docs.python.org/2.7/library/modulefinder.html
-.. _ImageMagick: http://www.imagemagick.org/script/index.php
-.. _netpbm package: http://netpbm.sourceforge.net/
-.. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
-.. _makeicns: https://bitbucket.org/mkae/makeicns
-.. _png2icns: http://icns.sourceforge.net/
+.. |ZlibArchiveImage| image:: images/ZlibArchive.png
+
+.. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
+.. _Cython: http://www.cython.org/
 .. _Django: https://www.djangoproject.com/
+.. _Dropbox: https://www.dropbox.com/home
+.. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
+.. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
+.. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt
+.. _FAQ: http://www.pyinstaller.org/wiki/FAQ
+.. _Git: http://git-scm.com/downloads
+.. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
+.. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
+.. _ImageMagick: http://www.imagemagick.org/script/index.php
+.. _imputil: http://docs.python.org/2.7/library/imputil.html
+.. include:: _definitions.txt
+.. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
+.. _`LSB sdk 4.0`: http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/
+.. _makeicns: https://bitbucket.org/mkae/makeicns
 .. _marshalled: http://docs.python.org/library/marshal
-.. _`Visual Studio Express`: http://www.microsoft.com/express/
-.. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
+.. _MinGW: http://sourceforge.net/downloads/mingw/
+.. _MinGW-w64: http://mingw-w64.sourceforge.net/
+.. _Modulefinder: http://docs.python.org/2.7/library/modulefinder.html
+.. _netpbm package: http://netpbm.sourceforge.net/
 .. _Parallels: http://www.parallels.com/
+.. _`PEP 302`: http://www.python.org/dev/peps/pep-0302/
+.. _PIL: http://www.pythonware.com/products/pil/
+.. _pip: http://www.pip-installer.org/
+.. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
+.. _png2icns: http://icns.sourceforge.net/
+.. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
+.. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
+.. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
+.. _pypi: https://pypi.python.org/pypi/PyInstaller/
+.. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
+.. _PySide: http://qt-project.org/wiki/About-PySide
+.. _PyWin32: http://sourceforge.net/projects/pywin32/files/
+.. _Qt: http://www.qt-project.org
+.. _Recipe: http://www.pyinstaller.org/wiki/Recipe
+.. _setup_tools: https://pypi.python.org/pypi/setuptools
+.. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
+.. _TDM-GCC: http://tdm-gcc.tdragon.net/
+.. _TkInter: http://wiki.python.org/moin/TkInter
+.. _UPX: http://upx.sourceforge.net/
+.. _virtualenv:  http://www.virtualenv.org/
+.. _`Visual Studio Express`: http://www.microsoft.com/express/
+.. _wiki: http://www.pyinstaller.org/wiki
+.. _`Version Information Structures`: http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx
 .. _virtualBox: https://www.virtualbox.org
 .. _VMWare: http://www.vmware.com/solutions/desktop/
 .. _Wine: http://www.winehq.org/
-.. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
-.. _Dropbox: https://www.dropbox.com/home
-.. _Git: http://git-scm.com/downloads
-.. _Cython: http://www.cython.org/
-.. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
-.. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
-.. _`PEP 302`: http://www.python.org/dev/peps/pep-0302/
-.. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
-.. _`Version Information Structures`: http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx
-.. include:: _definitions.txt
+.. _WxPython: http://www.wxpython.org/
+.. _Xcode: http://developer.apple.com/xcode
+
