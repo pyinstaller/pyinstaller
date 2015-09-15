@@ -740,9 +740,11 @@ or a supported version that uses Qt4 and a development version that uses Qt5 --
 we recommend you use virtualenv_.
 With virtualenv you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
+(If you work only with Python 3.4 and later, the built-in script pyvenv_
+does the same job.)
 
 * Use virtualenv to create as many different development environments as you need,
-  each with its own combination of Python and installed packages.
+  each with its unique combination of Python and installed packages.
 * Install |PyInstaller| in each environment.
 * Use |PyInstaller| to build your application in each environment.
 
@@ -2606,6 +2608,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
 .. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
 .. _PySide: http://qt-project.org/wiki/About-PySide
+.. _pyvenv: https://docs.python.org/3.4/library/venv.html
 .. _PyWin32: http://sourceforge.net/projects/pywin32/files/
 .. _Qt: http://www.qt-project.org
 .. _Recipe: http://www.pyinstaller.org/wiki/Recipe
