@@ -237,9 +237,6 @@ The complete installation places these commands on the execution path:
 * ``pyi-grab_version`` is used to extract a version resource from a Windows
   executable.  See `Capturing Version Data`_.
 
-* ``pyi-make_comserver`` is used to build a Windows COM server.
-  See `Windows COM Server Support`_.
-
 If you do not perform a complete installation
 (installing via ``pip`` or executing ``setup.py``),
 these commands will not be installed as commands.
@@ -2358,60 +2355,6 @@ Outdated Features
 
 The following sections document features of |PyInstaller| that
 are still present in the code but are rarely used and may no longer work.
-
-Windows COM Server Support
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A Windows COM server is a Windows program the uses
-`Microsoft COM`_ (Component Object Model) technology.
-If you write such a program in Python you can bundle it with |PyInstaller|,
-but you must prepare a special spec file and name the spec
-file, not your script, to the pyinstaller command.
-
-To prepare the spec file use the command
-
-    ``pyi-make_comserver`` [*options*] myscript.py
-
-Alternatively you can use the ``make_comserver.py`` script
-in the ``utils`` subdirectory of the |PyInstaller| folder.
-
-This will generate a spec file ``myscript.spec``
-and a new script ``drivescript.py``.
-From this point you build your project using the pyinstaller
-command, naming the spec file as its input.
-
-pyi-make_comserver assumes that your top level code (registration etc.) is
-"normal". If it's not, you will have to edit the generated script.
-
-These options are allowed with the pyi-make_comserver command:
-
---debug
-    Use the debug (verbose) version of the |bootloader| in the executable.
-
---verbose
-    Register the COM server(s) with the quiet flag off.
-
---ascii
-    do not include Unicode support modules.
-
---out=output_path
-    Generate ``drivescript.py`` and the spec file in *output_path*.
-
-If you have the win32dbg package installed, you can use it with the generated
-COM server. In ``drivescript.py``, set ``debug=1`` in the registration line.
-
-Caution: the inprocess COM server support will not work when the client
-process already has Python loaded. It would be rather tricky to
-non-obtrusively hook into an already running Python, but the show-stopper is
-that the Python/C API won't let us find out which interpreter instance to
-hook into. (If this is important to you, you might experiment with using
-apartment threading, which seems the best possibility to get this to work). To
-use a "frozen" COM server from a Python process, you'll have to load it as an
-exe::
-
-      o = win32com.client.Dispatch(progid,
-                       clsctx=pythoncom.CLSCTX_LOCAL_SERVER)
-
 
 Building Optimized
 ~~~~~~~~~~~~~~~~~~
