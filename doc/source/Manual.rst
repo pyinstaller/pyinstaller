@@ -765,13 +765,6 @@ If you need to distribute your application for more than one OS,
 for example both Windows and Mac OS X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
-If you share the same home directory on multiple platforms, for
-example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
-environment variable to different values on each platform otherwise
-PyInstaller may cache files for one platform and use them on the other
-platform, as by default it uses a subdirectory of your home directory
-as its cache location.
-
 You can do this from a single machine using virtualization.
 The free virtualBox_ or the paid VMWare_ and Parallels_
 allow you to run another complete operating system as a "guest".
@@ -785,20 +778,29 @@ Keep a single copy of your script(s) in a Dropbox folder.
 Then on any virtual machine you can run |PyInstaller| thus::
 
     cd ~/Dropbox/project_folder/src # Linux, Mac -- Windows similar
+    rm *.pyc # get rid of modules compiled by another Python
     pyinstaller --workpath=path-to-local-temp-folder  \
                 --distpath=path-to-local-dist-folder  \
                 ...other options as required...       \
                 ./myscript.py
 
-Your bundled app is in *path-to-local-dist-folder* on the
-virtual machine's local disk.
-After testing it, you can compress the app to a zip file and copy it to
-the ``Public`` folder of your Dropbox.
+|PyInstaller| reads scripts from the common Dropbox folder,
+but writes its work files and the bundled app in folders that
+are local to the virtual machine.
+You can use the ``Public`` folder of your Dropbox as a distribution
+point for your app.
 Your users can download it from there.
 (Pro tip: Do not shut down the virtual machine until
-Dropbox has completely uploaded the .zip to the cloud.)
+Dropbox has completely uploaded the app to the cloud.)
 
-It is claimed to be possible to cross-develop for Windows under Linux
+If you share the same home directory on multiple platforms, for
+example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
+environment variable to different values on each platform otherwise
+PyInstaller may cache files for one platform and use them on the other
+platform, as by default it uses a subdirectory of your home directory
+as its cache location.
+
+It is said to be possible to cross-develop for Windows under Linux
 using the free Wine_ environment.
 Further details are needed, see `How to Contribute`_.
 
