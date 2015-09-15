@@ -22,10 +22,13 @@ The user can run the packaged app without installing a Python interpreter or any
 and bundles apps that use the major Python packages
 including numpy, PyQt, wxPython, and so on.
 
-|PyInstaller| supports Windows, Mac OS X, Linux, AIX, Solaris, and FreeBSD.
+|PyInstaller| is tested against Windows, Mac OS X, and Linux.
 However, it is not a cross-compiler:
 to make a Windows app you run |PyInstaller| in Windows;
 to make a Linux app you run it in Linux, etc.
+|PyInstaller| has been used successfully with AIX, Solaris, and FreeBSD,
+but is not tested against them.
+
 
 What's New This Release
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,27 +75,14 @@ It also requires the ``objdump`` terminal application to display
 information from object files.
 This is typically found in the distribution-package ``binutils``.
 
-Solaris
-~~~~~~~~
+AIX, Solaris, and FreeBSD
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As with Linux, |PyInstaller| requires the ``ldd`` and ``objdump``
-terminal applications.
+Users have reported success running |PyInstaller| on these platforms,
+but it is not tested on them.
+The ``ldd`` and ``objdump`` commands are needed.
 
-AIX
-~~~
-
-|PyInstaller| supports AIX 6.1 or newer
-with the ``ldd`` and ``objdump`` terminal applications installed.
-Python executables created by |PyInstaller| on AIX 6.1 should work
-on AIX 5.2/5.3.
-
-FreeBSD
-~~~~~~~~
-
-|PyInstaller| supports FreeBSD 9.2 or newer
-(tested with FreeBSD 9.2 amd64, with included gcc version 4.2.1.)
-It also requires the ``ldd`` and ``objdump`` terminal applications.
-
+In each case you must compile a bootloader; see `Building the Bootloader`_.
 
 License
 =======
@@ -144,8 +134,10 @@ or upgrade to a newer version::
 Installing from the archive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can install |PyInstaller| by downloading the compressed archive
-from PyPI_.
+If pip is not available, download the compressed archive from PyPI_.
+If you are asked to test a problem using the latest development code,
+download the compressed archive from the *develop* branch of
+`PyInstaller at GitHub`_.
 
 Expand the archive.
 Inside is a script named ``setup.py``.
@@ -153,17 +145,9 @@ Execute ``python setup.py install``
 with administrator privilege to install or upgrade |PyInstaller|.
 
 For platforms other than Windows, Linux and Mac OS, you must first
-build a |bootloader| program for your platform.
-
-* ``cd`` into the distribution folder.
-* ``cd bootloader``.
-* Make a bootloader with: ``python ./waf configure build install``.
-
-If this reports an error, read `Building the Bootloader`_ below,
-then ask for technical help.
-It is of no use to continue the installation without a |bootloader|.
+build a |bootloader| program for your platform: see `Building the Bootloader`_.
 After the |bootloader| has been created,
-you can run ``python setup.py install`` with administrator privileges
+use ``python setup.py install`` with administrator privileges
 to complete the installation.
 
 Installing in Windows
@@ -2114,6 +2098,15 @@ If there is no precompiled bootloader for your platform,
 or if you want to modify the |bootloader| source,
 you need to build the |bootloader|.
 
+For 
+
+* ``cd`` into the distribution folder.
+* ``cd bootloader``.
+* Make a bootloader with: ``python ./waf configure build install``.
+
+If this reports an error, read `Building the Bootloader`_ below,
+then ask for technical help.
+
 
 Development tools
 -----------------
@@ -2634,6 +2627,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
       >>>
 
 
+.. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
 .. _UPX: http://upx.sourceforge.net/
