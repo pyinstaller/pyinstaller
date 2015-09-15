@@ -245,15 +245,15 @@ The other commands are found in *pyinstaller-folder* ``/cliutils/``
 with meaningful names (``makespec.py``, etc.)
 
 
-Overview: What |PyInstaller| Does and How It Does It
+What |PyInstaller| Does and How It Does It
 ============================================================
 
 This section covers the basic ideas of |PyInstaller|.
 These ideas apply to all platforms.
-The many options and special cases are covered below, under `Using PyInstaller`_.
+Options and special cases are covered below, under `Using PyInstaller`_.
 
 |PyInstaller| reads a Python script written by you.
-It analyzes your code to discover every other file
+It analyzes your code to discover every other module and library
 your script needs in order to execute.
 Then it collects copies of all those files -- including
 the active Python interpreter! -- and puts them with
@@ -294,7 +294,7 @@ They do not need to have Python installed at all.
 Analysis: Finding the Files Your Program Needs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-What does your script need in order to run?
+What other modules and libraries does your script need in order to run?
 (These are sometimes called its "dependencies".)
 
 To find out, |PyInstaller| finds all the ``import`` statements
@@ -327,7 +327,7 @@ you must help it:
   In the spec file you can tell |Pyinstaller| about code modules
   that are unique to your script.
 * You can write "hook" files that inform |Pyinstaller| of hidden imports.
-  If you "hook" imports for a package that other users might also use,
+  If you create a "hook" for a package that other users might also use,
   you can contribute your hook file to |PyInstaller|.
 
 If your program depends on access to certain data files,
@@ -347,8 +347,8 @@ Bundling to One Folder
 
 When you apply |PyInstaller| to ``myscript.py`` the default
 result is a single folder named ``myscript``.
-This folder contains all the necessary
-support files, and an executable file also named ``myscript``
+This folder contains all your script's dependencies,
+and an executable file also named ``myscript``
 (``myscript.exe`` in Windows).
 
 You compress the folder
@@ -357,13 +357,13 @@ They install the program simply by unzipping it.
 A user runs your app by
 opening the folder and launching the ``myscript`` executable inside it.
 
-Using one-folder mode, it is easier to debug
-any problems in building the app.
+It is easy to debug problems that occur when building the app
+when you use one-folder mode.
 You can see exactly what files |PyInstaller| collected into the folder.
 
 Another advantage of a one-folder bundle
 is that when you change your code, as long
-as it imports `exactly the same set of support files`, you could send out
+as it imports `exactly the same set of dependencies`, you could send out
 only the updated ``myscript`` executable.
 That is typically much smaller
 than the entire folder.
