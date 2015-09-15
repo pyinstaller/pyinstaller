@@ -225,9 +225,6 @@ The complete installation places these commands on the execution path:
 
 * ``pyi-makespec`` is used to create a spec file. See `Using Spec Files`_.
 
-* ``pyi-build`` is used to execute a spec file that already exists.
-  See `Using Spec Files`_.
-
 * ``pyi-archive_viewer`` is used to inspect a bundled application.
   See `Inspecting Archives`_.
 
