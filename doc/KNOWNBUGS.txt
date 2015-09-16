@@ -1,5 +1,0 @@
-==========
-KNOWN BUGS
-==========
-
-Consult http://www.pyinstaller.org/report/1 for the current list of Known Bugs
