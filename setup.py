@@ -100,9 +100,9 @@ setup(
 
     classifiers=CLASSIFIERS,
     zip_safe=False,
-    packages=find_packages(),
+    packages=['PyInstaller'],
     package_data={
-        # This includes precompiled bootloaders.
+        # This includes precompiled bootloaders and icons for bootloaders.
         'PyInstaller': ['bootloader/*/*'],
         # This file is necessary for rthooks (runtime hooks).
         'PyInstaller.loader': ['rthooks.dat'],
