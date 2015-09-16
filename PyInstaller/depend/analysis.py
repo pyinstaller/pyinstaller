@@ -429,7 +429,8 @@ def initialize_modgraph(excludes=()):
     """
     logger.info('Initializing module dependency graph...')
     # `get_implies()` are hidden-imports known by modulgraph.
-    graph = PyiModuleGraph(HOMEPATH, excludes=excludes, implies=get_implies(), debug=0)
+    debug = os.environ.get("MODULEGRAPH_DEBUG", 0)
+    graph = PyiModuleGraph(HOMEPATH, excludes=excludes, implies=get_implies(), debug=debug)
 
     if not is_py2:
         logger.info('Analyzing base_library.zip ...')
