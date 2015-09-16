@@ -1296,7 +1296,7 @@ class ModuleGraph(ObjectGraph):
                 fp.close()
 
         if parent:
-            self.msgout(4, "create reference", m, "->", parent)
+            self.msg(4, "create reference", m, "->", parent)
             self._updateReference(m, parent, edge_data=DependencyInfo(
                 conditional=False, fromlist=False, function=False, tryexcept=False
             ))
@@ -1338,7 +1338,7 @@ class ModuleGraph(ObjectGraph):
 
         elif typ == imp.PY_COMPILED:
             if fp.read(4) != imp.get_magic():
-                self.msgout(2, "raise ImportError: Bad magic number", pathname)
+                self.msg(2, "load_module: InvalidCompiledModule", pathname)
                 co = None
                 cls = InvalidCompiledModule
 
@@ -1716,7 +1716,7 @@ class ModuleGraph(ObjectGraph):
 
         node = self.findNode(fullname)
         if node is not None:
-            self.msgout(3, "find_module -> already included?", node)
+            self.msg(3, "find_module: already included?", node)
             raise ImportError(name)
 
         if path is None:
