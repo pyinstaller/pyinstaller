@@ -34,11 +34,13 @@ if is_win and is_py2:
             pass
 
 
-if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
+try:
     # PyInstaller is run directly of source without installation.
     # Fixed version and appended repo revision if '.git' dir exists.
-    __version__ = '3.0.dev1' + get_repo_revision()  # Empty str if no revision.
-else:
+    with open(os.path.join(HOMEPATH, 'version.txt')) as version_file:
+        __version__ = version_file.read().strip()
+        __version__ += get_repo_revision()  # Empty str if no revision.
+except IOError:
     # PyInstaller was installed by `python setup.py install'.
     import pkg_resources
     __version__ = pkg_resources.get_distribution('PyInstaller').version
