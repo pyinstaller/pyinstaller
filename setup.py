@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -9,18 +9,9 @@
 #-----------------------------------------------------------------------------
 
 
-import os
 import sys
-from setuptools import setup, find_packages
-from PyInstaller.utils.git import get_repo_revision
-
-
-
-# Read version from 'version.txt' file.
-with open(os.path.join(os.path.dirname(__file__), 'version.txt')) as version_file:
-    version = version_file.read().strip()
-    # Empty str if no revision.
-    version += get_repo_revision()
+from setuptools import setup
+from PyInstaller import __version__ as version
 
 
 REQUIREMENTS = ['setuptools']
