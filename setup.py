@@ -89,7 +89,7 @@ setup(
 
     author='Giovanni Bajo, Hartmut Goebel, Martin Zibricky',
     author_email='pyinstaller@googlegroups.com',
-    maintainer='Giovanni Bajo, Hartmut Goebel, Martin Zibricky',
+    maintainer='Hartmut Goebel, David Vierra, David Cortesi, Martin Zibricky',
     maintainer_email='pyinstaller@googlegroups.com',
 
     license=('GPL license with a special exception which allows to use '
