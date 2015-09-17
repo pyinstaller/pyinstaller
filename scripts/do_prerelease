@@ -1,0 +1,7 @@
+#!/bin/bash
+# Create tar.gz archive for source distribution, sign it with GPG and
+# upload it to PYPI.
+release  # zest.releaser command
+# Increment version number, etc.
+# TODO
+postrelease  # zest.releaser command
