@@ -489,8 +489,8 @@ def selectImports(pth, xtrapath=None):
 
         if npth:
             if not seen.get(npth.upper(), 0):
-                logger.debug("Adding %s dependency of %s",
-                             lib, os.path.basename(pth))
+                logger.debug("Adding %s dependency of %s from %s",
+                             lib, os.path.basename(pth), npth)
                 rv.append((lib, npth))
         else:
             logger.warning("lib not found: %s dependency of %s", lib, pth)
@@ -601,6 +601,13 @@ def _getImports_macholib(pth):
                 # is always relative to the binary location.
                 rpath = os.path.normpath(os.path.join(os.path.dirname(pth), rpath))
                 run_paths.update([rpath])
+            else:
+                # Frameworks that have this structure Name.framework/Versions/N/Name
+                # need to to search at the same level as the framework dir.
+                # This is specifically needed so that the QtWebEngine dependencies
+                # can be found.
+                if '.framework' in pth:
+                    run_paths.update(['../../../'])
 
     ## Try to find files in file system.
 
