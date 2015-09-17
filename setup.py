@@ -121,10 +121,5 @@ setup(
             'pyi-pprint_toc = PyInstaller.utils.cliutils.pprint_toc:run',
             'pyi-set_version = PyInstaller.utils.cliutils.set_version:run',
         ],
-        # This entry point ensures signing of tgz/zip archive before uploading
-        # to PYPI.
-        'zest.releaser.releaser.before_upload': [
-            'sign_code_distribution = PyInstaller.utils.release:sign_code_distribution'
-        ]
     }
 )
