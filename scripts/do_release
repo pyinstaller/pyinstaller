@@ -1,0 +1,4 @@
+#!/bin/bash
+# Do a full stable release.
+# TODO
+fullrelease  # zest.releaser command
