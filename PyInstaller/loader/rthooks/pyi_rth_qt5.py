@@ -17,7 +17,7 @@
 
 PYQT_PACKAGE = 'PyQt5'
 
-# Since we don't know which modules were built into PyQt5 beforhand, this list
+# Since we don't know which modules were built into PyQt5 beforehand, this list
 # contains all possible modules we are interested to expose through PyQt5.Qt.
 PYQT_MODULES = [
     'QAxContainer',
@@ -45,6 +45,8 @@ PYQT_MODULES = [
     'QtWebKit',
     'QtWebKitWidgets',
     'QtWebSockets',
+    'QtWebEngineWidgets',
+    'QtWebChannel',
     'QtWidgets',
     'QtWinExtras',
     'QtX11Extras',
