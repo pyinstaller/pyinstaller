@@ -109,16 +109,22 @@ setup(
         },
     include_package_data=True,
 
-    entry_points="""
-    [console_scripts]
-    pyinstaller=PyInstaller.__main__:run
-    pyi-archive_viewer=PyInstaller.utils.cliutils.archive_viewer:run
-    pyi-bindepend=PyInstaller.utils.cliutils.bindepend:run
-    pyi-build=PyInstaller.utils.cliutils.build:run
-    pyi-grab_version=PyInstaller.utils.cliutils.grab_version:run
-    pyi-make_comserver=PyInstaller.utils.cliutils.make_comserver:run
-    pyi-makespec=PyInstaller.utils.cliutils.makespec:run
-    pyi-pprint_toc=PyInstaller.utils.cliutils.pprint_toc:run
-    pyi-set_version=PyInstaller.utils.cliutils.set_version:run
-    """
+    entry_points={
+        'console_scripts': [
+            'pyinstaller = PyInstaller.__main__:run',
+            'pyi-archive_viewer = PyInstaller.utils.cliutils.archive_viewer:run',
+            'pyi-bindepend = PyInstaller.utils.cliutils.bindepend:run',
+            'pyi-build = PyInstaller.utils.cliutils.build:run',
+            'pyi-grab_version = PyInstaller.utils.cliutils.grab_version:run',
+            'pyi-make_comserver = PyInstaller.utils.cliutils.make_comserver:run',
+            'pyi-makespec = PyInstaller.utils.cliutils.makespec:run',
+            'pyi-pprint_toc = PyInstaller.utils.cliutils.pprint_toc:run',
+            'pyi-set_version = PyInstaller.utils.cliutils.set_version:run',
+        ],
+        # This entry point ensures signing of tgz/zip archive before uploading
+        # to PYPI.
+        'zest.releaser.release.before_upload': [
+            'signing = PyInstaller.utils.release:sign_code_distribution'
+        ]
+    }
 )
