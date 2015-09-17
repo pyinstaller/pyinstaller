@@ -787,11 +787,6 @@ Then on any virtual machine you can run |PyInstaller| thus::
 |PyInstaller| reads scripts from the common Dropbox folder,
 but writes its work files and the bundled app in folders that
 are local to the virtual machine.
-You can use the ``Public`` folder of your Dropbox as a distribution
-point for your app.
-Your users can download it from there.
-(Pro tip: Do not shut down the virtual machine until
-Dropbox has completely uploaded the app to the cloud.)
 
 If you share the same home directory on multiple platforms, for
 example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
