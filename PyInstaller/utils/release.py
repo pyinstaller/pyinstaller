@@ -26,4 +26,6 @@ def sign_source_distribution(data):
     :param data:
     """
     print(30 * 'A')
+    with open('/tmp/AABB.test', 'w') as fp:
+        fp.write('Hello entry_point!\n')
     pass

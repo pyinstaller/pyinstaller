@@ -123,8 +123,8 @@ setup(
         ],
         # This entry point ensures signing of tgz/zip archive before uploading
         # to PYPI.
-        'zest.releaser.release.before_upload': [
-            'signing = PyInstaller.utils.release:sign_code_distribution'
+        'zest.releaser.releaser.before_upload': [
+            'sign_code_distribution = PyInstaller.utils.release:sign_code_distribution'
         ]
     }
 )
