@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -13,8 +13,7 @@ This module contains various helper functions for git DVCS
 """
 
 import os
-import subprocess
-from ..compat import exec_command, exec_command_rc, is_py2
+from ..compat import exec_command, exec_command_rc
 
 def get_repo_revision():
     path = os.path # shortcut

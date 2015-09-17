@@ -24,7 +24,6 @@ include COPYING.txt
 include README.txt
 include pyinstaller.py
 include pyinstaller-gui.py
-include version.txt
 
 recursive-exclude bootloader/build *
 recursive-exclude bootloader/.waf* *
