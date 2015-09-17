@@ -9,9 +9,18 @@
 #-----------------------------------------------------------------------------
 
 
+import os
 import sys
 from setuptools import setup, find_packages
-from PyInstaller import __version__ as version
+from PyInstaller.utils.git import get_repo_revision
+
+
+
+# Read version from 'version.txt' file.
+with open(os.path.join(os.path.dirname(__file__), 'version.txt')) as version_file:
+    version = version_file.read().strip()
+    # Empty str if no revision.
+    version += get_repo_revision()
 
 
 REQUIREMENTS = ['setuptools']
