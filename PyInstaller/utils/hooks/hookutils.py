@@ -16,7 +16,7 @@ import pkg_resources
 import sys
 
 from ... import compat
-from ...compat import is_py2, is_win
+from ...compat import is_py2, is_win, is_py3
 from ...utils import misc
 from ... import HOMEPATH
 from ... import log as logging
@@ -395,7 +395,9 @@ def get_homebrew_path(formula = ''):
     except subprocess.CalledProcessError:
         logger.debug('homebrew formula "%s" not installed' % formula)
     if path:
-        return str(path,'UTF-8') # subprocess returns BYTES not STR
+        if is_py3:
+            path = path.decode('utf8')  # OS X filenames are UTF-8
+        return path
     else:
         return None
 
@@ -426,10 +428,13 @@ def get_qmake_path(version = ''):
     for dir in dirs:
         try:
             qmake = os.path.join(dir, 'qmake')
-            versionstring = subprocess.check_output([qmake, '-query', \
-                                                      'QT_VERSION']).strip()
-            if str(versionstring,'UTF-8').find(version) == 0:
-                logger.debug('Found qmake version "%s" at "%s".' \
+            versionstring = subprocess.check_output([qmake, '-query',
+                                                     'QT_VERSION']).strip()
+            if is_py3:
+                # version string is probably just ASCII
+                versionstring = versionstring.decode('utf8')
+            if versionstring.find(version) == 0:
+                logger.debug('Found qmake version "%s" at "%s".'
                              % (versionstring, qmake))
                 return qmake
         except (OSError, subprocess.CalledProcessError):
@@ -442,8 +447,8 @@ def qt5_qml_dir():
     qmake = get_qmake_path('5')
     if qmake is None:
         qmldir = ''
-        logger.error('Could not find qmake version 5.x, make sure PATH is ' \
-                   + 'set correctly or try setting QT5DIR.')
+        logger.error('Could not find qmake version 5.x, make sure PATH is '
+                     'set correctly or try setting QT5DIR.')
     else:
        qmldir = compat.exec_command(qmake, "-query", "QT_INSTALL_QML").strip()
     if len(qmldir) == 0:
