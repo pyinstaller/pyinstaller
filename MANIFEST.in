@@ -16,7 +16,6 @@ recursive-include PyInstaller *
 recursive-include tests/functional *
 recursive-include tests/unit *
 recursive-include tests/old_suite *
-recursive-include tests/old_suite/import/nspkg2-pkg *.egg-info
 recursive-include tests *.txt
 
 recursive-include utils *.py
