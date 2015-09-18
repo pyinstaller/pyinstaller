@@ -9,6 +9,7 @@
 #-----------------------------------------------------------------------------
 
 
+import codecs
 import sys
 from setuptools import setup
 from PyInstaller import __version__ as version
