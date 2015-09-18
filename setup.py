@@ -87,10 +87,8 @@ setup(
     long_description=LONG_DESC,
     keywords='packaging, standalone executable, pyinstaller, macholib, freeze, py2exe, py2app, bbfreeze',
 
-    author='Giovanni Bajo, Hartmut Goebel, Martin Zibricky',
+    author='Giovanni Bajo, Hartmut Goebel, David Vierra, David Cortesi, Martin Zibricky',
     author_email='pyinstaller@googlegroups.com',
-    maintainer='Hartmut Goebel, David Vierra, David Cortesi, Martin Zibricky',
-    maintainer_email='pyinstaller@googlegroups.com',
 
     license=('GPL license with a special exception which allows to use '
              'PyInstaller to build and distribute non-free programs '
