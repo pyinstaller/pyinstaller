@@ -11,7 +11,7 @@
 import os
 import glob
 
-from PyInstaller.utils.hooks.hookutils import get_module_file_attribute
+from PyInstaller.utils.hooks import get_module_file_attribute
 
 # Compiler (see class BaseDatabaseOperations)
 hiddenimports = ['django.db.models.sql.compiler']

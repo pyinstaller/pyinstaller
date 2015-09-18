@@ -9,7 +9,7 @@
 
 
 from PyInstaller.compat import modname_tkinter
-from PyInstaller.utils.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules
 
 # Module django.core.management.commands.shell imports IPython but it
 # introduces many other dependencies that are not necessary for simple

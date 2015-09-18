@@ -11,7 +11,7 @@
 # hook-sphinx.py - Pyinstaller hook for Sphinx
 # ********************************************
 from PyInstaller.compat import is_py2
-from PyInstaller.utils.hooks.hookutils import \
+from PyInstaller.utils.hooks import \
     collect_submodules, collect_data_files, is_module_version
 
 hiddenimports = (

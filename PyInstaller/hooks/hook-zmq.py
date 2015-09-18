@@ -12,7 +12,7 @@
 Hook for PyZMQ. Cython based Python bindings for messaging library ZeroMQ.
 http://www.zeromq.org/
 """
-from PyInstaller.utils.hooks.hookutils import collect_dynamic_libs, collect_submodules
+from PyInstaller.utils.hooks import collect_dynamic_libs, collect_submodules
 
 hiddenimports = ['zmq.utils.garbage']
 hiddenimports.extend(collect_submodules('zmq.backend'))

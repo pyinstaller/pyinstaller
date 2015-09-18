@@ -7,7 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules
 hiddenimports = []
 
 # Tested on Windows 7 x64 with Python 2.7.6 x32 using ReportLab 3.0

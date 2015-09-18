@@ -8,10 +8,10 @@
 #-----------------------------------------------------------------------------
 
 
-import PyInstaller.utils.hooks.hookutils
+import PyInstaller.utils.hooks
 
 
 # If the user imports setuparg1, we just set an attribute
-# in PyInstaller.utils.hooks.hookutils that allows us to later
+# in PyInstaller.utils.hooks that allows us to later
 # find out about this.
-PyInstaller.utils.hooks.hookutils.hook_variables['wxpubsub'] = 'arg1'
+PyInstaller.utils.hooks.hook_variables['wxpubsub'] = 'arg1'

@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.utils.hooks.hookutils import qt4_plugins_binaries
+from PyInstaller.utils.hooks import qt4_plugins_binaries
 
 hiddenimports = []
 

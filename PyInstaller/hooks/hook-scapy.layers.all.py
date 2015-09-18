@@ -7,7 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules
 
 # The layers to load can be configured using scapy's conf.load_layers.
 #  from scapy.config import conf; print(conf.load_layers)

@@ -28,7 +28,7 @@
 # since this is run-time discovered and loaded. Therefore, these
 # files are all data files.
 
-from PyInstaller.utils.hooks.hookutils import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 
 # Note that brain/ isn't a module (it lacks an __init__.py, so it can't be
 # referred to as astroid.brain; instead, locate it as package astriod,

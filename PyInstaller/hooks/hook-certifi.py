@@ -13,6 +13,6 @@
 
 # It has been extracted from the Requests project.
 
-from PyInstaller.utils.hooks.hookutils import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 
 datas = collect_data_files('certifi')

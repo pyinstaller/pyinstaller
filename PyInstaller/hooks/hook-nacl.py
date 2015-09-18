@@ -15,7 +15,7 @@ import os.path
 import glob
 
 from PyInstaller.compat import EXTENSION_SUFFIXES
-from PyInstaller.utils.hooks.hookutils import collect_data_files, get_module_file_attribute
+from PyInstaller.utils.hooks import collect_data_files, get_module_file_attribute
 
 
 datas = collect_data_files('nacl')

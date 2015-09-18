@@ -7,7 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.hookutils import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 
 # pycountry requires the ISO databases for country data.
 # Tested v1.15 on Linux/Ubuntu.

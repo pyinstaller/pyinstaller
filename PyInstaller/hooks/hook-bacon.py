@@ -14,7 +14,7 @@ import os
 import ctypes
 
 from PyInstaller.compat import is_win, is_darwin
-from PyInstaller.utils.hooks.hookutils import get_package_paths
+from PyInstaller.utils.hooks import get_package_paths
 
 
 def collect_native_files(package, files):

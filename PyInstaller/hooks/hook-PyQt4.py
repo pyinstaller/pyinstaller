@@ -10,7 +10,7 @@
 
 import os
 
-from PyInstaller.utils.hooks.hookutils import qt4_menu_nib_dir
+from PyInstaller.utils.hooks import qt4_menu_nib_dir
 from PyInstaller.compat import getsitepackages, is_darwin, is_win
 
 

@@ -45,7 +45,7 @@ from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from .. import HOMEPATH
-from ..utils.hooks.hookutils import collect_submodules, is_package
+from ..utils.hooks import collect_submodules, is_package
 
 logger = logging.getLogger(__name__)
 

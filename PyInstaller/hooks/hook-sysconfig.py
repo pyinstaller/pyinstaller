@@ -16,7 +16,7 @@
 import sysconfig
 import os
 
-from PyInstaller.utils.hooks.hookutils import relpath_to_config_or_make
+from PyInstaller.utils.hooks import relpath_to_config_or_make
 
 _CONFIG_H = sysconfig.get_config_h_filename()
 if hasattr(sysconfig, 'get_makefile_filename'):

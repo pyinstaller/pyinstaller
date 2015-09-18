@@ -48,7 +48,7 @@
 # pylint/__init__.py file must be included, since submodules must be children of
 # a module.
 
-from PyInstaller.utils.hooks.hookutils import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 import pylint
 
 datas = (

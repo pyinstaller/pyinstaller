@@ -11,7 +11,7 @@
 import os
 from pkg_resources import Requirement
 
-from PyInstaller.utils.hooks.hookutils import qt5_menu_nib_dir, exec_statement
+from PyInstaller.utils.hooks import qt5_menu_nib_dir, exec_statement
 from PyInstaller.compat import getsitepackages, is_darwin, is_win
 
 

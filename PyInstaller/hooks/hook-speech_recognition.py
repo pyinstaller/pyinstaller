@@ -10,6 +10,6 @@
 # Hook for speech_recognition: https://pypi.python.org/pypi/SpeechRecognition/
 # Tested on Windows 8.1 x64 with SpeechRecognition 1.5
 
-from PyInstaller.hooks.hookutils import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 
 datas = collect_data_files("speech_recognition")

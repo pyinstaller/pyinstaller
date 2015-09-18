@@ -15,7 +15,7 @@ https://pypi.python.org/pypi/ncclient
 
 This hook was tested with ncclient 0.4.3.
 """
-from PyInstaller.utils.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules
 
 # Modules 'ncclient.devices.*' are dynamically loaded and PyInstaller
 # is not able to find them.

@@ -15,7 +15,7 @@ from .datastruct import TOC, Tree
 from ..config import CONF
 
 # create a list of excludes suitable for Tree
-from ..utils.hooks.hookutils import PY_IGNORE_EXTENSIONS, PY_EXECUTABLE_SUFFIXES
+from ..utils.hooks import PY_IGNORE_EXTENSIONS, PY_EXECUTABLE_SUFFIXES
 PY_IGNORE_EXTENSIONS = set(
     '*'+s for s in PY_IGNORE_EXTENSIONS | PY_EXECUTABLE_SUFFIXES)
 # Exclude EGG-INFO, too, as long as we do not have a way to hold several

@@ -16,7 +16,7 @@
 import glob
 import os
 from PyInstaller.compat import is_win
-from PyInstaller.utils.hooks.hookutils import exec_statement
+from PyInstaller.utils.hooks import exec_statement
 
 
 hiddenimports = ['gmodule', 'gobject']

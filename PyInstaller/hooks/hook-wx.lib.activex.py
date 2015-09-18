@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.utils.hooks.hookutils import exec_statement
+from PyInstaller.utils.hooks import exec_statement
 
 # This needed because comtypes wx.lib.activex generates some stuff.
 exec_statement("import wx.lib.activex") 

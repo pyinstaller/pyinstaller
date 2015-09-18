@@ -16,7 +16,7 @@ attribute.
 """
 
 import os.path
-from PyInstaller.utils.hooks.hookutils import get_pywin32_module_file_attribute
+from PyInstaller.utils.hooks import get_pywin32_module_file_attribute
 
 _pth = get_pywin32_module_file_attribute('pythoncom')
 

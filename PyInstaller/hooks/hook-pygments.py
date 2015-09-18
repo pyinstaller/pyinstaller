@@ -12,7 +12,7 @@
 PyInstaller hook file for Pygments. Tested with version 2.0.2.
 """
 
-from PyInstaller.utils.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules
 
 # The following applies to pygments version 2.0.2, as reported by ``pip show
 # pygments``.

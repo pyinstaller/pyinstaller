@@ -1972,13 +1972,13 @@ define one or more of the following several global names:
 
     A way to simplify adding all submodules of a package is to use::
 
-        from PyInstaller.utils.hooks.hookutils import collect_submodules
+        from PyInstaller.utils.hooks import collect_submodules
         hiddenimports = collect_submodules('package')
 
     For an example see ``hook-docutils.py`` in the hooks folder.
 
     Note: We suggest always using the fully qualified name
-    ``PyInstaller.utils.hooks.hookutils`` for importing hookutils. This
+    ``PyInstaller.utils.hooks`` for importing the hook utilities. This
     avoids some pitfalls when implementing hooks for sub-modules.
 
 ``datas``
@@ -1999,7 +1999,7 @@ define one or more of the following several global names:
 
    A way to simplify collecting a folder of files is to use::
 
-      from PyInstaller.utils.hooks.hookutils import collect_data_files
+      from PyInstaller.utils.hooks import collect_data_files
       datas = collect_data_files('package_name')
 
    to collect all package-related data files into a folder

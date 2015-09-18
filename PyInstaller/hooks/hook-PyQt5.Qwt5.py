@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.utils.hooks.hookutils import eval_statement
+from PyInstaller.utils.hooks import eval_statement
 
 hiddenimports = ["PyQt5.QtCore",
                  "PyQt5.QtWidgets",

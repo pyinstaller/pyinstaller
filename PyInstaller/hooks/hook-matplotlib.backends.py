@@ -9,7 +9,7 @@
 
 
 from PyInstaller.compat import is_darwin
-from PyInstaller.utils.hooks.hookutils import (
+from PyInstaller.utils.hooks import (
     eval_statement, exec_statement, logger)
 
 

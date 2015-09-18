@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.utils.hooks.hookutils import get_pyextension_imports
+from PyInstaller.utils.hooks import get_pyextension_imports
 
 
 # It's hard to detect imports of binary Python module without importing it.

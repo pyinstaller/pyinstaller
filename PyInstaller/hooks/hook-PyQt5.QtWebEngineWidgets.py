@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 import os
-from PyInstaller.utils.hooks.hookutils import get_qmake_path
+from PyInstaller.utils.hooks import get_qmake_path
 import PyInstaller.compat as compat
 
 hiddenimports = ["sip",

@@ -15,7 +15,7 @@ from PyInstaller.compat import is_win, is_darwin, is_unix, is_venv, base_prefix
 from PyInstaller.compat import modname_tkinter
 from PyInstaller.depend.bindepend import selectImports, getImports
 from PyInstaller.building.datastruct import Tree
-from PyInstaller.utils.hooks.hookutils import exec_statement, logger
+from PyInstaller.utils.hooks import exec_statement, logger
 
 
 def _handle_broken_tcl_tk():

@@ -2135,12 +2135,12 @@ hiddenimports = ['_proxy', 'utils', 'defs']
 </pre>
 <p>A way to simplify adding all submodules of a package is to use:</p>
 <pre class="literal-block">
-from PyInstaller.utils.hooks.hookutils import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules
 hiddenimports = collect_submodules('package')
 </pre>
 <p>For an example see <tt class="docutils literal"><span class="pre">hook-docutils.py</span></tt> in the hooks folder.</p>
 <p class="last">Note: We suggest always using the fully qualified name
-<tt class="docutils literal">PyInstaller.utils.hooks.hookutils</tt> for importing hookutils. This
+<tt class="docutils literal">PyInstaller.utils.hooks</tt> for importing hookutils. This
 avoids some pitfalls when implementing hooks for sub-modules.</p>
 </dd>
 <dt><tt class="docutils literal">datas</tt></dt>
@@ -2159,7 +2159,7 @@ and recursively (because of the <tt class="docutils literal">*</tt> wildcard)
 copy the content of <cite>/usr/share/libsmi/mibs</cite> into <cite>mibs</cite>.</p>
 <p>A way to simplify collecting a folder of files is to use:</p>
 <pre class="literal-block">
-from PyInstaller.utils.hooks.hookutils import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 datas = collect_data_files('package_name')
 </pre>
 <p class="last">to collect all package-related data files into a folder
