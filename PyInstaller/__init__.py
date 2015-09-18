@@ -55,6 +55,7 @@ else:
 
 
 ## Default values of paths where to put files created by PyInstaller.
+## Mind option-help in build_main when changes these
 # Folder where to put created .spec file.
 DEFAULT_SPECPATH = compat.getcwd()
 # Folder where to put created .spec file.

@@ -678,9 +678,12 @@ def build(spec, distpath, workpath, clean_build):
 def __add_options(parser):
     parser.add_option("--distpath", metavar="DIR",
                 default=DEFAULT_DISTPATH,
-                 help='Where to put the bundled app (default: %default)')
+                      help=('Where to put the bundled app (default: %s)' %
+                            os.path.join(os.curdir, 'dist')))
     parser.add_option('--workpath', default=DEFAULT_WORKPATH,
-                      help='Where to put all the temporary work files, .log, .pyz and etc. (default: %default)')
+                      help=('Where to put all the temporary work files, '
+                            '.log, .pyz and etc. (default: %s)' %
+                            os.path.join(os.curdir, 'build')))
     parser.add_option('-y', '--noconfirm',
                       action="store_true", default=False,
                       help='Replace output directory (default: %s) without '
