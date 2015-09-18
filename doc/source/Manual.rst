@@ -802,51 +802,55 @@ Further details are needed, see `How to Contribute`_.
 Using Spec Files
 =================
 
-The spec (specification) file tells |PyInstaller| how to process your script.
-When you name a script (or scripts) to the ``pyinstaller`` command,
-the first thing it does is to build a spec file *name*.spec.
-The spec file encodes the script names and most of the options
+When you execute
+
+    ``pyinstaller`` *options*.. ``myscript.py``
+
+the first thing |PyInstaller| does is to build a spec (specification) file
+``myscript.spec``.
+That file is stored in the ``--specpath=`` directory,
+by default the current directory.
+
+The spec file tells |PyInstaller| how to process your script.
+It encodes the script names and most of the options
 you give to the ``pyinstaller`` command.
+The spec file is actually executable Python code.
+|PyInstaller| builds the app by executing the contents of the spec file.
 
 For many uses of |PyInstaller| you do not need to examine or modify the spec file.
-Editing the spec file was once a common way to help |PyInstaller|
-find all the parts of a program, but this is now less common.
 It is usually enough to
 give all the needed information (such as hidden imports)
 as option values to the ``pyinstaller`` command and let it run.
 
-There are three cases where it may be useful to modify the spec file:
+There are four cases where it is useful to modify the spec file:
 
 * When you want to bundle data files with the app.
+* When you want to include run-time libraries (``.dll`` or ``.so`` files) that
+  |PyInstaller| does not know about from any other source.
 * When you want to add Python run-time options to the executable.
 * When you want to create a multiprogram bundle with merged common modules.
 
 These uses are covered in topics below.
 
-You can create a spec file using this command:
+You create a spec file using this command:
 
-    ``pyi-makespec`` *options* *script* [*script* ...]
+    ``pyi-makespec`` *options* *name*\ ``.py`` [*other scripts* ...]
 
 The *options* are the same options documented above
 for the ``pyinstaller`` command.
-This command creates the *name*.spec file but does not
+This command creates the *name*\ ``.spec`` file but does not
 go on to build the executable.
 
 After you have created a spec file and modified it as necessary,
-you can build your application from it in either of two ways:
+you build the application by passing the spec file to the ``pyinstaller`` command:
 
-    ``pyinstaller`` *specfile*
+    ``pyinstaller`` *options* *name*\ ``.spec``
 
-or
-
-    ``pyi-build`` *specfile*
-
-The latter executes the part of ``pyinstaller`` that follows creation of a spec file.
-
-When you create a spec file, many command options are written into the spec file.
+When you create a spec file, most command options are encoded in the spec file.
 When you build from a spec file, those options cannot be changed.
 If they are given on the command line they are ignored and
 replaced by the options in the spec file.
+
 Only the following command-line options have an effect when building from a spec file:
 
 *  --upx-dir=
