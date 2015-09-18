@@ -1,33 +1,39 @@
-(+ user visible changes, * internal stuff)
+Changelog for PyInstaller
+=========================
 
-Changes since PyInstaller 2.1
--------------------------------
- + Support for Python 3
- + Support only Python 2.7 and 3.3+
- + (Windows) Bootloader is now built with full Unicode support.
- + (OS X) Executables built with PyInstaller under OS X can now be digitally
-   signed.
- + (Windows) for 32bit bootloader enable flag LARGEADDRESSAWARE that allows
-   to use 4GB of RAM.
- + (OS X) 32bit precompiled bootloader no longer distributed, only 64bit.
- + Allow override PyInstaller default config directory by environment variable
-   PYINSTALLER_CONFIG_DIR.
- + Bootloader debug messages 'LOADER: ...' printed to stderr.
- + Option --key to obfuscate the Python bytecode.
- * Use library modulegraph for module dependency analysis.
- * PyInstaller no longer extends sys.path and bundled 3rd-party libraries do not
-   interfere with their other versions.
- * Option to exclude Python modules in import hooks. Variable 'excludedimports'
-   can be used in import hook files.
- * Option to bundle dynamic libraries in import hooks. Variable 'binaries'
-   can be used to do so. PyInstaller then also includes these binaries in to the
-   dependency checking for dynamic libraries.
- * Tests migrated to py.test framework.
- * Improved testing infrastructure with continuous integration (Travis - Linux,
-   Appveyor - Windows)
- 
-Changes since PyInstaller 2.0
--------------------------------
+3.0 (unreleased)
+----------------
+
+- Python 3 support.
+- Initial Python 3.5 support
+- Support restricted only to Python 2.7 and 3.3+
+- (Windows) Bootloader is now built with full Unicode support.
+- (OS X) Executables built with PyInstaller under OS X can now be digitally
+  signed.
+- (Windows) for 32bit bootloader enable flag LARGEADDRESSAWARE that allows
+  to use 4GB of RAM.
+- (OS X) 32bit precompiled bootloader no longer distributed, only 64bit.
+- Allow override PyInstaller default config directory by environment variable
+  PYINSTALLER_CONFIG_DIR.
+- Bootloader debug messages 'LOADER: ...' printed to stderr.
+- Option --key to obfuscate the Python bytecode.
+- Use library modulegraph for module dependency analysis.
+- PyInstaller no longer extends sys.path and bundled 3rd-party libraries do not
+  interfere with their other versions.
+- Option to exclude Python modules in import hooks. Variable 'excludedimports'
+  can be used in import hook files.
+- Option to bundle dynamic libraries in import hooks. Variable 'binaries'
+  can be used to do so. PyInstaller then also includes these binaries in to the
+  dependency checking for dynamic libraries.
+- Tests migrated to py.test framework.
+- Improved testing infrastructure with continuous integration (Travis - Linux,
+  Appveyor - Windows)
+
+
+2.1 (2013-09-27)
+----------------
+
+(+ user visible changes, * internal stuff)
  + Rewritten manual explaining even very basic topics.
  + PyInstaller integration with setuptools (direct installation with easy_install or pip
    from PYPI - https://pypi.python.org/pypi). After installation there will be available
@@ -83,8 +89,10 @@ Changes since PyInstaller 2.0
  * Add more tests.
  * Tilde is in PyInstaller recognized as $HOME variable.
 
-Changes since PyInstaller 1.5.1
+
+2.0 (2012-08-08)
 -------------------------------
+
  + Minimum suported Python version is 2.3.
  + (OSX) Add support for Mac OS X 64-bit
  + (OSX) Add support Mac OS X 10.7 (Lion) and 10.8 (Mountain Lion).
@@ -137,8 +145,10 @@ Changes since PyInstaller 1.5.1
  * Hosting for running tests daily:
    https://jenkins.shiningpanda-ci.com/pyinstaller/
 
-Changes since PyInstaller 1.5
+
+1.5.1 (2011-08-01)
 -----------------------------
+
  + New default PyInstaller icon for generated executables on Windows.
  + Add support for Python built with --enable-shared on Mac OSX.
  + Add requirements section to documentation.
@@ -151,8 +161,10 @@ Changes since PyInstaller 1.5
  * Mention dependency on otool, ldd and objdump in documentation.
  * Fix typo preventing detection of DLL libraries loaded by ctypes module.
 
-Changes since PyInstaller 1.4
+
+1.5 (2011-05-05)
 -----------------------------
+
  + Full support for Python 2.7.
  + Full support for Python 2.6 on Windows. No manual redistribution
    of DLLs, CRT, manifest, etc. is required: PyInstaller is able to
@@ -188,8 +200,10 @@ Changes since PyInstaller 1.4
  * Fix weird "missing symbol" errors under Mac OSX (thanks to Isaac
    Wagner).
 
-Changes since PyInstaller 1.3
+
+1.4 (2010-03-22)
 -----------------------------
+
  + Fully support up to Python 2.6 on Linux/Mac and Python 2.5
    on Windows.
  + Preliminar Mac OSX support: both one-file and one-dir is supported;
@@ -268,8 +282,10 @@ Changes since PyInstaller 1.3
    exit, when running on Linux.
  * Fixed random segfaults at startup on 64-bit platforms (like x86-64).
 
-PyInstaller 1.3
+
+1.3 (2006-12-20)
 ---------------
+
  + Fix bug with user-provided icons disappearing from built executables
    when these were compressed with UPX.
  + Fix problems with packaging of applications using PIL (that was broken
@@ -289,15 +305,16 @@ PyInstaller 1.3
    not depend on libpythonX.X.so anymore.
 
 
-PyInstaller 1.2
+1.2 (2006-06-29)
 ---------------
+
  + Fix a crash when invoking UPX with certain kinds of builds.
  + Fix icon support by re-adding a resource section in the bootloader
    executable.
 
 
-PyInstaller 1.1
----------------
+1.1 (2006-02-13)
+----------------
 
  + (Windows) Make single-file packages not depend on MSVCRT71.DLL anymore,
    even under Python 2.4. You can eventually ship your programs really as
@@ -325,8 +342,8 @@ PyInstaller 1.1
    extensions). UPX 1.92+ is needed for this.
 
 
-PyInstaller 1.0 (with respect to McMillan's Python Installer 5b5):
----------------
+1.0 (2005-09-19) with respect to McMillan's Python Installer 5b5
+----------------------------------------------------------------
 
  + Add support for Python 2.3 (fix packaging of codecs).
  + Add support for Python 2.4 (under Windows, needed to recompiled the
