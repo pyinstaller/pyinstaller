@@ -1,5 +1,6 @@
-PyInstaller
-***********
+PyInstaller Overview
+====================
+
 .. image:: http://img.shields.io/travis/pyinstaller/pyinstaller/python3.svg
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
 
@@ -28,6 +29,27 @@ PyInstaller
 
 
 | Official website: http://www.pyinstaller.org
+
+
+PyInstaller is a program that converts (packages) Python
+programs into stand-alone executables, under Windows, Linux, Mac OS X,
+FreeBSD, AIX and Solaris.
+
+Its main advantages over similar tools are:
+
+- It works out-of-the-box with any version of Python since 2.7/3.3.
+- It builds smaller executables thanks to transparent compression.
+- It is fully multi-platform, and uses the OS support to load the dynamic
+  libraries, thus ensuring full compatibility.
+- It is compatible with many 3rd-party packages out-of-the-box. This means
+  that, with PyInstaller, all the required tricks to make external packages
+  work are already integrated within PyInstaller itself so that there is no
+  user intervention required.
+- You'll never be required to look for tricks in wikis and apply custom
+  modification to your files or your setup scripts.
+- Libraries like PyQt5, PyQt4, PySide, matplotlib or Django matplotlib are
+  fully supported, without having to handle plugins or external data files
+  manually.
 
 
 Requirements

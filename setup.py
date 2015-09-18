@@ -14,6 +14,7 @@ from setuptools import setup
 from PyInstaller import __version__ as version
 
 
+
 REQUIREMENTS = ['setuptools']
 if sys.platform.startswith('win'):
     # 'pypiwin32' is PyWin32 package made installable by 'pip install'
@@ -21,31 +22,21 @@ if sys.platform.startswith('win'):
     REQUIREMENTS.append('pypiwin32')
 
 
-DESC = ('Converts (packages) Python programs into stand-alone executables, '
-        'under Windows, Linux, Mac OS X, AIX and Solaris.')
-
-LONG_DESC = """
-PyInstaller is a program that converts (packages) Python
-programs into stand-alone executables, under Windows, Linux, Mac OS X,
-AIX and Solaris. Its main advantages over similar tools are that
-PyInstaller works with any version of Python since 2.3, it builds smaller
-executables thanks to transparent compression, it is fully multi-platform,
-and uses the OS support to load the dynamic libraries, thus ensuring full
-compatibility.
-
-The main goal of PyInstaller is to be compatible with 3rd-party packages
-out-of-the-box. This means that, with PyInstaller, all the required tricks
-to make external packages work are already integrated within PyInstaller
-itself so that there is no user intervention required. You'll never be
-required to look for tricks in wikis and apply custom modification to your
-files or your setup scripts. As an example, libraries like PyQt, Django or
-matplotlib are fully supported, without having to handle plugins or
-external data files manually.
-"""
+# Create long description from README.rst and doc/CHANGES.rst.
+# PYPI page will contain complete PyInstaller changelog.
+def read(filename):
+    try:
+        return unicode(codecs.open(filename, encoding='utf-8').read())
+    except NameError:
+        return open(filename, 'r', encoding='utf-8').read()
+long_description = u'\n\n'.join([read('README.rst'),
+                                 read('doc/CHANGES.rst')])
+if sys.version_info < (3,):
+    long_description = long_description.encode('utf-8')
 
 
 CLASSIFIERS = """
-Development Status :: 5 - Production/Stable
+Development Status :: 6 - Mature
 Environment :: Console
 Intended Audience :: Developers
 Intended Audience :: Other Audience
@@ -83,9 +74,10 @@ setup(
     name='PyInstaller',
     version=version,
 
-    description=DESC,
-    long_description=LONG_DESC,
-    keywords='packaging, standalone executable, pyinstaller, macholib, freeze, py2exe, py2app, bbfreeze',
+    description='Create Python programs into stand-alone executables.',
+    long_description=long_description,
+    keywords='packaging app apps bundle convert standalone executable '
+             'pyinstaller macholib cxfreeze freeze py2exe py2app bbfreeze',
 
     author='Giovanni Bajo, Hartmut Goebel, David Vierra, David Cortesi, Martin Zibricky',
     author_email='pyinstaller@googlegroups.com',
@@ -94,7 +86,6 @@ setup(
              'PyInstaller to build and distribute non-free programs '
              '(including commercial ones)'),
     url='http://www.pyinstaller.org',
-    download_url='https://sourceforge.net/projects/pyinstaller/files',
 
     classifiers=CLASSIFIERS,
     zip_safe=False,
