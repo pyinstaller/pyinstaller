@@ -592,7 +592,7 @@ class EXE(Target):
         if is_darwin:
             # Fix Mach-O header for codesigning on OS X.
             logger.info("Fixing EXE for code signing %s", self.name)
-            from PyInstaller.utils import osxutils
+            import PyInstaller.utils.osx as osxutils
             osxutils.fix_exe_for_code_signing(self.name)
             pass
 
