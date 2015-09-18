@@ -20,7 +20,7 @@ from .utils.git import get_repo_revision
 
 # Note: Keep this variable as plain string so it could be updated automatically
 #       when doing a release.
-__version__ = '3.0.dev1'
+__version__ = '3.0.dev2'
 
 
 # This ensures for Python 2 that PyInstaller will work on Windows with paths
