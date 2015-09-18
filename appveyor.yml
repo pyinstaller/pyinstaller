@@ -26,17 +26,17 @@ environment:
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
-      WAF_ARGS: ""
+      WAF_ARGS: "--gcc"
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
-      WAF_ARGS: ""
+      WAF_ARGS: "--gcc"
 
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
-      WAF_ARGS: ""
+      WAF_ARGS: "--gcc"
 
 cache:
   # Cache created Python .whl packages to avoid compiling them again.
@@ -62,8 +62,11 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  # Compile bootloader, use mingw.
-  - "SET PATH=C:\\MinGW\\bin;%PATH%"
+  # Install mingw-w64. Bootloader can be compiled only with mingw-w64.
+  - choco install -y mingw
+
+  # Compile bootloader, use mingw-w64.
+  - "SET PATH=C:\\tools\\mingw64\\bin;%PATH%"
   - cd bootloader
   - "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
   - cd ..
