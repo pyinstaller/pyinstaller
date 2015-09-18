@@ -65,8 +65,8 @@ install:
   # Install 32bit mingw-w64. Bootloader can be compiled only with mingw-w64.
   - choco install -y mingw -x86
 
-  # Compile bootloader, use mingw-w64.
-  - "SET PATH=C:\\tools\\mingw64\\bin;%PATH%"
+  # Compile bootloader, use 32bit mingw-w64.
+  - "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
   - cd bootloader
   - "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
   - cd ..
