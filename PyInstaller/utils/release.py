@@ -20,12 +20,21 @@ https://zestreleaser.readthedocs.org/en/latest/entrypoints.html
 """
 
 
+import os
+from ..compat import exec_command
+
+
 def sign_source_distribution(data):
     """
     Sign the tgz or zip archive that will be uploaded to PYPI.
     :param data:
     """
-    print(30 * 'A')
-    with open('/tmp/AABB.test', 'w') as fp:
-        fp.write('Hello entry_point!\n')
-    pass
+    # zest.releaser does a clean checkout where it generates tgz/zip in 'dist'
+    # directory and those files will be then uploaded to pypi.
+    dist_dir = os.path.join(data['tagdir'], 'dist')
+    # Sign all files in 'dist' directory.
+    for f in os.listdir(dist_dir):
+        print('Signing file %s' % f)
+        exec_command(['gpg', '--detach-sign', '-a', os.path.join(dist_dir, f)])
+    print(30 * 'B')
+    print(str(data))
