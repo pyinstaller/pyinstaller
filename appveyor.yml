@@ -62,8 +62,8 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  # Install mingw-w64. Bootloader can be compiled only with mingw-w64.
-  - choco install -y mingw
+  # Install 32bit mingw-w64. Bootloader can be compiled only with mingw-w64.
+  - choco install -y mingw -x86
 
   # Compile bootloader, use mingw-w64.
   - "SET PATH=C:\\tools\\mingw64\\bin;%PATH%"
