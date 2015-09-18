@@ -34,7 +34,6 @@ def sign_source_distribution(data):
     dist_dir = os.path.join(data['tagdir'], 'dist')
     # Sign all files in 'dist' directory.
     for f in os.listdir(dist_dir):
-        print('Signing file %s' % f)
-        exec_command('gpg', '--detach-sign', '-a', os.path.join(dist_dir, f))
-    print(30 * 'B')
-    print(str(data))
+        f = os.path.join(dist_dir, f)
+        print('\nSigning file %s' % f)
+        exec_command('gpg', '--detach-sign', '-a', f)
