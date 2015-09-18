@@ -27,6 +27,7 @@ include pyinstaller-gui.py
 
 recursive-exclude bootloader/build *
 recursive-exclude bootloader/.waf* *
+recursive-exclude bootloader/waf3-* *
 exclude bootloader/.lock-waf*
 
 recursive-exclude doc/source *
