@@ -431,11 +431,11 @@ class ImportHook(object):
 #* All hooks currently passing the empty string for such item (e.g.,
 #  "hooks/hook-babel.py", "hooks/hook-matplotlib.py") should be refactored
 #  to instead pass such basename.
-def format_binaries_and_datas(binaries_or_datas):
+def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     """
     Convert the passed `hook.datas` list to a list of `TOC`-style 3-tuples.
 
-    `datas` is a list of 2-tuples whose:
+    :param datas: is a list of 2-tuples whose:
 
     * First item is either:
       * A glob matching only the absolute paths of source non-Python data
@@ -450,10 +450,19 @@ def format_binaries_and_datas(binaries_or_datas):
         * A directory, such files will be recursively copied into a new
           target subdirectory whose name is such directory's basename.
           (This is usually what you want.)
+
+    :param workingdir: Optional argument, if datas contains relative paths then
+                       paths are relative to this directory and all relative
+                       paths are converted to absolute.
     """
     toc_datas = []
 
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
+        # Covert relative paths to absolute if required.
+        if workingdir and not os.path.isabs(src_root_path_or_glob):
+            src_root_path_or_glob = os.path.join(workingdir, src_root_path_or_glob)
+        # Normalize paths.
+        src_root_path_or_glob = os.path.normpath(src_root_path_or_glob)
         # List of the absolute paths of all source paths matching the
         # current glob.
         src_root_paths = glob.glob(src_root_path_or_glob)

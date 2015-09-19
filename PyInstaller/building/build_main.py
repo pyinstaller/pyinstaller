@@ -209,11 +209,11 @@ class Analysis(Target):
         # Initialise 'binaries' and 'datas' with lists specified in .spec file.
         if binaries:
             logger.info("Appending 'binaries' from .spec")
-            for name, pth in format_binaries_and_datas(binaries):
+            for name, pth in format_binaries_and_datas(binaries, workingdir=spec_dir):
                 self.binaries.append((name, pth, 'BINARY'))
         if datas:
             logger.info("Appending 'datas' from .spec")
-            for name, pth in format_binaries_and_datas(datas):
+            for name, pth in format_binaries_and_datas(datas, workingdir=spec_dir):
                 self.binaries.append((name, pth, 'DATA'))
 
     _GUTS = (# input parameters
