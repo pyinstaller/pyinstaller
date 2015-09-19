@@ -717,10 +717,15 @@ UPX has been used with |PyInstaller| output often, usually with no problems.
 Encrypting Python Bytecode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Python bytecode can be encrypted by specifying the ``--key`` argument on
-the command line. For this to work, you must have the PyCrypto_
-module installed.
+To encrypt the Python bytecode modules stored in the bundle,
+pass the ``--key=``\ *key-string*  argument on
+the command line.
 
+For this to work, you must have the PyCrypto_
+module installed.
+The *key-string* is a string of 16 characters which is used to
+encrypt each file of Python byte-code before it is stored in
+the archive inside the executable file.
 
 Supporting Multiple Platforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1089,30 +1094,6 @@ For example modify the spec file this way::
           options,   <--- added line
           exclude_binaries=...
           )
-
-
-Encrypting Python Bytecode
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In order to have your bytecode obfuscated, you need to load and initialize a
-*block cipher* object with a key. You must then pass this object as the
-``cipher`` keyword argument to both the ``Analysis`` and ``PYZ`` objects
-so that the former can pull the required dependencies and generate the key
-file loaded at bootstrap time, while the latter can use it to encrypt
-Python modules at build time.
-
-A complete example::
-
-    block_cipher = pyi_crypto.PyiBlockCipher(key='test_key')
-    a = Analysis(['test_onefile_crypto.py'], cipher=block_cipher)
-    pyz = PYZ(a.pure, cipher=block_cipher)
-    exe = EXE(pyz,
-              a.scripts,
-              a.binaries,
-              a.zipfiles,
-              a.datas,
-              name='test_onefile_crypto')
-
 
 Spec File Options For Mac OS X Apps
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
