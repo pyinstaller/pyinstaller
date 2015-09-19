@@ -930,7 +930,7 @@ class ModuleGraph(ObjectGraph):
         """
         return super(ModuleGraph, self).createReference(fromnode, tonode, edge_data=edge_data)
 
-    def findNode(self, name):
+    def findNode(self, name, create_nspkg=True):
         """
         Find a node by identifier.  If a node by that identifier exists,
         it will be returned.
@@ -940,6 +940,11 @@ class ModuleGraph(ObjectGraph):
 
         If a lazy node exists by that identifier with dependencies, it and its
         dependencies will be instantiated and scanned for additional dependencies.
+
+        If a namespace package exists by that identifier, it will be instantiated
+        and returned.
+
+        If `create_nspkg` is False, no namespace package will be instantiated.
         """
         data = super(ModuleGraph, self).findNode(name)
         if data is not None:
@@ -960,7 +965,7 @@ class ModuleGraph(ObjectGraph):
                     self.implyNodeReference(m, dep)
             return m
 
-        if name in self.nspackages:
+        if name in self.nspackages and create_nspkg:
             # name is a --single-version-externally-managed
             # namespace package (setuptools/distribute)
             pathnames = self.nspackages.pop(name)

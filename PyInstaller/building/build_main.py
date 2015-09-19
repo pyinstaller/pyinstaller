@@ -410,7 +410,7 @@ class Analysis(Target):
             for imported_name in hooks_cache:
 
                 # Skip hook if no module for it is in the graph.
-                from_node = self.graph.findNode(imported_name)
+                from_node = self.graph.findNode(imported_name, create_nspkg=False)
                 if from_node is None:
                     continue
                 # Skip hook if not the right Node type.

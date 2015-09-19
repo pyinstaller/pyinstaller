@@ -284,7 +284,8 @@ class ImportHook(object):
         try:
             # Do not try to first find out if a module by that name already exist.
             # Rely on modulegraph to handle that properly.
-            caller = mod_graph.findNode(self._name)
+            # Do not automatically create namespace packages if they do not exist.
+            caller = mod_graph.findNode(self._name, create_nspkg=False)
             mod_graph.import_hook(item, caller=caller)
         except ImportError:
             # Print warning if a module from hiddenimport could not be found.
