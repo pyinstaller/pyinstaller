@@ -353,7 +353,7 @@ class Analysis(Target):
         # that are found and recorded as extension nodes in the graph.
         # Reset seen variable before running bindepend. We use bindepend only for
         # the python executable.
-        bindepend.seen = {}
+        bindepend.seen.clear()
 
         # Add binary and assembly dependencies of Python.exe.
         # This also ensures that its assembly depencies under Windows get added to the

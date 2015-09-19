@@ -32,7 +32,7 @@ from PyInstaller.utils.win32 import winutils
 
 logger = logging.getLogger(__name__)
 
-seen = {}
+seen = set()
 
 # Import windows specific stuff.
 if is_win:
@@ -176,17 +176,17 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     lTOC = _extract_from_egg(lTOC)
 
     for nm, pth, typ in lTOC:
-        if seen.get(nm.upper(), 0):
+        if nm.upper() in seen:
             continue
         logger.debug("Analyzing %s", pth)
-        seen[nm.upper()] = 1
+        seen.add(nm.upper())
         if is_win:
             for ftocnm, fn in getAssemblyFiles(pth, manifest, redirects):
                 lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, xtrapath):
-            if seen.get(lib.upper(), 0) or seen.get(npth.upper(), 0):
+            if lib.upper() in seen or npth.upper() in seen:
                 continue
-            seen[npth.upper()] = 1
+            seen.add(npth.upper())
             lTOC.append((lib, npth, 'BINARY'))
 
     return lTOC
@@ -361,7 +361,7 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
     if manifest:
         _depNames = set(dep.name for dep in manifest.dependentAssemblies)
     for assembly in getAssemblies(pth):
-        if seen.get(assembly.getid().upper(), 0):
+        if assembly.getid().upper() in seen:
             continue
         if manifest and assembly.name not in _depNames:
             # Add assembly as dependency to our final output exe's manifest
@@ -404,7 +404,7 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
                 ))
 
         if files:
-            seen[assembly.getid().upper()] = 1
+            seen.add(assembly.getid().upper())
             for fn in files:
                 fname, fext = os.path.splitext(fn)
                 if fext.lower() == ".manifest":
@@ -420,10 +420,10 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
                                   (nm,
                                    ftocnm,
                                    fn)]
-                if not seen.get(fn.upper(), 0):
+                if fn.upper() not in seen:
                     logger.debug("Adding %s", ftocnm)
-                    seen[nm.upper()] = 1
-                    seen[fn.upper()] = 1
+                    seen.add(nm.upper())
+                    seen.add(fn.upper())
                     rv.append((ftocnm, fn))
                 else:
                     #logger.info("skipping %s part of assembly %s dependency of %s",
@@ -459,7 +459,7 @@ def selectImports(pth, xtrapath=None):
         xtrapath = [os.path.dirname(pth)] + xtrapath  # make a copy
     dlls = getImports(pth)
     for lib in dlls:
-        if seen.get(lib.upper(), 0):
+        if lib.upper() in seen:
             continue
         if not is_win and not is_cygwin:
             # all other platforms
@@ -480,7 +480,7 @@ def selectImports(pth, xtrapath=None):
             if (candidatelib.find('libpython') < 0 and
                candidatelib.find('Python.framework') < 0):
                 # skip libs not containing (libpython or Python.framework)
-                if not seen.get(npth.upper(), 0):
+                if npth.upper() not in seen:
                     logger.debug("Skipping %s dependency of %s",
                                  lib, os.path.basename(pth))
                 continue
@@ -488,7 +488,7 @@ def selectImports(pth, xtrapath=None):
                 pass
 
         if npth:
-            if not seen.get(npth.upper(), 0):
+            if npth.upper() not in seen:
                 logger.debug("Adding %s dependency of %s from %s",
                              lib, os.path.basename(pth), npth)
                 rv.append((lib, npth))
