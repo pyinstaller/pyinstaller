@@ -339,7 +339,7 @@ In order to locate included files at run time,
 your program needs to be able to learn its path at run time
 in a way that works regardless of
 whether or not it is running from a bundle.
-This is covered under `Accessing Data Files`_.
+This is covered under `Run-time Operation`_.
 
 
 Bundling to One Folder
@@ -799,6 +799,58 @@ It is said to be possible to cross-develop for Windows under Linux
 using the free Wine_ environment.
 Further details are needed, see `How to Contribute`_.
 
+
+Run-time Operation
+=====================
+
+Your app should run in a bundle exactly as it does when run from source.
+However, you might want to learn at run-time
+whether the app is running from source or "frozen" (bundled).
+
+For example, you might have
+data files that, when running live, are found based on a module's
+``__file__`` attribute.
+That will not work when the code is bundled.
+
+The |PyInstaller| |bootloader| adds the name ``frozen`` to the ``sys`` module.
+So the test for "are we bundled?" is::
+
+	import sys
+	if getattr( sys, 'frozen', False ) :
+		# running in a bundle
+	else :
+		# running live
+
+Data files and folders of files can be included in the bundle.
+by editing the spec file; see `Adding Files to the Bundle`_.
+The added files will be in the bundle folder.
+
+The |bootloader| stores the absolute path to the bundle folder in ``sys._MEIPASS``.
+For a one-folder bundle, this is the path to that folder, 
+wherever the user may have put it.
+For a one-file bundle, this is the path to the ``_MEIxxxxxx`` temporary folder
+created by the |bootloader| (see `How the One-File Program Works`_).
+
+When your application needs access to a data file that is bundled with it,
+you get the path to the file with the following code::
+
+    import sys
+    import os
+    ...
+    if getattr(sys, 'frozen', False):
+        # we are running in a bundle
+        basedir = sys._MEIPASS
+    else:
+        # we are running in a normal Python environment
+        basedir = os.path.dirname(os.path.abspath(__file__))
+
+This code sets ``basedir`` to the path to the folder containing
+your script and any other files or folders bundled with it.
+When your program was not started by the |bootloader|, the standard Python
+variable ``__file__`` is the full path to the script now executing,
+and ``os.path.dirname()`` extracts the path to the folder that contains it.
+When bundled, ``sys._MEIPASS`` provides the path to bundle folder.
+
 Using Spec Files
 =================
 
@@ -820,7 +872,7 @@ The spec file is actually executable Python code.
 For many uses of |PyInstaller| you do not need to examine or modify the spec file.
 It is usually enough to
 give all the needed information (such as hidden imports)
-as option values to the ``pyinstaller`` command and let it run.
+as options to the ``pyinstaller`` command and let it run.
 
 There are four cases where it is useful to modify the spec file:
 
@@ -865,228 +917,178 @@ Spec File Operation
 
 After |PyInstaller| creates a spec file,
 or opens a spec file when one is given instead of a script,
-the ``pyinstaller`` command *executes the spec file as code*.
-This is important to understand: the spec file contents are
-the central part of the code executed by |PyInstaller|.
+the ``pyinstaller`` command executes the spec file as code.
 Your bundled application is created by the execution of the spec file.
+The following is an shortened example of a spec file for a minimal, one-folder app::
 
-The statements in a spec file create objects from classes that are defined in the
-|PyInstaller| module ``build.py``.
-Here is an unrealistically simplified spec file for one-folder mode::
+	block_cipher = None
+	a = Analysis(['minimal.py'],
+             pathex=['/Developer/PItests/minimal'],
+             binaries=None,
+             datas=None,
+             hiddenimports=[],
+             hookspath=None,
+             runtime_hooks=None,
+             excludes=None,
+             cipher=block_cipher)
+	pyz = PYZ(a.pure, a.zipped_data,
+             cipher=block_cipher)
+	exe = EXE(pyz,... )
+	coll = COLLECT(...)
 
-      a = Analysis(['myscript.py'])
-      pyz = PYZ(a.pure)
-      exe = EXE(a.scripts, pyz, name="myscript", exclude_binaries=1)
-      dist = COLLECT(exe, a.binaries, name="dist")
-
-If you compare an actual spec file you will find about the same statements,
-but differently formatted and with more arguments.
-The statements do the following:
+The statements in a spec file create instances of four classes,
+``Analysis``, ``PYZ``, ``EXE`` and ``COLLECT``.
 
 * A new instance of class ``Analysis`` takes a list of script names as input.
-  The resulting object (here named ``a``) contains three lists,
-  held in object properties named
+  It analyzes all imports and other dependencies.
+  The resulting object (assigned to ``a``) contains lists of dependencies
+  in class members named:
 
   - ``scripts``: the python scripts named on the command line;
   - ``pure``: pure python modules needed by the scripts;
-  - ``binaries``: non-python modules needed by the scripts.
+  - ``binaries``: non-python modules needed by the scripts;
+  - ``datas``: non-binary files included in the app.
 
-* An instance of ``PYZ`` (a ``.pyz`` archive, described
-  under `Inspecting Archives`_ below) is built to contain the modules
-  listed in ``a.pure``.
+* An instance of class ``PYZ`` is a ``.pyz`` archive (described
+  under `Inspecting Archives`_ below), which contains all the
+  Python modules from ``a.pure``.
 
 * An instance of ``EXE`` is built from the analyzed scripts and the ``PYZ``
-  archive. This object contains what will be the executable file ``myscript``.
+  archive. This object creates the executable file.
 
-* An instance of ``COLLECT`` creates the output folder.
+* An instance of ``COLLECT`` creates the output folder from all the other parts.
 
 In one-file mode, there is no call to ``COLLECT``, and the
 ``EXE`` instance receives all of the scripts, modules and binaries.
 
-In order to read or modify a spec file you must understand some of
-the classes it uses.
-However, the class definitions and the exact contents of the spec
-file might change in future releases.
-For this reason, the following
-contains only the most useful and reliable detail.
-Some further details are under Advanced Topics below;
-and you can find the complete definition of these classes in the module ``build.py``.
-
-
-TOC Class (Table of Contents)
----------------------------------
-
-The ``TOC`` (Table Of Contents) class is used by all of the target classes.
-For example, the ``scripts`` member of an Analysis object is a TOC
-containing a list of scripts;
-the ``pure`` member is a TOC with a list of modules, and so on.
-
-Basically a ``TOC`` object contains a list of tuples of the form
-
-    ``(``\ *name*\ ``,``\ *path*\ ``,``\ *typecode*\ ``)``
-
-In fact, it acts as an ordered set of tuples; that is, it contains no duplicates
-(where uniqueness is based on the *name* element of each tuple).
-Within this constraint, a TOC preserves the order of tuples added to it.
-
-A TOC behaves like a list object and supports the same methods (appending, indexing, etc).
-A TOC also supports taking differences and intersections like a set.
-For these operations a simple list of tuples can be used as one argument.
-This makes excluding modules quite easy.
-For example,
-
-    ``a.binaries - [('badmodule', None, None)]``
-
-is an expression that yields a TOC from which any tuple named ``badmodule``
-has been removed.
-
-The right-hand argument to the subtraction operator
-is a list that contains one tuple
-in which *name* is ``badmodule`` and the *path* and *typecode* elements
-are ``None``.
-(Because set membership is based on the *name* element of a tuple only,
-it is not necessary to give accurate *path* and *typecode* elements when subtracting.)
-So, if you modify this line in a one-folder spec file::
-
-      dist = COLLECT(..., a.binaries - [('badmodule', None, None)], ...)
-
-or this line in a one-file spec::
-
-      exe = EXE(..., a.binaries - [('badmodule', None, None)], ...)
-
-you remove ``badmodule`` from the output executable.
-
-In order to add files to a TOC, you need to know the *typecode* values
-and their related *path* values.
-A *typecode* is a one-word string.
-|PyInstaller| uses a number of *typecode* values internally,
-but for the normal case you need to know only three:
-
-
-+---------------+--------------------------------------+-----------------------+--------------------------------------+
-| **typecode**  | **description**                      | **name**              | **path**                             |
-+===============+======================================+=======================+======================================+
-| 'BINARY'      | A shared library.                    | Run-time name.        | Full path name in build.             |
-+---------------+--------------------------------------+-----------------------+--------------------------------------+
-| 'DATA'        | Arbitrary files.                     | Run-time name.        | Full path name in build.             |
-+---------------+--------------------------------------+-----------------------+--------------------------------------+
-| 'OPTION'      | A Python run-time option.            | Option code           | ignored.                             |
-+---------------+--------------------------------------+-----------------------+--------------------------------------+
-
-
-The Tree Class
-------------------
-
-The Tree class is a way of creating a TOC that describes some or all of the
-files within a directory:
-
-      ``Tree(``\ *root*\ ``, prefix=``\ *run-time-folder*\ ``, excludes=``\ *match*\ ``)``
-
-* The *root* argument is a path string to a directory.
-  It may be absolute or relative to the build directory.
-
-* The *prefix* argument, if given, is a name for a subfolder
-  within the run-time folder to contain the tree files.
-  If you omit *prefix* or give ``None``,
-  the tree files will be at
-  the top level of the run-time folder.
-
-* The *excludes* argument, if given, is a list of one or more
-  strings that match files in the *root* that should be omitted from the Tree.
-  An item in the list can be either:
-
-  - a name, which causes files or folders with this basename to be excluded
-
-  - ``*.ext``, which causes files with this extension to be excluded
-
-For example::
-
-    extra_tree = Tree('../src/extras', prefix='extras', excludes=['tmp'])
-
-This creates ``extra_tree`` as a TOC object that lists
-all files from the relative path ``../src/extras``,
-omitting those that have the basename (or are in a folder named) ``tmp``.
-
-Each tuple in this TOC has:
-
-* A *typecode* of ``DATA``,
-
-* A *path* consisting of a complete, absolute path to one file in the *root* folder,
-
-* A *name* consisting of the filename of this file, or,
-  if you specify a *prefix*, the *name* is *prefix*\ ``/``\ *filename*.
-
+You modify the spec file to pass additional values to ``Analysis`` and
+to ``EXE``.
 
 Adding Files to the Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To add files to the bundle, you insert descriptions of the files
-into the argument list of the ``COLLECT`` object for a one-folder bundle,
-or to the argument list of the ``EXE`` object for a one-file bundle.
-You can add files as single TOC-style tuples,
-or you can add an entire Tree object by name.
+To add files to the bundle, you create a list that describes the files
+and supply it to the ``Analysis`` call.
 
-To add a single README file at the top level of a one-folder bundle,
-add a single TOC item describing it to the argument list of COLLECT or EXE::
+Adding Data Files
+------------------
 
-      collect = COLLECT(a.binaries +
-                [('README', '/my/project/readme', 'DATA')], ...)
+You provide a list that describes the files
+as the value of the ``datas=`` argument to ``Analysis``.
+The list of data files is a list of tuples.
+Each tuple has two values, both strings:
 
-This appends the README tuple to the ``a.binaries`` TOC.
-(You can use a list of one or more tuples in place of a TOC object in most cases).
+    * The path to the file or folder in this system now.
 
-The COLLECT and EXE classes take a variable-length list of arguments,
-so it is possible to just append a list of one tuple to the argument list::
+    * The path to the file or folder in the bundled app at run-time.
 
-      exe = EXE(a.scripts, a.binaries, ...
-                [('README', '/my/project/readme', 'DATA')])
+For example, suppose you want to add a single README file to
+a one-folder app.
+You could modify the spec file as follows::
 
-To add a folder of files, prepare a Tree for that folder::
+	a = Analysis(...
+             datas=[ ('src/README.txt', 'README') ],
+             hiddenimports=...
+             )
 
-    # Include all spellcheck dictionary files, as a folder named dict
-    dict_tree = Tree('../../aspell/dict', prefix = 'dict')
+You can add an entire folder in the same way.
+You can use either ``/`` or ``\`` as the path separator character.
+You can use "glob" abbreviations to specify a group of files.
+For example to include all the ``.mp3`` files from a certain folder::
 
-You could for convenience add single files to that Tree::
+    a = Analysis(...
+             datas=[ ( '/mygame/sfx/*.mp3', 'sfx' ) ],
+             ...
+             )
 
-    # add README to the Tree TOC for convenience
-    dict_tree += [('README', '/my/project/readme', 'DATA')]
+The path to the input file or folder may be relative as in the first
+example,
+or it may be absolute as in the second.
+When it is relative, it is taken as relative to the location of
+the spec file.
 
-Then simply mention the Tree at any point in the argument list for COLLECT or EXE::
+The path to the run-time file or folder must be relative.
+It will be located in the bundle folder.
+Your program can locate the files using the code shown in
+'Run-time Operation'_.
 
-    collect = COLLECT(dict_tree, a.binaries,...)
+If you want to add several files to the bundle,
+you can create the list in a separate statement::
 
-The topic `Accessing Data Files`_ describes how to find these files at run-time.
+    added = [
+             ( 'src/README.txt', 'README' ),
+             ( '../../aspell/dict/*.aff', 'spelling/dict' ),
+             ( '../../aspell/dict/*.dic', 'spelling/dict' ),
+             ( '/mygame/sfx/*.mp3', 'sfx' )
+            ]
+    a = Analysis(...
+            datas = added,
+            ...
+            )
 
+Adding Binary Files
+--------------------
+
+To add binary files, make a list of tuples that describe the files needed.
+Assign the list of tuples to the ``binaries=`` argument of Analysis.
+
+Normally |PyInstaller| learns about ``.so`` and ``.dll`` libraries by
+analyzing the imported modules.
+Sometimes it is not clear that a module is imported;
+in that case you use a ``--hidden-import=`` command option.
+But even that might not find all dependencies.
+
+Suppose you have a module ``special_ops.so`` that is written in C
+and uses the Python C-API.
+Your program imports ``special_ops``, and |PyInstaller| finds and
+includes ``special_ops.so``.
+But perhaps ``special_ops.so`` links to ``libiodbc.2.dylib``.
+|PyInstaller| does not find this dependency.
+You could add it to the bundle this way::
+
+    a = Analysis(...
+             binaries=[ ( '/usr/lib/libiodbc.2.dylib', 'libiodbc.dylib' ) ],
+             ...
+
+As with data files, if you have multiple binary files to add,
+create the list in a separate statement and pass the list by name.
 
 Giving Run-time Python Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can pass a run-time option to the Python interpreter
-by adding a tuple to the creation of the EXE object.
-The *typecode* element of the tuple is ``'OPTION'``.
-The *name* element of the tuple is the option code as it would appear on a python command line.
-The *path* element is ignored.
-The options the executables understand are:
+You can pass command-line options to the Python interpreter.
+The interpreter takes a number of command-line options but only the
+following are supported for a bundled app:
 
-+---------------+-----------------------+-------------------------------+-------------------------------------------------------------------------------------------------------+
-| **Option**	| **Description**	| **Example**			| **Notes**												|
-+===============+=======================+===============================+=======================================================================================================+
-| v 		| Verbose imports	| ('v', None, 'OPTION')		| Same as Python -v ... 										|
-+---------------+-----------------------+-------------------------------+-------------------------------------------------------------------------------------------------------+
-| u		| Unbuffered stdio	| ('u', None, 'OPTION')		| Same as Python -u ... 										|
-+---------------+-----------------------+-------------------------------+-------------------------------------------------------------------------------------------------------+
-| W spec	| Warning option	| ('W ignore', None, 'OPTION')	| Python 2.1+ only. 											|
-+---------------+-----------------------+-------------------------------+-------------------------------------------------------------------------------------------------------+
-| s		| Use site.py		| ('s', None, 'OPTION')		| The opposite of Python's -S flag. Note that site.py must be in the executable's directory to be used. |
-+---------------+-----------------------+-------------------------------+-------------------------------------------------------------------------------------------------------+
+* ``v`` to write a message to stdout each time a module is initialized.
 
-For example::
+* ``u`` for unbuffered stdio.
 
-    exe = EXE(a.scripts, pyz,
-              [('v', None, 'OPTION'),('W ignore', None, 'OPTION')],
-              name="myapp.exe", exclude_binaries=1)
+* ``W`` and an option to change warning behavior: ``W ignore`` or
+  ``W once`` or ``W error``.
 
-In this example, you have inserted a list of two tuples into the EXE call.
+To pass one or more of these options, 
+create a list of tuples, one for each option, and pass the list as
+an additional argument to the EXE call.
+Each tuple has three elements:
+
+* The option as a string, for example ``v`` or ``W ignore``.
+
+* None
+
+* The string ``OPTION``
+
+For example modify the spec file this way::
+
+    options = [ ('v', None, 'OPTION'), ('W ignore', None, 'OPTION') ]
+    a = Analysis( ...
+                )
+    ...
+    exe = EXE(pyz,
+          a.scripts,
+          options,   <--- added line
+          exclude_binaries=...
+          )
 
 
 Encrypting Python Bytecode
@@ -1532,67 +1534,6 @@ in a bundled app:
 5. If the module was not found then
    raise ``ImportError``.
 
-
-Adapting to being "frozen"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You might want to learn at run-time
-whether the app is running "live" (from source) or "frozen" (bundled).
-For example, you might have
-data files that, when running live, are found based on a module's
-``__file__`` attribute.
-That won't work when the code is bundled.
-
-The |PyInstaller| |bootloader| adds the name ``frozen`` to the ``sys`` module.
-So the test for "are we bundled?" is::
-
-	if getattr(sys, 'frozen', False):
-		# running in a bundle
-
-Accessing Data Files
-~~~~~~~~~~~~~~~~~~~~~~~
-
-You can include related files in either type of distribution.
-Data files and folders of files can be included
-by editing the spec file; see `Adding Files to the Bundle`_.
-
-The |bootloader| stores the absolute path to the bundle folder in ``sys._MEIPASS``.
-For a one-folder bundle, this is the path to that folder.
-For a one-file bundle, this is the path to the ``_MEIxxxxxx`` temporary folder
-created by the |bootloader| (see `How the One-File Program Works`_).
-
-When your application needs access to a data file that is bundled with it,
-for example a configuration file or an icon image file,
-you get the path to the file with the following code::
-
-    import sys
-    import os
-    ...
-    if getattr(sys, 'frozen', False):
-        # we are running in a |PyInstaller| bundle
-        basedir = sys._MEIPASS
-    else:
-        # we are running in a normal Python environment
-        basedir = os.path.dirname(os.path.abspath(__file__))
-
-This code sets ``basedir`` to the path to the folder containing
-your script and any other files or folders bundled with it.
-When your program was not started by the |bootloader|, the standard Python
-variable ``__file__`` is the full path to the script now executing,
-and ``os.path.dirname()`` extracts the path to the folder that contains it.
-When bundled, ``sys._MEIPASS`` provides the path to bundle folder.
-
-In the one-folder distribution,
-bundled data files are in the distribution folder.
-Your code can make useful changes to files in the folder.
-
-In the one-file mode, bundled data files are packaged into the executable.
-The |bootloader| unpacks them into a temporary folder.
-The ``basedir`` path discovered by the code above
-is the path to this temporary folder.
-Any files your code creates or modifies in that folder
-are available only while the app is running.
-When it ends they will be deleted.
 
 
 Capturing Version Data
