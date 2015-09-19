@@ -197,9 +197,10 @@ elif is_win:
     class WinExcludeList(object):
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
-            self._windows_dir = winutils.get_windows_dir()
+            self._windows_dir = winutils.get_windows_dir().lower()
 
         def search(self, libname):
+            libname = libname.lower()
             result = self._exclude_list.search(libname)
             if result:
                 return result
