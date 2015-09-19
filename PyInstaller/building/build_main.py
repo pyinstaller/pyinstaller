@@ -113,7 +113,7 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
-                 hiddenimports=None, hookspath=None, excludes=[], runtime_hooks=[],
+                 hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None,
                  cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False):
         """
         scripts
@@ -178,7 +178,7 @@ class Analysis(Target):
 
         # Custom runtime hook files that should be included and started before
         # any existing PyInstaller runtime hooks.
-        self.custom_runtime_hooks = runtime_hooks
+        self.custom_runtime_hooks = runtime_hooks or []
 
         if cipher:
             logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
@@ -190,7 +190,7 @@ class Analysis(Target):
             logger.info('Adding dependencies on pyi_crypto.py module')
             self.hiddenimports.append(pyz_crypto.get_crypto_hiddenimports())
 
-        self.excludes = excludes if excludes else []
+        self.excludes = excludes or []
         self.scripts = TOC()
         self.pure = TOC()
         self.binaries = TOC()
