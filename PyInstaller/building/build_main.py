@@ -32,10 +32,10 @@ from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, DLL, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache, HooksCache, ImportHook, format_binaries_and_datas
+from .imphook import AdditionalFilesCache, HooksCache, ImportHook
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
-from .utils import _check_guts_toc_mtime
+from .utils import _check_guts_toc_mtime, format_binaries_and_datas
 from ..depend.utils import create_py3_base_library, scan_code_for_ctypes
 from ..archive import pyz_crypto
 from ..utils.misc import get_path_to_toplevel_modules, get_unicode_modules, mtime
