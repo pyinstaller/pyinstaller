@@ -407,7 +407,7 @@ class ZlibArchive(Archive):
             txt = txt.replace('\r\n', '\n')
             try:
                 import os
-                co = compile(txt, self.os.path.join(self.path, nm), 'exec')
+                co = compile(txt, self.os.path.join(self.os.path.basename(self.path), nm), 'exec')
             except SyntaxError, e:
                 print("Syntax error in " + pth[:-1])
                 print(e.args)
