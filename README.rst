@@ -32,15 +32,15 @@ FreeBSD, AIX and Solaris.
    :alt: IRC
 
 
-| documentation: https://pythonhosted.org/PyInstaller/
-| website:       http://www.pyinstaller.org
-| code:          https://github.com/pyinstaller/pyinstaller
+- Documentation: https://pythonhosted.org/PyInstaller/
+- Website:       http://www.pyinstaller.org
+- Code:          https://github.com/pyinstaller/pyinstaller
 
 
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 2.7 / 3.3+.
+- Works out-of-the-box with any Python version 2.7 / 3.3-3.4.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Compatible with many 3rd-party packages out-of-the-box. (All the required
@@ -50,8 +50,8 @@ Main Advantages
 - Bundles MS Visual C++ dlls on Windows.
 
 
-Requirements
-------------
+Requirements and Supported Platforms
+------------------------------------
 
 - Python: 
 
@@ -93,8 +93,11 @@ Basic usage is very simple, just run it against your main script::
 For more details, see the `manual`_.
 
 
-Experimental ports
-------------------
+Contributed Platforms
+---------------------
+
+The following platforms have been contributed and any feedback or
+enhancements on these are welcome.
 
 - FreeBSD
 
@@ -112,7 +115,7 @@ Experimental ports
  - ldd
 
 
-Before using experimental ports, you need to build the PyInstaller
+Before using any contributed platform, you need to build the PyInstaller
 bootloader, as we do not ship binary packages. Download PyInstaller
 source, and build the bootloader::
      
