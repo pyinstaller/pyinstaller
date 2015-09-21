@@ -15,17 +15,15 @@ import dis
 import imp
 import marshal
 import os
+import pkgutil
 import sys
 import struct
-import zipimport
 import re
 from collections import deque, namedtuple
 import ast
 
 from ..altgraph.ObjectGraph import ObjectGraph
 from ..altgraph import GraphError
-
-from itertools import count
 
 from . import util
 from . import zipio
@@ -51,6 +49,47 @@ if sys.version_info[0] == 2:
 else:
     _READ_MODE = "r"
 
+# TODO: Refactor all uses of explicit filetypes in this module *AND* of the
+# imp.get_suffixes() function to use this dictionary instead. Unfortunately,
+# tests for explicit filetypes (e.g., ".py") are non-portable. Under Windows,
+# for example, both the ".py" *AND* ".pyw" filetypes signify valid uncompiled
+# Python modules.
+# TODO: The imp.get_suffixes() function (in fact, the entire "imp" package) has
+# been deprecated as of Python 3.3 by the importlib.machinery.all_suffixes()
+# function, which largely performs the same role. Unfortunately, the latter
+# function was only introduced with Python 3.3. Since PyInstaller requires
+# Python >= 3.3 when running under Python 3, refactor this as follows:
+#
+# * Under Python 2, continue calling imp.get_suffixes().
+# * Under Python 3, call importlib.machinery.all_suffixes() instead.
+_IMPORTABLE_FILETYPE_TO_METADATA = {
+    filetype: (filetype, open_mode, imp_type)
+    for filetype, open_mode, imp_type in imp.get_suffixes()
+}
+"""
+Dictionary mapping the filetypes of importable files to the 3-tuple of metadata
+describing such files returned by the `imp.get_suffixes()` function whose first
+element is that filetype.
+
+This dictionary simplifies platform-portable importation of importable files,
+including:
+
+* Uncompiled modules suffixed by `.py` (as well as `.pyw` under Windows).
+* Compiled modules suffixed by either `.pyc` or `.pyo`.
+* C extensions suffixed by the platform-specific shared library filetype (e.g.,
+  `.so` under Linux, `.dll` under Windows).
+
+The keys of this dictionary are `.`-prefixed filetypes (e.g., `.py`, `.so');
+the values of this dictionary are 3-tuples whose:
+
+1. First element is the same `.`-prefixed filetype.
+1. Second element is the mode to be passed to the `open()` built-in to open
+   files of that filetype under the current platform and Python interpreter
+   (e.g., `rU` for the `.py` filetype under Python 2, `r` for the same
+   filetype under Python 3).
+1. Third element is a magic number specific to the `imp` module (e.g.,
+   `imp.C_EXTENSION` for filetypes corresponding to C extensions).
+"""
 
 
 
@@ -145,187 +184,6 @@ def _code_to_file(co):
     """ Convert code object to a .pyc pseudo-file """
     return BytesIO(
             imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
-
-
-def find_module(name, path=None):
-    """
-    Get a 3-tuple detailing the physical location of the Python module with
-    the passed name if that module is found *or* raise `ImportError` otherwise.
-
-    This low-level function is a variant on the standard `imp.find_module()`
-    function with additional support for:
-
-    * Multiple search paths. The passed list of absolute paths will be
-      iteratively searched for the first directory containing a file
-      corresponding to this module.
-    * Compressed (e.g., zipped) packages.
-
-    For efficiency, the high-level `ModuleGraph.find_module()` method wraps
-    this function with graph-based module caching.
-
-    Parameters
-    ----------
-    name : str
-        Fully-qualified name of the Python module to be found.
-    path : list
-        List of the absolute paths of all directories to search for this module
-        *or* `None` if the default path list `sys.path` is to be searched.
-
-    Returns
-    ----------
-    (file_handle, filename, metadata)
-        3-tuple detailing the physical location of this module, where:
-        * `file_handle` is an open read-only file handle from which the
-            contents of this module may be read.
-        * `filename` is the absolute path of this file.
-        * `metadata` is itself a 3-tuple `(file_suffix, mode, imp_type)`.  See
-          `load_module()` for details.
-    """
-    if path is None:
-        path = sys.path
-
-    # Support for the PEP302 importer for normal imports:
-    # - Python 2.5 has pkgutil.ImpImporter
-    # - In setuptools 0.7 and later there's _pkgutil.ImpImporter
-    # - In earlier setuptools versions you pkg_resources.ImpWrapper
-    #
-    # XXX: This is a bit of a hack, should check if we can just rely on
-    # PEP302's get_code() method with all recent versions of pkgutil and/or
-    # setuptools (setuptools 0.6.latest, setuptools trunk and python2.[45])
-    #
-    # For python 3.4 this code should be replaced by code calling
-    # importlib.util.find_spec().
-    # For python 3.3 this code should be replaced by code using importlib,
-    # for python 3.2 and 2.7 this should be cleaned up a lot.
-    try:
-        from pkgutil import ImpImporter
-    except ImportError:
-        try:
-            from _pkgutil import ImpImporter
-        except ImportError:
-            ImpImporter = pkg_resources.ImpWrapper
-
-    namespace_path =[]
-    fp = None
-    for entry in path:
-        importer = pkg_resources.get_importer(entry)
-        if importer is None:
-            continue
-
-        if sys.version_info[:2] >= (3,3) and hasattr(importer, 'find_loader'):
-            loader, portions = importer.find_loader(name)
-
-        else:
-            loader = importer.find_module(name)
-            portions = []
-
-        namespace_path.extend(portions)
-
-        if loader is None: continue
-
-        if isinstance(importer, ImpImporter):
-            filename = loader.filename
-            if filename.endswith('.pyc') or filename.endswith('.pyo'):
-                fp = open(filename, 'rb')
-                description = ('.pyc', 'rb', imp.PY_COMPILED)
-                return (fp, filename, description)
-
-            elif filename.endswith('.py'):
-                if sys.version_info[0] == 2:
-                    fp = open(filename, _READ_MODE)
-                else:
-                    with open(filename, 'rb') as fp:
-                        encoding = util.guess_encoding(fp)
-
-                    fp = open(filename, _READ_MODE, encoding=encoding)
-                description = ('.py', _READ_MODE, imp.PY_SOURCE)
-                return (fp, filename, description)
-
-            else:
-                for _sfx, _mode, _type in imp.get_suffixes():
-                    if _type == imp.C_EXTENSION and filename.endswith(_sfx):
-                        description = (_sfx, 'rb', imp.C_EXTENSION)
-                        break
-                else:
-                    description = ('', '', imp.PKG_DIRECTORY)
-
-                return (None, filename, description)
-
-        if hasattr(loader, 'path'):
-            if loader.path.endswith('.pyc') or loader.path.endswith('.pyo'):
-                fp = open(loader.path, 'rb')
-                description = ('.pyc', 'rb', imp.PY_COMPILED)
-                return (fp, loader.path, description)
-
-
-        if hasattr(loader, 'get_source'):
-            source = loader.get_source(name)
-            fp = StringIO(source)
-            co = None
-
-        else:
-            source = None
-
-        if source is None:
-            if hasattr(loader, 'get_code'):
-                co = loader.get_code(name)
-                fp = _code_to_file(co)
-
-            else:
-                fp = None
-                co = None
-
-        pathname = os.path.join(entry, *name.split('.'))
-
-        if isinstance(loader, zipimport.zipimporter):
-            # Check if this happens to be a wrapper module introduced by
-            # setuptools, if it is we return the actual extension.
-            zn = '/'.join(name.split('.'))
-            for _sfx, _mode, _type in imp.get_suffixes():
-                if _type == imp.C_EXTENSION:
-                    p = loader.prefix + zn + _sfx
-                    if loader._files is None:
-                        loader_files = zipimport._zip_directory_cache[loader.archive]
-                    else:
-                        loader_files = loader._files
-
-                    if p in loader_files:
-                        description = (_sfx, 'rb', imp.C_EXTENSION)
-                        return (None, pathname + _sfx, description)
-
-        if hasattr(loader, 'is_package') and loader.is_package(name):
-            return (None, pathname, ('', '', imp.PKG_DIRECTORY))
-
-        if co is None:
-            if hasattr(loader, 'path'):
-                filename = loader.path
-            elif hasattr(loader, 'get_filename'):
-                filename = loader.get_filename(name)
-                if source is not None:
-                    if filename.endswith(".pyc") or filename.endswith(".pyo"):
-                        filename = filename[:-1]
-            else:
-                filename = None
-
-            if filename is not None and (filename.endswith('.py') or filename.endswith('.pyw')):
-                return (fp, filename, ('.py', 'rU', imp.PY_SOURCE))
-            else:
-                if fp is not None:
-                    fp.close()
-                return (None, filename, (os.path.splitext(filename)[-1], 'rb', imp.C_EXTENSION))
-
-        else:
-            if hasattr(loader, 'path'):
-                return (fp, loader.path, ('.pyc', 'rb', imp.PY_COMPILED))
-            else:
-                return (fp, pathname + '.pyc', ('.pyc', 'rb', imp.PY_COMPILED))
-
-    if namespace_path:
-        if fp is not None:
-            fp.close()
-        return (None, namespace_path[0], ('', namespace_path, imp.PKG_DIRECTORY))
-
-    raise ImportError(name)
 
 def moduleInfoForPath(path):
     for (ext, readmode, typ) in imp.get_suffixes():
@@ -1730,7 +1588,7 @@ class ModuleGraph(ObjectGraph):
 
             path = self.path
 
-        fp, buf, stuff = find_module(name, path)
+        fp, buf, stuff = self._find_module_path(name, path)
         try:
             if buf:
                 buf = os.path.realpath(buf)
@@ -1739,6 +1597,206 @@ class ModuleGraph(ObjectGraph):
         except:
             fp.close()
             raise
+
+    def _find_module_path(self, module_name, search_dirs):
+        """
+        Get a 3-tuple detailing the physical location of the module with the
+        passed name if that module exists _or_ raise `ImportError` otherwise.
+
+        This low-level function is a variant on the standard `imp.find_module()`
+        function with additional support for:
+
+        * Multiple search paths. The passed list of absolute paths will be
+          iteratively searched for the first directory containing a file
+          corresponding to this module.
+        * Compressed (e.g., zipped) packages.
+
+        For efficiency, the higher level `ModuleGraph._find_module()` method
+        wraps this function with support for module caching.
+
+        Parameters
+        ----------
+        module_name : str
+            Fully-qualified name of the module to be found.
+        search_dirs : list
+            List of the absolute paths of all directories to search for this
+            module (in order). Searching will halt at the first directory
+            containing this module.
+
+        Returns
+        ----------
+        (file_handle, filename, metadata)
+            3-tuple describing the physical location of this module, where:
+            * `file_handle` is an open read-only file handle from which the
+              on-disk contents of this module may be read if this is a
+              pure-Python module or `None` otherwise (e.g., if this is a
+              package or C extension).
+            * `filename` is the absolute path of this file.
+            * `metadata` is itself a 3-tuple `(filetype, open_mode, imp_type)`.
+              See the `_IMPORTABLE_FILETYPE_TO_METADATA` dictionary for
+              details.
+
+        Raises
+        ----------
+        ImportError
+            If this module is _not_ found.
+        """
+        self.msgin(4, "_find_module_path <-", module_name, search_dirs)
+
+        # TODO: Under:
+        #
+        # * Python 3.3, the following logic should be replaced by logic
+        #   leveraging only the "importlib" module.
+        # * Python 3.4, the following logic should be replaced by a call to
+        #   importlib.util.find_spec().
+
+        # Top-level 3-tuple to be returned.
+        path_data = None
+
+        # File handle to be returned.
+        file_handle = None
+
+        # List of the absolute paths of all directories comprising the
+        # namespace package to which this module belongs if any.
+        namespace_dirs = []
+
+        try:
+            for search_dir in search_dirs:
+                # TODO: Unclear why this is needed. It really shouldn't be.
+                # If this search directory is not a directory, assume the
+                # caller intended to search this file's parent directory.
+                if not os.path.isdir(search_dir):
+                    search_dir = os.path.dirname(search_dir)
+
+                # PEP 302-compliant importer making loaders for this directory.
+                importer = pkgutil.get_importer(search_dir)
+
+                # If this directory is not importable, continue.
+                if importer is None:
+                    # self.msg(4, "_find_module_path importer not found", search_dir)
+                    continue
+
+                # Get the PEP 302-compliant loader object loading this module.
+                #
+                # If this importer defines the PEP 302-compliant find_loader()
+                # method, prefer that.
+                if hasattr(importer, 'find_loader'):
+                    loader, loader_namespace_dirs = importer.find_loader(
+                        module_name)
+                    namespace_dirs.extend(loader_namespace_dirs)
+                # Else if this importer defines the Python 2-specific
+                # find_module() method, fall back to that. Despite the method
+                # name, this method returns a loader rather than a module.
+                elif hasattr(importer, 'find_module'):
+                    loader = importer.find_module(module_name)
+                # Else, raise an exception.
+                else:
+                    raise ImportError(
+                        "Module %r importer %r loader unobtainable" % (module_name, importer))
+
+                # If this module is not loadable from this directory, continue.
+                if loader is None:
+                    # self.msg(4, "_find_module_path loader not found", search_dir)
+                    continue
+
+                # 3-tuple of metadata to be returned.
+                metadata = None
+
+                # Absolute path of this module. If this module resides in a
+                # compressed archive, this is the absolute path of this module
+                # after extracting this module from that archive and hence
+                # should not exist; else, this path should typically exist.
+                pathname = None
+
+                # If this loader defines the PEP 302-compliant get_filename()
+                # method, preferably call that method first. Most if not all
+                # loaders (including zipimporter objects) define this method.
+                if hasattr(loader, 'get_filename'):
+                    pathname = loader.get_filename(module_name)
+                # Else if this loader provides a "path" attribute, defer to that.
+                elif hasattr(loader, 'path'):
+                    pathname = loader.path
+                # Else, raise an exception.
+                else:
+                    raise ImportError(
+                        "Module %r loader %r path unobtainable" % (module_name, loader))
+
+                # If no path was found, this is probably a namespace package. In
+                # such case, continue collecting namespace directories.
+                if pathname is None:
+                    self.msg(4, "_find_module_path path not found", pathname)
+                    continue
+
+                # If this loader defines the PEP 302-compliant is_package()
+                # method returning True, this is a non-namespace package.
+                if hasattr(loader, 'is_package') and loader.is_package(module_name):
+                    metadata = ('', '', imp.PKG_DIRECTORY)
+                # Else, this is either a module or C extension.
+                else:
+                    # In either case, this path must have a filetype.
+                    filetype = os.path.splitext(pathname)[1]
+                    if not filetype:
+                        raise ImportError(
+                            'Non-package module %r path %r has no filetype' % (module_name, pathname))
+
+                    # 3-tuple of metadata specific to this filetype.
+                    metadata = _IMPORTABLE_FILETYPE_TO_METADATA.get(
+                        filetype, None)
+                    if metadata is None:
+                        raise ImportError(
+                            'Non-package module %r filetype %r unrecognized' % (pathname, filetype))
+
+                    # See "_IMPORTABLE_FILETYPE_TO_METADATA" for details.
+                    open_mode = metadata[1]
+                    imp_type = metadata[2]
+
+                    # If this is a C extension, leave this path unopened.
+                    if imp_type == imp.C_EXTENSION:
+                        pass
+                    # Else, this is a module.
+                    #
+                    # If this loader defines the PEP 302-compliant get_source()
+                    # method, open the returned string as a file-like buffer.
+                    elif hasattr(loader, 'get_source'):
+                        file_handle = StringIO(loader.get_source(module_name))
+                    # If this loader defines the PEP 302-compliant get_code()
+                    # method, open the returned object as a file-like buffer.
+                    elif hasattr(loader, 'get_code'):
+                        code_object = loader.get_code(module_name)
+                        file_handle = _code_to_file(code_object)
+                    # If this is an uncompiled file under Python 3, open this
+                    # file for encoding-aware text reading.
+                    elif imp_type == imp.PY_SOURCE and sys.version_info[0] == 3:
+                        with open(pathname, 'rb') as file_handle:
+                            encoding = util.guess_encoding(file_handle)
+                        file_handle = open(
+                            pathname, open_mode, encoding=encoding)
+                    # Else, this is either a compiled file or an uncompiled
+                    # file under Python 2. In either case, open this file.
+                    else:
+                        file_handle = open(pathname, open_mode)
+
+                # Return such metadata.
+                path_data = (file_handle, pathname, metadata)
+                break
+            # Else if this is a namespace package, return such metadata.
+            else:
+                if namespace_dirs:
+                    path_data = (None, namespace_dirs[0], (
+                        '', namespace_dirs, imp.PKG_DIRECTORY))
+        # Ensure that exceptions are logged, as this function is typically
+        # called by the import_module() method which squelches ImportErrors.
+        except Exception as exc:
+            self.msg(4, "_find_module_path exception", exc)
+            raise
+
+        # If this module was not found, raise an exception.
+        self.msgout(4, "_find_module_path ->", path_data)
+        if path_data is None:
+            raise ImportError("No module named " + repr(module_name))
+
+        return path_data
+
 
     def create_xref(self, out=None):
         global header, footer, entry, contpl, contpl_linked, imports
