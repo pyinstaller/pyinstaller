@@ -1,0 +1,1 @@
+hiddenimports = ['gi._error']
