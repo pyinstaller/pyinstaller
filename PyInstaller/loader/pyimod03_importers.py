@@ -49,9 +49,11 @@ else:
     if sys.version_info[1] <= 4:
         # Python 3.3, 3.4
         EXTENSION_SUFFIXES = _frozen_importlib.EXTENSION_SUFFIXES
+        EXTENSION_LOADER = _frozen_importlib.ExtensionFileLoader
     else:
-        # Python 3.5+
+        # Since Python 3.5+ some attributes were moved to '_bootstrap_external'.
         EXTENSION_SUFFIXES = _frozen_importlib._bootstrap_external.EXTENSION_SUFFIXES
+        EXTENSION_LOADER = _frozen_importlib._bootstrap_external.ExtensionFileLoader
 
     # In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.
     # However, 'types' module is not a built-in module. The 'types' module uses this trick
@@ -488,8 +490,7 @@ class CExtensionImporter(object):
                             # Continue trying new suffix.
                             continue
                         # Load module.
-                        import _frozen_importlib
-                        loader = _frozen_importlib.ExtensionFileLoader(fullname, filename)
+                        loader = EXTENSION_LOADER(fullname, filename)
                         module = loader.load_module(fullname)
 
         except Exception:
