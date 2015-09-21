@@ -576,7 +576,7 @@ in ``dist`` is a UNIX executable
 It can be executed from a Terminal command line.
 Standard input and output work as normal through the Terminal window.
 
-If you specify ``--windowed``, the ``dist`` folder contains
+If you also specify ``--windowed``, the ``dist`` folder contains
 two outputs: the UNIX executable ``myscript``
 and also an OS X application named ``myscript.app``.
 
@@ -586,49 +586,18 @@ It contains:
 
   + A folder ``Frameworks`` which is empty.
   + A folder ``MacOS`` that contains a copy of the same ``myscript`` UNIX executable.
-  + A folder ``Resources`` that contains an icon file ``icon-windowed.icns``.
+  + A folder ``Resources`` that contains an icon file.
   + A file ``Info.plist`` that describes the app.
 
-``Info.plist`` is an `Info Property List`_ XML file (or "plist").
-Its contents tell Mac OS X about your application.
-You can inspect and edit a plist  with the Property List Editor
-that is part of XCode.
+|PyInstaller| builds minimal versions of these elements.
 
+Use the ``osx-bundle-identifier=`` argument to add a bundle identifier.
+Use the ``icon=`` argument to specify a custom icon for the application.
+(If you do not specify an icon file, |PyInstaller| supplies a
+file ``icon-windowed.icns`` with the |PyInstaller| logo.)
 
-Setting a Custom Icon
------------------------
-
-The minimal plist provided by |PyInstaller| designates the icon file for the app
-as the  ``icon-windowed.icns`` file in ``Resources``.
-This is the |PyInstaller| logo in icns format.
-For now you can apply your own icon after the app is built in several ways:
-
-* Prepare another ``.icns`` file with your own graphic,
-  save it as ``icon-windowed.icns`` replacing the default one
-  in ``Resources``.
-
-* Prepare an ``.icns`` file with your own graphic,
-  place it in ``Resources`` and edit the  ``Info.plist`` to name it.
-
-* Prepare an ``.icns`` file with your own graphic;
-  open in it Preview.app; select-all and copy;
-  in the Finder, Get Info on your app;
-  click the icon in the info display and paste.
-
-The following programs are capable of creating ``.icns`` files from JPEG or PNG images:
-
-* GraphicConverter_ ($$)
-* makeicns_ (MIT License)
-* png2icns_ (GPL)
-
-
-Setting the Supported Document Types
---------------------------------------
-
-You can also edit the ``Info.plist`` file to tell the Mac OS X
-Launcher what document types your application supports.
-Refer to the Mac OS developer documentation for these keywords.
-
+You can add items to the ``Info.plist`` by editing the spec file;
+see `Spec File Options for a Mac OS X Bundle`_ below.
 
 Getting the Opened Document Names
 ------------------------------------
@@ -1095,18 +1064,64 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
-Spec File Options For Mac OS X Apps
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Spec File Options for a Mac OS X Bundle
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you want to create ``.app`` file, create an instance of ``BUNDLE``. You can specify the version number and icon file, add or overwrite default settings in Info.plist. For example, when you use PyQt5, set NSHighResolutionCapable to True to let your app also work in retina screen::
+When you build a windowed Mac OS X app
+(that is, running in Mac OS X, you specify the ``--onefile --windowed`` options),
+the spec file contains an additional statement to
+create the Mac OS X application bundle, or app folder::
 
-    exe = EXE(pyz, a.scripts, exclude_binaries=True, name='example',
-              debug=False, strip=None, upx=True, console=False )
-    bundle = BUNDLE(exe, a.binaries, a.zipfiles, a.datas,
-                   info_plist={
-                     'NSHighResolutionCapable': 'True'
-                   },
-                   version='0.0.1', icon='example.icns', name='example.app')
+    app = BUNDLE(exe,
+             name='myscript.app',
+             icon=None,
+             bundle_identifier=None)
+
+The ``icon=`` argument to ``BUNDLE`` will have the path to an icon file
+that you specify using the ``--icon=`` option.
+The ``bundle_identifier`` will have the value you specify with the
+``--osx-bundle-identifier=`` option.
+
+An ``Info.plist`` file is an important part of a Mac OS X app bundle.
+(See the `Apple bundle overview`_ for a discussion of the contents
+of ``Info.plist``.)
+
+|PyInstaller| creates a minimal ``Info.plist``.
+You can add or overwrite entries in the plist by passing an
+``info_plist=`` parameter to the BUNDLE call.
+The value of this argument is a Python dict.
+Each key and value in the dict becomes a key and value in the ``Info.plist`` file.
+For example, when you use PyQt5,
+you can set ``NSHighResolutionCapable`` to ``True`` to let your app
+also work in retina screen::
+
+    app = BUNDLE(exe,
+             name='myscript.app',
+             icon=None,
+             bundle_identifier=None
+             info_plist={
+             	'NSHighResolutionCapable': 'True'
+             	},
+             )
+
+The ``info_plist=`` parameter only handles simple key:value pairs.
+It cannot handle nested XML arrays.
+For example, if you want to modify ``Info.plist`` to tell Mac OS X
+what filetypes your app supports, you must add a 
+``CFBundleDocumentTypes`` entry to ``Info.plist``
+(see `Apple document types`_).
+The value of that keyword is a list of dicts,
+each containing up to five key:value pairs.
+
+To add such a value to your app's ``Info.plist`` you must edit the
+plist file separately after |PyInstaller| has created the app.
+However, when you re-run |PyInstaller|, your changes will be wiped out.
+One solution is to prepare a complete ``Info.plist`` file and
+copy it into the app after creating it.
+For example you could call |PyInstaller| in a shell script, and
+follow it with a statement such as::
+
+    cp -f Info.plist dist/myscript.app/Contents/Info.plist
 
 
 When Things Go Wrong
@@ -2497,6 +2512,8 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. |ZlibArchiveImage| image:: images/ZlibArchive.png
 
 .. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
+.. _`Apple bundle overview`: https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html
+.. _`Apple document types`: https://developer.apple.com/library/ios/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html#//apple_ref/doc/uid/20001431-101685
 .. _Cython: http://www.cython.org/
 .. _Django: https://www.djangoproject.com/
 .. _Dropbox: https://www.dropbox.com/home
