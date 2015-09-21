@@ -50,6 +50,14 @@ Main Advantages
 - Bundles MS Visual C++ dlls on Windows.
 
 
+Installation
+------------
+
+PyInstaller is available on PyPI. You can install it through `pip`::
+
+      pip install pyinstaller
+
+
 Requirements and Supported Platforms
 ------------------------------------
 
@@ -75,13 +83,6 @@ Requirements and Supported Platforms
 
  - Mac OS X 10.6 (Snow Leopard) or newer.
 
-
-Installation
-------------
-
-PyInstaller is available on PyPI. You can install it through `pip`::
-
-      pip install pyinstaller
 
 Usage
 -----
