@@ -48,6 +48,7 @@ Operating System :: MacOS :: MacOS X
 Operating System :: Microsoft :: Windows
 Operating System :: POSIX
 Operating System :: POSIX :: AIX
+Operating System :: POSIX :: BSD
 Operating System :: POSIX :: Linux
 Operating System :: POSIX :: SunOS/Solaris
 Programming Language :: C
@@ -75,7 +76,7 @@ setup(
     name='PyInstaller',
     version=version,
 
-    description='Create Python programs into stand-alone executables.',
+    description='Create stand-alone executables from Python programs.',
     long_description=long_description,
     keywords='packaging app apps bundle convert standalone executable '
              'pyinstaller macholib cxfreeze freeze py2exe py2app bbfreeze',
