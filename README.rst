@@ -47,6 +47,7 @@ Main Advantages
   tricks to make external packages work are already integrated.)
 - Libraries like PyQt5, PyQt4, PySide, matplotlib or Django are fully supported,
   without having to handle plugins or external data files manually.
+- Working code signing on OS X.
 - Bundles MS Visual C++ dlls on Windows.
 
 
