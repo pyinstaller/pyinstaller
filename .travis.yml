@@ -21,7 +21,7 @@ python:
 matrix:
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python 3.5
-      - python: "3.5-dev"
+      - python: "3.5"
       # Ignore failures from OS X.
       - os: osx
 
@@ -46,6 +46,13 @@ before_install:
   #- sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
   #- sudo apt-get install -y python-zmq
   #- sudo apt-get install -y libespeak1  # required by pyttsx
+
+  # List some directories when looking for libpython35.so
+  # ls /
+  - ls /opt
+  - ls /opt/python/
+  - ls /opt/python/${TRAVIS_PYTHON_VERSION}/
+  - ls /opt/python/${TRAVIS_PYTHON_VERSION}/lib
 
   # Compile bootloader
   - cd bootloader
