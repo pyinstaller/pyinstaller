@@ -39,6 +39,10 @@
 #include "pyi_global.h"
 #include "pyi_win32_utils.h"
 
+#ifdef __FreeBSD__
+#include <floatingpoint.h>
+#endif
+
 #if defined(_WIN32)
 #define MS_WINDOWS
 #endif
