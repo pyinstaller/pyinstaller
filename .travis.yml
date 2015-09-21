@@ -51,6 +51,12 @@ before_install:
   # ls /
   - ls /opt
   - ls /opt/python/
+  - ls /opt/python/2.7.9/
+  - ls /opt/python/2.7.9/lib
+  - ls /opt/python/3.3.5/
+  - ls /opt/python/3.3.5/lib
+  - ls /opt/python/3.4.2/
+  - ls /opt/python/3.4.2/lib
   - ls /opt/python/3.5.0/
   - ls /opt/python/3.5.0/lib
 
