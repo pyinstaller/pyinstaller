@@ -1,6 +1,9 @@
 {
     'django':     ['pyi_rth_django.py'],
     'enchant':    ['pyi_rth_enchant.py'],
+    'gi':         ['pyi_rth_gi.py'],
+    'gi.repository.Gio':    ['pyi_rth_gio.py'],
+    'gi.repository.Gst':    ['pyi_rth_gstreamer.py'],
     'gst':        ['pyi_rth_gstreamer.py'],
     'matplotlib': ['pyi_rth_mplconfig.py', 'pyi_rth_mpldata.py'],
     'PIL.Image':  ['pyi_rth_PIL_Image.py'],
