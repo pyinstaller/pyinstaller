@@ -21,7 +21,12 @@
     #include <winsock.h>  // ntohl
 #else
     #include <limits.h>  // PATH_MAX - not available on windows.
-    #include <netinet/in.h>  // ntohl
+    #ifdef __FreeBSD__
+    	// freebsd issue #188316
+    	#include <arpa/inet.h>  // ntohl
+    #else
+    	#include <netinet/in.h>  // ntohl
+    #endif
     #include <stdlib.h>  // malloc
     #include <string.h>  // strncmp, strcpy, strcat
     #include <sys/stat.h>  // fchmod
