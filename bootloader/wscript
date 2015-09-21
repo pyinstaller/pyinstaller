@@ -384,7 +384,7 @@ def configure(ctx):
         ctx.env.append_value('DEFINES', '_POSIX_C_SOURCE=200112L')
         # SUS v2 (UNIX 98) definitions.
         #   Mac OS X 10.5 is UNIX 03 compliant.
-        ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=500')
+        ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=600')
         ctx.env.append_value('DEFINES', '_REENTRANT')
         # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
         ctx.env.append_value('DEFINES', '_BSD_SOURCE')
