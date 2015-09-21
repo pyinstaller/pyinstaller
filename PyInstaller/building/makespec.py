@@ -15,11 +15,11 @@ Automatically build spec files containing a description of the project
 import os
 import sys
 
-from PyInstaller import HOMEPATH, DEFAULT_SPECPATH
-from PyInstaller import log as logging
-from PyInstaller.building.templates import onefiletmplt, onedirtmplt, comsrvrtmplt, cipher_absent_template, \
+from .. import HOMEPATH, DEFAULT_SPECPATH
+from .. import log as logging
+from ..compat import expand_path, is_win, is_cygwin, is_darwin
+from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
-from PyInstaller.compat import expand_path, is_win, is_cygwin, is_darwin
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +210,7 @@ def __add_options(parser):
 
 
 def main(scripts, name=None, onefile=False,
-         console=True, debug=False, strip=False, noupx=False, comserver=False,
+         console=True, debug=False, strip=False, noupx=False,
          pathex=[], version_file=None, specpath=DEFAULT_SPECPATH,
          icon_file=None, manifest=None, resources=[], bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=[],
@@ -345,9 +345,7 @@ def main(scripts, name=None, onefile=False,
     # Write down .spec file to filesystem.
     specfnm = os.path.join(specpath, name + '.spec')
     specfile = open(specfnm, 'w')
-    if comserver:
-        specfile.write(comsrvrtmplt % d)
-    elif onefile:
+    if onefile:
         specfile.write(onefiletmplt % d)
         # For OSX create .app bundle.
         if is_darwin and not console:
