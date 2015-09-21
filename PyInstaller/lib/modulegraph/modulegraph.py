@@ -1421,16 +1421,15 @@ class ModuleGraph(ObjectGraph):
         if isinstance(co, ast.AST):
             #return self._scan_bytecode(compile(co, '-', 'exec', 0, True), m)
             self._scan_ast(co, m)
-            # Actually import the modules collected while scanning.
-            # This has to be done prior to scanning for global names,
-            # as otherwise `_safe_import_hook()` would take submodules
-            # imported via `from xxx import abc` as been already imported.
-            #self._process_imports(m)
             self._scan_bytecode_stores(
                     compile(co, '-', 'exec', 0, True), m)
 
         else:
             self._scan_bytecode(co, m)
+        # Actually import the modules collected while scanning.
+        # We need to suspend the globalnames as otherwise
+        # `_safe_import_hook()` would take submodules
+        # imported via `from xxx import abc` as been already imported.
         globalnames = m.globalnames
         m.globalnames = set()
         self._process_imports(m)
