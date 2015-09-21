@@ -7,15 +7,15 @@ cache: pip
 # Try OS X.
 os:
   - linux
-  - osx
+  #- osx
 
 #env:
 #  - PYCRYPTO_VERSION=2.4.1
 #  - PYCRYPTO_VERSION=2.6.1
 python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
+  #- "2.7"
+  #- "3.3"
+  #- "3.4"
   - "3.5"
 
 matrix:
@@ -51,8 +51,8 @@ before_install:
   # ls /
   - ls /opt
   - ls /opt/python/
-  - ls /opt/python/${TRAVIS_PYTHON_VERSION}/
-  - ls /opt/python/${TRAVIS_PYTHON_VERSION}/lib
+  - ls /opt/python/3.5.0/
+  - ls /opt/python/3.5.0/lib
 
   # Compile bootloader
   - cd bootloader
