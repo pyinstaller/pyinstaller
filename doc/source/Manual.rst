@@ -22,7 +22,7 @@ The user can run the packaged app without installing a Python interpreter or any
 and bundles apps that use the major Python packages
 including numpy, PyQt, wxPython, and so on.
 
-|PyInstaller| is tested against Windows, Mac OS X, and Linux.
+|PyInstaller| is tested against Windows, Mac OS X, and Linux.
 However, it is not a cross-compiler:
 to make a Windows app you run |PyInstaller| in Windows;
 to make a Linux app you run it in Linux, etc.
@@ -57,10 +57,10 @@ It requires the PyWin32_ Python extensions for Windows,
 which is installed automatically if you install |PyInstaller| using pip.
 The pip-Win_ package is recommended, but not required.
 
-Mac OS X
+Mac OS X
 ~~~~~~~~~
 
-|PyInstaller| runs in Mac OS X 10.6 (Snow Leopard) or newer.
+|PyInstaller| runs in Mac OS X 10.6 (Snow Leopard) or newer.
 It builds 64-bit executables by default, but can create 32-bit executables.
 It can build graphical windowed apps (apps that do not use a terminal window).
 
@@ -386,7 +386,7 @@ This is the heart of the ``myscript`` executable in the folder.
 
 The |PyInstaller| |bootloader| is a binary
 executable program for the active platform
-(Windows, Linux, Mac OS X, etc.).
+(Windows, Linux, Mac OS X, etc.).
 When the user launches your program, it is the |bootloader| that runs.
 The |bootloader| creates a temporary Python environment
 such that the Python interpreter will find all imported modules and
@@ -567,10 +567,10 @@ General Options
 .. include:: _pyinstaller-options.tmp
 
 
-Building Mac OS X App Bundles
+Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you specify only ``--onefile`` under Mac OS X, the output
+If you specify only ``--onefile`` under Mac OS X, the output
 in ``dist`` is a UNIX executable
 ``myscript``.
 It can be executed from a Terminal command line.
@@ -597,14 +597,14 @@ Use the ``icon=`` argument to specify a custom icon for the application.
 file ``icon-windowed.icns`` with the |PyInstaller| logo.)
 
 You can add items to the ``Info.plist`` by editing the spec file;
-see `Spec File Options for a Mac OS X Bundle`_ below.
+see `Spec File Options for a Mac OS X Bundle`_ below.
 
 Getting the Opened Document Names
 ------------------------------------
 
 When a user double-clicks a document of a type your application
 supports, or when a user drags a document icon and drops it
-on your application's icon, Mac OS X launches your application
+on your application's icon, Mac OS X launches your application
 and provides the name(s) of the opened document(s) in the
 form of an OpenDocument AppleEvent.
 This AppleEvent is received by the |bootloader|
@@ -661,7 +661,7 @@ a large number of executable file formats.
 See the UPX_ home page for downloads, and for the list of
 supported executable formats.
 As of May 2013, the only major absence is 64-bit binaries for
-Windows and Mac OS X.
+Windows and Mac OS X.
 UPX has no effect on these.
 
 A compressed executable program is wrapped in UPX
@@ -736,7 +736,7 @@ Supporting Multiple Operating Systems
 ---------------------------------------
 
 If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
+for example both Windows and Mac OS X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
 You can do this from a single machine using virtualization.
@@ -1064,13 +1064,13 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
-Spec File Options for a Mac OS X Bundle
+Spec File Options for a Mac OS X Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When you build a windowed Mac OS X app
-(that is, running in Mac OS X, you specify the ``--onefile --windowed`` options),
+When you build a windowed Mac OS X app
+(that is, running in Mac OS X, you specify the ``--onefile --windowed`` options),
 the spec file contains an additional statement to
-create the Mac OS X application bundle, or app folder::
+create the Mac OS X application bundle, or app folder::
 
     app = BUNDLE(exe,
              name='myscript.app',
@@ -1082,7 +1082,7 @@ that you specify using the ``--icon=`` option.
 The ``bundle_identifier`` will have the value you specify with the
 ``--osx-bundle-identifier=`` option.
 
-An ``Info.plist`` file is an important part of a Mac OS X app bundle.
+An ``Info.plist`` file is an important part of a Mac OS X app bundle.
 (See the `Apple bundle overview`_ for a discussion of the contents
 of ``Info.plist``.)
 
@@ -1106,7 +1106,7 @@ also work in retina screen::
 
 The ``info_plist=`` parameter only handles simple key:value pairs.
 It cannot handle nested XML arrays.
-For example, if you want to modify ``Info.plist`` to tell Mac OS X
+For example, if you want to modify ``Info.plist`` to tell Mac OS X
 what filetypes your app supports, you must add a 
 ``CFBundleDocumentTypes`` entry to ``Info.plist``
 (see `Apple document types`_).
@@ -2055,9 +2055,9 @@ On Fedora/RHEL and derivates, you can run the following::
     su
     yum groupinstall "Development Tools"
 
-On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
-for developing software for Mac OS X. It can be also installed from your
-Mac OS X Install DVD. It is not necessary to install the version 4 of Xcode.
+On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
+for developing software for Mac OS X. It can be also installed from your
+Mac OS X Install DVD. It is not necessary to install the version 4 of Xcode.
 
 On Solaris and AIX the |bootloader| is tested with gcc.
 
