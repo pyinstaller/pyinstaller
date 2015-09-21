@@ -1027,6 +1027,14 @@ You could add it to the bundle this way::
 As with data files, if you have multiple binary files to add,
 create the list in a separate statement and pass the list by name.
 
+Advanced Methods of Adding Files
+---------------------------------
+
+|PyInstaller| supports a more advanced (and complex) way of adding
+files to the bundle that may be useful for special cases.
+See `The TOC and Tree Classes`_ below.
+
+
 Giving Run-time Python Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1127,6 +1135,14 @@ follow it with a statement such as::
 When Things Go Wrong
 ====================
 
+The information above covers most normal uses of |PyInstaller|.
+However, the variations of Python and third-party libraries are
+endless and unpredictable.
+It may happen that you attempt to bundle your app and either
+|PyInstaller| itself, or your bundled app, terminates with a Python traceback.
+Then please consider the following actions in sequence, before
+asking for technical help.
+
 Recipes and Examples for Specific Problems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1137,12 +1153,15 @@ Some of the recipes there include:
 * A more sophisticated way of collecting data files
   than the one shown above (`Adding Files to the Bundle`_).
 
-* A use of a run-time hook to set the Qt API level.
+* Bundling a typical Django app.
+
+* A use of a run-time hook to set the PyQt4 API level.
 
 * A workaround for a multiprocessing constraint under Windows.
 
-and others. Please feel free to contribute more recipes!
-
+and others.
+Many of these Recipes were contributed by users.
+Please feel free to contribute more recipes!
 
 Getting the Latest Version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1159,58 +1178,24 @@ to install the latest version of |PyInstaller| directly::
 
     pip install -e git://github.com/pyinstaller/pyinstaller.git#egg=PyInstaller
 
-
-
 Finding out What Went Wrong
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Build-time Messages
 --------------------
 
-When an ``Analysis`` step runs, it produces error and warning messages.
+When the ``Analysis`` step runs, it produces error and warning messages.
 These display after the command line if the ``--log-level`` option allows it.
 Analysis also puts messages in a warnings file
-named ``warn<name>.txt`` in the spec file's directory.
+named ``build/``\ *name*\ ``/warn``\ *name*\ ``.txt`` in the
+``work-path=`` directory.
 
-An error message appears if Analysis detects an unconditional import
+An error message appears if Analysis detects an import
 and the module it names cannot be found.
-An unconditional import is one that appears at the top level of the script,
-so it is certain to be executed.
-
-A warning is given if the module named in an import cannot be found,
-but the import itself is conditional.
-An import is conditional when it appears in a function definition
-or in an ``if`` statement.
-There is a reasonable chance that such an import will not be executed,
-so it will not matter that the module cannot be found.
-
-For example, ``os.py`` (which is cross-platform) works by figuring out what
-platform it is on, then importing and rebinding names from the appropriate
-platform-specific module.
-If your script imports ``os`` or ``os.path``, the warning file
-will have lines like::
-
-      WARNING: no module named dos (conditional import by os)
-      WARNING: no module named ce (conditional import by os)
-      WARNING: no module named os2 (conditional import by os)
-
-The analysis has detected that the import is within a conditional
-block (an if statement).
-You will know that in this system, ``os`` will never need to import
-the ``os2`` module, for example, so that warning can be ignored.
-
-Warnings may also be produced when a class or function is declared in
+A message may also be produced when a class or function is declared in
 a package (an ``__init__.py`` module), and the import specifies
 ``package.name``. In this case, the analysis can't tell if name is supposed to
 refer to a submodule or package.
-
-Warnings are also produced when an ``__import__``, ``exec`` or ``eval`` statement is
-encountered.
-Either ``exec`` and ``eval`` could be used to implement a dynamic import,
-but normally they are used for something else.
-However, an ``__import__`` warning should certainly be investigated.
-It probably represents  a place where the script is importing code that |PyInstaller|
-cannot see.
 
 Problems detected through these messages can be corrected;
 see `Listing Hidden Imports`_ below for how to do it.
@@ -1222,7 +1207,7 @@ Build-Time Python Errors
 |PyInstaller| sometimes terminates by raising a Python exception.
 In most cases the reason is clear from the exception message,
 for example "Your system is not supported", or "Pyinstaller
-requires at least Python 2.4".
+requires at least Python 2.7".
 Others clearly indicate a bug that should be reported.
 
 One of these errors can be puzzling, however:
@@ -1292,7 +1277,8 @@ to list all the other places that the script might be searching for imports::
        pyi-makespec --paths=/path/to/thisdir \
                     --paths=/path/to/otherdir myscript.py
 
-These paths will be added to the current ``sys.path`` during analysis.
+These paths will be noted in the spec file.
+They will be added to the current ``sys.path`` during analysis.
 
 
 Listing Hidden Imports
@@ -1305,20 +1291,19 @@ visible to the analysis phase.
 
 Hidden imports can occur when the code is using ``__import__``
 or perhaps ``exec`` or ``eval``.
-You get warnings of these (see `Build-time Messages`_).
-
 Hidden imports can also occur when an extension module uses the
 Python/C API to do an import.
 When this occurs, Analysis can detect nothing.
-There will be no warnings, only a crash at run-time.
+There will be no warnings, only an ImportError at run-time.
 
 To find these hidden imports,
-set the ``-v`` flag (`Getting Python's Verbose Imports`_ above).
+build the app with the ``-v`` flag (`Getting Python's Verbose Imports`_ above)
+and run it.
 
 Once you know what they are, you add the needed modules
 to the bundle using the ``--hidden-import=`` command option,
-by editing the spec file, or
-with a hook file (see `Using Hook Files`_ below).
+or by editing the spec file,
+or with a hook file (see `Using Hook Files`_ below).
 
 
 Extending a Package's ``__path__``
@@ -1340,8 +1325,9 @@ We fix the problem with the same hook mechanism we use for hidden imports,
 with some additional logic; see `Using Hook Files`_ below.
 
 Note that manipulations of ``__path__`` hooked in this way apply only
-to the analysis.
-That is, at runtime ``win32com.shell`` is resolved the same
+to the Analysis.
+At runtime all imports are intercepted and satisfied from within the
+bundle. ``win32com.shell`` is resolved the same
 way as ``win32com.anythingelse``, and ``win32com.__path__``
 knows nothing of ``../win32comext``.
 
@@ -1402,6 +1388,11 @@ The runtime hook does this as follows::
 
 Advanced Topics
 ================
+
+The TOC and Tree Classes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 
 The Bootstrap Process in Detail
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
