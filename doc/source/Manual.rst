@@ -232,7 +232,7 @@ The complete installation places these commands on the execution path:
   See `Inspecting Executables`_.
 
 * ``pyi-grab_version`` is used to extract a version resource from a Windows
-  executable.  See `Capturing Version Data`_.
+  executable.  See `Capturing Windows Version Data`_.
 
 If you do not perform a complete installation
 (installing via ``pip`` or executing ``setup.py``),
@@ -566,6 +566,78 @@ General Options
 
 .. include:: _pyinstaller-options.tmp
 
+
+Capturing Windows Version Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A Windows app may require a Version resource file.
+A Version resource contains a group of data structures,
+some containing binary integers and some containing strings,
+that describe the properties of the executable.
+For details see the Microsoft `Version Information Structures`_ page.
+
+Version resources are complex and
+some elements are optional, others required.
+When you view the version tab of a Properties dialog,
+there's no simple relationship between
+the data displayed and the structure of the resource.
+For this reason |PyInstaller| includes the ``pyi-grab_version`` command.
+It is invoked with the full path name of any Windows executable
+that has a Version resource:
+
+      ``pyi-grab_version`` *executable_with_version_resource*
+
+The command writes text that represents
+a Version resource in readable form to standard output.
+You can copy it from the console window or redirect it to a file.
+Then you can edit the version information to adapt it to your program.
+Using ``pyi-grab_version`` you can find an executable that displays the kind of
+information you want, copy its resource data, and modify it to suit your package.
+
+The version text file is encoded UTF-8 and may contain non-ASCII characters.
+(Unicode characters are allowed in Version resource string fields.)
+Be sure to edit and save the text file in UTF-8 unless you are
+certain it contains only ASCII string values.
+
+Your edited version text file can be given with the ``--version-file=``
+option to ``pyinstaller`` or ``pyi-makespec``.
+The text data is converted to a Version resource and
+installed in the bundled app.
+
+In a Version resource there are two 64-bit binary values,
+``FileVersion`` and ``ProductVersion``.
+In the version text file these are given as four-element tuples,
+for example::
+
+    filevers=(2, 0, 4, 0),
+    prodvers=(2, 0, 4, 0),
+
+The elements of each tuple represent 16-bit values
+from most-significant to least-significant.
+For example the value ``(2, 0, 4, 0)`` resolves to
+``0002000000040000`` in hex.
+
+You can also install a Version resource from a text file after
+the bundled app has been created, using the ``set_version`` command:
+
+    ``set_version`` *version_text_file* *executable_file*
+
+The ``set_version`` utility reads a version text file as written
+by ``pyi-grab_version``, converts it to a Version resource,
+and installs that resource in the *executable_file* specified.
+
+For advanced uses, examine a version text file as written by  ``pyi-grab_version``.
+You find it is Python code that creates a ``VSVersionInfo`` object.
+The class definition for ``VSVersionInfo`` is found in
+``utils/win32/versioninfo.py`` in the |PyInstaller| distribution folder.
+You can write a program that imports ``versioninfo``.
+In that program you can ``eval``
+the contents of a version info text file to produce a
+``VSVersionInfo`` object.
+You can use the ``.toRaw()`` method of that object to
+produce a Version resource in binary form.
+Or you can apply the ``unicode()`` function to the object
+to reproduce the version text file.
 
 Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1423,15 +1495,10 @@ Advanced Topics
 ================
 
 The following discussions cover details of |PyInstaller| internal methods.
-You should not need this amount of detail for normal use.
-These details are helpful, however, if you want to investigate
+You should not need this level of detail for normal use,
+but such details are helpful if you want to investigate
 the |PyInstaller| code and possibly contribute to it,
 as described in `How to Contribute`_.
-
-The TOC and Tree Classes
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
 
 The Bootstrap Process in Detail
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1485,22 +1552,18 @@ B. Second process: bootloader itself started as a child process.
 
     4. Run python code.
 
+Running Python code requires several steps:
 
-Running Python code
--------------------
-
-Running Python code consists of several steps:
-
-1. Run Python initialization code which
+1. Run the Python initialization code which
    prepares everything for running the user's main script.
    The initialization code can use only the Python built-in modules
    because the general import mechanism is not yet available.
-   It sets up the python import mechanism to load modules
-   from archives embedded in the executable.
+   It sets up the Python import mechanism to load modules
+   only from archives embedded in the executable.
    It also adds the attributes ``frozen``
    and ``_MEIPASS`` to the ``sys`` built-in module.
 
-2. Execute run run-time hooks: first those specified by the
+2. Execute any run-time hooks: first those specified by the
    user, then any standard ones.
 
 3. Install python "egg" files.
@@ -1527,7 +1590,7 @@ PyInstaller implements the PEP 302 specification for
 importing built-in modules,
 importing "frozen" modules (compiled python code
 bundled with the app) and for C-extensions.
-The code can be read in ``./PyInstaller/loader/pyi_importers.py``.
+The code can be read in ``./PyInstaller/loader/pyi_mod03_importers.py``.
 
 At runtime the PyInstaller PEP 302 hooks are appended
 to the variable ``sys.meta_path``.
@@ -1561,75 +1624,116 @@ in a bundled app:
    raise ``ImportError``.
 
 
-
-Capturing Version Data
+The TOC and Tree Classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-      ``pyi-grab_version`` *executable_with_version_resource*
+|PyInstaller| manages lists of files using the ``TOC``
+(Table Of Contents) class.
+It provides the ``Tree`` class as a convenient way to build a ``TOC``
+from a folder path.
+
+TOC Class (Table of Contents)
+---------------------------------
+
+Objects of the ``TOC`` class are used as input to the classes created in
+a spec file.
+For example, the ``scripts`` member of an Analysis object is a TOC
+containing a list of scripts.
+The ``pure`` member is a TOC with a list of modules, and so on.
+
+Basically a ``TOC`` object contains a list of tuples of the form
+
+    ``(``\ *name*\ ``,``\ *path*\ ``,``\ *typecode*\ ``)``
+
+In fact, it acts as an ordered set of tuples;
+that is, it contains no duplicates
+(where uniqueness is based on the *name* element of each tuple).
+Within this constraint, a TOC preserves the order of tuples added to it.
+
+A TOC behaves like a list and supports the same methods
+such as appending, indexing, etc.
+A TOC also behaves like a set, and supports taking differences and intersections.
+In all of these operations a list of tuples can be used as one argument.
+For example, the following expressions are equivalent ways to
+add a file to the ``a.datas`` member::
+
+    a.datas.append( [ ('README', 'src/README.txt', 'DATA' ) ] )
+    a.datas += [ ('README', 'src/README.txt', 'DATA' ) ]
+
+Set-difference makes excluding modules quite easy. For example::
+
+    a.binaries - [('badmodule', None, None)]
+
+is an expression that produces a new ``TOC`` that is a copy of
+``a.binaries`` from which any tuple named ``badmodule`` has been removed.
+The right-hand argument to the subtraction operator
+is a list that contains one tuple
+in which *name* is ``badmodule`` and the *path* and *typecode* elements
+are ``None``.
+Because set membership is based on the *name* element of a tuple only,
+it is not necessary to give accurate *path* and *typecode* elements when subtracting.
+
+In order to add files to a TOC, you need to know the *typecode* values
+and their related *path* values.
+A *typecode* is a one-word string.
+|PyInstaller| uses a number of *typecode* values internally,
+but for the normal case you need to know only three:
 
 
-The ``pyi-grab_version`` command is invoked
-with the full path name of a Windows executable
-that has a Version resource.
-(A Version resource contains a group of data structures,
-some containing binary integers and some containing strings,
-that describe the properties of the executable.
-For details see the `Version Information Structures`_ page.)
++---------------+--------------------------------------+-----------------------+--------------------------------------+
+| **typecode**  | **description**                      | **name**              | **path**                             |
++===============+======================================+=======================+======================================+
+| 'BINARY'      | A shared library.                    | Run-time name.        | Full path name in build.             |
++---------------+--------------------------------------+-----------------------+--------------------------------------+
+| 'DATA'        | Arbitrary files.                     | Run-time name.        | Full path name in build.             |
++---------------+--------------------------------------+-----------------------+--------------------------------------+
+| 'OPTION'      | A Python run-time option.            | Option code           | ignored.                             |
++---------------+--------------------------------------+-----------------------+--------------------------------------+
 
-The command writes text that represents
-a Version resource in readable form.
-The version text is written to standard output.
-You can copy it from the console window or redirect it to a file.
-Then you can edit the version information to adapt it to your program.
-This approach is used because version resources are complex.
-Some elements are optional, others required.
-When you view the version tab of a Properties dialog,
-there's no simple relationship between
-the data displayed and the structure of the resource.
-Using ``pyi-grab_version`` you can find an executable that displays the kind of
-information you want, copy its resource data, and modify it to suit your package.
 
-The version text file is encoded UTF-8 and may contain non-ASCII characters.
-(Unicode characters are allowed in Version resource string fields.)
-Be sure to edit and save the text file in UTF-8 unless you are
-certain it contains only ASCII string values.
+The Tree Class
+------------------
 
-The edited version text file can be given with a ``--version-file=``
-option to ``pyinstaller`` or ``pyi-makespec``.
-The text data is converted to a Version resource and
-installed in the executable output.
+The Tree class is a way of creating a TOC that describes some or all of the
+files within a directory:
 
-In a Version resource there are two 64-bit binary values,
-``FileVersion`` and ``ProductVersion``.
-In the version text file these are given as four-element tuples,
-for example::
+      ``Tree(``\ *root*\ ``, prefix=``\ *run-time-folder*\ ``, excludes=``\ *match*\ ``)``
 
-    filevers=(2, 0, 4, 0),
-    prodvers=(2, 0, 4, 0),
+* The *root* argument is a path string to a directory.
+  It may be absolute or relative to the spec file directory.
 
-The elements of each tuple represent 16-bit values
-from most-significant to least-significant.
-For example the ``FileVersion`` value given resolves to
-``0002000000040000`` in hex.
+* The *prefix* argument, if given, is a name for a subfolder
+  within the run-time folder to contain the tree files.
+  If you omit *prefix* or give ``None``,
+  the tree files will be at
+  the top level of the run-time folder.
 
-      ``set_version`` *version_text_file* *executable_file*
+* The *excludes* argument, if given, is a list of one or more
+  strings that match files in the *root* that should be omitted from the Tree.
+  An item in the list can be either:
 
-The ``set_version`` utility reads a version text file as written
-by ``pyi-grab_version``, converts it to a Version resource,
-and installs that resource in the *executable_file* specified.
+  - a name, which causes files or folders with this basename to be excluded
 
-For advanced uses, examine a version text file.
-You find it is Python code that creates a ``VSVersionInfo`` object.
-The class definition for ``VSVersionInfo`` is found in
-``utils/versioninfo.py`` in the |PyInstaller| distribution folder.
-You can write a program that imports that module.
-In that program you can ``eval``
-the contents of a version info text file to produce a
-``VSVersionInfo`` object.
-You can use the ``.toRaw()`` method of that object to
-produce a Version resource in binary form.
-Or you can apply the ``unicode()`` function to the object
-to reproduce the version text file.
+  - ``*.ext``, which causes files with this extension to be excluded
+
+For example::
+
+    extras_toc = Tree('../src/extras', prefix='extras', excludes=['tmp','*.pyc'])
+
+This creates ``extras_toc`` as a TOC object that lists
+all files from the relative path ``../src/extras``,
+omitting those that have the basename (or are in a folder named) ``tmp``
+or that have the type ``.pyc``.
+
+Each tuple in this TOC has:
+
+* A *typecode* of ``DATA``,
+
+* A *path* consisting of a complete, absolute path to one file in the *root* folder,
+
+* A *name* consisting of the filename of this file, or,
+  if you specify a *prefix*, the *name* is *prefix*\ ``/``\ *filename*.
+
 
 
 Inspecting Archives
