@@ -11,7 +11,8 @@
 from PyInstaller.lib.modulegraph.modulegraph import RuntimeModule
 import PyInstaller.utils.hooks as hookutils
 
-def hook(module_graph):
+
+def pre_safe_import_module(api):
     """
     Add the `six.moves` module as a dynamically defined runtime module node and
     all modules mapped by `six._SixMetaPathImporter` as aliased module nodes to
@@ -50,6 +51,6 @@ for moved_module in six._moved_attributes:
 print('}')
 ''')
 
-    module_graph.add_module(RuntimeModule('six.moves'))
+    api.module_graph.add_module(RuntimeModule('six.moves'))
     for real_module_name, six_module_name in real_to_six_module_name.items():
-        module_graph.alias_module(real_module_name, six_module_name)
+        api.module_graph.alias_module(real_module_name, six_module_name)
