@@ -592,6 +592,8 @@ It contains:
 |PyInstaller| builds minimal versions of these elements.
 
 Use the ``osx-bundle-identifier=`` argument to add a bundle identifier.
+This becomes the ``CFBundleIdentifier`` used in code-signing
+(see the `Apple code signing overview`_ technical note).
 Use the ``icon=`` argument to specify a custom icon for the application.
 (If you do not specify an icon file, |PyInstaller| supplies a
 file ``icon-windowed.icns`` with the |PyInstaller| logo.)
@@ -1126,8 +1128,16 @@ plist file separately after |PyInstaller| has created the app.
 However, when you re-run |PyInstaller|, your changes will be wiped out.
 One solution is to prepare a complete ``Info.plist`` file and
 copy it into the app after creating it.
-For example you could call |PyInstaller| in a shell script, and
-follow it with a statement such as::
+
+Begin by building and testing the windowed app.
+When it works, copy the ``Info.plist`` prepared by |PyInstaller|.
+This includes the ``CFBundleExecutable`` value as well as the
+icon path and bundle identifier if you supplied them.
+Edit the ``Info.plist`` as necessary to add more items
+and save it separately.
+
+From that point on, to rebuild the app call |PyInstaller| in a shell script,
+and follow it with a statement such as::
 
     cp -f Info.plist dist/myscript.app/Contents/Info.plist
 
@@ -1138,7 +1148,7 @@ When Things Go Wrong
 The information above covers most normal uses of |PyInstaller|.
 However, the variations of Python and third-party libraries are
 endless and unpredictable.
-It may happen that you attempt to bundle your app and either
+It may happen that when you attempt to bundle your app either
 |PyInstaller| itself, or your bundled app, terminates with a Python traceback.
 Then please consider the following actions in sequence, before
 asking for technical help.
@@ -1163,21 +1173,6 @@ and others.
 Many of these Recipes were contributed by users.
 Please feel free to contribute more recipes!
 
-Getting the Latest Version
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you have some reason to think you have found a bug in |PyInstaller|
-you can try downloading the latest development version.
-This version might have fixes or features that are not yet at `PyPI`_.
-Links to download the latest stable version and the latest development
-version are at PyInstaller.org_.
-
-If you have Git_ installed on your development system,
-you can use it together with pip
-to install the latest version of |PyInstaller| directly::
-
-    pip install -e git://github.com/pyinstaller/pyinstaller.git#egg=PyInstaller
-
 Finding out What Went Wrong
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1190,15 +1185,28 @@ Analysis also puts messages in a warnings file
 named ``build/``\ *name*\ ``/warn``\ *name*\ ``.txt`` in the
 ``work-path=`` directory.
 
-An error message appears if Analysis detects an import
+Analysis creates a message when it detects an import
 and the module it names cannot be found.
 A message may also be produced when a class or function is declared in
 a package (an ``__init__.py`` module), and the import specifies
 ``package.name``. In this case, the analysis can't tell if name is supposed to
 refer to a submodule or package.
 
-Problems detected through these messages can be corrected;
-see `Listing Hidden Imports`_ below for how to do it.
+The "module not found" messages are not classed as errors because
+typically there are many of them.
+For example, many standard modules
+conditionally import modules for different platforms that may or may
+not be present.
+
+All "module not found" messages are written to the
+``build/``\ *name*\ ``/warn``\ *name*\ ``.txt`` file.
+They are not displayed to standard output because there are many of them.
+Examine the warning file; often there will be dozens of modules not found,
+but their absence has no effect.
+
+When you run the bundled app and it terminates with an ImportError,
+that is the time to examine the warning file.
+Then see `Helping PyInstaller Find Modules`_ below for how to proceed.
 
 
 Build-Time Python Errors
@@ -1300,7 +1308,7 @@ To find these hidden imports,
 build the app with the ``-v`` flag (`Getting Python's Verbose Imports`_ above)
 and run it.
 
-Once you know what they are, you add the needed modules
+Once you know what modules are needed, you add the needed modules
 to the bundle using the ``--hidden-import=`` command option,
 or by editing the spec file,
 or with a hook file (see `Using Hook Files`_ below).
@@ -1385,9 +1393,38 @@ The runtime hook does this as follows::
         return """cleanup shell runfcgi runserver""".split()
     django.core.management.find_commands = _find_commands
 
+Getting the Latest Version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have some reason to think you have found a bug in |PyInstaller|
+you can try downloading the latest development version.
+This version might have fixes or features that are not yet at `PyPI`_.
+Links to download the latest stable version and the latest development
+version are at PyInstaller.org_.
+
+If you have Git_ installed on your development system,
+you can use it together with pip
+to install the latest version of |PyInstaller| directly::
+
+    pip install -e git://github.com/pyinstaller/pyinstaller.git#egg=PyInstaller
+
+Asking for Help
+~~~~~~~~~~~~~~~~~~
+
+When none of the above suggestions help,
+do ask for assistance on the `PyInstaller Email List`_.
+
+Then, if you think it likely that you see a bug in |PyInstaller|,
+refer to the `How to Report Bugs`_ page.
 
 Advanced Topics
 ================
+
+The following discussions cover details of |PyInstaller| internal methods.
+You should not need this amount of detail for normal use.
+These details are helpful, however, if you want to investigate
+the |PyInstaller| code and possibly contribute to it,
+as described in `How to Contribute`_.
 
 The TOC and Tree Classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2504,6 +2541,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 
 .. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
 .. _`Apple bundle overview`: https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html
+.. _`Apple code signing overview`: https://developer.apple.com/library/mac/technotes/tn2206/_index.html
 .. _`Apple document types`: https://developer.apple.com/library/ios/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html#//apple_ref/doc/uid/20001431-101685
 .. _Cython: http://www.cython.org/
 .. _Django: https://www.djangoproject.com/
@@ -2515,6 +2553,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _Git: http://git-scm.com/downloads
 .. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
 .. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
+.. _`How to Report Bugs`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs
 .. _ImageMagick: http://www.imagemagick.org/script/index.php
 .. _imputil: http://docs.python.org/2.7/library/imputil.html
 .. include:: _definitions.txt
@@ -2536,6 +2575,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
 .. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
+.. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
 .. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
 .. _PySide: http://qt-project.org/wiki/About-PySide
