@@ -32,9 +32,9 @@ FreeBSD, AIX and Solaris.
    :alt: IRC
 
 
-- Documentation: https://pythonhosted.org/PyInstaller/
-- Website:       http://www.pyinstaller.org
-- Code:          https://github.com/pyinstaller/pyinstaller
+:Documentation: https://pythonhosted.org/PyInstaller/
+:Website:       http://www.pyinstaller.org
+:Code:          https://github.com/pyinstaller/pyinstaller
 
 
 Main Advantages
