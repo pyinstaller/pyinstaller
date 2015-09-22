@@ -40,7 +40,7 @@ FreeBSD, AIX and Solaris.
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 2.7 / 3.3-3.4.
+- Works out-of-the-box with any Python version 2.7 / 3.3-3.5.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Compatible with many 3rd-party packages out-of-the-box. (All the required
