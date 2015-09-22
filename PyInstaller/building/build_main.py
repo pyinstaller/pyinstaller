@@ -559,7 +559,7 @@ class Analysis(Target):
             logger.info('Using Python library %s', python_lib)
         else:
             msg = """Python library not found! This would mean your Python installation doesn't come with proper library files.
-This usually happends by missing development package, or unsuitable build parameters of Python installation.
+This usually happens by missing development package, or unsuitable build parameters of Python installation.
 
 * On Debian/Ubuntu, you would need to install Python development packages
   * apt-get install python3-dev
