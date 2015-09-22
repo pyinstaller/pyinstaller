@@ -558,12 +558,9 @@ class Analysis(Target):
             binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
             logger.info('Using Python library %s', python_lib)
         else:
-            msg = """Python library not found! This usually happens on Debian/Ubuntu
-where you need to install Python library:
+            msg = """Python library not found! This would mean your Python installation isn't build with shared library.
 
-  apt-get install python3-dev
-  apt-get install python-dev
-
+Please rebuild your Python with `--enable-shared` (or, `--enable-framework` on Darwin).
 """
             raise IOError(msg)
 
