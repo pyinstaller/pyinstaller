@@ -593,7 +593,9 @@ It contains:
 
 Use the ``osx-bundle-identifier=`` argument to add a bundle identifier.
 This becomes the ``CFBundleIdentifier`` used in code-signing
-(see the `Apple code signing overview`_ technical note).
+(see the `PyInstaller code signing recipe`_
+and for more detail, the `Apple code signing overview`_ technical note).
+
 Use the ``icon=`` argument to specify a custom icon for the application.
 (If you do not specify an icon file, |PyInstaller| supplies a
 file ``icon-windowed.icns`` with the |PyInstaller| logo.)
@@ -2574,6 +2576,7 @@ Here's a simple example of using ``iu`` as a builtin import replacement.
 .. _PyCrypto: https://pypi.python.org/pypi/pycrypto/
 .. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
 .. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
+.. _`PyInstaller code signing recipe`: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
