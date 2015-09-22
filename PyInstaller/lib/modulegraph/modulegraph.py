@@ -964,14 +964,14 @@ class ModuleGraph(ObjectGraph):
                 qname = parent.identifier
 
 
-        q = self._import_module(head, qname, parent)
+        q = self._safe_import_module(head, qname, parent)
         if q:
             self.msgout(4, "find_head_package ->", (q, tail))
             return q, tail
         if parent:
             qname = head
             parent = None
-            q = self._import_module(head, qname, parent)
+            q = self._safe_import_module(head, qname, parent)
             if q:
                 self.msgout(4, "find_head_package ->", (q, tail))
                 return q, tail
@@ -986,11 +986,11 @@ class ModuleGraph(ObjectGraph):
             if i < 0: i = len(tail)
             head, tail = tail[:i], tail[i+1:]
             mname = "%s.%s" % (result.identifier, head)
-            result = self._import_module(head, mname, result)
+            result = self._safe_import_module(head, mname, result)
             if result is None:
-                result = self.createNode(MissingModule, mname)
-                #self.msgout(4, "raise ImportError: No module named", mname)
-                #raise ImportError("No module named " + mname)
+                # result = self.createNode(MissingModule, mname)
+                self.msgout(4, "raise ImportError: No module named", mname)
+                raise ImportError("No module named " + repr(mname))
         self.msgout(4, "load_tail ->", result)
         return result
 
@@ -1010,7 +1010,7 @@ class ModuleGraph(ObjectGraph):
                 #      by 'm'.
 
                 fullname = m.identifier + '.' + sub
-                submod = self._import_module(sub, fullname, m)
+                submod = self._safe_import_module(sub, fullname, m)
                 if submod is None:
                     raise ImportError("No module named " + fullname)
             yield submod
@@ -1104,69 +1104,90 @@ class ModuleGraph(ObjectGraph):
                 self.createReference(module, parent)
                 parent[module_basename] = module
 
-    def _import_module(self, partname, fqname, parent):
-        # XXX: Review me for use with absolute imports.
+    def _safe_import_module(
+        self, module_basename, module_name, parent_package):
         """
-        Import the Python module with the passed name from the parent package
-        signified by the passed graph node.
+        Create a new graph node for the module with the passed name under the
+        parent package signified by the passed graph node _without_ raising
+        `ImportError` exceptions.
+
+        If this module has already been imported, this module's existing graph
+        node will be returned; else if this module is importable, a new graph
+        node will be added for this module and returned; else this module is
+        unimportable, in which case `None` will be returned. Like the
+        `_safe_import_hook()` method, this method does _not_ raise
+        `ImportError` exceptions when this module is unimportable.
 
         Parameters
         ----------
-        partname : str
+        module_basename : str
             Unqualified name of the module to be imported (e.g., `text`).
-        fqname : str
+        module_name : str
             Fully-qualified name of this module (e.g., `email.mime.text`).
-        parent : Package
-            Graph node for the package providing this module *or* `None` if
-            this module is a top-level module.
+        parent_package : Package
+            Graph node for the previously imported package containing this
+            module _or_ `None` if this module is a **top-level module** (i.e.,
+            `fqname` contains no `.` delimiters).
 
         Returns
         ----------
         Node
-            Graph node created for this module.
+            Graph node created for this module or `None` if this module is
+            unimportable.
         """
-        self.msgin(3, "import_module", partname, fqname, parent)
-        m = self.findNode(fqname)
-        if m is not None:
-            self.msgout(3, "import_module ->", m)
-            if parent:
-                self._updateReference(m, parent, edge_data=DependencyInfo(
-                    conditional=False, fromlist=False, function=False, tryexcept=False
-                ))
-            return m
+        self.msgin(3, "safe_import_module", module_basename, module_name, parent_package)
+        module = self.findNode(module_name)
 
-        if parent and parent.packagepath is None:
-            self.msgout(3, "import_module -> None")
-            return None
+        # If this module has *NOT* already been imported, do so.
+        if module is None:
+            # List of the absolute paths of all directories to be searched for
+            # this module. This effectively defaults to "sys.path".
+            search_dirs = None
 
-        try:
-            searchpath = None
-            if parent is not None and parent.packagepath:
-                searchpath = parent.packagepath
+            # Open file handle providing the physical contents of this module.
+            file_handle = None
 
-            fp, pathname, stuff = self._find_module(partname,
-                searchpath, parent)
+            # If this module has a parent package...
+            if parent_package is not None:
+                # ...with a list of the absolute paths of all directories
+                # comprising this package, prefer that to "sys.path".
+                if parent_package.packagepath is not None:
+                    search_dirs = parent_package.packagepath
+                # Else, something is horribly wrong. Return emptiness.
+                else:
+                    self.msgout(3, "safe_import_module -> None (parent_parent.packagepath is None)")
+                    return None
 
-        except ImportError:
-            self.msgout(3, "import_module ->", None)
-            return None
+            try:
+                try:
+                    file_handle, pathname, metadata = self._find_module(
+                        module_basename, search_dirs, parent_package)
+                except ImportError as exc:
+                    self.msgout(3, "safe_import_module -> None (%r)" % exc)
+                    return None
 
-        try:
-            m = self._load_module(fqname, fp, pathname, stuff)
+                module = self._load_module(
+                    module_name, file_handle, pathname, metadata)
+            finally:
+                if file_handle is not None:
+                    file_handle.close()
 
-        finally:
-            if fp is not None:
-                fp.close()
-
-        if parent:
-            self.msg(4, "create reference", m, "->", parent)
-            self._updateReference(m, parent, edge_data=DependencyInfo(
-                conditional=False, fromlist=False, function=False, tryexcept=False
+        # If this module has a parent package, add an edge from the former to
+        # the latter regardless of whether this module has already been
+        # imported or not.
+        if parent_package is not None:
+            self.msg(4, "safe_import_module create reference", module, "->", parent_package)
+            self._updateReference(
+                module, parent_package, edge_data=DependencyInfo(
+                    conditional=False,
+                    fromlist=False,
+                    function=False,
+                    tryexcept=False,
             ))
-            parent[partname] = m
+            parent_package[module_basename] = module
 
-        self.msgout(3, "import_module ->", m)
-        return m
+        self.msgout(3, "safe_import_module ->", module)
+        return module
 
     def _load_module(self, fqname, fp, pathname, info):
         suffix, mode, typ = info
@@ -1787,7 +1808,7 @@ class ModuleGraph(ObjectGraph):
         # Ensure that exceptions are logged, as this function is typically
         # called by the import_module() method which squelches ImportErrors.
         except Exception as exc:
-            self.msg(4, "_find_module_path exception", exc)
+            self.msgout(4, "_find_module_path -> exception", exc)
             raise
 
         # If this module was not found, raise an exception.
