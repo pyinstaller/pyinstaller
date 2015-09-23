@@ -26,7 +26,8 @@ else:
     name = 'ctypes_dylib.so'
 
 # Test resolving dynamic libraries loaded in Python code at runtime
+# by Python module 'ctypes'.
 tct = CDLL(os.path.join(get_data_dir(), 'ctypes_dylib', name))
-# by Python module 'ctypes'
+# The "dummy" function in ctypes_dylib returning value + 12.
 assert tct.dummy(42) == (42 + 12)
 
