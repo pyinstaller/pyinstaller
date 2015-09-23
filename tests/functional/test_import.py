@@ -142,7 +142,10 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
     if not is_win and funcname.endswith(("WinDLL", "OleDLL")):
         pytest.skip('%s requires windows' % funcname)
 
-    # evaluate the soname here, so the test-code contains a constant
+    # evaluate the soname here, so the test-code contains a constant.
+    # We want the name of the dynamically-loaded library only, not its path.
+    # See discussion in https://github.com/pyinstaller/pyinstaller/pull/1478#issuecomment-139622994.
+    soname = compiled_dylib.basename
     # TODO get the correct filename from compiled_dylib, see comment there
     if is_win:
         soname = 'ctypes_dylib.dll'
@@ -155,7 +158,7 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
     """ % funcname + _template_ctypes_test
     source = source +_template_ctypes_test
 
-    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib)
+    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
     pyi_builder.test_source(source % locals(), test_id=test_id)
 
 
