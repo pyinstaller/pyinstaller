@@ -438,6 +438,7 @@ def compiled_dylib(tmpdir):
     old_wd = tmp_data_dir.chdir()
     try:
         if is_win:
+            tmp_data_dir = tmp_data_dir.join('ctypes_dylib.dll')
             # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
             march = '-m32' if architecture() == '32bit' else '-m64'
             ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
@@ -450,6 +451,7 @@ def compiled_dylib(tmpdir):
                 # Fallback to msvc.
                 ret = subprocess.call([cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
         elif is_darwin:
+            tmp_data_dir = tmp_data_dir.join('ctypes_dylib.dylib')
             # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
             arch = 'i386' if architecture() == '32bit' else 'x86_64'
             cmd = ('gcc -arch ' + arch + ' -Wall -dynamiclib '
@@ -458,6 +460,7 @@ def compiled_dylib(tmpdir):
             id_dylib = os.path.abspath('ctypes_dylib.dylib')
             ret = subprocess.call('install_name_tool -id %s ctypes_dylib.dylib' % (id_dylib,), shell=True)
         else:
+            tmp_data_dir = tmp_data_dir.join('ctypes_dylib.so')
             ret = subprocess.call('gcc -fPIC -shared ctypes_dylib.c -o ctypes_dylib.so', shell=True)
         assert ret == 0, 'Compile ctypes_dylib failed.'
     finally:
