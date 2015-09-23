@@ -177,7 +177,7 @@ def scan_code_for_ctypes(co):
             # None values has to be removed too.
             binaries.remove(binary)
         elif binary != os.path.basename(binary):
-            # TODO make these arning show up somewhere
+            # TODO make these warnings show up somewhere.
             warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
 
     binaries = _resolveCtypesImports(binaries)
@@ -289,8 +289,8 @@ def _resolveCtypesImports(cbinaries):
     `scan_code_instruction_for_ctypes`). Output is a list of tuples
     ready to be appended to the ``binaries`` of a modules.
 
-    This function temporary extents PATH, LD_LIBRARY_PATH or
-    DYLD_LIBRARY_PATH (depending on teh plattform) by CONF['pathex']
+    This function temporarily extents PATH, LD_LIBRARY_PATH or
+    DYLD_LIBRARY_PATH (depending on the plattform) by CONF['pathex']
     so shared libs will be search there, too.
 
     Example:

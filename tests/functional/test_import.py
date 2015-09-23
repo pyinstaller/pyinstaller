@@ -109,7 +109,7 @@ _template_ctypes_test = """
 #
 # At least on Linux, we can not use our own `ctypes_dylib` because
 # `find_library` does not consult LD_LIBRARY_PATH and hence does not
-# find our lib. Anyway, this test tests the pth of the loaded lib and
+# find our lib. Anyway, this test tests the path of the loaded lib and
 # thus checks if libgs.so is included into the frozen exe.
 # TODO: Check how this behaves on other platforms.
 @skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
@@ -159,7 +159,7 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
     pyi_builder.test_source(source % locals(), test_id=test_id)
 
 
-# TODO: Add test-cases forthe prefabricated library loaders supporting
+# TODO: Add test-cases for the prefabricated library loaders supporting
 # attribute accesses on windows. Example::
 #
 #   cdll.kernel32.GetModuleHandleA(None)
