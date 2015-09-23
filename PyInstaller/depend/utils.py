@@ -325,8 +325,6 @@ def _resolveCtypesImports(cbinaries):
     # local paths to library search paths, then replaces original values.
     old = _setPaths()
     for cbin in cbinaries:
-        if not include_library(cbin):
-            continue
         cpath = find_library(os.path.splitext(cbin)[0])
         if is_unix:
             # CAVEAT: find_library() is not the correct function. Ctype's
@@ -354,6 +352,8 @@ def _resolveCtypesImports(cbinaries):
         if cpath is None:
             logger.warn("library %s required via ctypes not found", cbin)
         else:
+            if not include_library(cpath):
+                continue
             ret.append((cbin, cpath, "BINARY"))
     _restorePaths(old)
     return ret
