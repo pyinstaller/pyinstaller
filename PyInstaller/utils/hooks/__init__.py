@@ -818,10 +818,13 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package, subdir=None):
+def collect_submodules(package, subdir=None, pattern=None):
     """
     The following two functions were originally written by Ryan Welsh
     (welchr AT umich.edu).
+
+    :param pattern: String pattern to match only submodules containing
+                    this pattern in the name.
 
     This produces a list of strings which specify all the modules in
     package.  Its results can be directly assigned to ``hiddenimports``
@@ -866,7 +869,12 @@ def collect_submodules(package, subdir=None):
                 extension = os.path.splitext(f)[1]
                 if ((remove_file_extension(f) != '__init__') and
                     extension in PY_EXECUTABLE_SUFFIXES):
-                    mods.add(mod_path + "." + remove_file_extension(f))
+                    modname = mod_path + "." + remove_file_extension(f)
+                    # TODO convert this into regex matching.
+                    # Skip submodules not matching pattern.
+                    if pattern and not pattern in modname:
+                        continue
+                    mods.add(modname)
         else:
         # If not, nothing here is part of the package; don't visit any of
         # these subdirs.

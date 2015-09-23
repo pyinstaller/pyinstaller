@@ -409,8 +409,10 @@ def test_pil_plugins(pyi_builder):
         # are bundled.
         from PIL import Image
         Image.init()
+        MIN_PLUG_COUNT = 7  # Without all plugins the count is usually 6.
         plugins = list(Image.SAVE.keys())
-        if len(plugins) < 1:
+        plugins.sort()
+        if len(plugins) < MIN_PLUG_COUNT:
             raise SystemExit('No PIL image plugins were bundled!')
         else:
             print('PIL supported image formats: %s' % plugins)
