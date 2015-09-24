@@ -18,7 +18,6 @@
 
 char * GetWinErrorString();
 int CreateActContext(const char *manifestpath);
-void ReleaseActContext(void);
 
 char * pyi_win32_wcs_to_mbs(const wchar_t *wstr);
 char * pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr);
