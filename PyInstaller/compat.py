@@ -80,7 +80,7 @@ else:
 if is_py2:
     FileExistsError = OSError
 else:
-    from builtin import FileExistsError
+    from builtins import FileExistsError
 
 
 # In Python 3 built-in function raw_input() was renamed to just 'input()'.
