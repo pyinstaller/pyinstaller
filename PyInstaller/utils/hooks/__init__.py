@@ -1043,4 +1043,4 @@ def gir_library_path_fix(path):
             logger.error('Unable to find gir directory: %s.\n'
                          'Try installing your platforms gobject-introspection package.' % gir_path)
     else:
-        return (path, 'typelibs')
+        return (path, 'gi_typelibs')
