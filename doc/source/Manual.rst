@@ -1215,6 +1215,124 @@ and follow it with a statement such as::
 
     cp -f Info.plist dist/myscript.app/Contents/Info.plist
 
+Multipackage Bundles
+~~~~~~~~~~~~~~~~~~~~~
+
+Some products are made of several different apps,
+each of which might
+depend on a common set of third-party libraries, or share code in other ways.
+When packaging such an product it
+would be a pity to treat each app in isolation, bundling it with
+all its dependencies, because that means storing duplicate copies
+of code and libraries.
+
+You can use the multipackage feature to bundle a set of executable apps
+so that they share single copies of libraries.
+Each dependency (a DLL, for example) is packaged only once, in one of the apps.
+Any other apps in the set that depend on that DLL
+have an "external reference" to it, telling them
+to go find that dependency in the executable file of the app that contains it.
+
+This saves disk space because each dependency is stored only once.
+However, to follow an external reference takes extra time when an app is starting up.
+Some of the apps in the set will have slightly slower launch times.
+
+The external references between binaries include hard-coded
+paths to the output directory, and cannot be rearranged.
+If you use one-folder mode, you must
+install all the application folders within a single parent directory.
+If you use one-file mode, you must place all
+the related applications in the same directory
+when you install the application.
+
+To build such a set of apps you must code a custom
+spec file that contains  a call to the ``MERGE`` function.
+This function takes a list of analyzed scripts,
+finds their common dependencies, and modifies the analyses
+to minimize the storage cost.
+
+The order of the analysis objects in the argument list matters.
+The MERGE function packages each dependency into the
+first script from left to right that needs that dependency.
+A script that comes later in the list and needs the same file
+will have an external reference to the prior script in the list.
+You might sequence the scripts to place the most-used scripts first in the list.
+
+A custom spec file for a multipackage bundle contains one call to the MERGE function::
+
+      MERGE(*args)
+
+MERGE is used after the analysis phase and before ``EXE`` and ``COLLECT``.
+Its variable-length list of arguments consists of
+a list of tuples, each tuple having three elements:
+
+* The first element is an Analysis object, an instance of class Analysis.
+* The second element is the script name (without the ``.py`` extension).
+* The third element is the name for the executable (usually the same as the script).
+
+MERGE examines the Analysis objects to learn the dependencies of each script.
+It modifies these objects to avoid duplication of libraries and modules.
+As a result the packages generated will be connected.
+
+
+Example MERGE spec file
+------------------------
+
+One way to construct a spec file for a multipackage bundle is to
+first build a spec file for each app in the package.
+Suppose you have a product that comprises three apps named
+(because we have no imagination) ``foo``, ``bar`` and ``zap``:
+
+    ``pyi-makespec`` *options as appropriate...* ``foo.py``
+    
+    ``pyi-makespec`` *options as appropriate...* ``bar.py``
+    
+    ``pyi-makespec`` *options as appropriate...* ``zap.py``
+
+Check for warnings and test each of the apps individually.
+Deal with any hidden imports and other problems.
+When all three work correctly,
+edit the three files ``foo.spec``, ``bar.spec`` and ``zap.spec``
+and combine them as follows.
+
+First copy the Analysis statements from each,
+changing them to give each Analysis object a unique name::
+
+    foo_a = Analysis(['foo.py'],
+            pathex=['/the/path/to/foo'],
+            hiddenimports=[],
+            hookspath=None)
+
+    bar_a = Analysis(['bar.py'], etc., etc...
+
+    zap_a = Analysis(['zap.py'], etc., etc...
+
+Now code the call to MERGE to process the three Analysis objects::
+
+    MERGE( (foo_a, 'foo', 'foo'), (bar_a, 'bar', 'bar'), (zap_a, 'zap', 'zap') )
+
+Following this you can copy the ``PYZ``, ``EXE`` and ``COLLECT`` statements from
+the original three spec files,
+substituting the unique names of the Analysis objects
+where the original spec files have ``a.``, for example::
+
+    foo_pyz = PYZ(foo_a.pure)
+    foo_exe = EXE(foo_pyz, foo_a.scripts, ... etc.
+
+Save the merged spec file as ``foobarzap.spec`` and then build it::
+
+    pyi-build foobarzap.spec
+
+There are several multipackage examples in the ``/tests/old_suite/multipackage`` folder
+of the |PyInstaller| distribution folder.
+
+Remember that a spec file is executable Python.
+You can use all the Python facilities (``for`` and ``with``
+and the members of ``sys`` and ``io``)
+in creating the Analysis
+objects and performing the ``PYZ``, ``EXE`` and ``COLLECT`` statements.
+You may also need to know and use `The TOC and Tree Classes`_ described below.
+
 
 When Things Go Wrong
 ====================
@@ -1878,125 +1996,6 @@ an executable or by another DLL.
 ``pyi-bindepend`` is used by |PyInstaller| to
 follow the chain of dependencies of binary extensions
 during Analysis.
-
-
-Multipackage Bundles
-~~~~~~~~~~~~~~~~~~~~~
-
-Some products are made of several different apps,
-each of which might
-depend on a common set of third-party libraries, or share code in other ways.
-When packaging such an product it
-would be a pity to treat each app in isolation, bundling it with
-all its dependencies, because that means storing duplicate copies
-of code and libraries.
-
-You can use the multipackage feature to bundle a set of executable apps
-so that they share single copies of libraries.
-Each dependency (a DLL, for example) is packaged only once, in one of the apps.
-Any other apps in the set that depend on that DLL
-have an "external reference" to it, telling them
-to go find that dependency in the executable file of the app that contains it.
-
-This saves disk space because each dependency is stored only once.
-However, to follow an external reference takes extra time when an app is starting up.
-Some of the apps in the set will have slightly slower launch times.
-
-The external references between binaries include hard-coded
-paths to the output directory, and cannot be rearranged.
-If you use one-folder mode, you must
-install all the application folders within a single parent directory.
-If you use one-file mode, you must place all
-the related applications in the same directory
-when you install the application.
-
-To build such a set of apps you must code a custom
-spec file that contains  a call to the `MERGE Function`_.
-This function takes a list of analyzed scripts,
-finds their common dependencies, and modifies the analyses
-to minimize the storage cost.
-
-The order of the analysis objects in the argument list matters.
-The MERGE function packages each dependency into the
-first script from left to right that needs that dependency.
-A script that comes later in the list and needs the same file
-will have an external reference.
-You might sequence the scripts to place the most-used scripts first in the list.
-
-
-MERGE Function
----------------
-
-A custom spec file for a multipackage bundle contains one call to the MERGE function::
-
-      MERGE(*args)
-
-MERGE is used after the analysis phase and before ``EXE`` and ``COLLECT``.
-Its variable-length list of arguments consists of
-a list of tuples, each tuple having three elements:
-
-* The first element is an Analysis object, an instance of class Analysis.
-* The second element is the script name (without the ``.py`` extension).
-* The third element is the name for the executable (usually the same as the script).
-
-MERGE examines the Analysis objects to learn the dependencies of each script.
-It modifies the total list to avoid duplication of libraries and modules.
-As a result the packages generated will be connected.
-
-
-Example MERGE spec file
-------------------------
-
-One way to construct a spec file for a multipackage bundle is to
-first build a spec file for each app in the package.
-Suppose you have a product that comprises three apps named
-(because we have no imagination) ``foo``, ``bar`` and ``zap``::
-
-    pyi-makespec options as appropriate... foo.py
-    pyi-makespec options as appropriate... bar.py
-    pyi-makespec options as appropriate... zap.py
-
-Check for warnings and test the apps individually.
-Deal with any hidden imports and other problems.
-When all three work correctly,
-edit the three files ``foo.spec``, ``bar.spec`` and ``zap.spec``
-and combine them as follows.
-First copy the Analysis statements from each,
-changing them to give each Analysis object a unique name::
-
-    foo_a = Analysis(['foo.py'],
-            pathex=['/the/path/to/foo'],
-            hiddenimports=[],
-            hookspath=None)
-
-    bar_a = Analysis(['bar.py'], etc., etc...
-
-    zap_a = Analysis(['zap.py'], etc., etc...
-
-Now code the call to MERGE to process the three Analysis objects::
-
-    MERGE( (foo_a, 'foo', 'foo'), (bar_a, 'bar', 'bar'), (zap_a, 'zap', 'zap') )
-
-Following this you can copy the ``PYZ``, ``EXE`` and ``COLLECT`` statements from
-the original three spec files,
-substituting the unique names of the Analysis objects
-where the original spec files have ``a.``, for example::
-
-    foo_pyz = PYZ(foo_a.pure)
-    foo_exe = EXE(foo_pyz, foo_a.scripts, ... etc.
-
-Save the merged spec file as ``foobarzap.spec`` and then build it::
-
-    pyi-build foobarzap.spec
-
-There are several multipackage examples in the ``tests/multipackage`` folder
-of the |PyInstaller| distribution folder.
-
-Remember that a spec file is executable Python.
-You can use all the Python facilities (``for`` and ``with``
-and the members of ``sys`` and ``io``)
-in creating the Analysis
-objects and performing the ``PYZ``, ``EXE`` and ``COLLECT`` statements.
 
 
 Using Hook Files
