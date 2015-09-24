@@ -96,6 +96,7 @@ int CreateActContext(const char *manifestpath)
     ZeroMemory(&ctx, sizeof(ctx));
     ctx.cbSize = sizeof(ACTCTX);
     ctx.lpSource = manifestpath_w;
+    ctx.dwFlags = ACTCTX_FLAG_SET_PROCESS_DEFAULT;
 
     hCtx = CreateActCtx(&ctx);
     free(manifestpath_w);
