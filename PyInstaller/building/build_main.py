@@ -306,7 +306,8 @@ class Analysis(Target):
         else:
             for m in self.excludes:
                 logger.debug("Excluding module '%s'" % m)
-            self.graph = initialize_modgraph(excludes=self.excludes)
+            self.graph = initialize_modgraph(
+                excludes=self.excludes, user_hook_dirs=self.hookspath)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
@@ -418,12 +419,14 @@ class Analysis(Target):
                 if node_type not in VALID_MODULE_TYPES:
                     continue
 
-                # Import hook module from a file.
-                imphook_object = ImportHook(imported_name, hooks_cache[imported_name])
-                # Expad module dependency graph.
-                imphook_object.update_dependencies(self.graph)
-                # Update cache of binaries and datas.
-                additional_files_cache.add(imported_name, imphook_object.binaries, imphook_object.datas)
+                # Run all post-graph hooks for this module.
+                for hook_file in hooks_cache[imported_name]:
+                    # Import hook module from a file.
+                    imphook_object = ImportHook(imported_name, hook_file)
+                    # Expand module dependency graph.
+                    imphook_object.update_dependencies(self.graph)
+                    # Update cache of binaries and datas.
+                    additional_files_cache.add(imported_name, imphook_object.binaries, imphook_object.datas)
 
                 # Append applied hooks to the list 'applied_hooks'.
                 # These will be removed after the inner loop finishs.
