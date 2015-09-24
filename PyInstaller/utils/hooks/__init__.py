@@ -15,10 +15,10 @@ import os
 import pkg_resources
 import re
 import sys
-import tempfile
 
 from ... import compat
 from ...compat import is_py2, is_win, is_py3, is_darwin
+from ...config import CONF
 from ...utils import misc
 from ... import HOMEPATH
 from ... import log as logging
@@ -1015,32 +1015,33 @@ def gir_library_path_fix(path):
     gir_file = os.path.join(gir_path, gir_name)
 
     if is_darwin:
-        if os.path.exists(gir_path):
-            if os.path.exists(gir_file):
-                with open(gir_file, 'r') as f:
-                    lines = f.readlines()
-
-                with open(os.path.join(tempfile.gettempdir(), gir_name), 'w') as f:
-                    for line in lines:
-                        if 'shared-library' in line:
-                            split = re.split('(=)', line)
-                            files = re.split('(["|,])', split[2])
-                            for count, item in enumerate(files):
-                                if 'lib' in item:
-                                    files[count] = '@loader_path/' + os.path.basename(item)
-                            line = ''.join(split[0:2]) + ''.join(files)
-                        f.write(line)
-
-                command = subprocess.Popen(('g-ir-compiler', os.path.join(tempfile.gettempdir(), gir_name),
-                                            '-o', os.path.join(tempfile.gettempdir(), typelib_name)))
-                command.wait()
-
-                return (os.path.join(tempfile.gettempdir(), typelib_name), 'typelibs')
-            else:
-                logger.error('Unable to find gir file: %s.\n'
-                             'Try installing your platforms gobject-introspection package.' % gir_file)
-        else:
+        if not os.path.exists(gir_path):
             logger.error('Unable to find gir directory: %s.\n'
                          'Try installing your platforms gobject-introspection package.' % gir_path)
+            return None
+        if not os.path.exists(gir_file):
+            logger.error('Unable to find gir file: %s.\n'
+                         'Try installing your platforms gobject-introspection package.' % gir_file)
+            return None
+
+        with open(gir_file, 'r') as f:
+            lines = f.readlines()
+        with open(os.path.join(CONF['workpath'], gir_name), 'w') as f:
+            for line in lines:
+                if 'shared-library' in line:
+                    split = re.split('(=)', line)
+                    files = re.split('(["|,])', split[2])
+                    for count, item in enumerate(files):
+                        if 'lib' in item:
+                            files[count] = '@loader_path/' + os.path.basename(item)
+                    line = ''.join(split[0:2]) + ''.join(files)
+                f.write(line)
+
+        # g-ir-compiler expects a file so we cannot just pipe the fixed file to it.
+        command = subprocess.Popen(('g-ir-compiler', os.path.join(CONF['workpath'], gir_name),
+                                    '-o', os.path.join(CONF['workpath'], typelib_name)))
+        command.wait()
+
+        return (os.path.join(CONF['workpath'], typelib_name), 'gi_typelibs')
     else:
         return (path, 'gi_typelibs')
