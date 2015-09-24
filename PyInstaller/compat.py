@@ -75,6 +75,13 @@ else:
                      'Please define constant PYDYLIB_NAMES for your platform.')
 
 
+# In Python 3 there is exception FileExistsError. But it is not available
+# in Python 2. For Python 2 fall back to OSError exception.
+if is_py2:
+    FileExistsError = OSError
+else:
+    from builtin import FileExistsError
+
 
 # In Python 3 built-in function raw_input() was renamed to just 'input()'.
 try:

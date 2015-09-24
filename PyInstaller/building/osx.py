@@ -9,10 +9,10 @@
 
 import os
 import shutil
-from PyInstaller import is_darwin
-from PyInstaller.building.api import EXE, COLLECT
-from PyInstaller.building.datastruct import Target, TOC, logger, _check_guts_eq
-from PyInstaller.building.utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
+from ..compat import is_darwin, FileExistsError
+from .api import EXE, COLLECT
+from .datastruct import Target, TOC, logger, _check_guts_eq
+from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
 
 
 
