@@ -146,11 +146,6 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
     # We want the name of the dynamically-loaded library only, not its path.
     # See discussion in https://github.com/pyinstaller/pyinstaller/pull/1478#issuecomment-139622994.
     soname = compiled_dylib.basename
-    # TODO get the correct filename from compiled_dylib, see comment there
-    if is_win:
-        soname = 'ctypes_dylib.dll'
-    else:
-        soname = 'ctypes_dylib.so'
 
     source = """
         import ctypes ; from ctypes import *
