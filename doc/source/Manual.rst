@@ -1033,55 +1033,53 @@ Adding Data Files
 You provide a list that describes the files
 as the value of the ``datas=`` argument to ``Analysis``.
 The list of data files is a list of tuples.
-Each tuple has two values, both strings:
+Each tuple has two values, both of which must be strings:
 
-    * The path to the file or folder in this system now.
+    * The first string specifies the file or files as they are in this system now.
 
-    * The path to the file or folder in the bundled app at run-time.
+    * The second specifies the names of the files in the bundled app at run-time.
 
-For example, suppose you want to add a single README file to
-a one-folder app.
-You could modify the spec file as follows::
+For example, to add a single README file to a one-folder app,
+you could modify the spec file as follows::
 
 	a = Analysis(...
              datas=[ ('src/README.txt', 'README') ],
              hiddenimports=...
              )
 
-You can add an entire folder in the same way.
-You can use either ``/`` or ``\`` as the path separator character.
-You can use "glob" abbreviations to specify a group of files.
-For example to include all the ``.mp3`` files from a certain folder::
+You have made the ``datas=`` argument a one-item list.
+The item is a tuple in which the first string says the existing file
+is ``src/README.txt``.
+This file will be copied into the bundle with name ``README``.
 
-    a = Analysis(...
-             datas=[ ( '/mygame/sfx/*.mp3', 'sfx' ) ],
+The spec file is more readable if you create the list of added files
+in a separate statement::
+
+	added_files = [
+             ( 'src/README.txt', 'README' )
+             ]
+	a = Analysis(...
+             datas= added_files,
              ...
              )
 
-The path to the input file or folder may be relative as in the first
-example,
-or it may be absolute as in the second.
+The strings may use either ``/`` or ``\`` as the path separator character.
+You can specify input files using "glob" abbreviations.
+When the input is multiple files, the output string may be the name of a folder.
+For example to include all the ``.mp3`` files from a certain folder::
+
+    added_files = [
+             ( '/mygame/sfx/*.mp3', 'sfx' ),
+             ( 'src/README.txt', 'README' )
+             ]
+
+All files matching ``/mygame/sfx/*.mp3`` will be copied into the bundle
+and stored in a folder named ``sfx``.
+
+The path to the input file or folder may be absolute as in the first
+tuple, or relative as in the second.
 When it is relative, it is taken as relative to the location of
 the spec file.
-
-The path to the run-time file or folder must be relative.
-It will be located in the bundle folder.
-Your program can locate the files using the code shown in
-'Run-time Operation'_.
-
-If you want to add several files to the bundle,
-you can create the list in a separate statement::
-
-    added = [
-             ( 'src/README.txt', 'README' ),
-             ( '../../aspell/dict/*.aff', 'spelling/dict' ),
-             ( '../../aspell/dict/*.dic', 'spelling/dict' ),
-             ( '/mygame/sfx/*.mp3', 'sfx' )
-            ]
-    a = Analysis(...
-            datas = added,
-            ...
-            )
 
 Adding Binary Files
 --------------------
@@ -1355,6 +1353,7 @@ asking for technical help.
 Recipes and Examples for Specific Problems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The |PyInstaller| `FAQ`_ page has work-arounds for some common problems.
 Code examples for some advanced uses and some common
 problems are available on our Recipe_ web-page.
 Some of the recipes there include:
