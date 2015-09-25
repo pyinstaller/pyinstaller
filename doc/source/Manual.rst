@@ -1297,8 +1297,8 @@ Suppose you have a product that comprises three apps named
 Check for warnings and test each of the apps individually.
 Deal with any hidden imports and other problems.
 When all three work correctly,
-edit the three files ``foo.spec``, ``bar.spec`` and ``zap.spec``
-and combine them as follows.
+combine the statements from the three files ``foo.spec``, ``bar.spec`` and ``zap.spec``
+as follows.
 
 First copy the Analysis statements from each,
 changing them to give each Analysis object a unique name::
@@ -1312,9 +1312,12 @@ changing them to give each Analysis object a unique name::
 
     zap_a = Analysis(['zap.py'], etc., etc...
 
-Now code the call to MERGE to process the three Analysis objects::
+Now call the MERGE method to process the three Analysis objects::
 
     MERGE( (foo_a, 'foo', 'foo'), (bar_a, 'bar', 'bar'), (zap_a, 'zap', 'zap') )
+
+The Analysis objects ``foo_a``, ``bar_a``, and ``zap_a`` are modified
+so that the latter two refer to the first for common dependencies.
 
 Following this you can copy the ``PYZ``, ``EXE`` and ``COLLECT`` statements from
 the original three spec files,
@@ -1323,13 +1326,22 @@ where the original spec files have ``a.``, for example::
 
     foo_pyz = PYZ(foo_a.pure)
     foo_exe = EXE(foo_pyz, foo_a.scripts, ... etc.
+    foo_coll = COLLECT( foo_exe, foo_a.binaries, foo_a.datas... etc.
 
-Save the merged spec file as ``foobarzap.spec`` and then build it::
+    bar_pyz = PYZ(bar_a.pure)
+    bar_exe = EXE(bar_pyz, bar_a.scripts, ... etc.
+    bar_coll = COLLECT( bar_exe, bar_a.binaries, bar_a.datas... etc.
+
+Save the combined spec file as ``foobarzap.spec`` and then build it::
 
     pyi-build foobarzap.spec
 
-There are several multipackage examples in the ``/tests/old_suite/multipackage`` folder
-of the |PyInstaller| distribution folder.
+The output in the ``dist`` folder will be all three apps, but
+the apps ``dist/bar/bar`` and ``dist/zap/zap`` will refer to
+the contents of ``dist/foo/`` for shared dependencies.
+
+There are several multipackage examples in the 
+|PyInstaller| distribution folder under ``/tests/old_suite/multipackage``.
 
 Remember that a spec file is executable Python.
 You can use all the Python facilities (``for`` and ``with``
