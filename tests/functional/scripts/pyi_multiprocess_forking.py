@@ -21,8 +21,9 @@ import os
 import sys
 import multiprocessing
 
-# Module multiprocessing is organized differently for Python 2.7.
+# Module multiprocessing is organized differently in Python 3.4+
 try:
+    # Python 3.4+
     if sys.platform.startswith('win'):
         import multiprocessing.popen_spawn_win32 as forking
     else:
