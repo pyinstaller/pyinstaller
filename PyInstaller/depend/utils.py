@@ -354,7 +354,10 @@ def _resolveCtypesImports(cbinaries):
         if cpath is None:
             logger.warn("library %s required via ctypes not found", cbin)
         else:
-            ret.append((cbin, cpath, "BINARY"))
+            if cbin == cpath:
+                ret.append((os.path.basename(cbin), cpath, "BINARY"))
+            else:
+                ret.append((cbin, cpath, "BINARY"))
     _restorePaths(old)
     return ret
 
