@@ -45,9 +45,9 @@ div#contents p.topic-title.first {
 	font-weight: normal;
 }
 div.contents {
+	float:left;
 	margin-left: -1em;
 	width: 35%;
-	float:left;
 	background: white;
 	margin-right: 2em;
 	padding-right: 0.5em;
