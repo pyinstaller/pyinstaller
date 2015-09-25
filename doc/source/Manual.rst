@@ -19,8 +19,8 @@ In Brief
 a single package.
 The user can run the packaged app without installing a Python interpreter or any modules.
 |PyInstaller| supports Python 2.7 and Python 3.4+,
-and bundles apps that use the major Python packages
-including numpy, PyQt, wxPython, and so on.
+and correctly bundles the major Python packages
+such as numpy, PyQt, Django, wxPython, and others.
 
 |PyInstaller| is tested against Windows, Mac OS X, and Linux.
 However, it is not a cross-compiler:
@@ -37,10 +37,11 @@ Release 3.0 is a major rewrite that adds Python 3 support,
 better code quality through use of automated testing,
 and resolutions for many old issues.
 
-Functional changes include an easier way to include data files
-in the bundle (LINK HERE)
-changes to the "hook" API (LINK HERE),
-and removal of support for Python prior to 2.7.
+Functional changes include
+removal of support for Python prior to 2.7,
+an easier way to include data files
+in the bundle (`Adding Files to the Bundle`_),
+and changes to the "hook" API (`Understanding PyInstaller Hooks`_).
 
 Requirements
 ============
