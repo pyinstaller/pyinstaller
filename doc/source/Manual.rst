@@ -186,8 +186,8 @@ Once it is installed, to use |PyInstaller|,
 * In the Command field enter ``venv pyi-env-name``
 * Click Run
 
-Then you have a command shell window in which commands
-execute in that Python environment.
+Then you have a command shell window in which commands such as
+`pyinstaller` execute in that Python environment.
 
 
 
