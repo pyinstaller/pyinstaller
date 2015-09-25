@@ -133,25 +133,6 @@ or upgrade to a newer version::
 
     pip install --upgrade pyinstaller
 
-Installing from the archive
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If pip is not available, download the compressed archive from PyPI_.
-If you are asked to test a problem using the latest development code,
-download the compressed archive from the *develop* branch of
-`PyInstaller at GitHub`_.
-
-Expand the archive.
-Inside is a script named ``setup.py``.
-Execute ``python setup.py install``
-with administrator privilege to install or upgrade |PyInstaller|.
-
-For platforms other than Windows, Linux and Mac OS, you must first
-build a |bootloader| program for your platform: see `Building the Bootloader`_.
-After the |bootloader| has been created,
-use ``python setup.py install`` with administrator privileges
-to complete the installation.
-
 Installing in Windows
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -188,6 +169,38 @@ Once it is installed, to use |PyInstaller|,
 
 Then you have a command shell window in which commands such as
 `pyinstaller` execute in that Python environment.
+
+Installing in Mac OS X
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+|PyInstaller| works with the default Python 2.7 provided with current
+Mac OS X installations.
+However, if you plan to use a later version of Python,
+or if you use any of the major packages such as
+PyQt, Numpy, Matplotlib, Scipy, and the like, we strongly
+recommend that you install these using either `MacPorts`_ or `Homebrew`_.
+
+|PyInstaller| users report fewer problems when they use a package manager
+than when they attempt to install major packages individually.
+
+Installing from the archive
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If pip is not available, download the compressed archive from PyPI_.
+If you are asked to test a problem using the latest development code,
+download the compressed archive from the *develop* branch of
+`PyInstaller at GitHub`_.
+
+Expand the archive.
+Inside is a script named ``setup.py``.
+Execute ``python setup.py install``
+with administrator privilege to install or upgrade |PyInstaller|.
+
+For platforms other than Windows, Linux and Mac OS, you must first
+build a |bootloader| program for your platform: see `Building the Bootloader`_.
+After the |bootloader| has been created,
+use ``python setup.py install`` with administrator privileges
+to complete the installation.
 
 
 
@@ -2338,6 +2351,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _FAQ: http://www.pyinstaller.org/wiki/FAQ
 .. _Git: http://git-scm.com/downloads
 .. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
+.. _Homebrew: http://brew.sh/
 .. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
 .. _`How to Report Bugs`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs
 .. _ImageMagick: http://www.imagemagick.org/script/index.php
@@ -2345,6 +2359,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. include:: _definitions.txt
 .. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
 .. _`LSB sdk 4.0`: http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/
+.. _MacPorts: https://www.macports.org/
 .. _makeicns: https://bitbucket.org/mkae/makeicns
 .. _marshalled: http://docs.python.org/library/marshal
 .. _MinGW: http://sourceforge.net/downloads/mingw/
