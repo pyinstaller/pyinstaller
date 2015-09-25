@@ -32,7 +32,7 @@ from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, DLL, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache, HooksCache, ImportHook
+from .imphook import AdditionalFilesCache, HooksCache, ImportHook, create_hook_parent_module
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
@@ -393,6 +393,7 @@ class Analysis(Target):
         #    b. no new hook was applied in the 'while' iteration.
         #
         logger.info('Looking for import hooks ...')
+        create_hook_parent_module()
         hooks_cache = HooksCache(get_importhooks_dir())
         # Custom import hooks
         if self.hookspath:

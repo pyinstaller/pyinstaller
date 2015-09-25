@@ -15,11 +15,13 @@ Code related to processing of import hooks.
 import glob
 import os.path
 import re
+import sys
 import warnings
 
 from .. import log as logging
 from .utils import format_binaries_and_datas
-from ..compat import expand_path, importlib_load_source, UserDict
+from ..compat import expand_path, importlib_load_source, UserDict, is_py2
+from ..compat import importlib_load_source, UserDict, is_py2
 from ..utils.misc import get_code_object
 
 logger = logging.getLogger(__name__)
@@ -488,3 +490,20 @@ class ImportHook(object):
         if hasattr(self._module, 'attrs'):
             self._process_attrs(mod_graph)
 
+
+def create_hook_parent_module():
+    """"
+    Import hook files are imported into namespace 'pyi_hook'. Python 2
+    complains about this missing parent module.
+
+        RuntimeWarning: Parent module 'pyi_hook' not found while handling
+        absolute import from PyInstaller.utils.hooks import collect_submodules
+
+    For Python 2 create this parent module to avoid this warning.
+    """
+    if is_py2:
+        import imp
+        hook_pkg = imp.new_module('pyi_hook')
+        hook_pkg.__package__ = 'pyi_hook'
+        hook_pkg.__path__ = []
+        sys.modules['pyi_hook'] = hook_pkg
