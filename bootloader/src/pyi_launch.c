@@ -43,7 +43,7 @@
 #include "pyi_utils.h"
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
-#include "pyi_win32_utils.h"  // CreateActContext, ReleaseActContext
+#include "pyi_win32_utils.h"  // CreateActContext
 
 
 /* Max count of possible opened archives in multipackage mode. */
@@ -497,9 +497,6 @@ int pyi_launch_execute(ARCHIVE_STATUS *status)
 
 void pyi_launch_finalize(ARCHIVE_STATUS *status)
 {
-    #ifdef _WIN32
-    ReleaseActContext();
-    #endif
     pyi_pylib_finalize(status);
 }
 

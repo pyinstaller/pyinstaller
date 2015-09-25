@@ -32,22 +32,31 @@ FreeBSD, AIX and Solaris.
    :alt: IRC
 
 
-- Documentation: https://pythonhosted.org/PyInstaller/
-- Website:       http://www.pyinstaller.org
-- Code:          https://github.com/pyinstaller/pyinstaller
+:Documentation: https://pythonhosted.org/PyInstaller/
+:Website:       http://www.pyinstaller.org
+:Code:          https://github.com/pyinstaller/pyinstaller
 
 
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 2.7 / 3.3-3.4.
+- Works out-of-the-box with any Python version 2.7 / 3.3-3.5.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Compatible with many 3rd-party packages out-of-the-box. (All the required
   tricks to make external packages work are already integrated.)
 - Libraries like PyQt5, PyQt4, PySide, matplotlib or Django are fully supported,
   without having to handle plugins or external data files manually.
+- Working code signing on OS X.
 - Bundles MS Visual C++ dlls on Windows.
+
+
+Installation
+------------
+
+PyInstaller is available on PyPI. You can install it through `pip`::
+
+      pip install pyinstaller
 
 
 Requirements and Supported Platforms
@@ -75,13 +84,6 @@ Requirements and Supported Platforms
 
  - Mac OS X 10.6 (Snow Leopard) or newer.
 
-
-Installation
-------------
-
-PyInstaller is available on PyPI. You can install it through `pip`::
-
-      pip install pyinstaller
 
 Usage
 -----

@@ -96,6 +96,7 @@ int CreateActContext(const char *manifestpath)
     ZeroMemory(&ctx, sizeof(ctx));
     ctx.cbSize = sizeof(ACTCTX);
     ctx.lpSource = manifestpath_w;
+    ctx.dwFlags = ACTCTX_FLAG_SET_PROCESS_DEFAULT;
 
     hCtx = CreateActCtx(&ctx);
     free(manifestpath_w);
@@ -113,42 +114,6 @@ int CreateActContext(const char *manifestpath)
     hCtx = INVALID_HANDLE_VALUE;
     VS("LOADER: Error activating the context: ActivateActCtx: \n%s\n", GetWinErrorString());
     return 0;
-}
-
-void ReleaseActContext(void)
-{
-    void (WINAPI *ReleaseActCtx)(HANDLE);
-    BOOL (WINAPI *DeactivateActCtx)(DWORD dwFlags, ULONG_PTR ulCookie);
-    HANDLE k32;
-
-    k32 = LoadLibraryA("kernel32");
-    ReleaseActCtx = (void*)GetProcAddress(k32, "ReleaseActCtx");
-    DeactivateActCtx = (void*)GetProcAddress(k32, "DeactivateActCtx");
-    if (!ReleaseActCtx || !DeactivateActCtx)
-    {
-        VS("LOADER: Cannot find ReleaseActCtx/DeactivateActCtx exports in kernel32.dll\n");
-        return;
-    }
-
-    // TODO mingw (gcc) does not support '__try', '__except' - probably just drop it if there is no other workaround.
-    /*__try
-    {*/
-
-        VS("LOADER: Deactivating activation context\n");
-        if (!DeactivateActCtx(0, actToken))
-            VS("LOADER: Error deactivating context!\n!");
-        
-        VS("LOADER: Releasing activation context\n");
-        if (hCtx != INVALID_HANDLE_VALUE)
-            ReleaseActCtx(hCtx);
-        VS("LOADER: Done\n");
-
-    // TODO mingw (gcc) does not support '__try', '__except' - probably just drop it if there is no other workaround.
-    /*}
-    __except (STATUS_SXS_EARLY_DEACTIVATION)
-    {
-    	VS("LOADER: XS early deactivation; somebody left the activation context dirty, let's ignore the problem\n");
-    }*/
 }
 
 /* Convert a wide string to an ANSI string.

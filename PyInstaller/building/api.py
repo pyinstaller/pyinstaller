@@ -407,11 +407,14 @@ class EXE(Target):
                 self.console, self.uac_admin, self.uac_uiaccess)
 
             manifest_filename = os.path.basename(self.name) + ".manifest"
+
             self.toc.append((manifest_filename, filename, 'BINARY'))
-            # Store name of manifest file as bootloader option. Allows
-            # the exe to be renamed.
-            self.toc.append(("pyi-windows-manifest-filename " + manifest_filename,
-                             "", "OPTION"))
+            if not self.exclude_binaries:
+                # Onefile mode: manifest file is explicitly loaded.
+                # Store name of manifest file as bootloader option. Allows
+                # the exe to be renamed.
+                self.toc.append(("pyi-windows-manifest-filename " + manifest_filename,
+                                 "", "OPTION"))
 
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
@@ -506,28 +509,6 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-        if is_win and not self.exclude_binaries:
-            # Windows and onefile mode - embed manifest into exe.
-            logger.info('Onefile Mode - Embedding Manifest into EXE file')
-            tmpnm = tempfile.mktemp()
-            shutil.copy2(exe, tmpnm)
-            os.chmod(tmpnm, 0o755)
-
-            # In onefile mode, dependencies in the onefile manifest
-            # refer to files that are about to be unpacked when the exe
-            # is run. The Windows DLL loader doesn't know that and
-            # refuses to run the exe at all. Since the .exe does not in
-            # fact depend on those, and the actual manifest will be used
-            # later when an activation context is created, all
-            # dependencies are removed from the embedded manifest.
-            #
-            # This allows the embedded manifest to still specify UAC options
-            # while the manifest that will be unpacked from the archive will
-            # specify assembly dependencies
-            self.manifest.dependentAssemblies = []
-            self.manifest.update_resources(tmpnm, [1]) # 1 for executable
-            trash.append(tmpnm)
-            exe = tmpnm
 
         if is_win and (self.icon or self.versrsrc or self.resources):
             tmpnm = tempfile.mktemp()

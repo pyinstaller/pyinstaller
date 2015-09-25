@@ -17,11 +17,12 @@ python:
   - "3.3"
   - "3.4"
   - "3.5"
+  - "nightly"
 
 matrix:
   allow_failures:
-      # Just tests how PyInstaller performs with upcoming Python 3.5
-      - python: "3.5"
+      # Just tests how PyInstaller performs with upcoming Python 3.6
+      - python: "nightly"
       # Ignore failures from OS X.
       - os: osx
 

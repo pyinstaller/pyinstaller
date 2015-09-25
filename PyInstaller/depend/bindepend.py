@@ -15,6 +15,7 @@ Find external dependencies of binary libraries.
 import os
 import sys
 import re
+import platform
 from glob import glob
 
 # Required for extracting eggs.
@@ -79,7 +80,7 @@ def getfullnameof(mod, xtrapath=None):
         # second try: lower case filename
         for p in epath:
             npth = os.path.join(p, mod.lower())
-            if os.path.exists(npth):
+            if os.path.exists(npth) and matchDLLArch(npth):
                 return npth
     return ''
 
@@ -155,6 +156,38 @@ def match_binding_redirect(manifest, redirect):
         manifest.processorArchitecture == redirect.arch,
         manifest.publicKeyToken == redirect.publicKeyToken,
     ])
+
+def matchDLLArch(filename):
+    """
+    Return True if the DLL given by filename matches the CPU type/architecture of the
+    Python process running PyInstaller.
+
+    Always returns True on non-Windows platforms
+
+    :param filename:
+    :type filename:
+    :return:
+    :rtype:
+    """
+    # TODO: check machine type on other platforms?
+    if not is_win:
+        return True
+
+    import PyInstaller.lib.pefile as pefile
+
+    _machine = platform.machine().upper()
+    machine_types = {
+        'I386': 'IMAGE_FILE_MACHINE_I386',
+        'AMD64': 'IMAGE_FILE_MACHINE_AMD64',
+        'IA64': 'IMAGE_FILE_MACHINE_IA64',
+    }
+    machine = machine_types.get(_machine, None)
+    if machine is None:
+        raise ValueError("Could not verify DLL machine type. Unknown machine type: %s" % _machine)
+
+    pe = pefile.PE(filename, fast_load=True)
+
+    return pe.FILE_HEADER.Machine == machine
 
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
