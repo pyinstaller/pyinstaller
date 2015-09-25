@@ -17,10 +17,14 @@ from PyInstaller import __version__ as version
 
 
 REQUIREMENTS = ['setuptools']
+# For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
-    # 'pypiwin32' is PyWin32 package made installable by 'pip install'
-    # command.
-    REQUIREMENTS.append('pypiwin32')
+    try:
+        import pywintypes
+    except ImportError:
+        # 'pypiwin32' is PyWin32 package made installable by 'pip install'
+        # command.
+        REQUIREMENTS.append('pypiwin32')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.
