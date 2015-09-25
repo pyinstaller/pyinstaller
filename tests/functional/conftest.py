@@ -40,7 +40,8 @@ sys.path.append(_ROOT_DIR)
 from PyInstaller import configure
 from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
-from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr
+from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
+  architecture
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
@@ -61,6 +62,23 @@ _SPEC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs')
 # ====
 # Fixtures
 # --------
+# A helper function to copy from data/dir to tmpdir/data.
+def _data_dir_copy(
+  # The name of the subdirectory located in data/name to copy.
+  subdir_name,
+  # The tmpdir object for this test. See
+  # https://pytest.org/latest/tmpdir.html.
+  tmpdir):
+
+    # Form the source and tmp paths.
+    source_data_dir = py.path.local(_DATA_DIR).join(subdir_name)
+    tmp_data_dir = tmpdir.join('data', subdir_name)
+    # Copy the data.
+    shutil.copytree(source_data_dir.strpath, tmp_data_dir.strpath)
+    # Return the temporary data directory, so that the copied data can now be
+    # used.
+    return tmp_data_dir
+
 # Define a fixure for the DataDir object.
 @pytest.fixture
 def data_dir(
@@ -75,13 +93,8 @@ def data_dir(
 
     # Strip the leading 'test_' from the test's name.
     name = request.function.__name__[5:]
-    # Copy _DATA_DIR/<name> to the tmpdir.
-    source_data = os.path.join(_DATA_DIR, name)
-    tmp_data = os.path.join(tmpdir.strpath, 'data', name)
-    shutil.copytree(source_data, tmp_data)
-
-    # Return a py.path.local object representing this directory.
-    return py.path.local(tmp_data)
+    # Copy to tmpdir and return the path.
+    return _data_dir_copy(name, tmpdir)
 
 class AppBuilder(object):
 
@@ -411,3 +424,44 @@ def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
     monkeypatch.chdir(tmp)
 
     return AppBuilder(tmp, None, pyi_modgraph)
+
+# Define a fixture which compiles the data/load_dll_using_ctypes/ctypes_dylib.c
+# program in the tmpdir, returning the tmpdir object.
+@pytest.fixture()
+def compiled_dylib(tmpdir):
+    tmp_data_dir = _data_dir_copy('ctypes_dylib', tmpdir)
+
+    # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD. Don't
+    # use monkeypatch.chdir to change, then monkeypatch.undo() to restore the
+    # CWD, since this will undo ALL monkeypatches (such as the pyi_builder's
+    # additions to sys.path), breaking the test.
+    old_wd = tmp_data_dir.chdir()
+    try:
+        if is_win:
+            # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
+            march = '-m32' if architecture() == '32bit' else '-m64'
+            ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
+            if ret != 0:
+                # Find path to cl.exe file.
+                from distutils.msvccompiler import MSVCCompiler
+                comp = MSVCCompiler()
+                comp.initialize()
+                cl_path = comp.cc
+                # Fallback to msvc.
+                ret = subprocess.call([cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
+        elif is_darwin:
+            # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
+            arch = 'i386' if architecture() == '32bit' else 'x86_64'
+            cmd = ('gcc -arch ' + arch + ' -Wall -dynamiclib '
+                'ctypes_dylib.c -o ctypes_dylib.dylib -headerpad_max_install_names')
+            ret = subprocess.call(cmd, shell=True)
+            id_dylib = os.path.abspath('ctypes_dylib.dylib')
+            ret = subprocess.call('install_name_tool -id %s ctypes_dylib.dylib' % (id_dylib,), shell=True)
+        else:
+            ret = subprocess.call('gcc -fPIC -shared ctypes_dylib.c -o ctypes_dylib.so', shell=True)
+        assert ret == 0, 'Compile ctypes_dylib failed.'
+    finally:
+        # Reset the CWD directory.
+        old_wd.chdir()
+
+    return tmp_data_dir

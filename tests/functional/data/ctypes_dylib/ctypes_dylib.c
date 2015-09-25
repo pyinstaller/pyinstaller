@@ -13,7 +13,7 @@
 // Windows code
 int __declspec(dllexport) dummy(int arg)
 {
-    return arg;
+    return arg + 12;
 }
 
 #else
@@ -21,7 +21,7 @@ int __declspec(dllexport) dummy(int arg)
 // Unix code
 int dummy(int arg)
 {
-    return arg;
+    return arg + 12;
 }
 
 #endif
