@@ -241,7 +241,7 @@ these commands will not be installed as commands.
 However, you can still execute all the functions documented below
 by running Python scripts found in the distribution folder.
 The equivalent of the ``pyinstaller`` command is
-*pyinstaller-folder* ``/pyinstaller.py``.
+*pyinstaller-folder*\ ``/pyinstaller.py``.
 The other commands are found in *pyinstaller-folder* ``/cliutils/``
 with meaningful names (``makespec.py``, etc.)
 
@@ -342,6 +342,11 @@ in a way that works regardless of
 whether or not it is running from a bundle.
 This is covered under `Run-time Operation`_.
 
+|PyInstaller| does *not* include libraries that should exist in
+any installation of this OS.
+For example in Linux, it does not bundle any file
+from ``/lib`` or ``/usr/lib``, assuming these will be found in every system.
+
 
 Bundling to One Folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -417,7 +422,7 @@ the one-folder bundle.
 
 Before you attempt to bundle to one file, make sure your app
 works correctly when bundled to one folder.
-It is is *much* easier to debug problems in one-folder mode.
+It is is *much* easier to diagnose problems in one-folder mode.
 
 How the One-File Program Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -511,7 +516,7 @@ Cython C object modules and bundle them.
 Additionally, Python bytecode can be obfuscated with AES256 by specifying
 an encryption key on PyInstaller's command line. Please note that it is still
 very easy to extract the key and get back the original bytecode, but it
-should prevent most forms of "occasional" tampering.
+should prevent most forms of "casual" tampering.
 
 
 Using PyInstaller
@@ -567,6 +572,159 @@ General Options
 
 .. include:: _pyinstaller-options.tmp
 
+
+
+Shortening the Command
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Because of its numerous options, a full ``pyinstaller`` command
+can become very long.
+You will run the same command again and again as you develop
+your script.
+You can put the command in a shell script or batch file,
+using line continuations to make it readable.
+For example, in Linux::
+
+    pyinstaller --noconfirm --log-level=WARN \
+        --onefile --nowindow \
+        --hidden-import=secret1 \
+        --hidden-import=secret2 \
+        --upx-dir=/usr/local/share/ \
+        myscript.spec
+
+Or in Windows, use the little-known BAT file line continuation::
+
+    pyinstaller --noconfirm --log-level=WARN ^
+        --onefile --nowindow ^
+        --hidden-import=secret1 ^
+        --hidden-import=secret2 ^
+        --icon-file=..\MLNMFLCN.ICO ^
+        myscript.spec
+
+
+Using UPX
+~~~~~~~~~~~~~~~~~~~
+
+UPX_ is a free utility available for most operating systems.
+UPX compresses executable files and libraries, making them smaller,
+sometimes much smaller.
+UPX is available for most operating systems and can compress
+a large number of executable file formats.
+See the UPX_ home page for downloads, and for the list of
+supported executable formats.
+Development of UPX appears to have ended in September 2013,
+at which time it supported most executable formats except for
+64-bit binaries for Mac OS X.
+UPX has no effect on those.
+
+A compressed executable program is wrapped in UPX
+startup code that dynamically decompresses the program
+when the program is launched.
+After it has been decompressed, the program runs normally.
+In the case of a |PyInstaller| one-file executable that has
+been UPX-compressed, the full execution sequence is:
+
+* The compressed program start up in the UPX decompressor code.
+* After decompression, the program executes the |PyInstaller| |bootloader|,
+  which creates a temporary environment for Python.
+* The Python interpreter executes your script.
+
+|PyInstaller| looks for UPX on the execution path
+or the path specified with the ``--upx-dir`` option.
+If UPX exists, |PyInstaller| applies it to the final executable,
+unless the ``--noupx`` option was given.
+UPX has been used with |PyInstaller| output often, usually with no problems.
+
+
+Encrypting Python Bytecode
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To encrypt the Python bytecode modules stored in the bundle,
+pass the ``--key=``\ *key-string*  argument on
+the command line.
+
+For this to work, you must have the PyCrypto_
+module installed.
+The *key-string* is a string of 16 characters which is used to
+encrypt each file of Python byte-code before it is stored in
+the archive inside the executable file.
+
+Supporting Multiple Platforms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you distribute your application for only one combination of OS and Python,
+just install |PyInstaller| like any other package and use it in your
+normal development setup.
+
+
+Supporting Multiple Python Environments
+-----------------------------------------
+
+When you need to bundle your application within one OS
+but for different versions of Python and support libraries -- for example,
+a Python 3 version and a Python 2.7 version;
+or a supported version that uses Qt4 and a development version that uses Qt5 --
+we recommend you use virtualenv_.
+With virtualenv you can maintain different combinations of Python
+and installed packages, and switch from one combination to another easily.
+(If you work only with Python 3.4 and later, the built-in script pyvenv_
+does the same job.)
+
+* Use virtualenv to create as many different development environments as you need,
+  each with its unique combination of Python and installed packages.
+* Install |PyInstaller| in each environment.
+* Use |PyInstaller| to build your application in each environment.
+
+Note that when using virtualenv, the path to the |PyInstaller| commands is:
+
+* Windows: ENV_ROOT\\Scripts
+* Others:  ENV_ROOT/bin
+
+Under Windows, the pip-Win_ package installs virtualenv and makes it
+especially easy to set up different environments and switch between them.
+Under Linux and Mac OS, you switch environments at the command line.
+
+
+Supporting Multiple Operating Systems
+---------------------------------------
+
+If you need to distribute your application for more than one OS,
+for example both Windows and Mac OS X, you must install |PyInstaller|
+on each platform and bundle your app separately on each.
+
+You can do this from a single machine using virtualization.
+The free virtualBox_ or the paid VMWare_ and Parallels_
+allow you to run another complete operating system as a "guest".
+You set up a virtual machine for each "guest" OS.
+In it you install
+Python, the support packages your application needs, and PyInstaller.
+
+The Dropbox_ system is useful with virtual machines.
+Install a Dropbox client in each virtual machine, all linked to your Dropbox account.
+Keep a single copy of your script(s) in a Dropbox folder.
+Then on any virtual machine you can run |PyInstaller| thus::
+
+    cd ~/Dropbox/project_folder/src # Linux, Mac -- Windows similar
+    rm *.pyc # get rid of modules compiled by another Python
+    pyinstaller --workpath=path-to-local-temp-folder  \
+                --distpath=path-to-local-dist-folder  \
+                ...other options as required...       \
+                ./myscript.py
+
+|PyInstaller| reads scripts from the common Dropbox folder,
+but writes its work files and the bundled app in folders that
+are local to the virtual machine.
+
+If you share the same home directory on multiple platforms, for
+example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
+environment variable to different values on each platform otherwise
+PyInstaller may cache files for one platform and use them on the other
+platform, as by default it uses a subdirectory of your home directory
+as its cache location.
+
+It is said to be possible to cross-develop for Windows under Linux
+using the free Wine_ environment.
+Further details are needed, see `How to Contribute`_.
 
 Capturing Windows Version Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -697,158 +855,6 @@ OpenDocument is the only AppleEvent the |bootloader| handles.
 If you want to handle other events, or events that
 are delivered after the program has launched, you must
 set up the appropriate handlers.
-
-
-Shortening the Command
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Because of its numerous options, a full ``pyinstaller`` command
-can become very long.
-You will run the same command again and again as you develop
-your script.
-You can put the command in a shell script or batch file,
-using line continuations to make it readable.
-For example, in Linux::
-
-    pyinstaller --noconfirm --log-level=WARN \
-        --onefile --nowindow \
-        --hidden-import=secret1 \
-        --hidden-import=secret2 \
-        --upx-dir=/usr/local/share/ \
-        myscript.spec
-
-Or in Windows, use the little-known BAT file line continuation::
-
-    pyinstaller --noconfirm --log-level=WARN ^
-        --onefile --nowindow ^
-        --hidden-import=secret1 ^
-        --hidden-import=secret2 ^
-        --icon-file=..\MLNMFLCN.ICO ^
-        myscript.spec
-
-
-Using UPX
-~~~~~~~~~~~~~~~~~~~
-
-UPX_ is a free utility available for most operating systems.
-UPX compresses executable files and libraries, making them smaller,
-sometimes much smaller.
-UPX is available for most operating systems and can compress
-a large number of executable file formats.
-See the UPX_ home page for downloads, and for the list of
-supported executable formats.
-As of May 2013, the only major absence is 64-bit binaries for
-Windows and Mac OS X.
-UPX has no effect on these.
-
-A compressed executable program is wrapped in UPX
-startup code that dynamically decompresses the program
-when the program is launched.
-After it has been decompressed, the program runs normally.
-In the case of a |PyInstaller| one-file executable that has
-been UPX-compressed, the full execution sequence is:
-
-* The compressed program start up in the UPX decompressor code.
-* After decompression, the program executes the |PyInstaller| |bootloader|,
-  which creates a temporary environment for Python.
-* The Python interpreter executes your script.
-
-|PyInstaller| looks for UPX on the execution path
-or the path specified with the ``--upx-dir`` option.
-If UPX exists, |PyInstaller| applies it to the final executable,
-unless the ``--noupx`` option was given.
-UPX has been used with |PyInstaller| output often, usually with no problems.
-
-
-Encrypting Python Bytecode
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To encrypt the Python bytecode modules stored in the bundle,
-pass the ``--key=``\ *key-string*  argument on
-the command line.
-
-For this to work, you must have the PyCrypto_
-module installed.
-The *key-string* is a string of 16 characters which is used to
-encrypt each file of Python byte-code before it is stored in
-the archive inside the executable file.
-
-Supporting Multiple Platforms
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you distribute your application for only one combination of OS and Python,
-just install |PyInstaller| like any other package and use it in your
-normal development setup.
-
-
-Supporting Multiple Python Environments
------------------------------------------
-
-When you need to bundle your application within one OS
-but for different versions of Python and support libraries -- for example,
-a Python 3 version and a Python 2.7 version;
-or a supported version that uses Qt4 and a development version that uses Qt5 --
-we recommend you use virtualenv_.
-With virtualenv you can maintain different combinations of Python
-and installed packages, and switch from one combination to another easily.
-(If you work only with Python 3.4 and later, the built-in script pyvenv_
-does the same job.)
-
-* Use virtualenv to create as many different development environments as you need,
-  each with its unique combination of Python and installed packages.
-* Install |PyInstaller| in each environment.
-* Use |PyInstaller| to build your application in each environment.
-
-Note that when using virtualenv, the path to the |PyInstaller| commands is:
-
-* Windows: ENV_ROOT\\Scripts
-* Others:  ENV_ROOT/bin
-
-Under Windows, the pip-Win_ package installs virtualenv and makes it
-especially easy to set up different environments and switch between them.
-Under Linux and Mac OS, you switch environments at the command line.
-
-
-Supporting Multiple Operating Systems
----------------------------------------
-
-If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
-on each platform and bundle your app separately on each.
-
-You can do this from a single machine using virtualization.
-The free virtualBox_ or the paid VMWare_ and Parallels_
-allow you to run another complete operating system as a "guest".
-You set up a virtual machine for each "guest" OS.
-In it you install
-Python, the support packages your application needs, and PyInstaller.
-
-The Dropbox_ system is useful with virtual machines.
-Install a Dropbox client in each virtual machine, all linked to your Dropbox account.
-Keep a single copy of your script(s) in a Dropbox folder.
-Then on any virtual machine you can run |PyInstaller| thus::
-
-    cd ~/Dropbox/project_folder/src # Linux, Mac -- Windows similar
-    rm *.pyc # get rid of modules compiled by another Python
-    pyinstaller --workpath=path-to-local-temp-folder  \
-                --distpath=path-to-local-dist-folder  \
-                ...other options as required...       \
-                ./myscript.py
-
-|PyInstaller| reads scripts from the common Dropbox folder,
-but writes its work files and the bundled app in folders that
-are local to the virtual machine.
-
-If you share the same home directory on multiple platforms, for
-example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
-environment variable to different values on each platform otherwise
-PyInstaller may cache files for one platform and use them on the other
-platform, as by default it uses a subdirectory of your home directory
-as its cache location.
-
-It is said to be possible to cross-develop for Windows under Linux
-using the free Wine_ environment.
-Further details are needed, see `How to Contribute`_.
 
 
 Run-time Operation
