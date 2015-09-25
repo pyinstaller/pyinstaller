@@ -111,6 +111,23 @@ except ImportError:
 if sys.warnoptions:
     import warnings
 
+try:
+    import ctypes
+    import os
+    from ctypes import LibraryLoader, DEFAULT_MODE
+
+
+    class PyInstaller_CDLL(ctypes.CDLL):
+        def __init__(self, name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False):
+            frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
+            if os.path.exists(frozen_name):
+                name = frozen_name
+            super(PyInstaller_CDLL, self).__init__(name, mode, handle, use_errno, use_last_error)
+
+    ctypes.CDLL = PyInstaller_CDLL
+    ctypes.cdll = LibraryLoader(PyInstaller_CDLL)
+except ImportError:
+    pass
 
 # On Mac OS X insert sys._MEIPASS in the first position of the list of paths
 # that ctypes uses to search for libraries.
