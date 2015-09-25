@@ -54,8 +54,8 @@ Windows
 |PyInstaller| runs in Windows XP or newer.
 It can create graphical windowed apps (apps that do not need a command window).
 
-It requires the PyWin32_ Python extensions for Windows,
-which is installed automatically if you install |PyInstaller| using pip.
+It requires the PyWin32_ or pypiwin32_ Python extension for Windows.
+The latter is installed automatically if you install |PyInstaller| using pip.
 The pip-Win_ package is recommended, but not required.
 
 Mac OS X
@@ -68,11 +68,11 @@ It can build graphical windowed apps (apps that do not use a terminal window).
 Linux
 ~~~~~~
 
-|PyInstaller| requires the ``ldd`` terminal application to print
+|PyInstaller| requires the ``ldd`` terminal application to discover
 the shared libraries required by each program or shared library.
 It is typically found in the distribution-package ``glibc`` or ``libc-bin``.
 
-It also requires the ``objdump`` terminal application to display
+It also requires the ``objdump`` terminal application to extract
 information from object files.
 This is typically found in the distribution-package ``binutils``.
 
@@ -83,7 +83,8 @@ Users have reported success running |PyInstaller| on these platforms,
 but it is not tested on them.
 The ``ldd`` and ``objdump`` commands are needed.
 
-In each case you must compile a bootloader; see `Building the Bootloader`_.
+Before using |PyInstaller| in these systems
+you must compile a bootloader; see `Building the Bootloader`_.
 
 License
 =======
@@ -154,11 +155,10 @@ to complete the installation.
 Installing in Windows
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-For Windows, PyWin32_ is a prerequisite.
-It is installed automatically when you install |PyInstaller|
+For Windows, PyWin32_ or the more recent pypiwin32_, is a prerequisite.
+The latter is installed automatically when you install |PyInstaller|
 using pip_ or `easy_install`_.
-If necessary, follow the PyWin32_ link to install it manually.
-There is a different version of PyWin32 for each version of Python.
+If necessary, follow the pypiwin32_ link to install it manually.
 
 It is particularly easy to use pip-Win_ to install |PyInstaller|
 along with the correct version of PyWin32_.
@@ -2347,6 +2347,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
+.. _pypiwin32: https://pypi.python.org/pypi/pypiwin32/219
 .. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
 .. _PySide: http://qt-project.org/wiki/About-PySide
 .. _pyvenv: https://docs.python.org/3.4/library/venv.html
