@@ -50,11 +50,12 @@ class TOC(compat.UserList):
             logger.info("TOC found a %s, not a tuple", entry)
             raise TypeError("Expected tuple, not %s." % type(entry).__name__)
         name, path, typecode = entry
-        if typecode in ["BINARY", "DATA"]:
+        if typecode in ["BINARY", "DATA"] and not os.path.dirname(name) == 'gi_typelibs':
             # Normalize the case for binary files and data files only (to avoid duplicates
             # for different cases under Windows). We can't do that for
             # Python files because the import semantic (even at runtime)
-            # depends on the case.
+            # depends on the case. We also cannot do that for GObject Introspection typelibs
+            # which depend on the case when being loaded through PyGObject.
             name = os.path.normcase(name)
         return (name, path, typecode)
 

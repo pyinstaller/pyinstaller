@@ -13,10 +13,12 @@ import glob
 import pkgutil
 import os
 import pkg_resources
+import re
 import sys
 
 from ... import compat
-from ...compat import is_py2, is_win, is_py3
+from ...compat import is_py2, is_win, is_py3, is_darwin
+from ...config import CONF
 from ...utils import misc
 from ... import HOMEPATH
 from ... import log as logging
@@ -984,3 +986,62 @@ def relpath_to_config_or_make(filename):
     # Relative path in the dist directory.
     prefix = _find_prefix(filename)
     return os.path.relpath(os.path.dirname(filename), prefix)
+
+
+def get_typelibs(module, version):
+    datas = []
+    statement = """
+import gi
+gi.require_version("GIRepository", "2.0")
+from gi.repository import GIRepository
+print(GIRepository.Repository.get_search_path())"""
+    typelibs_path = eval_statement(statement)[0]
+    pattern = os.path.join(typelibs_path, module + '*' + version + '*')
+    for f in glob.glob(pattern):
+        datas.append(gir_library_path_fix(f))
+    return datas
+
+
+def gir_library_path_fix(path):
+    import subprocess
+
+    path = os.path.abspath(path)
+    common_path = os.path.commonprefix([sys.prefix, path])
+    gir_path = os.path.join(common_path, 'share', 'gir-1.0')
+
+    typelib_name = os.path.basename(path)
+    gir_name = os.path.splitext(typelib_name)[0] + '.gir'
+
+    gir_file = os.path.join(gir_path, gir_name)
+
+    if is_darwin:
+        if not os.path.exists(gir_path):
+            logger.error('Unable to find gir directory: %s.\n'
+                         'Try installing your platforms gobject-introspection package.' % gir_path)
+            return None
+        if not os.path.exists(gir_file):
+            logger.error('Unable to find gir file: %s.\n'
+                         'Try installing your platforms gobject-introspection package.' % gir_file)
+            return None
+
+        with open(gir_file, 'r') as f:
+            lines = f.readlines()
+        with open(os.path.join(CONF['workpath'], gir_name), 'w') as f:
+            for line in lines:
+                if 'shared-library' in line:
+                    split = re.split('(=)', line)
+                    files = re.split('(["|,])', split[2])
+                    for count, item in enumerate(files):
+                        if 'lib' in item:
+                            files[count] = '@loader_path/' + os.path.basename(item)
+                    line = ''.join(split[0:2]) + ''.join(files)
+                f.write(line)
+
+        # g-ir-compiler expects a file so we cannot just pipe the fixed file to it.
+        command = subprocess.Popen(('g-ir-compiler', os.path.join(CONF['workpath'], gir_name),
+                                    '-o', os.path.join(CONF['workpath'], typelib_name)))
+        command.wait()
+
+        return (os.path.join(CONF['workpath'], typelib_name), 'gi_typelibs')
+    else:
+        return (path, 'gi_typelibs')
