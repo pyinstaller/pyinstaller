@@ -108,6 +108,9 @@ def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
 
 
+# TODO move 'multiprocessig' tests into 'test_multiprocess.py.
+
+
 @importorskip('multiprocessing')
 def test_multiprocess(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess.py')
@@ -116,6 +119,27 @@ def test_multiprocess(pyi_builder):
 @importorskip('multiprocessing')
 def test_multiprocess_forking(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_forking.py')
+
+
+@importorskip('multiprocessing')
+def test_multiprocess_pool(pyi_builder):
+    pyi_builder.test_source(
+        """
+        # Example from https://docs.python.org/3.4/library/multiprocessing.html#using-a-pool-of-workers
+        from multiprocessing import Pool, freeze_support
+        def  f(x):
+            return x*x
+        if __name__ == '__main__':
+            freeze_support()
+            # Start 4 worker processes.
+            pool = Pool(processes=4)
+            print('Evaluate "f(10)" asynchronously.')
+            res = pool.apply_async(f, [10])
+            print(res.get(timeout=1))          # prints "100"
+            print('Print "[0, 1, 4,..., 81]"')
+            print(pool.map(f, range(10)))
+        """)
+
 
 
 # TODO skip this test if C compiler is not found.
