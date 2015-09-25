@@ -1503,7 +1503,7 @@ and run it.
 Once you know what modules are needed, you add the needed modules
 to the bundle using the ``--hidden-import=`` command option,
 or by editing the spec file,
-or with a hook file (see `Using Hook Files`_ below).
+or with a hook file (see `Understanding PyInstaller Hooks`_ below).
 
 
 Extending a Package's ``__path__``
@@ -1522,7 +1522,7 @@ Because the ``__init__.py`` of an imported module
 is not actually executed during analysis,
 changes it makes to ``__path__`` are not seen by |PyInstaller|.
 We fix the problem with the same hook mechanism we use for hidden imports,
-with some additional logic; see `Using Hook Files`_ below.
+with some additional logic; see `Understanding PyInstaller Hooks`_ below.
 
 Note that manipulations of ``__path__`` hooked in this way apply only
 to the Analysis.
@@ -1998,9 +1998,14 @@ follow the chain of dependencies of binary extensions
 during Analysis.
 
 
-Using Hook Files
-~~~~~~~~~~~~~~~~~~~~~
+Understanding PyInstaller Hooks
+==================================
 
+.. Note::
+     THE FOLLOWING IS THE TEXT FROM THE 2.1 MANUAL
+     
+     IT NEEDS TO BE REWRITTEN FOR THE NEW HOOKS API
+     
 In summary, a "hook" file tells |PyInstaller| about hidden imports
 called by a particular module.
 The name of the hook file is ``hook-<module>.py`` where "<module>" is
@@ -2155,7 +2160,7 @@ define one or more of the following several global names:
 
 
 Building the Bootloader
-~~~~~~~~~~~~~~~~~~~~~~~~
+=========================
 
 PyInstaller comes with binary bootloaders for most platforms in
 the ``bootloader`` folder of the distribution folder.
@@ -2176,7 +2181,7 @@ then ask for technical help.
 
 
 Development tools
------------------
+~~~~~~~~~~~~~~~~~~~~
 
 On Debian/Ubuntu systems, you can run the following to
 install everything required::
@@ -2214,8 +2219,8 @@ following locations:
 * `TDM-GCC`_ - MinGW and MinGW-w64 installers
 
 
-Building
---------
+Building for Windows
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 On Windows, when using MinGW, it is needed to add ``PATH_TO_MINGW\bin``
 to your system ``PATH``. variable. In command prompt before building
@@ -2246,8 +2251,8 @@ On Windows this will produce in the ``./PyInstaller/bootloader/YOUR_OS`` directo
 *Note:* On AIX the |bootloader| builds with gcc and is tested with gcc 4.2.0 on AIX 6.1.
 
 
-Linux Standard Base (LSB) binary
---------------------------------
+Building for LINUX
+~~~~~~~~~~~~~~~~~~~~~
 
 By default, the bootloaders on Linux are LSB binaries.
 
