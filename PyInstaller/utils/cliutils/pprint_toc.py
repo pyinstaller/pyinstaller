@@ -27,4 +27,5 @@ def run():
 
     for toc_file in args:
         with codecs.open(toc_file, 'r', 'utf-8') as f:
+            from PyInstaller.depend.bindepend import BindingRedirect
             pprint.pprint(eval(f.read()))
