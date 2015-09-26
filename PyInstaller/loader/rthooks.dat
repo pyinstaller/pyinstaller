@@ -6,6 +6,7 @@
     'gi.repository.Gst':    ['pyi_rth_gstreamer.py'],
     'gst':        ['pyi_rth_gstreamer.py'],
     'matplotlib': ['pyi_rth_mplconfig.py', 'pyi_rth_mpldata.py'],
+    'osgeo':      ['pyi_rth_osgeo.py'],
     'PIL.Image':  ['pyi_rth_PIL_Image.py'],
     'pkg_resources':  ['pyi_rth_pkgres.py'],
     'PyQt4':      ['pyi_rth_qt4plugins.py'],
