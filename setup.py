@@ -80,7 +80,8 @@ setup(
     name='PyInstaller',
     version=version,
 
-    description='Create stand-alone executables from Python programs.',
+    description='PyInstaller bundles a Python application and all its '
+                'dependencies into a single package.',
     long_description=long_description,
     keywords='packaging app apps bundle convert standalone executable '
              'pyinstaller macholib cxfreeze freeze py2exe py2app bbfreeze',
