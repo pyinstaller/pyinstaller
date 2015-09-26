@@ -10,28 +10,12 @@
 
 # Library imports
 # ---------------
-import os
 import pytest
-import shutil
 
 # Local imports
 # -------------
 from PyInstaller.compat import is_win
-from PyInstaller.utils.tests import importorskip, xfail_py2
-
-
-@xfail_py2
-@importorskip('django')
-# Django test might sometimes hang.
-@pytest.mark.timeout(timeout=7*60)
-def test_django(pyi_builder, monkeypatch, data_dir):
-    # Extend sys.path so PyInstaller could find modules from 'tmpdir/django/'.
-    monkeypatch.syspath_prepend(data_dir.strpath)
-    # Django uses manage.py as the main script.
-    script = os.path.join(data_dir.strpath, 'manage.py')
-    # Create the exe, run django command 'check' to do basic sanity checking of the
-    # executable.
-    pyi_builder.test_script(script, app_name='django_site', app_args=['check'])
+from PyInstaller.utils.tests import importorskip
 
 
 @importorskip('enchant')
