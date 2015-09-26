@@ -25,14 +25,9 @@ elif sys.platform.startswith("darwin"):
 else:
     name = 'ctypes_dylib.so'
 
-def dummy(arg):
-    """
-    Test loading ctypes library and passing an argument to it.
-    """
-    tct = CDLL(os.path.join(get_data_dir(), 'load_dll_using_ctypes', name))
-    return tct.dummy(arg)
-
 # Test resolving dynamic libraries loaded in Python code at runtime
-# by Python module 'ctypes'
-assert dummy(42) == 42
+# by Python module 'ctypes'.
+tct = CDLL(os.path.join(get_data_dir(), 'ctypes_dylib', name))
+# The "dummy" function in ctypes_dylib returning value + 12.
+assert tct.dummy(42) == (42 + 12)
 

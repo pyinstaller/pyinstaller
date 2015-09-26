@@ -41,6 +41,26 @@ def test_ctypes_CDLL_c(pyi_builder):
         assert lib is not None
         """)
 
+import PyInstaller.depend.utils
+__orig_resolveCtypesImports = PyInstaller.depend.utils._resolveCtypesImports
+
+def __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib):
+
+    def mocked_resolveCtypesImports(*args, **kwargs):
+        from PyInstaller.config import CONF
+        old_pathex = CONF['pathex']
+        CONF['pathex'].append(str(compiled_dylib))
+        res = __orig_resolveCtypesImports(*args, **kwargs)
+        CONF['pathex'] = old_pathex
+        return res
+
+    # Add the path to ctypes_dylib to pathex, only for
+    # _resolveCtypesImports. We can not monkeypath CONF['pathex']
+    # here, as it will be overwritten when pyi_builder is starting up.
+    # So be monkeypatch _resolveCtypesImports by a wrapper.
+    monkeypatch.setattr(PyInstaller.depend.utils, "_resolveCtypesImports",
+                        mocked_resolveCtypesImports)
+
 
 def skip_if_lib_missing(libname, text=None):
     """
@@ -86,6 +106,12 @@ _template_ctypes_test = """
     """
 
 # Ghostscript's libgs.so should be available in may Unix/Linux systems
+#
+# At least on Linux, we can not use our own `ctypes_dylib` because
+# `find_library` does not consult LD_LIBRARY_PATH and hence does not
+# find our lib. Anyway, this test tests the path of the loaded lib and
+# thus checks if libgs.so is included into the frozen exe.
+# TODO: Check how this behaves on other platforms.
 @skip_if_lib_missing('gs', 'libgs.so (Ghostscript)')
 def test_ctypes_CDLL_find_library__gs(pyi_builder):
     libname = 'gs'
@@ -94,14 +120,12 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
 
 #-- Generate test-cases for the different types of ctypes objects.
 
-libname = 'gs'
-reason = 'libgs.so (Ghostscript)'
 parameters = []
 ids = []
 for prefix in ('', 'ctypes.'):
     for funcname in  ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
-        ids.append('%s_%s' % (prefix+funcname, libname))
-        params = (prefix+funcname, libname, reason, ids[-1])
+        ids.append(prefix+funcname)
+        params = (prefix+funcname, ids[-1])
         # Workaround a problem in pytest: skipif on a parameter will
         # completely replace the skipif on the test function. See
         # https://github.com/pytest-dev/pytest/issues/954
@@ -111,44 +135,32 @@ for prefix in ('', 'ctypes.'):
         #    params = skipif_notwin(params)
         parameters.append(params)
 
-@pytest.mark.parametrize("funcname,libname,reason,test_id", parameters, ids=ids)
-@skip_if_lib_missing(libname, reason)
-def test_ctypes_gen(pyi_builder, funcname, libname, reason, test_id):
+@pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
+def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id):
     # Workaround, see above.
     # :todo: remove this workaround (see above)
     if not is_win and funcname.endswith(("WinDLL", "OleDLL")):
         pytest.skip('%s requires windows' % funcname)
-    # evaluate the soname here, so the test-code contains a constant
-    soname = ctypes.util.find_library(libname)
+
+    # evaluate the soname here, so the test-code contains a constant.
+    # We want the name of the dynamically-loaded library only, not its path.
+    # See discussion in https://github.com/pyinstaller/pyinstaller/pull/1478#issuecomment-139622994.
+    soname = compiled_dylib.basename
+
     source = """
         import ctypes ; from ctypes import *
         lib = %s(%%(soname)r)
     """ % funcname + _template_ctypes_test
     source = source +_template_ctypes_test
+
+    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
     pyi_builder.test_source(source % locals(), test_id=test_id)
 
 
-# TODO: Add test-cases forthe prefabricated library loaders supporting
+# TODO: Add test-cases for the prefabricated library loaders supporting
 # attribute accesses on windows. Example::
 #
 #   cdll.kernel32.GetModuleHandleA(None)
 #
 # Of course we need to use dlls which is not are commony available on
 # windows but mot excluded in PyInstaller.depend.dylib
-
-
-@skip_if_lib_missing('usb-1.0')
-def test_ctypes_CDLL_find_library__usb(pyi_builder):
-    libname = 'usb-1.0'
-    pyi_builder.test_source(_template_ctypes_CDLL_find_library % locals())
-
-
-@skip_if_lib_missing('usb-1.0')
-def test_ctypes_CDLL__usb(pyi_builder):
-    # evaluate the soname here, so the test-code contains a constant
-    soname = ctypes.util.find_library('usb-1.0')
-    script = """
-        import ctypes
-        lib = ctypes.CDLL(%(soname)r)
-    """ + _template_ctypes_test
-    pyi_builder.test_source(script % locals())
