@@ -10,7 +10,7 @@
 from PyInstaller.lib.modulegraph.modulegraph import RuntimeModule
 
 
-def pre_safe_import_module(module_graph):
+def pre_safe_import_module(api):
     # PyGObject modules loaded through the gi repository are marked as MissingModules by modulegraph
     # so we convert them to RuntimeModules so their hooks are loaded and run.
-    module_graph.add_module(RuntimeModule('gi.repository.Gst'))
+    api.module_graph.add_module(RuntimeModule('gi.repository.Gst'))
