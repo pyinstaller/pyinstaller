@@ -28,7 +28,7 @@ with relative prefix::
 
 
 pefile
---------
+------
 
 Two versions of pefile are included to make PyInstaller runnable on both
 Python 2 and 3. Importing pefile.py will import the correct version for
