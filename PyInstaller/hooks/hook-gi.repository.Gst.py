@@ -46,6 +46,4 @@ pattern = os.path.join(plugin_path, 'libgst*')
 
 binaries = [(f, os.path.join('gst_plugins')) for f in glob.glob(pattern)]
 
-typelibs = get_typelibs('Gst', '1.0')
-if typelibs:
-    datas = typelibs
+datas = get_typelibs('Gst', '1.0')

@@ -29,9 +29,7 @@ logger = logging.getLogger(__name__)
 hiddenimports = ['gi.overrides.Gio']
 
 
-typelib = get_typelibs('Gio', '2.0')
-if typelib:
-    datas = typelib
+datas = get_typelibs('Gio', '2.0')
 
 
 binaries = []
