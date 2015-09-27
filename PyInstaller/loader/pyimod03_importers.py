@@ -58,6 +58,13 @@ else:
     # with using type() function:
     imp_new_module = type(sys)
 
+if sys.flags.verbose:
+    def trace(msg, *a):
+        sys.stderr.write(msg % a)
+        sys.stderr.write("\n")
+else:
+    def trace(msg, *a):
+        pass
 
 # TODO Do we still need BuiltintImporter for Python 3 built-in modules?
 class BuiltinImporter(object):
@@ -200,6 +207,7 @@ class FrozenImporter(object):
                 # frozen module. Let's make them accessible as a set().
                 self.toc = set(self._pyz_archive.toc.keys())
                 # Return - no error was raised.
+                trace("# PyInstaller: FrozenImporter(%s)", pyz_filepath)
                 return
             except IOError:
                 # Item from sys.path is not ZlibArchiveReader let's try next.
@@ -233,6 +241,7 @@ class FrozenImporter(object):
         if fullname in self.toc:
             # Tell the import machinery to use self.load_module() to load the module.
             module_loader = self
+            trace("import %s # PyInstaller PYZ", fullname)
         elif path is not None:
             # Try to handle module.__path__ modifications by the modules themselves
             # Reverse the fake __path__ we added to the package module to a
@@ -247,13 +256,16 @@ class FrozenImporter(object):
                 if not parts[0]:
                     parts = parts[1:]
                 parts.append(modname)
-                fullname = ".".join(parts)
-                if fullname in self.toc:
-                    module_loader = FrozenPackageImporter(self, fullname)
+                real_fullname = ".".join(parts)
+                if real_fullname in self.toc:
+                    module_loader = FrozenPackageImporter(self, real_fullname)
+                    trace("import %s as %s # PyInstaller PYZ (__path__ override: %s)",
+                          real_fullname, fullname, p)
                     break
         # Release the interpreter's import lock.
         imp_unlock()
-
+        if module_loader is None:
+            trace("# %s not found in PYZ", fullname)
         return module_loader
 
     def load_module(self, fullname, real_fullname=None):
