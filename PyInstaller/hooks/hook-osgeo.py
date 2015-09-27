@@ -38,7 +38,7 @@ is_conda = False
 # Auxiliary data:
 #
 # - general case (data in 'osgeo/data/gdal'):
-datas = collect_data_files('osgeo', subdir='data/gdal')
+datas = collect_data_files('osgeo', subdir=os.path.join('data', 'gdal'))
 
 # check if the data has been effectively found in 'osgeo/data/gdal'
 if len(datas) == 0:
