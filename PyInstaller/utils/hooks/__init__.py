@@ -998,7 +998,9 @@ print(GIRepository.Repository.get_search_path())"""
     typelibs_path = eval_statement(statement)[0]
     pattern = os.path.join(typelibs_path, module + '*' + version + '*')
     for f in glob.glob(pattern):
-        datas.append(gir_library_path_fix(f))
+        d = gir_library_path_fix(f)
+        if d:
+            datas.append(d)
     return datas
 
 
