@@ -18,6 +18,8 @@ Fake 'site' makes PyInstaller to work with distutils and to work inside
 virtualenv environment.
 """
 
+# Marker to be used in our test-suite.
+__pyinstaller__faked__site__module__ = True
 
 # TODO test the following code stub from real 'site' module.
 
