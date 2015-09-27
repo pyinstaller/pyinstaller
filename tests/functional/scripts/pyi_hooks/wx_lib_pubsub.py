@@ -20,17 +20,29 @@ The default protocol conditionally depends on the current wxPython version. If:
 Hence, this test is identical to explicitly importing the setup package for the
 default protocol specific to the current wxPython version (e.g., `setupv1` for
 wxPython 2.8 or older) _before_ the existing import from `wx.lib.pubsub` below.
+
+
+NOTE: "wx.lib.pubsub.__init__" on 2.8 tries to use `imp.find_loader`
+to find out if the module is importable; because `imp.find_loader` does not honor
+our FrozenImporter path hook, it always returns None for *any* frozen module. This
+means 2.8 never uses the v1 API when frozen, a deviation from its non-frozen behavior.
+
+This indicates wxPython 2.8 cannot be used (for now) without the following workaround:
+ - Explicitly import wx.lib.pubsub.setupv1 before wx.lib.pubsub
 """
 
-import pkgutil
-
-# Attempt to find a PEP 302-compatible loader for the placeholder
-# "wx.lib.pubsub.autosetuppubsubv1" module.
+# Attempt to import the placeholder "wx.lib.pubsub.autosetuppubsubv1" module.
+# We can't use `find_loader` to locate it because it may be present on both
+# wxPython 2.8 and 2.9; version 2.9 explicitly raises ImportError to
+# pretend it is not found. For whatever reason.
+#
+# Importing this module has no side effects; it either raises ImportError
+# or does nothing.
 try:
-    pkgutil.find_loader('wx.lib.pubsub.autosetuppubsubv1')
+    import wx.lib.pubsub.autosetuppubsubv1
 # If that failed, the current version of wxPython is 2.9 or newer, in which case
 # the default protocol is the version 3 "kwargs" protocol.
-except Exception:
+except ImportError:
     from wx.lib.pubsub import pub as Publisher
     print('wxPython 2.9 or newer detected.')
 
