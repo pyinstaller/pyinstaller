@@ -1019,11 +1019,13 @@ def gir_library_path_fix(path):
     if is_darwin:
         if not os.path.exists(gir_path):
             logger.error('Unable to find gir directory: %s.\n'
-                         'Try installing your platforms gobject-introspection package.' % gir_path)
+                         'Try installing your platforms gobject-introspection '
+                         'package.', gir_path)
             return None
         if not os.path.exists(gir_file):
             logger.error('Unable to find gir file: %s.\n'
-                         'Try installing your platforms gobject-introspection package.' % gir_file)
+                         'Try installing your platforms gobject-introspection '
+                         'package.', gir_file)
             return None
 
         with open(gir_file, 'r') as f:
