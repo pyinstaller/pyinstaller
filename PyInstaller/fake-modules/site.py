@@ -51,5 +51,7 @@ class _Helper(object):
          return "Type help() for interactive help, " \
                 "or help(object) for help about object."
      def __call__(self, *args, **kwds):
-         import pydoc
+         # Do *not* use `import` here, otherwise pydoc will be included in
+         # *every* frozen app
+         pydoc = __import__(''.join('pydoc'))
          return pydoc.help(*args, **kwds)
