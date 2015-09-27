@@ -23,6 +23,12 @@ from .utils.git import get_repo_revision
 __version__ = '3.0.dev6'
 
 
+# Absolute path of this package's directory. Save this early so all
+# submodules can use the absolute path. This is required e.g. if the
+# current directorey changes prior to loading the hooks.
+PACKAGEPATH = os.path.abspath(os.path.dirname(__file__))
+
+HOMEPATH = os.path.dirname(PACKAGEPATH)
 if is_win and is_py2:
     # This ensures for Python 2 that PyInstaller will work on Windows
     # with paths containing foreign characters.
