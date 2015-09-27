@@ -7,11 +7,11 @@ programs into stand-alone executables, under Windows, Linux, Mac OS X,
 FreeBSD, AIX and Solaris.
 
 
-.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller/python3.svg
+.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller/develop.svg
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
 
-.. image:: https://ci.appveyor.com/api/projects/status/t7o4swychyh94wrs/branch/python3?svg=true
-   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/python3
+.. image:: https://ci.appveyor.com/api/projects/status/t7o4swychyh94wrs/branch/develop?svg=true
+   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/develop
 
 .. image:: http://img.shields.io/pypi/v/PyInstaller.svg
    :target: https://pypi.python.org/pypi/PyInstaller
@@ -20,11 +20,11 @@ FreeBSD, AIX and Solaris.
    :target: https://pypi.python.org/pypi/PyInstaller
 
 .. image:: https://img.shields.io/badge/docs-latest-blue.svg
-   :target: http://htmlpreview.github.io/?https://github.com/pyinstaller/pyinstaller/blob/python3/doc/Manual.html
+   :target: http://htmlpreview.github.io/?https://github.com/pyinstaller/pyinstaller/blob/develop/doc/Manual.html
    :alt: Manual
 
 .. image:: https://img.shields.io/badge/changes-latest-blue.svg
-   :target: https://github.com/pyinstaller/pyinstaller/blob/python3/doc/CHANGES.txt
+   :target: https://github.com/pyinstaller/pyinstaller/blob/develop/doc/CHANGES.txt
    :alt: Changelog
 
 .. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
@@ -133,5 +133,5 @@ or simply use it direclty from the source (pyinstaller.py).
 
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
-.. _`manual`: http://htmlpreview.github.io/?https://github.com/pyinstaller/pyinstaller/blob/python3/doc/Manual.html
+.. _`manual`: http://htmlpreview.github.io/?https://github.com/pyinstaller/pyinstaller/blob/develop/doc/Manual.html
 
