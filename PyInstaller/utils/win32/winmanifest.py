@@ -351,8 +351,8 @@ class Manifest(object):
             language = self.language
 
         if os.path.isdir(pcfiles):
-            logger.info("Searching for publisher configuration %s ...",
-                        self.getpolicyid(True, language=language))
+            logger.debug("Searching for publisher configuration %s ...",
+                         self.getpolicyid(True, language=language))
             if sys.getwindowsversion() < (6, ):
                 # Windows XP
                 policies = os.path.join(pcfiles,
@@ -376,8 +376,8 @@ class Manifest(object):
                     logger.error("Could not parse file %s", manifestpth)
                     logger.exception(exc)
                 else:
-                    logger.info("Checking publisher policy for "
-                                "binding redirects")
+                    logger.debug("Checking publisher policy for "
+                                 "binding redirects")
                     for assembly in policy.dependentAssemblies:
                         if (not assembly.same_id(self, True) or
                             assembly.optional):
@@ -392,22 +392,22 @@ class Manifest(object):
                                 new = ".".join([str(i)
                                                 for i in
                                                 redirect[1]])
-                                logger.info("Found redirect for "
-                                            "version(s) %s -> %s",
-                                            old, new)
+                                logger.debug("Found redirect for "
+                                             "version(s) %s -> %s",
+                                             old, new)
                             if (version >= redirect[0][0] and
                                 version <= redirect[0][-1] and
                                 version != redirect[1]):
-                                logger.info("Applying redirect "
-                                            "%s -> %s",
-                                            ".".join([str(i)
-                                                      for i in
-                                                      version]),
-                                            new)
+                                logger.debug("Applying redirect "
+                                             "%s -> %s",
+                                             ".".join([str(i)
+                                                       for i in
+                                                       version]),
+                                             new)
                                 version = redirect[1]
                                 redirected = True
             if not redirected:
-                logger.info("Publisher configuration not used")
+                logger.debug("Publisher configuration not used")
 
         return version
 
