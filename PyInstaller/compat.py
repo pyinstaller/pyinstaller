@@ -62,7 +62,9 @@ elif is_aix:
     PYDYLIB_NAMES = set(['libpython%d.%d.a' % _pyver])
 elif is_freebsd:
     PYDYLIB_NAMES = set(['libpython%d.%d.so.1' % _pyver,
-                         'libpython%d.%dm.so.1' % _pyver])
+                         'libpython%d.%dm.so.1' % _pyver,
+                         'libpython%d.%d.so.1.0' % _pyver,
+                         'libpython%d.%dm.so.1.0' % _pyver])
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
