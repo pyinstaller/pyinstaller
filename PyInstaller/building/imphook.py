@@ -82,7 +82,8 @@ class HooksCache(dict):
         # Perform tilde and variable expansion and validate the result.
         hooks_dir = expand_path(hooks_dir)
         if not os.path.isdir(hooks_dir):
-            logger.error('Hook directory %r not found' % hooks_dir)
+            logger.error('Hook directory %r not found',
+                         os.path.abspath(hooks_dir))
             return
 
         # For each hook in the passed directory...
