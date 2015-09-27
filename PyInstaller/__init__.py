@@ -23,10 +23,9 @@ from .utils.git import get_repo_revision
 __version__ = '3.0.dev6'
 
 
-# This ensures for Python 2 that PyInstaller will work on Windows with paths
-# containing foreign characters.
-HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 if is_win and is_py2:
+    # This ensures for Python 2 that PyInstaller will work on Windows
+    # with paths containing foreign characters.
     try:
         unicode(HOMEPATH)
     except UnicodeDecodeError:
