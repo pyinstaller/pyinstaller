@@ -19,6 +19,4 @@ from PyInstaller.utils.hooks import get_typelibs
 
 hiddenimports = ['gi.overrides.GModule']
 
-typelib = get_typelibs('GModule', '2.0')
-if typelib:
-    datas = typelib
+datas = get_typelibs('GModule', '2.0')

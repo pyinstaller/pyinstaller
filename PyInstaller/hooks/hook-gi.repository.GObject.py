@@ -19,6 +19,4 @@ from PyInstaller.utils.hooks import get_typelibs
 
 hiddenimports = ['gi.overrides.GObject', 'gi._gobject.option', 'gi._gobject']
 
-typelib = get_typelibs('GObject', '2.0')
-if typelib:
-    datas = typelib
+datas = get_typelibs('GObject', '2.0')
