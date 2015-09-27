@@ -74,9 +74,12 @@ def _get_pyinst_config_dir():
     return config_dir
 
 
-def get_importhooks_dir():
+def get_importhooks_dir(hook_type=None):
     from . import PACKAGEPATH
-    return os.path.join(PACKAGEPATH, 'hooks')
+    if not hook_type:
+        return os.path.join(PACKAGEPATH, 'hooks')
+    else:
+        return os.path.join(PACKAGEPATH, 'hooks', hook_type)
 
 
 def get_config(upx_dir, **kw):
