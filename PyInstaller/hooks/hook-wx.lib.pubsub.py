@@ -8,10 +8,6 @@
 #-----------------------------------------------------------------------------
 
 
-import PyInstaller.utils.hooks
+from PyInstaller.utils.hooks import collect_submodules
 
-
-# If the user imports setuparg1, we just set an attribute
-# in PyInstaller.utils.hooks that allows us to later
-# find out about this.
-PyInstaller.utils.hooks.hook_variables['wxpubsub'] = 'arg1'
+hiddenimports = collect_submodules('wx.lib.pubsub')
