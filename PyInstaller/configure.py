@@ -73,8 +73,10 @@ def _get_pyinst_config_dir():
     config_dir = os.path.join(config_dir, 'pyinstaller')
     return config_dir
 
+
 def get_importhooks_dir():
-    return os.path.join(os.path.dirname(__file__), 'hooks')
+    from . import PACKAGEPATH
+    return os.path.join(PACKAGEPATH, 'hooks')
 
 
 def get_config(upx_dir, **kw):
