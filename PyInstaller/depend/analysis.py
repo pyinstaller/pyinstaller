@@ -32,7 +32,6 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
-import importlib
 import logging
 import os
 import re
@@ -46,7 +45,7 @@ from ..lib.modulegraph.find_modules import get_implies
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
-from .. import HOMEPATH
+from .. import HOMEPATH, configure
 from ..utils.hooks import collect_submodules, is_package
 
 logger = logging.getLogger(__name__)
@@ -115,12 +114,8 @@ class PyiModuleGraph(ModuleGraph):
             subpackage of the `PyInstaller.hooks` package containing such hooks
             (e.g., `post_create_package` for post-create package hooks).
         """
-        # Official PyInstaller package containing these hooks.
-        hooks_package = importlib.import_module(
-            'PyInstaller.hooks.' + hook_type)
-
-        # Absolute path of this package's directory.
-        system_hook_dir = hooks_package.__path__[0]
+        # Absolute path of this type hook package's directory.
+        system_hook_dir = configure.get_importhooks_dir(hook_type)
 
         # Cache of such hooks.
         # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
