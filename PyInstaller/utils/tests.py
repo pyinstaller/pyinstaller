@@ -21,8 +21,9 @@ skipif_notwin = skipif(not is_win, reason='requires Windows')
 skipif_notosx = skipif(not is_darwin, reason='requires Mac OS X')
 skipif_win = skipif(is_win, reason='does not run on Windows')
 skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
-xfail_py2 = pytest.mark.xfail(is_py2, reason='fails with Python 2.7')
-xfail_py3 = pytest.mark.xfail(is_py3, reason='fails with Python 3')
+xfail = pytest.mark.xfail
+xfail_py2 = xfail(is_py2, reason='fails with Python 2.7')
+xfail_py3 = xfail(is_py3, reason='fails with Python 3')
 
 
 # TODO: Rename to importerskip(). That said, is even that really the best name?

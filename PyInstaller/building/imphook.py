@@ -19,51 +19,120 @@ import warnings
 
 from .. import log as logging
 from .utils import format_binaries_and_datas
-from ..compat import importlib_load_source, UserDict
+from ..compat import expand_path, importlib_load_source, UserDict
 from ..utils.misc import get_code_object
 
 logger = logging.getLogger(__name__)
 
 
-class HooksCache(UserDict):
+class HooksCache(dict):
     """
-    Implements cache of module list for which there exists a hook.
-    It allows to iterate over import hooks and remove them.
+    Dictionary mapping from the fully-qualified names of each module hooked by
+    at least one hook script to lists of the absolute paths of these scripts.
+
+    This `dict` subclass caches the list of all hooks applicable to each module,
+    permitting Pythonic mapping, iteration, addition, and removal of such hooks.
+    Each dictionary key is a fully-qualified module name. Each dictionary value
+    is a list of the absolute paths of all hook scripts specific to that module,
+    including both official PyInstaller hooks and unofficial user-defined hooks.
+
+    See Also
+    ----------
+    `_load_file_list()`
+        For details on hook priority.
     """
-    def __init__(self, hooks_path):
+    def __init__(self, hooks_dir):
         """
-        :param hooks_path: File name where to load hook from.
-        """
-        # Initializes self.data that contains the real dictionary.
-        UserDict.__init__(self)
-        self._load_file_list(hooks_path)
+        Initialize this dictionary.
 
-    def _load_file_list(self, path):
+        Parameters
+        ----------
+        hook_dir : str
+            Absolute or relative path of the directory containing hooks with
+            which to populate this cache. By default, this is the absolute path
+            of the `PyInstaller/hooks` directory containing official hooks.
         """
-        Internal method list directory and update the list of available hooks.
+        super(dict, self).__init__()
+        self._load_file_list(hooks_dir)
+
+    def _load_file_list(self, hooks_dir):
         """
-        files = glob.glob(os.path.join(path, 'hook-*.py'))
-        for f in files:
-            # Remove prefix 'hook-' and suffix '.py'.
-            modname = os.path.basename(f)[5:-3]
-            f = os.path.abspath(f)
-            # key - module name, value - path to hook directory.
-            self.data[modname] = f
+        Cache all hooks in the passed directory.
 
-    def add_custom_paths(self, custom_paths):
-        for p in custom_paths:
-            self._load_file_list(p)
+        **Order of caching is significant** with respect to hooks for the same
+        module, as the values of this dictionary are ordered lists. Hooks for
+        the same module will be run in the order in which they are cached.
+        Previously cached hooks are always preserved (rather than overidden).
 
-    def remove(self, names):
+        Specifically, any hook in the passed directory having the same module
+        name as that of a previously cached hook will be appended to the list of
+        hooks for that module name. By default, official hooks are cached
+        _before_ user-defined hooks. For modules with both official and
+        user-defined hooks, this implies that the former take priority over and
+        will be run _before_ the latter.
+
+        Parameters
+        ----------
+        hooks_dir : str
+            Absolute or relative path of the directory containing additional
+            hooks to be cached. For convenience, tilde and variable expansion
+            will be applied to this path (e.g., a leading `~` will be replaced
+            by the absolute path of the corresponding home directory).
         """
-        :param names: List of module names to remove from cache.
+        # Perform tilde and variable expansion and validate the result.
+        hooks_dir = expand_path(hooks_dir)
+        if not os.path.isdir(hooks_dir):
+            logger.error('Hook directory %r not found' % hooks_dir)
+            return
+
+        # For each hook in the passed directory...
+        hook_files = glob.glob(os.path.join(hooks_dir, 'hook-*.py'))
+        for hook_file in hook_files:
+            # Absolute path of this hook's script.
+            hook_file = os.path.abspath(hook_file)
+
+            # Fully-qualified name of this hook's corresponding module,
+            # constructed by removing the "hook-" prefix and ".py" suffix.
+            module_name = os.path.basename(hook_file)[5:-3]
+
+            # If this module already has cached hooks, append this hook's path
+            # to the existing list of such paths.
+            if module_name in self:
+                self[module_name].append(hook_file)
+            # Else, default to a new list containing only this hook's path.
+            else:
+                self[module_name] = [hook_file]
+
+    def add_custom_paths(self, hooks_dirs):
         """
-        names = set(names)  # Eliminate duplicate entries.
-        for n in names:
-            if n in self.data:
-                del self.data[n]
+        Cache all hooks in the list of passed directories.
+
+        Parameters
+        ----------
+        hooks_dirs : list
+            List of the absolute or relative paths of all directories containing
+            additional hooks to be cached.
+        """
+        for hooks_dir in hooks_dirs:
+            self._load_file_list(hooks_dir)
+
+    def remove(self, module_names):
+        """
+        Remove all key-value pairs whose key is a fully-qualified module name in
+        the passed list from this dictionary.
+
+        Parameters
+        ----------
+        module_names : list
+            List of all fully-qualified module names to be removed.
+        """
+        for module_name in set(module_names):  # Eliminate duplicate entries.
+            if module_name in self:
+                del self[module_name]
 
 
+# TODO: The "UserDict" class has been obsoleted by subclassing the "dict" class
+# directly. Let's consider doing that. Huzzah!
 class AdditionalFilesCache(UserDict):
     """
     Cache for storing what binaries and datas were pushed by what modules

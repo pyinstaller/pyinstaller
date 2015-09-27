@@ -32,12 +32,14 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
-import glob
+import importlib
 import logging
 import os
 import re
 
 from PyInstaller.building.datastruct import TOC
+from ..building.imphook import HooksCache
+from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
 from ..utils.misc import load_py_data_struct
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..lib.modulegraph.find_modules import get_implies
@@ -65,14 +67,21 @@ class PyiModuleGraph(ModuleGraph):
 
     Attributes
     ----------
-    _graph_hooks : dict
-        Dictionary mapping the fully-qualified names of modules having
-        corresponding graph hooks to the absolute paths of these hooks. See the
-        `import_module()` method for details.
+    _hooks_pre_find_module_path : HooksCache
+        Dictionary mapping the fully-qualified names of all modules with
+        pre-find module path hooks to the absolute paths of such hooks. See the
+        the `_find_module_path()` method for details.
+    _hooks_pre_safe_import_module : HooksCache
+        Dictionary mapping the fully-qualified names of all modules with
+        pre-safe import module hooks to the absolute paths of such hooks. See
+        the `_safe_import_module()` method for details.
+    _user_hook_dirs : list
+        List of the absolute paths of all directories containing user-defined
+        hooks for the current application.
     """
 
 
-    def __init__(self, pyi_homepath, *args, **kwargs):
+    def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
         # Homepath to the place where is PyInstaller located.
         self._homepath = pyi_homepath
@@ -80,28 +89,52 @@ class PyiModuleGraph(ModuleGraph):
         # by PyInstaller.
         self._top_script_node = None
 
-        # Define lookup tables for graph and runtime hooks.
-        self._graph_hooks = self._calc_graph_hooks()
+        # Absolute paths of all user-defined hook directories.
+        self._user_hook_dirs = \
+            user_hook_dirs if user_hook_dirs is not None else []
+
+        # Hook-specific lookup tables, defined after defining "_user_hook_dirs".
+        logger.info('Initializing module graph hooks...')
+        self._hooks_pre_safe_import_module = self._cache_hooks('pre_safe_import_module')
+        self._hooks_pre_find_module_path = self._cache_hooks('pre_find_module_path')
         self._available_rthooks = load_py_data_struct(
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
 
-    # TODO Add support for user-defined graph hooks.
-    def _calc_graph_hooks(self):
+    def _cache_hooks(self, hook_type):
         """
-        Initialize the `_graph_hooks` module attribute.
+        Get a cache of all hooks of the passed type.
+
+        The cache will include all official hooks defined by the PyInstaller
+        codebase _and_ all unofficial hooks defined for the current application.
+
+        Parameters
+        ----------
+        hook_type : str
+            Type of hooks to be cached, equivalent to the basename of the
+            subpackage of the `PyInstaller.hooks` package containing such hooks
+            (e.g., `post_create_package` for post-create package hooks).
         """
-        logger.info('Looking for graph hooks ...')
+        # Official PyInstaller package containing these hooks.
+        hooks_package = importlib.import_module(
+            'PyInstaller.hooks.' + hook_type)
 
-        # Absolute path of the directory containing graph hooks.
-        from PyInstaller.hooks import graph
-        graph_hook_dir = graph.__path__[0]
+        # Absolute path of this package's directory.
+        system_hook_dir = hooks_package.__path__[0]
 
-        return {
-            os.path.basename(graph_hook_file)[5:-3]: graph_hook_file
-            for graph_hook_file in glob.glob(
-                os.path.join(graph_hook_dir, 'hook-*.py'))
-        }
+        # Cache of such hooks.
+        # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
+        hooks_cache = HooksCache(system_hook_dir)
+        for user_hook_dir in self._user_hook_dirs:
+            # Absolute path of the user-defined subdirectory of this hook type.
+            user_hook_type_dir = os.path.join(user_hook_dir, hook_type)
+
+            # If this directory exists, cache all hooks in this directory.
+            if os.path.isdir(user_hook_type_dir):
+                # logger.debug("Caching user %s hook dir %r" % (hook_type, hooks_user_dir))
+                hooks_cache.add_custom_paths(user_hook_type_dir)
+
+        return hooks_cache
 
     def run_script(self, pathname, caller=None):
         """
@@ -128,50 +161,95 @@ class PyiModuleGraph(ModuleGraph):
                 caller = self._top_script_node
             return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
 
-    def _import_module(self, partname, fqname, parent):
+    def _safe_import_module(self, module_basename, module_name, parent_package):
         """
-        Import the Python module with the passed name from the parent package
-        signified by the passed graph node.
+        Create a new graph node for the module with the passed name under the
+        parent package signified by the passed graph node.
 
-        This method wraps the superclass method of the same name with support
-        for graph hooks. If there exists a corresponding **graph hook** (i.e., a
-        module `PyInstaller.hooks.graph.hook-{fqname}`), that hook is imported
-        and the `hook()` function necessarily defined by that hook called
-        *before* the module with the passed name is imported.
+        This method wraps the superclass method with support for pre-import
+        module hooks. If such a hook exists for this module (e.g., a script
+        `PyInstaller.hooks.hook-{module_name}` containing a function
+        `pre_safe_import_module()`), that hook will be run _before_ the
+        superclass method is called.
 
-        Parameters
-        ----------
-        partname : str
-            Unqualified name of the module to be imported (e.g., `text`).
-        fqname : str
-            Fully-qualified name of this module (e.g., `email.mime.text`).
-        parent : Package
-            Graph node for the package providing this module *or* `None` if
-            this module is a top-level module.
-
-        Returns
-        ----------
-        Node
-            Graph node created for this module.
+        See superclass method for parameter and return value descriptions.
         """
-        # If this module has a graph hook, run that hook first.
-        if fqname in self._graph_hooks:
-            hook_filename = self._graph_hooks[fqname]
-            logger.info('Processing graph hook   %s', os.path.basename(hook_filename))
-            hook_namespace = importlib_load_source('pyi_graph_hook.' + fqname, hook_filename)
+        # If this module has pre-safe import module hooks, run these first.
+        if module_name in self._hooks_pre_safe_import_module:
+            # For the absolute path of each such hook...
+            for hook_file in self._hooks_pre_safe_import_module[module_name]:
+                # Dynamically import this hook as a fabricated module.
+                logger.info('Processing pre-safe import module hook   %s', module_name)
+                hook_module = importlib_load_source(
+                    'pyi_pre_safe_import_module.' + module_name, hook_file)
 
-            # Graph hooks are required to define the hook() function.
-            if not hasattr(hook_namespace, 'hook'):
-                raise NameError('hook() function undefined in graph hook "%s".' % hook_filename)
+                # Object communicating changes made by this hook back to us.
+                hook_api = PreSafeImportModuleAPI(
+                    module_graph=self,
+                    module_basename=module_basename,
+                    module_name=module_name,
+                    parent_package=parent_package,
+                )
 
-            # Pass this hook the current module graph.
-            hook_namespace.hook(self)
+                # Run this hook, passed this object.
+                if not hasattr(hook_module, 'pre_safe_import_module'):
+                    raise NameError('pre_safe_import_module() function not defined by hook %r.' % hook_file)
+                hook_module.pre_safe_import_module(hook_api)
 
-            # Prevent the next import of this module from rerunning this hook
-            del self._graph_hooks[fqname]
+                # Respect method call changes requested by this hook.
+                module_basename = hook_api.module_basename
+                module_name = hook_api.module_name
 
-        return super(PyiModuleGraph, self)._import_module(
-            partname, fqname, parent)
+            # Prevent subsequent calls from rerunning these hooks.
+            del self._hooks_pre_safe_import_module[module_name]
+
+        # Call the superclass method.
+        return super(PyiModuleGraph, self)._safe_import_module(
+            module_basename, module_name, parent_package)
+
+    def _find_module_path(self, module_name, search_dirs):
+        """
+        Get a 3-tuple detailing the physical location of the module with the
+        passed name if that module exists _or_ raise `ImportError` otherwise.
+
+        This method wraps the superclass method with support for pre-find module
+        path hooks. If such a hook exists for this module (e.g., a script
+        `PyInstaller.hooks.hook-{module_name}` containing a function
+        `pre_find_module_path()`), that hook will be run _before_ the
+        superclass method is called.
+
+        See superclass method for parameter and return value descriptions.
+        """
+        # If this module has pre-find module path hooks, run these first.
+        if module_name in self._hooks_pre_find_module_path:
+            # For the absolute path of each such hook...
+            for hook_file in self._hooks_pre_find_module_path[module_name]:
+                # Dynamically import this hook as a fabricated module.
+                logger.info('Processing pre-find module path hook   %s', module_name)
+                hook_module = importlib_load_source(
+                    'pyi_pre_find_module_path.' + module_name, hook_file)
+
+                # Object communicating changes made by this hook back to us.
+                hook_api = PreFindModulePathAPI(
+                    module_graph=self,
+                    module_name=module_name,
+                    search_dirs=search_dirs,
+                )
+
+                # Run this hook, passed this object.
+                if not hasattr(hook_module, 'pre_find_module_path'):
+                    raise NameError('pre_find_module_path() function not defined by hook %r.' % hook_file)
+                hook_module.pre_find_module_path(hook_api)
+
+                # Respect method call changes requested by this hook.
+                search_dirs = hook_api.search_dirs
+
+            # Prevent subsequent calls from rerunning these hooks.
+            del self._hooks_pre_find_module_path[module_name]
+
+        # Call the superclass method.
+        return super(PyiModuleGraph, self)._find_module_path(
+            module_name, search_dirs)
 
     def get_code_objects(self):
         """
@@ -420,22 +498,55 @@ class PyiModuleGraph(ModuleGraph):
         return co_dict
 
 
-def initialize_modgraph(excludes=()):
+# TODO: A little odd. Couldn't we just push this functionality into the
+# PyiModuleGraph.__init__() constructor and then construct PyiModuleGraph
+# objects directly?
+def initialize_modgraph(excludes=(), user_hook_dirs=None):
     """
-    Create module dependency graph and for Python 3 analyze dependencies
-    for base_library.zip. These are same for every executable.
+    Create the module graph and, for Python 3, analyze dependencies for
+    `base_library.zip` (which remain the same for every executable).
 
-    :return: PyiModuleGraph object with basic dependencies.
+    Parameters
+    ----------
+    excludes : list
+        List of the fully-qualified names of all modules to be "excluded" and
+        hence _not_ frozen into the executable.
+    user_hook_dirs : list
+        List of the absolute paths of all directories containing user-defined
+        hooks for the current application or `None` if no such directories were
+        specified.
+
+    Returns
+    ----------
+    PyiModuleGraph
+        Module graph with core dependencies.
     """
     logger.info('Initializing module dependency graph...')
-    # `get_implies()` are hidden-imports known by modulgraph.
+
+    # Module graph-specific debug level, defaulting to the "MODULEGRAPH_DEBUG"
+    # environment variable if defined or 0 otherwise. This is a non-negative
+    # integer such that:
+    #
+    # * If 0, no module graph debug messages will be printed.
+    # * If 1, only high-level module graph debug messages will be printed.
+    # * If 2, both high-level and "second-level" module graph debug messages
+    #   will be printed.
+    # * And so on.
     debug = os.environ.get("MODULEGRAPH_DEBUG", 0)
     try:
         debug = int(debug)
     except ValueError:
         debug = 0
 
-    graph = PyiModuleGraph(HOMEPATH, excludes=excludes, implies=get_implies(), debug=debug)
+    # Construct the initial module graph by analyzing all import statements.
+    graph = PyiModuleGraph(
+        HOMEPATH,
+        excludes=excludes,
+        # get_implies() are hidden imports known by modulgraph.
+        implies=get_implies(),
+        debug=debug,
+        user_hook_dirs=user_hook_dirs,
+    )
 
     if not is_py2:
         logger.info('Analyzing base_library.zip ...')

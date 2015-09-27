@@ -14,9 +14,12 @@ Since wxPython is currently only stably supported under Python 2, these tests
 are implicitly skipped under Python 3.
 """
 
-from PyInstaller.utils.tests import importorskip, xfail_py3
+from PyInstaller.utils.tests import importorskip, xfail  # xfail_py3
 
-@xfail_py3
+
+# TODO: Replace the second by the first @xfail after fixing this issue. Thanks!
+# @xfail_py3
+@xfail(reason='See issue #1367.')
 @importorskip('wx.lib.pubsub')
 def test_wx_lib_pubsub_protocol_default(pyi_builder):
     """
@@ -24,7 +27,9 @@ def test_wx_lib_pubsub_protocol_default(pyi_builder):
     """
     pyi_builder.test_script('pyi_hooks/wx_lib_pubsub.py')
 
-@xfail_py3
+# TODO: Replace the second by the first @xfail after fixing this issue. Thanks!
+# @xfail_py3
+@xfail(reason='See issue #1367.')
 @importorskip('wx.lib.pubsub.core')
 def test_wx_lib_pubsub_protocol_kwargs(pyi_builder):
     """
@@ -34,10 +39,14 @@ def test_wx_lib_pubsub_protocol_kwargs(pyi_builder):
     """
     pyi_builder.test_script('pyi_hooks/wx_lib_pubsub_setupkwargs.py')
 
-@xfail_py3
+# TODO: Replace the second by the first @xfail after fixing this issue. Thanks!
+# @xfail_py3
+@xfail(reason='See issue #1367.')
 @importorskip('wx.lib.pubsub.core')
 def test_wx_lib_pubsub_protocol_arg1(pyi_builder):
     """
     Functional test specific to version 3 of the PyPubSub API.
+
+    The `wx.lib.pubsub.core` package is specific to this version.
     """
     pyi_builder.test_script('pyi_hooks/wx_lib_pubsub_setuparg1.py')
