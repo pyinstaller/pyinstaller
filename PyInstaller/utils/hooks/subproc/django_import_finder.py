@@ -29,6 +29,8 @@ django.setup()
 # This allows to access all django settings even from the settings.py module.
 from django.conf import settings
 
+from PyInstaller.utils.hooks import collect_submodules
+
 
 hiddenimports = list(settings.INSTALLED_APPS) + \
                  list(settings.TEMPLATE_CONTEXT_PROCESSORS) + \
@@ -40,7 +42,7 @@ def _remove_class(class_name):
     return '.'.join(class_name.split('.')[0:-1])
 
 
-### Changes in Djang 1.7.
+### Changes in Django 1.7.
 
 # Remove class names and keep just modules.
 if hasattr(settings, 'AUTHENTICATION_BACKENDS'):
@@ -87,6 +89,15 @@ def find_url_callbacks(urls_module):
         elif isinstance(pattern, RegexURLResolver):
             hid_list += find_url_callbacks(pattern.urlconf_module)
     return hid_list
+
+
+# Add templatetags and context processors for each installed app.
+for app in settings.INSTALLED_APPS:
+    app_templatetag_module = app + '.templatetags'
+    app_ctx_proc_module = app + '.context_processors'
+    hiddenimports.append(app_templatetag_module)
+    hiddenimports += collect_submodules(app_templatetag_module)
+    hiddenimports.append(app_ctx_proc_module)
 
 
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
