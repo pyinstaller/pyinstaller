@@ -54,15 +54,14 @@ if root_dir:
             'django.contrib.messages.storage.fallback',
     ]
     # Django hiddenimports from the standard Python library.
-    # Python 3.x
     if sys.version_info.major == 3:
-      
+        # Python 3.x
         hiddenimports += [
                 'http.cookies',
                 'html.parser',
         ]
-    # Python 2.x
     else:
+        # Python 2.x
         hiddenimports += [
                 'Cookie',
                 'HTMLParser',
