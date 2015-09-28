@@ -114,6 +114,10 @@ if sys.warnoptions:
 
 # On Mac OS X insert sys._MEIPASS in the first position of the list of paths
 # that ctypes uses to search for libraries.
+#
+# Note: 'ctypes' module will NOT be bundled with every app because code in this
+#       module is not scanned for module dependencies. It is safe to wrap
+#       'ctypes' module into 'try/except ImportError' block.
 if sys.platform.startswith('darwin'):
     try:
         from ctypes.macholib import dyld
