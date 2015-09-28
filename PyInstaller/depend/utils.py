@@ -364,6 +364,11 @@ def _resolveCtypesImports(cbinaries):
                 else:
                     cpath = None
         if cpath is None:
+            # Skip warning message if cbin (basename of library) is ignored.
+            # This prevents messages like:
+            # 'W: library kernel32.dll required via ctypes not found'
+            if not include_library(cbin):
+                continue
             logger.warn("library %s required via ctypes not found", cbin)
         else:
             if not include_library(cpath):
