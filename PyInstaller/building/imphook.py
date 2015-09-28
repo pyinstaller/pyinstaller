@@ -20,7 +20,7 @@ import warnings
 
 from .. import log as logging
 from .utils import format_binaries_and_datas
-from ..compat import expand_path, importlib_load_source, UserDict, is_py2
+from ..compat import expand_path
 from ..compat import importlib_load_source, UserDict, is_py2
 from ..utils.misc import get_code_object
 
@@ -309,7 +309,8 @@ class ImportHook(object):
         self._filename = hook_filename
         # _module represents the code of 'hook-modname.py'
         # Load hook from file and parse and interpret it's content.
-        self._module = importlib_load_source('pyi_hook.'+self._name, self._filename)
+        hook_modname = 'PyInstaller_hooks_' + modname.replace('.', '_')
+        self._module = importlib_load_source(hook_modname, self._filename)
         # Public import hook attributes for further processing.
         self.binaries = set()
         self.datas = set()
@@ -489,21 +490,3 @@ class ImportHook(object):
             self._process_binaries(mod_graph)
         if hasattr(self._module, 'attrs'):
             self._process_attrs(mod_graph)
-
-
-def create_hook_parent_module():
-    """"
-    Import hook files are imported into namespace 'pyi_hook'. Python 2
-    complains about this missing parent module.
-
-        RuntimeWarning: Parent module 'pyi_hook' not found while handling
-        absolute import from PyInstaller.utils.hooks import collect_submodules
-
-    For Python 2 create this parent module to avoid this warning.
-    """
-    if is_py2:
-        import imp
-        hook_pkg = imp.new_module('pyi_hook')
-        hook_pkg.__package__ = 'pyi_hook'
-        hook_pkg.__path__ = []
-        sys.modules['pyi_hook'] = hook_pkg

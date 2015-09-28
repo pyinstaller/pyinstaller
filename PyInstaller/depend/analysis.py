@@ -175,8 +175,8 @@ class PyiModuleGraph(ModuleGraph):
             for hook_file in self._hooks_pre_safe_import_module[module_name]:
                 # Dynamically import this hook as a fabricated module.
                 logger.info('Processing pre-safe import module hook   %s', module_name)
-                hook_module = importlib_load_source(
-                    'pyi_pre_safe_import_module.' + module_name, hook_file)
+                hook_module_name = 'PyInstaller_hooks_pre_safe_import_module_' + module_name.replace('.', '_')
+                hook_module = importlib_load_source(hook_module_name, hook_file)
 
                 # Object communicating changes made by this hook back to us.
                 hook_api = PreSafeImportModuleAPI(
@@ -221,8 +221,8 @@ class PyiModuleGraph(ModuleGraph):
             for hook_file in self._hooks_pre_find_module_path[module_name]:
                 # Dynamically import this hook as a fabricated module.
                 logger.info('Processing pre-find module path hook   %s', module_name)
-                hook_module = importlib_load_source(
-                    'pyi_pre_find_module_path.' + module_name, hook_file)
+                hook_module_name = 'PyInstaller_hooks_pre_find_module_path_' + module_name.replace('.', '_')
+                hook_module = importlib_load_source(hook_module_name, hook_file)
 
                 # Object communicating changes made by this hook back to us.
                 hook_api = PreFindModulePathAPI(
