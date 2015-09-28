@@ -23,6 +23,11 @@ environment:
 #      PYTHON_ARCH: "64"
 #      WAF_ARGS: ""
 
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "32"
+      WAF_ARGS: "--gcc"
+
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
@@ -106,4 +111,4 @@ build: none
 
 test_script:
   # Split tests into several subprocesses.
-  - "%CMD_IN_ENV% py.test -n 3"
+  - "%CMD_IN_ENV% py.test -n 5"
