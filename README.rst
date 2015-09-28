@@ -62,7 +62,7 @@ Main Advantages
 - Libraries like PyQt5, PyQt4, PySide, wxPython, matplotlib or Django are fully
   supported, without having to handle plugins or external data files manually.
 - Working code signing on OS X.
-- Bundles MS Visual C++ dlls on Windows.
+- Bundles MS Visual C++ DLLs on Windows.
 
 
 Installation
@@ -88,10 +88,10 @@ Requirements and Tested Platforms
 - Linux (32bit/64bit)
 
  - ldd: Console application to print the shared libraries required
-   by each program or shared library. This typically can by found in
+   by each program or shared library. This typically can be found in
    the distribution-package `glibc` or `libc-bin`.
  - objdump: Console application to display information from 
-   object files. This typically can by found in the
+   object files. This typically can be found in the
    distribution-package `binutils`.
 
 - Mac OS X (64bit):
@@ -138,11 +138,11 @@ source, and build the bootloader::
         cd bootloader
         python ./waf distclean all
 
-then install PyInstaller::
+Then install PyInstaller::
 
         python setup.py install
         
-or simply use it direclty from the source (pyinstaller.py).
+or simply use it directly from the source (pyinstaller.py).
 
 
 
