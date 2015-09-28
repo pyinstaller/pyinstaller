@@ -11,6 +11,7 @@
 # Tested with django 1.8.
 
 
+import sys
 import glob
 import os
 from PyInstaller import log as logging
@@ -53,11 +54,19 @@ if root_dir:
             'django.contrib.messages.storage.fallback',
     ]
     # Django hiddenimports from the standard Python library.
-    # TODO there is some import magic in the 'six' module.
-    hiddenimports += [
-            'http.cookies',
-            'html.parser',
-    ]
+    # Python 3.x
+    if sys.version_info.major == 3:
+      
+        hiddenimports += [
+                'http.cookies',
+                'html.parser',
+        ]
+    # Python 2.x
+    else:
+        hiddenimports += [
+                'Cookie',
+                'HTMLParser',
+        ]
 
     # Include django data files - localizations, etc.
     datas = collect_data_files('django')
