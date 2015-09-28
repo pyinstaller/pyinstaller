@@ -124,7 +124,7 @@ How to Install |PyInstaller|
 
 |PyInstaller| is a normal Python package.
 You can download the archive from PyPi_,
-but it is easier to install using pip_ where pip_ is available,
+but it is easier to install using pip_ where is is available,
 for example::
 
     pip install pyinstaller
@@ -189,7 +189,7 @@ Installing from the archive
 If pip is not available, download the compressed archive from PyPI_.
 If you are asked to test a problem using the latest development code,
 download the compressed archive from the *develop* branch of
-`PyInstaller at GitHub`_.
+`PyInstaller Downloads`_ page.
 
 Expand the archive.
 Inside is a script named ``setup.py``.
@@ -327,7 +327,7 @@ the egg and its dependencies to the set of needed files.
 including the GUI packages
 Qt_ (imported via PyQt_ or PySide_), WxPython_, TkInter_, Django_,
 and other major packages.
-(For a complete list of supported packages see LINK HERE)
+For a complete list, see `Supported Packages`_.
 
 Some Python scripts import modules in ways that |PyInstaller| cannot detect:
 for example, by using the ``__import__()`` function with variable data,
@@ -348,7 +348,7 @@ you must help it:
 If your program depends on access to certain data files,
 you can tell |PyInstaller| to include them in the bundle as well.
 You do this by modifying the spec file, an advanced topic that is
-covered under `Using Spec Files`_. (LINK TARGET TO CHANGE).
+covered under `Using Spec Files`_.
 
 In order to locate included files at run time,
 your program needs to be able to learn its path at run time
@@ -1391,7 +1391,7 @@ Recipes and Examples for Specific Problems
 
 The |PyInstaller| `FAQ`_ page has work-arounds for some common problems.
 Code examples for some advanced uses and some common
-problems are available on our Recipe_ web-page.
+problems are available on our `PyInstaller Recipes`_ page.
 Some of the recipes there include:
 
 * A more sophisticated way of collecting data files
@@ -1633,8 +1633,8 @@ Getting the Latest Version
 If you have some reason to think you have found a bug in |PyInstaller|
 you can try downloading the latest development version.
 This version might have fixes or features that are not yet at `PyPI`_.
-Links to download the latest stable version and the latest development
-version are at PyInstaller.org_.
+You can download the latest stable version and the latest development
+version from the `PyInstaller Downloads`_ page.
 
 If you have Git_ installed on your development system,
 you can use it together with pip
@@ -2353,7 +2353,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
 .. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt
-.. _FAQ: http://www.pyinstaller.org/wiki/FAQ
+.. _FAQ: https://github.com/pyinstaller/pyinstaller/wiki/FAQ
 .. _Git: http://git-scm.com/downloads
 .. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
 .. _Homebrew: http://brew.sh/
@@ -2381,9 +2381,11 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
 .. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
 .. _`PyInstaller code signing recipe`: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing
+.. _`PyInstaller Downloads`:  https://github.com/pyinstaller/pyinstaller/releases
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
 .. _`PyInstaller Issue #1309`: https://github.com/pyinstaller/pyinstaller/issues/1309
+.. _`PyInstaller Recipes`: https://github.com/pyinstaller/pyinstaller/wiki/Recipes
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
 .. _pypiwin32: https://pypi.python.org/pypi/pypiwin32/219
 .. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
@@ -2394,6 +2396,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _Recipe: http://www.pyinstaller.org/wiki/Recipe
 .. _setup_tools: https://pypi.python.org/pypi/setuptools
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
+.. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
 .. _TkInter: http://wiki.python.org/moin/TkInter
 .. _UPX: http://upx.sourceforge.net/
