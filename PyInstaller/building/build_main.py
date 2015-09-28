@@ -498,8 +498,6 @@ class Analysis(Target):
         ### Include zipped Python eggs.
         logger.info('Looking for eggs')
         self.zipfiles.extend(deps_proc.make_zipfiles_toc())
-        # Note: pyiboot02_egg_install is included unconditionally in
-        # ``depend.analysis``.
 
         # Verify that Python dynamic library can be found.
         # Without dynamic Python library PyInstaller cannot continue.
