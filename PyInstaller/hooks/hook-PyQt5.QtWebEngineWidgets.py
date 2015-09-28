@@ -37,8 +37,6 @@ if qmake:
         ]
 
         resources_dir = os.path.join(libdir, 'QtWebEngineCore.framework', 'Versions', '5', 'Resources')
-        resources_dest = os.path.join('QtWebEngineProcess.app', 'Contents', 'Versions', 'Current', 'Resources')
-        resources_dest2 = os.path.join('QtWebEngineProcess.app', 'Contents', 'Resources')
         datas = [
             (os.path.join(resources_dir, 'icudtl.dat'),''),
             (os.path.join(resources_dir, 'qtwebengine_resources.pak'), ''),
