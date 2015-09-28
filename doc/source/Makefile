@@ -14,7 +14,8 @@ all:
 doc: html pdf man cleanlogs
 	@echo "Documentation generated: Please see ../*.html, ../*.pdf and ../*.1 for files"
 
-manpages := pyinstaller pyi-makespec pyi-build pyi-make_comserver
+manpages := pyinstaller pyi-makespec
+#manpages := pyinstaller pyi-makespec pyi-build pyi-make_comserver
 
 html: ../Manual.html $(foreach manpage,${manpages},../${manpage}.html)
 pdf: ../Manual.pdf
@@ -29,8 +30,8 @@ man: $(foreach manpage,${manpages},../${manpage}.1)
 Manual.rst: _pyinstaller-options.tmp
 pyinstaller.rst: _pyinstaller-options.tmp
 pyi-makespec.rst: _pyi-makespec-options.tmp
-pyi-build.rst: _pyi-build-options.tmp
-pyi-make_comserver.rst: _pyi-make_comserver-options.tmp
+# pyi-build.rst: _pyi-build-options.tmp
+# pyi-make_comserver.rst: _pyi-make_comserver-options.tmp
 
 _pyinstaller-options.tmp: ../../pyinstaller.py
 	./help2rst $< > $@
