@@ -851,6 +851,16 @@ see `Spec File Options for a Mac OS X Bundle`_ below.
 Getting the Opened Document Names
 ------------------------------------
 
+.. Note::
+
+	The following is true only for a 32-bit app.
+	(Instructions for building a 32-bit app are displayed whenever
+	you run |PyInstaller|.)
+	Support for OpenDocument events is broken in the default 64-bit
+	app format owing to code changes needed in the bootloader.
+	If this feature is important to you, follow and comment on
+	the status of `PyInstaller Issue #1309`_.
+
 When a user double-clicks a document of a type your application
 supports, or when a user drags a document icon and drops it
 on your application's icon, Mac OS X launches your application
@@ -2379,6 +2389,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _`PyInstaller code signing recipe`: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
+.. _`PyInstaller Issue #1309`: https://github.com/pyinstaller/pyinstaller/issues/1309
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
 .. _pypiwin32: https://pypi.python.org/pypi/pypiwin32/219
 .. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
