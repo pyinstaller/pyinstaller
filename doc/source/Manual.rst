@@ -222,7 +222,8 @@ the proper directory:
   major and minor Python verysion number,
   for example ``C:\Python34\Scripts`` for Python 3.4)
 * Linux: ``/usr/bin/``
-* OS X (using the default Apple-supplied Python) ``/usr/local/bin``
+* OS X (using the default Apple-supplied Python) ``/usr/bin``
+* OS X (using Python installed by homebrew) ``/usr/local/bin``
 * OS X (using Python installed by macports) ``/opt/local/bin``
 
 To display the current path in Windows the command is ``echo %path%``
