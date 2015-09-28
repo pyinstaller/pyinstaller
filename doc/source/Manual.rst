@@ -213,7 +213,7 @@ execution path. To verify this, enter the command
   ``pyinstaller --version``
 
 The result should resemble ``3.n`` for a released version,
-and ``3.ndev-xxxxxx`` for a development branch.
+and ``3.n.dev0-xxxxxx`` for a development branch.
 
 If the command is not found, make sure the execution path includes
 the proper directory:
