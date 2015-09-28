@@ -2216,7 +2216,7 @@ For
 
 * ``cd`` into the distribution folder.
 * ``cd bootloader``.
-* Make a bootloader with: ``python ./waf configure build install``.
+* Make a bootloader with: ``python ./waf distclean all``.
 
 If this reports an error, read `Building the Bootloader`_ below,
 then ask for technical help.
@@ -2254,11 +2254,9 @@ you can use any Visual Studio version you have around.
 You can download and install or unpack MinGW distribution from one of the
 following locations:
 
-* `MinGW`_ - stable and mature, uses gcc 3.4 as its base
+* `MinGW-w64`_ required, uses gcc 4.4 and up.
 
-* `MinGW-w64`_ - more recent, uses gcc 4.4 and up.
-
-* `TDM-GCC`_ - MinGW and MinGW-w64 installers
+* `TDM-GCC`_ - MinGW (not used) and MinGW-w64 installers
 
 
 Building for Windows
