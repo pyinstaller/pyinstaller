@@ -1247,6 +1247,12 @@ and follow it with a statement such as::
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
 
+.. Note::
+	This feature is broken in the |PyInstaller| 3.0 release.
+	Do not attempt building multipackage bundles until the feature
+	is fixed. If this feature is important to you,
+	follow  and comment on `PyInstaller Issue #1527`_.
+
 Some products are made of several different apps,
 each of which might
 depend on a common set of third-party libraries, or share code in other ways.
@@ -2390,6 +2396,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
 .. _`PyInstaller Issue #1309`: https://github.com/pyinstaller/pyinstaller/issues/1309
+.. _`PyInstaller Issue #1527`: https://github.com/pyinstaller/pyinstaller/issues/1527
 .. _`PyInstaller Recipes`: https://github.com/pyinstaller/pyinstaller/wiki/Recipes
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
 .. _pypiwin32: https://pypi.python.org/pypi/pypiwin32/219
