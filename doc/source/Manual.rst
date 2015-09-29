@@ -878,11 +878,10 @@ Getting the Opened Document Names
 
 .. Note::
 
-	The following is true only for a 32-bit app.
-	(Instructions for building a 32-bit app are displayed whenever
-	you run |PyInstaller|.)
-	Support for OpenDocument events is broken in the default 64-bit
-	app format owing to code changes needed in the bootloader.
+	Support for OpenDocument events is broken in |PyInstaller| 3.0
+	owing to code changes needed in the bootloader to support current
+	versions of Mac OS X.
+	Do not attempt to use this feature until it has been fixed.
 	If this feature is important to you, follow and comment on
 	the status of `PyInstaller Issue #1309`_.
 
