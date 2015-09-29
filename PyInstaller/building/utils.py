@@ -418,10 +418,12 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
 
         for src_root_path in src_root_paths:
             if os.path.isfile(src_root_path):
+                # Normalizing the result to remove redundant relative
+                # paths (e.g., removing "./" from "trg/./file").
                 toc_datas.append((
-                    os.path.join(
-                        trg_root_dir, os.path.basename(src_root_path)),
-                    src_root_path))
+                    os.path.normpath(os.path.join(
+                        trg_root_dir, os.path.basename(src_root_path))),
+                    os.path.normpath(src_root_path)))
             elif os.path.isdir(src_root_path):
                 # If no top-level target directory was passed, default this
                 # to the basename of the top-level source directory.
@@ -452,8 +454,10 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
                     for src_file_basename in src_file_basenames:
                         src_file = os.path.join(src_dir, src_file_basename)
                         if os.path.isfile(src_file):
+                            # Normalizing the result to remove redundant relative
+                            # paths (e.g., removing "./" from "trg/./file").
                             toc_datas.append((
-                                os.path.join(trg_dir, src_file_basename),
-                                src_file))
+                                os.path.normpath(os.path.join(trg_dir, src_file_basename)),
+                                os.path.normpath(src_file)))
 
     return toc_datas
