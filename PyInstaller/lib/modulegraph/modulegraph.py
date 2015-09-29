@@ -468,6 +468,10 @@ class _Visitor (ast.NodeVisitor):
     def __init__(self, graph, module):
         self._graph = graph
         self._module = module
+        # Importing a module twice *may* happen, e.g. with
+        # replacePackage or `_xmlplus` as `xml`
+        #assert module._imported_modules is None, module
+        module._imported_modules = []
         self._level = DEFAULT_IMPORT_LEVEL
         self._in_if = [False]
         self._in_def = [False]
@@ -485,7 +489,7 @@ class _Visitor (ast.NodeVisitor):
     def in_tryexcept(self):
         return self._in_tryexcept[-1]
 
-    def _process_import(self, name, fromlist, level):
+    def _collect_import(self, name, fromlist, level):
 
         if sys.version_info[0] == 2:
             if name == '__future__' and 'absolute_import' in (fromlist or ()):
@@ -498,27 +502,23 @@ class _Visitor (ast.NodeVisitor):
                 fromlist.remove('*')
                 have_star = True
 
-        imported_module = self._graph._safe_import_hook(name,
-            self._module, fromlist, level, attr=DependencyInfo(
-                conditional=self.in_if,
-                tryexcept=self.in_tryexcept,
-                function=self.in_def,
-                fromlist=False,
-            ))[0]
-        if have_star:
-            self._module.globalnames.update(imported_module.globalnames)
-            self._module.starimports.update(imported_module.starimports)
-            if imported_module.code is None:
-                self._module.starimports.add(name)
-
+        # Collect this import to belong to this module
+        self._module._imported_modules.append(
+            (have_star,
+             (name, self._module, fromlist, level),
+             {'attr': DependencyInfo(
+                 conditional=self.in_if,
+                 tryexcept=self.in_tryexcept,
+                 function=self.in_def,
+                 fromlist=False)}))
 
     def visit_Import(self, node):
         for nm in _ast_names(node.names):
-            self._process_import(nm, None, self._level)
+            self._collect_import(nm, None, self._level)
 
     def visit_ImportFrom(self, node):
         level = node.level if node.level != 0 else self._level
-        self._process_import(node.module or '', _ast_names(node.names), level)
+        self._collect_import(node.module or '', _ast_names(node.names), level)
 
     def visit_If(self, node):
         self._in_if.append(True)
@@ -581,6 +581,14 @@ class ModuleGraph(ObjectGraph):
     Directed graph whose nodes represent modules and edges represent
     dependencies between these modules.
     """
+
+    def createNode(self, cls, name, *args, **kw):
+        m = self.findNode(name)
+        if m is None:
+            #assert m is None, m
+            m = super(ModuleGraph, self).createNode(cls, name, *args, **kw)
+            m._imported_modules = None
+        return m
 
     def __init__(self, path=None, excludes=(), replace_paths=(), implies=(), graph=None, debug=0):
         super(ModuleGraph, self).__init__(graph=graph, debug=debug)
@@ -1254,7 +1262,6 @@ class ModuleGraph(ObjectGraph):
                 co = self._replace_paths_in_code(co)
             m.code = co
 
-
         self.msgout(2, "load_module ->", m)
         return m
 
@@ -1419,6 +1426,15 @@ class ModuleGraph(ObjectGraph):
 
         else:
             self._scan_bytecode(co, m)
+        # Actually import the modules collected while scanning.
+        # We need to suspend the globalnames as otherwise
+        # `_safe_import_hook()` would take submodules
+        # imported via `from xxx import abc` as been already imported.
+        globalnames = m.globalnames
+        m.globalnames = set()
+        self._process_imports(m)
+        m.globalnames = globalnames
+
 
     def _scan_ast(self, co, m):
         visitor = _Visitor(self, m)
@@ -1475,6 +1491,11 @@ class ModuleGraph(ObjectGraph):
         level = None
         fromlist = None
 
+        # Importing a module twice *may* happen, e.g. with
+        # replacePackage or `_xmlplus` as `xml`
+        #assert m._imported_modules is None
+        m._imported_modules = []
+
         while i < n:
             c = code[i]
             i += 1
@@ -1504,15 +1525,10 @@ class ModuleGraph(ObjectGraph):
                         fromlist.remove('*')
                         have_star = True
 
-                #self.msgin(2, "Before import hook", repr(name), repr(m), repr(fromlist), repr(level))
-
-                imported_module = self._safe_import_hook(name, m, fromlist, level)[0]
-
-                if have_star:
-                    m.globalnames.update(imported_module.globalnames)
-                    m.starimports.update(imported_module.starimports)
-                    if imported_module.code is None:
-                        m.starimports.add(name)
+                # Collect this import to belong to this module
+                m._imported_modules.append((have_star,
+                                            (name, m, fromlist, level),
+                                            {}))
 
             elif c == STORE_NAME or c == STORE_GLOBAL:
                 # keep track of all global names that are assigned to
@@ -1524,6 +1540,25 @@ class ModuleGraph(ObjectGraph):
         for c in constants:
             if isinstance(c, cotype):
                 self._scan_bytecode(c, m)
+
+
+    def _process_imports(self, m):
+        """
+        Actally import the modules collected in _scan_code (resp.
+        _scan_ast, _scan_bytecode, and _scan_bytecode_stores).
+        """
+        if m._imported_modules is None:
+            return
+        for have_star, import_info, kwargs in m._imported_modules:
+            imported_module = self._safe_import_hook(*import_info, **kwargs)[0]
+
+            if have_star:
+                m.globalnames.update(imported_module.globalnames)
+                m.starimports.update(imported_module.starimports)
+                if imported_module.code is None:
+                    name = import_info[0]
+                    m.starimports.add(name)
+
 
     def _load_package(self, fqname, pathname, pkgpath):
         """
