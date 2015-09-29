@@ -1129,6 +1129,17 @@ tuple, or relative as in the second.
 When it is relative, it is taken as relative to the location of
 the spec file.
 
+You can also include the entire contents of a folder::
+
+    added_files = [
+             ( '/mygame/data', 'data' ),
+             ( '/mygame/sfx/*.mp3', 'sfx' ),
+             ( 'src/README.txt', 'README' )
+             ]
+
+All files in ``/mygame/data`` will be copied recursively into a folder
+named ``data`` in the bundle.
+
 Adding Binary Files
 --------------------
 
