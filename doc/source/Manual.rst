@@ -54,9 +54,11 @@ Windows
 |PyInstaller| runs in Windows XP or newer.
 It can create graphical windowed apps (apps that do not need a command window).
 
-It requires the PyWin32_ or pypiwin32_ Python extension for Windows.
-The latter is installed automatically if you install |PyInstaller| using pip.
-The pip-Win_ package is recommended, but not required.
+|PyInstaller| requires the PyWin32_ or pypiwin32_ Python extension for Windows.
+If you install |PyInstaller| using pip, and PyWin32 is not found,
+pypiwin32 is automatically installed.
+
+The pip-Win_ package is also recommended but not required.
 
 Mac OS X
 ~~~~~~~~~
