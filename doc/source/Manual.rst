@@ -2092,9 +2092,11 @@ Understanding PyInstaller Hooks
 ==================================
 
 .. Note::
-     THE FOLLOWING IS THE TEXT FROM THE 2.1 MANUAL
+     THE FOLLOWING IS THE TEXT FROM THE 2.1 MANUAL.
      
-     IT NEEDS TO BE REWRITTEN FOR THE NEW HOOKS API
+     IT NEEDS TO BE REWRITTEN FOR THE NEW HOOKS API OF VERSION 3.0.
+     
+     DO NOT ATTEMPT TO BUILD OR EDIT A HOOK BASED ON THIS TEXT.
      
 In summary, a "hook" file tells |PyInstaller| about hidden imports
 called by a particular module.
