@@ -57,6 +57,9 @@ install:
   - ECHO "Filesystem root:"
   - ps: "ls \"C:/\""
 
+  - ECHO "Chocolatey tools:"
+  - ps: "ls \"C:/Tools\""
+
   - ECHO "Installed SDKs:"
   - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
 
@@ -113,4 +116,4 @@ build: none
 
 test_script:
   # Split tests into several subprocesses.
-  #- "%CMD_IN_ENV% py.test -n 3"
+  - "%CMD_IN_ENV% py.test -n 3"
