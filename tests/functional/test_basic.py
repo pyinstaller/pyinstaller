@@ -108,6 +108,9 @@ def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
 
 
+# TODO move 'multiprocessig' tests into 'test_multiprocess.py.
+
+
 @importorskip('multiprocessing')
 def test_multiprocess(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess.py')
@@ -116,6 +119,11 @@ def test_multiprocess(pyi_builder):
 @importorskip('multiprocessing')
 def test_multiprocess_forking(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_forking.py')
+
+
+@importorskip('multiprocessing')
+def test_multiprocess_pool(pyi_builder):
+    pyi_builder.test_script('pyi_multiprocess_pool.py')
 
 
 # TODO skip this test if C compiler is not found.

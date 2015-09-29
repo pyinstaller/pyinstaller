@@ -36,6 +36,18 @@ _BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])
 
 # Ignoring some system libraries speeds up packaging process
 _excludes = set([
+    # Ignore annoying warnings with Windows system dlls.
+    #
+    # 'W: library kernel32.dll required via ctypes not found'
+    # 'W: library coredll.dll required via ctypes not found'
+    #
+    # These these dlls has to be ignored for all operating systems
+    # because they might be resolved when scanning code for ctypes
+    # dependencies.
+    r'coredll\.dll',
+    r'kernel32\.dll',
+    r'kernel32',
+    r'crypt32\.dll',
 ])
 
 # Regex includes - overrides excludes.

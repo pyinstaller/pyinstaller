@@ -162,9 +162,9 @@ class Analysis(Target):
         # Django hook requires this variable to find the script manage.py.
         CONF['main_script'] = self.inputs[0]
 
-        self.pathex = self._extend_pathex(pathex,scripts)
+        self.pathex = self._extend_pathex(pathex, self.inputs)
         # Set global config variable 'pathex' to make it available for hookutils and
-        # import hooks. Ppath extensions for module search.
+        # import hooks. Path extensions for module search.
         CONF['pathex'] = self.pathex
 
         # Set global variable to hold assembly binding redirects
@@ -258,6 +258,7 @@ class Analysis(Target):
         pathex = []
         # Add scripts paths first.
         for script in scripts:
+            logger.debug('script: %s' % script)
             script_toplevel_dir = get_path_to_toplevel_modules(script)
             if script_toplevel_dir:
                 pathex.append(script_toplevel_dir)
@@ -498,8 +499,6 @@ class Analysis(Target):
         ### Include zipped Python eggs.
         logger.info('Looking for eggs')
         self.zipfiles.extend(deps_proc.make_zipfiles_toc())
-        # Note: pyiboot02_egg_install is included unconditionally in
-        # ``depend.analysis``.
 
         # Verify that Python dynamic library can be found.
         # Without dynamic Python library PyInstaller cannot continue.

@@ -15,11 +15,13 @@ Code related to processing of import hooks.
 import glob
 import os.path
 import re
+import sys
 import warnings
 
 from .. import log as logging
 from .utils import format_binaries_and_datas
-from ..compat import expand_path, importlib_load_source, UserDict
+from ..compat import expand_path
+from ..compat import importlib_load_source, UserDict, is_py2
 from ..utils.misc import get_code_object
 
 logger = logging.getLogger(__name__)
@@ -307,7 +309,8 @@ class ImportHook(object):
         self._filename = hook_filename
         # _module represents the code of 'hook-modname.py'
         # Load hook from file and parse and interpret it's content.
-        self._module = importlib_load_source('pyi_hook.'+self._name, self._filename)
+        hook_modname = 'PyInstaller_hooks_' + modname.replace('.', '_')
+        self._module = importlib_load_source(hook_modname, self._filename)
         # Public import hook attributes for further processing.
         self.binaries = set()
         self.datas = set()
@@ -487,4 +490,3 @@ class ImportHook(object):
             self._process_binaries(mod_graph)
         if hasattr(self._module, 'attrs'):
             self._process_attrs(mod_graph)
-

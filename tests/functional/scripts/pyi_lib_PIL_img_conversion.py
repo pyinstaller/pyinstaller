@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,11 +8,17 @@
 #-----------------------------------------------------------------------------
 
 
-# Verify packaging of PIL.Image. Specifically, the hidden import of FixTk
-# importing tkinter is causing some problems.
+import sys
+import os
+
+import PIL.Image
 
 
-from Image import fromstring
+# Disable "leaking" the installed version.
+PIL.Image.__file__ = '/'
 
 
-print(fromstring)
+# Convert tiff to png.
+basedir = sys._MEIPASS
+im = PIL.Image.open(os.path.join(basedir, "tinysample.tiff"))
+im.save(os.path.join(basedir, "tinysample.png"))

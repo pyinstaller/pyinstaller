@@ -31,6 +31,7 @@ if root_dir:
     settings_py_imports = django_dottedstring_imports(root_dir)
     # Include all submodules of all imports detected in mysite.settings.py.
     for submod in settings_py_imports:
+        hiddenimports.append(submod)
         hiddenimports += collect_submodules(submod)
     # Include main django modules - settings.py, urls.py, wsgi.py.
     # Without them the django server won't run.
@@ -47,8 +48,10 @@ if root_dir:
             'django.template.defaultfilters',
             'django.template.defaulttags',
             'django.template.loader_tags',
+            'django.template.context_processors',
     ]
     hiddenimports += collect_submodules('django.middleware')
+    hiddenimports += collect_submodules('django.templatetags')
     # Other hidden imports to get Django example startproject working.
     hiddenimports += [
             'django.contrib.messages.storage.fallback',

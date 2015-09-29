@@ -15,7 +15,6 @@ as a data file. The path to this dll is contained in __file__
 attribute.
 """
 
-import os.path
 from PyInstaller.utils.hooks import get_pywin32_module_file_attribute
 
 _pth = get_pywin32_module_file_attribute('pywintypes')

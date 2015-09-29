@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -345,8 +346,17 @@ def _resolveCtypesImports(cbinaries):
                     cpath = os.path.join(d, cpath)
                     break
             else:
+                # TODO refactor this code to call 'ldconfig' only once - performance improvement.
+                #      (it contains thousands of libraries)
                 text = compat.exec_command("/sbin/ldconfig", "-p")
-                for L in text.strip().splitlines():
+                # Skip first line of the library list because it is just
+                # an informative line and might contain localized characters.
+                # Example of first line with local cs_CZ.UTF-8:
+                #
+                #   V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
+                #
+                library_list = text.strip().splitlines()[1:]
+                for L in library_list:
                     if cpath in L:
                         cpath = L.split("=>", 1)[1].strip()
                         assert os.path.isfile(cpath)
@@ -354,6 +364,11 @@ def _resolveCtypesImports(cbinaries):
                 else:
                     cpath = None
         if cpath is None:
+            # Skip warning message if cbin (basename of library) is ignored.
+            # This prevents messages like:
+            # 'W: library kernel32.dll required via ctypes not found'
+            if not include_library(cbin):
+                continue
             logger.warn("library %s required via ctypes not found", cbin)
         else:
             if not include_library(cpath):

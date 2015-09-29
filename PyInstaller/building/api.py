@@ -18,6 +18,7 @@ import os
 import shutil
 import tempfile
 import pkgutil
+import pprint
 import sys
 
 from PyInstaller import is_win, is_darwin, HOMEPATH, PLATFORM
@@ -252,6 +253,7 @@ class PKG(Target):
         mytoc = []
         seenInms = {}
         seenFnms = {}
+        seenFnms_typ = {}
         toc = add_suffix_to_extensions(self.toc)
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
@@ -270,20 +272,23 @@ class PKG(Target):
                         # happen if they come from different sources (eg. once from
                         # binary dependence, and once from direct import).
                         if inm in seenInms:
-                            logger.warn("Two binaries added with the same internal "
-                                        "name. %s was placed at %s previously. "
-                                        "Skipping %s." %
-                                        (seenInms[inm], inm, fnm))
+                            logger.warn('Two binaries added with the same internal name.')
+                            logger.warn(pprint.pformat((inm, fnm, typ)))
+                            logger.warn('was placed previously at')
+                            logger.warn(pprint.pformat((inm, seenInms[inm], seenFnms_typ[seenInms[inm]])))
+                            logger.warn('Skipping %s.' % fnm)
                             continue
 
                         # Warn if the same binary extension was included
                         # with multiple internal names
                         if fnm in seenFnms:
-                            logger.warn("One binary added with two internal "
-                                        "names. %s was placed at %s previously." %
-                                        (fnm, seenFnms[fnm]))
+                            logger.warn('One binary added with two internal names.')
+                            logger.warn(pprint.pformat((inm, fnm, typ)))
+                            logger.warn('was placed previously at')
+                            logger.warn(pprint.pformat((seenFnms[fnm], fnm, seenFnms_typ[fnm])))
                     seenInms[inm] = fnm
                     seenFnms[fnm] = inm
+                    seenFnms_typ[fnm] = typ
 
                     fnm = checkCache(fnm, strip=self.strip_binaries,
                                      upx=(self.upx_binaries and (is_win or is_cygwin)),

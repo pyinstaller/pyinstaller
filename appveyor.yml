@@ -23,6 +23,12 @@ environment:
 #      PYTHON_ARCH: "64"
 #      WAF_ARGS: ""
 
+    # TODO Enable Python 3.5 one day. Issue #1547.
+    #- PYTHON: "C:\\Python35"
+      #PYTHON_VERSION: "3.5"
+      #PYTHON_ARCH: "32"
+      #WAF_ARGS: "--gcc"
+
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
@@ -42,13 +48,17 @@ cache:
   # Cache created Python .whl packages to avoid compiling them again.
   # Wheels are built with --use-wheel to avoid recompiling already-built wheels.
   - C:\wheels
-
+  # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
+  - C:\Users\appveyor\AppData\Local\Temp\chocolatey -> appveyor.yml
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
 install:
   - ECHO "Filesystem root:"
   - ps: "ls \"C:/\""
+
+  - ECHO "Chocolatey tools:"
+  - ps: "ls \"C:/Tools\""
 
   - ECHO "Installed SDKs:"
   - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""

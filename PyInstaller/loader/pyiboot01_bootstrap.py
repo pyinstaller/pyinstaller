@@ -114,6 +114,10 @@ if sys.warnoptions:
 
 # On Mac OS X insert sys._MEIPASS in the first position of the list of paths
 # that ctypes uses to search for libraries.
+#
+# Note: 'ctypes' module will NOT be bundled with every app because code in this
+#       module is not scanned for module dependencies. It is safe to wrap
+#       'ctypes' module into 'try/except ImportError' block.
 if sys.platform.startswith('darwin'):
     try:
         from ctypes.macholib import dyld
@@ -121,3 +125,15 @@ if sys.platform.startswith('darwin'):
     except ImportError:
         # Do nothing when module 'ctypes' is not available.
         pass
+
+
+# Make .eggs and zipfiles available at runtime
+d = "eggs"
+d = os.path.join(sys._MEIPASS, d)
+# Test if the `eggs´ directory exists. This allows to
+# opportunistically including this script into the packaged exe, even
+# if no eggs as found when packaging the program. (Which may be a
+# use-case, see issue #653.
+if os.path.isdir(d):
+    for fn in os.listdir(d):
+        sys.path.append(os.path.join(d, fn))

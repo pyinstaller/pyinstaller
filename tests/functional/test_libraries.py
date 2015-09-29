@@ -389,3 +389,31 @@ def test_gi_gst_binding(pyi_builder):
         Gst.init(None)
         print(Gst)
         """)
+
+
+@importorskip('PIL')
+def test_pil_img_conversion(pyi_builder_spec):
+    pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
+
+
+@importorskip('PIL')
+def test_pil_plugins(pyi_builder):
+    pyi_builder.test_source(
+        """
+        # Verify packaging of PIL.Image. Specifically, the hidden import of FixTk
+        # importing tkinter is causing some problems.
+        from PIL.Image import fromstring
+        print(fromstring)
+
+        # PIL import hook should bundle all available PIL plugins. Verify that plugins
+        # are bundled.
+        from PIL import Image
+        Image.init()
+        MIN_PLUG_COUNT = 7  # Without all plugins the count is usually 6.
+        plugins = list(Image.SAVE.keys())
+        plugins.sort()
+        if len(plugins) < MIN_PLUG_COUNT:
+            raise SystemExit('No PIL image plugins were bundled!')
+        else:
+            print('PIL supported image formats: %s' % plugins)
+        """)

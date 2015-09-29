@@ -40,4 +40,4 @@ sqlalchemy
 twisted
 matplotlib
 pyexcelerate
-
+Pillow

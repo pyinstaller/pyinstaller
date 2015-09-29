@@ -17,10 +17,14 @@ from PyInstaller import __version__ as version
 
 
 REQUIREMENTS = ['setuptools']
+# For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
-    # 'pypiwin32' is PyWin32 package made installable by 'pip install'
-    # command.
-    REQUIREMENTS.append('pypiwin32')
+    try:
+        import pywintypes
+    except ImportError:
+        # 'pypiwin32' is PyWin32 package made installable by 'pip install'
+        # command.
+        REQUIREMENTS.append('pypiwin32')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.
@@ -76,7 +80,8 @@ setup(
     name='PyInstaller',
     version=version,
 
-    description='Create stand-alone executables from Python programs.',
+    description='PyInstaller bundles a Python application and all its '
+                'dependencies into a single package.',
     long_description=long_description,
     keywords='packaging app apps bundle convert standalone executable '
              'pyinstaller macholib cxfreeze freeze py2exe py2app bbfreeze',

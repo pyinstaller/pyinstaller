@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,11 +8,5 @@
 #-----------------------------------------------------------------------------
 
 
-# Verify packaging of PIL.Image. Specifically, the hidden import of FixTk
-# importing tkinter is causing some problems.
-
-
-from PIL.Image import fromstring
-
-
-print(fromstring)
+from PyInstaller.utils.hooks import collect_submodules
+hiddenimports = collect_submodules('django.template.loaders')
