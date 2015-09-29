@@ -1257,14 +1257,15 @@ of code and libraries.
 
 You can use the multipackage feature to bundle a set of executable apps
 so that they share single copies of libraries.
+You can do this with either one-file or one-folder apps.
 Each dependency (a DLL, for example) is packaged only once, in one of the apps.
 Any other apps in the set that depend on that DLL
 have an "external reference" to it, telling them
-to go find that dependency in the executable file of the app that contains it.
+to extract that dependency from the executable file of the app that contains it.
 
 This saves disk space because each dependency is stored only once.
 However, to follow an external reference takes extra time when an app is starting up.
-Some of the apps in the set will have slightly slower launch times.
+All but one of the apps in the set will have slightly slower launch times.
 
 The external references between binaries include hard-coded
 paths to the output directory, and cannot be rearranged.
@@ -1295,8 +1296,11 @@ MERGE is used after the analysis phase and before ``EXE`` and ``COLLECT``.
 Its variable-length list of arguments consists of
 a list of tuples, each tuple having three elements:
 
-* The first element is an Analysis object, an instance of class Analysis.
-* The second element is the script name (without the ``.py`` extension).
+* The first element is an Analysis object, an instance of class Analysis,
+  as applied to one of the apps.
+  
+* The second element is the script name of the analyzed app (without the ``.py`` extension).
+
 * The third element is the name for the executable (usually the same as the script).
 
 MERGE examines the Analysis objects to learn the dependencies of each script.
@@ -1356,6 +1360,7 @@ where the original spec files have ``a.``, for example::
     bar_exe = EXE(bar_pyz, bar_a.scripts, ... etc.
     bar_coll = COLLECT( bar_exe, bar_a.binaries, bar_a.datas... etc.
 
+(If you are building one-file apps, there is no ``COLLECT`` step.)
 Save the combined spec file as ``foobarzap.spec`` and then build it::
 
     pyi-build foobarzap.spec
