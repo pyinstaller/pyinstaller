@@ -740,6 +740,31 @@ It is said to be possible to cross-develop for Windows under Linux
 using the free Wine_ environment.
 Further details are needed, see `How to Contribute`_.
 
+Making Linux Apps Forward-Compatible
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Under Linux, |PyInstaller| does not bundle ``libc``
+(the C standard library, usually ``glibc``, the Gnu version) with the app.
+Instead, the app expects to link dynamically to the ``libc`` from the
+local OS where it runs.
+The interface between any app and ``libc`` is forward compatible to 
+newer releases, but it is not backward compatible to older releases.
+
+For this reason, if you bundle your app on the current version of Linux,
+it may fail to execute (typically with a runtime dynamic link error) if
+it is executed on an older version of Linux.
+
+The solution is to always build your app on the *oldest* version of 
+Linux you mean to support.
+It should continue to work with the ``libc`` found on newer versions.
+
+The Linux standard libraries such as ``glibc`` are distributed in 64-bit
+and 32-bit versions, and these are not compatible.
+As a result you cannot bundle your app on a 32-bit system and run it
+on a 64-bit installation, nor vice-versa.
+You must make a unique version of the app for each word-length supported.
+
+
 Capturing Windows Version Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
