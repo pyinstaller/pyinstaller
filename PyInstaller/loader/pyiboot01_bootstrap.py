@@ -111,6 +111,53 @@ except ImportError:
 if sys.warnoptions:
     import warnings
 
+try:
+    import ctypes
+    import os
+    from ctypes import LibraryLoader, DEFAULT_MODE
+
+    class PyInstallerCDLL(ctypes.CDLL):
+        def __init__(self, name, *args, **kwargs):
+            frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
+            if os.path.exists(frozen_name):
+                name = frozen_name
+            super(PyInstallerCDLL, self).__init__(name, *args, **kwargs)
+
+    ctypes.CDLL = PyInstallerCDLL
+    ctypes.cdll = LibraryLoader(PyInstallerCDLL)
+
+    class PyInstallerPyDLL(ctypes.CDLL):
+        def __init__(self, name, *args, **kwargs):
+            frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
+            if os.path.exists(frozen_name):
+                name = frozen_name
+            super(PyInstallerPyDLL, self).__init__(name, *args, **kwargs)
+
+    ctypes.PyDLL = PyInstallerPyDLL
+    ctypes.pydll = LibraryLoader(PyInstallerPyDLL)
+
+    if sys.platform.startswith('win'):
+        class PyInstallerWinDLL(ctypes.CDLL):
+            def __init__(self, name,*args, **kwargs):
+                frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
+                if os.path.exists(frozen_name):
+                    name = frozen_name
+                super(PyInstallerWinDLL, self).__init__(name, *args, **kwargs)
+
+        ctypes.WinDLL = PyInstallerWinDLL
+        ctypes.windll = LibraryLoader(PyInstallerWinDLL)
+
+        class PyInstallerOleDLL(ctypes.CDLL):
+            def __init__(self, name,*args, **kwargs):
+                frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
+                if os.path.exists(frozen_name):
+                    name = frozen_name
+                super(PyInstallerOleDLL, self).__init__(name, *args, **kwargs)
+
+        ctypes.OleDLL = PyInstallerOleDLL
+        ctypes.oledll = LibraryLoader(PyInstallerOleDLL)
+except ImportError:
+    pass
 
 # On Mac OS X insert sys._MEIPASS in the first position of the list of paths
 # that ctypes uses to search for libraries.
