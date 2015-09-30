@@ -116,5 +116,4 @@ build: none
 
 test_script:
   # Split tests into several subprocesses.
-  #- "%CMD_IN_ENV% py.test -n 3"
-  - "%CMD_IN_ENV% py.test"
+  - "%CMD_IN_ENV% py.test -n 3"
