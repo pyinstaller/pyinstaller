@@ -3225,21 +3225,8 @@ class PE:
         max_failed_entries_before_giving_up = 10
 
         for i in xrange( min( export_dir.NumberOfNames, length_until_eof(export_dir.AddressOfNames)/4) ):
-
-            symbol_name_address = self.get_dword_from_data(address_of_names, i)
-
-            symbol_name = self.get_string_at_rva( symbol_name_address )
-            try:
-                symbol_name_offset = self.get_offset_from_rva( symbol_name_address )
-            except PEFormatError:
-                max_failed_entries_before_giving_up -= 1
-                if max_failed_entries_before_giving_up <= 0:
-                    break
-                continue
-
             symbol_ordinal = self.get_word_from_data(
                 address_of_name_ordinals, i)
-
 
             if symbol_ordinal*4 < len(address_of_functions):
                 symbol_address = self.get_dword_from_data(
@@ -3268,6 +3255,17 @@ class PE:
                 forwarder_str = None
                 forwarder_offset = None
 
+            symbol_name_address = self.get_dword_from_data(address_of_names, i)
+
+            symbol_name = self.get_string_at_rva( symbol_name_address )
+            try:
+                symbol_name_offset = self.get_offset_from_rva( symbol_name_address )
+            except PEFormatError:
+                max_failed_entries_before_giving_up -= 1
+                if max_failed_entries_before_giving_up <= 0:
+                    break
+                continue
+                
             exports.append(
                 ExportData(
                     pe = self,
