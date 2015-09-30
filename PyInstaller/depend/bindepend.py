@@ -184,7 +184,7 @@ def matchDLLArch(filename):
     machine = machine_types.get(_machine, None)
     if machine is None:
         raise ValueError("Could not verify DLL machine type. Unknown machine type: %s" % _machine)
-
+    machine = pefile.MACHINE_TYPE[machine]
     pe = pefile.PE(filename, fast_load=True)
 
     return pe.FILE_HEADER.Machine == machine
