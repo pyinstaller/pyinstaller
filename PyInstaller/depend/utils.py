@@ -24,7 +24,8 @@ import zipfile
 from ..lib.modulegraph import modulegraph
 
 from .. import compat
-from ..compat import is_darwin, is_unix, is_py2, is_py27, BYTECODE_MAGIC, PY3_BASE_MODULES
+from ..compat import is_darwin, is_unix, is_py2, BYTECODE_MAGIC, PY3_BASE_MODULES, \
+    exec_python_rc
 from .dylib import include_library
 from .. import log as logging
 
@@ -402,3 +403,35 @@ def is_path_to_egg(path):
        directly).
     """
     return get_path_to_egg(path) is not None
+
+
+def is_real_extension_module(modname, filename):
+    """
+    Tries importing .so/.pyd Python extensions in a subprocess.
+
+    Some Python libraries bundle DLLs with .so/.pyd suffix. e.g. libzmq.pyd
+    in pyzmq. PyInstaller should not handle these "fake extensions" as real
+    Python extensions.
+
+    :param modname: Absolute module name.
+    :param filename: Absolute path to the .so/.pyd file
+    :return: True if module is importable and thus C extension, False otherwise
+    """
+    # Python 2 does not have module 'importlib.machinery'
+    if is_py2:
+        template = """
+import imp
+ext_tuple = ('.so', 'rb', 3)
+fp = open('%(file)s', 'rb')
+imp.load_module('%(module)s', fp, '%(file)s', ext_tuple)
+        """
+    else:
+        template = """
+from importlib.machinery import ExtensionFileLoader
+loader = ExtensionFileLoader('%(module)s', '%(file)s')
+loader.load_module('%(module)s')
+"""
+
+    code = template % {'module': modname, 'file': filename}
+    exit_code = exec_python_rc('-c', code)
+    return exit_code == 0

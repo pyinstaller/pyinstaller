@@ -36,7 +36,7 @@ import logging
 import os
 import re
 
-from PyInstaller.building.datastruct import TOC
+from ..building.datastruct import TOC
 from ..building.imphook import HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
 from ..utils.misc import load_py_data_struct
@@ -47,6 +47,7 @@ from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from .. import HOMEPATH, configure
 from ..utils.hooks import collect_submodules, is_package
+from .utils import is_real_extension_module
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +310,12 @@ class PyiModuleGraph(ModuleGraph):
                 base_nm = os.path.basename(node.filename)
                 ext = os.path.splitext(base_nm)[1]
                 if base_nm.startswith('lib') and ext in ('.pyd', '.so'):
-                    continue
+                    # Verify that C extension is not a real extension and
+                    # skip it in this case.
+                    # Some Python C-extensions starts with 'lib' prefix
+                    # e.g. libxml2mod.so, scipy.svm.libsvm.so
+                    if not is_real_extension_module(node.identifier, node.filename):
+                        continue
 
             if typecode and not (mg_type in typecode):
                 # Type is not a to be selected one, skip this one
