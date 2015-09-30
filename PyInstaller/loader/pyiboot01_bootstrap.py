@@ -126,7 +126,7 @@ try:
     ctypes.CDLL = PyInstallerCDLL
     ctypes.cdll = LibraryLoader(PyInstallerCDLL)
 
-    class PyInstallerPyDLL(ctypes.CDLL):
+    class PyInstallerPyDLL(ctypes.PyDLL):
         def __init__(self, name, *args, **kwargs):
             frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
             if os.path.exists(frozen_name):
@@ -137,7 +137,7 @@ try:
     ctypes.pydll = LibraryLoader(PyInstallerPyDLL)
 
     if sys.platform.startswith('win'):
-        class PyInstallerWinDLL(ctypes.CDLL):
+        class PyInstallerWinDLL(ctypes.WinDLL):
             def __init__(self, name,*args, **kwargs):
                 frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
                 if os.path.exists(frozen_name):
@@ -147,7 +147,7 @@ try:
         ctypes.WinDLL = PyInstallerWinDLL
         ctypes.windll = LibraryLoader(PyInstallerWinDLL)
 
-        class PyInstallerOleDLL(ctypes.CDLL):
+        class PyInstallerOleDLL(ctypes.OleDLL):
             def __init__(self, name,*args, **kwargs):
                 frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
                 if os.path.exists(frozen_name):
