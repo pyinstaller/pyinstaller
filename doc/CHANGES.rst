@@ -29,6 +29,11 @@ Changelog for PyInstaller
 - Tests migrated to py.test framework.
 - Improved testing infrastructure with continuous integration (Travis - Linux,
   Appveyor - Windows)
+  
+
+**Known Issues**
+
+- Apps built with Windows 10 and Python 3.5 may not run on Windows versions earlier than 10. 
 
 
 2.1 (2013-09-27)
