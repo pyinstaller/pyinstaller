@@ -279,7 +279,6 @@ def test_twisted(pyi_builder):
 
 
 @importorskip('matplotlib')
-@pytest.mark.xfail(reason='TODO - known to fail in Travis')
 def test_matplotlib(pyi_builder):
     pyi_builder.test_source(
         """

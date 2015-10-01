@@ -304,7 +304,7 @@ def exec_command_rc(*cmdargs, **kwargs):
     """
     # 'encoding' keyword is not supported for 'subprocess.call'.
     # Remove it thus from kwargs.
-    if 'encodings' in kwargs:
+    if 'encoding' in kwargs:
         kwargs.pop('encoding')
     return subprocess.call(cmdargs, **kwargs)
 

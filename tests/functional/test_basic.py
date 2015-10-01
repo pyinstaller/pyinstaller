@@ -54,7 +54,6 @@ def test_decoders_ascii(pyi_builder):
     pyi_builder.test_script('pyi_decoders_ascii.py')
 
 
-@pytest.mark.xfail(reason="distutils not bundled correctly in virtualenv (fixme!)")
 def test_distutils_submod(pyi_builder):
     pyi_builder.test_script('pyi_distutils_submod.py')
 
