@@ -15,6 +15,9 @@ import ctypes, ctypes.util
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, skipif_notwin
 
+# :todo: find a way to get this from `conftest` or such
+# Directory with testing modules used in some tests.
+_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 
 def test_relative_import(pyi_builder):
     pyi_builder.test_script('pyi_import_relative.py')
@@ -26,6 +29,11 @@ def test_relative_import2(pyi_builder):
 
 def test_relative_import3(pyi_builder):
     pyi_builder.test_script('pyi_import_relative3.py')
+
+def test_import_pyqt5_uic_port(pyi_builder):
+    extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt.uic.port')
+    pyi_builder.test_script('pyi_import_pyqt5.uic.port.py',
+                            pyi_args=['--path', extra_path], )
 
 
 #--- ctypes ----
