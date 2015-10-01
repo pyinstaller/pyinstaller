@@ -157,6 +157,8 @@ def match_binding_redirect(manifest, redirect):
         manifest.publicKeyToken == redirect.publicKeyToken,
     ])
 
+_exe_machine_type = None
+
 def matchDLLArch(filename):
     """
     Return True if the DLL given by filename matches the CPU type/architecture of the
@@ -175,19 +177,14 @@ def matchDLLArch(filename):
 
     import PyInstaller.lib.pefile as pefile
 
-    _machine = platform.machine().upper()
-    machine_types = {
-        'I386': 'IMAGE_FILE_MACHINE_I386',
-        'AMD64': 'IMAGE_FILE_MACHINE_AMD64',
-        'IA64': 'IMAGE_FILE_MACHINE_IA64',
-    }
-    machine = machine_types.get(_machine, None)
-    if machine is None:
-        raise ValueError("Could not verify DLL machine type. Unknown machine type: %s" % _machine)
-    machine = pefile.MACHINE_TYPE[machine]
+    global _exe_machine_type
+    if _exe_machine_type is None:
+        exe_pe = pefile.PE(sys.executable, fast_load=True)
+        _exe_machine_type = exe_pe.FILE_HEADER.Machine
+
     pe = pefile.PE(filename, fast_load=True)
 
-    return pe.FILE_HEADER.Machine == machine
+    return pe.FILE_HEADER.Machine == _exe_machine_type
 
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
