@@ -9,7 +9,7 @@ include bootloader/wscript
 
 recursive-include doc/images *
 recursive-include doc/stylesheets *
-recursive-include doc *.1 *.html *.pdf *.txt
+recursive-include doc *.1 *.html *.pdf *.rst *.txt
 
 recursive-include PyInstaller *
 
@@ -20,8 +20,8 @@ recursive-include tests *.txt
 
 recursive-include utils *.py
 
-include COPYING.txt
-include README.txt
+include *.rst
+include *.txt
 include pyinstaller.py
 include pyinstaller-gui.py
 
