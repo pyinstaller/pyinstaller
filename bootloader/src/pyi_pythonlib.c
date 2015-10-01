@@ -24,7 +24,12 @@
 #else
     #include <dlfcn.h>  // dlerror
     #include <limits.h>  // PATH_MAX
-    #include <netinet/in.h>  // ntohl
+    #ifdef __FreeBSD__
+    	// freebsd issue #188316
+    	#include <arpa/inet.h>  // ntohl
+    #else
+    	#include <netinet/in.h>  // ntohl
+    #endif
     #include <stdlib.h>  // mbstowcs
 #endif
 #include <stddef.h>  // ptrdiff_t
