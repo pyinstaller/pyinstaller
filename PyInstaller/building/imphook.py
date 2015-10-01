@@ -23,6 +23,7 @@ from .utils import format_binaries_and_datas
 from ..compat import expand_path
 from ..compat import importlib_load_source, UserDict, is_py2
 from ..utils.misc import get_code_object
+from .imphookapi import PostGraphAPI
 
 logger = logging.getLogger(__name__)
 
@@ -157,152 +158,6 @@ class AdditionalFilesCache(UserDict):
         return self.data[modname]['datas']
 
 
-# TODO Simplify this class and drop useless code.
-# TODO This class should raise exceptions on external callers attempting to
-# modify class attributes (e.g., a hook attempting to set "mod.datas = []").
-# This has been the source of numerous difficult-to-debug issues. The simplest
-# means of ensuring this would be to:
-#
-# * Prefix all attribute names by "_" (e.g., renaming "datas" to "_datas").
-# * Define one @property-decorated getter (but not setter) for each such
-#   attribute, thus permitting access but prohibiting modification.
-# TODO There is no method resembling info() in the ModuleGraph class. Correct
-# the docstring below.
-class FakeModule(object):
-    """
-    A **mod** (i.e., metadata describing external assets to be frozen with an
-    imported module).
-
-    Mods are both passed to and returned from the `hook(mod)` functions of
-    `hook-{module_name}.py` files. Mods are constructed before the call from
-    `ModuleGraph` info. Changes to mods are propagated back to the current graph
-    and related data structures.
-
-    .. NOTE::
-       Mods are *only* used for communication with hooks.
-
-    Attributes
-    ----------
-    Hook functions may access but *not* modify the following attributes:
-
-    __file__ : str
-        Absolute path of this module's Python file. (Unlike all other
-        attributes, hook functions may modify this attribute.)
-    __path__ : str
-        Absolute path of this module's parent directory.
-    name : str
-        This module's `.`-delimited name (e.g., `six.moves.tkinter`).
-    co : code
-        Code object compiled from the contents of `__file__` (e.g., via the
-        `compile()` builtin).
-    datas : list
-        List of associated data files.
-    imports : list
-        List of things this module imports.
-    binaries : list
-        List of `(name, path, 'BINARY')` tuples or TOC objects.
-    """
-
-    def __init__(self, identifier, graph):
-        # Go into the module graph and get the node for this identifier.
-        # It should always exist because the caller should be working
-        # from the graph itself, or a TOC made from the graph.
-        node = graph.findNode(identifier)
-        assert(node is not None) # should not occur
-        self.__name__ = identifier
-        # keep a pointer back to the original node
-        self.node = node
-        # keep a pointer back to the original graph
-        self.graph = graph
-        # Add the __file__ member
-        self.__file__ = node.filename
-        # Add the __path__ member which is either None or, if
-        # the node type is Package, a list of one element, the
-        # path string to the package directory -- just like a mod.
-        # Note that if the hook changes it, it will change in the node proper.
-        self.__path__ = node.packagepath
-        # Stick in the .co (compiled code) member. One hook (hook-distutiles)
-        # wants to change both __path__ and .co. TODO: HOW HANDLE?
-        self.co = node.code
-        # Create the datas member as an empty list
-        self.datas = []
-        # Add the binaries and imports lists and populate with names.
-        # The node imports whatever is reachable in the graph
-        # starting at that node. Put Extension names in binaries.
-        self.binaries = []
-        self.imports = []
-        for impnode in graph.flatten(start=node):
-            if type(impnode).__name__ != 'Extension' :
-                self.imports.append([impnode.identifier, 1, 0, -1])
-            else:
-                self.binaries.append([(impnode.identifier, impnode.filename, 'BINARY')])
-        # Private members to collect changes.
-        self._added_imports = []
-        self._deleted_imports = []
-        self._added_binaries = []
-
-
-    @property
-    def name(self):
-        return self.__name__
-
-    @name.setter
-    def name(self, name):
-        self.__name__ = name
-
-
-    def add_import(self,names):
-        """
-        Add all Python modules whose `.`-delimited names are in the passed list
-        as "hidden imports" upon which the current module depends.
-
-        The passed argument may be either a list of module names *or* a single
-        module name.
-        """
-        warnings.warn("Deprecated: Use the hook's attribute `hiddenimports'",
-                      DeprecationWarning)
-        if not isinstance(names, list):
-            names = [names]  # Allow passing string or list.
-        self._added_imports.extend(names) # save change to implement in graph later
-        for name in names:
-            self.imports.append([name,1,0,-1]) # make change visible to caller
-
-    def del_import(self,names):
-        """
-        Remove all Python modules whose `.`-delimited names are in the passed
-        list from the set of imports (either hidden or visible) upon which the
-        current module depends.
-
-        The passed argument may be either a list of module names *or* a single
-        module name.
-        """
-        warnings.warn("Deprecated: Use the hook's attribute `excludedimports'",
-                      DeprecationWarning)
-        # just save to implement in graph later
-        if not isinstance(names, list):
-            names = [names]  # Allow passing string or list.
-        self._deleted_imports.extend(names)
-
-    def retarget(self, path_to_new_code):
-        """
-        Recompile this module's code object as the passed Python file.
-
-        This method is intended to "retarget" unfreezable modules into simpler
-        versions well-suited to being frozen. This is especially useful for
-        **venvs** (i.e., virtual environments), which frequently override
-        default modules with wrappers poorly suited to being frozen.
-        """
-        # Keep the original filename in the fake code object.
-        new_code = get_code_object(path_to_new_code, new_filename=self.node.filename)
-        # Update node.
-        # TODO Need to update many attributes more, e.g. node.globalnames.
-        # Perhaps it's better to replace the node
-        self.node.code = new_code
-        self.node.filename = path_to_new_code
-        # Update dependencies in the graph.
-        self.graph._scan_code(new_code, self.node)
-
-
 class ImportHook(object):
     """
     Class encapsulating processing of hook attributes like hiddenimports, etc.
@@ -330,24 +185,19 @@ class ImportHook(object):
         Function hook(mod) has to be called first because this function
         could update other attributes - datas, hiddenimports, etc.
         """
-        # TODO use directly Modulegraph machinery in the 'def hook(mod)' function.
-        # TODO: it won't be called "FakeModule" later on
-        # Process a hook(mod) function. Create a Module object as its API.
-        mod = FakeModule(self._name, mod_graph)
-        mod = self._module.hook(mod)
+        # Process a `hook(hook_api)` function.
+        hook_api = PostGraphAPI(self._name, mod_graph)
+        self._module.hook(hook_api)
 
-        for item in mod._added_imports:
+        self.datas.update(set(hook_api._added_datas))
+        self.binaries.update(set(hook_api._added_binaries))
+        for item in hook_api._added_imports:
             self._process_one_hiddenimport(item, mod_graph)
-        for item in mod.datas:
-            # Supposed to be TOC form (n,p,'DATA')
-            assert(item[2] == 'DATA')
-            self.datas.add(item[0:2])  # Drop element 'DATA'
-        for item in mod._deleted_imports:
+        for item in hook_api._deleted_imports:
             # Remove the graph link between the hooked module and item.
             # This removes the 'item' node from the graph if no other
             # links go to it (no other modules import it)
-            mod_graph.removeReference(mod.node, item)
-        # TODO: process mod.datas if not empty, tkinter data files
+            mod_graph.removeReference(hook_api.node, item)
 
     def _process_hiddenimports(self, mod_graph):
         """

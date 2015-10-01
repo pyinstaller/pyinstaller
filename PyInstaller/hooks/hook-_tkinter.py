@@ -145,7 +145,7 @@ def _find_tcl_tk_dir():
     return tcl_root, tk_root
 
 
-def _find_tcl_tk(mod):
+def _find_tcl_tk(hook_api):
     """
     Get a platform-specific 2-tuple of the absolute paths of the top-level
     external data directories for both Tcl and Tk, respectively.
@@ -156,16 +156,16 @@ def _find_tcl_tk(mod):
         2-tuple whose first element is the value of `${TCL_LIBRARY}` and whose
         second element is the value of `${TK_LIBRARY}`.
     """
-    bins = selectImports(mod.__file__)
+    bins = selectImports(hook_api.__file__)
 
     if is_darwin:
         # _tkinter depends on system Tcl/Tk frameworks.
         # For example this is the case of Python from homebrew.
         if not bins:
-            # 'mod.binaries' can't be used because on Mac OS X _tkinter.so
+            # 'hook_api.binaries' can't be used because on Mac OS X _tkinter.so
             # might depend on system Tcl/Tk frameworks and these are not
-            # included in 'mod.binaries'.
-            bins = getImports(mod.__file__)
+            # included in 'hook_api.binaries'.
+            bins = getImports(hook_api.__file__)
             # Reformat data structure from
             #     set(['lib1', 'lib2', 'lib3'])
             # to
@@ -193,7 +193,7 @@ def _find_tcl_tk(mod):
     return tcl_tk
 
 
-def _collect_tcl_tk_files(mod):
+def _collect_tcl_tk_files(hook_api):
     """
     Get a list of TOC-style 3-tuples describing all external Tcl/Tk data files.
 
@@ -205,7 +205,7 @@ def _collect_tcl_tk_files(mod):
     # Workaround for broken Tcl/Tk detection in virtualenv on Windows.
     _handle_broken_tcl_tk()
 
-    tcl_root, tk_root = _find_tcl_tk(mod)
+    tcl_root, tk_root = _find_tcl_tk(hook_api)
 
     # TODO Shouldn't these be fatal exceptions?
     if not tcl_root:
@@ -231,19 +231,17 @@ def _collect_tcl_tk_files(mod):
     return (tcltree + tktree)
 
 
-def hook(mod):
+def hook(hook_api):
     # Use a hook-function to get the module's attr:`__file__` easily.
     """
     Freeze all external Tcl/Tk data files if this is a supported platform *or*
     log a non-fatal error otherwise.
     """
     if is_win or is_darwin or is_unix:
-        # _collect_tcl_tk_files(mod) returns a Tree (which is okay),
-        # so we need to store it into `mod.datas` to prevent
+        # _collect_tcl_tk_files(hook_api) returns a Tree (which is okay),
+        # so we need to store it into `hook_api.datas` to prevent
         # `building.imphook.format_binaries_and_datas` from crashing
         # with "too many values to unpack".
-        mod.datas = _collect_tcl_tk_files(mod)
+        hook_api.add_datas(_collect_tcl_tk_files(hook_api))
     else:
         logger.error("... skipping Tcl/Tk handling on unsupported platform %s", sys.platform)
-
-    return mod
