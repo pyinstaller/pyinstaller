@@ -18,6 +18,7 @@ modifications into appropriate operations on the current `PyiModuleGraph`
 instance, thus modifying which modules will be frozen into the executable.
 """
 
+from .datastruct import TOC
 
 class PreSafeImportModuleAPI(object):
     """
@@ -360,8 +361,14 @@ class PostGraphAPI(object):
         `(name, path)` 2-tuples as dependencies of the current module.
         This is equivalent to adding to the global `binaries` hook
         attribute.
+
+        For convenience, the `list_of_tuples` may also be a single TOC
+        or TREE instance.
         """
-        self._added_binaries.extend(list_of_tuples)
+        if isinstance(list_of_tuples, TOC):
+            self._added_binaries.extend(i[:2] for i in list_of_tuples)
+        else:
+            self._added_binaries.extend(list_of_tuples)
 
     def add_datas(self, list_of_tuples):
         """
@@ -369,5 +376,10 @@ class PostGraphAPI(object):
         path)` 2-tuples as dependencies of the current module. This is
         equivalent to adding to the global `datas` hook attribute.
 
+        For convenience, the `list_of_tuples` may also be a single TOC
+        or TREE instance.
         """
-        self._added_datas.extend(list_of_tuples)
+        if isinstance(list_of_tuples, TOC):
+            self._added_datas.extend(i[:2] for i in list_of_tuples)
+        else:
+            self._added_datas.extend(list_of_tuples)
