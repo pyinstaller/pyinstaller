@@ -1644,7 +1644,7 @@ class ModuleGraph(ObjectGraph):
 
             path = self.path
 
-        fp, buf, stuff = self._find_module_path(name, path)
+        fp, buf, stuff = self._find_module_path(fullname, name, path)
         try:
             if buf:
                 buf = os.path.realpath(buf)
@@ -1654,7 +1654,7 @@ class ModuleGraph(ObjectGraph):
             fp.close()
             raise
 
-    def _find_module_path(self, module_name, search_dirs):
+    def _find_module_path(self, fullname, module_name, search_dirs):
         """
         Get a 3-tuple detailing the physical location of the module with the
         passed name if that module exists _or_ raise `ImportError` otherwise.
@@ -1697,7 +1697,7 @@ class ModuleGraph(ObjectGraph):
         ImportError
             If this module is _not_ found.
         """
-        self.msgin(4, "_find_module_path <-", module_name, search_dirs)
+        self.msgin(4, "_find_module_path <-", fullname, search_dirs)
 
         # TODO: Under:
         #
