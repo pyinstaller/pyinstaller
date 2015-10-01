@@ -8,6 +8,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+import sys
 
 block_cipher = None
 app_name = 'pyi_lib_PIL_img_conversion'
@@ -28,11 +29,12 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name=app_name,
+          name=app_name + ('.exe' if sys.platform.startswith("win") else ''),
           debug=True,
           strip=None,
           upx=False,
-          console=False )
+          # On Windows, use console mode or else the VS() messageboxes will stall pytest.
+          console=True if sys.platform.startswith("win") else False)
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
