@@ -17,7 +17,7 @@
 <col class="docinfo-content" />
 <tbody valign="top">
 <tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller 3.0.dev0+fe59eb3</td></tr>
+<td>PyInstaller 3.0.dev8+f1a8933.mod</td></tr>
 <tr class="field"><th class="docinfo-name">Homepage:</th><td class="field-body"><a class="reference external" href="http://www.pyinstaller.org">http://www.pyinstaller.org</a></td>
 </tr>
 <tr><th class="docinfo-name">Contact:</th>
@@ -72,89 +72,91 @@
 <li><a class="reference internal" href="#how-to-generate" id="id30">How to generate</a></li>
 <li><a class="reference internal" href="#windows-and-mac-os-x-specific-options" id="id31">Windows and Mac OS X specific options</a></li>
 <li><a class="reference internal" href="#windows-specific-options" id="id32">Windows specific options</a></li>
-<li><a class="reference internal" href="#mac-os-x-specific-options" id="id33">Mac OS X specific options</a></li>
+<li><a class="reference internal" href="#windows-side-by-side-assembly-searching-options-advanced" id="id33">Windows Side-by-side Assembly searching options (advanced)</a></li>
+<li><a class="reference internal" href="#mac-os-x-specific-options" id="id34">Mac OS X specific options</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#shortening-the-command" id="id34">Shortening the Command</a></li>
-<li><a class="reference internal" href="#using-upx" id="id35">Using UPX</a></li>
-<li><a class="reference internal" href="#encrypting-python-bytecode" id="id36">Encrypting Python Bytecode</a></li>
-<li><a class="reference internal" href="#supporting-multiple-platforms" id="id37">Supporting Multiple Platforms</a><ul>
-<li><a class="reference internal" href="#supporting-multiple-python-environments" id="id38">Supporting Multiple Python Environments</a></li>
-<li><a class="reference internal" href="#supporting-multiple-operating-systems" id="id39">Supporting Multiple Operating Systems</a></li>
+<li><a class="reference internal" href="#shortening-the-command" id="id35">Shortening the Command</a></li>
+<li><a class="reference internal" href="#using-upx" id="id36">Using UPX</a></li>
+<li><a class="reference internal" href="#encrypting-python-bytecode" id="id37">Encrypting Python Bytecode</a></li>
+<li><a class="reference internal" href="#supporting-multiple-platforms" id="id38">Supporting Multiple Platforms</a><ul>
+<li><a class="reference internal" href="#supporting-multiple-python-environments" id="id39">Supporting Multiple Python Environments</a></li>
+<li><a class="reference internal" href="#supporting-multiple-operating-systems" id="id40">Supporting Multiple Operating Systems</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capturing-windows-version-data" id="id40">Capturing Windows Version Data</a></li>
-<li><a class="reference internal" href="#building-mac-os-x-app-bundles" id="id41">Building Mac&nbsp;OS&nbsp;X App Bundles</a><ul>
-<li><a class="reference internal" href="#getting-the-opened-document-names" id="id42">Getting the Opened Document Names</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#run-time-operation" id="id43">Run-time Operation</a></li>
-<li><a class="reference internal" href="#using-spec-files" id="id44">Using Spec Files</a><ul>
-<li><a class="reference internal" href="#spec-file-operation" id="id45">Spec File Operation</a></li>
-<li><a class="reference internal" href="#adding-files-to-the-bundle" id="id46">Adding Files to the Bundle</a><ul>
-<li><a class="reference internal" href="#adding-data-files" id="id47">Adding Data Files</a></li>
-<li><a class="reference internal" href="#adding-binary-files" id="id48">Adding Binary Files</a></li>
-<li><a class="reference internal" href="#advanced-methods-of-adding-files" id="id49">Advanced Methods of Adding Files</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#giving-run-time-python-options" id="id50">Giving Run-time Python Options</a></li>
-<li><a class="reference internal" href="#spec-file-options-for-a-mac-os-x-bundle" id="id51">Spec File Options for a Mac&nbsp;OS&nbsp;X Bundle</a></li>
-<li><a class="reference internal" href="#multipackage-bundles" id="id52">Multipackage Bundles</a><ul>
-<li><a class="reference internal" href="#example-merge-spec-file" id="id53">Example MERGE spec file</a></li>
+<li><a class="reference internal" href="#making-linux-apps-forward-compatible" id="id41">Making Linux Apps Forward-Compatible</a></li>
+<li><a class="reference internal" href="#capturing-windows-version-data" id="id42">Capturing Windows Version Data</a></li>
+<li><a class="reference internal" href="#building-mac-os-x-app-bundles" id="id43">Building Mac&nbsp;OS&nbsp;X App Bundles</a><ul>
+<li><a class="reference internal" href="#getting-the-opened-document-names" id="id44">Getting the Opened Document Names</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#when-things-go-wrong" id="id54">When Things Go Wrong</a><ul>
-<li><a class="reference internal" href="#recipes-and-examples-for-specific-problems" id="id55">Recipes and Examples for Specific Problems</a></li>
-<li><a class="reference internal" href="#finding-out-what-went-wrong" id="id56">Finding out What Went Wrong</a><ul>
-<li><a class="reference internal" href="#build-time-messages" id="id57">Build-time Messages</a></li>
-<li><a class="reference internal" href="#build-time-python-errors" id="id58">Build-Time Python Errors</a></li>
-<li><a class="reference internal" href="#getting-debug-messages" id="id59">Getting Debug Messages</a></li>
-<li><a class="reference internal" href="#getting-python-s-verbose-imports" id="id60">Getting Python's Verbose Imports</a></li>
+<li><a class="reference internal" href="#run-time-operation" id="id45">Run-time Operation</a></li>
+<li><a class="reference internal" href="#using-spec-files" id="id46">Using Spec Files</a><ul>
+<li><a class="reference internal" href="#spec-file-operation" id="id47">Spec File Operation</a></li>
+<li><a class="reference internal" href="#adding-files-to-the-bundle" id="id48">Adding Files to the Bundle</a><ul>
+<li><a class="reference internal" href="#adding-data-files" id="id49">Adding Data Files</a></li>
+<li><a class="reference internal" href="#adding-binary-files" id="id50">Adding Binary Files</a></li>
+<li><a class="reference internal" href="#advanced-methods-of-adding-files" id="id51">Advanced Methods of Adding Files</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#helping-pyinstaller-find-modules" id="id61">Helping PyInstaller Find Modules</a><ul>
-<li><a class="reference internal" href="#extending-the-path" id="id62">Extending the Path</a></li>
-<li><a class="reference internal" href="#listing-hidden-imports" id="id63">Listing Hidden Imports</a></li>
-<li><a class="reference internal" href="#extending-a-package-s-path" id="id64">Extending a Package's <tt class="docutils literal">__path__</tt></a></li>
-<li><a class="reference internal" href="#changing-runtime-behavior" id="id65">Changing Runtime Behavior</a></li>
+<li><a class="reference internal" href="#giving-run-time-python-options" id="id52">Giving Run-time Python Options</a></li>
+<li><a class="reference internal" href="#spec-file-options-for-a-mac-os-x-bundle" id="id53">Spec File Options for a Mac&nbsp;OS&nbsp;X Bundle</a></li>
+<li><a class="reference internal" href="#multipackage-bundles" id="id54">Multipackage Bundles</a><ul>
+<li><a class="reference internal" href="#example-merge-spec-file" id="id55">Example MERGE spec file</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#getting-the-latest-version" id="id66">Getting the Latest Version</a></li>
-<li><a class="reference internal" href="#asking-for-help" id="id67">Asking for Help</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#advanced-topics" id="id68">Advanced Topics</a><ul>
-<li><a class="reference internal" href="#the-bootstrap-process-in-detail" id="id69">The Bootstrap Process in Detail</a><ul>
-<li><a class="reference internal" href="#bootloader" id="id70">Bootloader</a></li>
-<li><a class="reference internal" href="#python-imports-in-a-bundled-app" id="id71">Python imports in a bundled app</a></li>
+<li><a class="reference internal" href="#when-things-go-wrong" id="id56">When Things Go Wrong</a><ul>
+<li><a class="reference internal" href="#recipes-and-examples-for-specific-problems" id="id57">Recipes and Examples for Specific Problems</a></li>
+<li><a class="reference internal" href="#finding-out-what-went-wrong" id="id58">Finding out What Went Wrong</a><ul>
+<li><a class="reference internal" href="#build-time-messages" id="id59">Build-time Messages</a></li>
+<li><a class="reference internal" href="#build-time-python-errors" id="id60">Build-Time Python Errors</a></li>
+<li><a class="reference internal" href="#getting-debug-messages" id="id61">Getting Debug Messages</a></li>
+<li><a class="reference internal" href="#getting-python-s-verbose-imports" id="id62">Getting Python's Verbose Imports</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#the-toc-and-tree-classes" id="id72">The TOC and Tree Classes</a><ul>
-<li><a class="reference internal" href="#toc-class-table-of-contents" id="id73">TOC Class (Table of Contents)</a></li>
-<li><a class="reference internal" href="#the-tree-class" id="id74">The Tree Class</a></li>
+<li><a class="reference internal" href="#helping-pyinstaller-find-modules" id="id63">Helping PyInstaller Find Modules</a><ul>
+<li><a class="reference internal" href="#extending-the-path" id="id64">Extending the Path</a></li>
+<li><a class="reference internal" href="#listing-hidden-imports" id="id65">Listing Hidden Imports</a></li>
+<li><a class="reference internal" href="#extending-a-package-s-path" id="id66">Extending a Package's <tt class="docutils literal">__path__</tt></a></li>
+<li><a class="reference internal" href="#changing-runtime-behavior" id="id67">Changing Runtime Behavior</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#inspecting-archives" id="id75">Inspecting Archives</a><ul>
-<li><a class="reference internal" href="#zlibarchive" id="id76">ZlibArchive</a></li>
-<li><a class="reference internal" href="#carchive" id="id77">CArchive</a></li>
-<li><a class="reference internal" href="#using-pyi-archive-viewer" id="id78">Using pyi-archive_viewer</a></li>
+<li><a class="reference internal" href="#getting-the-latest-version" id="id68">Getting the Latest Version</a></li>
+<li><a class="reference internal" href="#asking-for-help" id="id69">Asking for Help</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#inspecting-executables" id="id79">Inspecting Executables</a></li>
+<li><a class="reference internal" href="#advanced-topics" id="id70">Advanced Topics</a><ul>
+<li><a class="reference internal" href="#the-bootstrap-process-in-detail" id="id71">The Bootstrap Process in Detail</a><ul>
+<li><a class="reference internal" href="#bootloader" id="id72">Bootloader</a></li>
+<li><a class="reference internal" href="#python-imports-in-a-bundled-app" id="id73">Python imports in a bundled app</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#understanding-pyinstaller-hooks" id="id80">Understanding PyInstaller Hooks</a><ul>
-<li><a class="reference internal" href="#hooks-in-detail" id="id81">Hooks in Detail</a></li>
+<li><a class="reference internal" href="#the-toc-and-tree-classes" id="id74">The TOC and Tree Classes</a><ul>
+<li><a class="reference internal" href="#toc-class-table-of-contents" id="id75">TOC Class (Table of Contents)</a></li>
+<li><a class="reference internal" href="#the-tree-class" id="id76">The Tree Class</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#building-the-bootloader" id="id82">Building the Bootloader</a><ul>
-<li><a class="reference internal" href="#development-tools" id="id83">Development tools</a></li>
-<li><a class="reference internal" href="#building-for-windows" id="id84">Building for Windows</a></li>
-<li><a class="reference internal" href="#building-for-linux" id="id85">Building for LINUX</a></li>
+<li><a class="reference internal" href="#inspecting-archives" id="id77">Inspecting Archives</a><ul>
+<li><a class="reference internal" href="#zlibarchive" id="id78">ZlibArchive</a></li>
+<li><a class="reference internal" href="#carchive" id="id79">CArchive</a></li>
+<li><a class="reference internal" href="#using-pyi-archive-viewer" id="id80">Using pyi-archive_viewer</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#inspecting-executables" id="id81">Inspecting Executables</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#understanding-pyinstaller-hooks" id="id82">Understanding PyInstaller Hooks</a><ul>
+<li><a class="reference internal" href="#hooks-in-detail" id="id83">Hooks in Detail</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#building-the-bootloader" id="id84">Building the Bootloader</a><ul>
+<li><a class="reference internal" href="#development-tools" id="id85">Development tools</a></li>
+<li><a class="reference internal" href="#building-for-windows" id="id86">Building for Windows</a></li>
+<li><a class="reference internal" href="#building-for-linux" id="id87">Building for LINUX</a></li>
 </ul>
 </li>
 </ul>
@@ -164,7 +166,7 @@
 <p><cite>PyInstaller</cite> bundles a Python application and all its dependencies into
 a single package.
 The user can run the packaged app without installing a Python interpreter or any modules.
-<cite>PyInstaller</cite> supports Python 2.7 and Python 3.4+,
+<cite>PyInstaller</cite> supports Python 2.7 and Python 3.3+,
 and correctly bundles the major Python packages
 such as numpy, PyQt, Django, wxPython, and others.</p>
 <p><cite>PyInstaller</cite> is tested against Windows, Mac&nbsp;OS&nbsp;X, and Linux.
@@ -191,9 +193,10 @@ and changes to the &quot;hook&quot; API (<a class="reference internal" href="#un
 <h2><a class="toc-backref" href="#id5">Windows</a></h2>
 <p><cite>PyInstaller</cite> runs in Windows XP or newer.
 It can create graphical windowed apps (apps that do not need a command window).</p>
-<p>It requires the <a class="reference external" href="http://sourceforge.net/projects/pywin32/files/">PyWin32</a> or <a class="reference external" href="https://pypi.python.org/pypi/pypiwin32/219">pypiwin32</a> Python extension for Windows.
-The latter is installed automatically if you install <cite>PyInstaller</cite> using pip.
-The <a class="reference external" href="https://sites.google.com/site/pydatalog/python/pip-for-windows">pip-Win</a> package is recommended, but not required.</p>
+<p><cite>PyInstaller</cite> requires the <a class="reference external" href="http://sourceforge.net/projects/pywin32/files/">PyWin32</a> or <a class="reference external" href="https://pypi.python.org/pypi/pypiwin32/219">pypiwin32</a> Python extension for Windows.
+If you install <cite>PyInstaller</cite> using pip, and PyWin32 is not found,
+pypiwin32 is automatically installed.</p>
+<p>The <a class="reference external" href="https://sites.google.com/site/pydatalog/python/pip-for-windows">pip-Win</a> package is also recommended but not required.</p>
 </div>
 <div class="section" id="mac-os-x">
 <h2><a class="toc-backref" href="#id6">Mac&nbsp;OS&nbsp;X</a></h2>
@@ -236,7 +239,7 @@ them under GPL terms.</li>
 </ol>
 </blockquote>
 <p>For updated information or clarification see our
-<a class="reference external" href="http://www.pyinstaller.org/wiki/FAQ">FAQ</a> at the <a class="reference external" href="http://www.pyinstaller.org">PyInstaller</a> home page.</p>
+<a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/FAQ">FAQ</a> at the <a class="reference external" href="http://www.pyinstaller.org">PyInstaller</a> home page.</p>
 </div>
 <div class="section" id="how-to-contribute">
 <h1><a class="toc-backref" href="#id10">How To Contribute</a></h1>
@@ -252,7 +255,7 @@ as well as tested hooks for installing other packages.</p>
 <h1><a class="toc-backref" href="#id11">How to Install <cite>PyInstaller</cite></a></h1>
 <p><cite>PyInstaller</cite> is a normal Python package.
 You can download the archive from <a class="reference external" href="https://pypi.python.org/pypi/PyInstaller/">PyPi</a>,
-but it is easier to install using <a class="reference external" href="http://www.pip-installer.org/">pip</a> where <a class="reference external" href="http://www.pip-installer.org/">pip</a> is available,
+but it is easier to install using <a class="reference external" href="http://www.pip-installer.org/">pip</a> where is is available,
 for example:</p>
 <pre class="literal-block">
 pip install pyinstaller
@@ -309,7 +312,7 @@ than when they attempt to install major packages individually.</p>
 <p>If pip is not available, download the compressed archive from <a class="reference external" href="https://pypi.python.org/pypi/PyInstaller/">PyPI</a>.
 If you are asked to test a problem using the latest development code,
 download the compressed archive from the <em>develop</em> branch of
-<a class="reference external" href="https://github.com/pyinstaller/pyinstaller">PyInstaller at GitHub</a>.</p>
+<a class="reference external" href="https://github.com/pyinstaller/pyinstaller/releases">PyInstaller Downloads</a> page.</p>
 <p>Expand the archive.
 Inside is a script named <tt class="docutils literal">setup.py</tt>.
 Execute <tt class="docutils literal">python setup.py install</tt>
@@ -327,7 +330,7 @@ execution path. To verify this, enter the command</p>
 <blockquote>
 <tt class="docutils literal">pyinstaller <span class="pre">--version</span></tt></blockquote>
 <p>The result should resemble <tt class="docutils literal">3.n</tt> for a released version,
-and <tt class="docutils literal"><span class="pre">3.ndev-xxxxxx</span></tt> for a development branch.</p>
+and <tt class="docutils literal"><span class="pre">3.n.dev0-xxxxxx</span></tt> for a development branch.</p>
 <p>If the command is not found, make sure the execution path includes
 the proper directory:</p>
 <ul class="simple">
@@ -335,7 +338,8 @@ the proper directory:</p>
 major and minor Python verysion number,
 for example <tt class="docutils literal"><span class="pre">C:\Python34\Scripts</span></tt> for Python 3.4)</li>
 <li>Linux: <tt class="docutils literal">/usr/bin/</tt></li>
-<li>OS X (using the default Apple-supplied Python) <tt class="docutils literal">/usr/local/bin</tt></li>
+<li>OS X (using the default Apple-supplied Python) <tt class="docutils literal">/usr/bin</tt></li>
+<li>OS X (using Python installed by homebrew) <tt class="docutils literal">/usr/local/bin</tt></li>
 <li>OS X (using Python installed by macports) <tt class="docutils literal">/opt/local/bin</tt></li>
 </ul>
 <p>To display the current path in Windows the command is <tt class="docutils literal">echo %path%</tt>
@@ -424,7 +428,7 @@ the egg and its dependencies to the set of needed files.</p>
 including the GUI packages
 <a class="reference external" href="http://www.qt-project.org">Qt</a> (imported via <a class="reference external" href="http://www.riverbankcomputing.co.uk/software/pyqt/intro">PyQt</a> or <a class="reference external" href="http://qt-project.org/wiki/About-PySide">PySide</a>), <a class="reference external" href="http://www.wxpython.org/">WxPython</a>, <a class="reference external" href="http://wiki.python.org/moin/TkInter">TkInter</a>, <a class="reference external" href="https://www.djangoproject.com/">Django</a>,
 and other major packages.
-(For a complete list of supported packages see LINK HERE)</p>
+For a complete list, see <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages">Supported Packages</a>.</p>
 <p>Some Python scripts import modules in ways that <cite>PyInstaller</cite> cannot detect:
 for example, by using the <tt class="docutils literal">__import__()</tt> function with variable data,
 or manipulating the <tt class="docutils literal">sys.path</tt> value at run time.
@@ -444,7 +448,7 @@ you can contribute your hook file to <cite>PyInstaller</cite>.</li>
 <p>If your program depends on access to certain data files,
 you can tell <cite>PyInstaller</cite> to include them in the bundle as well.
 You do this by modifying the spec file, an advanced topic that is
-covered under <a class="reference internal" href="#using-spec-files">Using Spec Files</a>. (LINK TARGET TO CHANGE).</p>
+covered under <a class="reference internal" href="#using-spec-files">Using Spec Files</a>.</p>
 <p>In order to locate included files at run time,
 your program needs to be able to learn its path at run time
 in a way that works regardless of
@@ -653,14 +657,12 @@ After you do this, you name the spec file to <cite>PyInstaller</cite> instead of
 <td>Show program version info and exit.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">--distpath=<var>DIR</var></span></kbd></td>
-<td>Where to put the bundled app (default: /Developer/PYIN
-STALLERWORK/pyinstaller/doc/source/dist)</td></tr>
+<td>Where to put the bundled app (default: ./dist)</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--workpath=<var>WORKPATH</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Where to put all the temporary work files, .log, .pyz
-and etc. (default: /Developer/PYINSTALLERWORK/pyinstal
-ler/doc/source/build)</td></tr>
+and etc. (default: ./build)</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">-y</span>, <span class="option">--noconfirm</span></kbd></td>
 </tr>
@@ -843,8 +845,33 @@ work with Remote Desktop.</td></tr>
 </tbody>
 </table>
 </div>
+<div class="section" id="windows-side-by-side-assembly-searching-options-advanced">
+<h3><a class="toc-backref" href="#id33">Windows Side-by-side Assembly searching options (advanced)</a></h3>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--win-private-assemblies</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Any Shared Assemblies bundled into the application
+will be changed into Private Assemblies. This means
+the exact versions of these assemblies will always be
+used, and any newer versions installed on user
+machines at the system level will be ignored.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--win-no-prefer-redirects</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>While searching for Shared or Private Assemblies to
+bundle into the application, PyInstaller will prefer
+not to follow policies that redirect to newer
+versions, and will try to bundle the exact versions of
+the assembly.</td></tr>
+</tbody>
+</table>
+</div>
 <div class="section" id="mac-os-x-specific-options">
-<h3><a class="toc-backref" href="#id33">Mac OS X specific options</a></h3>
+<h3><a class="toc-backref" href="#id34">Mac OS X specific options</a></h3>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
@@ -863,7 +890,7 @@ script's basename)</td></tr>
 </div>
 </div>
 <div class="section" id="shortening-the-command">
-<h2><a class="toc-backref" href="#id34">Shortening the Command</a></h2>
+<h2><a class="toc-backref" href="#id35">Shortening the Command</a></h2>
 <p>Because of its numerous options, a full <tt class="docutils literal">pyinstaller</tt> command
 can become very long.
 You will run the same command again and again as you develop
@@ -890,7 +917,7 @@ pyinstaller --noconfirm --log-level=WARN ^
 </pre>
 </div>
 <div class="section" id="using-upx">
-<h2><a class="toc-backref" href="#id35">Using UPX</a></h2>
+<h2><a class="toc-backref" href="#id36">Using UPX</a></h2>
 <p><a class="reference external" href="http://upx.sourceforge.net/">UPX</a> is a free utility available for most operating systems.
 UPX compresses executable files and libraries, making them smaller,
 sometimes much smaller.
@@ -921,7 +948,7 @@ unless the <tt class="docutils literal"><span class="pre">--noupx</span></tt> op
 UPX has been used with <cite>PyInstaller</cite> output often, usually with no problems.</p>
 </div>
 <div class="section" id="encrypting-python-bytecode">
-<h2><a class="toc-backref" href="#id36">Encrypting Python Bytecode</a></h2>
+<h2><a class="toc-backref" href="#id37">Encrypting Python Bytecode</a></h2>
 <p>To encrypt the Python bytecode modules stored in the bundle,
 pass the <tt class="docutils literal"><span class="pre">--key=</span></tt><em>key-string</em>  argument on
 the command line.</p>
@@ -932,12 +959,12 @@ encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.</p>
 </div>
 <div class="section" id="supporting-multiple-platforms">
-<h2><a class="toc-backref" href="#id37">Supporting Multiple Platforms</a></h2>
+<h2><a class="toc-backref" href="#id38">Supporting Multiple Platforms</a></h2>
 <p>If you distribute your application for only one combination of OS and Python,
 just install <cite>PyInstaller</cite> like any other package and use it in your
 normal development setup.</p>
 <div class="section" id="supporting-multiple-python-environments">
-<h3><a class="toc-backref" href="#id38">Supporting Multiple Python Environments</a></h3>
+<h3><a class="toc-backref" href="#id39">Supporting Multiple Python Environments</a></h3>
 <p>When you need to bundle your application within one OS
 but for different versions of Python and support libraries -- for example,
 a Python 3 version and a Python 2.7 version;
@@ -963,7 +990,7 @@ especially easy to set up different environments and switch between them.
 Under Linux and Mac OS, you switch environments at the command line.</p>
 </div>
 <div class="section" id="supporting-multiple-operating-systems">
-<h3><a class="toc-backref" href="#id39">Supporting Multiple Operating Systems</a></h3>
+<h3><a class="toc-backref" href="#id40">Supporting Multiple Operating Systems</a></h3>
 <p>If you need to distribute your application for more than one OS,
 for example both Windows and Mac&nbsp;OS&nbsp;X, you must install <cite>PyInstaller</cite>
 on each platform and bundle your app separately on each.</p>
@@ -999,8 +1026,28 @@ using the free <a class="reference external" href="http://www.winehq.org/">Wine<
 Further details are needed, see <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute">How to Contribute</a>.</p>
 </div>
 </div>
+<div class="section" id="making-linux-apps-forward-compatible">
+<h2><a class="toc-backref" href="#id41">Making Linux Apps Forward-Compatible</a></h2>
+<p>Under Linux, <cite>PyInstaller</cite> does not bundle <tt class="docutils literal">libc</tt>
+(the C standard library, usually <tt class="docutils literal">glibc</tt>, the Gnu version) with the app.
+Instead, the app expects to link dynamically to the <tt class="docutils literal">libc</tt> from the
+local OS where it runs.
+The interface between any app and <tt class="docutils literal">libc</tt> is forward compatible to
+newer releases, but it is not backward compatible to older releases.</p>
+<p>For this reason, if you bundle your app on the current version of Linux,
+it may fail to execute (typically with a runtime dynamic link error) if
+it is executed on an older version of Linux.</p>
+<p>The solution is to always build your app on the <em>oldest</em> version of
+Linux you mean to support.
+It should continue to work with the <tt class="docutils literal">libc</tt> found on newer versions.</p>
+<p>The Linux standard libraries such as <tt class="docutils literal">glibc</tt> are distributed in 64-bit
+and 32-bit versions, and these are not compatible.
+As a result you cannot bundle your app on a 32-bit system and run it
+on a 64-bit installation, nor vice-versa.
+You must make a unique version of the app for each word-length supported.</p>
+</div>
 <div class="section" id="capturing-windows-version-data">
-<h2><a class="toc-backref" href="#id40">Capturing Windows Version Data</a></h2>
+<h2><a class="toc-backref" href="#id42">Capturing Windows Version Data</a></h2>
 <p>A Windows app may require a Version resource file.
 A Version resource contains a group of data structures,
 some containing binary integers and some containing strings,
@@ -1063,7 +1110,7 @@ Or you can apply the <tt class="docutils literal">unicode()</tt> function to the
 to reproduce the version text file.</p>
 </div>
 <div class="section" id="building-mac-os-x-app-bundles">
-<h2><a class="toc-backref" href="#id41">Building Mac&nbsp;OS&nbsp;X App Bundles</a></h2>
+<h2><a class="toc-backref" href="#id43">Building Mac&nbsp;OS&nbsp;X App Bundles</a></h2>
 <p>If you specify only <tt class="docutils literal"><span class="pre">--onefile</span></tt> under Mac&nbsp;OS&nbsp;X, the output
 in <tt class="docutils literal">dist</tt> is a UNIX executable
 <tt class="docutils literal">myscript</tt>.
@@ -1094,7 +1141,16 @@ file <tt class="docutils literal"><span class="pre">icon-windowed.icns</span></t
 <p>You can add items to the <tt class="docutils literal">Info.plist</tt> by editing the spec file;
 see <a class="reference internal" href="#spec-file-options-for-a-mac-os-x-bundle">Spec File Options for a Mac&nbsp;OS&nbsp;X Bundle</a> below.</p>
 <div class="section" id="getting-the-opened-document-names">
-<h3><a class="toc-backref" href="#id42">Getting the Opened Document Names</a></h3>
+<h3><a class="toc-backref" href="#id44">Getting the Opened Document Names</a></h3>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">Support for OpenDocument events is broken in <cite>PyInstaller</cite> 3.0
+owing to code changes needed in the bootloader to support current
+versions of Mac&nbsp;OS&nbsp;X.
+Do not attempt to use this feature until it has been fixed.
+If this feature is important to you, follow and comment on
+the status of <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/issues/1309">PyInstaller Issue #1309</a>.</p>
+</div>
 <p>When a user double-clicks a document of a type your application
 supports, or when a user drags a document icon and drops it
 on your application's icon, Mac&nbsp;OS&nbsp;X launches your application
@@ -1115,7 +1171,7 @@ set up the appropriate handlers.</p>
 </div>
 </div>
 <div class="section" id="run-time-operation">
-<h1><a class="toc-backref" href="#id43">Run-time Operation</a></h1>
+<h1><a class="toc-backref" href="#id45">Run-time Operation</a></h1>
 <p>Your app should run in a bundle exactly as it does when run from source.
 However, you might want to learn at run-time
 whether the app is running from source or &quot;frozen&quot; (bundled).</p>
@@ -1161,7 +1217,7 @@ and <tt class="docutils literal">os.path.dirname()</tt> extracts the path to the
 When bundled, <tt class="docutils literal">sys._MEIPASS</tt> provides the path to bundle folder.</p>
 </div>
 <div class="section" id="using-spec-files">
-<h1><a class="toc-backref" href="#id44">Using Spec Files</a></h1>
+<h1><a class="toc-backref" href="#id46">Using Spec Files</a></h1>
 <p>When you execute</p>
 <blockquote>
 <tt class="docutils literal">pyinstaller</tt> <em>options</em>.. <tt class="docutils literal">myscript.py</tt></blockquote>
@@ -1211,7 +1267,7 @@ replaced by the options in the spec file.</p>
 <li>--ascii</li>
 </ul>
 <div class="section" id="spec-file-operation">
-<h2><a class="toc-backref" href="#id45">Spec File Operation</a></h2>
+<h2><a class="toc-backref" href="#id47">Spec File Operation</a></h2>
 <p>After <cite>PyInstaller</cite> creates a spec file,
 or opens a spec file when one is given instead of a script,
 the <tt class="docutils literal">pyinstaller</tt> command executes the spec file as code.
@@ -1259,11 +1315,11 @@ archive. This object creates the executable file.</li>
 to <tt class="docutils literal">EXE</tt>.</p>
 </div>
 <div class="section" id="adding-files-to-the-bundle">
-<h2><a class="toc-backref" href="#id46">Adding Files to the Bundle</a></h2>
+<h2><a class="toc-backref" href="#id48">Adding Files to the Bundle</a></h2>
 <p>To add files to the bundle, you create a list that describes the files
 and supply it to the <tt class="docutils literal">Analysis</tt> call.</p>
 <div class="section" id="adding-data-files">
-<h3><a class="toc-backref" href="#id47">Adding Data Files</a></h3>
+<h3><a class="toc-backref" href="#id49">Adding Data Files</a></h3>
 <p>You provide a list that describes the files
 as the value of the <tt class="docutils literal">datas=</tt> argument to <tt class="docutils literal">Analysis</tt>.
 The list of data files is a list of tuples.
@@ -1313,9 +1369,19 @@ and stored in a folder named <tt class="docutils literal">sfx</tt>.</p>
 tuple, or relative as in the second.
 When it is relative, it is taken as relative to the location of
 the spec file.</p>
+<p>You can also include the entire contents of a folder:</p>
+<pre class="literal-block">
+added_files = [
+         ( '/mygame/data', 'data' ),
+         ( '/mygame/sfx/*.mp3', 'sfx' ),
+         ( 'src/README.txt', 'README' )
+         ]
+</pre>
+<p>All files in <tt class="docutils literal">/mygame/data</tt> will be copied recursively into a folder
+named <tt class="docutils literal">data</tt> in the bundle.</p>
 </div>
 <div class="section" id="adding-binary-files">
-<h3><a class="toc-backref" href="#id48">Adding Binary Files</a></h3>
+<h3><a class="toc-backref" href="#id50">Adding Binary Files</a></h3>
 <p>To add binary files, make a list of tuples that describe the files needed.
 Assign the list of tuples to the <tt class="docutils literal">binaries=</tt> argument of Analysis.</p>
 <p>Normally <cite>PyInstaller</cite> learns about <tt class="docutils literal">.so</tt> and <tt class="docutils literal">.dll</tt> libraries by
@@ -1339,14 +1405,14 @@ a = Analysis(...
 create the list in a separate statement and pass the list by name.</p>
 </div>
 <div class="section" id="advanced-methods-of-adding-files">
-<h3><a class="toc-backref" href="#id49">Advanced Methods of Adding Files</a></h3>
+<h3><a class="toc-backref" href="#id51">Advanced Methods of Adding Files</a></h3>
 <p><cite>PyInstaller</cite> supports a more advanced (and complex) way of adding
 files to the bundle that may be useful for special cases.
 See <a class="reference internal" href="#the-toc-and-tree-classes">The TOC and Tree Classes</a> below.</p>
 </div>
 </div>
 <div class="section" id="giving-run-time-python-options">
-<h2><a class="toc-backref" href="#id50">Giving Run-time Python Options</a></h2>
+<h2><a class="toc-backref" href="#id52">Giving Run-time Python Options</a></h2>
 <p>You can pass command-line options to the Python interpreter.
 The interpreter takes a number of command-line options but only the
 following are supported for a bundled app:</p>
@@ -1379,7 +1445,7 @@ exe = EXE(pyz,
 </pre>
 </div>
 <div class="section" id="spec-file-options-for-a-mac-os-x-bundle">
-<h2><a class="toc-backref" href="#id51">Spec File Options for a Mac&nbsp;OS&nbsp;X Bundle</a></h2>
+<h2><a class="toc-backref" href="#id53">Spec File Options for a Mac&nbsp;OS&nbsp;X Bundle</a></h2>
 <p>When you build a windowed Mac&nbsp;OS&nbsp;X app
 (that is, running in Mac&nbsp;OS&nbsp;X, you specify the <tt class="docutils literal"><span class="pre">--onefile</span> <span class="pre">--windowed</span></tt> options),
 the spec file contains an additional statement to
@@ -1441,7 +1507,14 @@ cp -f Info.plist dist/myscript.app/Contents/Info.plist
 </pre>
 </div>
 <div class="section" id="multipackage-bundles">
-<h2><a class="toc-backref" href="#id52">Multipackage Bundles</a></h2>
+<h2><a class="toc-backref" href="#id54">Multipackage Bundles</a></h2>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">This feature is broken in the <cite>PyInstaller</cite> 3.0 release.
+Do not attempt building multipackage bundles until the feature
+is fixed. If this feature is important to you,
+follow  and comment on <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/issues/1527">PyInstaller Issue #1527</a>.</p>
+</div>
 <p>Some products are made of several different apps,
 each of which might
 depend on a common set of third-party libraries, or share code in other ways.
@@ -1451,13 +1524,14 @@ all its dependencies, because that means storing duplicate copies
 of code and libraries.</p>
 <p>You can use the multipackage feature to bundle a set of executable apps
 so that they share single copies of libraries.
+You can do this with either one-file or one-folder apps.
 Each dependency (a DLL, for example) is packaged only once, in one of the apps.
 Any other apps in the set that depend on that DLL
 have an &quot;external reference&quot; to it, telling them
-to go find that dependency in the executable file of the app that contains it.</p>
+to extract that dependency from the executable file of the app that contains it.</p>
 <p>This saves disk space because each dependency is stored only once.
 However, to follow an external reference takes extra time when an app is starting up.
-Some of the apps in the set will have slightly slower launch times.</p>
+All but one of the apps in the set will have slightly slower launch times.</p>
 <p>The external references between binaries include hard-coded
 paths to the output directory, and cannot be rearranged.
 If you use one-folder mode, you must
@@ -1484,15 +1558,16 @@ MERGE(*args)
 Its variable-length list of arguments consists of
 a list of tuples, each tuple having three elements:</p>
 <ul class="simple">
-<li>The first element is an Analysis object, an instance of class Analysis.</li>
-<li>The second element is the script name (without the <tt class="docutils literal">.py</tt> extension).</li>
+<li>The first element is an Analysis object, an instance of class Analysis,
+as applied to one of the apps.</li>
+<li>The second element is the script name of the analyzed app (without the <tt class="docutils literal">.py</tt> extension).</li>
 <li>The third element is the name for the executable (usually the same as the script).</li>
 </ul>
 <p>MERGE examines the Analysis objects to learn the dependencies of each script.
 It modifies these objects to avoid duplication of libraries and modules.
 As a result the packages generated will be connected.</p>
 <div class="section" id="example-merge-spec-file">
-<h3><a class="toc-backref" href="#id53">Example MERGE spec file</a></h3>
+<h3><a class="toc-backref" href="#id55">Example MERGE spec file</a></h3>
 <p>One way to construct a spec file for a multipackage bundle is to
 first build a spec file for each app in the package.
 Suppose you have a product that comprises three apps named
@@ -1538,7 +1613,8 @@ bar_pyz = PYZ(bar_a.pure)
 bar_exe = EXE(bar_pyz, bar_a.scripts, ... etc.
 bar_coll = COLLECT( bar_exe, bar_a.binaries, bar_a.datas... etc.
 </pre>
-<p>Save the combined spec file as <tt class="docutils literal">foobarzap.spec</tt> and then build it:</p>
+<p>(If you are building one-file apps, there is no <tt class="docutils literal">COLLECT</tt> step.)
+Save the combined spec file as <tt class="docutils literal">foobarzap.spec</tt> and then build it:</p>
 <pre class="literal-block">
 pyi-build foobarzap.spec
 </pre>
@@ -1557,7 +1633,7 @@ You may also need to know and use <a class="reference internal" href="#the-toc-a
 </div>
 </div>
 <div class="section" id="when-things-go-wrong">
-<h1><a class="toc-backref" href="#id54">When Things Go Wrong</a></h1>
+<h1><a class="toc-backref" href="#id56">When Things Go Wrong</a></h1>
 <p>The information above covers most normal uses of <cite>PyInstaller</cite>.
 However, the variations of Python and third-party libraries are
 endless and unpredictable.
@@ -1566,10 +1642,10 @@ It may happen that when you attempt to bundle your app either
 Then please consider the following actions in sequence, before
 asking for technical help.</p>
 <div class="section" id="recipes-and-examples-for-specific-problems">
-<h2><a class="toc-backref" href="#id55">Recipes and Examples for Specific Problems</a></h2>
-<p>The <cite>PyInstaller</cite> <a class="reference external" href="http://www.pyinstaller.org/wiki/FAQ">FAQ</a> page has work-arounds for some common problems.
+<h2><a class="toc-backref" href="#id57">Recipes and Examples for Specific Problems</a></h2>
+<p>The <cite>PyInstaller</cite> <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/FAQ">FAQ</a> page has work-arounds for some common problems.
 Code examples for some advanced uses and some common
-problems are available on our <a class="reference external" href="http://www.pyinstaller.org/wiki/Recipe">Recipe</a> web-page.
+problems are available on our <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/Recipes">PyInstaller Recipes</a> page.
 Some of the recipes there include:</p>
 <ul class="simple">
 <li>A more sophisticated way of collecting data files
@@ -1583,9 +1659,9 @@ Many of these Recipes were contributed by users.
 Please feel free to contribute more recipes!</p>
 </div>
 <div class="section" id="finding-out-what-went-wrong">
-<h2><a class="toc-backref" href="#id56">Finding out What Went Wrong</a></h2>
+<h2><a class="toc-backref" href="#id58">Finding out What Went Wrong</a></h2>
 <div class="section" id="build-time-messages">
-<h3><a class="toc-backref" href="#id57">Build-time Messages</a></h3>
+<h3><a class="toc-backref" href="#id59">Build-time Messages</a></h3>
 <p>When the <tt class="docutils literal">Analysis</tt> step runs, it produces error and warning messages.
 These display after the command line if the <tt class="docutils literal"><span class="pre">--log-level</span></tt> option allows it.
 Analysis also puts messages in a warnings file
@@ -1612,7 +1688,7 @@ that is the time to examine the warning file.
 Then see <a class="reference internal" href="#helping-pyinstaller-find-modules">Helping PyInstaller Find Modules</a> below for how to proceed.</p>
 </div>
 <div class="section" id="build-time-python-errors">
-<h3><a class="toc-backref" href="#id58">Build-Time Python Errors</a></h3>
+<h3><a class="toc-backref" href="#id60">Build-Time Python Errors</a></h3>
 <p><cite>PyInstaller</cite> sometimes terminates by raising a Python exception.
 In most cases the reason is clear from the exception message,
 for example &quot;Your system is not supported&quot;, or &quot;Pyinstaller
@@ -1637,7 +1713,7 @@ try setting the correct path in the environment variable
 <tt class="docutils literal">DYLD_LIBRARY_PATH</tt> in OS X.</p>
 </div>
 <div class="section" id="getting-debug-messages">
-<h3><a class="toc-backref" href="#id59">Getting Debug Messages</a></h3>
+<h3><a class="toc-backref" href="#id61">Getting Debug Messages</a></h3>
 <p>Giving the <tt class="docutils literal"><span class="pre">--debug</span></tt> option causes the bundled executable itself to
 write progress messages when it runs.
 This can be useful during development of a complex package,
@@ -1651,7 +1727,7 @@ For a <tt class="docutils literal"><span class="pre">--windowed</span></tt> Mac 
 Users would find the messages annoying.</p>
 </div>
 <div class="section" id="getting-python-s-verbose-imports">
-<h3><a class="toc-backref" href="#id60">Getting Python's Verbose Imports</a></h3>
+<h3><a class="toc-backref" href="#id62">Getting Python's Verbose Imports</a></h3>
 <p>You can also pass a <tt class="docutils literal"><span class="pre">-v</span></tt> (verbose imports) flag to the embedded Python interpreter
 (see <a class="reference internal" href="#giving-run-time-python-options">Giving Run-time Python Options</a> above).
 This can be extremely useful.
@@ -1664,9 +1740,9 @@ Remember to not use this in the distributed program.</p>
 </div>
 </div>
 <div class="section" id="helping-pyinstaller-find-modules">
-<h2><a class="toc-backref" href="#id61">Helping PyInstaller Find Modules</a></h2>
+<h2><a class="toc-backref" href="#id63">Helping PyInstaller Find Modules</a></h2>
 <div class="section" id="extending-the-path">
-<h3><a class="toc-backref" href="#id62">Extending the Path</a></h3>
+<h3><a class="toc-backref" href="#id64">Extending the Path</a></h3>
 <p>If Analysis recognizes that a module is needed, but cannot find that module,
 it is often because the script is manipulating <tt class="docutils literal">sys.path</tt>.
 The easiest thing to do in this case is to use the <tt class="docutils literal"><span class="pre">--paths=</span></tt> option
@@ -1679,7 +1755,7 @@ pyi-makespec --paths=/path/to/thisdir \
 They will be added to the current <tt class="docutils literal">sys.path</tt> during analysis.</p>
 </div>
 <div class="section" id="listing-hidden-imports">
-<h3><a class="toc-backref" href="#id63">Listing Hidden Imports</a></h3>
+<h3><a class="toc-backref" href="#id65">Listing Hidden Imports</a></h3>
 <p>If Analysis thinks it has found all the imports,
 but the app fails with an import error,
 the problem is a hidden import; that is, an import that is not
@@ -1699,7 +1775,7 @@ or by editing the spec file,
 or with a hook file (see <a class="reference internal" href="#understanding-pyinstaller-hooks">Understanding PyInstaller Hooks</a> below).</p>
 </div>
 <div class="section" id="extending-a-package-s-path">
-<h3><a class="toc-backref" href="#id64">Extending a Package's <tt class="docutils literal">__path__</tt></a></h3>
+<h3><a class="toc-backref" href="#id66">Extending a Package's <tt class="docutils literal">__path__</tt></a></h3>
 <p>Python allows a script to extend the search path used for imports
 through the <tt class="docutils literal">__path__</tt> mechanism.
 Normally, the <tt class="docutils literal">__path__</tt> of an imported module has only one entry,
@@ -1722,7 +1798,7 @@ knows nothing of <tt class="docutils literal"><span class="pre">../win32comext</
 <p>Once in a while, that's not enough.</p>
 </div>
 <div class="section" id="changing-runtime-behavior">
-<h3><a class="toc-backref" href="#id65">Changing Runtime Behavior</a></h3>
+<h3><a class="toc-backref" href="#id67">Changing Runtime Behavior</a></h3>
 <p>More bizarre situations can be accomodated with runtime hooks.
 These are small scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.</p>
@@ -1771,12 +1847,12 @@ django.core.management.find_commands = _find_commands
 </div>
 </div>
 <div class="section" id="getting-the-latest-version">
-<h2><a class="toc-backref" href="#id66">Getting the Latest Version</a></h2>
+<h2><a class="toc-backref" href="#id68">Getting the Latest Version</a></h2>
 <p>If you have some reason to think you have found a bug in <cite>PyInstaller</cite>
 you can try downloading the latest development version.
 This version might have fixes or features that are not yet at <a class="reference external" href="https://pypi.python.org/pypi/PyInstaller/">PyPI</a>.
-Links to download the latest stable version and the latest development
-version are at <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/Community">PyInstaller.org</a>.</p>
+You can download the latest stable version and the latest development
+version from the <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/releases">PyInstaller Downloads</a> page.</p>
 <p>If you have <a class="reference external" href="http://git-scm.com/downloads">Git</a> installed on your development system,
 you can use it together with pip
 to install the latest version of <cite>PyInstaller</cite> directly:</p>
@@ -1785,7 +1861,7 @@ pip install -e git://github.com/pyinstaller/pyinstaller.git#egg=PyInstaller
 </pre>
 </div>
 <div class="section" id="asking-for-help">
-<h2><a class="toc-backref" href="#id67">Asking for Help</a></h2>
+<h2><a class="toc-backref" href="#id69">Asking for Help</a></h2>
 <p>When none of the above suggestions help,
 do ask for assistance on the <a class="reference external" href="https://groups.google.com/forum/#!forum/pyinstaller">PyInstaller Email List</a>.</p>
 <p>Then, if you think it likely that you see a bug in <cite>PyInstaller</cite>,
@@ -1793,14 +1869,14 @@ refer to the <a class="reference external" href="https://github.com/pyinstaller/
 </div>
 </div>
 <div class="section" id="advanced-topics">
-<h1><a class="toc-backref" href="#id68">Advanced Topics</a></h1>
+<h1><a class="toc-backref" href="#id70">Advanced Topics</a></h1>
 <p>The following discussions cover details of <cite>PyInstaller</cite> internal methods.
 You should not need this level of detail for normal use,
 but such details are helpful if you want to investigate
 the <cite>PyInstaller</cite> code and possibly contribute to it,
 as described in <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute">How to Contribute</a>.</p>
 <div class="section" id="the-bootstrap-process-in-detail">
-<h2><a class="toc-backref" href="#id69">The Bootstrap Process in Detail</a></h2>
+<h2><a class="toc-backref" href="#id71">The Bootstrap Process in Detail</a></h2>
 <p>There are many steps that must take place before the bundled
 script can begin execution.
 A summary of these steps was given in the Overview
@@ -1809,7 +1885,7 @@ A summary of these steps was given in the Overview
 Here is more detail to help you understand what the bootloader
 does and how to figure out problems.</p>
 <div class="section" id="bootloader">
-<h3><a class="toc-backref" href="#id70">Bootloader</a></h3>
+<h3><a class="toc-backref" href="#id72">Bootloader</a></h3>
 <p>The bootloader prepares everything for running Python code.
 It begins the setup and then returns itself in another process.
 This approach of using two processes allows a lot of flexibility
@@ -1867,7 +1943,7 @@ item in <tt class="docutils literal">sys.path</tt> is a zip file or a directory.
 </ol>
 </div>
 <div class="section" id="python-imports-in-a-bundled-app">
-<h3><a class="toc-backref" href="#id71">Python imports in a bundled app</a></h3>
+<h3><a class="toc-backref" href="#id73">Python imports in a bundled app</a></h3>
 <p><cite>PyInstaller</cite> embeds compiled python code
 (<tt class="docutils literal">.pyc</tt> files) within the executable.
 <cite>PyInstaller</cite> injects its code into the
@@ -1908,13 +1984,13 @@ raise <tt class="docutils literal">ImportError</tt>.</li>
 </div>
 </div>
 <div class="section" id="the-toc-and-tree-classes">
-<h2><a class="toc-backref" href="#id72">The TOC and Tree Classes</a></h2>
+<h2><a class="toc-backref" href="#id74">The TOC and Tree Classes</a></h2>
 <p><cite>PyInstaller</cite> manages lists of files using the <tt class="docutils literal">TOC</tt>
 (Table Of Contents) class.
 It provides the <tt class="docutils literal">Tree</tt> class as a convenient way to build a <tt class="docutils literal">TOC</tt>
 from a folder path.</p>
 <div class="section" id="toc-class-table-of-contents">
-<h3><a class="toc-backref" href="#id73">TOC Class (Table of Contents)</a></h3>
+<h3><a class="toc-backref" href="#id75">TOC Class (Table of Contents)</a></h3>
 <p>Objects of the <tt class="docutils literal">TOC</tt> class are used as input to the classes created in
 a spec file.
 For example, the <tt class="docutils literal">scripts</tt> member of an Analysis object is a TOC
@@ -1988,7 +2064,7 @@ but for the normal case you need to know only three:</p>
 </table>
 </div>
 <div class="section" id="the-tree-class">
-<h3><a class="toc-backref" href="#id74">The Tree Class</a></h3>
+<h3><a class="toc-backref" href="#id76">The Tree Class</a></h3>
 <p>The Tree class is a way of creating a TOC that describes some or all of the
 files within a directory:</p>
 <blockquote>
@@ -2027,7 +2103,7 @@ if you specify a <em>prefix</em>, the <em>name</em> is <em>prefix</em><tt class=
 </div>
 </div>
 <div class="section" id="inspecting-archives">
-<h2><a class="toc-backref" href="#id75">Inspecting Archives</a></h2>
+<h2><a class="toc-backref" href="#id77">Inspecting Archives</a></h2>
 <p>An archive is a file that contains other files,
 for example a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils literal">.jar</tt> file, or a <tt class="docutils literal">.zip</tt> file.
 Two kinds of archives are used in <cite>PyInstaller</cite>.
@@ -2041,7 +2117,7 @@ as well as from Python.
 Both of these derive from a common base class, making it fairly easy to
 create new kinds of archives.</p>
 <div class="section" id="zlibarchive">
-<h3><a class="toc-backref" href="#id76">ZlibArchive</a></h3>
+<h3><a class="toc-backref" href="#id78">ZlibArchive</a></h3>
 <p>A ZlibArchive contains compressed <tt class="docutils literal">.pyc</tt> or <tt class="docutils literal">.pyo</tt> files.
 The <tt class="docutils literal">PYZ</tt> class invocation in a spec file creates a ZlibArchive.</p>
 <p>The table of contents in a ZlibArchive
@@ -2065,7 +2141,7 @@ you can make sense of it.</p>
 <p><img alt="ZlibArchiveImage" src="images/ZlibArchive.png" /></p>
 </div>
 <div class="section" id="carchive">
-<h3><a class="toc-backref" href="#id77">CArchive</a></h3>
+<h3><a class="toc-backref" href="#id79">CArchive</a></h3>
 <p>A CArchive can contain any kind of file.
 It's very much like a <tt class="docutils literal">.zip</tt> file.
 They are easy to create in Python and easy to unpack from C code.
@@ -2094,7 +2170,7 @@ file, seek to the end and 'open' the CArchive.</p>
 <p><img alt="CArchiveImage" src="images/CArchive.png" /></p>
 </div>
 <div class="section" id="using-pyi-archive-viewer">
-<h3><a class="toc-backref" href="#id78">Using pyi-archive_viewer</a></h3>
+<h3><a class="toc-backref" href="#id80">Using pyi-archive_viewer</a></h3>
 <p>Use the <tt class="docutils literal"><span class="pre">pyi-archive_viewer</span></tt> command to inspect any type of archive:</p>
 <blockquote>
 <tt class="docutils literal"><span class="pre">pyi-archive_viewer</span></tt> <em>archivefile</em></blockquote>
@@ -2139,7 +2215,7 @@ If none given, the member is extracted to stdout.</dd>
 </div>
 </div>
 <div class="section" id="inspecting-executables">
-<h2><a class="toc-backref" href="#id79">Inspecting Executables</a></h2>
+<h2><a class="toc-backref" href="#id81">Inspecting Executables</a></h2>
 <p>You can inspect any executable file with <tt class="docutils literal"><span class="pre">pyi-bindepend</span></tt>:</p>
 <blockquote>
 <tt class="docutils literal"><span class="pre">pyi-bindepend</span></tt> <em>executable_or_dynamic_library</em></blockquote>
@@ -2153,11 +2229,12 @@ during Analysis.</p>
 </div>
 </div>
 <div class="section" id="understanding-pyinstaller-hooks">
-<h1><a class="toc-backref" href="#id80">Understanding PyInstaller Hooks</a></h1>
+<h1><a class="toc-backref" href="#id82">Understanding PyInstaller Hooks</a></h1>
 <div class="note">
 <p class="first admonition-title">Note</p>
-<p>THE FOLLOWING IS THE TEXT FROM THE 2.1 MANUAL</p>
-<p class="last">IT NEEDS TO BE REWRITTEN FOR THE NEW HOOKS API</p>
+<p>THE FOLLOWING IS THE TEXT FROM THE 2.1 MANUAL.</p>
+<p>IT NEEDS TO BE REWRITTEN FOR THE NEW HOOKS API OF VERSION 3.0.</p>
+<p class="last">DO NOT ATTEMPT TO BUILD OR EDIT A HOOK BASED ON THIS TEXT.</p>
 </div>
 <p>In summary, a &quot;hook&quot; file tells <cite>PyInstaller</cite> about hidden imports
 called by a particular module.
@@ -2187,7 +2264,7 @@ the command could be simply</p>
 <p>If you successfully hook a publicly distributed module in this way,
 please send us the hook file so we can make it available to others.</p>
 <div class="section" id="hooks-in-detail">
-<h2><a class="toc-backref" href="#id81">Hooks in Detail</a></h2>
+<h2><a class="toc-backref" href="#id83">Hooks in Detail</a></h2>
 <p>A hook is a module named
 <tt class="docutils literal">hook-</tt> <em>fully.qualified.import.name</em> <tt class="docutils literal">.py</tt> in the
 <tt class="docutils literal">hooks</tt> folder of the <cite>PyInstaller</cite> folder
@@ -2225,7 +2302,7 @@ hiddenimports = collect_submodules('package')
 </pre>
 <p>For an example see <tt class="docutils literal"><span class="pre">hook-docutils.py</span></tt> in the hooks folder.</p>
 <p class="last">Note: We suggest always using the fully qualified name
-<tt class="docutils literal">PyInstaller.utils.hooks</tt> for importing hookutils. This
+<tt class="docutils literal">PyInstaller.utils.hooks</tt> for importing the hook utilities. This
 avoids some pitfalls when implementing hooks for sub-modules.</p>
 </dd>
 <dt><tt class="docutils literal">datas</tt></dt>
@@ -2299,7 +2376,7 @@ See <tt class="docutils literal"><span class="pre">hook-win32com.py</span></tt> 
 </div>
 </div>
 <div class="section" id="building-the-bootloader">
-<h1><a class="toc-backref" href="#id82">Building the Bootloader</a></h1>
+<h1><a class="toc-backref" href="#id84">Building the Bootloader</a></h1>
 <p>PyInstaller comes with binary bootloaders for most platforms in
 the <tt class="docutils literal">bootloader</tt> folder of the distribution folder.
 For most cases, these precompiled bootloaders are all you need.</p>
@@ -2310,12 +2387,21 @@ you need to build the bootloader.</p>
 <ul class="simple">
 <li><tt class="docutils literal">cd</tt> into the distribution folder.</li>
 <li><tt class="docutils literal">cd bootloader</tt>.</li>
-<li>Make a bootloader with: <tt class="docutils literal">python ./waf configure build install</tt>.</li>
+<li>Make the bootloader with: <tt class="docutils literal">python ./waf distclean all</tt>.</li>
 </ul>
-<p>If this reports an error, read <a class="reference internal" href="#building-the-bootloader">Building the Bootloader</a> below,
+<p>This will produce the bootloader executables,</p>
+<ul class="simple">
+<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/run</tt>,</li>
+<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/run_d</tt></li>
+<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/runw</tt> and</li>
+<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/runw_d</tt></li>
+</ul>
+<p><em>Note:</em> If you have multiple versions of Python, the Python you use to run
+<tt class="docutils literal">waf</tt> is the one whose configuration is used.</p>
+<p>If this reports an error, read the detailed notes that follow,
 then ask for technical help.</p>
 <div class="section" id="development-tools">
-<h2><a class="toc-backref" href="#id83">Development tools</a></h2>
+<h2><a class="toc-backref" href="#id85">Development tools</a></h2>
 <p>On Debian/Ubuntu systems, you can run the following to
 install everything required:</p>
 <pre class="literal-block">
@@ -2329,52 +2415,40 @@ yum groupinstall &quot;Development Tools&quot;
 <p>On Mac&nbsp;OS&nbsp;X you can get gcc by installing <a class="reference external" href="http://developer.apple.com/xcode">Xcode</a>. It is a suite of tools
 for developing software for Mac&nbsp;OS&nbsp;X. It can be also installed from your
 Mac&nbsp;OS&nbsp;X Install DVD. It is not necessary to install the version 4 of Xcode.</p>
-<p>On Solaris and AIX the bootloader is tested with gcc.</p>
+<p>On Solaris and AIX the bootloader is built and tested with gcc.</p>
+</div>
+<div class="section" id="building-for-windows">
+<h2><a class="toc-backref" href="#id86">Building for Windows</a></h2>
 <p>On Windows you can use the Visual Studio C++ compiler
 (Visual Studio 2008 is recommended).
 A free version you can download is <a class="reference external" href="http://www.microsoft.com/express/">Visual Studio Express</a>.</p>
-<p><em>Note:</em> There is no connection between the Visual Studio
-version used to compile the bootloader and the Visual Studio version used to
-compile Python. The bootloader is a self-contained static executable
-that imposes no restrictions on the version of Python being used. So
-you can use any Visual Studio version you have around.</p>
-<p>You can download and install or unpack MinGW distribution from one of the
+<p><em>Note:</em> When compiling libs to link with Python it is important
+to use the same level of Visual Studio as was used to compile Python.
+<em>That is not the case here</em>. The bootloader is a self-contained static
+executable that imposes no restrictions on the version of Python being used.
+So you can use any Visual Studio version that is convenient.</p>
+<p>If Visual Studio is not convenient,
+you can download and install the MinGW distribution from one of the
 following locations:</p>
 <ul class="simple">
-<li><a class="reference external" href="http://sourceforge.net/downloads/mingw/">MinGW</a> - stable and mature, uses gcc 3.4 as its base</li>
-<li><a class="reference external" href="http://mingw-w64.sourceforge.net/">MinGW-w64</a> - more recent, uses gcc 4.4 and up.</li>
-<li><a class="reference external" href="http://tdm-gcc.tdragon.net/">TDM-GCC</a> - MinGW and MinGW-w64 installers</li>
+<li><a class="reference external" href="http://mingw-w64.sourceforge.net/">MinGW-w64</a> required, uses gcc 4.4 and up.</li>
+<li><a class="reference external" href="http://tdm-gcc.tdragon.net/">TDM-GCC</a> - MinGW (not used) and MinGW-w64 installers</li>
 </ul>
-</div>
-<div class="section" id="building-for-windows">
-<h2><a class="toc-backref" href="#id84">Building for Windows</a></h2>
-<p>On Windows, when using MinGW, it is needed to add <tt class="docutils literal">PATH_TO_MINGW\bin</tt>
-to your system <tt class="docutils literal">PATH</tt>. variable. In command prompt before building
+<p>On Windows, when using MinGW-w64, add <tt class="docutils literal">PATH_TO_MINGW\bin</tt>
+to your system <tt class="docutils literal">PATH</tt>. variable. Before building the
 bootloader run for example:</p>
 <pre class="literal-block">
 set PATH=C:\MinGW\bin;%PATH%
 </pre>
 <p>Change to the <tt class="docutils literal">bootloader</tt> subdirectory. Run:</p>
 <pre class="literal-block">
-python ./waf configure build install
+python ./waf distclean all
 </pre>
-<p>This will produce</p>
-<ul class="simple">
-<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/run</tt>,</li>
-<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/run_d</tt></li>
-<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/runw</tt> and</li>
-<li><tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS/runw_d</tt></li>
-</ul>
-<p>which are the bootloaders.</p>
-<p>On Windows this will produce in the <tt class="docutils literal">./PyInstaller/bootloader/YOUR_OS</tt> directory:
-<tt class="docutils literal"><span class="pre">run*.exe</span></tt> (bootloader for regular programs), and
-<tt class="docutils literal"><span class="pre">inprocsrvr*.dll</span></tt> (bootloader for in-process COM servers).</p>
-<p><em>Note:</em> If you have multiple versions of Python, the Python you use to run
-<tt class="docutils literal">waf</tt> is the one whose configuration is used.</p>
-<p><em>Note:</em> On AIX the bootloader builds with gcc and is tested with gcc 4.2.0 on AIX 6.1.</p>
+<p>This will produce the bootloader executables <tt class="docutils literal"><span class="pre">run*.exe</span></tt>
+in the <tt class="docutils literal">.\PyInstaller\bootloader\YOUR_OS</tt> directory.</p>
 </div>
 <div class="section" id="building-for-linux">
-<h2><a class="toc-backref" href="#id85">Building for LINUX</a></h2>
+<h2><a class="toc-backref" href="#id87">Building for LINUX</a></h2>
 <p>By default, the bootloaders on Linux are LSB binaries.</p>
 <p>LSB is a set of open standards that should increase compatibility among Linux
 distributions.
@@ -2422,7 +2496,7 @@ python waf configure --no-lsb build install
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2015-09-25 19:25 UTC.
+Generated on: 2015-10-01 14:47 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH PYI-MAKESPEC 1 "" "PyInstaller 2.1.1dev-3607bf4" ""
+.TH PYI-MAKESPEC 1 "" "PyInstaller 3.0.dev8+f1a8933.mod" ""
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -183,6 +183,23 @@ request elevation upon application restart.
 Using this option allows an elevated application to
 work with Remote Desktop.
 .UNINDENT
+.SS Windows Side\-by\-side Assembly searching options (advanced)
+.INDENT 0.0
+.TP
+.B \-\-win\-private\-assemblies
+Any Shared Assemblies bundled into the application
+will be changed into Private Assemblies. This means
+the exact versions of these assemblies will always be
+used, and any newer versions installed on user
+machines at the system level will be ignored.
+.TP
+.B \-\-win\-no\-prefer\-redirects
+While searching for Shared or Private Assemblies to
+bundle into the application, PyInstaller will prefer
+not to follow policies that redirect to newer
+versions, and will try to bundle the exact versions of
+the assembly.
+.UNINDENT
 .SS Mac OS X specific options
 .INDENT 0.0
 .TP
@@ -194,6 +211,21 @@ notation. For example:
 com.mycompany.department.appname (default: first
 script\(aqs basename)
 .UNINDENT
+.SH ENVIRONMENT VARIABLES
+.TS
+center;
+|l|l|.
+_
+T{
+PYINSTALLER_CONFIG_DIR
+T}	T{
+This changes the directory where PyInstaller caches some
+files. The default location for this is operating system
+dependent, but is typically a subdirectory of the home
+directory.
+T}
+_
+.TE
 .SH SEE ALSO
 .sp
 \fBpyi\-build\fP(1), The PyInstaller Manual, \fBpyinstaller\fP(1)

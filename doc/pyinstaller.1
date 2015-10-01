@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH PYINSTALLER 1 "" "PyInstaller 2.1.1dev-3607bf4" ""
+.TH PYINSTALLER 1 "" "PyInstaller 3.0.dev8+f1a8933.mod" ""
 .SH NAME
 pyinstaller \- Configure and build y PyInstaller project in one run
 .
@@ -52,13 +52,11 @@ show this help message and exit
 Show program version info and exit.
 .TP
 .BI \-\-distpath\fB= DIR
-Where to put the bundled app (default: /home/hartmut/p
-rojekte/software/pyinstaller/doc/source/dist)
+Where to put the bundled app (default: ./dist)
 .TP
 .BI \-\-workpath\fB= WORKPATH
 Where to put all the temporary work files, .log, .pyz
-and etc. (default: /home/hartmut/projekte/software/pyi
-nstaller/doc/source/build)
+and etc. (default: ./build)
 .TP
 .B \-y\fP,\fB  \-\-noconfirm
 Replace output directory (default:
@@ -194,6 +192,23 @@ request elevation upon application restart.
 Using this option allows an elevated application to
 work with Remote Desktop.
 .UNINDENT
+.SS Windows Side\-by\-side Assembly searching options (advanced)
+.INDENT 0.0
+.TP
+.B \-\-win\-private\-assemblies
+Any Shared Assemblies bundled into the application
+will be changed into Private Assemblies. This means
+the exact versions of these assemblies will always be
+used, and any newer versions installed on user
+machines at the system level will be ignored.
+.TP
+.B \-\-win\-no\-prefer\-redirects
+While searching for Shared or Private Assemblies to
+bundle into the application, PyInstaller will prefer
+not to follow policies that redirect to newer
+versions, and will try to bundle the exact versions of
+the assembly.
+.UNINDENT
 .SS Mac OS X specific options
 .INDENT 0.0
 .TP
@@ -205,6 +220,21 @@ notation. For example:
 com.mycompany.department.appname (default: first
 script\(aqs basename)
 .UNINDENT
+.SH ENVIRONMENT VARIABLES
+.TS
+center;
+|l|l|.
+_
+T{
+PYINSTALLER_CONFIG_DIR
+T}	T{
+This changes the directory where PyInstaller caches some
+files. The default location for this is operating system
+dependent, but is typically a subdirectory of the home
+directory.
+T}
+_
+.TE
 .SH SEE ALSO
 .sp
 \fBpyi\-configure\fP(1), \fBpyi\-makespec\fP(1), \fBpyi\-build\fP(1), The
