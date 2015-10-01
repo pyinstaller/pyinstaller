@@ -50,6 +50,8 @@ class TOC(compat.UserList):
             logger.info("TOC found a %s, not a tuple", entry)
             raise TypeError("Expected tuple, not %s." % type(entry).__name__)
         name, path, typecode = entry
+        # :todo: remove this special case for `gi_typelibs`. This
+        # should not be handled at such a basic level datastruct.
         if typecode in ["BINARY", "DATA"] and not os.path.dirname(name) == 'gi_typelibs':
             # Normalize the case for binary files and data files only (to avoid duplicates
             # for different cases under Windows). We can't do that for

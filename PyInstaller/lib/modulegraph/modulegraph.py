@@ -1718,7 +1718,14 @@ class ModuleGraph(ObjectGraph):
 
         try:
             for search_dir in search_dirs:
-                # TODO: Unclear why this is needed. It really shouldn't be.
+                # FIXME: Unclear why this is needed. It really shouldn't be.
+                #  Needed since for a module within a package the search_dir
+                #  is set to the modules filename. This is true at least for
+                #  the __init__.py. Each import of a packet comes here twice:
+                #  First to disvocer the PKG_DIRECTORY, then to load the
+                #  __init__file. Possible solution: in _find_module, if
+                #  parent is not None, use the parents path.
+                #
                 # If this search directory is not a directory, assume the
                 # caller intended to search this file's parent directory.
                 if not os.path.isdir(search_dir):
