@@ -15,7 +15,6 @@ doc: html pdf man cleanlogs
 	@echo "Documentation generated: Please see ../*.html, ../*.pdf and ../*.1 for files"
 
 manpages := pyinstaller pyi-makespec
-#manpages := pyinstaller pyi-makespec pyi-build pyi-make_comserver
 
 html: ../Manual.html $(foreach manpage,${manpages},../${manpage}.html)
 pdf: ../Manual.pdf
@@ -30,8 +29,6 @@ man: $(foreach manpage,${manpages},../${manpage}.1)
 Manual.rst: _pyinstaller-options.tmp
 pyinstaller.rst: _pyinstaller-options.tmp
 pyi-makespec.rst: _pyi-makespec-options.tmp
-# pyi-build.rst: _pyi-build-options.tmp
-# pyi-make_comserver.rst: _pyi-make_comserver-options.tmp
 
 _pyinstaller-options.tmp: ../../pyinstaller.py
 	./help2rst $< > $@
@@ -54,7 +51,7 @@ _pyi-%-options.tmp: ../../utils/%.py
 	rm ../_definitions.txt ../_pyinstaller-options.tmp
 
 _definitions.txt:
-	@echo Overwritung '_definitions.txt'
+	@echo Writting '_definitions.txt'
 	@echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > $@
 	@echo '' >> $@  # Empty line.
 	@# Append other lines.
@@ -65,7 +62,6 @@ _definitions.txt:
 	@# run `pyinstaller.py -v` to get the version
 	@echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> $@
 	@echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
-	@echo '.. |install_path| replace:: /OBSOLETE-REMOVE/' >> $@
 	@# folder name of package after download and unzip
 	@echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
 	@# how we punctuate boot loader as a proper noun "the bootloader"
@@ -73,20 +69,21 @@ _definitions.txt:
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
-	@echo "make cleanlogs ===> To clean *.log, *.aux, etc. but not the .html or .pdf"
+	@echo "make cleanlogs ===> To clean _definitions.txt, *.log, *.aux, etc. but not the .html or .pdf"
 
 
 cleanall: cleanlogs
 	@# Checkout last commited version to avoid '-mod' postfix in version
 	git checkout --quiet --force -- ../*.pdf ../*.html
 	rm -f ../*.1
-	rm -f _definitions.txt _*-options.tmp
+	rm -f _*-options.tmp
 	@echo "All generated documentation removed."
 
 
 cleanlogs:
 	rm -f ../*.aux ../*.out ../*.log
 	rm -f .log *.log
+	rm -f _definitions.txt
 	@echo "All logs and aux removed."
 
 #
