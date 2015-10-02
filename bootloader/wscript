@@ -582,9 +582,6 @@ def build(ctx):
         elif sys.platform.startswith('aix'):
             libs = ['DL', 'M']
             staticlibs = ['Z']
-        elif sys.platform.startswith('sun'):
-            libs = ['DL', 'M']
-            staticlibs = ['Z']
 
         if ctx.options.boehmgc:
             libs.append('GC')
