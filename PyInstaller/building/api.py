@@ -392,13 +392,13 @@ class EXE(Target):
 
         # Old .spec format included on Windows in 'name' .exe suffix.
         if is_win or is_cygwin:
-            base_name = os.path.basename(self.name)
             # Append .exe suffix if it is not already there.
-            if not base_name.endswith('.exe'):
-                base_name += '.exe'
-            self.pkgname = os.path.splitext(base_name)[0] + '.pkg'
+            if not self.name.endswith('.exe'):
+                self.name += '.exe'
+            base_name = os.path.splitext(os.path.basename(self.name))[0]
         else:
-            self.pkgname = self.name + '.pkg'
+            base_name = os.path.basename(self.name)
+        self.pkgname = base_name + '.pkg'
 
         self.toc = TOC()
 
