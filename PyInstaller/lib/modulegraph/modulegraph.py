@@ -1644,7 +1644,7 @@ class ModuleGraph(ObjectGraph):
 
             path = self.path
 
-        fp, buf, stuff = self._find_module_path(name, path)
+        fp, buf, stuff = self._find_module_path(fullname, name, path)
         try:
             if buf:
                 buf = os.path.realpath(buf)
@@ -1654,7 +1654,7 @@ class ModuleGraph(ObjectGraph):
             fp.close()
             raise
 
-    def _find_module_path(self, module_name, search_dirs):
+    def _find_module_path(self, fullname, module_name, search_dirs):
         """
         Get a 3-tuple detailing the physical location of the module with the
         passed name if that module exists _or_ raise `ImportError` otherwise.
@@ -1697,7 +1697,7 @@ class ModuleGraph(ObjectGraph):
         ImportError
             If this module is _not_ found.
         """
-        self.msgin(4, "_find_module_path <-", module_name, search_dirs)
+        self.msgin(4, "_find_module_path <-", fullname, search_dirs)
 
         # TODO: Under:
         #
@@ -1718,7 +1718,14 @@ class ModuleGraph(ObjectGraph):
 
         try:
             for search_dir in search_dirs:
-                # TODO: Unclear why this is needed. It really shouldn't be.
+                # FIXME: Unclear why this is needed. It really shouldn't be.
+                #  Needed since for a module within a package the search_dir
+                #  is set to the modules filename. This is true at least for
+                #  the __init__.py. Each import of a packet comes here twice:
+                #  First to disvocer the PKG_DIRECTORY, then to load the
+                #  __init__file. Possible solution: in _find_module, if
+                #  parent is not None, use the parents path.
+                #
                 # If this search directory is not a directory, assume the
                 # caller intended to search this file's parent directory.
                 if not os.path.isdir(search_dir):

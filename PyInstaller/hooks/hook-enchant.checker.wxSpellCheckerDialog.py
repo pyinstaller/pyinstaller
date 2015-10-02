@@ -15,8 +15,7 @@
 """
 
 # TODO find better workaround
-def hook(mod):
+def hook(hook_api):
     # Workaround DOES NOT work with well with python 2.6
     # let's just disable it
     #return None
-    return mod

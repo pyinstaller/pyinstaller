@@ -10,11 +10,10 @@
 
 import sys
 
-def hook(mod):
+def pre_find_module_path(hook_api):
     # Forbid imports in the port_v2 directory under Python 3
     # The code wouldn't import and would crash the build process.
     if sys.hexversion >= 0x03000000:
-        mod.__path__ = []
-    return mod
+        hook_api.search_dirs = []
 
 

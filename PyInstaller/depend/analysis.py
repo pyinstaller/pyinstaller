@@ -203,7 +203,7 @@ class PyiModuleGraph(ModuleGraph):
         return super(PyiModuleGraph, self)._safe_import_module(
             module_basename, module_name, parent_package)
 
-    def _find_module_path(self, module_name, search_dirs):
+    def _find_module_path(self, fullname, module_name, search_dirs):
         """
         Get a 3-tuple detailing the physical location of the module with the
         passed name if that module exists _or_ raise `ImportError` otherwise.
@@ -217,18 +217,18 @@ class PyiModuleGraph(ModuleGraph):
         See superclass method for parameter and return value descriptions.
         """
         # If this module has pre-find module path hooks, run these first.
-        if module_name in self._hooks_pre_find_module_path:
+        if fullname in self._hooks_pre_find_module_path:
             # For the absolute path of each such hook...
-            for hook_file in self._hooks_pre_find_module_path[module_name]:
+            for hook_file in self._hooks_pre_find_module_path[fullname]:
                 # Dynamically import this hook as a fabricated module.
-                logger.info('Processing pre-find module path hook   %s', module_name)
-                hook_module_name = 'PyInstaller_hooks_pre_find_module_path_' + module_name.replace('.', '_')
-                hook_module = importlib_load_source(hook_module_name, hook_file)
+                logger.info('Processing pre-find module path hook   %s', fullname)
+                hook_fullname = 'PyInstaller_hooks_pre_find_module_path_' + fullname.replace('.', '_')
+                hook_module = importlib_load_source(hook_fullname, hook_file)
 
                 # Object communicating changes made by this hook back to us.
                 hook_api = PreFindModulePathAPI(
                     module_graph=self,
-                    module_name=module_name,
+                    module_name=fullname,
                     search_dirs=search_dirs,
                 )
 
@@ -241,11 +241,11 @@ class PyiModuleGraph(ModuleGraph):
                 search_dirs = hook_api.search_dirs
 
             # Prevent subsequent calls from rerunning these hooks.
-            del self._hooks_pre_find_module_path[module_name]
+            del self._hooks_pre_find_module_path[fullname]
 
         # Call the superclass method.
         return super(PyiModuleGraph, self)._find_module_path(
-            module_name, search_dirs)
+            fullname, module_name, search_dirs)
 
     def get_code_objects(self):
         """

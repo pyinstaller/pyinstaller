@@ -18,6 +18,7 @@ modifications into appropriate operations on the current `PyiModuleGraph`
 instance, thus modifying which modules will be frozen into the executable.
 """
 
+from .datastruct import TOC
 
 class PreSafeImportModuleAPI(object):
     """
@@ -213,7 +214,7 @@ class PostGraphAPI(object):
     corresponding public methods instead:
 
     _added_datas : list
-        List of the `(name, path, 'DATA')` 3-tuples or TOC objects of all
+        List of the `(name, path)` 2-tuples or TOC objects of all
         external data files required by the current hook, defaulting to the
         empty list. This is equivalent to the global `datas` hook attribute.
     _added_imports : list
@@ -221,7 +222,7 @@ class PostGraphAPI(object):
         hook, defaulting to the empty list. This is equivalent to the global
         `hiddenimports` hook attribute.
     _added_binaries : list
-        List of the `(name, path, 'BINARY')` 3-tuples or TOC objects of all
+        List of the `(name, path)` 2-tuples or TOC objects of all
         external C extensions imported by the current hook, defaulting to the
         empty list. This is equivalent to the global
         `binaries` hook attribute.
@@ -322,7 +323,7 @@ class PostGraphAPI(object):
         """
         return self.module_graph.flatten(start=self.module)
 
-    def add_import(self, module_names):
+    def add_imports(self, module_names):
         """
         Add all Python modules whose fully-qualified names are in the passed
         list as "hidden imports" upon which the current module depends.
@@ -339,7 +340,7 @@ class PostGraphAPI(object):
         # Append such names to the current list of all such names.
         self._added_imports.extend(module_names)
 
-    def del_import(self, module_names):
+    def del_imports(self, module_names):
         """
         Remove all Python modules whose `.`-delimited names are in the passed
         list from the set of imports (either hidden or visible) upon which the
@@ -354,20 +355,31 @@ class PostGraphAPI(object):
             module_names = [module_names]
         self._deleted_imports.extend(module_names)
 
-    def add_binary(self, list_of_tuples):
+    def add_binaries(self, list_of_tuples):
         """
-        Add all external dynamic libraries in the passed list of TOC-style
-        3-tuples as dependencies of the current module.
+        Add all external dynamic libraries in the passed list of
+        `(name, path)` 2-tuples as dependencies of the current module.
+        This is equivalent to adding to the global `binaries` hook
+        attribute.
 
-        The third element of each such tuple *must* be `BINARY`.
+        For convenience, the `list_of_tuples` may also be a single TOC
+        or TREE instance.
         """
-        self._added_binaries.extend(list_of_tuples)
+        if isinstance(list_of_tuples, TOC):
+            self._added_binaries.extend(i[:2] for i in list_of_tuples)
+        else:
+            self._added_binaries.extend(list_of_tuples)
 
-    def add_data(self, list_of_tuples):
+    def add_datas(self, list_of_tuples):
         """
-        Add all external data files in the passed list of TOC-style 3-tuples as
-        dependencies of the current module.
+        Add all external data files in the passed list of `(name,
+        path)` 2-tuples as dependencies of the current module. This is
+        equivalent to adding to the global `datas` hook attribute.
 
-        The third element of each such tuple *must* be `DATA`.
+        For convenience, the `list_of_tuples` may also be a single TOC
+        or TREE instance.
         """
-        self._added_datas.extend(list_of_tuples)
+        if isinstance(list_of_tuples, TOC):
+            self._added_datas.extend(i[:2] for i in list_of_tuples)
+        else:
+            self._added_datas.extend(list_of_tuples)
