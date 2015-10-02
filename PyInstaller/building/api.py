@@ -332,7 +332,8 @@ class EXE(Target):
                 Setting to True gives you progress mesages from the executable
                 (for console=False there will be annoying MessageBoxes on Windows).
             name
-                The filename for the executable.
+                The filename for the executable. On Windows suffix '.exe' is
+                appended.
             exclude_binaries
                 Forwarded to the PKG the EXE builds.
             icon
@@ -389,11 +390,15 @@ class EXE(Target):
             # onefile mode - create executable in DISTPATH.
             self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
 
-        # Base name of the EXE file without .exe suffix.
-        base_name = os.path.basename(self.name)
+        # Old .spec format included on Windows in 'name' .exe suffix.
         if is_win or is_cygwin:
-            base_name = os.path.splitext(base_name)[0]
-        self.pkgname = base_name + '.pkg'
+            base_name = os.path.basename(self.name)
+            # Append .exe suffix if it is not already there.
+            if not base_name.endswith('.exe'):
+                base_name += '.exe'
+            self.pkgname = os.path.splitext(base_name)[0] + '.pkg'
+        else:
+            self.pkgname = self.name + '.pkg'
 
         self.toc = TOC()
 

@@ -33,7 +33,7 @@ exe = EXE(pyz,
           a.binaries,
           a.zipfiles,
           a.datas,
-          name='%(exename)s',
+          name='%(name)s',
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -59,7 +59,7 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='%(exename)s',
+          name='%(name)s',
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
@@ -82,7 +82,7 @@ block_cipher = pyi_crypto.PyiBlockCipher(key=%(key)r)
 """
 
 bundleexetmplt = """app = BUNDLE(exe,
-             name='%(exename)s.app',
+             name='%(name)s.app',
              icon=%(icon)s,
              bundle_identifier=%(bundle_identifier)s)
 """

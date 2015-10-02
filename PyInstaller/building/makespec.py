@@ -23,9 +23,6 @@ from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
 
 logger = logging.getLogger(__name__)
 
-# HACK to be used used in tests
-_EXENAME_FORCED_SUFFIX_ = ''
-
 
 def quote_win_filepath(path):
     # quote all \ with another \ after using normpath to clean up the path
@@ -331,16 +328,6 @@ def main(scripts, name=None, onefile=False,
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,
     }
-
-    if is_win or is_cygwin:
-        d['exename'] = name + '.exe'
-        d['dllname'] = name + '.dll'
-    else:
-        d['exename'] = name
-    if _EXENAME_FORCED_SUFFIX_:
-        # HACK to be used used in tests
-        d['exename'] = name + _EXENAME_FORCED_SUFFIX_
-        # but keep the dll name on windows
 
     # Write down .spec file to filesystem.
     specfnm = os.path.join(specpath, name + '.spec')
