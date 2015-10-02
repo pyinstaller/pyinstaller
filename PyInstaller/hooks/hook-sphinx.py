@@ -10,7 +10,6 @@
 # ********************************************
 # hook-sphinx.py - Pyinstaller hook for Sphinx
 # ********************************************
-from PyInstaller.compat import is_py2
 from PyInstaller.utils.hooks import \
     collect_submodules, collect_data_files, is_module_version
 
@@ -66,16 +65,6 @@ hiddenimports = (
 #
 # Add these two modules.
                   ['inspect', 'locale'] )
-
-# TODO: In theory, we shouldn't need this anymore. PyInstaller now detects "six"
-# imports for both Python 2 and 3. Verify this and remove if true.
-
-# Finally, there are a HUGE number of imports from six that must be manually
-# listed. These will be auto-detected in Python 3, so omit them.
-if is_py2:
-    hiddenimports += ('StringIO', 'cStringIO', 'cPickle', 'itertools',
-                      'UserString', 'urllib', 'urllib2', 'HTMLParser',
-                      'ConfigParser')
 
 # Sphinx also relies on a number of data files in its directory hierarchy: for
 # example, *.html and *.conf files in sphinx.themes, translation files in
