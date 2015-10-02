@@ -391,6 +391,7 @@ def test_gi_gst_binding(pyi_builder):
 
 
 @importorskip('PIL')
+@pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
 def test_pil_img_conversion(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
 
