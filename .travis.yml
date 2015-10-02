@@ -65,4 +65,4 @@ install:
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
-  - py.test -n 5  --exitfirst
+  - py.test -n 5  --maxfail 3
