@@ -34,7 +34,7 @@ exe = EXE(pyz,
           strip=None,
           upx=False,
           # Use console mode or else on Windows the VS() messageboxes will stall pytest.
-          console=False)
+          console=True)
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
