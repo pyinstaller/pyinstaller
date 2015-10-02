@@ -11,8 +11,11 @@
 # This hook was tested with Pillow 2.9.0 (Maintained fork of PIL):
 # https://pypi.python.org/pypi/Pillow
 
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.compat import modname_tkinter
 
-# Include all PIL image plugins - module names containing 'ImagePlugin'.
-# e.g.  PIL.JpegImagePlugin
-hiddenimports = collect_submodules('PIL', pattern='ImagePlugin')
+# Ignore 'FixTk' (Python 2) or tkinter to prevent inclusion of Tcl/Tk library
+# and other GUI libraries.
+# Assume that if people are really using tkinter in their application, they
+# will also import it directly and thus PyInstaller bundles the right GUI
+# library.
+excludedimports = [modname_tkinter, 'FixTk', 'PySide', 'PyQt4', 'PyQt5']
