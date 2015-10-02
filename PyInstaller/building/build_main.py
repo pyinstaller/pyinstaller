@@ -30,7 +30,7 @@ from ..utils.misc import absnormpath
 from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
-from .api import PYZ, EXE, DLL, COLLECT, MERGE
+from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
 from .imphook import AdditionalFilesCache, HooksCache, ImportHook
 from .osx import BUNDLE
@@ -155,6 +155,8 @@ class Analysis(Target):
             if absnormpath(script) in self._old_scripts:
                 logger.warn('Ignoring obsolete auto-added script %s', script)
                 continue
+            # Normalize script path.
+            script = os.path.normpath(script)
             if not os.path.exists(script):
                 raise ValueError("script '%s' not found" % script)
             self.inputs.append(script)
@@ -655,7 +657,6 @@ def build(spec, distpath, workpath, clean_build):
         'Analysis': Analysis,
         'BUNDLE': BUNDLE,
         'COLLECT': COLLECT,
-        'DLL': DLL,
         'EXE': EXE,
         'MERGE': MERGE,
         'PYZ': PYZ,

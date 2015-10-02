@@ -603,33 +603,6 @@ class EXE(Target):
             outf.write(data)
 
 
-class DLL(EXE):
-    # TODO This feature was dropped and I think it could be removed.
-    """
-    On Windows, this provides support for doing in-process COM servers. It is not
-    generalized. However, embedders can follow the same model to build a special
-    purpose process DLL so the Python support in their app is hidden. You will
-    need to write your own dll.
-    """
-
-    def _bootloader_file(self, dummy, dummy_extension):
-        # Return the path to the inprocsrvr-dll
-        # Input parameter `dummy` is ignored, since this is always called
-        # by `EXE.__init__()` with "run"
-        return super(DLL, self)._bootloader_file('inprocsrvr', '.dll')
-
-    def assemble(self):
-        logger.info("Building DLL %s", self.tocbasename)
-        outf = open(self.name, 'wb')
-        dll = self.exefiles[0][1]  # pathname of inprocsrvr-dll
-        if not os.path.exists(dll):
-            raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
-        self.copy(dll, outf)
-        self.copy(self.pkg.name, outf)
-        outf.close()
-        os.chmod(self.name, 0o755)
-
-
 class COLLECT(Target):
     """
     In one-dir mode creates the output folder with all necessary files.
