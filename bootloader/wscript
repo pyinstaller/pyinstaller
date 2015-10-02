@@ -39,7 +39,7 @@ is_darwin = platform.system() == 'Darwin'
 is_linux = platform.system() == 'Linux'
 is_freebsd = sys.platform.startswith('freebsd')
 # TODO find out proper value for AIX/Solaris
-is_solar = platform.system() == 'Solaris'
+is_solar = platform.system() in ['Solaris', 'SunOS']
 is_aix = platform.system() == 'AIX'
 
 
