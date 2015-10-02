@@ -9,7 +9,7 @@
 
 
 from PyInstaller.lib.modulegraph.modulegraph import RuntimeModule
-import PyInstaller.utils.hooks as hookutils
+from PyInstaller.utils.hooks import eval_statement
 
 
 def pre_safe_import_module(api):
@@ -33,7 +33,7 @@ def pre_safe_import_module(api):
     """
     # Dictionary from conventional module names to "six.moves" attribute names
     # (e.g., from `tkinter.tix` to `six.moves.tkinter_tix`).
-    real_to_six_module_name = hookutils.eval_statement(
+    real_to_six_module_name = eval_statement(
 '''
 import six
 print('{')
@@ -42,11 +42,12 @@ print('{')
 # "six._importer.known_modules" dictionary, as "urllib"-specific moved modules
 # are overwritten in the latter with unhelpful "LazyModule" objects.
 for moved_module in six._moved_attributes:
-    # If this is a moved attribute rather than module, skip to the next object.
-    if not isinstance(moved_module, six.MovedModule):
-        continue
-    print('  %s: %s,' % (
-        repr(moved_module.mod), repr('six.moves.' + moved_module.name)))
+    # If this is a moved module or attribute, map the corresponding module. In
+    # the case of moved attributes, the attribute's module is mapped while the
+    # attribute itself is mapped at runtime and hence ignored here.
+    if isinstance(moved_module, (six.MovedModule, six.MovedAttribute)):
+        print('  %r: %r,' % (
+            moved_module.mod, 'six.moves.' + moved_module.name))
 
 print('}')
 ''')
