@@ -5,15 +5,22 @@ Changelog for PyInstaller
 3.0 (unreleased)
 ----------------
 
-- Python 3 support.
-- Initial Python 3.5 support
-- Support restricted only to Python 2.7 and 3.3+
-- (Windows) Bootloader is now built with full Unicode support.
-- (OS X) Executables built with PyInstaller under OS X can now be digitally
+- Python 3 support (3.3 / 3.4 / 3.5).
+- Removed support for Python 2.6 and lower.
+- Full unicode support in the bootloader (TODO issue numbers)
+
+  - (Windows) Python 2.7 apps can now run from paths with non-ASCII characters.
+  - (Windows) Python 2.7 onefile apps can now run for users whose usernames
+    contain non-ASCII characters
+
+- (OSX) Executables built with PyInstaller under OS X can now be digitally
   signed.
-- (Windows) for 32bit bootloader enable flag LARGEADDRESSAWARE that allows
+- (OSX) 32bit precompiled bootloader no longer distributed, only 64bit.
+- (Windows) for 32bit bootloader enabled flag LARGEADDRESSAWARE that allows
   to use 4GB of RAM.
-- (OS X) 32bit precompiled bootloader no longer distributed, only 64bit.
+
+
+
 - Allow override PyInstaller default config directory by environment variable
   PYINSTALLER_CONFIG_DIR.
 - Bootloader debug messages 'LOADER: ...' printed to stderr.
@@ -33,7 +40,10 @@ Changelog for PyInstaller
 
 **Known Issues**
 
-- Apps built with Windows 10 and Python 3.5 may not run on Windows versions earlier than 10. 
+- Apps built with Windows 10 and Python 3.5 may not run on Windows versions
+  earlier than 10. (#1566)
+- Broken multipackage (MERGE) feature (#1527)
+- (OSX) Broken support for OpenDocument events (#1309)
 
 
 2.1 (2013-09-27)
