@@ -39,7 +39,7 @@ is_darwin = platform.system() == 'Darwin'
 is_linux = platform.system() == 'Linux'
 is_freebsd = sys.platform.startswith('freebsd')
 # TODO find out proper value for AIX/Solaris
-is_solar = platform.system() == 'Solaris'
+is_solar = platform.system() in ['Solaris', 'SunOS']
 is_aix = platform.system() == 'AIX'
 
 
@@ -580,9 +580,6 @@ def build(ctx):
             if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
                 libs.append('THR')
         elif sys.platform.startswith('aix'):
-            libs = ['DL', 'M']
-            staticlibs = ['Z']
-        elif sys.platform.startswith('sun'):
             libs = ['DL', 'M']
             staticlibs = ['Z']
 
