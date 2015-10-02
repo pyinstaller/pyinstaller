@@ -29,12 +29,12 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name=app_name + ('.exe' if sys.platform.startswith("win") else ''),
+          name=app_name,
           debug=True,
           strip=None,
           upx=False,
-          # On Windows, use console mode or else the VS() messageboxes will stall pytest.
-          console=True if sys.platform.startswith("win") else False)
+          # Use console mode or else on Windows the VS() messageboxes will stall pytest.
+          console=False)
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
