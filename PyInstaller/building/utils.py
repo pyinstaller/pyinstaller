@@ -240,6 +240,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     if not os.path.exists(os.path.dirname(cachedfile)):
         os.makedirs(os.path.dirname(cachedfile))
     shutil.copy2(fnm, cachedfile)
+    if hasattr(os, 'chflags'):
+        os.chflags(cachedfile, 0)
     os.chmod(cachedfile, 0o755)
 
     if os.path.splitext(fnm.lower())[1] in (".pyd", ".dll"):
