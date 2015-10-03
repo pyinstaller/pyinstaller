@@ -6,32 +6,32 @@ Changelog for PyInstaller
 ----------------
 
 - Python 3 support (3.3 / 3.4 / 3.5).
-- Removed support for Python 2.6 and lower.
-- Full unicode support in the bootloader (TODO issue numbers)
+- Remove support for Python 2.6 and lower.
+- Full unicode support in the bootloader (#824, #1224, #1323, #1340, #1396)
 
-  - (Windows) Python 2.7 apps can now run from paths with non-ASCII characters.
+  - (Windows) Python 2.7 apps can now run from paths with non-ASCII characters
   - (Windows) Python 2.7 onefile apps can now run for users whose usernames
     contain non-ASCII characters
+  - Fix sys.getfilesystemencoding() to return correct values (#446, #885).
 
 - (OSX) Executables built with PyInstaller under OS X can now be digitally
   signed.
 - (OSX) 32bit precompiled bootloader no longer distributed, only 64bit.
-- (Windows) for 32bit bootloader enabled flag LARGEADDRESSAWARE that allows
+- (Windows) for 32bit bootloader enable flag LARGEADDRESSAWARE that allows
   to use 4GB of RAM.
-
-- Add hooks: countrycode, gi, keyring, lensfunpy, mpl_toolkits.basemap, netCDF4, osgeo, patsy, PsychoPy, pycountry, pycparser, PyExcelerate, PyGobject, PyNaCl, PySiDe.QtCore, PySide.QtGui, rawpy, six, SpeechRecognition, u1db, weasyprint, Xlib,
-- Hook fixes: ctypes, django, pint, PyQt5, PySide, pyusb, sphinx, tkinter, wxPython,
-
-- Use library modulegraph for module dependency analysis.
-- Support including data files from eggs.
-
-- Add FreeBSD support.
-- AIX fixes.
-- Solaris fixes.
-
-
-
+- Add hooks: amazon-product-api, appy, certifi, countrycode, cryptography, gi,
+  httplib2, jsonschema, keyring, lensfunpy, mpl_toolkits.basemap, ncclient,
+  netCDF4, OpenCV, osgeo, patsy, PsychoPy, pycountry, pycparser, PyExcelerate,
+  PyGobject, pymssql, PyNaCl, PySiDe.QtCore, PySide.QtGui, rawpy, requests,
+  scapy, scipy, six, SpeechRecognition, u1db, weasyprint, Xlib.
+- Hook fixes: babel, ctypes, django, IPython, pint, PyEnchant, Pygments, PyQt5,
+  PySide, pyusb, sphinx, sqlalchemy, tkinter, wxPython.
+- Including data files from eggs support.
+- Directory eggs support.
+- Namespace packages support e.g. zope.interface (#502, #615, #665, #1346).
+- pkgutil.extend_path() support.
 - Option --key to obfuscate the Python bytecode.
+- Option --exclude-module to ignore a specific module or package.
 - (Windows) Option --uac-admin to request admin permissions before starting app.
 - (Windows) Option --uac-uiaccess allows an elevated application to work with
   Remote Desktop.
@@ -43,27 +43,34 @@ Changelog for PyInstaller
     prefer not to follow policies that redirect to newer versions.
 
 - (OSX) Option --osx-bundle-identifier to set .app bundle identifier.
+- (Windows) Remove old COM server support.
 - Allow override PyInstaller default config directory by environment variable
   PYINSTALLER_CONFIG_DIR.
+- Add FreeBSD support.
+- AIX fixes.
+- Solaris fixes.
+- Use library modulegraph for module dependency analysis.
 - Bootloader debug messages 'LOADER: ...' printed to stderr.
 - PyInstaller no longer extends sys.path and bundled 3rd-party libraries do not
   interfere with their other versions.
-
 - Attribute 'excludedimports' to exclude Python modules in import hooks.
-- Attribute 'binaries' to bundle dynamic libraries in .spec file and in import hooks.
-- Attribute 'datas' to bundle additional data files in .spec file and in import hooks.
-
+- Attribute 'binaries' to bundle dynamic libraries in .spec file and in import
+  hooks.
+- Attribute 'datas' to bundle additional data files in .spec file and in import
+  hooks.
+- A lot of internal code refactoring.
 - Test suite migrated to pytest framework.
 - Improved testing infrastructure with continuous integration (Travis - Linux,
   Appveyor - Windows)
+- Wiki and bug tracker migrated to github.
   
 
 **Known Issues**
 
 - Apps built with Windows 10 and Python 3.5 may not run on Windows versions
-  earlier than 10. (#1566)
-- Broken multipackage (MERGE) feature (#1527)
-- (OSX) Broken support for OpenDocument events (#1309)
+  earlier than 10 (#1566).
+- Broken multipackage (MERGE) feature (#1527).
+- (OSX) Broken support for OpenDocument events (#1309).
 
 
 2.1 (2013-09-27)

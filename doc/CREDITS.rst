@@ -12,7 +12,7 @@ Contributions to PyInstaller 3.0
 - David Cortesi - Initial work on Python 3 support, Python 3 fixes, documentation updates, various hook fixes.
 - Cecil Curry - 'six' hook for Python 3, various modulegraph improvements, wxPython hook fixes,
 - David Vierra - unicode support in bootloader, Windows SxS Assembly Manifest fixes and many other Windows improvements.
-- Michael Mulley - PyNaCl import hook.
+- Michael Mulley - keyring, PyNaCl import hook.
 - Rainer Dreyer - OS X fixes, hook fixes.
 - Bryan A. Jones - test suite fixes, various hook fixes.
 - Philippe Pepiot - Linux fixes.
@@ -47,6 +47,10 @@ Contributions to PyInstaller 3.0
 - Konstantinos Koukopoulos - FreeBSD support.
 - Jonathan Beezley - PyQt5 import hook fixes.
 - Andraz Vrhovec - various fixes.
+- Noah Treuhaft - OpenCV import hook.
+- Michael Hipp - reportlab import hook.
+- Michael Sverdlik - certifi, httplib2, requests, jsonschema import hooks.
+- Santiago Reig - appy import hook.
 
 
 Contributions to PyInstaller 2.1 and older
