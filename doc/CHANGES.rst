@@ -19,21 +19,31 @@ Changelog for PyInstaller
 - (Windows) for 32bit bootloader enabled flag LARGEADDRESSAWARE that allows
   to use 4GB of RAM.
 
+- Add hooks: gi, mpl_toolkits.basemap, netCDF4, osgeo, pycountry, PyGobject, PyNaCl, PySiDe.QtCore, PySide.QtGui, six, weasyprint,
+- Hook fixes: ctypes, django, pint, PyQt5, PySide, pyusb, wxPython,
+
+- Use library modulegraph for module dependency analysis.
+- Include data files from eggs.
+
+- AIX fixes.
+- FreeBSD fixes.
+- Solaris fixes.
+
+
 
 
 - Allow override PyInstaller default config directory by environment variable
   PYINSTALLER_CONFIG_DIR.
 - Bootloader debug messages 'LOADER: ...' printed to stderr.
 - Option --key to obfuscate the Python bytecode.
-- Use library modulegraph for module dependency analysis.
 - PyInstaller no longer extends sys.path and bundled 3rd-party libraries do not
   interfere with their other versions.
-- Option to exclude Python modules in import hooks. Variable 'excludedimports'
-  can be used in import hook files.
-- Option to bundle dynamic libraries in import hooks. Variable 'binaries'
-  can be used to do so. PyInstaller then also includes these binaries in to the
-  dependency checking for dynamic libraries.
-- Tests migrated to py.test framework.
+
+- Attribute 'excludedimports' to exclude Python modules in import hooks.
+- Attribute 'binaries' to bundle dynamic libraries in .spec file and in import hooks.
+- Attribute 'datas' to bundle additional data files in .spec file and in import hooks.
+
+- Test suite migrated to pytest framework.
 - Improved testing infrastructure with continuous integration (Travis - Linux,
   Appveyor - Windows)
   
