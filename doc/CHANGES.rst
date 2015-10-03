@@ -19,23 +19,33 @@ Changelog for PyInstaller
 - (Windows) for 32bit bootloader enabled flag LARGEADDRESSAWARE that allows
   to use 4GB of RAM.
 
-- Add hooks: gi, mpl_toolkits.basemap, netCDF4, osgeo, pycountry, PyGobject, PyNaCl, PySiDe.QtCore, PySide.QtGui, six, weasyprint,
-- Hook fixes: ctypes, django, pint, PyQt5, PySide, pyusb, wxPython,
+- Add hooks: countrycode, gi, keyring, lensfunpy, mpl_toolkits.basemap, netCDF4, osgeo, patsy, PsychoPy, pycountry, pycparser, PyExcelerate, PyGobject, PyNaCl, PySiDe.QtCore, PySide.QtGui, rawpy, six, SpeechRecognition, u1db, weasyprint, Xlib,
+- Hook fixes: ctypes, django, pint, PyQt5, PySide, pyusb, sphinx, tkinter, wxPython,
 
 - Use library modulegraph for module dependency analysis.
-- Include data files from eggs.
+- Support including data files from eggs.
 
+- Add FreeBSD support.
 - AIX fixes.
-- FreeBSD fixes.
 - Solaris fixes.
 
 
 
+- Option --key to obfuscate the Python bytecode.
+- (Windows) Option --uac-admin to request admin permissions before starting app.
+- (Windows) Option --uac-uiaccess allows an elevated application to work with
+  Remote Desktop.
+- (Windows) Options for Side-by-side Assembly searching:
 
+  - --win-private-assemblies bundled Shared Assemblies into the application will
+    be changed into Private Assemblies
+  - --win-no-prefer-redirects while searching for Assemblies PyInstaller will
+    prefer not to follow policies that redirect to newer versions.
+
+- (OSX) Option --osx-bundle-identifier to set .app bundle identifier.
 - Allow override PyInstaller default config directory by environment variable
   PYINSTALLER_CONFIG_DIR.
 - Bootloader debug messages 'LOADER: ...' printed to stderr.
-- Option --key to obfuscate the Python bytecode.
 - PyInstaller no longer extends sys.path and bundled 3rd-party libraries do not
   interfere with their other versions.
 

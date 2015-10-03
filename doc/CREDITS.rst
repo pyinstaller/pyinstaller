@@ -9,30 +9,49 @@ please let us know if your name is omitted by accident:
 Contributions to PyInstaller 3.0
 --------------------------------
 
-- David Cortesi - Initial work on Python 3 support, documentation updates.
+- David Cortesi - Initial work on Python 3 support, Python 3 fixes, documentation updates, various hook fixes.
 - Cecil Curry - 'six' hook for Python 3, various modulegraph improvements, wxPython hook fixes,
-- David Vierra - unicode support in bootloader, many Windows improvements.
+- David Vierra - unicode support in bootloader, Windows SxS Assembly Manifest fixes and many other Windows improvements.
 - Michael Mulley - PyNaCl import hook.
-- Rainer Dreyer - OS X fixes.
-- Bryan A. Jones - test suite fixes.
+- Rainer Dreyer - OS X fixes, hook fixes.
+- Bryan A. Jones - test suite fixes, various hook fixes.
 - Philippe Pepiot - Linux fixes.
 - Emanuele Bertoldi - pycountry import hook, Django import hook fixes.
-- Glenn Ramsey - PyQt5 import hook - support for QtWebEngine on OSX.
+- Glenn Ramsey - PyQt5 import hook - support for QtWebEngine on OSX, various hook fixes, Windows fixes.
 - Karol Woźniak - import hook fixes.
-- Jonathan Springer - PyGObject hooks. ctypes, PyEnchant hook fixes.
+- Jonathan Springer - PyGObject hooks. ctypes, PyEnchant hook fixes, OS X fixes.
 - Yuu Yamashita - OS X fixes.
 - Thomas Waldmann - FreeBSD fixes.
 - Boris Savelev - FreeBSD and Solaris fixes.
-
-
-
-
+- Guillermo Gutiérrez - Python 3 fixes.
+- Jasper Geurtz - gui fixes, hook fixes.
+- Holger Pandel - Windows fixes.
+- Anthony Zhang - SpeechRecognition import hook.
+- Andrei Fokau - Python 3.5 fixes.
+- Kenneth Zhao - AIX fixes.
+- Maik Riechert - lensfunpy, rawpy import hooks.
+- Tim Stumbaugh - hook fixes.
+- Andrew Leech - Windows fixes.
+- Patrick Robertson - tkinter import hook fixes.
+- Yaron de Leeuw - import hook fixes.
+- Bryan Cort - PsychoPy import hook.
+- Phoebus Veiz - bootloader fixes.
+- Sean Johnston - version fix.
+- Kevin Zhang - PyExcelerate import hook.
+- Paulo Matias - unicode fixes.
+- Lorenzo Villani - crypto feature, various fixes.
+- Janusz Skonieczny - hook fixes.
+- Martin Gamwell Dawids - Solaris fixes.
+- Volodymyr Vitvitskyi - typo fixes.
+- Thomas Kho - django import hook fixes.
+- Konstantinos Koukopoulos - FreeBSD support.
+- Jonathan Beezley - PyQt5 import hook fixes.
+- Andraz Vrhovec - various fixes.
 
 
 Contributions to PyInstaller 2.1 and older
------------------------------------------
+------------------------------------------
 
-- Konstantinos Koukopoulos - FreeBSD support
 - Glenn Ramsey - PyQt5 import hook.
 - David Cortesi - PyInstaller manual rewrite.
 - Vaclav Smilauer - IPython import hook.
@@ -75,4 +94,3 @@ Contributions to PyInstaller 2.1 and older
 - Eugene Prigorodov <eprigorodov at naumen dot ru> - KInterasDB import hook.
 - David C. Morrill - vtkpython import hook.
 - Alan James Salmoni - Tkinter interface to PyInstaller.
-- Kevin Zhang - PyExcelerate import hook.
