@@ -20,5 +20,5 @@ sys.path.insert(0, pyi_home)
 
 
 if __name__ == '__main__':
-    from PyInstaller.cliutils.bindepend import run
+    from PyInstaller.utils.cliutils.bindepend import run
     run()

@@ -19,8 +19,7 @@ from PyInstaller.compat import is_cygwin
 hiddenimports = ['glob']
 
 
-# This method will try to resolve your libusb libraries in the
-# following orders:
+# Try to resolve your libusb libraries in the following order:
 #
 #   libusb-1.0, libusb-0.1, openusb
 #
@@ -34,20 +33,23 @@ libusb_candidates = (
     'openusb',
 )
 
-
-def hook(mod):
-    for candidate in libusb_candidates:
-        libname = ctypes.util.find_library(candidate)
-        if libname is not None:
-            break
-
+for candidate in libusb_candidates:
+    libname = ctypes.util.find_library(candidate)
     if libname is not None:
-        # Use basename here because Python returns full library path
-        # on Mac OSX when using ctypes.util.find_library.
-        bins = [os.path.basename(libname)]
-        mod.binaries.extend(_resolveCtypesImports(bins))
-    elif is_cygwin:
-        bins = ['cygusb-1.0-0.dll', 'cygusb0.dll']
-        mod.binaries.extend(_resolveCtypesImports(bins)[0:1])
+        break
 
-    return mod
+if libname is not None:
+    # Use basename here because Python returns full library path
+    # on Mac OSX when using ctypes.util.find_library.
+    bins = [os.path.basename(libname)]
+    binaries = _resolveCtypesImports(bins)
+elif is_cygwin:
+    bins = ['cygusb-1.0-0.dll', 'cygusb0.dll']
+    binaries = _resolveCtypesImports(bins)[:1]  # use only the first one if any
+else:
+    binaries = []
+if binaries:
+    # `_resolveCtypesImports` returns a 3-tuple, but `binaries` are only
+    # 2-tuples, so remove the last element:
+    assert len(binaries[0]) == 3
+    binaries.pop(2)

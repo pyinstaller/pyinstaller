@@ -8,6 +8,13 @@
 #-----------------------------------------------------------------------------
 
 
-from hookutils import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules
 
-hiddenimports = collect_submodules('sqlite3')
+hiddenimports = []
+
+# On Windows in Python 3.4 'sqlite3' package might contain tests.
+# these tests are not necessary for the final executable.
+for mod in collect_submodules('sqlite3'):
+    if not mod.startswith('sqlite3.test'):
+        hiddenimports.append(mod)
+

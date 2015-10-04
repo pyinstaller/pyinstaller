@@ -1,13 +1,10 @@
 import os
 import sys
 import stat
-import operator
 import struct
 import shutil
 
-#from modulegraph.util import *
-
-from macholib import mach_o
+from PyInstaller.lib.macholib import mach_o
 
 MAGIC = [
     struct.pack('!L', getattr(mach_o, 'MH_' + _))
@@ -75,7 +72,7 @@ class fileview(object):
         if not (self._start <= seekto <= self._end):
             raise IOError("%s to offset %d is outside window [%d, %d]" % (
                 op, seekto, self._start, self._end))
-        
+
     def seek(self, offset, whence=0):
         seekto = offset
         if whence == 0:
@@ -102,7 +99,7 @@ class fileview(object):
         self._checkwindow(here, 'read')
         bytes = min(size, self._end - here)
         return self._fileobj.read(bytes)
-        
+
 
 def mergecopy(src, dest):
     """
@@ -110,6 +107,7 @@ def mergecopy(src, dest):
     """
     if os.path.exists(dest) and os.stat(dest).st_mtime >= os.stat(src).st_mtime:
         return
+
     copy2(src, dest)
 
 def mergetree(src, dst, condition=None, copyfn=mergecopy, srcbase=None):
@@ -213,7 +211,7 @@ def is_platform_file(path):
 def iter_platform_files(dst):
     """
     Walk a directory and yield each full path that is a Mach-O file
-    """ 
+    """
     for root, dirs, files in os.walk(dst):
         for fn in files:
             fn = os.path.join(root, fn)

@@ -1,0 +1,6 @@
+[
+    'getopt',
+    'test_multipackage4',
+    '.*multipackage4_B.multipackage4_B\.exe:.*ssl.*',
+    '(?i).*multipackage4_B.multipackage4_B\.exe:.*python.*',
+]

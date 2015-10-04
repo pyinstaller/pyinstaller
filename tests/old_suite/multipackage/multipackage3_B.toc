@@ -1,0 +1,6 @@
+[
+    'getopt',
+    'multipackage3_B',
+    '.*ssl.*',
+    '(?i).*python.*',
+]

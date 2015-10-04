@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -11,19 +11,14 @@
 import os
 import glob
 
-def hook(mod):
-    global hiddenimports
+from PyInstaller.utils.hooks import get_module_file_attribute
 
-    modpath = mod.__path__[0]
-    hiddenimports = []
+# Compiler (see class BaseDatabaseOperations)
+hiddenimports = ['django.db.models.sql.compiler']
 
-    for fn in glob.glob(os.path.join(modpath, '*')):
-        if os.path.isdir(fn):
-            fn = os.path.basename(fn)
-            hiddenimports.append('django.db.backends.' + fn + '.base')
-
-    # Compiler (see class BaseDatabaseOperations)
-    hiddenimports.append("django.db.models.sql.compiler")
-
-    return mod
-
+# Include all available Django backends.
+modpath = os.path.dirname(get_module_file_attribute('django.db.backends'))
+for fn in glob.glob(os.path.join(modpath, '*')):
+    if os.path.isdir(fn):
+        fn = os.path.basename(fn)
+        hiddenimports.append('django.db.backends.' + fn + '.base')

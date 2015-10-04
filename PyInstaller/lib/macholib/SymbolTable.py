@@ -2,7 +2,7 @@
 Class to read the symbol table from a Mach-O header
 """
 
-from macholib.mach_o import *
+from PyInstaller.lib.macholib.mach_o import *
 
 __all__ = ['SymbolTable']
 

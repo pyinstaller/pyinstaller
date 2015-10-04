@@ -5,8 +5,8 @@ altgraph.GraphUtil - Utility classes and functions
 
 import random
 from collections import deque
-from altgraph import Graph
-from altgraph import GraphError
+from PyInstaller.lib.altgraph import Graph
+from PyInstaller.lib.altgraph import GraphError
 
 def generate_random_graph(node_num, edge_num, self_loops=False, multi_edges=False):
     '''
@@ -101,8 +101,8 @@ def filter_stack(graph, head, filters):
     * removes: the list of nodes where the node
       data does not all *filters*
     * orphans: tuples of (last_good, node),
-      where node is not in removes, is directly 
-      reachable from a node in *removes* and 
+      where node is not in removes, is directly
+      reachable from a node in *removes* and
       *last_good* is the closest upstream node that is not
       in *removes*.
     """

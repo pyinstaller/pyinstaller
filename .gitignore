@@ -3,6 +3,7 @@
 \#*#
 
 *.py[co]
+__pycache__/
 /*.egg
 /*.egg-info/
 /*.egg-link
@@ -22,6 +23,9 @@
 # Temporary rope files
 .ropeproject
 
+# PyCharm settings
+.idea
+
 # /tests/
 /tests/build*
 /tests/dist*
@@ -31,49 +35,52 @@
 /tests/python_exe.build
 /tests/report.xml
 
-/tests/*/build/
-/tests/*/dist/
+/tests/**/build/
+/tests/**/dist/
 
-# ignore generated spec-files
+# Ignore generated spec-files
 # NB: You can still add .spec-files to be tracked using `git add`
-/tests/*/*.spec
+/tests/old_suite/**/*.spec
 
-# /tests/basic/
-/tests/basic/python_exe.build
+# /tests/functional/data
+/tests/functional/data/sphinx/_build
 
-# /tests/basic/ctypes/
-/tests/basic/ctypes/testctypes.dylib
-/tests/basic/ctypes/testctypes.so
-/tests/basic/ctypes/testctypes-win.dll
-/tests/basic/ctypes/testctypes-win.exp
-/tests/basic/ctypes/testctypes-win.obj
-/tests/basic/ctypes/testctypes-win.lib
+# /tests/old_suite/basic/
+/tests/old_suite/basic/python_exe.build
 
-# /tests/libraries/
-/tests/libraries/tinysample.png
-/tests/libraries/test_xml.spec
-/tests/basic/test_absolute_ld_library_path.spec
-/tests/basic/test_absolute_python_path.spec
-/tests/libraries/test_sqlalchemy.spec
+# /tests/old_suite/basic/ctypes/
+/tests/old_suite/basic/ctypes/testctypes.dylib
+/tests/old_suite/basic/ctypes/testctypes.so
+/tests/old_suite/basic/ctypes/testctypes-win.dll
+/tests/old_suite/basic/ctypes/testctypes-win.exp
+/tests/old_suite/basic/ctypes/testctypes-win.obj
+/tests/old_suite/basic/ctypes/testctypes-win.lib
+
+tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
+
+# /tests/old_suite/libraries/
+/tests/old_suite/libraries/tinysample.png
 
 /old/e2etests/common/hanoi[1-9]
 
 # /doc/
-/doc/*.1
 /doc/source/_definitions.txt
+/doc/source/_pyi*.tmp
 
-# /source/
-/source/.lock-wscript
-/source/build
-/source/waf-*
-/source/.waf-*
+# Bootloader source
+/bootloader/.lock-waf*
+/bootloader/.lock-wscript
+/bootloader/build
+/bootloader/waf-*
+/bootloader/waf3-*
+/bootloader/.waf-*
+/bootloader/.waf3-*
 
-# /source/crypto/
-/source/crypto/build
+# Mac OS X
+.DS_store
 
-# /source/linux/
-/source/linux/Makefile
+# Windows debug symbols
+*.pdb
 
-# /support/loader/
-/support/loader/run
-/support/loader/run_d
+# py.test cache folder
+.cache

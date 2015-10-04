@@ -9,7 +9,7 @@
 
 
 import pkg_resources as res
-from pyi_importers import FrozenImporter
+from pyimod03_importers import FrozenImporter
 
 
 # To make pkg_resources work with froze moduels we need to set the 'Provider'

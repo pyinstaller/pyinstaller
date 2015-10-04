@@ -1,0 +1,2 @@
+nspkg2
+nspkg2.bbb

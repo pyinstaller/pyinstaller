@@ -3,19 +3,20 @@ modulegraph.find_modules - High-level module dependency finding interface
 =========================================================================
 
 History
-........ 
+........
 
 Originally (loosely) based on code in py2exe's build_exe.py by Thomas Heller.
 """
+from __future__ import absolute_import
 
 import sys
 import os
 import imp
 import warnings
 
-import modulegraph
-from modulegraph import Alias
-from util import imp_find_module, imp_walk
+from . import modulegraph
+from .modulegraph import Alias, Script, Extension
+from .util import imp_find_module
 
 __all__ = [
     'find_modules', 'parse_mf_results'
@@ -36,6 +37,17 @@ def get_implies():
         "cStringIO":    ["copy_reg"],
         "_sre":         ["copy", "string", "sre"],
         "zipimport":    ["zlib"],
+
+        # Python 3.2:
+        "_datetime":    ["time", "_strptime"],
+        "_json":        ["json.decoder"],
+        "_pickle":      ["codecs", "copyreg", "_compat_pickle"],
+        "_posixsubprocess": ["gc"],
+        "_ssl":         ["socket"],
+
+        # Python 3.3:
+        "_elementtree": ["copy", "xml.etree.ElementPath" ],
+
         # mactoolboxglue can do a bunch more of these
         # that are far harder to predict, these should be tracked
         # manually for now.
@@ -44,7 +56,38 @@ def get_implies():
         "anydbm":       ["dbhash", "gdbm", "dbm", "dumbdbm", "whichdb"],
         # package aliases
         "wxPython.wx":  Alias('wx'),
+
     }
+
+    if sys.version_info[0] == 3:
+        result["_sre"] = ["copy", "re"]
+        result["parser"] = ["copyreg"]
+
+        # _frozen_importlib is part of the interpreter itself
+        result["_frozen_importlib"] = None
+
+    if sys.version_info[0] == 2 and sys.version_info[1] >= 5:
+        result.update({
+            "email.base64MIME":         Alias("email.base64mime"),
+            "email.Charset":            Alias("email.charset"),
+            "email.Encoders":           Alias("email.encoders"),
+            "email.Errors":             Alias("email.errors"),
+            "email.Feedparser":         Alias("email.feedParser"),
+            "email.Generator":          Alias("email.generator"),
+            "email.Header":             Alias("email.header"),
+            "email.Iterators":          Alias("email.iterators"),
+            "email.Message":            Alias("email.message"),
+            "email.Parser":             Alias("email.parser"),
+            "email.quopriMIME":         Alias("email.quoprimime"),
+            "email.Utils":              Alias("email.utils"),
+            "email.MIMEAudio":          Alias("email.mime.audio"),
+            "email.MIMEBase":           Alias("email.mime.base"),
+            "email.MIMEImage":          Alias("email.mime.image"),
+            "email.MIMEMessage":        Alias("email.mime.message"),
+            "email.MIMEMultipart":      Alias("email.mime.multipart"),
+            "email.MIMENonMultipart":   Alias("email.mime.nonmultipart"),
+            "email.MIMEText":           Alias("email.mime.text"),
+        })
 
     if sys.version_info[:2] >= (2, 5):
         result["_elementtree"] = ["pyexpat"]
@@ -58,13 +101,18 @@ def get_implies():
     if sys.version_info[:2] >= (2, 6):
         result['future_builtins'] = ['itertools']
 
+    # os.path is an alias for a platform specific submodule,
+    # ensure that the graph shows this.
+    result['os.path'] = Alias(os.path.__name__)
+
+
     return result
 
 def parse_mf_results(mf):
     """
     Return two lists: the first one contains the python files in the graph,
     the second the C extensions.
-    
+
     :param mf: a :class:`modulegraph.modulegraph.ModuleGraph` instance
     """
     #for name, imports in get_hidden_imports().items():
@@ -82,15 +130,16 @@ def parse_mf_results(mf):
         if item.identifier == "__main__":
             continue
         src = item.filename
-        if src:
-            suffix = os.path.splitext(src)[1]
-
-            if suffix in PY_SUFFIXES:
+        if src and src != '-':
+            if isinstance(item, Script):
+                # Scripts are python files
                 py_files.append(item)
-            elif suffix in C_SUFFIXES:
+
+            elif isinstance(item, Extension):
                 extensions.append(item)
+
             else:
-                raise TypeError("Don't know how to handle '%s'" % repr(src))
+                py_files.append(item)
 
     # sort on the file names, the output is nicer to read
     py_files.sort(key=lambda v: v.filename)
@@ -102,10 +151,18 @@ def plat_prepare(includes, packages, excludes):
     # used by Python itself
     includes.update(["warnings", "unicodedata", "weakref"])
 
+    #if os.uname()[0] != 'java':
+        # Jython specific imports in the stdlib:
+        #excludes.update([
+        #    'java.lang',
+        #    'org.python.core',
+        #])
+
     if not sys.platform.startswith('irix'):
         excludes.update([
             'AL',
             'sgi',
+            'vms_lib',
         ])
 
     if not sys.platform in ('mac', 'darwin'):
@@ -119,13 +176,14 @@ def plat_prepare(includes, packages, excludes):
             'MacOS',
             'macfs',
             'macostools',
-            'macpath',
+            #'macpath',
+            '_scproxy',
         ])
 
     if not sys.platform == 'win32':
         # only win32
         excludes.update([
-            'ntpath',
+            #'ntpath',
             'nturl2path',
             'win32api',
             'win32con',
@@ -141,12 +199,16 @@ def plat_prepare(includes, packages, excludes):
             'winsound',
             'win32',
             '_winreg',
+            '_winapi',
+            'msvcrt',
+            'winreg',
+            '_subprocess',
          ])
 
     if not sys.platform == 'riscos':
         excludes.update([
              'riscosenviron',
-             'riscospath',
+             #'riscospath',
              'rourl2path',
           ])
 
@@ -157,10 +219,19 @@ def plat_prepare(includes, packages, excludes):
 
     if not sys.platform == 'os2emx':
         excludes.update([
-            'os2emxpath'
+            #'os2emxpath',
+            '_emx_link',
         ])
 
     excludes.update(set(['posix', 'nt', 'os2', 'mac', 'ce', 'riscos']) - set(sys.builtin_module_names))
+
+    # Carbon.Res depends on this, but the module hasn't been present
+    # for a while...
+    excludes.add('OverrideFrom23')
+    excludes.add('OverrideFrom23._Res')
+
+    # import trickery in the dummy_threading module (stdlib)
+    excludes.add('_dummy_threading')
 
     try:
         imp_find_module('poll')
@@ -178,10 +249,13 @@ def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warn
         mf.run_script(path)
 
     for mod in includes:
-        if mod[-2:] == '.*':
-            mf.import_hook(mod[:-2], None, ['*'])
-        else:
-            mf.import_hook(mod)
+        try:
+            if mod[-2:] == '.*':
+                mf.import_hook(mod[:-2], None, ['*'])
+            else:
+                mf.import_hook(mod)
+        except ImportError:
+            warn("No module named %s"%(mod,))
 
     for f in packages:
         # If modulegraph has seen a reference to the package, then
@@ -194,7 +268,7 @@ def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warn
             # Find path of package
             # TODO: use imp_find_module_or_importer
             try:
-                path = imp_find_module(f)[1]
+                path = imp_find_module(f, mf.path)[1]
             except ImportError:
                 warn("No package named %s" % f)
                 continue
@@ -204,10 +278,19 @@ def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warn
         # first trim the path (of the head package),
         # then convert directory name in package name,
         # finally push into modulegraph.
+        # FIXME:
+        # 1) Needs to be adjusted for namespace packages in python 3.3
+        # 2) Code is fairly dodgy and needs better tests
         for (dirpath, dirnames, filenames) in os.walk(path):
             if '__init__.py' in filenames and dirpath.startswith(path):
-                package = f + '.' + path[len(path)+1:].replace(os.sep, '.')
-                mf.import_hook(package, None, ["*"])
+                package = f + '.' + dirpath[len(path)+1:].replace(os.sep, '.')
+                if package.endswith('.'):
+                    package = package[:-1]
+                m = mf.import_hook(package, None, ["*"])
+            else:
+                # Exclude subtrees that aren't packages
+                dirnames[:] = []
+
 
     return mf
 
@@ -228,7 +311,7 @@ def _replacePackages():
     REPLACEPACKAGES = {
         '_xmlplus':     'xml',
     }
-    for k,v in REPLACEPACKAGES.iteritems():
+    for k,v in REPLACEPACKAGES.items():
         modulegraph.replacePackage(k, v)
 
 _replacePackages()
@@ -238,7 +321,7 @@ def find_modules(scripts=(), includes=(), packages=(), excludes=(), path=None, d
     High-level interface, takes iterables for:
         scripts, includes, packages, excludes
 
-    And returns a :class:`modulegraph.modulegraph.ModuleGraph` instance, 
+    And returns a :class:`modulegraph.modulegraph.ModuleGraph` instance,
     python_files, and extensions
 
     python_files is a list of pure python dependencies as modulegraph.Module objects,

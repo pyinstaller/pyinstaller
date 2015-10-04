@@ -1,0 +1,5 @@
+[
+ 'nspkg1',
+ 'nspkg1.bbb',
+ 'nspkg1.bbb.zzz',
+]

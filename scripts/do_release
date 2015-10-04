@@ -1,0 +1,10 @@
+#!/bin/bash
+# Do a full stable release:
+# - asks some questions
+# - remove '.devN' version string
+# - update date in release notes
+# - create new git tag
+# - create tarball and upload to pypi
+# - increment version string for new development
+# - commit and push related changes
+fullrelease  # zest.releaser command

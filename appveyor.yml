@@ -1,0 +1,119 @@
+# As config example taken this file: https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
+environment:
+  global:
+    # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
+    # /E:ON and /V:ON options are not enabled in the batch script intepreter
+    # See: http://stackoverflow.com/a/13751649/163740
+    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\tests\\scripts\\appveyor\\run_with_env.cmd"
+
+  matrix:
+
+    # TODO Fix bootloader compilation of 64bit bootloader - either fix for msvc or install mingw-w64
+    # Pre-installed Python versions, which Appveyor may upgrade to
+    # a later point release.
+#    - PYTHON: "C:\\Python34-x64"
+#      PYTHON_VERSION: "3.4"
+#      PYTHON_ARCH: "64"
+#      # This forces to build bootloader with MSVC.
+#      # Appveyor does not have 64-bit mingw.
+#      WAF_ARGS: ""
+#
+#    - PYTHON: "C:\\Python33-x64"
+#      PYTHON_VERSION: "3.3"
+#      PYTHON_ARCH: "64"
+#      WAF_ARGS: ""
+
+    # TODO Enable Python 3.5 one day. Issue #1547.
+    #- PYTHON: "C:\\Python35"
+      #PYTHON_VERSION: "3.5"
+      #PYTHON_ARCH: "32"
+      #WAF_ARGS: "--gcc"
+
+    - PYTHON: "C:\\Python34"
+      PYTHON_VERSION: "3.4"
+      PYTHON_ARCH: "32"
+      WAF_ARGS: "--gcc"
+
+    - PYTHON: "C:\\Python33"
+      PYTHON_VERSION: "3.3"
+      PYTHON_ARCH: "32"
+      WAF_ARGS: "--gcc"
+
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "32"
+      WAF_ARGS: "--gcc"
+
+cache:
+  # Cache created Python .whl packages to avoid compiling them again.
+  # Wheels are built with --use-wheel to avoid recompiling already-built wheels.
+  - C:\wheels
+  # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
+  - C:\Users\appveyor\AppData\Local\Temp\chocolatey -> appveyor.yml
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+
+install:
+  - ECHO "Filesystem root:"
+  - ps: "ls \"C:/\""
+
+  - ECHO "Chocolatey tools:"
+  - ps: "ls \"C:/Tools\""
+
+  - ECHO "Installed SDKs:"
+  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
+
+  # Prepend newly installed Python to the PATH of this build (this cannot be
+  # done from inside the powershell script as it would require to restart
+  # the parent CMD process).
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+
+  # Check that we have the expected version and architecture for Python
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+
+  # Install 32bit mingw-w64. Bootloader can be compiled only with mingw-w64.
+  - choco install -y mingw -x86
+
+  # Compile bootloader, use 32bit mingw-w64.
+  - "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
+  - cd bootloader
+  - "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
+  - cd ..
+
+  ### Install the PyInsaller dependencies.
+
+  # Create .whl packages from dependencies for possible caching.
+  # First install 'wheel' package to be able create .whl files.
+  - "%CMD_IN_ENV% pip install wheel"
+
+  # Create c:/wheels if it does not exist.
+  - ps: If ( -not (Test-Path C:/wheels) )  { mkdir C:/wheels }
+
+  - ECHO "Cached wheels:"
+  - ps: "ls \"C:/wheels\""
+
+  # Create .whl packages from dependencies for possible caching.
+  # If some dependencies contain
+  # compiled extensions and are not provided as pre-built wheel packages,
+  # pip will build them from source using the MSVC compiler matching the
+  # target Python version and architecture
+  # If we have previously built a wheel and stored it in C:/wheels,
+  # the --find-links option will find the previously built wheel and
+  # skip rebuilding it. The wheel will still be rebuilt if a newer version is
+  # available on PyPI.
+  # TODO: remove out-of-date wheels to avoid overflowing the build cache
+  - "%CMD_IN_ENV% pip wheel --use-wheel --wheel-dir C:/wheels --find-links c:/wheels -r tests/requirements-win.txt"
+
+  # Install the PyInstaller test dependencies.
+  # Use cached .whl packages.
+  - "%CMD_IN_ENV% pip install --no-index --find-links C:\\wheels -r tests/requirements-win.txt"
+
+  # Install PyInstaller into virtualenv.
+  - "%CMD_IN_ENV% pip install -e ."
+
+build: none
+
+test_script:
+  # Split tests into several subprocesses.
+  - "%CMD_IN_ENV% py.test -n 7  --timeout 180 --maxfail 3"

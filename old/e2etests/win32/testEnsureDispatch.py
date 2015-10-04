@@ -4,6 +4,6 @@ import copy_reg
 
 import win32com.client.gencache
 x = win32com.client.gencache.EnsureDispatch('ADOR.Recordset')
-print x
+print(x)
 x = None
 #raw_input("Press any key to continue...")

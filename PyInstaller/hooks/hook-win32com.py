@@ -1,14 +1,11 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
-import os
 
 
 hiddenimports = [
@@ -19,12 +16,3 @@ hiddenimports = [
     'win32com.client.util',
     'win32com.server.util',
 ]
-
-
-def hook(mod):
-    # win32com module changes sys.path and wrapps win32comext modules.
-    pth = str(mod.__path__[0])
-    if os.path.isdir(pth):
-        mod.__path__.append(
-            os.path.normpath(os.path.join(pth, '..', 'win32comext')))
-    return mod

@@ -1,0 +1,43 @@
+# For running tests
+pytest  # Testing framework.
+pytest-xdist  # Plugin allowing running tests in parallel.
+pytest-timeout # Plugin to abort hanging tests.
+pytest-catchlog  # Capture log output separately from stdout/stderr
+pyreadline  # Colors in ipython on Windows.
+ipython  # Better interactive Python shell.
+mock
+
+# Helper tools
+zest.releaser # Makes releasing easier
+wheel  # For creating .whl packages in Appveyour to avoid compiling again.
+check-manifest  # Checks MANIFEST.in
+pyroma  # Checks if package follows best practices of Python packaging.
+chardet  # character encoding detector.
+readme  # Check PYPI description.
+twine  # For secure upload of tar.gz to PYPI.
+pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
+
+
+# Test libraries
+# Url for downloading PyCrypto prebuilt Windows binaries:
+# http://www.voidspace.org.uk/python/pycrypto-2.6.1/
+pycrypto==2.6.1  # Required for crypto feature - encrypting bytecode.
+Django==1.8.3
+# Latest babel 1.3.1 fails with Python 3.3/3.4 on Windows:
+# https://github.com/mitsuhiko/babel/issues/174
+babel==1.3  # Required by sphinx. This version works on Windows.
+pygments
+pylint
+markdown
+sphinx
+pyzmq
+zope.interface  # Required for test_namespace_package
+numpy
+keyring
+pycparser
+pytz
+sqlalchemy
+twisted
+matplotlib
+pyexcelerate
+Pillow

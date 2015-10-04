@@ -20,8 +20,6 @@ import sys
 
 d = os.path.abspath(os.path.join(sys._MEIPASS, "qml"))
 
-print d
-
 # We replace the QML_IMPORT_PATH variables because we want
 # Qt5 to load qml only from the path we set.
 if 'QML_IMPORT_PATH' in os.environ:

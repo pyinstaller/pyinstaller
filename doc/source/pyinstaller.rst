@@ -36,10 +36,17 @@ Please see the PyInstaller Manual for more information.
 OPTIONS
 ========
 
-For now, please use ``pyinstaller --help`` to get all options.
-Basically these are the same as for pyi-configure, pyi-makespec and
-pyi-build together.
+.. include:: _pyinstaller-options.tmp
 
+ENVIRONMENT VARIABLES
+=====================
+
+====================== ========================================================
+PYINSTALLER_CONFIG_DIR This changes the directory where PyInstaller caches some
+                       files. The default location for this is operating system
+                       dependent, but is typically a subdirectory of the home
+                       directory.
+====================== ========================================================
 
 SEE ALSO
 =============

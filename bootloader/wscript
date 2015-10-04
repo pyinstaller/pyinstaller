@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2014, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -17,468 +17,608 @@ Bootloader building script.
 import os
 import platform
 import sys
+import sysconfig
 
-import Utils
-import Options
-
-
-# the following two variables are used by the target "waf dist"
-VERSION=''
-APPNAME=''
+from waflib.Configure import conf
+from waflib import Logs
 
 
-# these variables are mandatory ('/' are converted automatically)
+# The following two variables are used by the target "waf dist"
+VERSION = ''
+APPNAME = ''
+
+
+# These variables are mandatory ('/' are converted automatically)
 top = '.'
 out = 'build'
 
 
-# TODO use following variable only on darwin and for 32bit loader.
-# OS X 10.5 doesn't understand the load command  'LC_DYLD_INFO_ONLY'
-# that is used by the OS X 10.6 linker.
-# The following variable fixes 10.5 compatibility.
-os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.5'
+# Platform specific switches.
+is_win = platform.system() == 'Windows'
+is_darwin = platform.system() == 'Darwin'
+is_linux = platform.system() == 'Linux'
+is_freebsd = sys.platform.startswith('freebsd')
+# TODO find out proper value for AIX/Solaris
+is_solar = platform.system() in ['Solaris', 'SunOS']
+is_aix = platform.system() == 'AIX'
 
+
+# Build variants of bootloader.
+# PyInstaller provides debug/release bootloaders and console/windowed
+# variants.
+# Every variant has different exe name.
+variants = {
+    'debug': 'run_d',
+    'debugw': 'runw_d',
+    'release': 'run',
+    'releasew': 'runw',
+}
+
+
+# TODO use following variable only on darwin and for 32bit loader.
+# TODO Do we still need this variable on OS X?
+# OS X 10.6 might not understand some load commands.
+# The following variable fixes 10.6 compatibility.
+os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.6'
 
 # TODO strip created binaries.
 
 
-def set_options(opt):
-    myplatform = Utils.detect_platform()
+def architecture():
+    """
+    on 64bit Mac function platform.architecture() returns 64bit even
+    for 32bit Python. This is the workaround for this.
+    """
     
-    if not myplatform.startswith('win'):
-        opt.add_option('--leak-detector',
-                action = 'store_true',
-                help = 'Link with Boehm garbage collector to detect memory leaks.',
-                default = False,
-                dest = 'boehmgc')
+    if is_darwin and sys.maxsize <= 3**32:
 
-    if myplatform.startswith('linux'):
-        opt.add_option('--no-lsb',
-                action = 'store_true',
-                help = 'Prevent building LSB (Linux Standard Base) bootloader.',
-                default = False,
-                dest = 'nolsb')
-        opt.add_option('--lsbcc-path',
-                action = 'store',
-                help = 'Path to lsbcc. By default PATH is searched for lsbcc otherwise is tried file /opt/lsb/bin/lsbcc. [Default: lsbcc]',
-                default = 'lsbcc',
-                dest = 'lsbcc_path')
-        opt.add_option('--lsb-target-version',
-                action = 'store',
-                help = 'Specify LSB target version [Default: 4.0]',
-                default = '4.0',
-                dest = 'lsb_version')
-
-    opt.tool_options('compiler_cc')
-
-
-def configure(conf):
-
-    def achitecture():
         return '32bit'
-
-    conf.env.NAME = 'default'
-
-    opt = Options.options
-    myplatform = Utils.detect_platform()
-
-    # on 64bit Mac function platform.architecture() returns 64bit even
-    # for 32bit Python. This is the workaround for this.
-    if myplatform == 'darwin' and sys.maxint <= 3**32:
-        myarch = '32bit'
     else:
-        myarch = platform.architecture()[0] # 32bit or 64bit
-    conf.env.MYARCH = myarch
+        return platform.architecture()[0]  # 32bit or 64bit
 
-    # Differenciate path to bootloader with machine name if necessary.
-    mymach = platform.machine()
-    if mymach.startswith('arm'):
-        mymach = 'arm'
+
+def machine():
+    """
+    Differenciate path to bootloader with machine name if necessary.
+
+    Machine name in bootloader is necessary only for non-x86 architecture.
+    """
+    mach = None  # Assume x86/x86_64 machine.
+    # Different name for arm is necessary.
+    if platform.machine().startswith('arm'):
+        mach = 'arm'
+    return mach
+
+
+def options(ctx):
+    ctx.load('compiler_c')
+
+    ctx.add_option('--debug',
+                   action='store_true',
+                   help='Include debugging info for GDB.',
+                   default=False,
+                   dest='debug')
+    ctx.add_option('--leak-detector',
+                   action='store_true',
+                   help='Link with Boehm garbage collector to detect memory leaks.',
+                   default=False,
+                   dest='boehmgc')
+    ctx.add_option('--clang',
+                   action='store_true',
+                   help='Try to find clang C compiler instead of gcc.',
+                   default=False,
+                   dest='clang')
+    ctx.add_option('--gcc',
+                   action='store_true',
+                   help='Try to find GNU C compiler.',
+                   default=False,
+                   dest='gcc')
+    ctx.add_option('--target-arch',
+                   action='store',
+                   help='Target architecture format (32bit, 64bit). '
+                        'This option allows to build 32bit bootloader with 64bit compiler '
+                        'and 64bit Python.',
+                   default=None,
+                   dest='target_arch')
+    ctx.add_option('--target-cpu',
+                   action='store',
+                   help='Target CPU format (x86, amd64).',
+                   default=None,
+                   dest='target_cpu')
+
+    if is_linux:
+        ctx.add_option('--no-lsb',
+                       action='store_true',
+                       help='Prevent building LSB (Linux Standard Base) bootloader.',
+                       default=False,
+                       dest='nolsb')
+        ctx.add_option('--lsbcc-path',
+                       action='store',
+                       help='Path where to look for lsbcc. By default PATH is '
+                            'searched for lsbcc otherwise is tried file '
+                            '/opt/lsb/bin/lsbcc. [Default: lsbcc]',
+                       default=None,
+                       dest='lsbcc_path')
+        ctx.add_option('--lsb-target-version',
+                       action='store',
+                       help='Specify LSB target version [Default: 4.0]',
+                       default='4.0',
+                       dest='lsb_version')
+
+
+@conf
+def set_lsb_compiler(ctx):
+    """
+    Build LSB (Linux Standard Base) bootloader.
+
+    LSB bootloader allows to build bootloader binary that is compatible
+    with almost every Linux distribution.
+    'lsbcc' just wraps gcc in a special way.
+    """
+    Logs.pprint('CYAN', 'Building LSB (Linux Standard Base) bootloader.')
+    lsb_paths = ['/opt/lsb/bin']
+    if ctx.options.lsbcc_path:
+        lsb_paths.insert(0, ctx.options.lsbcc_path)
+    try:
+        ctx.find_program('lsbcc', var='LSBCC', path_list=lsb_paths)
+    except ctx.errors.ConfigurationError:
+        # Fail hard and print warning if lsbcc is not available.
+        #if not ctx.env.LSBCC:
+        ctx.fatal('RED', 'LSB (Linux Standard Base) tools >= 4.0 are '
+                  'required.\nTry --no-lsb option if not interested in '
+                  'building LSB binary.')
+
+    # lsbcc as CC compiler
+    ctx.env.append_value('CFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
+    ctx.env.append_value('LINKFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
+    ctx.env.CC = ctx.env.LSBCC
+    ctx.env.LINK_CC = ctx.env.LSBCC
+    ## check LSBCC flags
+    # --lsb-besteffort - binary will work on platforms without LSB stuff
+    # --lsb-besteffort - available in LSB build tools >= 4.0
+    ctx.check_cc(ccflags='--lsb-besteffort',
+                 msg='Checking for LSB build tools >= 4.0',
+                 errmsg='LSB >= 4.0 is required', mandatory=True)
+    ctx.env.append_value('CFLAGS', '--lsb-besteffort')
+    ctx.env.append_value('LINKFLAGS', '--lsb-besteffort')
+    # binary compatibility with a specific LSB version
+    # LSB 4.0 can generate binaries compatible with 3.0, 3.1, 3.2, 4.0
+    # however because of using function 'mkdtemp', loader requires
+    # using target version 4.0
+    lsb_target_flag = '--lsb-target-version=%s' % ctx.options.lsb_version
+    ctx.env.append_value('CFLAGS', lsb_target_flag)
+    ctx.env.append_value('LINKFLAGS', lsb_target_flag)
+
+
+@conf
+def detect_arch_cpu(ctx):
+    """
+    Handle options --target-arch and --target-cpu or use the same
+    architecture as the Python interpreter.
+    """
+    # Get arch/cpu values either from CLI or detect it.
+    arch = ctx.options.target_arch or architecture()
+    # 'target_cpu is useful only on Windows for now.
+    cpu = ctx.options.target_cpu or ''  # Use empty string if not specified.
+
+    # Print message based on arch/cpu.
+    if ctx.options.target_arch or ctx.options.target_cpu:
+        if cpu == 'amd64':
+            ctx.env['MSVC_TARGETS'] = ['x64']
+            arch = '64bit'  # Force 64bit for amd64 cpu.
+        elif cpu == 'x86':
+            ctx.env['MSVC_TARGETS'] = ['x86']
+            arch = '32bit'  # Force 32bit for x86 cpu.
+            ctx.msg('Platform', 'Architecture manually chosen: x86')
+        ctx.msg('Platform', '%s-%s %s  manually chosen' % (platform.system(), arch, cpu))
     else:
-        # Assume x86/x86_64 machine.
-        mymach = None
-    conf.env.MYMACHINE = mymach
+        ctx.msg('Platform', '%s-%s detected' % (platform.system(), arch))
+
+    if is_darwin and arch == '64bit':
+        ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
+        ctx.msg('CYAN', 'For 32b-bit bootloader prepend the python command with:')
+        ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
+
+    # Pass return values as environment variables.
+    ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
+    ctx.env.PYI_CPU = cpu  # 'x86' or 'amd64' or empty string
+
+    if arch == '64bit':
+        ctx.env['MSVC_TARGETS'] = ['x64']
+    elif arch == '32bit':
+        ctx.env['MSVC_TARGETS'] = ['x86']
 
 
-    Utils.pprint('CYAN', '%s-%s detected' % (platform.system(), myarch))
+@conf
+def set_arch_flags(ctx):
+    """
+    Set properly architecture flag (32 or 64 bit) cflags for compiler
+    and CPU target for compiler.
+    """
+    if is_win and ctx.env.CC_NAME == 'msvc':
+        # Set msvc linkflags based on --target-cpu.
+        if ctx.env.PYI_CPU:
+            if ctx.options.target_cpu == 'x86':
+                ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
+                # Set LARGE_ADDRESS_AWARE_FLAG to True.
+                # On Windows this allows 32bit apps to use 4GB of memory and
+                ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
+            elif ctx.options.target_cpu == 'amd64':
+                ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
+            else:
+                ctx.fatal('RED', 'Unrecognized target CPU: %s' % ctx.env.PYI_CPU)
+        # Set msvc linkflags based on architecture.
+        else:
+            if ctx.env.PYI_ARCH == '32bit':
+                ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
+                # Set LARGE_ADDRESS_AWARE_FLAG to True.
+                # On Windows this allows 32bit apps to use 4GB of memory and
+                ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
 
-    if myplatform == 'darwin' and myarch == '64bit':
-        Utils.pprint('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
-        Utils.pprint('CYAN', 'For 32b-bit bootloader prepend the python command with:')
-        Utils.pprint('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
+            elif ctx.env.PYI_ARCH == '64bit':
+                ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
 
-    if myplatform.startswith('linux') and not opt.nolsb:
-        Utils.pprint('CYAN', 'Building LSB bootloader.')
+        # Enable 64bit porting warnings and other warnings too.
+        ctx.env.append_value('CFLAGS', '/W3')
+        # We use SEH exceptions in winmain.c; make sure they are activated.
+        ctx.env.append_value('CFLAGS', '/EHa')
+
+    # Ensure proper architecture flags on Mac OS X.
+    elif is_darwin:
+        # Default compiler on Mac OS X is Clang.
+        # Clang does not have flags '-m32' and '-m64'.
+        if ctx.env.PYI_ARCH == '32bit':
+            mac_arch = ['-arch', 'i386']
+        else:
+            mac_arch = ['-arch', 'x86_64']
+        ctx.env.append_value('CFLAGS', mac_arch)
+        ctx.env.append_value('CXXFLAGS', mac_arch)
+        ctx.env.append_value('LINKFLAGS', mac_arch)
+
+    # Other compiler - not msvc.
+    else:
+        if machine() == 'sw_64':
+            # The gcc has no '-m64' option under sw64 machine, but the
+            # __x86_64__ macro needs to be defined
+            conf.env.append_value('CCDEFINES', '__x86_64__')
+        # This ensures proper compilation with 64bit gcc and 32bit Python
+        # or vice versa or with manually choosen --target-arch.
+        # Option -m32/-m64 has to be passed to cflags and linkflages.
+        elif ctx.env.PYI_ARCH == '32bit':
+            ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
+            ctx.env.append_value('CFLAGS', '-m32')
+            ctx.env.append_value('LINKFLAGS', '-m32')
+            # Set LARGE_ADDRESS_AWARE_FLAG to True.
+            # On Windows this allows 32bit apps to use 4GB of memory and
+            # not only 2GB.
+            # TODO verify if this option being as default might cause any side effects.
+            if is_win:
+                ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
+        elif ctx.env.PYI_ARCH == '64bit':
+            ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
+            ctx.env.append_value('CFLAGS', '-m64')
+            ctx.env.append_value('LINKFLAGS', '-m64')
+        else:
+            ctx.fatal('RED', 'Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
+
+    # We need to pass architecture switch to the 'windres' tool.
+    if is_win and ctx.env.CC_NAME != 'msvc':
+        if ctx.env.PYI_ARCH == '32bit':
+            ctx.env.WINRCFLAGS = ['--target=pe-i386']
+        else:
+            ctx.env.WINRCFLAGS = ['--target=pe-x86-64']
+
+
+def configure(ctx):
+
+    # Detect architecture and CPU
+    ctx.detect_arch_cpu()
 
     ### C compiler
 
-    if myplatform.startswith('win'):
-        try:
-            # mingw (gcc for Windows)
-            conf.check_tool('gcc')
-        except:
-            try:
-                # Newest detected MSVC version is used by default.
-                # msvc 7.1 (Visual Studio 2003)
-                # msvc 8.0 (Visual Studio 2005)
-                # msvc 9.0 (Visual Studio 2008)
-                conf.env['MSVC_VERSIONS'] = ['msvc 7.1', 'msvc 8.0', 'msvc 9.0', 'wsdk 7.0', 'wsdk 7.1']
-                if myarch == '32bit':
-                    conf.env['MSVC_TARGETS'] = ['x86', 'ia32']
-                elif myarch == '64bit':
-                    conf.env['MSVC_TARGETS'] = ['x64', 'x86_amd64', 'intel64', 'em64t']
-                conf.check_tool('msvc')
-                conf.print_all_msvc_detected()
-                # Do not embed manifest file.
-                # Manifest file will be added in the phase of packaging python application.
-                conf.env.MSVC_MANIFEST = False
-            except Exception, e:
-                print e
-                Utils.pprint('RED', str(e))
-                Utils.pprint('RED', 'GCC (MinGW) or MSVC compiler not found.')
-                exit(1)
-        else:
-            # When using GCC, deactivate declarations after statements
-            # (not supported by Visual Studio)
-            conf.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
-            conf.env.append_value('CCFLAGS', '-Werror')
+    # Do not embed manifest file when using MSVC (Visual Studio).
+    if is_win:
+        # Manifest file will be added in the phase of packaging python
+        # application by PyInstaller.
+        ctx.env.MSVC_MANIFEST = False
 
+    # Allow to use Clang if preferred.
+    if ctx.options.clang:
+        ctx.load('clang')
+    # Allow to use gcc if preferred.
+    elif ctx.options.gcc:
+        ctx.load('gcc')
     else:
-        conf.check_tool('compiler_cc')
+        ctx.load('compiler_c')  # Any available C compiler.
+			
+    # LSB compatible bootloader only for Linux and without cli option --no-lsb.
+    if is_linux and not ctx.options.nolsb:
+        ctx.set_lsb_compiler()
+
+    # Load tool to process *.rc* files for C/C++ like icon for exe files.
+    if is_win:
+        ctx.load('winres')
+
+    # Set proper architecture and CPU for C compiler
+    ctx.set_arch_flags()
 
 
-    ### build LSB (Linux Standard Base) boot loader
-    if myplatform.startswith('linux') and not opt.nolsb:
-        try:
-            # custom lsbcc path
-            if opt.lsbcc_path != 'lsbcc':
-                conf.env.LSBCC = conf.find_program(opt.lsbcc_path, mandatory=True)
-            # default values
-            else:
-                conf.env.LSBCC = conf.find_program(opt.lsbcc_path)
-                if not conf.env.LSBCC:
-                    conf.env.LSBCC = conf.find_program('/opt/lsb/bin/lsbcc',
-                            mandatory=True)
-        except:
-            Utils.pprint('RED', 'LSB (Linux Standard Base) tools >= 4.0 are required.')
-            Utils.pprint('RED', 'Try --no-lsb option if not interested in building LSB binary.')
-            exit(2)
-        # lsbcc as CC compiler
-        conf.env.append_value('CCFLAGS', '--lsb-cc=%s' % conf.env.CC[0])
-        conf.env.append_value('LINKFLAGS', '--lsb-cc=%s' % conf.env.CC[0])
-        conf.env.CC = conf.env.LSBCC
-        conf.env.LINK_CC = conf.env.LSBCC
-        ## check LSBCC flags
-        # --lsb-besteffort - binary will work on platforms without LSB stuff
-        # --lsb-besteffort - available in LSB build tools >= 4.0
-        conf.check_cc(ccflags='--lsb-besteffort',
-                msg='Checking for LSB build tools >= 4.0',
-                errmsg='LSB >= 4.0 is required', mandatory=True)
-        conf.env.append_value('CCFLAGS', '--lsb-besteffort')
-        conf.env.append_value('LINKFLAGS', '--lsb-besteffort')
-        # binary compatibility with a specific LSB version
-        # LSB 4.0 can generate binaries compatible with 3.0, 3.1, 3.2, 4.0
-        # however because of using function 'mkdtemp', loader requires
-        # using target version 4.0
-        lsb_target_flag = '--lsb-target-version=%s' % opt.lsb_version
-        conf.env.append_value('CCFLAGS', lsb_target_flag)
-        conf.env.append_value('LINKFLAGS', lsb_target_flag)
+    # TODO Set proper optimization flags for MSVC (Visual Studio).
+    ### C Compiler optimizations.
+
+    if ctx.options.debug:
+        if is_win and ctx.env.CC_NAME == 'msvc':
+            # Include information for debugging in MSVC/msdebug
+            ctx.env.append_value('CFLAGS', '/Z7')
+            ctx.env.append_value('CFLAGS', '/Od')
+            ctx.env.append_value('LINKFLAGS', '/DEBUG')
+        else:
+            # Include gcc debugging information for debugging in GDB.
+            ctx.env.append_value('CFLAGS', '-g')
+    else:
+        ctx.env.append_value('CFLAGS', '-O2')
+
+    if ctx.env.CC_NAME != 'msvc':
+        # This tool allows reduce the size of executables.
+        ctx.load('strip', tooldir='tools')
 
 
     ### Defines, Includes
 
-    if myplatform.startswith('lin'):
-        # make sure we don't use declarations after statement (break Visual Studio)
-        conf.env.append_value('CCFLAGS', '-Wdeclaration-after-statement')
-        conf.env.append_value('CCFLAGS', '-Werror')
+    if ctx.env.CC_NAME != 'msvc':
+        # Make sure we don't use declarations after statement. It breaks
+        # MSVC (Visual Studio).
+        ctx.env.append_value('CFLAGS', '-Wdeclaration-after-statement')
 
-    if not myplatform.startswith('win'):
+        # Require function declarations to avoid data type length mismatches
+        # Implicit return value is 'int' which is only 32 bits on Windows.
+        ctx.env.append_value('CFLAGS', '-Wimplicit-function-declaration')
+        ctx.env.append_value('CFLAGS', '-Werror')
+
+    if not is_win:
         # Defines common for Unix and Unix-like platforms.
         # For details see:
         #   http://man.he.net/man7/feature_test_macros
         #
-        ## Without these definitions compiling maight fail on OSX.
-        conf.env.append_value('CCDEFINES', '_POSIX_C_SOURCE=200112L')
+        ## Without these definitions compiling might fail on OSX.
+        ctx.env.append_value('DEFINES', '_POSIX_C_SOURCE=200112L')
         # SUS v2 (UNIX 98) definitions.
         #   Mac OS X 10.5 is UNIX 03 compliant.
-        conf.env.append_value('CCDEFINES', '_XOPEN_SOURCE=500')
-        conf.env.append_value('CCDEFINES', '_REENTRANT')
+        ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=600')
+        ctx.env.append_value('DEFINES', '_REENTRANT')
         # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
-        conf.env.append_value('CCDEFINES', '_BSD_SOURCE')
-        
+        ctx.env.append_value('DEFINES', '_BSD_SOURCE')
+        # On Mac OS X is 'mkdtemp' available only with _DARWIN_C_SOURCE.
+        if is_darwin:
+            ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
 
-    if myplatform.startswith('win'):
-        conf.env.append_value('CCDEFINES', 'WIN32')
-        conf.env.append_value('CPPPATH', '../zlib')
-
-    if myplatform.startswith('sun'):
-        conf.env.append_value('CCDEFINES', 'SUNOS')
-
-    if myplatform.startswith('aix'):
-        conf.env.append_value('CCDEFINES', 'AIX')
-
-    conf.env.append_value('CPPPATH', os.path.join('..', 'common'))
+    if is_win:
+        ctx.env.append_value('DEFINES', 'WIN32')
+        ctx.env.append_value('CPPPATH', '../zlib')
+    if is_solar:
+        ctx.env.append_value('DEFINES', 'SUNOS')
+        if ctx.env.CC_NAME == 'gcc':
+            # On Solaris using gcc the linker options for shared and static
+            # libraries are slightly different from other platforms.
+            ctx.env['SHLIB_MARKER'] = '-Wl,-Bdynamic'
+            ctx.env['STLIB_MARKER'] = '-Wl,-Bstatic'
+    if is_aix:
+        ctx.env.append_value('DEFINES', 'AIX')
+        # On AIX some APIs are restricted if _ALL_SOURCE is not defined.
+        # In the case of PyInstaller, we need the AIX specific flag RTLD_MEMBER
+        # for dlopen() which is used to load a shared object from a library
+        # archive. We need to load the Python library like this:
+        #  dlopen("libpython2.7.a(libpython2.7.so)", RTLD_MEMBER)
+        ctx.env.append_value('DEFINES', '_ALL_SOURCE')
+        if ctx.env.CC_NAME == 'gcc':
+            # On AIX using gcc the linker options for shared and static
+            # libraries are slightly different from other platforms.
+            ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
+            ctx.env['STATICLIB_MARKER'] = '-Wl,-bstatic'
 
 
     ### Libraries
 
-    if myplatform.startswith('win'):
-        conf.check_cc(lib='user32', mandatory=True)
-        conf.check_cc(lib='comctl32', mandatory=True)
-        conf.check_cc(lib='kernel32', mandatory=True)
-        conf.check_cc(lib='ws2_32', mandatory=True)
-
+    if is_win:
+        ctx.check_cc(lib='user32', mandatory=True)
+        ctx.check_cc(lib='comctl32', mandatory=True)
+        ctx.check_cc(lib='kernel32', mandatory=True)
+        ctx.check_cc(lib='ws2_32', mandatory=True)
     else:
-        conf.check_cc(lib='dl', mandatory=True)
-        conf.check_cc(lib='z', mandatory=True)
-        if conf.check_cc(function_name='readlink', header_name='unistd.h'):
-            conf.env.append_value('CCFLAGS', '-DHAVE_READLINK')
-
+        # Mac OS X and FreeBSD do not need libdl.
+        # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
+        if not (is_darwin or is_freebsd):
+            ctx.check_cc(lib='dl', mandatory=True)
+        # Link to libthr on FreeBSD.
+        if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop(): 
+            ctx.check_cc(lib='thr', mandatory=True)
+        ctx.check_cc(lib='m', mandatory=True)
+        ctx.check_cc(lib='z', mandatory=True)
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
-        if opt.boehmgc:
-            conf.check_cc(lib='gc', mandatory=True)
-            conf.env.append_value('CCDEFINES', 'PYI_LEAK_DETECTOR')
-            conf.env.append_value('CCDEFINES', 'GC_FIND_LEAK')
-            conf.env.append_value('CCDEFINES', 'GC_DEBUG')
-            conf.env.append_value('CCDEFINES', 'SAVE_CALL_CHAIN')
+        if ctx.options.boehmgc:
+            ctx.check_cc(lib='gc', mandatory=True)
+            ctx.env.append_value('DEFINES', 'PYI_LEAK_DETECTOR')
+            ctx.env.append_value('DEFINES', 'GC_FIND_LEAK')
+            ctx.env.append_value('DEFINES', 'GC_DEBUG')
+            ctx.env.append_value('DEFINES', 'SAVE_CALL_CHAIN')
 
-    ### ccflags
+    ### Functions
 
-    if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
-        # Disables console - MinGW option
-        conf.check_cc(ccflags='-mwindows', mandatory=True,
-                msg='Checking for flags -mwindows')
-        # Use Visual C++ compatible alignment
-        conf.check_cc(ccflags='-mms-bitfields', mandatory=True,
-                msg='Checking for flags -mms-bitfields')
-        conf.env.append_value('CCFLAGS', '-mms-bitfields')
+    # unsetenv not available on AIX, maybe others.
+    ctx.check_cc(function_name='unsetenv', header_name="stdlib.h", mandatory=False)
 
-    elif myplatform.startswith('win') and conf.env.CC_NAME == 'msvc':
-        if myarch == '32bit':
-            conf.env.append_value('LINKFLAGS', '/MACHINE:X86')
-        elif myarch == '64bit':
-            conf.env.append_value('LINKFLAGS', '/MACHINE:X64')
-        # Enable 64bit porting warnings and other warnings too.
-        conf.env.append_value('CCFLAGS', '/W3')
-        # We use SEH exceptions in winmain.c; make sure they are activated.
-        conf.env.append_value('CCFLAGS', '/EHa')
-    
-    # Compile with 64bit gcc 32bit binaries or vice versa.
-    if conf.env.CC_NAME == 'gcc':
-        if myarch == '32bit' and conf.check_cc(ccflags='-m32', msg='Checking for flags -m32'):
-            conf.env.append_value('CCFLAGS', '-m32')
-        elif myarch == '64bit':
-            conf.env.append_value('CCFLAGS', '-m64')
+    ### CFLAGS
 
-    # Ensure proper architecture flags on Mac OS X.
-    # TODO Add support for universal binaries.
-    if myplatform.startswith('darwin'):
-
-        available_archs = {'32bit': 'i386', '64bit': 'x86_64'}
-        mac_arch = available_archs[myarch]
-
-        conf.env.append_value('CCFLAGS', '-arch')
-        conf.env.append_value('CCFLAGS', mac_arch)
-        conf.env.append_value('CXXFLAGS', '-arch')
-        conf.env.append_value('CXXFLAGS', mac_arch)
-        conf.env.append_value('LINKFLAGS', '-arch')
-        conf.env.append_value('LINKFLAGS', mac_arch)
-
-        if myarch == '32bit':
-            conf.env.append_value('CCFLAGS', '-mmacosx-version-min=10.5')
+    if is_win:
+        if ctx.env.CC_NAME == 'msvc':
+            # Use Unicode entry point wmain/wWinMain and wchar_t WinAPI
+            ctx.env.append_value('CFLAGS', '-DUNICODE')
+            ctx.env.append_value('CFLAGS', '-D_UNICODE')
         else:
-            conf.env.append_value('CCFLAGS', '-mmacosx-version-min=10.6')
+            # Use Visual C++ compatible alignment
+            ctx.env.append_value('CFLAGS', '-mms-bitfields')
 
-        
+            # Define UNICODE and _UNICODE for wchar_t WinAPI
+            ctx.env.append_value('CFLAGS', '-municode')
 
-       
+            # Use Unicode entry point wmain/wWinMain
+            ctx.env.append_value('LINKFLAGS', '-municode')
+
+    if is_darwin:
+        ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.6')
+
+
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
-    if myplatform.startswith('linux') and conf.check_cc(ccflags='-Wl,--as-needed',
-            msg='Checking for flags -Wl,--as-needed'):
-        conf.env.append_value('LINKFLAGS', '-Wl,--as-needed')
+    if is_linux and ctx.check_cc(ccflags='-Wl,--as-needed',
+                                 msg='Checking for flags -Wl,--as-needed'):
+        ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
-
-    ### Other stuff
-
-    if myplatform.startswith('win'):
-        # RC file - icon
-        conf.check_tool('winres')
 
     ### DEBUG and RELEASE environments
-
-    rel = conf.env.copy()
-    dbg = conf.env.copy()
-    rel.set_variant('release') # separate subfolder for building
-    dbg.set_variant('debug') # separate subfolder for building
-    rel.detach() # detach environment from default
-    dbg.detach()
+    basic_env = ctx.env
 
     ## setup DEBUG environment
-    dbg.set_variant('debug') # separate subfolder for building
-    conf.set_env_name('debug', dbg)
-    conf.setenv('debug')
+    ctx.setenv('debug', basic_env)  # Ensure env contains shared values.
+    debug_env = ctx.env
     # This define enables verbose console output of the bootloader.
-    conf.env.append_value('CCDEFINES', ['LAUNCH_DEBUG'])
-    conf.env.append_value('CCDEFINES', 'NDEBUG')
-    dbgw = conf.env.copy() # WINDOWED DEBUG environment
-    dbgw.set_variant('debugw') # separate subfolder for building
-    dbgw.detach()
+    ctx.env.append_value('DEFINES', ['LAUNCH_DEBUG'])
+    ctx.env.append_value('DEFINES', 'NDEBUG')
 
     ## setup windowed DEBUG environment
-    conf.set_env_name('debugw', dbgw)
-    conf.setenv('debugw')
-    conf.env.append_value('CCDEFINES', 'WINDOWED')
-    # disables console - mingw option
-    if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
-            conf.env.append_value('LINKFLAGS', '-mwindows')
-    elif myplatform.startswith('darwin'):
-        #conf.env.append_value('CCFLAGS', '-I/Developer/Headers/FlatCarbon')
+    ctx.setenv('debugw', debug_env)  # Ensure env contains shared values.
+    ctx.env.append_value('DEFINES', 'WINDOWED')
+    # For MinGW disables console window on Windows- MinGW option
+    if is_win and not ctx.env.CC_NAME == 'msvc':
+            # TODO Is it necessary to have -mwindows for C and LINK flags?
+            ctx.env.append_value('LINKFLAGS', '-mwindows')
+            ctx.env.append_value('CFLAGS', '-mwindows')
+    elif is_darwin:
+        #conf.env.append_value('CFLAGS', '-I/Developer/Headers/FlatCarbon')
         # To support catching AppleEvents and running as ordinary OSX GUI app,
         # we have to link against the Carbon framework.
         # This linkage only needs to be there for the windowed bootloaders.
-        conf.env.append_value('LINKFLAGS', '-framework')
-        conf.env.append_value('LINKFLAGS', 'Carbon')
+        ctx.env.append_value('LINKFLAGS', '-framework')
+        ctx.env.append_value('LINKFLAGS', 'Carbon')
         # conf.env.append_value('LINKFLAGS', '-framework')
         # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
-
     ## setup RELEASE environment
-    conf.set_env_name('release', rel)
-    conf.setenv('release')
-    conf.env.append_value('CCDEFINES', 'NDEBUG')
-    conf.env.append_value('CCFLAGS', conf.env.CCFLAGS_RELEASE)
-    relw = conf.env.copy() # WINDOWED RELEASE environment
-    relw.set_variant('releasew') # separate subfolder for building
-    relw.detach()
+    ctx.setenv('release', basic_env)  # Ensure env contains shared values.
+    release_env = ctx.env
+    ctx.env.append_value('DEFINES', 'NDEBUG')
 
     ## setup windowed RELEASE environment
-    conf.set_env_name('releasew', relw)
-    conf.setenv('releasew')
-    conf.env.append_value('CCDEFINES', 'WINDOWED')
-    # disables console
-    if myplatform.startswith('win') and conf.env.CC_NAME == 'gcc':
-            conf.env.append_value('LINKFLAGS', '-mwindows')
-    elif myplatform.startswith('darwin'):
+    ctx.setenv('releasew', release_env)  # Ensure env contains shared values.
+    ctx.env.append_value('DEFINES', 'WINDOWED')
+
+    # For MinGW disables console window on Windows- MinGW option
+    if is_win and not ctx.env.CC_NAME == 'msvc':
+            # TODO Is it necessary to have -mwindows for C and LINK flags?
+            ctx.env.append_value('LINKFLAGS', '-mwindows')
+            ctx.env.append_value('CFLAGS', '-mwindows')
+    elif is_darwin:
         # To support catching AppleEvents and running as ordinary OSX GUI app,
         # we have to link against the Carbon framework.
         # This linkage only needs to be there for the windowed bootloaders.
-        conf.env.append_value('LINKFLAGS', '-framework')
-        conf.env.append_value('LINKFLAGS', 'Carbon')
+        ctx.env.append_value('LINKFLAGS', '-framework')
+        ctx.env.append_value('LINKFLAGS', 'Carbon')
         # TODO Do we need to link with this framework?
         # conf.env.append_value('LINKFLAGS', '-framework')
         # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
 
 # TODO Use 'strip' command to decrease the size of compiled bootloaders.
-def build(bld):
-    myplatform = Utils.detect_platform()
-    opt = Options.options
+def build(ctx):
+    if not ctx.variant:
+        ctx.fatal('Call "python waf all" to compile all bootloaders.')
 
-    # Force to run with 1 job (no parallel building).
-    # There are reported build failures on multicore CPUs
-    # with some msvc versions.
-    # TODO revisit parallel building with switch to waf 1.7
-    opt.jobs = 1
+    exe_name = variants[ctx.variant]
 
-    install_path = '../../PyInstaller/bootloader/' + platform.system() + "-" + bld.env.MYARCH
-    if bld.env.MYMACHINE:
-        install_path += '-' + bld.env.MYMACHINE
-    targets = dict(release='run', debug='run_d', releasew='runw', debugw='runw_d')
+    install_path = os.path.join(os.getcwd(), '../PyInstaller/bootloader',
+                                platform.system() + "-" + ctx.env.PYI_ARCH)
+    install_path = os.path.normpath(install_path)
 
-    if myplatform.startswith('win'):
+    if machine():
+        install_path += '-' + machine()
 
-        # static lib zlib
-
-        for key in targets.keys():
-            bld(
-                features = 'cc cstaticlib',
-                source = bld.path.ant_glob('zlib/*.c'),
-                target = 'staticlib_zlib',
-                env = bld.env_of_name(key),
-                includes = ['zlib'],
-            )
-
-        # console
-
-        for key in ('release', 'debug'):
-            bld(
-                features = 'cc cprogram',
-                source = bld.path.ant_glob('windows/utils.c windows/run.rc common/*.c'),
-                target = targets[key],
-                install_path = install_path,
-                uselib_local = 'staticlib_zlib',
-                uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-                env = bld.env_of_name(key).copy(),
-                includes = ['common', 'windows', 'zlib'],
-            )
-
-        # windowed
-
-        for key in ('releasew', 'debugw'):
-            bld(
-                features = 'cc cprogram',
-                source = bld.path.ant_glob('windows/utils.c windows/runw.rc common/*.c'), # uses different RC file (icon)
-                target = targets[key],
-                install_path = install_path,
-                uselib_local = 'staticlib_zlib',
-                uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-                env = bld.env_of_name(key).copy(),
-                includes = ['common', 'windows', 'zlib'],
-            )
-
-        ## inprocsrvr console
-
-        if bld.env.CC_NAME == 'msvc':
-            linkflags_c = bld.env.CPPFLAGS_CONSOLE
-            linkflags_w = bld.env.CPPFLAGS_WINDOWS
+    if is_win:
+        # Do not strip bootloaders when using MSVC.
+        if ctx.env.CC_NAME != 'msvc':
+            features = 'strip'
         else:
-            linkflags_c = ''
-            linkflags_w = ''
+            features = ''
+        # Use different RC file (icon) for console/windowed mode - remove '_d'
+        icon_rc = 'windows/' + exe_name.replace('_d', '') + '.rc'
+        # On Windows we need to link library zlib statically.
+        ctx.stlib(
+            source=ctx.path.ant_glob('zlib/*.c'),
+            target='static_zlib',
+            name='zlib',
+            includes='zlib',
+        )
+        ctx.program(
+            source=ctx.path.ant_glob('%s src/*.c' % icon_rc),
+            target=exe_name,
+            install_path=install_path,
+            use='USER32 COMCTL32 KERNEL32 WS2_32 zlib',
+            includes='src windows zlib',
+            # Strip final executables to make them smaller.
+            features=features,
+        )
+    else:
+        # Linux, Darwin (MacOSX), ...
+        libs = ['DL', 'M', 'Z']  # 'z' - zlib, 'm' - math,
+        staticlibs = []
+        # Mac OS X and FreeBSD do not need libdl.
+        if is_darwin or is_freebsd:
+            libs = ['Z', 'M']
+            # Check if python has threads: libthr needs
+            # to be loaded in the main process
+            if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
+                libs.append('THR')
+        elif sys.platform.startswith('aix'):
+            libs = ['DL', 'M']
+            staticlibs = ['Z']
 
-        for key, value in dict(release='inprocsrvr', debug='inprocsrvr_d').items():
-            bld(
-                features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_*.c windows/*.c'),
-                target = value,
-                install_path = install_path,
-                uselib_local = 'staticlib_zlib',
-                uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-                env = bld.env_of_name(key).copy(),
-                linkflags = linkflags_c,
-                includes = ['common', 'windows', 'zlib'],
-            )
+        if ctx.options.boehmgc:
+            libs.append('GC')
+        ctx.program(
+            source=ctx.path.ant_glob('src/*.c'),
+            target=exe_name,
+            includes='src',
+            use=libs,
+            stlib=staticlibs,
+            install_path=install_path,
+            # Strip final executables to make them smaller.
+            features='strip',
+        )
 
-        ## inprocsrvr windowed
 
-        for key, value in dict(releasew='inprocsrvrw', debugw='inprocsrvrw_d').items():
-            bld(
-                features = 'cc cshlib',
-                source = bld.path.ant_glob('common/pyi_*.c windows/*.c'),
-                target = value,
-                install_path = install_path,
-                uselib_local = 'staticlib_zlib',
-                uselib = 'USER32 COMCTL32 KERNEL32 WS2_32',
-                env = bld.env_of_name(key).copy(),
-                linkflags = linkflags_w,
-                includes = ['common', 'windows', 'zlib'],
-            )
+def all(ctx):
+    """
+    Do configure, build, install in one step.
+    """
+    from waflib import Options
+    Options.commands = ['distclean', 'configure', 'build_debug', 'build_release']
+    # On Windows and Mac OS X we also need console/windowed bootloaders.
+    # On other platforms they make no sense.
+    if is_win or is_darwin:
+        Options.commands += ['build_debugw', 'build_releasew']
+    # Install bootloaders.
+    Options.commands += ['install_debug', 'install_release']
+    if is_win or is_darwin:
+        Options.commands += ['install_debugw', 'install_releasew']
 
-    else: # linux, darwin (MacOSX)
 
-        libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
-        if opt.boehmgc:
-            libs.append('gc')
-
-        for key, value in targets.items():
-            bld(
-                features = 'cc cprogram',
-                source = bld.path.ant_glob('linux/*.c common/*.c'),
-                target = value,
-                install_path = install_path,
-                lib = libs,
-                env = bld.env_of_name(key).copy(),
-                includes = ['common', 'linux'],
-            )
+# Set up building several variants of bootloader.
+from waflib.Build import BuildContext, InstallContext
+for x in variants:
+    class BootloaderContext(BuildContext):
+        cmd = 'build' + '_' + x
+        variant = x
+    class BootloaderInstallContext(InstallContext):
+        cmd = 'install' + '_' + x
+        variant = x

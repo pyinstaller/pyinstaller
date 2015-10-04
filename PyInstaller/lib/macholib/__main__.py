@@ -9,7 +9,7 @@ gCommand = None
 
 def check_file(fp, path, callback):
     if not os.path.exists(path):
-        print('%s: %s: No such file or directory' % (gCommand, path), 
+        print('%s: %s: No such file or directory' % (gCommand, path),
                 file=sys.stderr)
         return 1
 

@@ -1,0 +1,14 @@
+[
+'pyi_testmod_relimp',
+'pyi_testmod_relimp.B',
+'pyi_testmod_relimp.B.C',
+'pyi_testmod_relimp.B.D',
+'pyi_testmod_relimp.E',
+'pyi_testmod_relimp.F',
+'pyi_testmod_relimp.F.G',
+'pyi_testmod_relimp.pyi_testmod_relimp',
+'pyi_testmod_relimp.pyi_testmod_relimp.relimp2',
+'pyi_testmod_relimp.pyi_testmod_relimp.relimp3',
+'pyi_testmod_relimp.relimp1',
+'pyi_testmod_relimp.relimp2',
+]

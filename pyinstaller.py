@@ -14,5 +14,5 @@ Main command-line interface to PyInstaller.
 """
 
 if __name__ == '__main__':
-    from PyInstaller.main import run
+    from PyInstaller.__main__ import run
     run()

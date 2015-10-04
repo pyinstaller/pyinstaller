@@ -8,6 +8,8 @@
 #-----------------------------------------------------------------------------
 
 
+# This is hook for DNS python package dnspython.
+
 hiddenimports = [
     "dns.rdtypes.*",
     "dns.rdtypes.ANY.*"

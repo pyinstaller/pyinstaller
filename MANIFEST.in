@@ -1,10 +1,46 @@
+recursive-include bootloader/src *
+recursive-include bootloader/tools *
+recursive-include bootloader/windows *
+recursive-include bootloader/zlib *
+include bootloader/README.txt
+include bootloader/waf
+include bootloader/wscript
+
+
+recursive-include doc/images *
+recursive-include doc/stylesheets *
+recursive-include doc *.1 *.html *.pdf *.rst *.txt
+
+recursive-include PyInstaller *
+
+recursive-include tests/functional *
+recursive-include tests/unit *
+recursive-include tests/old_suite *
+recursive-include tests *.txt
+
+recursive-include utils *.py
+
+include *.rst
+include *.txt
 include pyinstaller.py
 include pyinstaller-gui.py
-recursive-include bootloader *
-recursive-include doc *
-recursive-include old *
-recursive-include PyInstaller *
-recursive-include tests *
-recursive-include utils *
-exclude .gitignore
+
+recursive-exclude bootloader/build *
+recursive-exclude bootloader/.waf* *
+recursive-exclude bootloader/waf3-* *
+exclude bootloader/.lock-waf*
+
+recursive-exclude doc/source *
+exclude doc/source
+
+recursive-exclude old *
+exclude old
+
+recursive-exclude scripts *
+exclude scripts
+
+recursive-exclude tests/scripts *
+exclude tests/scripts
+
+exclude .* *.yml
 global-exclude *.pyc *.pyo

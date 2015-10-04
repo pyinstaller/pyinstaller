@@ -72,7 +72,7 @@ if __name__ == '__main__':
     elif "/register" in sys.argv:
         RegisterNextID()
     else:
-        print "running as server"
+        print("running as server")
         import win32com.server.localserver
         win32com.server.localserver.main()
         raw_input("Press any key...")

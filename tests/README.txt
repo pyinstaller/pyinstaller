@@ -1,41 +1,52 @@
-=======================
-Testing PyInstaller
-=======================
+Tests for PyInstaller
+=====================
 
-The test wokflow is not yet documented, but:
+This directory contains tests for PyInstaller:
 
- * If those tests will be interactive (user has to click on a button),
-   then it should go into `./tests/interactive/`, test for hooks (and
-   suchlike) go into `./tests/libraries/`. If you are working on a
-   core function, `./tests/basic/` or `./tests/import/` are
-   appropriate.
+ - ``functional`` directory contains tests where executables are created from Python scripts.
+ - ``old_suite`` directory contains old structure of tests (TODO migrate all tests to a new structure)
+ - ``unit`` directory contains simple unit tests
 
- * If you have more test files, create them with file name prefix
-   ``test_yourtest_``.
+Prerequisites
+-------------
 
- * To run all tests::
+In order to run the tests, you will need the following Python packages/libraries installed:
 
-    cd tests
-    python runtests.py
+ - Mock
+ - pytest
 
- * To run a single test::
+Running the Tests
+-----------------
 
-    cd tests
-    python runtests.py libraries/test_yourtest
+To run the tests, navigate to the root directory of the PyInstaller project, and then run the following command::
 
- * To run all interactive tests::
+    py.test
 
-    cd tests
-    python runtests.py -i
+Or, to speed up test runs by sending tests to multiple CPUs
 
- * Test success depends on zero exit status of created binary.
+    py.test -n NUM
 
+Or, to run only the unit or functional tests, run the following command::
 
-For more information pleas see
-http://www.pyinstaller.org/wiki/Development/HowtoContribute.
+    TODO
 
-..
-  Local Variables:
-  mode: rst
-  ispell-local-dictionary: "american"
-  End:
+Or, to run only a particular test suite within a file, run the
+following command::
+
+    TODO
+
+Run all tests matching `test_ctypes_CDLL` resp. `ctypes_CDLL`::
+
+    py.test -k test_ctypes_CDLL
+    py.test -k ctypes_CDLL
+
+Run both the onefile and ondir tests for
+`test_ctypes_CDLL_find_library__nss_files`::
+
+    py.test -k test_ctypes_CDLL_find_library__nss_files
+
+Finally, to only run a particular test, run one of the following
+commands::
+
+    py.test -k test_ctypes_CDLL_find_library__nss_files[onedir]
+    py.test -k test_ctypes_CDLL_find_library__nss_files[onefile]

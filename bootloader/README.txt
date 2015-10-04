@@ -6,14 +6,26 @@ standalone without any dependencies on 3rd party libraries.
 
 Directory Structure
 -------------------
-* common
-  Shared code for Unix/Windows.
-* linux
-  Code specific to Linux/Unix/OS X.
+* src
+  Bootloader source code common for all platforms.
 * windows
   Code specific to Windows.
 * zlib
   Library to unzip Python modules. This library is included in bootloader
-  for Windows.
+  for Windows. On other platforms the bootloader uses zlib library from the
+  system.
 * images
   PyInstaller icons for Windows bootloaders and the .app bundle on Mac OS X.
+
+Build instructions
+----------------------
+
+See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>.
+
+In short::
+
+  ./waf all
+
+or::
+
+  ./waf --no-lsb all

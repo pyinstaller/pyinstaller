@@ -1,0 +1,5 @@
+#!/bin/bash
+# Delete python development related files.
+SCRIPT_DIR=$( dirname "$0" )
+cd $SCRIPT_DIR/../  # Root directory of PyInstaller
+py.cleanup -a --quiet

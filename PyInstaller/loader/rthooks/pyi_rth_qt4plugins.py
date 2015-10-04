@@ -33,6 +33,14 @@ if 'QT_PLUGIN_PATH' in os.environ:
 # We cannot use QT_PLUGIN_PATH here, because it would not work when
 # PyQt4 is compiled with a different CRT from Python (eg: it happens
 # with Riverbank's GPL package).
-from PyQt4.QtCore import QCoreApplication
+
+# Suppose that the user usually does not use both (PySide and PyQt4)
+# in the same app.
+# First try importing PySide and then fallback to PyQt4.
+try:
+    from PySide.QtCore import QCoreApplication
+except ImportError:
+    from PyQt4.QtCore import QCoreApplication
+
 # We set "qt4_plugins" as only one path for Qt4 plugins
 QCoreApplication.setLibraryPaths([os.path.abspath(d)])

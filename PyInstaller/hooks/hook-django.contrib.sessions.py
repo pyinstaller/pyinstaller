@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,19 +8,5 @@
 #-----------------------------------------------------------------------------
 
 
-import os
-import glob
-
-def hook(mod):
-    global hiddenimports
-
-    modpath = mod.__path__[0]
-    hiddenimports = []
-
-    for fn in glob.glob(os.path.join(modpath, 'backends', '*.py')):
-        fn = os.path.basename(fn)
-        fn = os.path.splitext(fn)[0]
-        hiddenimports.append('django.contrib.sessions.backends.' + fn)
-
-    return mod
-
+from PyInstaller.utils.hooks import collect_submodules
+hiddenimports = collect_submodules('django.contrib.sessions.backends')

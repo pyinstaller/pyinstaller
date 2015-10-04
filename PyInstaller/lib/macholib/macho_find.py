@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from macholib._cmdline import main as _main
+from PyInstaller.lib.macholib._cmdline import main as _main
 
 
 def print_file(fp, path):

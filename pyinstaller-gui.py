@@ -14,9 +14,17 @@
 
 import sys
 import subprocess
-from Tkinter import *
-import tkFileDialog
-import FileDialog
+
+# In Python 3 module name is 'tkinter'
+try:
+    from tkinter import *
+    from tkinter.ttk import *
+    import tkinter.filedialog as filedialog
+except ImportError:
+    from Tkinter import *
+    from ttk import *
+    import tkFileDialog as filedialog
+
 
 class PyInstallerGUI:
 
@@ -63,7 +71,6 @@ class PyInstallerGUI:
         cancelbutton.bind("<Button>", self.killapp)
         cancelbutton.pack(side="right")
         self.fin = ''
-        self.fout = ''
 
         ws = root.winfo_screenwidth()
         hs = root.winfo_screenheight()
@@ -77,7 +84,7 @@ class PyInstallerGUI:
         sys.exit(0)
 
     def makePackage(self, event):
-        commands = ['python', 'pyinstaller.py']
+        commands = [sys.executable, 'pyinstaller.py']
         if self.filetype.get():
             commands.append('--onefile')
         if self.ascii.get():
@@ -93,7 +100,8 @@ class PyInstallerGUI:
         sys.exit(retcode)
 
     def GetFile(self, event):
-        self.fin = tkFileDialog.askopenfilename()
+        self.fin = filedialog.askopenfilename()
+        self.filein.delete(0, 'end')
         self.filein.insert(0, self.fin)
 
 if __name__ == "__main__":

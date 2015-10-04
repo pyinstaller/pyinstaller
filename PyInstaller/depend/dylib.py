@@ -12,6 +12,10 @@
 Manipulating with dynamic libraries.
 """
 
+import os.path
+
+from PyInstaller.utils.win32 import winutils
+
 
 __all__ = ['exclude_list', 'include_list', 'include_library']
 
@@ -30,100 +34,142 @@ logger = logging.getLogger(__name__)
 _BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])
 
 
-# Regex excludes
 # Ignoring some system libraries speeds up packaging process
-_excludes = {}
+_excludes = set([
+    # Ignore annoying warnings with Windows system dlls.
+    #
+    # 'W: library kernel32.dll required via ctypes not found'
+    # 'W: library coredll.dll required via ctypes not found'
+    #
+    # These these dlls has to be ignored for all operating systems
+    # because they might be resolved when scanning code for ctypes
+    # dependencies.
+    r'coredll\.dll',
+    r'kernel32\.dll',
+    r'kernel32',
+    r'crypt32\.dll',
+])
+
 # Regex includes - overrides excludes.
 # Include list is used only to override specific libraries
 # from exclude list.
-_includes = {}
+_includes = set()
 
 
-_win_excludes = {
+_win_includes = set([
+    # DLLs are from 'Microsoft Visual C++ 2010 Redistributable Package'.
+    # http://msdn.microsoft.com/en-us/library/8kche8ah(v=vs.100).aspx
+    #
+    # Python 3.3 and 3.4 depends use Visual Studio C++ 2010 for Windows builds.
+    # python33.dll depends on msvcr100.dll.
+    #
+    # Visual Studio C++ 2010 does not need Assembly manifests anymore and
+    # uses C++ runtime libraries the old way - pointing to C:\Windows\System32.
+    # It is necessary to allow inclusion of these libraries from C:\Windows\System32.
+    r'atl100\.dll',
+    r'msvcr100\.dll',
+    r'msvcp100\.dll',
+    r'mfc100\.dll',
+    r'mfc100u\.dll',
+    r'mfcmifc80\.dll',
+    r'mfcm100\.dll',
+    r'mfcm100u\.dll',
+
+    # Python 3.5 uses the Univeral C Runtime which consists of these DLLs:
+    r'api-ms-win-core.*',
+    r'api-ms-win-crt.*',
+    r'ucrtbase\.dll',
+
+    # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
+    r'py(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll',
+])
+
+_win_excludes = set([
+    # On Windows, only .dll files can be loaded.
+    r'.*\.so',
+    r'.*\.dylib',
+
     # MS assembly excludes
-    r'^Microsoft\.Windows\.Common-Controls$': 1,
-}
+    r'Microsoft\.Windows\.Common-Controls',
+])
 
 
-_unix_excludes = {
-    r'/libc\.so\..*': 1,
-    r'/libdl\.so\..*': 1,
-    r'/libm\.so\..*': 1,
-    r'/libpthread\.so\..*': 1,
-    r'/librt\.so\..*': 1,
-    r'/libthread_db\.so\..*': 1,
-    r'/libdb-.*\.so': 1,
+_unix_excludes = set([
+    r'libc\.so(\..*)?',
+    r'libdl\.so(\..*)?',
+    r'libm\.so(\..*)?',
+    r'libpthread\.so(\..*)?',
+    r'librt\.so(\..*)?',
+    r'libthread_db\.so(\..*)?',
     # glibc regex excludes.
-    r'/ld-linux\.so\..*': 1,
-    r'/libBrokenLocale\.so\..*': 1,
-    r'/libanl\.so\..*': 1,
-    r'/libcidn\.so\..*': 1,
-    r'/libcrypt\.so\..*': 1,
-    r'/libnsl\.so\..*': 1,
-    r'/libnss_compat.*\.so\..*': 1,
-    r'/libnss_dns.*\.so\..*': 1,
-    r'/libnss_files.*\.so\..*': 1,
-    r'/libnss_hesiod.*\.so\..*': 1,
-    r'/libnss_nis.*\.so\..*': 1,
-    r'/libnss_nisplus.*\.so\..*': 1,
-    r'/libresolv\.so\..*': 1,
-    r'/libutil\.so\..*': 1,
+    r'ld-linux\.so(\..*)?',
+    r'libBrokenLocale\.so(\..*)?',
+    r'libanl\.so(\..*)?',
+    r'libcidn\.so(\..*)?',
+    r'libcrypt\.so(\..*)?',
+    r'libnsl\.so(\..*)?',
+    r'libnss_compat.*\.so(\..*)?',
+    r'libnss_dns.*\.so(\..*)?',
+    r'libnss_files.*\.so(\..*)?',
+    r'libnss_hesiod.*\.so(\..*)?',
+    r'libnss_nis.*\.so(\..*)?',
+    r'libnss_nisplus.*\.so(\..*)?',
+    r'libresolv\.so(\..*)?',
+    r'libutil\.so(\..*)?',
     # libGL can reference some hw specific libraries (like nvidia libs).
-    r'/libGL\..*': 1,
-}
+    r'libGL\..*',
+    # libxcb-dri changes ABI frequently (e.g.: between Ubuntu LTS releases) and
+    # is usually installed as dependency of the graphics stack anyway. No need
+    # to bundle it.
+    r'libxcb\.so(\..*)?',
+    r'libxcb-dri.*\.so(\..*)?',
+])
 
-_aix_excludes = {
-    r'/libbz2\.a': 1,
-    r'/libc\.a': 1,
-    r'/libC\.a': 1,
-    r'/libcrypt\.a': 1,
-    r'/libdl\.a': 1,
-    r'/libintl\.a': 1,
-    r'/libpthreads\.a': 1,
-    r'/librt\\.a': 1,
-    r'/librtl\.a': 1,
-    r'/libz\.a': 1,
-}
+_aix_excludes = set([
+    r'libbz2\.a',
+    r'libc\.a',
+    r'libC\.a',
+    r'libcrypt\.a',
+    r'libdl\.a',
+    r'libintl\.a',
+    r'libpthreads\.a',
+    r'librt\\.a',
+    r'librtl\.a',
+    r'libz\.a',
+])
 
 
 if is_win:
-    _excludes = _win_excludes
-    from PyInstaller.utils import winutils
-    sep = '[%s]' % re.escape(os.sep + os.altsep)
-    # Exclude everything from the Windows directory by default.
-    windir = re.escape(winutils.get_windows_dir())
-    _excludes['^%s%s' % (windir, sep)] = 1
-    # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
-    _includes[r'%spy(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll$' % sep] = 1
-
+    _includes |= _win_includes
+    _excludes |= _win_excludes
 elif is_aix:
     # The exclude list for AIX differs from other *nix platforms.
-    _excludes = _aix_excludes
+    _excludes |= _aix_excludes
 elif is_unix:
     # Common excludes for *nix platforms -- except AIX.
-    _excludes = _unix_excludes
+    _excludes |= _unix_excludes
 
 
 class ExcludeList(object):
     def __init__(self):
-        self.regex = re.compile('|'.join(_excludes.keys()), re.I)
+        self.regex = re.compile('|'.join(_excludes), re.I)
 
     def search(self, libname):
         # Running re.search() on '' regex never returns None.
         if _excludes:
-            return self.regex.search(libname)
+            return self.regex.match(os.path.basename(libname))
         else:
             return False
 
 
 class IncludeList(object):
     def __init__(self):
-        self.regex = re.compile('|'.join(_includes.keys()), re.I)
+        self.regex = re.compile('|'.join(_includes), re.I)
 
     def search(self, libname):
         # Running re.search() on '' regex never returns None.
         if _includes:
-            return self.regex.search(libname)
+            return self.regex.match(os.path.basename(libname))
         else:
             return False
 
@@ -137,10 +183,39 @@ if is_darwin:
     from PyInstaller.lib.macholib import util
 
     class MacExcludeList(object):
-        def search(self, libname):
-            return util.in_system_path(libname)
+        def __init__(self, global_exclude_list):
+            # Wraps the global 'exclude_list' before it is overriden
+            # by this class.
+            self._exclude_list = global_exclude_list
 
-    exclude_list = MacExcludeList()
+        def search(self, libname):
+            # First try global exclude list. If it matches then
+            # return it's result otherwise continue with other check.
+            result = self._exclude_list.search(libname)
+            if result:
+                return result
+            else:
+                return util.in_system_path(libname)
+
+    exclude_list = MacExcludeList(exclude_list)
+
+elif is_win:
+    class WinExcludeList(object):
+        def __init__(self, global_exclude_list):
+            self._exclude_list = global_exclude_list
+            self._windows_dir = winutils.get_windows_dir().lower()
+
+        def search(self, libname):
+            libname = libname.lower()
+            result = self._exclude_list.search(libname)
+            if result:
+                return result
+            else:
+                # Exclude everything from the Windows directory by default.
+                fn = os.path.realpath(libname)
+                return fn.startswith(self._windows_dir)
+
+    exclude_list = WinExcludeList(exclude_list)
 
 
 def include_library(libname):

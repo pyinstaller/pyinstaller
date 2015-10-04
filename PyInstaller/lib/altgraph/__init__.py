@@ -10,7 +10,7 @@ altgraph is a python based graph (network) representation and manipulation packa
 It has started out as an extension to the `graph_lib module <http://www.ece.arizona.edu/~denny/python_nest/graph_lib_1.0.1.html>`_
 written by Nathan Denny it has been significantly optimized and expanded.
 
-The :class:`altgraph.Graph.Graph` class is loosely modeled after the `LEDA <http://www.algorithmic-solutions.com/enleda.htm>`_ 
+The :class:`altgraph.Graph.Graph` class is loosely modeled after the `LEDA <http://www.algorithmic-solutions.com/enleda.htm>`_
 (Library of Efficient Datatypes)  representation. The library
 includes methods for constructing graphs, BFS and DFS traversals,
 topological sort, finding connected components, shortest paths as well as a number
@@ -66,7 +66,7 @@ Our script then might look the following way::
         graph.add_edge(head, tail)
 
     # do a forward bfs from 1 at most to 20
-    print graph.forw_bfs(1)
+    print(graph.forw_bfs(1))
 
 This will print the nodes in some breadth first order::
 
@@ -75,7 +75,7 @@ This will print the nodes in some breadth first order::
 If we wanted to get the hop-distance from node 1 to node 8
 we coud write::
 
-    print graph.get_hops(1, 8)
+    print(graph.get_hops(1, 8))
 
 This will print the following::
 
@@ -85,7 +85,7 @@ Node 1 is at 0 hops since it is the starting node, nodes 2,3 are 1 hop away ...
 node 8 is 5 hops away. To find the shortest distance between two nodes you
 can use::
 
-    print GraphAlgo.shortest_path(graph, 1, 12)
+    print(GraphAlgo.shortest_path(graph, 1, 12))
 
 It will print the nodes on one (if there are more) the shortest paths::
 
@@ -128,8 +128,9 @@ To display the graph we can use the GraphViz backend::
   @contributor: U{Reka Albert <http://www.phys.psu.edu/~ralbert/>}
 
 '''
-
-__version__ = '0.7.0'
+# For PyInstaller/lib/ define the version here, since there is no
+# package-resource.
+__version__ = '0.12'
 
 class GraphError(ValueError):
     pass

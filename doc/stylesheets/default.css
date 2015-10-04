@@ -16,9 +16,9 @@ tt, span.literal {
 }
 
 div.document {
-	padding-left: 2em;
-	padding-right: 2em;
-	padding: 0 20px 30px;
+	padding-left: 1em;
+	padding-right: 1em;
+	/* padding: 0 20px 30px;  this overrides the prior 2 lines */
 }
 dl, table {
 	margin-left: 2em;
@@ -44,7 +44,15 @@ div#contents p.topic-title.first {
 	font-family: 'Trebuchet MS',sans-serif;
 	font-weight: normal;
 }
-
+div.contents {
+	float:left;
+	margin-left: -1em;
+	width: 35%;
+	background: white;
+	margin-right: 2em;
+	padding-right: 0.5em;
+	border: 1px solid black;
+	}
 a:link, a:visited { color: #006699; }
 a:hover { background-color:#006699; color:white; }
 
@@ -181,6 +189,22 @@ p.sidebar-title {
 	font-variant: small-caps;
 }
 
+div.note {
+    border: solid thin black;
+    background-color: #ffffee;
+    width: 90%;
+    padding: 0 0.5em;
+}
+
+div.note p.admonition-title {
+    font-weight: bold;
+    float: left;
+    margin-right: 1em;
+}
+
+div.note p.admonition-title:after {
+    content: ": "
+}
 
 /*
  * END OF FILE

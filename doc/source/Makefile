@@ -14,7 +14,7 @@ all:
 doc: html pdf man cleanlogs
 	@echo "Documentation generated: Please see ../*.html, ../*.pdf and ../*.1 for files"
 
-manpages := pyinstaller pyi-makespec pyi-build pyi-makeCOMServer
+manpages := pyinstaller pyi-makespec
 
 html: ../Manual.html $(foreach manpage,${manpages},../${manpage}.html)
 pdf: ../Manual.pdf
@@ -26,51 +26,64 @@ man: $(foreach manpage,${manpages},../${manpage}.1)
 ../%.html: %.rst docutils.conf _definitions.txt
 	rst2html --config=docutils.conf $< $@
 
-Manual.tex: Manual.rst _definitions.txt
-	tools/rst2newlatex.py --stylesheet-path=stylesheets/latex.tex Manual.rst Manual.tex
+Manual.rst: _pyinstaller-options.tmp
+pyinstaller.rst: _pyinstaller-options.tmp
+pyi-makespec.rst: _pyi-makespec-options.tmp
 
+_pyinstaller-options.tmp: ../../pyinstaller.py
+	./help2rst $< > $@
+
+_pyi-%-options.tmp: ../../utils/%.py
+	./help2rst $< > $@
+
+# rst2pdf need to find some images *and* the include-files in the
+# same dircectory, so copy the include-files up there.
 ../Manual.pdf: srcdir=$(dir $(abspath $<))
-../Manual.pdf: Manual.rst _definitions.txt
-	cp _definitions.txt ..
+../Manual.pdf: Manual.rst _definitions.txt _pyinstaller-options.tmp
+	cp _definitions.txt _pyinstaller-options.tmp ..
 	cd ${srcdir}/.. && \
-	rst2pdf < ${srcdir}/$< -o ${srcdir}/$@ \
+	rst2pdf < ${srcdir}/$< \
 	   --header='###Title### - ###Section###' \
 	   --footer='###Page###' \
-	   --default-dpi=75 
-	rm ../_definitions.txt
+	   --default-dpi=75 | \
+	gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite \
+	   '-sOutputFile=${srcdir}/$@' -c save pop -
+	rm ../_definitions.txt ../_pyinstaller-options.tmp
 
 _definitions.txt:
-	# _definitions.txt is overwritten.
-	echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > $@
-	echo '' >> $@  # Empty line.
-	# Append other lines.
-	echo '.. _PyInstaller: http://www.pyinstaller.org' >> $@
-	echo '' >> $@
-	echo '.. |Homepage| replace:: http://www.pyinstaller.org' >> $@
-	echo '.. |PyInstaller| replace:: `PyInstaller`' >> $@
-	# run `pyinstaller.py -v` to get the version
-	echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> $@
-	echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
-	echo '.. |install_path| replace:: /OBSOLETE-REMOVE/' >> $@
-	# folder name of package after download and unzip
-	echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
-	# how we punctuate boot loader as a proper noun "the bootloader"
-	echo '.. |bootloader| replace:: bootloader' >> $@
+	@echo Writting '_definitions.txt'
+	@echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > $@
+	@echo '' >> $@  # Empty line.
+	@# Append other lines.
+	@echo '.. _PyInstaller: http://www.pyinstaller.org' >> $@
+	@echo '' >> $@
+	@echo '.. |Homepage| replace:: http://www.pyinstaller.org' >> $@
+	@echo '.. |PyInstaller| replace:: `PyInstaller`' >> $@
+	@# run `pyinstaller.py -v` to get the version
+	@echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> $@
+	@echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
+	@# folder name of package after download and unzip
+	@echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
+	@# how we punctuate boot loader as a proper noun "the bootloader"
+	@echo '.. |bootloader| replace:: bootloader' >> $@
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
-	@echo "make cleanlogs ===> To clean *.log, *.aux, etc. but not the .html or .pdf"
+	@echo "make cleanlogs ===> To clean _definitions.txt, *.log, *.aux, etc. but not the .html or .pdf"
 
 
 cleanall: cleanlogs
-	rm -f ../*.pdf ../*.html ../*.1
-	rm _definitions.txt
-	@echo "All logs and documentation removed."
+	@# Checkout last commited version to avoid '-mod' postfix in version
+	git checkout --quiet --force -- ../*.pdf ../*.html
+	rm -f ../*.1
+	rm -f _*-options.tmp
+	@echo "All generated documentation removed."
 
 
 cleanlogs:
 	rm -f ../*.aux ../*.out ../*.log
 	rm -f .log *.log
+	rm -f _definitions.txt
 	@echo "All logs and aux removed."
 
 #

@@ -46,84 +46,17 @@ read the introduction to `Spec Files`.
 OPTIONS
 ========
 
-General Options
---------------------
+.. include:: _pyi-makespec-options.tmp
 
--h, --help          show this help message and exit
+ENVIRONMENT VARIABLES
+=====================
 
---log-level=LOGLEVEL  Log level for MakeSpec.py (default: INFO, choose
-                      one of DEBUG, INFO, WARN, ERROR, CRITICAL)
-
-What to generate
-------------------
-
--F, --onefile       create a single file deployment
--D, --onedir        create a single directory deployment (default)
--o DIR, --out=DIR   generate the spec file in the specified directory
-                    (default: current directory)
--n NAME, --name=NAME
-                    name to assign to the project (default: first script's
-                    basename)
-
-What to bundle, where to search
----------------------------------
-
--p DIR, --paths=DIR
-                    set base path for import (like using PYTHONPATH).
-                    Multiple directories are allowed, separating them with
-                    ':', or using this option multiple times
---additional-hooks-dir=HOOKSPATH
-                    additional path to search for hooks (may be given
-                    several times)
--a, --ascii         do NOT include unicode encodings (default: included if
-                    available)
---hidden-import=MODULENAME
-                    import hidden in the script(s). This option can be
-                    used multiple times.
-
-How to generate
--------------------
-
--d, --debug         use the debug (verbose) build of the executable for
-                    packaging. This will make the packaged executable be
-                    more verbose when run.
--s, --strip         strip the exe and shared libs (don't try this on
-                    Windows)
--X, --upx           use UPX if available (works differently between
-                    Windows and \*nix)
-
-Windows specific options
--------------------------
-
--c, --console, --nowindowed
-                    use a console subsystem executable (Windows only)
-                    (default)
--w, --windowed, --noconsole
-                    use a Windows subsystem executable (Windows only)
--v FILE, --version=FILE
-                    add a version resource from FILE to the exe
-                    (Windows only)
--i ICON_or_FILE_ID, --icon=ICON_or_FILE_ID
-                    If file is an .ico file, add the icon to the final
-                    executable. Otherwise, the syntax 'file.exe,id' to
-                    extract the icon with the specified id from file.exe
-                    and add it to the final executable
--m FILE_or_XML, --manifest=FILE_or_XML
-                    add manifest FILE or XML to the exe (Windows only)
--r RESOURCE, --resource=RESOURCE
-                    RESOURCE is of format FILE[,TYPE[,NAME[,LANGUAGE]]].
-
-                    Add or update resource of the given type, name and
-                    language from FILE to the final executable. FILE
-                    can be a data file or an exe/dll. For data files,
-                    atleast TYPE and NAME need to be specified,
-                    LANGUAGE defaults to 0 or may be specified as
-                    wildcard \* to update all resources of the given
-                    TYPE and NAME. For exe/dll files, all resources
-                    from FILE will be added/updated to the final
-                    executable if TYPE, NAME and LANGUAGE are omitted
-                    or specified as wildcard \*. Multiple resources
-                    are allowed, using this option multiple times.
+====================== ========================================================
+PYINSTALLER_CONFIG_DIR This changes the directory where PyInstaller caches some
+                       files. The default location for this is operating system
+                       dependent, but is typically a subdirectory of the home
+                       directory.
+====================== ========================================================
 
 SEE ALSO
 =============

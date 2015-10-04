@@ -1,0 +1,6 @@
+# Include some common dependencies for tests.
+-r requirements.txt
+
+pypiwin32  # This package is a pip-installable version of PyWin32.
+pyenchant
+PySide==1.2.2

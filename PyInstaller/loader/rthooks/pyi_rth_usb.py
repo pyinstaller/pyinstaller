@@ -25,7 +25,7 @@ import usb.backend.openusb as openusb
 
 
 def get_load_func(type, candidates):
-    def _load_library():
+    def _load_library(find_library=None):
         exec_path = sys._MEIPASS
 
         l = None

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -9,160 +9,111 @@
 #-----------------------------------------------------------------------------
 
 
-import os
-import stat
-from setuptools import setup, find_packages
-from distutils.command.build_py import build_py
-from distutils.command.sdist import sdist
-
-from PyInstaller import get_version
-import PyInstaller.utils.git
+import codecs
+import sys
+from setuptools import setup
+from PyInstaller import __version__ as version
 
 
-DESC = ('Converts (packages) Python programs into stand-alone executables, '
-        'under Windows, Linux, Mac OS X, AIX and Solaris.')
 
-LONG_DESC = """
-PyInstaller is a program that converts (packages) Python
-programs into stand-alone executables, under Windows, Linux, Mac OS X,
-AIX and Solaris. Its main advantages over similar tools are that
-PyInstaller works with any version of Python since 2.3, it builds smaller
-executables thanks to transparent compression, it is fully multi-platform,
-and uses the OS support to load the dynamic libraries, thus ensuring full
-compatibility.
+REQUIREMENTS = ['setuptools']
+# For Windows install PyWin32 if not already installed.
+if sys.platform.startswith('win'):
+    try:
+        import pywintypes
+    except ImportError:
+        # 'pypiwin32' is PyWin32 package made installable by 'pip install'
+        # command.
+        REQUIREMENTS.append('pypiwin32')
 
-The main goal of PyInstaller is to be compatible with 3rd-party packages
-out-of-the-box. This means that, with PyInstaller, all the required tricks
-to make external packages work are already integrated within PyInstaller
-itself so that there is no user intervention required. You'll never be
-required to look for tricks in wikis and apply custom modification to your
-files or your setup scripts. As an example, libraries like PyQt, Django or
-matplotlib are fully supported, without having to handle plugins or
-external data files manually.
-"""
+
+# Create long description from README.rst and doc/CHANGES.rst.
+# PYPI page will contain complete PyInstaller changelog.
+def read(filename):
+    try:
+        return unicode(codecs.open(filename, encoding='utf-8').read())
+    except NameError:
+        return open(filename, 'r', encoding='utf-8').read()
+long_description = u'\n\n'.join([read('README.rst'),
+                                 read('doc/CHANGES.rst')])
+if sys.version_info < (3,):
+    long_description = long_description.encode('utf-8')
 
 
 CLASSIFIERS = """
-Classifier: Development Status :: 5 - Production/Stable
-Classifier: Environment :: Console
-Classifier: Intended Audience :: Developers
-Classifier: Intended Audience :: Other Audience
-Classifier: Intended Audience :: System Administrators
-Classifier: License :: OSI Approved :: GNU General Public License v2 (GPLv2)
-Classifier: Natural Language :: English
-Classifier: Operating System :: MacOS :: MacOS X
-Classifier: Operating System :: Microsoft :: Windows
-Classifier: Operating System :: POSIX
-Classifier: Operating System :: POSIX :: AIX
-Classifier: Operating System :: POSIX :: Linux
-Classifier: Operating System :: POSIX :: SunOS/Solaris
-Classifier: Programming Language :: C
-Classifier: Programming Language :: Python
-Classifier: Programming Language :: Python :: 2
-Classifier: Programming Language :: Python :: 2.4
-Classifier: Programming Language :: Python :: 2.5
-Classifier: Programming Language :: Python :: 2.6
-Classifier: Programming Language :: Python :: 2.7
-Classifier: Programming Language :: Python :: 2 :: Only
-Classifier: Programming Language :: Python :: Implementation :: CPython
-Classifier: Topic :: Software Development
-Classifier: Topic :: Software Development :: Build Tools
-Classifier: Topic :: System :: Installation/Setup
-Classifier: Topic :: System :: Software Distribution
-Classifier: Topic :: Utilities
-""".splitlines()
+Development Status :: 6 - Mature
+Environment :: Console
+Intended Audience :: Developers
+Intended Audience :: Other Audience
+Intended Audience :: System Administrators
+License :: OSI Approved :: GNU General Public License v2 (GPLv2)
+Natural Language :: English
+Operating System :: MacOS :: MacOS X
+Operating System :: Microsoft :: Windows
+Operating System :: POSIX
+Operating System :: POSIX :: AIX
+Operating System :: POSIX :: BSD
+Operating System :: POSIX :: Linux
+Operating System :: POSIX :: SunOS/Solaris
+Programming Language :: C
+Programming Language :: Python
+Programming Language :: Python :: 2
+Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3
+Programming Language :: Python :: 3.3
+Programming Language :: Python :: 3.4
+Programming Language :: Python :: 3.5
+Programming Language :: Python :: Implementation :: CPython
+Topic :: Software Development
+Topic :: Software Development :: Build Tools
+Topic :: Software Development :: Interpreters
+Topic :: Software Development :: Libraries :: Python Modules
+Topic :: System :: Installation/Setup
+Topic :: System :: Software Distribution
+Topic :: Utilities
+""".strip().splitlines()
 
-# Make the distribution files to always report the git-revision used
-# then building the distribution packages. This is done by replacing
-# PyInstaller/utils/git.py within the dist/build by a fake-module
-# which always returns the current git-revision. The original
-# source-file is unchanged.
-#
-# This has to be done in 'build_py' for bdist-commands and in 'sdist'
-# for sdist-commands.
-
-def _write_git_version_file(filename):
-    """
-    Fake PyInstaller.utils.git.py to always return the current revision.
-    """
-    git_version = PyInstaller.utils.git.get_repo_revision()
-    st = os.stat(filename)
-    # remove the file first for the case it's hard-linked to the
-    # original file
-    os.remove(filename)
-    git_mod = open(filename, 'w')
-    template = "def get_repo_revision(): return %r"
-    try:
-        git_mod.write(template % git_version)
-    finally:
-        git_mod.close()
-    os.chmod(filename, stat.S_IMODE(st.st_mode))
-
-
-class my_build_py(build_py):
-    def build_module(self, module, module_file, package):
-        res = build_py.build_module(self, module, module_file, package)
-        if module == 'git' and package == 'PyInstaller.utils':
-            filename = self.get_module_outfile(
-                self.build_lib, package.split('.'), module)
-            _write_git_version_file(filename)
-        return res
-
-
-class my_sdist(sdist):
-    def make_release_tree(self, base_dir, files):
-        res = sdist.make_release_tree(self, base_dir, files)
-        build_py = self.get_finalized_command('build_py')
-        filename = build_py.get_module_outfile(
-            base_dir, ['PyInstaller', 'utils'], 'git')
-        _write_git_version_file(filename)
-        return res
 
 setup(
-    install_requires=['distribute'],
+    install_requires=REQUIREMENTS,
 
     name='PyInstaller',
-    version=get_version(),
+    version=version,
 
-    description=DESC,
-    long_description=LONG_DESC,
-    keywords='packaging, standalone executable, pyinstaller, macholib, freeze, py2exe, py2app, bbfreeze',
+    description='PyInstaller bundles a Python application and all its '
+                'dependencies into a single package.',
+    long_description=long_description,
+    keywords='packaging app apps bundle convert standalone executable '
+             'pyinstaller macholib cxfreeze freeze py2exe py2app bbfreeze',
 
-    author='Giovanni Bajo, Hartmut Goebel, Martin Zibricky',
+    author='Giovanni Bajo, Hartmut Goebel, David Vierra, David Cortesi, Martin Zibricky',
     author_email='pyinstaller@googlegroups.com',
-    maintainer='Giovanni Bajo, Hartmut Goebel, Martin Zibricky',
-    maintainer_email='pyinstaller@googlegroups.com',
 
     license=('GPL license with a special exception which allows to use '
              'PyInstaller to build and distribute non-free programs '
              '(including commercial ones)'),
     url='http://www.pyinstaller.org',
-    download_url='https://sourceforge.net/projects/pyinstaller/files',
 
     classifiers=CLASSIFIERS,
     zip_safe=False,
-    packages=find_packages(),
+    packages=['PyInstaller'],
     package_data={
-        # This includes precompiled bootloaders.
+        # This includes precompiled bootloaders and icons for bootloaders.
         'PyInstaller': ['bootloader/*/*'],
         # This file is necessary for rthooks (runtime hooks).
         'PyInstaller.loader': ['rthooks.dat'],
         },
     include_package_data=True,
-    cmdclass = {
-        'sdist': my_sdist,
-        'build_py': my_build_py,
-        },
 
-    entry_points="""
-    [console_scripts]
-    pyinstaller=PyInstaller.main:run
-    pyi-archive_viewer=PyInstaller.cliutils.archive_viewer:run
-    pyi-bindepend=PyInstaller.cliutils.bindepend:run
-    pyi-build=PyInstaller.cliutils.build:run
-    pyi-grab_version=PyInstaller.cliutils.grab_version:run
-    pyi-make_comserver=PyInstaller.cliutils.make_comserver:run
-    pyi-makespec=PyInstaller.cliutils.makespec:run
-    pyi-set_version=PyInstaller.cliutils.set_version:run
-    """
+    entry_points={
+        'console_scripts': [
+            'pyinstaller = PyInstaller.__main__:run',
+            'pyi-archive_viewer = PyInstaller.utils.cliutils.archive_viewer:run',
+            'pyi-bindepend = PyInstaller.utils.cliutils.bindepend:run',
+            'pyi-grab_version = PyInstaller.utils.cliutils.grab_version:run',
+            'pyi-makespec = PyInstaller.utils.cliutils.makespec:run',
+            'pyi-pprint_toc = PyInstaller.utils.cliutils.pprint_toc:run',
+            'pyi-set_version = PyInstaller.utils.cliutils.set_version:run',
+        ],
+    }
 )

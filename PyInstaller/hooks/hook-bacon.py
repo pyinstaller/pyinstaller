@@ -10,12 +10,12 @@
 # Hook for Bacon (https://github.com/aholkner/bacon)
 # Bacon requires its native DLLs to be copied alongside frozen executable.
 
-from PyInstaller.compat import is_win, is_darwin
-from PyInstaller.hooks.hookutils import get_package_paths
-
 import os
-import sys
 import ctypes
+
+from PyInstaller.compat import is_win, is_darwin
+from PyInstaller.utils.hooks import get_package_paths
+
 
 def collect_native_files(package, files):
     pkg_base, pkg_dir = get_package_paths(package)
