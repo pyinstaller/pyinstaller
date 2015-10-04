@@ -9,6 +9,8 @@ please let us know if your name is omitted by accident:
 Contributions to PyInstaller 3.0
 --------------------------------
 
+- Martin Zibricky - Core developer and release manager.
+- Hartmut Goebel - Core developer.
 - David Cortesi - Initial work on Python 3 support, Python 3 fixes, documentation updates, various hook fixes.
 - Cecil Curry - 'six' hook for Python 3, various modulegraph improvements, wxPython hook fixes,
 - David Vierra - unicode support in bootloader, Windows SxS Assembly Manifest fixes and many other Windows improvements.
@@ -20,6 +22,7 @@ Contributions to PyInstaller 3.0
 - Glenn Ramsey - PyQt5 import hook - support for QtWebEngine on OSX, various hook fixes, Windows fixes.
 - Karol Woźniak - import hook fixes.
 - Jonathan Springer - PyGObject hooks. ctypes, PyEnchant hook fixes, OS X fixes.
+- Giuseppe Masetti -  osgeo, mpl_toolkits.basemap and netCDF4 import hooks.
 - Yuu Yamashita - OS X fixes.
 - Thomas Waldmann - FreeBSD fixes.
 - Boris Savelev - FreeBSD and Solaris fixes.

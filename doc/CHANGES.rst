@@ -45,7 +45,7 @@ Changelog for PyInstaller
     PyInstaller will prefer not to follow policies that redirect to
     newer versions.
 
-- (OSX) Now option ``--osx-bundle-identifier`` to set .app bundle identifier.
+- (OSX) New option ``--osx-bundle-identifier`` to set .app bundle identifier.
 - (Windows) Remove old COM server support.
 - Allow override PyInstaller default config directory by environment
   variable ``PYINSTALLER_CONFIG_DIR``.
