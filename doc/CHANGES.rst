@@ -12,65 +12,72 @@ Changelog for PyInstaller
   - (Windows) Python 2.7 apps can now run from paths with non-ASCII characters
   - (Windows) Python 2.7 onefile apps can now run for users whose usernames
     contain non-ASCII characters
-  - Fix sys.getfilesystemencoding() to return correct values (#446, #885).
+  - Fix ``sys.getfilesystemencoding()`` to return correct values (#446, #885).
 
 - (OSX) Executables built with PyInstaller under OS X can now be digitally
   signed.
 - (OSX) 32bit precompiled bootloader no longer distributed, only 64bit.
 - (Windows) for 32bit bootloader enable flag LARGEADDRESSAWARE that allows
   to use 4GB of RAM.
-- Add hooks: amazon-product-api, appy, certifi, countrycode, cryptography, gi,
+- New hooks: amazon-product-api, appy, certifi, countrycode, cryptography, gi,
   httplib2, jsonschema, keyring, lensfunpy, mpl_toolkits.basemap, ncclient,
   netCDF4, OpenCV, osgeo, patsy, PsychoPy, pycountry, pycparser, PyExcelerate,
   PyGobject, pymssql, PyNaCl, PySiDe.QtCore, PySide.QtGui, rawpy, requests,
   scapy, scipy, six, SpeechRecognition, u1db, weasyprint, Xlib.
 - Hook fixes: babel, ctypes, django, IPython, pint, PyEnchant, Pygments, PyQt5,
   PySide, pyusb, sphinx, sqlalchemy, tkinter, wxPython.
-- Including data files from eggs support.
-- Directory eggs support.
-- Namespace packages support e.g. zope.interface (#502, #615, #665, #1346).
-- pkgutil.extend_path() support.
-- Option --key to obfuscate the Python bytecode.
-- Option --exclude-module to ignore a specific module or package.
-- (Windows) Option --uac-admin to request admin permissions before starting app.
-- (Windows) Option --uac-uiaccess allows an elevated application to work with
-  Remote Desktop.
-- (Windows) Options for Side-by-side Assembly searching:
+- Add support for automatically including data files from eggs.
+- Add support for directory eggs support.
+- Add support for all kind of namespace packages e.g.
+  ``zope.interface``, PEP302 (#502, #615, #665, #1346).
+- Add support for ``pkgutil.extend_path()``.
+- New option ``--key`` to obfuscate the Python bytecode.
+- New option ``--exclude-module`` to ignore a specific module or package.
+- (Windows) New option ``--uac-admin`` to request admin permissions
+  before starting the app.
+- (Windows) New option ``--uac-uiaccess`` allows an elevated
+  application to work with Remote Desktop.
+- (Windows) New options for Side-by-side Assembly searching:
 
-  - --win-private-assemblies bundled Shared Assemblies into the application will
-    be changed into Private Assemblies
-  - --win-no-prefer-redirects while searching for Assemblies PyInstaller will
-    prefer not to follow policies that redirect to newer versions.
+  - ``--win-private-assemblies`` bundled Shared Assemblies into the
+    application will be changed into Private Assemblies
+  - ``--win-no-prefer-redirects`` while searching for Assemblies
+    PyInstaller will prefer not to follow policies that redirect to
+    newer versions.
 
-- (OSX) Option --osx-bundle-identifier to set .app bundle identifier.
+- (OSX) Now option ``--osx-bundle-identifier`` to set .app bundle identifier.
 - (Windows) Remove old COM server support.
-- Allow override PyInstaller default config directory by environment variable
-  PYINSTALLER_CONFIG_DIR.
+- Allow override PyInstaller default config directory by environment
+  variable ``PYINSTALLER_CONFIG_DIR``.
 - Add FreeBSD support.
 - AIX fixes.
 - Solaris fixes.
 - Use library modulegraph for module dependency analysis.
-- Bootloader debug messages 'LOADER: ...' printed to stderr.
-- PyInstaller no longer extends sys.path and bundled 3rd-party libraries do not
-  interfere with their other versions.
-- Attribute 'excludedimports' to exclude Python modules in import hooks.
-- Attribute 'binaries' to bundle dynamic libraries in .spec file and in import
-  hooks.
-- Attribute 'datas' to bundle additional data files in .spec file and in import
-  hooks.
+- Bootloader debug messages ``LOADER: ...`` printed to stderr.
+- PyInstaller no longer extends ``sys.path`` and bundled 3rd-party
+  libraries do not interfere with their other versions.
+- Enhancemants to ``Analysis()``:
+
+  - New arguments ``excludedimports`` to exclude Python modules in
+    import hooks.
+  - New argument ``binaries`` to bundle dynamic libraries in `.spec`
+    file and in import hooks.
+  - New argument ``datas`` to bundle additional data files in `.spec`
+    file and in import hooks.
+
 - A lot of internal code refactoring.
 - Test suite migrated to pytest framework.
 - Improved testing infrastructure with continuous integration (Travis - Linux,
   Appveyor - Windows)
 - Wiki and bug tracker migrated to github.
-  
+
 
 **Known Issues**
 
 - Apps built with Windows 10 and Python 3.5 may not run on Windows versions
   earlier than 10 (#1566).
-- Broken multipackage (MERGE) feature (#1527).
-- (OSX) Broken support for OpenDocument events (#1309).
+- The multipackage (MERGE) feature (#1527) is currenty broken.
+- (OSX) Support for OpenDocument events (#1309) is broken.
 
 
 2.1 (2013-09-27)
