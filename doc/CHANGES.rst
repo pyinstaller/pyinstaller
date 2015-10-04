@@ -2,7 +2,7 @@ Changelog for PyInstaller
 =========================
 
 
-3.0 (unreleased)
+3.0 (2015-10-04)
 ----------------
 
 - Python 3 support (3.3 / 3.4 / 3.5).
