@@ -6,6 +6,12 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 3.1
+--------------------------------
+
+- Name - Description of contribution.
+
+
 Contributions to PyInstaller 3.0
 --------------------------------
 
