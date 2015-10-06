@@ -15,20 +15,45 @@ import ctypes, ctypes.util
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, skipif_notwin
 
+
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 
 def test_relative_import(pyi_builder):
-    pyi_builder.test_script('pyi_import_relative.py')
+    pyi_builder.test_source(
+        """
+        import pyi_testmod_relimp.B.C
+        from pyi_testmod_relimp.F import H
+        import pyi_testmod_relimp.relimp1
+
+        assert pyi_testmod_relimp.relimp1.name == 'pyi_testmod_relimp.relimp1'
+        assert pyi_testmod_relimp.B.C.name == 'pyi_testmod_relimp.B.C'
+        assert pyi_testmod_relimp.F.H.name == 'pyi_testmod_relimp.F.H'
+        """
+    )
 
 
 def test_relative_import2(pyi_builder):
-    pyi_builder.test_script('pyi_import_relative2.py')
+    pyi_builder.test_source(
+        """
+        import pyi_testmod_relimp2.bar
+        import pyi_testmod_relimp2.bar.bar2
+
+        pyi_testmod_relimp2.bar.say_hello_please()
+        pyi_testmod_relimp2.bar.bar2.say_hello_please()
+        """
+    )
 
 
 def test_relative_import3(pyi_builder):
-    pyi_builder.test_script('pyi_import_relative3.py')
+    pyi_builder.test_source(
+        """
+        from pyi_testmod_relimp3a.aa import a1
+        print(a1.getString())
+        """
+    )
+
 
 def test_import_pyqt5_uic_port(pyi_builder):
     extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt.uic.port')
