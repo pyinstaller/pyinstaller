@@ -266,6 +266,12 @@ def test_pywin32_win32com(pyi_builder):
     pyi_builder.test_script('pyi_pywin32_win32com.py')
 
 
+@pytest.mark.xfail(reason="Requires post-create-package hooks (issue #1322)")
+@importorskip('win32com')
+def test_pywin32_comext(pyi_builder):
+    pyi_builder.test_script('pyi_pywin32_comext.py')
+
+
 @importorskip('win32ui')
 def test_pywin32_win32ui(pyi_builder):
     pyi_builder.test_script('pyi_pywin32_win32ui.py')
