@@ -383,18 +383,17 @@ class Manifest(object):
                             assembly.optional):
                             continue
                         for redirect in assembly.bindingRedirects:
-                            if logger.isEnabledFor(logging.INFO):
-                                old = "-".join([".".join([str(i)
-                                                          for i in
-                                                          part])
-                                                for part in
-                                                redirect[0]])
-                                new = ".".join([str(i)
-                                                for i in
-                                                redirect[1]])
-                                logger.debug("Found redirect for "
-                                             "version(s) %s -> %s",
-                                             old, new)
+                            old = "-".join([".".join([str(i)
+                                                      for i in
+                                                      part])
+                                            for part in
+                                            redirect[0]])
+                            new = ".".join([str(i)
+                                            for i in
+                                            redirect[1]])
+                            logger.debug("Found redirect for "
+                                         "version(s) %s -> %s",
+                                         old, new)
                             if (version >= redirect[0][0] and
                                 version <= redirect[0][-1] and
                                 version != redirect[1]):
