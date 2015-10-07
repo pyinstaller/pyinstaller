@@ -550,8 +550,12 @@ class EXE(Target):
                                                         [reslang or "*"])
                 except winresource.pywintypes.error as exc:
                     if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
-                        logger.exception(exc)
+                        logger.error("Error while updating resources in %s"
+                                     " from resource file %s", tmpnm, resfile, exc_info=1)
                         continue
+
+                    # Handle the case where the file contains no resources, and is
+                    # intended as a single resource to be added to the exe.
                     if not restype or not resname:
                         logger.error("resource type and/or name not specified")
                         continue
@@ -566,8 +570,10 @@ class EXE(Target):
                                                              restype,
                                                              [resname],
                                                              [reslang or 0])
-                    except winresource.pywintypes.error as exc:
-                        logger.exception(exc)
+                    except winresource.pywintypes.error:
+                        logger.error("Error while updating resource %s %s in %s"
+                                     " from data file %s",
+                                     restype, resname, tmpnm, resfile, exc_info=1)
             trash.append(tmpnm)
             exe = tmpnm
         exe = checkCache(exe, strip=self.strip, upx=self.upx)

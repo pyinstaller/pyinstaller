@@ -360,8 +360,7 @@ def getAssemblies(pth):
                                           False)
                 except Exception as exc:
                     logger.error("Can not parse manifest resource %s, %s"
-                                 "from %s", name, language, pth)
-                    logger.exception(exc)
+                                 " from %s", name, language, pth, exc_info=1)
                 else:
                     if manifest.dependentAssemblies:
                         logger.debug("Dependent assemblies of %s:", pth)
@@ -700,10 +699,7 @@ def getImports(pth):
             # dependencies should already have been handled by
             # selectAssemblies in that case, so just warn, return an empty
             # list and continue.
-            if logger.isEnabledFor(logging.WARN):
-                 # logg excaption only if level >= warn
-                logger.warn('Can not get binary dependencies for file: %s', pth)
-                logger.exception(exception)
+            logger.warn('Can not get binary dependencies for file: %s', pth, exc_info=1)
             return []
     elif is_darwin:
         return _getImports_macholib(pth)

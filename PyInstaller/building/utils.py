@@ -273,9 +273,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                                   False)
                         except Exception as exc:
                             logger.error("Cannot parse manifest resource %s, "
-                                         "%s from", name, language)
-                            logger.error(cachedfile)
-                            logger.exception(exc)
+                                         "%s", name, language)
+                            logger.error("From file %s", cachedfile, exc_info=1)
                         else:
                             # optionally change manifest to private assembly
                             if CONF.get('win_private_assemblies', False):

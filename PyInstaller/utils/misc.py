@@ -74,7 +74,8 @@ def get_code_object(filename, new_filename=None):
         code_object = compile(source_code_string, filename, 'exec', 0, True)
         return code_object
     except SyntaxError as e:
-        logger.exception(e)
+        logger.error("SyntaxError while compiling code object for %s",
+                     filename, exc_info=True)
         raise SystemExit(10)
 
 

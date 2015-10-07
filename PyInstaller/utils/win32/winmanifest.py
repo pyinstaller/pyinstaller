@@ -372,9 +372,9 @@ class Manifest(object):
                 logger.info("Found %s", manifestpth)
                 try:
                     policy = ManifestFromXMLFile(manifestpth)
-                except Exception as exc:
-                    logger.error("Could not parse file %s", manifestpth)
-                    logger.exception(exc)
+                except Exception:
+                    logger.error("Could not parse file %s",
+                                 manifestpth, exc_info=1)
                 else:
                     logger.debug("Checking publisher policy for "
                                  "binding redirects")
@@ -509,9 +509,9 @@ class Manifest(object):
                     else:
                         logger.info("Found manifest %s", manifestpth)
                         manifest = ManifestFromXMLFile(manifestpth)
-                except Exception as exc:
-                    logger.error("Could not parse manifest %s", manifestpth)
-                    logger.exception(exc)
+                except Exception:
+                    logger.error("Could not parse manifest %s",
+                                 manifestpth, exc_info=1)
                 else:
                     if manifestpth.startswith(winsxs):
                         # Manifest is in Windows\WinSxS\Manifests, so assembly
