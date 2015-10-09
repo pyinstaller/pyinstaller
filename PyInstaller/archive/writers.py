@@ -30,6 +30,8 @@ import sys
 from types import CodeType
 import marshal
 import zlib
+import copy
+from operator import itemgetter
 
 from .readers import CArchiveReader, PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA
 from ..compat import BYTECODE_MAGIC
@@ -222,7 +224,10 @@ class ArchiveWriter(object):
           entry[2] is a flag for it's storage format (True or 1 if compressed)
           entry[3] is the entry's type code.
         """
-        for toc_entry in toc:
+        toc2 = copy.copy(toc)
+        toc2.sort(key=itemgetter(0), reverse=False)  # in place sort
+
+        for toc_entry in toc2:
             self.add(toc_entry)  # The guts of the archive.
 
     def _finalize(self):
