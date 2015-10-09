@@ -63,9 +63,11 @@ The pip-Win_ package is also recommended but not required.
 Mac OS X
 ~~~~~~~~~
 
-|PyInstaller| runs in Mac OS X 10.6 (Snow Leopard) or newer.
-It builds 64-bit executables by default, but can create 32-bit executables.
+|PyInstaller| runs in Mac OS X 10.6 (Snow Leopard) or newer.
 It can build graphical windowed apps (apps that do not use a terminal window).
+PyInstaller builds apps that are compatible with the Mac OS X release in
+which you run it, and following releases.
+It can build 32-bit binaries in Mac OS X releases that support them.
 
 Linux
 ~~~~~~
@@ -874,6 +876,68 @@ file ``icon-windowed.icns`` with the |PyInstaller| logo.)
 
 You can add items to the ``Info.plist`` by editing the spec file;
 see `Spec File Options for a Mac OS X Bundle`_ below.
+
+Making Mac OS X apps Forward-Compatible
+----------------------------------------
+
+In Mac OS X, components from one version of the OS are usually compatible
+with later versions, but they may not work with earlier versions.
+
+The only way to be certain your app supports an older version of Mac OS X
+is to run PyInstaller in the oldest version of the OS you need to support.
+
+For example, to be sure of compatibility with "Snow Leopard" (10.6)
+and later versions, you should execute PyInstaller in that environment.
+You would create a copy of Mac OS X 10.6, typically in a virtual machine.
+In it, install the desired level of Python
+(the default Python in Snow Leopard was 2.6, which PyInstaller no longer supports),
+and install |PyInstaller|, your source, and all its dependencies.
+Then build your app in that environment.
+It should be compatible with later versions of Mac OS X.
+
+Building 32-bit Apps in Mac OS X
+------------------------------------
+
+Older versions of Mac OS X supported both 32-bit and 64-bit executables.
+PyInstaller builds an app using the the word-length of the Python used to execute it.
+That will typically be a 64-bit version of Python,
+resulting in a 64-bit executable.
+To create a 32-bit executable, run PyInstaller under a 32-bit Python.
+
+Python as installed in OS X will usually be executable in either 64- or 32-bit mode.
+To verify this, apply the ``file`` command to the Python executable::
+
+    $ file /usr/local/bin/python3
+    /usr/local/bin/python3: Mach-O universal binary with 2 architectures
+    /usr/local/bin/python3 (for architecture i386):     Mach-O executable i386
+    /usr/local/bin/python3 (for architecture x86_64):   Mach-O 64-bit executable x86_64
+
+The OS chooses which architecture to run, and typically defaults to 64-bit.
+You can force the use of either architecture by name using the ``arch`` command::
+
+    $ /usr/local/bin/python3
+    Python 3.4.2 (v3.4.2:ab2c023a9432, Oct  5 2014, 20:42:22)
+    [GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> import sys; sys.maxsize
+    9223372036854775807
+
+    $ arch -i386 /usr/local/bin/python3
+    Python 3.4.2 (v3.4.2:ab2c023a9432, Oct  5 2014, 20:42:22)
+    [GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> import sys; sys.maxsize
+    2147483647
+
+Apple's default ``/usr/bin/python`` may circumvent the ``arch``
+specification and run 64-bit regardless.
+(That is not the case if you apply ``arch`` to a specific version
+such as ``/usr/bin/python2.7``.)
+To make sure of running 32-bit in all cases, set the following environment variable::
+
+    VERSIONER_PYTHON_PREFER_32_BIT=yes
+    arch -i386 /usr/bin/python pyinstaller --clean -F -w myscript.py
+
 
 Getting the Opened Document Names
 ------------------------------------
