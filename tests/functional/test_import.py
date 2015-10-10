@@ -197,3 +197,45 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
 #
 # Of course we need to use dlls which is not are commony available on
 # windows but mot excluded in PyInstaller.depend.dylib
+
+
+def test_egg_unzipped(pyi_builder):
+    pathex = os.path.join(_MODULES_DIR, 'pyi_egg_unzipped.egg')
+    pyi_builder.test_source(
+        """
+        # This code is part of the package for testing eggs in `PyInstaller`.
+        import os
+        import pkg_resources
+
+        expected_data = 'This is data file for `unzipped`.'.encode('ascii')
+        t = pkg_resources.resource_string('unzipped_egg', 'data/datafile.txt')
+        assert t.rstrip() == expected_data
+
+        import unzipped_egg
+        assert unzipped_egg.data == expected_data
+
+        print('Okay.')
+        """,
+        pyi_args=['--paths', pathex],
+    )
+
+
+def test_egg_zipped(pyi_builder):
+    pathex = os.path.join(_MODULES_DIR, 'pyi_egg_zipped.egg')
+    pyi_builder.test_source(
+        """
+        # This code is part of the package for testing eggs in `PyInstaller`.
+        import os
+        import pkg_resources
+
+        expected_data = 'This is data file for `zipped`.'.encode('ascii')
+        t = pkg_resources.resource_string('zipped_egg', 'data/datafile.txt')
+        assert t.rstrip() == expected_data
+
+        import zipped_egg
+        assert zipped_egg.data == expected_data
+
+        print('Okay.')
+        """,
+        pyi_args=['--paths', pathex],
+    )
