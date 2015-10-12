@@ -199,6 +199,7 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
 # windows but mot excluded in PyInstaller.depend.dylib
 
 
+@pytest.mark.xfail(reason='#1581 zipped eggs broken')
 def test_egg_unzipped(pyi_builder):
     pathex = os.path.join(_MODULES_DIR, 'pyi_egg_unzipped.egg')
     pyi_builder.test_source(
@@ -220,6 +221,7 @@ def test_egg_unzipped(pyi_builder):
     )
 
 
+@pytest.mark.xfail(reason='#1581 zipped eggs broken')
 def test_egg_zipped(pyi_builder):
     pathex = os.path.join(_MODULES_DIR, 'pyi_egg_zipped.egg')
     pyi_builder.test_source(
