@@ -6,16 +6,26 @@ package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
 
-.. image:: http://img.shields.io/travis/pyinstaller/pyinstaller/develop.svg
+.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/develop.svg?label=Linux
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
+   :alt: Travis CI test status (Linux)
 
-.. image:: https://ci.appveyor.com/api/projects/status/t7o4swychyh94wrs/branch/develop?svg=true
+.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller-osx-tests/master.svg?label=OS%20X
+   :target: https://travis-ci.org/pyinstaller/pyinstaller-osx-tests
+   :alt: Travis CI test status (OS X)
+
+.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/develop.svg?label=Windows
    :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/develop
+   :alt: AppVeyor CI test status (Windows)
 
-.. image:: http://img.shields.io/pypi/v/PyInstaller.svg
+.. image:: https://landscape.io/github/pyinstaller/pyinstaller/develop/landscape.svg
+   :target: https://landscape.io/github/pyinstaller/pyinstaller/develop
+   :alt: Code health
+
+.. image:: https://img.shields.io/pypi/v/PyInstaller.svg
    :target: https://pypi.python.org/pypi/PyInstaller
 
-.. image:: http://img.shields.io/pypi/dm/PyInstaller.svg
+.. image:: https://img.shields.io/pypi/dm/PyInstaller.svg
    :target: https://pypi.python.org/pypi/PyInstaller
 
 .. image:: https://img.shields.io/badge/docs-latest-blue.svg
