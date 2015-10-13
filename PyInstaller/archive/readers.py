@@ -94,7 +94,6 @@ class CArchiveReader(ArchiveReader):
     # to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
-    TOCTMPLT = CTOCReader
     LEVEL = 9
 
     # Cookie - holds some information for the bootloader. C struct format
@@ -167,7 +166,7 @@ class CArchiveReader(ArchiveReader):
         """
         Load the table of contents into memory.
         """
-        self.toc = self.TOCTMPLT()
+        self.toc = CTOCReader()
         self.lib.seek(self.pkg_start + self.tocpos)
         tocstr = self.lib.read(self.toclen)
         self.toc.frombinary(tocstr)

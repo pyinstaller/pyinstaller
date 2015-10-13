@@ -97,7 +97,6 @@ class ArchiveWriter(object):
     MAGIC = b'PYL\0'
     HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
     TOCPOS = 8
-    TOCTMPLT = {}
     os = None
     _bincache = None
 
@@ -206,12 +205,7 @@ class ArchiveWriter(object):
             self.lib.write(b'\0' * self.HDRLEN)
 
         # Create an empty table of contents.
-        if type(self.TOCTMPLT) == type({}):
-            self.toc = {}
-        else:
-            # FIXME Why do we need to assume callables and
-            # why not use @property decorator.
-            self.toc = self.TOCTMPLT()  # Assume callable.
+        self.toc = {}
 
     def _add_from_table_of_contents(self, toc):
         """
@@ -322,7 +316,6 @@ class ZlibArchiveWriter(ArchiveWriter):
     MAGIC = b'PYZ\0'
     TOCPOS = 8
     HDRLEN = ArchiveWriter.HDRLEN + 5
-    TOCTMPLT = {}
     COMPRESSION_LEVEL = 6  # Default level of the 'zlib' module from Python.
 
     def __init__(self, path=None, offset=None, code_dict=None,
@@ -502,7 +495,6 @@ class CArchiveWriter(ArchiveWriter):
     # to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
-    TOCTMPLT = CTOCWriter
     LEVEL = 9
 
     # Cookie - holds some information for the bootloader. C struct format
@@ -561,6 +553,14 @@ class CArchiveWriter(ArchiveWriter):
         for (dpos, dlen, ulen, flag, typcd, nm) in self.toc:
             rslt.append(nm)
         return rslt
+
+    def _start_add_entries(self, path):
+        """
+        Open an empty archive for addition of entries.
+        """
+        super(CArchiveWriter, self)._start_add_entries(path)
+        # Override parents' toc {} with a class.
+        self.toc = CTOCWriter()
 
     def add(self, entry):
         """

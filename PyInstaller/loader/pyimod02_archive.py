@@ -102,7 +102,6 @@ class ArchiveReader(object):
     MAGIC = b'PYL\0'
     HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
     TOCPOS = 8
-    TOCTMPLT = {}
     os = None
     _bincache = None
 
@@ -281,7 +280,6 @@ class ZlibArchiveReader(ArchiveReader):
     MAGIC = b'PYZ\0'
     TOCPOS = 8
     HDRLEN = ArchiveReader.HDRLEN + 5
-    TOCTMPLT = {}
 
     def __init__(self, path=None, offset=None):
         if path is None:
