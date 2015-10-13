@@ -17,7 +17,7 @@ import re
 import sys
 
 from ... import compat
-from ...compat import is_py2, is_win, is_py3, is_darwin
+from ...compat import is_py2, is_win, is_py3, is_darwin, EXTENSION_SUFFIXES
 from ...config import CONF
 from ...utils import misc
 from ... import HOMEPATH
@@ -592,7 +592,13 @@ def remove_suffix(string, suffix):
 def remove_file_extension(filename):
     """
     This function returns filename without its extension.
+
+    For Python C modules it removes even whole '.cpython-34m.so' etc.
     """
+    for suff in EXTENSION_SUFFIXES:
+        if filename.endswith(suff):
+            return filename[0:filename.rfind(suff)]
+    # Fallback to ordinary 'splitext'.
     return os.path.splitext(filename)[0]
 
 
