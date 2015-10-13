@@ -896,12 +896,15 @@ PY_DYLIB_PATTERNS = [
 ]
 
 
-def collect_dynamic_libs(package):
+def collect_dynamic_libs(package, destdir=None):
     """
     This routine produces a list of (source, dest) of dynamic library
     files which reside in package. Its results can be directly assigned to
     ``binaries`` in a hook script; see, for example, hook-zmq.py. The
     package parameter must be a string which names the package.
+
+    :param destdir: Relative path to ./dist/APPNAME where the libraries
+                    should be put.
     """
     # Accept only strings as packages.
     if type(package) is not str:
@@ -919,7 +922,12 @@ def collect_dynamic_libs(package):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.pyd,
                 #  mod/submod/file.pyd)
-                dest = remove_prefix(dirpath, os.path.dirname(pkg_base) + os.sep)
+                if destdir:
+                    # Libraries will be put in the same directory.
+                    dest = destdir
+                else:
+                    # The directory hierarchy is preserved as in the original package.
+                    dest = remove_prefix(dirpath, os.path.dirname(pkg_base) + os.sep)
                 logger.debug(' %s, %s' % (source, dest))
                 dylibs.append((source, dest))
     return dylibs
