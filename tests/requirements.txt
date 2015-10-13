@@ -41,3 +41,4 @@ twisted
 matplotlib
 pyexcelerate
 Pillow
+pandas

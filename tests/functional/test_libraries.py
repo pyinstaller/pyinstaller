@@ -416,3 +416,15 @@ def test_pil_plugins(pyi_builder):
         else:
             print('PIL supported image formats: %s' % plugins)
         """)
+
+
+@importorskip('pandas')
+def test_pandas_extension(pyi_builder):
+    # Tests that C extension 'pandas.lib' is properly bundled. Issue #1580.
+    pyi_builder.test_source(
+        """
+        from pandas.lib import is_float
+        assert is_float(1) == 0
+        """)
+
+
