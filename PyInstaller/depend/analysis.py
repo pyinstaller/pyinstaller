@@ -301,22 +301,6 @@ class PyiModuleGraph(ModuleGraph):
             mg_type = type(node).__name__
             assert mg_type is not None
 
-            # Skip dynamic libraries that looks like Python C extensions.
-            # For example pyzmq bundles files like:
-            #     libzmq.cpython-34m.so,
-            #     libzmq.cpython-34m.pyd.
-            # These files have to be handled separately.
-            if mg_type == 'Extension':
-                base_nm = os.path.basename(node.filename)
-                ext = os.path.splitext(base_nm)[1]
-                if base_nm.startswith('lib') and ext in ('.pyd', '.so'):
-                    # Verify that C extension is not a real extension and
-                    # skip it in this case.
-                    # Some Python C-extensions starts with 'lib' prefix
-                    # e.g. libxml2mod.so, scipy.svm.libsvm.so
-                    if not is_real_extension_module(node.identifier, node.filename):
-                        continue
-
             if typecode and not (mg_type in typecode):
                 # Type is not a to be selected one, skip this one
                 continue
