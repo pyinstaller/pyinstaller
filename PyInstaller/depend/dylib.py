@@ -45,9 +45,12 @@ _excludes = set([
     # because they might be resolved when scanning code for ctypes
     # dependencies.
     r'coredll\.dll',
-    r'kernel32\.dll',
-    r'kernel32',
     r'crypt32\.dll',
+    r'kernel32',
+    r'kernel32\.dll',
+    r'msvcrt\.dll',
+    r'rpcrt4\.dll',
+    r'user32\.dll',
 ])
 
 # Regex includes - overrides excludes.
