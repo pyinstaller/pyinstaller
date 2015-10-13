@@ -165,7 +165,10 @@ def test_sqlite3(pyi_builder):
         """)
 
 
-@importorskip('scapy')
+# Note that @importorskip('scapy') isn't sufficient; this doesn't ask scapy to
+# import its backend dependencies (such as pcapy or dnet). scapy.all does import
+# the backends, skipping this test if they aren't installed.
+@importorskip('scapy.all')
 def test_scapy(pyi_builder):
     pyi_builder.test_source(
         """
@@ -184,7 +187,7 @@ def test_scapy(pyi_builder):
         """)
 
 
-@importorskip('scapy')
+@importorskip('scapy.all')
 def test_scapy2(pyi_builder):
     pyi_builder.test_source(
         """
@@ -193,7 +196,7 @@ def test_scapy2(pyi_builder):
         """)
 
 
-@importorskip('scapy')
+@importorskip('scapy.all')
 def test_scapy3(pyi_builder):
     pyi_builder.test_source(
         """
