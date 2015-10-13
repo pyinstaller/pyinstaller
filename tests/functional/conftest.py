@@ -329,7 +329,8 @@ class AppBuilder(object):
         default_args = ['--debug', '--noupx',
                 '--specpath', self._specdir,
                 '--distpath', self._distdir,
-                '--workpath', self._builddir]
+                '--workpath', self._builddir,
+                '--path', _MODULES_DIR]
         default_args.extend(['--debug', '--log-level=DEBUG'])
 
         # Choose bundle mode.
@@ -397,10 +398,6 @@ def pyi_modgraph():
 @pytest.fixture(params=['onedir', 'onefile'])
 def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     tmp = tmpdir.strpath
-    # Append _MMODULES_DIR to sys.path for building exes.
-    # Some tests need additional test modules.
-    # This also ensures that sys.path is reseted to original value for every test.
-    monkeypatch.syspath_prepend(_MODULES_DIR)
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'], )
     # Set current working directory to
