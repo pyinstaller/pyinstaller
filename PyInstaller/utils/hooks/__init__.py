@@ -452,7 +452,7 @@ def qt5_qml_dir():
         logger.error('Could not find qmake version 5.x, make sure PATH is '
                      'set correctly or try setting QT5DIR.')
     else:
-       qmldir = compat.exec_command(qmake, "-query", "QT_INSTALL_QML").strip()
+        qmldir = compat.exec_command(qmake, "-query", "QT_INSTALL_QML").strip()
     if len(qmldir) == 0:
         logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
                         + 'QT_INSTALL_QML" returned nothing')

@@ -373,9 +373,9 @@ class EXE(Target):
         self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
 
         if CONF['hasUPX']:
-           self.upx = kwargs.get('upx', False)
+            self.upx = kwargs.get('upx', False)
         else:
-           self.upx = False
+            self.upx = False
 
         # Old .spec format included in 'name' the path where to put created
         # app. New format includes only exename.
@@ -628,9 +628,9 @@ class COLLECT(Target):
         self.strip_binaries = kws.get('strip', False)
 
         if CONF['hasUPX']:
-           self.upx_binaries = kws.get('upx', False)
+            self.upx_binaries = kws.get('upx', False)
         else:
-           self.upx_binaries = False
+            self.upx_binaries = False
 
         self.name = kws.get('name')
         # Old .spec format included in 'name' the path where to collect files

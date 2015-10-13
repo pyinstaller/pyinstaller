@@ -224,8 +224,8 @@ class DependencyInfo (namedtuple("DependencyInfo", ["conditional", "function", "
 
     def _merged(self, other):
         if (not self.conditional and not self.function and not self.tryexcept) \
-            or (not other.conditional and not other.function and not other.tryexcept):
-                return DependencyInfo(conditional=False, function=False, tryexcept=False, fromlist=self.fromlist and other.fromlist)
+                or (not other.conditional and not other.function and not other.tryexcept):
+            return DependencyInfo(conditional=False, function=False, tryexcept=False, fromlist=self.fromlist and other.fromlist)
 
         else:
             return DependencyInfo(
