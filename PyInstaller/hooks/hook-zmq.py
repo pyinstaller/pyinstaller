@@ -21,7 +21,7 @@ hiddenimports.extend(collect_submodules('zmq.backend'))
 # extension-modules TOC so zmq/__init__.py can load it at runtime.
 # PyZMQ is able to load 'libzmq' and 'libsodium' even from sys._MEIPASS.
 # So they could be with other .dlls.
-binaries = collect_dynamic_libs('zmq', destdir='.')
+binaries = collect_dynamic_libs('zmq')
 
 # If PyZMQ pvorides its own copy of libzmq and libsodium, these libs look like
 # C extensions. Excluding these modules ensures that those dlls are not bundled

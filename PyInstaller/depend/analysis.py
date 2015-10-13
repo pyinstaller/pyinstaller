@@ -47,7 +47,6 @@ from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from .. import HOMEPATH, configure
 from ..utils.hooks import collect_submodules, is_package
-from .utils import is_real_extension_module
 
 logger = logging.getLogger(__name__)
 
