@@ -950,7 +950,7 @@ class Manifest(object):
             filename_or_file = self.filename
         if isinstance(filename_or_file, string_types):
             filename_or_file = open(filename_or_file, "wb")
-        xmlstr = self.toxml(indent, newl, encoding)
+        xmlstr = self.toxml(encoding)
         filename_or_file.write(xmlstr.encode())
         filename_or_file.close()
 
