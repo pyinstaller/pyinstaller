@@ -206,13 +206,13 @@ def __add_options(parser):
                       "(default: first script's basename)")
 
 
-def main(scripts, name=None, onefile=False,
-         console=True, debug=False, strip=False, noupx=False,
-         pathex=[], version_file=None, specpath=DEFAULT_SPECPATH,
-         icon_file=None, manifest=None, resources=[], bundle_identifier=None,
-         hiddenimports=None, hookspath=None, key=None, runtime_hooks=[],
-         excludes=[], uac_admin=False, uac_uiaccess=False,
-         win_no_prefer_redirects=False, win_private_assemblies=False,
+def main(scripts, name=None, onefile=None,
+         console=None, debug=None, strip=None, noupx=None,
+         pathex=None, version_file=None, specpath=None,
+         icon_file=None, manifest=None, resources=None, bundle_identifier=None,
+         hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
+         excludes=None, uac_admin=None, uac_uiaccess=None,
+         win_no_prefer_redirects=None, win_private_assemblies=None,
          **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
@@ -233,6 +233,7 @@ def main(scripts, name=None, onefile=False,
         os.makedirs(specpath)
 
     # Append specpath to PYTHONPATH - where to look for additional Python modules.
+    pathex = pathex or []
     pathex = pathex[:]
     pathex.append(specpath)
 
@@ -307,26 +308,26 @@ def main(scripts, name=None, onefile=False,
         'pathex': pathex,
         'hiddenimports': hiddenimports,
         'name': name,
-        'debug': debug,
-        'strip': strip,
+        'debug': debug or False,
+        'strip': strip or False,
         'upx': not noupx,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
         # Directory with additional custom import hooks.
         'hookspath': hookspath,
         # List with custom runtime hook files.
-        'runtime_hooks': runtime_hooks,
+        'runtime_hooks': runtime_hooks or [],
         # List of modules/pakages to ignore.
-        'excludes': excludes,
+        'excludes': excludes or [],
         # only Windows and Mac OS X distinguish windowed and console apps
-        'console': console,
+        'console': console or True,
         # Icon filename. Only OSX uses this item.
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.
         'bundle_identifier': bundle_identifier,
         # Windows assembly searching options
-        'win_no_prefer_redirects': win_no_prefer_redirects,
-        'win_private_assemblies': win_private_assemblies,
+        'win_no_prefer_redirects': win_no_prefer_redirects or False,
+        'win_private_assemblies': win_private_assemblies or False,
     }
 
     # Write down .spec file to filesystem.

@@ -191,7 +191,7 @@ def get_content(arch, recursive, brief, output):
                     stack.pop()
 
 
-def show_log(arch, recursive, brief, output=[]):
+def show_log(arch, recursive, brief):
     output = []
     get_content(arch, recursive, brief, output)
     # first print all TOCs

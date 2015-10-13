@@ -325,7 +325,7 @@ class ZlibArchiveWriter(ArchiveWriter):
     TOCTMPLT = {}
     COMPRESSION_LEVEL = 6  # Default level of the 'zlib' module from Python.
 
-    def __init__(self, path=None, offset=None, code_dict={},
+    def __init__(self, path=None, offset=None, code_dict=None,
                  cipher=None):
         """
         code_dict      dict containing module code objects from ModuleGraph.
@@ -348,7 +348,7 @@ class ZlibArchiveWriter(ArchiveWriter):
 
         # Keep references to module code objects constructed by ModuleGraph
         # to avoid writting .pyc/pyo files to hdd.
-        self.code_dict = code_dict
+        self.code_dict = code_dict or {}
 
         super(ZlibArchiveWriter, self).__init__(path, offset)
 
