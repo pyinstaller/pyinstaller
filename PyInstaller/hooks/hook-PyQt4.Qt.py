@@ -21,5 +21,4 @@ hiddenimports = ['sip',
                  'PyQt4.QtXml',
                  'PyQt4.QtWebKit',
                  'PyQt4.QtOpenGL',
-                 'PyQt4._qt'
                  ]
