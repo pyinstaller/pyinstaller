@@ -8,8 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['sip']
-
 from PyInstaller.utils.hooks import qt4_plugins_binaries
 
 binaries = qt4_plugins_binaries('codecs')
+hiddenimports = ['sip']
