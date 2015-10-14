@@ -22,8 +22,7 @@ if is_win:
     extend_system_path([os.path.join(x, 'PyQt4') for x in getsitepackages()])
 
 
-# In the new consolidated mode any PyQt depends on _qt
-hiddenimports = ['sip', 'PyQt4._qt']
+hiddenimports = ['sip']
 
 
 # For Qt to work on Mac OS X it is necessary to include directory qt_menu.nib.
