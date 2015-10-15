@@ -603,6 +603,9 @@ class ModuleGraph(ObjectGraph):
         self.replace_paths = replace_paths
 
         self.nspackages = self._calc_setuptools_nspackages()
+        # Maintain own list of package path mappings in the scope of Modulegraph
+        # object.
+        self._package_path_map = _packagePathMap
 
     def _calc_setuptools_nspackages(self):
         # Setuptools has some magic handling for namespace
@@ -844,7 +847,7 @@ class ModuleGraph(ObjectGraph):
             m.packagepath = _namespace_package_path(name, pathnames, self.path)
 
             # As per comment at top of file, simulate runtime packagepath additions.
-            m.packagepath = m.packagepath + _packagePathMap.get(name, [])
+            m.packagepath = m.packagepath + self._package_path_map.get(name, [])
             return m
 
         return None
@@ -1111,6 +1114,23 @@ class ModuleGraph(ObjectGraph):
             else:
                 self.createReference(module, parent)
                 parent[module_basename] = module
+
+    def add_package_path(self, package_name, package_path):
+        """
+        Modulegraph does a good job at simulating Python's, but it can not
+        handle packagepath __path__ modifications packages make at runtime.
+        Therefore there is a mechanism whereby you can register extra paths
+        in this map for a package, and it will be honored.
+
+        NOTE: This method has to be called before a package is resolved by
+              modulegraph.
+
+        :param module: fully qualified module name
+        :param package_path: new path for __path__ attribute
+        """
+        paths = self._package_path_map.get(package_name, [])
+        paths.append(package_path)
+        self._package_path_map[package_name] = paths
 
     def _safe_import_module(
         self, module_basename, module_name, parent_package):
@@ -1581,7 +1601,7 @@ class ModuleGraph(ObjectGraph):
             m.packagepath = [pathname] + ns_pkgpath
 
         # As per comment at top of file, simulate runtime packagepath additions.
-        m.packagepath = m.packagepath + _packagePathMap.get(fqname, [])
+        m.packagepath = m.packagepath + self._package_path_map.get(fqname, [])
 
 
 
