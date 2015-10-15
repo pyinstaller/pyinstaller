@@ -263,18 +263,41 @@ def test_argument(pyi_builder):
 
 @importorskip('win32com')
 def test_pywin32_win32com(pyi_builder):
-    pyi_builder.test_script('pyi_pywin32_win32com.py')
+    pyi_builder.test_source(
+        """
+        # Test importing some modules from pywin32 package.
+        # All modules from pywin32 depens on module pywintypes.
+        # This module should be also included.
+        import win32com
+        import win32com.client
+        import win32com.server
+        """)
 
 
-@pytest.mark.xfail(reason="Requires post-create-package hooks (issue #1322)")
+#@pytest.mark.xfail(reason="Requires post-create-package hooks (issue #1322)")
 @importorskip('win32com')
 def test_pywin32_comext(pyi_builder):
-    pyi_builder.test_script('pyi_pywin32_comext.py')
+    pyi_builder.test_source(
+        """
+        # Test importing modules from win32com that are actually present in
+        # win32comext, and made available by __path__ changes in win32com.
+        from win32com.shell import shell
+        from win32com.propsys import propsys
+        from win32com.bits import bits
+        """)
 
 
 @importorskip('win32ui')
 def test_pywin32_win32ui(pyi_builder):
-    pyi_builder.test_script('pyi_pywin32_win32ui.py')
+    pyi_builder.test_source(
+        """
+        # Test importing some modules from pywin32 package.
+        # All modules from pywin32 depens on module pywintypes.
+        # This module should be also included.
+        import win32ui
+        from pywin.mfc.dialog import Dialog
+        d = Dialog(win32ui.IDD_SIMPLE_INPUT)
+        """)
 
 
 @skipif_notwin
