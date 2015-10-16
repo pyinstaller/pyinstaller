@@ -50,7 +50,6 @@ def __exec_python_cmd(cmd, env=None):
     anything that was emitted in the standard output as a single
     string.
     """
-    from ...config import CONF
     if env is None:
         env = {}
     # Update environment. Defaults to 'os.environ'
@@ -518,7 +517,6 @@ def django_find_root_dir():
     """
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
-    from PyInstaller.config import CONF
     manage_py = CONF['main_script']
     manage_dir = os.path.dirname(os.path.abspath(manage_py))
 
