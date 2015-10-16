@@ -366,13 +366,12 @@ class ZlibArchiveWriter(ArchiveWriter):
                     typ = PYZ_TYPE_PKG
             data = marshal.dumps(self.code_dict[name])
         else:
+            # Any data files, that might be required by pkg_resources.
             typ = PYZ_TYPE_DATA
             with open(path, 'rb') as fh:
                 data = fh.read()
-            # Use forward slash as path-separator in PYZ (like in zipfiles)
-            if os.path.altsep:
-                name = name.replace(os.path.altsep, os.path.sep)
-            name = name.replace(os.path.sep, '/')
+            # No need to use forward slash as path-separator here since
+            # pkg_resources on Windows back slash as path-separator.
 
         obj = zlib.compress(data, self.COMPRESSION_LEVEL)
 
