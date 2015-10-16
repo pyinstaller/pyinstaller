@@ -21,6 +21,7 @@ import struct
 import re
 from collections import deque, namedtuple
 import ast
+import zipfile
 
 from ..altgraph.ObjectGraph import ObjectGraph
 from ..altgraph import GraphError
@@ -1746,9 +1747,9 @@ class ModuleGraph(ObjectGraph):
                 #  __init__file. Possible solution: in _find_module, if
                 #  parent is not None, use the parents path.
                 #
-                # If this search directory is not a directory, assume the
-                # caller intended to search this file's parent directory.
-                if not os.path.isdir(search_dir):
+                # If this search directory is not an .egg (zip file) or a directory,
+                # assume the caller intended to search this file's parent directory.
+                if not zipfile.is_zipfile(search_dir) and not os.path.isdir(search_dir):
                     search_dir = os.path.dirname(search_dir)
 
                 # PEP 302-compliant importer making loaders for this directory.

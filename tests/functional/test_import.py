@@ -207,10 +207,15 @@ def test_egg_unzipped(pyi_builder):
         import os
         import pkg_resources
 
+        # Test ability to load resource.
         expected_data = 'This is data file for `unzipped`.'.encode('ascii')
         t = pkg_resources.resource_string('unzipped_egg', 'data/datafile.txt')
+        print('Resource: %s' % t)
+        t_filename = pkg_resources.resource_filename('unzipped_egg', 'data/datafile.txt')
+        print('Resource filename: %s' % t_filename)
         assert t.rstrip() == expected_data
 
+        # Test ability that module from .egg is able to load resource.
         import unzipped_egg
         assert unzipped_egg.data == expected_data
 
@@ -220,7 +225,6 @@ def test_egg_unzipped(pyi_builder):
     )
 
 
-@pytest.mark.xfail(reason='#1581 zipped eggs broken')
 def test_egg_zipped(pyi_builder):
     pathex = os.path.join(_MODULES_DIR, 'pyi_egg_zipped.egg')
     pyi_builder.test_source(
@@ -229,10 +233,15 @@ def test_egg_zipped(pyi_builder):
         import os
         import pkg_resources
 
+        # Test ability to load resource.
         expected_data = 'This is data file for `zipped`.'.encode('ascii')
         t = pkg_resources.resource_string('zipped_egg', 'data/datafile.txt')
+        print('Resource: %s' % t)
+        t_filename = pkg_resources.resource_filename('zipped_egg', 'data/datafile.txt')
+        print('Resource filename: %s' % t_filename)
         assert t.rstrip() == expected_data
 
+        # Test ability that module from .egg is able to load resource.
         import zipped_egg
         assert zipped_egg.data == expected_data
 
