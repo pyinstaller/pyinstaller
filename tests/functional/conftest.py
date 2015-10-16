@@ -62,6 +62,10 @@ _SPEC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs')
 # ====
 # Fixtures
 # --------
+@pytest.fixture
+def script_dir():
+    return py.path.local(_SCRIPT_DIR)
+
 # A helper function to copy from data/dir to tmpdir/data.
 def _data_dir_copy(
   # The name of the subdirectory located in data/name to copy.
