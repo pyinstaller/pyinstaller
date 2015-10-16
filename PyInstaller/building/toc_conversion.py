@@ -13,6 +13,10 @@ import pkg_resources
 from ..depend.utils import get_path_to_egg
 from .datastruct import TOC, Tree
 from ..config import CONF
+from .. import log as logging
+
+logger = logging.getLogger(__name__)
+
 
 # create a list of excludes suitable for Tree
 from ..utils.hooks import PY_IGNORE_EXTENSIONS, PY_EXECUTABLE_SUFFIXES
@@ -136,6 +140,7 @@ class DependencyProcessor(object):
 
     def make_zipped_data_toc(self):
         toc = TOC()
+        logger.debug('Looking for egg data files...')
         for dist in self._distributions:
             if dist._pyinstaller_info['egg']:
                 # TODO: check in docu if top_level.txt always exists

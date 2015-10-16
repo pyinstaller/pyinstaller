@@ -156,6 +156,7 @@ class FrozenPackageImporter(object):
     def load_module(self, fullname):
         return self._importer.load_module(fullname, self._fullname)
 
+
 class FrozenImporter(object):
     """
     Load bytecode of Python modules from the executable created by PyInstaller.
@@ -429,6 +430,9 @@ class FrozenImporter(object):
         """
         This returns the data as a string, or raise IOError if the "file"
         wasn't found. The data is always returned as if "binary" mode was used.
+
+        This method is useful getting resources with 'pkg_resources' that are
+        bundled with Python modules in the PYZ archive.
 
         The 'path' argument is a path that can be constructed by munging
         module.__file__ (or pkg.__path__ items)
