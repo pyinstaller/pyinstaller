@@ -17,12 +17,10 @@ import codecs
 import optparse
 import pprint
 
-from PyInstaller.utils import misc
 import PyInstaller.log
 
 def run():
     PyInstaller.log.init()
-    misc.check_not_running_as_root()
 
     _, args = optparse.OptionParser(usage='usage: %prog toc_files...').parse_args()
 

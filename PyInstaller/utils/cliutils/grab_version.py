@@ -13,13 +13,11 @@ import os
 import sys
 
 import PyInstaller.utils.win32.versioninfo
-from PyInstaller.utils import misc
 import PyInstaller.log
 
 
 def run():
     PyInstaller.log.init()
-    misc.check_not_running_as_root()
 
     out_filename = os.path.abspath('file_version_info.txt')
 

@@ -20,13 +20,11 @@ import optparse
 
 import PyInstaller.depend.bindepend
 from PyInstaller import is_win
-from PyInstaller.utils import misc
 import PyInstaller.log
 
 
 def run():
     PyInstaller.log.init()
-    misc.check_not_running_as_root()
 
     parser = optparse.OptionParser(
             usage='python %prog <executable_or_dynamic_library> '

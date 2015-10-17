@@ -21,7 +21,6 @@ import tempfile
 import zlib
 
 from PyInstaller.loader import pyimod02_archive
-from PyInstaller.utils import misc
 from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
 from PyInstaller.compat import stdin_input
 import PyInstaller.log
@@ -32,7 +31,6 @@ cleanup = []
 
 def main(name, brief, debug, rec_debug, **unused_options):
     PyInstaller.log.init()
-    misc.check_not_running_as_root()
 
     global stack
 

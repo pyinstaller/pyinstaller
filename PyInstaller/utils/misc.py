@@ -107,19 +107,6 @@ def get_path_to_toplevel_modules(filename):
     return None
 
 
-def check_not_running_as_root():
-    """
-    Raise SystemExit error if the user is on unix and trying running
-    PyInstaller or its utilities as superuser 'root'.
-    """
-    if is_unix:
-        # Prevent running as superuser (root).
-        if hasattr(os, "getuid") and os.getuid() == 0:
-            logger.error('You are running PyInstaller as user root.'
-                ' This is not supported.')
-            raise SystemExit(10)
-
-
 def mtime(fnm):
     try:
         # TODO: explain why this doesn't use os.path.getmtime() ?
