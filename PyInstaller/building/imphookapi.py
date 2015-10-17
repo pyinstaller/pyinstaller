@@ -49,6 +49,9 @@ class PreSafeImportModuleAPI(object):
     and hence has no means of parsing `import` statements performed by runtime
     modules existing only in-memory.
 
+    'With great power comes great responsibility.'
+
+
     Attributes (Mutable)
     ----------
     The following attributes are **mutable** (i.e., modifiable). All changes to
@@ -64,8 +67,6 @@ class PreSafeImportModuleAPI(object):
     parent_package : Package
         Graph node for the package providing this module _or_ `None` if this
         module is a top-level module.
-
-    "With great power comes great responsibility."
     """
 
     def __init__(
@@ -181,7 +182,7 @@ class PostGraphAPI(object):
     module : Node
         Graph node for the currently hooked module.
 
-    "With great power comes great responsibility."
+    'With great power comes great responsibility.'
 
     Attributes (Immutable)
     ----------
