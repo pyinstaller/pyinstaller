@@ -320,3 +320,6 @@ def test_renamed_exe(pyi_builder):
 @skipif_notosx
 def test_osx_override_info_plist(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_osx_override_info_plist.spec')
+
+def test_hook_collect_submodules(pyi_builder, script_dir):
+    pyi_builder.test_script('pyi_collect_submodules.py', ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])

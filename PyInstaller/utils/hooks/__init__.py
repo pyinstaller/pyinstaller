@@ -50,7 +50,6 @@ def __exec_python_cmd(cmd, env=None):
     anything that was emitted in the standard output as a single
     string.
     """
-    from ...config import CONF
     if env is None:
         env = {}
     # Update environment. Defaults to 'os.environ'
@@ -518,7 +517,6 @@ def django_find_root_dir():
     """
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
-    from PyInstaller.config import CONF
     manage_py = CONF['main_script']
     manage_dir = os.path.dirname(os.path.abspath(manage_py))
 
@@ -601,6 +599,17 @@ def remove_file_extension(filename):
     # Fallback to ordinary 'splitext'.
     return os.path.splitext(filename)[0]
 
+def _pkgutil_find_loader(fullname):
+    """
+    Temporarily extend sys.path with pathex to invoke pkgutil.find_loader.
+    """
+    old_path = sys.path
+    try:
+        sys.path.extend(CONF['pathex'])
+        return pkgutil.find_loader(fullname)
+    finally:
+        sys.path = old_path
+
 
 def get_module_file_attribute(package):
     """
@@ -624,7 +633,7 @@ def get_module_file_attribute(package):
     # certain modules in pywin32, which replace all module attributes
     # with those of the .dll
     try:
-        loader = pkgutil.find_loader(package)
+        loader = _pkgutil_find_loader(package)
         attr = loader.get_filename(package)
     # Second try to import module in a subprocess. Might raise ImportError.
     except (AttributeError, ImportError):
@@ -789,7 +798,7 @@ def is_package(module_name):
     """
     # This way determines if module is a package without importing the module.
     try:
-        loader = pkgutil.find_loader(module_name)
+        loader = _pkgutil_find_loader(module_name)
     except Exception:
         # When it fails to find a module loader then it points probably to a clas
         # or function and module is not a package. Just return False.
