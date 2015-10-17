@@ -1129,9 +1129,9 @@ class ModuleGraph(ObjectGraph):
         :param module: fully qualified module name
         :param package_path: new path for __path__ attribute
         """
-        paths = self._package_path_map.get(package_name, [])
+        paths = self._package_path_map.setdefault(package_name, [])
         paths.append(package_path)
-        self._package_path_map[package_name] = paths
+
 
     def _safe_import_module(
         self, module_basename, module_name, parent_package):
