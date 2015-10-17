@@ -19,7 +19,7 @@ from .utils import _check_guts_eq
 logger = logging.getLogger(__name__)
 
 
-class TOC(compat.UserList):
+class TOC(list):
     # TODO Simplify the representation and use directly Modulegraph objects.
     """
     TOC (Table of Contents) class is a list of tuples of the form (name, path, tytecode).
@@ -39,7 +39,7 @@ class TOC(compat.UserList):
     PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
     """
     def __init__(self, initlist=None):
-        compat.UserList.__init__(self)
+        super(TOC, self).__init__(self)
         self.filenames = set()
         if initlist:
             for entry in initlist:
@@ -64,13 +64,13 @@ class TOC(compat.UserList):
     def append(self, entry):
         name, path, typecode = self._normentry(entry)
         if name not in self.filenames:
-            self.data.append((name, path, typecode))
+            super(TOC, self).append((name, path, typecode))
             self.filenames.add(name)
 
     def insert(self, pos, entry):
         name, path, typecode = self._normentry(entry)
         if name not in self.filenames:
-            self.data.insert(pos, (name, path, typecode))
+            super(TOC, self).insert(pos, (name, path, typecode))
             self.filenames.add(name)
 
     def __add__(self, other):
@@ -85,7 +85,7 @@ class TOC(compat.UserList):
 
     def extend(self, other):
         # TODO: look if this can be done more efficient with out the
-        # loop, e.g. by not using a UserList as base at all
+        # loop, e.g. by not using a list as base at all
         for entry in other:
             self.append(entry)
 
@@ -95,7 +95,7 @@ class TOC(compat.UserList):
         result = TOC()
         for name, path, typecode in self:
             if name in filenames:
-                result.data.append((name, path, typecode))
+                super(TOC, result).append((name, path, typecode))
         return result
 
     def __rsub__(self, other):
@@ -108,7 +108,7 @@ class TOC(compat.UserList):
         result = TOC()
         for name, path, typecode in other:
             if name in filenames:
-                result.data.append((name, path, typecode))
+                super(TOC, result).append((name, path, typecode))
         return result
 
 

@@ -575,4 +575,4 @@ def get_bootstrap_modules():
     ]
     # TODO Why is here the call to TOC()?
     toc = TOC(loader_mods)
-    return toc.data
+    return toc
