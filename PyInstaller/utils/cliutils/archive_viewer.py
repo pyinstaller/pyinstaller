@@ -31,6 +31,7 @@ cleanup = []
 
 
 def main(name, brief, debug, rec_debug, **unused_options):
+    PyInstaller.log.init()
     misc.check_not_running_as_root()
 
     global stack

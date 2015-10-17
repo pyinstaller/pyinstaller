@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013, PyInstaller Development Team.
 #
@@ -8,17 +8,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+# This utility is primary meant to be used when PyInstaller is not
+# installed, eg. when be run by a git checkout.
 
-import os
-import sys
-
-
-# Expand PYTHONPATH with PyInstaller package to support running without
-# installation.
-pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-sys.path.insert(0, pyi_home)
-
-
-if __name__ == '__main__':
-    from PyInstaller.utils.cliutils.set_version import run
-    run()
+from PyInstaller.utils.cliutils.bindepend import run
+run()
