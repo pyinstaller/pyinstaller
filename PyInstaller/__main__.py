@@ -56,9 +56,9 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
     pyi_args     allows running PyInstaller programatically without a subprocess
     pyi_config   allows checking configuration once when running multiple tests
     """
+    PyInstaller.log.init()
     misc.check_not_running_as_root()
     check_requirements()
-
 
     try:
         parser = optparse.OptionParser(

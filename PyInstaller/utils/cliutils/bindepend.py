@@ -25,6 +25,7 @@ import PyInstaller.log
 
 
 def run():
+    PyInstaller.log.init()
     misc.check_not_running_as_root()
 
     parser = optparse.OptionParser(
