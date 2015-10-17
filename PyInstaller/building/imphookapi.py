@@ -19,6 +19,8 @@ instance, thus modifying which modules will be frozen into the executable.
 """
 
 from .datastruct import TOC
+from ..lib.modulegraph.modulegraph import RuntimeModule
+
 
 class PreSafeImportModuleAPI(object):
     """
@@ -97,6 +99,58 @@ class PreSafeImportModuleAPI(object):
     def parent_package(self):
         "Parent Package of this node"
         return self._parent_package
+
+
+    def add_runtime_module(self, fully_qualified_name):
+        """
+        Add a node representing a Python module dynamically defined at
+        runtime.
+
+        Most modules are statically defined at creation time in
+        external Python files. Some modules, however, are dynamically
+        defined at runtime (e.g., `six.moves`, dynamically defined by
+        the statically defined `six` module). This method add a node
+        represents such a module.
+
+        It is typically used like this::
+
+          api.add_runtime_module(api.module_name)
+
+        """
+        self._module_graph.add_module(RuntimeModule(fully_qualified_name))
+
+
+    def add_alias_module(self, real_module_name, alias_module_name):
+        """
+        Alias the source module to the target module with the passed names.
+
+        This method ensures that the next call to findNode() given the target
+        module name will resolve this alias. This includes importing and adding
+        a graph node for the source module if needed as well as adding a
+        reference from the target to the source module.
+
+        Parameters
+        ----------
+        real_module_name : str
+            Fully-qualified name of the **existing module** (i.e., the
+            module being aliased).
+        alias_module_name : str
+            Fully-qualified name of the **non-existent module** (i.e.,
+            the alias to be created).
+        """
+        self._module_graph.alias_module(real_module_name, alias_module_name)
+
+
+    def append_package_path(self, directory):
+        """
+        Modulegraph does a good job at simulating Python's, but it can not
+        handle packagepath __path__ modifications packages make at runtime.
+        Therefore there is a mechanism whereby you can register extra paths
+        in this map for a package, and it will be honored.
+
+        :param directory: directory to append to the  __path__ attribute.
+        """
+        self._module_graph.add_package_path(self._module_name, directory)
 
 
 class PreFindModulePathAPI(object):
