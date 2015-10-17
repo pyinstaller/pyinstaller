@@ -52,11 +52,11 @@ class PreSafeImportModuleAPI(object):
     'With great power comes great responsibility.'
 
 
-    Attributes (Mutable)
-    ----------
-    The following attributes are **mutable** (i.e., modifiable). All changes to
-    these attributes will be respected by PyInstaller, typically immediately
-    after the current hook returns:
+    Attributes (Immutable)
+    ----------------------------
+    The following attributes are **immutable** (i.e., read-only). For
+    safety, any attempts to change these attributes _will_ result in a
+    raised exception:
 
     module_graph : PyiModuleGraph
         Current module graph.
@@ -69,17 +69,34 @@ class PreSafeImportModuleAPI(object):
         module is a top-level module.
     """
 
-    def __init__(
-        self,
-        module_graph,
-        module_basename,
-        module_name,
-        parent_package,
-    ):
-        self.module_graph = module_graph
-        self.module_basename = module_basename
-        self.module_name = module_name
-        self.parent_package = parent_package
+    def __init__(self, module_graph, module_basename, module_name,
+                 parent_package):
+        self._module_graph = module_graph
+        self._module_basename = module_basename
+        self._module_name = module_name
+        self._parent_package = parent_package
+
+
+    # Immutable properties. No corresponding setters are defined.
+    @property
+    def module_graph(self):
+        "Current module graph"
+        return self._module_graph
+
+    @property
+    def module_name(self):
+        "Fully-qualified name of this module (e.g., `email.mime.text`)."
+        return self._module_name
+
+    @property
+    def module_basename(self):
+        "Unqualified name of the module to be imported (e.g., `text`)."
+        return self._module_basename
+
+    @property
+    def parent_package(self):
+        "Parent Package of this node"
+        return self._parent_package
 
 
 class PreFindModulePathAPI(object):
