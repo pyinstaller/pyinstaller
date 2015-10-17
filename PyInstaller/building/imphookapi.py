@@ -150,7 +150,7 @@ class PreSafeImportModuleAPI(object):
 
         :param directory: directory to append to the  __path__ attribute.
         """
-        self._module_graph.add_package_path(self._module_name, directory)
+        self._module_graph.append_package_path(self._module_name, directory)
 
 
 class PreFindModulePathAPI(object):

@@ -1116,7 +1116,7 @@ class ModuleGraph(ObjectGraph):
                 self.createReference(module, parent)
                 parent[module_basename] = module
 
-    def add_package_path(self, package_name, package_path):
+    def append_package_path(self, package_name, package_path):
         """
         Modulegraph does a good job at simulating Python's, but it can not
         handle packagepath __path__ modifications packages make at runtime.
