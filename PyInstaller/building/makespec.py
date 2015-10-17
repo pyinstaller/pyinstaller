@@ -106,7 +106,7 @@ def __add_options(parser):
                       "Multiple paths are allowed, separated "
                       "by %s, or use this option multiple times"
                       % repr(os.pathsep))
-    g.add_option('--hidden-import',
+    g.add_option('--hidden-import', '--hiddenimport',
                  action='append',
                  metavar="MODULENAME", dest='hiddenimports',
                  help='Name an import not visible in the code of the script(s). '
