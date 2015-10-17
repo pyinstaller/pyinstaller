@@ -28,4 +28,4 @@ def pre_safe_import_module(api):
     comext_dir = os.path.join(os.path.dirname(win32com_dir), 'win32comext')
     logger.debug('win32com: extending __path__ with dir %r' % comext_dir)
     # Append the __path__ where PyInstaller will look for 'win32com' modules.'
-    api.module_graph.add_package_path('win32com', comext_dir)
+    api.append_package_path(comext_dir)

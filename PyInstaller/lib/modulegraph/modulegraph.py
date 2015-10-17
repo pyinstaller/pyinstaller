@@ -1116,7 +1116,7 @@ class ModuleGraph(ObjectGraph):
                 self.createReference(module, parent)
                 parent[module_basename] = module
 
-    def add_package_path(self, package_name, package_path):
+    def append_package_path(self, package_name, directory):
         """
         Modulegraph does a good job at simulating Python's, but it can not
         handle packagepath __path__ modifications packages make at runtime.
@@ -1127,11 +1127,11 @@ class ModuleGraph(ObjectGraph):
               modulegraph.
 
         :param module: fully qualified module name
-        :param package_path: new path for __path__ attribute
+        :param directory: directory to append to the  __path__ attribute.
         """
-        paths = self._package_path_map.get(package_name, [])
-        paths.append(package_path)
-        self._package_path_map[package_name] = paths
+        paths = self._package_path_map.setdefault(package_name, [])
+        paths.append(directory)
+
 
     def _safe_import_module(
         self, module_basename, module_name, parent_package):

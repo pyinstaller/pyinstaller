@@ -8,7 +8,6 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.lib.modulegraph.modulegraph import RuntimeModule
 from PyInstaller.utils.hooks import eval_statement
 
 
@@ -52,6 +51,6 @@ for moved_module in six._moved_attributes:
 print('}')
 ''')
 
-    api.module_graph.add_module(RuntimeModule('six.moves'))
+    api.add_runtime_module(api.module_name)
     for real_module_name, six_module_name in real_to_six_module_name.items():
-        api.module_graph.alias_module(real_module_name, six_module_name)
+        api.add_alias_module(real_module_name, six_module_name)
