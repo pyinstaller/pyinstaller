@@ -207,12 +207,12 @@ def __add_options(parser):
 
 
 def main(scripts, name=None, onefile=None,
-         console=None, debug=None, strip=None, noupx=None,
+         console=True, debug=False, strip=False, noupx=False,
          pathex=None, version_file=None, specpath=None,
          icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
-         excludes=None, uac_admin=None, uac_uiaccess=None,
-         win_no_prefer_redirects=None, win_private_assemblies=None,
+         excludes=None, uac_admin=False, uac_uiaccess=False,
+         win_no_prefer_redirects=False, win_private_assemblies=False,
          **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
@@ -308,8 +308,8 @@ def main(scripts, name=None, onefile=None,
         'pathex': pathex,
         'hiddenimports': hiddenimports,
         'name': name,
-        'debug': debug or False,
-        'strip': strip or False,
+        'debug': debug,
+        'strip': strip,
         'upx': not noupx,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
@@ -320,14 +320,14 @@ def main(scripts, name=None, onefile=None,
         # List of modules/pakages to ignore.
         'excludes': excludes or [],
         # only Windows and Mac OS X distinguish windowed and console apps
-        'console': console or True,
+        'console': console,
         # Icon filename. Only OSX uses this item.
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.
         'bundle_identifier': bundle_identifier,
         # Windows assembly searching options
-        'win_no_prefer_redirects': win_no_prefer_redirects or False,
-        'win_private_assemblies': win_private_assemblies or False,
+        'win_no_prefer_redirects': win_no_prefer_redirects,
+        'win_private_assemblies': win_private_assemblies,
     }
 
     # Write down .spec file to filesystem.
