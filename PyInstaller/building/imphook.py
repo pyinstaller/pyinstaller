@@ -270,7 +270,7 @@ class ImportHook(object):
             # Remove all of these imports which are also in `imports_to_remove`
             for dest in imports_to_remove & references:
                 mod_graph.removeReference(src, dest)
-                logger.warn("  Removing import %s from %s", dest, src)
+                logger.warn("  From %s removing import %s", src, dest)
 
 
     def _process_datas(self, mod_graph):
