@@ -229,42 +229,6 @@ class ImportHook(object):
             # that was not updated for a long time.
             logger.warn("Hidden import '%s' not found (probably old hook)" % item)
 
-    def _remove_module_references(self, node, graph, mod_filter=None):
-        """
-        Remove implicit reference to a module. Also submodules of the hook name
-        might reference the module. Remove those references too.
-
-        :param node:
-        :param mod_filter: List of module name prefixes to remove reference to.
-        :return: True if all references were removed False otherwise
-        """
-        result = True  # First assume it is possible to remove all references.
-        referers = graph.getReferers(node)  # Nodes that reference 'node'.
-
-        if not mod_filter:
-            # Just remove reference, nothing special filtering.
-            for r in referers:
-                logger.debug('Removing reference %s' % r.identifier)
-                graph.removeReference(r, node)
-            return True
-
-        # Remove only references that starts with any prefix from 'mod_filter'.
-        regex_str = '|'.join(['(%s.*)' % x for x in mod_filter])
-        is_allowed = re.compile(regex_str)
-        for r in referers:
-            if is_allowed.match(r.identifier):
-                logger.debug('Removing reference %s' % r.identifier)
-                # Contains prefix of 'imported_name' - remove reference.
-                graph.removeReference(r, node)
-            else:
-                # Other modules reference the implicit import - DO NOT remove it.
-                # Any module name was not specified in the filder and cannot be
-                # removed.
-                logger.debug('Removing reference %s failed' % r.identifier)
-                result = False
-
-        return result
-
     def _process_excludedimports(self, mod_graph):
         """
         'excludedimports' is a list of Python module names that PyInstaller
