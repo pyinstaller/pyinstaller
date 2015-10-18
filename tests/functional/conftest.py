@@ -212,12 +212,12 @@ class AppBuilder(object):
         # Empty list means that PyInstaller probably failed to create any executable.
         assert exes != [], 'No executable file was found.'
         for exe in exes:
-            retcode = self._run_executable(exe, args, run_from_path, runtime)
-            assert retcode == 0, 'Running exe %s failed with return-code %s.' % (exe, retcode)
             # Try to find .toc log file. .toc log file has the same basename as exe file.
             toc_log = os.path.join(_LOGS_DIR, os.path.basename(exe) + '.toc')
             if os.path.exists(toc_log):
                 assert self._examine_executable(exe, toc_log), 'Matching .toc of %s failed.' % exe
+            retcode = self._run_executable(exe, args, run_from_path, runtime)
+            assert retcode == 0, 'Running exe %s failed with return-code %s.' % (exe, retcode)
 
     def _find_executables(self, name):
         """
