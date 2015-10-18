@@ -21,7 +21,7 @@ import warnings
 from .. import log as logging
 from .utils import format_binaries_and_datas
 from ..compat import expand_path
-from ..compat import importlib_load_source, UserDict, is_py2
+from ..compat import importlib_load_source, is_py2
 from ..utils.misc import get_code_object
 from .imphookapi import PostGraphAPI
 
@@ -135,27 +135,33 @@ class HooksCache(dict):
                 del self[module_name]
 
 
-# TODO: The "UserDict" class has been obsoleted by subclassing the "dict" class
-# directly. Let's consider doing that. Huzzah!
-class AdditionalFilesCache(UserDict):
+class AdditionalFilesCache:
     """
     Cache for storing what binaries and datas were pushed by what modules
     when import hooks were processed.
     """
+    def __init__(self):
+        self._binaries = {}
+        self._datas = {}
+
     def add(self, modname, binaries, datas):
-        self.data[modname] = {'binaries': binaries, 'datas': datas}
+        self._binaries[modname] = binaries or []
+        self._datas[modname] = datas or []
+
+    def __contains__(self, name):
+        return name in self._binaries or name in self._datas
 
     def binaries(self, modname):
         """
         Return list of binaries for given module name.
         """
-        return self.data[modname]['binaries']
+        return self._binaries[modname]
 
     def datas(self, modname):
         """
         Return list of datas for given module name.
         """
-        return self.data[modname]['datas']
+        return self._datas[modname]
 
 
 class ImportHook(object):

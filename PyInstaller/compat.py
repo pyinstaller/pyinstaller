@@ -99,14 +99,6 @@ else:
     safe_repr = ascii
 
 
-# UserDict class is moved to 'collections.UserDict in Python 3.
-try:
-    from collections import UserDict
-except ImportError:
-    # PyInstaller needs iterable dist  'for a in dict'
-    from UserDict import IterableUserDict as UserDict
-
-
 # Correct extension ending: 'c' or 'o'
 if __debug__:
     PYCO = 'c'
