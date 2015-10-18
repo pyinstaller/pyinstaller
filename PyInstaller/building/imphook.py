@@ -240,14 +240,11 @@ class ImportHook(object):
 
         def find_all_package_nodes(name):
             mods = [name]
-            #mods = [mod_graph.findNode(name, create_nspkg=False)]
             name += '.'
             for subnode in mod_graph.nodes():
                 if subnode.identifier.startswith(name):
                     mods.append(subnode.identifier)
             return mods
-
-        not_allowed_references = set(self._module.excludedimports)
 
         # Collect all submodules of this module.
         hooked_mods = find_all_package_nodes(self._name)
@@ -256,7 +253,7 @@ class ImportHook(object):
         # TODO: Optimize this by using a pattern and walking the graph
         # only once.
         imports_to_remove = []
-        for item in not_allowed_references:
+        for item in set(self._module.excludedimports):
             excluded_node = mod_graph.findNode(item, create_nspkg=False)
             if excluded_node is None:
                 logger.info("Import to be excluded not found: %r", item)
