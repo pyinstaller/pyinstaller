@@ -263,17 +263,17 @@ class ImportHook(object):
                 continue
             logger.info("Excluding import %r", item)
             targets_to_remove.extend(find_all_package_nodes(item))
+        targets_to_remove = set(targets_to_remove)
 
         # Remove references between module nodes, as though they would
         # not be imported from 'name'.
         for src in hooked_mods:
-            for dest in targets_to_remove:
-                try:
-                    mod_graph.removeReference(src, dest)
-                except GraphError:
-                    pass
-                else:
-                    logger.warn("  Removing import %s from %s", dest, src)
+            # modules, this `src` does import
+            references = set(n.identifier for n in mod_graph.getReferences(src))
+            # Remove all of these imports which are also in `targets_to_remove`
+            for dest in targets_to_remove & references:
+                mod_graph.removeReference(src, dest)
+                logger.warn("  Removing import %s from %s", dest, src)
 
 
     def _process_datas(self, mod_graph):
