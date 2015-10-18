@@ -253,7 +253,7 @@ class ImportHook(object):
         hooked_mods = find_all_package_nodes(self._name)
 
         # Collect all dependencies and their submodules
-        # TODO: Optimize this by using a pattern and walking the tree
+        # TODO: Optimize this by using a pattern and walking the graph
         # only once.
         imports_to_remove = []
         for item in not_allowed_references:
