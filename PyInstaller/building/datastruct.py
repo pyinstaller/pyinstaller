@@ -240,8 +240,16 @@ class Tree(Target, TOC):
                 path = os.path.join(d, nm)
                 if os.path.isdir(path):
                     stack.append(path)
-        self.data = data['data']  # collected files
+        self[:] = data['data']  # collected files
         return False
+
+
+    def _save_guts(self):
+        # Use the attribute `data` to save the list
+        self.data = self
+        super(Tree, self)._save_guts()
+        del self.data
+
 
     def assemble(self):
         logger.info("Building Tree %s", self.tocbasename)
@@ -271,4 +279,4 @@ class Tree(Target, TOC):
                     stack.append((fullfilename, resfilename))
                 else:
                     result.append((resfilename, fullfilename, 'DATA'))
-        self.data = result
+        self[:] = result
