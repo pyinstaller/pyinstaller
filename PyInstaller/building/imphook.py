@@ -252,25 +252,27 @@ class ImportHook(object):
         # Collect all dependencies and their submodules
         # TODO: Optimize this by using a pattern and walking the graph
         # only once.
-        imports_to_remove = []
         for item in set(self._module.excludedimports):
             excluded_node = mod_graph.findNode(item, create_nspkg=False)
             if excluded_node is None:
                 logger.info("Import to be excluded not found: %r", item)
                 continue
             logger.info("Excluding import %r", item)
-            imports_to_remove.extend(find_all_package_nodes(item))
-        imports_to_remove = set(imports_to_remove)
+            imports_to_remove = set(find_all_package_nodes(item))
 
-        # Remove references between module nodes, as though they would
-        # not be imported from 'name'.
-        for src in hooked_mods:
-            # modules, this `src` does import
-            references = set(n.identifier for n in mod_graph.getReferences(src))
-            # Remove all of these imports which are also in `imports_to_remove`
-            for dest in imports_to_remove & references:
-                mod_graph.removeReference(src, dest)
-                logger.warn("  From %s removing import %s", src, dest)
+            # Remove references between module nodes, as though they would
+            # not be imported from 'name'.
+            # Note: Doing this in a nested loop is less efficient than
+            # collecting all import to remove first, but log messages
+            # are easier to understand since related to the "Excluding ..."
+            # message above.
+            for src in hooked_mods:
+                # modules, this `src` does import
+                references = set(n.identifier for n in mod_graph.getReferences(src))
+                # Remove all of these imports which are also in `imports_to_remove`
+                for dest in imports_to_remove & references:
+                    mod_graph.removeReference(src, dest)
+                    logger.warn("  From %s removing import %s", src, dest)
 
 
     def _process_datas(self, mod_graph):
