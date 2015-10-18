@@ -29,26 +29,20 @@ xfail_py3 = xfail(is_py3, reason='fails with Python 3')
 # TODO: Rename to importerskip(). That said, is even that really the best name?
 # skipif_modules_not_found() or something similar would probably be more
 # self-explanatory.
-def importorskip(modules):
+def importorskip(*modules):
     """
     This wraps the pytest decorator to evaluate all modules that are required
     for running a test.
 
-    :param modules: Module name or list of modules.
+    :param modules: Module names
     :return: pytest decorator with a reason and list of required modules.
     """
     mods_avail = True
-    # Convert string to a list with one item.
-    if is_py2:
-        if type(modules) in (str, unicode):
-            modules = [modules]
-    else:
-        if type(modules) is str:
-            modules = [modules]
     for m in modules:
         try:
             __import__(m)
         except ImportError:
             mods_avail = False
     # Return pytest decorator.
-    return skipif(not mods_avail, reason='requires modules %s' % ', '.join(modules))
+    return skipif(not mods_avail,
+                  reason='requires modules %s' % ', '.join(modules))
