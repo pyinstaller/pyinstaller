@@ -409,6 +409,19 @@ def test_pil_img_conversion(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
 
 
+@importorskip('PIL', 'FixTk')
+def test_pil_FixTk(pyi_builder):
+    # See issue #1584
+    pyi_builder.test_source("""
+    try:
+        # In Python 2 the module name is 'Tkinter'
+        import Tkinter
+    except ImportError:
+        import tkinter
+    import FixTk, PIL
+    """)
+
+
 @importorskip('PIL')
 def test_pil_plugins(pyi_builder):
     pyi_builder.test_source(
