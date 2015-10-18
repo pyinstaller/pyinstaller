@@ -255,23 +255,23 @@ class ImportHook(object):
         # Collect all dependencies and their submodules
         # TODO: Optimize this by using a pattern and walking the tree
         # only once.
-        targets_to_remove = []
+        imports_to_remove = []
         for item in not_allowed_references:
             excluded_node = mod_graph.findNode(item, create_nspkg=False)
             if excluded_node is None:
                 logger.info("Import to be excluded not found: %r", item)
                 continue
             logger.info("Excluding import %r", item)
-            targets_to_remove.extend(find_all_package_nodes(item))
-        targets_to_remove = set(targets_to_remove)
+            imports_to_remove.extend(find_all_package_nodes(item))
+        imports_to_remove = set(imports_to_remove)
 
         # Remove references between module nodes, as though they would
         # not be imported from 'name'.
         for src in hooked_mods:
             # modules, this `src` does import
             references = set(n.identifier for n in mod_graph.getReferences(src))
-            # Remove all of these imports which are also in `targets_to_remove`
-            for dest in targets_to_remove & references:
+            # Remove all of these imports which are also in `imports_to_remove`
+            for dest in imports_to_remove & references:
                 mod_graph.removeReference(src, dest)
                 logger.warn("  Removing import %s from %s", dest, src)
 
