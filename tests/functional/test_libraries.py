@@ -411,7 +411,8 @@ def test_pil_img_conversion(pyi_builder_spec):
 
 @importorskip('PIL', 'FixTk')
 def test_pil_FixTk(pyi_builder):
-    # See issue #1584
+    # hook-PIL is excluding FixTk, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
     pyi_builder.test_source("""
     try:
         # In Python 2 the module name is 'Tkinter'
@@ -419,6 +420,26 @@ def test_pil_FixTk(pyi_builder):
     except ImportError:
         import tkinter
     import FixTk, PIL
+    """)
+
+@importorskip('PIL.ImageQt', 'PyQt5')
+def test_pil_PyQt5(pyi_builder):
+    # hook-PIL is excluding PyQt5, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+    import PyQt5
+    import PIL
+    import PIL.ImageQt
+    """)
+
+@importorskip('PIL.ImageQt', 'PyQt4')
+def test_pil_PyQt4(pyi_builder):
+    # hook-PIL is excluding PyQt4, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+    import PyQt4
+    import PIL
+    import PIL.ImageQt
     """)
 
 
