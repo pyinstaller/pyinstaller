@@ -165,8 +165,9 @@ class Analysis(Target):
         CONF['main_script'] = self.inputs[0]
 
         self.pathex = self._extend_pathex(pathex, self.inputs)
-        # Set global config variable 'pathex' to make it available for hookutils and
-        # import hooks. Path extensions for module search.
+        # Set global config variable 'pathex' to make it available for
+        # PyInstaller.utils.hooks and import hooks. Path extensions for module
+        # search.
         CONF['pathex'] = self.pathex
 
         # Set global variable to hold assembly binding redirects
