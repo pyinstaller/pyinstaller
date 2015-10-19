@@ -1,7 +1,10 @@
 language: python
-# Use new container-based Travis infrastructure.
+
+# Use the new container-based Travis infrastructure.
 sudo: false
-# Cache pip packages.
+
+# Cache pip packages. Explicitly name the pip-cache directory since we
+# use a custom `install` step which annuls `cache: pip`.
 cache:
   directories:
     - $HOME/.cache/pip
