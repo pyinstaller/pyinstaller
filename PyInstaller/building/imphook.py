@@ -24,6 +24,7 @@ from ..compat import expand_path
 from ..compat import importlib_load_source, is_py2
 from ..utils.misc import get_code_object
 from .imphookapi import PostGraphAPI
+from ..lib.modulegraph.modulegraph import GraphError
 
 logger = logging.getLogger(__name__)
 
@@ -228,86 +229,51 @@ class ImportHook(object):
             # that was not updated for a long time.
             logger.warn("Hidden import '%s' not found (probably old hook)" % item)
 
-    def _remove_module_references(self, node, graph, mod_filter=None):
-        """
-        Remove implicit reference to a module. Also submodules of the hook name
-        might reference the module. Remove those references too.
-
-        :param node:
-        :param mod_filter: List of module name prefixes to remove reference to.
-        :return: True if all references were removed False otherwise
-        """
-        result = True  # First assume it is possible to remove all references.
-        referers = graph.getReferers(node)  # Nodes that reference 'node'.
-
-        if not mod_filter:
-            # Just remove reference, nothing special filtering.
-            for r in referers:
-                logger.debug('Removing reference %s' % r.identifier)
-                graph.removeReference(r, node)
-            return True
-
-        # Remove only references that starts with any prefix from 'mod_filter'.
-        regex_str = '|'.join(['(%s.*)' % x for x in mod_filter])
-        is_allowed = re.compile(regex_str)
-        for r in referers:
-            if is_allowed.match(r.identifier):
-                logger.debug('Removing reference %s' % r.identifier)
-                # Contains prefix of 'imported_name' - remove reference.
-                graph.removeReference(r, node)
-            else:
-                # Other modules reference the implicit import - DO NOT remove it.
-                # Any module name was not specified in the filder and cannot be
-                # removed.
-                logger.debug('Removing reference %s failed' % r.identifier)
-                result = False
-
-        return result
-
     def _process_excludedimports(self, mod_graph):
         """
         'excludedimports' is a list of Python module names that PyInstaller
         should not detect as dependency of this module name.
+
+        So remove all import-edges from the current module (and it's
+        submodules) to the given `excludedimports` (end their submodules).
         """
-        not_allowed_references = set(self._module.excludedimports)
-        # Remove references between module nodes, as if they are not imported from 'name'
-        for item in not_allowed_references:
-            try:
-                excluded_node = mod_graph.findNode(item)
-                if excluded_node is not None:
-                    logger.info("Excluding import '%s'" % item)
 
-                    safe_to_remove = self._remove_module_references(excluded_node, mod_graph,
-                                                                    mod_filter=not_allowed_references)
-                    # If no other modules reference the excluded_node then it is safe to remove
-                    # all references to excluded_node and its all submodules.
-                    # NOTE: Removing references from graph will keep some dead branches that
-                    #       are not reachable from the top-level script. But import hoosks
-                    #       for modules in dead branches will get processed!
-                    # TODO Find out a way to remove unreachable branches in the graph. - Create a new graph object that will be constructed just from the top-level script?
-                    if safe_to_remove:
-                        submodule_list = set()
-                        # First find submodules.
-                        for subnode in mod_graph.nodes():
-                            if subnode.identifier.startswith(excluded_node.identifier + '.'):
-                                submodule_list.add(subnode)
-                        # Then remove references to those submodules.
-                        for mod in submodule_list:
-                            mod_referers = mod_graph.getReferers(mod)
-                            for mod_ref in mod_referers:
-                                mod_graph.removeReference(mod_ref, mod)
-                            logger.warn("  Removing import '%s'" % mod.identifier)
-                            mod_graph.removeNode(mod)
-                        # Remove the parent node itself.
-                        logger.warn("  Removing import '%s'" % item)
-                        mod_graph.removeNode(excluded_node)
+        def find_all_package_nodes(name):
+            mods = [name]
+            name += '.'
+            for subnode in mod_graph.nodes():
+                if subnode.identifier.startswith(name):
+                    mods.append(subnode.identifier)
+            return mods
 
-                else:
-                    logger.info("Excluded import '%s' not found" % item)
-            except ImportError:
-                # excludedimport could not be found.
-                # modulegraph raises ImporError when a module is not found.
-                logger.info("Excluded import '%s' not found" % item)
+        # Collect all submodules of this module.
+        hooked_mods = find_all_package_nodes(self._name)
+
+        # Collect all dependencies and their submodules
+        # TODO: Optimize this by using a pattern and walking the graph
+        # only once.
+        for item in set(self._module.excludedimports):
+            excluded_node = mod_graph.findNode(item, create_nspkg=False)
+            if excluded_node is None:
+                logger.info("Import to be excluded not found: %r", item)
+                continue
+            logger.info("Excluding import %r", item)
+            imports_to_remove = set(find_all_package_nodes(item))
+
+            # Remove references between module nodes, as though they would
+            # not be imported from 'name'.
+            # Note: Doing this in a nested loop is less efficient than
+            # collecting all import to remove first, but log messages
+            # are easier to understand since related to the "Excluding ..."
+            # message above.
+            for src in hooked_mods:
+                # modules, this `src` does import
+                references = set(n.identifier for n in mod_graph.getReferences(src))
+                # Remove all of these imports which are also in `imports_to_remove`
+                for dest in imports_to_remove & references:
+                    mod_graph.removeReference(src, dest)
+                    logger.warn("  From %s removing import %s", src, dest)
+
 
     def _process_datas(self, mod_graph):
         """

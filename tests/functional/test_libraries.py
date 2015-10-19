@@ -290,9 +290,20 @@ def test_twisted(pyi_builder):
             raise SystemExit('Twisted reactor not properly initialized.')
         """)
 
+# matplotlib tries to import any of PyQt4, PyQt5 or PySide. But if we
+# have more then one of these in the frozen app, the app's
+# runtime-hooks will crash. Thus we need to exclude the other two.
+all_qt_pkgs = ['PyQt4', 'PyQt5', 'PySide']
+excludes = []
+for pkg in all_qt_pkgs:
+    p = [p for p in all_qt_pkgs]
+    p = importorskip(pkg)(p)
+    excludes.append(p)
 
 @importorskip('matplotlib')
-def test_matplotlib(pyi_builder):
+@pytest.mark.parametrize("excludes", excludes, ids=all_qt_pkgs)
+def test_matplotlib(pyi_builder, excludes):
+    pyi_args = ['--exclude-module=%s' % e for e in excludes]
     pyi_builder.test_source(
         """
         import os
@@ -312,7 +323,9 @@ def test_matplotlib(pyi_builder):
             raise SystemExit('MATPLOTLIBDATA not pointing to sys._MEIPASS.')
         # This import was reported to fail with matplotlib 1.3.0.
         from mpl_toolkits import axes_grid1
-        """)
+        """, pyi_args=pyi_args)
+
+del all_qt_pkgs, excludes
 
 
 @importorskip('pyexcelerate')
@@ -407,6 +420,40 @@ def test_gi_gst_binding(pyi_builder):
 @pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
 def test_pil_img_conversion(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
+
+
+@importorskip('PIL', 'FixTk')
+def test_pil_FixTk(pyi_builder):
+    # hook-PIL is excluding FixTk, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+    try:
+        # In Python 2 the module name is 'Tkinter'
+        import Tkinter
+    except ImportError:
+        import tkinter
+    import FixTk, PIL
+    """)
+
+@importorskip('PIL.ImageQt', 'PyQt5')
+def test_pil_PyQt5(pyi_builder):
+    # hook-PIL is excluding PyQt5, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+    import PyQt5
+    import PIL
+    import PIL.ImageQt
+    """)
+
+@importorskip('PIL.ImageQt', 'PyQt4')
+def test_pil_PyQt4(pyi_builder):
+    # hook-PIL is excluding PyQt4, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+    import PyQt4
+    import PIL
+    import PIL.ImageQt
+    """)
 
 
 @importorskip('PIL')
