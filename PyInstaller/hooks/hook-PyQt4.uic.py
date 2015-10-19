@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 # Because this is PyQt4.uic, note the fully qualified package name required in
-# order to refer to hookutils.
+# order to refer to PyInstaller.utils.hooks.
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 from PyInstaller.compat import is_linux
 
@@ -17,9 +17,9 @@ from PyInstaller.compat import is_linux
 #
 #      File "/usr/local/lib/python2.7/dist-packages/PyInstaller-2.1.1dev_9e9d21b-py2.7.egg/PyInstaller/hooks/hook-PyQt4.uic.py", line 29, in <module>
 #        hiddenimports += collect_submodules('PyKDE4') + ['PyQt4.QtSvg', 'PyQt4.QtXml']
-#      File "/usr/local/lib/python2.7/dist-packages/PyInstaller-2.1.1dev_9e9d21b-py2.7.egg/PyInstaller/hooks/hookutils.py", line 679, in collect_submodules
+#      File "/usr/local/lib/python2.7/dist-packages/PyInstaller-2.1.1dev_9e9d21b-py2.7.egg/PyInstaller/utils/hooks/__init__.py", line 679, in collect_submodules
 #        pkg_base, pkg_dir = get_package_paths(package)
-#      File "/usr/local/lib/python2.7/dist-packages/PyInstaller-2.1.1dev_9e9d21b-py2.7.egg/PyInstaller/hooks/hookutils.py", line 646, in get_package_paths
+#      File "/usr/local/lib/python2.7/dist-packages/PyInstaller-2.1.1dev_9e9d21b-py2.7.egg/PyInstaller/utils/hooks/__init__.py", line 646, in get_package_paths
 #        assert is_package, 'Package %s does not have __path__ attribute' % package
 #    AssertionError: Package PyKDE4 does not have __path__ attribute
 #

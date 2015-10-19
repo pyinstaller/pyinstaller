@@ -93,15 +93,15 @@ def exec_script(script_filename, env=None, *args):
     returns anything that was emitted in the standard output as a
     single string.
 
-    To prevent missuse, the script passed to hookutils.exec_script
+    To prevent missuse, the script passed to utils.hooks.exec_script
     must be located in the `PyInstaller/utils/hooks/subproc` directory.
     """
     script_filename = os.path.basename(script_filename)
     script_filename = os.path.join(os.path.dirname(__file__), 'subproc', script_filename)
     if not os.path.exists(script_filename):
         raise SystemError("To prevent missuse, the script passed to "
-                          "hookutils.exec-script must be located in "
-                          "the `PyInstaller/utils/hooks/subproc` directory.")
+                          "PyInstaller.utils.hooks.exec-script must be located "
+                          "in the `PyInstaller/utils/hooks/subproc` directory.")
 
     cmd = [script_filename]
     cmd.extend(args)
@@ -749,7 +749,7 @@ def is_module_version(module_name, comparison_name, module_version):
     Examples
     ----------
         # Test whether the local version of Sphinx is 1.3.x or newer.
-        >>> from PyInstaller.utils.hooks.hookutils import is_module_version
+        >>> from PyInstaller.utils.hooks import is_module_version
         >>> is_module_version('sphinx', '>=', '1.3.1')
         True
     """
