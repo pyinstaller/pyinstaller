@@ -135,7 +135,7 @@ class HooksCache(dict):
                 del self[module_name]
 
 
-class AdditionalFilesCache:
+class AdditionalFilesCache(object):
     """
     Cache for storing what binaries and datas were pushed by what modules
     when import hooks were processed.

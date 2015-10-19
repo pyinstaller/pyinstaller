@@ -20,11 +20,13 @@ from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
 
 FORMAT = '%(relativeCreated)d %(levelname)s: %(message)s'
 
+
 def init():
-    # Allow defering initialization
+    # Allow deferring initialization
     global logger
     logging.basicConfig(format=FORMAT, level=logging.INFO)
     logger = getLogger('PyInstaller')
+
 
 def __add_options(parser):
     levels = ('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
@@ -36,6 +38,7 @@ def __add_options(parser):
                             '(default: %%default, choose one of %s)'
                             % ', '.join(levels))
                       )
+
 
 def __process_options(parser, opts):
     try:
