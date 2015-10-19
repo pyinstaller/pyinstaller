@@ -103,9 +103,18 @@ for app in settings.INSTALLED_APPS:
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
 
-# Construct base module name - without 'settings' suffix.
 base_module_name = '.'.join(os.environ['DJANGO_SETTINGS_MODULE'].split('.')[0:-1])
-base_module = __import__(base_module_name, {}, {}, ["urls"])
+root_urlconf = getattr(settings, 'ROOT_URLCONF', None)
+if root_urlconf is None:
+    # Construct base module name - without 'settings' suffix.
+    base_module = __import__(base_module_name, {}, {}, ["urls"])
+else:
+    names = root_urlconf.split('.')
+    urls_path = '.'.join(names[:-1])
+    urls_module_name = names[-1]
+    if not urls_path:
+        urls_path = base_module_name
+    base_module = __import__(urls_path, {}, {}, [urls_module_name])
 urls = base_module.urls
 
 # Find url imports.
