@@ -2,7 +2,9 @@ language: python
 # Use new container-based Travis infrastructure.
 sudo: false
 # Cache pip packages.
-cache: pip
+cache:
+  directories:
+    - $HOME/.cache/pip
 
 # Try OS X.
 os:
