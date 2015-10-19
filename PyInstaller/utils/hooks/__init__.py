@@ -1026,7 +1026,14 @@ import gi
 gi.require_version("GIRepository", "2.0")
 from gi.repository import GIRepository
 print(GIRepository.Repository.get_search_path())"""
-    typelibs_path = eval_statement(statement)[0]
+    typelibs_path = eval_statement(statement)
+    if not typelibs_path:
+        logger.error("gi repository 'GIRepository 2.0' not found. "
+                     "Please make sure libgirepository-gir2.0 resp. "
+                     "lib64girepository-gir2.0 is installed.")
+        # :todo: should we raise a SystemError here?
+        return []
+    typelibs_path = typelibs_path[0]
     pattern = os.path.join(typelibs_path, module + '*' + version + '*')
     for f in glob.glob(pattern):
         d = gir_library_path_fix(f)
