@@ -30,7 +30,6 @@ cleanup = []
 
 
 def main(name, brief, debug, rec_debug, **unused_options):
-    PyInstaller.log.init()
 
     global stack
 
@@ -232,6 +231,7 @@ class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
 
 
 def run():
+    PyInstaller.log.init()
     parser = optparse.OptionParser('%prog [options] pyi_archive')
     parser.add_option('-l', '--log',
                       default=False,
