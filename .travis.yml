@@ -8,6 +8,7 @@ sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
+    - $HOME/.pip-accel
 
 # Try OS X.
 os:
@@ -66,7 +67,8 @@ install:
   # Install dependencies for tests.
   # Download-progress bars break Travis's log view. Disable them by piping output
   # through another program (if output is not a tty, no progress bars)
-  - pip install -r tests/requirements.txt | cat
+  - pip install pip-accel | cal
+  - pip-accel install -r tests/requirements.txt | cat
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
