@@ -9,7 +9,7 @@
 
 
 import os
-import sys
+import argparse
 
 import PyInstaller.utils.win32.versioninfo
 import PyInstaller.log
@@ -17,19 +17,21 @@ import PyInstaller.log
 def run():
     PyInstaller.log.init()
 
-    out_filename = os.path.abspath('file_version_info.txt')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('info_file', metavar='info-file',
+                        help="text file containing version info")
+    parser.add_argument('exe_file', metavar='exe-file',
+                        help="full pathname of a Windows executable")
+    args = parser.parse_args()
 
-    if len(sys.argv) < 3:
-        print('Usage: python set_version.py  <version_info.txt>  <exe>')
-        print(' where: <version_info.txt> is file containing version info')
-        print(' and <exe> is the fullpathname of a Windows executable.')
-        raise SystemExit(1)
-
-    info_file = os.path.abspath(sys.argv[1])
-    exe_file = os.path.abspath(sys.argv[2])
+    info_file = os.path.abspath(args.info_file)
+    exe_file = os.path.abspath(args.exe_file)
 
     try:
         vs = PyInstaller.utils.win32.versioninfo.SetVersion(exe_file, info_file)
         print(('Version info set in: %s' % exe_file))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
+if __name__ == '__main__':
+    run()
