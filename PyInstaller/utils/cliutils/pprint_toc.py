@@ -14,7 +14,7 @@ Pretty-prints a TOC file.
 
 
 import codecs
-import optparse
+import argparse
 import pprint
 
 import PyInstaller.log
@@ -22,9 +22,14 @@ import PyInstaller.log
 def run():
     PyInstaller.log.init()
 
-    _, args = optparse.OptionParser(usage='usage: %prog toc_files...').parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('toc_files', metavar='toc-file', nargs='+')
+    args = parser.parse_args()
 
-    for toc_file in args:
+    for toc_file in args.toc_files:
         with codecs.open(toc_file, 'r', 'utf-8') as f:
             from PyInstaller.depend.bindepend import BindingRedirect
             pprint.pprint(eval(f.read()))
+
+if __name__ == '__main__':
+    run()
