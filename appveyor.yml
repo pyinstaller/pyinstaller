@@ -45,11 +45,13 @@ environment:
       WAF_ARGS: "--gcc"
 
 cache:
+  - C:\Users\appveyor\.pip-accel
   # Cache created Python .whl packages to avoid compiling them again.
   # Wheels are built with --use-wheel to avoid recompiling already-built wheels.
-  - C:\wheels
+  #- C:\wheels
   # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
-  - C:\Users\appveyor\AppData\Local\Temp\chocolatey -> appveyor.yml
+  #- C:\Users\appveyor\AppData\Local\Temp\chocolatey -> appveyor.yml
+  - C:\Users\appveyor\AppData\Local\Temp\chocolatey
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
@@ -83,15 +85,15 @@ install:
 
   ### Install the PyInsaller dependencies.
 
-  # Create .whl packages from dependencies for possible caching.
-  # First install 'wheel' package to be able create .whl files.
-  - "%CMD_IN_ENV% pip install wheel"
+  ## Create .whl packages from dependencies for possible caching.
+  ## First install 'wheel' package to be able create .whl files.
+  #- "%CMD_IN_ENV% pip install wheel"
 
-  # Create c:/wheels if it does not exist.
-  - ps: If ( -not (Test-Path C:/wheels) )  { mkdir C:/wheels }
+  ## Create c:/wheels if it does not exist.
+  #- ps: If ( -not (Test-Path C:/wheels) )  { mkdir C:/wheels }
 
-  - ECHO "Cached wheels:"
-  - ps: "ls \"C:/wheels\""
+  #- ECHO "Cached wheels:"
+  #- ps: "ls \"C:/wheels\""
 
   # Create .whl packages from dependencies for possible caching.
   # If some dependencies contain
@@ -103,11 +105,20 @@ install:
   # skip rebuilding it. The wheel will still be rebuilt if a newer version is
   # available on PyPI.
   # TODO: remove out-of-date wheels to avoid overflowing the build cache
-  - "%CMD_IN_ENV% pip wheel --use-wheel --wheel-dir C:/wheels --find-links c:/wheels -r tests/requirements-win.txt"
+  #- "%CMD_IN_ENV% pip wheel --use-wheel --wheel-dir C:/wheels --find-links c:/wheels -r tests/requirements-win.txt"
+
+  # Install pip-accel to cache pypi packages and avoid compiling some packages.
+  # (numpy or pycrypto take a lot of tome to compile).
+  #
+  # TODO Use upstream version when windows support is merged.
+  # Windows support is not yet merged upstream so use own 'pip-accel' fork:
+  #   https://github.com/paylogic/pip-accel/pull/60
+  - "%CMD_IN_ENV% pip install git+https://github.com/matysek/pip-accel.git"
 
   # Install the PyInstaller test dependencies.
+  - "%CMD_IN_ENV% pip-accel install -r tests/requirements-win.txt"
   # Use cached .whl packages.
-  - "%CMD_IN_ENV% pip install --no-index --find-links C:\\wheels -r tests/requirements-win.txt"
+  #- "%CMD_IN_ENV% pip install --no-index --find-links C:\\wheels -r tests/requirements-win.txt"
 
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
@@ -116,4 +127,4 @@ build: none
 
 test_script:
   # Split tests into several subprocesses.
-  - "%CMD_IN_ENV% py.test -n 7  --timeout 180 --maxfail 3"
+  #- "%CMD_IN_ENV% py.test -n 3  --timeout 180 --maxfail 3"
