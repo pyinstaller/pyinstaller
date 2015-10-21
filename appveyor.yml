@@ -74,14 +74,16 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
+  # TODO Reenable
   # Install 32bit mingw-w64. Bootloader can be compiled only with mingw-w64.
-  - choco install -y mingw -x86
+  #- choco install -y mingw -x86
 
+  # TODO Reenable
   # Compile bootloader, use 32bit mingw-w64.
-  - "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
-  - cd bootloader
-  - "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
-  - cd ..
+  #- "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
+  #- cd bootloader
+  #- "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
+  #- cd ..
 
   ### Install the PyInsaller dependencies.
 
