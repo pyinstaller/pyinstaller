@@ -32,17 +32,23 @@ environment:
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
-      WAF_ARGS: "--gcc"
+      #WAF_ARGS: "--gcc"
+      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+      WAF_ARGS: ""
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
-      WAF_ARGS: "--gcc"
+      #WAF_ARGS: "--gcc"
+      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+      WAF_ARGS: ""
 
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
-      WAF_ARGS: "--gcc"
+      #WAF_ARGS: "--gcc"
+      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+      WAF_ARGS: ""
 
 cache:
   # Cache binary Python packages e.g. numpy, pycrypto
@@ -50,7 +56,10 @@ cache:
   # 'pip-accel' requires caching of downloaded pip packages.
   - C:\Users\appveyor\AppData\Local\pip -> tests/requirements.txt
   # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
-  - C:\tools\mingw32
+  # TODO Remove mingw-w64 caching when it is natively supported by apppveyor:
+  #    https://github.com/appveyor/ci/issues/466
+  # TODO mingw-w64 caching takes a lot of time - unpacking/zipping 15000 files.
+  #- C:\tools\mingw32
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -76,7 +85,12 @@ install:
 
   # Install 32bit mingw-w64. Bootloader can be compiled only with mingw-w64.
   # Install only if it is not cached from previous runs.
-  - ps: If ( -not ( Test-Path C:/tools/mingw32 ) )  { choco install -y mingw -x86 }
+  # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+  #    It takes a lot of time to install mingw-w64.
+  #
+  #    https://github.com/appveyor/ci/issues/466
+  #
+  #- ps: If ( -not ( Test-Path C:/tools/mingw32 ) )  { choco install -y mingw -x86 }
 
   # Compile bootloader, use 32bit mingw-w64.
   - "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
@@ -85,28 +99,6 @@ install:
   - cd ..
 
   ### Install the PyInsaller dependencies.
-
-  ## Create .whl packages from dependencies for possible caching.
-  ## First install 'wheel' package to be able create .whl files.
-  #- "%CMD_IN_ENV% pip install wheel"
-
-  ## Create c:/wheels if it does not exist.
-  #- ps: If ( -not (Test-Path C:/wheels) )  { mkdir C:/wheels }
-
-  #- ECHO "Cached wheels:"
-  #- ps: "ls \"C:/wheels\""
-
-  # Create .whl packages from dependencies for possible caching.
-  # If some dependencies contain
-  # compiled extensions and are not provided as pre-built wheel packages,
-  # pip will build them from source using the MSVC compiler matching the
-  # target Python version and architecture
-  # If we have previously built a wheel and stored it in C:/wheels,
-  # the --find-links option will find the previously built wheel and
-  # skip rebuilding it. The wheel will still be rebuilt if a newer version is
-  # available on PyPI.
-  # TODO: remove out-of-date wheels to avoid overflowing the build cache
-  #- "%CMD_IN_ENV% pip wheel --use-wheel --wheel-dir C:/wheels --find-links c:/wheels -r tests/requirements-win.txt"
 
   # Install pip-accel to cache pypi packages and avoid compiling some packages.
   # (numpy or pycrypto take a lot of tome to compile).
@@ -118,8 +110,6 @@ install:
 
   # Install the PyInstaller test dependencies.
   - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
-  # Use cached .whl packages.
-  #- "%CMD_IN_ENV% pip install --no-index --find-links C:\\wheels -r tests/requirements-win.txt"
 
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
@@ -128,4 +118,4 @@ build: none
 
 test_script:
   # Split tests into several subprocesses.
-  #- "%CMD_IN_ENV% py.test -n 3  --timeout 180 --maxfail 3"
+  #- "%CMD_IN_ENV% py.test -n 3  --timeout 180 --maxfail 5"
