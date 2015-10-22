@@ -45,8 +45,10 @@ environment:
       WAF_ARGS: "--gcc"
 
 cache:
-  #- C:\Users\appveyor\.pip-accel
-  #- C:\Users\appveyor\AppData\Local\pip
+  # Cache binary Python packages e.g. numpy, pycrypto
+  - C:\Users\appveyor\.pip-accel -> tests/requirements.txt
+  # 'pip-accel' requires caching of downloaded pip packages.
+  - C:\Users\appveyor\AppData\Local\pip -> tests/requirements.txt
   # Cache created Python .whl packages to avoid compiling them again.
   # Wheels are built with --use-wheel to avoid recompiling already-built wheels.
   #- C:\wheels
@@ -76,9 +78,9 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  # TODO Reenable
   # Install 32bit mingw-w64. Bootloader can be compiled only with mingw-w64.
-  #- choco install -y mingw -x86
+  # Install only if it is not cached from previous runs.
+  - ps: If ( -not ( Test-Path C:/tools/mingw32 ) )  { choco install -y mingw -x86 }
 
   # TODO Reenable
   # Compile bootloader, use 32bit mingw-w64.
