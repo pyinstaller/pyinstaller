@@ -49,13 +49,9 @@ cache:
   - C:\Users\appveyor\.pip-accel -> tests/requirements.txt
   # 'pip-accel' requires caching of downloaded pip packages.
   - C:\Users\appveyor\AppData\Local\pip -> tests/requirements.txt
-  # Cache created Python .whl packages to avoid compiling them again.
-  # Wheels are built with --use-wheel to avoid recompiling already-built wheels.
-  #- C:\wheels
   # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
   - C:\tools\mingw32
-  #- C:\Users\appveyor\AppData\Local\Temp\chocolatey -> appveyor.yml
-  #- C:\Users\appveyor\AppData\Local\Temp\chocolatey
+
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
@@ -82,12 +78,11 @@ install:
   # Install only if it is not cached from previous runs.
   - ps: If ( -not ( Test-Path C:/tools/mingw32 ) )  { choco install -y mingw -x86 }
 
-  # TODO Reenable
   # Compile bootloader, use 32bit mingw-w64.
-  #- "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
-  #- cd bootloader
-  #- "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
-  #- cd ..
+  - "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
+  - cd bootloader
+  - "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
+  - cd ..
 
   ### Install the PyInsaller dependencies.
 
@@ -119,15 +114,15 @@ install:
   # TODO Use upstream version when windows support is merged.
   # Windows support is not yet merged upstream so use own 'pip-accel' fork:
   #   https://github.com/paylogic/pip-accel/pull/60
-  #- "%CMD_IN_ENV% pip install git+https://github.com/matysek/pip-accel.git"
+  - "%CMD_IN_ENV% pip install git+https://github.com/matysek/pip-accel.git"
 
   # Install the PyInstaller test dependencies.
-  #- "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
+  - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
   # Use cached .whl packages.
   #- "%CMD_IN_ENV% pip install --no-index --find-links C:\\wheels -r tests/requirements-win.txt"
 
   # Install PyInstaller into virtualenv.
-  #- "%CMD_IN_ENV% pip install -e ."
+  - "%CMD_IN_ENV% pip install -e ."
 
 build: none
 
