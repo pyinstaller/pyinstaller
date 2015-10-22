@@ -45,12 +45,13 @@ environment:
       WAF_ARGS: "--gcc"
 
 cache:
-  - C:\Users\appveyor\.pip-accel
-  - C:\Users\appveyor\AppData\Local\pip
+  #- C:\Users\appveyor\.pip-accel
+  #- C:\Users\appveyor\AppData\Local\pip
   # Cache created Python .whl packages to avoid compiling them again.
   # Wheels are built with --use-wheel to avoid recompiling already-built wheels.
   #- C:\wheels
   # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
+  - C:\tools\mingw32
   #- C:\Users\appveyor\AppData\Local\Temp\chocolatey -> appveyor.yml
   #- C:\Users\appveyor\AppData\Local\Temp\chocolatey
 init:
