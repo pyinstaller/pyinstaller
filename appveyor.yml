@@ -51,10 +51,10 @@ environment:
       WAF_ARGS: ""
 
 cache:
-  # Cache binary Python packages e.g. numpy, pycrypto
-  - C:\Users\appveyor\.pip-accel -> tests/requirements.txt
   # 'pip-accel' requires caching of downloaded pip packages.
-  - C:\Users\appveyor\AppData\Local\pip -> tests/requirements.txt
+  - C:\Users\appveyor\AppData\Local\pip
+  # Cache binary Python packages e.g. numpy, pycrypto
+  - C:\Users\appveyor\.pip-accel
   # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
   # TODO Remove mingw-w64 caching when it is natively supported by apppveyor:
   #    https://github.com/appveyor/ci/issues/466
