@@ -420,9 +420,19 @@ def expand_path(path):
 
 # Obsolete command line options.
 
+class __obsolete_option:
+    def __init__(self, option_strings, dest, help, **kwargs):
+        self.type = bool
+        self.option_strings = option_strings
+        self.dest = dest
+        self.help = help
+        self.default = self.const = False
+        self.nargs = self.const = self.choices = self.metavar=None
+        self.required = False
 
-def __obsolete_option(option, opt, value, parser):
-    parser.error('%s option does not exist anymore (obsolete).' % opt)
+    def __call__(parser, namespace, values, opt):
+        return
+        parser.error('%s option does not exist anymore (obsolete).' % opt)
 
 
 def __add_obsolete_options(parser):
@@ -430,11 +440,10 @@ def __add_obsolete_options(parser):
     Add the obsolete options to a option-parser instance and
     print error message when they are present.
     """
-    g = parser.add_option_group('Obsolete options (not used anymore)')
-    g.add_option(*_OLD_OPTIONS,
-                 **{'action': 'callback',
-                    'callback': __obsolete_option,
-                    'help': 'These options do not exist anymore.'})
+    g = parser.add_argument_group('Obsolete options (not used anymore)')
+    g.add_argument(*_OLD_OPTIONS, 
+                   action=__obsolete_option,
+                   help='These options do not exist anymore.')
 
 
 # Site-packages functions - use native function if available.

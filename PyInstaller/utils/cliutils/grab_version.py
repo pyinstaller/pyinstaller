@@ -10,7 +10,7 @@
 
 import codecs
 import os
-import sys
+import argparse
 
 import PyInstaller.utils.win32.versioninfo
 import PyInstaller.log
@@ -19,27 +19,27 @@ import PyInstaller.log
 def run():
     PyInstaller.log.init()
 
-    out_filename = os.path.abspath('file_version_info.txt')
+    parser = argparse.ArgumentParser(
+        epilog = ('The printed output may be saved to a file, edited and '
+                  'used as the input for a version resource on any of the '
+                  'executable targets in an Installer spec file.'))
+    parser.add_argument('exe_file', metavar='exe-file',
+                        help="full pathname of a Windows executable")
+    parser.add_argument('out_filename', metavar='out-filename', nargs='?',
+                        default='file_version_info.txt',
+                        help=("filename where the grabbed version info "
+                              "will be saved"))
 
-    if len(sys.argv) < 2:
-        print('Usage: python grab_version.py <exe>  [ out.txt ]')
-        print(' where: <exe> is the fullpathname of a Windows executable and')
-        print(' <out.txt> is the optional pathname where the grabbed')
-        print(' version info will be saved.')
-        print(' default out filename:  file_version_info.txt')
-        print(' The printed output may be saved to a file, edited and')
-        print(' used as the input for a version resource on any of the')
-        print(' executable targets in an Installer spec file.')
-        raise SystemExit(1)
-
-    if len(sys.argv) == 3:
-        out_filename = os.path.abspath(sys.argv[2])
+    args = parser.parse_args()
 
     try:
-        vs = PyInstaller.utils.win32.versioninfo.decode(sys.argv[1])
-        fp = codecs.open(out_filename, 'w', 'utf-8')
+        vs = PyInstaller.utils.win32.versioninfo.decode(args.exe_file)
+        fp = codecs.open(args.out_filename, 'w', 'utf-8')
         fp.write(unicode(vs))
         fp.close()
         print(('Version info written to: %s' % out_filename))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
+if __name__ == '__main__':
+    run()

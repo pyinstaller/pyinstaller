@@ -12,7 +12,7 @@
 Automatically build spec files containing a description of the project
 """
 
-import optparse
+import argparse
 import os
 
 import PyInstaller.building.makespec
@@ -23,28 +23,27 @@ import PyInstaller.log
 def run():
     PyInstaller.log.init()
 
-    p = optparse.OptionParser(
-        usage='python %prog [opts] <scriptname> [<scriptname> ...]'
-    )
+    p = argparse.ArgumentParser()
     PyInstaller.building.makespec.__add_options(p)
     PyInstaller.log.__add_options(p)
     PyInstaller.compat.__add_obsolete_options(p)
+    p.add_argument('scriptname', nargs='+')
 
-    opts, args = p.parse_args()
-    PyInstaller.log.__process_options(p, opts)
+    args = p.parse_args()
+    PyInstaller.log.__process_options(p, args)
 
     # Split pathex by using the path separator
-    temppaths = opts.pathex[:]
-    opts.pathex = []
+    temppaths = args.pathex[:]
+    args.pathex = []
     for p in temppaths:
-        opts.pathex.extend(p.split(os.pathsep))
-
-    if not args:
-        p.error('Requires at least one scriptname file')
+        args.pathex.extend(p.split(os.pathsep))
 
     try:
-        name = PyInstaller.building.makespec.main(args, **opts.__dict__)
+        name = PyInstaller.building.makespec.main(args.scriptname, **vars(args))
         print('wrote %s' % name)
         print('now run pyinstaller.py to build the executable')
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
+if __name__ == '__main__':
+    run()
