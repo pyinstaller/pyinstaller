@@ -149,8 +149,9 @@ class ArchiveReader(object):
         self.lib.seek(self.start + self.TOCPOS)
         (offset,) = struct.unpack('!i', self.lib.read(4))
         self.lib.seek(self.start + offset)
-        # use marshal.loads() since load() arg must be a file object
-        self.toc = marshal.loads(self.lib.read())
+        # Use marshal.loads() since load() arg must be a file object
+        # Convert the read list into a dict for faster access
+        self.toc = dict(marshal.loads(self.lib.read()))
 
     ######## This is what is called by FuncImporter #######
     ## Since an Archive is flat, we ignore parent and modname.

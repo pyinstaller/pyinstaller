@@ -67,7 +67,8 @@ class ArchiveWriter(object):
         if self.HDRLEN:
             self.lib.write(b'\0' * self.HDRLEN)
         # Create an empty table of contents.
-        self.toc = {}
+        # Use a list to support reproducible builds
+        self.toc = []
 
     def _add_from_table_of_contents(self, toc):
         """
@@ -107,7 +108,7 @@ class ArchiveWriter(object):
         pynm, ext = os.path.splitext(os.path.basename(pth))
         ispkg = pynm == '__init__'
         assert ext in ('.pyc', '.pyo')
-        self.toc[nm] = (ispkg, self.lib.tell())
+        self.toc.append((nm, (ispkg, self.lib.tell())))
         f = open(entry[1], 'rb')
         f.seek(8)  # skip magic and timestamp
         self.lib.write(f.read())
@@ -210,7 +211,7 @@ class ZlibArchiveWriter(ArchiveWriter):
         if self.cipher:
             obj = self.cipher.encrypt(obj)
 
-        self.toc[name] = (typ, self.lib.tell(), len(obj))
+        self.toc.append((name, (typ, self.lib.tell(), len(obj))))
         self.lib.write(obj)
 
     def update_headers(self, tocpos):

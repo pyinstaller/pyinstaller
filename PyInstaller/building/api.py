@@ -168,6 +168,8 @@ class PYZ(Target):
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
                 self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])
+        # sort content alphabetically to support reproducible builds
+        toc.sort()
         pyz = ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
 
 
