@@ -30,14 +30,14 @@ def init():
 
 def __add_options(parser):
     levels = ('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
-    parser.add_option('--log-level',
-                      choices=levels,
-                      default='INFO',
-                      dest='loglevel',
-                      help=('Amount of detail in build-time console messages '
-                            '(default: %%default, choose one of %s)'
-                            % ', '.join(levels))
-                      )
+    parser.add_argument('--log-level',
+                        choices=levels,
+                        default='INFO',
+                        dest='loglevel',
+                        help=('Amount of detail in build-time console messages '
+                              '(default: %%(default)s, choose one of %s)'
+                              % ', '.join(levels))
+    )
 
 
 def __process_options(parser, opts):

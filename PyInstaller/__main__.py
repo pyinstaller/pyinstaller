@@ -13,7 +13,7 @@ Main command-line interface to PyInstaller.
 """
 
 import os
-import optparse
+import argparse
 import platform
 import sys
 
@@ -30,27 +30,28 @@ from . import log as logging
 logger = logging.getLogger(__name__)
 
 
-def run_makespec(opts, args):
+def run_makespec(filenames, **opts):
     # Split pathex by using the path separator
-    temppaths = opts.pathex[:]
-    opts.pathex = []
+    temppaths = opts['pathex'][:]
+    pathex = opts['pathex'] = []
     for p in temppaths:
-        opts.pathex.extend(p.split(os.pathsep))
+        pathex.extend(p.split(os.pathsep))
 
-    spec_file = PyInstaller.building.makespec.main(args, **opts.__dict__)
+    spec_file = PyInstaller.building.makespec.main(filenames, **opts)
     logger.info('wrote %s' % spec_file)
     return spec_file
 
 
-def run_build(opts, spec_file, pyi_config):
-    PyInstaller.building.build_main.main(pyi_config, spec_file, **opts.__dict__)
+def run_build(pyi_config, spec_file, **kwargs):
+    PyInstaller.building.build_main.main(pyi_config, spec_file, **kwargs)
 
 
 def __add_options(parser):
-    parser.add_option('-v', '--version', default=False, action='store_true',
-                      help='Show program version info and exit.')
+    parser.add_argument('-v', '--version', action='version',
+                        version=__version__,
+                        help='Show program version info and exit.')
 
-def run(pyi_args=sys.argv[1:], pyi_config=None):
+def run(pyi_args=None, pyi_config=None):
     """
     pyi_args     allows running PyInstaller programatically without a subprocess
     pyi_config   allows checking configuration once when running multiple tests
@@ -59,26 +60,18 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
     check_requirements()
 
     try:
-        parser = optparse.OptionParser(
-            usage='%prog [opts] <scriptname> [ <scriptname> ...] | <specfile>'
-            )
+        parser = argparse.ArgumentParser()
         __add_options(parser)
         PyInstaller.building.makespec.__add_options(parser)
         PyInstaller.building.build_main.__add_options(parser)
         PyInstaller.log.__add_options(parser)
         PyInstaller.compat.__add_obsolete_options(parser)
+        parser.add_argument('filenames', metavar='scriptname', nargs='+',
+                            help=("name of scriptfiles to be processed or "
+                                  "exactly one .spec-file"))
 
-        opts, args = parser.parse_args(pyi_args)
-        PyInstaller.log.__process_options(parser, opts)
-
-        # Print program version and exit
-        if opts.version:
-            print(__version__)
-            raise SystemExit(0)
-
-        if not args:
-            parser.error('Requires at least one scriptname file '
-                         'or exactly one .spec-file')
+        args = parser.parse_args(pyi_args)
+        PyInstaller.log.__process_options(parser, args)
 
         # Print PyInstaller version, Python version and platform
         # as the first line to stdout.
@@ -89,12 +82,12 @@ def run(pyi_args=sys.argv[1:], pyi_config=None):
         logger.info('Platform: %s' % platform.platform())
 
         # Skip creating .spec when .spec file is supplied
-        if args[0].endswith('.spec'):
-            spec_file = args[0]
+        if args.filenames[0].endswith('.spec'):
+            spec_file = args.filenames[0]
         else:
-            spec_file = run_makespec(opts, args)
+            spec_file = run_makespec(**vars(args))
 
-        run_build(opts, spec_file, pyi_config)
+        run_build(pyi_config, spec_file, **vars(args))
 
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
