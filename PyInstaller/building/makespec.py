@@ -86,12 +86,12 @@ def __add_options(parser):
     option group.
     """
     g = parser.add_argument_group('What to generate')
-    g.add_argument("-F", "--onefile", dest="onefile",
-                   action="store_true", default=False,
-                   help="Create a one-file bundled executable.")
     g.add_argument("-D", "--onedir", dest="onefile",
                    action="store_false",
                    help="Create a one-folder bundle containing an executable (default)")
+    g.add_argument("-F", "--onefile", dest="onefile",
+                   action="store_true", default=False,
+                   help="Create a one-file bundled executable.")
     g.add_argument("--specpath", metavar="DIR",
                    help="Folder to store the generated spec file "
                         "(default: current directory)")
