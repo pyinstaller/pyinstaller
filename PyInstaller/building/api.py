@@ -20,6 +20,7 @@ import tempfile
 import pkgutil
 import pprint
 import sys
+from operator import itemgetter
 
 from PyInstaller import is_win, is_darwin, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
@@ -252,6 +253,7 @@ class PKG(Target):
         logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
         trash = []
         mytoc = []
+        srctoc = []
         seenInms = {}
         seenFnms = {}
         seenFnms_typ = {}
@@ -299,12 +301,23 @@ class PKG(Target):
                                   self.xformdict.get(typ, 'b')))
             elif typ == 'OPTION':
                 mytoc.append((inm, '', 0, 'o'))
+            elif typ in ('PYSOURCE', 'PYMODULE'):
+                # collect sourcefiles and module in a toc of it's own
+                # which will not be sorted.
+                srctoc.append((inm, fnm, self.cdict[typ], self.xformdict[typ]))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
-        archive = CArchiveWriter(self.name, mytoc, pylib_name=pylib_name)
+
+        # Sort content alphabetically by type and name to support
+        # reproducible builds.
+        mytoc.sort(key=itemgetter(3, 0))
+        # Do *not* sort modules and scripts, as their order is important.
+        # TODO: Think about having all modules first and then all scripts.
+        archive = CArchiveWriter(self.name, srctoc + mytoc,
+                                 pylib_name=pylib_name)
 
         for item in trash:
             os.remove(item)
