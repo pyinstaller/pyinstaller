@@ -15,7 +15,9 @@ os:
   - linux
   #- osx
 
-#env:
+env:
+   # shorten logging of pip-accel
+   - COLOREDLOGS_LOG_FORMAT="%(name)-18s %(levelname)s %(message)s'"
 #  - PYCRYPTO_VERSION=2.4.1
 #  - PYCRYPTO_VERSION=2.6.1
 
