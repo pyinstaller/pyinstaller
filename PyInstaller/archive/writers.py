@@ -13,10 +13,6 @@ Utilities to create data structures for embedding Python modules and additional
 files into the executable.
 """
 
-# TODO clean up this module
-
-# TODO copied from pyimod02_carchive
-
 # While an Archive is really an abstraction for any "filesystem
 # within a file", it is tuned for use with imputil.FuncImporter.
 # This assumes it contains python code objects, indexed by the
@@ -27,62 +23,13 @@ files into the executable.
 
 import os
 import sys
+import struct
 from types import CodeType
 import marshal
 import zlib
 
 from .readers import CArchiveReader, PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA
 from ..compat import BYTECODE_MAGIC
-
-
-class ArchiveFile(object):
-    """
-    File class support auto open when access member from file object
-    This class is use to avoid file locking on windows
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-        self.pos = 0
-        self.fd = None
-        self.__open()
-
-    def __getattr__(self, name):
-        """
-        Auto open file when access member from file object
-        This function only call when member of name not exist in self
-        """
-        assert self.fd
-        return getattr(self.fd, name)
-
-    def __open(self):
-        """
-        Open file and seek to pos record from last close
-        """
-        if self.fd is None:
-            self.fd = open(*self.args, **self.kwargs)
-            self.fd.seek(self.pos)
-
-    def __enter__(self):
-        self.__open()
-
-    def __exit__(self, type, value, traceback):
-        assert self.fd
-        self.close()
-
-    def close(self):
-        """
-        Close file and record pos
-        """
-        if self.fd is not None:
-            self.pos = self.fd.tell()
-            self.fd.close()
-            self.fd = None
-
-
-class ArchiveReadError(RuntimeError):
-    pass
 
 
 class ArchiveWriter(object):
@@ -97,113 +44,28 @@ class ArchiveWriter(object):
     MAGIC = b'PYL\0'
     HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
     TOCPOS = 8
-    os = None
-    _bincache = None
 
-    def __init__(self, path=None, start=0):
+    def __init__(self, archive_path, logical_toc):
         """
-        Initialize an Archive. If path is omitted, it will be an empty Archive.
+        Create an archive file of name 'archive_path'.
+        logical_toc is a 'logical TOC' - a list of (name, path, ...)
+        where name is the internal name, eg 'a'
+        and path is a file to get the object from, eg './a.pyc'.
         """
-        self.toc = None
-        self.path = path
-        self.start = start
+        self.start = 0
 
-        if path is not None:
-            self.lib = ArchiveFile(self.path, 'rb')
-            with self.lib:
-                self.checkmagic()
-                self.loadtoc()
+        self._start_add_entries(archive_path)
+        self._add_from_table_of_contents(logical_toc)
+        self._finalize()
 
-    ####### Sub-methods of __init__ - override as needed #############
-    def checkmagic(self):
-        """
-        Overridable.
-        Check to see if the file object self.lib actually has a file
-        we understand.
-        """
-        self.lib.seek(self.start)  # default - magic is at start of file
-
-        if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise ArchiveReadError("%s is not a valid %s archive file"
-                                   % (self.path, self.__class__.__name__))
-
-        if self.lib.read(len(BYTECODE_MAGIC)) != BYTECODE_MAGIC:
-            raise ArchiveReadError("%s has version mismatch to dll" %
-                (self.path))
-
-        self.lib.read(4)
-
-    def loadtoc(self):
-        """
-        Overridable.
-        Default: After magic comes an int (4 byte native) giving the
-        position of the TOC within self.lib.
-        Default: The TOC is a marshal-able string.
-        """
-        self.lib.seek(self.start + self.TOCPOS)
-        (offset,) = struct.unpack('!i', self.lib.read(4))
-        self.lib.seek(self.start + offset)
-        # use marshal.loads() since load() arg must be a file object
-        self.toc = marshal.loads(self.lib.read())
-
-    ######## This is what is called by FuncImporter #######
-    ## Since an Archive is flat, we ignore parent and modname.
-    #XXX obsolete - imputil only code
-    ##  def get_code(self, parent, modname, fqname):
-    ##      pass
-
-    ####### Core method - Override as needed  #########
-    def extract(self, name):
-        """
-        Get the object corresponding to name, or None.
-        For use with imputil ArchiveImporter, object is a python code object.
-        'name' is the name as specified in an 'import name'.
-        'import a.b' will become:
-        extract('a') (return None because 'a' is not a code object)
-        extract('a.__init__') (return a code object)
-        extract('a.b') (return a code object)
-        Default implementation:
-          self.toc is a dict
-          self.toc[name] is pos
-          self.lib has the code object marshal-ed at pos
-        """
-        ispkg, pos = self.toc.get(name, (0, None))
-        if pos is None:
-            return None
-        with self.lib:
-            self.lib.seek(self.start + pos)
-            # use marshal.loads() sind load() arg must be a file object
-            obj = marshal.loads(self.lib.read())
-        return ispkg, obj
-
-    ########################################################################
-    # Informational methods
-
-    def contents(self):
-        """
-        Return a list of the contents
-        Default implementation assumes self.toc is a dict like object.
-        Not required by ArchiveImporter.
-        """
-        return list(self.toc.keys())
-
-    ########################################################################
-    # Building
-
-    ####### Top level method - shouldn't need overriding #######
-
-    def _start_add_entries(self, path):
+    def _start_add_entries(self, archive_path):
         """
         Open an empty archive for addition of entries.
         """
-        assert(self.path is None)
-
-        self.path = path
-        self.lib = ArchiveFile(path, 'wb')
+        self.lib = open(archive_path, 'wb')
         # Reserve space for the header.
         if self.HDRLEN:
             self.lib.write(b'\0' * self.HDRLEN)
-
         # Create an empty table of contents.
         self.toc = {}
 
@@ -225,21 +87,11 @@ class ArchiveWriter(object):
         writing any needed padding and the table of contents.
         """
         toc_pos = self.lib.tell()
-        self.save_toc(toc_pos)
+        self.save_trailer(toc_pos)
         if self.HDRLEN:
             self.update_headers(toc_pos)
         self.lib.close()
 
-    def build(self, archive_path, logical_toc):
-        """
-        Create an archive file of name 'archive_path'.
-        logical_toc is a 'logical TOC' - a list of (name, path, ...)
-        where name is the internal name, eg 'a'
-        and path is a file to get the object from, eg './a.pyc'.
-        """
-        self._start_add_entries(archive_path)
-        self._add_from_table_of_contents(logical_toc)
-        self._finalize()
 
     ####### manages keeping the internal TOC and the guts in sync #######
     def add(self, entry):
@@ -260,7 +112,7 @@ class ArchiveWriter(object):
         f.seek(8)  # skip magic and timestamp
         self.lib.write(f.read())
 
-    def save_toc(self, tocpos):
+    def save_trailer(self, tocpos):
         """
         Default - toc is a dict
         Gets marshaled to self.lib
@@ -318,38 +170,17 @@ class ZlibArchiveWriter(ArchiveWriter):
     HDRLEN = ArchiveWriter.HDRLEN + 5
     COMPRESSION_LEVEL = 6  # Default level of the 'zlib' module from Python.
 
-    def __init__(self, path=None, offset=None, code_dict=None,
-                 cipher=None):
+    def __init__(self, archive_path, logical_toc, code_dict=None, cipher=None):
         """
         code_dict      dict containing module code objects from ModuleGraph.
         """
-        if path is None:
-            offset = 0
-        elif offset is None:
-            for i in range(len(path) - 1, - 1, - 1):
-                if path[i] == '?':
-                    try:
-                        offset = int(path[i + 1:])
-                    except ValueError:
-                        # Just ignore any spurious "?" in the path
-                        # (like in Windows UNC \\?\<path>).
-                        continue
-                    path = path[:i]
-                    break
-            else:
-                offset = 0
-
         # Keep references to module code objects constructed by ModuleGraph
         # to avoid writting .pyc/pyo files to hdd.
         self.code_dict = code_dict or {}
+        self.cipher = cipher or None
 
-        super(ZlibArchiveWriter, self).__init__(path, offset)
+        super(ZlibArchiveWriter, self).__init__(archive_path, logical_toc)
 
-        if cipher:
-            self.crypted = 1
-            self.cipher = cipher
-        else:
-            self.crypted = 0
 
     def add(self, entry):
         name, path, typ = entry
@@ -376,7 +207,7 @@ class ZlibArchiveWriter(ArchiveWriter):
         obj = zlib.compress(data, self.COMPRESSION_LEVEL)
 
         # First compress then encrypt.
-        if self.crypted:
+        if self.cipher:
             obj = self.cipher.encrypt(obj)
 
         self.toc[name] = (typ, self.lib.tell(), len(obj))
@@ -387,22 +218,11 @@ class ZlibArchiveWriter(ArchiveWriter):
         add level
         """
         ArchiveWriter.update_headers(self, tocpos)
-        self.lib.write(struct.pack('!B', self.crypted))
-
-
-# TODO copied from pyimod03_carchive
-
-
-import struct
-import sys
+        self.lib.write(struct.pack('!B', self.cipher is not None))
 
 
 
-class NotAnArchiveError(Exception):
-    pass
-
-
-class CTOCWriter(object):
+class CTOC(object):
     """
     A class encapsulating the table of contents of a CArchive.
 
@@ -459,26 +279,6 @@ class CTOCWriter(object):
         nm = os.path.normpath(nm)
         self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
-    def get(self, ndx):
-        """
-        Return the table of contents entry (tuple) at index NDX.
-        """
-        return self.data[ndx]
-
-    def __getitem__(self, ndx):
-        return self.data[ndx]
-
-    def find(self, name):
-        """
-        Return the index of the toc entry with name NAME.
-
-        Return -1 for failure.
-        """
-        for i, nm in enumerate(self.data):
-            if nm[-1] == name:
-                return i
-        return -1
-
 
 class CArchiveWriter(ArchiveWriter):
     """
@@ -512,7 +312,7 @@ class CArchiveWriter(ArchiveWriter):
     _cookie_format = '!8siiii64s'
     _cookie_size = struct.calcsize(_cookie_format)
 
-    def __init__(self, archive_path=None, start=0, length=0, pylib_name=''):
+    def __init__(self, archive_path, logical_toc, pylib_name):
         """
         Constructor.
 
@@ -521,37 +321,10 @@ class CArchiveWriter(ArchiveWriter):
         len          is the length of the CArchive (if 0, then read till EOF).
         pylib_name   name of Python DLL which bootloader will use.
         """
-        self.length = length
         self._pylib_name = pylib_name
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
-        self.pkg_start = 0
-        super(CArchiveWriter, self).__init__(archive_path, start)
-
-    def _finalize(self):
-        """
-        Finalize an archive which has been opened using _start_add_entries(),
-        writing any needed padding and the table of contents.
-
-        Overrides parent method because we need to save cookie and headers.
-        """
-        toc_pos = self.lib.tell() - self.pkg_start
-        self.save_toc(toc_pos)
-        self.save_cookie(toc_pos)
-
-        if self.HDRLEN:
-            self.update_headers(toc_pos)
-
-        self.lib.close()
-
-    def contents(self):
-        """
-        Return the names of the entries.
-        """
-        rslt = []
-        for (dpos, dlen, ulen, flag, typcd, nm) in self.toc:
-            rslt.append(nm)
-        return rslt
+        super(CArchiveWriter, self).__init__(archive_path, logical_toc)
 
     def _start_add_entries(self, path):
         """
@@ -559,7 +332,7 @@ class CArchiveWriter(ArchiveWriter):
         """
         super(CArchiveWriter, self)._start_add_entries(path)
         # Override parents' toc {} with a class.
-        self.toc = CTOCWriter()
+        self.toc = CTOC()
 
     def add(self, entry):
         """
@@ -634,49 +407,28 @@ class CArchiveWriter(ArchiveWriter):
             if pathnm.find('.__init__.py') > -1:
                 typcd = 'M'
 
+        # Record the entry in the CTOC
         self.toc.add(where, dlen, ulen, flag, typcd, nm)
 
 
-    def save_toc(self, tocpos):
+    def save_trailer(self, tocpos):
         """
-        Save the table of contents to disk.
-        """
-        self.tocpos = tocpos
-        tocstr = self.toc.tobinary()
-        self.toclen = len(tocstr)
-        self.lib.write(tocstr)
-
-    def save_cookie(self, tocpos):
-        """
-        Save the cookie for the bootlader to disk.
+        Save the table of contents and the cookie for the bootlader to
+        disk.
 
         CArchives can be opened from the end - the cookie points
         back to the start.
         """
-        totallen = tocpos + self.toclen + self._cookie_size
+        tocstr = self.toc.tobinary()
+        self.lib.write(tocstr)
+        toclen = len(tocstr)
+
+        # now save teh cookie
+        total_len = tocpos + toclen + self._cookie_size
         pyvers = sys.version_info[0] * 10 + sys.version_info[1]
         # Before saving cookie we need to convert it to corresponding
         # C representation.
-        cookie = struct.pack(self._cookie_format, self.MAGIC, totallen,
-                tocpos, self.toclen, pyvers, self._pylib_name.encode('ascii'))
+        cookie = struct.pack(self._cookie_format, self.MAGIC, total_len,
+                             tocpos, toclen, pyvers,
+                             self._pylib_name.encode('ascii'))
         self.lib.write(cookie)
-
-    def openEmbedded(self, name):
-        """
-        Open a CArchive of name NAME embedded within this CArchive.
-
-        This fuction is used by archive_viewer.py utility.
-        """
-        ndx = self.toc.find(name)
-
-        if ndx == -1:
-            raise KeyError("Member '%s' not found in %s" % (name, self.path))
-        (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
-
-        if typcd not in "zZ":
-            raise NotAnArchiveError('%s is not an archive' % name)
-
-        if flag:
-            raise ValueError('Cannot open compressed archive %s in place' %
-                    name)
-        return CArchiveReader(self.path, self.pkg_start + dpos, dlen)

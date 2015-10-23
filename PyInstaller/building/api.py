@@ -168,8 +168,7 @@ class PYZ(Target):
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
                 self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])
-        pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
-        pyz.build(self.name, toc)
+        pyz = ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
 
 
 class PKG(Target):
@@ -303,9 +302,8 @@ class PKG(Target):
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
-        archive = CArchiveWriter(pylib_name=pylib_name)
+        archive = CArchiveWriter(self.name, mytoc, pylib_name=pylib_name)
 
-        archive.build(self.name, mytoc)
         for item in trash:
             os.remove(item)
 
