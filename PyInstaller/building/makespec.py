@@ -124,9 +124,9 @@ def __add_options(parser):
                    'This option can be used multiple times.')
     g.add_argument('--exclude-module', dest='excludes', action='append',
                    default=[],
-                   help='Optional module or package (his Python names,'
-                   'not path names) that will be ignored (as though'
-                   'it was not found).'
+                   help='Optional module or package (his Python names, '
+                   'not path names) that will be ignored (as though '
+                   'it was not found). '
                    'This option can be used multiple times.')
     g.add_argument('--key', dest='key',
                    help='The key used to encrypt Python bytecode.')
@@ -151,7 +151,7 @@ def __add_options(parser):
                    action="store_false",
                    help="Windows and Mac OS X: do not provide a console window "
                         "for standard i/o. "
-                        "On Mac OS X this also triggers building an OS X .app bundle."
+                        "On Mac OS X this also triggers building an OS X .app bundle. "
                         "This option is ignored in *NIX systems.")
     g.add_argument("-i", "--icon", dest="icon_file",
                    metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
