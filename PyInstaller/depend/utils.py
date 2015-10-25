@@ -147,10 +147,9 @@ def pass1(code):
 
 
 def scan_code_for_ctypes(co):
-    warnings = []
     binaries = []
 
-    __recursivly_scan_code_objects_for_ctypes(co, binaries, warnings)
+    __recursivly_scan_code_objects_for_ctypes(co, binaries)
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
@@ -168,26 +167,26 @@ def scan_code_for_ctypes(co):
             binaries.remove(binary)
         elif binary != os.path.basename(binary):
             # TODO make these warnings show up somewhere.
-            warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
+            loggger.warn("ignoring %s - ctypes imports only supported using bare filenames" % binary)
 
     binaries = _resolveCtypesImports(binaries)
-    return binaries, warnings
+    return binaries
 
 
-def __recursivly_scan_code_objects_for_ctypes(co, binaries, warnings):
-    # Note: binaries and warnings are both lists, which get extended here.
+def __recursivly_scan_code_objects_for_ctypes(co, binaries):
+    # Note: `binaries` is a list, which gets extended here.
     instrs = pass1(co.co_code)
     for i in range(len(instrs)):
         # ctypes scanning requires a scope wider than one bytecode
         # instruction, so the code resides in a separate function
         # for clarity.
-        ctypesb, ctypesw = __scan_code_instruction_for_ctypes(co, instrs, i)
-        binaries.extend(ctypesb)
-        warnings.extend(ctypesw)
+        bin = __scan_code_instruction_for_ctypes(co, instrs, i)
+        if bin:
+            binaries.append(bin)
 
     for c in co.co_consts:
         if isinstance(c, type(co)):
-            __recursivly_scan_code_objects_for_ctypes(c, binaries, warnings)
+            __recursivly_scan_code_objects_for_ctypes(c, binaries)
 
 
 def __scan_code_instruction_for_ctypes(co, instrs, i):
@@ -205,16 +204,13 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
         op, oparg, conditional, curline = instrs[i]
         if op == LOAD_CONST:
             soname = co.co_consts[oparg]
-            binaries.add(soname)
-
-    warnings = []
-    binaries = set()
+            return soname
 
     op, oparg, conditional, curline = instrs[i]
     expected_ops = (LOAD_GLOBAL, LOAD_NAME)
 
     if op not in expected_ops:
-        return [], []
+        return None
 
     name = co.co_names[oparg]
     if name == "ctypes":
@@ -231,7 +227,7 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
         expected_ops = (LOAD_ATTR,)
         op, oparg, conditional, curline = instrs[i]
         if op not in expected_ops:
-            return [], []
+            return None
         name = co.co_names[oparg]
 
     if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
@@ -239,7 +235,7 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
         #
         #   LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
         #   LOAD_CONST 1 ('library.so')
-        _libFromConst(i + 1)
+        return _libFromConst(i + 1)
 
     elif name in ("cdll", "windll", "oledll", "pydll"):
         # Guesses ctypes imports of these types:
@@ -259,11 +255,11 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
         if op == LOAD_ATTR:
             if co.co_names[oparg] == "LoadLibrary":
                 # Second type, needs to fetch one more instruction
-                _libFromConst(i + 1)
+                return _libFromConst(i + 1)
             else:
                 # First type
-                soname = co.co_names[oparg] + ".dll"
-                binaries.add(soname)
+                return co.co_names[oparg] + ".dll"
+
     elif op == LOAD_ATTR and name in ("util", ):
         # Guesses ctypes imports of these types::
         #
@@ -281,9 +277,7 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
                 op, oparg, conditional, curline = instrs[i]
                 if op == LOAD_CONST:
                     libname = co.co_consts[oparg]
-                    soname = ctypes.util.find_library(libname)
-                    binaries.add(soname)
-    return binaries, warnings
+                    return ctypes.util.find_library(libname)
 
 
 # TODO Reuse this code with modulegraph implementation
