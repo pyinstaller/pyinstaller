@@ -68,7 +68,7 @@ install:
   # Download-progress bars break Travis's log view. Disable them by
   # piping output through another program (if output is not a tty, no
   # progress bars)
-  - pip install pip-accel | cal
+  - pip install pip-accel | cat
   - pip-accel install -r tests/requirements.txt | cat
 
 script:
