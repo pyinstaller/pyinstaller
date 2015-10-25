@@ -147,28 +147,16 @@ def pass1(code):
 
 
 def scan_code_for_ctypes(co):
-    instrs = pass1(co.co_code)
     warnings = []
     binaries = []
 
-    for i in range(len(instrs)):
-        # ctypes scanning requires a scope wider than one bytecode
-        # instruction, so the code resides in a separate function
-        # for clarity.
-        ctypesb, ctypesw = __scan_code_instruction_for_ctypes(co, instrs, i)
-        binaries.extend(ctypesb)
-        warnings.extend(ctypesw)
-
-    for c in co.co_consts:
-        if isinstance(c, type(co)):
-            nested_binaries, nested_warnings = scan_code_for_ctypes(c)
-            binaries.extend(nested_binaries)
-            warnings.extend(nested_warnings)
+    __recursivly_scan_code_objects_for_ctypes(co, binaries, warnings)
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
     # the user - pyinstaller would need to patch the compiled pyc
     # file to make it work correctly!
+    binaries = set(binaries)
     for binary in list(binaries):
         # 'binary' might be in some cases None. Some Python
         # modules might contain code like the following. For
@@ -184,6 +172,22 @@ def scan_code_for_ctypes(co):
 
     binaries = _resolveCtypesImports(binaries)
     return binaries, warnings
+
+
+def __recursivly_scan_code_objects_for_ctypes(co, binaries, warnings):
+    # Note: binaries and warnings are both lists, which get extended here.
+    instrs = pass1(co.co_code)
+    for i in range(len(instrs)):
+        # ctypes scanning requires a scope wider than one bytecode
+        # instruction, so the code resides in a separate function
+        # for clarity.
+        ctypesb, ctypesw = __scan_code_instruction_for_ctypes(co, instrs, i)
+        binaries.extend(ctypesb)
+        warnings.extend(ctypesw)
+
+    for c in co.co_consts:
+        if isinstance(c, type(co)):
+            __recursivly_scan_code_objects_for_ctypes(c, binaries, warnings)
 
 
 def __scan_code_instruction_for_ctypes(co, instrs, i):
