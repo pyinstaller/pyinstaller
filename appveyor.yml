@@ -5,6 +5,7 @@ environment:
     # /E:ON and /V:ON options are not enabled in the batch script intepreter
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\tests\\scripts\\appveyor\\run_with_env.cmd"
+    COLOREDLOGS_LOG_FORMAT: "%(name)-18s %(levelname)s %(message)s"
 
   matrix:
 
