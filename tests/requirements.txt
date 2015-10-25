@@ -1,5 +1,5 @@
 # For running tests
-pytest  # Testing framework.
+pytest >= 2.7.3  # Testing framework.
 pytest-xdist  # Plugin allowing running tests in parallel.
 pytest-timeout # Plugin to abort hanging tests.
 pytest-catchlog  # Capture log output separately from stdout/stderr

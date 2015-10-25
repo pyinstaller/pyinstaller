@@ -159,22 +159,13 @@ for prefix in ('', 'ctypes.'):
     for funcname in  ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
         ids.append(prefix+funcname)
         params = (prefix+funcname, ids[-1])
-        # Workaround a problem in pytest: skipif on a parameter will
-        # completely replace the skipif on the test function. See
-        # https://github.com/pytest-dev/pytest/issues/954
-        # :todo: reanable this when pytest supports this
-        #if funcname in ("WinDLL", "OleDLL"):
-        #    # WinDLL, OleDLL only work on windows.
-        #    params = skipif_notwin(params)
+        if funcname in ("WinDLL", "OleDLL"):
+            # WinDLL, OleDLL only work on windows.
+            params = skipif_notwin(params)
         parameters.append(params)
 
 @pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
 def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id):
-    # Workaround, see above.
-    # :todo: remove this workaround (see above)
-    if not is_win and funcname.endswith(("WinDLL", "OleDLL")):
-        pytest.skip('%s requires windows' % funcname)
-
     # evaluate the soname here, so the test-code contains a constant.
     # We want the name of the dynamically-loaded library only, not its path.
     # See discussion in https://github.com/pyinstaller/pyinstaller/pull/1478#issuecomment-139622994.
@@ -196,11 +187,6 @@ def test_ctypes_in_func_gen(pyi_builder, monkeypatch, funcname,
     This is much like test_ctypes_gen except that the ctypes calls
     are in a function. See issue #1620.
     """
-    # Workaround, see above.
-    # :todo: remove this workaround (see above)
-    if not is_win and funcname.endswith(("WinDLL", "OleDLL")):
-        pytest.skip('%s requires windows' % funcname)
-
     soname = compiled_dylib.basename
 
     source = ("""
