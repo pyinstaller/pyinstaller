@@ -1021,6 +1021,7 @@ class ModuleGraph(ObjectGraph):
             if submod is None:
                 if sub in m.globalnames:
                     # Name is a global in the module
+                    self.msg(4, 'Global name found:', m.identifier, sub)
                     continue
                 # XXX: ^^^ need something simular for names imported
                 #      by 'm'.
@@ -1398,6 +1399,7 @@ class ModuleGraph(ObjectGraph):
 
             elif sub in m.globalnames:
                 # Global variable in the module, ignore
+                self.msg(4, 'Global name found:', m.identifier, sub)
                 continue
 
 
