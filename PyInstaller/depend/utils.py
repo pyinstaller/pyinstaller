@@ -346,21 +346,11 @@ def _resolveCtypesImports(cbinaries):
                     cpath = os.path.join(d, cpath)
                     break
             else:
-                # TODO refactor this code to call 'ldconfig' only once - performance improvement.
-                #      (it contains thousands of libraries)
-                text = compat.exec_command("/sbin/ldconfig", "-p")
-                # Skip first line of the library list because it is just
-                # an informative line and might contain localized characters.
-                # Example of first line with local cs_CZ.UTF-8:
-                #
-                #   V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
-                #
-                library_list = text.strip().splitlines()[1:]
-                for L in library_list:
-                    if cpath in L:
-                        cpath = L.split("=>", 1)[1].strip()
-                        assert os.path.isfile(cpath)
-                        break
+                if LDCONFIG_CACHE is None:
+                    load_ldconfig_cache()
+                if cpath in LDCONFIG_CACHE:
+                    cpath = LDCONFIG_CACHE[cpath]
+                    assert os.path.isfile(cpath)
                 else:
                     cpath = None
         if cpath is None:
@@ -376,6 +366,30 @@ def _resolveCtypesImports(cbinaries):
             ret.append((cbin, cpath, "BINARY"))
     _restorePaths(old)
     return ret
+
+
+LDCONFIG_CACHE = None  # cache the output of `/sbin/ldconfig -p`
+
+def load_ldconfig_cache():
+    """
+    Create a cache of the `ldconfig`-output to call it only once.
+    It contains thousands of libraries and running it on every dynlib
+    is expensive.
+    """
+    global LDCONFIG_CACHE
+    text = compat.exec_command("/sbin/ldconfig", "-p")
+    # Skip first line of the library list because it is just
+    # an informative line and might contain localized characters.
+    # Example of first line with local cs_CZ.UTF-8:
+    #
+    #   V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
+    #
+    LDCONFIG_CACHE = {}
+    for line in text.strip().splitlines()[1:]:
+        # :fixme: this assumes libary names do not contain whitespace
+        name = line.split(None, 1)[0]
+        path = line.split("=>", 1)[1].strip()
+        LDCONFIG_CACHE[name] = path
 
 
 def get_path_to_egg(path):
