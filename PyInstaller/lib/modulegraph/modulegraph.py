@@ -248,6 +248,10 @@ class Node(object):
         # The set of global names that are assigned to in the module.
         # This includes those names imported through starimports of
         # Python modules.
+        # These are only relevant when looking up the from-list in
+        # `from xxx import yyy`, since `import xxx.yyy` requires `yyy`
+        # to be a module and thus the globalnames need not to be
+        # checked.
         self.globalnames = set()
         # The set of starimports this module did that could not be
         # resolved, ie. a starimport from a non-Python module.
@@ -1449,8 +1453,12 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(co, m)
         # Actually import the modules collected while scanning.
         # We need to suspend the globalnames as otherwise
-        # `_safe_import_hook()` would take submodules
-        # imported via `from xxx import abc` as been already imported.
+        # `_safe_import_hook()` would take identfiers imported via
+        # `from . import abc` as existing global names and not try to
+        # import them. Please note: This only effects this form of
+        # import where relative_module is "." For all other cases, the
+        # imported module is already processed and all global names
+        # are in place anyway.
         globalnames = m.globalnames
         m.globalnames = set()
         self._process_imports(m)
