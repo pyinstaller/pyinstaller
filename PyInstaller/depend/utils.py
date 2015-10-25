@@ -175,21 +175,24 @@ def scan_code_for_ctypes(co):
 
 def __recursivly_scan_code_objects_for_ctypes(co, binaries):
     # Note: `binaries` is a list, which gets extended here.
-    instrs = pass1(co.co_code)
-    for i in range(len(instrs)):
+    instructions = iter(pass1(co.co_code))
+    while 1:
         # ctypes scanning requires a scope wider than one bytecode
         # instruction, so the code resides in a separate function
         # for clarity.
-        bin = __scan_code_instruction_for_ctypes(co, instrs, i)
-        if bin:
-            binaries.append(bin)
+        try:
+            bin = __scan_code_instruction_for_ctypes(co, instructions)
+            if bin:
+                binaries.append(bin)
+        except StopIteration:
+            break
 
     for c in co.co_consts:
         if isinstance(c, type(co)):
             __recursivly_scan_code_objects_for_ctypes(c, binaries)
 
 
-def __scan_code_instruction_for_ctypes(co, instrs, i):
+def __scan_code_instruction_for_ctypes(co, instructions):
     """
     Detects ctypes dependencies, using reasonable heuristics that
     should cover most common ctypes usages; returns a tuple of two
@@ -197,16 +200,17 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
     dependencies, the other containing warnings.
     """
 
-    def _libFromConst(i):
+    def _libFromConst():
         """Extracts library name from an expected LOAD_CONST instruction and
         appends it to local binaries list.
         """
-        op, oparg, conditional, curline = instrs[i]
+        op, oparg, conditional, curline = next(instructions)
         if op == LOAD_CONST:
             soname = co.co_consts[oparg]
             return soname
 
-    op, oparg, conditional, curline = instrs[i]
+
+    op, oparg, conditional, curline = next(instructions)
     expected_ops = (LOAD_GLOBAL, LOAD_NAME)
 
     if op not in expected_ops:
@@ -223,9 +227,8 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
         #
         # In this case "strip" the `ctypes` by advancing and expecting
         # `LOAD_ATTR` next.
-        i += 1
         expected_ops = (LOAD_ATTR,)
-        op, oparg, conditional, curline = instrs[i]
+        op, oparg, conditional, curline = next(instructions)
         if op not in expected_ops:
             return None
         name = co.co_names[oparg]
@@ -235,7 +238,7 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
         #
         #   LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
         #   LOAD_CONST 1 ('library.so')
-        return _libFromConst(i + 1)
+        return _libFromConst()
 
     elif name in ("cdll", "windll", "oledll", "pydll"):
         # Guesses ctypes imports of these types:
@@ -250,12 +253,11 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
         #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
         #     LOAD_ATTR     1 (LoadLibrary)
         #     LOAD_CONST    1 ('library.so')
-        i += 1
-        op, oparg, conditional, curline = instrs[i]
+        op, oparg, conditional, curline = next(instructions)
         if op == LOAD_ATTR:
             if co.co_names[oparg] == "LoadLibrary":
                 # Second type, needs to fetch one more instruction
-                return _libFromConst(i + 1)
+                return _libFromConst()
             else:
                 # First type
                 return co.co_names[oparg] + ".dll"
@@ -265,19 +267,18 @@ def __scan_code_instruction_for_ctypes(co, instrs, i):
         #
         #  ctypes.util.find_library('gs')
         #
-        #     LOAD_GLOBAL   0 (ctype)
+        #     LOAD_GLOBAL   0 (ctypes)
         #     LOAD_ATTR     1 (util) <--- we "are" here right now
         #     LOAD_ATTR     1 (find_library)
         #     LOAD_CONST    1 ('gs')
-        i += 1
-        op, oparg, conditional, curline = instrs[i]
+        op, oparg, conditional, curline = next(instructions)
         if op == LOAD_ATTR:
             if co.co_names[oparg] == "find_library":
-                i += 1
-                op, oparg, conditional, curline = instrs[i]
+                op, oparg, conditional, curline = next(instructions)
                 if op == LOAD_CONST:
                     libname = co.co_consts[oparg]
                     return ctypes.util.find_library(libname)
+
 
 
 # TODO Reuse this code with modulegraph implementation
