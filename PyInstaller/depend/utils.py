@@ -155,7 +155,7 @@ def scan_code_for_ctypes(co):
         # ctypes scanning requires a scope wider than one bytecode
         # instruction, so the code resides in a separate function
         # for clarity.
-        ctypesb, ctypesw = scan_code_instruction_for_ctypes(co, instrs, i)
+        ctypesb, ctypesw = __scan_code_instruction_for_ctypes(co, instrs, i)
         binaries.extend(ctypesb)
         warnings.extend(ctypesw)
 
@@ -186,7 +186,7 @@ def scan_code_for_ctypes(co):
     return binaries, warnings
 
 
-def scan_code_instruction_for_ctypes(co, instrs, i):
+def __scan_code_instruction_for_ctypes(co, instrs, i):
     """
     Detects ctypes dependencies, using reasonable heuristics that
     should cover most common ctypes usages; returns a tuple of two
