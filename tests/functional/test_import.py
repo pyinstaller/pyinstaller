@@ -189,6 +189,34 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
     pyi_builder.test_source(source % locals(), test_id=test_id)
 
 
+@pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
+def test_ctypes_in_func_gen(pyi_builder, monkeypatch, funcname,
+                            compiled_dylib, test_id):
+    """
+    This is much like test_ctypes_gen except that the ctypes calls
+    are in a function. See issue #1620.
+    """
+    # Workaround, see above.
+    # :todo: remove this workaround (see above)
+    if not is_win and funcname.endswith(("WinDLL", "OleDLL")):
+        pytest.skip('%s requires windows' % funcname)
+
+    soname = compiled_dylib.basename
+
+    source = ("""
+    import ctypes ; from ctypes import *
+    def f():
+      def g():
+        lib = %s(%%(soname)r)
+    """ % funcname +
+    _template_ctypes_test + """
+      g()
+    f()
+    """)
+    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
+    pyi_builder.test_source(source % locals(), test_id=test_id)
+
+
 # TODO: Add test-cases for the prefabricated library loaders supporting
 # attribute accesses on windows. Example::
 #
