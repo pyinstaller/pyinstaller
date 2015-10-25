@@ -167,7 +167,13 @@ class PyiModuleGraph(ModuleGraph):
         `pre_safe_import_module()`), that hook will be run _before_ the
         superclass method is called.
 
-        See superclass method for parameter and return value descriptions.
+        Pre-Safe-Import-Hooks are performed just *prior* to importing
+        the module. When running the hook, the modules parent package
+        has already been imported and ti's `__path__` is set up. But
+        the module is just about to be imported.
+
+        See the superclass method for description of parameters and
+        return value.
         """
         # If this module has pre-safe import module hooks, run these first.
         if module_name in self._hooks_pre_safe_import_module:
