@@ -127,17 +127,6 @@ _template_ctypes_CDLL_find_library = """
         print('>>> file found')
     """
 
-_template_ctypes_test = """
-        print(lib)
-        assert lib is not None and lib._name is not None
-        import sys, os
-        if getattr(sys, 'frozen', False):
-            libfile = os.path.join(sys._MEIPASS, %(soname)r)
-            print(libfile)
-            assert os.path.isfile(libfile), '%(soname)s is missing'
-            print('>>> file found')
-    """
-
 # Ghostscript's libgs.so should be available in may Unix/Linux systems
 #
 # At least on Linux, we can not use our own `ctypes_dylib` because
@@ -152,6 +141,17 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
 
 
 #-- Generate test-cases for the different types of ctypes objects.
+
+_template_ctypes_test = """
+        print(lib)
+        assert lib is not None and lib._name is not None
+        import sys, os
+        if getattr(sys, 'frozen', False):
+            libfile = os.path.join(sys._MEIPASS, %(soname)r)
+            print(libfile)
+            assert os.path.isfile(libfile), '%(soname)s is missing'
+            print('>>> file found')
+    """
 
 parameters = []
 ids = []
@@ -184,7 +184,6 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
         import ctypes ; from ctypes import *
         lib = %s(%%(soname)r)
     """ % funcname + _template_ctypes_test
-    source = source +_template_ctypes_test
 
     __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
     pyi_builder.test_source(source % locals(), test_id=test_id)
