@@ -1,17 +1,26 @@
 language: python
-# Use new container-based Travis infrastructure.
+
+# Use the new container-based Travis infrastructure.
 sudo: false
-# Cache pip packages.
-cache: pip
+
+# Cache pip packages. Explicitly name the pip-cache directory since we
+# use a custom `install` step which annuls `cache: pip`.
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/.pip-accel
 
 # Try OS X.
 os:
   - linux
   #- osx
 
-#env:
+env:
+   # shorten logging of pip-accel
+   - COLOREDLOGS_LOG_FORMAT="%(name)-18s %(levelname)s %(message)s"
 #  - PYCRYPTO_VERSION=2.4.1
 #  - PYCRYPTO_VERSION=2.6.1
+
 python:
   - "2.7"
   - "3.3"
@@ -26,42 +35,41 @@ matrix:
       # Ignore failures from OS X.
       - os: osx
 
+addons:
+  apt:
+    packages:
+    # TODO Review installing dependencies.
+    # NB: Travis-CI uses Ubuntu 12.04 TLS, thus these are only
+    #     available for Python 2.7.
+    - python-imaging
+    - python-gst0.10
+    #- python-matplotlib  # outdated: v1.1.1
+    - python-mysqldb
+    - python-numpy
+    - python-pyodbc
+    - python-qt4
+    - python-scipy
+    - python-wxgtk2.8
+    - libespeak1  # required by pyttsx
 
 before_install:
-  # TODO Review installing dependencies.
-  # install extension using apt-get to save compiling
-  # NB: Travis-CI uses Ubuntu 12.04 TLS, thus these are only available
-  #     for Python 2.7.
-  #- sudo apt-get update -qq
-  #- sudo apt-get install -y python-gst0.10
-  #- sudo apt-get install -y python-imaging
-  #- sudo apt-get install -y python-matplotlib
-  #- sudo apt-get install -y python-mysqldb
-  #- sudo apt-get install -y python-numpy
-  #- sudo apt-get install -y python-pyodbc
-  #- sudo apt-get install -y python-qt4
-  #- sudo apt-get install -y python-scipy
-  #- sudo apt-get install -y python-wxgtk2.8
-  ## fix a problem in travis, see
-  ## https://github.com/travis-ci/travis-ci/issues/3106
-  #- sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
-  #- sudo apt-get install -y python-zmq
-  #- sudo apt-get install -y libespeak1  # required by pyttsx
-
   # Compile bootloader
   - cd bootloader
   - python waf distclean all --no-lsb
   - cd ..
 
-# Install dependencies.
+
 install:
   # Install PyInstaller.
   - pip install -e .
 
-  # Install dependencies for tests.
-  # Download-progress bars break Travis's log view. Disable them by piping output
-  # through another program (if output is not a tty, no progress bars)
-  - pip install -r tests/requirements.txt | cat
+  # Install dependencies for tests. Use pip-accel to cache compiled
+  # packages and safe recompiling each time.
+  # Download-progress bars break Travis's log view. Disable them by
+  # piping output through another program (if output is not a tty, no
+  # progress bars)
+  - pip install pip-accel | cat
+  - pip-accel install -r tests/requirements.txt | cat
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.

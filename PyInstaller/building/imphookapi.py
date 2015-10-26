@@ -19,6 +19,8 @@ instance, thus modifying which modules will be frozen into the executable.
 """
 
 from .datastruct import TOC
+from ..lib.modulegraph.modulegraph import RuntimeModule
+
 
 class PreSafeImportModuleAPI(object):
     """
@@ -49,11 +51,14 @@ class PreSafeImportModuleAPI(object):
     and hence has no means of parsing `import` statements performed by runtime
     modules existing only in-memory.
 
-    Attributes (Mutable)
-    ----------
-    The following attributes are **mutable** (i.e., modifiable). All changes to
-    these attributes will be respected by PyInstaller, typically immediately
-    after the current hook returns:
+    'With great power comes great responsibility.'
+
+
+    Attributes (Immutable)
+    ----------------------------
+    The following attributes are **immutable** (i.e., read-only). For
+    safety, any attempts to change these attributes _will_ result in a
+    raised exception:
 
     module_graph : PyiModuleGraph
         Current module graph.
@@ -64,21 +69,88 @@ class PreSafeImportModuleAPI(object):
     parent_package : Package
         Graph node for the package providing this module _or_ `None` if this
         module is a top-level module.
-
-    "With great power comes great responsibility."
     """
 
-    def __init__(
-        self,
-        module_graph,
-        module_basename,
-        module_name,
-        parent_package,
-    ):
-        self.module_graph = module_graph
-        self.module_basename = module_basename
-        self.module_name = module_name
-        self.parent_package = parent_package
+    def __init__(self, module_graph, module_basename, module_name,
+                 parent_package):
+        self._module_graph = module_graph
+        self._module_basename = module_basename
+        self._module_name = module_name
+        self._parent_package = parent_package
+
+
+    # Immutable properties. No corresponding setters are defined.
+    @property
+    def module_graph(self):
+        "Current module graph"
+        return self._module_graph
+
+    @property
+    def module_name(self):
+        "Fully-qualified name of this module (e.g., `email.mime.text`)."
+        return self._module_name
+
+    @property
+    def module_basename(self):
+        "Unqualified name of the module to be imported (e.g., `text`)."
+        return self._module_basename
+
+    @property
+    def parent_package(self):
+        "Parent Package of this node"
+        return self._parent_package
+
+
+    def add_runtime_module(self, fully_qualified_name):
+        """
+        Add a node representing a Python module dynamically defined at
+        runtime.
+
+        Most modules are statically defined at creation time in
+        external Python files. Some modules, however, are dynamically
+        defined at runtime (e.g., `six.moves`, dynamically defined by
+        the statically defined `six` module). This method add a node
+        represents such a module.
+
+        It is typically used like this::
+
+          api.add_runtime_module(api.module_name)
+
+        """
+        self._module_graph.add_module(RuntimeModule(fully_qualified_name))
+
+
+    def add_alias_module(self, real_module_name, alias_module_name):
+        """
+        Alias the source module to the target module with the passed names.
+
+        This method ensures that the next call to findNode() given the target
+        module name will resolve this alias. This includes importing and adding
+        a graph node for the source module if needed as well as adding a
+        reference from the target to the source module.
+
+        Parameters
+        ----------
+        real_module_name : str
+            Fully-qualified name of the **existing module** (i.e., the
+            module being aliased).
+        alias_module_name : str
+            Fully-qualified name of the **non-existent module** (i.e.,
+            the alias to be created).
+        """
+        self._module_graph.alias_module(real_module_name, alias_module_name)
+
+
+    def append_package_path(self, directory):
+        """
+        Modulegraph does a good job at simulating Python's, but it can not
+        handle packagepath __path__ modifications packages make at runtime.
+        Therefore there is a mechanism whereby you can register extra paths
+        in this map for a package, and it will be honored.
+
+        :param directory: directory to append to the  __path__ attribute.
+        """
+        self._module_graph.append_package_path(self._module_name, directory)
 
 
 class PreFindModulePathAPI(object):
@@ -181,7 +253,7 @@ class PostGraphAPI(object):
     module : Node
         Graph node for the currently hooked module.
 
-    "With great power comes great responsibility."
+    'With great power comes great responsibility.'
 
     Attributes (Immutable)
     ----------

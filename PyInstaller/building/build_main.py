@@ -165,8 +165,9 @@ class Analysis(Target):
         CONF['main_script'] = self.inputs[0]
 
         self.pathex = self._extend_pathex(pathex, self.inputs)
-        # Set global config variable 'pathex' to make it available for hookutils and
-        # import hooks. Path extensions for module search.
+        # Set global config variable 'pathex' to make it available for
+        # PyInstaller.utils.hooks and import hooks. Path extensions for module
+        # search.
         CONF['pathex'] = self.pathex
 
         # Set global variable to hold assembly binding redirects
@@ -465,9 +466,8 @@ class Analysis(Target):
         for name, co in ctypes_code_objs.items():
             # Get dlls that might be needed by ctypes.
             logger.debug('Scanning %s for shared libraries or dlls', name)
-            ctypes_binaries, ctypes_warnings = scan_code_for_ctypes(co)
+            ctypes_binaries = scan_code_for_ctypes(co)
             self.binaries.extend(set(ctypes_binaries))
-            # TODO: print and write ctypes_warnings
 
         # Analyze run-time hooks.
         # Run-time hooks has to be executed before user scripts. Add them
@@ -681,26 +681,27 @@ def build(spec, distpath, workpath, clean_build):
 
 
 def __add_options(parser):
-    parser.add_option("--distpath", metavar="DIR",
-                default=DEFAULT_DISTPATH,
-                      help=('Where to put the bundled app (default: %s)' %
-                            os.path.join(os.curdir, 'dist')))
-    parser.add_option('--workpath', default=DEFAULT_WORKPATH,
-                      help=('Where to put all the temporary work files, '
-                            '.log, .pyz and etc. (default: %s)' %
-                            os.path.join(os.curdir, 'build')))
-    parser.add_option('-y', '--noconfirm',
-                      action="store_true", default=False,
-                      help='Replace output directory (default: %s) without '
-                      'asking for confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'))
-    parser.add_option('--upx-dir', default=None,
-                      help='Path to UPX utility (default: search the execution path)')
-    parser.add_option("-a", "--ascii", action="store_true",
-                 help="Do not include unicode encoding support "
-                      "(default: included if available)")
-    parser.add_option('--clean', dest='clean_build', action='store_true', default=False,
-                 help='Clean PyInstaller cache and remove temporary files '
-                      'before building.')
+    parser.add_argument("--distpath", metavar="DIR",
+                        default=DEFAULT_DISTPATH,
+                        help=('Where to put the bundled app (default: %s)' %
+                              os.path.join(os.curdir, 'dist')))
+    parser.add_argument('--workpath', default=DEFAULT_WORKPATH,
+                        help=('Where to put all the temporary work files, '
+                              '.log, .pyz and etc. (default: %s)' %
+                              os.path.join(os.curdir, 'build')))
+    parser.add_argument('-y', '--noconfirm',
+                        action="store_true", default=False,
+                        help='Replace output directory (default: %s) without '
+                        'asking for confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'))
+    parser.add_argument('--upx-dir', default=None,
+                        help='Path to UPX utility (default: search the execution path)')
+    parser.add_argument("-a", "--ascii", action="store_true",
+                        help="Do not include unicode encoding support "
+                        "(default: included if available)")
+    parser.add_argument('--clean', dest='clean_build', action='store_true',
+                        default=False,
+                        help='Clean PyInstaller cache and remove temporary '
+                        'files before building.')
 
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):

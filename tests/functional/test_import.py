@@ -127,17 +127,6 @@ _template_ctypes_CDLL_find_library = """
         print('>>> file found')
     """
 
-_template_ctypes_test = """
-        print(lib)
-        assert lib is not None and lib._name is not None
-        import sys, os
-        if getattr(sys, 'frozen', False):
-            libfile = os.path.join(sys._MEIPASS, %(soname)r)
-            print(libfile)
-            assert os.path.isfile(libfile), '%(soname)s is missing'
-            print('>>> file found')
-    """
-
 # Ghostscript's libgs.so should be available in may Unix/Linux systems
 #
 # At least on Linux, we can not use our own `ctypes_dylib` because
@@ -153,28 +142,30 @@ def test_ctypes_CDLL_find_library__gs(pyi_builder):
 
 #-- Generate test-cases for the different types of ctypes objects.
 
+_template_ctypes_test = """
+        print(lib)
+        assert lib is not None and lib._name is not None
+        import sys, os
+        if getattr(sys, 'frozen', False):
+            libfile = os.path.join(sys._MEIPASS, %(soname)r)
+            print(libfile)
+            assert os.path.isfile(libfile), '%(soname)s is missing'
+            print('>>> file found')
+    """
+
 parameters = []
 ids = []
 for prefix in ('', 'ctypes.'):
     for funcname in  ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
         ids.append(prefix+funcname)
         params = (prefix+funcname, ids[-1])
-        # Workaround a problem in pytest: skipif on a parameter will
-        # completely replace the skipif on the test function. See
-        # https://github.com/pytest-dev/pytest/issues/954
-        # :todo: reanable this when pytest supports this
-        #if funcname in ("WinDLL", "OleDLL"):
-        #    # WinDLL, OleDLL only work on windows.
-        #    params = skipif_notwin(params)
+        if funcname in ("WinDLL", "OleDLL"):
+            # WinDLL, OleDLL only work on windows.
+            params = skipif_notwin(params)
         parameters.append(params)
 
 @pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
 def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id):
-    # Workaround, see above.
-    # :todo: remove this workaround (see above)
-    if not is_win and funcname.endswith(("WinDLL", "OleDLL")):
-        pytest.skip('%s requires windows' % funcname)
-
     # evaluate the soname here, so the test-code contains a constant.
     # We want the name of the dynamically-loaded library only, not its path.
     # See discussion in https://github.com/pyinstaller/pyinstaller/pull/1478#issuecomment-139622994.
@@ -184,8 +175,30 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
         import ctypes ; from ctypes import *
         lib = %s(%%(soname)r)
     """ % funcname + _template_ctypes_test
-    source = source +_template_ctypes_test
 
+    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
+    pyi_builder.test_source(source % locals(), test_id=test_id)
+
+
+@pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
+def test_ctypes_in_func_gen(pyi_builder, monkeypatch, funcname,
+                            compiled_dylib, test_id):
+    """
+    This is much like test_ctypes_gen except that the ctypes calls
+    are in a function. See issue #1620.
+    """
+    soname = compiled_dylib.basename
+
+    source = ("""
+    import ctypes ; from ctypes import *
+    def f():
+      def g():
+        lib = %s(%%(soname)r)
+    """ % funcname +
+    _template_ctypes_test + """
+      g()
+    f()
+    """)
     __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
     pyi_builder.test_source(source % locals(), test_id=test_id)
 
@@ -197,3 +210,55 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
 #
 # Of course we need to use dlls which is not are commony available on
 # windows but mot excluded in PyInstaller.depend.dylib
+
+
+def test_egg_unzipped(pyi_builder):
+    pathex = os.path.join(_MODULES_DIR, 'pyi_egg_unzipped.egg')
+    pyi_builder.test_source(
+        """
+        # This code is part of the package for testing eggs in `PyInstaller`.
+        import os
+        import pkg_resources
+
+        # Test ability to load resource.
+        expected_data = 'This is data file for `unzipped`.'.encode('ascii')
+        t = pkg_resources.resource_string('unzipped_egg', 'data/datafile.txt')
+        print('Resource: %s' % t)
+        t_filename = pkg_resources.resource_filename('unzipped_egg', 'data/datafile.txt')
+        print('Resource filename: %s' % t_filename)
+        assert t.rstrip() == expected_data
+
+        # Test ability that module from .egg is able to load resource.
+        import unzipped_egg
+        assert unzipped_egg.data == expected_data
+
+        print('Okay.')
+        """,
+        pyi_args=['--paths', pathex],
+    )
+
+
+def test_egg_zipped(pyi_builder):
+    pathex = os.path.join(_MODULES_DIR, 'pyi_egg_zipped.egg')
+    pyi_builder.test_source(
+        """
+        # This code is part of the package for testing eggs in `PyInstaller`.
+        import os
+        import pkg_resources
+
+        # Test ability to load resource.
+        expected_data = 'This is data file for `zipped`.'.encode('ascii')
+        t = pkg_resources.resource_string('zipped_egg', 'data/datafile.txt')
+        print('Resource: %s' % t)
+        t_filename = pkg_resources.resource_filename('zipped_egg', 'data/datafile.txt')
+        print('Resource filename: %s' % t_filename)
+        assert t.rstrip() == expected_data
+
+        # Test ability that module from .egg is able to load resource.
+        import zipped_egg
+        assert zipped_egg.data == expected_data
+
+        print('Okay.')
+        """,
+        pyi_args=['--paths', pathex],
+    )

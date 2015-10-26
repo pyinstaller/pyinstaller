@@ -10,6 +10,6 @@
 # Hook for weasyprint: https://pypi.python.org/pypi/WeasyPrint
 # Tested on version weasyprint 0.24 using Windows 7 and python 2.7
 
-from PyInstaller.hooks.hookutils import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 
 datas = collect_data_files('weasyprint')

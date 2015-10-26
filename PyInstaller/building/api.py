@@ -20,6 +20,7 @@ import tempfile
 import pkgutil
 import pprint
 import sys
+from operator import itemgetter
 
 from PyInstaller import is_win, is_darwin, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
@@ -168,8 +169,9 @@ class PYZ(Target):
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
                 self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])
-        pyz = ZlibArchiveWriter(code_dict=self.code_dict, cipher=self.cipher)
-        pyz.build(self.name, toc)
+        # sort content alphabetically to support reproducible builds
+        toc.sort()
+        pyz = ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
 
 
 class PKG(Target):
@@ -251,6 +253,7 @@ class PKG(Target):
         logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
         trash = []
         mytoc = []
+        srctoc = []
         seenInms = {}
         seenFnms = {}
         seenFnms_typ = {}
@@ -298,14 +301,24 @@ class PKG(Target):
                                   self.xformdict.get(typ, 'b')))
             elif typ == 'OPTION':
                 mytoc.append((inm, '', 0, 'o'))
+            elif typ in ('PYSOURCE', 'PYMODULE'):
+                # collect sourcefiles and module in a toc of it's own
+                # which will not be sorted.
+                srctoc.append((inm, fnm, self.cdict[typ], self.xformdict[typ]))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
-        archive = CArchiveWriter(pylib_name=pylib_name)
 
-        archive.build(self.name, mytoc)
+        # Sort content alphabetically by type and name to support
+        # reproducible builds.
+        mytoc.sort(key=itemgetter(3, 0))
+        # Do *not* sort modules and scripts, as their order is important.
+        # TODO: Think about having all modules first and then all scripts.
+        archive = CArchiveWriter(self.name, srctoc + mytoc,
+                                 pylib_name=pylib_name)
+
         for item in trash:
             os.remove(item)
 
@@ -373,9 +386,9 @@ class EXE(Target):
         self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
 
         if CONF['hasUPX']:
-           self.upx = kwargs.get('upx', False)
+            self.upx = kwargs.get('upx', False)
         else:
-           self.upx = False
+            self.upx = False
 
         # Old .spec format included in 'name' the path where to put created
         # app. New format includes only exename.
@@ -628,9 +641,9 @@ class COLLECT(Target):
         self.strip_binaries = kws.get('strip', False)
 
         if CONF['hasUPX']:
-           self.upx_binaries = kws.get('upx', False)
+            self.upx_binaries = kws.get('upx', False)
         else:
-           self.upx_binaries = False
+            self.upx_binaries = False
 
         self.name = kws.get('name')
         # Old .spec format included in 'name' the path where to collect files

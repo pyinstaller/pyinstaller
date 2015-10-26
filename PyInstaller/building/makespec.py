@@ -85,133 +85,137 @@ def __add_options(parser):
     Add the `Makespec` options to a option-parser instance or a
     option group.
     """
-    g = parser.add_option_group('What to generate')
-    g.add_option("-F", "--onefile", dest="onefile",
-                 action="store_true", default=False,
-                 help="Create a one-file bundled executable.")
-    g.add_option("-D", "--onedir", dest="onefile",
-                 action="store_false",
-                 help="Create a one-folder bundle containing an executable (default)")
-    g.add_option("--specpath", metavar="DIR", default=None,
-                 help="Folder to store the generated spec file "
-                      "(default: current directory)")
-    g.add_option("-n", "--name",
-                 help="Name to assign to the bundled app and spec file "
-                      "(default: first script's basename)")
+    g = parser.add_argument_group('What to generate')
+    g.add_argument("-D", "--onedir", dest="onefile",
+                   action="store_false",
+                   help="Create a one-folder bundle containing an executable (default)")
+    g.add_argument("-F", "--onefile", dest="onefile",
+                   action="store_true", default=False,
+                   help="Create a one-file bundled executable.")
+    g.add_argument("--specpath", metavar="DIR",
+                   help="Folder to store the generated spec file "
+                        "(default: current directory)")
+    g.add_argument("-n", "--name",
+                   help="Name to assign to the bundled app and spec file "
+                        "(default: first script's basename)")
 
-    g = parser.add_option_group('What to bundle, where to search')
-    g.add_option("-p", "--paths", default=[], dest="pathex",
-                 metavar="DIR", action="append",
-                 help="A path to search for imports (like using PYTHONPATH). "
-                      "Multiple paths are allowed, separated "
-                      "by %s, or use this option multiple times"
-                      % repr(os.pathsep))
-    g.add_option('--hidden-import',
-                 action='append',
-                 metavar="MODULENAME", dest='hiddenimports',
-                 help='Name an import not visible in the code of the script(s). '
-                 'This option can be used multiple times.')
-    g.add_option("--additional-hooks-dir", action="append", dest="hookspath",
-                 help="An additional path to search for hooks. "
-                      "This option can be used multiple times.")
-    g.add_option('--runtime-hook', action='append', dest='runtime_hooks',
-                 help='Path to a custom runtime hook file. A runtime hook '
-                 'is code that is bundled with the executable and '
-                 'is executed before any other code or module '
-                 'to set up special features of the runtime environment. '
-                 'This option can be used multiple times.')
-    g.add_option('--exclude-module', dest='excludes', action='append',
-                 help='Optional module or package (his Python names,'
-                 'not path names) that will be ignored (as though'
-                 'it was not found).'
-                 'This option can be used multiple times.')
-    g.add_option('--key', dest='key',
-                 help='The key used to encrypt Python bytecode.')
+    g = parser.add_argument_group('What to bundle, where to search')
+    g.add_argument("-p", "--paths", dest="pathex",
+                   metavar="DIR", action="append", default=[],
+                   help="A path to search for imports (like using PYTHONPATH). "
+                        "Multiple paths are allowed, separated "
+                        "by %s, or use this option multiple times"
+                        % repr(os.pathsep))
+    g.add_argument('--hidden-import', '--hiddenimport',
+                   action='append', default=[],
+                   metavar="MODULENAME", dest='hiddenimports',
+                   help='Name an import not visible in the code of the script(s). '
+                   'This option can be used multiple times.')
+    g.add_argument("--additional-hooks-dir", action="append", dest="hookspath",
+                   default=[],
+                   help="An additional path to search for hooks. "
+                        "This option can be used multiple times.")
+    g.add_argument('--runtime-hook', action='append', dest='runtime_hooks',
+                   default=[],
+                   help='Path to a custom runtime hook file. A runtime hook '
+                   'is code that is bundled with the executable and '
+                   'is executed before any other code or module '
+                   'to set up special features of the runtime environment. '
+                   'This option can be used multiple times.')
+    g.add_argument('--exclude-module', dest='excludes', action='append',
+                   default=[],
+                   help='Optional module or package (his Python names, '
+                   'not path names) that will be ignored (as though '
+                   'it was not found). '
+                   'This option can be used multiple times.')
+    g.add_argument('--key', dest='key',
+                   help='The key used to encrypt Python bytecode.')
 
-    g = parser.add_option_group('How to generate')
-    g.add_option("-d", "--debug", action="store_true", default=False,
-                 help=("Tell the bootloader to issue progress messages "
-                       "while initializing and starting the bundled app. "
-                       "Used to diagnose problems with missing imports."))
-    g.add_option("-s", "--strip", action="store_true",
-                 help="Apply a symbol-table strip to the executable and shared libs "
-                      "(not recommended for Windows)")
-    g.add_option("--noupx", action="store_true", default=False,
-                 help="Do not use UPX even if it is available "
-                      "(works differently between Windows and *nix)")
+    g = parser.add_argument_group('How to generate')
+    g.add_argument("-d", "--debug", action="store_true", default=False,
+                   help=("Tell the bootloader to issue progress messages "
+                         "while initializing and starting the bundled app. "
+                         "Used to diagnose problems with missing imports."))
+    g.add_argument("-s", "--strip", action="store_true",
+                   help="Apply a symbol-table strip to the executable and shared libs "
+                        "(not recommended for Windows)")
+    g.add_argument("--noupx", action="store_true", default=False,
+                   help="Do not use UPX even if it is available "
+                        "(works differently between Windows and *nix)")
 
-    g = parser.add_option_group('Windows and Mac OS X specific options')
-    g.add_option("-c", "--console", "--nowindowed", dest="console",
-                 action="store_true", default=True,
-                 help="Open a console window for standard i/o (default)")
-    g.add_option("-w", "--windowed", "--noconsole", dest="console",
-                 action="store_false",
-                 help="Windows and Mac OS X: do not provide a console window "
-                      "for standard i/o. "
-                      "On Mac OS X this also triggers building an OS X .app bundle."
-                      "This option is ignored in *NIX systems.")
-    g.add_option("-i", "--icon", dest="icon_file",
-                 metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
-                 help="FILE.ico: apply that icon to a Windows executable. "
-                      "FILE.exe,ID, extract the icon with ID from an exe. "
-                      "FILE.icns: apply the icon to the "
-                      ".app bundle on Mac OS X")
+    g = parser.add_argument_group('Windows and Mac OS X specific options')
+    g.add_argument("-c", "--console", "--nowindowed", dest="console",
+                   action="store_true", default=True,
+                   help="Open a console window for standard i/o (default)")
+    g.add_argument("-w", "--windowed", "--noconsole", dest="console",
+                   action="store_false",
+                   help="Windows and Mac OS X: do not provide a console window "
+                        "for standard i/o. "
+                        "On Mac OS X this also triggers building an OS X .app bundle. "
+                        "This option is ignored in *NIX systems.")
+    g.add_argument("-i", "--icon", dest="icon_file",
+                   metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
+                   help="FILE.ico: apply that icon to a Windows executable. "
+                        "FILE.exe,ID, extract the icon with ID from an exe. "
+                        "FILE.icns: apply the icon to the "
+                        ".app bundle on Mac OS X")
 
-    g = parser.add_option_group('Windows specific options')
-    g.add_option("--version-file",
-                 dest="version_file", metavar="FILE",
-                 help="add a version resource from FILE to the exe")
-    g.add_option("-m", "--manifest", metavar="<FILE or XML>",
-                 help="add manifest FILE or XML to the exe")
-    g.add_option("-r", "--resource", default=[], dest="resources",
-                 metavar="<FILE[,TYPE[,NAME[,LANGUAGE]]]>", action="append",
-                 help="Add or update a resource of the given type, name and language "
-                      "from FILE to a Windows executable. FILE can be a "
-                      "data file or an exe/dll. For data files, at least "
-                      "TYPE and NAME must be specified. LANGUAGE defaults "
-                      "to 0 or may be specified as wildcard * to update all "
-                      "resources of the given TYPE and NAME. For exe/dll "
-                      "files, all resources from FILE will be added/updated "
-                      "to the final executable if TYPE, NAME and LANGUAGE "
-                      "are omitted or specified as wildcard *."
-                      "This option can be used multiple times.")
-    g.add_option('--uac-admin', dest='uac_admin', action="store_true", default=False,
-                 help='Using this option creates a Manifest '
-                      'which will request elevation upon application restart.')
-    g.add_option('--uac-uiaccess', dest='uac_uiaccess', action="store_true", default=False,
-                 help='Using this option allows an elevated application to '
-                      'work with Remote Desktop.')
+    g = parser.add_argument_group('Windows specific options')
+    g.add_argument("--version-file",
+                   dest="version_file", metavar="FILE",
+                   help="add a version resource from FILE to the exe")
+    g.add_argument("-m", "--manifest", metavar="<FILE or XML>",
+                   help="add manifest FILE or XML to the exe")
+    g.add_argument("-r", "--resource", dest="resources",
+                   metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
+                   default=[],
+                   help="Add or update a resource of the given type, name and language "
+                        "from FILE to a Windows executable. FILE can be a "
+                        "data file or an exe/dll. For data files, at least "
+                        "TYPE and NAME must be specified. LANGUAGE defaults "
+                        "to 0 or may be specified as wildcard * to update all "
+                        "resources of the given TYPE and NAME. For exe/dll "
+                        "files, all resources from FILE will be added/updated "
+                        "to the final executable if TYPE, NAME and LANGUAGE "
+                        "are omitted or specified as wildcard *."
+                        "This option can be used multiple times.")
+    g.add_argument('--uac-admin', dest='uac_admin', action="store_true", default=False,
+                   help='Using this option creates a Manifest '
+                        'which will request elevation upon application restart.')
+    g.add_argument('--uac-uiaccess', dest='uac_uiaccess', action="store_true", default=False,
+                   help='Using this option allows an elevated application to '
+                        'work with Remote Desktop.')
 
-    g = parser.add_option_group('Windows Side-by-side Assembly searching options (advanced)')
-    g.add_option("--win-private-assemblies", dest="win_private_assemblies",
-                 action="store_true",
-                 help="Any Shared Assemblies bundled into the application "
-                      "will be changed into Private Assemblies. This means "
-                      "the exact versions of these assemblies will always "
-                      "be used, and any newer versions installed on user "
-                      "machines at the system level will be ignored.")
-    g.add_option("--win-no-prefer-redirects", dest="win_no_prefer_redirects",
-                 action="store_true",
-                 help="While searching for Shared or Private Assemblies to "
-                      "bundle into the application, PyInstaller will prefer "
-                      "not to follow policies that redirect to newer versions, "
-                      "and will try to bundle the exact versions of the assembly.")
-
-
-    g = parser.add_option_group('Mac OS X specific options')
-    g.add_option('--osx-bundle-identifier', dest='bundle_identifier',
-                 help='Mac OS X .app bundle identifier is used as the default unique program '
-                      'name for code signing purposes. The usual form is a hierarchical name '
-                      'in reverse DNS notation. For example: com.mycompany.department.appname '
-                      "(default: first script's basename)")
+    g = parser.add_argument_group('Windows Side-by-side Assembly searching options (advanced)')
+    g.add_argument("--win-private-assemblies", dest="win_private_assemblies",
+                   action="store_true",
+                   help="Any Shared Assemblies bundled into the application "
+                        "will be changed into Private Assemblies. This means "
+                        "the exact versions of these assemblies will always "
+                        "be used, and any newer versions installed on user "
+                        "machines at the system level will be ignored.")
+    g.add_argument("--win-no-prefer-redirects", dest="win_no_prefer_redirects",
+                   action="store_true",
+                   help="While searching for Shared or Private Assemblies to "
+                        "bundle into the application, PyInstaller will prefer "
+                        "not to follow policies that redirect to newer versions, "
+                        "and will try to bundle the exact versions of the assembly.")
 
 
-def main(scripts, name=None, onefile=False,
+    g = parser.add_argument_group('Mac OS X specific options')
+    g.add_argument('--osx-bundle-identifier', dest='bundle_identifier',
+                   help='Mac OS X .app bundle identifier is used as the default unique program '
+                        'name for code signing purposes. The usual form is a hierarchical name '
+                        'in reverse DNS notation. For example: com.mycompany.department.appname '
+                        "(default: first script's basename)")
+
+
+def main(scripts, name=None, onefile=None,
          console=True, debug=False, strip=False, noupx=False,
-         pathex=[], version_file=None, specpath=DEFAULT_SPECPATH,
-         icon_file=None, manifest=None, resources=[], bundle_identifier=None,
-         hiddenimports=None, hookspath=None, key=None, runtime_hooks=[],
-         excludes=[], uac_admin=False, uac_uiaccess=False,
+         pathex=None, version_file=None, specpath=None,
+         icon_file=None, manifest=None, resources=None, bundle_identifier=None,
+         hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
+         excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
          **kwargs):
     # If appname is not specified - use the basename of the main script as name.
@@ -233,6 +237,7 @@ def main(scripts, name=None, onefile=False,
         os.makedirs(specpath)
 
     # Append specpath to PYTHONPATH - where to look for additional Python modules.
+    pathex = pathex or []
     pathex = pathex[:]
     pathex.append(specpath)
 
@@ -315,9 +320,9 @@ def main(scripts, name=None, onefile=False,
         # Directory with additional custom import hooks.
         'hookspath': hookspath,
         # List with custom runtime hook files.
-        'runtime_hooks': runtime_hooks,
+        'runtime_hooks': runtime_hooks or [],
         # List of modules/pakages to ignore.
-        'excludes': excludes,
+        'excludes': excludes or [],
         # only Windows and Mac OS X distinguish windowed and console apps
         'console': console,
         # Icon filename. Only OSX uses this item.

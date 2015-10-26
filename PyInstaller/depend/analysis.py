@@ -47,7 +47,6 @@ from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from .. import HOMEPATH, configure
 from ..utils.hooks import collect_submodules, is_package
-from .utils import is_real_extension_module
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +167,13 @@ class PyiModuleGraph(ModuleGraph):
         `pre_safe_import_module()`), that hook will be run _before_ the
         superclass method is called.
 
-        See superclass method for parameter and return value descriptions.
+        Pre-Safe-Import-Hooks are performed just *prior* to importing
+        the module. When running the hook, the modules parent package
+        has already been imported and ti's `__path__` is set up. But
+        the module is just about to be imported.
+
+        See the superclass method for description of parameters and
+        return value.
         """
         # If this module has pre-safe import module hooks, run these first.
         if module_name in self._hooks_pre_safe_import_module:
@@ -300,22 +305,6 @@ class PyiModuleGraph(ModuleGraph):
             # get node type e.g. Script
             mg_type = type(node).__name__
             assert mg_type is not None
-
-            # Skip dynamic libraries that looks like Python C extensions.
-            # For example pyzmq bundles files like:
-            #     libzmq.cpython-34m.so,
-            #     libzmq.cpython-34m.pyd.
-            # These files have to be handled separately.
-            if mg_type == 'Extension':
-                base_nm = os.path.basename(node.filename)
-                ext = os.path.splitext(base_nm)[1]
-                if base_nm.startswith('lib') and ext in ('.pyd', '.so'):
-                    # Verify that C extension is not a real extension and
-                    # skip it in this case.
-                    # Some Python C-extensions starts with 'lib' prefix
-                    # e.g. libxml2mod.so, scipy.svm.libsvm.so
-                    if not is_real_extension_module(node.identifier, node.filename):
-                        continue
 
             if typecode and not (mg_type in typecode):
                 # Type is not a to be selected one, skip this one
@@ -592,4 +581,4 @@ def get_bootstrap_modules():
     ]
     # TODO Why is here the call to TOC()?
     toc = TOC(loader_mods)
-    return toc.data
+    return toc

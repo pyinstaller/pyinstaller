@@ -17,10 +17,13 @@ from PyInstaller.utils.hooks import collect_dynamic_libs, collect_submodules
 hiddenimports = ['zmq.utils.garbage']
 hiddenimports.extend(collect_submodules('zmq.backend'))
 
-# If PyZMQ provides its own copy of libzmq or libsodium, add it to the
+# If PyZMQ provides its own copy of libzmq and libsodium, add it to the
 # extension-modules TOC so zmq/__init__.py can load it at runtime.
-# For predictable behavior, the libzmq search here must be equivalent
-# to the search in zmq/__init__.py.
-# zmq/__init__.py will look in os.join(sys._MEIPASS, 'zmq'),
-# so libzmq has to land there.
+# PyZMQ is able to load 'libzmq' and 'libsodium' even from sys._MEIPASS.
+# So they could be with other .dlls.
 binaries = collect_dynamic_libs('zmq')
+
+# If PyZMQ pvorides its own copy of libzmq and libsodium, these libs look like
+# C extensions. Excluding these modules ensures that those dlls are not bundled
+# twice. Once as ./zmq.libzmq.pyd and once as ./zmq/libzmq.py.
+excludedimports = ['zmq.libzmq']

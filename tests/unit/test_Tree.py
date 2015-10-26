@@ -70,5 +70,5 @@ _PARAMETERS = (
 @pytest.mark.parametrize("prefix,excludes,result", _PARAMETERS)
 def test_Tree(prefix, excludes, result):
     tree = Tree(_DATA_BASEPATH, prefix=prefix, excludes=excludes)
-    files = sorted(f[0] for f in tree.data)
+    files = sorted(f[0] for f in tree)
     assert files == sorted(result)

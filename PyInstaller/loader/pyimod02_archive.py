@@ -102,7 +102,6 @@ class ArchiveReader(object):
     MAGIC = b'PYL\0'
     HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
     TOCPOS = 8
-    TOCTMPLT = {}
     os = None
     _bincache = None
 
@@ -150,8 +149,9 @@ class ArchiveReader(object):
         self.lib.seek(self.start + self.TOCPOS)
         (offset,) = struct.unpack('!i', self.lib.read(4))
         self.lib.seek(self.start + offset)
-        # use marshal.loads() since load() arg must be a file object
-        self.toc = marshal.loads(self.lib.read())
+        # Use marshal.loads() since load() arg must be a file object
+        # Convert the read list into a dict for faster access
+        self.toc = dict(marshal.loads(self.lib.read()))
 
     ######## This is what is called by FuncImporter #######
     ## Since an Archive is flat, we ignore parent and modname.
@@ -281,7 +281,6 @@ class ZlibArchiveReader(ArchiveReader):
     MAGIC = b'PYZ\0'
     TOCPOS = 8
     HDRLEN = ArchiveReader.HDRLEN + 5
-    TOCTMPLT = {}
 
     def __init__(self, path=None, offset=None):
         if path is None:

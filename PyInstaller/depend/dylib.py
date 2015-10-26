@@ -44,10 +44,23 @@ _excludes = set([
     # These these dlls has to be ignored for all operating systems
     # because they might be resolved when scanning code for ctypes
     # dependencies.
+    r'advapi32\.dll',
+    r'ws2_32\.dll',
+    r'gdi32\.dll',
+    r'oleaut32\.dll',
+    r'shell32\.dll',
+    r'ole32\.dll',
+
     r'coredll\.dll',
-    r'kernel32\.dll',
-    r'kernel32',
     r'crypt32\.dll',
+    r'kernel32',
+    r'kernel32\.dll',
+    r'msvcrt\.dll',
+    r'rpcrt4\.dll',
+    r'user32\.dll',
+    # Some modules tries to import the Python library.
+    # e.g. pyreadline.console.console
+    r'python\%s\%s',
 ])
 
 # Regex includes - overrides excludes.

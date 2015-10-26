@@ -26,6 +26,17 @@ def test_enchant(pyi_builder):
 def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
 
+@importorskip('FixTk')
+def test_tkinter_FixTk(pyi_builder):
+    # check if Tkinter includes FixTk
+    # TODO: FixTk doesn't exist in Python 3.4. Check when it was removed.
+    pyi_builder.test_source("""
+    try:
+        # In Python 2 the module name is 'Tkinter'
+        import Tkinter
+    except ImportError:
+        import tkinter
+    """)
 
 @importorskip('zmq')
 def test_zmq(pyi_builder):
@@ -54,7 +65,6 @@ def test_markdown(pyi_builder):
 def test_PyQt4_QtWebKit(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt4-QtWebKit.py')
 
-@pytest.mark.xfail(reason='Reports "ImportError: No module named QtWebKit.QWebView".')
 @importorskip('PyQt4')
 def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
@@ -166,7 +176,10 @@ def test_sqlite3(pyi_builder):
         """)
 
 
-@importorskip('scapy')
+# Note that @importorskip('scapy') isn't sufficient; this doesn't ask scapy to
+# import its backend dependencies (such as pcapy or dnet). scapy.all does import
+# the backends, skipping this test if they aren't installed.
+@importorskip('scapy.all')
 def test_scapy(pyi_builder):
     pyi_builder.test_source(
         """
@@ -185,7 +198,7 @@ def test_scapy(pyi_builder):
         """)
 
 
-@importorskip('scapy')
+@importorskip('scapy.all')
 def test_scapy2(pyi_builder):
     pyi_builder.test_source(
         """
@@ -194,7 +207,7 @@ def test_scapy2(pyi_builder):
         """)
 
 
-@importorskip('scapy')
+@importorskip('scapy.all')
 def test_scapy3(pyi_builder):
     pyi_builder.test_source(
         """
@@ -277,9 +290,20 @@ def test_twisted(pyi_builder):
             raise SystemExit('Twisted reactor not properly initialized.')
         """)
 
+# matplotlib tries to import any of PyQt4, PyQt5 or PySide. But if we
+# have more then one of these in the frozen app, the app's
+# runtime-hooks will crash. Thus we need to exclude the other two.
+all_qt_pkgs = ['PyQt4', 'PyQt5', 'PySide']
+excludes = []
+for pkg in all_qt_pkgs:
+    p = [p for p in all_qt_pkgs]
+    p = importorskip(pkg)(p)
+    excludes.append(p)
 
 @importorskip('matplotlib')
-def test_matplotlib(pyi_builder):
+@pytest.mark.parametrize("excludes", excludes, ids=all_qt_pkgs)
+def test_matplotlib(pyi_builder, excludes):
+    pyi_args = ['--exclude-module=%s' % e for e in excludes]
     pyi_builder.test_source(
         """
         import os
@@ -299,7 +323,9 @@ def test_matplotlib(pyi_builder):
             raise SystemExit('MATPLOTLIBDATA not pointing to sys._MEIPASS.')
         # This import was reported to fail with matplotlib 1.3.0.
         from mpl_toolkits import axes_grid1
-        """)
+        """, pyi_args=pyi_args)
+
+del all_qt_pkgs, excludes
 
 
 @importorskip('pyexcelerate')
@@ -396,6 +422,40 @@ def test_pil_img_conversion(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
 
 
+@importorskip('PIL', 'FixTk')
+def test_pil_FixTk(pyi_builder):
+    # hook-PIL is excluding FixTk, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+    try:
+        # In Python 2 the module name is 'Tkinter'
+        import Tkinter
+    except ImportError:
+        import tkinter
+    import FixTk, PIL
+    """)
+
+@importorskip('PIL.ImageQt', 'PyQt5')
+def test_pil_PyQt5(pyi_builder):
+    # hook-PIL is excluding PyQt5, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+    import PyQt5
+    import PIL
+    import PIL.ImageQt
+    """)
+
+@importorskip('PIL.ImageQt', 'PyQt4')
+def test_pil_PyQt4(pyi_builder):
+    # hook-PIL is excluding PyQt4, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+    import PyQt4
+    import PIL
+    import PIL.ImageQt
+    """)
+
+
 @importorskip('PIL')
 def test_pil_plugins(pyi_builder):
     pyi_builder.test_source(
@@ -417,3 +477,15 @@ def test_pil_plugins(pyi_builder):
         else:
             print('PIL supported image formats: %s' % plugins)
         """)
+
+
+@importorskip('pandas')
+def test_pandas_extension(pyi_builder):
+    # Tests that C extension 'pandas.lib' is properly bundled. Issue #1580.
+    pyi_builder.test_source(
+        """
+        from pandas.lib import is_float
+        assert is_float(1) == 0
+        """)
+
+

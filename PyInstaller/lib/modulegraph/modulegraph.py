@@ -21,6 +21,7 @@ import struct
 import re
 from collections import deque, namedtuple
 import ast
+import zipfile
 
 from ..altgraph.ObjectGraph import ObjectGraph
 from ..altgraph import GraphError
@@ -224,8 +225,8 @@ class DependencyInfo (namedtuple("DependencyInfo", ["conditional", "function", "
 
     def _merged(self, other):
         if (not self.conditional and not self.function and not self.tryexcept) \
-            or (not other.conditional and not other.function and not other.tryexcept):
-                return DependencyInfo(conditional=False, function=False, tryexcept=False, fromlist=self.fromlist and other.fromlist)
+                or (not other.conditional and not other.function and not other.tryexcept):
+            return DependencyInfo(conditional=False, function=False, tryexcept=False, fromlist=self.fromlist and other.fromlist)
 
         else:
             return DependencyInfo(
@@ -247,6 +248,10 @@ class Node(object):
         # The set of global names that are assigned to in the module.
         # This includes those names imported through starimports of
         # Python modules.
+        # These are only relevant when looking up the from-list in
+        # `from xxx import yyy`, since `import xxx.yyy` requires `yyy`
+        # to be a module and thus the globalnames need not to be
+        # checked.
         self.globalnames = set()
         # The set of starimports this module did that could not be
         # resolved, ie. a starimport from a non-Python module.
@@ -603,6 +608,9 @@ class ModuleGraph(ObjectGraph):
         self.replace_paths = replace_paths
 
         self.nspackages = self._calc_setuptools_nspackages()
+        # Maintain own list of package path mappings in the scope of Modulegraph
+        # object.
+        self._package_path_map = _packagePathMap
 
     def _calc_setuptools_nspackages(self):
         # Setuptools has some magic handling for namespace
@@ -844,7 +852,7 @@ class ModuleGraph(ObjectGraph):
             m.packagepath = _namespace_package_path(name, pathnames, self.path)
 
             # As per comment at top of file, simulate runtime packagepath additions.
-            m.packagepath = m.packagepath + _packagePathMap.get(name, [])
+            m.packagepath = m.packagepath + self._package_path_map.get(name, [])
             return m
 
         return None
@@ -1013,6 +1021,7 @@ class ModuleGraph(ObjectGraph):
             if submod is None:
                 if sub in m.globalnames:
                     # Name is a global in the module
+                    self.msg(4, 'Global name found:', m.identifier, sub)
                     continue
                 # XXX: ^^^ need something simular for names imported
                 #      by 'm'.
@@ -1111,6 +1120,23 @@ class ModuleGraph(ObjectGraph):
             else:
                 self.createReference(module, parent)
                 parent[module_basename] = module
+
+    def append_package_path(self, package_name, directory):
+        """
+        Modulegraph does a good job at simulating Python's, but it can not
+        handle packagepath __path__ modifications packages make at runtime.
+        Therefore there is a mechanism whereby you can register extra paths
+        in this map for a package, and it will be honored.
+
+        NOTE: This method has to be called before a package is resolved by
+              modulegraph.
+
+        :param module: fully qualified module name
+        :param directory: directory to append to the  __path__ attribute.
+        """
+        paths = self._package_path_map.setdefault(package_name, [])
+        paths.append(directory)
+
 
     def _safe_import_module(
         self, module_basename, module_name, parent_package):
@@ -1373,6 +1399,7 @@ class ModuleGraph(ObjectGraph):
 
             elif sub in m.globalnames:
                 # Global variable in the module, ignore
+                self.msg(4, 'Global name found:', m.identifier, sub)
                 continue
 
 
@@ -1428,8 +1455,12 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(co, m)
         # Actually import the modules collected while scanning.
         # We need to suspend the globalnames as otherwise
-        # `_safe_import_hook()` would take submodules
-        # imported via `from xxx import abc` as been already imported.
+        # `_safe_import_hook()` would take identfiers imported via
+        # `from . import abc` as existing global names and not try to
+        # import them. Please note: This only effects this form of
+        # import where relative_module is "." For all other cases, the
+        # imported module is already processed and all global names
+        # are in place anyway.
         globalnames = m.globalnames
         m.globalnames = set()
         self._process_imports(m)
@@ -1581,7 +1612,7 @@ class ModuleGraph(ObjectGraph):
             m.packagepath = [pathname] + ns_pkgpath
 
         # As per comment at top of file, simulate runtime packagepath additions.
-        m.packagepath = m.packagepath + _packagePathMap.get(fqname, [])
+        m.packagepath = m.packagepath + self._package_path_map.get(fqname, [])
 
 
 
@@ -1726,9 +1757,9 @@ class ModuleGraph(ObjectGraph):
                 #  __init__file. Possible solution: in _find_module, if
                 #  parent is not None, use the parents path.
                 #
-                # If this search directory is not a directory, assume the
-                # caller intended to search this file's parent directory.
-                if not os.path.isdir(search_dir):
+                # If this search directory is not an .egg (zip file) or a directory,
+                # assume the caller intended to search this file's parent directory.
+                if not zipfile.is_zipfile(search_dir) and not os.path.isdir(search_dir):
                     search_dir = os.path.dirname(search_dir)
 
                 # PEP 302-compliant importer making loaders for this directory.

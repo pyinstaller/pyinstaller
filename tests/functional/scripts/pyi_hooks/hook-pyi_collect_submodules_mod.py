@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2015, PyInstaller Development Team.
+# Copyright (c) 2013-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -7,10 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from PyInstaller.utils.hooks import collect_submodules
 
-# Test importing modules from win32com that are actually present in
-# win32comext, and made available by __path__ changes in win32com.
+hiddenimports = collect_submodules('pyi_testmod_relimp')
 
-from win32com.shell import shell
-from win32com.propsys import propsys
-from win32com.bits import bits

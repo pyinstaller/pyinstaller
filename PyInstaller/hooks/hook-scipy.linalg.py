@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013, PyInstaller Development Team.
 #
@@ -9,16 +8,6 @@
 #-----------------------------------------------------------------------------
 
 
-import os
-import sys
+# The hidden import is necessary for SciPy 0.16+.
+hiddenimports = ['scipy.linalg.cython_blas', 'scipy.linalg.cython_lapack']
 
-
-# Expand PYTHONPATH with PyInstaller package to support running without
-# installation.
-pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-sys.path.insert(0, pyi_home)
-
-
-if __name__ == '__main__':
-    from PyInstaller.utils.cliutils.grab_version import run
-    run()

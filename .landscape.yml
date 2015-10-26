@@ -1,0 +1,5 @@
+# Configuration documentation: https://docs.landscape.io/configuration.html
+ignore-paths:
+    - doc
+    - old
+    - scripts

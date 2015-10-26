@@ -147,28 +147,15 @@ def pass1(code):
 
 
 def scan_code_for_ctypes(co):
-    instrs = pass1(co.co_code)
-    warnings = []
     binaries = []
 
-    for i in range(len(instrs)):
-        # ctypes scanning requires a scope wider than one bytecode
-        # instruction, so the code resides in a separate function
-        # for clarity.
-        ctypesb, ctypesw = scan_code_instruction_for_ctypes(co, instrs, i)
-        binaries.extend(ctypesb)
-        warnings.extend(ctypesw)
-
-    for c in co.co_consts:
-        if isinstance(c, type(co)):
-            nested_binaries, nested_warnings = scan_code_for_ctypes(c)
-            binaries.extend(nested_binaries)
-            warnings.extend(nested_warnings)
+    __recursivly_scan_code_objects_for_ctypes(co, binaries)
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
     # the user - pyinstaller would need to patch the compiled pyc
     # file to make it work correctly!
+    binaries = set(binaries)
     for binary in list(binaries):
         # 'binary' might be in some cases None. Some Python
         # modules might contain code like the following. For
@@ -180,13 +167,32 @@ def scan_code_for_ctypes(co):
             binaries.remove(binary)
         elif binary != os.path.basename(binary):
             # TODO make these warnings show up somewhere.
-            warnings.append("W: ignoring %s - ctypes imports only supported using bare filenames" % binary)
+            loggger.warn("ignoring %s - ctypes imports only supported using bare filenames" % binary)
 
     binaries = _resolveCtypesImports(binaries)
-    return binaries, warnings
+    return binaries
 
 
-def scan_code_instruction_for_ctypes(co, instrs, i):
+def __recursivly_scan_code_objects_for_ctypes(co, binaries):
+    # Note: `binaries` is a list, which gets extended here.
+    instructions = iter(pass1(co.co_code))
+    while 1:
+        # ctypes scanning requires a scope wider than one bytecode
+        # instruction, so the code resides in a separate function
+        # for clarity.
+        try:
+            bin = __scan_code_instruction_for_ctypes(co, instructions)
+            if bin:
+                binaries.append(bin)
+        except StopIteration:
+            break
+
+    for c in co.co_consts:
+        if isinstance(c, type(co)):
+            __recursivly_scan_code_objects_for_ctypes(c, binaries)
+
+
+def __scan_code_instruction_for_ctypes(co, instructions):
     """
     Detects ctypes dependencies, using reasonable heuristics that
     should cover most common ctypes usages; returns a tuple of two
@@ -194,23 +200,21 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
     dependencies, the other containing warnings.
     """
 
-    def _libFromConst(i):
+    def _libFromConst():
         """Extracts library name from an expected LOAD_CONST instruction and
         appends it to local binaries list.
         """
-        op, oparg, conditional, curline = instrs[i]
+        op, oparg, conditional, curline = next(instructions)
         if op == LOAD_CONST:
             soname = co.co_consts[oparg]
-            binaries.add(soname)
+            return soname
 
-    warnings = []
-    binaries = set()
 
-    op, oparg, conditional, curline = instrs[i]
+    op, oparg, conditional, curline = next(instructions)
     expected_ops = (LOAD_GLOBAL, LOAD_NAME)
 
     if op not in expected_ops:
-        return [], []
+        return None
 
     name = co.co_names[oparg]
     if name == "ctypes":
@@ -223,11 +227,10 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
         #
         # In this case "strip" the `ctypes` by advancing and expecting
         # `LOAD_ATTR` next.
-        i += 1
         expected_ops = (LOAD_ATTR,)
-        op, oparg, conditional, curline = instrs[i]
+        op, oparg, conditional, curline = next(instructions)
         if op not in expected_ops:
-            return [], []
+            return None
         name = co.co_names[oparg]
 
     if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
@@ -235,7 +238,7 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
         #
         #   LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
         #   LOAD_CONST 1 ('library.so')
-        _libFromConst(i + 1)
+        return _libFromConst()
 
     elif name in ("cdll", "windll", "oledll", "pydll"):
         # Guesses ctypes imports of these types:
@@ -250,36 +253,32 @@ def scan_code_instruction_for_ctypes(co, instrs, i):
         #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
         #     LOAD_ATTR     1 (LoadLibrary)
         #     LOAD_CONST    1 ('library.so')
-        i += 1
-        op, oparg, conditional, curline = instrs[i]
+        op, oparg, conditional, curline = next(instructions)
         if op == LOAD_ATTR:
             if co.co_names[oparg] == "LoadLibrary":
                 # Second type, needs to fetch one more instruction
-                _libFromConst(i + 1)
+                return _libFromConst()
             else:
                 # First type
-                soname = co.co_names[oparg] + ".dll"
-                binaries.add(soname)
+                return co.co_names[oparg] + ".dll"
+
     elif op == LOAD_ATTR and name in ("util", ):
         # Guesses ctypes imports of these types::
         #
         #  ctypes.util.find_library('gs')
         #
-        #     LOAD_GLOBAL   0 (ctype)
+        #     LOAD_GLOBAL   0 (ctypes)
         #     LOAD_ATTR     1 (util) <--- we "are" here right now
         #     LOAD_ATTR     1 (find_library)
         #     LOAD_CONST    1 ('gs')
-        i += 1
-        op, oparg, conditional, curline = instrs[i]
+        op, oparg, conditional, curline = next(instructions)
         if op == LOAD_ATTR:
             if co.co_names[oparg] == "find_library":
-                i += 1
-                op, oparg, conditional, curline = instrs[i]
+                op, oparg, conditional, curline = next(instructions)
                 if op == LOAD_CONST:
                     libname = co.co_consts[oparg]
-                    soname = ctypes.util.find_library(libname)
-                    binaries.add(soname)
-    return binaries, warnings
+                    return ctypes.util.find_library(libname)
+
 
 
 # TODO Reuse this code with modulegraph implementation
@@ -347,21 +346,11 @@ def _resolveCtypesImports(cbinaries):
                     cpath = os.path.join(d, cpath)
                     break
             else:
-                # TODO refactor this code to call 'ldconfig' only once - performance improvement.
-                #      (it contains thousands of libraries)
-                text = compat.exec_command("/sbin/ldconfig", "-p")
-                # Skip first line of the library list because it is just
-                # an informative line and might contain localized characters.
-                # Example of first line with local cs_CZ.UTF-8:
-                #
-                #   V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
-                #
-                library_list = text.strip().splitlines()[1:]
-                for L in library_list:
-                    if cpath in L:
-                        cpath = L.split("=>", 1)[1].strip()
-                        assert os.path.isfile(cpath)
-                        break
+                if LDCONFIG_CACHE is None:
+                    load_ldconfig_cache()
+                if cpath in LDCONFIG_CACHE:
+                    cpath = LDCONFIG_CACHE[cpath]
+                    assert os.path.isfile(cpath)
                 else:
                     cpath = None
         if cpath is None:
@@ -377,6 +366,30 @@ def _resolveCtypesImports(cbinaries):
             ret.append((cbin, cpath, "BINARY"))
     _restorePaths(old)
     return ret
+
+
+LDCONFIG_CACHE = None  # cache the output of `/sbin/ldconfig -p`
+
+def load_ldconfig_cache():
+    """
+    Create a cache of the `ldconfig`-output to call it only once.
+    It contains thousands of libraries and running it on every dynlib
+    is expensive.
+    """
+    global LDCONFIG_CACHE
+    text = compat.exec_command("/sbin/ldconfig", "-p")
+    # Skip first line of the library list because it is just
+    # an informative line and might contain localized characters.
+    # Example of first line with local cs_CZ.UTF-8:
+    #
+    #   V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
+    #
+    LDCONFIG_CACHE = {}
+    for line in text.strip().splitlines()[1:]:
+        # :fixme: this assumes libary names do not contain whitespace
+        name = line.split(None, 1)[0]
+        path = line.split("=>", 1)[1].strip()
+        LDCONFIG_CACHE[name] = path
 
 
 def get_path_to_egg(path):
@@ -403,35 +416,3 @@ def is_path_to_egg(path):
        directly).
     """
     return get_path_to_egg(path) is not None
-
-
-def is_real_extension_module(modname, filename):
-    """
-    Tries importing .so/.pyd Python extensions in a subprocess.
-
-    Some Python libraries bundle DLLs with .so/.pyd suffix. e.g. libzmq.pyd
-    in pyzmq. PyInstaller should not handle these "fake extensions" as real
-    Python extensions.
-
-    :param modname: Absolute module name.
-    :param filename: Absolute path to the .so/.pyd file
-    :return: True if module is importable and thus C extension, False otherwise
-    """
-    # Python 2 does not have module 'importlib.machinery'
-    if is_py2:
-        template = """
-import imp
-ext_tuple = ('.so', 'rb', 3)
-fp = open('%(file)s', 'rb')
-imp.load_module('%(module)s', fp, '%(file)s', ext_tuple)
-        """
-    else:
-        template = """
-from importlib.machinery import ExtensionFileLoader
-loader = ExtensionFileLoader('%(module)s', '%(file)s')
-loader.load_module('%(module)s')
-"""
-
-    code = template % {'module': modname, 'file': filename}
-    exit_code = exec_python_rc('-c', code)
-    return exit_code == 0

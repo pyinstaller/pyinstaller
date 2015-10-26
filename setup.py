@@ -112,7 +112,6 @@ setup(
             'pyi-bindepend = PyInstaller.utils.cliutils.bindepend:run',
             'pyi-grab_version = PyInstaller.utils.cliutils.grab_version:run',
             'pyi-makespec = PyInstaller.utils.cliutils.makespec:run',
-            'pyi-pprint_toc = PyInstaller.utils.cliutils.pprint_toc:run',
             'pyi-set_version = PyInstaller.utils.cliutils.set_version:run',
         ],
     }

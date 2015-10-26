@@ -14,14 +14,13 @@ Viewer for archives packaged by archive.py
 
 from __future__ import print_function
 
-import optparse
+import argparse
 import os
 import pprint
 import tempfile
 import zlib
 
 from PyInstaller.loader import pyimod02_archive
-from PyInstaller.utils import misc
 from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
 from PyInstaller.compat import stdin_input
 import PyInstaller.log
@@ -31,7 +30,6 @@ cleanup = []
 
 
 def main(name, brief, debug, rec_debug, **unused_options):
-    misc.check_not_running_as_root()
 
     global stack
 
@@ -191,7 +189,7 @@ def get_content(arch, recursive, brief, output):
                     stack.pop()
 
 
-def show_log(arch, recursive, brief, output=[]):
+def show_log(arch, recursive, brief):
     output = []
     get_content(arch, recursive, brief, output)
     # first print all TOCs
@@ -233,32 +231,38 @@ class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
 
 
 def run():
-    parser = optparse.OptionParser('%prog [options] pyi_archive')
-    parser.add_option('-l', '--log',
-                      default=False,
-                      action='store_true',
-                      dest='debug',
-                      help='Print an archive log (default: %default)')
-    parser.add_option('-r', '--recursive',
-                      default=False,
-                      action='store_true',
-                      dest='rec_debug',
-                      help='Recursively print an archive log (default: %default). '
-                      'Can be combined with -r')
-    parser.add_option('-b', '--brief',
-                      default=False,
-                      action='store_true',
-                      dest='brief',
-                      help='Print only file name. (default: %default). '
-                      'Can be combined with -r')
-    PyInstaller.log.__add_options(parser)
+    PyInstaller.log.init()
 
-    opts, args = parser.parse_args()
-    PyInstaller.log.__process_options(parser, opts)
-    if len(args) != 1:
-        parser.error('Requires exactly one pyinstaller archive')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--log',
+                        default=False,
+                        action='store_true',
+                        dest='debug',
+                        help='Print an archive log (default: %(default)s)')
+    parser.add_argument('-r', '--recursive',
+                        default=False,
+                        action='store_true',
+                        dest='rec_debug',
+                        help='Recursively print an archive log (default: %(default)s). '
+                        'Can be combined with -r')
+    parser.add_argument('-b', '--brief',
+                        default=False,
+                        action='store_true',
+                        dest='brief',
+                        help='Print only file name. (default: %(default)s). '
+                        'Can be combined with -r')
+    PyInstaller.log.__add_options(parser)
+    parser.add_argument('name', metavar='pyi_archive',
+                        help="pyinstaller archive to show content of")
+
+    args = parser.parse_args()
+    PyInstaller.log.__process_options(parser, args)
 
     try:
-        raise SystemExit(main(args[0], **vars(opts)))
+        raise SystemExit(main(**vars(args)))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
+if __name__ == '__main__':
+    run()
+

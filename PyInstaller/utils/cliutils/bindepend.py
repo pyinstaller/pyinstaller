@@ -15,34 +15,33 @@ Show dll dependencies of executable files or other dynamic libraries.
 from __future__ import print_function
 
 import glob
-import optparse
+import argparse
 
 
 import PyInstaller.depend.bindepend
 from PyInstaller import is_win
-from PyInstaller.utils import misc
 import PyInstaller.log
 
 
 def run():
-    misc.check_not_running_as_root()
+    PyInstaller.log.init()
 
-    parser = optparse.OptionParser(
-            usage='python %prog <executable_or_dynamic_library> '
-            '[ <executable_or_dynamic_library> ... ]')
+    parser = argparse.ArgumentParser()
     PyInstaller.log.__add_options(parser)
+    parser.add_argument('filenames', nargs='+',
+                        metavar='executable-or-dynamic-library',
+                        help=("executables or dynamic libraries for which "
+                              "the dependencies should be shown"))
 
-    opts, args = parser.parse_args()
-    PyInstaller.log.__process_options(parser, opts)
-    if len(args) == 0:
-        parser.error('Requires one or more executables or dynamic libraries')
+    args = parser.parse_args()
+    PyInstaller.log.__process_options(parser, args)
 
     # Suppress all informative messages from the dependency code.
     PyInstaller.log.getLogger('PyInstaller.build.bindepend').setLevel(
             PyInstaller.log.WARN)
 
     try:
-        for a in args:
+        for a in args.filenames:
             for fn in glob.glob(a):
                 imports = PyInstaller.depend.bindepend.getImports(fn)
                 if is_win:
@@ -51,3 +50,6 @@ def run():
                 print(fn, imports)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
+if __name__ == '__main__':
+    run()

@@ -1,7 +1,7 @@
 from __future__ import print_function
 import sys
 import os
-import optparse
+import argparse
 import textwrap
 from .modulegraph import ModuleGraph
 
@@ -22,16 +22,16 @@ def main():
         * -g: Output a .dot graph
         * -h: Output a html file
     ''')
-    parser = optparse.OptionParser(usage=usage, add_help_option=False)
-    parser.add_option('-d', action='count', dest='debug', default=1)
-    parser.add_option('-q', action='store_const', dest='debug', const=0)
+    parser = argparse.ArgumentParser(usage=usage, add_help_option=False)
+    parser.add_argument('-d', action='count', dest='debug', default=1)
+    parser.add_argument('-q', action='store_const', dest='debug', const=0)
 
-    parser.add_option('-m', action='store_true', dest='domods', default=False)
-    parser.add_option('-x', action='append', dest='excludes', default=[])
-    parser.add_option('-p', action='append', dest='addpath', default=[])
+    parser.add_argument('-m', action='store_true', dest='domods', default=False)
+    parser.add_argument('-x', action='append', dest='excludes', default=[])
+    parser.add_argument('-p', action='append', dest='addpath', default=[])
 
-    parser.add_option('-g', action='store_const', dest='output', const='dot')
-    parser.add_option('-h', action='store_const', dest='output', const='html')
+    parser.add_argument('-g', action='store_const', dest='output', const='dot')
+    parser.add_argument('-h', action='store_const', dest='output', const='html')
     opts, args = parser.parse_args()
 
     if not args:

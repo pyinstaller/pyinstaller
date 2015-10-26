@@ -17,7 +17,7 @@ import re
 import sys
 
 from ... import compat
-from ...compat import is_py2, is_win, is_py3, is_darwin
+from ...compat import is_py2, is_win, is_py3, is_darwin, EXTENSION_SUFFIXES
 from ...config import CONF
 from ...utils import misc
 from ... import HOMEPATH
@@ -50,7 +50,6 @@ def __exec_python_cmd(cmd, env=None):
     anything that was emitted in the standard output as a single
     string.
     """
-    from ...config import CONF
     if env is None:
         env = {}
     # Update environment. Defaults to 'os.environ'
@@ -84,25 +83,26 @@ def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
     """
+    statement = textwrap.dedent(statement)
     cmd = ['-c', statement]
     return __exec_python_cmd(cmd)
 
 
-def exec_script(script_filename, env={}, *args):
+def exec_script(script_filename, env=None, *args):
     """
     Executes a Python script in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a
     single string.
 
-    To prevent missuse, the script passed to hookutils.exec_script
+    To prevent missuse, the script passed to utils.hooks.exec_script
     must be located in the `PyInstaller/utils/hooks/subproc` directory.
     """
     script_filename = os.path.basename(script_filename)
     script_filename = os.path.join(os.path.dirname(__file__), 'subproc', script_filename)
     if not os.path.exists(script_filename):
         raise SystemError("To prevent missuse, the script passed to "
-                          "hookutils.exec-script must be located in "
-                          "the `PyInstaller/utils/hooks/subproc` directory.")
+                          "PyInstaller.utils.hooks.exec-script must be located "
+                          "in the `PyInstaller/utils/hooks/subproc` directory.")
 
     cmd = [script_filename]
     cmd.extend(args)
@@ -117,7 +117,7 @@ def eval_statement(statement):
     return eval(txt)
 
 
-def eval_script(scriptfilename, env={}, *args):
+def eval_script(scriptfilename, env=None, *args):
     txt = exec_script(scriptfilename, *args, env=env).strip()
     if not txt:
         # return an empty string which is "not true" but iterable
@@ -452,7 +452,7 @@ def qt5_qml_dir():
         logger.error('Could not find qmake version 5.x, make sure PATH is '
                      'set correctly or try setting QT5DIR.')
     else:
-       qmldir = compat.exec_command(qmake, "-query", "QT_INSTALL_QML").strip()
+        qmldir = compat.exec_command(qmake, "-query", "QT_INSTALL_QML").strip()
     if len(qmldir) == 0:
         logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
                         + 'QT_INSTALL_QML" returned nothing')
@@ -518,7 +518,6 @@ def django_find_root_dir():
     """
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
-    from PyInstaller.config import CONF
     manage_py = CONF['main_script']
     manage_dir = os.path.dirname(os.path.abspath(manage_py))
 
@@ -592,8 +591,25 @@ def remove_suffix(string, suffix):
 def remove_file_extension(filename):
     """
     This function returns filename without its extension.
+
+    For Python C modules it removes even whole '.cpython-34m.so' etc.
     """
+    for suff in EXTENSION_SUFFIXES:
+        if filename.endswith(suff):
+            return filename[0:filename.rfind(suff)]
+    # Fallback to ordinary 'splitext'.
     return os.path.splitext(filename)[0]
+
+def _pkgutil_find_loader(fullname):
+    """
+    Temporarily extend sys.path with pathex to invoke pkgutil.find_loader.
+    """
+    old_path = sys.path
+    try:
+        sys.path.extend(CONF['pathex'])
+        return pkgutil.find_loader(fullname)
+    finally:
+        sys.path = old_path
 
 
 def get_module_file_attribute(package):
@@ -618,7 +634,7 @@ def get_module_file_attribute(package):
     # certain modules in pywin32, which replace all module attributes
     # with those of the .dll
     try:
-        loader = pkgutil.find_loader(package)
+        loader = _pkgutil_find_loader(package)
         attr = loader.get_filename(package)
     # Second try to import module in a subprocess. Might raise ImportError.
     except (AttributeError, ImportError):
@@ -734,7 +750,7 @@ def is_module_version(module_name, comparison_name, module_version):
     Examples
     ----------
         # Test whether the local version of Sphinx is 1.3.x or newer.
-        >>> from PyInstaller.utils.hooks.hookutils import is_module_version
+        >>> from PyInstaller.utils.hooks import is_module_version
         >>> is_module_version('sphinx', '>=', '1.3.1')
         True
     """
@@ -783,7 +799,7 @@ def is_package(module_name):
     """
     # This way determines if module is a package without importing the module.
     try:
-        loader = pkgutil.find_loader(module_name)
+        loader = _pkgutil_find_loader(module_name)
     except Exception:
         # When it fails to find a module loader then it points probably to a clas
         # or function and module is not a package. Just return False.
@@ -896,12 +912,15 @@ PY_DYLIB_PATTERNS = [
 ]
 
 
-def collect_dynamic_libs(package):
+def collect_dynamic_libs(package, destdir=None):
     """
     This routine produces a list of (source, dest) of dynamic library
     files which reside in package. Its results can be directly assigned to
     ``binaries`` in a hook script; see, for example, hook-zmq.py. The
     package parameter must be a string which names the package.
+
+    :param destdir: Relative path to ./dist/APPNAME where the libraries
+                    should be put.
     """
     # Accept only strings as packages.
     if type(package) is not str:
@@ -919,7 +938,12 @@ def collect_dynamic_libs(package):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.pyd,
                 #  mod/submod/file.pyd)
-                dest = remove_prefix(dirpath, os.path.dirname(pkg_base) + os.sep)
+                if destdir:
+                    # Libraries will be put in the same directory.
+                    dest = destdir
+                else:
+                    # The directory hierarchy is preserved as in the original package.
+                    dest = remove_prefix(dirpath, os.path.dirname(pkg_base) + os.sep)
                 logger.debug(' %s, %s' % (source, dest))
                 dylibs.append((source, dest))
     return dylibs
@@ -1003,7 +1027,14 @@ import gi
 gi.require_version("GIRepository", "2.0")
 from gi.repository import GIRepository
 print(GIRepository.Repository.get_search_path())"""
-    typelibs_path = eval_statement(statement)[0]
+    typelibs_path = eval_statement(statement)
+    if not typelibs_path:
+        logger.error("gi repository 'GIRepository 2.0' not found. "
+                     "Please make sure libgirepository-gir2.0 resp. "
+                     "lib64girepository-gir2.0 is installed.")
+        # :todo: should we raise a SystemError here?
+        return []
+    typelibs_path = typelibs_path[0]
     pattern = os.path.join(typelibs_path, module + '*' + version + '*')
     for f in glob.glob(pattern):
         d = gir_library_path_fix(f)
