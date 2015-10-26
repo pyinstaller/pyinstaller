@@ -41,7 +41,7 @@ def importorskip(*modules):
     for m in modules:
         try:
             __import__(m)
-        except ImportError:
+        except (ImportError, SyntaxError):
             mods_avail = False
     # Return pytest decorator.
     return skipif(not mods_avail,

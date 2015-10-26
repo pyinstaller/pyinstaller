@@ -14,13 +14,67 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_win, is_py3
 from PyInstaller.utils.tests import importorskip
+
+
+@importorskip('boto')
+@pytest.mark.skipif(is_py3, reason='boto does not fully support Python 3')
+def test_boto(pyi_builder):
+    pyi_builder.test_script('pyi_lib_boto.py')
+
+
+@importorskip('boto3')
+def test_boto3(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import boto3
+        session = boto3.Session(region_name='us-west-2')
+
+        # verify all clients
+        for service in session.get_available_services():
+            session.client(service)
+
+        # verify all resources
+        for resource in session.get_available_resources():
+            session.resource(resource)
+        """)
+
+
+@importorskip('botocore')
+def test_botocore(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import botocore
+        from botocore.session import Session
+        session = Session()
+        # verify all services
+        for service in session.get_available_services():
+            session.create_client(service, region_name='us-west-2')
+        """)
 
 
 @importorskip('enchant')
 def test_enchant(pyi_builder):
     pyi_builder.test_script('pyi_lib_enchant.py')
+
+
+@importorskip('gevent')
+def test_gevent(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import gevent
+        gevent.spawn(lambda: x)
+        """)
+
+
+@importorskip('gevent')
+def test_gevent_monkey(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from gevent.monkey import patch_all
+        patch_all()
+        """)
 
 
 def test_tkinter(pyi_builder):
@@ -487,5 +541,3 @@ def test_pandas_extension(pyi_builder):
         from pandas.lib import is_float
         assert is_float(1) == 0
         """)
-
-
