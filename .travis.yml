@@ -45,6 +45,7 @@ addons:
     - python-gst0.10
     #- python-matplotlib  # outdated: v1.1.1
     - python-mysqldb
+    - python-lxml
     - python-numpy
     - python-pyodbc
     - python-qt4
