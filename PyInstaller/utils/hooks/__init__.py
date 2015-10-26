@@ -83,6 +83,7 @@ def exec_statement(statement):
     """Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
     """
+    statement = textwrap.dedent(statement)
     cmd = ['-c', statement]
     return __exec_python_cmd(cmd)
 
