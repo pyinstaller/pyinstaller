@@ -10,7 +10,7 @@
 set -e # exit on error
 
 entrypoints="pyinstaller pyi-archive_viewer pyi-bindepend
-             pyi-makespec pyi-pprint_toc"
+             pyi-makespec"
 # pyi-grab_version pyi-set_version are windows only
 for ep in $entrypoints ; do
     echo -n $(which $ep )
@@ -29,5 +29,4 @@ ls test.spec
 
 pyinstaller test.py > /dev/null
 pyi-archive_viewer -rb dist/test/test > /dev/null
-pyi-pprint_toc build/test/out00-Analysis.toc > /dev/null
 
