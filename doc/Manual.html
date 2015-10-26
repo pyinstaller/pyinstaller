@@ -152,13 +152,21 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#understanding-pyinstaller-hooks" id="id84">Understanding PyInstaller Hooks</a><ul>
-<li><a class="reference internal" href="#hooks-in-detail" id="id85">Hooks in Detail</a></li>
+<li><a class="reference internal" href="#how-a-hook-is-loaded" id="id85">How a Hook Is Loaded</a><ul>
+<li><a class="reference internal" href="#hook-global-variables" id="id86">Hook Global Variables</a></li>
+<li><a class="reference internal" href="#useful-items-in-pyinstaller-compat" id="id87">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></li>
+<li><a class="reference internal" href="#useful-items-in-pyinstaller-utils-hooks" id="id88">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></li>
+<li><a class="reference internal" href="#the-hook-hook-api-method" id="id89">The <tt class="docutils literal">hook(hook_api)</tt> Method</a></li>
+<li><a class="reference internal" href="#the-pre-find-module-path-pfmp-api-method" id="id90">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></li>
+<li><a class="reference internal" href="#the-pre-safe-import-module-psim-api-method" id="id91">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#building-the-bootloader" id="id86">Building the Bootloader</a><ul>
-<li><a class="reference internal" href="#development-tools" id="id87">Development tools</a></li>
-<li><a class="reference internal" href="#building-for-windows" id="id88">Building for Windows</a></li>
-<li><a class="reference internal" href="#building-for-linux" id="id89">Building for LINUX</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#building-the-bootloader" id="id92">Building the Bootloader</a><ul>
+<li><a class="reference internal" href="#development-tools" id="id93">Development tools</a></li>
+<li><a class="reference internal" href="#building-for-windows" id="id94">Building for Windows</a></li>
+<li><a class="reference internal" href="#building-for-linux" id="id95">Building for LINUX</a></li>
 </ul>
 </li>
 </ul>
@@ -2291,153 +2299,482 @@ during Analysis.</p>
 </div>
 <div class="section" id="understanding-pyinstaller-hooks">
 <h1><a class="toc-backref" href="#id84">Understanding PyInstaller Hooks</a></h1>
-<div class="note">
-<p class="first admonition-title">Note</p>
-<p>THE FOLLOWING IS THE TEXT FROM THE 2.1 MANUAL.</p>
-<p>IT NEEDS TO BE REWRITTEN FOR THE NEW HOOKS API OF VERSION 3.0.</p>
-<p class="last">DO NOT ATTEMPT TO BUILD OR EDIT A HOOK BASED ON THIS TEXT.</p>
-</div>
-<p>In summary, a &quot;hook&quot; file tells <cite>PyInstaller</cite> about hidden imports
-called by a particular module.
-The name of the hook file is <tt class="docutils literal"><span class="pre">hook-&lt;module&gt;.py</span></tt> where &quot;&lt;module&gt;&quot; is
-the name of a script or imported module that will be found by Analysis.
-You should browse through the existing hooks in the
-<tt class="docutils literal">hooks</tt> folder of the <cite>PyInstaller</cite> distribution folder,
-if only to see the names of the many supported imports.</p>
-<p>For example <tt class="docutils literal"><span class="pre">hook-cPickle.py</span></tt> is a hook file telling
-about hidden imports used by the module <tt class="docutils literal">cPickle</tt>.
-When your script has <tt class="docutils literal">import cPickle</tt>
-the Analysis will note it and check for a hook file <tt class="docutils literal"><span class="pre">hook-cPickle.py</span></tt>.</p>
-<p>Typically a hook module has only one line; in <tt class="docutils literal"><span class="pre">hook-cPickle.py</span></tt> it is</p>
-<blockquote>
-<tt class="docutils literal">hiddenimports = ['copy_reg', 'types', 'string']</tt></blockquote>
-<p>assigning a list of one or more module names to <tt class="docutils literal">hiddenimports</tt>.
-These module names are added to the Analysis list exactly as if the
-script being analyzed had imported them by name.</p>
-<p>When the module that needs these hidden imports is local to your project,
+<p>In summary, a &quot;hook&quot; file extends <cite>PyInstaller</cite> to adapt it to
+the special needs and methods used by a Python package.
+The word &quot;hook&quot; is used for two kinds of files.
+A <em>runtime</em> hook helps the bootloader to launch an app.
+For more on runtime hooks, see <a class="reference internal" href="#changing-runtime-behavior">Changing Runtime Behavior</a>.
+Other hooks run while an app is being analyzed.
+They help the Analysis phase find needed files.</p>
+<p>The majority of Python packages use normal methods of importing
+their dependencies, and <cite>PyInstaller</cite> locates all their files without difficulty.
+But some packages make unusual uses of the Python import mechanism,
+or make clever changes to the import system at runtime.
+For this or other reasons, <cite>PyInstaller</cite> cannot reliably find
+all the needed files, or may include too many files.
+A hook can tell about additional source files or data files to import,
+or files not to import.</p>
+<p>A hook file is a Python script, and can use all Python features.
+It can also import helper methods from <tt class="docutils literal">PyInstaller.utils.hooks</tt>
+and useful variables from <tt class="docutils literal">PyInstaller.compat</tt>.
+These helpers are documented below.</p>
+<p>The name of a hook file is <tt class="docutils literal">hook-</tt><em>full-import-name</em><tt class="docutils literal">.py</tt>,
+where <em>full-import-name</em> is
+the fully-qualified name of an imported script or module.
+You can browse through the existing hooks in the
+<tt class="docutils literal">hooks</tt> folder of the <cite>PyInstaller</cite> distribution folder
+and see the names of the packages for which hooks have been written.
+For example <tt class="docutils literal"><span class="pre">hook-PyQt5.QtCore.py</span></tt> is a hook file telling
+about hidden imports needed by the module <tt class="docutils literal">PyQt5.QtCore</tt>.
+When your script contains <tt class="docutils literal">import PyQt5.QtCore</tt>
+(or <tt class="docutils literal">from PyQt5 import QtCore</tt>),
+Analysis notes that <tt class="docutils literal"><span class="pre">hook-PyQt5.QtCore.py</span></tt> exists, and will call it.</p>
+<p>Many hooks consist of only one statement, an assignment to <tt class="docutils literal">hiddenimports</tt>.
+For example, the hook for the <a class="reference external" href="http://www.dnspython.org/">dnspython</a> package, called
+<tt class="docutils literal"><span class="pre">hook-dns.rdata.py</span></tt>, has only this statement:</p>
+<pre class="literal-block">
+hiddenimports = [
+    &quot;dns.rdtypes.*&quot;,
+    &quot;dns.rdtypes.ANY.*&quot;
+]
+</pre>
+<p>When Analysis sees <tt class="docutils literal">import dns.rdata</tt> or <tt class="docutils literal">from dns import rdata</tt>
+it calls <tt class="docutils literal"><span class="pre">hook-dns.rdata.py</span></tt> and examines its value
+of <tt class="docutils literal">hiddenimports</tt>.
+As a result, it is as if your source script also contained:</p>
+<pre class="literal-block">
+import dns.rdtypes.*
+import dsn.rdtypes.ANY.*
+</pre>
+<p>A hook can also cause the addition of data files,
+and it can cause certain files to <em>not</em> be imported.
+Examples of these actions are shown below.</p>
+<p>When the module that needs these hidden imports is useful only to your project,
 store the hook file(s) somewhere near your source file.
 Then specify their location to the <tt class="docutils literal">pyinstaller</tt> or <tt class="docutils literal"><span class="pre">pyi-makespec</span></tt>
 command with the <tt class="docutils literal"><span class="pre">--additional-hooks-dir=</span></tt> option.
 If the hook file(s) are at the same level as the script,
-the command could be simply</p>
-<blockquote>
-<tt class="docutils literal">pyinstaller <span class="pre">--additional-hooks-dir=.</span> myscript.py</tt></blockquote>
-<p>If you successfully hook a publicly distributed module in this way,
-please send us the hook file so we can make it available to others.</p>
-<div class="section" id="hooks-in-detail">
-<h2><a class="toc-backref" href="#id85">Hooks in Detail</a></h2>
-<p>A hook is a module named
-<tt class="docutils literal">hook-</tt> <em>fully.qualified.import.name</em> <tt class="docutils literal">.py</tt> in the
-<tt class="docutils literal">hooks</tt> folder of the <cite>PyInstaller</cite> folder
-(or in a folder specified with <tt class="docutils literal"><span class="pre">--additional-hooks-dir</span></tt>).</p>
-<p>A hook is executable Python code that should
-define one or more of the following several global names:</p>
-<div class="note">
-<p class="first admonition-title">Note</p>
-<p class="last">A hook is just a normal Python script. So you can do all things
-like testing <tt class="docutils literal">sys.version</tt> and adjust e.g. <tt class="docutils literal">hiddenimports</tt>
-based on that.</p>
-</div>
-<dl class="docutils">
-<dt><tt class="docutils literal">excludedimports</tt></dt>
-<dd><p class="first">A list of module names (relative or absolute) that the
-hooked module excludes in some opaque way.
-These names reduce the list of imported modules created
-by scanning the code. Example:</p>
-<pre class="last literal-block">
-excludedimports = ['_proxy', 'utils', 'defs']
-</pre>
-</dd>
-<dt><tt class="docutils literal">hiddenimports</tt></dt>
-<dd><p class="first">A list of module names (relative or absolute) that the
-hooked module imports in some opaque way.
-These names extend the list of imported modules created
-by scanning the code. Example:</p>
+the command could be simply:</p>
 <pre class="literal-block">
+pyinstaller --additional-hooks-dir=. myscript.py
+</pre>
+<p>If you write a hook for a module used by others,
+please send us the hook file so we can make it available.</p>
+<div class="section" id="how-a-hook-is-loaded">
+<h2><a class="toc-backref" href="#id85">How a Hook Is Loaded</a></h2>
+<p>A hook is a module named <tt class="docutils literal">hook-</tt><em>full-import-name</em><tt class="docutils literal">.py</tt>
+in a folder where the Analysis object looks for hooks.
+Each time Analysis detects an import, it looks for a hook file with
+a matching name.
+When one is found, Analysis imports the hook's code into a Python namespace.
+This results in the execution of all top-level statements in the hook source,
+for example import statements, assignments to global names, and
+function definitions.
+The names defined by these statements are visible to Analysis
+as attributes of the namespace.</p>
+<p>Thus a hook is a normal Python script and can use all normal Python facilities.
+For example it could test <tt class="docutils literal">sys.version</tt> and adjust its
+assignment to <tt class="docutils literal">hiddenimports</tt> based on that.
+There are over 150 hooks in the <cite>PyInstaller</cite> installation.
+You are welcome to browse through them for examples.</p>
+<div class="section" id="hook-global-variables">
+<h3><a class="toc-backref" href="#id86">Hook Global Variables</a></h3>
+<p>A majority of the existing hooks consist entirely of assignments of
+values to one or more of the following global variables.
+If any of these are defined by the hook, Analysis takes their values and
+applies them to the bundle being created.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">hiddenimports</tt></dt>
+<dd><p class="first">A list of module names (relative or absolute) that should
+be part of the bundled app.
+This has the same effect as the <tt class="docutils literal"><span class="pre">--hidden-import</span></tt> command line option,
+but it can contain a list of names and is applied automatically
+only when the hooked module is imported.
+Example:</p>
+<pre class="last literal-block">
 hiddenimports = ['_proxy', 'utils', 'defs']
 </pre>
-<p>A way to simplify adding all submodules of a package is to use:</p>
-<pre class="literal-block">
-from PyInstaller.utils.hooks import collect_submodules
-hiddenimports = collect_submodules('package')
+</dd>
+<dt><tt class="docutils literal">excludedimports</tt></dt>
+<dd><p class="first">A list of module names (relative or absolute) that should
+<em>not</em> be part of the bundled app if they are only imported
+by the hooked module.
+(If they are explicitly imported by the source file, they will be kept.)
+Several hooks use this to prevent automatic inclusion of
+the <tt class="docutils literal">tkinter</tt> module. Example:</p>
+<pre class="last literal-block">
+excludedimports = ['matplotlib']
 </pre>
-<p>For an example see <tt class="docutils literal"><span class="pre">hook-docutils.py</span></tt> in the hooks folder.</p>
-<p class="last">Note: We suggest always using the fully qualified name
-<tt class="docutils literal">PyInstaller.utils.hooks</tt> for importing the hook utilities. This
-avoids some pitfalls when implementing hooks for sub-modules.</p>
 </dd>
 <dt><tt class="docutils literal">datas</tt></dt>
-<dd><p class="first">A list of globs of files or directories to bundle as datafiles. For
-each glob, a destination directory is specified.</p>
-<p>Example:</p>
+<dd><p class="first">A list of files to bundle with the app as data.
+Each entry in the list is a tuple containing two strings.
+The first string specifies a file (or file &quot;glob&quot;) in this system,
+and the second specifies the name(s) the file(s) are to have in
+the bundle.
+(This is the same format as used for the <tt class="docutils literal">datas=</tt> argument,
+see <a class="reference internal" href="#adding-data-files">Adding Data Files</a>.)
+Example:</p>
 <pre class="literal-block">
-datas = [
-     ('/usr/share/icons/education_*.png', 'icons'),
-     ('/usr/share/libsmi/mibs/*', 'mibs'),
-     ]
+datas = [ ('/usr/share/icons/education_*.png', 'icons') ]
 </pre>
-<p>This will copy all files matching <cite>education_*.png</cite> into the
-subdirectory <cite>icons</cite>,
-and recursively (because of the <tt class="docutils literal">*</tt> wildcard)
-copy the content of <cite>/usr/share/libsmi/mibs</cite> into <cite>mibs</cite>.</p>
-<p>A way to simplify collecting a folder of files is to use:</p>
-<pre class="literal-block">
-from PyInstaller.utils.hooks import collect_data_files
-datas = collect_data_files('package_name')
+<p>Many hooks use helpers from the <tt class="docutils literal">PyInstaller.hooks.utils</tt> module
+(see below) to create this list, for example:</p>
+<pre class="last literal-block">
+datas = collect_data_files('sphinx')
 </pre>
-<p class="last">to collect all package-related data files into a folder
-<em>package_name</em> in the app bundle.
-For an example see hook-pytz.py in the hooks folder.</p>
 </dd>
 <dt><tt class="docutils literal">binaries</tt></dt>
-<dd><p class="first">A list of globs of files or directories to bundle as binaries. Binaries is
-a special case of <tt class="docutils literal">datas</tt> in that PyInstaller will check if they depend
-on other possible dynamic libraries. Otherwise it looks the same.</p>
-<p>Example:</p>
+<dd><p class="first">A list of files or directories to bundle as binaries.
+The format is the same as <tt class="docutils literal">datas</tt> (tuples with strings that
+specify the source and the destination).
+Binaries is a special case of <tt class="docutils literal">datas</tt>, in that PyInstaller will
+check each file to see if it depends on other dynamic libraries.
+Example:</p>
+<pre class="literal-block">
+binaries = [ ('C:\\Windows\\System32\\*.dll', 'dlls') ]
+</pre>
+<p>Many hooks use helpers from the <tt class="docutils literal">PyInstaller.hooks.utils</tt> module
+to create this list (see below):</p>
 <pre class="last literal-block">
-binaries = [
-     ('/usr/lib/lib*.so', 'libs'),
-     ('C:\\Windows\\System32\\*.dll', 'dlls'),
-     ]
+binaries = collect_dynamic_libs('zmq')
 </pre>
 </dd>
-<dt><tt class="docutils literal">attrs</tt></dt>
-<dd><p class="first">A list of <tt class="docutils literal">(</tt> <em>name</em> <tt class="docutils literal">,</tt> <em>value</em> <tt class="docutils literal">)</tt> pairs
-(where value is normally meaningless).</p>
-<p>This will set the module-attribute <em>name</em> to <em>value</em> for each
-pair in the list. The value is usually unimportant because the
-modules are not executed.</p>
-<p class="last">The main purpose is so that ImportTracker will not issue spurious
-warnings when the rightmost node in a dotted name turns out to be
-an attribute in a package, instead of a missing submodule.
-For an example see the hook file <tt class="docutils literal"><span class="pre">hook-xml.sax.py</span></tt>.</p>
-</dd>
 </dl>
-<p><tt class="docutils literal">def hook(mod):</tt></p>
-<blockquote>
-<div class="note">
-<p class="first admonition-title">Note</p>
-<p class="last">The need to use this should be rare. Instead, try to use the
-global names described above first. This will keep the hook's
-code simple.</p>
 </div>
-<p>Defines a function that takes a <tt class="docutils literal">Module</tt> object.
-It must return a <tt class="docutils literal">Module</tt> object, possibly the same one
-unchanged, or a modified one.
-A <tt class="docutils literal">Module</tt> object is an instance of the class
-<tt class="docutils literal">PyInstaller.depend.modules.Module()</tt> which you can read.
-If defined, <tt class="docutils literal">hook(mod)</tt> is called before <cite>PyInstaller</cite> processed
-the global names described above.</p>
-<p>This function is supported to handle cases like dynamic modification of a
-package's <tt class="docutils literal">__path__</tt> variable.
-A static list of names won't suffice
-because the new entry on <tt class="docutils literal">__path__</tt> may well require computation.
-See <tt class="docutils literal"><span class="pre">hook-win32com.py</span></tt> in the hooks folder for an example.</p>
+<div class="section" id="useful-items-in-pyinstaller-compat">
+<h3><a class="toc-backref" href="#id87">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></h3>
+<p>A hook may import the following names from <tt class="docutils literal">PyInstaller.compat</tt>,
+for example:</p>
+<pre class="literal-block">
+from PyInstaller.compat import modname_tkinter, is_win
+</pre>
+<dl class="docutils">
+<dt><tt class="docutils literal">is_py2</tt>:</dt>
+<dd>True when the active Python is version 2.7.</dd>
+<dt><tt class="docutils literal">is_py3</tt>:</dt>
+<dd>True when the active Python is version 3.X.</dd>
+<dt><tt class="docutils literal">is_py34</tt>, <tt class="docutils literal">is_py35</tt>, <tt class="docutils literal">is_py36</tt>:</dt>
+<dd>True in Python 3.4, 3.5 or 3.6 respectively.</dd>
+<dt><tt class="docutils literal">is_win</tt>:</dt>
+<dd>True in a Windows system.</dd>
+<dt><tt class="docutils literal">is_cygwin</tt>:</dt>
+<dd>True when <tt class="docutils literal"><span class="pre">sys.platform=='cygwin'</span></tt>.</dd>
+<dt><tt class="docutils literal">is_darwin</tt>:</dt>
+<dd>True in Mac OS X.</dd>
+<dt><tt class="docutils literal">is_linux</tt>:</dt>
+<dd>True in any Linux system (<tt class="docutils literal"><span class="pre">sys.platform.startswith('linux')</span></tt>).</dd>
+<dt><tt class="docutils literal">is_solar</tt>:</dt>
+<dd>True in Solaris.</dd>
+<dt><tt class="docutils literal">is_aix</tt>:</dt>
+<dd>True in AIX.</dd>
+<dt><tt class="docutils literal">is_freebsd</tt>:</dt>
+<dd>True in FreeBSD.</dd>
+<dt><tt class="docutils literal">is_venv</tt>:</dt>
+<dd>True in any virtual environment (either virtualenv or venv).</dd>
+<dt><tt class="docutils literal">base_prefix</tt>:</dt>
+<dd>String, the correct path to the base Python installation,
+whether the installation is native or a virtual environment.</dd>
+<dt><tt class="docutils literal">modname_tkinter</tt>:</dt>
+<dd><p class="first">String, <tt class="docutils literal">Tkinter</tt> in Python 2.7 but <tt class="docutils literal">tkinter</tt> in Python 3.
+To prevent an unnecessary import of Tkinter, write:</p>
+<pre class="last literal-block">
+from PyInstaller.compat import modname_tkinter
+excludedimports = [ modname_tkinter ]
+</pre>
+</dd>
+<dt><tt class="docutils literal">EXTENSION_SUFFIXES</tt>:</dt>
+<dd>List of Python C-extension file suffixes. Used for finding all
+binary dependencies in a folder; see <tt class="docutils literal"><span class="pre">hook-cryptography.py</span></tt> for an example.</dd>
+</dl>
+</div>
+<div class="section" id="useful-items-in-pyinstaller-utils-hooks">
+<h3><a class="toc-backref" href="#id88">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></h3>
+<p>A hook may import useful functions from <tt class="docutils literal">PyInstaller.utils.hooks</tt>.
+Use a fully-qualified import statement, for example:</p>
+<pre class="literal-block">
+from PyInstaller.utils.hooks import collect_data_files, eval_statement
+</pre>
+<p>The <tt class="docutils literal">PyInstaller.utils.hooks</tt> functions listed here are generally useful
+and used in a number of existing hooks.
+There are several more functions besides these that serve the needs
+of specific hooks, such as hooks for PyQt4/5.
+You are welcome to read the <tt class="docutils literal">PyInstaller.utils.hooks</tt> module
+(and read the existing hooks that import from it) to get code and ideas.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">exec_statement( statement )</tt>:</dt>
+<dd><p class="first">Execute a single Python statement in an externally-spawned interpreter
+and return the standard output that results, as a string.
+Examples:</p>
+<pre class="last literal-block">
+tk_version = exec_statement(
+   &quot;from _tkinter import TK_VERSION; print(TK_VERSION)&quot;
+   )
+
+mpl_data_dir = exec_statement(
+   &quot;import matplotlib; print(matplotlib._get_data_path())&quot;
+   )
+datas = [ (mpl_data_dir, &quot;&quot;) ]
+</pre>
+</dd>
+<dt><tt class="docutils literal">eval_statement( statement )</tt>:</dt>
+<dd><p class="first">Execute a single Python statement in an externally-spawned interpreter.
+If the resulting standard output text is not empty, apply
+the <tt class="docutils literal">eval()</tt> function to it; else return None. Example:</p>
+<pre class="last literal-block">
+databases = eval_statement('''
+   import sqlalchemy.databases
+   print(sqlalchemy.databases.__all__)
+   ''')
+for db in databases:
+   hiddenimports.append(&quot;sqlalchemy.databases.&quot; + db)
+</pre>
+</dd>
+<dt><tt class="docutils literal">is_module_version( module, relation, version_string )</tt>:</dt>
+<dd><p class="first">Check the version of the named module (full-qualified)
+against a version string using the comparison operator <tt class="docutils literal">relation</tt>.
+Example:</p>
+<pre class="literal-block">
+if is_module_version('sqlalchemy', '&gt;=', '0.6') :
+</pre>
+<p>This function provides robust version checking based on the same low-level
+algorithm used by <tt class="docutils literal">easy_install</tt> and <tt class="docutils literal">pip</tt>, and should always be
+used in preference to writing your own comparison code.
+In particular, version strings should never be compared lexicographically
+(except for exact equality).
+For example <tt class="docutils literal">'00.5' &gt; '0.6'</tt> returns True, which is not correct.</p>
+<p>The <tt class="docutils literal">version_string</tt> is a PEP0440-compliant, dot-delimited version
+specifier such as <tt class="docutils literal"><span class="pre">3.14-rc5</span></tt>.
+The <tt class="docutils literal">relation</tt> is one of the following eight strings:</p>
+<ul class="simple">
+<li>'&gt;' or 'gt', greater-than.</li>
+<li>'&lt;' or 'lt', less-than.</li>
+<li>'&gt;=' or 'ge', greater-than-or-equal-to.</li>
+<li>'&lt;=' or 'le', less-than-or-equal-to.</li>
+</ul>
+<p class="last"></p>
+</dd>
+<dt><tt class="docutils literal">collect_submodules( package, subdir=None, pattern=None )</tt>:</dt>
+<dd><p class="first">Returns a list of strings that specify all the modules in a package,
+ready to be assigned to the <tt class="docutils literal">hiddenimports</tt> global.
+Returns an empty list when <tt class="docutils literal">package</tt> does not name a package
+(a package is defined as a module that contains a <tt class="docutils literal">__path__</tt> attribute).</p>
+<p><tt class="docutils literal">subdir</tt>, if given, names a relative subdirectory in the package,
+used in the case where a package imports modules at runtime from a
+directory lacking <tt class="docutils literal">__init__.py</tt>.
+The <tt class="docutils literal">pattern</tt>, if given, is a string that may be contained in the
+names of modules.
+Only modules containing the pattern will be returned.
+Example:</p>
+<pre class="last literal-block">
+hiddenimports = collect_submodules( 'PIL', pattern='ImagePlugin' )
+</pre>
+</dd>
+<dt><tt class="docutils literal">collect_data_files( module, subdir=None, include_py_files=False )</tt>:</dt>
+<dd><p class="first">Returns a list of (source, dest) tuples for all non-Python (i.e. data)
+files found in <tt class="docutils literal">module</tt>, ready to be assigned to the <tt class="docutils literal">datas</tt> global.
+<tt class="docutils literal">module</tt> is a string giving the fully-qualified name of a module or
+package (but not a zipped &quot;egg&quot;).
+The function uses <tt class="docutils literal">os.walk()</tt> to visit the module directory recursively.
+<tt class="docutils literal">subdir</tt>, if given, restricts the search to a relative subdirectory.</p>
+<p class="last">Normally Python executable files (ending in <tt class="docutils literal">.py</tt>, <tt class="docutils literal">.pyc</tt>, etc.)
+are not collected. Pass <tt class="docutils literal">include_py_files=True</tt> to collect those
+files as well.
+(This can be used with routines such as those in <tt class="docutils literal">pkgutil</tt> that
+search a directory for Python executable files and load them as
+extensions or plugins.)</p>
+</dd>
+<dt><tt class="docutils literal">collect_dynamic_libs( module )</tt>:</dt>
+<dd><p class="first">Returns a list of (source, dest) tuples for all the dynamic libs
+present in a module directory.
+The list is ready to be assigned to the <tt class="docutils literal">binaries</tt> global variable.
+The function uses <tt class="docutils literal">os.walk()</tt> to examine all files in the
+module directory recursively.
+The name of each file found is tested against the likely patterns for
+a dynamic lib: <tt class="docutils literal">*.dll</tt>, <tt class="docutils literal">*.dylib</tt>, <tt class="docutils literal"><span class="pre">lib*.pyd</span></tt>, and <tt class="docutils literal"><span class="pre">lib*.so</span></tt>.
+Example:</p>
+<pre class="last literal-block">
+binaries = collect_dynamic_libs( 'enchant' )
+</pre>
+</dd>
+<dt><tt class="docutils literal">get_module_file_attribute( module )</tt>:</dt>
+<dd><p class="first">Return the absolute path to <tt class="docutils literal">module</tt>, a fully-qualified module name.
+Example:</p>
+<pre class="last literal-block">
+nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
+</pre>
+</dd>
+<dt><tt class="docutils literal">get_package_paths( package )</tt>:</dt>
+<dd><p class="first">Given the name of a package, return a tuple.
+The first element is the absolute path to the folder where the package is stored.
+The second element is the absolute path to the named package.
+For example, if <tt class="docutils literal">pkg.subpkg</tt> is stored in <tt class="docutils literal">/abs/Python/lib</tt>
+the result of:</p>
+<pre class="literal-block">
+get_package_paths( 'pkg.subpkg' )
+</pre>
+<p class="last">is the tuple, <tt class="docutils literal">( '/abs/Python/lib', '/abs/Python/lib/pkg/subpkg' )</tt></p>
+</dd>
+<dt><tt class="docutils literal">get_homebrew_path( <span class="pre">formula=''</span> )</tt>:</dt>
+<dd>Return the homebrew path to the named formula, or to the
+global prefix when formula is omitted. Returns None if
+not found.</dd>
+<dt><tt class="docutils literal">django_find_root_dir()</tt>:</dt>
+<dd>Return the path to the top-level Python package containing
+the Django files, or None if nothing can be found.</dd>
+<dt><tt class="docutils literal">django_dottedstring_imports( django_root_dir )</tt></dt>
+<dd>Return a list of all necessary Django modules specified in
+the Django settings.py file, such as the
+<tt class="docutils literal">Django.settings.INSTALLED_APPS</tt> list and many others.</dd>
+</dl>
+</div>
+<div class="section" id="the-hook-hook-api-method">
+<h3><a class="toc-backref" href="#id89">The <tt class="docutils literal">hook(hook_api)</tt> Method</a></h3>
+<p>In addition to, or instead of, setting global values,
+a hook may define a function <tt class="docutils literal">hook(hook_api)</tt>.
+A <tt class="docutils literal">hook()</tt> function should only be needed if the hook
+needs to apply sophisticated logic or to make a complex
+search of the source machine.</p>
+<p>The Analysis object calls the function and passes it a <tt class="docutils literal">hook_api</tt> object
+which has the following immutable properties:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">__name__</tt>:</dt>
+<dd>The fully-qualified name of the module that caused the
+hook to be called, e.g., <tt class="docutils literal">six.moves.tkinter</tt>.</dd>
+<dt><tt class="docutils literal">__file__</tt>:</dt>
+<dd><p class="first">The absolute path of the module. If it is:</p>
+<blockquote class="last">
+<ul class="simple">
+<li>A standard (rather than namespace) package, this is the absolute path
+of this package's directory.</li>
+<li>A namespace (rather than standard) package, this is the abstract
+placeholder <tt class="docutils literal">-</tt>.</li>
+<li>A non-package module or C extension, this is the absolute path of the
+corresponding file.</li>
+</ul>
 </blockquote>
+</dd>
+<dt><tt class="docutils literal">__path__</tt>:</dt>
+<dd>A list of the absolute paths of all directories comprising the module
+if it is a package, or <tt class="docutils literal">None</tt>. Typically the list contains only the
+absolute path of the package's directory.</dd>
+</dl>
+<p>The <tt class="docutils literal">hook_api</tt> object also offers the following methods:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">add_imports( names )</tt>:</dt>
+<dd>The <tt class="docutils literal">names</tt> argument may be a single string or a list of strings,
+giving the fully-qualified name(s) of modules to be imported.
+This has the same effect as adding the names to the <tt class="docutils literal">hiddenimports</tt> global.</dd>
+<dt><tt class="docutils literal">del_imports( names )</tt>:</dt>
+<dd>The <tt class="docutils literal">names</tt> argument may be a single string or a list of strings,
+giving the fully-qualified name(s) of modules that are not
+to be included if they are imported only by the hooked module.
+This has the same effect as adding names to the <tt class="docutils literal">excludedimports</tt> global.</dd>
+<dt><tt class="docutils literal">add_datas( tuple_list )</tt>:</dt>
+<dd>The <tt class="docutils literal">tuple_list</tt> argument has the format used with the <tt class="docutils literal">datas</tt> global
+variable. This call has the effect of adding items to that list.</dd>
+<dt><tt class="docutils literal">add_binaries( tuple_list )</tt>:</dt>
+<dd>The <tt class="docutils literal">tuple_list</tt> argument has the format used with the <tt class="docutils literal">binaries</tt>
+global variable. This call has the effect of adding items to that list.</dd>
+</dl>
+<p>The <tt class="docutils literal">hook()</tt> function can add, remove or change included files using the
+above methods of <tt class="docutils literal">hook_api</tt>.
+Or, it can simply set values in the four global variables, because
+these will be examined after <tt class="docutils literal">hook()</tt> returns.</p>
+</div>
+<div class="section" id="the-pre-find-module-path-pfmp-api-method">
+<h3><a class="toc-backref" href="#id90">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></h3>
+<p>You may write a hook with the special function <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt>.
+This method is called when the hooked module name is first seen
+by Analysis, before it has located the path to that module or package
+(hence the name &quot;pre-find-module-path&quot;).</p>
+<p>Hooks of this type are only recognized if they are stored in
+a sub-folder named <tt class="docutils literal">pre_find_module_path</tt> in a hooks folder,
+either in the distributed hooks folder or an <tt class="docutils literal"><span class="pre">--additional-hooks-dir</span></tt> folder.
+You may have normal hooks as well as hooks of this type for the same module.
+For example the distributed system has both a <tt class="docutils literal"><span class="pre">hooks/hook-distutils.py</span></tt>
+and also a <tt class="docutils literal"><span class="pre">hooks/pre_find_module_path/hook-distutils.py</span></tt>.</p>
+<p>The <tt class="docutils literal">pfmp_api</tt> object that is passed has the following immutable attribute:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">module_name</tt>:</dt>
+<dd>A string, the fully-qualified name of the hooked module.</dd>
+</dl>
+<p>The <tt class="docutils literal">pfmp_api</tt> object has one mutable attribute, <tt class="docutils literal">search_dirs</tt>.
+This is a list of strings that specify the absolute path, or paths,
+that will be searched for the hooked module.
+The paths in the list will be searched in index sequence.
+The <tt class="docutils literal">pre_find_module_path()</tt> function may replace or change
+the contents of <tt class="docutils literal">pfmp_api.search_dirs</tt>.</p>
+<p>Immediately after return from <tt class="docutils literal">pre_find_module_path()</tt>, the contents
+of <tt class="docutils literal">search_dirs</tt> will be used to find and analyze the module.</p>
+<p>For an example of use,
+see the file <tt class="docutils literal"><span class="pre">hooks/pre_find_module_path/hook-distutils.py</span></tt>.
+It uses this method to redirect a search for distutils when
+<cite>PyInstaller</cite> is executing in a virtual environment.</p>
+</div>
+<div class="section" id="the-pre-safe-import-module-psim-api-method">
+<h3><a class="toc-backref" href="#id91">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></h3>
+<p>You may write a hook with the special function <tt class="docutils literal">pre_safe_import_module( psim_api )</tt>.
+This method is called after the hooked module has been found,
+but <em>before</em> it--and everything it recursively imports--is added
+to the &quot;graph&quot; of imported modules.</p>
+<p>Hooks of this type are only recognized if they are stored in a sub-folder
+named <tt class="docutils literal">pre_safe_import_module</tt> in a hooks folder,
+either in the distributed hooks folder or an <tt class="docutils literal"><span class="pre">--additional-hooks-dir</span></tt> folder.
+(See the distributed <tt class="docutils literal">hooks/pre_safe_import_module</tt> folder for examples.)</p>
+<p>You may have normal hooks as well as hooks of this type for the same module.
+For example the distributed system has both a <tt class="docutils literal"><span class="pre">hooks/hook-gi.repository.GLib.py</span></tt>
+and also a <tt class="docutils literal"><span class="pre">hooks/pre_safe_import_module/hook-gi.repository.GLib.py</span></tt>.</p>
+<p>The <tt class="docutils literal">psim_api</tt> object offers the following attributes,
+all of which are immutable (an attempt to change one raises an exception):</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">module_basename</tt>:</dt>
+<dd>String, the unqualified name of the hooked module, for example <tt class="docutils literal">text</tt>.</dd>
+<dt><tt class="docutils literal">module_name</tt>:</dt>
+<dd>String, the fully-qualified name of the hooked module, for example
+<tt class="docutils literal">email.mime.text</tt>.</dd>
+<dt><tt class="docutils literal">module_graph</tt>:</dt>
+<dd>The module graph representing all imports processed so far.</dd>
+<dt><tt class="docutils literal">parent_package</tt>:</dt>
+<dd>If this module is a top-level module of its package, <tt class="docutils literal">None</tt>.
+Otherwise, the graph node that represents the import of the
+top-level module.</dd>
+</dl>
+<p>The last two items, <tt class="docutils literal">module_graph</tt> and <tt class="docutils literal">parent_package</tt>,
+are related to the module-graph, the internal data structure used by
+<cite>PyInstaller</cite> to document all imports.
+Normally you do not need to know about the module-graph.</p>
+<p>The <tt class="docutils literal">psim_api</tt> object also offers the following methods:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">add_runtime_module( fully_qualified_name )</tt>:</dt>
+<dd><p class="first">Use this method to add an imported module whose name may not
+appear in the source because it is dynamically defined at run-time.
+A typical use applies the name from the <tt class="docutils literal">psim_api</tt>:</p>
+<pre class="last literal-block">
+psim_api.add_runtime_module( psim_api.module_name )
+</pre>
+</dd>
+<dt><tt class="docutils literal">add_alias_module( real_module_name, alias_module_name )</tt>:</dt>
+<dd><tt class="docutils literal">real_module_name</tt> is the fully-qualifed name of an existing
+module, one that has been or could be imported by name
+(it will be added to the graph if it has not already been imported).
+<tt class="docutils literal">alias_module_name</tt> is a name that might be referenced in the
+source file but should be treated as if it were <tt class="docutils literal">real_module_name</tt>.
+This method ensures that if <cite>PyInstaller</cite> processes an import of
+<tt class="docutils literal">alias_module_name</tt> it will use <tt class="docutils literal">real_module_name</tt>.</dd>
+<dt><tt class="docutils literal">append_package_path( directory )</tt>:</dt>
+<dd>The hook can use this method to add a package path
+to be searched by <cite>PyInstaller</cite>, typically an import
+path that the imported module would add dynamically to
+the path if the module was executed normally.
+<tt class="docutils literal">directory</tt> is a string, a pathname to add to the
+<tt class="docutils literal">__path__</tt> attribute.</dd>
+</dl>
+</div>
 </div>
 </div>
 <div class="section" id="building-the-bootloader">
-<h1><a class="toc-backref" href="#id86">Building the Bootloader</a></h1>
+<h1><a class="toc-backref" href="#id92">Building the Bootloader</a></h1>
 <p>PyInstaller comes with binary bootloaders for most platforms in
 the <tt class="docutils literal">bootloader</tt> folder of the distribution folder.
 For most cases, these precompiled bootloaders are all you need.</p>
@@ -2462,7 +2799,7 @@ you need to build the bootloader.</p>
 <p>If this reports an error, read the detailed notes that follow,
 then ask for technical help.</p>
 <div class="section" id="development-tools">
-<h2><a class="toc-backref" href="#id87">Development tools</a></h2>
+<h2><a class="toc-backref" href="#id93">Development tools</a></h2>
 <p>On Debian/Ubuntu systems, you can run the following to
 install everything required:</p>
 <pre class="literal-block">
@@ -2479,7 +2816,7 @@ Mac&nbsp;OS&nbsp;X Install DVD. It is not necessary to install the version 4 of 
 <p>On Solaris and AIX the bootloader is built and tested with gcc.</p>
 </div>
 <div class="section" id="building-for-windows">
-<h2><a class="toc-backref" href="#id88">Building for Windows</a></h2>
+<h2><a class="toc-backref" href="#id94">Building for Windows</a></h2>
 <p>On Windows you can use the Visual Studio C++ compiler
 (Visual Studio 2008 is recommended).
 A free version you can download is <a class="reference external" href="http://www.microsoft.com/express/">Visual Studio Express</a>.</p>
@@ -2509,7 +2846,7 @@ python ./waf distclean all
 in the <tt class="docutils literal">.\PyInstaller\bootloader\YOUR_OS</tt> directory.</p>
 </div>
 <div class="section" id="building-for-linux">
-<h2><a class="toc-backref" href="#id89">Building for LINUX</a></h2>
+<h2><a class="toc-backref" href="#id95">Building for LINUX</a></h2>
 <p>By default, the bootloaders on Linux are LSB binaries.</p>
 <p>LSB is a set of open standards that should increase compatibility among Linux
 distributions.
@@ -2557,7 +2894,7 @@ python waf configure --no-lsb build install
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2015-10-09 19:51 UTC.
+Generated on: 2015-10-26 19:10 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
