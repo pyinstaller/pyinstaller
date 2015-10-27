@@ -11,11 +11,14 @@
 # This hook was tested with Pillow 2.9.0 (Maintained fork of PIL):
 # https://pypi.python.org/pypi/Pillow
 
-from PyInstaller.compat import modname_tkinter
+from PyInstaller.compat import modname_tkinter, is_py2
 
 # Ignore 'FixTk' (Python 2) or tkinter to prevent inclusion of Tcl/Tk library
 # and other GUI libraries.
-# Assume that if people are really using tkinter in their application, they
-# will also import it directly and thus PyInstaller bundles the right GUI
-# library.
-excludedimports = [modname_tkinter, 'FixTk', 'PySide', 'PyQt4', 'PyQt5']
+# Assume that if people are really using tkinter or any other GUI library
+# in their application, they will also import it directly and thus PyInstaller
+# bundles the right GUI library.
+excludedimports = [modname_tkinter, 'PySide', 'PyQt4', 'PyQt5']
+# Python 2 contains 'FixTk'.
+if is_py2:
+    excludedimports.append('FixTk')
