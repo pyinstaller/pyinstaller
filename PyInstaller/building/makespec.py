@@ -87,7 +87,7 @@ def __add_options(parser):
     """
     g = parser.add_argument_group('What to generate')
     g.add_argument("-D", "--onedir", dest="onefile",
-                   action="store_false",
+                   action="store_false", default=False,
                    help="Create a one-folder bundle containing an executable (default)")
     g.add_argument("-F", "--onefile", dest="onefile",
                    action="store_true", default=False,
