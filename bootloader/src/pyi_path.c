@@ -190,13 +190,15 @@ int pyi_search_path(char * result, const char * appname) {
             strncpy(dirname, path, PATH_MAX);
         }
         pyi_path_join(result, dirname, appname);
-
+        if (access(result, X_OK) == 0) {
+            return 0;  // success, we found the executable
+        }
         if (!delim) {
             break;
         }
         path = delim + 1;
     }
-    return 0;
+    return -1;
 }
 
 /*
@@ -211,7 +213,7 @@ int pyi_search_path(char * result, const char * appname) {
 int pyi_path_executable(char *execfile, const char *appname)
 {
     char buffer[PATH_MAX];
-    size_t result = -1;
+    ssize_t result = -1;
 #ifdef _WIN32
     wchar_t modulename_w[PATH_MAX];
 
@@ -238,8 +240,8 @@ int pyi_path_executable(char *execfile, const char *appname)
         FATALERROR("System error - unable to load!");
 		return -1;
     }
-    if(pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {
-        VS("LOADER: Cannot get fullpath for %s\n", execfile);
+    if(!pyi_path_fullpath(execfile, PATH_MAX, buffer)) {
+        VS("LOADER: Cannot get fullpath for %s\n", buffer);
         return -1;
     }
 
@@ -254,6 +256,11 @@ int pyi_path_executable(char *execfile, const char *appname)
 #elif defined(__sun)
     result = readlink("/proc/self/path/a.out", execfile, PATH_MAX);  // Solaris
 #endif
+    if(result >= 0) {
+        /* execfile is not yet zero-terminated. result is the byte count. */
+        *(execfile + result) = '\0';
+    }
+    else
     if(-1 == result) {
         /* No /proc path found or provided
          */
@@ -261,8 +268,8 @@ int pyi_path_executable(char *execfile, const char *appname)
             /* Absolute or relative path.
              * Convert to absolute and resolve symlinks.
              */
-            if(pyi_path_fullpath(execfile, PATH_MAX, appname) == false) {
-                VS("LOADER: Cannot get fullpath for %s\n", execfile);
+            if(!pyi_path_fullpath(execfile, PATH_MAX, appname)) {
+                VS("LOADER: Cannot get fullpath for %s\n", appname);
                 return -1;
             }
         } else {
@@ -272,10 +279,10 @@ int pyi_path_executable(char *execfile, const char *appname)
             if(-1 == result) {
                 /* Searching $PATH failed, user is crazy. */
                 VS("LOADER: Searching $PATH failed for %s", appname);
-                strcpy(buffer, appname);
+                return -1;
             }
-            if(pyi_path_fullpath(execfile, PATH_MAX, appname) == false) {
-                VS("LOADER: Cannot get fullpath for %s\n", execfile);
+            if(!pyi_path_fullpath(execfile, PATH_MAX, buffer)) {
+                VS("LOADER: Cannot get fullpath for %s\n", buffer);
                 return -1;
             }
         }
