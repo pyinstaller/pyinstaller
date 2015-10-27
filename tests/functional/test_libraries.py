@@ -14,7 +14,7 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_win, modname_tkinter
 from PyInstaller.utils.tests import importorskip
 
 
@@ -420,6 +420,26 @@ def test_gi_gst_binding(pyi_builder):
 @pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
 def test_pil_img_conversion(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
+
+
+@importorskip('PIL', modname_tkinter)
+def test_pil_no_tkinter(pyi_builder):
+    # hook-PIL is excluding tkinter.
+    # Ensure it really cannot be imported - ImportError.
+    pyi_builder.test_source("""
+        import PIL.Image
+        # PIL's SpiderImagePlugin features a tkPhotoImage() method which
+        # imports ImageTk (and thus brings the whole Tcl/Tk library in).
+        import PIL.SpiderImagePlugin
+
+        try:
+            __import__('_tkinter')
+            raise SystemExit('ERROR: Module _tkinter is bundled.')
+            __import__('%(modname)s')
+            raise SystemExit('ERROR: Module %(modname)s is bundled.')
+        except ImportError:
+            print('ok')
+        """ % {'modname': modname_tkinter})
 
 
 @importorskip('PIL', 'FixTk')
