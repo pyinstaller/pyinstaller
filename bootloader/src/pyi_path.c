@@ -16,7 +16,8 @@
 // TODO: use safe string functions
 #define _CRT_SECURE_NO_WARNINGS 1
 
-#include <sys/types.h> // struct stat, _stat
+#include <sys/types.h> // struct stat, struct _stat
+#include <sys/stat.h> // stat()
 
 #ifdef _WIN32
     #include <windows.h>  // GetModuleFileNameW
