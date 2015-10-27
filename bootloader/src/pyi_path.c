@@ -211,7 +211,7 @@ int pyi_search_path(char * result, const char * appname) {
 int pyi_path_executable(char *execfile, const char *appname)
 {
     char buffer[PATH_MAX];
-    ssize_t result = -1;
+    size_t result = -1;
 #ifdef _WIN32
     wchar_t modulename_w[PATH_MAX];
 
@@ -254,12 +254,11 @@ int pyi_path_executable(char *execfile, const char *appname)
 #elif defined(__sun)
     result = readlink("/proc/self/path/a.out", execfile, PATH_MAX);  // Solaris
 #endif
-    if(result >= 0) {
+    if(-1 != result) {
         /* execfile is not yet zero-terminated. result is the byte count. */
         *(execfile + result) = '\0';
     }
-    else
-    if(-1 == result) {
+    else {
         /* No /proc path found or provided
          */
         if(appname[0] == PYI_SEP || strchr(appname, PYI_SEP)) {
