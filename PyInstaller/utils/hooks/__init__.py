@@ -10,11 +10,12 @@
 
 import copy
 import glob
-import pkgutil
 import os
 import pkg_resources
+import pkgutil
 import re
 import sys
+import textwrap
 
 from ... import compat
 from ...compat import is_py2, is_win, is_py3, is_darwin, EXTENSION_SUFFIXES
