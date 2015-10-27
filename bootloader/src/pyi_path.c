@@ -16,6 +16,8 @@
 // TODO: use safe string functions
 #define _CRT_SECURE_NO_WARNINGS 1
 
+#include <sys/types.h> // struct stat, _stat
+
 #ifdef _WIN32
     #include <windows.h>  // GetModuleFileNameW
     #include <wchar.h>
@@ -167,12 +169,25 @@ int pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
    #endif
 }
 
+int pyi_path_exists(char * path) {
+#ifdef _WIN32
+    wchar_t wpath[PATH_MAX+1];
+    struct _stat result;
+    pyi_win32_utils_from_utf8(wpath, path, PATH_MAX);
+    return _wstat(wpath, &result) == 0;
+#else
+    struct stat result;
+    return stat(path, &result) == 0;
+#endif
+}
+
 /* Search $PATH for the program named 'appname' and return its full path.
  * 'result' should be a buffer of at least PATH_MAX characters.
  */
 int pyi_search_path(char * result, const char * appname) {
     char * path = getenv("PATH");
     char dirname[PATH_MAX+1];
+    char filename[PATH_MAX+1];
     if (NULL == path) {
         return -1;
     }
@@ -189,14 +204,17 @@ int pyi_search_path(char * result, const char * appname) {
         else {  // last $PATH element
             strncpy(dirname, path, PATH_MAX);
         }
-        pyi_path_join(result, dirname, appname);
-
+        pyi_path_join(filename, dirname, appname);
+        if(pyi_path_exists(filename)) {
+            strncpy(result, filename, PATH_MAX);
+            return 0;
+        }
         if (!delim) {
             break;
         }
         path = delim + 1;
     }
-    return 0;
+    return -1;
 }
 
 /*
