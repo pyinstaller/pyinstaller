@@ -7,9 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from PyInstaller.utils.hooks import qt5_plugins_binaries
 
 hiddenimports = ['sip', 'PyQt5.QtCore']
-
-from PyInstaller.utils.hooks import qt5_plugins_binaries
 
 binaries = qt5_plugins_binaries('audio')
