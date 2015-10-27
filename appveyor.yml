@@ -109,6 +109,10 @@ install:
   #   https://github.com/paylogic/pip-accel/pull/60
   - "%CMD_IN_ENV% pip install git+https://github.com/matysek/pip-accel.git"
 
+  # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
+  # See: https://github.com/pyinstaller/pyinstaller/pull/1638
+  - "%CMD_IN_ENV% pip-accel install -i https://pypi.anaconda.org/giumas/simple lxml"
+
   # Install the PyInstaller test dependencies.
   - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
 
