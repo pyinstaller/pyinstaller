@@ -423,6 +423,33 @@ class Analysis(Target):
                 if node_type not in VALID_MODULE_TYPES:
                     continue
 
+                # # Run hooks for all parent packages but only if they were not
+                # # applied yet.
+                # #   'aaa.bb.c.dddd' ->  ['aaa', 'aaa.bb', 'aaa.bb.c']
+                # parent_pkgs = _module_parent_packages(imported_name)
+                # if parent_pkgs:  # 'imported_name' is not top-level module.
+                #     logger.warn(30*'A')
+                #     logger.warn(parent_pkgs)
+                #     for pkg in parent_pkgs:
+                #         if pkg in hooks_cache:  # Any post-graph hook exists for package.
+                #             logger.warn(30*'B')
+                #             logger.warn(pkg)
+                #             # Add 'pkg' to graph if not already there.
+                #             #self.graph._safe_import_module(pkg.split('.')[-1], pkg)
+                #             # Run all post-graph hooks for this package.
+                #             for hk_file in hooks_cache[pkg]:
+                #                 # Import hook module from a file.
+                #                 imphook_obj = ImportHook(pkg, hk_file)
+                #                 # Expand module dependency graph.
+                #                 imphook_obj.update_dependencies(self.graph)
+                #                 # Update cache of binaries and datas.
+                #                 additional_files_cache.add(pkg, imphook_obj.binaries, imphook_obj.datas)
+                #             # Append applied hooks to the list 'applied_hooks'.
+                #             # These will be removed after the inner loop finish.
+                #             # It also is a marker that iteration over hooks should
+                #             # continue.
+                #             applied_hooks.append(pkg)
+
                 # Run all post-graph hooks for this module.
                 for hook_file in hooks_cache[imported_name]:
                     # Import hook module from a file.
@@ -433,7 +460,7 @@ class Analysis(Target):
                     additional_files_cache.add(imported_name, imphook_object.binaries, imphook_object.datas)
 
                 # Append applied hooks to the list 'applied_hooks'.
-                # These will be removed after the inner loop finishs.
+                # These will be removed after the inner loop finish.
                 # It also is a marker that iteration over hooks should
                 # continue.
                 applied_hooks.append(imported_name)
