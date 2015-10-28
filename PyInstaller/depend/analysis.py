@@ -179,6 +179,9 @@ class PyiModuleGraph(ModuleGraph):
         for module in parent_packages:
             # Check if there is any excluded import for the module.
             if module in self._excluded_imports:
+                logger.warn(30*'C')
+                logger.warn(module)
+                logger.warn(imported_by)
                 # 'imported_by' is a subpackage of 'module', keep the excluded
                 # import and just end the function.
                 if imported_by.startswith(module):
@@ -188,16 +191,20 @@ class PyiModuleGraph(ModuleGraph):
                     return True
                 # Modules for which the excluded import should be kept.
                 not_allowed_modules = self._excluded_imports[module]
+                logger.warn('not_allowed_modules')
+                logger.warn(not_allowed_modules)
                 # 'imported_by' is not allowed or is subpackage of any not
                 # allowed module.
                 for not_allowed in not_allowed_modules:
+                    logger.warn('not_allowed')
+                    logger.warn(not_allowed)
                     if imported_by.startswith(not_allowed):
                         return True
                 # 'module_name' is excluded for some modules but this time
                 # it is imported by completely different module and thus
                 # 'module_name' and all its parent should be included in the analysis.
                 # Thus remove them from the excluded imports.
-                logger.warn('excludedimports: Including previously excluded module %s' % module_name)
+                logger.warn('excludedimports: Including previously excluded %r' % module_name)
                 del self._excluded_imports[module]
 
         # Module could be imported the usual way.

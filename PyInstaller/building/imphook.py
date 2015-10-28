@@ -244,7 +244,7 @@ class ImportHook(object):
                 logger.warn('Excluding import %r', module_name)
                 if not module_name in mod_graph._excluded_imports:
                     mod_graph._excluded_imports[module_name] = set()
-                mod_graph._excluded_imports[module_name].add(module_name)
+                mod_graph._excluded_imports[module_name].add(self._name)
             else:
                 logger.warn('Excluded import %r skipped', module_name)
 
