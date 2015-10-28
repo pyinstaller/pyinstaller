@@ -101,7 +101,7 @@ class PyiModuleGraph(ModuleGraph):
 
         # Modules that should be excluded when they are not imported by any
         # other modules besides those in the dict.
-        self._excluded_imports = {}
+        self.excluded_imports = {}
 
     def _cache_hooks(self, hook_type):
         """
@@ -178,7 +178,7 @@ class PyiModuleGraph(ModuleGraph):
         parent_packages = [module_name] + module_parent_packages(module_name)
         for module in parent_packages:
             # Check if there is any excluded import for the module.
-            if module in self._excluded_imports:
+            if module in self.excluded_imports:
                 logger.warn(30*'C')
                 logger.warn(module)
                 logger.warn(imported_by)
@@ -187,10 +187,10 @@ class PyiModuleGraph(ModuleGraph):
                 if imported_by.startswith(module):
                     # Add submodules of excluded modules to the exclude list and
                     # exclude it for the same modules as the parent package.
-                    self._excluded_imports[module_name] = self._excluded_imports[module]
+                    self.excluded_imports[module_name] = self.excluded_imports[module]
                     return True
                 # Modules for which the excluded import should be kept.
-                not_allowed_modules = self._excluded_imports[module]
+                not_allowed_modules = self.excluded_imports[module]
                 logger.warn('not_allowed_modules')
                 logger.warn(not_allowed_modules)
                 # 'imported_by' is not allowed or is subpackage of any not
@@ -205,7 +205,7 @@ class PyiModuleGraph(ModuleGraph):
                 # 'module_name' and all its parent should be included in the analysis.
                 # Thus remove them from the excluded imports.
                 logger.warn('excludedimports: Including previously excluded %r' % module_name)
-                del self._excluded_imports[module]
+                del self.excluded_imports[module]
 
         # Module could be imported the usual way.
         return False

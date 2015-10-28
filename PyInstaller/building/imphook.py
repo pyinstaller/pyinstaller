@@ -15,18 +15,53 @@ Code related to processing of import hooks.
 import glob
 import os.path
 import re
-import sys
-import warnings
 
 from .. import log as logging
 from .utils import format_binaries_and_datas
 from ..compat import expand_path
-from ..compat import importlib_load_source, is_py2
-from ..utils.misc import get_code_object
+from ..compat import importlib_load_source
 from .imphookapi import PostGraphAPI
-from ..lib.modulegraph.modulegraph import GraphError
 
 logger = logging.getLogger(__name__)
+
+
+class ExcludedImports(dict):
+    """
+    Dictionary mapping for hook attribute 'excludedimports'.
+    'excludedimports' is a list of Python module names that PyInstaller
+    should not detect as dependency of some module names.
+
+    Excludedimports attribute is parsed from all post-import hooks
+    before analyzing any Python code. This ensures that all excluded
+    modules are checked in the right time when they get imported.
+    """
+    def __init__(self, hooks_files):
+        """
+        Initialize this dictionary.
+        """
+        logger.info('Loading excluded imports...')
+        self._parser = re.compile('excludedimports = (.+)$', flags=re.MULTILINE)
+        # TODO find out better way how to obtain 'excludedimports' from hooks.
+        for modname, filenames in hooks_files.items():
+            # TODO parse all files not just first one.
+            code = self._parse_code(filenames[0])
+            if not code:  # hook does not contain 'excludedimports'
+                continue
+            # Evaluate code and update self dict.
+            excl_imports = eval(code)
+            logger.info('  Excluded imports for %r -> %s', modname, ', '.join(excl_imports))
+            for excl_mod in excl_imports:
+                if excl_mod not in self:
+                    self[excl_mod] = set()
+                self[excl_mod].add(modname)
+
+    def _parse_code(self, filename):
+        code = None
+        with open(filename, 'r') as f:
+            match = self._parser.search(f.read())
+            if match is not None:
+                code = match.groups()[0]
+        return code
 
 
 class HooksCache(dict):
@@ -56,7 +91,7 @@ class HooksCache(dict):
             which to populate this cache. By default, this is the absolute path
             of the `PyInstaller/hooks` directory containing official hooks.
         """
-        super(dict, self).__init__()
+        super(HooksCache, self).__init__()
         self._load_file_list(hooks_dir)
 
     def _load_file_list(self, hooks_dir):
@@ -229,61 +264,6 @@ class ImportHook(object):
             # that was not updated for a long time.
             logger.warn("Hidden import '%s' not found (probably old hook)" % item)
 
-    def _process_excludedimports(self, mod_graph):
-        """
-        'excludedimports' is a list of Python module names that PyInstaller
-        should not detect as dependency of this module name.
-
-        So remove all import-edges from the current module (and it's
-        submodules) to the given `excludedimports` (end their submodules).
-        """
-        for module_name in self._module.excludedimports:
-            # The excluded import is meaningful only if the excluded module
-            # was not found by modulegraph yet.
-            if mod_graph.findNode(module_name, create_nspkg=False) is None:
-                logger.warn('Excluding import %r', module_name)
-                if not module_name in mod_graph._excluded_imports:
-                    mod_graph._excluded_imports[module_name] = set()
-                mod_graph._excluded_imports[module_name].add(self._name)
-            else:
-                logger.warn('Excluded import %r skipped', module_name)
-
-        # def find_all_package_nodes(name):
-        #     mods = [name]
-        #     name += '.'
-        #     for subnode in mod_graph.nodes():
-        #         if subnode.identifier.startswith(name):
-        #             mods.append(subnode.identifier)
-        #     return mods
-        #
-        # # Collect all submodules of this module.
-        # hooked_mods = find_all_package_nodes(self._name)
-        #
-        # # Collect all dependencies and their submodules
-        # # TODO: Optimize this by using a pattern and walking the graph
-        # # only once.
-        # for item in set(self._module.excludedimports):
-        #     excluded_node = mod_graph.findNode(item, create_nspkg=False)
-        #     if excluded_node is None:
-        #         logger.info("Import to be excluded not found: %r", item)
-        #         continue
-        #     imports_to_remove = set(find_all_package_nodes(item))
-        #
-        #     # Remove references between module nodes, as though they would
-        #     # not be imported from 'name'.
-        #     # Note: Doing this in a nested loop is less efficient than
-        #     # collecting all import to remove first, but log messages
-        #     # are easier to understand since related to the "Excluding ..."
-        #     # message above.
-        #     for src in hooked_mods:
-        #         # modules, this `src` does import
-        #         references = set(n.identifier for n in mod_graph.getReferences(src))
-        #         # Remove all of these imports which are also in `imports_to_remove`
-        #         for dest in imports_to_remove & references:
-        #             mod_graph.removeReference(src, dest)
-        #             logger.warn("  From %s removing import %s", src, dest)
-        #
-
     def _process_datas(self, mod_graph):
         """
         'datas' is a list of globs of files or
@@ -320,8 +300,6 @@ class ImportHook(object):
             self._process_hook_function(mod_graph)
         if hasattr(self._module, 'hiddenimports'):
             self._process_hiddenimports(mod_graph)
-        if hasattr(self._module, 'excludedimports'):
-            self._process_excludedimports(mod_graph)
         if hasattr(self._module, 'datas'):
             self._process_datas(mod_graph)
         if hasattr(self._module, 'binaries'):
