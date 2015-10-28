@@ -156,7 +156,7 @@ class PyiModuleGraph(ModuleGraph):
                 caller = self._top_script_node
             return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
 
-    def _safe_import_module(self, module_basename, module_name, parent_package):
+    def _safe_import_module(self, module_basename, module_name, parent_package, caller):
         """
         Create a new graph node for the module with the passed name under the
         parent package signified by the passed graph node.
@@ -175,6 +175,7 @@ class PyiModuleGraph(ModuleGraph):
         See the superclass method for description of parameters and
         return value.
         """
+
         # If this module has pre-safe import module hooks, run these first.
         if module_name in self._hooks_pre_safe_import_module:
             # For the absolute path of each such hook...
@@ -206,7 +207,7 @@ class PyiModuleGraph(ModuleGraph):
 
         # Call the superclass method.
         return super(PyiModuleGraph, self)._safe_import_module(
-            module_basename, module_name, parent_package)
+            module_basename, module_name, parent_package, caller)
 
     def _find_module_path(self, fullname, module_name, search_dirs):
         """

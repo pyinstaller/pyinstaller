@@ -896,11 +896,11 @@ class ModuleGraph(ObjectGraph):
         """
         self.msg(3, "import_hook", name, caller, fromlist, level)
         parent = self._determine_parent(caller)
-        q, tail = self._find_head_package(parent, name, level)
-        m = self._load_tail(q, tail)
+        q, tail = self._find_head_package(parent, name, caller, level)
+        m = self._load_tail(q, tail, caller)
         modules = [m]
         if fromlist and m.packagepath:
-            for s in self._ensure_fromlist(m, fromlist):
+            for s in self._ensure_fromlist(m, fromlist, caller):
                 if s not in modules:
                     modules.append(s)
         for m in modules:
@@ -932,10 +932,12 @@ class ModuleGraph(ObjectGraph):
         self.msgout(4, "determine_parent ->", parent)
         return parent
 
-    def _find_head_package(self, parent, name, level=DEFAULT_IMPORT_LEVEL):
+    def _find_head_package(self, parent, name, caller, level=DEFAULT_IMPORT_LEVEL):
         """
         Given a calling parent package and an import name determine the containing
         package for the name
+
+        :param caller: Python module (graph node) that imports module 'name'.
         """
         self.msgin(4, "find_head_package", parent, name, level)
         if '.' in name:
@@ -980,21 +982,21 @@ class ModuleGraph(ObjectGraph):
                 qname = parent.identifier
 
 
-        q = self._safe_import_module(head, qname, parent)
+        q = self._safe_import_module(head, qname, parent, caller)
         if q:
             self.msgout(4, "find_head_package ->", (q, tail))
             return q, tail
         if parent:
             qname = head
             parent = None
-            q = self._safe_import_module(head, qname, parent)
+            q = self._safe_import_module(head, qname, parent, caller)
             if q:
                 self.msgout(4, "find_head_package ->", (q, tail))
                 return q, tail
         self.msgout(4, "raise ImportError: No module named", qname)
         raise ImportError("No module named " + qname)
 
-    def _load_tail(self, mod, tail):
+    def _load_tail(self, mod, tail, caller):
         self.msgin(4, "load_tail", mod, tail)
         result = mod
         while tail:
@@ -1002,7 +1004,7 @@ class ModuleGraph(ObjectGraph):
             if i < 0: i = len(tail)
             head, tail = tail[:i], tail[i+1:]
             mname = "%s.%s" % (result.identifier, head)
-            result = self._safe_import_module(head, mname, result)
+            result = self._safe_import_module(head, mname, result, caller)
             if result is None:
                 # result = self.createNode(MissingModule, mname)
                 self.msgout(4, "raise ImportError: No module named", mname)
@@ -1010,7 +1012,7 @@ class ModuleGraph(ObjectGraph):
         self.msgout(4, "load_tail ->", result)
         return result
 
-    def _ensure_fromlist(self, m, fromlist):
+    def _ensure_fromlist(self, m, fromlist, caller=None):
         fromlist = set(fromlist)
         self.msg(4, "ensure_fromlist", m, fromlist)
         if '*' in fromlist:
@@ -1027,7 +1029,7 @@ class ModuleGraph(ObjectGraph):
                 #      by 'm'.
 
                 fullname = m.identifier + '.' + sub
-                submod = self._safe_import_module(sub, fullname, m)
+                submod = self._safe_import_module(sub, fullname, m, caller)
                 if submod is None:
                     raise ImportError("No module named " + fullname)
             yield submod
@@ -1139,7 +1141,7 @@ class ModuleGraph(ObjectGraph):
 
 
     def _safe_import_module(
-        self, module_basename, module_name, parent_package):
+        self, module_basename, module_name, parent_package, caller):
         """
         Create a new graph node for the module with the passed name under the
         parent package signified by the passed graph node _without_ raising
@@ -1162,6 +1164,7 @@ class ModuleGraph(ObjectGraph):
             Graph node for the previously imported package containing this
             module _or_ `None` if this module is a **top-level module** (i.e.,
             `fqname` contains no `.` delimiters).
+        :param caller: Python module (graph node) that imports module 'module_name'.
 
         Returns
         ----------
@@ -1292,6 +1295,15 @@ class ModuleGraph(ObjectGraph):
         return m
 
     def _safe_import_hook(self, name, caller, fromlist, level=DEFAULT_IMPORT_LEVEL, attr=None):
+        """
+
+        :param name:
+        :param caller: Python module (graph node) that imports module 'name'.
+        :param fromlist:
+        :param level:
+        :param attr:
+        :return:
+        """
         # wrapper for self.import_hook() that won't raise ImportError
 
         # List of graph nodes created for the modules imported by this call.
