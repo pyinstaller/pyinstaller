@@ -237,43 +237,52 @@ class ImportHook(object):
         So remove all import-edges from the current module (and it's
         submodules) to the given `excludedimports` (end their submodules).
         """
+        for module_name in self._module.excludedimports:
+            # The excluded import is meaningful only if the excluded module
+            # was not found by modulegraph yet.
+            if mod_graph.findNode(module_name, create_nspkg=False) is None:
+                logger.warn('Excluding import %r', module_name)
+                if not module_name in mod_graph._excluded_imports:
+                    mod_graph._excluded_imports[module_name] = set()
+                mod_graph._excluded_imports[module_name].add(module_name)
+            else:
+                logger.warn('Excluded import %r skipped', module_name)
 
-        def find_all_package_nodes(name):
-            mods = [name]
-            name += '.'
-            for subnode in mod_graph.nodes():
-                if subnode.identifier.startswith(name):
-                    mods.append(subnode.identifier)
-            return mods
-
-        # Collect all submodules of this module.
-        hooked_mods = find_all_package_nodes(self._name)
-
-        # Collect all dependencies and their submodules
-        # TODO: Optimize this by using a pattern and walking the graph
-        # only once.
-        for item in set(self._module.excludedimports):
-            excluded_node = mod_graph.findNode(item, create_nspkg=False)
-            if excluded_node is None:
-                logger.info("Import to be excluded not found: %r", item)
-                continue
-            logger.info("Excluding import %r", item)
-            imports_to_remove = set(find_all_package_nodes(item))
-
-            # Remove references between module nodes, as though they would
-            # not be imported from 'name'.
-            # Note: Doing this in a nested loop is less efficient than
-            # collecting all import to remove first, but log messages
-            # are easier to understand since related to the "Excluding ..."
-            # message above.
-            for src in hooked_mods:
-                # modules, this `src` does import
-                references = set(n.identifier for n in mod_graph.getReferences(src))
-                # Remove all of these imports which are also in `imports_to_remove`
-                for dest in imports_to_remove & references:
-                    mod_graph.removeReference(src, dest)
-                    logger.warn("  From %s removing import %s", src, dest)
-
+        # def find_all_package_nodes(name):
+        #     mods = [name]
+        #     name += '.'
+        #     for subnode in mod_graph.nodes():
+        #         if subnode.identifier.startswith(name):
+        #             mods.append(subnode.identifier)
+        #     return mods
+        #
+        # # Collect all submodules of this module.
+        # hooked_mods = find_all_package_nodes(self._name)
+        #
+        # # Collect all dependencies and their submodules
+        # # TODO: Optimize this by using a pattern and walking the graph
+        # # only once.
+        # for item in set(self._module.excludedimports):
+        #     excluded_node = mod_graph.findNode(item, create_nspkg=False)
+        #     if excluded_node is None:
+        #         logger.info("Import to be excluded not found: %r", item)
+        #         continue
+        #     imports_to_remove = set(find_all_package_nodes(item))
+        #
+        #     # Remove references between module nodes, as though they would
+        #     # not be imported from 'name'.
+        #     # Note: Doing this in a nested loop is less efficient than
+        #     # collecting all import to remove first, but log messages
+        #     # are easier to understand since related to the "Excluding ..."
+        #     # message above.
+        #     for src in hooked_mods:
+        #         # modules, this `src` does import
+        #         references = set(n.identifier for n in mod_graph.getReferences(src))
+        #         # Remove all of these imports which are also in `imports_to_remove`
+        #         for dest in imports_to_remove & references:
+        #             mod_graph.removeReference(src, dest)
+        #             logger.warn("  From %s removing import %s", src, dest)
+        #
 
     def _process_datas(self, mod_graph):
         """
@@ -311,8 +320,8 @@ class ImportHook(object):
             self._process_hook_function(mod_graph)
         if hasattr(self._module, 'hiddenimports'):
             self._process_hiddenimports(mod_graph)
-        #if hasattr(self._module, 'excludedimports'):
-            #self._process_excludedimports(mod_graph)
+        if hasattr(self._module, 'excludedimports'):
+            self._process_excludedimports(mod_graph)
         if hasattr(self._module, 'datas'):
             self._process_datas(mod_graph)
         if hasattr(self._module, 'binaries'):

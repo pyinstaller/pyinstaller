@@ -233,11 +233,11 @@ class PyiModuleGraph(ModuleGraph):
             # for modulegraph.
             return None
 
-        # test definition of excluded imports.
-        if module_name == 'PIL':
-            for m in ['tkinter', 'PyQt4', 'PyQt5', 'PySide']:
-                logger.warn('excludedimports: Excluding module %s' % m)
-                self._excluded_imports[m] = ['PIL']
+        # # test definition of excluded imports.
+        # if module_name == 'PIL':
+        #     for m in ['tkinter', 'PyQt4', 'PyQt5', 'PySide']:
+        #         logger.warn('excludedimports: Excluding module %s' % m)
+        #         self._excluded_imports[m] = ['PIL']
 
         # If this module has pre-safe import module hooks, run these first.
         if module_name in self._hooks_pre_safe_import_module:
