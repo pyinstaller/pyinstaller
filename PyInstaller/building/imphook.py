@@ -311,8 +311,8 @@ class ImportHook(object):
             self._process_hook_function(mod_graph)
         if hasattr(self._module, 'hiddenimports'):
             self._process_hiddenimports(mod_graph)
-        if hasattr(self._module, 'excludedimports'):
-            self._process_excludedimports(mod_graph)
+        #if hasattr(self._module, 'excludedimports'):
+            #self._process_excludedimports(mod_graph)
         if hasattr(self._module, 'datas'):
             self._process_datas(mod_graph)
         if hasattr(self._module, 'binaries'):
