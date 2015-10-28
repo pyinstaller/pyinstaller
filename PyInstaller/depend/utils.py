@@ -14,6 +14,7 @@ Utility functions related to analyzing/bundling dependencies.
 """
 
 import ctypes
+import ctypes.util
 import dis
 import io
 import marshal
