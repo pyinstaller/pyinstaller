@@ -39,7 +39,7 @@ import re
 from ..building.datastruct import TOC
 from ..building.imphook import HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
-from ..utils.misc import load_py_data_struct
+from ..utils.misc import load_py_data_struct, module_parent_packages
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..lib.modulegraph.find_modules import get_implies
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
@@ -79,7 +79,6 @@ class PyiModuleGraph(ModuleGraph):
         hooks for the current application.
     """
 
-
     def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
         # Homepath to the place where is PyInstaller located.
@@ -99,6 +98,10 @@ class PyiModuleGraph(ModuleGraph):
         self._available_rthooks = load_py_data_struct(
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
+
+        # Modules that should be excluded when they are not imported by any
+        # other modules besides those in the dict.
+        self._excluded_imports = {}
 
     def _cache_hooks(self, hook_type):
         """
@@ -156,6 +159,51 @@ class PyiModuleGraph(ModuleGraph):
                 caller = self._top_script_node
             return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
 
+    def _is_excluded_import(self, module_name, imported_by):
+        """
+        If a module is in the excluded imports dict then either keep it there or
+        remove it from the dict.
+
+        Conditions for keeping excluded module in the dict:
+        - Any parent package of 'module_name' is in 'excluded_imports' and
+          - 'imported_by' is a subpackage of 'module_name.
+          - 'imported_by' is a subpackage of any item from the 'excluded_imports'
+            dict value.
+
+        :param module_name: Module name to check if keeping in excluded modules.
+        :param imported_by: Module name that imports module 'module_name'.
+        :return: True if the module should be really excluded or False otherwise.
+        """
+        # Check 'module_name' and all its parent packages.
+        parent_packages = [module_name] + module_parent_packages(module_name)
+        for module in parent_packages:
+            # Check if there is any excluded import for the module.
+            if module in self._excluded_imports:
+                # 'imported_by' is a subpackage of 'module', keep the excluded
+                # import and just end the function.
+                if imported_by.startswith(module):
+                    # Add submodules of excluded modules to the exclude list and
+                    # exclude it for the same modules as the parent package.
+                    self._excluded_imports[module_name] = self._excluded_imports[module]
+                    return True
+                # Modules for which the excluded import should be kept.
+                not_allowed_modules = self._excluded_imports[module]
+                # 'imported_by' is not allowed or is subpackage of any not
+                # allowed module.
+                for not_allowed in not_allowed_modules:
+                    if imported_by.startswith(not_allowed):
+                        return True
+                # 'module_name' is excluded for some modules but this time
+                # it is imported by completely different module and thus
+                # 'module_name' and all its parent should be included in the analysis.
+                # Thus remove them from the excluded imports.
+                logger.warn('excludedimports: Including previously excluded module %s' % module_name)
+                del self._excluded_imports[module]
+
+        # Module could be imported the usual way.
+        return False
+
+
     def _safe_import_module(self, module_basename, module_name, parent_package, caller):
         """
         Create a new graph node for the module with the passed name under the
@@ -175,6 +223,21 @@ class PyiModuleGraph(ModuleGraph):
         See the superclass method for description of parameters and
         return value.
         """
+        # Before importing a module, check first if it should be kept excluded
+        # or not.
+        #
+        # It does not make sense check excluded modules if the caller module
+        # is not known.
+        if caller is not None and self._is_excluded_import(module_name, caller.identifier):
+            # Return None means that the module is excluded and thus unimportable
+            # for modulegraph.
+            return None
+
+        # test definition of excluded imports.
+        if module_name == 'PIL':
+            for m in ['tkinter', 'PyQt4', 'PyQt5', 'PySide']:
+                logger.warn('excludedimports: Excluding module %s' % m)
+                self._excluded_imports[m] = ['PIL']
 
         # If this module has pre-safe import module hooks, run these first.
         if module_name in self._hooks_pre_safe_import_module:
