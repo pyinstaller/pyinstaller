@@ -422,15 +422,12 @@ def test_pil_img_conversion(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
 
 
-@importorskip('PIL', modname_tkinter)
+@importorskip('PIL')
 def test_pil_no_tkinter(pyi_builder):
     # hook-PIL is excluding tkinter.
     # Ensure it really cannot be imported - ImportError.
     pyi_builder.test_source("""
         import PIL.Image
-        # PIL's SpiderImagePlugin features a tkPhotoImage() method which
-        # imports ImageTk (and thus brings the whole Tcl/Tk library in).
-        import PIL.SpiderImagePlugin
 
         try:
             __import__('_tkinter')
@@ -439,6 +436,18 @@ def test_pil_no_tkinter(pyi_builder):
             raise SystemExit('ERROR: Module %(modname)s is bundled.')
         except ImportError:
             print('ok')
+        """ % {'modname': modname_tkinter})
+
+@importorskip('PIL', modname_tkinter)
+def test_pil_tkinter_bundled(pyi_builder):
+    # hook-PIL is excluding tkinter, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+        import PIL.Image
+        try:
+            import %(modname)s
+        except ImportError:
+            raise SystemExit('ERROR: Module %(modname)s is NOT bundled.')
         """ % {'modname': modname_tkinter})
 
 
