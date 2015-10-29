@@ -441,16 +441,8 @@ class Analysis(Target):
                 #   'aaa.bb.c.dddd' ->  ['aaa', 'aaa.bb', 'aaa.bb.c']
                 parent_pkgs = module_parent_packages(imported_name)
                 if parent_pkgs:  # 'imported_name' is not top-level module.
-                    logger.warn(30*'A')
-                    logger.warn(imported_name)
-                    logger.warn(30*'B')
-                    logger.warn(parent_pkgs)
                     for pkg in parent_pkgs:
                         if pkg in hooks_cache_set:  # Any post-graph hook exists for package.
-                            logger.warn(50*'C')
-                            logger.warn(pkg)
-                            # Add 'pkg' to graph if not already there.
-                            #self.graph._safe_import_module(pkg.split('.')[-1], pkg)
                             # Run all post-graph hooks for this package.
                             for hk_file in hooks_cache[pkg]:
                                 # Import hook module from a file.
