@@ -3,4 +3,4 @@
 
 pypiwin32  # This package is a pip-installable version of PyWin32.
 pyenchant
-PySide==1.2.2
+PySide==1.2.4

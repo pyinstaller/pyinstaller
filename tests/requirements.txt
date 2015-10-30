@@ -38,7 +38,9 @@ pycparser
 pytz
 sqlalchemy
 twisted
-matplotlib
+# Windows binary packages are for Python 2.7,3.3,3.4
+matplotlib==1.4.3
 pyexcelerate
-Pillow
+# Pillow 3.0.0 is broken.
+Pillow==3.0.0
 pandas
