@@ -20,12 +20,15 @@ module 'win32com.shell' is in reality 'win32comext.shell'.
 
 import os
 
+from PyInstaller.compat import is_win
 from PyInstaller.utils.hooks import logger, get_module_file_attribute
 
 
 def pre_safe_import_module(api):
-    win32com_dir = os.path.dirname(get_module_file_attribute('win32com'))
-    comext_dir = os.path.join(os.path.dirname(win32com_dir), 'win32comext')
-    logger.debug('win32com: extending __path__ with dir %r' % comext_dir)
-    # Append the __path__ where PyInstaller will look for 'win32com' modules.'
-    api.append_package_path(comext_dir)
+    # TODO find out better way how to specify platformm specific code in pre_import hooks.
+    if is_win:
+        win32com_dir = os.path.dirname(get_module_file_attribute('win32com'))
+        comext_dir = os.path.join(os.path.dirname(win32com_dir), 'win32comext')
+        logger.debug('win32com: extending __path__ with dir %r' % comext_dir)
+        # Append the __path__ where PyInstaller will look for 'win32com' modules.'
+        api.append_package_path(comext_dir)
