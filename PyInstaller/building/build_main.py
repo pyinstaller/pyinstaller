@@ -29,7 +29,7 @@ from .. import log as logging
 from ..utils.misc import absnormpath, module_parent_packages
 from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
-from ..depend.analysis import initialize_modgraph
+from ..depend.analysis import initialize_modgraph, initialize_hooks_caches
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
 from .imphook import AdditionalFilesCache, ExcludedImports, HooksCache, ImportHook
@@ -311,7 +311,12 @@ class Analysis(Target):
             for m in self.excludes:
                 logger.debug("Excluding module '%s'" % m)
             self.graph = initialize_modgraph(
-                excludes=self.excludes, user_hook_dirs=self.hookspath)
+                excludes=self.excludes)
+
+        # Initialize hook caches.
+        # Doing that in PyiModuleGraph.__init__() is not good place when using
+        # 'tests_modgraph' for running PyInstaller tests.
+        initialize_hooks_caches(self.graph, self.hookspath)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
@@ -370,24 +375,11 @@ class Analysis(Target):
         if is_win:
             depmanifest.writeprettyxml()
 
-        # Create cache for hooks.
-        hooks_cache = HooksCache(get_importhooks_dir())
-        # Custom import hooks
-        if self.hookspath:
-            hooks_cache.add_custom_paths(self.hookspath)
-        # Cache with attitional 'datas' and 'binaries' that were
+        # Cache with additional 'datas' and 'binaries' that were
         # NOTE: This cache is necessary to later decide if those files belong to
         #       to module which is reachable for top-level script. Or if these
         #       files belong to a module from dead branch of the graph.
         additional_files_cache = AdditionalFilesCache()
-
-
-        # Parse hook attribute 'excludedimports' globally from all hooks before
-        # analyzing any Python script or module and pass it to module graph
-        # object.
-        excluded_imports = ExcludedImports(hooks_cache)
-        self.graph.excluded_imports = excluded_imports
-
 
         # The first script in the analysis is the main user script. Its node is used as
         # the "caller" node for all others. This gives a connected graph rather than
@@ -416,6 +408,7 @@ class Analysis(Target):
         #    b. no new hook was applied in the 'while' iteration.
         #
         logger.info('Looking for import hooks ...')
+        hooks_cache = self.graph.hooks_post_import
 
         while True:
             # This ensures that import hooks get applied only once.

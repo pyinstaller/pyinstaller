@@ -37,7 +37,7 @@ import os
 import re
 
 from ..building.datastruct import TOC
-from ..building.imphook import HooksCache
+from ..building.imphook import ExcludedImports, HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
 from ..utils.misc import load_py_data_struct, module_parent_packages
 from ..lib.modulegraph.modulegraph import ModuleGraph
@@ -87,52 +87,17 @@ class PyiModuleGraph(ModuleGraph):
         # by PyInstaller.
         self._top_script_node = None
 
-        # Absolute paths of all user-defined hook directories.
-        self._user_hook_dirs = \
-            user_hook_dirs if user_hook_dirs is not None else []
-
-        # Hook-specific lookup tables, defined after defining "_user_hook_dirs".
-        logger.info('Initializing module graph hooks...')
-        self._hooks_pre_safe_import_module = self._cache_hooks('pre_safe_import_module')
-        self._hooks_pre_find_module_path = self._cache_hooks('pre_find_module_path')
-        self._available_rthooks = load_py_data_struct(
-            os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
-        )
+        # Hook-specific lookup tables. They are set up later.
+        self._hooks_pre_safe_import_module = {}
+        self._hooks_pre_find_module_path = {}
+        self._available_rthooks = {}
+        # Post import hooks (classical import hooks) will be accessed outside
+        # this object.
+        self.hooks_post_import = {}
 
         # Modules that should be excluded when they are not imported by any
         # other modules besides those in the dict.
         self.excluded_imports = {}
-
-    def _cache_hooks(self, hook_type):
-        """
-        Get a cache of all hooks of the passed type.
-
-        The cache will include all official hooks defined by the PyInstaller
-        codebase _and_ all unofficial hooks defined for the current application.
-
-        Parameters
-        ----------
-        hook_type : str
-            Type of hooks to be cached, equivalent to the basename of the
-            subpackage of the `PyInstaller.hooks` package containing such hooks
-            (e.g., `post_create_package` for post-create package hooks).
-        """
-        # Absolute path of this type hook package's directory.
-        system_hook_dir = configure.get_importhooks_dir(hook_type)
-
-        # Cache of such hooks.
-        # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
-        hooks_cache = HooksCache(system_hook_dir)
-        for user_hook_dir in self._user_hook_dirs:
-            # Absolute path of the user-defined subdirectory of this hook type.
-            user_hook_type_dir = os.path.join(user_hook_dir, hook_type)
-
-            # If this directory exists, cache all hooks in this directory.
-            if os.path.isdir(user_hook_type_dir):
-                # logger.debug("Caching user %s hook dir %r" % (hook_type, hooks_user_dir))
-                hooks_cache.add_custom_paths(user_hook_type_dir)
-
-        return hooks_cache
 
     def run_script(self, pathname, caller=None):
         """
@@ -546,13 +511,14 @@ class PyiModuleGraph(ModuleGraph):
         return co_dict
 
 
-# TODO: A little odd. Couldn't we just push this functionality into the
-# PyiModuleGraph.__init__() constructor and then construct PyiModuleGraph
-# objects directly?
 def initialize_modgraph(excludes=(), user_hook_dirs=None):
     """
     Create the module graph and, for Python 3, analyze dependencies for
     `base_library.zip` (which remain the same for every executable).
+
+    This function might appear weird but is necessary for speeding up
+    test runtime because it allows caching basic ModuleGraph object that
+    gets created for 'base_library.zip'.
 
     Parameters
     ----------
@@ -609,6 +575,56 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
         for m in required_mods:
             graph.import_hook(m)
     return graph
+
+
+def initialize_hooks_caches(modgraph, user_hook_dirs):
+    """
+    Initialize all caches of all possible hook types for the passed graph.
+
+    :param modgraph:
+    """
+    def _cache_hooks(hook_type, user_hook_dirs):
+        """
+        Get a cache of all hooks of the passed type.
+
+        The cache will include all official hooks defined by the PyInstaller
+        codebase _and_ all unofficial hooks defined for the current application.
+
+        Parameters
+        ----------
+        hook_type : str
+            Type of hooks to be cached, equivalent to the basename of the
+            subpackage of the `PyInstaller.hooks` package containing such hooks
+            (e.g., `post_create_package` for post-create package hooks).
+        """
+        # Absolute path of this type hook package's directory.
+        system_hook_dir = configure.get_importhooks_dir(hook_type)
+        # Cache of such hooks.
+        # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
+        hooks_cache = HooksCache(system_hook_dir)
+        for hook_dir in user_hook_dirs:
+            # Absolute path of the user-defined subdirectory of this hook type.
+            user_hook_type_dir = os.path.join(hook_dir, hook_type)
+            # If this directory exists, cache all hooks in this directory.
+            if os.path.isdir(user_hook_type_dir):
+                logger.debug('Caching user %s hook dir %r' % (hook_type, hook_dir))
+                hooks_cache.add_custom_paths(user_hook_type_dir)
+        return hooks_cache
+
+    # Hook-specific lookup tables for all hooks.
+    logger.info('Initializing module graph hooks...')
+    modgraph._hooks_pre_safe_import_module = _cache_hooks('pre_safe_import_module', user_hook_dirs)
+    modgraph._hooks_pre_find_module_path = _cache_hooks('pre_find_module_path', user_hook_dirs)
+    modgraph.hooks_post_import = _cache_hooks(None, user_hook_dirs)
+    modgraph._available_rthooks = load_py_data_struct(
+        os.path.join(modgraph._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
+    )
+
+    # Parse hook attribute 'excludedimports' globally from all hooks before
+    # analyzing any Python script or module and pass it to module graph
+    # object.
+    excluded_imports = ExcludedImports(modgraph.hooks_post_import)
+    modgraph.excluded_imports = excluded_imports
 
 
 def get_bootstrap_modules():
