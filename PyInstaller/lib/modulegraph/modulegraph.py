@@ -1595,7 +1595,7 @@ class ModuleGraph(ObjectGraph):
 
     def _load_package(self, fqname, pathname, pkgpath):
         """
-        Called only when an imp.PACKAGE_DIRECTORY is found
+        Called only when an imp.PKG_DIRECTORY is found
         """
         self.msgin(2, "load_package", fqname, pathname, pkgpath)
         newname = _replacePackageMap.get(fqname)
@@ -1658,7 +1658,7 @@ class ModuleGraph(ObjectGraph):
         Returns
         ----------
         (file_handle, filename, metadata)
-            See `modulegraph.find_module()` for details.
+            See `modulegraph._find_module()` for details.
         """
         if parent is not None:
             # assert path is not None
