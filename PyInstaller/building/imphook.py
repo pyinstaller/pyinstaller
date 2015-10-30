@@ -292,14 +292,6 @@ class ImportHook(object):
         """
         self.binaries.update(set(format_binaries_and_datas(self._module.binaries)))
 
-    def _process_attrs(self, mod_graph):
-        # TODO implement attribute 'hook_name_space.attrs'
-        # hook_name_space.attrs is a list of tuples (attr_name, value) where 'attr_name'
-        # is name for Python module attribute that should be set/changed.
-        # 'value' is the value of that attribute. PyInstaller will modify
-        # mod.attr_name and set it to 'value' for the created .exe file.
-        pass
-
     # Public methods
 
     def update_dependencies(self, mod_graph):
@@ -317,5 +309,3 @@ class ImportHook(object):
             self._process_datas(mod_graph)
         if hasattr(self._module, 'binaries'):
             self._process_binaries(mod_graph)
-        if hasattr(self._module, 'attrs'):
-            self._process_attrs(mod_graph)

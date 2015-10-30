@@ -143,7 +143,9 @@ else:
 base_prefix = getattr( sys, 'real_prefix',
                        getattr( sys, 'base_prefix', sys.prefix )
                         )
-is_venv = is_virtualenv = base_prefix != sys.prefix
+# Ensure `base_prefix` is not containing any relative parts.
+base_prefix = os.path.abspath(base_prefix)
+is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how

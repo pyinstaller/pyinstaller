@@ -10,11 +10,12 @@
 
 import copy
 import glob
-import pkgutil
 import os
 import pkg_resources
+import pkgutil
 import re
 import sys
+import textwrap
 
 from ... import compat
 from ...compat import is_py2, is_win, is_py3, is_darwin, EXTENSION_SUFFIXES
@@ -999,6 +1000,7 @@ def _find_prefix(filename):
     """
     if not compat.is_venv:
         return sys.prefix
+    filename = os.path.abspath(filename)
     prefixes = [os.path.abspath(sys.prefix), compat.base_prefix]
     possible_prefixes = []
     for prefix in prefixes:
