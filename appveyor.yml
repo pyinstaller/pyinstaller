@@ -103,11 +103,7 @@ install:
 
   # Install pip-accel to cache pypi packages and avoid compiling some packages.
   # (numpy or pycrypto take a lot of tome to compile).
-  #
-  # TODO Use upstream version when windows support is merged.
-  # Windows support is not yet merged upstream so use own 'pip-accel' fork:
-  #   https://github.com/paylogic/pip-accel/pull/60
-  - "%CMD_IN_ENV% pip install git+https://github.com/matysek/pip-accel.git"
+  - "%CMD_IN_ENV% pip install pip-accel"
 
   # Install the PyInstaller test dependencies.
   - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
