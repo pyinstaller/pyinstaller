@@ -708,7 +708,7 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # Clean up configuration and force PyInstaller to do a clean configuration
     # for another app/test.
     from .. import config
-    config.CONF = config.DEFAULT_CONF
+    config.CONF = config.DEFAULT_CONF.copy()
 
     from ..config import CONF
     CONF['noconfirm'] = noconfirm
