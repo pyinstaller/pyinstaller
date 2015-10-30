@@ -16,6 +16,7 @@ import glob
 import os.path
 import re
 
+from collections import OrderedDict
 from .. import log as logging
 from .utils import format_binaries_and_datas
 from ..compat import expand_path
@@ -25,7 +26,9 @@ from .imphookapi import PostGraphAPI
 logger = logging.getLogger(__name__)
 
 
-class ExcludedImports(dict):
+# Reproducible freeze: OrderedDict ensures hooks are always applied in the same
+# order.
+class ExcludedImports(OrderedDict):
     """
     Dictionary mapping for hook attribute 'excludedimports'.
     'excludedimports' is a list of Python module names that PyInstaller
@@ -39,6 +42,7 @@ class ExcludedImports(dict):
         """
         Initialize this dictionary.
         """
+        super(ExcludedImports, self).__init__()
         logger.info('Loading excluded imports...')
         self._parser = re.compile('excludedimports = (.+)$', flags=re.MULTILINE)
         # TODO find out better way how to obtain 'excludedimports' from hooks.
@@ -49,6 +53,7 @@ class ExcludedImports(dict):
                 continue
             # Evaluate code and update self dict.
             excl_imports = eval(code)
+            excl_imports.sort()
             logger.info('  Excluded imports for %r -> %s', modname, ', '.join(excl_imports))
             for excl_mod in excl_imports:
                 if excl_mod not in self:
@@ -64,7 +69,9 @@ class ExcludedImports(dict):
         return code
 
 
-class HooksCache(dict):
+# Reproducible freeze: OrderedDict ensures hooks are always applied in the same
+# order.
+class HooksCache(OrderedDict):
     """
     Dictionary mapping from the fully-qualified names of each module hooked by
     at least one hook script to lists of the absolute paths of these scripts.
@@ -127,6 +134,7 @@ class HooksCache(dict):
 
         # For each hook in the passed directory...
         hook_files = glob.glob(os.path.join(hooks_dir, 'hook-*.py'))
+        hook_files.sort()
         for hook_file in hook_files:
             # Absolute path of this hook's script.
             hook_file = os.path.abspath(hook_file)
@@ -169,6 +177,15 @@ class HooksCache(dict):
         for module_name in set(module_names):  # Eliminate duplicate entries.
             if module_name in self:
                 del self[module_name]
+
+    def copy(self):
+        """
+        Return a copy of internal dict structure.
+        """
+        c = OrderedDict()
+        for k, v in self.items():
+            c[k] = v
+        return c
 
 
 class AdditionalFilesCache(object):
