@@ -2262,14 +2262,17 @@ applies them to the bundle being created.
         hiddenimports = ['_proxy', 'utils', 'defs']
 
 ``excludedimports``
-    A list of module names (relative or absolute) that should
-    *not* be part of the bundled app if they are only imported
-    by the hooked module.
-    (If they are explicitly imported by the source file, they will be kept.)
+    A list of absolute module names that should
+    *not* be part of the bundled app.
+    If an excluded module is imported only by the hooked module or one
+    of its sub-modules, the excluded name and its sub-modules 
+    will not be part of the bundle.
+    (If an excluded name is explicitly imported in the
+    source file or some other module, it will be kept.)
     Several hooks use this to prevent automatic inclusion of
     the ``tkinter`` module. Example::
 
-        excludedimports = ['matplotlib']
+        excludedimports = [modname_tkinter]
 
 ``datas``
    A list of files to bundle with the app as data.
@@ -2283,10 +2286,20 @@ applies them to the bundle being created.
 
       datas = [ ('/usr/share/icons/education_*.png', 'icons') ]
 
-   Many hooks use helpers from the ``PyInstaller.hooks.utils`` module
+   If you need to collect multiple directories or nested directories,
+   you can use helper functions from the ``PyInstaller.hooks.utils`` module
    (see below) to create this list, for example::
       
-      datas = collect_data_files('sphinx')
+      datas = collect_data_files('submodule1')
+      datas+= collect_data_files('submodule2')
+
+   In rare cases you may need to apply logic to locate
+   particular files within the file system,
+   for example because the files are
+   in different places on different platforms or under different versions.
+   Then you can write a ``hook()`` function as described
+   below under `The ``hook(hook_api)`` Function`_.
+   
 
 ``binaries``
    A list of files or directories to bundle as binaries.
@@ -2317,7 +2330,7 @@ for example::
 ``is_py3``:
    True when the active Python is version 3.X.
 ``is_py34``, ``is_py35``, ``is_py36``:
-   True in Python 3.4, 3.5 or 3.6 respectively.
+   True when the current version of Python is at least 3.4, 3.5 or 3.6 respectively.
 
 ``is_win``:
    True in a Windows system.
@@ -2408,14 +2421,16 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
     
     The ``version_string`` is a PEP0440-compliant, dot-delimited version
     specifier such as ``3.14-rc5``.
-    The ``relation`` is one of the following eight strings:
+    The ``relation`` is one of the strings:
 
-    * '>' or 'gt', greater-than.
-    * '<' or 'lt', less-than.
-    * '>=' or 'ge', greater-than-or-equal-to.
-    * '<=' or 'le', less-than-or-equal-to.
-
-    \ 
+    * ``>`` for greater-than.
+    
+    * ``<`` for less-than.
+    
+    * ``>=`` for greater-than-or-equal-to.
+    
+    * ``<=`` for less-than-or-equal-to.
+	 
 
 ``collect_submodules( package, subdir=None, pattern=None )``:
    Returns a list of strings that specify all the modules in a package,
@@ -2493,7 +2508,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    the Django settings.py file, such as the
    ``Django.settings.INSTALLED_APPS`` list and many others.
 
-The ``hook(hook_api)`` Method
+The ``hook(hook_api)`` Function
 --------------------------------
 
 In addition to, or instead of, setting global values,
@@ -2528,12 +2543,12 @@ which has the following immutable properties:
 
 The ``hook_api`` object also offers the following methods:
 
-``add_imports( names )``:
-   The ``names`` argument may be a single string or a list of strings,
+``add_imports( *names )``:
+   The ``names`` argument may be a single string or a list of strings
    giving the fully-qualified name(s) of modules to be imported.
    This has the same effect as adding the names to the ``hiddenimports`` global.
 
-``del_imports( names )``:
+``del_imports( *names )``:
    The ``names`` argument may be a single string or a list of strings,
    giving the fully-qualified name(s) of modules that are not
    to be included if they are imported only by the hooked module.
@@ -2564,7 +2579,7 @@ Hooks of this type are only recognized if they are stored in
 a sub-folder named ``pre_find_module_path`` in a hooks folder,
 either in the distributed hooks folder or an ``--additional-hooks-dir`` folder.
 You may have normal hooks as well as hooks of this type for the same module.
-For example the distributed system has both a ``hooks/hook-distutils.py``
+For example |PyInstaller| includes both a ``hooks/hook-distutils.py``
 and also a ``hooks/pre_find_module_path/hook-distutils.py``.
 
 The ``pfmp_api`` object that is passed has the following immutable attribute:
@@ -2575,7 +2590,7 @@ The ``pfmp_api`` object that is passed has the following immutable attribute:
 The ``pfmp_api`` object has one mutable attribute, ``search_dirs``.
 This is a list of strings that specify the absolute path, or paths,
 that will be searched for the hooked module.
-The paths in the list will be searched in index sequence.
+The paths in the list will be searched in sequence.
 The ``pre_find_module_path()`` function may replace or change
 the contents of ``pfmp_api.search_dirs``.
 
@@ -2593,8 +2608,17 @@ The ``pre_safe_import_module( psim_api )`` Method
 
 You may write a hook with the special function ``pre_safe_import_module( psim_api )``.
 This method is called after the hooked module has been found,
-but *before* it--and everything it recursively imports--is added
+but *before* it and everything it recursively imports is added
 to the "graph" of imported modules.
+Use a pre-safe-import hook in the unusual case where:
+
+* The script imports *package.dynamic-name*
+* The *package* exists
+* however, no module *dynamic-name* exists at compile time (it will be defined somehow at run time)
+
+You use this type of hook to make dynamically-generated names known to PyInstaller.
+PyInstaller will not try to locate the dynamic names, fail, and report them as missing.
+However, if there are normal hooks for these names, they will be called.
 
 Hooks of this type are only recognized if they are stored in a sub-folder
 named ``pre_safe_import_module`` in a hooks folder,
@@ -2633,6 +2657,7 @@ The ``psim_api`` object also offers the following methods:
 ``add_runtime_module( fully_qualified_name )``:
    Use this method to add an imported module whose name may not
    appear in the source because it is dynamically defined at run-time.
+   This is useful to make the module known to |PyInstaller| and avoid misleading warnings.
    A typical use applies the name from the ``psim_api``::
    
    	psim_api.add_runtime_module( psim_api.module_name )
