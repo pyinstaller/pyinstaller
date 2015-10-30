@@ -602,13 +602,11 @@ def initialize_hooks_caches(modgraph, user_hook_dirs):
         # Cache of such hooks.
         # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
         hooks_cache = HooksCache(system_hook_dir)
-        for hook_dir in user_hook_dirs:
-            # Absolute path of the user-defined subdirectory of this hook type.
-            user_hook_type_dir = os.path.join(hook_dir, hook_type)
+        # Absolute path of the user-defined subdirectories of this hook type.
+        if hook_type:
+            user_hook_dirs = [os.path.join(d, hook_type) for d in user_hook_dirs]
             # If this directory exists, cache all hooks in this directory.
-            if os.path.isdir(user_hook_type_dir):
-                logger.debug('Caching user %s hook dir %r' % (hook_type, hook_dir))
-                hooks_cache.add_custom_paths(user_hook_type_dir)
+        hooks_cache.add_custom_paths(user_hook_dirs)
         return hooks_cache
 
     # Hook-specific lookup tables for all hooks.
