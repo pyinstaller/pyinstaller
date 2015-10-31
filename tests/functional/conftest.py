@@ -350,7 +350,7 @@ class AppBuilder(object):
         # Override CONFIGDIR for PyInstaller and put it into self.tmpdir
         PYI_CONFIG['configdir'] = self._tmpdir
         # Speed up tests by reusing copy of basic module graph object.
-        PYI_CONFIG['tests_modgraph'] = copy.deepcopy(self._modgraph)
+        #PYI_CONFIG['tests_modgraph'] = copy.deepcopy(self._modgraph)
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
 
@@ -395,7 +395,8 @@ class AppBuilder(object):
 # for every executable.
 @pytest.fixture(scope='session')
 def pyi_modgraph():
-    return initialize_modgraph()
+    #return initialize_modgraph()
+    return None
 
 
 # Run by default test as onedir and onefile.
