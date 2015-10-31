@@ -301,6 +301,8 @@ class Analysis(Target):
         """
         from ..config import CONF
 
+        ### Initialize a ModuleGraph object.
+
         # Either instantiate a ModuleGraph object or for tests reuse
         # dependency graph already created.
         # Do not reuse dependency graph when option --exclude-module was used.
@@ -310,13 +312,7 @@ class Analysis(Target):
         else:
             for m in self.excludes:
                 logger.debug("Excluding module '%s'" % m)
-            self.graph = initialize_modgraph(
-                excludes=self.excludes)
-
-        # Initialize hook caches.
-        # Doing that in PyiModuleGraph.__init__() is not good place when using
-        # 'tests_modgraph' for running PyInstaller tests.
-        initialize_hooks_caches(self.graph, self.hookspath)
+            self.graph = initialize_modgraph(excludes=self.excludes, user_hook_dirs=self.hookspath)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'

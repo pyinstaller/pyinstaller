@@ -562,6 +562,9 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
         user_hook_dirs=user_hook_dirs,
     )
 
+    # Initialize hook caches.
+    initialize_hooks_caches(graph, user_hook_dirs)
+
     if not is_py2:
         logger.info('Analyzing base_library.zip ...')
         required_mods = []
