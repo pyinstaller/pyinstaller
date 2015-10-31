@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2005-2015, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,10 +8,11 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.utils.hooks import (collect_data_files, collect_submodules)
+# Tested with IPython 4.0.0.
 
-
-# IPython (tested with 0.13) requires the following files:
-#   ./site-packages/IPython/config/profile/README_STARTUP
-datas = collect_data_files('IPython')
-hiddenimports = collect_submodules('IPython')
+# Ignore 'matplotlib'. IPython contains support for matplotlib.
+# Ignore GUI libraries. IPython supports integration with GUI frameworks.
+# Assume that it will be imported by any other module when the user really
+# uses it.
+# TODO IPython uses 'tkinter' for clipboard acces on Linux/Unix. Ignore it conditionally.
+excludedimports = ['gtk', 'matplotlib', 'PyQt4', 'PyQt5', 'PySide']
