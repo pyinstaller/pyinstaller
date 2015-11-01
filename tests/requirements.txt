@@ -4,7 +4,6 @@ pytest-xdist  # Plugin allowing running tests in parallel.
 pytest-timeout # Plugin to abort hanging tests.
 pytest-catchlog  # Capture log output separately from stdout/stderr
 psutil  # Better subprocess alternative with implemented timeout.
-pyreadline  # Colors in ipython on Windows.
 ipython  # Better interactive Python shell.
 
 # Helper tools
