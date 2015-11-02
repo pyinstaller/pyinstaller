@@ -311,7 +311,11 @@ class PyiModuleGraph(ModuleGraph):
         """
         # Construct regular expression for matching modules that should be
         # excluded because they are bundled in base_library.zip.
-        regex_str = '|'.join(['(%s.*)' % x for x in PY3_BASE_MODULES])
+        # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
+        # The match has to be exact - start and end of string not substring.
+        regex_modules = '|'.join([r'(^%s$)' % x for x in PY3_BASE_MODULES])
+        regex_submod = '|'.join([r'(^%s\..*$)' % x for x in PY3_BASE_MODULES])
+        regex_str = regex_modules + '|' + regex_submod
         module_filter = re.compile(regex_str)
 
         result = existing_TOC or TOC()
@@ -349,6 +353,7 @@ class PyiModuleGraph(ModuleGraph):
             name = str(name)
             # Translate to the corresponding TOC typecode.
             toc_type = MODULE_TYPES_TO_TOC_DICT[mg_type]
+
             # TOC.append the data. This checks for a pre-existing name
             # and skips it if it exists.
             result.append((name, path, toc_type))
