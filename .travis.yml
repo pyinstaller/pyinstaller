@@ -73,4 +73,5 @@ install:
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
-  - py.test -n 5  --maxfail 3
+  #- py.test -n 5  --maxfail 3
+  - py.test  --maxfail 3 -k test_ipython
