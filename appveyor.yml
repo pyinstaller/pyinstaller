@@ -24,12 +24,6 @@ environment:
 #      PYTHON_ARCH: "64"
 #      WAF_ARGS: ""
 
-    # TODO Enable Python 3.5 one day. Issue #1547.
-    #- PYTHON: "C:\\Python35"
-      #PYTHON_VERSION: "3.5"
-      #PYTHON_ARCH: "32"
-      #WAF_ARGS: "--gcc"
-
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
@@ -50,6 +44,16 @@ environment:
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
+
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "32"
+      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+      WAF_ARGS: ""
+
+    allow_failures:
+      # Allow failures for Python 3.5 - issue #1547.
+      - PYTHON_VERSION: "3.5"
 
 cache:
   # 'pip-accel' requires caching of downloaded pip packages.
