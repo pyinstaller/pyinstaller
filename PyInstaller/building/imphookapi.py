@@ -395,36 +395,27 @@ class PostGraphAPI(object):
         """
         return self.module_graph.flatten(start=self.module)
 
-    def add_imports(self, module_names):
+    def add_imports(self, *module_names):
         """
         Add all Python modules whose fully-qualified names are in the passed
         list as "hidden imports" upon which the current module depends.
 
         This is equivalent to appending such names to the hook-specific
-        `hiddenimports` attribute. For convenience, the passed argument may be
-        either a single module name _or_ list of module names.
+        `hiddenimports` attribute.
         """
-        # If the passed object is a string, convert that to a list containing
-        # only this string for convenience.
-        if isinstance(module_names, str):
-            module_names = [module_names]
-
         # Append such names to the current list of all such names.
         self._added_imports.extend(module_names)
 
-    def del_imports(self, module_names):
+    def del_imports(self, *module_names):
         """
-        Remove all Python modules whose `.`-delimited names are in the passed
-        list from the set of imports (either hidden or visible) upon which the
-        current module depends.
+        Remove the named fully-qualified modules from the set of
+        imports (either hidden or visible) upon which the current
+        module depends.
 
-        The passed argument may be either a list of module names _or_ a single
-        module name.
+        This is equivalent to appending such names to the hook-specific
+        `excludedimports` attribute.
+
         """
-        # If the passed object is a string, convert that to a list containing
-        # only this string for convenience.
-        if isinstance(module_names, str):
-            module_names = [module_names]
         self._deleted_imports.extend(module_names)
 
     def add_binaries(self, list_of_tuples):

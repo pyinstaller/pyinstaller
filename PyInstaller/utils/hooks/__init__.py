@@ -1000,6 +1000,7 @@ def _find_prefix(filename):
     """
     if not compat.is_venv:
         return sys.prefix
+    filename = os.path.abspath(filename)
     prefixes = [os.path.abspath(sys.prefix), compat.base_prefix]
     possible_prefixes = []
     for prefix in prefixes:

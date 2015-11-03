@@ -156,7 +156,7 @@
 <li><a class="reference internal" href="#hook-global-variables" id="id86">Hook Global Variables</a></li>
 <li><a class="reference internal" href="#useful-items-in-pyinstaller-compat" id="id87">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></li>
 <li><a class="reference internal" href="#useful-items-in-pyinstaller-utils-hooks" id="id88">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></li>
-<li><a class="reference internal" href="#the-hook-hook-api-method" id="id89">The <tt class="docutils literal">hook(hook_api)</tt> Method</a></li>
+<li><a class="reference internal" href="#the-hook-hook-api-function" id="id89">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></li>
 <li><a class="reference internal" href="#the-pre-find-module-path-pfmp-api-method" id="id90">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></li>
 <li><a class="reference internal" href="#the-pre-safe-import-module-psim-api-method" id="id91">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></li>
 </ul>
@@ -668,10 +668,10 @@ After you do this, you name the spec file to <cite>PyInstaller</cite> instead of
 <kbd><span class="option">-v</span>, <span class="option">--version</span></kbd></td>
 <td>Show program version info and exit.</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">--distpath=<var>DIR</var></span></kbd></td>
+<kbd><span class="option">--distpath <var>DIR</var></span></kbd></td>
 <td>Where to put the bundled app (default: ./dist)</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--workpath=<var>WORKPATH</var></span></kbd></td>
+<kbd><span class="option">--workpath <var>WORKPATH</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Where to put all the temporary work files, .log, .pyz
 and etc. (default: ./build)</td></tr>
@@ -682,7 +682,7 @@ and etc. (default: ./build)</td></tr>
 SPECPATH/dist/SPECNAME) without asking for
 confirmation</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--upx-dir=<var>UPX_DIR</var></span></kbd></td>
+<kbd><span class="option">--upx-dir <var>UPX_DIR</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Path to UPX utility (default: search the execution
 path)</td></tr>
@@ -694,14 +694,17 @@ included if available)</td></tr>
 <kbd><span class="option">--clean</span></kbd></td>
 <td>Clean PyInstaller cache and remove temporary files
 before building.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--log-level=<var>LOGLEVEL</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Amount of detail in build-time console messages
-(default: INFO, choose one of DEBUG, INFO, WARN,
-ERROR, CRITICAL)</td></tr>
 </tbody>
 </table>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">_pyinstaller-options.tmp</tt>, line 15)</p>
+Option list ends without a blank line; unexpected unindent.</div>
+<dl class="docutils">
+<dt>--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}</dt>
+<dd>Amount of detail in build-time console messages
+(default: INFO, choose one of DEBUG, INFO, WARN,
+ERROR, CRITICAL)</dd>
+</dl>
 </div>
 <div class="section" id="what-to-generate">
 <h3><a class="toc-backref" href="#id28">What to generate</a></h3>
@@ -710,18 +713,18 @@ ERROR, CRITICAL)</td></tr>
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group">
-<kbd><span class="option">-F</span>, <span class="option">--onefile</span></kbd></td>
-<td>Create a one-file bundled executable.</td></tr>
-<tr><td class="option-group">
 <kbd><span class="option">-D</span>, <span class="option">--onedir</span></kbd></td>
 <td>Create a one-folder bundle containing an executable
 (default)</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">--specpath=<var>DIR</var></span></kbd></td>
+<kbd><span class="option">-F</span>, <span class="option">--onefile</span></kbd></td>
+<td>Create a one-file bundled executable.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--specpath <var>DIR</var></span></kbd></td>
 <td>Folder to store the generated spec file (default:
 current directory)</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">-n <var>NAME</var></span>, <span class="option">--name=<var>NAME</var></span></kbd></td>
+<kbd><span class="option">-n <var>NAME</var></span>, <span class="option">--name <var>NAME</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Name to assign to the bundled app and spec file
 (default: first script's basename)</td></tr>
@@ -735,23 +738,23 @@ current directory)</td></tr>
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">-p <var>DIR</var></span>, <span class="option">--paths=<var>DIR</var></span></kbd></td>
+<kbd><span class="option">-p <var>DIR</var></span>, <span class="option">--paths <var>DIR</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>A path to search for imports (like using PYTHONPATH).
 Multiple paths are allowed, separated by ':', or use
 this option multiple times</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--hidden-import=<var>MODULENAME</var></span></kbd></td>
+<kbd><span class="option">--hidden-import <var>MODULENAME</var></span>, <span class="option">--hiddenimport <var>MODULENAME</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Name an import not visible in the code of the
 script(s). This option can be used multiple times.</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--additional-hooks-dir=<var>HOOKSPATH</var></span></kbd></td>
+<kbd><span class="option">--additional-hooks-dir <var>HOOKSPATH</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>An additional path to search for hooks. This option
 can be used multiple times.</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--runtime-hook=<var>RUNTIME_HOOKS</var></span></kbd></td>
+<kbd><span class="option">--runtime-hook <var>RUNTIME_HOOKS</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Path to a custom runtime hook file. A runtime hook is
 code that is bundled with the executable and is
@@ -759,13 +762,13 @@ executed before any other code or module to set up
 special features of the runtime environment. This
 option can be used multiple times.</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--exclude-module=<var>EXCLUDES</var></span></kbd></td>
+<kbd><span class="option">--exclude-module <var>EXCLUDES</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Optional module or package (his Python names,not path
-names) that will be ignored (as thoughit was not
-found).This option can be used multiple times.</td></tr>
+<tr><td>&nbsp;</td><td>Optional module or package (his Python names, not path
+names) that will be ignored (as though it was not
+found). This option can be used multiple times.</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">--key=<var>KEY</var></span></kbd></td>
+<kbd><span class="option">--key <var>KEY</var></span></kbd></td>
 <td>The key used to encrypt Python bytecode.</td></tr>
 </tbody>
 </table>
@@ -807,10 +810,10 @@ differently between Windows and *nix)</td></tr>
 </tr>
 <tr><td>&nbsp;</td><td>Windows and Mac OS X: do not provide a console window
 for standard i/o. On Mac OS X this also triggers
-building an OS X .app bundle.This option is ignored in
-*NIX systems.</td></tr>
+building an OS X .app bundle. This option is ignored
+in *NIX systems.</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">-i <var>&lt;FILE.ico or FILE.exe,ID or FILE.icns&gt;</var></span>, <span class="option">--icon=<var>&lt;FILE.ico or FILE.exe,ID or FILE.icns&gt;</var></span></kbd></td>
+<kbd><span class="option">-i <var>&lt;FILE.ico or FILE.exe,ID or FILE.icns&gt;</var></span>, <span class="option">--icon <var>&lt;FILE.ico or FILE.exe,ID or FILE.icns&gt;</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>FILE.ico: apply that icon to a Windows executable.
 FILE.exe,ID, extract the icon with ID from an exe.
@@ -826,17 +829,21 @@ X</td></tr>
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--version-file=<var>FILE</var></span></kbd></td>
+<kbd><span class="option">--version-file <var>FILE</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>add a version resource from FILE to the exe</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">-m <var>&lt;FILE or XML&gt;</var></span>, <span class="option">--manifest=<var>&lt;FILE or XML&gt;</var></span></kbd></td>
+<kbd><span class="option">-m <var>&lt;FILE or XML&gt;</var></span>, <span class="option">--manifest <var>&lt;FILE or XML&gt;</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>add manifest FILE or XML to the exe</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-r <var>&lt;FILE[,TYPE[,NAME[,LANGUAGE]]]&gt;</var></span>, <span class="option">--resource=<var>&lt;FILE[,TYPE[,NAME[,LANGUAGE]]]&gt;</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Add or update a resource of the given type, name and
+</tbody>
+</table>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">_pyinstaller-options.tmp</tt>, line 88)</p>
+Option list ends without a blank line; unexpected unindent.</div>
+<dl class="docutils">
+<dt>-r FILE[,TYPE[,NAME[,LANGUAGE]]], --resource FILE[,TYPE[,NAME[,LANGUAGE]]]</dt>
+<dd>Add or update a resource of the given type, name and
 language from FILE to a Windows executable. FILE can
 be a data file or an exe/dll. For data files, at least
 TYPE and NAME must be specified. LANGUAGE defaults to
@@ -845,7 +852,15 @@ resources of the given TYPE and NAME. For exe/dll
 files, all resources from FILE will be added/updated
 to the final executable if TYPE, NAME and LANGUAGE are
 omitted or specified as wildcard *.This option can be
-used multiple times.</td></tr>
+used multiple times.</dd>
+</dl>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">_pyinstaller-options.tmp</tt>, line 99)</p>
+Definition list ends without a blank line; unexpected unindent.</div>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
 <tr><td class="option-group">
 <kbd><span class="option">--uac-admin</span></kbd></td>
 <td>Using this option creates a Manifest which will
@@ -889,7 +904,7 @@ the assembly.</td></tr>
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--osx-bundle-identifier=<var>BUNDLE_IDENTIFIER</var></span></kbd></td>
+<kbd><span class="option">--osx-bundle-identifier <var>BUNDLE_IDENTIFIER</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>Mac OS X .app bundle identifier is used as the default
 unique program name for code signing purposes. The
@@ -2396,14 +2411,17 @@ hiddenimports = ['_proxy', 'utils', 'defs']
 </pre>
 </dd>
 <dt><tt class="docutils literal">excludedimports</tt></dt>
-<dd><p class="first">A list of module names (relative or absolute) that should
-<em>not</em> be part of the bundled app if they are only imported
-by the hooked module.
-(If they are explicitly imported by the source file, they will be kept.)
+<dd><p class="first">A list of absolute module names that should
+<em>not</em> be part of the bundled app.
+If an excluded module is imported only by the hooked module or one
+of its sub-modules, the excluded name and its sub-modules
+will not be part of the bundle.
+(If an excluded name is explicitly imported in the
+source file or some other module, it will be kept.)
 Several hooks use this to prevent automatic inclusion of
 the <tt class="docutils literal">tkinter</tt> module. Example:</p>
 <pre class="last literal-block">
-excludedimports = ['matplotlib']
+excludedimports = [modname_tkinter]
 </pre>
 </dd>
 <dt><tt class="docutils literal">datas</tt></dt>
@@ -2418,11 +2436,19 @@ Example:</p>
 <pre class="literal-block">
 datas = [ ('/usr/share/icons/education_*.png', 'icons') ]
 </pre>
-<p>Many hooks use helpers from the <tt class="docutils literal">PyInstaller.hooks.utils</tt> module
+<p>If you need to collect multiple directories or nested directories,
+you can use helper functions from the <tt class="docutils literal">PyInstaller.hooks.utils</tt> module
 (see below) to create this list, for example:</p>
-<pre class="last literal-block">
-datas = collect_data_files('sphinx')
+<pre class="literal-block">
+datas = collect_data_files('submodule1')
+datas+= collect_data_files('submodule2')
 </pre>
+<p class="last">In rare cases you may need to apply logic to locate
+particular files within the file system,
+for example because the files are
+in different places on different platforms or under different versions.
+Then you can write a <tt class="docutils literal">hook()</tt> function as described
+below under <cite>The ``hook(hook_api)`</cite> Function`_.</p>
 </dd>
 <dt><tt class="docutils literal">binaries</tt></dt>
 <dd><p class="first">A list of files or directories to bundle as binaries.
@@ -2455,7 +2481,7 @@ from PyInstaller.compat import modname_tkinter, is_win
 <dt><tt class="docutils literal">is_py3</tt>:</dt>
 <dd>True when the active Python is version 3.X.</dd>
 <dt><tt class="docutils literal">is_py34</tt>, <tt class="docutils literal">is_py35</tt>, <tt class="docutils literal">is_py36</tt>:</dt>
-<dd>True in Python 3.4, 3.5 or 3.6 respectively.</dd>
+<dd>True when the current version of Python is at least 3.4, 3.5 or 3.6 respectively.</dd>
 <dt><tt class="docutils literal">is_win</tt>:</dt>
 <dd>True in a Windows system.</dd>
 <dt><tt class="docutils literal">is_cygwin</tt>:</dt>
@@ -2545,14 +2571,13 @@ In particular, version strings should never be compared lexicographically
 For example <tt class="docutils literal">'00.5' &gt; '0.6'</tt> returns True, which is not correct.</p>
 <p>The <tt class="docutils literal">version_string</tt> is a PEP0440-compliant, dot-delimited version
 specifier such as <tt class="docutils literal"><span class="pre">3.14-rc5</span></tt>.
-The <tt class="docutils literal">relation</tt> is one of the following eight strings:</p>
-<ul class="simple">
-<li>'&gt;' or 'gt', greater-than.</li>
-<li>'&lt;' or 'lt', less-than.</li>
-<li>'&gt;=' or 'ge', greater-than-or-equal-to.</li>
-<li>'&lt;=' or 'le', less-than-or-equal-to.</li>
+The <tt class="docutils literal">relation</tt> is one of the strings:</p>
+<ul class="last simple">
+<li><tt class="docutils literal">&gt;</tt> for greater-than.</li>
+<li><tt class="docutils literal">&lt;</tt> for less-than.</li>
+<li><tt class="docutils literal">&gt;=</tt> for greater-than-or-equal-to.</li>
+<li><tt class="docutils literal">&lt;=</tt> for less-than-or-equal-to.</li>
 </ul>
-<p class="last"></p>
 </dd>
 <dt><tt class="docutils literal">collect_submodules( package, subdir=None, pattern=None )</tt>:</dt>
 <dd><p class="first">Returns a list of strings that specify all the modules in a package,
@@ -2628,8 +2653,8 @@ the Django settings.py file, such as the
 <tt class="docutils literal">Django.settings.INSTALLED_APPS</tt> list and many others.</dd>
 </dl>
 </div>
-<div class="section" id="the-hook-hook-api-method">
-<h3><a class="toc-backref" href="#id89">The <tt class="docutils literal">hook(hook_api)</tt> Method</a></h3>
+<div class="section" id="the-hook-hook-api-function">
+<h3><a class="toc-backref" href="#id89">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></h3>
 <p>In addition to, or instead of, setting global values,
 a hook may define a function <tt class="docutils literal">hook(hook_api)</tt>.
 A <tt class="docutils literal">hook()</tt> function should only be needed if the hook
@@ -2661,11 +2686,11 @@ absolute path of the package's directory.</dd>
 </dl>
 <p>The <tt class="docutils literal">hook_api</tt> object also offers the following methods:</p>
 <dl class="docutils">
-<dt><tt class="docutils literal">add_imports( names )</tt>:</dt>
-<dd>The <tt class="docutils literal">names</tt> argument may be a single string or a list of strings,
+<dt><tt class="docutils literal">add_imports( *names )</tt>:</dt>
+<dd>The <tt class="docutils literal">names</tt> argument may be a single string or a list of strings
 giving the fully-qualified name(s) of modules to be imported.
 This has the same effect as adding the names to the <tt class="docutils literal">hiddenimports</tt> global.</dd>
-<dt><tt class="docutils literal">del_imports( names )</tt>:</dt>
+<dt><tt class="docutils literal">del_imports( *names )</tt>:</dt>
 <dd>The <tt class="docutils literal">names</tt> argument may be a single string or a list of strings,
 giving the fully-qualified name(s) of modules that are not
 to be included if they are imported only by the hooked module.
@@ -2692,7 +2717,7 @@ by Analysis, before it has located the path to that module or package
 a sub-folder named <tt class="docutils literal">pre_find_module_path</tt> in a hooks folder,
 either in the distributed hooks folder or an <tt class="docutils literal"><span class="pre">--additional-hooks-dir</span></tt> folder.
 You may have normal hooks as well as hooks of this type for the same module.
-For example the distributed system has both a <tt class="docutils literal"><span class="pre">hooks/hook-distutils.py</span></tt>
+For example <cite>PyInstaller</cite> includes both a <tt class="docutils literal"><span class="pre">hooks/hook-distutils.py</span></tt>
 and also a <tt class="docutils literal"><span class="pre">hooks/pre_find_module_path/hook-distutils.py</span></tt>.</p>
 <p>The <tt class="docutils literal">pfmp_api</tt> object that is passed has the following immutable attribute:</p>
 <dl class="docutils">
@@ -2702,7 +2727,7 @@ and also a <tt class="docutils literal"><span class="pre">hooks/pre_find_module_
 <p>The <tt class="docutils literal">pfmp_api</tt> object has one mutable attribute, <tt class="docutils literal">search_dirs</tt>.
 This is a list of strings that specify the absolute path, or paths,
 that will be searched for the hooked module.
-The paths in the list will be searched in index sequence.
+The paths in the list will be searched in sequence.
 The <tt class="docutils literal">pre_find_module_path()</tt> function may replace or change
 the contents of <tt class="docutils literal">pfmp_api.search_dirs</tt>.</p>
 <p>Immediately after return from <tt class="docutils literal">pre_find_module_path()</tt>, the contents
@@ -2716,8 +2741,17 @@ It uses this method to redirect a search for distutils when
 <h3><a class="toc-backref" href="#id91">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></h3>
 <p>You may write a hook with the special function <tt class="docutils literal">pre_safe_import_module( psim_api )</tt>.
 This method is called after the hooked module has been found,
-but <em>before</em> it--and everything it recursively imports--is added
-to the &quot;graph&quot; of imported modules.</p>
+but <em>before</em> it and everything it recursively imports is added
+to the &quot;graph&quot; of imported modules.
+Use a pre-safe-import hook in the unusual case where:</p>
+<ul class="simple">
+<li>The script imports <em>package.dynamic-name</em></li>
+<li>The <em>package</em> exists</li>
+<li>however, no module <em>dynamic-name</em> exists at compile time (it will be defined somehow at run time)</li>
+</ul>
+<p>You use this type of hook to make dynamically-generated names known to PyInstaller.
+PyInstaller will not try to locate the dynamic names, fail, and report them as missing.
+However, if there are normal hooks for these names, they will be called.</p>
 <p>Hooks of this type are only recognized if they are stored in a sub-folder
 named <tt class="docutils literal">pre_safe_import_module</tt> in a hooks folder,
 either in the distributed hooks folder or an <tt class="docutils literal"><span class="pre">--additional-hooks-dir</span></tt> folder.
@@ -2749,6 +2783,7 @@ Normally you do not need to know about the module-graph.</p>
 <dt><tt class="docutils literal">add_runtime_module( fully_qualified_name )</tt>:</dt>
 <dd><p class="first">Use this method to add an imported module whose name may not
 appear in the source because it is dynamically defined at run-time.
+This is useful to make the module known to <cite>PyInstaller</cite> and avoid misleading warnings.
 A typical use applies the name from the <tt class="docutils literal">psim_api</tt>:</p>
 <pre class="last literal-block">
 psim_api.add_runtime_module( psim_api.module_name )
@@ -2894,7 +2929,7 @@ python waf configure --no-lsb build install
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2015-10-26 19:10 UTC.
+Generated on: 2015-10-30 22:45 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

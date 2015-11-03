@@ -319,12 +319,6 @@ def configure(ctx):
 
     ### C compiler
 
-    # Do not embed manifest file when using MSVC (Visual Studio).
-    if is_win:
-        # Manifest file will be added in the phase of packaging python
-        # application by PyInstaller.
-        ctx.env.MSVC_MANIFEST = False
-
     # Allow to use Clang if preferred.
     if ctx.options.clang:
         ctx.load('clang')
@@ -338,8 +332,12 @@ def configure(ctx):
     if is_linux and not ctx.options.nolsb:
         ctx.set_lsb_compiler()
 
-    # Load tool to process *.rc* files for C/C++ like icon for exe files.
     if is_win:
+        # Do not embed manifest file when using MSVC (Visual Studio).
+        # Manifest file will be added in the phase of packaging python
+        # application by PyInstaller.
+        ctx.env.MSVC_MANIFEST = False
+        # Load tool to process *.rc* files for C/C++ like icon for exe files.
         ctx.load('winres')
 
     # Set proper architecture and CPU for C compiler
