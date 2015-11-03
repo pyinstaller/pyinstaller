@@ -1,3 +1,10 @@
+# Hook for PyPubSub for Python 2.7
+# Includes submodules of pubsub to handle the way
+# pubsub may provide different versions of its API
+# according to the order in which certain modules are imported.
+#
+# Tested under Python 2.7.10 wih PyPubSub 3.3
+
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 hiddenimports = collect_submodules('pubsub')
