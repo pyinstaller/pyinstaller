@@ -51,9 +51,12 @@ environment:
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
 
-    allow_failures:
-      # Allow failures for Python 3.5 - issue #1547.
-      - PYTHON_VERSION: "3.5"
+matrix:
+  # If one build job fails then do not run the others.
+  fast_finish: true
+  # Allow failures for Python 3.5 - issue #1547.
+  allow_failures:
+    - PYTHON_VERSION: "3.5"
 
 cache:
   # 'pip-accel' requires caching of downloaded pip packages.
