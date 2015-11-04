@@ -110,7 +110,9 @@ install:
 
   # Install pip-accel to cache pypi packages and avoid compiling some packages.
   # (numpy or pycrypto take a lot of tome to compile).
-  - "%CMD_IN_ENV% pip install pip-accel"
+  # TODO use upstream version when this bug is fixed upstream:
+  #   https://github.com/paylogic/pip-accel/issues/62
+  - "%CMD_IN_ENV% pip install git+https://github.com/matysek/pip-accel.git"
 
   # Install the PyInstaller test dependencies.
   - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
