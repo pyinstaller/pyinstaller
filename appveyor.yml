@@ -124,4 +124,4 @@ build: none
 
 test_script:
   # Split tests into several subprocesses.
-  #- "%CMD_IN_ENV% py.test -n 3  --timeout 180 --maxfail 5"
+  - "%CMD_IN_ENV% py.test -n 3  --maxfail 5  --duration=10"
