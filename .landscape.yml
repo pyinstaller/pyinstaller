@@ -1,5 +1,13 @@
 # Configuration documentation: https://docs.landscape.io/configuration.html
+doc-warnings: yes
+max-line-length: 120
 ignore-paths:
     - doc
     - old
     - scripts
+ignore-patterns:
+    # Ignore bundled 3rd party Python libraries.
+    - lib/altgraph
+    - lib/macholib
+    - lib/ordlookup
+    - lib/pefile*.py
