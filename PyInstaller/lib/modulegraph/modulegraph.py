@@ -879,11 +879,12 @@ class ModuleGraph(ObjectGraph):
             with open(pathname, _READ_MODE) as fp:
                 contents = fp.read() + '\n'
 
-        co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
+        co_ast = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
+        co = compile(co_ast, pathname, 'exec', 0, True)
         m = self.createNode(Script, pathname)
         self._updateReference(caller, m, None)
-        self._scan_code(co, m)
-        m.code = compile(co, pathname, 'exec', 0, True)
+        self._scan_code(m, co, co_ast)
+        m.code = co
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
         return m
@@ -1280,10 +1281,13 @@ class ModuleGraph(ObjectGraph):
         m = self.createNode(cls, fqname)
         m.filename = pathname
         if co is not None:
-            self._scan_code(co, m)
-
             if isinstance(co, ast.AST):
-                co = compile(co, pathname, 'exec', 0, True)
+                co_ast = co
+                co = compile(co_ast, pathname, 'exec', 0, True)
+            else:
+                co_ast = None
+            self._scan_code(m, co, co_ast)
+
             if self.replace_paths:
                 co = self._replace_paths_in_code(co)
             m.code = co
@@ -1444,15 +1448,13 @@ class ModuleGraph(ObjectGraph):
                     subs.append(sm)
         return subs
 
-    def _scan_code(self, co, m):
-        if isinstance(co, ast.AST):
-            #return self._scan_bytecode(compile(co, '-', 'exec', 0, True), m)
-            self._scan_ast(co, m)
-            self._scan_bytecode_stores(
-                    compile(co, '-', 'exec', 0, True), m)
-
+    def _scan_code(self, m, co, co_ast=None):
+        if co_ast is not None:
+            self._scan_ast(co_ast, m)
+            self._scan_bytecode_stores(co, m)
         else:
             self._scan_bytecode(co, m)
+
         # Actually import the modules collected while scanning.
         # We need to suspend the globalnames as otherwise
         # `_safe_import_hook()` would take identfiers imported via
