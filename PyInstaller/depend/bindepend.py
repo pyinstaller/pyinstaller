@@ -104,7 +104,8 @@ def _getImports_pe(pth):
     pe.parse_data_directories(directories=[
         pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
         pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXPORT'],
-        ])
+        ], forwarded_exports_only=True,
+        import_dllnames_only=True)
 
     # Some libraries have no other binary dependencies. Use empty list
     # in that case. Otherwise pefile would return None.
