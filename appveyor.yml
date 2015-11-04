@@ -53,7 +53,7 @@ environment:
 
 matrix:
   # If one build job fails then do not run the others.
-  fast_finish: true
+  #fast_finish: true
   # Allow failures for Python 3.5 - issue #1547.
   allow_failures:
     - PYTHON_VERSION: "3.5"
