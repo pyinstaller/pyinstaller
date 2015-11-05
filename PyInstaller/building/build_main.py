@@ -305,8 +305,8 @@ class Analysis(Target):
 
         # Either instantiate a ModuleGraph object or for tests reuse
         # dependency graph already created.
-        # Do not reuse dependency graph when option --exclude-module was used.
-        if 'tests_modgraph' in CONF and not self.excludes:
+        # Do not reuse dependency graph when option --exclude-module and --additional-hooks-dir was used.
+        if 'tests_modgraph' in CONF and not self.excludes and not self.hookspath:
             logger.info('Reusing basic module graph object.')
             self.graph = CONF['tests_modgraph']
         else:
