@@ -292,7 +292,7 @@ def test_twisted(pyi_builder):
         """)
 
 
-all_qt_pkgs = ['PyQt4', 'PyQt5', 'PySide']
+all_qt_pkgs = ['PyQt4', 'PyQt5', 'PySide', 'gi']
 
 @importorskip('matplotlib')
 @pytest.mark.parametrize('qt_module', all_qt_pkgs)
@@ -310,6 +310,13 @@ def test_matplotlib(pyi_builder, qt_module):
         import matplotlib
         import sys
         import tempfile
+        # Try if the required module is really bundled.
+        try:
+            __import__('%(qt_module)s')
+        except ImportError:
+            raise SystemExit('ERROR: Module %(qt_module)s not bundled with matplotlib.')
+        """ % {'qt_module': qt_module} +
+        """
         # In frozen state rthook should force matplotlib to create config directory
         # in temp directory and not $HOME/.matplotlib.
         configdir = os.environ['MPLCONFIGDIR']
