@@ -66,7 +66,7 @@ def test_extension(tmpdir):
 
 def test_package(tmpdir):
     node = _import_and_get_node(tmpdir, 'distutils', path=sys.path)
-    assert isinstance(node, modulegraph.Package)
+    assert node.__class__ is modulegraph.Package
     import distutils
     assert distutils.__file__ in (node.filename, node.filename+'c')
     assert node.packagepath == distutils.__path__
