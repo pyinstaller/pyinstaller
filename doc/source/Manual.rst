@@ -1144,67 +1144,64 @@ and supply it to the ``Analysis`` call.
 Adding Data Files
 ------------------
 
-You provide a list that describes the files
-as the value of the ``datas=`` argument to ``Analysis``.
+To have data files included in the bundle, provide a list that
+describes the files as the value of the ``datas=`` argument to ``Analysis``.
 The list of data files is a list of tuples.
 Each tuple has two values, both of which must be strings:
 
     * The first string specifies the file or files as they are in this system now.
 
-    * The second specifies the names of the files in the bundled app at run-time.
+    * The second specifies the name of the folder to contain
+      the files at run-time.
 
-For example, to add a single README file to a one-folder app,
+For example, to add a single README file to the top level of a one-folder app,
 you could modify the spec file as follows::
 
 	a = Analysis(...
-             datas=[ ('src/README.txt', 'README') ],
-             hiddenimports=...
+             datas=[ ('src/README.txt', '.') ],
+             ...
              )
 
 You have made the ``datas=`` argument a one-item list.
 The item is a tuple in which the first string says the existing file
 is ``src/README.txt``.
-This file will be copied into the bundle with name ``README``.
+That file will be looked up (relative to the location of the spec file)
+and copied into the top level of the bundled app.
+
+The strings may use either ``/`` or ``\`` as the path separator character.
+You can specify input files using "glob" abbreviations.
+For example to include all the ``.mp3`` files from a certain folder::
+
+	a = Analysis(...
+             datas= [ ('/mygame/sfx/*.mp3', 'sfx' ) ],
+             ...
+             )
+
+All the ``.mp3`` files in the folder ``/mygame/sfx`` will be copied
+into a folder named ``sfx`` in the bundled app.
 
 The spec file is more readable if you create the list of added files
 in a separate statement::
 
-	added_files = [
-             ( 'src/README.txt', 'README' )
-             ]
-	a = Analysis(...
-             datas= added_files,
-             ...
-             )
-
-The strings may use either ``/`` or ``\`` as the path separator character.
-You can specify input files using "glob" abbreviations.
-When the input is multiple files, the output string may be the name of a folder.
-For example to include all the ``.mp3`` files from a certain folder::
-
     added_files = [
              ( '/mygame/sfx/*.mp3', 'sfx' ),
-             ( 'src/README.txt', 'README' )
+             ( 'src/README.txt', '.' )
              ]
-
-All files matching ``/mygame/sfx/*.mp3`` will be copied into the bundle
-and stored in a folder named ``sfx``.
-
-The path to the input file or folder may be absolute as in the first
-tuple, or relative as in the second.
-When it is relative, it is taken as relative to the location of
-the spec file.
+	a = Analysis(...
+             datas = added_files,
+             ...
+             )
 
 You can also include the entire contents of a folder::
 
     added_files = [
              ( '/mygame/data', 'data' ),
              ( '/mygame/sfx/*.mp3', 'sfx' ),
-             ( 'src/README.txt', 'README' )
+             ( 'src/README.txt', '.' )
              ]
 
-All files in ``/mygame/data`` will be copied recursively into a folder
-named ``data`` in the bundle.
+The folder ``/mygame/data`` will be reproduced under the name
+``data`` in the bundle.
 
 Adding Binary Files
 --------------------

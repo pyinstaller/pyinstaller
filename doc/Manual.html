@@ -694,17 +694,14 @@ included if available)</td></tr>
 <kbd><span class="option">--clean</span></kbd></td>
 <td>Clean PyInstaller cache and remove temporary files
 before building.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--log-level <var>&lt; DEBUG | INFO | WARN | ERROR | CRITICAL &gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Amount of detail in build-time console messages
+(default: INFO, choose one of DEBUG, INFO, WARN,
+ERROR, CRITICAL)</td></tr>
 </tbody>
 </table>
-<div class="system-message">
-<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">_pyinstaller-options.tmp</tt>, line 15)</p>
-Option list ends without a blank line; unexpected unindent.</div>
-<dl class="docutils">
-<dt>--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}</dt>
-<dd>Amount of detail in build-time console messages
-(default: INFO, choose one of DEBUG, INFO, WARN,
-ERROR, CRITICAL)</dd>
-</dl>
 </div>
 <div class="section" id="what-to-generate">
 <h3><a class="toc-backref" href="#id28">What to generate</a></h3>
@@ -836,14 +833,10 @@ X</td></tr>
 <kbd><span class="option">-m <var>&lt;FILE or XML&gt;</var></span>, <span class="option">--manifest <var>&lt;FILE or XML&gt;</var></span></kbd></td>
 </tr>
 <tr><td>&nbsp;</td><td>add manifest FILE or XML to the exe</td></tr>
-</tbody>
-</table>
-<div class="system-message">
-<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">_pyinstaller-options.tmp</tt>, line 88)</p>
-Option list ends without a blank line; unexpected unindent.</div>
-<dl class="docutils">
-<dt>-r FILE[,TYPE[,NAME[,LANGUAGE]]], --resource FILE[,TYPE[,NAME[,LANGUAGE]]]</dt>
-<dd>Add or update a resource of the given type, name and
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-r <var>&lt; FILE[,TYPE[,NAME[,LANGUAGE]]] &gt;</var></span>, <span class="option">--resource <var>&lt; FILE[,TYPE[,NAME[,LANGUAGE]]] &gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Add or update a resource of the given type, name and
 language from FILE to a Windows executable. FILE can
 be a data file or an exe/dll. For data files, at least
 TYPE and NAME must be specified. LANGUAGE defaults to
@@ -852,15 +845,7 @@ resources of the given TYPE and NAME. For exe/dll
 files, all resources from FILE will be added/updated
 to the final executable if TYPE, NAME and LANGUAGE are
 omitted or specified as wildcard *.This option can be
-used multiple times.</dd>
-</dl>
-<div class="system-message">
-<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">_pyinstaller-options.tmp</tt>, line 99)</p>
-Definition list ends without a blank line; unexpected unindent.</div>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
+used multiple times.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">--uac-admin</span></kbd></td>
 <td>Using this option creates a Manifest which will
@@ -1404,65 +1389,63 @@ to <tt class="docutils literal">EXE</tt>.</p>
 and supply it to the <tt class="docutils literal">Analysis</tt> call.</p>
 <div class="section" id="adding-data-files">
 <h3><a class="toc-backref" href="#id51">Adding Data Files</a></h3>
-<p>You provide a list that describes the files
-as the value of the <tt class="docutils literal">datas=</tt> argument to <tt class="docutils literal">Analysis</tt>.
+<p>To have data files included in the bundle, provide a list that
+describes the files as the value of the <tt class="docutils literal">datas=</tt> argument to <tt class="docutils literal">Analysis</tt>.
 The list of data files is a list of tuples.
 Each tuple has two values, both of which must be strings:</p>
 <blockquote>
 <ul class="simple">
 <li>The first string specifies the file or files as they are in this system now.</li>
-<li>The second specifies the names of the files in the bundled app at run-time.</li>
+<li>The second specifies the name of the folder to contain
+the files at run-time.</li>
 </ul>
 </blockquote>
-<p>For example, to add a single README file to a one-folder app,
+<p>For example, to add a single README file to the top level of a one-folder app,
 you could modify the spec file as follows:</p>
 <pre class="literal-block">
 a = Analysis(...
-     datas=[ ('src/README.txt', 'README') ],
-     hiddenimports=...
+     datas=[ ('src/README.txt', '.') ],
+     ...
      )
 </pre>
 <p>You have made the <tt class="docutils literal">datas=</tt> argument a one-item list.
 The item is a tuple in which the first string says the existing file
 is <tt class="docutils literal">src/README.txt</tt>.
-This file will be copied into the bundle with name <tt class="docutils literal">README</tt>.</p>
+That file will be looked up (relative to the location of the spec file)
+and copied into the top level of the bundled app.</p>
+<p>The strings may use either <tt class="docutils literal">/</tt> or <tt class="docutils literal">\</tt> as the path separator character.
+You can specify input files using &quot;glob&quot; abbreviations.
+For example to include all the <tt class="docutils literal">.mp3</tt> files from a certain folder:</p>
+<pre class="literal-block">
+a = Analysis(...
+     datas= [ ('/mygame/sfx/*.mp3', 'sfx' ) ],
+     ...
+     )
+</pre>
+<p>All the <tt class="docutils literal">.mp3</tt> files in the folder <tt class="docutils literal">/mygame/sfx</tt> will be copied
+into a folder named <tt class="docutils literal">sfx</tt> in the bundled app.</p>
 <p>The spec file is more readable if you create the list of added files
 in a separate statement:</p>
 <pre class="literal-block">
 added_files = [
-     ( 'src/README.txt', 'README' )
-     ]
-a = Analysis(...
-     datas= added_files,
-     ...
-     )
-</pre>
-<p>The strings may use either <tt class="docutils literal">/</tt> or <tt class="docutils literal">\</tt> as the path separator character.
-You can specify input files using &quot;glob&quot; abbreviations.
-When the input is multiple files, the output string may be the name of a folder.
-For example to include all the <tt class="docutils literal">.mp3</tt> files from a certain folder:</p>
-<pre class="literal-block">
-added_files = [
          ( '/mygame/sfx/*.mp3', 'sfx' ),
-         ( 'src/README.txt', 'README' )
+         ( 'src/README.txt', '.' )
          ]
+    a = Analysis(...
+         datas = added_files,
+         ...
+         )
 </pre>
-<p>All files matching <tt class="docutils literal"><span class="pre">/mygame/sfx/*.mp3</span></tt> will be copied into the bundle
-and stored in a folder named <tt class="docutils literal">sfx</tt>.</p>
-<p>The path to the input file or folder may be absolute as in the first
-tuple, or relative as in the second.
-When it is relative, it is taken as relative to the location of
-the spec file.</p>
 <p>You can also include the entire contents of a folder:</p>
 <pre class="literal-block">
 added_files = [
          ( '/mygame/data', 'data' ),
          ( '/mygame/sfx/*.mp3', 'sfx' ),
-         ( 'src/README.txt', 'README' )
+         ( 'src/README.txt', '.' )
          ]
 </pre>
-<p>All files in <tt class="docutils literal">/mygame/data</tt> will be copied recursively into a folder
-named <tt class="docutils literal">data</tt> in the bundle.</p>
+<p>The folder <tt class="docutils literal">/mygame/data</tt> will be reproduced under the name
+<tt class="docutils literal">data</tt> in the bundle.</p>
 </div>
 <div class="section" id="adding-binary-files">
 <h3><a class="toc-backref" href="#id52">Adding Binary Files</a></h3>
@@ -2929,7 +2912,7 @@ python waf configure --no-lsb build install
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2015-10-30 22:45 UTC.
+Generated on: 2015-11-05 00:19 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
