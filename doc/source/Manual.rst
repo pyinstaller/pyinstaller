@@ -979,8 +979,7 @@ However, you might want to learn at run-time
 whether the app is running from source or "frozen" (bundled).
 
 For example, you might have
-data files that, when running live, are found based on a module's
-``__file__`` attribute.
+data files that are normally found based on a module's ``__file__`` attribute.
 That will not work when the code is bundled.
 
 The |PyInstaller| |bootloader| adds the name ``frozen`` to the ``sys`` module.
@@ -992,35 +991,11 @@ So the test for "are we bundled?" is::
 	else :
 		# running live
 
-Data files and folders of files can be included in the bundle.
-by editing the spec file; see `Adding Files to the Bundle`_.
-The added files will be in the bundle folder.
-
 The |bootloader| stores the absolute path to the bundle folder in ``sys._MEIPASS``.
 For a one-folder bundle, this is the path to that folder, 
 wherever the user may have put it.
 For a one-file bundle, this is the path to the ``_MEIxxxxxx`` temporary folder
 created by the |bootloader| (see `How the One-File Program Works`_).
-
-When your application needs access to a data file that is bundled with it,
-you get the path to the file with the following code::
-
-    import sys
-    import os
-    ...
-    if getattr(sys, 'frozen', False):
-        # we are running in a bundle
-        basedir = sys._MEIPASS
-    else:
-        # we are running in a normal Python environment
-        basedir = os.path.dirname(os.path.abspath(__file__))
-
-This code sets ``basedir`` to the path to the folder containing
-your script and any other files or folders bundled with it.
-When your program was not started by the |bootloader|, the standard Python
-variable ``__file__`` is the full path to the script now executing,
-and ``os.path.dirname()`` extracts the path to the folder that contains it.
-When bundled, ``sys._MEIPASS`` provides the path to bundle folder.
 
 Using Spec Files
 =================
@@ -1202,6 +1177,76 @@ You can also include the entire contents of a folder::
 
 The folder ``/mygame/data`` will be reproduced under the name
 ``data`` in the bundle.
+
+Locating Data Files at Run Time
+--------------------------------
+
+When your application needs access to a data file that is bundled with it,
+you can get the path to the application's folder with the following code::
+
+    import sys
+    import os
+    ...
+    if getattr(sys, 'frozen', False):
+        # we are running in a bundle
+        basedir = sys._MEIPASS
+    else:
+        # we are running in a normal Python environment
+        basedir = os.path.dirname(os.path.abspath(__file__))
+
+This code sets ``basedir`` to the path to the folder containing
+your script and any other files or folders located with it.
+For example if you included ``README.txt`` as shown above,
+you could open it using::
+
+	readme_file = open( 'r',os.path.join( basedir, 'README.txt' ) )
+
+When your program was not started by the |bootloader|, the standard Python
+variable ``__file__`` is the full path to the script now executing,
+and ``os.path.dirname()`` extracts the path to the folder that contains it.
+When bundled as one-folder, ``sys._MEIPASS`` provides the path to bundle folder.
+When bundled as one-file, ``sys._MEIPASS`` is the path to the temporary
+folder created when the application starts.
+
+Using Data Files from a Module
+--------------------------------
+
+If the data files you are adding are contained within a Python module,
+you can retrieve them using ``pkgutils.get_data()``.
+
+For example, suppose that part of your application is a module named ``helpmod``.
+In the same folder as your script and its spec file you have this folder
+arrangement::
+
+	helpmod
+		__init__.py
+		helpmod.py
+		help_data.txt
+
+Because your script includes the statement ``import helpmod``, 
+|PyInstaller| will create this folder arrangement in your bundled app.
+However, it will only include the ``.py`` files.
+The data file ``help_data.txt`` will not be automatically included.
+To cause it to be included also, you would add a ``datas`` tuple
+to the spec file::
+
+	a = Analysis(...
+             datas= [ ('helpmod/help_data.txt', 'helpmod' ) ],
+             ...
+             )
+
+When your script executes, you could find ``help_data.txt`` by
+using its base folder path, as described in the previous section.
+However, this data file is part of a module, so you can also retrieve
+its contents using the standard library function ``pkgutil.get_data()``::
+
+	import pkgutil
+	help_bin = pkgutil.get_data( 'helpmod', 'help_data.txt' )
+
+In Python 3, this returns the contents of the ``help_data.txt`` file as a binary string.
+If it is actually characters, you must decode it::
+
+	help_utf = help_bin.decode('UTF-8', 'ignore')
 
 Adding Binary Files
 --------------------
