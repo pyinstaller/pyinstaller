@@ -25,7 +25,6 @@ _RUNTIME = 3  # In seconds.
 def test_ipython(pyi_builder):
     pyi_builder.test_source(
         """
-        import resource
         from IPython import embed
         embed()
         """, runtime=_RUNTIME)
