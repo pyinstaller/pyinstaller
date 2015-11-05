@@ -573,7 +573,7 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
     )
 
     # Initialize hook caches.
-    initialize_hooks_caches(graph, user_hook_dirs)
+    initialize_hooks_caches(graph, excludes, user_hook_dirs)
 
     if not is_py2:
         logger.info('Analyzing base_library.zip ...')
@@ -590,7 +590,7 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
     return graph
 
 
-def initialize_hooks_caches(modgraph, user_hook_dirs):
+def initialize_hooks_caches(modgraph, excludes, user_hook_dirs):
     """
     Initialize all caches of all possible hook types for the passed graph.
 
@@ -637,6 +637,11 @@ def initialize_hooks_caches(modgraph, user_hook_dirs):
     # object.
     excluded_imports = ExcludedImports()
     excluded_imports.load_hooks(modgraph.hooks_post_import)
+    # Remove excludedimports for modules that are globally excluded.
+    # Otherwise those modules gets bundled when required.
+    for global_exclude in excludes:
+        if global_exclude in excluded_imports:
+            del excluded_imports[global_exclude]
     modgraph.excluded_imports = excluded_imports
 
 
