@@ -1611,12 +1611,14 @@ class ModuleGraph(ObjectGraph):
         else:
             m = self.createNode(Package, fqname)
             m.filename = pathname
+            # PEP-302-compliant loaders return the pathname of the
+            # `__init__`-file, not the packge directory.
+            if os.path.basename(pathname).startswith('__init__.'):
+                pathname = os.path.dirname(pathname)
             m.packagepath = [pathname] + ns_pkgpath
 
         # As per comment at top of file, simulate runtime packagepath additions.
         m.packagepath = m.packagepath + self._package_path_map.get(fqname, [])
-
-
 
         try:
             self.msg(2, "find __init__ for %s"%(m.packagepath,))
