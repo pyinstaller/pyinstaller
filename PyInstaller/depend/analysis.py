@@ -139,6 +139,7 @@ class PyiModuleGraph(ModuleGraph):
         :param imported_by: Module name that imports module 'module_name'.
         :return: True if the module should be really excluded or False otherwise.
         """
+        # TODO check if it is necessary remember references to 'imported_by' when exludedimports are later included!
         # Check 'module_name' and all its parent packages.
         parent_packages = [module_name] + module_parent_packages(module_name)
         for module in parent_packages:
@@ -169,6 +170,35 @@ class PyiModuleGraph(ModuleGraph):
         return False
 
 
+    def _process_imports(self, node):
+        """
+        This method wraps the superclass method with support for excludedimports.
+        Wrapping avoids creating MissingModule nodes if any dependency of module
+        'node' imports excluded modules.
+
+        Before importing a module, check first if it should be kept excluded
+        or not. It does not make sense check excluded modules if the caller
+        module is not known.
+
+        Wrapping this method allow to behave like modules from excludedimports
+        were not even recognided as a dependency of a module.
+        """
+        if node._imported_modules is None:
+            return
+
+        new_imported_modules = []
+        imported_by = node.identifier
+
+        for mod_data in node._imported_modules:
+            module_name = mod_data[1][0]
+            # Skip excluded modules and remove it from dependencies.
+            if not self._is_excluded_import(module_name, imported_by):
+                new_imported_modules.append(mod_data)
+        node._imported_modules = new_imported_modules
+
+        return super(PyiModuleGraph, self)._process_imports(node)
+
+
     def _safe_import_module(self, module_basename, module_name, parent_package, caller):
         """
         Create a new graph node for the module with the passed name under the
@@ -188,16 +218,6 @@ class PyiModuleGraph(ModuleGraph):
         See the superclass method for description of parameters and
         return value.
         """
-        # Before importing a module, check first if it should be kept excluded
-        # or not.
-        #
-        # It does not make sense check excluded modules if the caller module
-        # is not known.
-        if caller is not None and self._is_excluded_import(module_name, caller.identifier):
-            # Return None means that the module is excluded and thus unimportable
-            # for modulegraph.
-            return None
-
         # If this module has pre-safe import module hooks, run these first.
         if module_name in self._hooks_pre_safe_import_module:
             # For the absolute path of each such hook...
