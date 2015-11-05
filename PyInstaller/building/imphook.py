@@ -38,15 +38,14 @@ class ExcludedImports(OrderedDict):
     before analyzing any Python code. This ensures that all excluded
     modules are checked in the right time when they get imported.
     """
-    def __init__(self, hooks_files):
+    def load_hooks(self, hooks_dict):
         """
-        Initialize this dictionary.
+        Parse `excludedimports` from hook files.
         """
-        super(ExcludedImports, self).__init__()
         logger.info('Loading excluded imports...')
         self._parser = re.compile('excludedimports = (.+)$', flags=re.MULTILINE)
         # TODO find out better way how to obtain 'excludedimports' from hooks.
-        for modname, filenames in hooks_files.items():
+        for modname, filenames in hooks_dict.items():
             # TODO parse all files not just first one.
             code = self._parse_code(filenames[0])
             if not code:  # hook does not contain 'excludedimports'
@@ -68,6 +67,17 @@ class ExcludedImports(OrderedDict):
                 code = match.groups()[0]
         return code
 
+    def __deepcopy__(self, memo):
+        """
+        Return a deep copy of internal dict structure.
+
+        This is necessary for caching basic module graph object between tests.
+        """
+        obj = ExcludedImports()
+        for k, v in self.items():
+            obj[k] = v
+        return obj
+
 
 # Reproducible freeze: OrderedDict ensures hooks are always applied in the same
 # order.
@@ -84,24 +94,10 @@ class HooksCache(OrderedDict):
 
     See Also
     ----------
-    `_load_file_list()`
+    `load_file_list()`
         For details on hook priority.
     """
-    def __init__(self, hooks_dir):
-        """
-        Initialize this dictionary.
-
-        Parameters
-        ----------
-        hook_dir : str
-            Absolute or relative path of the directory containing hooks with
-            which to populate this cache. By default, this is the absolute path
-            of the `PyInstaller/hooks` directory containing official hooks.
-        """
-        super(HooksCache, self).__init__()
-        self._load_file_list(hooks_dir)
-
-    def _load_file_list(self, hooks_dir):
+    def load_file_list(self, hooks_dir):
         """
         Cache all hooks in the passed directory.
 
@@ -162,7 +158,7 @@ class HooksCache(OrderedDict):
             additional hooks to be cached.
         """
         for hooks_dir in hooks_dirs:
-            self._load_file_list(hooks_dir)
+            self.load_file_list(hooks_dir)
 
     def remove(self, module_names):
         """
@@ -177,15 +173,6 @@ class HooksCache(OrderedDict):
         for module_name in set(module_names):  # Eliminate duplicate entries.
             if module_name in self:
                 del self[module_name]
-
-    def copy(self):
-        """
-        Return a copy of internal dict structure.
-        """
-        c = OrderedDict()
-        for k, v in self.items():
-            c[k] = v
-        return c
 
 
 class AdditionalFilesCache(object):

@@ -421,7 +421,7 @@ class Analysis(Target):
             # These hooks are all hooks that could be still checked in the inner
             # loop. This data structure allows to remove in the loop more items
             # when hooks for parent packages are also applied.
-            applicable_hooks = self.graph.hooks_post_import.copy()
+            applicable_hooks = copy.copy(self.graph.hooks_post_import)
 
             # Iterate over applicable_hooks.
             while applicable_hooks:

@@ -542,6 +542,11 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
     """
     logger.info('Initializing module dependency graph...')
 
+    # Convert None to empty list. This happens when running tests where
+    # the basic module graph is cached.
+    if user_hook_dirs is None:
+        user_hook_dirs = []
+
     # Module graph-specific debug level, defaulting to the "MODULEGRAPH_DEBUG"
     # environment variable if defined or 0 otherwise. This is a non-negative
     # integer such that:
@@ -609,7 +614,8 @@ def initialize_hooks_caches(modgraph, user_hook_dirs):
         system_hook_dir = configure.get_importhooks_dir(hook_type)
         # Cache of such hooks.
         # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
-        hooks_cache = HooksCache(system_hook_dir)
+        hooks_cache = HooksCache()
+        hooks_cache.load_file_list(system_hook_dir)
         # Absolute path of the user-defined subdirectories of this hook type.
         if hook_type:
             user_hook_dirs = [os.path.join(d, hook_type) for d in user_hook_dirs]
@@ -626,10 +632,11 @@ def initialize_hooks_caches(modgraph, user_hook_dirs):
         os.path.join(modgraph._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
     )
 
-    # Parse hook attribute 'excludedimports' globally from all hooks before
+    # Parse hooks attribute 'excludedimports' globally from all hooks before
     # analyzing any Python script or module and pass it to module graph
     # object.
-    excluded_imports = ExcludedImports(modgraph.hooks_post_import)
+    excluded_imports = ExcludedImports()
+    excluded_imports.load_hooks(modgraph.hooks_post_import)
     modgraph.excluded_imports = excluded_imports
 
 
