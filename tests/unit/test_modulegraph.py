@@ -72,6 +72,18 @@ def test_package(tmpdir):
     assert node.packagepath == distutils.__path__
 
 
+@skipif(is_py3, reason='Python 3 does not look into the __pycache__')
+def test_compiled_package(tmpdir):
+    pysrc = tmpdir.join('stuff', '__init__.py').ensure()
+    pysrc.write('###')
+    py_compile.compile(str(pysrc))
+    pysrc.remove()
+    node = _import_and_get_node(tmpdir, 'stuff')
+    assert node.__class__ is modulegraph.Package
+    assert node.filename == str(pysrc) + 'c'
+    assert node.packagepath == [str(pysrc.dirname)]
+
+
 @skipif(is_py2, reason='Requires Python 3 or newer')
 def test_nspackage_pep420(tmpdir):
     p1 = tmpdir.join('p1')
