@@ -150,6 +150,15 @@ def test_keyring(pyi_builder):
     pyi_builder.test_script('pyi_lib_keyring.py')
 
 
+@importorskip('lxml')
+def test_lxml_isoschematron(pyi_builder):
+    pyi_builder.test_source(
+        """
+        # The import of this module triggers the loading some required XML files.
+        from lxml import isoschematron
+        """)
+
+
 @importorskip('numpy')
 def test_numpy(pyi_builder):
     pyi_builder.test_source(
