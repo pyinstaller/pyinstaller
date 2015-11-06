@@ -66,11 +66,12 @@ def test_extension(tmpdir):
 
 
 def test_package(tmpdir):
-    node = _import_and_get_node(tmpdir, 'distutils', path=sys.path)
+    pysrc = tmpdir.join('stuff', '__init__.py')
+    pysrc.write('###', ensure=True)
+    node = _import_and_get_node(tmpdir, 'stuff')
     assert node.__class__ is modulegraph.Package
-    import distutils
-    assert distutils.__file__ in (node.filename, node.filename+'c')
-    assert node.packagepath == distutils.__path__
+    assert node.filename in (str(pysrc), str(pysrc)+'c')
+    assert node.packagepath == [pysrc.dirname]
 
 
 @skipif(is_py3, reason='Python 3 does not look into the __pycache__')
