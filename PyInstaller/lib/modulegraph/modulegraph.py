@@ -1858,8 +1858,15 @@ class ModuleGraph(ObjectGraph):
                     # If this loader defines the PEP 302-compliant get_code()
                     # method, open the returned object as a file-like buffer.
                     elif imp_type == imp.PY_COMPILED and hasattr(loader, 'get_code'):
-                        code_object = loader.get_code(module_name)
-                        file_handle = _code_to_file(code_object)
+                        try:
+                            code_object = loader.get_code(module_name)
+                            if code_object is None:
+                                file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
+                            else:
+                                file_handle = _code_to_file(code_object)
+                        except ImportError:
+                            # post-bone the ImportError until load_module
+                            file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
                     # If this is an uncompiled file under Python 3, open this
                     # file for encoding-aware text reading.
                     elif imp_type == imp.PY_SOURCE and sys.version_info[0] == 3:
