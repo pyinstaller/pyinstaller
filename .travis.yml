@@ -45,6 +45,9 @@ addons:
     - python-gst0.10
     #- python-matplotlib  # outdated: v1.1.1
     - python-mysqldb
+    # required to build lxml
+    - libxml2-dev
+    - libxslt1-dev
     - python-numpy
     - python-pyodbc
     - python-qt4
