@@ -18,6 +18,7 @@ NOTE: All global variables, classes and imported modules create API
 
 import glob
 import os
+import pprint
 import shutil
 import sys
 
@@ -169,6 +170,9 @@ class Analysis(Target):
         # PyInstaller.utils.hooks and import hooks. Path extensions for module
         # search.
         CONF['pathex'] = self.pathex
+        # Extend sys.path so PyInstaller could find all necessary modules.
+        logger.info('Extending PYTHOHPATH with paths\n' + pprint.pformat(self.pathex))
+        sys.path.extend(self.pathex)
 
         # Set global variable to hold assembly binding redirects
         CONF['binding_redirects'] = []
@@ -265,7 +269,6 @@ class Analysis(Target):
             script_toplevel_dir = get_path_to_toplevel_modules(script)
             if script_toplevel_dir:
                 pathex.append(script_toplevel_dir)
-                logger.info('Extending PYTHONPATH with %s', script_toplevel_dir)
         # Append paths from .spec.
         if spec_pathex is not None:
             pathex.extend(spec_pathex)
