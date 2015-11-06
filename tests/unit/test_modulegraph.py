@@ -10,6 +10,7 @@
 import os
 import sys
 import py_compile
+import zipfile
 
 import pytest
 
@@ -83,6 +84,92 @@ def test_compiled_package(tmpdir):
     assert node.filename == str(pysrc) + 'c'
     assert node.packagepath == [str(pysrc.dirname)]
 
+#-- Tests with a single module in a zip-file
+
+def _zip_directory(filename, path):
+    with zipfile.ZipFile(filename, mode='w') as zfh:
+        for filename in path.visit(fil='*.py*'):
+            zfh.write(str(filename), filename.relto(path))
+
+
+def test_zipped_module_source(tmpdir):
+    pysrc = tmpdir.join('stuff.py')
+    pysrc.write('###', ensure=True)
+    zipfilename = str(tmpdir.join('unstuff.zip'))
+    _zip_directory(zipfilename, tmpdir)
+    node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
+    assert node.__class__ is modulegraph.SourceModule
+    assert node.filename.startswith(zipfilename + '/stuff.py')
+
+
+def test_zipped_module_source_and_compiled(tmpdir):
+    pysrc = tmpdir.join('stuff.py')
+    pysrc.write('###', ensure=True)
+    py_compile.compile(str(pysrc))
+    zipfilename = str(tmpdir.join('unstuff.zip'))
+    _zip_directory(zipfilename, tmpdir)
+    node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
+    # Do not care whether it's source or compiled, as long as it is
+    # neither invalid nor missing.
+    assert node.__class__ in (modulegraph.SourceModule, modulegraph.CompiledModule)
+    assert node.filename.startswith(zipfilename + '/stuff.py')
+
+
+@skipif(is_py3, reason='Python 3 does not look into the __pycache__')
+def test_zipped_module_compiled(tmpdir):
+    pysrc = tmpdir.join('stuff.py')
+    pysrc.write('###', ensure=True)
+    py_compile.compile(str(pysrc))
+    pysrc.remove()
+    zipfilename = str(tmpdir.join('unstuff.zip'))
+    _zip_directory(zipfilename, tmpdir)
+    node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
+    assert node.__class__ is modulegraph.CompiledModule
+    assert node.filename.startswith(zipfilename + '/stuff.py')
+
+
+#-- Tests with a package in a zip-file
+
+def _zip_package(filename, path):
+    with zipfile.ZipFile(filename, mode='w') as zfh:
+        for filename in path.visit():
+            zfh.write(str(filename), filename.relto(path.dirname))
+
+def test_zipped_package_source(tmpdir):
+    pysrc = tmpdir.join('stuff', '__init__.py')
+    pysrc.write('###', ensure=True)
+    zipfilename = str(tmpdir.join('stuff.zip'))
+    _zip_package(zipfilename, tmpdir.join('stuff'))
+    node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
+    assert node.__class__ is modulegraph.Package
+    assert node.packagepath == [zipfilename + '/stuff']
+
+
+def test_zipped_package_source_and_compiled(tmpdir):
+    pysrc = tmpdir.join('stuff', '__init__.py')
+    pysrc.write('###', ensure=True)
+    py_compile.compile(str(pysrc))
+    zipfilename = str(tmpdir.join('stuff.zip'))
+    _zip_package(zipfilename, tmpdir.join('stuff'))
+    node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
+    assert node.__class__ is modulegraph.Package
+    assert node.packagepath == [zipfilename + '/stuff']
+
+
+@skipif(is_py3, reason='Python 3 does not look into the __pycache__')
+def test_zipped_package_compiled(tmpdir):
+    pysrc = tmpdir.join('stuff', '__init__.py')
+    pysrc.write('###', ensure=True)
+    py_compile.compile(str(pysrc))
+    pysrc.remove()
+    zipfilename = str(tmpdir.join('stuff.zip'))
+    _zip_package(zipfilename, tmpdir.join('stuff'))
+    node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
+    assert node.__class__ is modulegraph.Package
+    assert node.packagepath == [zipfilename + '/stuff']
+
+
+#-- Namespace packages
 
 @skipif(is_py2, reason='Requires Python 3 or newer')
 def test_nspackage_pep420(tmpdir):
