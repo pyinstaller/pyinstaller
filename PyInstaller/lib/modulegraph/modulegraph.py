@@ -1865,11 +1865,11 @@ class ModuleGraph(ObjectGraph):
                     #
                     # If this loader defines the PEP 302-compliant get_source()
                     # method, open the returned string as a file-like buffer.
-                    elif hasattr(loader, 'get_source'):
+                    elif imp_type == imp.PY_SOURCE and hasattr(loader, 'get_source'):
                         file_handle = StringIO(loader.get_source(module_name))
                     # If this loader defines the PEP 302-compliant get_code()
                     # method, open the returned object as a file-like buffer.
-                    elif hasattr(loader, 'get_code'):
+                    elif imp_type == imp.PY_COMPILED and hasattr(loader, 'get_code'):
                         code_object = loader.get_code(module_name)
                         file_handle = _code_to_file(code_object)
                     # If this is an uncompiled file under Python 3, open this

@@ -51,11 +51,7 @@ tests_modgraph  - cached PyiModuleGraph object to speed up tests
 
 # NOTE: Do not import other PyInstaller modules here. Just define constants here.
 
-DEFAULT_CONF = {
+CONF = {
     # Unit tests require this key to exist.
     'pathex': [],
 }
-
-
-CONF = DEFAULT_CONF
-

@@ -66,6 +66,7 @@ def getfullnameof(mod, xtrapath=None):
             os.path.join(base_prefix, 'Lib', 'site-packages', 'numpy', 'core')
         )
 
+    # TODO check if this 'numpy' workaround is still necessary!
     # Search sys.path first!
     epath = sys.path + numpy_core_paths + winutils.get_system_path()
     if xtrapath is not None:

@@ -355,6 +355,7 @@ class AppBuilder(object):
         PYI_CONFIG['configdir'] = self._tmpdir
         # Speed up tests by reusing copy of basic module graph object.
         PYI_CONFIG['tests_modgraph'] = copy.deepcopy(self._modgraph)
+
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
 
@@ -408,8 +409,15 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     tmp = tmpdir.strpath
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'], )
+    # PyInstaller or a test case might manipulate 'sys.path'.
+    # Reset it for every test.
+    monkeypatch.syspath_prepend(None)
     # Set current working directory to
     monkeypatch.chdir(tmp)
+    # Clean up configuration and force PyInstaller to do a clean configuration
+    # for another app/test.
+    # The value is same as the original value.
+    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
     return AppBuilder(tmp, request.param, pyi_modgraph)
 
@@ -419,14 +427,17 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
 @pytest.fixture
 def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
     tmp = tmpdir.strpath
-    # Append _MMODULES_DIR to sys.path for building exes.
-    # Some tests need additional test modules.
-    # This also ensures that sys.path is reseted to original value for every test.
-    monkeypatch.syspath_prepend(_MODULES_DIR)
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'], )
     # Set current working directory to
     monkeypatch.chdir(tmp)
+    # PyInstaller or a test case might manipulate 'sys.path'.
+    # Reset it for every test.
+    monkeypatch.syspath_prepend(None)
+    # Clean up configuration and force PyInstaller to do a clean configuration
+    # for another app/test.
+    # The value is same as the original value.
+    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
     return AppBuilder(tmp, None, pyi_modgraph)
 
