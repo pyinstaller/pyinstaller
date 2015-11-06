@@ -10,6 +10,9 @@
 
 from PyInstaller.utils.hooks import exec_statement
 
+# 'matplotlib' does not depend directly on IPython.
+excludedimports = ['IPython']
+
 mpl_data_dir = exec_statement(
     "import matplotlib; print(matplotlib._get_data_path())")
 

@@ -15,21 +15,73 @@ Code related to processing of import hooks.
 import glob
 import os.path
 import re
-import sys
-import warnings
 
+from collections import OrderedDict
 from .. import log as logging
 from .utils import format_binaries_and_datas
 from ..compat import expand_path
-from ..compat import importlib_load_source, is_py2
-from ..utils.misc import get_code_object
+from ..compat import importlib_load_source
 from .imphookapi import PostGraphAPI
-from ..lib.modulegraph.modulegraph import GraphError
 
 logger = logging.getLogger(__name__)
 
 
-class HooksCache(dict):
+# Reproducible freeze: OrderedDict ensures hooks are always applied in the same
+# order.
+class ExcludedImports(OrderedDict):
+    """
+    Dictionary mapping for hook attribute 'excludedimports'.
+    'excludedimports' is a list of Python module names that PyInstaller
+    should not detect as dependency of some module names.
+
+    Excludedimports attribute is parsed from all post-import hooks
+    before analyzing any Python code. This ensures that all excluded
+    modules are checked in the right time when they get imported.
+    """
+    def load_hooks(self, hooks_dict):
+        """
+        Parse `excludedimports` from hook files.
+        """
+        logger.info('Loading excluded imports...')
+        self._parser = re.compile('excludedimports = (.+)$', flags=re.MULTILINE)
+        # TODO find out better way how to obtain 'excludedimports' from hooks.
+        for modname, filenames in hooks_dict.items():
+            # TODO parse all files not just first one.
+            code = self._parse_code(filenames[0])
+            if not code:  # hook does not contain 'excludedimports'
+                continue
+            # Evaluate code and update self dict.
+            excl_imports = eval(code)
+            excl_imports.sort()
+            logger.info('  Excluded imports for %r -> %s', modname, ', '.join(excl_imports))
+            for excl_mod in excl_imports:
+                if excl_mod not in self:
+                    self[excl_mod] = set()
+                self[excl_mod].add(modname)
+
+    def _parse_code(self, filename):
+        code = None
+        with open(filename, 'r') as f:
+            match = self._parser.search(f.read())
+            if match is not None:
+                code = match.groups()[0]
+        return code
+
+    def __deepcopy__(self, memo):
+        """
+        Return a deep copy of internal dict structure.
+
+        This is necessary for caching basic module graph object between tests.
+        """
+        obj = ExcludedImports()
+        for k, v in self.items():
+            obj[k] = v
+        return obj
+
+
+# Reproducible freeze: OrderedDict ensures hooks are always applied in the same
+# order.
+class HooksCache(OrderedDict):
     """
     Dictionary mapping from the fully-qualified names of each module hooked by
     at least one hook script to lists of the absolute paths of these scripts.
@@ -42,24 +94,10 @@ class HooksCache(dict):
 
     See Also
     ----------
-    `_load_file_list()`
+    `load_file_list()`
         For details on hook priority.
     """
-    def __init__(self, hooks_dir):
-        """
-        Initialize this dictionary.
-
-        Parameters
-        ----------
-        hook_dir : str
-            Absolute or relative path of the directory containing hooks with
-            which to populate this cache. By default, this is the absolute path
-            of the `PyInstaller/hooks` directory containing official hooks.
-        """
-        super(dict, self).__init__()
-        self._load_file_list(hooks_dir)
-
-    def _load_file_list(self, hooks_dir):
+    def load_file_list(self, hooks_dir):
         """
         Cache all hooks in the passed directory.
 
@@ -92,6 +130,7 @@ class HooksCache(dict):
 
         # For each hook in the passed directory...
         hook_files = glob.glob(os.path.join(hooks_dir, 'hook-*.py'))
+        hook_files.sort()
         for hook_file in hook_files:
             # Absolute path of this hook's script.
             hook_file = os.path.abspath(hook_file)
@@ -119,7 +158,7 @@ class HooksCache(dict):
             additional hooks to be cached.
         """
         for hooks_dir in hooks_dirs:
-            self._load_file_list(hooks_dir)
+            self.load_file_list(hooks_dir)
 
     def remove(self, module_names):
         """
@@ -229,52 +268,6 @@ class ImportHook(object):
             # that was not updated for a long time.
             logger.warn("Hidden import '%s' not found (probably old hook)" % item)
 
-    def _process_excludedimports(self, mod_graph):
-        """
-        'excludedimports' is a list of Python module names that PyInstaller
-        should not detect as dependency of this module name.
-
-        So remove all import-edges from the current module (and it's
-        submodules) to the given `excludedimports` (end their submodules).
-        """
-
-        def find_all_package_nodes(name):
-            mods = [name]
-            name += '.'
-            for subnode in mod_graph.nodes():
-                if subnode.identifier.startswith(name):
-                    mods.append(subnode.identifier)
-            return mods
-
-        # Collect all submodules of this module.
-        hooked_mods = find_all_package_nodes(self._name)
-
-        # Collect all dependencies and their submodules
-        # TODO: Optimize this by using a pattern and walking the graph
-        # only once.
-        for item in set(self._module.excludedimports):
-            excluded_node = mod_graph.findNode(item, create_nspkg=False)
-            if excluded_node is None:
-                logger.info("Import to be excluded not found: %r", item)
-                continue
-            logger.info("Excluding import %r", item)
-            imports_to_remove = set(find_all_package_nodes(item))
-
-            # Remove references between module nodes, as though they would
-            # not be imported from 'name'.
-            # Note: Doing this in a nested loop is less efficient than
-            # collecting all import to remove first, but log messages
-            # are easier to understand since related to the "Excluding ..."
-            # message above.
-            for src in hooked_mods:
-                # modules, this `src` does import
-                references = set(n.identifier for n in mod_graph.getReferences(src))
-                # Remove all of these imports which are also in `imports_to_remove`
-                for dest in imports_to_remove & references:
-                    mod_graph.removeReference(src, dest)
-                    logger.warn("  From %s removing import %s", src, dest)
-
-
     def _process_datas(self, mod_graph):
         """
         'datas' is a list of globs of files or
@@ -303,8 +296,6 @@ class ImportHook(object):
             self._process_hook_function(mod_graph)
         if hasattr(self._module, 'hiddenimports'):
             self._process_hiddenimports(mod_graph)
-        if hasattr(self._module, 'excludedimports'):
-            self._process_excludedimports(mod_graph)
         if hasattr(self._module, 'datas'):
             self._process_datas(mod_graph)
         if hasattr(self._module, 'binaries'):

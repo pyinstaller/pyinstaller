@@ -7,11 +7,9 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-from PyInstaller.compat import modname_tkinter
 
-
-# PIL's SpiderImagePlugin features a tkPhotoImage() method which imports
-# ImageTk (and thus brings the whole Tcl/Tk library in).
-# Assume that if people are really using tkinter in their application, they
-# will also import it directly.
-excludedimports = [modname_tkinter, 'FixTk']
+# Ignore 'IPython' and 'matplotlib'.
+# Assume that if people are really using any n their application, they
+# will also import it directly and PyInstaller will thus bundle them.
+# 'pandas.util.clipboard' uses on Linux some gui libraries. Ignore them too.
+excludedimports = ['IPython', 'matplotlib', 'gtk', 'PyQt4', 'PySide']

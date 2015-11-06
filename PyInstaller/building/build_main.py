@@ -16,6 +16,7 @@ NOTE: All global variables, classes and imported modules create API
 """
 
 
+import copy
 import glob
 import os
 import pprint
@@ -27,20 +28,19 @@ import sys
 from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
-from ..utils.misc import absnormpath
+from ..utils.misc import absnormpath, module_parent_packages
 from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
-from ..depend.analysis import initialize_modgraph
+from ..depend.analysis import initialize_modgraph, initialize_hooks_caches
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache, HooksCache, ImportHook
+from .imphook import AdditionalFilesCache, ImportHook
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
 from ..depend.utils import create_py3_base_library, scan_code_for_ctypes
 from ..archive import pyz_crypto
 from ..utils.misc import get_path_to_toplevel_modules, get_unicode_modules, mtime
-from ..configure import get_importhooks_dir
 
 if is_win:
     from ..utils.win32 import winmanifest
@@ -304,17 +304,18 @@ class Analysis(Target):
         """
         from ..config import CONF
 
+        ### Initialize a ModuleGraph object.
+
         # Either instantiate a ModuleGraph object or for tests reuse
         # dependency graph already created.
-        # Do not reuse dependency graph when option --exclude-module was used.
-        if 'tests_modgraph' in CONF and not self.excludes:
+        # Do not reuse dependency graph when option --exclude-module and --additional-hooks-dir was used.
+        if 'tests_modgraph' in CONF and not self.excludes and not self.hookspath:
             logger.info('Reusing basic module graph object.')
             self.graph = CONF['tests_modgraph']
         else:
             for m in self.excludes:
                 logger.debug("Excluding module '%s'" % m)
-            self.graph = initialize_modgraph(
-                excludes=self.excludes, user_hook_dirs=self.hookspath)
+            self.graph = initialize_modgraph(excludes=self.excludes, user_hook_dirs=self.hookspath)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
@@ -373,6 +374,12 @@ class Analysis(Target):
         if is_win:
             depmanifest.writeprettyxml()
 
+        # Cache with additional 'datas' and 'binaries' that were
+        # NOTE: This cache is necessary to later decide if those files belong to
+        #       to module which is reachable for top-level script. Or if these
+        #       files belong to a module from dead branch of the graph.
+        additional_files_cache = AdditionalFilesCache()
+
         # The first script in the analysis is the main user script. Its node is used as
         # the "caller" node for all others. This gives a connected graph rather than
         # a collection of unrelated trees, one for each of self.inputs.
@@ -400,22 +407,29 @@ class Analysis(Target):
         #    b. no new hook was applied in the 'while' iteration.
         #
         logger.info('Looking for import hooks ...')
-        hooks_cache = HooksCache(get_importhooks_dir())
-        # Custom import hooks
-        if self.hookspath:
-            hooks_cache.add_custom_paths(self.hookspath)
-        # Cache with attitional 'datas' and 'binaries' that were
-        # NOTE: This cache is necessary to later decide if those files belong to
-        #       to module which is reachable for top-level script. Or if these
-        #       files belong to a module from dead branch of the graph.
-        additional_files_cache = AdditionalFilesCache()
+
+        def _apply_import_hooks(modname, hook_files, graph, files_cache):
+            # Run all post-graph (classic import) hooks.
+            for hook_file in hook_files:
+                # Import hook module from a file.
+                imphook_object = ImportHook(modname, hook_file)
+                # Expand module dependency graph.
+                imphook_object.update_dependencies(graph)
+                # Update cache of binaries and datas.
+                files_cache.add(modname, imphook_object.binaries, imphook_object.datas)
 
         while True:
             # This ensures that import hooks get applied only once.
-            applied_hooks = []  # Empty means no hook was applied.
+            applied_hooks = []  # Empty means no hook was applied in inner loop.
+            # These hooks are all hooks that could be still checked in the inner
+            # loop. This data structure allows to remove in the loop more items
+            # when hooks for parent packages are also applied.
+            applicable_hooks = copy.copy(self.graph.hooks_post_import)
 
-            # Iterate over hooks in cache.
-            for imported_name in hooks_cache:
+            # Iterate over applicable_hooks.
+            while applicable_hooks:
+                # Reproducible freeze: start with first item in OrderedDict.
+                imported_name, hook_files = applicable_hooks.popitem(last=False)
 
                 # Skip hook if no module for it is in the graph.
                 from_node = self.graph.findNode(imported_name, create_nspkg=False)
@@ -426,17 +440,26 @@ class Analysis(Target):
                 if node_type not in VALID_MODULE_TYPES:
                     continue
 
-                # Run all post-graph hooks for this module.
-                for hook_file in hooks_cache[imported_name]:
-                    # Import hook module from a file.
-                    imphook_object = ImportHook(imported_name, hook_file)
-                    # Expand module dependency graph.
-                    imphook_object.update_dependencies(self.graph)
-                    # Update cache of binaries and datas.
-                    additional_files_cache.add(imported_name, imphook_object.binaries, imphook_object.datas)
+                # Run hooks for all parent packages but only if they were not
+                # applied yet.
+                #   'aaa.bb.c.dddd' ->  ['aaa', 'aaa.bb', 'aaa.bb.c']
+                parent_pkgs = module_parent_packages(imported_name)
+                if parent_pkgs:  # 'imported_name' is not top-level module.
+                    for pkg in parent_pkgs:
+                        if pkg in applicable_hooks:  # Any post-graph hook exists for package.
+                            # This ensures that the parent hook is not applied again later on.
+                            hk_files = applicable_hooks.pop(pkg)
+                            _apply_import_hooks(pkg, hk_files, self.graph, additional_files_cache)
+                            # Append applied parent package hooks to the list 'applied_hooks'.
+                            # These will be removed after the inner loop finish.
+                            # It also is a marker that iteration over hooks should
+                            # continue.
+                            applied_hooks.append(pkg)
 
+                # Run all post-graph (classic import) hooks.
+                _apply_import_hooks(imported_name, hook_files, self.graph, additional_files_cache)
                 # Append applied hooks to the list 'applied_hooks'.
-                # These will be removed after the inner loop finishs.
+                # These will be removed after the inner loop finish.
                 # It also is a marker that iteration over hooks should
                 # continue.
                 applied_hooks.append(imported_name)
@@ -448,7 +471,7 @@ class Analysis(Target):
             else:
                 # Remove applied hooks from the cache - its not
                 # necessary apply then again.
-                hooks_cache.remove(applied_hooks)
+                self.graph.hooks_post_import.remove(applied_hooks)
                 # Run again - reset list 'applied_hooks'.
                 applied_hooks = []
 

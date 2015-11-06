@@ -15,7 +15,6 @@ Main command-line interface to PyInstaller.
 import os
 import argparse
 import platform
-import sys
 
 import PyInstaller.building.makespec
 import PyInstaller.building.build_main

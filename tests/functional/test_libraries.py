@@ -10,11 +10,12 @@
 
 # Library imports
 # ---------------
+import copy
 import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_win, modname_tkinter
 from PyInstaller.utils.tests import importorskip
 
 
@@ -290,19 +291,18 @@ def test_twisted(pyi_builder):
             raise SystemExit('Twisted reactor not properly initialized.')
         """)
 
-# matplotlib tries to import any of PyQt4, PyQt5 or PySide. But if we
-# have more then one of these in the frozen app, the app's
-# runtime-hooks will crash. Thus we need to exclude the other two.
-all_qt_pkgs = ['PyQt4', 'PyQt5', 'PySide']
-excludes = []
-for pkg in all_qt_pkgs:
-    p = [p for p in all_qt_pkgs]
-    p = importorskip(pkg)(p)
-    excludes.append(p)
+
+all_qt_pkgs = ['PyQt4', 'PyQt5', 'PySide', 'gi']
 
 @importorskip('matplotlib')
-@pytest.mark.parametrize("excludes", excludes, ids=all_qt_pkgs)
-def test_matplotlib(pyi_builder, excludes):
+@pytest.mark.parametrize('qt_module', all_qt_pkgs)
+def test_matplotlib(pyi_builder, qt_module):
+    pytest.importorskip(qt_module)
+    # matplotlib tries to import any of PyQt4, PyQt5 or PySide. But if we
+    # have more then one of these in the frozen app, the app's
+    # runtime-hooks will crash. Thus we need to exclude the other two.
+    excludes = copy.copy(all_qt_pkgs)
+    excludes.remove(qt_module)
     pyi_args = ['--exclude-module=%s' % e for e in excludes]
     pyi_builder.test_source(
         """
@@ -310,6 +310,13 @@ def test_matplotlib(pyi_builder, excludes):
         import matplotlib
         import sys
         import tempfile
+        # Try if the required module is really bundled.
+        try:
+            __import__('%(qt_module)s')
+        except ImportError:
+            raise SystemExit('ERROR: Module %(qt_module)s not bundled with matplotlib.')
+        """ % {'qt_module': qt_module} +
+        """
         # In frozen state rthook should force matplotlib to create config directory
         # in temp directory and not $HOME/.matplotlib.
         configdir = os.environ['MPLCONFIGDIR']
@@ -324,8 +331,6 @@ def test_matplotlib(pyi_builder, excludes):
         # This import was reported to fail with matplotlib 1.3.0.
         from mpl_toolkits import axes_grid1
         """, pyi_args=pyi_args)
-
-del all_qt_pkgs, excludes
 
 
 @importorskip('pyexcelerate')
@@ -420,6 +425,35 @@ def test_gi_gst_binding(pyi_builder):
 @pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
 def test_pil_img_conversion(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
+
+
+@importorskip('PIL')
+def test_pil_no_tkinter(pyi_builder):
+    # hook-PIL is excluding tkinter.
+    # Ensure it really cannot be imported - ImportError.
+    pyi_builder.test_source("""
+        import PIL.Image
+
+        try:
+            __import__('_tkinter')
+            raise SystemExit('ERROR: Module _tkinter is bundled.')
+            __import__('%(modname)s')
+            raise SystemExit('ERROR: Module %(modname)s is bundled.')
+        except ImportError:
+            print('ok')
+        """ % {'modname': modname_tkinter})
+
+@importorskip('PIL', modname_tkinter)
+def test_pil_tkinter_bundled(pyi_builder):
+    # hook-PIL is excluding tkinter, but is must still be included
+    # since it is imported elsewhere. Also see issue #1584.
+    pyi_builder.test_source("""
+        import PIL.Image
+        try:
+            import %(modname)s
+        except ImportError:
+            raise SystemExit('ERROR: Module %(modname)s is NOT bundled.')
+        """ % {'modname': modname_tkinter})
 
 
 @importorskip('PIL', 'FixTk')

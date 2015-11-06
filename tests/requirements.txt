@@ -3,9 +3,8 @@ pytest >= 2.7.3  # Testing framework.
 pytest-xdist  # Plugin allowing running tests in parallel.
 pytest-timeout # Plugin to abort hanging tests.
 pytest-catchlog  # Capture log output separately from stdout/stderr
-pyreadline  # Colors in ipython on Windows.
+psutil  # Better subprocess alternative with implemented timeout.
 ipython  # Better interactive Python shell.
-mock
 
 # Helper tools
 zest.releaser # Makes releasing easier
@@ -32,13 +31,15 @@ markdown
 sphinx
 pyzmq
 zope.interface  # Required for test_namespace_package
-numpy
+numpy==1.10.1
 keyring
 pycparser
 pytz
 sqlalchemy
 twisted
-matplotlib
+# Windows binary packages are for Python 2.7,3.3,3.4
+matplotlib==1.4.3
 pyexcelerate
-Pillow
+# Pillow 3.0.0 is broken.
+Pillow==3.0.0
 pandas

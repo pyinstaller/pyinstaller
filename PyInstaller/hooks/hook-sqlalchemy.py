@@ -10,6 +10,10 @@
 
 from PyInstaller.utils.hooks import exec_statement, is_module_version
 
+
+# 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
+excludedimports = ['sqlalchemy.testing']
+
 # include most common database bindings
 # some database bindings are detected and include some
 # are not. We should explicitly include database backends.

@@ -37,9 +37,9 @@ import os
 import re
 
 from ..building.datastruct import TOC
-from ..building.imphook import HooksCache
+from ..building.imphook import ExcludedImports, HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
-from ..utils.misc import load_py_data_struct
+from ..utils.misc import load_py_data_struct, module_parent_packages
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..lib.modulegraph.find_modules import get_implies
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
@@ -79,7 +79,6 @@ class PyiModuleGraph(ModuleGraph):
         hooks for the current application.
     """
 
-
     def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
         # Homepath to the place where is PyInstaller located.
@@ -88,48 +87,17 @@ class PyiModuleGraph(ModuleGraph):
         # by PyInstaller.
         self._top_script_node = None
 
-        # Absolute paths of all user-defined hook directories.
-        self._user_hook_dirs = \
-            user_hook_dirs if user_hook_dirs is not None else []
+        # Hook-specific lookup tables. They are set up later.
+        self._hooks_pre_safe_import_module = {}
+        self._hooks_pre_find_module_path = {}
+        self._available_rthooks = {}
+        # Post import hooks (classical import hooks) will be accessed outside
+        # this object.
+        self.hooks_post_import = {}
 
-        # Hook-specific lookup tables, defined after defining "_user_hook_dirs".
-        logger.info('Initializing module graph hooks...')
-        self._hooks_pre_safe_import_module = self._cache_hooks('pre_safe_import_module')
-        self._hooks_pre_find_module_path = self._cache_hooks('pre_find_module_path')
-        self._available_rthooks = load_py_data_struct(
-            os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
-        )
-
-    def _cache_hooks(self, hook_type):
-        """
-        Get a cache of all hooks of the passed type.
-
-        The cache will include all official hooks defined by the PyInstaller
-        codebase _and_ all unofficial hooks defined for the current application.
-
-        Parameters
-        ----------
-        hook_type : str
-            Type of hooks to be cached, equivalent to the basename of the
-            subpackage of the `PyInstaller.hooks` package containing such hooks
-            (e.g., `post_create_package` for post-create package hooks).
-        """
-        # Absolute path of this type hook package's directory.
-        system_hook_dir = configure.get_importhooks_dir(hook_type)
-
-        # Cache of such hooks.
-        # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
-        hooks_cache = HooksCache(system_hook_dir)
-        for user_hook_dir in self._user_hook_dirs:
-            # Absolute path of the user-defined subdirectory of this hook type.
-            user_hook_type_dir = os.path.join(user_hook_dir, hook_type)
-
-            # If this directory exists, cache all hooks in this directory.
-            if os.path.isdir(user_hook_type_dir):
-                # logger.debug("Caching user %s hook dir %r" % (hook_type, hooks_user_dir))
-                hooks_cache.add_custom_paths(user_hook_type_dir)
-
-        return hooks_cache
+        # Modules that should be excluded when they are not imported by any
+        # other modules besides those in the dict.
+        self.excluded_imports = {}
 
     def run_script(self, pathname, caller=None):
         """
@@ -156,7 +124,85 @@ class PyiModuleGraph(ModuleGraph):
                 caller = self._top_script_node
             return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
 
-    def _safe_import_module(self, module_basename, module_name, parent_package):
+    def _is_excluded_import(self, module_name, imported_by):
+        """
+        If a module is in the excluded imports dict then either keep it there or
+        remove it from the dict.
+
+        Conditions for keeping excluded module in the dict:
+        - Any parent package of 'module_name' is in 'excluded_imports' and
+          - 'imported_by' is a subpackage of 'module_name.
+          - 'imported_by' is a subpackage of any item from the 'excluded_imports'
+            dict value.
+
+        :param module_name: Module name to check if keeping in excluded modules.
+        :param imported_by: Module name that imports module 'module_name'.
+        :return: True if the module should be really excluded or False otherwise.
+        """
+        # TODO check if it is necessary remember references to 'imported_by' when exludedimports are later included!
+        #      If there are later reported any import errors with missing modules then this is probably the case.
+        # Check 'module_name' and all its parent packages.
+        parent_packages = [module_name] + module_parent_packages(module_name)
+        for module in parent_packages:
+            # Check if there is any excluded import for the module.
+            if module in self.excluded_imports:
+                # TODO verify if 'imported_by' being subpackage of excludedimports needs checking.
+                # 'imported_by' is a subpackage of 'module', keep the excluded
+                # import and just end the function.
+                #if imported_by.startswith(module):
+                    # Add submodules of excluded modules to the exclude list and
+                    # exclude it for the same modules as the parent package.
+                    #self.excluded_imports[module_name] = self.excluded_imports[module]
+                    #return True
+                # Modules for which the excluded import should be kept.
+                not_allowed_modules = self.excluded_imports[module]
+                # 'imported_by' is not allowed or is subpackage of any not
+                # allowed module.
+                for not_allowed in not_allowed_modules:
+                    if imported_by.startswith(not_allowed):
+                        return True
+                # 'module_name' is excluded for some modules but this time
+                # it is imported by completely different module and thus
+                # 'module_name' and all its parent should be included in the analysis.
+                # Thus remove them from the excluded imports.
+                logger.warn('Including previously excluded %r (required by %s)' % (module_name, imported_by))
+                del self.excluded_imports[module]
+
+        # Module could be imported the usual way.
+        return False
+
+
+    def _process_imports(self, node):
+        """
+        This method wraps the superclass method with support for excludedimports.
+        Wrapping avoids creating MissingModule nodes if any dependency of module
+        'node' imports excluded modules.
+
+        Before importing a module, check first if it should be kept excluded
+        or not. It does not make sense check excluded modules if the caller
+        module is not known.
+
+        Wrapping this method allow to behave like modules from excludedimports
+        were not even recognided as a dependency of a module.
+        """
+        if node._imported_modules is None:
+            return
+
+        new_imported_modules = []
+        imported_by = node.identifier
+
+        for mod_data in node._imported_modules:
+            module_name = mod_data[1][0]
+            # Skip excluded modules and remove it from dependencies.
+            if not self._is_excluded_import(module_name, imported_by):
+                new_imported_modules.append(mod_data)
+        node._imported_modules = new_imported_modules
+
+        return super(PyiModuleGraph, self)._process_imports(node)
+
+
+    # TODO Check if 'pre_safe_import' hooks could be wrapped in method '_process_imports()' to avaoid duplicate checking of modules.
+    def _safe_import_module(self, module_basename, module_name, parent_package, caller):
         """
         Create a new graph node for the module with the passed name under the
         parent package signified by the passed graph node.
@@ -206,7 +252,7 @@ class PyiModuleGraph(ModuleGraph):
 
         # Call the superclass method.
         return super(PyiModuleGraph, self)._safe_import_module(
-            module_basename, module_name, parent_package)
+            module_basename, module_name, parent_package, caller)
 
     def _find_module_path(self, fullname, module_name, search_dirs):
         """
@@ -288,7 +334,11 @@ class PyiModuleGraph(ModuleGraph):
         """
         # Construct regular expression for matching modules that should be
         # excluded because they are bundled in base_library.zip.
-        regex_str = '|'.join(['(%s.*)' % x for x in PY3_BASE_MODULES])
+        # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
+        # The match has to be exact - start and end of string not substring.
+        regex_modules = '|'.join([r'(^%s$)' % x for x in PY3_BASE_MODULES])
+        regex_submod = '|'.join([r'(^%s\..*$)' % x for x in PY3_BASE_MODULES])
+        regex_str = regex_modules + '|' + regex_submod
         module_filter = re.compile(regex_str)
 
         result = existing_TOC or TOC()
@@ -326,6 +376,7 @@ class PyiModuleGraph(ModuleGraph):
             name = str(name)
             # Translate to the corresponding TOC typecode.
             toc_type = MODULE_TYPES_TO_TOC_DICT[mg_type]
+
             # TOC.append the data. This checks for a pre-existing name
             # and skips it if it exists.
             result.append((name, path, toc_type))
@@ -488,13 +539,14 @@ class PyiModuleGraph(ModuleGraph):
         return co_dict
 
 
-# TODO: A little odd. Couldn't we just push this functionality into the
-# PyiModuleGraph.__init__() constructor and then construct PyiModuleGraph
-# objects directly?
 def initialize_modgraph(excludes=(), user_hook_dirs=None):
     """
     Create the module graph and, for Python 3, analyze dependencies for
     `base_library.zip` (which remain the same for every executable).
+
+    This function might appear weird but is necessary for speeding up
+    test runtime because it allows caching basic ModuleGraph object that
+    gets created for 'base_library.zip'.
 
     Parameters
     ----------
@@ -512,6 +564,11 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
         Module graph with core dependencies.
     """
     logger.info('Initializing module dependency graph...')
+
+    # Convert None to empty list. This happens when running tests where
+    # the basic module graph is cached.
+    if user_hook_dirs is None:
+        user_hook_dirs = []
 
     # Module graph-specific debug level, defaulting to the "MODULEGRAPH_DEBUG"
     # environment variable if defined or 0 otherwise. This is a non-negative
@@ -538,6 +595,9 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
         user_hook_dirs=user_hook_dirs,
     )
 
+    # Initialize hook caches.
+    initialize_hooks_caches(graph, excludes, user_hook_dirs)
+
     if not is_py2:
         logger.info('Analyzing base_library.zip ...')
         required_mods = []
@@ -551,6 +611,61 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
         for m in required_mods:
             graph.import_hook(m)
     return graph
+
+
+def initialize_hooks_caches(modgraph, excludes, user_hook_dirs):
+    """
+    Initialize all caches of all possible hook types for the passed graph.
+
+    :param modgraph:
+    """
+    def _cache_hooks(hook_type, user_hook_dirs):
+        """
+        Get a cache of all hooks of the passed type.
+
+        The cache will include all official hooks defined by the PyInstaller
+        codebase _and_ all unofficial hooks defined for the current application.
+
+        Parameters
+        ----------
+        hook_type : str
+            Type of hooks to be cached, equivalent to the basename of the
+            subpackage of the `PyInstaller.hooks` package containing such hooks
+            (e.g., `post_create_package` for post-create package hooks).
+        """
+        # Absolute path of this type hook package's directory.
+        system_hook_dir = configure.get_importhooks_dir(hook_type)
+        # Cache of such hooks.
+        # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
+        hooks_cache = HooksCache()
+        hooks_cache.load_file_list(system_hook_dir)
+        # Absolute path of the user-defined subdirectories of this hook type.
+        if hook_type:
+            user_hook_dirs = [os.path.join(d, hook_type) for d in user_hook_dirs]
+            # If this directory exists, cache all hooks in this directory.
+        hooks_cache.add_custom_paths(user_hook_dirs)
+        return hooks_cache
+
+    # Hook-specific lookup tables for all hooks.
+    logger.info('Initializing module graph hooks...')
+    modgraph._hooks_pre_safe_import_module = _cache_hooks('pre_safe_import_module', user_hook_dirs)
+    modgraph._hooks_pre_find_module_path = _cache_hooks('pre_find_module_path', user_hook_dirs)
+    modgraph.hooks_post_import = _cache_hooks(None, user_hook_dirs)
+    modgraph._available_rthooks = load_py_data_struct(
+        os.path.join(modgraph._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
+    )
+
+    # Parse hooks attribute 'excludedimports' globally from all hooks before
+    # analyzing any Python script or module and pass it to module graph
+    # object.
+    excluded_imports = ExcludedImports()
+    excluded_imports.load_hooks(modgraph.hooks_post_import)
+    # Remove excludedimports for modules that are globally excluded.
+    # Otherwise those modules gets bundled when required.
+    for global_exclude in excludes:
+        if global_exclude in excluded_imports:
+            del excluded_imports[global_exclude]
+    modgraph.excluded_imports = excluded_imports
 
 
 def get_bootstrap_modules():
