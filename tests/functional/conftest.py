@@ -405,6 +405,9 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     tmp = tmpdir.strpath
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'], )
+    # PyInstaller or a test case might manipulate 'sys.path'.
+    # Reset it for every test.
+    monkeypatch.syspath_prepend(None)
     # Set current working directory to
     monkeypatch.chdir(tmp)
     # Clean up configuration and force PyInstaller to do a clean configuration
