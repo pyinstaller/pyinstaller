@@ -351,6 +351,7 @@ class AppBuilder(object):
         PYI_CONFIG['configdir'] = self._tmpdir
         # Speed up tests by reusing copy of basic module graph object.
         PYI_CONFIG['tests_modgraph'] = copy.deepcopy(self._modgraph)
+
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
 
@@ -406,6 +407,10 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     monkeypatch.setenv('PATH', os.environ['PATH'], )
     # Set current working directory to
     monkeypatch.chdir(tmp)
+    # Clean up configuration and force PyInstaller to do a clean configuration
+    # for another app/test.
+    # The value is same as the original value.
+    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
     return AppBuilder(tmp, request.param, pyi_modgraph)
 
