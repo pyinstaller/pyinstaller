@@ -1453,6 +1453,7 @@ class ModuleGraph(ObjectGraph):
             self._scan_ast(co_ast, m)
             self._scan_bytecode_stores(co, m)
         else:
+            m._imported_modules = []
             self._scan_bytecode(co, m)
 
         # Actually import the modules collected while scanning.
@@ -1523,11 +1524,6 @@ class ModuleGraph(ObjectGraph):
 
         level = None
         fromlist = None
-
-        # Importing a module twice *may* happen, e.g. with
-        # replacePackage or `_xmlplus` as `xml`
-        #assert m._imported_modules is None
-        m._imported_modules = []
 
         while i < n:
             c = code[i]
