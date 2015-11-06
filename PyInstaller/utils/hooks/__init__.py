@@ -19,7 +19,6 @@ import textwrap
 
 from ... import compat
 from ...compat import is_py2, is_win, is_py3, is_darwin, EXTENSION_SUFFIXES
-from ...config import CONF
 from ...utils import misc
 from ... import HOMEPATH
 from ... import log as logging
@@ -51,6 +50,8 @@ def __exec_python_cmd(cmd, env=None):
     anything that was emitted in the standard output as a single
     string.
     """
+    # 'PyInstaller.config' cannot be imported as other top-level modules.
+    from ...config import CONF
     if env is None:
         env = {}
     # Update environment. Defaults to 'os.environ'
@@ -517,6 +518,8 @@ def django_find_root_dir():
     In Django 1.4+ the script 'manage.py' is not in the directory with 'settings.py'
     but usually one level up. We need to detect this special case too.
     """
+    # 'PyInstaller.config' cannot be imported as other top-level modules.
+    from ...config import CONF
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
     manage_py = CONF['main_script']
@@ -605,6 +608,8 @@ def _pkgutil_find_loader(fullname):
     """
     Temporarily extend sys.path with pathex to invoke pkgutil.find_loader.
     """
+    # 'PyInstaller.config' cannot be imported as other top-level modules.
+    from ...config import CONF
     old_path = sys.path
     try:
         sys.path.extend(CONF['pathex'])
@@ -800,6 +805,9 @@ def is_package(module_name):
     """
     # This way determines if module is a package without importing the module.
     try:
+        import pprint
+        logger.warn('sys.path:')
+        logger.warn(pprint.pformat(sys.path))
         loader = _pkgutil_find_loader(module_name)
     except Exception:
         # When it fails to find a module loader then it points probably to a clas
@@ -1047,6 +1055,8 @@ print(GIRepository.Repository.get_search_path())"""
 
 def gir_library_path_fix(path):
     import subprocess
+    # 'PyInstaller.config' cannot be imported as other top-level modules.
+    from ...config import CONF
 
     path = os.path.abspath(path)
     common_path = os.path.commonprefix([sys.prefix, path])

@@ -12,7 +12,6 @@ import zipfile
 import pkg_resources
 from ..depend.utils import get_path_to_egg
 from .datastruct import TOC, Tree
-from ..config import CONF
 from .. import log as logging
 
 logger = logging.getLogger(__name__)
@@ -130,6 +129,8 @@ class DependencyProcessor(object):
 
     @staticmethod
     def __collect_data_files_from_zip(zipfilename):
+        # 'PyInstaller.config' cannot be imported as other top-level modules.
+        from ..config import CONF
         workpath = os.path.join(CONF['workpath'], os.path.basename(zipfilename))
         os.makedirs(workpath)
         # TODO extract only those file which whould then be included
