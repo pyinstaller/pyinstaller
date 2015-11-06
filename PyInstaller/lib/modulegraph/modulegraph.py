@@ -1595,7 +1595,7 @@ class ModuleGraph(ObjectGraph):
 
     def _load_package(self, fqname, pathname, pkgpath):
         """
-        Called only when an imp.PACKAGE_DIRECTORY is found
+        Called only when an imp.PKG_DIRECTORY is found
         """
         self.msgin(2, "load_package", fqname, pathname, pkgpath)
         newname = _replacePackageMap.get(fqname)
@@ -1611,12 +1611,14 @@ class ModuleGraph(ObjectGraph):
         else:
             m = self.createNode(Package, fqname)
             m.filename = pathname
+            # PEP-302-compliant loaders return the pathname of the
+            # `__init__`-file, not the packge directory.
+            if os.path.basename(pathname).startswith('__init__.'):
+                pathname = os.path.dirname(pathname)
             m.packagepath = [pathname] + ns_pkgpath
 
         # As per comment at top of file, simulate runtime packagepath additions.
         m.packagepath = m.packagepath + self._package_path_map.get(fqname, [])
-
-
 
         try:
             self.msg(2, "find __init__ for %s"%(m.packagepath,))
@@ -1658,7 +1660,7 @@ class ModuleGraph(ObjectGraph):
         Returns
         ----------
         (file_handle, filename, metadata)
-            See `modulegraph.find_module()` for details.
+            See `modulegraph._find_module()` for details.
         """
         if parent is not None:
             # assert path is not None
@@ -1751,19 +1753,6 @@ class ModuleGraph(ObjectGraph):
 
         try:
             for search_dir in search_dirs:
-                # FIXME: Unclear why this is needed. It really shouldn't be.
-                #  Needed since for a module within a package the search_dir
-                #  is set to the modules filename. This is true at least for
-                #  the __init__.py. Each import of a packet comes here twice:
-                #  First to disvocer the PKG_DIRECTORY, then to load the
-                #  __init__file. Possible solution: in _find_module, if
-                #  parent is not None, use the parents path.
-                #
-                # If this search directory is not an .egg (zip file) or a directory,
-                # assume the caller intended to search this file's parent directory.
-                if not zipfile.is_zipfile(search_dir) and not os.path.isdir(search_dir):
-                    search_dir = os.path.dirname(search_dir)
-
                 # PEP 302-compliant importer making loaders for this directory.
                 importer = pkgutil.get_importer(search_dir)
 
@@ -1858,8 +1847,15 @@ class ModuleGraph(ObjectGraph):
                     # If this loader defines the PEP 302-compliant get_code()
                     # method, open the returned object as a file-like buffer.
                     elif imp_type == imp.PY_COMPILED and hasattr(loader, 'get_code'):
-                        code_object = loader.get_code(module_name)
-                        file_handle = _code_to_file(code_object)
+                        try:
+                            code_object = loader.get_code(module_name)
+                            if code_object is None:
+                                file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
+                            else:
+                                file_handle = _code_to_file(code_object)
+                        except ImportError:
+                            # post-bone the ImportError until load_module
+                            file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
                     # If this is an uncompiled file under Python 3, open this
                     # file for encoding-aware text reading.
                     elif imp_type == imp.PY_SOURCE and sys.version_info[0] == 3:
