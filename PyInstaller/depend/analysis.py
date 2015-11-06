@@ -140,18 +140,20 @@ class PyiModuleGraph(ModuleGraph):
         :return: True if the module should be really excluded or False otherwise.
         """
         # TODO check if it is necessary remember references to 'imported_by' when exludedimports are later included!
+        #      If there are later reported any import errors with missing modules then this is probably the case.
         # Check 'module_name' and all its parent packages.
         parent_packages = [module_name] + module_parent_packages(module_name)
         for module in parent_packages:
             # Check if there is any excluded import for the module.
             if module in self.excluded_imports:
+                # TODO verify if 'imported_by' being subpackage of excludedimports needs checking.
                 # 'imported_by' is a subpackage of 'module', keep the excluded
                 # import and just end the function.
-                if imported_by.startswith(module):
+                #if imported_by.startswith(module):
                     # Add submodules of excluded modules to the exclude list and
                     # exclude it for the same modules as the parent package.
-                    self.excluded_imports[module_name] = self.excluded_imports[module]
-                    return True
+                    #self.excluded_imports[module_name] = self.excluded_imports[module]
+                    #return True
                 # Modules for which the excluded import should be kept.
                 not_allowed_modules = self.excluded_imports[module]
                 # 'imported_by' is not allowed or is subpackage of any not
@@ -199,6 +201,7 @@ class PyiModuleGraph(ModuleGraph):
         return super(PyiModuleGraph, self)._process_imports(node)
 
 
+    # TODO Check if 'pre_safe_import' hooks could be wrapped in method '_process_imports()' to avaoid duplicate checking of modules.
     def _safe_import_module(self, module_basename, module_name, parent_package, caller):
         """
         Create a new graph node for the module with the passed name under the
