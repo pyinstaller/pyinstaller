@@ -297,7 +297,7 @@ int pyi_path_executable(char *execfile, const char *appname)
                 VS("LOADER: Searching $PATH failed for %s", appname);
                 strcpy(buffer, appname);
             }
-            if(pyi_path_fullpath(execfile, PATH_MAX, appname) == false) {
+            if(pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {
                 VS("LOADER: Cannot get fullpath for %s\n", execfile);
                 return -1;
             }
