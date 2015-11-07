@@ -56,6 +56,7 @@ def test_UPX(config, upx_dir):
 
 
 def _get_pyinst_cache_dir():
+    old_cache_dir = None
     if compat.getenv('PYINSTALLER_CONFIG_DIR'):
         cache_dir = compat.getenv('PYINSTALLER_CONFIG_DIR')
     elif is_win:
@@ -67,10 +68,18 @@ def _get_pyinst_cache_dir():
     else:
         # According to XDG specification
         # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
+        old_cache_dir = compat.getenv('XDG_DATA_HOME')
+        if not old_cache_dir:
+            old_cache_dir = os.path.expanduser('~/.local/share')
         cache_dir = compat.getenv('XDG_CACHE_HOME')
         if not cache_dir:
             cache_dir = os.path.expanduser('~/.cache')
     cache_dir = os.path.join(cache_dir, 'pyinstaller')
+    # Move old cache-dir, if any, to now location
+    if old_cache_dir and not os.path.exists(cache_dir):
+        old_cache_dir = os.path.join(old_cache_dir, 'pyinstaller')
+        if os.path.exists(old_cache_dir):
+            os.rename(old_cache_dir, cache_dir)
     return cache_dir
 
 
