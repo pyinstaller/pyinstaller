@@ -239,7 +239,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
 
     if not os.path.exists(os.path.dirname(cachedfile)):
         os.makedirs(os.path.dirname(cachedfile))
-    shutil.copy2(fnm, cachedfile)
+    try:
+        shutil.copy2(fnm, cachedfile)
+    except:
+        shutil.copy(fnm, cachedfile)
     if hasattr(os, 'chflags'):
         # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example)
         # If flags still remains, os.chmod will failed with:
