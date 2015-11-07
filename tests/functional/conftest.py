@@ -58,6 +58,9 @@ _LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 # Directory with .spec files used in some tests.
 _SPEC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs')
+# Timeout for running the executable. If executable does not exit in this time
+# then it is interpreted as test failure.
+_EXE_TIMEOUT = 5  # In sec.
 
 # Code
 # ====
@@ -314,12 +317,17 @@ class AppBuilder(object):
         # If not timeout was specified then it is 'None' - no timeout, just waiting.
         # Runtime is useful mostly for interactive tests.
         try:
-            retcode = process.wait(timeout=runtime)
+            timeout = runtime if runtime else _EXE_TIMEOUT
+            retcode = process.wait(timeout=timeout)
         except psutil.TimeoutExpired:
-            # When 'timeout' is set then expired timeout is a good sing
-            # that the executable was running successfully for a specified time.
-            # TODO Is there a better way return success than 'retcode = 0'?
-            retcode = 0
+            if runtime:
+                # When 'runtime' is set then expired timeout is a good sing
+                # that the executable was running successfully for a specified time.
+                # TODO Is there a better way return success than 'retcode = 0'?
+                retcode = 0
+            else:
+                # Exe is still running and it is not an interactive test. Fail the test.
+                retcode = 1
             # Kill the subprocess and its child processes.
             for p in process.children(recursive=True):
                 p.kill()

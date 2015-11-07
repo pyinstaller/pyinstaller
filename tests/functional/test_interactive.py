@@ -15,10 +15,9 @@ the executable for some time. Otherwise it is marked as fail.
 Note: All tests in this file should use the argument 'runtime'.
 """
 
-# TODO 'runtime' argument does not work for Python 2.7.
 from PyInstaller.utils.tests import importorskip
 
-_RUNTIME = 3  # In seconds.
+_RUNTIME = 5  # In seconds.
 
 
 @importorskip('IPython')

@@ -27,9 +27,6 @@ class MyDialog(QtGui.QDialog):
         self.resize(400, 200)
         self.show()
 
-        # close window after 1.5 seconds
-        QtCore.QTimer.singleShot(1500, self.close)
-
     def sizeHint(self):
         return self.label.sizeHint()
 
