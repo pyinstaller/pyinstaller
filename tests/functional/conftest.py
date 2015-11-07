@@ -347,8 +347,8 @@ class AppBuilder(object):
         pyi_args = [self.script] + default_args + args
         # TODO fix return code in running PyInstaller programatically
         PYI_CONFIG = configure.get_config(upx_dir=None)
-        # Override CONFIGDIR for PyInstaller and put it into self.tmpdir
-        PYI_CONFIG['configdir'] = self._tmpdir
+        # Override CACHEDIR for PyInstaller and put it into self.tmpdir
+        PYI_CONFIG['cachedir'] = self._tmpdir
         # Speed up tests by reusing copy of basic module graph object.
         PYI_CONFIG['tests_modgraph'] = copy.deepcopy(self._modgraph)
 

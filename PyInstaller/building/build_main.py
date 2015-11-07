@@ -620,11 +620,11 @@ def build(spec, distpath, workpath, clean_build):
 
     CONF['warnfile'] = os.path.join(workpath, 'warn%s.txt' % CONF['specnm'])
 
-    # Clean PyInstaller cache (CONF['configdir']) and temporary files (workpath)
+    # Clean PyInstaller cache (CONF['cachedir']) and temporary files (workpath)
     # to be able start a clean build.
     if clean_build:
-        logger.info('Removing temporary files and cleaning cache in %s', CONF['configdir'])
-        for pth in (CONF['configdir'], workpath):
+        logger.info('Removing temporary files and cleaning cache in %s', CONF['cachedir'])
+        for pth in (CONF['cachedir'], workpath):
             if os.path.exists(pth):
                 # Remove all files in 'pth'.
                 for f in glob.glob(pth + '/*'):

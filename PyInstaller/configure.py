@@ -55,23 +55,23 @@ def test_UPX(config, upx_dir):
     config['upx_dir'] = upx_dir
 
 
-def _get_pyinst_config_dir():
+def _get_pyinst_cache_dir():
     if compat.getenv('PYINSTALLER_CONFIG_DIR'):
-        config_dir = compat.getenv('PYINSTALLER_CONFIG_DIR')
+        cache_dir = compat.getenv('PYINSTALLER_CONFIG_DIR')
     elif is_win:
-        config_dir = compat.getenv('APPDATA')
-        if not config_dir:
-            config_dir = os.path.expanduser('~\\Application Data')
+        cache_dir = compat.getenv('APPDATA')
+        if not cache_dir:
+            cache_dir = os.path.expanduser('~\\Application Data')
     elif is_darwin:
-        config_dir = os.path.expanduser('~/Library/Application Support')
+        cache_dir = os.path.expanduser('~/Library/Application Support')
     else:
         # According to XDG specification
         # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
-        config_dir = compat.getenv('XDG_DATA_HOME')
-        if not config_dir:
-            config_dir = os.path.expanduser('~/.local/share')
-    config_dir = os.path.join(config_dir, 'pyinstaller')
-    return config_dir
+        cache_dir = compat.getenv('XDG_DATA_HOME')
+        if not cache_dir:
+            cache_dir = os.path.expanduser('~/.local/share')
+    cache_dir = os.path.join(cache_dir, 'pyinstaller')
+    return cache_dir
 
 
 def get_importhooks_dir(hook_type=None):
@@ -85,6 +85,6 @@ def get_importhooks_dir(hook_type=None):
 def get_config(upx_dir, **kw):
     config = {}
     test_UPX(config, upx_dir)
-    config['configdir'] = _get_pyinst_config_dir()
+    config['cachedir'] = _get_pyinst_cache_dir()
 
     return config
