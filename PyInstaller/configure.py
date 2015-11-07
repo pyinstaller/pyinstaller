@@ -67,9 +67,9 @@ def _get_pyinst_cache_dir():
     else:
         # According to XDG specification
         # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
-        cache_dir = compat.getenv('XDG_DATA_HOME')
+        cache_dir = compat.getenv('XDG_CACHE_HOME')
         if not cache_dir:
-            cache_dir = os.path.expanduser('~/.local/share')
+            cache_dir = os.path.expanduser('~/.cache')
     cache_dir = os.path.join(cache_dir, 'pyinstaller')
     return cache_dir
 
