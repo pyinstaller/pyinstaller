@@ -739,7 +739,8 @@ class MERGE(object):
             self._id_to_path[os.path.normcase(i)] = p
 
         # Get the longest common path
-        self._common_prefix = os.path.dirname(os.path.commonprefix([os.path.abspath(a.scripts[-1][1]) for a, _, _ in args]))
+        common_prefix = os.path.commonprefix([os.path.normcase(os.path.abspath(a.scripts[-1][1])) for a, _, _ in args])
+        self._common_prefix = os.path.dirname(common_prefix)
         if self._common_prefix[-1] != os.sep:
             self._common_prefix += os.sep
         logger.info("Common prefix: %s", self._common_prefix)
