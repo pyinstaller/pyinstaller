@@ -22,9 +22,9 @@ GStreamer 1.4.5, gst-python 1.4.0, PyGObject 3.14.0, and GObject Introspection 1
 
 import glob
 import os
-from PyInstaller.utils.hooks import exec_statement, get_typelibs
+from PyInstaller.utils.hooks import exec_statement, get_gi_typelibs
 
-hiddenimports = ['gi.overrides.Gst', 'gi.repository.GObject', 'gi.repository.GModule', 'gi.repository.Gio']
+binaries, datas, hiddenimports = get_gi_typelibs('Gst', '1.0')
 
 statement = """
 import os
@@ -44,6 +44,6 @@ plugin_path = exec_statement(statement)
 # and we may have mixed plugin extensions, e.g., .so and .dylib.
 pattern = os.path.join(plugin_path, 'libgst*')
 
-binaries = [(f, os.path.join('gst_plugins')) for f in glob.glob(pattern)]
+binaries += [(f, os.path.join('gst_plugins')) for f in glob.glob(pattern)]
 
-datas = get_typelibs('Gst', '1.0')
+

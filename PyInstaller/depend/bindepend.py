@@ -873,3 +873,17 @@ def get_python_library_path():
 
     # Python library NOT found. Return just None.
     return None
+
+def findSystemLibrary(name):
+    '''
+        Given a library name, try to resolve the path to that library. If the
+        path is already an absolute path, return that without searching.
+    '''
+
+    if os.path.isabs(name):
+        return name
+
+    if is_unix:
+        return findLibrary(name)
+    elif is_win:
+        return getfullnameof(name)

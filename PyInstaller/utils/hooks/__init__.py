@@ -22,6 +22,7 @@ from ...compat import is_py2, is_win, is_py3, is_darwin, EXTENSION_SUFFIXES
 from ...utils import misc
 from ... import HOMEPATH
 from ... import log as logging
+from ...depend.bindepend import findSystemLibrary
 
 logger = logging.getLogger(__name__)
 
@@ -827,13 +828,14 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package, subdir=None, pattern=None):
+def collect_submodules(package, subdir=None, pattern=None, endswith=False):
     """
     The following two functions were originally written by Ryan Welsh
     (welchr AT umich.edu).
 
     :param pattern: String pattern to match only submodules containing
                     this pattern in the name.
+    :param endswith: If True, will match using 'endswith'
 
     This produces a list of strings which specify all the modules in
     package.  Its results can be directly assigned to ``hiddenimports``
@@ -881,9 +883,9 @@ def collect_submodules(package, subdir=None, pattern=None):
                     modname = mod_path + "." + remove_file_extension(f)
                     # TODO convert this into regex matching.
                     # Skip submodules not matching pattern.
-                    if pattern and not pattern in modname:
-                        continue
-                    mods.add(modname)
+                    if not pattern or (endswith and modname.endswith(pattern)) or \
+                                      (not endswith and pattern in modname):
+                        mods.add(modname)
         else:
         # If not, nothing here is part of the package; don't visit any of
         # these subdirs.
@@ -1015,26 +1017,76 @@ def relpath_to_config_or_make(filename):
 
 
 def get_typelibs(module, version):
+    '''deprecated; only here for backwards compat'''
+    logger.warn("get_typelibs is deprecated, use get_gi_typelibs instead")
+    return get_gi_typelibs(module, version)[1]
+
+def get_gi_typelibs(module, version):
+    """
+    Returns a tuple of (binaries, datas, hiddenimports) to be used by PyGObject
+    related hooks. Searches for and adds dependencies recursively.
+
+    :param module: GI module name, as passed to 'gi.require_version()'
+    :param version: GI module version, as passed to 'gi.require_version()'
+    """
     datas = []
+    binaries = []
+    hiddenimports = []
+
+    _get_gi_typelibs(module, version, datas, binaries, hiddenimports)
+
+    return binaries, datas, hiddenimports
+
+def _get_gi_typelibs(module, version, datas, binaries, hiddenimports):
+    """
+    Internal function used by get_gi_typelibs()
+    """
+
     statement = """
 import gi
 gi.require_version("GIRepository", "2.0")
 from gi.repository import GIRepository
-print(GIRepository.Repository.get_search_path())"""
-    typelibs_path = eval_statement(statement)
-    if not typelibs_path:
+repo = GIRepository.Repository.get_default()
+module, version = (%r, %r)
+repo.require(module, version,
+             GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
+get_deps = getattr(repo, 'get_immediate_dependencies', None)
+if not get_deps:
+    get_deps = repo.get_dependencies
+print({'sharedlib': repo.get_shared_library(module),
+       'typelib': repo.get_typelib_path(module),
+       'deps': get_deps(module) or []})
+"""
+    statement %= (module, version)
+    typelibs_data = eval_statement(statement)
+    if not typelibs_data:
         logger.error("gi repository 'GIRepository 2.0' not found. "
                      "Please make sure libgirepository-gir2.0 resp. "
                      "lib64girepository-gir2.0 is installed.")
         # :todo: should we raise a SystemError here?
-        return []
-    typelibs_path = typelibs_path[0]
-    pattern = os.path.join(typelibs_path, module + '*' + version + '*')
-    for f in glob.glob(pattern):
-        d = gir_library_path_fix(f)
+    else:
+        logger.debug("Adding files for %s %s", module, version)
+
+        if typelibs_data['sharedlib']:
+            for lib in typelibs_data['sharedlib'].split(','):
+                path = findSystemLibrary(lib.strip())
+                if path:
+                    logger.debug('Found shared library %s at %s', lib, path)
+                    binaries.append((path, ''))
+
+        d = gir_library_path_fix(typelibs_data['typelib'])
         if d:
+            logger.debug('Found gir typelib at %s', d)
             datas.append(d)
-    return datas
+
+        hiddenimports += collect_submodules('gi.overrides',
+                                            pattern='.' + module, endswith=True)
+
+        ## Load dependencies recursively
+        for dep in typelibs_data['deps']:
+            m, v = dep.rsplit('-', 1)
+            _get_gi_typelibs(m, v, datas, binaries, hiddenimports)
+
 
 
 def gir_library_path_fix(path):

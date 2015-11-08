@@ -21,18 +21,11 @@ import sys
 
 import PyInstaller.log as logging
 from PyInstaller.compat import is_darwin, is_win
-from PyInstaller.utils.hooks import get_typelibs, exec_statement
+from PyInstaller.utils.hooks import get_gi_typelibs, exec_statement
 
 logger = logging.getLogger(__name__)
 
-
-hiddenimports = ['gi.overrides.Gio']
-
-
-datas = get_typelibs('Gio', '2.0')
-
-
-binaries = []
+binaries, datas, hiddenimports = get_gi_typelibs('Gio', '2.0')
 
 statement = """
 from gi.repository import Gio
