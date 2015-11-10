@@ -225,7 +225,8 @@ elif is_win:
                 return result
             else:
                 # Exclude everything from the Windows directory by default.
-                fn = os.path.realpath(libname)
+                # .. sometimes realpath changes the case of libname, lower it
+                fn = os.path.realpath(libname).lower()
                 return fn.startswith(self._windows_dir)
 
     exclude_list = WinExcludeList(exclude_list)
