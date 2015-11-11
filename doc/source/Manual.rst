@@ -1528,6 +1528,46 @@ in creating the Analysis
 objects and performing the ``PYZ``, ``EXE`` and ``COLLECT`` statements.
 You may also need to know and use `The TOC and Tree Classes`_ described below.
 
+Globals Available to the Spec File
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While a spec file is executing it has access to a limited set of global names.
+These names include the classes defined by |PyInstaller|:
+``Analysis``, ``BUNDLE``, ``COLLECT``, ``EXE``, ``MERGE``,
+``PYZ``, ``TOC`` and ``Tree``,
+which are discussed in the preceding sections.
+
+Other globals contain information about the build environment:
+
+``DISTPATH``
+	The relative path to the ``dist`` folder where
+	the application will be stored.
+	The default path is relative to the current directory.
+	If the ``--distpath=`` option is used, ``DISTPATH`` contains that value.
+
+``HOMEPATH``
+	The absolute path to the |PyInstaller|
+	distribution, typically in the current Python site-packages folder.
+
+``SPEC``
+	The complete spec file argument given to the
+	``pyinstaller`` command, for example ``myscript.spec``
+	or ``source/myscript.spec``.
+
+``SPECPATH``
+	The path prefix to the ``SPEC`` value as returned by ``os.split()``.
+
+``specnm``
+	The name of the spec file, for example ``myscript``.
+
+``workpath``
+	The path to the ``build`` directory. The default is relative to
+	the current directory. If the ``workpath=`` option is used,
+	``workpath`` contains that value.
+
+``WARNFILE``
+	The full path to the warnings file in the build directory,
+	for example ``build/warnmyscript.txt``.
 
 When Things Go Wrong
 ====================
