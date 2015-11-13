@@ -127,7 +127,7 @@ class PyiModuleGraph(ModuleGraph):
             # If this directory exists, cache all hooks in this directory.
             if os.path.isdir(user_hook_type_dir):
                 # logger.debug("Caching user %s hook dir %r" % (hook_type, hooks_user_dir))
-                hooks_cache.add_custom_paths(user_hook_type_dir)
+                hooks_cache.add_custom_paths([user_hook_type_dir])
 
         return hooks_cache
 
