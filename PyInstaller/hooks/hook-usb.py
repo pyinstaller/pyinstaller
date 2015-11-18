@@ -52,4 +52,4 @@ if binaries:
     # `_resolveCtypesImports` returns a 3-tuple, but `binaries` are only
     # 2-tuples, so remove the last element:
     assert len(binaries[0]) == 3
-    binaries.pop(2)
+    binaries[0].pop(2)
