@@ -208,7 +208,8 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         op, oparg, conditional, curline = next(instructions)
         if op == LOAD_CONST:
             soname = co.co_consts[oparg]
-            return soname
+            if isinstance(soname, str):
+                return soname
 
 
     op, oparg, conditional, curline = next(instructions)
@@ -275,11 +276,9 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         op, oparg, conditional, curline = next(instructions)
         if op == LOAD_ATTR:
             if co.co_names[oparg] == "find_library":
-                op, oparg, conditional, curline = next(instructions)
-                if op == LOAD_CONST:
-                    libname = co.co_consts[oparg]
+                libname = _libFromConst()
+                if libname:
                     return ctypes.util.find_library(libname)
-
 
 
 # TODO Reuse this code with modulegraph implementation
