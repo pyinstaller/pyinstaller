@@ -19,3 +19,7 @@ os.environ['GST_REGISTRY_FORK'] = 'no'
 
 # Tested on OSX only.
 os.environ['GST_PLUGIN_PATH'] = os.path.join(sys._MEIPASS, 'gst_plugins')
+
+# Only use packaged plugins to prevent GStreamer from crashing when it finds
+# plugins from another version which are installed system wide.
+os.environ['GST_PLUGIN_SYSTEM_PATH'] = ''
