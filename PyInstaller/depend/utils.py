@@ -377,6 +377,10 @@ def load_ldconfig_cache():
     is expensive.
     """
     global LDCONFIG_CACHE
+
+    if LDCONFIG_CACHE is not None:
+        return
+
     text = compat.exec_command("/sbin/ldconfig", "-p")
     # Skip first line of the library list because it is just
     # an informative line and might contain localized characters.
