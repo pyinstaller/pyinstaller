@@ -20,12 +20,9 @@ import PyInstaller.building.datastruct
 class Tree(PyInstaller.building.datastruct.Tree):
     # A stripped-down version of PyInstaller.building.datastruct.Tree,
     # not checking guts, but only the `assemble()` step
-    def __init__(self, root=None, prefix=None, excludes=None):
-        self.root = root
-        self.prefix = prefix
-        self.excludes = excludes or []
-        self.tocbasename = ''
+    def __postinit__(self):
         self.assemble()
+
 
 TEST_MOD = 'Tree_files'
 _DATA_BASEPATH = join(os.path.dirname(os.path.abspath(__file__)), TEST_MOD)
@@ -68,7 +65,8 @@ _PARAMETERS = (
 )
 
 @pytest.mark.parametrize("prefix,excludes,result", _PARAMETERS)
-def test_Tree(prefix, excludes, result):
+def test_Tree(monkeypatch, prefix, excludes, result):
+    monkeypatch.setattr('PyInstaller.config.CONF', {'workpath': '.'})
     tree = Tree(_DATA_BASEPATH, prefix=prefix, excludes=excludes)
     files = sorted(f[0] for f in tree)
     assert files == sorted(result)
