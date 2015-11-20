@@ -516,6 +516,8 @@ class Analysis(Target):
 
         # Write warnings about missing modules.
         self._write_warnings()
+        # Write debug information about hte graph
+        self._write_graph_debug()
 
     def _write_warnings(self):
         """
@@ -543,6 +545,20 @@ class Analysis(Target):
                           )
             wf.close()
             logger.info("Warnings written to %s", CONF['warnfile'])
+
+    def _write_graph_debug(self):
+        # With `--log-level DEBUG` write a xref and a dot-drawing of
+        # the graph.
+        if logger.getEffectiveLevel() > logging.DEBUG:
+            return
+        from ..config import CONF
+        with open(CONF['dot-file'], 'w') as fh:
+            self.graph.graphreport(fh)
+            logger.info("Graph drawing written to %s", CONF['dot-file'])
+        with open(CONF['xref-file'], 'w') as fh:
+            self.graph.create_xref(fh)
+            logger.info("Graph cross-reference written to %s", CONF['xref-file'])
+
 
     def _check_python_library(self, binaries):
         """
@@ -619,6 +635,8 @@ def build(spec, distpath, workpath, clean_build):
         workpath = os.path.join(workpath, CONF['specnm'])
 
     CONF['warnfile'] = os.path.join(workpath, 'warn%s.txt' % CONF['specnm'])
+    CONF['dot-file'] = os.path.join(workpath, 'graph-%s.dot' % CONF['specnm'])
+    CONF['xref-file'] = os.path.join(workpath, 'xref-%s.html' % CONF['specnm'])
 
     # Clean PyInstaller cache (CONF['cachedir']) and temporary files (workpath)
     # to be able start a clean build.
