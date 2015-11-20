@@ -22,15 +22,15 @@ from glob import glob
 import zipfile
 import collections
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_solar, is_cygwin, is_darwin, is_freebsd
-from PyInstaller.compat import is_venv, base_prefix, PYDYLIB_NAMES
-from PyInstaller.depend import dylib
-import PyInstaller.depend.utils
-import PyInstaller.compat as compat
+from .. import compat
+from ..compat import (is_win, is_unix, is_aix, is_solar, is_cygwin,
+                      is_darwin, is_freebsd, is_venv,
+                      base_prefix, PYDYLIB_NAMES)
+from . import dylib, utils
 
 
-import PyInstaller.log as logging
-from PyInstaller.utils.win32 import winutils
+from .. import log as logging
+from ..utils.win32 import winutils
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ def _getImports_pe(pth):
     and uses library pefile for that and supports
     32/64bit Windows
     """
-    import PyInstaller.lib.pefile as pefile
+    from ..lib import pefile
     dlls = set()
     # By default library pefile parses all PE information.
     # We are only interested in the list of dependent dlls.
@@ -178,7 +178,7 @@ def matchDLLArch(filename):
     if not is_win:
         return True
 
-    import PyInstaller.lib.pefile as pefile
+    from ..lib import pefile
 
     global _exe_machine_type
     if _exe_machine_type is None:
@@ -594,9 +594,9 @@ def _getImports_macholib(pth):
 
     This implementation is for Mac OS X and uses library macholib.
     """
-    from PyInstaller.lib.macholib.MachO import MachO
-    from PyInstaller.lib.macholib.mach_o import LC_RPATH
-    from PyInstaller.lib.macholib.dyld import dyld_find
+    from ..lib.macholib.MachO import MachO
+    from ..lib.macholib.mach_o import LC_RPATH
+    from ..lib.macholib.dyld import dyld_find
     rslt = set()
     seen = set()  # Libraries read from binary headers.
 
@@ -738,8 +738,8 @@ def findLibrary(name):
     # Look in /etc/ld.so.cache
     # Solaris does not have /sbin/ldconfig. Just check if this file exists.
     if lib is None:
-        PyInstaller.depend.utils.load_ldconfig_cache()
-        lib = PyInstaller.depend.utils.LDCONFIG_CACHE.get(name)
+        utils.load_ldconfig_cache()
+        lib = utils.LDCONFIG_CACHE.get(name)
         if lib:
             assert os.path.isfile(lib)
 
