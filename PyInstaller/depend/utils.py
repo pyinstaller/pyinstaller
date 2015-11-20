@@ -25,8 +25,9 @@ import zipfile
 from ..lib.modulegraph import modulegraph
 
 from .. import compat
-from ..compat import is_darwin, is_unix, is_py2, BYTECODE_MAGIC, PY3_BASE_MODULES, \
-    exec_python_rc
+from ..compat import (is_darwin, is_unix, is_py2, is_freebsd,
+                      BYTECODE_MAGIC, PY3_BASE_MODULES,
+                      exec_python_rc)
 from .dylib import include_library
 from .. import log as logging
 
@@ -385,7 +386,11 @@ def load_ldconfig_cache():
     # :fixme: Is this the correct path for all unixes?
     ldconfig = find_executable('ldconfig',
                                '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
-    text = compat.exec_command(ldconfig, '-p')
+    if is_freebsd:
+        # This has a slightly different format than on linux
+        text = compat.exec_command(ldconfig, '-r')
+    else:
+        text = compat.exec_command(ldconfig, '-p')
 
     # Skip first line of the library list because it is just
     # an informative line and might contain localized characters.
