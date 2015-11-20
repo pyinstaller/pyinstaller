@@ -189,7 +189,7 @@ class Tree(Target, TOC):
     This class is a way of creating a TOC (Table of Contents) that describes
     some or all of the files within a directory.
     """
-    def __init__(self, root=None, prefix=None, excludes=None):
+    def __init__(self, root=None, prefix=None, excludes=None, typecode='DATA'):
         """
         root
                 The root of the tree (on the build system).
@@ -203,12 +203,16 @@ class Tree(Target, TOC):
                         include the path).
                     *.ext
                         Any file with the given extension will be excluded.
+        typecode
+                The typecode to be used for all files found in this tree.
+                See the TOC class for for information about the typcodes.
         """
         Target.__init__(self)
         TOC.__init__(self)
         self.root = root
         self.prefix = prefix
         self.excludes = excludes
+        self.typecode = typecode
         if excludes is None:
             self.excludes = []
         self.__postinit__()
@@ -217,6 +221,7 @@ class Tree(Target, TOC):
             ('root', _check_guts_eq),
             ('prefix', _check_guts_eq),
             ('excludes', _check_guts_eq),
+            ('typecode', _check_guts_eq),
             ('data', None),  # tested below
             # no calculated/analysed values
             )
@@ -278,5 +283,5 @@ class Tree(Target, TOC):
                 if os.path.isdir(fullfilename):
                     stack.append((fullfilename, resfilename))
                 else:
-                    result.append((resfilename, fullfilename, 'DATA'))
+                    result.append((resfilename, fullfilename, self.typecode))
         self[:] = result
