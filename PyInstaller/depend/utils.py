@@ -381,7 +381,12 @@ def load_ldconfig_cache():
     if LDCONFIG_CACHE is not None:
         return
 
-    text = compat.exec_command("/sbin/ldconfig", "-p")
+    from distutils.spawn import find_executable
+    # :fixme: Is this the correct path for all unixes?
+    ldconfig = find_executable('ldconfig',
+                               '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
+    text = compat.exec_command(ldconfig, '-p')
+
     # Skip first line of the library list because it is just
     # an informative line and might contain localized characters.
     # Example of first line with local cs_CZ.UTF-8:
