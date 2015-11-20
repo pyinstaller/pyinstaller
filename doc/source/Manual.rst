@@ -2051,7 +2051,7 @@ The Tree Class
 The Tree class is a way of creating a TOC that describes some or all of the
 files within a directory:
 
-      ``Tree(``\ *root*\ ``, prefix=``\ *run-time-folder*\ ``, excludes=``\ *match*\ ``)``
+      ``Tree(``\ *root*\ ``, prefix=``\ *run-time-folder*\ ``, excludes=``\ *match*\ ``, typecode='DATA')``
 
 * The *root* argument is a path string to a directory.
   It may be absolute or relative to the spec file directory.
@@ -2069,6 +2069,12 @@ files within a directory:
   - a name, which causes files or folders with this basename to be excluded
 
   - ``*.ext``, which causes files with this extension to be excluded
+
+* The *typecode* argument specifies the typecode to be used for all
+  files found in this tree.
+  It defaults to ``'DATA'``, which is appropriate in most cases.
+  See the `TOC Class (Table of Contents)`_
+  for more information about the typcodes.
 
 For example::
 
