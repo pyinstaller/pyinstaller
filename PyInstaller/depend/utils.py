@@ -403,7 +403,11 @@ def load_ldconfig_cache():
         # :fixme: this assumes libary names do not contain whitespace
         name = line.split(None, 1)[0]
         path = line.split("=>", 1)[1].strip()
-        LDCONFIG_CACHE[name] = path
+        # ldconfig may know about several versions of the same lib,
+        # e.g. differents arch, different libc, etc. Use the first
+        # entry.
+        if not name in LDCONFIG_CACHE:
+            LDCONFIG_CACHE[name] = path
 
 
 def get_path_to_egg(path):
