@@ -32,14 +32,11 @@ def test_ctypes_util_find_library_as_default_argument():
 
 @pytest.mark.skipif(not is_unix, reason="requires a Unix System")
 def test_ldconfig_cache():
-    # This is a bit of a double-fold test: It should test if
-    # LDCONFIG_CACHE is working, but also requires PYDYLIB_NAMES to be
-    # correct.
-    # If somebody has a better idea which library to test for, feel
-    # free to enhance this code.
     utils.load_ldconfig_cache()
-    for name in PYDYLIB_NAMES:
-        lib = utils.LDCONFIG_CACHE.get(name)
-        if lib:
+    libpath = None
+    for soname in utils.LDCONFIG_CACHE:
+        if soname.startswith('libc.so.'):
+            libpath = utils.LDCONFIG_CACHE[soname]
             break
-    assert lib, 'Neither of %s found' % ', '.join(PYDYLIB_NAMES)
+    assert libpath, 'libc.so not found'
+    assert os.path.isfile(libpath)
