@@ -53,15 +53,9 @@ def test_append_existing():
     expected = list(ELEMS1)
     assert toc == expected
 
-def test_append_other_case_1():
-    toc = TOC(ELEMS1)
-    toc.append(('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE'))
-    expected = list(ELEMS1)
-    assert len(toc) == len(ELEMS1)+1
-
 @skipif_notwin
-def test_append_other_case_2():
-    # BINARY should be norm-cased and thus not added again
+def test_append_other_case():
+    # should not be added if the filenames are the same on a case-insensitive system.
     toc = TOC(ELEMS1)
     toc.append(('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY'))
     expected = list(ELEMS1)
@@ -88,16 +82,9 @@ def test_insert_existing():
     expected = list(ELEMS1)
     assert toc == expected
 
-
-def test_insert_other_case_1():
-    toc = TOC(ELEMS1)
-    toc.insert(1, ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE'))
-    expected = list(ELEMS1)
-    assert len(toc) == len(ELEMS1)+1
-
 @skipif_notwin
-def test_insert_other_case_2():
-    # BINARY should be norm-cased and thus not added again
+def test_insert_other_case():
+    # should not be added if the filenames are the same on a case-insensitive system.
     toc = TOC(ELEMS1)
     toc.insert(1, ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY'))
     expected = list(ELEMS1)
