@@ -13,6 +13,7 @@ import pytest
 import textwrap
 
 from PyInstaller.depend import utils
+from PyInstaller.compat import (is_unix, PYDYLIB_NAMES)
 
 
 def test_ctypes_util_find_library_as_default_argument():
@@ -27,3 +28,18 @@ def test_ctypes_util_find_library_as_default_argument():
     code = textwrap.dedent(code)
     co = compile(code, '<ctypes_util_find_library_as_default_argument>', 'exec')
     utils.scan_code_for_ctypes(co)
+
+
+@pytest.mark.skipif(not is_unix, reason="requires a Unix System")
+def test_ldconfig_cache():
+    # This is a bit of a double-fold test: It should test if
+    # LDCONFIG_CACHE is working, but also requires PYDYLIB_NAMES to be
+    # correct.
+    # If somebody has a better idea which library to test for, feel
+    # free to enhance this code.
+    utils.load_ldconfig_cache()
+    for name in PYDYLIB_NAMES:
+        lib = utils.LDCONFIG_CACHE.get(name)
+        if lib:
+            break
+    assert lib, 'Neither of %s found' % ', '.join(PYDYLIB_NAMES)
