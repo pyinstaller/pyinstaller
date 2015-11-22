@@ -25,6 +25,7 @@ from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 
 
 SYS_PREFIX = sys._MEIPASS
+SYS_PREFIXLEN = len(SYS_PREFIX)
 
 # In Python 3.3+ tne locking scheme has changed to per-module locks for the most part.
 # Global locking should not be required in Python 3.3+
@@ -222,6 +223,21 @@ class FrozenImporter(object):
         # Raise import error.
         raise ImportError("Can't load frozen modules.")
 
+
+    def __call__(self, path):
+        """
+        PEP-302 sys.path_hook processor. sys.meta_path is not enough, as
+        pkgutil.get_loader() does not use it directly.
+        """
+
+        if path.startswith(SYS_PREFIX):
+            fullname = path[SYS_PREFIXLEN+1:].replace(pyi_os_path.os_sep, '.')
+            loader = self.find_module(fullname)
+            if loader is not None:
+                return loader
+
+        raise ImportError(path)
+
     def find_module(self, fullname, path=None):
         """
         PEP-302 finder.find_module() method for the ``sys.meta_path`` hook.
@@ -392,7 +408,7 @@ class FrozenImporter(object):
         if fullname in self.toc:
             try:
                 is_pkg, bytecode = self._pyz_archive.extract(fullname)
-                return is_pkg
+                return bool(is_pkg)
             except Exception:
                 raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
         else:
@@ -635,7 +651,10 @@ def install():
         sys.meta_path.append(BuiltinImporter())
     # Ensure Python looks in the bundled zip archive for modules before any
     # other places.
-    sys.meta_path.append(FrozenImporter())
+    fimp = FrozenImporter()
+    sys.meta_path.append(fimp)
+    sys.path_hooks.append(fimp)
+
     # Import hook for the C extension modules.
     sys.meta_path.append(CExtensionImporter())
 
