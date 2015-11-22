@@ -65,7 +65,7 @@ class TOC(list):
             self.filenames.add(name)
             super(TOC, self).append((name, path, typecode))
         else:
-            if typecode in ('EXTENSION', 'PYSOURCE', 'PYMODULE') and name != os.path.normcase(path):
+            if typecode in ('EXTENSION', 'PYSOURCE', 'PYMODULE') and name != os.path.normcase(name):
                 logger.warn("Attempted to add Python module twice with different upper/lowercases: %s", name)
 
     def insert(self, pos, entry):
@@ -77,7 +77,7 @@ class TOC(list):
             self.filenames.add(name)
             super(TOC, self).insert(pos, (name, path, typecode))
         else:
-            if typecode in ('EXTENSION', 'PYSOURCE', 'PYMODULE') and name != os.path.normcase(path):
+            if typecode in ('EXTENSION', 'PYSOURCE', 'PYMODULE') and name != os.path.normcase(name):
                 logger.warn("Attempted to add Python module twice with different upper/lowercases: %s", name)
 
     def __add__(self, other):
