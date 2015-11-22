@@ -383,9 +383,13 @@ def load_ldconfig_cache():
         return
 
     from distutils.spawn import find_executable
-    # :fixme: Is this the correct path for all unixes?
-    ldconfig = find_executable('ldconfig',
-                               '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
+    ldconfig = find_executable('ldconfig')
+    if ldconfig is None:
+        # If `lsconfig` is not found in $PATH, search it in some fixed
+        # directories. Simply use a second call instead of fiddling
+        # around with checks for empty env-vars and string-concat.
+        ldconfig = find_executable('ldconfig',
+                                   '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
     if is_freebsd:
         # This has a quite different format than other Unixes
         # [vagrant@freebsd-10 ~]$ ldconfig -r
