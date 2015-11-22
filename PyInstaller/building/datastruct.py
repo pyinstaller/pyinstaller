@@ -19,6 +19,17 @@ from .utils import _check_guts_eq
 logger = logging.getLogger(__name__)
 
 
+class FilenameSet(set):
+    """
+    Used by TOC to contain a unique set of filenames, even on case-insensitive systems.
+    """
+    def add(self, name):
+        super(FilenameSet, self).add(os.path.normcase(name))
+    
+    def __contains__(self, name):
+        return super(FilenameSet, self).__contains__(os.path.normcase(name))
+
+
 class TOC(list):
     # TODO Simplify the representation and use directly Modulegraph objects.
     """
@@ -40,38 +51,28 @@ class TOC(list):
     """
     def __init__(self, initlist=None):
         super(TOC, self).__init__(self)
-        self.filenames = set()
+        self.filenames = FilenameSet()
         if initlist:
             for entry in initlist:
                 self.append(entry)
 
-    def _normentry(self, entry):
+    def append(self, entry):
         if not isinstance(entry, tuple):
             logger.info("TOC found a %s, not a tuple", entry)
             raise TypeError("Expected tuple, not %s." % type(entry).__name__)
         name, path, typecode = entry
-        # :todo: remove this special case for `gi_typelibs`. This
-        # should not be handled at such a basic level datastruct.
-        if typecode in ["BINARY", "DATA"] and not os.path.dirname(name) == 'gi_typelibs':
-            # Normalize the case for binary files and data files only (to avoid duplicates
-            # for different cases under Windows). We can't do that for
-            # Python files because the import semantic (even at runtime)
-            # depends on the case. We also cannot do that for GObject Introspection typelibs
-            # which depend on the case when being loaded through PyGObject.
-            name = os.path.normcase(name)
-        return (name, path, typecode)
-
-    def append(self, entry):
-        name, path, typecode = self._normentry(entry)
         if name not in self.filenames:
-            super(TOC, self).append((name, path, typecode))
             self.filenames.add(name)
+            super(TOC, self).append((name, path, typecode))
 
     def insert(self, pos, entry):
-        name, path, typecode = self._normentry(entry)
+        if not isinstance(entry, tuple):
+            logger.info("TOC found a %s, not a tuple", entry)
+            raise TypeError("Expected tuple, not %s." % type(entry).__name__)
+        name, path, typecode = entry
         if name not in self.filenames:
-            super(TOC, self).insert(pos, (name, path, typecode))
             self.filenames.add(name)
+            super(TOC, self).insert(pos, (name, path, typecode))
 
     def __add__(self, other):
         result = TOC(self)
