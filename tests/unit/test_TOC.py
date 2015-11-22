@@ -67,6 +67,12 @@ def test_append_other_case_2():
     expected = list(ELEMS1)
     assert toc == expected
 
+def test_append_keep_filename():
+    # name in TOC should be the same as the one added
+    toc = TOC()
+    entry = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
+    toc.append(entry)
+    assert toc[0][0] == entry[0]
 
 def test_insert():
     toc = TOC(ELEMS1)
@@ -96,6 +102,13 @@ def test_insert_other_case_2():
     toc.insert(1, ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY'))
     expected = list(ELEMS1)
     assert toc == expected
+
+def test_insert_keep_filename():
+    # name in TOC should be the same as the one added
+    toc = TOC()
+    entry = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
+    toc.insert(1, entry)
+    assert toc[0][0] == entry[0]
 
 
 def test_extend():
