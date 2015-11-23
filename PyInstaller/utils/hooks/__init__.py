@@ -891,6 +891,7 @@ def collect_submodules(package, subdir=None, pattern=None, endswith=False):
         # these subdirs.
             del dirnames[:]
 
+    logger.debug("- Found submodules: %s", mods)
     return list(mods)
 
 
@@ -985,6 +986,37 @@ def collect_data_files(package, include_py_files=False, subdir=None):
 
     return datas
 
+def collect_system_data_files(path, destdir=None, include_py_files=False):
+    """
+    This routine produces a list of (source, dest) non-Python (i.e. data)
+    files which reside somewhere on the system. Its results can be directly
+    assigned to ``datas`` in a hook script.
+
+    This function is used only for hook scripts, but not by the body of
+    PyInstaller.
+    """
+    # Accept only strings as paths.
+    if type(path) is not str:
+        raise ValueError
+
+    # Walk through all file in the given package, looking for data files.
+    datas = []
+    for dirpath, dirnames, files in os.walk(path):
+        for f in files:
+            extension = os.path.splitext(f)[1]
+            if include_py_files or (not extension in PY_IGNORE_EXTENSIONS):
+                # Produce the tuple
+                # (/abs/path/to/source/mod/submod/file.dat,
+                #  mod/submod/file.dat)
+                source = os.path.join(dirpath, f)
+                dest = remove_prefix(dirpath,
+                                     os.path.dirname(path) + os.sep)
+                if destdir is not None:
+                    dest = os.path.join(destdir, dest)
+                datas.append((source, dest))
+
+    return datas
+
 
 def _find_prefix(filename):
     """
@@ -1021,6 +1053,25 @@ def get_typelibs(module, version):
     logger.warn("get_typelibs is deprecated, use get_gi_typelibs instead")
     return get_gi_typelibs(module, version)[1]
 
+def get_gi_libdir(module, version):
+    statement = """
+import gi
+gi.require_version("GIRepository", "2.0")
+from gi.repository import GIRepository
+repo = GIRepository.Repository.get_default()
+module, version = (%r, %r)
+repo.require(module, version,
+             GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
+print(repo.get_shared_library(module))
+"""
+    statement %= (module, version)
+    libs = exec_statement(statement).split(',')
+    for lib in libs:
+        path = findSystemLibrary(lib.strip())
+        return os.path.dirname(path)
+    
+    raise ValueError("Could not find libdir for %s-%s" % (module, version))
+
 def get_gi_typelibs(module, version):
     """
     Returns a tuple of (binaries, datas, hiddenimports) to be used by PyGObject
@@ -1032,15 +1083,6 @@ def get_gi_typelibs(module, version):
     datas = []
     binaries = []
     hiddenimports = []
-
-    _get_gi_typelibs(module, version, datas, binaries, hiddenimports)
-
-    return binaries, datas, hiddenimports
-
-def _get_gi_typelibs(module, version, datas, binaries, hiddenimports):
-    """
-    Internal function used by get_gi_typelibs()
-    """
 
     statement = """
 import gi
@@ -1084,9 +1126,10 @@ print({'sharedlib': repo.get_shared_library(module),
 
         ## Load dependencies recursively
         for dep in typelibs_data['deps']:
-            m, v = dep.rsplit('-', 1)
-            _get_gi_typelibs(m, v, datas, binaries, hiddenimports)
-
+            m, _ = dep.rsplit('-', 1)
+            hiddenimports += ['gi.repository.%s' % m]
+    
+    return binaries, datas, hiddenimports
 
 
 def gir_library_path_fix(path):
@@ -1136,3 +1179,45 @@ def gir_library_path_fix(path):
         return os.path.join(CONF['workpath'], typelib_name), 'gi_typelibs'
     else:
         return (path, 'gi_typelibs')
+
+def get_glib_system_data_dirs():
+    statement = """
+import gi
+gi.require_version('GLib', '2.0')
+from gi.repository import GLib
+print(GLib.get_system_data_dirs())
+"""
+    data_dirs = eval_statement(statement)
+    if not data_dirs:
+        logger.error("gi repository 'GIRepository 2.0' not found. "
+                     "Please make sure libgirepository-gir2.0 resp. "
+                     "lib64girepository-gir2.0 is installed.")
+        # :todo: should we raise a SystemError here?
+    return data_dirs
+
+def collect_glib_share_files(path):
+    glib_data_dirs = get_glib_system_data_dirs()
+    if glib_data_dirs == None or len(glib_data_dirs) == 0:
+        return []
+    
+    path = os.path.join(glib_data_dirs[0], path)
+    return collect_system_data_files(path, destdir='share', include_py_files=False)
+
+_glib_translations = None
+
+def collect_glib_translations(prog):
+    """
+    Returns a list of translations in the system locale directory whose
+    names equal prog.mo
+    """
+    
+    global _glib_translations
+    if _glib_translations is None:
+        _glib_translations = collect_glib_share_files('locale')
+    
+    names = [os.sep + prog + '.mo',
+             os.sep + prog + '.po']
+    namelen = len(names[0])
+    
+    return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
+

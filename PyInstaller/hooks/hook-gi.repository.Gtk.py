@@ -10,12 +10,17 @@
 Import hook for PyGObject https://wiki.gnome.org/PyGObject
 """
 
-from PyInstaller.utils.hooks import get_gi_typelibs
+import os
+import os.path
+import glob
+
+from PyInstaller.compat import is_win
+from PyInstaller.utils.hooks import collect_glib_share_files, collect_glib_translations, exec_statement, get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('Gtk', '3.0')
 
-import logging
-logging = logging.getLogger(__name__)
-logging.warn("GTK support is currently incomplete, please copy "
-             "icons/fontconfig/locale/themes to your dist directory for "
-             "your app to work correctly.")
+datas += collect_glib_share_files('fontconfig')
+datas += collect_glib_share_files('icons')
+datas += collect_glib_share_files('themes')
+datas += collect_glib_translations('gtk30')
+
