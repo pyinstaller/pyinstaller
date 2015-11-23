@@ -150,8 +150,9 @@ def get_data(name, arch):
         (ispkg, pos, length) = arch.toc.get(name, (0, None, 0))
         if pos is None:
             return None
-        arch.lib.seek(arch.start + pos)
-        return zlib.decompress(arch.lib.read(length))
+        with arch.lib:
+            arch.lib.seek(arch.start + pos)
+            return zlib.decompress(arch.lib.read(length))
     ndx = arch.toc.find(name)
     dpos, dlen, ulen, flag, typcd, name = arch.toc[ndx]
     x, data = arch.extract(ndx)

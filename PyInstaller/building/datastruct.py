@@ -19,6 +19,17 @@ from .utils import _check_guts_eq
 logger = logging.getLogger(__name__)
 
 
+class FilenameSet(set):
+    """
+    Used by TOC to contain a unique set of filenames, even on case-insensitive systems.
+    """
+    def add(self, name):
+        super(FilenameSet, self).add(os.path.normcase(name))
+    
+    def __contains__(self, name):
+        return super(FilenameSet, self).__contains__(os.path.normcase(name))
+
+
 class TOC(list):
     # TODO Simplify the representation and use directly Modulegraph objects.
     """
@@ -40,38 +51,34 @@ class TOC(list):
     """
     def __init__(self, initlist=None):
         super(TOC, self).__init__(self)
-        self.filenames = set()
+        self.filenames = FilenameSet()
         if initlist:
             for entry in initlist:
                 self.append(entry)
 
-    def _normentry(self, entry):
+    def append(self, entry):
         if not isinstance(entry, tuple):
             logger.info("TOC found a %s, not a tuple", entry)
             raise TypeError("Expected tuple, not %s." % type(entry).__name__)
         name, path, typecode = entry
-        # :todo: remove this special case for `gi_typelibs`. This
-        # should not be handled at such a basic level datastruct.
-        if typecode in ["BINARY", "DATA"] and not os.path.dirname(name) == 'gi_typelibs':
-            # Normalize the case for binary files and data files only (to avoid duplicates
-            # for different cases under Windows). We can't do that for
-            # Python files because the import semantic (even at runtime)
-            # depends on the case. We also cannot do that for GObject Introspection typelibs
-            # which depend on the case when being loaded through PyGObject.
-            name = os.path.normcase(name)
-        return (name, path, typecode)
-
-    def append(self, entry):
-        name, path, typecode = self._normentry(entry)
         if name not in self.filenames:
-            super(TOC, self).append((name, path, typecode))
             self.filenames.add(name)
+            super(TOC, self).append((name, path, typecode))
+        else:
+            if typecode in ('EXTENSION', 'PYSOURCE', 'PYMODULE') and name != os.path.normcase(name):
+                logger.warn("Attempted to add Python module twice with different upper/lowercases: %s", name)
 
     def insert(self, pos, entry):
-        name, path, typecode = self._normentry(entry)
+        if not isinstance(entry, tuple):
+            logger.info("TOC found a %s, not a tuple", entry)
+            raise TypeError("Expected tuple, not %s." % type(entry).__name__)
+        name, path, typecode = entry
         if name not in self.filenames:
-            super(TOC, self).insert(pos, (name, path, typecode))
             self.filenames.add(name)
+            super(TOC, self).insert(pos, (name, path, typecode))
+        else:
+            if typecode in ('EXTENSION', 'PYSOURCE', 'PYMODULE') and name != os.path.normcase(name):
+                logger.warn("Attempted to add Python module twice with different upper/lowercases: %s", name)
 
     def __add__(self, other):
         result = TOC(self)
@@ -189,7 +196,7 @@ class Tree(Target, TOC):
     This class is a way of creating a TOC (Table of Contents) that describes
     some or all of the files within a directory.
     """
-    def __init__(self, root=None, prefix=None, excludes=None):
+    def __init__(self, root=None, prefix=None, excludes=None, typecode='DATA'):
         """
         root
                 The root of the tree (on the build system).
@@ -203,12 +210,16 @@ class Tree(Target, TOC):
                         include the path).
                     *.ext
                         Any file with the given extension will be excluded.
+        typecode
+                The typecode to be used for all files found in this tree.
+                See the TOC class for for information about the typcodes.
         """
         Target.__init__(self)
         TOC.__init__(self)
         self.root = root
         self.prefix = prefix
         self.excludes = excludes
+        self.typecode = typecode
         if excludes is None:
             self.excludes = []
         self.__postinit__()
@@ -217,6 +228,7 @@ class Tree(Target, TOC):
             ('root', _check_guts_eq),
             ('prefix', _check_guts_eq),
             ('excludes', _check_guts_eq),
+            ('typecode', _check_guts_eq),
             ('data', None),  # tested below
             # no calculated/analysed values
             )
@@ -278,5 +290,5 @@ class Tree(Target, TOC):
                 if os.path.isdir(fullfilename):
                     stack.append((fullfilename, resfilename))
                 else:
-                    result.append((resfilename, fullfilename, 'DATA'))
+                    result.append((resfilename, fullfilename, self.typecode))
         self[:] = result

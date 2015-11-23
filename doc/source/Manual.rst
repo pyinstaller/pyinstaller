@@ -2084,7 +2084,7 @@ files within a directory:
 
 * The *typecode* argument, if given, specifies the TOC typecode string
   that applies to all items in the Tree.
-  If omitted, the default is ``DATA``.
+  If omitted, the default is ``DATA``, which is appropriate for most cases.
 
 For example::
 

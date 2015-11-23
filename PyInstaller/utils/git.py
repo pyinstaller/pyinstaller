@@ -15,6 +15,12 @@ This module contains various helper functions for git DVCS
 import os
 from ..compat import exec_command, exec_command_rc, FileNotFoundError
 
+try:
+    WindowsError
+except NameError:
+    # No running on Windows
+    WindowsError = FileNotFoundError
+
 def get_repo_revision():
     path = os.path # shortcut
     gitdir = path.normpath(path.join(path.dirname(os.path.abspath(__file__)), '..', '..', '.git'))
@@ -31,7 +37,7 @@ def get_repo_revision():
                 rev += '.mod'
             # According to pep440 local version identifier starts with '+'.
             return '+' + rev
-    except FileNotFoundError:
+    except (FileNotFoundError, WindowsError):
         # Be silent when git command is not found.
         pass
     return ''

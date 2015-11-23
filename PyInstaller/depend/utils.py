@@ -25,8 +25,9 @@ import zipfile
 from ..lib.modulegraph import modulegraph
 
 from .. import compat
-from ..compat import is_darwin, is_unix, is_py2, BYTECODE_MAGIC, PY3_BASE_MODULES, \
-    exec_python_rc
+from ..compat import (is_darwin, is_unix, is_py2, is_freebsd,
+                      BYTECODE_MAGIC, PY3_BASE_MODULES,
+                      exec_python_rc)
 from .dylib import include_library
 from .. import log as logging
 
@@ -208,7 +209,8 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         op, oparg, conditional, curline = next(instructions)
         if op == LOAD_CONST:
             soname = co.co_consts[oparg]
-            return soname
+            if isinstance(soname, str):
+                return soname
 
 
     op, oparg, conditional, curline = next(instructions)
@@ -275,11 +277,9 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         op, oparg, conditional, curline = next(instructions)
         if op == LOAD_ATTR:
             if co.co_names[oparg] == "find_library":
-                op, oparg, conditional, curline = next(instructions)
-                if op == LOAD_CONST:
-                    libname = co.co_consts[oparg]
+                libname = _libFromConst()
+                if libname:
                     return ctypes.util.find_library(libname)
-
 
 
 # TODO Reuse this code with modulegraph implementation
@@ -378,19 +378,62 @@ def load_ldconfig_cache():
     is expensive.
     """
     global LDCONFIG_CACHE
-    text = compat.exec_command("/sbin/ldconfig", "-p")
-    # Skip first line of the library list because it is just
-    # an informative line and might contain localized characters.
-    # Example of first line with local cs_CZ.UTF-8:
-    #
-    #   V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
-    #
+
+    if LDCONFIG_CACHE is not None:
+        return
+
+    from distutils.spawn import find_executable
+    ldconfig = find_executable('ldconfig')
+    if ldconfig is None:
+        # If `lsconfig` is not found in $PATH, search it in some fixed
+        # directories. Simply use a second call instead of fiddling
+        # around with checks for empty env-vars and string-concat.
+        ldconfig = find_executable('ldconfig',
+                                   '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
+    if is_freebsd:
+        # This has a quite different format than other Unixes
+        # [vagrant@freebsd-10 ~]$ ldconfig -r
+        # /var/run/ld-elf.so.hints:
+        #     search directories: /lib:/usr/lib:/usr/lib/compat:...
+        #     0:-lgeom.5 => /lib/libgeom.so.5
+        #   184:-lpython2.7.1 => /usr/local/lib/libpython2.7.so.1
+        text = compat.exec_command(ldconfig, '-r')
+        text = text.strip().splitlines()[2:]
+        pattern = re.compile(r'^\s+\d+:-l(.+?)((\.\d+)+) => (\S+)')
+        pattern = re.compile(r'^\s+\d+:-l(\S+)(\s.*)? => (\S+)')
+    else:
+        # Skip first line of the library list because it is just
+        # an informative line and might contain localized characters.
+        # Example of first line with local cs_CZ.UTF-8:
+        #$ /sbin/ldconfig -p
+        #V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
+        #      libzvbi.so.0 (libc6,x86-64) => /lib64/libzvbi.so.0
+        #      libzvbi-chains.so.0 (libc6,x86-64) => /lib64/libzvbi-chains.so.0
+        text = compat.exec_command(ldconfig, '-p')
+        text = text.strip().splitlines()[1:]
+        pattern = re.compile(r'^\s+(\S+)(\s.*)? => (\S+)')
+
     LDCONFIG_CACHE = {}
-    for line in text.strip().splitlines()[1:]:
+    for line in text:
         # :fixme: this assumes libary names do not contain whitespace
-        name = line.split(None, 1)[0]
-        path = line.split("=>", 1)[1].strip()
-        LDCONFIG_CACHE[name] = path
+        m = pattern.match(line)
+        path = m.groups()[-1]
+        if is_freebsd:
+            # Insert `.so` at the end of the lib's basename. soname
+            # and filename may have (different) trailing versions. We
+            # assume the `.so` in the filename to mark the end of the
+            # lib's basename.
+            bname = os.path.basename(path).split('.so', 1)[0]
+            name = 'lib' + m.group(1)
+            assert name.startswith(bname)
+            name = bname + '.so' + name[len(bname):]
+        else:
+            name = m.group(1)
+        # ldconfig may know about several versions of the same lib,
+        # e.g. differents arch, different libc, etc. Use the first
+        # entry.
+        if not name in LDCONFIG_CACHE:
+            LDCONFIG_CACHE[name] = path
 
 
 def get_path_to_egg(path):
