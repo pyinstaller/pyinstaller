@@ -2041,20 +2041,20 @@ but for the normal case you need to know only these:
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
 | 'BINARY'      | A shared library.                    | Run-time name.        | Full path name in build.             |
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
-| 'EXTENSION'   | A shared library or other binary.    | Run-time name.        | Full path name in build.             |
+| 'EXTENSION'   | A binary extension to Python.        | Run-time name.        | Full path name in build.             |
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
 | 'OPTION'      | A Python run-time option.            | Option code           | ignored.                             |
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
 
 The run-time name of a file will be used in the final bundle.
 It may include path elements, for example ``extras/mydata.txt``.
-The run-time name of a ``DATA`` or ``BINARY`` file is "normalized",
-that is, made all-lowercase.
-The run-time name of an ``EXTENSION`` file is unchanged.
 
 A ``BINARY`` file or an ``EXTENSION`` file is assumed to be loadable, executable code,
-for example a dynamic library or a Python module compiled by Cython_.
-|PyInstaller| will examine these files for their dependencies,
+for example a dynamic library.
+The types are treated the same.
+``EXTENSION`` is generally used for a Python extension module,
+for example a module compiled by Cython_.
+|PyInstaller| will examine either type of file for dependencies,
 and if any are found, they are also included.
 
 The Tree Class
@@ -2115,7 +2115,7 @@ Each tuple in this TOC has:
 
 * A *path* as an absolute path to that file in ``../src/cy_mods`` relative to the spec file.
 
-* A *typecode* of ``EXTENSION`` (treat as loadable binary, do not normalize filename).
+* A *typecode* of ``EXTENSION`` (``BINARY`` could be used as well).
 
 
 Inspecting Archives
