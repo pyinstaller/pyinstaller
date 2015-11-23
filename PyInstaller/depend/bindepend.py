@@ -887,3 +887,5 @@ def findSystemLibrary(name):
         return findLibrary(name)
     elif is_win:
         return getfullnameof(name)
+    else:
+        raise ValueError("findSystemLibrary not implemented for this platform")
