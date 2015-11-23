@@ -2047,6 +2047,7 @@ but for the normal case you need to know only these:
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
 
 The run-time name of a file will be used in the final bundle.
+It may include path elements, for example ``extras/mydata.txt``.
 The run-time name of a ``DATA`` or ``BINARY`` file is "normalized",
 that is, made all-lowercase.
 The run-time name of an ``EXTENSION`` file is unchanged.
@@ -2062,7 +2063,7 @@ The Tree Class
 The Tree class is a way of creating a TOC that describes some or all of the
 files within a directory:
 
-      ``Tree(``\ *root*\ ``, prefix=``\ *run-time-folder*\ ``, excludes=``\ *match*\ ``)``
+      ``Tree(``\ *root*\ ``, prefix=``\ *run-time-folder*\ ``, excludes=``\ *string_list*\ ``, typecode=``\ *code* | ``'DATA' )``
 
 * The *root* argument is a path string to a directory.
   It may be absolute or relative to the spec file directory.
@@ -2081,6 +2082,10 @@ files within a directory:
 
   - ``*.ext``, which causes files with this extension to be excluded
 
+* The *typecode* argument, if given, specifies the TOC typecode string
+  that applies to all items in the Tree.
+  If omitted, the default is ``DATA``.
+
 For example::
 
     extras_toc = Tree('../src/extras', prefix='extras', excludes=['tmp','*.pyc'])
@@ -2089,16 +2094,28 @@ This creates ``extras_toc`` as a TOC object that lists
 all files from the relative path ``../src/extras``,
 omitting those that have the basename (or are in a folder named) ``tmp``
 or that have the type ``.pyc``.
-
 Each tuple in this TOC has:
 
-* A *typecode* of ``DATA``,
+* A *name* composed of ``extras/``\ *filename*.
 
-* A *path* consisting of a complete, absolute path to one file in the *root* folder,
+* A *path* consisting of a complete, absolute path to that file in the ``../src/extras`` folder (relative to the location of the spec file).
 
-* A *name* consisting of the filename of this file, or,
-  if you specify a *prefix*, the *name* is *prefix*\ ``/``\ *filename*.
+* A *typecode* of ``DATA`` (by default).
 
+An example of creating a TOC listing some binary modules::
+
+    cython_mods = Tree( '..src/cy_mods', excludes=['*.pyx','*.py','*.pyc'], typecode='EXTENSION' )
+
+This creates a TOC with a tuple for every file in the ``cy_mods`` folder,
+excluding any with the ``.pyx``, ``.py`` or ``.pyc`` suffixes
+(so presumably collecting the ``.pyd`` or ``.so`` modules created by Cython).
+Each tuple in this TOC has:
+
+* Its own filename as *name* (no prefix; the file will be at the top level of the bundle).
+
+* A *path* as an absolute path to that file in ``../src/cy_mods`` relative to the spec file.
+
+* A *typecode* of ``EXTENSION`` (treat as loadable binary, do not normalize filename).
 
 
 Inspecting Archives
