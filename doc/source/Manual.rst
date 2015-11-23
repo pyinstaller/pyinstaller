@@ -2031,19 +2031,30 @@ In order to add files to a TOC, you need to know the *typecode* values
 and their related *path* values.
 A *typecode* is a one-word string.
 |PyInstaller| uses a number of *typecode* values internally,
-but for the normal case you need to know only three:
+but for the normal case you need to know only these:
 
 
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
 | **typecode**  | **description**                      | **name**              | **path**                             |
 +===============+======================================+=======================+======================================+
+| 'DATA'        | Arbitrary files.                     | Run-time name.        | Full path name in build.             |
++---------------+--------------------------------------+-----------------------+--------------------------------------+
 | 'BINARY'      | A shared library.                    | Run-time name.        | Full path name in build.             |
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
-| 'DATA'        | Arbitrary files.                     | Run-time name.        | Full path name in build.             |
+| 'EXTENSION'   | A shared library or other binary.    | Run-time name.        | Full path name in build.             |
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
 | 'OPTION'      | A Python run-time option.            | Option code           | ignored.                             |
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
 
+The run-time name of a file will be used in the final bundle.
+The run-time name of a ``DATA`` or ``BINARY`` file is "normalized",
+that is, made all-lowercase.
+The run-time name of an ``EXTENSION`` file is unchanged.
+
+A ``BINARY`` file or an ``EXTENSION`` file is assumed to be loadable, executable code,
+for example a dynamic library or a Python module compiled by Cython_.
+|PyInstaller| will examine these files for their dependencies,
+and if any are found, they are also included.
 
 The Tree Class
 ------------------
