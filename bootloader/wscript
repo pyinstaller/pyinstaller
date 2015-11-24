@@ -403,6 +403,8 @@ def configure(ctx):
             # libraries are slightly different from other platforms.
             ctx.env['SHLIB_MARKER'] = '-Wl,-Bdynamic'
             ctx.env['STLIB_MARKER'] = '-Wl,-Bstatic'
+	    # On Solaris using gcc, the compiler needs to be gnu99
+	    ctx.env.append_value('CFLAGS', '-std=gnu99')
     if is_aix:
         ctx.env.append_value('DEFINES', 'AIX')
         # On AIX some APIs are restricted if _ALL_SOURCE is not defined.
