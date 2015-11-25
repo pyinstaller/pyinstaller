@@ -1636,6 +1636,31 @@ When you run the bundled app and it terminates with an ImportError,
 that is the time to examine the warning file.
 Then see `Helping PyInstaller Find Modules`_ below for how to proceed.
 
+Build-Time Dependency Graph
+----------------------------
+
+If you specify ``--log-level=DEBUG`` to the ``pyinstaller`` command,
+|PyInstaller| writes two files of data about dependencies into the
+build folder.
+
+The file ``build/``\ *name*\ ``/xref-``\ *name*\ ``.html`` in the
+``work-path=`` directory is an HTML file that lists the full
+contents of the import graph, showing which modules are imported
+by which.
+You can open it in any web browser.
+Find a module name, then keep clicking the "imported by" links
+until you find the top-level import that causes that module to be included.
+
+The file ``build/``\ *name*\ ``/graph-``\ *name*\ ``.dot`` in the
+``work-path=`` directory is a GraphViz_ input file.
+You can process it with the GraphViz_ command ``dot`` to produce
+a graphical display of the import dependencies.
+
+These files are very large because even the simplest "hello world"
+Python program ends up including a large number of standard modules.
+For this reason the graph file is not very useful in this release.
+
+
 
 Build-Time Python Errors
 -------------------------
@@ -2946,6 +2971,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _FAQ: https://github.com/pyinstaller/pyinstaller/wiki/FAQ
 .. _Git: http://git-scm.com/downloads
 .. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
+.. _GraphViz: http://graphviz.org/Home.php
 .. _Homebrew: http://brew.sh/
 .. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
 .. _`How to Report Bugs`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs
