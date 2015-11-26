@@ -20,40 +20,20 @@ import os
 import sys
 
 import PyInstaller.log as logging
-from PyInstaller.compat import is_darwin, is_win
-from PyInstaller.utils.hooks import get_typelibs, exec_statement
+from PyInstaller.compat import is_darwin, is_win, is_linux
+from PyInstaller.utils.hooks import get_gi_typelibs, get_gi_libdir, exec_statement
 
 logger = logging.getLogger(__name__)
 
+binaries, datas, hiddenimports = get_gi_typelibs('Gio', '2.0')
 
-hiddenimports = ['gi.overrides.Gio']
+libdir = get_gi_libdir('Gio', '2.0')
+path = None
 
-
-datas = get_typelibs('Gio', '2.0')
-
-
-binaries = []
-
-statement = """
-from gi.repository import Gio
-print(Gio.__path__)
-"""
-
-path = exec_statement(statement)
-pattern = None
-
-if is_darwin:
-    # Use commonprefix to find common prefix between sys.prefix and the path, e.g.,
-    # /opt/local/Library/Frameworks/Python.framework/Versions/3.4,
-    # and /opt/local/lib/girepository-1.0/Gio-2.0.typelib.
-    # Then use that and the standard Gio modules path of <prefix>/lib/gio/modules/ to gather the modules.
-    pattern = os.path.join(os.path.commonprefix([sys.prefix, path]), 'lib', 'gio', 'modules', '*.so')
-elif is_win:
-    # Don't use common prefix since sys.prefix on Windows in usually C:\Python<version> and Gio's modules
-    # are installed at C:\Python<version>\Lib\site-packages\gnome\lib\gio\modules which wouldn't yield a useful prefix.
-    # By just backing up a directory level from the Gio typelib we are then in the gnome lib directory and can then
-    # use the standard Gio modules path to gather the modules.
-    pattern = os.path.join(os.path.dirname(path), '..', 'gio', 'modules', '*.dll')
+if is_win:
+    pattern = os.path.join(libdir, 'gio', 'modules', '*.dll')
+elif is_darwin or is_linux:
+    pattern = os.path.join(libdir, 'gio', 'modules', '*.so')
 
 if pattern:
     for f in glob.glob(pattern):

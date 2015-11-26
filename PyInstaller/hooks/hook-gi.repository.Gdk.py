@@ -8,9 +8,8 @@
 #-----------------------------------------------------------------------------
 """
 Import hook for PyGObject https://wiki.gnome.org/PyGObject
-
-Tested with PyGObject 3.16.2 from MacPorts on Mac OS X 10.10 and
-PyGobject 3.14.0 on Windows 7
 """
+from PyInstaller.utils.hooks import get_gi_typelibs
 
-hiddenimports = ['gi._error', 'gi._option']
+binaries, datas, hiddenimports = get_gi_typelibs('Gdk', '3.0')
+hiddenimports += ['gi._gi_cairo']

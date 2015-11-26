@@ -6,11 +6,10 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-"""
-Import hook for PyGObject https://wiki.gnome.org/PyGObject
 
-Tested with PyGObject 3.16.2 from MacPorts on Mac OS X 10.10 and
-PyGobject 3.14.0 on Windows 7
-"""
 
-hiddenimports = ['gi._error', 'gi._option']
+def pre_safe_import_module(api):
+    # PyGObject modules loaded through the gi repository are marked as
+    # MissingModules by modulegraph so we convert them to
+    # RuntimeModules so their hooks are loaded and run.
+    api.add_runtime_module(api.module_name)
