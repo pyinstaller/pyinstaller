@@ -256,7 +256,12 @@ class Cipher(object):
             if not mod:
                 # Raise import error if none of the AES modules is found.
                 raise ImportError(modname)
-        return mod.load_module(modname)
+        mod = mod.load_module(modname)
+        # Issue #1663: Remove the AES module from sys.modules list. Otherwise
+        # it interferes with using 'Crypto.Cipher' module in users' code.
+        if modname in sys.modules:
+            del sys.modules[modname]
+        return mod
 
     def __create_cipher(self, iv):
         # The 'BlockAlgo' class is stateful, this factory method is used to
