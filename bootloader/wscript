@@ -382,9 +382,8 @@ def configure(ctx):
         #  warning "_BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE"
         if is_linux:
             ctx.env.append_value('DEFINES', '_DEFAULT_SOURCE')
-        else:
-            # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
-            ctx.env.append_value('DEFINES', '_BSD_SOURCE')
+        # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
+        ctx.env.append_value('DEFINES', '_BSD_SOURCE')
         # On Mac OS X is 'mkdtemp' available only with _DARWIN_C_SOURCE.
         if is_darwin:
             ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
