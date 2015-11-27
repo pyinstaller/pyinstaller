@@ -1,37 +1,32 @@
 #! /usr/bin/env python
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Copyright (c) 2014, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 """
 Bootloader building script.
 """
 
-
 import os
 import platform
 import sys
 import sysconfig
-
 from waflib.Configure import conf
 from waflib import Logs
-
 
 # The following two variables are used by the target "waf dist"
 VERSION = ''
 APPNAME = ''
 
-
 # These variables are mandatory ('/' are converted automatically)
 top = '.'
 out = 'build'
-
 
 # Platform specific switches.
 is_win = platform.system() == 'Windows'
@@ -41,7 +36,6 @@ is_freebsd = sys.platform.startswith('freebsd')
 # TODO find out proper value for AIX/Solaris
 is_solar = platform.system() in ['Solaris', 'SunOS']
 is_aix = platform.system() == 'AIX'
-
 
 # Build variants of bootloader.
 # PyInstaller provides debug/release bootloaders and console/windowed
@@ -54,12 +48,12 @@ variants = {
     'releasew': 'runw',
 }
 
-
 # TODO use following variable only on darwin and for 32bit loader.
 # TODO Do we still need this variable on OS X?
 # OS X 10.6 might not understand some load commands.
 # The following variable fixes 10.6 compatibility.
 os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.6'
+
 
 # TODO strip created binaries.
 
@@ -69,8 +63,8 @@ def architecture():
     on 64bit Mac function platform.architecture() returns 64bit even
     for 32bit Python. This is the workaround for this.
     """
-    
-    if is_darwin and sys.maxsize <= 3**32:
+
+    if is_darwin and sys.maxsize <= 3 ** 32:
 
         return '32bit'
     else:
@@ -163,10 +157,10 @@ def set_lsb_compiler(ctx):
         ctx.find_program('lsbcc', var='LSBCC', path_list=lsb_paths)
     except ctx.errors.ConfigurationError:
         # Fail hard and print warning if lsbcc is not available.
-        #if not ctx.env.LSBCC:
+        # if not ctx.env.LSBCC:
         ctx.fatal('RED', 'LSB (Linux Standard Base) tools >= 4.0 are '
-                  'required.\nTry --no-lsb option if not interested in '
-                  'building LSB binary.')
+                         'required.\nTry --no-lsb option if not interested in '
+                         'building LSB binary.')
 
     # lsbcc as CC compiler
     ctx.env.append_value('CFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
@@ -313,7 +307,6 @@ def set_arch_flags(ctx):
 
 
 def configure(ctx):
-
     # Detect architecture and CPU
     ctx.detect_arch_cpu()
 
@@ -327,7 +320,7 @@ def configure(ctx):
         ctx.load('gcc')
     else:
         ctx.load('compiler_c')  # Any available C compiler.
-			
+
     # LSB compatible bootloader only for Linux and without cli option --no-lsb.
     if is_linux and not ctx.options.nolsb:
         ctx.set_lsb_compiler()
@@ -342,7 +335,6 @@ def configure(ctx):
 
     # Set proper architecture and CPU for C compiler
     ctx.set_arch_flags()
-
 
     # TODO Set proper optimization flags for MSVC (Visual Studio).
     ### C Compiler optimizations.
@@ -362,7 +354,6 @@ def configure(ctx):
     if ctx.env.CC_NAME != 'msvc':
         # This tool allows reduce the size of executables.
         ctx.load('strip', tooldir='tools')
-
 
     ### Defines, Includes
 
@@ -387,8 +378,13 @@ def configure(ctx):
         #   Mac OS X 10.5 is UNIX 03 compliant.
         ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=600')
         ctx.env.append_value('DEFINES', '_REENTRANT')
-        # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
-        ctx.env.append_value('DEFINES', '_BSD_SOURCE')
+        # Recent GCC 5.x complains about _BSD_SOURCE:
+        #  warning "_BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE"
+        if is_linux:
+            ctx.env.append_value('DEFINES', '_DEFAULT_SOURCE')
+        else:
+            # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
+            ctx.env.append_value('DEFINES', '_BSD_SOURCE')
         # On Mac OS X is 'mkdtemp' available only with _DARWIN_C_SOURCE.
         if is_darwin:
             ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
@@ -403,8 +399,8 @@ def configure(ctx):
             # libraries are slightly different from other platforms.
             ctx.env['SHLIB_MARKER'] = '-Wl,-Bdynamic'
             ctx.env['STLIB_MARKER'] = '-Wl,-Bstatic'
-	    # On Solaris using gcc, the compiler needs to be gnu99
-	    ctx.env.append_value('CFLAGS', '-std=gnu99')
+            # On Solaris using gcc, the compiler needs to be gnu99
+            ctx.env.append_value('CFLAGS', '-std=gnu99')
     if is_aix:
         ctx.env.append_value('DEFINES', 'AIX')
         # On AIX some APIs are restricted if _ALL_SOURCE is not defined.
@@ -419,7 +415,6 @@ def configure(ctx):
             ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
             ctx.env['STATICLIB_MARKER'] = '-Wl,-bstatic'
 
-
     ### Libraries
 
     if is_win:
@@ -433,7 +428,7 @@ def configure(ctx):
         if not (is_darwin or is_freebsd):
             ctx.check_cc(lib='dl', mandatory=True)
         # Link to libthr on FreeBSD.
-        if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop(): 
+        if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
             ctx.check_cc(lib='thr', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
         ctx.check_cc(lib='z', mandatory=True)
@@ -471,14 +466,12 @@ def configure(ctx):
     if is_darwin:
         ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.6')
 
-
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
     if is_linux and ctx.check_cc(ccflags='-Wl,--as-needed',
                                  msg='Checking for flags -Wl,--as-needed'):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
-
 
     ### DEBUG and RELEASE environments
     basic_env = ctx.env
@@ -495,11 +488,11 @@ def configure(ctx):
     ctx.env.append_value('DEFINES', 'WINDOWED')
     # For MinGW disables console window on Windows- MinGW option
     if is_win and not ctx.env.CC_NAME == 'msvc':
-            # TODO Is it necessary to have -mwindows for C and LINK flags?
-            ctx.env.append_value('LINKFLAGS', '-mwindows')
-            ctx.env.append_value('CFLAGS', '-mwindows')
+        # TODO Is it necessary to have -mwindows for C and LINK flags?
+        ctx.env.append_value('LINKFLAGS', '-mwindows')
+        ctx.env.append_value('CFLAGS', '-mwindows')
     elif is_darwin:
-        #conf.env.append_value('CFLAGS', '-I/Developer/Headers/FlatCarbon')
+        # conf.env.append_value('CFLAGS', '-I/Developer/Headers/FlatCarbon')
         # To support catching AppleEvents and running as ordinary OSX GUI app,
         # we have to link against the Carbon framework.
         # This linkage only needs to be there for the windowed bootloaders.
@@ -519,9 +512,9 @@ def configure(ctx):
 
     # For MinGW disables console window on Windows- MinGW option
     if is_win and not ctx.env.CC_NAME == 'msvc':
-            # TODO Is it necessary to have -mwindows for C and LINK flags?
-            ctx.env.append_value('LINKFLAGS', '-mwindows')
-            ctx.env.append_value('CFLAGS', '-mwindows')
+        # TODO Is it necessary to have -mwindows for C and LINK flags?
+        ctx.env.append_value('LINKFLAGS', '-mwindows')
+        ctx.env.append_value('CFLAGS', '-mwindows')
     elif is_darwin:
         # To support catching AppleEvents and running as ordinary OSX GUI app,
         # we have to link against the Carbon framework.
@@ -618,10 +611,13 @@ def all(ctx):
 
 # Set up building several variants of bootloader.
 from waflib.Build import BuildContext, InstallContext
+
 for x in variants:
     class BootloaderContext(BuildContext):
         cmd = 'build' + '_' + x
         variant = x
+
+
     class BootloaderInstallContext(InstallContext):
         cmd = 'install' + '_' + x
         variant = x
