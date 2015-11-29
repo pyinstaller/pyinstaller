@@ -60,7 +60,8 @@ _definitions.txt:
 	@echo '.. |Homepage| replace:: http://www.pyinstaller.org' >> $@
 	@echo '.. |PyInstaller| replace:: `PyInstaller`' >> $@
 	@# run `pyinstaller.py -v` to get the version
-	@echo '.. |Version| replace::' `python ../../pyinstaller.py -v` >> $@
+	@echo -n '.. |Version| replace:: ' >> $@
+	@python ../../pyinstaller.py -v >> $@ 2>&1
 	@echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
 	@# folder name of package after download and unzip
 	@echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
