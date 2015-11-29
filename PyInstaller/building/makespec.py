@@ -167,10 +167,12 @@ def __add_options(parser):
     g.add_argument("-m", "--manifest", metavar="<FILE or XML>",
                    help="add manifest FILE or XML to the exe")
     g.add_argument("-r", "--resource", dest="resources",
-                   metavar="FILE[,TYPE[,NAME[,LANGUAGE]]]", action="append",
+                   metavar="RESOURCE", action="append",
                    default=[],
-                   help="Add or update a resource of the given type, name and language "
-                        "from FILE to a Windows executable. FILE can be a "
+                   help="Add or update a resource to a Windows executable. "
+                        "The RESOURCE is one to four items, "
+                        "FILE[,TYPE[,NAME[,LANGUAGE]]]. "
+                        "FILE can be a "
                         "data file or an exe/dll. For data files, at least "
                         "TYPE and NAME must be specified. LANGUAGE defaults "
                         "to 0 or may be specified as wildcard * to update all "
