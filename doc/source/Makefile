@@ -82,7 +82,7 @@ cleanall: cleanlogs
 
 cleanlogs:
 	rm -f ../*.aux ../*.out ../*.log
-	rm -f .log *.log
+	rm -f .log *.log _py*-options.tmp
 	rm -f _definitions.txt
 	@echo "All logs and aux removed."
 
