@@ -1069,7 +1069,7 @@ print(repo.get_shared_library(module))
     for lib in libs:
         path = findSystemLibrary(lib.strip())
         return os.path.dirname(path)
-    
+
     raise ValueError("Could not find libdir for %s-%s" % (module, version))
 
 def get_gi_typelibs(module, version):
@@ -1128,7 +1128,7 @@ print({'sharedlib': repo.get_shared_library(module),
         for dep in typelibs_data['deps']:
             m, _ = dep.rsplit('-', 1)
             hiddenimports += ['gi.repository.%s' % m]
-    
+
     return binaries, datas, hiddenimports
 
 
@@ -1199,7 +1199,7 @@ def collect_glib_share_files(path):
     glib_data_dirs = get_glib_system_data_dirs()
     if glib_data_dirs == None or len(glib_data_dirs) == 0:
         return []
-    
+
     path = os.path.join(glib_data_dirs[0], path)
     return collect_system_data_files(path, destdir='share', include_py_files=False)
 
@@ -1210,14 +1210,14 @@ def collect_glib_translations(prog):
     Returns a list of translations in the system locale directory whose
     names equal prog.mo
     """
-    
+
     global _glib_translations
     if _glib_translations is None:
         _glib_translations = collect_glib_share_files('locale')
-    
+
     names = [os.sep + prog + '.mo',
              os.sep + prog + '.po']
     namelen = len(names[0])
-    
+
     return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
 
