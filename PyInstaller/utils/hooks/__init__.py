@@ -1221,3 +1221,61 @@ def collect_glib_translations(prog):
 
     return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
 
+def copy_metadata(package_name):
+    """
+    This function returns a list to be assigned to the ``datas`` global
+    variable. This list instructs PyInstaller to copy the metadata for the given
+    package to PyInstaller's data directory.
+
+    Parameters
+    ----------
+    package_name : str
+        Specifies the name of the package for which metadata should be copied.
+
+    Returns
+    ----------
+    list
+        This should be assigned to ``datas``.
+
+    Examples
+    ----------
+        >>> from PyInstaller.utils.hooks import copy_metadata
+        >>> copy_metadata('sphinx')
+        [('c:\\python27\\lib\\site-packages\\Sphinx-1.3.2.dist-info',
+          'Sphinx-1.3.2.dist-info')]
+    """
+
+    # Some notes: to look at the metadata locations for all installed packages::
+    #
+    #     for key, value in pkg_resources.working_set.by_key.iteritems():
+    #         print('{}: {}'.format(key, value.egg_info))
+    #
+    # Looking at this output, I see three general types of packages:
+    #
+    # 1. ``pypubsub: c:\python27\lib\site-packages\pypubsub-3.3.0-py2.7.egg\EGG-INFO``
+    # 2. ``codechat: c:\users\bjones\documents\documentation\CodeChat.egg-info``
+    # 3. ``zest.releaser: c:\python27\lib\site-packages\zest.releaser-6.2.dist-info``
+    # 4. ``pyserial: None``
+    #
+    # The first item shows that some metadata will be nested inside an egg. I
+    # assume we'll have to deal with zipped eggs, but I don't have any examples
+    # handy. The second and third items show different naming conventions for
+    # the metadata-containing directory. The fourth item shows a package with no
+    # metadata.
+    #
+    # So, in cases 1-3, copy the metadata directory. In case 4, emit an error --
+    # there's no metadata to copy. See https://pythonhosted.org/setuptools/pkg_resources.html#getting-or-creating-distributions.
+    # Unfortunately, there's no documentation on the ``egg_info`` attribute; it
+    # was found through trial and error.
+    dist = pkg_resources.get_distribution(package_name)
+    metadata_dir = dist.egg_info
+    assert metadata_dir
+
+    # We want to copy from the ``metadata_dir`` to PyInstaller, leaving off its
+    # prefix in ``sys.path``. The ``location`` attribute provides this prefix,
+    # per https://pythonhosted.org/setuptools/pkg_resources.html#distribution-attributes.
+    # For example, if ``package_name`` is ``regex``, then ``location = c:\python27\lib\site-packages``
+    # and ``metadata_dir = c:\python27\lib\site-packages\regex-2015.11.09.dist-info``.
+    # We should therefore return ``[ ('c:\python27\lib\site-packages\regex-2015.11.09.dist-info',
+    # 'regex-2015.11.09.dist-info') ]``.
+    return [ (metadata_dir, metadata_dir[len(dist.location) + len(os.sep):]) ]
