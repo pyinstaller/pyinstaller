@@ -239,7 +239,12 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
 
     if not os.path.exists(os.path.dirname(cachedfile)):
         os.makedirs(os.path.dirname(cachedfile))
-    shutil.copy2(fnm, cachedfile)
+    # There are known some issues with 'shutil.copy2' on Mac OS X 10.11
+    # with copying st_flags. Issue #1650.
+    # 'shutil.copy' copies also permission bits and it should be sufficient for
+    # PyInstalle purposes.
+    shutil.copy(fnm, cachedfile)
+    # TODO find out if this is still necessary when no longer using shutil.copy2()
     if hasattr(os, 'chflags'):
         # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example)
         # If flags still remains, os.chmod will failed with:

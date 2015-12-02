@@ -535,7 +535,7 @@ class EXE(Target):
 
         if is_win and (self.icon or self.versrsrc or self.resources):
             tmpnm = tempfile.mktemp()
-            shutil.copy2(exe, tmpnm)
+            shutil.copy(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
             if self.icon:
                 icon.CopyIcons(tmpnm, self.icon)
@@ -596,7 +596,7 @@ class EXE(Target):
             self.copy(self.pkg.name, outf)
         else:
             logger.info("Copying archive to %s", self.pkgname)
-            shutil.copy2(self.pkg.name, self.pkgname)
+            shutil.copy(self.pkg.name, self.pkgname)
         outf.close()
 
         if is_darwin:
