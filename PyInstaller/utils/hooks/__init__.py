@@ -1197,11 +1197,16 @@ print(GLib.get_system_data_dirs())
 
 def collect_glib_share_files(path):
     glib_data_dirs = get_glib_system_data_dirs()
-    if glib_data_dirs == None or len(glib_data_dirs) == 0:
+    if glib_data_dirs == None:
         return []
 
-    path = os.path.join(glib_data_dirs[0], path)
-    return collect_system_data_files(path, destdir='share', include_py_files=False)
+    # TODO: will this return too much?
+    collected = []
+    for data_dir in glib_data_dirs:
+        p = os.path.join(data_dir, path)
+        collected += collect_system_data_files(p, destdir='share', include_py_files=False)
+
+    return collected
 
 _glib_translations = None
 

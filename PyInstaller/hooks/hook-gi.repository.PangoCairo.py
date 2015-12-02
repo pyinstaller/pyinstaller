@@ -9,7 +9,7 @@
 """
 Import hook for PyGObject https://wiki.gnome.org/PyGObject
 """
+
 from PyInstaller.utils.hooks import get_gi_typelibs
 
-binaries, datas, hiddenimports = get_gi_typelibs('Gdk', '3.0')
-hiddenimports += ['gi._gi_cairo', 'gi.repository.cairo']
+binaries, datas, hiddenimports = get_gi_typelibs('PangoCairo', '1.0')
