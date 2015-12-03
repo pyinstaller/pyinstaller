@@ -10,21 +10,14 @@
 # ***************************************************
 # hook-logilab.py - PyInstaller hook file for logilab
 # ***************************************************
-from PyInstaller.compat import is_py2
+# The following was written about logilab, version 1.1.0, based on executing
+# ``pip show logilab-common``.
 #
-# The following was written about logilab, version 0.32.2, based on the contents
-# of logilab.common.__pkginfo__.
+# In logilab.common, line 33::
 #
-# In logilab.common.configuration, line 126::
+#    __version__ = pkg_resources.get_distribution('logilab-common').version
 #
-#    from six.moves import range, configparser as cp, input
-#
-# Therefore, the modules must be listed as hidden imports, due to the six
-# module's lazy import structure. The range module is a builtin, so we
-# don't need to list that. The configparser imports as ConfigParser in
-# Python 2.
-#
-# Pyinstaller for Python 3 can auto-detect six imports, so omit it.
-if is_py2:
-    hiddenimports = ['ConfigParser']
+# Therefore, we need metadata for logilab.
+from PyInstaller.utils.hooks import copy_metadata
 
+datas = copy_metadata('logilab-common')
