@@ -13,7 +13,8 @@ import pytest
 import ctypes, ctypes.util
 
 from PyInstaller.compat import is_win
-from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, skipif_notwin
+from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, \
+  skipif_notwin, xfail
 
 
 # :todo: find a way to get this from `conftest` or such
@@ -64,7 +65,7 @@ def test_relative_import3(pyi_builder):
 #   * a/ -- contains no __init__.py.
 #
 #     * b.py - Empty. Should be imported.
-#
+@xfail(reason='__path__ not respected for filesystem modules.')
 def test_import_respects_path(pyi_builder, script_dir):
     pyi_builder.test_source('import pyi_testmod_path',
       ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
