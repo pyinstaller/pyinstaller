@@ -1068,7 +1068,7 @@ print(repo.get_shared_library(module))
     libs = exec_statement(statement).split(',')
     for lib in libs:
         path = findSystemLibrary(lib.strip())
-        return os.path.dirname(path)
+        return os.path.normpath(os.path.dirname(path))
 
     raise ValueError("Could not find libdir for %s-%s" % (module, version))
 
@@ -1195,7 +1195,32 @@ print(GLib.get_system_data_dirs())
         # :todo: should we raise a SystemError here?
     return data_dirs
 
+def get_glib_sysconf_dirs():
+    '''Tries to return the sysconf directories, eg /etc'''
+
+    if is_win:
+        # On windows, if you look at gtkwin32.c, sysconfdir is actually
+        # relative to the location of the GTK DLL. Since that's what
+        # we're actually interested in (not the user path), we have to
+        # do that the hard way'''
+        return [os.path.join(get_gi_libdir('GLib', '2.0'), 'etc')]
+
+    statement = """
+import gi
+gi.require_version('GLib', '2.0')
+from gi.repository import GLib
+print(GLib.get_system_config_dirs())
+"""
+    data_dirs = eval_statement(statement)
+    if not data_dirs:
+        logger.error("gi repository 'GIRepository 2.0' not found. "
+                     "Please make sure libgirepository-gir2.0 resp. "
+                     "lib64girepository-gir2.0 is installed.")
+        # :todo: should we raise a SystemError here?
+    return data_dirs
+
 def collect_glib_share_files(path):
+    '''path is relative to the system data directory (eg, /usr/share)'''
     glib_data_dirs = get_glib_system_data_dirs()
     if glib_data_dirs == None:
         return []
@@ -1205,6 +1230,20 @@ def collect_glib_share_files(path):
     for data_dir in glib_data_dirs:
         p = os.path.join(data_dir, path)
         collected += collect_system_data_files(p, destdir='share', include_py_files=False)
+
+    return collected
+
+def collect_glib_etc_files(path):
+    '''path is relative to the system config directory (eg, /etc)'''
+    glib_config_dirs = get_glib_sysconf_dirs()
+    if glib_config_dirs == None:
+        return []
+
+    # TODO: will this return too much?
+    collected = []
+    for config_dir in glib_config_dirs:
+        p = os.path.join(config_dir, path)
+        collected += collect_system_data_files(p, destdir='etc', include_py_files=False)
 
     return collected
 
