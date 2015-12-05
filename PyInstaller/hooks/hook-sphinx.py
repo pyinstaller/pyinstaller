@@ -37,7 +37,7 @@ hiddenimports = (
 #    lang_class = getattr(__import__(module, None, None, [classname]),
 #                         classname)
 #
-# From sphinx. search line 119::
+# From sphinx.search line 119::
 #
 #    languages = {
 #        'da': 'sphinx.search.da.SearchDanish',
