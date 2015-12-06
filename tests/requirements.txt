@@ -3,6 +3,7 @@ pytest >= 2.7.3  # Testing framework.
 pytest-xdist  # Plugin allowing running tests in parallel.
 pytest-timeout # Plugin to abort hanging tests.
 pytest-catchlog  # Capture log output separately from stdout/stderr
+pytest-drop-dup-tests # allows specifying order without duplicates
 pyreadline  # Colors in ipython on Windows.
 ipython  # Better interactive Python shell.
 mock

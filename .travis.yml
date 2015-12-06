@@ -76,4 +76,5 @@ install:
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
-  - py.test -n 5  --maxfail 3
+  # Run unitttest first.
+  - py.test -n 5  --maxfail 3 tests/unit/ tests/
