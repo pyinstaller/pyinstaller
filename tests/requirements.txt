@@ -30,7 +30,7 @@ boto3
 botocore
 gevent
 pygments
-pylint
+pylint>=1.5
 markdown
 sphinx
 pyzmq
