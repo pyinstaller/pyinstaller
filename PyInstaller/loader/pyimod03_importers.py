@@ -226,8 +226,10 @@ class FrozenImporter(object):
 
     def __call__(self, path):
         """
-        PEP-302 sys.path_hook processor. sys.meta_path is not enough, as
-        pkgutil.get_loader() does not use it directly.
+        PEP-302 sys.path_hook processor.
+
+        sys.path_hook is a list of callables, which will be checked in
+        sequence to determine if they can handle a given path item.
         """
 
         if path.startswith(SYS_PREFIX):
@@ -235,8 +237,8 @@ class FrozenImporter(object):
             loader = self.find_module(fullname)
             if loader is not None:
                 return loader
-
         raise ImportError(path)
+
 
     def find_module(self, fullname, path=None):
         """
@@ -649,10 +651,14 @@ def install():
     if sys.version_info[0] == 2:
         # First look in the built-in modules and not bundled ZIP archive.
         sys.meta_path.append(BuiltinImporter())
+
     # Ensure Python looks in the bundled zip archive for modules before any
     # other places.
     fimp = FrozenImporter()
     sys.meta_path.append(fimp)
+    # Add the FrozenImporter to `sys.path_hook`, too, since
+    # `pkgutil.get_loader()` does not use `sys.meta_path`. See issue
+    # #1689.
     sys.path_hooks.append(fimp)
 
     # Import hook for the C extension modules.
