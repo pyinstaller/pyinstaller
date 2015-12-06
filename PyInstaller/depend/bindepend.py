@@ -16,6 +16,7 @@ import os
 import sys
 import re
 import platform
+import ctypes.util
 from glob import glob
 
 # Required for extracting eggs.
@@ -888,4 +889,5 @@ def findSystemLibrary(name):
     elif is_win:
         return getfullnameof(name)
     else:
-        raise ValueError("findSystemLibrary not implemented for this platform")
+        # This seems to work, and is similar to what we have above..
+        return ctypes.util.find_library(name)

@@ -15,7 +15,9 @@ Tested with GLib 2.44.1, PyGObject 3.16.2, and GObject Introspection 1.44.0 on M
 GLib 2.42.2, PyGObject 3.14.0, and GObject Introspection 1.42 on Windows 7
 """
 
-from PyInstaller.utils.hooks import collect_glib_translations, get_gi_typelibs
+from PyInstaller.utils.hooks import collect_glib_translations, collect_glib_share_files, get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('GLib', '2.0')
 datas += collect_glib_translations('glib20')
+datas += collect_glib_share_files('glib-2.0', 'schemas')
+

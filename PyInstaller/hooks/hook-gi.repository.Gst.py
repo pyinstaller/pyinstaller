@@ -28,6 +28,8 @@ binaries, datas, hiddenimports = get_gi_typelibs('Gst', '1.0')
 
 datas += collect_glib_share_files('gstreamer-1.0')
 
+hiddenimports += ["gi.repository.Gio"]
+
 for prog in ['gst-plugins-bad-1.0',
              'gst-plugins-base-1.0',
              'gst-plugins-good-1.0',
