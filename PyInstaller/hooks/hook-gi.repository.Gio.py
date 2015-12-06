@@ -20,7 +20,7 @@ import os
 import sys
 
 import PyInstaller.log as logging
-from PyInstaller.compat import is_darwin, is_win, is_linux
+from PyInstaller.compat import is_darwin, is_win, is_linux, base_prefix
 from PyInstaller.utils.hooks import get_gi_typelibs, get_gi_libdir, exec_statement
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,12 @@ path = None
 if is_win:
     pattern = os.path.join(libdir, 'gio', 'modules', '*.dll')
 elif is_darwin or is_linux:
-    pattern = os.path.join(libdir, 'gio', 'modules', '*.so')
+    gio_libdir = os.path.join(libdir, 'gio', 'modules')
+    if not os.path.exists(gio_libdir):
+        # homebrew installs the files elsewhere..
+        gio_libdir = os.path.join(os.path.commonprefix([base_prefix, gio_libdir]), 'lib', 'gio', 'modules')
+
+    pattern = os.path.join(gio_libdir, '*.so')
 
 if pattern:
     for f in glob.glob(pattern):

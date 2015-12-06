@@ -20,3 +20,4 @@ from PyInstaller.utils.hooks import collect_glib_translations, collect_glib_shar
 binaries, datas, hiddenimports = get_gi_typelibs('GLib', '2.0')
 datas += collect_glib_translations('glib20')
 datas += collect_glib_share_files('glib-2.0', 'schemas')
+
