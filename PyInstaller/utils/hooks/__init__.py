@@ -1138,7 +1138,7 @@ def gir_library_path_fix(path):
     from ...config import CONF
 
     path = os.path.abspath(path)
-    common_path = os.path.commonprefix([sys.prefix, path])
+    common_path = os.path.commonprefix([compat.base_prefix, path])
     gir_path = os.path.join(common_path, 'share', 'gir-1.0')
 
     typelib_name = os.path.basename(path)
