@@ -1219,31 +1219,35 @@ print(GLib.get_system_config_dirs())
         # :todo: should we raise a SystemError here?
     return data_dirs
 
-def collect_glib_share_files(path):
+def collect_glib_share_files(*path):
     '''path is relative to the system data directory (eg, /usr/share)'''
     glib_data_dirs = get_glib_system_data_dirs()
     if glib_data_dirs == None:
         return []
 
+    destdir = os.path.join('share', *path[:-1])
+
     # TODO: will this return too much?
     collected = []
     for data_dir in glib_data_dirs:
-        p = os.path.join(data_dir, path)
-        collected += collect_system_data_files(p, destdir='share', include_py_files=False)
+        p = os.path.join(data_dir, *path)
+        collected += collect_system_data_files(p, destdir=destdir, include_py_files=False)
 
     return collected
 
-def collect_glib_etc_files(path):
+def collect_glib_etc_files(*path):
     '''path is relative to the system config directory (eg, /etc)'''
     glib_config_dirs = get_glib_sysconf_dirs()
     if glib_config_dirs == None:
         return []
 
+    destdir = os.path.join('etc', *path[:-1])
+
     # TODO: will this return too much?
     collected = []
     for config_dir in glib_config_dirs:
-        p = os.path.join(config_dir, path)
-        collected += collect_system_data_files(p, destdir='etc', include_py_files=False)
+        p = os.path.join(config_dir, *path)
+        collected += collect_system_data_files(p, destdir=destdir, include_py_files=False)
 
     return collected
 
