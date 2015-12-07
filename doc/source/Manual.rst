@@ -1855,11 +1855,10 @@ This version might have fixes or features that are not yet at `PyPI`_.
 You can download the latest stable version and the latest development
 version from the `PyInstaller Downloads`_ page.
 
-If you have Git_ installed on your development system,
-you can use it together with pip
-to install the latest version of |PyInstaller| directly::
+You can also install the latest version of |PyInstaller| directly
+using pip_::
 
-    pip install -e git://github.com/pyinstaller/pyinstaller.git#egg=PyInstaller
+    pip install -e https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 
 Asking for Help
 ~~~~~~~~~~~~~~~~~~
