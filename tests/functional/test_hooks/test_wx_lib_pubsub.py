@@ -17,11 +17,17 @@ are implicitly skipped under Python 3.
 import pkg_resources
 from PyInstaller.utils.tests import importorskip, xfail_py3, xfail
 
-# These tests fail under wxPython versions which support multiple pubsub APIs.
-# See https://github.com/pyinstaller/pyinstaller/issues/1704.
-wxPython_fail = ( pkg_resources.parse_version('2.8.10') <=
-                  pkg_resources.get_distribution('wxPython').parsed_version <
-                  pkg_resources.parse_version('2.9') )
+
+try:
+    # These tests fail under wxPython versions which support multiple pubsub
+    # APIs. See https://github.com/pyinstaller/pyinstaller/issues/1704.
+    wxPython_fail = ( pkg_resources.parse_version('2.8.10') <=
+                      pkg_resources.get_distribution('wxPython').parsed_version <
+                      pkg_resources.parse_version('2.9') )
+except pkg_resources.DistributionNotFound:
+    # Linux wxPython installations don't provide distribution metadata, but pass
+    # all the tests below.
+    wxPython_fail = False
 
 @xfail_py3
 @xfail(wxPython_fail, reason='Unsupported wxPython version')
