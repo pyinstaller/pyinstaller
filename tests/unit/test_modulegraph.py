@@ -62,7 +62,7 @@ def test_builtin(tmpdir):
 
 
 def test_extension(tmpdir):
-    node = _import_and_get_node(tmpdir, 'array', path=sys.path)
+    node = _import_and_get_node(tmpdir, '_ctypes', path=sys.path)
     assert isinstance(node, modulegraph.Extension)
 
 
