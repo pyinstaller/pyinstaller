@@ -2514,7 +2514,7 @@ of specific hooks, such as hooks for PyQt4/5.
 You are welcome to read the ``PyInstaller.utils.hooks`` module
 (and read the existing hooks that import from it) to get code and ideas.
 
-``exec_statement( statement )``:
+``exec_statement( 'statement' )``:
    Execute a single Python statement in an externally-spawned interpreter
    and return the standard output that results, as a string.
    Examples::
@@ -2528,7 +2528,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
         )
      datas = [ (mpl_data_dir, "") ]
 
-``eval_statement( statement )``:
+``eval_statement( 'statement' )``:
    Execute a single Python statement in an externally-spawned interpreter.
    If the resulting standard output text is not empty, apply
    the ``eval()`` function to it; else return None. Example::
@@ -2540,7 +2540,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
       for db in databases:
          hiddenimports.append("sqlalchemy.databases." + db)
 
-``is_module_version( module, relation, version_string )``:
+``is_module_version( 'module-name', relation, version_string )``:
     Check the version of the named module (full-qualified)
     against a version string using the comparison operator ``relation``.
     Example::
@@ -2567,7 +2567,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
     * ``<=`` for less-than-or-equal-to.
 	 
 
-``collect_submodules( package, subdir=None, pattern=None )``:
+``collect_submodules( 'package-name', subdir=None, pattern=None )``:
    Returns a list of strings that specify all the modules in a package,
    ready to be assigned to the ``hiddenimports`` global.
    Returns an empty list when ``package`` does not name a package
@@ -2583,10 +2583,10 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    
    		hiddenimports = collect_submodules( 'PIL', pattern='ImagePlugin' )
 
-``collect_data_files( module, subdir=None, include_py_files=False )``:
+``collect_data_files( 'module-name', subdir=None, include_py_files=False )``:
    Returns a list of (source, dest) tuples for all non-Python (i.e. data)
-   files found in ``module``, ready to be assigned to the ``datas`` global.
-   ``module`` is a string giving the fully-qualified name of a module or
+   files found in *module-name*, ready to be assigned to the ``datas`` global.
+   *module-name* is the fully-qualified name of a module or
    package (but not a zipped "egg").
    The function uses ``os.walk()`` to visit the module directory recursively.
    ``subdir``, if given, restricts the search to a relative subdirectory.
@@ -2598,7 +2598,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    search a directory for Python executable files and load them as
    extensions or plugins.)
    
-``collect_dynamic_libs( module )``:
+``collect_dynamic_libs( 'module-name' )``:
    Returns a list of (source, dest) tuples for all the dynamic libs
    present in a module directory.
    The list is ready to be assigned to the ``binaries`` global variable.
@@ -2610,13 +2610,13 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
 
 		binaries = collect_dynamic_libs( 'enchant' )
 
-``get_module_file_attribute( module )``:
-   Return the absolute path to ``module``, a fully-qualified module name.
+``get_module_file_attribute( 'module-name' )``:
+   Return the absolute path to *module-name*, a fully-qualified module name.
    Example::
    
        nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
 
-``get_package_paths( package )``:
+``get_package_paths( 'package-name' )``:
    Given the name of a package, return a tuple.
    The first element is the absolute path to the folder where the package is stored.
    The second element is the absolute path to the named package.
@@ -2627,6 +2627,24 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
 
    is the tuple, ``( '/abs/Python/lib', '/abs/Python/lib/pkg/subpkg' )``
 
+``copy_metadata( 'package-name' )``:
+   Given the name of a package, return the name of its distribution
+   metadata folder as a list of tuples ready to be assigned
+   (or appended) to the ``datas`` global variable.
+   
+   Some packages rely on metadata files accessed through the
+   ``pkg_resources`` module.
+   Normally |PyInstaller| does not include these metadata files.
+   If a package fails without them, you can use this
+   function in a hook file to easily add them to the bundle.
+   The tuples in the returned list have two strings.
+   The first is the full pathname to a folder in this system.
+   The second is the folder name only.
+   When these tuples are added to ``datas``\ ,
+   the folder will be bundled at the top level.
+   If *package-name* does not have metadata, an
+   AssertionError exception is raised.
+   
 
 ``get_homebrew_path( formula='' )``:
    Return the homebrew path to the named formula, or to the 
@@ -2638,7 +2656,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    Return the path to the top-level Python package containing
    the Django files, or None if nothing can be found.
 
-``django_dottedstring_imports( django_root_dir )``
+``django_dottedstring_imports( 'django-root-dir' )``
    Return a list of all necessary Django modules specified in
    the Django settings.py file, such as the
    ``Django.settings.INSTALLED_APPS`` list and many others.

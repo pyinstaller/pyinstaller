@@ -2645,7 +2645,7 @@ of specific hooks, such as hooks for PyQt4/5.
 You are welcome to read the <tt class="docutils literal">PyInstaller.utils.hooks</tt> module
 (and read the existing hooks that import from it) to get code and ideas.</p>
 <dl class="docutils">
-<dt><tt class="docutils literal">exec_statement( statement )</tt>:</dt>
+<dt><tt class="docutils literal">exec_statement( 'statement' )</tt>:</dt>
 <dd><p class="first">Execute a single Python statement in an externally-spawned interpreter
 and return the standard output that results, as a string.
 Examples:</p>
@@ -2660,7 +2660,7 @@ mpl_data_dir = exec_statement(
 datas = [ (mpl_data_dir, &quot;&quot;) ]
 </pre>
 </dd>
-<dt><tt class="docutils literal">eval_statement( statement )</tt>:</dt>
+<dt><tt class="docutils literal">eval_statement( 'statement' )</tt>:</dt>
 <dd><p class="first">Execute a single Python statement in an externally-spawned interpreter.
 If the resulting standard output text is not empty, apply
 the <tt class="docutils literal">eval()</tt> function to it; else return None. Example:</p>
@@ -2673,7 +2673,7 @@ for db in databases:
    hiddenimports.append(&quot;sqlalchemy.databases.&quot; + db)
 </pre>
 </dd>
-<dt><tt class="docutils literal">is_module_version( module, relation, version_string )</tt>:</dt>
+<dt><tt class="docutils literal">is_module_version( <span class="pre">'module-name',</span> relation, version_string )</tt>:</dt>
 <dd><p class="first">Check the version of the named module (full-qualified)
 against a version string using the comparison operator <tt class="docutils literal">relation</tt>.
 Example:</p>
@@ -2696,7 +2696,7 @@ The <tt class="docutils literal">relation</tt> is one of the strings:</p>
 <li><tt class="docutils literal">&lt;=</tt> for less-than-or-equal-to.</li>
 </ul>
 </dd>
-<dt><tt class="docutils literal">collect_submodules( package, subdir=None, pattern=None )</tt>:</dt>
+<dt><tt class="docutils literal">collect_submodules( <span class="pre">'package-name',</span> subdir=None, pattern=None )</tt>:</dt>
 <dd><p class="first">Returns a list of strings that specify all the modules in a package,
 ready to be assigned to the <tt class="docutils literal">hiddenimports</tt> global.
 Returns an empty list when <tt class="docutils literal">package</tt> does not name a package
@@ -2712,10 +2712,10 @@ Example:</p>
 hiddenimports = collect_submodules( 'PIL', pattern='ImagePlugin' )
 </pre>
 </dd>
-<dt><tt class="docutils literal">collect_data_files( module, subdir=None, include_py_files=False )</tt>:</dt>
+<dt><tt class="docutils literal">collect_data_files( <span class="pre">'module-name',</span> subdir=None, include_py_files=False )</tt>:</dt>
 <dd><p class="first">Returns a list of (source, dest) tuples for all non-Python (i.e. data)
-files found in <tt class="docutils literal">module</tt>, ready to be assigned to the <tt class="docutils literal">datas</tt> global.
-<tt class="docutils literal">module</tt> is a string giving the fully-qualified name of a module or
+files found in <em>module-name</em>, ready to be assigned to the <tt class="docutils literal">datas</tt> global.
+<em>module-name</em> is the fully-qualified name of a module or
 package (but not a zipped &quot;egg&quot;).
 The function uses <tt class="docutils literal">os.walk()</tt> to visit the module directory recursively.
 <tt class="docutils literal">subdir</tt>, if given, restricts the search to a relative subdirectory.</p>
@@ -2726,7 +2726,7 @@ files as well.
 search a directory for Python executable files and load them as
 extensions or plugins.)</p>
 </dd>
-<dt><tt class="docutils literal">collect_dynamic_libs( module )</tt>:</dt>
+<dt><tt class="docutils literal">collect_dynamic_libs( <span class="pre">'module-name'</span> )</tt>:</dt>
 <dd><p class="first">Returns a list of (source, dest) tuples for all the dynamic libs
 present in a module directory.
 The list is ready to be assigned to the <tt class="docutils literal">binaries</tt> global variable.
@@ -2739,14 +2739,14 @@ Example:</p>
 binaries = collect_dynamic_libs( 'enchant' )
 </pre>
 </dd>
-<dt><tt class="docutils literal">get_module_file_attribute( module )</tt>:</dt>
-<dd><p class="first">Return the absolute path to <tt class="docutils literal">module</tt>, a fully-qualified module name.
+<dt><tt class="docutils literal">get_module_file_attribute( <span class="pre">'module-name'</span> )</tt>:</dt>
+<dd><p class="first">Return the absolute path to <em>module-name</em>, a fully-qualified module name.
 Example:</p>
 <pre class="last literal-block">
 nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
 </pre>
 </dd>
-<dt><tt class="docutils literal">get_package_paths( package )</tt>:</dt>
+<dt><tt class="docutils literal">get_package_paths( <span class="pre">'package-name'</span> )</tt>:</dt>
 <dd><p class="first">Given the name of a package, return a tuple.
 The first element is the absolute path to the folder where the package is stored.
 The second element is the absolute path to the named package.
@@ -2757,6 +2757,23 @@ get_package_paths( 'pkg.subpkg' )
 </pre>
 <p class="last">is the tuple, <tt class="docutils literal">( '/abs/Python/lib', '/abs/Python/lib/pkg/subpkg' )</tt></p>
 </dd>
+<dt><tt class="docutils literal">copy_metadata( <span class="pre">'package-name'</span> )</tt>:</dt>
+<dd><p class="first">Given the name of a package, return the name of its distribution
+metadata folder as a list of tuples ready to be assigned
+(or appended) to the <tt class="docutils literal">datas</tt> global variable.</p>
+<p class="last">Some packages rely on metadata files accessed through the
+<tt class="docutils literal">pkg_resources</tt> module.
+Normally <cite>PyInstaller</cite> does not include these metadata files.
+If a package fails without them, you can use this
+function in a hook file to easily add them to the bundle.
+The tuples in the returned list have two strings.
+The first is the full pathname to a folder in this system.
+The second is the folder name only.
+When these tuples are added to <tt class="docutils literal">datas</tt>,
+the folder will be bundled at the top level.
+If <em>package-name</em> does not have metadata, an
+AssertionError exception is raised.</p>
+</dd>
 <dt><tt class="docutils literal">get_homebrew_path( <span class="pre">formula=''</span> )</tt>:</dt>
 <dd>Return the homebrew path to the named formula, or to the
 global prefix when formula is omitted. Returns None if
@@ -2764,7 +2781,7 @@ not found.</dd>
 <dt><tt class="docutils literal">django_find_root_dir()</tt>:</dt>
 <dd>Return the path to the top-level Python package containing
 the Django files, or None if nothing can be found.</dd>
-<dt><tt class="docutils literal">django_dottedstring_imports( django_root_dir )</tt></dt>
+<dt><tt class="docutils literal">django_dottedstring_imports( <span class="pre">'django-root-dir'</span> )</tt></dt>
 <dd>Return a list of all necessary Django modules specified in
 the Django settings.py file, such as the
 <tt class="docutils literal">Django.settings.INSTALLED_APPS</tt> list and many others.</dd>
@@ -3046,7 +3063,7 @@ python waf configure --no-lsb build install
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2015-11-25 19:18 UTC.
+Generated on: 2015-12-10 21:11 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
