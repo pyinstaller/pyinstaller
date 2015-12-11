@@ -16,18 +16,38 @@ from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
 from .utils import _check_guts_eq
 
+from collections import MutableSet
+
 logger = logging.getLogger(__name__)
 
 
-class FilenameSet(set):
+class FilenameSet(MutableSet):
     """
     Used by TOC to contain a unique set of filenames, even on case-insensitive systems.
     """
-    def add(self, name):
-        super(FilenameSet, self).add(os.path.normcase(name))
-    
+    def __init__(self, arg=None):
+        if arg:
+            self._set = set(arg)
+        else:
+            self._set = set()
+
     def __contains__(self, name):
-        return super(FilenameSet, self).__contains__(os.path.normcase(name))
+        return os.path.normcase(name) in self._set
+
+    def __len__(self):
+        return len(self._set)
+
+    def __iter__(self):
+        return iter(self._set)
+
+    def add(self, name):
+        self._set.add(os.path.normcase(name))
+
+    def discard(self, name):
+        self._set.discard(os.path.normcase(name))
+
+
+    
 
 
 class TOC(list):
