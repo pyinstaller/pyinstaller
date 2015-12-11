@@ -156,10 +156,7 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
                               );
 
     if (0 == len) {
-        FATALERROR("Failed to get ANSI buffer size"
-                   "(WideCharToMultiByte: %s)\n",
-                   GetWinErrorString()
-                   );
+        FATAL_WINERROR("WideCharToMultiByte", "Failed to get ANSI buffer size.\n");
         return NULL;
     }
 
@@ -176,10 +173,7 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
                               );
 
     if (0 == ret) {
-        FATALERROR("Failed to encode filename as ANSI"
-                   "(WideCharToMultiByte: %s)\n",
-                   GetWinErrorString()
-                   );
+        FATAL_WINERROR("WideCharToMultiByte", "Failed to encode filename as ANSI.\n");
         return NULL;
     }
     return str;
@@ -372,9 +366,7 @@ pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len)
                                   );
 
         if (0 == len) {
-            FATALERROR("Failed to get UTF-8 buffer size (WideCharToMultiByte: %s)\n",
-                       GetWinErrorString()
-                       );
+            FATAL_WINERROR("WideCharToMultiByte", "Failed to get UTF-8 buffer size.\n");
             return NULL;
         }
 
@@ -395,9 +387,8 @@ pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len)
                               );
 
     if (len == 0) {
-        FATALERROR("Failed to encode wchar_t as UTF-8 (WideCharToMultiByte: %s)\n",
-                   GetWinErrorString()
-                   );
+        FATAL_WINERROR("WideCharToMultiByte",
+                       "Failed to encode wchar_t as UTF-8.\n");
         return NULL;
     }
     return output;
@@ -435,9 +426,7 @@ pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
                                    );
 
         if (0 == wlen) {
-            FATALERROR("Failed to get UTF-8 buffer size (WideCharToMultiByte: %s)\n",
-                       GetWinErrorString()
-                       );
+            FATAL_WINERROR("MultiByteToWideChar", "Failed to get wchar_t buffer size.\n");
             return NULL;
         }
 
@@ -456,9 +445,7 @@ pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
                                );
 
     if (wlen == 0) {
-        FATALERROR("Failed to encode wchar_t as UTF-8 (WideCharToMultiByte: %s)\n",
-                   GetWinErrorString()
-                   );
+        FATAL_WINERROR("MultiByteToWideChar", "Failed to decode wchar_t from UTF-8\n");
         return NULL;
     }
     return output;

@@ -141,7 +141,7 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
     archive = (ARCHIVE_STATUS *) malloc(sizeof(ARCHIVE_STATUS));
 
     if (archive == NULL) {
-        FATALERROR("Error allocating memory for status\n");
+        FATAL_PERROR("malloc", "Error allocating memory for status\n");
         return NULL;
     }
 
@@ -164,7 +164,7 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
     archive->has_temp_directory = archive_pool[SELF]->has_temp_directory;
 
     if (pyi_arch_open(archive)) {
-        FATALERROR("Error opening archive %s\n", path);
+        FATAL_PERROR("malloc", "Error opening archive %s\n", path);
         free(archive);
         return NULL;
     }
@@ -228,7 +228,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
         VS("LOADER: File %s found, assuming is onedir\n", srcpath);
 
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Error coping %s\n", filename);
+            FATALERROR("Error copying %s\n", filename);
             return -1;
         }
         /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
@@ -238,7 +238,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
         VS("LOADER: File %s found, assuming is onedir\n", srcpath);
 
         if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Error coping %s\n", filename);
+            FATALERROR("Error copying %s\n", filename);
             return -1;
         }
     }

@@ -200,14 +200,14 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
     len = ntohl(ptoc->ulen);
 
     if (out == NULL) {
-        FATALERROR("%s could not be extracted!\n", ptoc->name);
+        FATAL_PERROR("fopen", "%s could not be extracted!\n", ptoc->name);
         return -1;
     }
     else {
         result = fwrite(data, len, 1, out);
 
         if ((1 != result) && (len > 0)) {
-            FATALERROR("Failed to write all bytes for %s\n", ptoc->name);
+            FATAL_PERROR("fwrite", "Failed to write all bytes for %s\n", ptoc->name);
             return -1;
         }
 #ifndef WIN32
@@ -420,19 +420,19 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     status->tocbuff = (TOC *) malloc(ntohl(status->cookie.TOClen));
 
     if (status->tocbuff == NULL) {
-        FATALERROR("Could not allocate buffer for TOC.");
+        FATAL_PERROR("malloc", "Could not allocate buffer for TOC.");
         return -1;
     }
 
     if (fread(status->tocbuff, ntohl(status->cookie.TOClen), 1, status->fp) < 1) {
-        FATALERROR("Could not read from file.");
+        FATAL_PERROR("fread", "Could not read from file.");
         return -1;
     }
     status->tocend = (TOC *) (((char *)status->tocbuff) + ntohl(status->cookie.TOClen));
 
     /* Check input file is still ok (should be). */
     if (ferror(status->fp)) {
-        FATALERROR("Error on file");
+        FATALERROR("Error on file\n.");
         return -1;
     }
 

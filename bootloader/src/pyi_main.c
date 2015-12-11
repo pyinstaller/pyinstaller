@@ -59,7 +59,7 @@ pyi_main(int argc, char * argv[])
     archive_status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS));
 
     if (archive_status == NULL) {
-        FATALERROR("Cannot allocate memory for ARCHIVE_STATUS\n");
+        FATAL_PERROR("calloc", "Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
 
     }

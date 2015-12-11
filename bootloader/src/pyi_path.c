@@ -262,14 +262,12 @@ pyi_path_executable(char *execfile, const char *appname)
     /* GetModuleFileNameW returns an absolute, fully qualified path
      */
     if (!GetModuleFileNameW(NULL, modulename_w, PATH_MAX)) {
-        FATALERROR("Failed to get executable path. \nGetModuleFileNameW: %s",
-                   GetWinErrorString());
+        FATAL_WINERROR("GetModuleFileNameW", "Failed to get executable path.");
         return -1;
     }
 
     if (!pyi_win32_utils_to_utf8(execfile, modulename_w, PATH_MAX)) {
-        FATALERROR("Failed to convert executable path to UTF-8.",
-                   GetWinErrorString());
+        FATALERROR("Failed to convert executable path to UTF-8.");
         return -1;
     }
 
@@ -280,7 +278,7 @@ pyi_path_executable(char *execfile, const char *appname)
      * This may return a symlink.
      */
     if (_NSGetExecutablePath(buffer, &length) != 0) {
-        FATALERROR("System error - unable to load!");
+        FATALERROR("System error - unable to load!\n");
         return -1;
     }
 

@@ -720,7 +720,7 @@ pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
         GetExitCodeProcess(pi.hProcess, (unsigned long *)&rc);
     }
     else {
-        FATALERROR("Error creating child process!\n");
+        FATAL_WINERROR("CreateProcessW", "Error creating child process!\n");
         rc = -1;
     }
     return rc;

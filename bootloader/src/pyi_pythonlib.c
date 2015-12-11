@@ -112,10 +112,9 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     /* Check success of loading Python library. */
     if (dll == 0) {
 #ifdef _WIN32
-        FATALERROR("Error loading Python DLL: %s (error code %d)\n",
-                   dllpath, GetLastError());
+        FATAL_WINERROR("LoadLibrary", "Error loading Python DLL '%s'.\n", dllpath);
 #else
-        FATALERROR("Error loading Python lib '%s': %s\n",
+        FATALERROR("Error loading Python lib '%s': dlopen: %s\n",
                    dllpath, dlerror());
 #endif
         return -1;
@@ -208,7 +207,7 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
                     /* as all known Wflags are ASCII. */
                     if ((size_t)-1 == mbstowcs(wchar_tmp, &ptoc->name[2], PATH_MAX)) {
                         FATALERROR("Failed to convert Wflag %s using mbstowcs "
-                                   "(invalid multibyte string)", &ptoc->name[2]);
+                                   "(invalid multibyte string)\n", &ptoc->name[2]);
                         return -1;
                     }
                     PI_PySys_AddWarnOption(wchar_tmp);
