@@ -45,7 +45,7 @@
 
 /* PyInstaller headers. */
 #include "pyi_global.h"
-
+#include "pyi_win32_utils.h"
 /* Text length of MessageBox(). */
 #define MBTXTLEN 1024
 
@@ -85,6 +85,65 @@ mbothererror(const char *fmt, ...)
 
     MessageBoxA(NULL, msg, "Error!", MB_OK | MB_ICONWARNING);
 }
+
+    void mbfatal_winerror(const char * funcname, const char *fmt, ...)
+    {
+        char msg[MBTXTLEN];
+        int size = 0;
+        DWORD error_code = GetLastError();
+        va_list args;
+
+        va_start(args, fmt);
+            size = vsnprintf(msg, MBTXTLEN, fmt, args);
+        va_end(args);
+
+        if(size < MBTXTLEN) {
+            strncpy(msg + size, funcname, MBTXTLEN - size - 1);
+            size += strlen(funcname);
+        }
+
+        if(size < MBTXTLEN) {
+            strncpy(msg + size, ": ", 2);
+            size += 2;
+        }
+
+        if(size < MBTXTLEN) {
+            strncpy(msg + size, GetWinErrorString(error_code), MBTXTLEN - size - 1);
+        }
+
+        msg[MBTXTLEN-1] = '\0';
+
+        MessageBoxA(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
+    }
+
+    void mbfatal_perror(const char * funcname, const char *fmt, ...)
+    {
+        char msg[MBTXTLEN];
+        int size = 0;
+        va_list args;
+
+        va_start(args, fmt);
+            size = vsnprintf(msg, MBTXTLEN, fmt, args);
+        va_end(args);
+
+        if(size < MBTXTLEN) {
+            strncpy(msg + size, funcname, MBTXTLEN - size - 1);
+            size += strlen(funcname);
+        }
+
+        if(size < MBTXTLEN) {
+            strncpy(msg + size, ": ", 2);
+            size += 2;
+        }
+
+        if(size < MBTXTLEN) {
+            strncpy(msg + size, strerror(errno), MBTXTLEN - size - 1);
+        }
+
+        msg[MBTXTLEN-1] = '\0';
+
+        MessageBoxA(NULL, msg, "Fatal Error!", MB_OK | MB_ICONEXCLAMATION);
+    }
 #endif  /* _WIN32 and WINDOWED */
 
 /* Enable or disable debug output. */
@@ -137,3 +196,43 @@ pyi_global_printf(const char *fmt, ...)
     va_end(v);
 #endif
 }
+
+/*
+ * Print a debug message followed by the name of the function that resulted in an error
+ * and a textual description of the error, as with perror().
+ */
+void pyi_global_perror(const char *funcname, const char *fmt, ...) {
+    va_list v;
+
+    va_start(v, fmt);
+        vfprintf(stderr, fmt, v);
+    va_end(v);
+    perror(funcname);  // perror() writes to stderr
+
+    #if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+        va_start(v, fmt);
+            vsyslog(LOG_NOTICE, fmt, v);
+            vsyslog(LOG_NOTICE, "%m\n");  // %m emits the result of strerror()
+        va_end(v);
+    #endif
+}
+
+#ifdef _WIN32
+
+/*
+ * Windows errors.
+ *
+ * Print a debug message followed by the name of the function that resulted in an error
+ * and a textual description of the error, as returned by FormatMessage.
+ */
+void pyi_global_winerror(const char *funcname, const char *fmt, ...) {
+    DWORD error_code = GetLastError();
+    va_list v;
+
+    va_start(v, fmt);
+        vfprintf(stderr, fmt, v);
+    va_end(v);
+    fprintf(stderr, "%s: %s", funcname, GetWinErrorString(error_code));
+}
+
+#endif
