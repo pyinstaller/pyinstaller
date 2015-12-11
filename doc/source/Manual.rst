@@ -2286,6 +2286,40 @@ an executable or by another DLL.
 follow the chain of dependencies of binary extensions
 during Analysis.
 
+Creating a Reproducible Build
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In certain cases it is important that when you build the same application twice,
+using exactly the same set of dependencies,
+the two bundles should be exactly, bit-for-bit identical.
+
+That is not the case normally.
+Python uses a random hash to make dicts and other hashed types,
+and this affects compiled byte-code as well as |PyInstaller|
+internal data structures.
+As a result, two builds may not produce bit-for-bit identical results
+even when all the components of the application bundle are the same
+and the two applications execute in identical ways.
+
+You can assure that a build will produce the same bits
+by setting the ``PYTHONHASHSEED`` environment variable to a known
+integer value before running |PyInstaller|.
+This forces Python to use the same random hash sequence until
+``PYTHONHASHSEED`` is unset or set to ``'random'``.
+For example, execute |PyInstaller| in a script such as
+the following (for Linux and OS X)::
+
+    # set seed to a known repeatable integer value
+    PYTHONHASHSEED=1
+    export PYTHONHASHSEED
+    # create one-file build as myscript
+    pyinstaller myscript.spec
+    # make checksum
+    cksum dist/myscript/myscript | awk '{print $1}' > dist/myscript/checksum.txt
+    # let Python be unpredictable again
+    unset PYTHONHASHSEED
+
+
 Understanding PyInstaller Hooks
 ==================================
      

@@ -153,24 +153,25 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#inspecting-executables" id="id87">Inspecting Executables</a></li>
+<li><a class="reference internal" href="#creating-a-reproducible-build" id="id88">Creating a Reproducible Build</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#understanding-pyinstaller-hooks" id="id88">Understanding PyInstaller Hooks</a><ul>
-<li><a class="reference internal" href="#how-a-hook-is-loaded" id="id89">How a Hook Is Loaded</a><ul>
-<li><a class="reference internal" href="#hook-global-variables" id="id90">Hook Global Variables</a></li>
-<li><a class="reference internal" href="#useful-items-in-pyinstaller-compat" id="id91">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></li>
-<li><a class="reference internal" href="#useful-items-in-pyinstaller-utils-hooks" id="id92">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></li>
-<li><a class="reference internal" href="#the-hook-hook-api-function" id="id93">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></li>
-<li><a class="reference internal" href="#the-pre-find-module-path-pfmp-api-method" id="id94">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></li>
-<li><a class="reference internal" href="#the-pre-safe-import-module-psim-api-method" id="id95">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></li>
+<li><a class="reference internal" href="#understanding-pyinstaller-hooks" id="id89">Understanding PyInstaller Hooks</a><ul>
+<li><a class="reference internal" href="#how-a-hook-is-loaded" id="id90">How a Hook Is Loaded</a><ul>
+<li><a class="reference internal" href="#hook-global-variables" id="id91">Hook Global Variables</a></li>
+<li><a class="reference internal" href="#useful-items-in-pyinstaller-compat" id="id92">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></li>
+<li><a class="reference internal" href="#useful-items-in-pyinstaller-utils-hooks" id="id93">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></li>
+<li><a class="reference internal" href="#the-hook-hook-api-function" id="id94">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></li>
+<li><a class="reference internal" href="#the-pre-find-module-path-pfmp-api-method" id="id95">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></li>
+<li><a class="reference internal" href="#the-pre-safe-import-module-psim-api-method" id="id96">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#building-the-bootloader" id="id96">Building the Bootloader</a><ul>
-<li><a class="reference internal" href="#development-tools" id="id97">Development tools</a></li>
-<li><a class="reference internal" href="#building-for-windows" id="id98">Building for Windows</a></li>
-<li><a class="reference internal" href="#building-for-linux" id="id99">Building for LINUX</a></li>
+<li><a class="reference internal" href="#building-the-bootloader" id="id97">Building the Bootloader</a><ul>
+<li><a class="reference internal" href="#development-tools" id="id98">Development tools</a></li>
+<li><a class="reference internal" href="#building-for-windows" id="id99">Building for Windows</a></li>
+<li><a class="reference internal" href="#building-for-linux" id="id100">Building for LINUX</a></li>
 </ul>
 </li>
 </ul>
@@ -2428,9 +2429,40 @@ an executable or by another DLL.</p>
 follow the chain of dependencies of binary extensions
 during Analysis.</p>
 </div>
+<div class="section" id="creating-a-reproducible-build">
+<h2><a class="toc-backref" href="#id88">Creating a Reproducible Build</a></h2>
+<p>In certain cases it is important that when you build the same application twice,
+using exactly the same set of dependencies,
+the two bundles should be exactly, bit-for-bit identical.</p>
+<p>That is not the case normally.
+Python uses a random hash to make dicts and other hashed types,
+and this affects compiled byte-code as well as <cite>PyInstaller</cite>
+internal data structures.
+As a result, two builds may not produce bit-for-bit identical results
+even when all the components of the application bundle are the same
+and the two applications execute in identical ways.</p>
+<p>You can assure that a build will produce the same bits
+by setting the <tt class="docutils literal">PYTHONHASHSEED</tt> environment variable to a known
+integer value before running <cite>PyInstaller</cite>.
+This forces Python to use the same random hash sequence until
+<tt class="docutils literal">PYTHONHASHSEED</tt> is unset or set to <tt class="docutils literal">'random'</tt>.
+For example, execute <cite>PyInstaller</cite> in a script such as
+the following (for Linux and OS X):</p>
+<pre class="literal-block">
+# set seed to a known repeatable integer value
+PYTHONHASHSEED=1
+export PYTHONHASHSEED
+# create one-file build as myscript
+pyinstaller myscript.spec
+# make checksum
+cksum dist/myscript/myscript | awk '{print $1}' &gt; dist/myscript/checksum.txt
+# let Python be unpredictable again
+unset PYTHONHASHSEED
+</pre>
+</div>
 </div>
 <div class="section" id="understanding-pyinstaller-hooks">
-<h1><a class="toc-backref" href="#id88">Understanding PyInstaller Hooks</a></h1>
+<h1><a class="toc-backref" href="#id89">Understanding PyInstaller Hooks</a></h1>
 <p>In summary, a &quot;hook&quot; file extends <cite>PyInstaller</cite> to adapt it to
 the special needs and methods used by a Python package.
 The word &quot;hook&quot; is used for two kinds of files.
@@ -2493,7 +2525,7 @@ pyinstaller --additional-hooks-dir=. myscript.py
 <p>If you write a hook for a module used by others,
 please send us the hook file so we can make it available.</p>
 <div class="section" id="how-a-hook-is-loaded">
-<h2><a class="toc-backref" href="#id89">How a Hook Is Loaded</a></h2>
+<h2><a class="toc-backref" href="#id90">How a Hook Is Loaded</a></h2>
 <p>A hook is a module named <tt class="docutils literal">hook-</tt><em>full-import-name</em><tt class="docutils literal">.py</tt>
 in a folder where the Analysis object looks for hooks.
 Each time Analysis detects an import, it looks for a hook file with
@@ -2510,7 +2542,7 @@ assignment to <tt class="docutils literal">hiddenimports</tt> based on that.
 There are over 150 hooks in the <cite>PyInstaller</cite> installation.
 You are welcome to browse through them for examples.</p>
 <div class="section" id="hook-global-variables">
-<h3><a class="toc-backref" href="#id90">Hook Global Variables</a></h3>
+<h3><a class="toc-backref" href="#id91">Hook Global Variables</a></h3>
 <p>A majority of the existing hooks consist entirely of assignments of
 values to one or more of the following global variables.
 If any of these are defined by the hook, Analysis takes their values and
@@ -2586,7 +2618,7 @@ binaries = collect_dynamic_libs('zmq')
 </dl>
 </div>
 <div class="section" id="useful-items-in-pyinstaller-compat">
-<h3><a class="toc-backref" href="#id91">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></h3>
+<h3><a class="toc-backref" href="#id92">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></h3>
 <p>A hook may import the following names from <tt class="docutils literal">PyInstaller.compat</tt>,
 for example:</p>
 <pre class="literal-block">
@@ -2632,7 +2664,7 @@ binary dependencies in a folder; see <tt class="docutils literal"><span class="p
 </dl>
 </div>
 <div class="section" id="useful-items-in-pyinstaller-utils-hooks">
-<h3><a class="toc-backref" href="#id92">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></h3>
+<h3><a class="toc-backref" href="#id93">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></h3>
 <p>A hook may import useful functions from <tt class="docutils literal">PyInstaller.utils.hooks</tt>.
 Use a fully-qualified import statement, for example:</p>
 <pre class="literal-block">
@@ -2788,7 +2820,7 @@ the Django settings.py file, such as the
 </dl>
 </div>
 <div class="section" id="the-hook-hook-api-function">
-<h3><a class="toc-backref" href="#id93">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></h3>
+<h3><a class="toc-backref" href="#id94">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></h3>
 <p>In addition to, or instead of, setting global values,
 a hook may define a function <tt class="docutils literal">hook(hook_api)</tt>.
 A <tt class="docutils literal">hook()</tt> function should only be needed if the hook
@@ -2842,7 +2874,7 @@ Or, it can simply set values in the four global variables, because
 these will be examined after <tt class="docutils literal">hook()</tt> returns.</p>
 </div>
 <div class="section" id="the-pre-find-module-path-pfmp-api-method">
-<h3><a class="toc-backref" href="#id94">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></h3>
+<h3><a class="toc-backref" href="#id95">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></h3>
 <p>You may write a hook with the special function <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt>.
 This method is called when the hooked module name is first seen
 by Analysis, before it has located the path to that module or package
@@ -2872,7 +2904,7 @@ It uses this method to redirect a search for distutils when
 <cite>PyInstaller</cite> is executing in a virtual environment.</p>
 </div>
 <div class="section" id="the-pre-safe-import-module-psim-api-method">
-<h3><a class="toc-backref" href="#id95">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></h3>
+<h3><a class="toc-backref" href="#id96">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></h3>
 <p>You may write a hook with the special function <tt class="docutils literal">pre_safe_import_module( psim_api )</tt>.
 This method is called after the hooked module has been found,
 but <em>before</em> it and everything it recursively imports is added
@@ -2943,7 +2975,7 @@ the path if the module was executed normally.
 </div>
 </div>
 <div class="section" id="building-the-bootloader">
-<h1><a class="toc-backref" href="#id96">Building the Bootloader</a></h1>
+<h1><a class="toc-backref" href="#id97">Building the Bootloader</a></h1>
 <p>PyInstaller comes with binary bootloaders for most platforms in
 the <tt class="docutils literal">bootloader</tt> folder of the distribution folder.
 For most cases, these precompiled bootloaders are all you need.</p>
@@ -2968,7 +3000,7 @@ you need to build the bootloader.</p>
 <p>If this reports an error, read the detailed notes that follow,
 then ask for technical help.</p>
 <div class="section" id="development-tools">
-<h2><a class="toc-backref" href="#id97">Development tools</a></h2>
+<h2><a class="toc-backref" href="#id98">Development tools</a></h2>
 <p>On Debian/Ubuntu systems, you can run the following to
 install everything required:</p>
 <pre class="literal-block">
@@ -2985,7 +3017,7 @@ Mac&nbsp;OS&nbsp;X Install DVD. It is not necessary to install the version 4 of 
 <p>On Solaris and AIX the bootloader is built and tested with gcc.</p>
 </div>
 <div class="section" id="building-for-windows">
-<h2><a class="toc-backref" href="#id98">Building for Windows</a></h2>
+<h2><a class="toc-backref" href="#id99">Building for Windows</a></h2>
 <p>On Windows you can use the Visual Studio C++ compiler
 (Visual Studio 2008 is recommended).
 A free version you can download is <a class="reference external" href="http://www.microsoft.com/express/">Visual Studio Express</a>.</p>
@@ -3015,7 +3047,7 @@ python ./waf distclean all
 in the <tt class="docutils literal">.\PyInstaller\bootloader\YOUR_OS</tt> directory.</p>
 </div>
 <div class="section" id="building-for-linux">
-<h2><a class="toc-backref" href="#id99">Building for LINUX</a></h2>
+<h2><a class="toc-backref" href="#id100">Building for LINUX</a></h2>
 <p>By default, the bootloaders on Linux are LSB binaries.</p>
 <p>LSB is a set of open standards that should increase compatibility among Linux
 distributions.
@@ -3063,7 +3095,7 @@ python waf configure --no-lsb build install
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2015-12-10 21:11 UTC.
+Generated on: 2015-12-11 18:53 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
