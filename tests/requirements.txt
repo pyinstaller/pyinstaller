@@ -43,7 +43,10 @@ pycparser
 pytz
 sqlalchemy
 twisted
-matplotlib
 pyexcelerate
 Pillow
 pandas
+
+# matplotlib 1.5+ does not provide binaries for python 3.3
+matplotlib ; python_version < '2.8' or python_version >= '3.4'
+matplotlib==1.4.3 ; python_version >= '3.3' and python_version < '3.4'
