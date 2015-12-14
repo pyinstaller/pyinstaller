@@ -37,7 +37,7 @@ def _get_commands():
          'makemigrations': 'django.core',
          'migrate': 'django.core',
          'runfcgi': 'django.core',
-         'runserver': 'django.contrib.staticfiles',
+         'runserver': 'django.core',
          'shell': 'django.core',
          'showmigrations': 'django.core',
          'sql': 'django.core',
