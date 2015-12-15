@@ -50,6 +50,15 @@ def test_codecs(pyi_builder):
     pyi_builder.test_script('pyi_codecs.py')
 
 
+def test_compiled_filenames(pyi_builder):
+    pyi_builder.test_source("""
+    import pyi_dummy_module
+    from os.path import isabs
+
+    assert not isabs(pyi_dummy_module.dummy.__code__.co_filename), "pyi_dummy_module.dummy.__code__.co_filename has compiled filename: %s" % (pyi_dummy_module.dummy.__code__.co_filename,)
+    assert not isabs(pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename), "pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename has compiled filename: %s" % (pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename,)
+    """)
+
 def test_decoders_ascii(pyi_builder):
     pyi_builder.test_script('pyi_decoders_ascii.py')
 
