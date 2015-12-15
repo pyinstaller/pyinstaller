@@ -316,6 +316,32 @@ class Analysis(Target):
             self.graph = initialize_modgraph(
                 excludes=self.excludes, user_hook_dirs=self.hookspath)
 
+        search_path = self.pathex + self.graph.path
+
+        # Initialize path replacements. Compiled bytecode contains the original path
+        # to the python file. Here we set up replacements for each element in sys.path
+        # to strip most of the leading path components.
+
+        # path_strip is the number of path components to keep.
+        # -1 means keep all path components.
+        # 0 means remove all path components and keep only the path relative to the
+        #      sys.path entry.
+        # The default is 2, which will usually keep the 'python2.7/lib'
+        #      or 'src/pyinstaller' part of entry.
+
+        path_strip = 2
+        if path_strip != -1:
+            replace_paths = []
+            for p in search_path:
+                if path_strip:
+                    components = p.split(os.sep)
+                    new_path = os.sep.join(components[-path_strip:])
+                else:
+                    new_path = ""
+                replace_paths.append((p, new_path))
+
+            self.graph.replace_paths = replace_paths
+
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
         # containing core Python modules. In Python 3 some built-in modules
@@ -331,7 +357,8 @@ class Analysis(Target):
         # Expand sys.path of module graph.
         # The attribute is the set of paths to use for imports: sys.path,
         # plus our loader, plus other paths from e.g. --path option).
-        self.graph.path = self.pathex + self.graph.path
+        self.graph.path = search_path
+
 
         # Analyze the script's hidden imports (named on the command line)
         self.graph.add_hiddenimports(self.hiddenimports)
