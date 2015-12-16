@@ -115,8 +115,7 @@ class Analysis(Target):
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
                  hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None,
-                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False,
-                 strip_paths=2):
+                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False):
         """
         scripts
                 A list of scripts specified as file names.
@@ -143,29 +142,6 @@ class Analysis(Target):
         win_private_assemblies
                 If True, changes all bundled Windows SxS Assemblies into Private
                 Assemblies to enforce assembly versions.
-        strip_paths
-                Strip pathnames from compiled code. These pathnames will appear in
-                error tracebacks produced by the built application.
-
-                Paths in compiled python code will be stripped of filenames according to
-                the sys.path (or pathex) entry that allowed them to be included. Only this
-                many path components from the end of that entry will be kept. Pass 0 to
-                strip all components of the sys.path entry, leaving only the relative
-                filename; pass -1 to disable this feature. The default value is 2, keeping
-                only the last two path components.
-
-                Example:
-                    sys.path entry: '/usr/share/python2.7/lib/site-packages'
-                    original filename: '/usr/share/python2.7/lib/site-packages/foo/bar.py'
-
-                    strip_paths = 2
-                    stripped filename: 'lib/site-packages/foo/bar.py'
-
-                    strip_paths = 0
-                    stripped filename: 'foo/bar.py'
-
-                    strip_paths = -1
-                    stripped filename: '/usr/share/python2.7/lib/site-packages/foo/bar.py'
 
         """
         super(Analysis, self).__init__()
@@ -232,7 +208,6 @@ class Analysis(Target):
         self.binding_redirects = CONF['binding_redirects'] = []
         self.win_no_prefer_redirects = win_no_prefer_redirects
         self.win_private_assemblies = win_private_assemblies
-        self.strip_paths = max(-1, strip_paths)
 
         self.__postinit__()
 
@@ -341,16 +316,26 @@ class Analysis(Target):
             self.graph = initialize_modgraph(
                 excludes=self.excludes, user_hook_dirs=self.hookspath)
 
-        # We don't set self.graph.path until later, since pathex should not affect
-        # modules in base_library.zip. But we need the search path now for replace_paths.
         search_path = self.pathex + self.graph.path
 
-        if self.strip_paths != -1:
+        # Initialize path replacements. Compiled bytecode contains the original path
+        # to the python file. Here we set up replacements for each element in sys.path
+        # to strip most of the leading path components.
+
+        # path_strip is the number of path components to keep.
+        # -1 means keep all path components.
+        # 0 means remove all path components and keep only the path relative to the
+        #      sys.path entry.
+        # The default is 2, which will usually keep the 'python2.7/lib'
+        #      or 'src/pyinstaller' part of entry.
+
+        path_strip = 2
+        if path_strip != -1:
             replace_paths = []
             for p in search_path:
-                if self.strip_paths:
+                if path_strip:
                     components = p.split(os.sep)
-                    new_path = os.sep.join(components[-self.strip_paths:])
+                    new_path = os.sep.join(components[-path_strip:])
                 else:
                     new_path = ""
                 replace_paths.append((p, new_path))
