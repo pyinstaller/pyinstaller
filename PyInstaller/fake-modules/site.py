@@ -35,7 +35,8 @@ ENABLE_USER_SITE = False
 # For distutils.commands.install
 # These values are initialized by the getuserbase() and getusersitepackages()
 # functions, through the main() function when Python starts.
-USER_SITE = None
+# Issue #1699: Freezing pip requires 'site.USER_SITE' to be a 'str' not None.
+USER_SITE = ''
 USER_BASE = None
 
 
