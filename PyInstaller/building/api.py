@@ -197,22 +197,24 @@ class PYZ(Target):
             else:
                 return co
 
-        consts = list(co.co_consts)
-        for i in range(len(consts)):
-            if isinstance(consts[i], type(co)):
-                consts[i] = self._strip_paths_in_code(consts[i], new_filename)
-
         code_func = type(co)
 
+        consts = tuple(
+            self._strip_paths_in_code(const_co, new_filename)
+            if isinstance(const_co, code_func) else const_co
+            for const_co in co.co_consts
+        )
+
+        # co_kwonlyargcount added in some version of Python 3
         if hasattr(co, 'co_kwonlyargcount'):
             return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
-                         co.co_flags, co.co_code, tuple(consts), co.co_names,
+                         co.co_flags, co.co_code, consts, co.co_names,
                          co.co_varnames, new_filename, co.co_name,
                          co.co_firstlineno, co.co_lnotab,
                          co.co_freevars, co.co_cellvars)
         else:
             return code_func(co.co_argcount, co.co_nlocals, co.co_stacksize,
-                         co.co_flags, co.co_code, tuple(consts), co.co_names,
+                         co.co_flags, co.co_code, consts, co.co_names,
                          co.co_varnames, new_filename, co.co_name,
                          co.co_firstlineno, co.co_lnotab,
                          co.co_freevars, co.co_cellvars)
