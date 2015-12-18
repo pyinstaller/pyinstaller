@@ -186,20 +186,21 @@ class PYZ(Target):
 
         pyz = ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
 
-    def _strip_paths_in_code(self, co):
-        original_filename = os.path.normpath(co.co_filename)
-        for f in self.replace_paths:
-            if original_filename.startswith(f):
-                new_filename = original_filename[len(f):]
-                break
+    def _strip_paths_in_code(self, co, new_filename=None):
+        if new_filename is None:
+            original_filename = os.path.normpath(co.co_filename)
+            for f in self.replace_paths:
+                if original_filename.startswith(f):
+                    new_filename = original_filename[len(f):]
+                    break
 
-        else:
-            return co
+            else:
+                return co
 
         consts = list(co.co_consts)
         for i in range(len(consts)):
             if isinstance(consts[i], type(co)):
-                consts[i] = self._strip_paths_in_code(consts[i])
+                consts[i] = self._strip_paths_in_code(consts[i], new_filename)
 
         code_func = type(co)
 
