@@ -14,10 +14,10 @@
 #
 # Tested with gevent 1.0.2 and 1.1b6
 
-from PyInstaller.utils.hooks import collect_submodules, is_module_version
+from PyInstaller.utils.hooks import collect_submodules, is_module_satisfies
 
 # monkey patching in gevent 1.1 uses dynamic imports
-if is_module_version('gevent', '>=', '1.1b0'):
+if is_module_satisfies('gevent >= 1.1b0'):
     hiddenimports = [
         'gevent.builtins',
         'gevent.os',
