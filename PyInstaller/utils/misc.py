@@ -89,13 +89,17 @@ def get_path_to_toplevel_modules(filename):
     Returned directory might be used to extend the PYTHONPATH.
     """
     curr_dir = os.path.dirname(os.path.abspath(filename))
+    module_name = curr_dir.split(os.path.sep)[-1]
     pattern = '__init__.py'
 
     # Try max. 10 levels up.
     try:
         for i in range(10):
             files = set(os.listdir(curr_dir))
-            # 'curr_dir' is still not top-leve go to parent dir.
+            # 'curr_dir' is still not top-level go to parent dir.
+            if module_name in files:  # prevent wrong imports because of duplicate module names in parent folders
+                return None
+
             if pattern in files:
                 curr_dir = os.path.dirname(curr_dir)
             # Top-level dir found - return it.
@@ -121,7 +125,7 @@ def compile_py_files(toc, workpath):
     Given a TOC or equivalent list of tuples, generates all the required
     pyc/pyo files, writing in a local directory if required, and returns the
     list of tuples with the updated pathnames.
-    
+
     In the old system using ImpTracker, the generated TOC of "pure" modules
     already contains paths to nm.pyc or nm.pyo and it is only necessary
     to check that these files are not older than the source.

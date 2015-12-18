@@ -486,13 +486,7 @@ def qt5_qml_plugins_binaries(dir):
     return binaries
 
 
-def django_dottedstring_imports(django_root_dir):
-    """
-    Get all the necessary Django modules specified in settings.py.
-
-    In the settings.py the modules are specified in several variables
-    as strings.
-    """
+def eval_script_with_django(django_root_dir, name, env=None):
     pths = []
     # Extend PYTHONPATH with parent dir of django_root_dir.
     pths.append(misc.get_path_to_toplevel_modules(django_root_dir))
@@ -500,12 +494,26 @@ def django_dottedstring_imports(django_root_dir):
     # Many times Django users do not specify absolute imports in the settings module.
     pths.append(django_root_dir)
 
-    package_name = os.path.basename(django_root_dir) + '.settings'
-    env = {'DJANGO_SETTINGS_MODULE': package_name,
-           'PYTHONPATH': os.pathsep.join(pths)}
-    ret = eval_script('django_import_finder.py', env=env)
+    python_path = os.getenv('PYTHONPATH', '').split(os.pathsep)
+    python_path.extend(pths)
+    python_path = os.pathsep.join(python_path)
 
-    return ret
+    django_settings_module = os.getenv('DJANGO_SETTINGS_MODULE', os.path.basename(django_root_dir) + '.settings')
+    if env is None:
+        env = {}
+    env.setdefault('DJANGO_SETTINGS_MODULE', django_settings_module)
+    env.setdefault('PYTHONPATH', python_path)
+    return eval_script(name, env=env)
+
+
+def django_dottedstring_imports(django_root_dir):
+    """
+    Get all the necessary Django modules specified in settings.py.
+
+    In the settings.py the modules are specified in several variables
+    as strings.
+    """
+    return eval_script_with_django(django_root_dir, 'django_import_finder.py')
 
 
 def django_find_root_dir():
@@ -525,9 +533,13 @@ def django_find_root_dir():
     # first main executable script.
     manage_py = CONF['main_script']
     manage_dir = os.path.dirname(os.path.abspath(manage_py))
+    try:
+        return eval_script_with_django(manage_dir, 'django_find_basedir.py')
+    except Exception:
+        pass
 
-    # Get the Django root directory. The directory that contains settings.py and url.py.
-    # It could be the directory containig manage.py or any of its subdirectories.
+    # Get the Django root directory. The directory that contains settings.py and urls.py.
+    # It could be the directory containing manage.py or any of its subdirectories.
     settings_dir = None
     files = set(os.listdir(manage_dir))
     if 'settings.py' in files and 'urls.py' in files:
