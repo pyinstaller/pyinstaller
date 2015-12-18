@@ -2573,12 +2573,13 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
       for db in databases:
          hiddenimports.append("sqlalchemy.databases." + db)
 
-``is_module_version( 'module-name', relation, version_string )``:
-    Check the version of the named module (full-qualified)
-    against a version string using the comparison operator ``relation``.
+``is_module_satisfies( requirements, version=None, version_attr='__version__' )``:
+
+    Check the named module (full-qualified) exists and satisfies the
+    given requirement.
     Example::
     
-    	if is_module_version('sqlalchemy', '>=', '0.6') :
+	if is_module_satisfies('sqlalchemy >= 0.6'):
 
     This function provides robust version checking based on the same low-level
     algorithm used by ``easy_install`` and ``pip``, and should always be
@@ -2587,18 +2588,11 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
     (except for exact equality).
     For example ``'00.5' > '0.6'`` returns True, which is not correct.
     
-    The ``version_string`` is a PEP0440-compliant, dot-delimited version
+    The version is a PEP0440-compliant, dot-delimited version
     specifier such as ``3.14-rc5``.
-    The ``relation`` is one of the strings:
 
-    * ``>`` for greater-than.
-    
-    * ``<`` for less-than.
-    
-    * ``>=`` for greater-than-or-equal-to.
-    
-    * ``<=`` for less-than-or-equal-to.
-	 
+    For details please refer to the function's doc-string.
+
 
 ``collect_submodules( 'package-name', subdir=None, pattern=None )``:
    Returns a list of strings that specify all the modules in a package,
