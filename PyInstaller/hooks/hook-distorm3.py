@@ -10,7 +10,6 @@
 from PyInstaller.compat import is_win, is_darwin
 from PyInstaller.utils.hooks import get_package_paths
 
-datas = [ ("C:\python27\Lib\site-packages\distorm3\distorm3.dll", ''), ]
 if is_win:
     datas = [ ("C:\python27\Lib\site-packages\distorm3\distorm3.dll", ''), ]
 else:
