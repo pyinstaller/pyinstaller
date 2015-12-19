@@ -9,7 +9,7 @@ please let us know if your name is omitted by accident:
 Contributions to PyInstaller 3.1
 --------------------------------
 
-- Name - Description of contribution.
+- Starwarsfan2099 - Distorm3 Hook
 
 
 Contributions to PyInstaller 3.0
