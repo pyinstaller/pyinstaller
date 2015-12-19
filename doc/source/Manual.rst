@@ -358,7 +358,7 @@ In order to locate included files at run time,
 your program needs to be able to learn its path at run time
 in a way that works regardless of
 whether or not it is running from a bundle.
-This is covered under `Run-time Operation`_.
+This is covered under `Run-time Information`_.
 
 |PyInstaller| does *not* include libraries that should exist in
 any installation of this OS.
@@ -971,13 +971,12 @@ are delivered after the program has launched, you must
 set up the appropriate handlers.
 
 
-Run-time Operation
+Run-time Information
 =====================
 
 Your app should run in a bundle exactly as it does when run from source.
-However, you might want to learn at run-time
-whether the app is running from source or "frozen" (bundled).
-
+However, you may need to learn at run-time
+whether the app is running from source, or is "frozen" (bundled).
 For example, you might have
 data files that are normally found based on a module's ``__file__`` attribute.
 That will not work when the code is bundled.
@@ -991,11 +990,71 @@ So the test for "are we bundled?" is::
 	else :
 		# running live
 
-The |bootloader| stores the absolute path to the bundle folder in ``sys._MEIPASS``.
+When your app is running, it may need to access data files in any of
+three general locations:
+
+* Files that were bundled with it (see `Adding Data Files`_).
+
+* Files the user has placed with the app bundle, say in the same folder.
+
+* Files in the user's current working directory.
+
+The program has access to several path variables for these uses.
+
+
+Using ``__file__`` and ``sys._MEIPASS``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When your program is not frozen, the standard Python
+variable ``__file__`` is the full path to the script now executing.
+When a bundled app starts up,
+the |bootloader| sets the ``sys.frozen`` attribute
+and stores the absolute path to the bundle folder in ``sys._MEIPASS``.
 For a one-folder bundle, this is the path to that folder, 
 wherever the user may have put it.
 For a one-file bundle, this is the path to the ``_MEIxxxxxx`` temporary folder
 created by the |bootloader| (see `How the One-File Program Works`_).
+
+
+Using ``sys.executable`` and ``sys.argv[0]``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When a normal Python script runs, ``sys.executable`` is the path to the
+program that was executed, namely, the Python interpreter.
+In a frozen app, ``sys.executable`` is also the path to the
+program that was executed, but that is not Python;
+it is the bootloader in either the one-file app
+or the executable in the one-folder app.
+This gives you a reliable way to known what frozen executable the user
+actually launched.
+
+The value of ``sys.argv[0]`` is the name or relative path that was
+used in the user's command.
+It may be a relative path or an absolute path depending
+on the platform and how the app was launched.
+
+The following small program explores all these possibilities.
+Save it as ``directories.py``.
+Execute it as a Python script,
+then bundled as a one-folder app,
+and then bundled as a one-file app::
+
+	#!/usr/bin/python3
+	import sys, os
+	frozen = 'not'
+	if getattr(sys, 'frozen', False):
+		# we are running in a bundle
+		frozen = 'ever so'
+		bundle_dir = sys._MEIPASS
+	else:
+		# we are running in a normal Python environment
+		bundle_dir = os.path.dirname(os.path.abspath(__file__))
+	print( 'we are',frozen,'frozen')
+	print( 'bundle dir is', bundle_dir )
+	print( 'sys.argv[0] is', sys.argv[0] )
+	print( 'sys.executable is', sys.executable )
+	print( 'os.getcwd is', os.getcwd() )
+
 
 Using Spec Files
 =================
@@ -1115,6 +1174,7 @@ Adding Files to the Bundle
 
 To add files to the bundle, you create a list that describes the files
 and supply it to the ``Analysis`` call.
+To find the data files at run-time, see `Run-time Information`_.
 
 Adding Data Files
 ------------------
@@ -1177,36 +1237,6 @@ You can also include the entire contents of a folder::
 
 The folder ``/mygame/data`` will be reproduced under the name
 ``data`` in the bundle.
-
-Locating Data Files at Run Time
---------------------------------
-
-When your application needs access to a data file that is bundled with it,
-you can get the path to the application's folder with the following code::
-
-    import sys
-    import os
-    ...
-    if getattr(sys, 'frozen', False):
-        # we are running in a bundle
-        basedir = sys._MEIPASS
-    else:
-        # we are running in a normal Python environment
-        basedir = os.path.dirname(os.path.abspath(__file__))
-
-This code sets ``basedir`` to the path to the folder containing
-your script and any other files or folders located with it.
-For example if you included ``README.txt`` as shown above,
-you could open it using::
-
-	readme_file = open( 'r',os.path.join( basedir, 'README.txt' ) )
-
-When your program was not started by the |bootloader|, the standard Python
-variable ``__file__`` is the full path to the script now executing,
-and ``os.path.dirname()`` extracts the path to the folder that contains it.
-When bundled as one-folder, ``sys._MEIPASS`` provides the path to bundle folder.
-When bundled as one-file, ``sys._MEIPASS`` is the path to the temporary
-folder created when the application starts.
 
 Using Data Files from a Module
 --------------------------------
