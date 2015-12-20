@@ -1025,7 +1025,7 @@ In a frozen app, ``sys.executable`` is also the path to the
 program that was executed, but that is not Python;
 it is the bootloader in either the one-file app
 or the executable in the one-folder app.
-This gives you a reliable way to known what frozen executable the user
+This gives you a reliable way to locate the frozen executable the user
 actually launched.
 
 The value of ``sys.argv[0]`` is the name or relative path that was
@@ -1033,11 +1033,26 @@ used in the user's command.
 It may be a relative path or an absolute path depending
 on the platform and how the app was launched.
 
-The following small program explores all these possibilities.
+If the user launches the app by way of a symbolic link,
+``sys.argv[0]`` uses that symbolic name,
+while ``sys.executable`` is the actual path to the executable.
+Sometimes the same app is linked under different names
+and is expected to behave differently depending on the name that is
+used to launch it.
+For this case, you would test ``os.path.basename(sys.argv[0])``
+
+On the other hand, sometimes the user is told to store the executable
+in the same folder as the files it will operate on,
+for example a music player that should be stored in the same folder
+as the audio files it will play.
+For this case, you would use ``os.path.dirname(sys.executable)``.
+
+The following small program explores some of these possibilities.
 Save it as ``directories.py``.
 Execute it as a Python script,
-then bundled as a one-folder app,
-and then bundled as a one-file app::
+then bundled as a one-folder app.
+Then bundle it as a one-file app and launch it directly and also via a
+symbolic link::
 
 	#!/usr/bin/python3
 	import sys, os
