@@ -6,11 +6,10 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-#By Starwarsfan2099
-from PyInstaller.compat import is_win, is_darwin
-from PyInstaller.utils.hooks import get_package_paths
-
+import site
+import os
+from PyInstaller.compat import is_win
+from PyInstaller.utils.hooks import collect_dynamic_libs, collect_data_files
 if is_win:
-    datas = [ ("C:\python27\Lib\site-packages\distorm3\distorm3.dll", ''), ]
-else:
-    raise ValueError('This distorm3 hook only works on Windows!')
+   datas = [ ( os.path.join(site.getsitepackages()[1], 'distorm3\distorm3.dll'),
+   #Not tested on Linux yet
