@@ -2619,24 +2619,39 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
          hiddenimports.append("sqlalchemy.databases." + db)
 
 ``is_module_satisfies( requirements, version=None, version_attr='__version__' )``:
-
-    Check the named module (full-qualified) exists and satisfies the
-    given requirement.
-    Example::
+   Check that the named module (fully-qualified) exists and satisfies the
+   given requirement. Example::
     
-	if is_module_satisfies('sqlalchemy >= 0.6'):
+	    if is_module_satisfies('sqlalchemy >= 0.6'):
 
-    This function provides robust version checking based on the same low-level
-    algorithm used by ``easy_install`` and ``pip``, and should always be
-    used in preference to writing your own comparison code.
-    In particular, version strings should never be compared lexicographically
-    (except for exact equality).
-    For example ``'00.5' > '0.6'`` returns True, which is not correct.
-    
-    The version is a PEP0440-compliant, dot-delimited version
-    specifier such as ``3.14-rc5``.
+   This function provides robust version checking based on the same low-level
+   algorithm used by ``easy_install`` and ``pip``, and should always be
+   used in preference to writing your own comparison code.
+   In particular, version strings should never be compared lexicographically
+   (except for exact equality).
+   For example ``'00.5' > '0.6'`` returns True, which is not the desired result.	
 
-    For details please refer to the function's doc-string.
+   The ``requirements`` argument uses the same syntax as supported by
+   the `Package resources`_ module of setup tools (follow the link to
+   see the supported syntax).
+
+   The optional ``version`` argument is is a PEP0440-compliant,
+   dot-delimited version specifier such as ``'3.14-rc5'``.
+
+   When the package being queried has been installed by ``easy_install``
+   or ``pip``, the existing setup tools machinery is used to perform the test
+   and the ``version`` and ``version_attr`` arguments are ignored.
+
+   When that is not the case, the ``version`` argument is taken as the
+   installed version of the package
+   (perhaps obtained by interrogating the package in some other way).
+   When ``version`` is ``None``, the named package is imported into a
+   subprocess, and the ``__version__`` value of that import is tested.
+   If the package uses some other name than ``__version__`` for its version
+   global, that name can be passed as the ``version_attr`` argument.
+
+   For more details and examples refer to the function's doc-string, found
+   in ``Pyinstaller/utils/hooks/__init__.py``.
 
 
 ``collect_submodules( 'package-name', subdir=None, pattern=None )``:
@@ -3102,6 +3117,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _Qt: http://www.qt-project.org
 .. _Recipe: http://www.pyinstaller.org/wiki/Recipe
 .. _setup_tools: https://pypi.python.org/pypi/setuptools
+.. _`Package resources`: https://pythonhosted.org/setuptools/pkg_resources.html#requirements-parsing
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
 .. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
