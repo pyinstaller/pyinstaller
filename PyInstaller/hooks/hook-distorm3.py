@@ -6,10 +6,12 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-import site
-import os
-from PyInstaller.compat import is_win
-from PyInstaller.utils.hooks import collect_dynamic_libs, collect_data_files
-if is_win:
-   datas = [ ( os.path.join(site.getsitepackages()[1], 'distorm3\distorm3.dll'),
-   #Not tested on Linux yet
+
+
+# Hook for the diStorm3 module: https://pypi.python.org/pypi/distorm3
+# Tested with distorm3 3.3.0, Python 2.7, Windows
+
+from PyInstaller.utils.hooks import collect_dynamic_libs
+
+# distorm3 dynamic library should be in the path with other dynamic libraries.
+binaries = collect_dynamic_libs('distorm3', destdir='.')
