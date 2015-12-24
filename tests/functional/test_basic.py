@@ -432,6 +432,10 @@ def test_threading_module(pyi_builder):
         """)
 
 
+def test_threading_module2(pyi_builder):
+    pyi_builder.test_script('pyi_threading_module2.py')
+
+
 def test_argument(pyi_builder):
     pyi_builder.test_source(
         '''
