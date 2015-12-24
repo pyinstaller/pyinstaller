@@ -16,3 +16,5 @@ runw	-text
 runw_d	-text
 *.exe	-text
 *.dll	-text
+
+/PyInstaller/utils/_gitrevision.py ident export-subst

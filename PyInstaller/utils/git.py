@@ -26,6 +26,13 @@ def get_repo_revision():
     gitdir = path.normpath(path.join(path.dirname(os.path.abspath(__file__)), '..', '..', '.git'))
     cwd = os.path.dirname(gitdir)
     if not path.exists(gitdir):
+        try:
+            from ._gitrevision import rev
+            if not rev.startswith('$'):
+                # the format specifier has been substituted
+                return '+' + rev
+        except ImportError:
+            pass
         return ''
     try:
         rev = exec_command('git', 'rev-parse', '--short', 'HEAD', cwd=cwd).strip()
