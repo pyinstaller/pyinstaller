@@ -1,2 +1,6 @@
 rev = "$Format:%h$"
+commit = "$Format:%H$"
 date = "$Format:%ci$"
+author = "$Format:%an$ <$Format:%ae$>"
+ref_names = "$Format:%D$"
+commit_message = """$Format:%B$"""
