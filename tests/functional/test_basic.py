@@ -242,6 +242,55 @@ def test_option_exclude_module(pyi_builder):
         pyi_args=['--exclude-module', 'xml.sax'])
 
 
+def test_option_verbose(pyi_builder, monkeypatch):
+    "Test to ensure that option V can be set and has effect."
+    # This option is like 'python -v' - trace import statements.
+    # 'None' should be allowed or '' also.
+
+    def MyEXE(*args, **kwargs):
+        args = list(args)
+        args.append([('v', None, 'OPTION')])
+        return EXE(*args, **kwargs)
+
+    import PyInstaller
+    EXE = PyInstaller.building.build_main.EXE
+    monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
+
+    pyi_builder.test_source(
+        """
+        print('test - PYTHONVERBOSE - trace import statements')
+        import re # just import anything
+        print('test - done')
+        """)
+
+
+def test_option_w_unset(pyi_builder):
+    "Test to ensure that option W is not set by default."
+    pyi_builder.test_source(
+        """
+        import sys
+        assert 'ignore' not in sys.warnoptions
+        """)
+
+def test_option_w_ignore(pyi_builder, monkeypatch):
+    "Test to ensure that option W can be set."
+
+    def MyEXE(*args, **kwargs):
+        args = list(args)
+        args.append([('W ignore', '', 'OPTION')])
+        return EXE(*args, **kwargs)
+
+    import PyInstaller
+    EXE = PyInstaller.building.build_main.EXE
+    monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
+
+    pyi_builder.test_source(
+        """
+        import sys
+        assert 'ignore' in sys.warnoptions
+        """)
+
+
 @skipif_win
 def test_python_makefile(pyi_builder):
     pyi_builder.test_script('pyi_python_makefile.py')
