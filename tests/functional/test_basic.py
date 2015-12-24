@@ -42,8 +42,11 @@ def test_absolute_python_path(pyi_builder):
 
 
 def test_celementtree(pyi_builder):
-    pyi_builder.test_script('pyi_celementtree.py')
-
+    pyi_builder.test_source(
+        """
+        from xml.etree.cElementTree import ElementTree
+        print('OK')
+        """)
 
 @importorskip('codecs')
 def test_codecs(pyi_builder):
@@ -60,28 +63,77 @@ def test_compiled_filenames(pyi_builder):
     """)
 
 def test_decoders_ascii(pyi_builder):
-    pyi_builder.test_script('pyi_decoders_ascii.py')
+    pyi_builder.test_source(
+        """
+        # This import forces Python 2 to handle string as unicode -
+        # as with prefix 'u'.
+        from __future__ import unicode_literals
+
+        # Convert type 'bytes' to type 'str' (Py3) or 'unicode' (Py2).
+        assert b'foo'.decode('ascii') == 'foo'
+        """)
 
 
 def test_distutils_submod(pyi_builder):
-    pyi_builder.test_script('pyi_distutils_submod.py')
+    # Test import of submodules of distutils package
+    # PyI fails to include `distutils.version` when running from virtualenv
+    pyi_builder.test_source(
+        """
+        from distutils.version import LooseVersion
+        """)
 
 
 def test_dynamic_module(pyi_builder):
-    pyi_builder.test_script('pyi_dynamic_module.py')
+    pyi_builder.test_source(
+        """
+        import pyi_testmod_dynamic
+
+        # The value 'foo' should  not be None.
+        print("'foo' value: %s" % pyi_testmod_dynamic.foo)
+        assert pyi_testmod_dynamic.foo is not None
+        assert pyi_testmod_dynamic.foo == 'A new value!'
+        """)
 
 
 def test_email(pyi_builder):
-    pyi_builder.test_script('pyi_email.py')
-
+    # Test import of new-style email module names.
+    # This should work on Python 2.5+
+    pyi_builder.test_source(
+        """
+        from email import utils
+        from email.header import Header
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.nonmultipart import MIMENonMultipart
+        """)
 
 @importorskip('Crypto')
 def test_feature_crypto(pyi_builder):
-    pyi_builder.test_script('pyi_feature_crypto.py', pyi_args=['--key=test_key'])
+    pyi_builder.test_source(
+        """
+        from pyimod00_crypto_key import key
+        from pyimod02_archive import CRYPT_BLOCK_SIZE
+
+        # Issue 1663: Crypto feature caused issues when using PyCrypto module.
+        import Crypto.Cipher.AES
+
+        assert type(key) is str
+        # The test runner uses 'test_key' as key.
+        assert key == 'test_key'.zfill(CRYPT_BLOCK_SIZE)
+        """,
+        pyi_args=['--key=test_key'])
 
 
 def test_feature_nocrypto(pyi_builder):
-    pyi_builder.test_script('pyi_feature_nocrypto.py')
+    pyi_builder.test_source(
+        """
+        try:
+            import pyimod00_crypto_key
+
+            raise AssertionError('The pyimod00_crypto_key module must NOT be there if crypto is disabled.')
+        except ImportError:
+            pass
+        """)
 
 
 def test_filename(pyi_builder):
@@ -93,7 +145,7 @@ def test_getfilesystemencoding(pyi_builder):
 
 
 def test_helloworld(pyi_builder):
-    pyi_builder.test_script('pyi_helloworld.py')
+    pyi_builder.test_source("print('Hello Python!')")
 
 
 def test_module__file__attribute(pyi_builder):
@@ -160,7 +212,13 @@ def test_get_meipass_value(pyi_builder):
 
 
 def test_chdir_meipass(pyi_builder):
-    pyi_builder.test_script('pyi_chdir_meipass.py')
+    # Ensure meipass dir exists.
+    pyi_builder.test_source(
+        """
+        import os, sys
+        os.chdir(sys._MEIPASS)
+        print(os.getcwd())
+        """)
 
 
 def test_option_exclude_module(pyi_builder):
@@ -168,8 +226,20 @@ def test_option_exclude_module(pyi_builder):
     Test to ensure that when using option --exclude-module=xml.sax
     the module 'xml.sax' won't be bundled.
     """
-    pyi_builder.test_script('pyi_option_exclude_module.py',
-                            pyi_args=['--exclude-module', 'xml.sax'])
+    pyi_builder.test_source(
+        """
+        try:
+            import xml.sax
+            # Option --exclude-module=xml.sax did not work and the module
+            # was successfully imported.
+            raise SystemExit('Module xml.sax was excluded but it is '
+                             'bundled with the executable.')
+        except ImportError:
+            # The Import error is expected since PyInstaller should
+            # not bundle 'xml.sax' module.
+            pass
+        """,
+        pyi_args=['--exclude-module', 'xml.sax'])
 
 
 @skipif_win
@@ -185,8 +255,7 @@ def test_set_icon(pyi_builder, data_dir):
         args = ['--windowed', '--icon', os.path.join(data_dir.strpath, 'pyi_icon.icns')]
     else:
         pytest.skip('option --icon works only on Windows and Mac OS X')
-    # Just use helloworld script.
-    pyi_builder.test_script('pyi_helloworld.py', pyi_args=args)
+    pyi_builder.test_source("print('Hello Python!')", pyi_args=args)
 
 
 def test_python_home(pyi_builder):
@@ -243,7 +312,11 @@ def test_site_module_disabled(pyi_builder):
 
 
 def test_time_module(pyi_builder):
-    pyi_builder.test_script('pyi_time_module.py')
+    pyi_builder.test_source(
+        """
+        import time
+        print(time.strptime(time.ctime()))
+        """)
 
 
 @skipif_win
@@ -255,19 +328,49 @@ def test_time_module_localized(pyi_builder, monkeypatch):
     # time.strptime was using 'xx_YY' from the environment.
     lang = 'cs_CZ' if is_darwin else 'cs_CZ.UTF-8'
     monkeypatch.setenv('LC_ALL', lang)
-    pyi_builder.test_script('pyi_time_module.py')
+    pyi_builder.test_source(
+        """
+        import time
+        print(time.strptime(time.ctime()))
+        """)
 
 
 def test_xmldom_module(pyi_builder):
-    pyi_builder.test_script('pyi_xmldom_module.py')
+    pyi_builder.test_source(
+        """
+        print('Importing xml.dom')
+        from xml.dom import pulldom
+        print('Importing done')
+        """)
 
 
 def test_threading_module(pyi_builder):
-    pyi_builder.test_script('pyi_threading_module.py')
+    pyi_builder.test_source(
+        """
+        import threading
+
+        def doit(nm):
+            print(('%s started' % nm))
+            import pyi_testmod_threading
+            print(('%s %s' % (nm, pyi_testmod_threading.x)))
+
+        t1 = threading.Thread(target=doit, args=('t1',))
+        t2 = threading.Thread(target=doit, args=('t2',))
+        t1.start()
+        t2.start()
+        doit('main')
+        t1.join()
+        t2.join()
+        """)
 
 
 def test_argument(pyi_builder):
-    pyi_builder.test_script('pyi_argument.py', app_args=["--argument"])
+    pyi_builder.test_source(
+        '''
+        import sys
+        assert sys.argv[1] == "--argument", "sys.argv[1] was %s, expected %r" % (sys.argv[1], "--argument")
+        ''',
+        app_args=["--argument"])
 
 
 @importorskip('win32com')
@@ -323,7 +426,7 @@ def test_renamed_exe(pyi_builder):
         return newexes
 
     pyi_builder._find_executables = _find_executables
-    pyi_builder.test_script('pyi_helloworld.py')
+    pyi_builder.test_source("print('Hello Python!')")
 
 
 @skipif_notosx
@@ -331,4 +434,19 @@ def test_osx_override_info_plist(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_osx_override_info_plist.spec')
 
 def test_hook_collect_submodules(pyi_builder, script_dir):
-    pyi_builder.test_script('pyi_collect_submodules.py', ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
+    # This is designed to test the operation of
+    # PyInstaller.utils.hook.collect_submodules. To do so:
+    #
+    # 1. It imports the dummy module pyi_collect_submodules_mod, which
+    #    contains nothing.
+    # 2. This causes hook-pyi_collect_submodules_mod.py to be run,
+    #    which collects some dummy submodules. In this case, it
+    #    collects from modules/pyi_testmod_relimp.
+    # 3. Therefore, we should be able to find hidden imports under
+    #    pyi_testmod_relimp.
+    pyi_builder.test_source(
+        """
+        import pyi_collect_submodules_mod
+        __import__('pyi_testmod_relimp.B.C')
+        """,
+        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])

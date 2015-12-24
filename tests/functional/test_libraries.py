@@ -94,7 +94,14 @@ def test_tkinter_FixTk(pyi_builder):
 
 @importorskip('zmq')
 def test_zmq(pyi_builder):
-    pyi_builder.test_script('pyi_lib_zmq.py')
+    pyi_builder.test_source(
+        """
+        import zmq
+        print(zmq.__version__)
+        print(zmq.zmq_version())
+        # This is a problematic module and might cause some issues.
+        import zmq.utils.strtypes
+        """)
 
 
 @importorskip('sphinx')
@@ -104,19 +111,61 @@ def test_sphinx(tmpdir, pyi_builder, data_dir):
 
 @importorskip('pylint')
 def test_pylint(pyi_builder):
-    pyi_builder.test_script('pyi_lib_pylint.py')
+    pyi_builder.test_source(
+        """
+        # The following more obvious test doesn't work::
+        #
+        #   import pylint
+        #   pylint.run_pylint()
+        #
+        # because pylint will exit with 32, since a valid command
+        # line wasn't given. Instead, provide a valid command line below.
+
+        from pylint.lint import Run
+        Run(['-h'])
+        """)
+
 
 @importorskip('pygments')
 def test_pygments(pyi_builder):
-    pyi_builder.test_script('pyi_lib_pygments.py')
+    pyi_builder.test_source(
+        """
+        # This sample code is taken from http://pygments.org/docs/quickstart/.
+        from pygments import highlight
+        from pygments.lexers import PythonLexer
+        from pygments.formatters import HtmlFormatter
+
+        code = 'print "Hello World"'
+        print(highlight(code, PythonLexer(), HtmlFormatter()))
+        """)
 
 @importorskip('markdown')
 def test_markdown(pyi_builder):
-    pyi_builder.test_script('pyi_lib_markdown.py')
+    # Markdown uses __import__ed extensions. Make sure these work by
+    # trying to use the 'toc' extension..
+    pyi_builder.test_source(
+        """
+        import markdown
+        print(markdown.markdown('testing',  ['toc']))
+        """)
 
 @importorskip('PyQt4')
 def test_PyQt4_QtWebKit(pyi_builder):
-    pyi_builder.test_script('pyi_lib_PyQt4-QtWebKit.py')
+    pyi_builder.test_source(
+        """
+        from PyQt4.QtGui import QApplication
+        from PyQt4.QtWebKit import QWebView
+        from PyQt4.QtCore import QTimer
+
+        app = QApplication([])
+        view = QWebView()
+        view.show()
+        # Exit Qt when the main loop becomes idle.
+        QTimer.singleShot(0, app.exit)
+        # Run the main loop, displaying the WebKit widget.
+        app.exec_()
+        """)
+
 
 @importorskip('PyQt4')
 def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
@@ -155,14 +204,15 @@ def test_idlelib(pyi_builder):
 
 @importorskip('keyring')
 def test_keyring(pyi_builder):
-    pyi_builder.test_script('pyi_lib_keyring.py')
+    pyi_builder.test_source("import keyring")
 
 
 @importorskip('lxml')
 def test_lxml_isoschematron(pyi_builder):
     pyi_builder.test_source(
         """
-        # The import of this module triggers the loading some required XML files.
+        # The import of this module triggers the loading of some
+        # required XML files.
         from lxml import isoschematron
         """)
 
