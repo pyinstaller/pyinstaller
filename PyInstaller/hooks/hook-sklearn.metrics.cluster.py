@@ -6,12 +6,9 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-from PyInstaller.utils.hooks import collect_data_files
 
-# Hook tested with scikit-image (skimage) 0.9.3 on Mac OS 10.9 and Windows 7
-# 64-bit
-hiddenimports = ['skimage.draw.draw',
-                 'skimage._shared.geometry',
-                 'skimage.filters.rank.core_cy']
-
-datas = collect_data_files('skimage')
+# Tested on Windows 7 64bit with scikit-learn 0.17 and Python 2.7
+hiddenimports = ['sklearn.utils.sparsetools._graph_validation',
+                 'sklearn.utils.sparsetools._graph_tools',
+                 'sklearn.utils.lgamma',
+                 'sklearn.utils.weight_vector']
