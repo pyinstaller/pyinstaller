@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH PYI-MAKESPEC 1 "" "PyInstaller 3.0.dev8+f1a8933.mod" ""
+.TH PYI-MAKESPEC 1 "" "PyInstaller 3.1.dev0+44ebb38.mod" ""
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -66,58 +66,58 @@ read the introduction to \fISpec Files\fP\&.
 .B \-h\fP,\fB  \-\-help
 show this help message and exit
 .TP
-.BI \-\-log\-level\fB= LOGLEVEL
-Amount of detail in build\-time console messages
-(default: INFO, choose one of DEBUG, INFO, WARN,
-ERROR, CRITICAL)
+.BI \-\-log\-level \ LEVEL
+Amount of detail in build\-time console messages. LEVEL
+may be one of DEBUG, INFO, WARN, ERROR, CRITICAL
+(default: INFO).
 .UNINDENT
 .SS What to generate
 .INDENT 0.0
-.TP
-.B \-F\fP,\fB  \-\-onefile
-Create a one\-file bundled executable.
 .TP
 .B \-D\fP,\fB  \-\-onedir
 Create a one\-folder bundle containing an executable
 (default)
 .TP
-.BI \-\-specpath\fB= DIR
+.B \-F\fP,\fB  \-\-onefile
+Create a one\-file bundled executable.
+.TP
+.BI \-\-specpath \ DIR
 Folder to store the generated spec file (default:
 current directory)
 .TP
-.BI \-n \ NAME\fP,\fB \ \-\-name\fB= NAME
+.BI \-n \ NAME\fP,\fB \ \-\-name \ NAME
 Name to assign to the bundled app and spec file
 (default: first script\(aqs basename)
 .UNINDENT
 .SS What to bundle, where to search
 .INDENT 0.0
 .TP
-.BI \-p \ DIR\fP,\fB \ \-\-paths\fB= DIR
+.BI \-p \ DIR\fP,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH).
 Multiple paths are allowed, separated by \(aq:\(aq, or use
 this option multiple times
 .TP
-.BI \-\-hidden\-import\fB= MODULENAME
+.BI \-\-hidden\-import \ MODULENAME\fP,\fB \ \-\-hiddenimport \ MODULENAME
 Name an import not visible in the code of the
 script(s). This option can be used multiple times.
 .TP
-.BI \-\-additional\-hooks\-dir\fB= HOOKSPATH
+.BI \-\-additional\-hooks\-dir \ HOOKSPATH
 An additional path to search for hooks. This option
 can be used multiple times.
 .TP
-.BI \-\-runtime\-hook\fB= RUNTIME_HOOKS
+.BI \-\-runtime\-hook \ RUNTIME_HOOKS
 Path to a custom runtime hook file. A runtime hook is
 code that is bundled with the executable and is
 executed before any other code or module to set up
 special features of the runtime environment. This
 option can be used multiple times.
 .TP
-.BI \-\-exclude\-module\fB= EXCLUDES
-Optional module or package (his Python names,not path
-names) that will be ignored (as thoughit was not
-found).This option can be used multiple times.
+.BI \-\-exclude\-module \ EXCLUDES
+Optional module or package (his Python names, not path
+names) that will be ignored (as though it was not
+found). This option can be used multiple times.
 .TP
-.BI \-\-key\fB= KEY
+.BI \-\-key \ KEY
 The key used to encrypt Python bytecode.
 .UNINDENT
 .SS How to generate
@@ -145,10 +145,10 @@ Open a console window for standard i/o (default)
 .B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
 Windows and Mac OS X: do not provide a console window
 for standard i/o. On Mac OS X this also triggers
-building an OS X .app bundle.This option is ignored in
-*NIX systems.
+building an OS X .app bundle. This option is ignored
+in *NIX systems.
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fP,\fB \ \-\-icon\fB= <FILE.ico or FILE.exe,ID or FILE.icns>
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fP,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns>
 FILE.ico: apply that icon to a Windows executable.
 FILE.exe,ID, extract the icon with ID from an exe.
 FILE.icns: apply the icon to the .app bundle on Mac OS
@@ -157,23 +157,24 @@ X
 .SS Windows specific options
 .INDENT 0.0
 .TP
-.BI \-\-version\-file\fB= FILE
+.BI \-\-version\-file \ FILE
 add a version resource from FILE to the exe
 .TP
-.BI \-m \ <FILE or XML>\fP,\fB \ \-\-manifest\fB= <FILE or XML>
+.BI \-m \ <FILE or XML>\fP,\fB \ \-\-manifest \ <FILE or XML>
 add manifest FILE or XML to the exe
 .TP
-.BI \-r \ <FILE[,TYPE[,NAME[,LANGUAGE]]]>\fP,\fB \ \-\-resource\fB= <FILE[,TYPE[,NAME[,LANGUAGE]]]>
-Add or update a resource of the given type, name and
-language from FILE to a Windows executable. FILE can
-be a data file or an exe/dll. For data files, at least
-TYPE and NAME must be specified. LANGUAGE defaults to
-0 or may be specified as wildcard * to update all
-resources of the given TYPE and NAME. For exe/dll
-files, all resources from FILE will be added/updated
-to the final executable if TYPE, NAME and LANGUAGE are
-omitted or specified as wildcard *.This option can be
-used multiple times.
+.BI \-r \ RESOURCE\fP,\fB \ \-\-resource \ RESOURCE
+Add or update a resource to a Windows executable. The
+RESOURCE is one to four items,
+FILE[,TYPE[,NAME[,LANGUAGE]]]. FILE can be a data file
+or an exe/dll. For data files, at least TYPE and NAME
+must be specified. LANGUAGE defaults to 0 or may be
+specified as wildcard * to update all resources of the
+given TYPE and NAME. For exe/dll files, all resources
+from FILE will be added/updated to the final
+executable if TYPE, NAME and LANGUAGE are omitted or
+specified as wildcard *.This option can be used
+multiple times.
 .TP
 .B \-\-uac\-admin
 Using this option creates a Manifest which will
@@ -203,7 +204,7 @@ the assembly.
 .SS Mac OS X specific options
 .INDENT 0.0
 .TP
-.BI \-\-osx\-bundle\-identifier\fB= BUNDLE_IDENTIFIER
+.BI \-\-osx\-bundle\-identifier \ BUNDLE_IDENTIFIER
 Mac OS X .app bundle identifier is used as the default
 unique program name for code signing purposes. The
 usual form is a hierarchical name in reverse DNS
