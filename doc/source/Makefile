@@ -33,7 +33,7 @@ pyi-makespec.rst: _pyi-makespec-options.tmp
 _pyinstaller-options.tmp: ../../pyinstaller.py
 	./help2rst $< > $@
 
-_pyi-%-options.tmp: ../../utils/%.py
+_pyi-makespec-options.tmp: ../../makespec.py
 	./help2rst $< > $@
 
 # rst2pdf need to find some images *and* the include-files in the
