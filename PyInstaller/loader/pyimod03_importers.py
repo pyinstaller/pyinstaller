@@ -370,6 +370,13 @@ class FrozenImporter(object):
                 else:
                     module.__package__ = fullname.rsplit('.', 1)[0]
 
+                ### Set __spec__ for Python 3.4+
+                # In Python 3.4 was introduced module attribute __spec__ to
+                # consolidate all module attributes.
+                if sys.version_info[0:2] > (3, 3):
+                    module.__spec__ = _frozen_importlib.ModuleSpec(
+                        real_fullname, self, is_package=is_pkg)
+
                 ### Add module object to sys.modules dictionary.
                 # Module object must be in sys.modules before the loader
                 # executes the module code. This is crucial because the module
