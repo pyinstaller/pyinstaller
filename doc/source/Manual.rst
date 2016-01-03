@@ -358,7 +358,7 @@ In order to locate included files at run time,
 your program needs to be able to learn its path at run time
 in a way that works regardless of
 whether or not it is running from a bundle.
-This is covered under `Run-time Operation`_.
+This is covered under `Run-time Information`_.
 
 |PyInstaller| does *not* include libraries that should exist in
 any installation of this OS.
@@ -971,13 +971,12 @@ are delivered after the program has launched, you must
 set up the appropriate handlers.
 
 
-Run-time Operation
+Run-time Information
 =====================
 
 Your app should run in a bundle exactly as it does when run from source.
-However, you might want to learn at run-time
-whether the app is running from source or "frozen" (bundled).
-
+However, you may need to learn at run-time
+whether the app is running from source, or is "frozen" (bundled).
 For example, you might have
 data files that are normally found based on a module's ``__file__`` attribute.
 That will not work when the code is bundled.
@@ -991,11 +990,86 @@ So the test for "are we bundled?" is::
 	else :
 		# running live
 
-The |bootloader| stores the absolute path to the bundle folder in ``sys._MEIPASS``.
+When your app is running, it may need to access data files in any of
+three general locations:
+
+* Files that were bundled with it (see `Adding Data Files`_).
+
+* Files the user has placed with the app bundle, say in the same folder.
+
+* Files in the user's current working directory.
+
+The program has access to several path variables for these uses.
+
+
+Using ``__file__`` and ``sys._MEIPASS``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When your program is not frozen, the standard Python
+variable ``__file__`` is the full path to the script now executing.
+When a bundled app starts up,
+the |bootloader| sets the ``sys.frozen`` attribute
+and stores the absolute path to the bundle folder in ``sys._MEIPASS``.
 For a one-folder bundle, this is the path to that folder, 
 wherever the user may have put it.
 For a one-file bundle, this is the path to the ``_MEIxxxxxx`` temporary folder
 created by the |bootloader| (see `How the One-File Program Works`_).
+
+
+Using ``sys.executable`` and ``sys.argv[0]``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When a normal Python script runs, ``sys.executable`` is the path to the
+program that was executed, namely, the Python interpreter.
+In a frozen app, ``sys.executable`` is also the path to the
+program that was executed, but that is not Python;
+it is the bootloader in either the one-file app
+or the executable in the one-folder app.
+This gives you a reliable way to locate the frozen executable the user
+actually launched.
+
+The value of ``sys.argv[0]`` is the name or relative path that was
+used in the user's command.
+It may be a relative path or an absolute path depending
+on the platform and how the app was launched.
+
+If the user launches the app by way of a symbolic link,
+``sys.argv[0]`` uses that symbolic name,
+while ``sys.executable`` is the actual path to the executable.
+Sometimes the same app is linked under different names
+and is expected to behave differently depending on the name that is
+used to launch it.
+For this case, you would test ``os.path.basename(sys.argv[0])``
+
+On the other hand, sometimes the user is told to store the executable
+in the same folder as the files it will operate on,
+for example a music player that should be stored in the same folder
+as the audio files it will play.
+For this case, you would use ``os.path.dirname(sys.executable)``.
+
+The following small program explores some of these possibilities.
+Save it as ``directories.py``.
+Execute it as a Python script,
+then bundled as a one-folder app.
+Then bundle it as a one-file app and launch it directly and also via a
+symbolic link::
+
+	#!/usr/bin/python3
+	import sys, os
+	frozen = 'not'
+	if getattr(sys, 'frozen', False):
+		# we are running in a bundle
+		frozen = 'ever so'
+		bundle_dir = sys._MEIPASS
+	else:
+		# we are running in a normal Python environment
+		bundle_dir = os.path.dirname(os.path.abspath(__file__))
+	print( 'we are',frozen,'frozen')
+	print( 'bundle dir is', bundle_dir )
+	print( 'sys.argv[0] is', sys.argv[0] )
+	print( 'sys.executable is', sys.executable )
+	print( 'os.getcwd is', os.getcwd() )
+
 
 Using Spec Files
 =================
@@ -1115,6 +1189,7 @@ Adding Files to the Bundle
 
 To add files to the bundle, you create a list that describes the files
 and supply it to the ``Analysis`` call.
+To find the data files at run-time, see `Run-time Information`_.
 
 Adding Data Files
 ------------------
@@ -1177,36 +1252,6 @@ You can also include the entire contents of a folder::
 
 The folder ``/mygame/data`` will be reproduced under the name
 ``data`` in the bundle.
-
-Locating Data Files at Run Time
---------------------------------
-
-When your application needs access to a data file that is bundled with it,
-you can get the path to the application's folder with the following code::
-
-    import sys
-    import os
-    ...
-    if getattr(sys, 'frozen', False):
-        # we are running in a bundle
-        basedir = sys._MEIPASS
-    else:
-        # we are running in a normal Python environment
-        basedir = os.path.dirname(os.path.abspath(__file__))
-
-This code sets ``basedir`` to the path to the folder containing
-your script and any other files or folders located with it.
-For example if you included ``README.txt`` as shown above,
-you could open it using::
-
-	readme_file = open( 'r',os.path.join( basedir, 'README.txt' ) )
-
-When your program was not started by the |bootloader|, the standard Python
-variable ``__file__`` is the full path to the script now executing,
-and ``os.path.dirname()`` extracts the path to the folder that contains it.
-When bundled as one-folder, ``sys._MEIPASS`` provides the path to bundle folder.
-When bundled as one-file, ``sys._MEIPASS`` is the path to the temporary
-folder created when the application starts.
 
 Using Data Files from a Module
 --------------------------------
@@ -1855,11 +1900,10 @@ This version might have fixes or features that are not yet at `PyPI`_.
 You can download the latest stable version and the latest development
 version from the `PyInstaller Downloads`_ page.
 
-If you have Git_ installed on your development system,
-you can use it together with pip
-to install the latest version of |PyInstaller| directly::
+You can also install the latest version of |PyInstaller| directly
+using pip_::
 
-    pip install -e git://github.com/pyinstaller/pyinstaller.git#egg=PyInstaller
+    pip install -e https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 
 Asking for Help
 ~~~~~~~~~~~~~~~~~~
@@ -2286,6 +2330,40 @@ an executable or by another DLL.
 follow the chain of dependencies of binary extensions
 during Analysis.
 
+Creating a Reproducible Build
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In certain cases it is important that when you build the same application twice,
+using exactly the same set of dependencies,
+the two bundles should be exactly, bit-for-bit identical.
+
+That is not the case normally.
+Python uses a random hash to make dicts and other hashed types,
+and this affects compiled byte-code as well as |PyInstaller|
+internal data structures.
+As a result, two builds may not produce bit-for-bit identical results
+even when all the components of the application bundle are the same
+and the two applications execute in identical ways.
+
+You can assure that a build will produce the same bits
+by setting the ``PYTHONHASHSEED`` environment variable to a known
+integer value before running |PyInstaller|.
+This forces Python to use the same random hash sequence until
+``PYTHONHASHSEED`` is unset or set to ``'random'``.
+For example, execute |PyInstaller| in a script such as
+the following (for Linux and OS X)::
+
+    # set seed to a known repeatable integer value
+    PYTHONHASHSEED=1
+    export PYTHONHASHSEED
+    # create one-file build as myscript
+    pyinstaller myscript.spec
+    # make checksum
+    cksum dist/myscript/myscript | awk '{print $1}' > dist/myscript/checksum.txt
+    # let Python be unpredictable again
+    unset PYTHONHASHSEED
+
+
 Understanding PyInstaller Hooks
 ==================================
      
@@ -2514,7 +2592,7 @@ of specific hooks, such as hooks for PyQt4/5.
 You are welcome to read the ``PyInstaller.utils.hooks`` module
 (and read the existing hooks that import from it) to get code and ideas.
 
-``exec_statement( statement )``:
+``exec_statement( 'statement' )``:
    Execute a single Python statement in an externally-spawned interpreter
    and return the standard output that results, as a string.
    Examples::
@@ -2528,7 +2606,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
         )
      datas = [ (mpl_data_dir, "") ]
 
-``eval_statement( statement )``:
+``eval_statement( 'statement' )``:
    Execute a single Python statement in an externally-spawned interpreter.
    If the resulting standard output text is not empty, apply
    the ``eval()`` function to it; else return None. Example::
@@ -2540,34 +2618,43 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
       for db in databases:
          hiddenimports.append("sqlalchemy.databases." + db)
 
-``is_module_version( module, relation, version_string )``:
-    Check the version of the named module (full-qualified)
-    against a version string using the comparison operator ``relation``.
-    Example::
+``is_module_satisfies( requirements, version=None, version_attr='__version__' )``:
+   Check that the named module (fully-qualified) exists and satisfies the
+   given requirement. Example::
     
-    	if is_module_version('sqlalchemy', '>=', '0.6') :
+	    if is_module_satisfies('sqlalchemy >= 0.6'):
 
-    This function provides robust version checking based on the same low-level
-    algorithm used by ``easy_install`` and ``pip``, and should always be
-    used in preference to writing your own comparison code.
-    In particular, version strings should never be compared lexicographically
-    (except for exact equality).
-    For example ``'00.5' > '0.6'`` returns True, which is not correct.
-    
-    The ``version_string`` is a PEP0440-compliant, dot-delimited version
-    specifier such as ``3.14-rc5``.
-    The ``relation`` is one of the strings:
+   This function provides robust version checking based on the same low-level
+   algorithm used by ``easy_install`` and ``pip``, and should always be
+   used in preference to writing your own comparison code.
+   In particular, version strings should never be compared lexicographically
+   (except for exact equality).
+   For example ``'00.5' > '0.6'`` returns True, which is not the desired result.	
 
-    * ``>`` for greater-than.
-    
-    * ``<`` for less-than.
-    
-    * ``>=`` for greater-than-or-equal-to.
-    
-    * ``<=`` for less-than-or-equal-to.
-	 
+   The ``requirements`` argument uses the same syntax as supported by
+   the `Package resources`_ module of setup tools (follow the link to
+   see the supported syntax).
 
-``collect_submodules( package, subdir=None, pattern=None )``:
+   The optional ``version`` argument is is a PEP0440-compliant,
+   dot-delimited version specifier such as ``'3.14-rc5'``.
+
+   When the package being queried has been installed by ``easy_install``
+   or ``pip``, the existing setup tools machinery is used to perform the test
+   and the ``version`` and ``version_attr`` arguments are ignored.
+
+   When that is not the case, the ``version`` argument is taken as the
+   installed version of the package
+   (perhaps obtained by interrogating the package in some other way).
+   When ``version`` is ``None``, the named package is imported into a
+   subprocess, and the ``__version__`` value of that import is tested.
+   If the package uses some other name than ``__version__`` for its version
+   global, that name can be passed as the ``version_attr`` argument.
+
+   For more details and examples refer to the function's doc-string, found
+   in ``Pyinstaller/utils/hooks/__init__.py``.
+
+
+``collect_submodules( 'package-name', subdir=None, pattern=None )``:
    Returns a list of strings that specify all the modules in a package,
    ready to be assigned to the ``hiddenimports`` global.
    Returns an empty list when ``package`` does not name a package
@@ -2583,10 +2670,10 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    
    		hiddenimports = collect_submodules( 'PIL', pattern='ImagePlugin' )
 
-``collect_data_files( module, subdir=None, include_py_files=False )``:
+``collect_data_files( 'module-name', subdir=None, include_py_files=False )``:
    Returns a list of (source, dest) tuples for all non-Python (i.e. data)
-   files found in ``module``, ready to be assigned to the ``datas`` global.
-   ``module`` is a string giving the fully-qualified name of a module or
+   files found in *module-name*, ready to be assigned to the ``datas`` global.
+   *module-name* is the fully-qualified name of a module or
    package (but not a zipped "egg").
    The function uses ``os.walk()`` to visit the module directory recursively.
    ``subdir``, if given, restricts the search to a relative subdirectory.
@@ -2598,7 +2685,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    search a directory for Python executable files and load them as
    extensions or plugins.)
    
-``collect_dynamic_libs( module )``:
+``collect_dynamic_libs( 'module-name' )``:
    Returns a list of (source, dest) tuples for all the dynamic libs
    present in a module directory.
    The list is ready to be assigned to the ``binaries`` global variable.
@@ -2610,13 +2697,13 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
 
 		binaries = collect_dynamic_libs( 'enchant' )
 
-``get_module_file_attribute( module )``:
-   Return the absolute path to ``module``, a fully-qualified module name.
+``get_module_file_attribute( 'module-name' )``:
+   Return the absolute path to *module-name*, a fully-qualified module name.
    Example::
    
        nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
 
-``get_package_paths( package )``:
+``get_package_paths( 'package-name' )``:
    Given the name of a package, return a tuple.
    The first element is the absolute path to the folder where the package is stored.
    The second element is the absolute path to the named package.
@@ -2627,6 +2714,24 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
 
    is the tuple, ``( '/abs/Python/lib', '/abs/Python/lib/pkg/subpkg' )``
 
+``copy_metadata( 'package-name' )``:
+   Given the name of a package, return the name of its distribution
+   metadata folder as a list of tuples ready to be assigned
+   (or appended) to the ``datas`` global variable.
+   
+   Some packages rely on metadata files accessed through the
+   ``pkg_resources`` module.
+   Normally |PyInstaller| does not include these metadata files.
+   If a package fails without them, you can use this
+   function in a hook file to easily add them to the bundle.
+   The tuples in the returned list have two strings.
+   The first is the full pathname to a folder in this system.
+   The second is the folder name only.
+   When these tuples are added to ``datas``\ ,
+   the folder will be bundled at the top level.
+   If *package-name* does not have metadata, an
+   AssertionError exception is raised.
+   
 
 ``get_homebrew_path( formula='' )``:
    Return the homebrew path to the named formula, or to the 
@@ -2638,7 +2743,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    Return the path to the top-level Python package containing
    the Django files, or None if nothing can be found.
 
-``django_dottedstring_imports( django_root_dir )``
+``django_dottedstring_imports( 'django-root-dir' )``
    Return a list of all necessary Django modules specified in
    the Django settings.py file, such as the
    ``Django.settings.INSTALLED_APPS`` list and many others.
@@ -3012,6 +3117,7 @@ This will also produce ``support/loader/YOUR_OS/run``,
 .. _Qt: http://www.qt-project.org
 .. _Recipe: http://www.pyinstaller.org/wiki/Recipe
 .. _setup_tools: https://pypi.python.org/pypi/setuptools
+.. _`Package resources`: https://pythonhosted.org/setuptools/pkg_resources.html#requirements-parsing
 .. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
 .. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/

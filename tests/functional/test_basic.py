@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2015, PyInstaller Development Team.
+# Copyright (c) 2005-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -49,6 +49,15 @@ def test_celementtree(pyi_builder):
 def test_codecs(pyi_builder):
     pyi_builder.test_script('pyi_codecs.py')
 
+
+def test_compiled_filenames(pyi_builder):
+    pyi_builder.test_source("""
+    import pyi_dummy_module
+    from os.path import isabs
+
+    assert not isabs(pyi_dummy_module.dummy.__code__.co_filename), "pyi_dummy_module.dummy.__code__.co_filename has compiled filename: %s" % (pyi_dummy_module.dummy.__code__.co_filename,)
+    assert not isabs(pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename), "pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename has compiled filename: %s" % (pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename,)
+    """)
 
 def test_decoders_ascii(pyi_builder):
     pyi_builder.test_script('pyi_decoders_ascii.py')

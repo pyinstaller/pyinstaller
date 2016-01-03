@@ -1,0 +1,152 @@
+#!/usr/bin/env python
+#-----------------------------------------------------------------------------
+# Copyright (c) 2016, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
+"""This script updates the copyright year to the current year.
+
+If checks all non-binary files tracked by git. It also lists all
+non-binary files tracked missing our copyright header.
+
+Run this at the beginning of each new year.
+"""
+
+from __future__ import print_function
+
+__copyright__ = "Copyright (c) 2016, PyInstaller Development Team."
+__author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
+
+import os, sys, re
+import subprocess
+import time
+import fnmatch
+
+YEAR = str(time.localtime().tm_year)
+
+EXCLUDE = set(
+    '''
+    .gitattributes
+    .gitignore
+    MANIFEST.in
+    bootloader/waf
+    bootloader/windows/run.rc
+    bootloader/windows/runw.rc
+    doc/CHANGES.rst
+    doc/CREDITS.rst
+    doc/source/tools/rst2newlatex.py
+    doc/source/tools/rst2xml.py
+    old/examples/file_version_info.txt
+    PyInstaller/lib/pefile.py
+    PyInstaller/lib/pefile_py2.py
+    PyInstaller/lib/pefile_py3.py
+    PyInstaller/utils/_gitrevision.py
+    tests/functional/data/sphinx/conf.py
+    tests/old_suite/basic/test_pkg_structures-version.txt
+    '''.split())
+
+EXCLUDE_GLOBS = '''
+    doc/*.html
+    doc/*.1
+    */EGG-INFO/*
+    */*.egg-info/*
+    '''.split()
+
+EXCLUDE_DIRS = tuple(
+    '''
+    bootloader/zlib/
+    PyInstaller/lib/altgraph/
+    PyInstaller/lib/macholib/
+    PyInstaller/lib/ordlookup/
+    '''.split())
+
+
+script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+base_dir = os.path.dirname(script_dir)
+os.chdir(base_dir)
+
+def get_file_list():
+    def chunks(l, n):
+        """Yield successive n-sized chunks from l."""
+        for i in xrange(0, len(l), n):
+            yield l[i:i+n]
+
+    text = subprocess.check_output(
+        'git ls-tree -rz --name-only --full-tree HEAD | '
+        'xargs -0 git check-attr text -z', shell=True)
+    text = text.rstrip('\0') # strip trailing NULL-byte
+    for entry in chunks(text.split('\0'), 3):
+        assert len(entry) == 3, entry
+        assert entry[1] == "text", entry
+        path, dummy, typ = entry
+        assert typ in ('auto', 'unset'), entry
+        if typ == 'unset':
+            # binary file
+            continue
+        yield path
+
+
+def ignore(filename):
+    if filename in EXCLUDE or os.path.basename(filename) in EXCLUDE:
+        return True
+    if filename.startswith(EXCLUDE_DIRS):
+        return True
+    for pat in EXCLUDE_GLOBS:
+        if fnmatch.fnmatch(filename, pat):
+            return True
+    return False
+
+
+P1 = re.compile(r'(Copyright[: ].* 2[0-9]{3})-(2[0-9]{3})(,? PyInstaller Development Team)',
+                flags=re.IGNORECASE)
+P2 = re.compile(r'(Copyright[: ].*) (2[0-9]{3})(,? PyInstaller Development Team)',
+                flags=re.IGNORECASE)
+
+
+def transform(text):
+    """Transform text or return None if no change."""
+    changed = False
+    text, n = P1.subn(r'\1-' + YEAR + r'\3', text)
+    changed = changed or bool(n)
+    text, n = P2.subn(r'\1 \2-' + YEAR + r'\3', text)
+    changed = changed or bool(n)
+    if changed:
+        return text
+
+def has_our_copyright(text):
+    if len(text) <= 30:
+        # ignore short files
+        return True
+    found = P1.search(text) or P2.search(text)
+    return found
+
+
+missing_copyright = []
+files = get_file_list()
+
+for filename in files:
+    with open(filename, 'r') as f:
+        text = f.read()
+    newtext = transform(text)
+    if newtext:
+        with open(filename, 'w') as f:
+            f.write(newtext)
+    elif ignore(filename):
+        continue
+    elif not has_our_copyright(text):
+        missing_copyright.append(filename)
+    else:
+        # Report all files which do not have a current copyright year
+        # This is to find those files missing our copyright header.
+        text = text.lower()
+        if 'copyright' in text and not YEAR in text:
+            print('unchanged:', filename)
+
+if missing_copyright:
+    print('File missing our copyright:')
+    for f in missing_copyright:
+        print(f)

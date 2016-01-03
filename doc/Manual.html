@@ -17,7 +17,7 @@
 <col class="docinfo-content" />
 <tbody valign="top">
 <tr><th class="docinfo-name">Version:</th>
-<td>PyInstaller 3.1.dev0+e3dcf94.mod</td></tr>
+<td>PyInstaller 3.1.dev0+44ebb38.mod</td></tr>
 <tr class="field"><th class="docinfo-name">Homepage:</th><td class="field-body"><a class="reference external" href="http://www.pyinstaller.org">http://www.pyinstaller.org</a></td>
 </tr>
 <tr><th class="docinfo-name">Contact:</th>
@@ -94,83 +94,87 @@
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#run-time-operation" id="id47">Run-time Operation</a></li>
-<li><a class="reference internal" href="#using-spec-files" id="id48">Using Spec Files</a><ul>
-<li><a class="reference internal" href="#spec-file-operation" id="id49">Spec File Operation</a></li>
-<li><a class="reference internal" href="#adding-files-to-the-bundle" id="id50">Adding Files to the Bundle</a><ul>
-<li><a class="reference internal" href="#adding-data-files" id="id51">Adding Data Files</a></li>
-<li><a class="reference internal" href="#locating-data-files-at-run-time" id="id52">Locating Data Files at Run Time</a></li>
-<li><a class="reference internal" href="#using-data-files-from-a-module" id="id53">Using Data Files from a Module</a></li>
-<li><a class="reference internal" href="#adding-binary-files" id="id54">Adding Binary Files</a></li>
-<li><a class="reference internal" href="#advanced-methods-of-adding-files" id="id55">Advanced Methods of Adding Files</a></li>
+<li><a class="reference internal" href="#run-time-information" id="id47">Run-time Information</a><ul>
+<li><a class="reference internal" href="#using-file-and-sys-meipass" id="id48">Using <tt class="docutils literal">__file__</tt> and <tt class="docutils literal">sys._MEIPASS</tt></a></li>
+<li><a class="reference internal" href="#using-sys-executable-and-sys-argv-0" id="id49">Using <tt class="docutils literal">sys.executable</tt> and <tt class="docutils literal">sys.argv[0]</tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#giving-run-time-python-options" id="id56">Giving Run-time Python Options</a></li>
-<li><a class="reference internal" href="#spec-file-options-for-a-mac-os-x-bundle" id="id57">Spec File Options for a Mac&nbsp;OS&nbsp;X Bundle</a></li>
-<li><a class="reference internal" href="#multipackage-bundles" id="id58">Multipackage Bundles</a><ul>
-<li><a class="reference internal" href="#example-merge-spec-file" id="id59">Example MERGE spec file</a></li>
+<li><a class="reference internal" href="#using-spec-files" id="id50">Using Spec Files</a><ul>
+<li><a class="reference internal" href="#spec-file-operation" id="id51">Spec File Operation</a></li>
+<li><a class="reference internal" href="#adding-files-to-the-bundle" id="id52">Adding Files to the Bundle</a><ul>
+<li><a class="reference internal" href="#adding-data-files" id="id53">Adding Data Files</a></li>
+<li><a class="reference internal" href="#using-data-files-from-a-module" id="id54">Using Data Files from a Module</a></li>
+<li><a class="reference internal" href="#adding-binary-files" id="id55">Adding Binary Files</a></li>
+<li><a class="reference internal" href="#advanced-methods-of-adding-files" id="id56">Advanced Methods of Adding Files</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#globals-available-to-the-spec-file" id="id60">Globals Available to the Spec File</a></li>
+<li><a class="reference internal" href="#giving-run-time-python-options" id="id57">Giving Run-time Python Options</a></li>
+<li><a class="reference internal" href="#spec-file-options-for-a-mac-os-x-bundle" id="id58">Spec File Options for a Mac&nbsp;OS&nbsp;X Bundle</a></li>
+<li><a class="reference internal" href="#multipackage-bundles" id="id59">Multipackage Bundles</a><ul>
+<li><a class="reference internal" href="#example-merge-spec-file" id="id60">Example MERGE spec file</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#when-things-go-wrong" id="id61">When Things Go Wrong</a><ul>
-<li><a class="reference internal" href="#recipes-and-examples-for-specific-problems" id="id62">Recipes and Examples for Specific Problems</a></li>
-<li><a class="reference internal" href="#finding-out-what-went-wrong" id="id63">Finding out What Went Wrong</a><ul>
-<li><a class="reference internal" href="#build-time-messages" id="id64">Build-time Messages</a></li>
-<li><a class="reference internal" href="#build-time-dependency-graph" id="id65">Build-Time Dependency Graph</a></li>
-<li><a class="reference internal" href="#build-time-python-errors" id="id66">Build-Time Python Errors</a></li>
-<li><a class="reference internal" href="#getting-debug-messages" id="id67">Getting Debug Messages</a></li>
-<li><a class="reference internal" href="#getting-python-s-verbose-imports" id="id68">Getting Python's Verbose Imports</a></li>
+<li><a class="reference internal" href="#globals-available-to-the-spec-file" id="id61">Globals Available to the Spec File</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#helping-pyinstaller-find-modules" id="id69">Helping PyInstaller Find Modules</a><ul>
-<li><a class="reference internal" href="#extending-the-path" id="id70">Extending the Path</a></li>
-<li><a class="reference internal" href="#listing-hidden-imports" id="id71">Listing Hidden Imports</a></li>
-<li><a class="reference internal" href="#extending-a-package-s-path" id="id72">Extending a Package's <tt class="docutils literal">__path__</tt></a></li>
-<li><a class="reference internal" href="#changing-runtime-behavior" id="id73">Changing Runtime Behavior</a></li>
+<li><a class="reference internal" href="#when-things-go-wrong" id="id62">When Things Go Wrong</a><ul>
+<li><a class="reference internal" href="#recipes-and-examples-for-specific-problems" id="id63">Recipes and Examples for Specific Problems</a></li>
+<li><a class="reference internal" href="#finding-out-what-went-wrong" id="id64">Finding out What Went Wrong</a><ul>
+<li><a class="reference internal" href="#build-time-messages" id="id65">Build-time Messages</a></li>
+<li><a class="reference internal" href="#build-time-dependency-graph" id="id66">Build-Time Dependency Graph</a></li>
+<li><a class="reference internal" href="#build-time-python-errors" id="id67">Build-Time Python Errors</a></li>
+<li><a class="reference internal" href="#getting-debug-messages" id="id68">Getting Debug Messages</a></li>
+<li><a class="reference internal" href="#getting-python-s-verbose-imports" id="id69">Getting Python's Verbose Imports</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#getting-the-latest-version" id="id74">Getting the Latest Version</a></li>
-<li><a class="reference internal" href="#asking-for-help" id="id75">Asking for Help</a></li>
+<li><a class="reference internal" href="#helping-pyinstaller-find-modules" id="id70">Helping PyInstaller Find Modules</a><ul>
+<li><a class="reference internal" href="#extending-the-path" id="id71">Extending the Path</a></li>
+<li><a class="reference internal" href="#listing-hidden-imports" id="id72">Listing Hidden Imports</a></li>
+<li><a class="reference internal" href="#extending-a-package-s-path" id="id73">Extending a Package's <tt class="docutils literal">__path__</tt></a></li>
+<li><a class="reference internal" href="#changing-runtime-behavior" id="id74">Changing Runtime Behavior</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#advanced-topics" id="id76">Advanced Topics</a><ul>
-<li><a class="reference internal" href="#the-bootstrap-process-in-detail" id="id77">The Bootstrap Process in Detail</a><ul>
-<li><a class="reference internal" href="#bootloader" id="id78">Bootloader</a></li>
-<li><a class="reference internal" href="#python-imports-in-a-bundled-app" id="id79">Python imports in a bundled app</a></li>
+<li><a class="reference internal" href="#getting-the-latest-version" id="id75">Getting the Latest Version</a></li>
+<li><a class="reference internal" href="#asking-for-help" id="id76">Asking for Help</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#the-toc-and-tree-classes" id="id80">The TOC and Tree Classes</a><ul>
-<li><a class="reference internal" href="#toc-class-table-of-contents" id="id81">TOC Class (Table of Contents)</a></li>
-<li><a class="reference internal" href="#the-tree-class" id="id82">The Tree Class</a></li>
+<li><a class="reference internal" href="#advanced-topics" id="id77">Advanced Topics</a><ul>
+<li><a class="reference internal" href="#the-bootstrap-process-in-detail" id="id78">The Bootstrap Process in Detail</a><ul>
+<li><a class="reference internal" href="#bootloader" id="id79">Bootloader</a></li>
+<li><a class="reference internal" href="#python-imports-in-a-bundled-app" id="id80">Python imports in a bundled app</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#inspecting-archives" id="id83">Inspecting Archives</a><ul>
-<li><a class="reference internal" href="#zlibarchive" id="id84">ZlibArchive</a></li>
-<li><a class="reference internal" href="#carchive" id="id85">CArchive</a></li>
-<li><a class="reference internal" href="#using-pyi-archive-viewer" id="id86">Using pyi-archive_viewer</a></li>
+<li><a class="reference internal" href="#the-toc-and-tree-classes" id="id81">The TOC and Tree Classes</a><ul>
+<li><a class="reference internal" href="#toc-class-table-of-contents" id="id82">TOC Class (Table of Contents)</a></li>
+<li><a class="reference internal" href="#the-tree-class" id="id83">The Tree Class</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#inspecting-executables" id="id87">Inspecting Executables</a></li>
+<li><a class="reference internal" href="#inspecting-archives" id="id84">Inspecting Archives</a><ul>
+<li><a class="reference internal" href="#zlibarchive" id="id85">ZlibArchive</a></li>
+<li><a class="reference internal" href="#carchive" id="id86">CArchive</a></li>
+<li><a class="reference internal" href="#using-pyi-archive-viewer" id="id87">Using pyi-archive_viewer</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#understanding-pyinstaller-hooks" id="id88">Understanding PyInstaller Hooks</a><ul>
-<li><a class="reference internal" href="#how-a-hook-is-loaded" id="id89">How a Hook Is Loaded</a><ul>
-<li><a class="reference internal" href="#hook-global-variables" id="id90">Hook Global Variables</a></li>
-<li><a class="reference internal" href="#useful-items-in-pyinstaller-compat" id="id91">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></li>
-<li><a class="reference internal" href="#useful-items-in-pyinstaller-utils-hooks" id="id92">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></li>
-<li><a class="reference internal" href="#the-hook-hook-api-function" id="id93">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></li>
-<li><a class="reference internal" href="#the-pre-find-module-path-pfmp-api-method" id="id94">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></li>
-<li><a class="reference internal" href="#the-pre-safe-import-module-psim-api-method" id="id95">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></li>
+<li><a class="reference internal" href="#inspecting-executables" id="id88">Inspecting Executables</a></li>
+<li><a class="reference internal" href="#creating-a-reproducible-build" id="id89">Creating a Reproducible Build</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#understanding-pyinstaller-hooks" id="id90">Understanding PyInstaller Hooks</a><ul>
+<li><a class="reference internal" href="#how-a-hook-is-loaded" id="id91">How a Hook Is Loaded</a><ul>
+<li><a class="reference internal" href="#hook-global-variables" id="id92">Hook Global Variables</a></li>
+<li><a class="reference internal" href="#useful-items-in-pyinstaller-compat" id="id93">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></li>
+<li><a class="reference internal" href="#useful-items-in-pyinstaller-utils-hooks" id="id94">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></li>
+<li><a class="reference internal" href="#the-hook-hook-api-function" id="id95">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></li>
+<li><a class="reference internal" href="#the-pre-find-module-path-pfmp-api-method" id="id96">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></li>
+<li><a class="reference internal" href="#the-pre-safe-import-module-psim-api-method" id="id97">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#building-the-bootloader" id="id96">Building the Bootloader</a><ul>
-<li><a class="reference internal" href="#development-tools" id="id97">Development tools</a></li>
-<li><a class="reference internal" href="#building-for-windows" id="id98">Building for Windows</a></li>
-<li><a class="reference internal" href="#building-for-linux" id="id99">Building for LINUX</a></li>
+<li><a class="reference internal" href="#building-the-bootloader" id="id98">Building the Bootloader</a><ul>
+<li><a class="reference internal" href="#development-tools" id="id99">Development tools</a></li>
+<li><a class="reference internal" href="#building-for-windows" id="id100">Building for Windows</a></li>
+<li><a class="reference internal" href="#building-for-linux" id="id101">Building for LINUX</a></li>
 </ul>
 </li>
 </ul>
@@ -469,7 +473,7 @@ covered under <a class="reference internal" href="#using-spec-files">Using Spec 
 your program needs to be able to learn its path at run time
 in a way that works regardless of
 whether or not it is running from a bundle.
-This is covered under <a class="reference internal" href="#run-time-operation">Run-time Operation</a>.</p>
+This is covered under <a class="reference internal" href="#run-time-information">Run-time Information</a>.</p>
 <p><cite>PyInstaller</cite> does <em>not</em> include libraries that should exist in
 any installation of this OS.
 For example in Linux, it does not bundle any file
@@ -701,9 +705,9 @@ before building.</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--log-level <var>LEVEL</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Amount of detail in build-time console messages.
-For LEVEL choose one of DEBUG, INFO (default), WARN,
-ERROR, or CRITICAL.</td></tr>
+<tr><td>&nbsp;</td><td>Amount of detail in build-time console messages. LEVEL
+may be one of DEBUG, INFO, WARN, ERROR, CRITICAL
+(default: INFO).</td></tr>
 </tbody>
 </table>
 </div>
@@ -840,18 +844,17 @@ X</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">-r <var>RESOURCE</var></span>, <span class="option">--resource <var>RESOURCE</var></span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>For RESOURCE specify FILE[,TYPE[,NAME[,LANGUAGE]]].
-Use this option to add or update a resource of the given type,
-name and
-language from FILE to a Windows executable. FILE can
-be a data file or an exe/dll. For data files, at least
-TYPE and NAME must be specified. LANGUAGE defaults to
-0 or may be specified as wildcard * to update all
-resources of the given TYPE and NAME. For exe/dll
-files, all resources from FILE will be added/updated
-to the final executable if TYPE, NAME and LANGUAGE are
-omitted or specified as wildcard *.This option can be
-used multiple times.</td></tr>
+<tr><td>&nbsp;</td><td>Add or update a resource to a Windows executable. The
+RESOURCE is one to four items,
+FILE[,TYPE[,NAME[,LANGUAGE]]]. FILE can be a data file
+or an exe/dll. For data files, at least TYPE and NAME
+must be specified. LANGUAGE defaults to 0 or may be
+specified as wildcard * to update all resources of the
+given TYPE and NAME. For exe/dll files, all resources
+from FILE will be added/updated to the final
+executable if TYPE, NAME and LANGUAGE are omitted or
+specified as wildcard *.This option can be used
+multiple times.</td></tr>
 <tr><td class="option-group">
 <kbd><span class="option">--uac-admin</span></kbd></td>
 <td>Using this option creates a Manifest which will
@@ -1245,12 +1248,12 @@ set up the appropriate handlers.</p>
 </div>
 </div>
 </div>
-<div class="section" id="run-time-operation">
-<h1><a class="toc-backref" href="#id47">Run-time Operation</a></h1>
+<div class="section" id="run-time-information">
+<h1><a class="toc-backref" href="#id47">Run-time Information</a></h1>
 <p>Your app should run in a bundle exactly as it does when run from source.
-However, you might want to learn at run-time
-whether the app is running from source or &quot;frozen&quot; (bundled).</p>
-<p>For example, you might have
+However, you may need to learn at run-time
+whether the app is running from source, or is &quot;frozen&quot; (bundled).
+For example, you might have
 data files that are normally found based on a module's <tt class="docutils literal">__file__</tt> attribute.
 That will not work when the code is bundled.</p>
 <p>The <cite>PyInstaller</cite> bootloader adds the name <tt class="docutils literal">frozen</tt> to the <tt class="docutils literal">sys</tt> module.
@@ -1262,14 +1265,79 @@ if getattr( sys, 'frozen', False ) :
 else :
         # running live
 </pre>
-<p>The bootloader stores the absolute path to the bundle folder in <tt class="docutils literal">sys._MEIPASS</tt>.
+<p>When your app is running, it may need to access data files in any of
+three general locations:</p>
+<ul class="simple">
+<li>Files that were bundled with it (see <a class="reference internal" href="#adding-data-files">Adding Data Files</a>).</li>
+<li>Files the user has placed with the app bundle, say in the same folder.</li>
+<li>Files in the user's current working directory.</li>
+</ul>
+<p>The program has access to several path variables for these uses.</p>
+<div class="section" id="using-file-and-sys-meipass">
+<h2><a class="toc-backref" href="#id48">Using <tt class="docutils literal">__file__</tt> and <tt class="docutils literal">sys._MEIPASS</tt></a></h2>
+<p>When your program is not frozen, the standard Python
+variable <tt class="docutils literal">__file__</tt> is the full path to the script now executing.
+When a bundled app starts up,
+the bootloader sets the <tt class="docutils literal">sys.frozen</tt> attribute
+and stores the absolute path to the bundle folder in <tt class="docutils literal">sys._MEIPASS</tt>.
 For a one-folder bundle, this is the path to that folder,
 wherever the user may have put it.
 For a one-file bundle, this is the path to the <tt class="docutils literal">_MEIxxxxxx</tt> temporary folder
 created by the bootloader (see <a class="reference internal" href="#how-the-one-file-program-works">How the One-File Program Works</a>).</p>
 </div>
+<div class="section" id="using-sys-executable-and-sys-argv-0">
+<h2><a class="toc-backref" href="#id49">Using <tt class="docutils literal">sys.executable</tt> and <tt class="docutils literal">sys.argv[0]</tt></a></h2>
+<p>When a normal Python script runs, <tt class="docutils literal">sys.executable</tt> is the path to the
+program that was executed, namely, the Python interpreter.
+In a frozen app, <tt class="docutils literal">sys.executable</tt> is also the path to the
+program that was executed, but that is not Python;
+it is the bootloader in either the one-file app
+or the executable in the one-folder app.
+This gives you a reliable way to locate the frozen executable the user
+actually launched.</p>
+<p>The value of <tt class="docutils literal">sys.argv[0]</tt> is the name or relative path that was
+used in the user's command.
+It may be a relative path or an absolute path depending
+on the platform and how the app was launched.</p>
+<p>If the user launches the app by way of a symbolic link,
+<tt class="docutils literal">sys.argv[0]</tt> uses that symbolic name,
+while <tt class="docutils literal">sys.executable</tt> is the actual path to the executable.
+Sometimes the same app is linked under different names
+and is expected to behave differently depending on the name that is
+used to launch it.
+For this case, you would test <tt class="docutils literal">os.path.basename(sys.argv[0])</tt></p>
+<p>On the other hand, sometimes the user is told to store the executable
+in the same folder as the files it will operate on,
+for example a music player that should be stored in the same folder
+as the audio files it will play.
+For this case, you would use <tt class="docutils literal">os.path.dirname(sys.executable)</tt>.</p>
+<p>The following small program explores some of these possibilities.
+Save it as <tt class="docutils literal">directories.py</tt>.
+Execute it as a Python script,
+then bundled as a one-folder app.
+Then bundle it as a one-file app and launch it directly and also via a
+symbolic link:</p>
+<pre class="literal-block">
+#!/usr/bin/python3
+import sys, os
+frozen = 'not'
+if getattr(sys, 'frozen', False):
+        # we are running in a bundle
+        frozen = 'ever so'
+        bundle_dir = sys._MEIPASS
+else:
+        # we are running in a normal Python environment
+        bundle_dir = os.path.dirname(os.path.abspath(__file__))
+print( 'we are',frozen,'frozen')
+print( 'bundle dir is', bundle_dir )
+print( 'sys.argv[0] is', sys.argv[0] )
+print( 'sys.executable is', sys.executable )
+print( 'os.getcwd is', os.getcwd() )
+</pre>
+</div>
+</div>
 <div class="section" id="using-spec-files">
-<h1><a class="toc-backref" href="#id48">Using Spec Files</a></h1>
+<h1><a class="toc-backref" href="#id50">Using Spec Files</a></h1>
 <p>When you execute</p>
 <blockquote>
 <tt class="docutils literal">pyinstaller</tt> <em>options</em>.. <tt class="docutils literal">myscript.py</tt></blockquote>
@@ -1319,7 +1387,7 @@ replaced by the options in the spec file.</p>
 <li>--ascii</li>
 </ul>
 <div class="section" id="spec-file-operation">
-<h2><a class="toc-backref" href="#id49">Spec File Operation</a></h2>
+<h2><a class="toc-backref" href="#id51">Spec File Operation</a></h2>
 <p>After <cite>PyInstaller</cite> creates a spec file,
 or opens a spec file when one is given instead of a script,
 the <tt class="docutils literal">pyinstaller</tt> command executes the spec file as code.
@@ -1367,11 +1435,12 @@ archive. This object creates the executable file.</li>
 to <tt class="docutils literal">EXE</tt>.</p>
 </div>
 <div class="section" id="adding-files-to-the-bundle">
-<h2><a class="toc-backref" href="#id50">Adding Files to the Bundle</a></h2>
+<h2><a class="toc-backref" href="#id52">Adding Files to the Bundle</a></h2>
 <p>To add files to the bundle, you create a list that describes the files
-and supply it to the <tt class="docutils literal">Analysis</tt> call.</p>
+and supply it to the <tt class="docutils literal">Analysis</tt> call.
+To find the data files at run-time, see <a class="reference internal" href="#run-time-information">Run-time Information</a>.</p>
 <div class="section" id="adding-data-files">
-<h3><a class="toc-backref" href="#id51">Adding Data Files</a></h3>
+<h3><a class="toc-backref" href="#id53">Adding Data Files</a></h3>
 <p>To have data files included in the bundle, provide a list that
 describes the files as the value of the <tt class="docutils literal">datas=</tt> argument to <tt class="docutils literal">Analysis</tt>.
 The list of data files is a list of tuples.
@@ -1430,37 +1499,8 @@ added_files = [
 <p>The folder <tt class="docutils literal">/mygame/data</tt> will be reproduced under the name
 <tt class="docutils literal">data</tt> in the bundle.</p>
 </div>
-<div class="section" id="locating-data-files-at-run-time">
-<h3><a class="toc-backref" href="#id52">Locating Data Files at Run Time</a></h3>
-<p>When your application needs access to a data file that is bundled with it,
-you can get the path to the application's folder with the following code:</p>
-<pre class="literal-block">
-import sys
-import os
-...
-if getattr(sys, 'frozen', False):
-    # we are running in a bundle
-    basedir = sys._MEIPASS
-else:
-    # we are running in a normal Python environment
-    basedir = os.path.dirname(os.path.abspath(__file__))
-</pre>
-<p>This code sets <tt class="docutils literal">basedir</tt> to the path to the folder containing
-your script and any other files or folders located with it.
-For example if you included <tt class="docutils literal">README.txt</tt> as shown above,
-you could open it using:</p>
-<pre class="literal-block">
-readme_file = open( 'r',os.path.join( basedir, 'README.txt' ) )
-</pre>
-<p>When your program was not started by the bootloader, the standard Python
-variable <tt class="docutils literal">__file__</tt> is the full path to the script now executing,
-and <tt class="docutils literal">os.path.dirname()</tt> extracts the path to the folder that contains it.
-When bundled as one-folder, <tt class="docutils literal">sys._MEIPASS</tt> provides the path to bundle folder.
-When bundled as one-file, <tt class="docutils literal">sys._MEIPASS</tt> is the path to the temporary
-folder created when the application starts.</p>
-</div>
 <div class="section" id="using-data-files-from-a-module">
-<h3><a class="toc-backref" href="#id53">Using Data Files from a Module</a></h3>
+<h3><a class="toc-backref" href="#id54">Using Data Files from a Module</a></h3>
 <p>If the data files you are adding are contained within a Python module,
 you can retrieve them using <tt class="docutils literal">pkgutils.get_data()</tt>.</p>
 <p>For example, suppose that part of your application is a module named <tt class="docutils literal">helpmod</tt>.
@@ -1499,7 +1539,7 @@ help_utf = help_bin.decode('UTF-8', 'ignore')
 </pre>
 </div>
 <div class="section" id="adding-binary-files">
-<h3><a class="toc-backref" href="#id54">Adding Binary Files</a></h3>
+<h3><a class="toc-backref" href="#id55">Adding Binary Files</a></h3>
 <p>To add binary files, make a list of tuples that describe the files needed.
 Assign the list of tuples to the <tt class="docutils literal">binaries=</tt> argument of Analysis.</p>
 <p>Normally <cite>PyInstaller</cite> learns about <tt class="docutils literal">.so</tt> and <tt class="docutils literal">.dll</tt> libraries by
@@ -1523,14 +1563,14 @@ a = Analysis(...
 create the list in a separate statement and pass the list by name.</p>
 </div>
 <div class="section" id="advanced-methods-of-adding-files">
-<h3><a class="toc-backref" href="#id55">Advanced Methods of Adding Files</a></h3>
+<h3><a class="toc-backref" href="#id56">Advanced Methods of Adding Files</a></h3>
 <p><cite>PyInstaller</cite> supports a more advanced (and complex) way of adding
 files to the bundle that may be useful for special cases.
 See <a class="reference internal" href="#the-toc-and-tree-classes">The TOC and Tree Classes</a> below.</p>
 </div>
 </div>
 <div class="section" id="giving-run-time-python-options">
-<h2><a class="toc-backref" href="#id56">Giving Run-time Python Options</a></h2>
+<h2><a class="toc-backref" href="#id57">Giving Run-time Python Options</a></h2>
 <p>You can pass command-line options to the Python interpreter.
 The interpreter takes a number of command-line options but only the
 following are supported for a bundled app:</p>
@@ -1563,7 +1603,7 @@ exe = EXE(pyz,
 </pre>
 </div>
 <div class="section" id="spec-file-options-for-a-mac-os-x-bundle">
-<h2><a class="toc-backref" href="#id57">Spec File Options for a Mac&nbsp;OS&nbsp;X Bundle</a></h2>
+<h2><a class="toc-backref" href="#id58">Spec File Options for a Mac&nbsp;OS&nbsp;X Bundle</a></h2>
 <p>When you build a windowed Mac&nbsp;OS&nbsp;X app
 (that is, running in Mac&nbsp;OS&nbsp;X, you specify the <tt class="docutils literal"><span class="pre">--onefile</span> <span class="pre">--windowed</span></tt> options),
 the spec file contains an additional statement to
@@ -1625,7 +1665,7 @@ cp -f Info.plist dist/myscript.app/Contents/Info.plist
 </pre>
 </div>
 <div class="section" id="multipackage-bundles">
-<h2><a class="toc-backref" href="#id58">Multipackage Bundles</a></h2>
+<h2><a class="toc-backref" href="#id59">Multipackage Bundles</a></h2>
 <div class="note">
 <p class="first admonition-title">Note</p>
 <p class="last">This feature is broken in the <cite>PyInstaller</cite> 3.0 release.
@@ -1685,7 +1725,7 @@ as applied to one of the apps.</li>
 It modifies these objects to avoid duplication of libraries and modules.
 As a result the packages generated will be connected.</p>
 <div class="section" id="example-merge-spec-file">
-<h3><a class="toc-backref" href="#id59">Example MERGE spec file</a></h3>
+<h3><a class="toc-backref" href="#id60">Example MERGE spec file</a></h3>
 <p>One way to construct a spec file for a multipackage bundle is to
 first build a spec file for each app in the package.
 Suppose you have a product that comprises three apps named
@@ -1750,7 +1790,7 @@ You may also need to know and use <a class="reference internal" href="#the-toc-a
 </div>
 </div>
 <div class="section" id="globals-available-to-the-spec-file">
-<h2><a class="toc-backref" href="#id60">Globals Available to the Spec File</a></h2>
+<h2><a class="toc-backref" href="#id61">Globals Available to the Spec File</a></h2>
 <p>While a spec file is executing it has access to a limited set of global names.
 These names include the classes defined by <cite>PyInstaller</cite>:
 <tt class="docutils literal">Analysis</tt>, <tt class="docutils literal">BUNDLE</tt>, <tt class="docutils literal">COLLECT</tt>, <tt class="docutils literal">EXE</tt>, <tt class="docutils literal">MERGE</tt>,
@@ -1785,7 +1825,7 @@ for example <tt class="docutils literal">build/warnmyscript.txt</tt>.</dd>
 </div>
 </div>
 <div class="section" id="when-things-go-wrong">
-<h1><a class="toc-backref" href="#id61">When Things Go Wrong</a></h1>
+<h1><a class="toc-backref" href="#id62">When Things Go Wrong</a></h1>
 <p>The information above covers most normal uses of <cite>PyInstaller</cite>.
 However, the variations of Python and third-party libraries are
 endless and unpredictable.
@@ -1794,7 +1834,7 @@ It may happen that when you attempt to bundle your app either
 Then please consider the following actions in sequence, before
 asking for technical help.</p>
 <div class="section" id="recipes-and-examples-for-specific-problems">
-<h2><a class="toc-backref" href="#id62">Recipes and Examples for Specific Problems</a></h2>
+<h2><a class="toc-backref" href="#id63">Recipes and Examples for Specific Problems</a></h2>
 <p>The <cite>PyInstaller</cite> <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/FAQ">FAQ</a> page has work-arounds for some common problems.
 Code examples for some advanced uses and some common
 problems are available on our <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/Recipes">PyInstaller Recipes</a> page.
@@ -1811,9 +1851,9 @@ Many of these Recipes were contributed by users.
 Please feel free to contribute more recipes!</p>
 </div>
 <div class="section" id="finding-out-what-went-wrong">
-<h2><a class="toc-backref" href="#id63">Finding out What Went Wrong</a></h2>
+<h2><a class="toc-backref" href="#id64">Finding out What Went Wrong</a></h2>
 <div class="section" id="build-time-messages">
-<h3><a class="toc-backref" href="#id64">Build-time Messages</a></h3>
+<h3><a class="toc-backref" href="#id65">Build-time Messages</a></h3>
 <p>When the <tt class="docutils literal">Analysis</tt> step runs, it produces error and warning messages.
 These display after the command line if the <tt class="docutils literal"><span class="pre">--log-level</span></tt> option allows it.
 Analysis also puts messages in a warnings file
@@ -1840,7 +1880,7 @@ that is the time to examine the warning file.
 Then see <a class="reference internal" href="#helping-pyinstaller-find-modules">Helping PyInstaller Find Modules</a> below for how to proceed.</p>
 </div>
 <div class="section" id="build-time-dependency-graph">
-<h3><a class="toc-backref" href="#id65">Build-Time Dependency Graph</a></h3>
+<h3><a class="toc-backref" href="#id66">Build-Time Dependency Graph</a></h3>
 <p>If you specify <tt class="docutils literal"><span class="pre">--log-level=DEBUG</span></tt> to the <tt class="docutils literal">pyinstaller</tt> command,
 <cite>PyInstaller</cite> writes two files of data about dependencies into the
 build folder.</p>
@@ -1860,7 +1900,7 @@ Python program ends up including a large number of standard modules.
 For this reason the graph file is not very useful in this release.</p>
 </div>
 <div class="section" id="build-time-python-errors">
-<h3><a class="toc-backref" href="#id66">Build-Time Python Errors</a></h3>
+<h3><a class="toc-backref" href="#id67">Build-Time Python Errors</a></h3>
 <p><cite>PyInstaller</cite> sometimes terminates by raising a Python exception.
 In most cases the reason is clear from the exception message,
 for example &quot;Your system is not supported&quot;, or &quot;Pyinstaller
@@ -1885,7 +1925,7 @@ try setting the correct path in the environment variable
 <tt class="docutils literal">DYLD_LIBRARY_PATH</tt> in OS X.</p>
 </div>
 <div class="section" id="getting-debug-messages">
-<h3><a class="toc-backref" href="#id67">Getting Debug Messages</a></h3>
+<h3><a class="toc-backref" href="#id68">Getting Debug Messages</a></h3>
 <p>Giving the <tt class="docutils literal"><span class="pre">--debug</span></tt> option causes the bundled executable itself to
 write progress messages when it runs.
 This can be useful during development of a complex package,
@@ -1899,7 +1939,7 @@ For a <tt class="docutils literal"><span class="pre">--windowed</span></tt> Mac 
 Users would find the messages annoying.</p>
 </div>
 <div class="section" id="getting-python-s-verbose-imports">
-<h3><a class="toc-backref" href="#id68">Getting Python's Verbose Imports</a></h3>
+<h3><a class="toc-backref" href="#id69">Getting Python's Verbose Imports</a></h3>
 <p>You can also pass a <tt class="docutils literal"><span class="pre">-v</span></tt> (verbose imports) flag to the embedded Python interpreter
 (see <a class="reference internal" href="#giving-run-time-python-options">Giving Run-time Python Options</a> above).
 This can be extremely useful.
@@ -1912,9 +1952,9 @@ Remember to not use this in the distributed program.</p>
 </div>
 </div>
 <div class="section" id="helping-pyinstaller-find-modules">
-<h2><a class="toc-backref" href="#id69">Helping PyInstaller Find Modules</a></h2>
+<h2><a class="toc-backref" href="#id70">Helping PyInstaller Find Modules</a></h2>
 <div class="section" id="extending-the-path">
-<h3><a class="toc-backref" href="#id70">Extending the Path</a></h3>
+<h3><a class="toc-backref" href="#id71">Extending the Path</a></h3>
 <p>If Analysis recognizes that a module is needed, but cannot find that module,
 it is often because the script is manipulating <tt class="docutils literal">sys.path</tt>.
 The easiest thing to do in this case is to use the <tt class="docutils literal"><span class="pre">--paths=</span></tt> option
@@ -1927,7 +1967,7 @@ pyi-makespec --paths=/path/to/thisdir \
 They will be added to the current <tt class="docutils literal">sys.path</tt> during analysis.</p>
 </div>
 <div class="section" id="listing-hidden-imports">
-<h3><a class="toc-backref" href="#id71">Listing Hidden Imports</a></h3>
+<h3><a class="toc-backref" href="#id72">Listing Hidden Imports</a></h3>
 <p>If Analysis thinks it has found all the imports,
 but the app fails with an import error,
 the problem is a hidden import; that is, an import that is not
@@ -1947,7 +1987,7 @@ or by editing the spec file,
 or with a hook file (see <a class="reference internal" href="#understanding-pyinstaller-hooks">Understanding PyInstaller Hooks</a> below).</p>
 </div>
 <div class="section" id="extending-a-package-s-path">
-<h3><a class="toc-backref" href="#id72">Extending a Package's <tt class="docutils literal">__path__</tt></a></h3>
+<h3><a class="toc-backref" href="#id73">Extending a Package's <tt class="docutils literal">__path__</tt></a></h3>
 <p>Python allows a script to extend the search path used for imports
 through the <tt class="docutils literal">__path__</tt> mechanism.
 Normally, the <tt class="docutils literal">__path__</tt> of an imported module has only one entry,
@@ -1970,7 +2010,7 @@ knows nothing of <tt class="docutils literal"><span class="pre">../win32comext</
 <p>Once in a while, that's not enough.</p>
 </div>
 <div class="section" id="changing-runtime-behavior">
-<h3><a class="toc-backref" href="#id73">Changing Runtime Behavior</a></h3>
+<h3><a class="toc-backref" href="#id74">Changing Runtime Behavior</a></h3>
 <p>More bizarre situations can be accomodated with runtime hooks.
 These are small scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.</p>
@@ -2019,21 +2059,20 @@ django.core.management.find_commands = _find_commands
 </div>
 </div>
 <div class="section" id="getting-the-latest-version">
-<h2><a class="toc-backref" href="#id74">Getting the Latest Version</a></h2>
+<h2><a class="toc-backref" href="#id75">Getting the Latest Version</a></h2>
 <p>If you have some reason to think you have found a bug in <cite>PyInstaller</cite>
 you can try downloading the latest development version.
 This version might have fixes or features that are not yet at <a class="reference external" href="https://pypi.python.org/pypi/PyInstaller/">PyPI</a>.
 You can download the latest stable version and the latest development
 version from the <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/releases">PyInstaller Downloads</a> page.</p>
-<p>If you have <a class="reference external" href="http://git-scm.com/downloads">Git</a> installed on your development system,
-you can use it together with pip
-to install the latest version of <cite>PyInstaller</cite> directly:</p>
+<p>You can also install the latest version of <cite>PyInstaller</cite> directly
+using <a class="reference external" href="http://www.pip-installer.org/">pip</a>:</p>
 <pre class="literal-block">
-pip install -e git://github.com/pyinstaller/pyinstaller.git#egg=PyInstaller
+pip install -e https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 </pre>
 </div>
 <div class="section" id="asking-for-help">
-<h2><a class="toc-backref" href="#id75">Asking for Help</a></h2>
+<h2><a class="toc-backref" href="#id76">Asking for Help</a></h2>
 <p>When none of the above suggestions help,
 do ask for assistance on the <a class="reference external" href="https://groups.google.com/forum/#!forum/pyinstaller">PyInstaller Email List</a>.</p>
 <p>Then, if you think it likely that you see a bug in <cite>PyInstaller</cite>,
@@ -2041,14 +2080,14 @@ refer to the <a class="reference external" href="https://github.com/pyinstaller/
 </div>
 </div>
 <div class="section" id="advanced-topics">
-<h1><a class="toc-backref" href="#id76">Advanced Topics</a></h1>
+<h1><a class="toc-backref" href="#id77">Advanced Topics</a></h1>
 <p>The following discussions cover details of <cite>PyInstaller</cite> internal methods.
 You should not need this level of detail for normal use,
 but such details are helpful if you want to investigate
 the <cite>PyInstaller</cite> code and possibly contribute to it,
 as described in <a class="reference external" href="https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute">How to Contribute</a>.</p>
 <div class="section" id="the-bootstrap-process-in-detail">
-<h2><a class="toc-backref" href="#id77">The Bootstrap Process in Detail</a></h2>
+<h2><a class="toc-backref" href="#id78">The Bootstrap Process in Detail</a></h2>
 <p>There are many steps that must take place before the bundled
 script can begin execution.
 A summary of these steps was given in the Overview
@@ -2057,7 +2096,7 @@ A summary of these steps was given in the Overview
 Here is more detail to help you understand what the bootloader
 does and how to figure out problems.</p>
 <div class="section" id="bootloader">
-<h3><a class="toc-backref" href="#id78">Bootloader</a></h3>
+<h3><a class="toc-backref" href="#id79">Bootloader</a></h3>
 <p>The bootloader prepares everything for running Python code.
 It begins the setup and then returns itself in another process.
 This approach of using two processes allows a lot of flexibility
@@ -2115,7 +2154,7 @@ item in <tt class="docutils literal">sys.path</tt> is a zip file or a directory.
 </ol>
 </div>
 <div class="section" id="python-imports-in-a-bundled-app">
-<h3><a class="toc-backref" href="#id79">Python imports in a bundled app</a></h3>
+<h3><a class="toc-backref" href="#id80">Python imports in a bundled app</a></h3>
 <p><cite>PyInstaller</cite> embeds compiled python code
 (<tt class="docutils literal">.pyc</tt> files) within the executable.
 <cite>PyInstaller</cite> injects its code into the
@@ -2156,13 +2195,13 @@ raise <tt class="docutils literal">ImportError</tt>.</li>
 </div>
 </div>
 <div class="section" id="the-toc-and-tree-classes">
-<h2><a class="toc-backref" href="#id80">The TOC and Tree Classes</a></h2>
+<h2><a class="toc-backref" href="#id81">The TOC and Tree Classes</a></h2>
 <p><cite>PyInstaller</cite> manages lists of files using the <tt class="docutils literal">TOC</tt>
 (Table Of Contents) class.
 It provides the <tt class="docutils literal">Tree</tt> class as a convenient way to build a <tt class="docutils literal">TOC</tt>
 from a folder path.</p>
 <div class="section" id="toc-class-table-of-contents">
-<h3><a class="toc-backref" href="#id81">TOC Class (Table of Contents)</a></h3>
+<h3><a class="toc-backref" href="#id82">TOC Class (Table of Contents)</a></h3>
 <p>Objects of the <tt class="docutils literal">TOC</tt> class are used as input to the classes created in
 a spec file.
 For example, the <tt class="docutils literal">scripts</tt> member of an Analysis object is a TOC
@@ -2250,7 +2289,7 @@ for example a module compiled by <a class="reference external" href="http://www.
 and if any are found, they are also included.</p>
 </div>
 <div class="section" id="the-tree-class">
-<h3><a class="toc-backref" href="#id82">The Tree Class</a></h3>
+<h3><a class="toc-backref" href="#id83">The Tree Class</a></h3>
 <p>The Tree class is a way of creating a TOC that describes some or all of the
 files within a directory:</p>
 <blockquote>
@@ -2304,7 +2343,7 @@ Each tuple in this TOC has:</p>
 </div>
 </div>
 <div class="section" id="inspecting-archives">
-<h2><a class="toc-backref" href="#id83">Inspecting Archives</a></h2>
+<h2><a class="toc-backref" href="#id84">Inspecting Archives</a></h2>
 <p>An archive is a file that contains other files,
 for example a <tt class="docutils literal">.tar</tt> file, a <tt class="docutils literal">.jar</tt> file, or a <tt class="docutils literal">.zip</tt> file.
 Two kinds of archives are used in <cite>PyInstaller</cite>.
@@ -2318,7 +2357,7 @@ as well as from Python.
 Both of these derive from a common base class, making it fairly easy to
 create new kinds of archives.</p>
 <div class="section" id="zlibarchive">
-<h3><a class="toc-backref" href="#id84">ZlibArchive</a></h3>
+<h3><a class="toc-backref" href="#id85">ZlibArchive</a></h3>
 <p>A ZlibArchive contains compressed <tt class="docutils literal">.pyc</tt> or <tt class="docutils literal">.pyo</tt> files.
 The <tt class="docutils literal">PYZ</tt> class invocation in a spec file creates a ZlibArchive.</p>
 <p>The table of contents in a ZlibArchive
@@ -2342,7 +2381,7 @@ you can make sense of it.</p>
 <p><img alt="ZlibArchiveImage" src="images/ZlibArchive.png" /></p>
 </div>
 <div class="section" id="carchive">
-<h3><a class="toc-backref" href="#id85">CArchive</a></h3>
+<h3><a class="toc-backref" href="#id86">CArchive</a></h3>
 <p>A CArchive can contain any kind of file.
 It's very much like a <tt class="docutils literal">.zip</tt> file.
 They are easy to create in Python and easy to unpack from C code.
@@ -2371,7 +2410,7 @@ file, seek to the end and 'open' the CArchive.</p>
 <p><img alt="CArchiveImage" src="images/CArchive.png" /></p>
 </div>
 <div class="section" id="using-pyi-archive-viewer">
-<h3><a class="toc-backref" href="#id86">Using pyi-archive_viewer</a></h3>
+<h3><a class="toc-backref" href="#id87">Using pyi-archive_viewer</a></h3>
 <p>Use the <tt class="docutils literal"><span class="pre">pyi-archive_viewer</span></tt> command to inspect any type of archive:</p>
 <blockquote>
 <tt class="docutils literal"><span class="pre">pyi-archive_viewer</span></tt> <em>archivefile</em></blockquote>
@@ -2416,7 +2455,7 @@ If none given, the member is extracted to stdout.</dd>
 </div>
 </div>
 <div class="section" id="inspecting-executables">
-<h2><a class="toc-backref" href="#id87">Inspecting Executables</a></h2>
+<h2><a class="toc-backref" href="#id88">Inspecting Executables</a></h2>
 <p>You can inspect any executable file with <tt class="docutils literal"><span class="pre">pyi-bindepend</span></tt>:</p>
 <blockquote>
 <tt class="docutils literal"><span class="pre">pyi-bindepend</span></tt> <em>executable_or_dynamic_library</em></blockquote>
@@ -2428,9 +2467,40 @@ an executable or by another DLL.</p>
 follow the chain of dependencies of binary extensions
 during Analysis.</p>
 </div>
+<div class="section" id="creating-a-reproducible-build">
+<h2><a class="toc-backref" href="#id89">Creating a Reproducible Build</a></h2>
+<p>In certain cases it is important that when you build the same application twice,
+using exactly the same set of dependencies,
+the two bundles should be exactly, bit-for-bit identical.</p>
+<p>That is not the case normally.
+Python uses a random hash to make dicts and other hashed types,
+and this affects compiled byte-code as well as <cite>PyInstaller</cite>
+internal data structures.
+As a result, two builds may not produce bit-for-bit identical results
+even when all the components of the application bundle are the same
+and the two applications execute in identical ways.</p>
+<p>You can assure that a build will produce the same bits
+by setting the <tt class="docutils literal">PYTHONHASHSEED</tt> environment variable to a known
+integer value before running <cite>PyInstaller</cite>.
+This forces Python to use the same random hash sequence until
+<tt class="docutils literal">PYTHONHASHSEED</tt> is unset or set to <tt class="docutils literal">'random'</tt>.
+For example, execute <cite>PyInstaller</cite> in a script such as
+the following (for Linux and OS X):</p>
+<pre class="literal-block">
+# set seed to a known repeatable integer value
+PYTHONHASHSEED=1
+export PYTHONHASHSEED
+# create one-file build as myscript
+pyinstaller myscript.spec
+# make checksum
+cksum dist/myscript/myscript | awk '{print $1}' &gt; dist/myscript/checksum.txt
+# let Python be unpredictable again
+unset PYTHONHASHSEED
+</pre>
+</div>
 </div>
 <div class="section" id="understanding-pyinstaller-hooks">
-<h1><a class="toc-backref" href="#id88">Understanding PyInstaller Hooks</a></h1>
+<h1><a class="toc-backref" href="#id90">Understanding PyInstaller Hooks</a></h1>
 <p>In summary, a &quot;hook&quot; file extends <cite>PyInstaller</cite> to adapt it to
 the special needs and methods used by a Python package.
 The word &quot;hook&quot; is used for two kinds of files.
@@ -2493,7 +2563,7 @@ pyinstaller --additional-hooks-dir=. myscript.py
 <p>If you write a hook for a module used by others,
 please send us the hook file so we can make it available.</p>
 <div class="section" id="how-a-hook-is-loaded">
-<h2><a class="toc-backref" href="#id89">How a Hook Is Loaded</a></h2>
+<h2><a class="toc-backref" href="#id91">How a Hook Is Loaded</a></h2>
 <p>A hook is a module named <tt class="docutils literal">hook-</tt><em>full-import-name</em><tt class="docutils literal">.py</tt>
 in a folder where the Analysis object looks for hooks.
 Each time Analysis detects an import, it looks for a hook file with
@@ -2510,7 +2580,7 @@ assignment to <tt class="docutils literal">hiddenimports</tt> based on that.
 There are over 150 hooks in the <cite>PyInstaller</cite> installation.
 You are welcome to browse through them for examples.</p>
 <div class="section" id="hook-global-variables">
-<h3><a class="toc-backref" href="#id90">Hook Global Variables</a></h3>
+<h3><a class="toc-backref" href="#id92">Hook Global Variables</a></h3>
 <p>A majority of the existing hooks consist entirely of assignments of
 values to one or more of the following global variables.
 If any of these are defined by the hook, Analysis takes their values and
@@ -2586,7 +2656,7 @@ binaries = collect_dynamic_libs('zmq')
 </dl>
 </div>
 <div class="section" id="useful-items-in-pyinstaller-compat">
-<h3><a class="toc-backref" href="#id91">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></h3>
+<h3><a class="toc-backref" href="#id93">Useful Items in <tt class="docutils literal">PyInstaller.compat</tt></a></h3>
 <p>A hook may import the following names from <tt class="docutils literal">PyInstaller.compat</tt>,
 for example:</p>
 <pre class="literal-block">
@@ -2632,7 +2702,7 @@ binary dependencies in a folder; see <tt class="docutils literal"><span class="p
 </dl>
 </div>
 <div class="section" id="useful-items-in-pyinstaller-utils-hooks">
-<h3><a class="toc-backref" href="#id92">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></h3>
+<h3><a class="toc-backref" href="#id94">Useful Items in <tt class="docutils literal">PyInstaller.utils.hooks</tt></a></h3>
 <p>A hook may import useful functions from <tt class="docutils literal">PyInstaller.utils.hooks</tt>.
 Use a fully-qualified import statement, for example:</p>
 <pre class="literal-block">
@@ -2645,7 +2715,7 @@ of specific hooks, such as hooks for PyQt4/5.
 You are welcome to read the <tt class="docutils literal">PyInstaller.utils.hooks</tt> module
 (and read the existing hooks that import from it) to get code and ideas.</p>
 <dl class="docutils">
-<dt><tt class="docutils literal">exec_statement( statement )</tt>:</dt>
+<dt><tt class="docutils literal">exec_statement( 'statement' )</tt>:</dt>
 <dd><p class="first">Execute a single Python statement in an externally-spawned interpreter
 and return the standard output that results, as a string.
 Examples:</p>
@@ -2660,7 +2730,7 @@ mpl_data_dir = exec_statement(
 datas = [ (mpl_data_dir, &quot;&quot;) ]
 </pre>
 </dd>
-<dt><tt class="docutils literal">eval_statement( statement )</tt>:</dt>
+<dt><tt class="docutils literal">eval_statement( 'statement' )</tt>:</dt>
 <dd><p class="first">Execute a single Python statement in an externally-spawned interpreter.
 If the resulting standard output text is not empty, apply
 the <tt class="docutils literal">eval()</tt> function to it; else return None. Example:</p>
@@ -2673,30 +2743,37 @@ for db in databases:
    hiddenimports.append(&quot;sqlalchemy.databases.&quot; + db)
 </pre>
 </dd>
-<dt><tt class="docutils literal">is_module_version( module, relation, version_string )</tt>:</dt>
-<dd><p class="first">Check the version of the named module (full-qualified)
-against a version string using the comparison operator <tt class="docutils literal">relation</tt>.
-Example:</p>
+<dt><tt class="docutils literal">is_module_satisfies( requirements, version=None, <span class="pre">version_attr='__version__'</span> )</tt>:</dt>
+<dd><p class="first">Check that the named module (fully-qualified) exists and satisfies the
+given requirement. Example:</p>
 <pre class="literal-block">
-if is_module_version('sqlalchemy', '&gt;=', '0.6') :
+if is_module_satisfies('sqlalchemy &gt;= 0.6'):
 </pre>
 <p>This function provides robust version checking based on the same low-level
 algorithm used by <tt class="docutils literal">easy_install</tt> and <tt class="docutils literal">pip</tt>, and should always be
 used in preference to writing your own comparison code.
 In particular, version strings should never be compared lexicographically
 (except for exact equality).
-For example <tt class="docutils literal">'00.5' &gt; '0.6'</tt> returns True, which is not correct.</p>
-<p>The <tt class="docutils literal">version_string</tt> is a PEP0440-compliant, dot-delimited version
-specifier such as <tt class="docutils literal"><span class="pre">3.14-rc5</span></tt>.
-The <tt class="docutils literal">relation</tt> is one of the strings:</p>
-<ul class="last simple">
-<li><tt class="docutils literal">&gt;</tt> for greater-than.</li>
-<li><tt class="docutils literal">&lt;</tt> for less-than.</li>
-<li><tt class="docutils literal">&gt;=</tt> for greater-than-or-equal-to.</li>
-<li><tt class="docutils literal">&lt;=</tt> for less-than-or-equal-to.</li>
-</ul>
+For example <tt class="docutils literal">'00.5' &gt; '0.6'</tt> returns True, which is not the desired result.</p>
+<p>The <tt class="docutils literal">requirements</tt> argument uses the same syntax as supported by
+the <a class="reference external" href="https://pythonhosted.org/setuptools/pkg_resources.html#requirements-parsing">Package resources</a> module of setup tools (follow the link to
+see the supported syntax).</p>
+<p>The optional <tt class="docutils literal">version</tt> argument is is a PEP0440-compliant,
+dot-delimited version specifier such as <tt class="docutils literal"><span class="pre">'3.14-rc5'</span></tt>.</p>
+<p>When the package being queried has been installed by <tt class="docutils literal">easy_install</tt>
+or <tt class="docutils literal">pip</tt>, the existing setup tools machinery is used to perform the test
+and the <tt class="docutils literal">version</tt> and <tt class="docutils literal">version_attr</tt> arguments are ignored.</p>
+<p>When that is not the case, the <tt class="docutils literal">version</tt> argument is taken as the
+installed version of the package
+(perhaps obtained by interrogating the package in some other way).
+When <tt class="docutils literal">version</tt> is <tt class="docutils literal">None</tt>, the named package is imported into a
+subprocess, and the <tt class="docutils literal">__version__</tt> value of that import is tested.
+If the package uses some other name than <tt class="docutils literal">__version__</tt> for its version
+global, that name can be passed as the <tt class="docutils literal">version_attr</tt> argument.</p>
+<p class="last">For more details and examples refer to the function's doc-string, found
+in <tt class="docutils literal">Pyinstaller/utils/hooks/__init__.py</tt>.</p>
 </dd>
-<dt><tt class="docutils literal">collect_submodules( package, subdir=None, pattern=None )</tt>:</dt>
+<dt><tt class="docutils literal">collect_submodules( <span class="pre">'package-name',</span> subdir=None, pattern=None )</tt>:</dt>
 <dd><p class="first">Returns a list of strings that specify all the modules in a package,
 ready to be assigned to the <tt class="docutils literal">hiddenimports</tt> global.
 Returns an empty list when <tt class="docutils literal">package</tt> does not name a package
@@ -2712,10 +2789,10 @@ Example:</p>
 hiddenimports = collect_submodules( 'PIL', pattern='ImagePlugin' )
 </pre>
 </dd>
-<dt><tt class="docutils literal">collect_data_files( module, subdir=None, include_py_files=False )</tt>:</dt>
+<dt><tt class="docutils literal">collect_data_files( <span class="pre">'module-name',</span> subdir=None, include_py_files=False )</tt>:</dt>
 <dd><p class="first">Returns a list of (source, dest) tuples for all non-Python (i.e. data)
-files found in <tt class="docutils literal">module</tt>, ready to be assigned to the <tt class="docutils literal">datas</tt> global.
-<tt class="docutils literal">module</tt> is a string giving the fully-qualified name of a module or
+files found in <em>module-name</em>, ready to be assigned to the <tt class="docutils literal">datas</tt> global.
+<em>module-name</em> is the fully-qualified name of a module or
 package (but not a zipped &quot;egg&quot;).
 The function uses <tt class="docutils literal">os.walk()</tt> to visit the module directory recursively.
 <tt class="docutils literal">subdir</tt>, if given, restricts the search to a relative subdirectory.</p>
@@ -2726,7 +2803,7 @@ files as well.
 search a directory for Python executable files and load them as
 extensions or plugins.)</p>
 </dd>
-<dt><tt class="docutils literal">collect_dynamic_libs( module )</tt>:</dt>
+<dt><tt class="docutils literal">collect_dynamic_libs( <span class="pre">'module-name'</span> )</tt>:</dt>
 <dd><p class="first">Returns a list of (source, dest) tuples for all the dynamic libs
 present in a module directory.
 The list is ready to be assigned to the <tt class="docutils literal">binaries</tt> global variable.
@@ -2739,14 +2816,14 @@ Example:</p>
 binaries = collect_dynamic_libs( 'enchant' )
 </pre>
 </dd>
-<dt><tt class="docutils literal">get_module_file_attribute( module )</tt>:</dt>
-<dd><p class="first">Return the absolute path to <tt class="docutils literal">module</tt>, a fully-qualified module name.
+<dt><tt class="docutils literal">get_module_file_attribute( <span class="pre">'module-name'</span> )</tt>:</dt>
+<dd><p class="first">Return the absolute path to <em>module-name</em>, a fully-qualified module name.
 Example:</p>
 <pre class="last literal-block">
 nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
 </pre>
 </dd>
-<dt><tt class="docutils literal">get_package_paths( package )</tt>:</dt>
+<dt><tt class="docutils literal">get_package_paths( <span class="pre">'package-name'</span> )</tt>:</dt>
 <dd><p class="first">Given the name of a package, return a tuple.
 The first element is the absolute path to the folder where the package is stored.
 The second element is the absolute path to the named package.
@@ -2757,6 +2834,23 @@ get_package_paths( 'pkg.subpkg' )
 </pre>
 <p class="last">is the tuple, <tt class="docutils literal">( '/abs/Python/lib', '/abs/Python/lib/pkg/subpkg' )</tt></p>
 </dd>
+<dt><tt class="docutils literal">copy_metadata( <span class="pre">'package-name'</span> )</tt>:</dt>
+<dd><p class="first">Given the name of a package, return the name of its distribution
+metadata folder as a list of tuples ready to be assigned
+(or appended) to the <tt class="docutils literal">datas</tt> global variable.</p>
+<p class="last">Some packages rely on metadata files accessed through the
+<tt class="docutils literal">pkg_resources</tt> module.
+Normally <cite>PyInstaller</cite> does not include these metadata files.
+If a package fails without them, you can use this
+function in a hook file to easily add them to the bundle.
+The tuples in the returned list have two strings.
+The first is the full pathname to a folder in this system.
+The second is the folder name only.
+When these tuples are added to <tt class="docutils literal">datas</tt>,
+the folder will be bundled at the top level.
+If <em>package-name</em> does not have metadata, an
+AssertionError exception is raised.</p>
+</dd>
 <dt><tt class="docutils literal">get_homebrew_path( <span class="pre">formula=''</span> )</tt>:</dt>
 <dd>Return the homebrew path to the named formula, or to the
 global prefix when formula is omitted. Returns None if
@@ -2764,14 +2858,14 @@ not found.</dd>
 <dt><tt class="docutils literal">django_find_root_dir()</tt>:</dt>
 <dd>Return the path to the top-level Python package containing
 the Django files, or None if nothing can be found.</dd>
-<dt><tt class="docutils literal">django_dottedstring_imports( django_root_dir )</tt></dt>
+<dt><tt class="docutils literal">django_dottedstring_imports( <span class="pre">'django-root-dir'</span> )</tt></dt>
 <dd>Return a list of all necessary Django modules specified in
 the Django settings.py file, such as the
 <tt class="docutils literal">Django.settings.INSTALLED_APPS</tt> list and many others.</dd>
 </dl>
 </div>
 <div class="section" id="the-hook-hook-api-function">
-<h3><a class="toc-backref" href="#id93">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></h3>
+<h3><a class="toc-backref" href="#id95">The <tt class="docutils literal">hook(hook_api)</tt> Function</a></h3>
 <p>In addition to, or instead of, setting global values,
 a hook may define a function <tt class="docutils literal">hook(hook_api)</tt>.
 A <tt class="docutils literal">hook()</tt> function should only be needed if the hook
@@ -2825,7 +2919,7 @@ Or, it can simply set values in the four global variables, because
 these will be examined after <tt class="docutils literal">hook()</tt> returns.</p>
 </div>
 <div class="section" id="the-pre-find-module-path-pfmp-api-method">
-<h3><a class="toc-backref" href="#id94">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></h3>
+<h3><a class="toc-backref" href="#id96">The <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt> Method</a></h3>
 <p>You may write a hook with the special function <tt class="docutils literal">pre_find_module_path( pfmp_api )</tt>.
 This method is called when the hooked module name is first seen
 by Analysis, before it has located the path to that module or package
@@ -2855,7 +2949,7 @@ It uses this method to redirect a search for distutils when
 <cite>PyInstaller</cite> is executing in a virtual environment.</p>
 </div>
 <div class="section" id="the-pre-safe-import-module-psim-api-method">
-<h3><a class="toc-backref" href="#id95">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></h3>
+<h3><a class="toc-backref" href="#id97">The <tt class="docutils literal">pre_safe_import_module( psim_api )</tt> Method</a></h3>
 <p>You may write a hook with the special function <tt class="docutils literal">pre_safe_import_module( psim_api )</tt>.
 This method is called after the hooked module has been found,
 but <em>before</em> it and everything it recursively imports is added
@@ -2926,7 +3020,7 @@ the path if the module was executed normally.
 </div>
 </div>
 <div class="section" id="building-the-bootloader">
-<h1><a class="toc-backref" href="#id96">Building the Bootloader</a></h1>
+<h1><a class="toc-backref" href="#id98">Building the Bootloader</a></h1>
 <p>PyInstaller comes with binary bootloaders for most platforms in
 the <tt class="docutils literal">bootloader</tt> folder of the distribution folder.
 For most cases, these precompiled bootloaders are all you need.</p>
@@ -2951,7 +3045,7 @@ you need to build the bootloader.</p>
 <p>If this reports an error, read the detailed notes that follow,
 then ask for technical help.</p>
 <div class="section" id="development-tools">
-<h2><a class="toc-backref" href="#id97">Development tools</a></h2>
+<h2><a class="toc-backref" href="#id99">Development tools</a></h2>
 <p>On Debian/Ubuntu systems, you can run the following to
 install everything required:</p>
 <pre class="literal-block">
@@ -2968,7 +3062,7 @@ Mac&nbsp;OS&nbsp;X Install DVD. It is not necessary to install the version 4 of 
 <p>On Solaris and AIX the bootloader is built and tested with gcc.</p>
 </div>
 <div class="section" id="building-for-windows">
-<h2><a class="toc-backref" href="#id98">Building for Windows</a></h2>
+<h2><a class="toc-backref" href="#id100">Building for Windows</a></h2>
 <p>On Windows you can use the Visual Studio C++ compiler
 (Visual Studio 2008 is recommended).
 A free version you can download is <a class="reference external" href="http://www.microsoft.com/express/">Visual Studio Express</a>.</p>
@@ -2998,7 +3092,7 @@ python ./waf distclean all
 in the <tt class="docutils literal">.\PyInstaller\bootloader\YOUR_OS</tt> directory.</p>
 </div>
 <div class="section" id="building-for-linux">
-<h2><a class="toc-backref" href="#id99">Building for LINUX</a></h2>
+<h2><a class="toc-backref" href="#id101">Building for LINUX</a></h2>
 <p>By default, the bootloaders on Linux are LSB binaries.</p>
 <p>LSB is a set of open standards that should increase compatibility among Linux
 distributions.
@@ -3046,7 +3140,7 @@ python waf configure --no-lsb build install
 <div class="footer">
 <hr class="footer" />
 <a class="reference external" href="source/Manual.rst">View document source</a>.
-Generated on: 2015-11-25 19:18 UTC.
+Generated on: 2016-01-02 13:09 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

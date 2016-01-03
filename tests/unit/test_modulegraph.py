@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2015, PyInstaller Development Team.
+# Copyright (c) 2005-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,6 +8,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import os.path
 import sys
 import py_compile
 import zipfile
@@ -61,7 +62,7 @@ def test_builtin(tmpdir):
 
 
 def test_extension(tmpdir):
-    node = _import_and_get_node(tmpdir, 'array', path=sys.path)
+    node = _import_and_get_node(tmpdir, '_ctypes', path=sys.path)
     assert isinstance(node, modulegraph.Extension)
 
 
@@ -100,7 +101,7 @@ def test_zipped_module_source(tmpdir):
     _zip_directory(zipfilename, tmpdir)
     node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
     assert node.__class__ is modulegraph.SourceModule
-    assert node.filename.startswith(zipfilename + '/stuff.py')
+    assert node.filename.startswith(os.path.join(zipfilename, 'stuff.py'))
 
 
 def test_zipped_module_source_and_compiled(tmpdir):
@@ -113,7 +114,7 @@ def test_zipped_module_source_and_compiled(tmpdir):
     # Do not care whether it's source or compiled, as long as it is
     # neither invalid nor missing.
     assert node.__class__ in (modulegraph.SourceModule, modulegraph.CompiledModule)
-    assert node.filename.startswith(zipfilename + '/stuff.py')
+    assert node.filename.startswith(os.path.join(zipfilename, 'stuff.py'))
 
 
 @skipif(is_py3, reason='Python 3 does not look into the __pycache__')
@@ -126,7 +127,7 @@ def test_zipped_module_compiled(tmpdir):
     _zip_directory(zipfilename, tmpdir)
     node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
     assert node.__class__ is modulegraph.CompiledModule
-    assert node.filename.startswith(zipfilename + '/stuff.py')
+    assert node.filename.startswith(os.path.join(zipfilename, 'stuff.py'))
 
 
 #-- Tests with a package in a zip-file
@@ -143,7 +144,7 @@ def test_zipped_package_source(tmpdir):
     _zip_package(zipfilename, tmpdir.join('stuff'))
     node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
     assert node.__class__ is modulegraph.Package
-    assert node.packagepath == [zipfilename + '/stuff']
+    assert node.packagepath == [os.path.join(zipfilename, 'stuff')]
 
 
 def test_zipped_package_source_and_compiled(tmpdir):
@@ -154,7 +155,7 @@ def test_zipped_package_source_and_compiled(tmpdir):
     _zip_package(zipfilename, tmpdir.join('stuff'))
     node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
     assert node.__class__ is modulegraph.Package
-    assert node.packagepath == [zipfilename + '/stuff']
+    assert node.packagepath == [os.path.join(zipfilename, 'stuff')]
 
 
 @skipif(is_py3, reason='Python 3 does not look into the __pycache__')
@@ -167,7 +168,7 @@ def test_zipped_package_compiled(tmpdir):
     _zip_package(zipfilename, tmpdir.join('stuff'))
     node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
     assert node.__class__ is modulegraph.Package
-    assert node.packagepath == [zipfilename + '/stuff']
+    assert node.packagepath == [os.path.join(zipfilename, 'stuff')]
 
 
 #-- Namespace packages

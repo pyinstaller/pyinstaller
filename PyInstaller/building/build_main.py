@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2015, PyInstaller Development Team.
+# Copyright (c) 2005-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -171,7 +171,7 @@ class Analysis(Target):
         # search.
         CONF['pathex'] = self.pathex
         # Extend sys.path so PyInstaller could find all necessary modules.
-        logger.info('Extending PYTHOHPATH with paths\n' + pprint.pformat(self.pathex))
+        logger.info('Extending PYTHONPATH with paths\n' + pprint.pformat(self.pathex))
         sys.path.extend(self.pathex)
 
         # Set global variable to hold assembly binding redirects

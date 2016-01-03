@@ -12,7 +12,8 @@ import subprocess
 import textwrap
 import re
 
-__copyright__ = "Copyright 2015 by Hartmut Goebel <h.goebel@crazy-compilers.com>"
+__copyright__ = "Copyright (c) 2015-2016 PyInstaller Development Team, Copyright (c) 2015 Hartmut Goebel"
+__author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 
 def gen_headings(text, headings_character):

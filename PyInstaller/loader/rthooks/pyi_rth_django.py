@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2015, PyInstaller Development Team.
+# Copyright (c) 2005-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -37,7 +37,7 @@ def _get_commands():
          'makemigrations': 'django.core',
          'migrate': 'django.core',
          'runfcgi': 'django.core',
-         'runserver': 'django.contrib.staticfiles',
+         'runserver': 'django.core',
          'shell': 'django.core',
          'showmigrations': 'django.core',
          'sql': 'django.core',

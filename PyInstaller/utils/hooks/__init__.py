@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2015, PyInstaller Development Team.
+# Copyright (c) 2005-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -7,6 +7,13 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+
+# TODO: This module is getting a bit long in the tooth. Let's consider
+# splitting package-specific utility functions into new utility modules: e.g.,
+#
+# * "PyInstaller.util.hooks.django", containing all Django helpers.
+# * "PyInstaller.util.hooks.gi", containing all GObject-Introspection helpers.
+# * "PyInstaller.util.hooks.qt", containing all Qt helpers.
 
 import copy
 import glob
@@ -593,6 +600,7 @@ def remove_suffix(string, suffix):
         return string
 
 
+# TODO: Do we really need a helper for this? This is pretty trivially obvious.
 def remove_file_extension(filename):
     """
     This function returns filename without its extension.
@@ -604,6 +612,49 @@ def remove_file_extension(filename):
             return filename[0:filename.rfind(suff)]
     # Fallback to ordinary 'splitext'.
     return os.path.splitext(filename)[0]
+
+
+# TODO: Replace most calls to exec_statement() with calls to this function.
+def get_module_attribute(module_name, attr_name):
+    """
+    Get the string value of the passed attribute from the passed module if this
+    attribute is defined by this module _or_ raise `AttributeError` otherwise.
+
+    Since modules cannot be directly imported during analysis, this function
+    spawns a subprocess importing this module and returning the string value of
+    this attribute in this module.
+
+    Parameters
+    ----------
+    module_name : str
+        Fully-qualified name of this module.
+    attr_name : str
+        Name of the attribute in this module to be retrieved.
+
+    Returns
+    ----------
+    str
+        String value of this attribute.
+
+    Raises
+    ----------
+    AttributeError
+        If this attribute is undefined.
+    """
+    # Magic string to be printed and captured below if this attribute is
+    # undefined, which should be sufficiently obscure as to avoid collisions
+    # with actual attribute values. That's the hope, anyway.
+    attr_value_if_undefined = '!)ABadCafe@(D15ea5e#*DeadBeef$&Fee1Dead%^'
+    attr_value = exec_statement("""
+import %s as m
+print(getattr(m, %r, %r))
+""" % (module_name, attr_name, attr_value_if_undefined))
+
+    if attr_value == attr_value_if_undefined:
+        raise AttributeError(
+            'Module %r has no attribute %r' % (module_name, attr_name))
+    else:
+        return attr_value
 
 
 def get_module_file_attribute(package):
@@ -643,36 +694,42 @@ print(p.__file__)
     return attr
 
 
-
+# TODO: Rename to get_pywin32_module_dll_path() and move to a new
+# "PyInstaller.utils.hooks.win32" module.
+# NOTE: This function requires PyInstaller to be on the default "sys.path" for
+# the called Python process. Running py.test changes the working dir to a temp
+# dir, so PyInstaller should be installed via either "setup.py install" or
+# "setup.py develop" before running py.test.
 def get_pywin32_module_file_attribute(module_name):
     """
-    Get the absolute path of the PyWin32 module with the passed name.
+    Get the absolute path of the PyWin32 DLL specific to the PyWin32 module
+    with the passed name.
+
+    On import, each PyWin32 module:
+
+    * Imports a DLL specific to that module.
+    * Overwrites the values of all module attributes with values specific to
+      that DLL. This includes that module's `__file__` attribute, which then
+      provides the absolute path of that DLL.
+
+    This function safely imports that module in a PyWin32-aware subprocess and
+    returns the value of that module's `__file__` attribute.
 
     Parameters
     ----------
     module_name : str
-        Fully-qualified name of this module.
+        Fully-qualified name of that module.
 
     Returns
     ----------
     str
-        Absolute path of this module.
+        Absolute path of that DLL.
 
     See Also
     ----------
     `PyInstaller.utils.win32.winutils.import_pywin32_module()`
         For further details.
     """
-    # On import, the pywin32 module imports a DLL and replaces all its attributes with
-    # those from the DLL, and also replaces its __file__.
-    # Execute module in subprocess to get actual __file__ of the DLL.
-
-    # NOTE: get_pywin32_module_file_attribute requires PyInstaller to be on the default
-    # sys.path for the called python process. Running py.test changes the working dir
-    # to a temp dir, so PyInstaller should be installed via setup.py install or
-    # setup.py develop before running py.test.
-
-
     statement = """
 from PyInstaller.utils.win32 import winutils
 module = winutils.import_pywin32_module('%s')
@@ -681,44 +738,66 @@ print(module.__file__)
     return exec_statement(statement % module_name)
 
 
-def is_module_version(module_name, comparison_name, module_version):
+def is_module_satisfies(
+    requirements, version=None, version_attr='__version__'):
     """
-    Check the version of the module with the passed name against the passed
-    version string using the comparison operator with the passed name.
+    `True` if the module, package, or C extension described by the passed
+    requirements string both exists and satisfies these requirements.
 
-    This function provides robust version checking based on the same low-level
-    algorithm leveraged by both `easy_install` and `pip`, and should _always_ be
-    called in lieu of manually comparing version strings. In particular, version
-    strings should _never_ be compared lexicographically (e.g., `'00.5' > '0.6'`
-    is technically `True`, despite being semantically untrue).
+    This function checks module versions and extras (i.e., optional install-
+    time features) via the same low-level algorithm leveraged by
+    `easy_install` and `pip`, and should _always_ be called in lieu of manual
+    checking. Attempting to manually check versions and extras invites subtle
+    issues, particularly when comparing versions lexicographically (e.g.,
+    `'00.5' > '0.6'` is `True`, despite being semantically untrue).
 
-    The passed module name should be a fully-qualified `.`-delimited module name
-    (e.g., `PyInstaller.util`). The passed version string should be a PEP
-    0440-compliant `.`-delimited version specifier (e.g., `3.14-rc5`). The
-    passed comparison name should be one of the following eight strings:
+    Requirements
+    ----------
+    This function is typically used to compare the version of a currently
+    installed module with some desired version. To do so, a string of the form
+    `{module_name} {comparison_operator} {version}` (e.g., `sphinx >= 1.3`) is
+    passed as the `requirements` parameter, where:
 
-    * '>=' or 'ge', performing a greater-than-or-equal-to comparison.
-    * '<=' or 'le', performing a less-than-or-equal-to comparison.
-    * '>' or 'gt', performing a greater-than comparison.
-    * '<' or 'lt', performing a less-than comparison.
+    * `{module_name}` is the fully-qualified name of the module, package, or C
+      extension to be tested (e.g., `yaml`). This is _not_ a `setuptools`-
+      specific distribution name (e.g., `PyYAML`).
+    * `{comparison_operator}` is the numeric comparison to be performed. All
+      numeric Python comparisons are supported (e.g., `!=`, `==`, `<`, `>=`).
+    * `{version}` is the desired PEP 0440-compliant version (e.g., `3.14-rc5`)
+      to be compared against the current version of this module.
+
+    This function may also be used to test multiple versions and/or extras.  To
+    do so, a string formatted ala the `pkg_resources.Requirements.parse()`
+    class method (e.g., `idontevenknow<1.6,>1.9,!=1.9.6,<2.0a0,==2.4c1`) is
+    passed as the `requirements` parameter. (See URL below.)
 
     Implementation
     ----------
-    Specifically, this function:
+    This function behaves as follows:
 
-    . Spawns a subprocess importing this module and getting the value of this
-      module's `__version__` attribute.
-    . Converts both that value and the passed version string to comparable
-      tuples via the `pkg_resources.parse_version()` `setuptools` function.
-    . Returns the boolean returned by dynamically calling the private method of
-      the first such tuple corresponding to the passed comparison operator name
-      (e.g., the `tuple.__lt__()` method if that name is either `<` or `lt`),
-      passed the second such tuple.
+    * If one or more `setuptools` distributions exist for this module, this
+      module was installed via either `easy_install` or `pip`. In either case,
+      `setuptools` machinery is used to validate the passed requirements.
+    * Else, these requirements are manually validated. Since manually
+      validating extras is non-trivial, only versions are manually validated:
+      * If these requirements test only extras (e.g., `Norf [foo, bar]`),
+        `True` is unconditionally returned.
+      * Else, these requirements test one or more versions. Then:
+        1. These requirements are converted into an instance of
+           `pkg_resources.Requirements`, thus parsing these requirements into
+           their constituent components. This is surprisingly non-trivial!
+        1. The current version of the desired module is found as follows:
+           * If the passed `version` parameter is non-`None`, that is used.
+           * Else, a subprocess importing this module is spawned and the value
+             of this module's version attribute in that subprocess is used. The
+             name of this attribute defaults to `__version__` but may be
+             configured with the passed `version_attr` parameter.
+        1. These requirements are validated against this version.
 
-    Note that `pkg_resources.parse_version()` is generally considered to be the
-    most robust means of comparing version strings in Python. The
-    alternative `LooseVersion()` and `StrictVersion()` functions provided by the
-    standard `distutils.version` module fail for common edge-cases: e.g.,
+    Note that `setuptools` is generally considered to be the most robust means
+    of comparing version strings in Python. The alternative `LooseVersion()`
+    and `StrictVersion()` functions provided by the standard
+    `distutils.version` module fail for common edge cases: e.g.,
 
         >>> from distutils.version import LooseVersion
         >>> LooseVersion('1.5') >= LooseVersion('1.5-rc2')
@@ -729,58 +808,93 @@ def is_module_version(module_name, comparison_name, module_version):
 
     Parameters
     ----------
-    module_name : str
-        Fully-qualified `.`-delimited module name.
-    comparison_name : str
-        Either '>=', 'ge', '<=', 'le', '>', 'gt', '<', or 'lt'.
-    module_version : str
-        PEP 0440-compliant `.`-delimited version specifier.
+    requirements : str
+        Requirements in `pkg_resources.Requirements.parse()` format.
+    version : str
+        Optional PEP 0440-compliant version (e.g., `3.14-rc5`) to be used
+        _instead_ of the current version of this module. If non-`None`, this
+        function ignores all `setuptools` distributions for this module and
+        instead compares this version against the version embedded in the
+        passed requirements. This ignores the module name embedded in the
+        passed requirements, permitting arbitrary versions to be compared in a
+        robust manner. (See examples below.)
+    version_attr : str
+        Optional name of the version attribute defined by this module,
+        defaulting to `__version__`. If a `setuptools` distribution exists for
+        this module (there usually does) _and_ the `version` parameter is
+        `None` (it usually is), this parameter is ignored.
 
     Returns
     ----------
     bool
-        Boolean returned by performing the desired module version check.
+        Boolean result of the desired validation.
+
+    Raises
+    ----------
+    AttributeError
+        If no `setuptools` distribution exists for this module _and_ this
+        module defines no attribute whose name is the passed
+        `version_attr` parameter.
+    ValueError
+        If the passed specification does _not_ comply with
+        `pkg_resources.Requirements` syntax.
+
+    See Also
+    ----------
+    https://pythonhosted.org/setuptools/pkg_resources.html#id12
+        `pkg_resources.Requirements` syntax details.
 
     Examples
     ----------
-        # Test whether the local version of Sphinx is 1.3.x or newer.
-        >>> from PyInstaller.utils.hooks import is_module_version
-        >>> is_module_version('sphinx', '>=', '1.3.1')
+        # Assume PIL 2.9.0, Sphinx 1.3.1, and SQLAlchemy 0.6 are all installed.
+        >>> from PyInstaller.util.hooks import is_module_satisfies
+        >>> is_module_satisfies('sphinx >= 1.3.1')
+        True
+        >>> is_module_satisfies('sqlalchemy != 0.6')
+        False
+
+        # Compare two arbitrary versions. In this case, the module name
+        # "sqlalchemy" is simply ignored.
+        >>> is_module_satisfies('sqlalchemy != 0.6', version='0.5')
+        True
+
+        # Since the "pillow" project providing PIL publishes its version via
+        # the custom "PILLOW_VERSION" attribute (rather than the standard
+        # "__version__" attribute), an attribute name is passed as a fallback
+        # to validate PIL when not installed by setuptools. As PIL is usually
+        # installed by setuptools, this optional parameter is usually ignored.
+        >>> is_module_satisfies('PIL == 2.9.0', version_attr='PILLOW_VERSION')
         True
     """
-    # Dictionary mapping passed comparison names to private tuple method names.
-    comparison_to_method_name = {
-        '>=': '__ge__',
-        'ge': '__ge__',
-        '<=': '__le__',
-        'le': '__le__',
-        '>':  '__gt__',
-        'gt': '__gt__',
-        '<':  '__lt__',
-        'lt': '__lt__',
-    }
+    # If no version was explicitly passed...
+    if version is None:
+        # If a setuptools distribution exists for this module, this validation
+        # is a simple one-liner. This approach supports non-version validation
+        # (e.g., of "["- and "]"-delimited extras) and is hence preferable.
+        try:
+            pkg_resources.get_distribution(requirements)
+        # If no such distribution exists, fallback to the logic below.
+        except pkg_resources.DistributionNotFound:
+            pass
+        # If all existing distributions violate these requirements, fail.
+        except (pkg_resources.UnknownExtra, pkg_resources.VersionConflict):
+            return False
+        # Else, an existing distribution satisfies these requirements. Win!
+        else:
+            return True
 
-    # If the passed comparison name is unrecognized, raise an exception.
-    if comparison_name not in comparison_to_method_name:
-        raise KeyError('Comparison name "%s" unrecognized.' % comparison_name)
+    # Either a module version was explicitly passed or no setuptools
+    # distribution exists for this module. First, parse a setuptools
+    # "Requirements" object from this requirements string.
+    requirements_parsed = pkg_resources.Requirement.parse(requirements)
 
-    # String module version obtained by importing this module in a subprocess.
-    statement = """
-import %s as module
-print(module.__version__)
-"""
-    module_version_real = exec_statement(statement % module_name)
+    # If no version was explicitly passed, query this module for it.
+    if version is None:
+        module_name = requirements_parsed.project_name
+        version = get_module_attribute(module_name, version_attr)
 
-    # Convert incomparable version strings to comparable version tuples.
-    module_version_real_tuple = pkg_resources.parse_version(module_version_real)
-    module_version_fake_tuple = pkg_resources.parse_version(module_version)
-
-    # Private tuple method performing this comparison.
-    module_version_real_tuple_comparator = getattr(
-        module_version_real_tuple, comparison_to_method_name[comparison_name])
-
-    # Finally, compare the two versions.
-    return module_version_real_tuple_comparator(module_version_fake_tuple)
+    # Compare this version against the version parsed from these requirements.
+    return version in requirements_parsed
 
 
 def is_package(module_name):

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2015, PyInstaller Development Team.
+# Copyright (c) 2005-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -27,6 +27,7 @@ from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc_mtime, _check_guts_toc, add_suffix_to_extensions, \
     checkCache, _check_path_overlap, _rmtree
 from PyInstaller.compat import is_cygwin
+from PyInstaller.config import CONF
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
@@ -79,6 +80,12 @@ class PYZ(Target):
         for t in tocs:
             self.toc.extend(t)
             self.code_dict.update(getattr(t, '_code_cache', {}))
+
+        # Paths to remove from filenames embedded in code objects
+        self.replace_paths = sys.path + CONF['pathex']
+        # Make sure paths end with os.sep
+        self.replace_paths = [os.path.join(f, '') for f in self.replace_paths]
+
         self.name = name
         if name is None:
             self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
@@ -159,7 +166,6 @@ class PYZ(Target):
             print(e.args)
             raise
 
-
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", self.name)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
@@ -171,8 +177,47 @@ class PYZ(Target):
                 self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])
         # sort content alphabetically to support reproducible builds
         toc.sort()
+
+        # Remove leading parts of paths in code objects
+        self.code_dict = {
+            key: self._strip_paths_in_code(code)
+            for key, code in self.code_dict.items()
+        }
+
         pyz = ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
 
+    def _strip_paths_in_code(self, co, new_filename=None):
+        if new_filename is None:
+            original_filename = os.path.normpath(co.co_filename)
+            for f in self.replace_paths:
+                if original_filename.startswith(f):
+                    new_filename = original_filename[len(f):]
+                    break
+
+            else:
+                return co
+
+        code_func = type(co)
+
+        consts = tuple(
+            self._strip_paths_in_code(const_co, new_filename)
+            if isinstance(const_co, code_func) else const_co
+            for const_co in co.co_consts
+        )
+
+        # co_kwonlyargcount added in some version of Python 3
+        if hasattr(co, 'co_kwonlyargcount'):
+            return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
+                         co.co_flags, co.co_code, consts, co.co_names,
+                         co.co_varnames, new_filename, co.co_name,
+                         co.co_firstlineno, co.co_lnotab,
+                         co.co_freevars, co.co_cellvars)
+        else:
+            return code_func(co.co_argcount, co.co_nlocals, co.co_stacksize,
+                         co.co_flags, co.co_code, consts, co.co_names,
+                         co.co_varnames, new_filename, co.co_name,
+                         co.co_firstlineno, co.co_lnotab,
+                         co.co_freevars, co.co_cellvars)
 
 class PKG(Target):
     """

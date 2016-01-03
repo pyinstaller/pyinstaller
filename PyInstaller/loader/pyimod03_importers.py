@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2015, PyInstaller Development Team.
+# Copyright (c) 2005-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -369,6 +369,13 @@ class FrozenImporter(object):
                     module.__package__ = fullname
                 else:
                     module.__package__ = fullname.rsplit('.', 1)[0]
+
+                ### Set __spec__ for Python 3.4+
+                # In Python 3.4 was introduced module attribute __spec__ to
+                # consolidate all module attributes.
+                if sys.version_info[0:2] > (3, 3):
+                    module.__spec__ = _frozen_importlib.ModuleSpec(
+                        real_fullname, self, is_package=is_pkg)
 
                 ### Add module object to sys.modules dictionary.
                 # Module object must be in sys.modules before the loader

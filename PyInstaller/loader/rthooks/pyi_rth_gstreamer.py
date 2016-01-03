@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2013-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -16,9 +16,11 @@ import sys
 # causes 100% CPU load. (Tested on OSX.)
 os.environ['GST_REGISTRY_FORK'] = 'no'
 
+os.environ['GST_PLUGIN_PATH'] = '{};{}'.format(
+    sys._MEIPASS, os.path.join(sys._MEIPASS, 'gst-plugins'))
 
-# Tested on OSX only.
-os.environ['GST_PLUGIN_PATH'] = os.path.join(sys._MEIPASS, 'gst_plugins')
+# Prevent permission issues on Windows
+os.environ['GST_REGISTRY'] = os.path.join(sys._MEIPASS, 'registry.bin')
 
 # Only use packaged plugins to prevent GStreamer from crashing when it finds
 # plugins from another version which are installed system wide.

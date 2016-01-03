@@ -3,6 +3,7 @@ pytest >= 2.7.3  # Testing framework.
 pytest-xdist  # Plugin allowing running tests in parallel.
 pytest-timeout # Plugin to abort hanging tests.
 pytest-catchlog  # Capture log output separately from stdout/stderr
+pytest-drop-dup-tests # allows specifying order without duplicates
 pyreadline  # Colors in ipython on Windows.
 ipython  # Better interactive Python shell.
 mock
@@ -42,7 +43,10 @@ pycparser
 pytz
 sqlalchemy
 twisted
-matplotlib
 pyexcelerate
 Pillow
 pandas
+
+# matplotlib 1.5+ does not provide binaries for python 3.3
+matplotlib ; python_version < '2.8' or python_version >= '3.4'
+matplotlib==1.4.3 ; python_version >= '3.3' and python_version < '3.4'
