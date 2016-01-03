@@ -8,6 +8,8 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.utils.hooks import is_module_satisfies
+from PyInstaller import log as logging
+
 import kivy
 
 if is_module_satisfies('kivy >= 1.9.1'):
@@ -21,6 +23,5 @@ if is_module_satisfies('kivy >= 1.9.1'):
     hiddenimports = list(set(get_factory_modules() + kivy_modules +
                              hiddenimports))
 else:
-    import logging
     logger = logging.getLogger(__name__)
     logger.warn('Hook disabled because of Kivy version < 1.9.1')
