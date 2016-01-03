@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -7,8 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import collect_data_files
-import os
+# test-case for issue#9: Nameclashes in module information gathering
 
-# Auxiliary data for isoschematron
-datas = collect_data_files('lxml', subdir=os.path.join('isoschematron', 'resources'))
+import relimp.nameclash
