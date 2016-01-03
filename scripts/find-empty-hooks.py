@@ -40,7 +40,7 @@ import PyInstaller.hooks
 
 hookspath = os.path.dirname(os.path.abspath(PyInstaller.hooks.__file__))
 
-EXPECTED_NAMES = set('hook hiddenimports attrs binaries datas'.split())
+EXPECTED_NAMES = set('hook hiddenimports excludedimports attrs binaries datas'.split())
 
 for hookfilename in glob.glob(os.path.join(hookspath, 'hook-*.py')):
     with open(hookfilename) as fh:
