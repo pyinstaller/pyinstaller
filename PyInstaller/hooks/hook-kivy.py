@@ -7,10 +7,10 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-from distutils.version import LooseVersion
+from PyInstaller.utils.hooks import is_module_satisfies
 import kivy
 
-if LooseVersion(kivy.__version__) >= LooseVersion('1.9.1'):
+if is_module_satisfies('kivy >= 1.9.1'):
     from kivy.tools.packaging.pyinstaller_hooks import (
         add_dep_paths, excludedimports, datas, get_deps_all,
         get_factory_modules, kivy_modules)
