@@ -502,42 +502,41 @@ else:
 
 
 # Patterns of module names that should be bundled into the base_library.zip.
-if is_py34:
-    PY3_BASE_MODULES = {
-        # Py_Initialize() function uses module '_bootlocale' to set default stdout/err encodings.
-        # Python 3.4
-        # Module _bootlocale is just subset of 'locale' for starting Python interpreter.
-        # More info: https://bugs.python.org/issue9548i
-        '_bootlocale',
-        '_weakrefset',
-        'abc',
-        'codecs',
-        'encodings',
-        'io',  # The 'io' module requires to set stdout/stderr encodings.
-    }
-else:
-    PY3_BASE_MODULES = {
-        # Python 3.3
-        # The _bootlocale module is not available in Python 3.3 and whole 'locale' and its
-        # dependencies have to be in base_library.zip.
-        '_weakrefset',
-        'abc',
-        'codecs',
-        'collections',
-        'copyreg',
-        'encodings',
-        'functools',
-        'io',
-        'heapq',
-        'keyword',
-        'locale',
-        're',
-        'reprlib',
-        'sre_compile',
-        'sre_constants',
-        'sre_parse',
-        'weakref',
-    }
+
+PY3_BASE_MODULES = {
+    # Python 3.x
+    # These modules are direct or indirect dependencies of encodings.* modules.
+    # encodings modules must be recursively included to set the I/O encoding during
+    # python startup.
+    '_weakrefset',
+    'abc',
+    'codecs',
+    'collections',
+    'copyreg',
+    'encodings',
+    'functools',
+    'io',
+    'heapq',
+    'keyword',
+    'linecache',
+    'locale',
+    'operator',
+    're',
+    'reprlib',
+    'sre_compile',
+    'sre_constants',
+    'sre_parse',
+    'traceback',  # for startup errors
+    'types',
+    'weakref',
+}
+
+if sys.version_info[0] == 3:
+    if sys.version_info[1] >= 4:
+        PY3_BASE_MODULES.update({
+            '_bootlocale',
+            '_collections_abc',
+        })
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
