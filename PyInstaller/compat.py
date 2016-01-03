@@ -52,26 +52,26 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd
 # On different platforms is different file for dynamic python library.
 _pyver = sys.version_info[:2]
 if is_win:
-    PYDYLIB_NAMES = set(['python%d%d.dll' % _pyver])
+    PYDYLIB_NAMES = {'python%d%d.dll' % _pyver}
 elif is_cygwin:
-    PYDYLIB_NAMES = set(['libpython%d%d.dll' % _pyver])
+    PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver}
 elif is_darwin:
-    PYDYLIB_NAMES = set(['Python', '.Python', 'libpython%d.%d.dylib' % _pyver])
+    PYDYLIB_NAMES = {'Python', '.Python', 'libpython%d.%d.dylib' % _pyver}
 elif is_aix:
     # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
-    PYDYLIB_NAMES = set(['libpython%d.%d.a' % _pyver])
+    PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver}
 elif is_freebsd:
-    PYDYLIB_NAMES = set(['libpython%d.%d.so.1' % _pyver,
-                         'libpython%d.%dm.so.1' % _pyver,
-                         'libpython%d.%d.so.1.0' % _pyver,
-                         'libpython%d.%dm.so.1.0' % _pyver])
+    PYDYLIB_NAMES = {'libpython%d.%d.so.1' % _pyver,
+                     'libpython%d.%dm.so.1' % _pyver,
+                     'libpython%d.%d.so.1.0' % _pyver,
+                     'libpython%d.%dm.so.1.0' % _pyver}
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
     # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
-    PYDYLIB_NAMES = set(['libpython%d.%d.so.1.0' % _pyver,
-                         'libpython%d.%dm.so.1.0' % _pyver,
-                         'libpython%d.%dmu.so.1.0' % _pyver])
+    PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
+                     'libpython%d.%dm.so.1.0' % _pyver,
+                     'libpython%d.%dmu.so.1.0' % _pyver}
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
@@ -503,7 +503,7 @@ else:
 
 # Patterns of module names that should be bundled into the base_library.zip.
 if is_py34:
-    PY3_BASE_MODULES = set([
+    PY3_BASE_MODULES = {
         # Py_Initialize() function uses module '_bootlocale' to set default stdout/err encodings.
         # Python 3.4
         # Module _bootlocale is just subset of 'locale' for starting Python interpreter.
@@ -514,9 +514,9 @@ if is_py34:
         'codecs',
         'encodings',
         'io',  # The 'io' module requires to set stdout/stderr encodings.
-    ])
+    }
 else:
-    PY3_BASE_MODULES = set([
+    PY3_BASE_MODULES = {
         # Python 3.3
         # The _bootlocale module is not available in Python 3.3 and whole 'locale' and its
         # dependencies have to be in base_library.zip.
@@ -537,11 +537,11 @@ else:
         'sre_constants',
         'sre_parse',
         'weakref',
-    ])
+    }
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
-PURE_PYTHON_MODULE_TYPES = set([
+PURE_PYTHON_MODULE_TYPES = {
     'SourceModule',
     'CompiledModule',
     'Package',
@@ -550,33 +550,33 @@ PURE_PYTHON_MODULE_TYPES = set([
     # TODO Could these module types be removed?
     'FlatPackage',
     'ArchiveModule',
-])
+}
 # Object types of special Python modules (built-in, run-time, namespace package)
 # in modulegraph dependency graph that do not have code object.
-SPECIAL_MODULE_TYPES = set([
+SPECIAL_MODULE_TYPES = {
     'AliasNode',
     'BuiltinModule',
     'RuntimeModule',
     # PyInstaller handles scripts differently and not as standard Python modules.
     'Script',
-])
+}
 # Object types of Binary Python modules (extensions, etc) in modulegraph
 # dependency graph.
-BINARY_MODULE_TYPES = set([
+BINARY_MODULE_TYPES = {
     'Extension',
-])
+}
 # Object types of valid Python modules in modulegraph dependency graph.
 VALID_MODULE_TYPES = PURE_PYTHON_MODULE_TYPES | SPECIAL_MODULE_TYPES | BINARY_MODULE_TYPES
 # Object types of bad/missing/invalid Python modules in modulegraph
 # dependency graph.
 # TODO Should be 'Invalid' module types also in the 'MISSING' set?
-BAD_MODULE_TYPES = set([
+BAD_MODULE_TYPES = {
     'BadModule',
     'ExcludedModule',
     'InvalidSourceModule',
     'InvalidCompiledModule',
     'MissingModule',
-])
+}
 ALL_MODULE_TYPES = VALID_MODULE_TYPES | BAD_MODULE_TYPES
 # TODO Review this mapping to TOC, remove useless entries.
 # Dict to map ModuleGraph node types to TOC typecodes
