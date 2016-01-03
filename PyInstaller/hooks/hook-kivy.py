@@ -10,8 +10,6 @@
 from PyInstaller.utils.hooks import is_module_satisfies
 from PyInstaller import log as logging
 
-import kivy
-
 if is_module_satisfies('kivy >= 1.9.1'):
     from kivy.tools.packaging.pyinstaller_hooks import (
         add_dep_paths, excludedimports, datas, get_deps_all,
