@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013, PyInstaller Development Team.
+# Copyright (c) 2013-2016, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -40,7 +40,7 @@ import PyInstaller.hooks
 
 hookspath = os.path.dirname(os.path.abspath(PyInstaller.hooks.__file__))
 
-EXPECTED_NAMES = set('hook hiddenimports attrs binaries datas'.split())
+EXPECTED_NAMES = set('hook hiddenimports excludedimports attrs binaries datas'.split())
 
 for hookfilename in glob.glob(os.path.join(hookspath, 'hook-*.py')):
     with open(hookfilename) as fh:
