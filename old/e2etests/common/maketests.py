@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+#
+# Copyright (c) 2012-2016, PyInstaller Development Team
 # Copyright (C) 2011, Hartmut Goebel
 # Copyright (C) 2005, Giovanni Bajo
 # Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
