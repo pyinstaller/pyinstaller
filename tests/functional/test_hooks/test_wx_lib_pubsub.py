@@ -39,7 +39,11 @@ def test_wx_lib_pubsub_protocol_default(pyi_builder):
     pyi_builder.test_script('pyi_hooks/wx_lib_pubsub.py')
 
 @xfail_py3
-@xfail(wxPython_fail, reason='Unsupported wxPython version')
+# This test will pass when test_import.test_import_respects_path passes, since
+# that test provides a simple example of what causes this wxPython version to
+# fail.
+@xfail(wxPython_fail,
+       reason='PyInstaller does not support this wxPython version')
 @importorskip('wx.lib.pubsub.core')
 def test_wx_lib_pubsub_protocol_kwargs(pyi_builder):
     """
