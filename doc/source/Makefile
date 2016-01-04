@@ -5,13 +5,15 @@
 .PHONY: all doc pdf man html clean cleanall cleanlogs
 
 all:
-	@echo "make doc   ===> To generate html and pdf of the documentation and man pages"
+	@echo "make doc   ===> To generate html, pdf and man pages"
 	@echo "make html  ===> To generate a html of the documentation"
 	@echo "make pdf   ===> To generate a pdf of the documentation"
 	@echo "make man   ===> To generate man pages documentation"
+	@echo "make DO_RELEASE=1 ... ===> Generate documentation for release"
+	@echo "                           (suppress git revision in version)"
 
 
-doc: html pdf man cleanlogs
+doc: cleanlogs html pdf man cleanlogs
 	@echo "Documentation generated: Please see ../*.html, ../*.pdf and ../*.1 for files"
 
 manpages := pyinstaller pyi-makespec
@@ -50,6 +52,18 @@ _pyi-makespec-options.tmp: ../../makespec.py
 	   '-sOutputFile=${srcdir}/$@' -c save pop -
 	rm ../_definitions.txt ../_pyinstaller-options.tmp
 
+define ERR_REPO_MODIFIED
+
+
+*** Error: Must build documentation from an unmodified repository.
+*
+* You may want to run 'git checkout ..' (mind your changes in this directory!)
+* Or run 'make FORCE_MODIFIED=1 ...'
+*
+
+endef
+export ERR_REPO_MODIFIED
+
 _definitions.txt:
 	@echo Writting '_definitions.txt'
 	@echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > $@
@@ -61,12 +75,22 @@ _definitions.txt:
 	@echo '.. |PyInstaller| replace:: `PyInstaller`' >> $@
 	@# run `pyinstaller.py -v` to get the version
 	@echo -n '.. |Version| replace:: ' >> $@
+ifeq "${DO_RELEASE}" ""
 	@python ../../pyinstaller.py -v >> $@ 2>&1
+else
+	@# When doing a release, pass 'sdist' to strip the git revision.
+	@python ../../pyinstaller.py -v sdist >> $@ 2>&1
+endif
 	@echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
 	@# folder name of package after download and unzip
 	@echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
 	@# how we punctuate boot loader as a proper noun "the bootloader"
 	@echo '.. |bootloader| replace:: bootloader' >> $@
+	@# Check if the repository is unmodified
+ifeq "${FORCE_MODIFIED}" ""
+	@grep -E '\|Version\|.*replace::.*\.mod' $@ && echo "$$ERR_REPO_MODIFIED" && exit 10 || echo
+endif
+
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
