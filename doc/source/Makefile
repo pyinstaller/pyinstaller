@@ -5,7 +5,7 @@
 .PHONY: all doc pdf man html clean cleanall cleanlogs
 
 all:
-	@echo "make doc   ===> To generate html and pdf of the documentation and man pages"
+	@echo "make doc   ===> To generate html, pdf and man pages"
 	@echo "make html  ===> To generate a html of the documentation"
 	@echo "make pdf   ===> To generate a pdf of the documentation"
 	@echo "make man   ===> To generate man pages documentation"
