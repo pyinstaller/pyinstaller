@@ -58,6 +58,7 @@ define ERR_REPO_MODIFIED
 *** Error: Must build documentation from an unmodified repository.
 *
 * You may want to run 'git checkout ..' (mind your changes in this directory!)
+* Or run 'make FORCE_MODIFIED=1 ...'
 *
 
 endef
@@ -86,7 +87,9 @@ endif
 	@# how we punctuate boot loader as a proper noun "the bootloader"
 	@echo '.. |bootloader| replace:: bootloader' >> $@
 	@# Check if the repository is unmodified
+ifeq "${FORCE_MODIFIED}" ""
 	@grep -E '\|Version\|.*replace::.*\.mod' $@ && echo "$$ERR_REPO_MODIFIED" && exit 10 || echo
+endif
 
 
 clean:
