@@ -52,6 +52,17 @@ _pyi-makespec-options.tmp: ../../makespec.py
 	   '-sOutputFile=${srcdir}/$@' -c save pop -
 	rm ../_definitions.txt ../_pyinstaller-options.tmp
 
+define ERR_REPO_MODIFIED
+
+
+*** Error: Must build documentation from an unmodified repository.
+*
+* You may want to run 'git checkout ..' (mind your changes in this directory!)
+*
+
+endef
+export ERR_REPO_MODIFIED
+
 _definitions.txt:
 	@echo Writting '_definitions.txt'
 	@echo '.. -*- mode: rst ; ispell-local-dictionary: "american" -*-' > $@
@@ -74,6 +85,9 @@ endif
 	@echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
 	@# how we punctuate boot loader as a proper noun "the bootloader"
 	@echo '.. |bootloader| replace:: bootloader' >> $@
+	@# Check if the repository is unmodified
+	@grep -E '\|Version\|.*replace::.*\.mod' $@ && echo "$$ERR_REPO_MODIFIED" && exit 10 || echo
+
 
 clean:
 	@echo "make cleanall  ===> To clean everything"
