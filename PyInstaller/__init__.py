@@ -47,7 +47,9 @@ if is_win and is_py2:
 # Update __version__ as necessary.
 if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
     # PyInstaller is run directly of source without installation or
-    # __version__ is called from 'setup.py'.
+    # __version__ is called from 'setup.py' ...
+    # Note: The documenation's Makefile also passes `sdist` when run
+    # with 'DO_RELEASE=1' to suppress the git revision.
     if 'sdist' not in sys.argv:
         # and 'setup.py' was not called with 'sdist' argument.
         # For creating source tarball we do not want git revision

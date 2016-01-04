@@ -9,6 +9,8 @@ all:
 	@echo "make html  ===> To generate a html of the documentation"
 	@echo "make pdf   ===> To generate a pdf of the documentation"
 	@echo "make man   ===> To generate man pages documentation"
+	@echo "make DO_RELEASE=1 ... ===> Generate documentation for release"
+	@echo "                           (suppress git revision in version)"
 
 
 doc: html pdf man cleanlogs
@@ -61,7 +63,12 @@ _definitions.txt:
 	@echo '.. |PyInstaller| replace:: `PyInstaller`' >> $@
 	@# run `pyinstaller.py -v` to get the version
 	@echo -n '.. |Version| replace:: ' >> $@
+ifeq "${DO_RELEASE}" ""
 	@python ../../pyinstaller.py -v >> $@ 2>&1
+else
+	@# When doing a release, pass 'sdist' to strip the git revision.
+	@python ../../pyinstaller.py -v sdist >> $@ 2>&1
+endif
 	@echo '.. |PyInstallerVersion| replace:: PyInstaller |Version|' >> $@
 	@# folder name of package after download and unzip
 	@echo '.. |unzipped_download| replace:: ``pyinstaller``' >> $@
