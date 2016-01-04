@@ -13,7 +13,7 @@ all:
 	@echo "                           (suppress git revision in version)"
 
 
-doc: html pdf man cleanlogs
+doc: cleanlogs html pdf man cleanlogs
 	@echo "Documentation generated: Please see ../*.html, ../*.pdf and ../*.1 for files"
 
 manpages := pyinstaller pyi-makespec
