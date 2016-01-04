@@ -33,7 +33,7 @@ interpreter or any modules.
    :alt: Manual
 
 .. image:: https://img.shields.io/badge/changes-latest-blue.svg
-   :target: https://github.com/pyinstaller/pyinstaller/blob/develop/doc/CHANGES.txt
+   :target: https://github.com/pyinstaller/pyinstaller/blob/develop/doc/CHANGES.rst
    :alt: Changelog
 
 .. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
