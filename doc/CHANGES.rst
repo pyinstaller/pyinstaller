@@ -1,11 +1,64 @@
 Changelog for PyInstaller
 =========================
 
-
 3.1 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Support reproducible builds (#490, #1434, #1582, #1590).
+- Strip leading parts of paths in compiled code objects (#1059, #1302,
+  #1724).
+
+- With ``--log-level=DEBUG``, a dependency graph-file is emitted in
+  the build-directory.
+
+- Allow running pyinstaller as user `root`. By popular demand, see
+  e.g. #1564, #1459, #1081.
+
+- New Hooks: botocore, boto3, distorm3, GObject, GI (G Introspection),
+  GStreamer, GEvent, kivy, lxml.isoschematron, pubsub.core,
+  PyQt5.QtMultimedia, scipy.linalg, shelve.
+- Fixed or Updated Hooks: astroid, django, jsonschema logilab, PyQt4,
+  PyQt5, skimage, sklearn.
+- Add option ``--hiddenimport`` as an alias for ``--hidden-import``.
+
+- (OSX): Fix issues with ``st_flags`` (#1650).
+- (OSX) Remove warning message about 32bit compatibility (#1586).
+- (Linux) The cache is now stored in ``$XDG_CACHE_HOME/pyinstaller``
+  instead of ``$XDG_DATA_HOME`` - the cache is moved automatically (#1118).
+- Documentation updates, e.g. about reproducible builds
+
+- Put back full text of GPL license into COPYING.txt.
+- Fix crashes when looking for ctypes DLLs (#1608, #1609, #1620).
+- Fix: Imports in byte-code not found if code contains a function (#1581).
+- Fix recursion into bytes-code when scanning for ctypes (#1620).
+- Fix PyCrypto modules to work with crypto feature (``--key`` option)
+  (#1663).
+- Fix problems with ``excludedimports`` in some hook excluding the
+  named modules even if used elswhere (#1584, #1600).
+- Fix freezing of pip 7.1.2 (#1699).
+- FreeBSD and Solaris fixes.
+
+- Search for ``ldconfig`` in $PATH first (#1659)
+- Deny processing outdated package ``_xmlplus``.
+
+- Improvements to the test-suite, testing infrastructure and
+  continuous integration.
+- For non-release builds, the exact git revision is not used.
+- Internal code refactoring.
+- Enhancements and clean-ups to the hooks API - only relevant for hook
+  authors. See the manual for details. E.g:
+  - Removed ``attrs`` in hooks - they were not used anymore anyway.
+  - Change ``add/del_import()`` to accept arbitrary number of module
+    names.
+  - New hook utility function ``copy_metadata()``.
+
+**Known Issues**
+
+- Apps built with Windows 10 and Python 3.5 may not run on Windows versions
+  earlier than 10 (#1566).
+- The multipackage (MERGE) feature (#1527) is currently broken.
+- (OSX) Support for OpenDocument events (#1309) is broken.
+
 
 
 3.0 (2015-10-04)

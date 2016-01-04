@@ -9,7 +9,31 @@ please let us know if your name is omitted by accident:
 Contributions to PyInstaller 3.1
 --------------------------------
 
-- Starwarsfan2099 - Distorm3 Hook
+- Hartmut Goebel - Core developer and release manager.
+- Martin Zibricky - Core developer.
+- David Cortesi - Core developer and documentation manager.
+- Bryan A. Jones - Core developer.
+- David Vierra - Core developer and encoding specialist.
+
+- Andrei Kopats - Windows fixes.
+- Andrey Malkov - Django runtime hooks.
+- Ben Hagen - kivy hook, GStreamer realtime hook.
+- Cecil Curry - Module Version Comparisons and and reworking hooks.
+- Dustin Spicuzza - Hooks for GLib, GIntrospection, Gstreamer, etc.
+- giumas - lxml.isoschematron hook.
+- Jonathan Stewmon - Hooks for botocore, boto, boto3 and gevent.monkey.
+- Kenneth Zhao - Solaris fixes.
+- Matthew Einhorn - kivy hook.
+- mementum - pubsub.core hook.
+- Nicholas Chammas - Documentation updates.
+- Nico Galoppo - Hooks for skimage and sklearn.
+- Panagiotis H.M. Issaris - weasyprint hook.
+- Penaz - shelve hook.
+- Roman Yurchak - scipy.linalg hook.
+- Starwarsfan2099 - Distorm3 hook.
+- Thomas Waldmann - Fixes for Bootloader and FreeBSD.
+- Tim Stumbaugh - Bug fixes.
+- zpin - Bug fixes.
 
 
 Contributions to PyInstaller 3.0
