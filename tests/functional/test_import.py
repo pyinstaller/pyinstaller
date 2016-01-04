@@ -13,7 +13,8 @@ import pytest
 import ctypes, ctypes.util
 
 from PyInstaller.compat import is_win
-from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, skipif_notwin
+from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, \
+  skipif_notwin, xfail
 
 
 # :todo: find a way to get this from `conftest` or such
@@ -53,6 +54,21 @@ def test_relative_import3(pyi_builder):
         print(a1.getString())
         """
     )
+
+# Verify that __path__ is respected for imports from the filesystem:
+#
+# * pyi_testmod_path/
+#
+#   * __init__.py -- inserts a/ into __path__, then imports b, which now refers
+#     to a/b.py, not ./b.py.
+#   * b.py - raises an exception. **Should not be imported.**
+#   * a/ -- contains no __init__.py.
+#
+#     * b.py - Empty. Should be imported.
+@xfail(reason='__path__ not respected for filesystem modules.')
+def test_import_respects_path(pyi_builder, script_dir):
+    pyi_builder.test_source('import pyi_testmod_path',
+      ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
 
 
 def test_import_pyqt5_uic_port(pyi_builder):
