@@ -123,6 +123,15 @@ def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
+@importorskip('PyQt5')
+def test_PyQt5_QtWebKit(pyi_builder):
+    pyi_builder.test_script('pyi_lib_PyQt5-QtWebKit.py')
+
+@importorskip('PyQt5')
+def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
+    # Note that including the data_dir fixture copies files needed by this test.
+    pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
+
 
 @importorskip('zope.interface')
 def test_zope_interface(pyi_builder):
