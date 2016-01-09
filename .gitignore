@@ -70,11 +70,12 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 # Bootloader source
 /bootloader/.lock-waf*
 /bootloader/.lock-wscript
-/bootloader/build
-/bootloader/waf-*
-/bootloader/waf3-*
-/bootloader/.waf-*
-/bootloader/.waf3-*
+/bootloader/build/
+/bootloader/.vagrant/
+/bootloader/waf-*/
+/bootloader/waf3-*/
+/bootloader/.waf-*/
+/bootloader/.waf3-*/
 
 # Mac OS X
 .DS_store
