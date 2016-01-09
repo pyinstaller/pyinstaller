@@ -47,6 +47,7 @@ Changelog for PyInstaller
 - Internal code refactoring.
 - Enhancements and clean-ups to the hooks API - only relevant for hook
   authors. See the manual for details. E.g:
+
   - Removed ``attrs`` in hooks - they were not used anymore anyway.
   - Change ``add/del_import()`` to accept arbitrary number of module
     names.
