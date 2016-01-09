@@ -18,7 +18,7 @@ interpreter or any modules.
    :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/develop
    :alt: AppVeyor CI test status (Windows)
 
-.. image:: https://landscape.io/github/pyinstaller/pyinstaller/develop/landscape.svg
+.. image:: https://landscape.io/github/pyinstaller/pyinstaller/develop/landscape.svg?
    :target: https://landscape.io/github/pyinstaller/pyinstaller/develop
    :alt: Code health
 
