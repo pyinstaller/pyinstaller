@@ -1,0 +1,87 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+# Automated rebuild of bootloader on misc. platforms
+#
+# Copyright (C) 2016 PyInstaller Development Team
+#
+# Based on a Vagrantfile by Thomas Waldmann. Thanks!
+# Copyright (C) 2015 The Borg Collective http://borgbackup.readthedocs.org/
+
+
+if not (Dir.exist?('./src') and File.exist?('./wscript'))
+   abort("vagrant must be called from within the 'bootloader' directory")
+end
+
+def packages_debianoid
+  return <<-EOF
+    apt-get update
+    apt-get install -y python python-dev python-setuptools libz-dev gcc
+  EOF
+end
+
+def packages_darwin
+  return <<-EOF
+    sudo chown -R vagrant /usr/local  # brew must be able to create stuff here
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    brew update
+    brew install openssl
+    brew install lz4
+    brew install fakeroot
+    brew install git
+    brew install pkgconfig
+    touch ~vagrant/.bash_profile ; chown vagrant ~vagrant/.bash_profile
+  EOF
+end
+
+def build_bootloader(boxname)
+  return <<-EOF
+    cd /vagrant
+    cd bootloader
+    python ./waf clean
+    python ./waf configure --no-lsb all
+  EOF
+end
+
+Vagrant.configure(2) do |config|
+  # not let the VM access .. (which is the PyInstaller base directory)
+  # on the host machine via the default shared folder
+  config.vm.synced_folder "..", "/vagrant"
+
+  # fix permissions on synced folder
+  #config.vm.provision "fix perms", :type => :shell, :inline => fix_perms
+
+  config.vm.provider :virtualbox do |v|
+    #v.gui = true
+    v.cpus = 1
+  end
+
+  #--- Linux 32 bit, using Debian 8.2 from boxcutter ---
+  # using images from buxcutter since they already include support for
+  # shared folders and Debian does not provide 32 bit versions
+  config.vm.define "linux32" do |b|
+    b.vm.box = "boxcutter/debian82-i386"
+    b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid
+    b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux32")
+  end
+
+  #--- Linux 64 bit, using Debian 8.2 from boxcutter ---
+  # using images from buxcutter since they already include support for
+  # shared folders
+  config.vm.define "linux64" do |b|
+    b.vm.box = "boxcutter/debian82"
+    b.vm.provider :virtualbox do |v|
+      v.memory = 768
+    end
+    b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid
+    b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux64")
+  end
+
+#  #--- OS X --- not yet implemented
+#  config.vm.define "darwin64" do |b|
+#    b.vm.box = "jhcook/yosemite-clitools"
+#    #b.vm.provision "packages darwin", :type => :shell, :privileged => false, :inline => packages_darwin
+#    #b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("darwin64")
+#  end
+
+end
