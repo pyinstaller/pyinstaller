@@ -1,7 +1,7 @@
 Changelog for PyInstaller
 =========================
 
-3.1 (unreleased)
+3.1 (2016-01-09)
 ----------------
 
 - Support reproducible builds (#490, #1434, #1582, #1590).
