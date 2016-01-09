@@ -1,7 +1,13 @@
 Changelog for PyInstaller
 =========================
 
-3.1 (unreleased)
+3.2 (unreleased)
+----------------
+
+- Nothing changed yet.
+
+
+3.1 (2016-01-09)
 ----------------
 
 - Support reproducible builds (#490, #1434, #1582, #1590).
@@ -47,6 +53,7 @@ Changelog for PyInstaller
 - Internal code refactoring.
 - Enhancements and clean-ups to the hooks API - only relevant for hook
   authors. See the manual for details. E.g:
+
   - Removed ``attrs`` in hooks - they were not used anymore anyway.
   - Change ``add/del_import()`` to accept arbitrary number of module
     names.
