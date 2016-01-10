@@ -27,6 +27,7 @@ Django==1.8.3
 # Latest babel 1.3.1 fails with Python 3.3/3.4 on Windows:
 # https://github.com/mitsuhiko/babel/issues/174
 babel==1.3  # Required by sphinx. This version works on Windows.
+boto
 boto3
 botocore
 gevent
