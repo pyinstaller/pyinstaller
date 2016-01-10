@@ -16,7 +16,7 @@ import zipfile
 import pytest
 
 from PyInstaller.lib.modulegraph import modulegraph
-from PyInstaller.utils.tests import skipif, is_py2, is_py3
+from PyInstaller.utils.tests import skipif, skipif_win, is_py2, is_py3
 
 def _import_and_get_node(tmpdir, module_name, path=None):
     script = tmpdir.join('script.py')
@@ -197,3 +197,19 @@ def test_nspackage_pep420(tmpdir):
 
 # :todo: test_namespace_setuptools
 # :todo: test_namespace_pkg_resources
+
+@skipif_win
+def test_symlinks(tmpdir):
+    base_dir = tmpdir.join('base').ensure(dir=True)
+    p1_init = tmpdir.join('p1', '__init__.py').ensure()
+    p2_init = tmpdir.join('p2', '__init__.py').ensure()
+    p1_init.write('###')
+    p2_init.write('###')
+
+    base_dir.join('p1').ensure(dir=True)
+
+    os.symlink(str(p1_init), str(base_dir.join('p1', '__init__.py')))
+    os.symlink(str(p2_init), str(base_dir.join('p1', 'p2.py')))
+
+    node = _import_and_get_node(base_dir, 'p1.p2')
+    assert isinstance(node, modulegraph.SourceModule)
