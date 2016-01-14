@@ -1675,15 +1675,7 @@ class ModuleGraph(ObjectGraph):
 
             path = self.path
 
-        fp, buf, stuff = self._find_module_path(fullname, name, path)
-        try:
-            if buf:
-                buf = os.path.realpath(buf)
-
-            return (fp, buf, stuff)
-        except:
-            fp.close()
-            raise
+        return self._find_module_path(fullname, name, path)
 
     def _find_module_path(self, fullname, module_name, search_dirs):
         """
