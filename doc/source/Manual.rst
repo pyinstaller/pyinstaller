@@ -616,7 +616,7 @@ Or in Windows, use the little-known BAT file line continuation::
         --onefile --nowindow ^
         --hidden-import=secret1 ^
         --hidden-import=secret2 ^
-        --icon-file=..\MLNMFLCN.ICO ^
+        --icon=..\MLNMFLCN.ICO ^
         myscript.spec
 
 
