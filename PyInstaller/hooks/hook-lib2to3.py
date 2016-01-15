@@ -7,8 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-# This is needed to bundle draft3.json and draft4.json files that come
-# with jsonschema module
+# This is needed to bundle lib2to3 Grammars files
 
 from PyInstaller.utils.hooks import collect_data_files
 
