@@ -278,3 +278,14 @@ def test_egg_zipped(pyi_builder):
         """,
         pyi_args=['--paths', pathex],
     )
+
+
+#--- hooks related stuff ---
+
+def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
+    # The package `pkg_without_hook_for_pkg` does not have a hook, but
+    # `pkg_without_hook_for_pkg.sub1` has one. And this hook includes
+    # the "hidden" import `pkg_without_hook_for_pkg.sub1.sub11`
+    pyi_builder.test_source(
+        'import pkg_without_hook_for_pkg.sub1',
+        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
