@@ -68,6 +68,20 @@ def test_hiddenimport(pyi_builder):
                             ['--hidden-import=a_hidden_import'])
 
 
+
+def test_error_during_import(pyi_builder):
+    # See ticket #27: historically, PyInstaller was catching all
+    # errors during imports...
+    pyi_builder.test_source(
+        """
+        try:
+            import error_during_import2
+        except KeyError:
+            print("OK")
+        else:
+            raise RuntimeError("failure!")
+        """)
+
 # :todo: Use some package which is already installed for some other
 # reason instead of `simplejson` which is only used here.
 @importorskip('simplejson')

@@ -7,6 +7,4 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
-import os
-os.environ["qwiejioqwjeioqwjeioqwje"]
+raise KeyError
