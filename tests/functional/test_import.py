@@ -302,3 +302,25 @@ def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
     pyi_builder.test_source(
         'import pkg_without_hook_for_pkg.sub1',
         ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
+
+
+
+def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
+
+    from PyInstaller.building.build_main import Analysis
+    class MyAnalysis(Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['datas'] = [('data/*/static_plugin.py', '.')]
+            # Setting back is required to make `super()` within
+            # Analysis access the correct class. Do not use
+            # `monkeypatch.undo()` as this will undo *all*
+            # monkeypathes.
+            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
+                                Analysis)
+            super(MyAnalysis, self).__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
+
+    # :fixme: When PyInstaller supports setting datas via the
+    # command-line, us this here instead of monkeypatching Analysis.
+    pyi_builder.test_script('pyi_app_with_plugin.py')
