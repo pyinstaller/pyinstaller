@@ -10,6 +10,8 @@
 
 import os
 import pytest
+import sys
+import glob
 import ctypes, ctypes.util
 
 from PyInstaller.compat import is_win
@@ -311,6 +313,67 @@ def test_egg_zipped(pyi_builder):
         print('Okay.')
         """,
         pyi_args=['--paths', pathex],
+    )
+
+
+#--- namespaces ---
+
+def test_nspkg1(pyi_builder):
+    # Test inclusion of namespace packages implemented using
+    # pkg_resources.declare_namespace
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg1.aaa
+        import nspkg1.bbb.zzz
+        import nspkg1.ccc
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+def test_nspkg1_empty(pyi_builder):
+    # Test inclusion of a namespace-only packages in an zipped egg.
+    # This package only defines the namespace, nothing is contained there.
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg1
+        print (nspkg1)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+def test_nspkg1_bbb_zzz(pyi_builder):
+    # Test inclusion of a namespace packages in an zipped egg
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg1.bbb.zzz
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+def test_nspkg2(pyi_builder):
+    # Test inclusion of namespace packages implemented as nspkg.pth-files
+
+    # When Python starts up, it scans sys.path for .pth files. Since
+    # this .pth-file does not reside on a sys.path-dir, we need to
+    # scan for it manually.
+    import site
+    orig_sys_path = sys.path
+    pathex = site.addsitedir(os.path.join(_MODULES_DIR, 'nspkg2-pkg'), set())
+    sys.path = orig_sys_path
+
+    pyi_builder.test_source(
+        """
+        import nspkg2.aaa
+        import nspkg2.bbb.zzz
+        import nspkg2.ccc
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
 
