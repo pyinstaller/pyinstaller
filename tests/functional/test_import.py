@@ -55,6 +55,13 @@ def test_relative_import3(pyi_builder):
         """
     )
 
+
+def test_module_with_coding_utf8(pyi_builder):
+    # Module ``utf8_encoded_module`` simply has an ``coding`` header
+    # and uses same German umlauts.
+    pyi_builder.test_source("import module_with_coding_utf8")
+
+
 def test_hiddenimport(pyi_builder):
     # The script simply does nothing, not even print out a line.
     pyi_builder.test_source('pass',
