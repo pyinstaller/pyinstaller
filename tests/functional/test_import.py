@@ -61,6 +61,13 @@ def test_hiddenimport(pyi_builder):
                             ['--hidden-import=a_hidden_import'])
 
 
+# :todo: Use some package which is already installed for some other
+# reason instead of `simplejson` which is only used here.
+@importorskip('simplejson')
+def test_c_extension(pyi_builder):
+    pyi_builder.test_script('pyi_c_extension.py')
+
+
 # Verify that __path__ is respected for imports from the filesystem:
 #
 # * pyi_testmod_path/
