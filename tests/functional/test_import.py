@@ -55,6 +55,12 @@ def test_relative_import3(pyi_builder):
         """
     )
 
+def test_hiddenimport(pyi_builder):
+    # The script simply does nothing, not even print out a line.
+    pyi_builder.test_source('pass',
+                            ['--hidden-import=a_hidden_import'])
+
+
 # Verify that __path__ is respected for imports from the filesystem:
 #
 # * pyi_testmod_path/
