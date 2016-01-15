@@ -377,6 +377,20 @@ def test_nspkg2(pyi_builder):
     )
 
 
+def test_nspkg_pep420(pyi_builder):
+    # Test inclusion of PEP 420 namespace packages.
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
+    pyi_builder.test_source(
+        """
+        import package.sub1
+        import package.sub2
+        import package.subpackage.sub
+        import package.nspkg.mod
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
 #--- hooks related stuff ---
 
 def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
