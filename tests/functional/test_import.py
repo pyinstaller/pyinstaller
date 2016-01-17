@@ -470,7 +470,7 @@ def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
     from PyInstaller.building.build_main import Analysis
     class MyAnalysis(Analysis):
         def __init__(self, *args, **kwargs):
-            kwargs['datas'] = [('data/*/static_plugin.py', '.')]
+            kwargs['datas'] = datas
             # Setting back is required to make `super()` within
             # Analysis access the correct class. Do not use
             # `monkeypatch.undo()` as this will undo *all*
@@ -483,4 +483,5 @@ def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
 
     # :fixme: When PyInstaller supports setting datas via the
     # command-line, us this here instead of monkeypatching Analysis.
+    datas = [('data/*/static_plugin.py', '.')]
     pyi_builder.test_script('pyi_app_with_plugin.py')
