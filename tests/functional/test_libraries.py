@@ -11,12 +11,16 @@
 # Library imports
 # ---------------
 import pytest
+import os
 
 # Local imports
 # -------------
 from PyInstaller.compat import is_win, is_py3
-from PyInstaller.utils.tests import importorskip
+from PyInstaller.utils.tests import importorskip, xfail
 
+# :todo: find a way to get this from `conftest` or such
+# Directory with testing modules used in some tests.
+_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 
 @importorskip('boto')
 @pytest.mark.skipif(is_py3, reason='boto does not fully support Python 3')
@@ -102,6 +106,76 @@ def test_zmq(pyi_builder):
         # This is a problematic module and might cause some issues.
         import zmq.utils.strtypes
         """)
+
+def test_pkg_resource_res_string(pyi_builder, monkeypatch):
+
+    from PyInstaller.building.build_main import Analysis
+    class MyAnalysis(Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['datas'] = datas
+            # Setting back is required to make `super()` within
+            # Analysis access the correct class. Do not use
+            # `monkeypatch.undo()` as this will undo *all*
+            # monkeypathes.
+            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
+                                Analysis)
+            super(MyAnalysis, self).__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
+
+    # Include some data files for testing pkg_resources module.
+    # :fixme: When PyInstaller supports setting datas via the
+    # command-line, us this here instead of monkeypatching Analysis.
+    datas = [(os.path.join(_MODULES_DIR, 'pkg3', 'sample-data.txt'), 'pkg3')]
+    pyi_builder.test_script('pkg_resource_res_string.py')
+
+
+def test_pkgutil_get_data(pyi_builder, monkeypatch):
+
+    from PyInstaller.building.build_main import Analysis
+    class MyAnalysis(Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['datas'] = datas
+            # Setting back is required to make `super()` within
+            # Analysis access the correct class. Do not use
+            # `monkeypatch.undo()` as this will undo *all*
+            # monkeypathes.
+            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
+                                Analysis)
+            super(MyAnalysis, self).__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
+
+    # Include some data files for testing pkg_resources module.
+    # :fixme: When PyInstaller supports setting datas via the
+    # command-line, us this here instead of monkeypatching Analysis.
+    datas = [(os.path.join(_MODULES_DIR, 'pkg3', 'sample-data.txt'), 'pkg3')]
+    pyi_builder.test_script('pkgutil_get_data.py')
+
+
+@xfail(reason='Our import mechanism returns the wrong loader-class for __main__.')
+def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
+
+    from PyInstaller.building.build_main import Analysis
+    class MyAnalysis(Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['datas'] = datas
+            # Setting back is required to make `super()` within
+            # Analysis access the correct class. Do not use
+            # `monkeypatch.undo()` as this will undo *all*
+            # monkeypathes.
+            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
+                                Analysis)
+            super(MyAnalysis, self).__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
+
+    # Include some data files for testing pkg_resources module.
+    # :fixme: When PyInstaller supports setting datas via the
+    # command-line, us this here instead of monkeypatching Analysis.
+    datas = [(os.path.join(_MODULES_DIR, 'pkg3', 'sample-data.txt'), 'pkg3')]
+    pyi_builder.test_script('pkgutil_get_data__main__.py')
+
 
 
 @importorskip('sphinx')
