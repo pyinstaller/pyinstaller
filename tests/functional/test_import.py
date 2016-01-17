@@ -377,6 +377,57 @@ def test_nspkg2(pyi_builder):
     )
 
 
+@xfail(reason="modulegraph implements `pkgutil.extend_path` wrong")
+def test_nspkg3(pyi_builder):
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg3.aaa
+        try:
+            # pkgutil ignores items of sys.path that are not strings
+            # referring to existing directories. So this zipped egg
+            # *must* be ignored.
+            import nspkg3.bbb.zzz
+        except ImportError:
+            pass
+        else:
+            raise SystemExit('nspkg3.bbb.zzz found but should not')
+        try:
+            import nspkg3.a
+        except ImportError:
+            pass
+        else:
+            raise SystemExit('nspkg3.a found but should not')
+        import nspkg3.ccc
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+def test_nspkg3_empty(pyi_builder):
+    # Test inclusion of a namespace-only package in a zipped egg
+    # using pkgutil.extend_path.
+    # This package only defines namespace, nothing is contained there.
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*_empty.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg3
+        print (nspkg3)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+def test_nspkg3_bbb_zzz(pyi_builder):
+    # Test inclusion of a namespace package in an zipped egg using
+    # pkgutil.extend_path
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg3.bbb.zzz
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
 def test_nspkg_pep420(pyi_builder):
     # Test inclusion of PEP 420 namespace packages.
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
