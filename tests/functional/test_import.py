@@ -416,6 +416,17 @@ def test_nspkg3_empty(pyi_builder):
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
+def test_nspkg3_aaa(pyi_builder):
+    # Test inclusion of a namespace package in an directory using
+    # pkgutil.extend_path
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg3.aaa
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
 def test_nspkg3_bbb_zzz(pyi_builder):
     # Test inclusion of a namespace package in an zipped egg using
     # pkgutil.extend_path
