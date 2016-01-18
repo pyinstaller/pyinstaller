@@ -17,6 +17,7 @@
     'PyQt5.QtQuick':  ['pyi_rth_qml.py'],
     'PyQt5.QtWebEngineWidgets': ['pyi_rth_qt5webengine.py'],
     'PySide':      ['pyi_rth_qt4plugins.py'],
+    'requests':    ['pyi_rth_requests.py'],
     '_tkinter':    ['pyi_rth__tkinter.py'],
     'twisted.internet.reactor':        ['pyi_rth_twisted.py'],
     'usb':        ['pyi_rth_usb.py'],
