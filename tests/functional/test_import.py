@@ -16,7 +16,7 @@ import ctypes, ctypes.util
 
 from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, \
-  skipif_notwin, xfail
+  skipif_notwin, xfail, is_py2
 
 
 # :todo: find a way to get this from `conftest` or such
@@ -438,7 +438,7 @@ def test_nspkg3_bbb_zzz(pyi_builder):
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
-
+@skipif(is_py2, reason="requires Python 3.3")
 def test_nspkg_pep420(pyi_builder):
     # Test inclusion of PEP 420 namespace packages.
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
