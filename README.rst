@@ -6,7 +6,7 @@ package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
 
-.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/3.1.svg?label=Linux
+.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/3.1.1.svg?label=Linux
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
    :alt: Travis CI test status (Linux)
 
@@ -14,8 +14,8 @@ interpreter or any modules.
    :target: https://travis-ci.org/pyinstaller/pyinstaller-osx-tests
    :alt: Travis CI test status (OS X)
 
-.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/3.1.svg?label=Windows
-   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/3.1
+.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/3.1.1.svg?label=Windows
+   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/3.1.1
    :alt: AppVeyor CI test status (Windows)
 
 .. image:: https://landscape.io/github/pyinstaller/pyinstaller/master/landscape.svg?
@@ -33,7 +33,7 @@ interpreter or any modules.
    :alt: Manual
 
 .. image:: https://img.shields.io/badge/changes-v3.1-blue.svg
-   :target: https://github.com/pyinstaller/pyinstaller/blob/3.1/doc/CHANGES.rst
+   :target: https://github.com/pyinstaller/pyinstaller/blob/3.1.1/doc/CHANGES.rst
    :alt: Changelog
 
 .. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
