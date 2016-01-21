@@ -35,15 +35,16 @@ def get_repo_revision():
             pass
         return ''
     try:
-        rev = exec_command('git', 'rev-parse', '--short', 'HEAD', cwd=cwd).strip()
-        if rev:
-            # need to update index first to get reliable state
-            exec_command_rc('git', 'update-index', '-q', '--refresh', cwd=cwd)
-            changed = exec_command_rc('git', 'diff-index', '--quiet', 'HEAD', cwd=cwd)
-            if changed:
-                rev += '.mod'
-            # According to pep440 local version identifier starts with '+'.
-            return '+' + rev
+        # need to update index first to get reliable state
+        exec_command_rc('git', 'update-index', '-q', '--refresh', cwd=cwd)
+        recent = exec_command('git', 'describe', '--long', '--dirty', cwd=cwd).strip()
+        tag, changes, rev = recent.rsplit('-', 2)
+        if changes == '0':
+            return ''
+        if rev == 'dirty':
+            rev = changes + '.mod'
+        # According to pep440 local version identifier starts with '+'.
+        return '+' + rev
     except (FileNotFoundError, WindowsError):
         # Be silent when git command is not found.
         pass
