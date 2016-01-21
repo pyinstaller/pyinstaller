@@ -358,15 +358,7 @@ def test_nspkg1_bbb_zzz(pyi_builder):
 
 def test_nspkg2(pyi_builder):
     # Test inclusion of namespace packages implemented as nspkg.pth-files
-
-    # When Python starts up, it scans sys.path for .pth files. Since
-    # this .pth-file does not reside on a sys.path-dir, we need to
-    # scan for it manually.
-    import site
-    orig_sys_path = sys.path
-    pathex = site.addsitedir(os.path.join(_MODULES_DIR, 'nspkg2-pkg'), set())
-    sys.path = orig_sys_path
-
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg2-pkg'))
     pyi_builder.test_source(
         """
         import nspkg2.aaa

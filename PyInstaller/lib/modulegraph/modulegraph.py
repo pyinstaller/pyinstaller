@@ -607,10 +607,14 @@ class ModuleGraph(ObjectGraph):
             self.lazynodes[m] = None
         self.replace_paths = replace_paths
 
-        self.nspackages = self._calc_setuptools_nspackages()
+        self.set_setuptools_nspackages()
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
+
+    def set_setuptools_nspackages(self):
+        # This is used when running in the test-suite
+        self.nspackages = self._calc_setuptools_nspackages()
 
     def _calc_setuptools_nspackages(self):
         # Setuptools has some magic handling for namespace
