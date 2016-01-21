@@ -24,9 +24,10 @@ import pytest
 # This test-cases test the return values of these functions for
 # importers from pyimod03_importers module.
 
-# Note: The modules should be at the end of the resp. code. Otherwise
-#       pkgutil-functions take a fery different branch (since the
-#       module is already in sys.modules).
+# Note: The modules need to be imported at the end of the resp. code.
+#       Otherwise the pkgutil-functions take a very different branch
+#       (since the module is already in sys.modules) and what we want
+#       to test will not be tested.
 
 
 def test_pep302_loader_builtin(pyi_builder):

@@ -1,0 +1,4 @@
+[
+ 'nspkg3',
+ 'nspkg3.aaa',
+]

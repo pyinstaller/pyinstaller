@@ -332,6 +332,7 @@ class Analysis(Target):
         # The attribute is the set of paths to use for imports: sys.path,
         # plus our loader, plus other paths from e.g. --path option).
         self.graph.path = self.pathex + self.graph.path
+        self.graph.set_setuptools_nspackages()
 
         # Analyze the script's hidden imports (named on the command line)
         self.graph.add_hiddenimports(self.hiddenimports)
