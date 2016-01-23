@@ -59,6 +59,13 @@ def test_pyz_as_external_file(pyi_builder, monkeypatch):
 
     pyi_builder.test_source("print('Hello Python!')")
 
+def test_base_modules_regex(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import resources_testmod
+        print('OK')
+        """)
+
 
 def test_celementtree(pyi_builder):
     pyi_builder.test_source(
