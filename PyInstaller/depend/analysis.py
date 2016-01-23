@@ -288,7 +288,11 @@ class PyiModuleGraph(ModuleGraph):
         """
         # Construct regular expression for matching modules that should be
         # excluded because they are bundled in base_library.zip.
-        regex_str = '|'.join(['(%s.*)' % x for x in PY3_BASE_MODULES])
+        #
+        # This expression matches the base module name, optionally followed by
+        # a period and then any number of characters. This matches the module name and
+        # the fully qualified names of any of its submodules.
+        regex_str = '|'.join([r'(%s(?:\..*)?)$' % x for x in PY3_BASE_MODULES])
         module_filter = re.compile(regex_str)
 
         result = existing_TOC or TOC()
