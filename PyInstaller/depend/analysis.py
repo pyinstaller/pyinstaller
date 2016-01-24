@@ -292,7 +292,7 @@ class PyiModuleGraph(ModuleGraph):
         # This expression matches the base module name, optionally followed by
         # a period and then any number of characters. This matches the module name and
         # the fully qualified names of any of its submodules.
-        regex_str = '|'.join([r'(%s(?:\..*)?)$' % x for x in PY3_BASE_MODULES])
+        regex_str = '(' + '|'.join(PY3_BASE_MODULES) + r')(\.|$)'
         module_filter = re.compile(regex_str)
 
         result = existing_TOC or TOC()
