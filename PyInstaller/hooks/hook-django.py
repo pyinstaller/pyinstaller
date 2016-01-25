@@ -16,7 +16,7 @@ import glob
 import os
 from PyInstaller import log as logging
 from PyInstaller.utils.hooks import django_find_root_dir, django_dottedstring_imports, \
-        collect_data_files, collect_submodules, get_module_file_attribute
+        collect_data_files, collect_submodules, get_module_file_attribute, get_module_attribute
 
 
 logger = logging.getLogger(__name__)
@@ -76,36 +76,31 @@ if root_dir:
     # Bundle django DB schema migration scripts as data files.
     # They are necessary for some commands.
     logger.info('Collecting Django migration scripts.')
-    django_mod_dir = os.path.dirname(get_module_file_attribute('django'))
     migration_modules = [
-             'conf.app_template.migrations',
-             'contrib.admin.migrations',
-             'contrib.auth.migrations',
-             'contrib.contenttypes.migrations',
-             'contrib.flatpages.migrations',
-             'contrib.redirects.migrations',
-             'contrib.sessions.migrations',
-             'contrib.sites.migrations',
+             'django.conf.app_template.migrations',
+             'django.contrib.admin.migrations',
+             'django.contrib.auth.migrations',
+             'django.contrib.contenttypes.migrations',
+             'django.contrib.flatpages.migrations',
+             'django.contrib.redirects.migrations',
+             'django.contrib.sessions.migrations',
+             'django.contrib.sites.migrations',
     ]
-    for mod in migration_modules:
-        bundle_dir = mod.replace('.', os.sep)
-        pattern = os.path.join(django_mod_dir, bundle_dir, '*.py')
-        files = glob.glob(pattern)
-        for f in files:
-            datas.append((f, os.path.join('django', bundle_dir)))
     # Include migration scripts of Django-based apps too.
-    settings_module = __import__(package_name + '.settings', globals(), locals(), ['INSTALLED_APPS'], 0)
-    installed_apps = settings_module.INSTALLED_APPS
+    installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
     for app in installed_apps:
         migration_mod = app + '.migrations'
         if migration_mod not in migration_modules:
             migration_modules.append(migration_mod)
+    # Copy migration files.
     for mod in migration_modules:
-        bundle_dir = mod.replace('.', os.sep)
-        pattern = os.path.join(bundle_dir, '*.py')
+        mod_name, sep, bundle_name = mod.partition('.')
+        mod_dir = os.path.dirname(get_module_file_attribute(mod_name))
+        bundle_dir = bundle_name.replace('.', os.sep)
+        pattern = os.path.join(mod_dir, bundle_dir, '*.py')
         files = glob.glob(pattern)
         for f in files:
-            datas.append((f, bundle_dir))
+            datas.append((f, os.path.join(mod_name, bundle_dir)))
 
     # Include data files from your Django project found in your django root package.
     datas += collect_data_files(package_name)
