@@ -93,6 +93,19 @@ if root_dir:
         files = glob.glob(pattern)
         for f in files:
             datas.append((f, os.path.join('django', bundle_dir)))
+    # Include migration scripts of Django-based apps too.
+    settings_module = __import__(package_name + '.settings', globals(), locals(), ['INSTALLED_APPS'], 0)
+    installed_apps = settings_module.INSTALLED_APPS
+    for app in installed_apps:
+        migration_mod = app + '.migrations'
+        if migration_mod not in migration_modules:
+            migration_modules.append(migration_mod)
+    for mod in migration_modules:
+        bundle_dir = mod.replace('.', os.sep)
+        pattern = os.path.join(bundle_dir, '*.py')
+        files = glob.glob(pattern)
+        for f in files:
+            datas.append((f, bundle_dir))
 
     # Include data files from your Django project found in your django root package.
     datas += collect_data_files(package_name)
