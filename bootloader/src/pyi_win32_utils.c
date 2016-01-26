@@ -193,7 +193,7 @@ char * pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr) {
         wstr_sfn = (wchar_t *)malloc(sizeof(wchar_t) * wsfnlen + 1);
         ret = GetShortPathNameW(wstr, wstr_sfn, wsfnlen);
         if(ret) {
-            str = pyi_win32_wcs_to_mbs(wstr);
+            str = pyi_win32_wcs_to_mbs(wstr_sfn);
         }
         free(wstr_sfn);
     }
