@@ -1,6 +1,18 @@
 Changelog for PyInstaller
 =========================
 
+3.1.1 (unreleased)
+------------------
+
+Fixed the following issues:
+
+- Fix problems with setuptools 19.4 (#1772, #1773, #1790, #1791)
+- 3.1 does not collect certain direct imports (#1780)
+- Git reports wrong version even if on unchanged release (#1778)
+- Don't resolve symlinks in modulegraph.py (#1750, #1755)
+- ShortFileName not returned in win32 util (#1799)
+
+
 3.1 (2016-01-09)
 ----------------
 
