@@ -201,7 +201,7 @@ char * pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr) {
         VS("Failed to get short path name for filename. GetShortPathNameW: \n%s",
                    GetWinErrorString()
                    );
-        str = pyi_win32_wcs_to_mbs(wstr_sfn);
+        str = pyi_win32_wcs_to_mbs(wstr);
     }
     return str;
 }
