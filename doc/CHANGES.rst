@@ -1,7 +1,7 @@
 Changelog for PyInstaller
 =========================
 
-3.1.1 (unreleased)
+3.1.1 (2016-01-31)
 ------------------
 
 Fixed the following issues:
