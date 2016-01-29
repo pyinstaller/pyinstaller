@@ -2231,7 +2231,7 @@ This will not tell your user anything useful,
 but if they send you a Python error trace,
 you can make sense of it.
 
-|ZlibArchiveImage|
+.. image:: images/ZlibArchive.png
 
 
 CArchive
@@ -2267,7 +2267,9 @@ functionality. For this reason, a CArchive's Table of Contents is
 at the end of the archive. The executable can open itself as a binary
 file, seek to the end and 'open' the CArchive.
 
-|CArchiveImage|
+.. image:: images/CArchive.png
+
+.. image:: images/SE_exe.png
 
 
 Using pyi-archive_viewer
@@ -3056,11 +3058,6 @@ do so by specifying --no-lsb on the waf command line, as follows::
 This will also produce ``support/loader/YOUR_OS/run``,
 ``support/loader/YOUR_OS/run_d``, ``support/loader/YOUR_OS/runw`` and
 ``support/loader/YOUR_OS/runw_d``, but they will not be LSB binaries.
-
-
-.. |CArchiveImage| image:: images/CArchive.png
-.. |SE_exeImage| image:: images/SE_exe.png
-.. |ZlibArchiveImage| image:: images/ZlibArchive.png
 
 .. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
 .. _`Apple bundle overview`: https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html
