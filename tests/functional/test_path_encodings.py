@@ -167,6 +167,6 @@ def test_win_non_codepage_path(pyi_builder, monkeypatch):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 @skipif_notwin
-@pytest.mark.skip(is_py2, reason="Python 3 only.")
+@pytest.mark.skipif(is_py2, reason="Python 3 only.")
 def test_win_py3_no_shortpathname(pyi_builder):
     pyi_builder.test_script('pyi_win_py3_no_shortpathname.py')

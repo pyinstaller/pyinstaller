@@ -6,6 +6,18 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 3.1.1
+----------------------------------
+
+- Hartmut Goebel - Core developer and release manager.
+- David Vierra - Core developer and encoding specialist.
+- Torsten Landschoff - Fix problems with setuptools
+- Peter Inglesby - resolve symlinks in modulegraph.py
+- syradium - bug hunting
+- dessant - bug hunting
+- Joker Qyou - bug hunting
+
+
 Contributions to PyInstaller 3.1
 --------------------------------
 

@@ -41,6 +41,36 @@ def test_absolute_python_path(pyi_builder):
     pyi_builder.test_script('pyi_absolute_python_path.py')
 
 
+def test_pyz_as_external_file(pyi_builder, monkeypatch):
+    # This tests the not well documented and seldom used feature of
+    # having the PYZ-archive in a separate file (.pkg).
+
+    def MyEXE(*args, **kwargs):
+        kwargs['append_pkg'] = False
+        return EXE(*args, **kwargs)
+
+    # :todo: find a better way to not even run this test in ondir-mode
+    if pyi_builder._mode == 'onefile':
+        pytest.skip('only --onedir')
+
+    import PyInstaller
+    EXE = PyInstaller.building.build_main.EXE
+    monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
+
+    pyi_builder.test_source("print('Hello Python!')")
+
+def test_base_modules_regex(pyi_builder):
+    """
+    Verify that the regex for excluding modules listed in
+    PY3_BASE_MODULES does not exclude other modules.
+    """
+    pyi_builder.test_source(
+        """
+        import resources_testmod
+        print('OK')
+        """)
+
+
 def test_celementtree(pyi_builder):
     pyi_builder.test_script('pyi_celementtree.py')
 
