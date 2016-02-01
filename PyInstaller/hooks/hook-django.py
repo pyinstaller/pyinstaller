@@ -88,13 +88,10 @@ if root_dir:
     ]
     # Include migration scripts of Django-based apps too.
     installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
-    for app in installed_apps:
-        migration_mod = app + '.migrations'
-        if migration_mod not in migration_modules:
-            migration_modules.append(migration_mod)
+    migration_modules.extend(set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
     for mod in migration_modules:
-        mod_name, sep, bundle_name = mod.partition('.')
+        mod_name, bundle_name = mod.split('.', 1)
         mod_dir = os.path.dirname(get_module_file_attribute(mod_name))
         bundle_dir = bundle_name.replace('.', os.sep)
         pattern = os.path.join(mod_dir, bundle_dir, '*.py')
