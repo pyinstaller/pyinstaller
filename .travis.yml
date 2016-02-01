@@ -84,4 +84,5 @@ notifications:
         channels:
             - "irc.freenode.org#pyinstaller"
         use_notice: true
-        skip_join: true
+        # skip_join: true would require +n mode *not to be set on #pyinstaller
+        skip_join: false
