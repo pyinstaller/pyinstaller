@@ -22,8 +22,8 @@ hiddenimports = collect_submodules('wx.lib.pubsub')
 
 pubsub_datas = collect_data_files('wx.lib.pubsub', include_py_files=True)
 
-def _match(dst):
-    # Since ``pubsub1`` and ``pubsub2`` are directories, they shoud up in dst.
+def _match(src, dst):
+    # Since ``pubsub1`` and ``pubsub2`` are directories, they should be in dst.
     # However, ``autosetuppubsubv1`` is a ``.py`` file, so it will only appear
     # in the ``src``. For example::
     #
@@ -31,4 +31,4 @@ def _match(dst):
     #       'wx\\lib\\pubsub') ]
     return "pubsub1" in dst or "pubsub2" in dst or "autosetuppubsubv1" in src
 
-datas = [(src, dst) for src, dst in pubsub_datas if _match(dst)]
+datas = [(src, dst) for src, dst in pubsub_datas if _match(src, dst)]
