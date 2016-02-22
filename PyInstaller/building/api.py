@@ -20,14 +20,13 @@ import tempfile
 import pkgutil
 import pprint
 import sys
-import subprocess
 from operator import itemgetter
 
-from PyInstaller import is_win, is_darwin, HOMEPATH, PLATFORM
+from PyInstaller import is_win, is_darwin, is_linux, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc_mtime, _check_guts_toc, add_suffix_to_extensions, \
     checkCache, _check_path_overlap, _rmtree
-from PyInstaller.compat import is_cygwin
+from PyInstaller.compat import is_cygwin, exec_command_all
 from PyInstaller.config import CONF
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
@@ -637,21 +636,29 @@ class EXE(Target):
             exe = tmpnm
         exe = checkCache(exe, strip=self.strip, upx=self.upx)
         self.copy(exe, outf)
-        if subprocess.check_call(['objcopy','--help']) != 0:
-            if self.append_pkg:
+        if self.append_pkg:
+            if is_linux:
+                outf.close()
+                logger.info("Appending archive to ELF section in EXE %s", self.name)
+                retcode, stdout, stderr = exec_command_all(*['objcopy',
+                                                             '--add-section',
+                                                             'pydata=%s' % self.pkg.name, 
+                                                             self.name])
+                logger.debug("objcopy:%i", retcode)
+                logger.debug(stdout)
+                logger.debug(stderr)
+                if retcode != 0:
+                    raise SystemError("objcopy Failure")
+            else:
+                # Fall back to just append on end of file
                 logger.info("Appending archive to EXE %s", self.name)
                 self.copy(self.pkg.name, outf)
-            else:
-                logger.info("Copying archive to %s", self.pkgname)
-                shutil.copy(self.pkg.name, self.pkgname)
-            outf.close()
+                outf.close()
         else:
             outf.close()
-            if subprocess.check_call(['objcopy',
-                                      '--add-section',
-                                      'pydata=%s' % self.pkg.name, 
-                                      self.name]) != 0:
-                raise SystemError("objcopy Failure")
+            logger.info("Copying archive to %s", self.pkgname)
+            shutil.copy(self.pkg.name, self.pkgname)
+            
 
         if is_darwin:
             # Fix Mach-O header for codesigning on OS X.

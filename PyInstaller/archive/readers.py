@@ -143,15 +143,23 @@ class CArchiveReader(ArchiveReader):
         else:
             self.lib.seek(0, 2)
         filelen = self.lib.tell()
-        if self.length:
-            self.lib.seek(self.start + self.length - self._cookie_size, 0)
-        else:
-            self.lib.seek(-self._cookie_size, 2)
-        (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
+        found = False
+        for i in range(4096):
+            self.lib.seek(filelen-self._cookie_size, 0)
+            (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
                 self._cookie_format, self.lib.read(self._cookie_size))
-        if magic != self.MAGIC:
+            if magic != self.MAGIC:
+                filelen -= 1
+            else:
+                found = True
+                break
+                
+                
+        if not found:
             raise RuntimeError("%s is not a valid %s archive file" %
-                    (self.path, self.__class__.__name__))
+                               (self.path, self.__class__.__name__))
+
+
         self.pkg_start = filelen - totallen
         if self.length:
             if totallen != self.length or self.pkg_start != self.start:

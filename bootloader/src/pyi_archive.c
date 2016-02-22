@@ -330,9 +330,6 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 #if defined(WIN32)
     int i;
     int alignment = 8;
-#elif defined(__APPLE__)
-    int i;
-    int alignment = 4096;
 #else
     int i;
     int alignment = 4096;
@@ -356,8 +353,8 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 		filelen = findDigitalSignature(status);
 		if (filelen < 1)
 			return -1;
-#else
-		VS("LOADER: Search fopr cookie");
+#endif
+		VS("LOADER: Search for cookie");
 		/* The digital signature has been aligned to a boundary.
 		   We need to look for our cookie taking into account some
 		   padding. */
@@ -374,7 +371,6 @@ int pyi_arch_open(ARCHIVE_STATUS *status)
 		}
 		VS("LOADER: package found skipping digital signature in %s\n", status->archivename);
 
-#endif
 	}
 
     /* Set the flag that Python library was not loaded yet. */

@@ -177,7 +177,6 @@ def test_getfilesystemencoding(pyi_builder):
 def test_helloworld(pyi_builder):
     pyi_builder.test_source("print('Hello Python!')")
 
-
 def test_module__file__attribute(pyi_builder):
     pyi_builder.test_script('pyi_module__file__attribute.py')
 
