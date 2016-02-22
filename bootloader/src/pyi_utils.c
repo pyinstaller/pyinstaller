@@ -670,44 +670,8 @@ int pyi_utils_create_child(const char *thisfile, const int argc, char *const arg
     process_apple_events_new();
 #endif
 
-
-    pid = fork();
-
-    /* Child code. */
-    if (pid == 0)
-        /* Replace process by starting a new application. */
-        execvp(thisfile, argv_pyi);
-    /* Parent code. */
-    else
-    {
-        child_pid = pid;
-
-        /* Redirect termination signals received by parent to child process. */
-        signal(SIGINT, &_signal_handler);
-        signal(SIGKILL, &_signal_handler);
-        signal(SIGTERM, &_signal_handler);
-    }
-
-    wait(&rc);
-
-    /* Parent code. */
-    if(child_pid != 0 )
-    {
-        /* When child process exited, reset signal handlers to default values. */
-        signal(SIGINT, SIG_DFL);
-        signal(SIGKILL, SIG_DFL);
-        signal(SIGTERM, SIG_DFL);
-
-        for (i = 0; i < argc_pyi; i++) free(argv_pyi[i]);
-        free(argv_pyi);
-    }
-    if (WIFEXITED(rc))
-        return WEXITSTATUS(rc);
-    /* Process ended abnormally */
-    if (WIFSIGNALED(rc))
-        /* Mimick the signal the child received */
-        raise(WTERMSIG(rc));
-    return 1;
+    /* Replace process by starting a new application. */
+    execvp(thisfile, argv_pyi);
 }
 
 
