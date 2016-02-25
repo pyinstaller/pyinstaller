@@ -608,62 +608,6 @@ def test_usb(pyi_builder):
         """)
 
 
-@importorskip('gi.repository.Gio')
-def test_gi_gio_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('Gio', '2.0')
-        from gi.repository import Gio
-        print(Gio)
-        """)
-
-
-@importorskip('gi.repository.GLib')
-def test_gi_glib_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('GLib', '2.0')
-        from gi.repository import GLib
-        print(GLib)
-        """)
-
-
-@importorskip('gi.repository.GModule')
-def test_gi_gmodule_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('GModule', '2.0')
-        from gi.repository import GModule
-        print(GModule)
-        """)
-
-
-@importorskip('gi.repository.GObject')
-def test_gi_gobject_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('GObject', '2.0')
-        from gi.repository import GObject
-        print(GObject)
-        """)
-
-
-@importorskip('gi.repository.Gst')
-def test_gi_gst_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('Gst', '1.0')
-        from gi.repository import Gst
-        Gst.init(None)
-        print(Gst)
-        """)
-
-
 @importorskip('PIL')
 @pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
 def test_pil_img_conversion(pyi_builder_spec):
