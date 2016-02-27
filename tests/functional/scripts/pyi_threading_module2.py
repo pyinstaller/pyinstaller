@@ -43,8 +43,13 @@ else:
     itself = sys.argv[0]
     # Run subprocess.
     import subprocess
+
+    # Preserve environment to avoid `Failed to initialize Windows random API (CryptoGen)`
+    env = dict(os.environ)
+    env['PYI_THREAD_TEST_CASE'] = 'yes'
+
     proc = subprocess.Popen([itself], stdout=subprocess.PIPE,
-                            env={'PYI_THREAD_TEST_CASE': 'yes'},
+                            env=env,
                             stderr=subprocess.PIPE, shell=False)
     # Waits for subprocess to complete.
     out, err = proc.communicate()
@@ -61,4 +66,7 @@ else:
             out.remove(line)
     # Check output.
     if out != _OUT_EXPECTED:
-        raise SystemExit('Subprocess did not print ONE, TWO, THREE in correct order.')
+        print(" +++++++ SUBPROCESS ERROR OUTPUT +++++++")
+        print(err)
+        raise SystemExit('Subprocess did not print ONE, TWO, THREE in correct order. '
+                         '(output was %r, return code was %s)' % (out, proc.returncode))
