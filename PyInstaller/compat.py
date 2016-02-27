@@ -14,6 +14,7 @@ with previous versions of Python from 2.7 onward.
 """
 
 
+import io
 import os
 import platform
 import site
@@ -79,6 +80,12 @@ else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
 
+
+# Function with which to open files. In Python 3, this is the open() built-in;
+# in Python 2, this is the Python 3 open() built-in backported into the "io"
+# module as io.open(). The Python 2 open() built-in is commonly regarded as
+# unsafe in regards to character encodings and hence inferior to io.open().
+open_file = open if is_py3 else io.open
 
 # In Python 3 there is exception FileExistsError. But it is not available
 # in Python 2. For Python 2 fall back to OSError exception.
@@ -363,7 +370,7 @@ def __wrap_python(args, kwargs):
         env['PYTHONIOENCODING'] = 'UTF-8'
         # ... and ensure we read output as utf-8
         kwargs['encoding'] = 'UTF-8'
-     
+
     return cmdargs, kwargs
 
 
@@ -453,7 +460,7 @@ def __add_obsolete_options(parser):
     print error message when they are present.
     """
     g = parser.add_argument_group('Obsolete options (not used anymore)')
-    g.add_argument(*_OLD_OPTIONS, 
+    g.add_argument(*_OLD_OPTIONS,
                    action=__obsolete_option,
                    help='These options do not exist anymore.')
 
