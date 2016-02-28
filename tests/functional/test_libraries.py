@@ -578,7 +578,8 @@ def test_pil_img_conversion(pyi_builder_spec):
 
 
 @xfail(is_darwin, reason='Issue #1895.')
-@importorskip('PIL', 'FixTk')
+@importorskip('PIL')
+@importorskip('FixTk')
 def test_pil_FixTk(pyi_builder):
     # hook-PIL is excluding FixTk, but is must still be included
     # since it is imported elsewhere. Also see issue #1584.
@@ -591,7 +592,8 @@ def test_pil_FixTk(pyi_builder):
     import FixTk, PIL
     """)
 
-@importorskip('PIL.ImageQt', 'PyQt5')
+@importorskip('PIL.ImageQt')
+@importorskip('PyQt5')
 def test_pil_PyQt5(pyi_builder):
     # hook-PIL is excluding PyQt5, but is must still be included
     # since it is imported elsewhere. Also see issue #1584.
@@ -601,7 +603,8 @@ def test_pil_PyQt5(pyi_builder):
     import PIL.ImageQt
     """)
 
-@importorskip('PIL.ImageQt', 'PyQt4')
+@importorskip('PIL.ImageQt')
+@importorskip('PyQt4')
 def test_pil_PyQt4(pyi_builder):
     # hook-PIL is excluding PyQt4, but is must still be included
     # since it is imported elsewhere. Also see issue #1584.
