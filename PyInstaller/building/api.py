@@ -658,7 +658,6 @@ class EXE(Target):
             outf.close()
             logger.info("Copying archive to %s", self.pkgname)
             shutil.copy(self.pkg.name, self.pkgname)
-            
 
         if is_darwin:
             # Fix Mach-O header for codesigning on OS X.
