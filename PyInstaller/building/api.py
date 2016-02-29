@@ -636,28 +636,27 @@ class EXE(Target):
             exe = tmpnm
         exe = checkCache(exe, strip=self.strip, upx=self.upx)
         self.copy(exe, outf)
-        if self.append_pkg:
-            if is_linux:
-                outf.close()
-                logger.info("Appending archive to ELF section in EXE %s", self.name)
-                retcode, stdout, stderr = exec_command_all(*['objcopy',
-                                                             '--add-section',
-                                                             'pydata=%s' % self.pkg.name, 
-                                                             self.name])
-                logger.debug("objcopy:%i", retcode)
-                logger.debug(stdout)
-                logger.debug(stderr)
-                if retcode != 0:
-                    raise SystemError("objcopy Failure")
-            else:
-                # Fall back to just append on end of file
-                logger.info("Appending archive to EXE %s", self.name)
-                self.copy(self.pkg.name, outf)
-                outf.close()
-        else:
+        if not self.append_pkg:
             outf.close()
             logger.info("Copying archive to %s", self.pkgname)
             shutil.copy(self.pkg.name, self.pkgname)
+        elif is_linux:
+            outf.close()
+            logger.info("Appending archive to ELF section in EXE %s", self.name)
+            retcode, stdout, stderr = exec_command_all(*['objcopy',
+                                                         '--add-section',
+                                                         'pydata=%s' % self.pkg.name,
+                                                         self.name])
+            logger.debug("objcopy:%i", retcode)
+            logger.debug(stdout)
+            logger.debug(stderr)
+            if retcode != 0:
+                raise SystemError("objcopy Failure")
+        else:
+            # Fall back to just append on end of file
+            logger.info("Appending archive to EXE %s", self.name)
+            self.copy(self.pkg.name, outf)
+            outf.close()
 
         if is_darwin:
             # Fix Mach-O header for codesigning on OS X.
