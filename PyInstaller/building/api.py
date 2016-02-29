@@ -644,10 +644,9 @@ class EXE(Target):
         elif is_linux:
             self._copyfile(exe, self.name)
             logger.info("Appending archive to ELF section in EXE %s", self.name)
-            retcode, stdout, stderr = exec_command_all(*['objcopy',
-                                                         '--add-section',
-                                                         'pydata=%s' % self.pkg.name,
-                                                         self.name])
+            retcode, stdout, stderr = exec_command_all(
+                'objcopy', '--add-section', 'pydata=%s' % self.pkg.name,
+                self.name)
             logger.debug("objcopy:%i", retcode)
             logger.debug(stdout)
             logger.debug(stderr)
@@ -669,7 +668,6 @@ class EXE(Target):
             logger.info("Fixing EXE for code signing %s", self.name)
             import PyInstaller.utils.osx as osxutils
             osxutils.fix_exe_for_code_signing(self.name)
-            pass
 
         os.chmod(self.name, 0o755)
         # get mtime for storing into the guts
