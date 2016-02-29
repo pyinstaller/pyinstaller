@@ -103,6 +103,9 @@ Requirements and Tested Platforms
  - objdump: Console application to display information from 
    object files. This typically can be found in the
    distribution-package `binutils`.
+ - objcopy: Console application to copy and translate object files.
+   This typically can be found in the distribution-package `binutils`,
+   too.
 
 - Mac OS X (64bit):
 

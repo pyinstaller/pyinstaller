@@ -77,8 +77,10 @@ the shared libraries required by each program or shared library.
 It is typically found in the distribution-package ``glibc`` or ``libc-bin``.
 
 It also requires the ``objdump`` terminal application to extract
-information from object files.
-This is typically found in the distribution-package ``binutils``.
+information from object files
+and the ``objcopy`` terminal application to append data to the
+bootloader.
+These are typically found in the distribution-package ``binutils``.
 
 AIX, Solaris, and FreeBSD
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
