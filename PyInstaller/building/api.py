@@ -572,7 +572,6 @@ class EXE(Target):
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
-        outf = open(self.name, 'wb')
         exe = self.exefiles[0][1]  # pathname of bootloader
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
@@ -580,7 +579,7 @@ class EXE(Target):
 
         if is_win and (self.icon or self.versrsrc or self.resources):
             tmpnm = tempfile.mktemp()
-            shutil.copy(exe, tmpnm)
+            self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
             if self.icon:
                 icon.CopyIcons(tmpnm, self.icon)
@@ -634,14 +633,16 @@ class EXE(Target):
                                      restype, resname, tmpnm, resfile, exc_info=1)
             trash.append(tmpnm)
             exe = tmpnm
+
         exe = checkCache(exe, strip=self.strip, upx=self.upx)
-        self.copy(exe, outf)
+
         if not self.append_pkg:
-            outf.close()
+            logger.info("Copying bootloader exe to %s", self.name)
+            self._copyfile(exe, self.name)
             logger.info("Copying archive to %s", self.pkgname)
-            shutil.copy(self.pkg.name, self.pkgname)
+            self._copyfile(self.pkg.name, self.pkgname)
         elif is_linux:
-            outf.close()
+            self._copyfile(exe, self.name)
             logger.info("Appending archive to ELF section in EXE %s", self.name)
             retcode, stdout, stderr = exec_command_all(*['objcopy',
                                                          '--add-section',
@@ -655,8 +656,13 @@ class EXE(Target):
         else:
             # Fall back to just append on end of file
             logger.info("Appending archive to EXE %s", self.name)
-            self.copy(self.pkg.name, outf)
-            outf.close()
+            with open(self.name, 'wb') as outf:
+                # write the bootloader data
+                with open(exe, 'rb') as infh:
+                    shutil.copyfileobj(infh, outf, length=64*1024)
+                # write the archive data
+                with open(self.pkg.name, 'rb') as infh:
+                    shutil.copyfileobj(infh, outf, length=64*1024)
 
         if is_darwin:
             # Fix Mach-O header for codesigning on OS X.
@@ -672,13 +678,10 @@ class EXE(Target):
             os.remove(item)
 
 
-    def copy(self, fnm, outf):
-        inf = open(fnm, 'rb')
-        while 1:
-            data = inf.read(64 * 1024)
-            if not data:
-                break
-            outf.write(data)
+    def _copyfile(self, infile, outfile):
+        with open(infile, 'rb') as infh:
+            with open(outfile, 'wb') as outfh:
+                shutil.copyfileobj(infh, outfh, length=64*1024)
 
 
 class COLLECT(Target):
