@@ -387,6 +387,11 @@ def configure(ctx):
         # On Mac OS X is 'mkdtemp' available only with _DARWIN_C_SOURCE.
         if is_darwin:
             ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
+        # Macro _FORTIFY_SOURCE forces some checks to detect some buffer overflow errors
+        # in various string and memory manipulation functions.
+        # TODO What other platforms support _FORTIFY_SOURCE macro? OS X?
+        if is_linux and ctx.env.CC_NAME == 'gcc':
+            ctx.env.append_value('DEFINES', '_FORTIFY_SOURCE=2')
 
     if is_win:
         ctx.env.append_value('DEFINES', 'WIN32')
