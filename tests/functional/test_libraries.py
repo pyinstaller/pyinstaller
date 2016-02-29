@@ -538,43 +538,6 @@ def test_twisted(pyi_builder):
             raise SystemExit('Twisted reactor not properly initialized.')
         """)
 
-# matplotlib tries to import any of PyQt4, PyQt5 or PySide. But if we
-# have more then one of these in the frozen app, the app's
-# runtime-hooks will crash. Thus we need to exclude the other two.
-all_qt_pkgs = ['PyQt4', 'PyQt5', 'PySide']
-excludes = []
-for pkg in all_qt_pkgs:
-    p = [p for p in all_qt_pkgs]
-    p = importorskip(pkg)(p)
-    excludes.append(p)
-
-@importorskip('matplotlib')
-@pytest.mark.parametrize("excludes", excludes, ids=all_qt_pkgs)
-def test_matplotlib(pyi_builder, excludes):
-    pyi_args = ['--exclude-module=%s' % e for e in excludes]
-    pyi_builder.test_source(
-        """
-        import os
-        import matplotlib
-        import sys
-        import tempfile
-        # In frozen state rthook should force matplotlib to create config directory
-        # in temp directory and not $HOME/.matplotlib.
-        configdir = os.environ['MPLCONFIGDIR']
-        print(('MPLCONFIGDIR: %s' % configdir))
-        if not configdir.startswith(tempfile.gettempdir()):
-            raise SystemExit('MPLCONFIGDIR not pointing to temp directory.')
-        # matplotlib data directory should point to sys._MEIPASS.
-        datadir = os.environ['MATPLOTLIBDATA']
-        print(('MATPLOTLIBDATA: %s' % datadir))
-        if not datadir.startswith(sys._MEIPASS):
-            raise SystemExit('MATPLOTLIBDATA not pointing to sys._MEIPASS.')
-        # This import was reported to fail with matplotlib 1.3.0.
-        from mpl_toolkits import axes_grid1
-        """, pyi_args=pyi_args)
-
-del all_qt_pkgs, excludes
-
 
 @importorskip('pyexcelerate')
 @pytest.mark.xfail(reason='TODO - known to fail')
