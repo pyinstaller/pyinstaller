@@ -493,15 +493,27 @@ def test_scapy3(pyi_builder):
 def test_scipy(pyi_builder):
     pyi_builder.test_source(
         """
-        # General SciPy import.
+        from distutils.version import LooseVersion
+
+        # Test top-level SciPy importability.
+        import scipy
         from scipy import *
-        # Test import hooks for the following modules.
+
+        # Test hooked SciPy modules.
         import scipy.io.matlab
         import scipy.sparse.csgraph
-        # Some other "problematic" scipy submodules.
-        import scipy.lib
+
+        # Test problematic SciPy modules.
         import scipy.linalg
         import scipy.signal
+
+        # SciPy >= 0.16 privatized the previously public "scipy.lib" package as
+        # "scipy._lib". Since this package is problematic, test its
+        # importability regardless of SciPy version.
+        if LooseVersion(scipy.__version__) >= LooseVersion('0.16.0'):
+            import scipy._lib
+        else:
+            import scipy.lib
         """)
 
 
