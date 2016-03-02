@@ -19,13 +19,13 @@ import time
 import requests
 
 """
-Note: to re-create the test_requests_server.pem file use the
+Note: to re-create the server.pem file use the
 following commands.
 
-cd /path/to/pyinstaller.git/tests/libraries
-openssl req -new -x509 -keyout test_requests_server.pem \
-    -out test_requests_server.pem -days 365 \
-    -nodes -config test_requests_openssl.conf
+cd /path/to/pyinstaller.git/tests/functional
+openssl req -new -x509 -keyout data/requests/server.pem \
+    -text -out data/requests/server.pem -days 36500 \
+    -nodes -config data/requests/openssl.conf
 """
 
 if getattr(sys, 'frozen', False):
@@ -37,7 +37,7 @@ else:
 
 
 SERVER_PORT = 8443
-SERVER_CERT = os.path.join(basedir, u"test_requests_server.pem")
+SERVER_CERT = os.path.join(basedir, u"server.pem")
 
 
 if not os.path.exists(SERVER_CERT):

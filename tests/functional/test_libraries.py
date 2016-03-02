@@ -358,6 +358,30 @@ def test_pycrypto(pyi_builder):
             AES.new("\\0" * BLOCK_SIZE).encrypt("\\0" * BLOCK_SIZE)))
         """)
 
+@importorskip('requests')
+def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
+    # Note that including the data_dir fixture copies files needed by this test.
+
+    from PyInstaller.building.build_main import Analysis
+    class MyAnalysis(Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['datas'] = datas
+            # Setting back is required to make `super()` within
+            # Analysis access the correct class. Do not use
+            # `monkeypatch.undo()` as this will undo *all*
+            # monkeypathes.
+            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
+                                Analysis)
+            super(MyAnalysis, self).__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
+
+    # Include the data files.
+    # :fixme: When PyInstaller supports setting datas via the
+    # command-line, us this here instead of monkeypatching Analysis.
+    datas = [(str(data_dir.join('*')), '.')]
+    pyi_builder.test_script('pyi_lib_requests.py')
+
 
 @importorskip('sqlite3')
 def test_sqlite3(pyi_builder):
