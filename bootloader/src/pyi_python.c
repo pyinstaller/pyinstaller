@@ -45,11 +45,9 @@ DECLVAR(Py_VerboseFlag);
 // functions with prefix `Py_`
 DECLPROC(Py_BuildValue);
 DECLPROC(Py_DecRef);
-DECLPROC(Py_EndInterpreter);
 DECLPROC(Py_Finalize);
 DECLPROC(Py_IncRef);
 DECLPROC(Py_Initialize);
-DECLPROC(Py_NewInterpreter);
 DECLPROC(Py_SetPath);
 DECLPROC(Py_SetProgramName);
 DECLPROC(Py_SetPythonHome);
@@ -59,9 +57,7 @@ DECLPROC(PyDict_GetItemString);
 DECLPROC(PyErr_Clear);
 DECLPROC(PyErr_Occurred);
 DECLPROC(PyErr_Print);
-DECLPROC(PyEval_AcquireThread);
-DECLPROC(PyEval_InitThreads);
-DECLPROC(PyEval_ReleaseThread);
+
 DECLPROC(PyImport_AddModule);
 DECLPROC(PyImport_ExecCodeModule);
 DECLPROC(PyImport_ImportModule);
@@ -78,7 +74,6 @@ DECLPROC(PySys_SetArgvEx);
 DECLPROC(PySys_GetObject);
 DECLPROC(PySys_SetObject);
 DECLPROC(PySys_SetPath);
-DECLPROC(PyThreadState_Swap);
 DECLPROC(PyUnicode_FromString);
 
 DECLPROC(Py_DecodeLocale);
@@ -106,11 +101,9 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     // functions with prefix `Py_`
     GETPROC(dll, Py_BuildValue);
     GETPROC(dll, Py_DecRef);
-    GETPROC(dll, Py_EndInterpreter);
     GETPROC(dll, Py_Finalize);
     GETPROC(dll, Py_IncRef);
     GETPROC(dll, Py_Initialize);
-    GETPROC(dll, Py_NewInterpreter);
     if (pyvers >= 30) {
       // new in Python 3
       GETPROC(dll, Py_SetPath);
@@ -123,9 +116,6 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyErr_Clear);
     GETPROC(dll, PyErr_Occurred);
     GETPROC(dll, PyErr_Print);
-    GETPROC(dll, PyEval_AcquireThread);
-    GETPROC(dll, PyEval_InitThreads);
-    GETPROC(dll, PyEval_ReleaseThread);
     GETPROC(dll, PyImport_AddModule);
     GETPROC(dll, PyImport_ExecCodeModule);
     GETPROC(dll, PyImport_ImportModule);
@@ -145,7 +135,6 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PySys_GetObject);
     GETPROC(dll, PySys_SetObject);
     GETPROC(dll, PySys_SetPath);
-    GETPROC(dll, PyThreadState_Swap);
     if (pyvers >= 30) {
       // new in Python 2.6, but not reliable available in all Linux distros
       GETPROC(dll, PyUnicode_FromString);

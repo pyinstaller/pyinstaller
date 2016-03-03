@@ -134,14 +134,6 @@ EXTDECLPROC(void, PySys_AddWarnOption, (wchar_t *));
 /* Return a C long representation of the contents of pylong. */
 EXTDECLPROC(long, PyLong_AsLong, (PyObject *) );
 
-
-/* Functions used in dllmain.c on Windows. */
-EXTDECLPROC(void, PyEval_InitThreads, (void) );
-EXTDECLPROC(void, PyEval_AcquireThread, (PyThreadState *) );
-EXTDECLPROC(void, PyEval_ReleaseThread, (PyThreadState *) );
-EXTDECLPROC(PyThreadState *, PyThreadState_Swap, (PyThreadState *) );
-EXTDECLPROC(PyThreadState *, Py_NewInterpreter, (void) );
-EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
 /* Used to convert argv to wchar_t on Linux/OS X */
