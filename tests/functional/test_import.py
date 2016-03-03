@@ -23,6 +23,16 @@ from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, \
 # Directory with testing modules used in some tests.
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 
+def test_nameclash(pyi_builder):
+    # test-case for issue #964: Nameclashes in module information gathering
+    # All pyinstaller specific module attributes should be prefixed,
+    # to avoid nameclashes.
+    pyi_builder.test_source(
+        """
+        import pyi_testmod_nameclash.nameclash
+        """)
+
+
 def test_relative_import(pyi_builder):
     pyi_builder.test_source(
         """
