@@ -17,23 +17,19 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 import os
 import shutil
 import tempfile
-import pkgutil
 import pprint
-import sys
 from operator import itemgetter
 
 from PyInstaller import is_win, is_darwin, is_linux, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
-from PyInstaller.building.utils import _check_guts_toc_mtime, _check_guts_toc, add_suffix_to_extensions, \
+from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
     checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object
 from PyInstaller.compat import is_cygwin, exec_command_all
-from PyInstaller.config import CONF
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
 from PyInstaller.building.datastruct import TOC, Target, logger, _check_guts_eq
 from PyInstaller.utils import misc
-from PyInstaller.utils.misc import save_py_data_struct
 from .. import log as logging
 
 logger = logging.getLogger(__name__)

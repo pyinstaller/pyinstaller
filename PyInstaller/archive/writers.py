@@ -28,7 +28,7 @@ from types import CodeType
 import marshal
 import zlib
 
-from .readers import CArchiveReader, PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA
+from .readers import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA
 from ..compat import BYTECODE_MAGIC
 
 

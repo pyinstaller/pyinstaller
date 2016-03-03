@@ -13,14 +13,13 @@ This module is for the miscellaneous routines which do not fit somewhere else.
 """
 
 import glob
-import imp
 import os
 import pprint
 import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import is_unix, is_win, BYTECODE_MAGIC, is_py2
+from PyInstaller.compat import BYTECODE_MAGIC, is_py2
 
 logger = logging.getLogger(__name__)
 
