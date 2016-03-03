@@ -58,27 +58,6 @@ def get_unicode_modules():
     return modules
 
 
-def get_code_object(filename, new_filename=None):
-    """
-    Convert source code from Python source file to code object.
-
-        new_filename  File name that the code should be compiled with.
-    """
-    try:
-        # with statement will close the file automatically.
-        with open(filename, 'rU') as fp:
-            source_code_string = fp.read() + '\n'
-        # Sometimes you might need to change the filename in the code object.
-        if new_filename:
-            filename = new_filename
-        code_object = compile(source_code_string, filename, 'exec', 0, True)
-        return code_object
-    except SyntaxError as e:
-        logger.error("SyntaxError while compiling code object for %s",
-                     filename, exc_info=True)
-        raise SystemExit(10)
-
-
 def get_path_to_toplevel_modules(filename):
     """
     Return the path to top-level directory that contains Python modules.
