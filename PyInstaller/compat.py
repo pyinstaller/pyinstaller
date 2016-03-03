@@ -55,7 +55,9 @@ if is_win:
     PYDYLIB_NAMES = {'python%d%d.dll' % _pyver}
 elif is_cygwin:
     PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver,
-                     'libpython%d.%d.dll' % _pyver}
+                     'libpython%d%dm.dll' % _pyver,
+                     'libpython%d.%d.dll' % _pyver,
+                     'libpython%d.%dm.dll' % _pyver}
 elif is_darwin:
     PYDYLIB_NAMES = {'Python', '.Python', 'libpython%d.%d.dylib' % _pyver}
 elif is_aix:
