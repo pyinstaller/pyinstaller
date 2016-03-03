@@ -25,7 +25,7 @@ from operator import itemgetter
 from PyInstaller import is_win, is_darwin, is_linux, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc_mtime, _check_guts_toc, add_suffix_to_extensions, \
-    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code
+    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object
 from PyInstaller.compat import is_cygwin, exec_command_all
 from PyInstaller.config import CONF
 from PyInstaller.depend import bindepend
@@ -111,56 +111,6 @@ class PYZ(Target):
             return True
         return False
 
-    # TODO Could this function be merged with 'PyInstaller.utils.misc:get_code_object()'?
-    def __get_code(self, modname, filename):
-        """
-        Get the code-object for a module.
-
-        This is a extra-simple version for compiling a module. It's
-        not worth spending more effort here, as it is only used in the
-        rare case if outXX-Analysis.toc exists, but outXX-PYZ.toc does
-        not.
-        """
-
-        def load_code(modname, filename):
-            path_item = os.path.dirname(filename)
-            if os.path.basename(filename).startswith('__init__.py'):
-                # this is a package
-                path_item = os.path.dirname(path_item)
-            if os.path.basename(path_item) == '__pycache__':
-                path_item = os.path.dirname(path_item)
-            importer = pkgutil.get_importer(path_item)
-            package, _, modname = modname.rpartition('.')
-
-            if sys.version_info >= (3,3) and hasattr(importer, 'find_loader'):
-                loader, portions = importer.find_loader(modname)
-            else:
-                loader = importer.find_module(modname)
-                portions = []
-
-            assert loader and hasattr(loader, 'get_code')
-            logger.debug('Compiling %s', filename)
-            return loader.get_code(modname)
-
-        try:
-            if filename in ('-', None):
-                # This is a NamespacePackage, modulegraph marks them
-                # by using the filename '-'. (But wants to use None,
-                # so check for None, too, to be forward-compatible.)
-                logger.debug('Compiling namespace package %s', modname)
-                txt = '#\n'
-                return compile(txt, filename, 'exec')
-            else:
-                logger.debug('Compiling %s', filename)
-                co = load_code(modname, filename)
-                if not co:
-                    raise ValueError("Module file %s is missing" % filename)
-                return co
-        except SyntaxError as e:
-            print("Syntax error in ", filename)
-            print(e.args)
-            raise
-
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", self.name)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
@@ -169,7 +119,7 @@ class PYZ(Target):
             if not entry[0] in self.code_dict and entry[2] == 'PYMODULE':
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
-                self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])
+                self.code_dict[entry[0]] = get_code_object(entry[0], entry[1])
         # sort content alphabetically to support reproducible builds
         toc.sort()
 
