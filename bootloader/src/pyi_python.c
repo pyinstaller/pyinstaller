@@ -82,6 +82,8 @@ DECLPROC(PyUnicode_FromFormat);
 DECLPROC(PyUnicode_DecodeFSDefault);
 DECLPROC(PyUnicode_Decode);
 
+DECLPROC(PyEval_EvalCode);
+DECLPROC(PyMarshal_ReadObjectFromString);
 
 /*
  * Get all of the entry points from libpython
@@ -135,6 +137,8 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PySys_GetObject);
     GETPROC(dll, PySys_SetObject);
     GETPROC(dll, PySys_SetPath);
+    GETPROC(dll, PyEval_EvalCode);
+    GETPROC(dll, PyMarshal_ReadObjectFromString);
     if (pyvers >= 30) {
       // new in Python 2.6, but not reliable available in all Linux distros
       GETPROC(dll, PyUnicode_FromString);

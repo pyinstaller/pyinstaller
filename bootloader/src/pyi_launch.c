@@ -20,10 +20,16 @@
     #include <Carbon/Carbon.h>  // TransformProcessType
 #endif
 
-
 #ifdef _WIN32
     #include <windows.h>
+    #include <winsock.h>  // ntohl
 #else
+    #ifdef __FreeBSD__
+    	// freebsd issue #188316
+    	#include <arpa/inet.h>  // ntohl
+    #else
+    	#include <netinet/in.h>  // ntohl
+    #endif
     #include <langinfo.h>  // CODESET, nl_langinfo
     #include <limits.h>  // PATH_MAX
     #include <stdlib.h>  // malloc
@@ -322,10 +328,23 @@ int pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 {
 	unsigned char *data;
 	char buf[PATH_MAX];
-	int rc = 0;
 	TOC * ptoc = status->tocbuff;
-	PyObject *__main__ = PI_PyImport_AddModule("__main__");
+	PyObject *__main__;
 	PyObject *__file__;
+	PyObject *main_dict;
+	PyObject *code, *retval;
+
+	__main__ = PI_PyImport_AddModule("__main__");
+	if (!__main__) {
+	    FATALERROR("Could not get __main__ module.");
+	    return -1;
+	}
+
+	main_dict = PI_PyModule_GetDict(__main__);
+	if (!main_dict) {
+	    FATALERROR("Could not get __main__ module's dict.");
+	    return -1;
+	}
 
 	/* Iterate through toc looking for scripts (type 's') */
 	while (ptoc < status->tocend) {
@@ -338,18 +357,27 @@ int pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 			strcat(buf, ".py");
 			VS("LOADER: Running %s\n", buf);
             if (is_py2) {
-	      __file__ = PI_PyString_FromString(buf);
-	    } else {
-	      __file__ = PI_PyUnicode_FromString(buf);
-	    };
+              __file__ = PI_PyString_FromString(buf);
+            } else {
+              __file__ = PI_PyUnicode_FromString(buf);
+            };
             PI_PyObject_SetAttrString(__main__, "__file__", __file__);
             Py_DECREF(__file__);
+
+            /* Unmarshall code object */
+            code = PI_PyMarshal_ReadObjectFromString(data, ntohl(ptoc->ulen));
+            if(!code) {
+                FATALERROR("Failed to unmarshal code object for %s\n", ptoc->name);
+			    PI_PyErr_Print();
+                return -1;
+            }
 			/* Run it */
-			rc = PI_PyRun_SimpleString((char *) data);
-			/* log errors and abort */
-			if (rc != 0) {
-				FATALERROR("%s returned %d\n", ptoc->name, rc);
-				return rc;
+			retval = PI_PyEval_EvalCode(code, main_dict, main_dict);
+			/* If retval is NULL, an error occured. Otherwise, it is a Python object */
+			if (!retval) {
+                FATALERROR("Failed to execute script %s\n", ptoc->name);
+                PI_PyErr_Print();
+				return -1;
 			}
 			free(data);
 		}

@@ -147,6 +147,9 @@ EXTDECLPROC(PyObject *, PyUnicode_FromFormat, (const char *, ...));
 EXTDECLPROC(PyObject *, PyUnicode_DecodeFSDefault, (const char *));
 EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, size_t, const char *, const char *)); // Py_ssize_t
 
+/* Used to load and execute marshalled code objects */
+EXTDECLPROC(PyObject *, PyEval_EvalCode, (PyObject *, PyObject *, PyObject *));
+EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, size_t)); // Py_ssize_t
 
 
 /*
