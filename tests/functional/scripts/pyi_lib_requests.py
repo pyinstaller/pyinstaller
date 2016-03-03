@@ -7,8 +7,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 # -----------------------------------------------------------------------------
 
-import BaseHTTPServer
-import SimpleHTTPServer
+try:
+    import BaseHTTPServer
+    import SimpleHTTPServer
+except ImportError:
+    import http.server as BaseHTTPServer
+    import http.server as SimpleHTTPServer
 
 import os
 import ssl
