@@ -249,7 +249,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example)
         # If flags still remains, os.chmod will failed with:
         # OSError: [Errno 1] Operation not permitted.
-        os.chflags(cachedfile, 0)
+        try:
+            os.chflags(cachedfile, 0)
+        except OSError:
+            pass
     os.chmod(cachedfile, 0o755)
 
     if os.path.splitext(fnm.lower())[1] in (".pyd", ".dll"):
