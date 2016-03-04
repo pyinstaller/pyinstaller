@@ -153,6 +153,9 @@ class AppBuilder(object):
             testname = testname + '__' + kwargs['test_id']
             del kwargs['test_id']
 
+        # Periods are not allowed in Python module names.
+        testname = testname.replace('.', '_')
+
         scriptfile = os.path.join(os.path.abspath(self._tmpdir),
                                   testname + '.py')
         source = textwrap.dedent(source)

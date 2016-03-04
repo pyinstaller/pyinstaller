@@ -14,17 +14,12 @@ Code related to processing of import hooks.
 
 import glob
 import os.path
-import re
-import sys
-import warnings
 
 from .. import log as logging
 from .utils import format_binaries_and_datas
 from ..compat import expand_path
-from ..compat import importlib_load_source, is_py2
-from ..utils.misc import get_code_object
+from ..compat import importlib_load_source
 from .imphookapi import PostGraphAPI
-from ..lib.modulegraph.modulegraph import GraphError
 
 logger = logging.getLogger(__name__)
 

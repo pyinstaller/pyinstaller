@@ -118,8 +118,8 @@ def test_import_respects_path(pyi_builder, script_dir):
 
 
 def test_import_pyqt5_uic_port(pyi_builder):
-    extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt.uic.port')
-    pyi_builder.test_script('pyi_import_pyqt5.uic.port.py',
+    extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt_uic_port')
+    pyi_builder.test_script('pyi_import_pyqt5_uic_port.py',
                             pyi_args=['--path', extra_path], )
 
 

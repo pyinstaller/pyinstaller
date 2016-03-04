@@ -16,10 +16,12 @@ import glob
 import hashlib
 import os
 import os.path
+import pkgutil
 import platform
 import shutil
 import sys
 
+from PyInstaller.config import CONF
 from .. import is_darwin, is_win, compat
 from ..compat import EXTENSION_SUFFIXES, FileNotFoundError
 from ..depend import dylib
@@ -473,3 +475,93 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
                                 os.path.normpath(src_file)))
 
     return toc_datas
+
+
+def _load_code(modname, filename):
+    path_item = os.path.dirname(filename)
+    if os.path.basename(filename).startswith('__init__.py'):
+        # this is a package
+        path_item = os.path.dirname(path_item)
+    if os.path.basename(path_item) == '__pycache__':
+        path_item = os.path.dirname(path_item)
+    importer = pkgutil.get_importer(path_item)
+    package, _, modname = modname.rpartition('.')
+
+    if sys.version_info >= (3, 3) and hasattr(importer, 'find_loader'):
+        loader, portions = importer.find_loader(modname)
+    else:
+        loader = importer.find_module(modname)
+        portions = []
+
+    assert loader and hasattr(loader, 'get_code')
+    logger.debug('Compiling %s', filename)
+    return loader.get_code(modname)
+
+def get_code_object(modname, filename):
+    """
+    Get the code-object for a module.
+
+    This is a extra-simple version for compiling a module. It's
+    not worth spending more effort here, as it is only used in the
+    rare case if outXX-Analysis.toc exists, but outXX-PYZ.toc does
+    not.
+    """
+
+    try:
+        if filename in ('-', None):
+            # This is a NamespacePackage, modulegraph marks them
+            # by using the filename '-'. (But wants to use None,
+            # so check for None, too, to be forward-compatible.)
+            logger.debug('Compiling namespace package %s', modname)
+            txt = '#\n'
+            return compile(txt, filename, 'exec')
+        else:
+            logger.debug('Compiling %s', filename)
+            co = _load_code(modname, filename)
+            if not co:
+                raise ValueError("Module file %s is missing" % filename)
+            return co
+    except SyntaxError as e:
+        print("Syntax error in ", filename)
+        print(e.args)
+        raise
+
+
+def strip_paths_in_code(co, new_filename=None):
+
+    # Paths to remove from filenames embedded in code objects
+    replace_paths = sys.path + CONF['pathex']
+    # Make sure paths end with os.sep
+    replace_paths = [os.path.join(f, '') for f in replace_paths]
+
+    if new_filename is None:
+        original_filename = os.path.normpath(co.co_filename)
+        for f in replace_paths:
+            if original_filename.startswith(f):
+                new_filename = original_filename[len(f):]
+                break
+
+        else:
+            return co
+
+    code_func = type(co)
+
+    consts = tuple(
+        strip_paths_in_code(const_co, new_filename)
+        if isinstance(const_co, code_func) else const_co
+        for const_co in co.co_consts
+    )
+
+    # co_kwonlyargcount added in some version of Python 3
+    if hasattr(co, 'co_kwonlyargcount'):
+        return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
+                     co.co_flags, co.co_code, consts, co.co_names,
+                     co.co_varnames, new_filename, co.co_name,
+                     co.co_firstlineno, co.co_lnotab,
+                     co.co_freevars, co.co_cellvars)
+    else:
+        return code_func(co.co_argcount, co.co_nlocals, co.co_stacksize,
+                     co.co_flags, co.co_code, consts, co.co_names,
+                     co.co_varnames, new_filename, co.co_name,
+                     co.co_firstlineno, co.co_lnotab,
+                     co.co_freevars, co.co_cellvars)
