@@ -391,36 +391,61 @@ def _rmtree(path):
 #  to instead pass such basename.
 def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     """
-    Convert the passed `hook.datas` list to a list of `TOC`-style 3-tuples.
+    Convert the passed list of hook-style 2-tuples into a returned set of
+    `TOC`-style 2-tuples.
 
-    :param datas: is a list of 2-tuples whose:
+    Elements of the passed list are 2-tuples `(source_dir_or_glob, target_dir)`.
+    Elements of the returned set are 2-tuples `(target_file, source_file)`.
+    For backwards compatibility, the order of elements in the former tuples are
+    the reverse of the order of elements in the latter tuples!
 
-    * First item is either:
-      * A glob matching only the absolute paths of source non-Python data
-        files.
-      * The absolute path of a directory containing only such files.
-    * Second item is either:
-      * The relative path of the target directory into which such files will
-        be recursively copied.
-      * The empty string. In such case, if the first item was:
-        * A glob, such files will be recursively copied into the top-level
-          target directory. (This is usually *not* what you want.)
-        * A directory, such files will be recursively copied into a new
-          target subdirectory whose name is such directory's basename.
-          (This is usually what you want.)
+    Parameters
+    ----------
+    binaries_or_datas : list
+        List of hook-style 2-tuples (e.g., the top-level `binaries` and `datas`
+        attributes defined by hooks) whose:
+        * First element is either:
+          * A glob matching only the absolute or relative paths of source
+            non-Python data files. The second element is then either:
+            * The relative path of the target directory into which these source
+              files will be recursively copied.
+            * The empty string, in which case these source files will be
+              recursively copied into the top-level target directory. (This is
+              usually _not_ what you want.)
+          * The absolute or relative path of a source directory containing only
+            source non-Python data files. The second element is then either:
+            * The relative path of the target directory into which these source
+              files will be recursively copied.
+            * The empty string, in which case these source files will be
+              recursively copied into a new target subdirectory whose name is
+              this source directory's basename. (This is usually what you want.)
+        If the optional `workingdir` parameter is passed, source paths may be
+        either absolute or relative; else, source paths _must_ be absolute.
+    workingdir : str
+        Optional absolute path of the directory to which all relative source
+        paths in the `binaries_or_datas` parameter will be prepended by (and
+        hence converted into absolute paths) _or_ `None` if these paths are to
+        be preserved as relative. Defaults to `None`.
 
-    :param workingdir: Optional argument, if datas contains relative paths then
-                       paths are relative to this directory and all relative
-                       paths are converted to absolute.
+    Returns
+    ----------
+    set
+        Set of `TOC`-style 2-tuples whose:
+        * First element is the absolute or relative path of a target file.
+        * Second element is the absolute or relative path of the corresponding
+          source file to be copied to this target file.
     """
-    toc_datas = []
+    toc_datas = set()
 
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
-        # Covert relative paths to absolute if required.
+        # Convert relative to absolute paths if required.
         if workingdir and not os.path.isabs(src_root_path_or_glob):
-            src_root_path_or_glob = os.path.join(workingdir, src_root_path_or_glob)
+            src_root_path_or_glob = os.path.join(
+                workingdir, src_root_path_or_glob)
+
         # Normalize paths.
         src_root_path_or_glob = os.path.normpath(src_root_path_or_glob)
+
         # List of the absolute paths of all source paths matching the
         # current glob.
         src_root_paths = glob.glob(src_root_path_or_glob)
@@ -434,7 +459,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
             if os.path.isfile(src_root_path):
                 # Normalizing the result to remove redundant relative
                 # paths (e.g., removing "./" from "trg/./file").
-                toc_datas.append((
+                toc_datas.add((
                     os.path.normpath(os.path.join(
                         trg_root_dir, os.path.basename(src_root_path))),
                     os.path.normpath(src_root_path)))
@@ -460,18 +485,18 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
                     #   "/top/dir").
                     # * Normalizing the result to remove redundant relative
                     #   paths (e.g., removing "./" from "trg/./file").
-                    trg_dir = os.path.normpath(
-                        os.path.join(
-                            trg_root_dir,
-                            os.path.relpath(src_dir, src_root_path)))
+                    trg_dir = os.path.normpath(os.path.join(
+                        trg_root_dir,
+                        os.path.relpath(src_dir, src_root_path)))
 
                     for src_file_basename in src_file_basenames:
                         src_file = os.path.join(src_dir, src_file_basename)
                         if os.path.isfile(src_file):
-                            # Normalizing the result to remove redundant relative
+                            # Normalize the result to remove redundant relative
                             # paths (e.g., removing "./" from "trg/./file").
-                            toc_datas.append((
-                                os.path.normpath(os.path.join(trg_dir, src_file_basename)),
+                            toc_datas.add((
+                                os.path.normpath(
+                                    os.path.join(trg_dir, src_file_basename)),
                                 os.path.normpath(src_file)))
 
     return toc_datas
