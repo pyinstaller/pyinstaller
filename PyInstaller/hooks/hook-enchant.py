@@ -30,7 +30,7 @@ from PyInstaller.utils.hooks import exec_statement, collect_data_files, \
 # - Mac OS X: usually libenchant.dylib and several dictionaries when installed via pip.
 binaries = collect_dynamic_libs('enchant')
 datas = collect_data_files('enchant')
-
+excludedimports = ['enchant.tests']
 
 # On OS X try to find files from Homebrew or Macports environments.
 if is_darwin:
