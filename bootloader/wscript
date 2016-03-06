@@ -48,11 +48,13 @@ variants = {
     'releasew': 'runw',
 }
 
-# TODO use following variable only on darwin and for 32bit loader.
-# TODO Do we still need this variable on OS X?
-# OS X 10.6 might not understand some load commands.
-# The following variable fixes 10.6 compatibility.
-os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.6'
+
+if is_darwin:
+    # OS X 10.7 might not understand some load commands.
+    # The following variable fixes 10.7 compatibility.
+    # According to OS X doc this variable is equivalent to gcc option:
+    #   -mmacosx-version-min=10.7
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 
 # TODO strip created binaries.
@@ -468,7 +470,7 @@ def configure(ctx):
             ctx.env.append_value('LINKFLAGS', '-municode')
 
     if is_darwin:
-        ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.6')
+        ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but

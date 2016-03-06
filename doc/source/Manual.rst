@@ -63,7 +63,7 @@ The pip-Win_ package is also recommended but not required.
 Mac OS X
 ~~~~~~~~~
 
-|PyInstaller| runs in Mac OS X 10.6 (Snow Leopard) or newer.
+|PyInstaller| runs in Mac OS X 10.7 (Lion) or newer.
 It can build graphical windowed apps (apps that do not use a terminal window).
 PyInstaller builds apps that are compatible with the Mac OS X release in
 which you run it, and following releases.
