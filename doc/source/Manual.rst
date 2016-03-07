@@ -22,7 +22,7 @@ The user can run the packaged app without installing a Python interpreter or any
 and correctly bundles the major Python packages
 such as numpy, PyQt, Django, wxPython, and others.
 
-|PyInstaller| is tested against Windows, Mac OS X, and Linux.
+|PyInstaller| is tested against Windows, MacÂ OSÂ X, and Linux.
 However, it is not a cross-compiler:
 to make a Windows app you run |PyInstaller| in Windows;
 to make a Linux app you run it in Linux, etc.
@@ -60,7 +60,7 @@ pypiwin32 is automatically installed.
 
 The pip-Win_ package is also recommended but not required.
 
-Mac OS X
+MacÂ OSÂ X
 ~~~~~~~~~
 
 |PyInstaller| runs in Mac OS X 10.7 (Lion) or newer.
@@ -176,11 +176,11 @@ Once it is installed, to use |PyInstaller|,
 Then you have a command shell window in which commands such as
 `pyinstaller` execute in that Python environment.
 
-Installing in Mac OS X
+Installing in MacÂ OSÂ X
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 |PyInstaller| works with the default Python 2.7 provided with current
-Mac OS X installations.
+MacÂ OSÂ X installations.
 However, if you plan to use a later version of Python,
 or if you use any of the major packages such as
 PyQt, Numpy, Matplotlib, Scipy, and the like, we strongly
@@ -412,7 +412,7 @@ This is the heart of the ``myscript`` executable in the folder.
 
 The |PyInstaller| |bootloader| is a binary
 executable program for the active platform
-(Windows, Linux, Mac OS X, etc.).
+(Windows, Linux, MacÂ OSÂ X, etc.).
 When the user launches your program, it is the |bootloader| that runs.
 The |bootloader| creates a temporary Python environment
 such that the Python interpreter will find all imported modules and
@@ -634,7 +634,7 @@ See the UPX_ home page for downloads, and for the list of
 supported executable formats.
 Development of UPX appears to have ended in September 2013,
 at which time it supported most executable formats except for
-64-bit binaries for Mac OS X.
+64-bit binaries for MacÂ OSÂ X.
 UPX has no effect on those.
 
 A compressed executable program is wrapped in UPX
@@ -709,7 +709,7 @@ Supporting Multiple Operating Systems
 ---------------------------------------
 
 If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
+for example both Windows and MacÂ OSÂ X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
 You can do this from a single machine using virtualization.
@@ -843,10 +843,10 @@ produce a Version resource in binary form.
 Or you can apply the ``unicode()`` function to the object
 to reproduce the version text file.
 
-Building Mac OS X App Bundles
+Building MacÂ OSÂ X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you specify only ``--onefile`` under Mac OS X, the output
+If you specify only ``--onefile`` under MacÂ OSÂ X, the output
 in ``dist`` is a UNIX executable
 ``myscript``.
 It can be executed from a Terminal command line.
@@ -877,30 +877,30 @@ Use the ``icon=`` argument to specify a custom icon for the application.
 file ``icon-windowed.icns`` with the |PyInstaller| logo.)
 
 You can add items to the ``Info.plist`` by editing the spec file;
-see `Spec File Options for a Mac OS X Bundle`_ below.
+see `Spec File Options for a MacÂ OSÂ X Bundle`_ below.
 
-Making Mac OS X apps Forward-Compatible
+Making MacÂ OSÂ X apps Forward-Compatible
 ----------------------------------------
 
-In Mac OS X, components from one version of the OS are usually compatible
+In MacÂ OSÂ X, components from one version of the OS are usually compatible
 with later versions, but they may not work with earlier versions.
 
-The only way to be certain your app supports an older version of Mac OS X
+The only way to be certain your app supports an older version of MacÂ OSÂ X
 is to run PyInstaller in the oldest version of the OS you need to support.
 
 For example, to be sure of compatibility with "Snow Leopard" (10.6)
 and later versions, you should execute PyInstaller in that environment.
-You would create a copy of Mac OS X 10.6, typically in a virtual machine.
+You would create a copy of MacÂ OSÂ X 10.6, typically in a virtual machine.
 In it, install the desired level of Python
 (the default Python in Snow Leopard was 2.6, which PyInstaller no longer supports),
 and install |PyInstaller|, your source, and all its dependencies.
 Then build your app in that environment.
 It should be compatible with later versions of Mac OS X.
 
-Building 32-bit Apps in Mac OS X
+Building 32-bit Apps in MacÂ OSÂ X
 ------------------------------------
 
-Older versions of Mac OS X supported both 32-bit and 64-bit executables.
+Older versions of MacÂ OSÂ X supported both 32-bit and 64-bit executables.
 PyInstaller builds an app using the the word-length of the Python used to execute it.
 That will typically be a 64-bit version of Python,
 resulting in a 64-bit executable.
@@ -948,14 +948,14 @@ Getting the Opened Document Names
 
 	Support for OpenDocument events is broken in |PyInstaller| 3.0
 	owing to code changes needed in the bootloader to support current
-	versions of Mac OS X.
+	versions of MacÂ OSÂ X.
 	Do not attempt to use this feature until it has been fixed.
 	If this feature is important to you, follow and comment on
 	the status of `PyInstaller Issue #1309`_.
 
 When a user double-clicks a document of a type your application
 supports, or when a user drags a document icon and drops it
-on your application's icon, Mac OS X launches your application
+on your application's icon, MacÂ OSÂ X launches your application
 and provides the name(s) of the opened document(s) in the
 form of an OpenDocument AppleEvent.
 This AppleEvent is received by the |bootloader|
@@ -1367,13 +1367,13 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
-Spec File Options for a Mac OS X Bundle
+Spec File Options for a MacÂ OSÂ X Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When you build a windowed Mac OS X app
-(that is, running in Mac OS X, you specify the ``--onefile --windowed`` options),
+When you build a windowed MacÂ OSÂ X app
+(that is, running in MacÂ OSÂ X, you specify the ``--onefile --windowed`` options),
 the spec file contains an additional statement to
-create the Mac OS X application bundle, or app folder::
+create the MacÂ OSÂ X application bundle, or app folder::
 
     app = BUNDLE(exe,
              name='myscript.app',
@@ -1385,7 +1385,7 @@ that you specify using the ``--icon=`` option.
 The ``bundle_identifier`` will have the value you specify with the
 ``--osx-bundle-identifier=`` option.
 
-An ``Info.plist`` file is an important part of a Mac OS X app bundle.
+An ``Info.plist`` file is an important part of a MacÂ OSÂ X app bundle.
 (See the `Apple bundle overview`_ for a discussion of the contents
 of ``Info.plist``.)
 
@@ -1409,7 +1409,7 @@ also work in retina screen::
 
 The ``info_plist=`` parameter only handles simple key:value pairs.
 It cannot handle nested XML arrays.
-For example, if you want to modify ``Info.plist`` to tell Mac OS X
+For example, if you want to modify ``Info.plist`` to tell MacÂ OSÂ X
 what filetypes your app supports, you must add a 
 ``CFBundleDocumentTypes`` entry to ``Info.plist``
 (see `Apple document types`_).
@@ -2513,7 +2513,7 @@ applies them to the bundle being created.
       datas = [ ('/usr/share/icons/education_*.png', 'icons') ]
 
    If you need to collect multiple directories or nested directories,
-   you can use helper functions from the ``PyInstaller.hooks.utils`` module
+   you can use helper functions from the ``PyInstaller.utils.hooks`` module
    (see below) to create this list, for example::
       
       datas = collect_data_files('submodule1')
@@ -2537,7 +2537,7 @@ applies them to the bundle being created.
 
       binaries = [ ('C:\\Windows\\System32\\*.dll', 'dlls') ]
 
-   Many hooks use helpers from the ``PyInstaller.hooks.utils`` module
+   Many hooks use helpers from the ``PyInstaller.utils.hooks`` module
    to create this list (see below)::
    
       binaries = collect_dynamic_libs('zmq')
@@ -2977,9 +2977,9 @@ On Fedora/RHEL and derivates, you can run the following::
     su
     yum groupinstall "Development Tools"
 
-On Mac OS X you can get gcc by installing Xcode_. It is a suite of tools
-for developing software for Mac OS X. It can be also installed from your
-Mac OS X Install DVD. It is not necessary to install the version 4 of Xcode.
+On MacÂ OSÂ X you can get gcc by installing Xcode_. It is a suite of tools
+for developing software for MacÂ OSÂ X. It can be also installed from your
+MacÂ OSÂ X Install DVD. It is not necessary to install the version 4 of Xcode.
 
 On Solaris and AIX the |bootloader| is built and tested with gcc.
 
