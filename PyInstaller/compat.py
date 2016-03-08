@@ -87,6 +87,13 @@ if is_py2:
 else:
     from builtins import FileExistsError
 
+# Python 3 moved collections classes to more sensible packages.
+if is_py2:
+    from UserDict import UserDict
+    from collections import Sequence, Set
+else:
+    from collections import UserDict
+    from collections.abc import Sequence, Set
 
 # In Python 3 built-in function raw_input() was renamed to just 'input()'.
 try:
@@ -534,6 +541,7 @@ PY3_BASE_MODULES = {
     'weakref',
 }
 
+#FIXME: Reduce this pair of nested tests to "if sys.version_info >= (3, 4)".
 if sys.version_info[0] == 3:
     if sys.version_info[1] >= 4:
         PY3_BASE_MODULES.update({
