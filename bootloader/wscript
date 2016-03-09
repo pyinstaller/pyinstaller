@@ -271,6 +271,16 @@ def set_arch_flags(ctx):
         ctx.env.append_value('CXXFLAGS', mac_arch)
         ctx.env.append_value('LINKFLAGS', mac_arch)
 
+    # AIX specific flags
+    elif is_aix:
+        if ctx.env.CC_NAME == 'gcc':
+	    ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
+            ctx.env.append_value('CFLAGS', '-m32')
+            ctx.env.append_value('LINKFLAGS', '-m32')
+	else:
+	    # We use xlc compiler
+	    pass
+
     # Other compiler - not msvc.
     else:
         if machine() == 'sw_64':
@@ -357,9 +367,9 @@ def configure(ctx):
         # This tool allows reduce the size of executables.
         ctx.load('strip', tooldir='tools')
 
-    ### Defines, Includes
+    if ctx.env.CC_NAME == 'gcc':
+	# !! These flags are gcc specific
 
-    if ctx.env.CC_NAME != 'msvc':
         # Make sure we don't use declarations after statement. It breaks
         # MSVC (Visual Studio).
         ctx.env.append_value('CFLAGS', '-Wdeclaration-after-statement')
@@ -368,6 +378,8 @@ def configure(ctx):
         # Implicit return value is 'int' which is only 32 bits on Windows.
         ctx.env.append_value('CFLAGS', '-Wimplicit-function-declaration')
         ctx.env.append_value('CFLAGS', '-Werror')
+
+    ### Defines, Includes
 
     if not is_win:
         # Defines common for Unix and Unix-like platforms.
@@ -398,6 +410,7 @@ def configure(ctx):
     if is_win:
         ctx.env.append_value('DEFINES', 'WIN32')
         ctx.env.append_value('CPPPATH', '../zlib')
+
     if is_solar:
         ctx.env.append_value('DEFINES', 'SUNOS')
         if ctx.env.CC_NAME == 'gcc':
@@ -407,6 +420,7 @@ def configure(ctx):
             ctx.env['STLIB_MARKER'] = '-Wl,-Bstatic'
             # On Solaris using gcc, the compiler needs to be gnu99
             ctx.env.append_value('CFLAGS', '-std=gnu99')
+
     if is_aix:
         ctx.env.append_value('DEFINES', 'AIX')
         # On AIX some APIs are restricted if _ALL_SOURCE is not defined.
@@ -415,11 +429,14 @@ def configure(ctx):
         # archive. We need to load the Python library like this:
         #  dlopen("libpython2.7.a(libpython2.7.so)", RTLD_MEMBER)
         ctx.env.append_value('DEFINES', '_ALL_SOURCE')
-        if ctx.env.CC_NAME == 'gcc':
-            # On AIX using gcc the linker options for shared and static
-            # libraries are slightly different from other platforms.
-            ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
-            ctx.env['STATICLIB_MARKER'] = '-Wl,-bstatic'
+
+	# On AIX using gcc the linker options for shared and static
+        # libraries are slightly different from other platforms.
+        ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
+        ctx.env['STLIB_MARKER'] = '-Wl,-bstatic'
+
+    # Adding python includedir into our environment
+    ctx.env.append_value('INCLUDES', sysconfig.get_config_var('INCLUDEDIR'))
 
     ### Libraries
 
@@ -581,9 +598,9 @@ def build(ctx):
             # to be loaded in the main process
             if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
                 libs.append('THR')
-        elif sys.platform.startswith('aix'):
-            libs = ['DL', 'M']
-            staticlibs = ['Z']
+        elif is_aix:
+            libs = ['dl', 'm']
+            staticlibs = ['z']
 
         if ctx.options.boehmgc:
             libs.append('GC')

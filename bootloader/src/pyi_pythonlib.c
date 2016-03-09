@@ -66,19 +66,27 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
  */
 #ifdef AIX
     /*
-     * On AIX 'ar' archives are used for both static and shared object.
-     * To load a shared object from a library, it should be loaded like this:
-     *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
+     * Determine if shared lib is in libpython?.?.so or libpython?.?.a(libpython?.?.so) format
      */
-    uint32_t pyvers_major;
-    uint32_t pyvers_minor;
+    if ((p = strrchr(status->cookie.pylibname, '.')) != NULL && strcmp(p, ".a") == 0) {
+      /*
+       * On AIX 'ar' archives are used for both static and shared object.
+       * To load a shared object from a library, it should be loaded like this:
+       *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
+       */
+      uint32_t pyvers_major;
+      uint32_t pyvers_minor;
 
-    pyvers_major = pyvers / 10;
-    pyvers_minor = pyvers % 10;
+      pyvers_major = pyvers / 10;
+      pyvers_minor = pyvers % 10;
 
-    sprintf(dllname,
-            "libpython%01d.%01d.a(libpython%01d.%01d.so)",
-            pyvers_major, pyvers_minor, pyvers_major, pyvers_minor);
+      sprintf(dllname,
+              "libpython%01d.%01d.a(libpython%01d.%01d.so)",
+              pyvers_major, pyvers_minor, pyvers_major, pyvers_minor);
+    }
+    else {
+      strcpy(dllname, status->cookie.pylibname);
+    }
 #else
     strcpy(dllname, status->cookie.pylibname);
 #endif

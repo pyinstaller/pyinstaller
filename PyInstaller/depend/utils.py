@@ -390,6 +390,12 @@ def load_ldconfig_cache():
         # around with checks for empty env-vars and string-concat.
         ldconfig = find_executable('ldconfig',
                                    '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
+
+        # if we still couldn't find 'ldconfig' command
+        if ldconfig is None:
+	    LDCONFIG_CACHE = {}
+	    return
+    
     if is_freebsd:
         # This has a quite different format than other Unixes
         # [vagrant@freebsd-10 ~]$ ldconfig -r
