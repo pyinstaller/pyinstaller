@@ -556,7 +556,7 @@ class EXE(Target):
             retcode, stdout, stderr = exec_command_all(
                 'objcopy', '--add-section', 'pydata=%s' % self.pkg.name,
                 self.name)
-            logger.debug("objcopy:%i", retcode)
+            logger.debug("objcopy returned %i", retcode)
             logger.debug(stdout)
             logger.debug(stderr)
             if retcode != 0:
