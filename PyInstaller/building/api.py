@@ -560,7 +560,7 @@ class EXE(Target):
             logger.debug(stdout)
             logger.debug(stderr)
             if retcode != 0:
-                raise SystemError("objcopy Failure")
+                raise SystemError("objcopy Failure: %s" % stderr)
         else:
             # Fall back to just append on end of file
             logger.info("Appending archive to EXE %s", self.name)
