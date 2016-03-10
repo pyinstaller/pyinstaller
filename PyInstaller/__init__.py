@@ -14,7 +14,7 @@ import os
 import sys
 
 from . import compat
-from .compat import is_darwin, is_win, is_py2, is_linux
+from .compat import is_darwin, is_win, is_cygwin, is_py2, is_linux
 from .utils.git import get_repo_revision
 
 
