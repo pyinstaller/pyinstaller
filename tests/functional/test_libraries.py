@@ -60,6 +60,14 @@ def test_botocore(pyi_builder):
         """)
 
 
+@importorskip('cherrypy')
+def test_cherrypy(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import cherrypy.wsgiserver.wsgiserver3
+        """)
+
+
 @importorskip('enchant')
 def test_enchant(pyi_builder):
     pyi_builder.test_script('pyi_lib_enchant.py')
