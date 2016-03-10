@@ -52,6 +52,9 @@ sqlalchemy
 twisted
 pyexcelerate
 Pillow
+
+# dateutil.tz in a package in 2.5.0 and does not play nice with PyInstaller.
+python-dateutil==2.4.2
 pandas
 
 # matplotlib 1.5+ does not provide binaries for python 3.3
