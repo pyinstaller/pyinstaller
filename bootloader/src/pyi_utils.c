@@ -185,17 +185,16 @@ int pyi_unsetenv(const char *variable)
 int pyi_get_temp_path(char *buffer)
 {
     int i;
-    char *ret;
-    char prefix[16];
+    wchar_t *wchar_ret;
+    wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
 
     /*
      * Get path to Windows temporary directory.
      */
     GetTempPathW(PATH_MAX, wchar_buffer);
-    pyi_win32_utils_to_utf8(buffer, wchar_buffer, PATH_MAX);
 
-    sprintf(prefix, "_MEI%d", getpid());
+    swprintf(prefix, 16, L"_MEI%d", getpid());
 
     /*
      * Windows does not have a race-free function to create a temporary
@@ -204,13 +203,13 @@ int pyi_get_temp_path(char *buffer)
      */
     for (i=0;i<5;i++) {
         // TODO use race-free fuction - if any exists?
-        ret = _tempnam(buffer, prefix);
-        if (mkdir(ret) == 0) {
-            strcpy(buffer, ret);
-            free(ret);
+        wchar_ret = _wtempnam(wchar_buffer, prefix);
+        if (_wmkdir(wchar_ret) == 0) {
+            pyi_win32_utils_to_utf8(buffer, wchar_ret, PATH_MAX);
+            free(wchar_ret);
             return 1;
         }
-        free(ret);
+        free(wchar_ret);
     }
     return 0;
 }
@@ -285,47 +284,27 @@ int pyi_create_temp_path(ARCHIVE_STATUS *status)
 }
 
 
-// TODO merge unix/win versions of remove_one() and pyi_remove_temp_path()
 #ifdef _WIN32
-static void remove_one(char *fnm, size_t pos, struct _finddata_t finfo)
-{
-	if ( strcmp(finfo.name, ".")==0  || strcmp(finfo.name, "..") == 0 )
-		return;
-	fnm[pos] = PYI_NULLCHAR;
-	strcat(fnm, finfo.name);
-	if ( finfo.attrib & _A_SUBDIR )
-        /* Use recursion to remove subdirectories. */
-		pyi_remove_temp_path(fnm);
-	else if (remove(fnm)) {
-        /* HACK: Possible concurrency issue... spin a little while */
-        Sleep(100);
-        remove(fnm);
-    }
-}
-
-//TODO Find easier and more portable implementation of removing directory recursively.
-//     e.g.
 void pyi_remove_temp_path(const char *dir)
 {
-	char fnm[PATH_MAX+1];
-	struct _finddata_t finfo;
-	intptr_t h;
-	size_t dirnmlen;
-	strcpy(fnm, dir);
-	dirnmlen = strlen(fnm);
-	if ( fnm[dirnmlen-1] != '/' && fnm[dirnmlen-1] != '\\' ) {
-		strcat(fnm, "\\");
-		dirnmlen++;
-	}
-	strcat(fnm, "*");
-	h = _findfirst(fnm, &finfo);
-	if (h != -1) {
-		remove_one(fnm, dirnmlen, finfo);
-		while ( _findnext(h, &finfo) == 0 )
-			remove_one(fnm, dirnmlen, finfo);
-		_findclose(h);
-	}
-	rmdir(dir);
+	/*
+	nice code steal from stackoverflow
+	Why am I having problems recursively deleting directories?
+	http://stackoverflow.com/questions/1468774/why-am-i-having-problems-recursively-deleting-directories/1480509#1480509 
+	*/
+	
+	wchar_t wdir[PATH_MAX+1]; // +1 for the double null terminate
+	SHFILEOPSTRUCTW wfileOp = {0};
+	
+	pyi_win32_utils_from_utf8(wdir, dir, PATH_MAX);
+
+	wdir[lstrlenW(wdir)+1] = 0; // double null terminate for SHFileOperation
+	
+	wfileOp.fFlags = FOF_NO_UI;
+	wfileOp.wFunc = FO_DELETE;
+	wfileOp.pFrom = wdir;
+	
+	SHFileOperationW(&wfileOp);
 }
 #else
 static void remove_one(char *pnm, int pos, const char *fnm)
@@ -406,9 +385,11 @@ FILE *pyi_open_target(const char *path, const char* name_)
 		if (!dir)
 			break;
 		if (stat(fnm, &sbuf) < 0)
-    {
+		{
 #ifdef _WIN32
-			mkdir(fnm);
+			wchar_t wchar_buffer[PATH_MAX];
+			pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
+			_wmkdir(wchar_buffer);
 #else
 			mkdir(fnm, 0700);
 #endif
