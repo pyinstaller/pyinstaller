@@ -15,6 +15,8 @@ import os
 
 # Local imports
 # -------------
+import sys
+
 from PyInstaller.compat import is_win, is_py3
 from PyInstaller.utils.tests import importorskip, xfail
 
@@ -62,10 +64,11 @@ def test_botocore(pyi_builder):
 
 @importorskip('cherrypy')
 def test_cherrypy(pyi_builder):
+    # import wsgiserver3 on Python 3, or else wsgiserver2 on Python 2.
     pyi_builder.test_source(
         """
-        import cherrypy.wsgiserver.wsgiserver3
-        """)
+        import cherrypy.wsgiserver.wsgiserver%s
+        """ % sys.version_info[0])
 
 
 @importorskip('enchant')
