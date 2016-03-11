@@ -293,12 +293,12 @@ void pyi_remove_temp_path(const char *dir)
 	http://stackoverflow.com/questions/1468774/why-am-i-having-problems-recursively-deleting-directories/1480509#1480509 
 	*/
 	
-	wchar_t wdir[PATH_MAX+1];
+	wchar_t wdir[PATH_MAX+1]; // +1 for the double null terminate
 	SHFILEOPSTRUCTW wfileOp = {0};
 	
 	pyi_win32_utils_from_utf8(wdir, dir, PATH_MAX);
 
-	wdir[lstrlenW(wdir)+1] = 0;
+	wdir[lstrlenW(wdir)+1] = 0; // double null terminate for SHFileOperation
 	
 	wfileOp.fFlags = FOF_NO_UI;
 	wfileOp.wFunc = FO_DELETE;
