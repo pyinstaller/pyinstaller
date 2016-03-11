@@ -405,9 +405,11 @@ FILE *pyi_open_target(const char *path, const char* name_)
 		if (!dir)
 			break;
 		if (stat(fnm, &sbuf) < 0)
-    {
+		{
 #ifdef _WIN32
-			mkdir(fnm);
+			wchar_t wchar_buffer[PATH_MAX];
+			pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
+			_wmkdir(wchar_buffer);
 #else
 			mkdir(fnm, 0700);
 #endif
