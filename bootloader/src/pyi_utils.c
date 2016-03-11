@@ -286,19 +286,21 @@ int pyi_create_temp_path(ARCHIVE_STATUS *status)
 
 // TODO merge unix/win versions of remove_one() and pyi_remove_temp_path()
 #ifdef _WIN32
-static void remove_one(char *fnm, size_t pos, struct _finddata_t finfo)
+static void remove_one(wchar_t *wfnm, size_t pos, struct _wfinddata_t wfinfo)
 {
-	if ( strcmp(finfo.name, ".")==0  || strcmp(finfo.name, "..") == 0 )
+	char fnm[PATH_MAX+1];
+	if ( wcscmp(wfinfo.name, L".")==0  || wcscmp(wfinfo.name, L"..") == 0 )
 		return;
-	fnm[pos] = PYI_NULLCHAR;
-	strcat(fnm, finfo.name);
-	if ( finfo.attrib & _A_SUBDIR )
+	wfnm[pos] = PYI_NULLCHAR;
+	wcscat(wfnm, wfinfo.name);
+	if ( wfinfo.attrib & _A_SUBDIR ) {
         /* Use recursion to remove subdirectories. */
+		pyi_win32_utils_to_utf8(fnm, wfnm, PATH_MAX);
 		pyi_remove_temp_path(fnm);
-	else if (remove(fnm)) {
+	} else if (_wremove(wfnm)) {
         /* HACK: Possible concurrency issue... spin a little while */
         Sleep(100);
-        remove(fnm);
+        _wremove(wfnm);
     }
 }
 
@@ -306,25 +308,27 @@ static void remove_one(char *fnm, size_t pos, struct _finddata_t finfo)
 //     e.g.
 void pyi_remove_temp_path(const char *dir)
 {
-	char fnm[PATH_MAX+1];
-	struct _finddata_t finfo;
+	wchar_t wfnm[PATH_MAX+1];
+	wchar_t wdir[PATH_MAX+1];
+	struct _wfinddata_t wfinfo;
 	intptr_t h;
 	size_t dirnmlen;
-	strcpy(fnm, dir);
-	dirnmlen = strlen(fnm);
-	if ( fnm[dirnmlen-1] != '/' && fnm[dirnmlen-1] != '\\' ) {
-		strcat(fnm, "\\");
+	pyi_win32_utils_from_utf8(wdir, dir, PATH_MAX);
+	wcscpy(wfnm, wdir);
+	dirnmlen = wcslen(wfnm);
+	if ( wfnm[dirnmlen-1] != L'/' && wfnm[dirnmlen-1] != L'\\' ) {
+		wcscat(wfnm, L"\\");
 		dirnmlen++;
 	}
-	strcat(fnm, "*");
-	h = _findfirst(fnm, &finfo);
+	wcscat(wfnm, L"*");
+	h = _wfindfirst(wfnm, &wfinfo);
 	if (h != -1) {
-		remove_one(fnm, dirnmlen, finfo);
-		while ( _findnext(h, &finfo) == 0 )
-			remove_one(fnm, dirnmlen, finfo);
+		remove_one(wfnm, dirnmlen, wfinfo);
+		while ( _wfindnext(h, &wfinfo) == 0 )
+			remove_one(wfnm, dirnmlen, wfinfo);
 		_findclose(h);
 	}
-	rmdir(dir);
+	_wrmdir(wdir);
 }
 #else
 static void remove_one(char *pnm, int pos, const char *fnm)
