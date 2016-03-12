@@ -543,7 +543,8 @@ class EXE(Target):
             trash.append(tmpnm)
             exe = tmpnm
 
-        exe = checkCache(exe, strip=self.strip, upx=self.upx)
+        # NOTE: Do not look up for bootloader file in the cache because it might
+        #       get corrupted by UPX when UPX is available. See #1863 for details.
 
         if not self.append_pkg:
             logger.info("Copying bootloader exe to %s", self.name)
