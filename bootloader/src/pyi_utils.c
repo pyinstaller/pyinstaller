@@ -392,7 +392,13 @@ void cleanUp(ARCHIVE_STATUS *status)
 //TODO find better name for function.
 FILE *pyi_open_target(const char *path, const char* name_)
 {
+	
+#ifdef _WIN32
+	wchar_t wchar_buffer[PATH_MAX];
+	struct _stat sbuf;
+#else
 	struct stat sbuf;
+#endif
 	char fnm[PATH_MAX];
 	char name[PATH_MAX];
 	char *dir;
@@ -408,21 +414,31 @@ FILE *pyi_open_target(const char *path, const char* name_)
 		dir = strtok(NULL, PYI_SEPSTR);
 		if (!dir)
 			break;
+
+#ifdef _WIN32
+		pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
+		if (_wstat(wchar_buffer, &sbuf) < 0)
+		{
+			_wmkdir(wchar_buffer);
+		}
+#else
 		if (stat(fnm, &sbuf) < 0)
 		{
-#ifdef _WIN32
-			wchar_t wchar_buffer[PATH_MAX];
-			pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
-			_wmkdir(wchar_buffer);
-#else
 			mkdir(fnm, 0700);
+		}
 #endif
-    }
 	}
 
+#ifdef _WIN32
+	pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
+	if (_wstat(wchar_buffer, &sbuf) == 0) {
+		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
+    }
+#else	
 	if (stat(fnm, &sbuf) == 0) {
 		OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
     }
+#endif
     /*
      * pyi_path_fopen() wraps different fopen names. On Windows it uses
      * wide-character version of fopen.
