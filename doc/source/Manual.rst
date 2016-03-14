@@ -2523,7 +2523,7 @@ applies them to the bundle being created.
       datas = [ ('/usr/share/icons/education_*.png', 'icons') ]
 
    If you need to collect multiple directories or nested directories,
-   you can use helper functions from the ``PyInstaller.hooks.utils`` module
+   you can use helper functions from the ``PyInstaller.utils.hooks`` module
    (see below) to create this list, for example::
       
       datas = collect_data_files('submodule1')
@@ -2547,7 +2547,7 @@ applies them to the bundle being created.
 
       binaries = [ ('C:\\Windows\\System32\\*.dll', 'dlls') ]
 
-   Many hooks use helpers from the ``PyInstaller.hooks.utils`` module
+   Many hooks use helpers from the ``PyInstaller.utils.hooks`` module
    to create this list (see below)::
    
       binaries = collect_dynamic_libs('zmq')
