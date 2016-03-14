@@ -8,31 +8,27 @@
  * ****************************************************************************
  */
 
-
 /*
  * Python.h replacements.
  */
 
-
 #ifdef _WIN32
-    #include <windows.h>  // HMODULE
-    #include <winsock.h>  // ntohl
+    #include <windows.h>  /* HMODULE */
+    #include <winsock.h>  /* ntohl */
 #else
-    #include <dlfcn.h>  // dlsym
+    #include <dlfcn.h>  /* dlsym */
 #endif
-#include <stddef.h>  // ptrdiff_t
+#include <stddef.h>  /* ptrdiff_t */
 #include <stdlib.h>
-
 
 /* PyInstaller headers. */
 #include "pyi_global.h"
 #include "pyi_python.h"
 
-
 /*
  * Python Entry point declarations (see macros in pyi_python.h).
  */
-// external variables
+/* external variables */
 DECLVAR(Py_DontWriteBytecodeFlag);
 DECLVAR(Py_FileSystemDefaultEncoding);
 DECLVAR(Py_FrozenFlag);
@@ -42,7 +38,7 @@ DECLVAR(Py_NoUserSiteDirectory);
 DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
 
-// functions with prefix `Py_`
+/* functions with prefix `Py_` */
 DECLPROC(Py_BuildValue);
 DECLPROC(Py_DecRef);
 DECLPROC(Py_Finalize);
@@ -52,7 +48,7 @@ DECLPROC(Py_SetPath);
 DECLPROC(Py_SetProgramName);
 DECLPROC(Py_SetPythonHome);
 
-// other functions
+/* other functions */
 DECLPROC(PyDict_GetItemString);
 DECLPROC(PyErr_Clear);
 DECLPROC(PyErr_Occurred);
@@ -89,7 +85,8 @@ DECLPROC(PyMarshal_ReadObjectFromString);
  * Get all of the entry points from libpython
  * that we are interested in.
  */
-int pyi_python_map_names(HMODULE dll, int pyvers)
+int
+pyi_python_map_names(HMODULE dll, int pyvers)
 {
     GETVAR(dll, Py_DontWriteBytecodeFlag);
     GETVAR(dll, Py_FileSystemDefaultEncoding);
@@ -100,20 +97,22 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETVAR(dll, Py_OptimizeFlag);
     GETVAR(dll, Py_VerboseFlag);
 
-    // functions with prefix `Py_`
+    /* functions with prefix `Py_` */
     GETPROC(dll, Py_BuildValue);
     GETPROC(dll, Py_DecRef);
     GETPROC(dll, Py_Finalize);
     GETPROC(dll, Py_IncRef);
     GETPROC(dll, Py_Initialize);
+
     if (pyvers >= 30) {
-      // new in Python 3
-      GETPROC(dll, Py_SetPath);
-    };
+        /* new in Python 3 */
+        GETPROC(dll, Py_SetPath);
+    }
+    ;
     GETPROC(dll, Py_SetProgramName);
     GETPROC(dll, Py_SetPythonHome);
 
-    // other functions
+    /* other functions */
     GETPROC(dll, PyDict_GetItemString);
     GETPROC(dll, PyErr_Clear);
     GETPROC(dll, PyErr_Occurred);
@@ -128,10 +127,12 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyObject_CallFunction);
     GETPROC(dll, PyObject_SetAttrString);
     GETPROC(dll, PyRun_SimpleString);
+
     if (pyvers < 30) {
-      GETPROC(dll, PyString_FromString);
-      GETPROC(dll, PyString_FromFormat);
-    };
+        GETPROC(dll, PyString_FromString);
+        GETPROC(dll, PyString_FromFormat);
+    }
+    ;
     GETPROC(dll, PySys_AddWarnOption);
     GETPROC(dll, PySys_SetArgvEx);
     GETPROC(dll, PySys_GetObject);
@@ -139,27 +140,29 @@ int pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PySys_SetPath);
     GETPROC(dll, PyEval_EvalCode);
     GETPROC(dll, PyMarshal_ReadObjectFromString);
-    if (pyvers >= 30) {
-      // new in Python 2.6, but not reliable available in all Linux distros
-      GETPROC(dll, PyUnicode_FromString);
-      // _Py_char2wchar is new in Python 3, in Python 3.5 renamed to Py_DecodeLocale
-      if (pyvers >= 35) {
-        GETPROC(dll, Py_DecodeLocale);
-      }
-      else {
-        GETPROC_RENAMED(dll, Py_DecodeLocale, _Py_char2wchar);
-      };
-    };
 
     if (pyvers >= 30) {
-        // only used on py3
+        /* new in Python 2.6, but not reliable available in all Linux distros */
+        GETPROC(dll, PyUnicode_FromString);
+
+        /* _Py_char2wchar is new in Python 3, in Python 3.5 renamed to Py_DecodeLocale */
+        if (pyvers >= 35) {
+            GETPROC(dll, Py_DecodeLocale);
+        }
+        else {
+            GETPROC_RENAMED(dll, Py_DecodeLocale, _Py_char2wchar);
+        };
+    }
+    ;
+
+    if (pyvers >= 30) {
+        /* only used on py3 */
         GETPROC(dll, PyUnicode_FromFormat);
         GETPROC(dll, PyUnicode_Decode);
     }
 
-
     if (pyvers >= 32) {
-        // new in Python 3.2
+        /* new in Python 3.2 */
         GETPROC(dll, PyUnicode_DecodeFSDefault);
     }
 
