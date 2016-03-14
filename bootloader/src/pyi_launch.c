@@ -391,7 +391,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             Py_DECREF(__file__);
 
             /* Unmarshall code object */
-            code = PI_PyMarshal_ReadObjectFromString(data, ntohl(ptoc->ulen));
+            code = PI_PyMarshal_ReadObjectFromString((const char *) data, ntohl(ptoc->ulen));
 
             if (!code) {
                 FATALERROR("Failed to unmarshal code object for %s\n", ptoc->name);
