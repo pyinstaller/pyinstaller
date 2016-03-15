@@ -81,6 +81,13 @@ class NullWriter:
 
     def flush(*args):
         pass
+
+    # Some packages are checking if stdout/stderr is available.
+    # e.g. youtube-dl  for details see #1883
+    def isatty(self):
+        return False
+
+
 # In Python 3 sys.stdout/err is None in GUI mode on Windows.
 # In Python 2 we need to check .fileno().
 if sys.stdout is None or sys.stdout.fileno() < 0:
