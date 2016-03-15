@@ -401,10 +401,14 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             /* Run it */
             retval = PI_PyEval_EvalCode(code, main_dict, main_dict);
 
-            /* If retval is NULL, an error occured. Otherwise, it is a Python object */
+            /* If retval is NULL, an error occured. Otherwise, it is a Python object.
+             * (Since we evaluate module-level code, which is not allowed to return an
+             * object, the Python object returned is always None.) */
             if (!retval) {
-                FATALERROR("Failed to execute script %s\n", ptoc->name);
                 PI_PyErr_Print();
+                /* If the error was SystemExit, PyErr_Print calls exit() without
+                 * returning. So don't print "Failed to execute" on SystemExit. */
+                FATALERROR("Failed to execute script %s\n", ptoc->name);
                 return -1;
             }
             free(data);
