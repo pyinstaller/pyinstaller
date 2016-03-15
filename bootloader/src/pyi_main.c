@@ -178,9 +178,6 @@ pyi_main(int argc, char * argv[])
         }
         pyi_arch_status_free_memory(archive_status);
 
-        if (extractionpath != NULL) {
-            free(extractionpath);
-        }
     }
     return rc;
 }
