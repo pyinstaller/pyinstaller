@@ -153,7 +153,7 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
         return NULL;
     }
 
-    str = (char *)calloc(wcslen(wstr) + 1, sizeof(char));
+    str = (char *)calloc(len + 1, sizeof(char));
 
     ret = WideCharToMultiByte(CP_ACP,    /* CodePage */
                               0,         /* dwFlags */
