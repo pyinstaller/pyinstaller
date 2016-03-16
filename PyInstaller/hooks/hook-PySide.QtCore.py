@@ -8,8 +8,8 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.utils.hooks import qt4_plugins_binaries
+from PyInstaller.utils.hooks import qt_plugins_binaries
 
 hiddenimports = []
 
-binaries = qt4_plugins_binaries('codecs', ns='PySide')
+binaries = qt_plugins_binaries('codecs', namespace='PySide')

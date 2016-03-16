@@ -8,13 +8,13 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.utils.hooks import qt4_plugins_binaries
+from PyInstaller.utils.hooks import qt_plugins_binaries
 
 binaries = []
-binaries.extend(qt4_plugins_binaries('accessible'))
-binaries.extend(qt4_plugins_binaries('iconengines'))
-binaries.extend(qt4_plugins_binaries('imageformats'))
-binaries.extend(qt4_plugins_binaries('inputmethods'))
-binaries.extend(qt4_plugins_binaries('graphicssystems'))
+binaries.extend(qt_plugins_binaries('accessible', namespace='PyQt4'))
+binaries.extend(qt_plugins_binaries('iconengines', namespace='PyQt4'))
+binaries.extend(qt_plugins_binaries('imageformats', namespace='PyQt4'))
+binaries.extend(qt_plugins_binaries('inputmethods', namespace='PyQt4'))
+binaries.extend(qt_plugins_binaries('graphicssystems', namespace='PyQt4'))
 
 hiddenimports = ['sip', 'PyQt4.QtCore']

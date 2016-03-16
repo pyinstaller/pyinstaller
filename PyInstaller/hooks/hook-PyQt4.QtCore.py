@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.utils.hooks import qt4_plugins_binaries
+from PyInstaller.utils.hooks import qt_plugins_binaries
 
-binaries = qt4_plugins_binaries('codecs')
+binaries = qt_plugins_binaries('codecs', namespace='PyQt4')
 hiddenimports = ['sip']

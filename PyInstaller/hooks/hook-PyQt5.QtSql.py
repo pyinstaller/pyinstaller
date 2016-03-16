@@ -10,6 +10,6 @@
 
 hiddenimports = ['sip', 'PyQt5.QtCore']
 
-from PyInstaller.utils.hooks import qt5_plugins_binaries
+from PyInstaller.utils.hooks import qt_plugins_binaries
 
-binaries = qt5_plugins_binaries('sqldrivers')
+binaries = qt_plugins_binaries('sqldrivers', namespace='PyQt5')
