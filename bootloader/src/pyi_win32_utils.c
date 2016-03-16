@@ -153,7 +153,7 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
         return NULL;
     }
 
-    str = (char *)malloc(sizeof(char) * wcslen(wstr) + 1);
+    str = (char *)calloc(wcslen(wstr) + 1, sizeof(char));
 
     ret = WideCharToMultiByte(CP_ACP,    /* CodePage */
                               0,         /* dwFlags */
@@ -196,7 +196,7 @@ pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr)
     wsfnlen = GetShortPathNameW(wstr, NULL, 0);
 
     if (wsfnlen) {
-        wstr_sfn = (wchar_t *)malloc(sizeof(wchar_t) * wsfnlen + 1);
+        wstr_sfn = (wchar_t *)calloc(wsfnlen + 1, sizeof(wchar_t));
         ret = GetShortPathNameW(wstr, wstr_sfn, wsfnlen);
 
         if (ret) {
@@ -276,7 +276,7 @@ pyi_win32_argv_to_utf8(int argc, wchar_t **wargv)
     int i, j;
     char ** argv;
 
-    argv = (char **)malloc(sizeof(char *) * (argc + 1));
+    argv = (char **)calloc(argc + 1, sizeof(char *));
 
     for (i = 0; i < argc; i++) {
         argv[i] = pyi_win32_utils_to_utf8(NULL, wargv[i], 0);
@@ -307,7 +307,7 @@ pyi_win32_wargv_from_utf8(int argc, char **argv)
     int i, j;
     wchar_t ** wargv;
 
-    wargv = (wchar_t **)malloc(sizeof(wchar_t *) * (argc + 1));
+    wargv = (wchar_t **)calloc(argc + 1, sizeof(wchar_t *));
 
     for (i = 0; i < argc; i++) {
         wargv[i] = pyi_win32_utils_from_utf8(NULL, argv[i], 0);
@@ -368,7 +368,7 @@ pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len)
             return NULL;
         }
 
-        output = (char *)malloc(sizeof(char) * len + 1);
+        output = (char *)calloc(len + 1, sizeof(char));
     }
     else {
         output = str;
@@ -431,7 +431,7 @@ pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
             return NULL;
         }
 
-        output = (wchar_t *)malloc(sizeof(wchar_t) * wlen + 1);
+        output = (wchar_t *)calloc(wlen + 1, sizeof(wchar_t));
     }
     else {
         output = wstr;
@@ -520,7 +520,7 @@ pyi_win32_argv_mbcs_from_utf8_ex(int argc, char **argv, int sfn)
     int i, j;
     char ** argv_mbcs;
 
-    argv_mbcs = (char **)malloc(sizeof(char *) * (argc + 1));
+    argv_mbcs = (char **)calloc(argc + 1, sizeof(char *));
 
     for (i = 0; i < argc; i++) {
         argv_mbcs[i] = pyi_win32_utf8_to_mbs_ex(NULL, argv[i], 0, sfn);
