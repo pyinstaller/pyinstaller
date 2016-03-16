@@ -226,15 +226,17 @@ def qt_plugins_binaries(plugin_type, namespace):
     # Windows:
     #
     # dlls_in_dir() grabs all files ending with *.dll, *.so and *.dylib in a certain
-    # directory. On Windows this would grab debug copies of Qt 4 plugins, which then
+    # directory. On Windows this would grab debug copies of Qt plugins, which then
     # causes PyInstaller to add a dependency on the Debug CRT __in addition__ to the
     # release CRT.
     #
-    # Since debug copies of Qt4 plugins end with "d4.dll" we filter them out of the
-    # list.
+    # Since on Windows debug copies of Qt4 plugins end with "d4.dll" and Qt 5 plugins
+    # end with "d.dll" we filter them out of the list.
     #
     if is_win and (namespace in ['PyQt4', 'PySide']):
         files = [f for f in files if not f.endswith("d4.dll")]
+    elif is_win and namespace is 'PyQt5':
+        files = [f for f in files if not f.endswith("d.dll")]
 
     logger.debug('Found plugin files {0} for plugin \'{1}\''.format(files, plugin_type))
     if namespace in ['PyQt4', 'PySide']:
