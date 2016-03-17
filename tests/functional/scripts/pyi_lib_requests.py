@@ -47,7 +47,8 @@ SERVER_CERT = os.path.join(basedir, u"server.pem")
 if not os.path.exists(SERVER_CERT):
     raise SystemExit('Certificate-File %s is missing' % SERVER_CERT)
 
-def ssl_server():
+
+def main():
     # SSL server copied from here:
     # http://www.piware.de/2011/01/creating-an-https-server-in-python/
     httpd = BaseHTTPServer.HTTPServer(
@@ -56,11 +57,11 @@ def ssl_server():
     httpd.socket = ssl.wrap_socket(
         httpd.socket, certfile=SERVER_CERT, server_side=True,
         ssl_version=ssl.PROTOCOL_TLSv1,
-        )
-    httpd.serve_forever()
+    )
 
+    def ssl_server():
+        httpd.serve_forever()
 
-def main():
     # Start the SSL server
     thread = threading.Thread(target=ssl_server)
     thread.daemon = True
