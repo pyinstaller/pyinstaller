@@ -173,219 +173,112 @@ print(list(diff))
     return module_imports
 
 
-def qt4_plugins_dir(ns='PyQt4'):
-    qt4_plugin_dirs = eval_statement(
-        "from %s.QtCore import QCoreApplication;"
-        "app=QCoreApplication([]);"
-        # For Python 2 print would give "<PyQt4.QtCore.QStringList
+def qt_plugins_dir(namespace):
+    """
+    Return list of paths searched for plugins
+
+    :param namespace: Import namespace, i.e., PyQt4, PyQt5, or PySide
+
+    :return: Plugin directory paths
+    """
+    if namespace not in ['PyQt4', 'PyQt5', 'PySide']:
+        raise Exception('Invalid namespace: {0}'.format(namespace))
+    paths = eval_statement("""
+        from {0}.QtCore import QCoreApplication;
+        app = QCoreApplication([]);
+        # For Python 2 print would give <PyQt4.QtCore.QStringList
         # object at 0x....>", so we need to convert each element separately
-        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
-        "print([str(p) for p in app.libraryPaths()])" % ns)
-    if not qt4_plugin_dirs:
-        logger.error('Cannot find %s plugin directories' % ns)
-        return ""
-    for d in qt4_plugin_dirs:
-        if os.path.isdir(d):
-            return str(d)  # must be 8-bit chars for one-file builds
-    logger.error('Cannot find existing %s plugin directory' % ns)
-    return ""
+        str = getattr(__builtins__, 'unicode', str);  # for Python 2
+        print([str(p) for p in app.libraryPaths()])
+        """.format(namespace))
+    if not paths:
+        raise Exception('Cannot find {0} plugin directories'.format(namespace))
+    else:
+        valid_paths = []
+        for path in paths:
+            if os.path.isdir(path):
+                valid_paths.append(str(path))  # must be 8-bit chars for one-file builds
+        qt_plugin_paths = valid_paths
+    if not qt_plugin_paths:
+        raise Exception("""
+            Cannot find existing {0} plugin directories
+            Paths checked: {1}
+            """.format(namespace, paths))
+    return qt_plugin_paths
 
 
-def qt4_phonon_plugins_dir(ns='PyQt4'):
-    qt4_plugin_dirs = eval_statement(
-        "from PyQt4.QtGui import QApplication;"
-        "app=QApplication([]); app.setApplicationName('pyinstaller');"
-        "from PyQt4.phonon import Phonon;"
-        "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        # For Python 2 print would give "<PyQt4.QtCore.QStringList
-        # object at 0x....>", so we need to convert each element separately
-        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
-        "print([str(p) for p in app.libraryPaths()])")
-    if not qt4_plugin_dirs:
-        logger.error("Cannot find PyQt4 phonon plugin directories")
-        return ""
-    for d in qt4_plugin_dirs:
-        if os.path.isdir(d):
-            return str(d)  # must be 8-bit chars for one-file builds
-    logger.error("Cannot find existing PyQt4 phonon plugin directory")
-    return ""
+def qt_plugins_binaries(plugin_type, namespace):
+    """
+    Return list of dynamic libraries formatted for mod.binaries.
 
+    :param plugin_type: Plugin to look for
+    :param namespace: Import namespace, i.e., PyQt4, PyQt5 or PySide
 
-def qt4_plugins_binaries(plugin_type, ns='PyQt4'):
-    """Return list of dynamic libraries formatted for mod.binaries."""
-    pdir = qt4_plugins_dir(ns=ns)
-    files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
+    :return: Plugin directory path corresponding to the given plugin_type
+    """
+    if namespace not in ['PyQt4', 'PyQt5', 'PySide']:
+        raise Exception('Invalid namespace: {0}'.format(namespace))
+    pdir = qt_plugins_dir(namespace=namespace)
+    files = []
+    for path in pdir:
+        files.extend(misc.dlls_in_dir(os.path.join(path, plugin_type)))
 
     # Windows:
     #
     # dlls_in_dir() grabs all files ending with *.dll, *.so and *.dylib in a certain
-    # directory. On Windows this would grab debug copies of Qt 4 plugins, which then
+    # directory. On Windows this would grab debug copies of Qt plugins, which then
     # causes PyInstaller to add a dependency on the Debug CRT __in addition__ to the
     # release CRT.
     #
-    # Since debug copies of Qt4 plugins end with "d4.dll" we filter them out of the
-    # list.
+    # Since on Windows debug copies of Qt4 plugins end with "d4.dll" and Qt 5 plugins
+    # end with "d.dll" we filter them out of the list.
     #
-    if is_win:
+    if is_win and (namespace in ['PyQt4', 'PySide']):
         files = [f for f in files if not f.endswith("d4.dll")]
+    elif is_win and namespace is 'PyQt5':
+        files = [f for f in files if not f.endswith("d.dll")]
 
-    dest_dir = os.path.join('qt4_plugins', plugin_type)
+    logger.debug('Found plugin files {0} for plugin \'{1}\''.format(files, plugin_type))
+    if namespace in ['PyQt4', 'PySide']:
+        plugin_dir = 'qt4_plugins'
+    else:
+        plugin_dir = 'qt5_plugins'
+    dest_dir = os.path.join(plugin_dir, plugin_type)
     binaries = [
         (f, dest_dir)
         for f in files]
     return binaries
 
 
-def qt4_menu_nib_dir():
-    """Return path to Qt resource dir qt_menu.nib. OSX only"""
-    menu_dir = ''
-    # Detect MacPorts prefix (usually /opt/local).
-    # Suppose that PyInstaller is using python from macports.
-    macports_prefix = os.path.realpath(sys.executable).split('/Library')[0]
+def qt_menu_nib_dir(namespace):
+    """
+    Return path to Qt resource dir qt_menu.nib on OSX only.
 
-    # list of directories where to look for qt_menu.nib
-    dirs = []
+    :param namespace: Import namespace, i.e., PyQt4, PyQt5, or PySide
 
-    # Look into user-specified directory, just in case Qt4 is not installed
-    # in a standard location
-    if 'QTDIR' in os.environ:
-        dirs += [
-            os.path.join(os.environ['QTDIR'], "QtGui.framework/Versions/4/Resources"),
-            os.path.join(os.environ['QTDIR'], "lib", "QtGui.framework/Versions/4/Resources"),
-        ]
+    :return: Directory containing qt_menu.nib for specified namespace
+    """
+    if namespace not in ['PyQt4', 'PyQt5', 'PySide']:
+        raise Exception('Invalid namespace: {0}'.format(namespace))
 
-    # If PyQt4 is built against Qt5 look for the qt_menu.nib in a user
-    # specified location, if it exists.
-    if 'QT5DIR' in os.environ:
-        dirs.append(os.path.join(os.environ['QT5DIR'],
-                                 "src", "plugins", "platforms", "cocoa"))
-
-    dirs += [
-        # Qt4 from MacPorts not compiled as framework.
-        os.path.join(macports_prefix, 'lib', 'Resources'),
-        # Qt4 from MacPorts compiled as framework.
-        os.path.join(macports_prefix, 'libexec', 'qt4-mac', 'lib',
-            'QtGui.framework', 'Versions', '4', 'Resources'),
-        # Qt4 installed into default location.
-        '/Library/Frameworks/QtGui.framework/Resources',
-        '/Library/Frameworks/QtGui.framework/Versions/4/Resources',
-        '/Library/Frameworks/QtGui.Framework/Versions/Current/Resources',
-    ]
-
-    # Qt from Homebrew
-    homebrewqtpath = get_homebrew_path('qt')
-    if homebrewqtpath:
-        dirs.append( os.path.join(homebrewqtpath,'lib','QtGui.framework','Versions','4','Resources') )
+    path = exec_statement("""
+    from {0}.QtCore import QLibraryInfo
+    path = QLibraryInfo.location(QLibraryInfo.LibrariesPath)
+    str = getattr(__builtins__, 'unicode', str)  # for Python 2
+    print(str(path))
+    """.format(namespace))
+    path = os.path.join(path, 'Resources')
 
     # Check directory existence
-    for d in dirs:
-        d = os.path.join(d, 'qt_menu.nib')
-        if os.path.exists(d):
-            menu_dir = d
-            break
-
-    if not menu_dir:
-        logger.error('Cannot find qt_menu.nib directory')
-    return menu_dir
-
-def qt5_plugins_dir():
-    if 'QT_PLUGIN_PATH' in os.environ and os.path.isdir(os.environ['QT_PLUGIN_PATH']):
-        return str(os.environ['QT_PLUGIN_PATH'])
-
-    qt5_plugin_dirs = eval_statement(
-        "from PyQt5.QtCore import QCoreApplication;"
-        "app=QCoreApplication([]);"
-        # For Python 2 print would give "<PyQt4.QtCore.QStringList
-        # object at 0x....>", so we need to convert each element separately
-        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
-        "print([str(p) for p in app.libraryPaths()])")
-    if not qt5_plugin_dirs:
-        logger.error("Cannot find PyQt5 plugin directories")
-        return ""
-    for d in qt5_plugin_dirs:
-        if os.path.isdir(d):
-            return str(d)  # must be 8-bit chars for one-file builds
-    logger.error("Cannot find existing PyQt5 plugin directory")
-    return ""
-
-
-def qt5_phonon_plugins_dir():
-    qt5_plugin_dirs = eval_statement(
-        "from PyQt5.QtGui import QApplication;"
-        "app=QApplication([]); app.setApplicationName('pyinstaller');"
-        "from PyQt5.phonon import Phonon;"
-        "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        # For Python 2 print would give "<PyQt4.QtCore.QStringList
-        # object at 0x....>", so we need to convert each element separately
-        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
-        "print([str(p) for p in app.libraryPaths()])")
-    if not qt5_plugin_dirs:
-        logger.error("Cannot find PyQt5 phonon plugin directories")
-        return ""
-    for d in qt5_plugin_dirs:
-        if os.path.isdir(d):
-            return str(d)  # must be 8-bit chars for one-file builds
-    logger.error("Cannot find existing PyQt5 phonon plugin directory")
-    return ""
-
-
-def qt5_plugins_binaries(plugin_type):
-    """Return list of dynamic libraries formatted for mod.binaries."""
-    pdir = qt5_plugins_dir()
-    files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
-    dest_dir = os.path.join('qt5_plugins', plugin_type)
-    binaries = [
-        (f, dest_dir)
-        for f in files]
-    return binaries
-
-
-def qt5_menu_nib_dir():
-    """Return path to Qt resource dir qt_menu.nib. OSX only"""
-    menu_dir = ''
-
-    # If the QT5DIR env var is set then look there first. It should be set to the
-    # qtbase dir in the Qt5 distribution.
-    dirs = []
-    if 'QT5DIR' in os.environ:
-        dirs.append(os.path.join(os.environ['QT5DIR'],
-                                 "src", "plugins", "platforms", "cocoa"))
-        dirs.append(os.path.join(os.environ['QT5DIR'],
-                                 "src", "qtbase", "src", "plugins", "platforms", "cocoa"))
-
-    # As of the time of writing macports doesn't yet support Qt5. So this is
-    # just modified from the Qt4 version.
-    # FIXME: update this when MacPorts supports Qt5
-    # Detect MacPorts prefix (usually /opt/local).
-    # Suppose that PyInstaller is using python from macports.
-    macports_prefix = os.path.realpath(sys.executable).split('/Library')[0]
-    # list of directories where to look for qt_menu.nib
-    dirs.extend( [
-        # Qt5 from MacPorts not compiled as framework.
-        os.path.join(macports_prefix, 'lib', 'Resources'),
-        # Qt5 from MacPorts compiled as framework.
-        os.path.join(macports_prefix, 'libexec', 'qt5-mac', 'lib',
-            'QtGui.framework', 'Versions', '5', 'Resources'),
-        # Qt5 installed into default location.
-        '/Library/Frameworks/QtGui.framework/Resources',
-        '/Library/Frameworks/QtGui.framework/Versions/5/Resources',
-        '/Library/Frameworks/QtGui.Framework/Versions/Current/Resources',
-    ])
-
-    # Qt5 from Homebrew
-    homebrewqtpath = get_homebrew_path('qt5')
-    if homebrewqtpath:
-        dirs.append( os.path.join(homebrewqtpath,'src','qtbase','src','plugins','platforms','cocoa') )
-
-    # Check directory existence
-    for d in dirs:
-        d = os.path.join(d, 'qt_menu.nib')
-        if os.path.exists(d):
-            menu_dir = d
-            break
-
-    if not menu_dir:
-        logger.error('Cannot find qt_menu.nib directory')
+    path = os.path.join(path, 'qt_menu.nib')
+    if os.path.exists(path):
+        menu_dir = path
+        logger.debug('Found qt_menu.nib for {0} at {1}'.format(namespace, path))
+    else:
+        raise Exception("""
+            Cannot find qt_menu.nib for {0}
+            Path checked: {1}
+            """.format(namespace, path))
     return menu_dir
 
 def get_homebrew_path(formula = ''):

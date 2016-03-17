@@ -11,7 +11,7 @@
 import os
 
 from PyInstaller.utils.hooks import (
-    get_module_attribute, is_module_satisfies, qt5_menu_nib_dir)
+    get_module_attribute, is_module_satisfies, qt_menu_nib_dir)
 from PyInstaller.compat import getsitepackages, is_darwin, is_win
 
 
@@ -34,4 +34,4 @@ if is_darwin:
     # Version of the currently installed Qt 5.x shared library.
     qt_version = get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')
     if is_module_satisfies('Qt < 5.4', qt_version):
-        datas = [(qt5_menu_nib_dir(), '')]
+        datas = [(qt_menu_nib_dir('PyQt5'), '')]

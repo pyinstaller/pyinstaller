@@ -9,12 +9,12 @@
 
 # QtMultimedia tries to pull in QtNetwork
 
-hiddenimports = [ 'PyQt5.QtNetwork' ]
+hiddenimports = ['PyQt5.QtNetwork']
 
 # QtMultimedia needs some plugins
 
-from PyInstaller.utils.hooks import qt5_plugins_binaries
+from PyInstaller.utils.hooks import qt_plugins_binaries
 
 binaries = []
-binaries.extend( qt5_plugins_binaries( 'audio' ) )
-binaries.extend( qt5_plugins_binaries( 'mediaservice' ) )
+binaries.extend(qt_plugins_binaries('audio', namespace='PyQt5'))
+binaries.extend(qt_plugins_binaries('mediaservice', namespace='PyQt5'))

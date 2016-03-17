@@ -15,7 +15,7 @@ import os
 import subprocess
 
 from PyInstaller.config import CONF
-from PyInstaller.compat import is_darwin, is_win, is_linux
+from PyInstaller.compat import is_darwin, is_win, is_linux, exec_command
 from PyInstaller.utils.hooks import collect_glib_translations, get_gi_typelibs,\
     get_gi_libdir
 
@@ -33,14 +33,13 @@ if pattern:
         binaries.append((f, 'lib/gdk-pixbuf-2.0/2.10.0/loaders'))
     
     # Create an updated version of the loader cache
-    cachedata = subprocess.check_output('gdk-pixbuf-query-loaders')
+    cachedata = exec_command('gdk-pixbuf-query-loaders')
     
     if is_darwin:
         cd = []
         prefix = '"' + libdir
         plen = len(prefix)
         
-        # TODO: python3 probably will break here
         for line in cachedata.splitlines():
             if line.startswith('#'):
                 continue

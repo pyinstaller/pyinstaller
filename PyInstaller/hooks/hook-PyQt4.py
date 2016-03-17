@@ -10,7 +10,7 @@
 
 import os
 
-from PyInstaller.utils.hooks import qt4_menu_nib_dir
+from PyInstaller.utils.hooks import qt_menu_nib_dir
 from PyInstaller.compat import getsitepackages, is_darwin, is_win
 
 
@@ -30,5 +30,5 @@ hiddenimports = ['sip']
 # app.
 if is_darwin:
     datas = [
-        (qt4_menu_nib_dir(), ''),
+        (qt_menu_nib_dir('PyQt4'), ''),
     ]

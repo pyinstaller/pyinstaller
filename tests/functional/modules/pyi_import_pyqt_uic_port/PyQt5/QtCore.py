@@ -7,7 +7,7 @@ class QCoreApplication:
     @classmethod
     def setLibraryPaths(*args, **kw): pass
 
-    def libraryPaths(*args, **kw): return []
+    def libraryPaths(*args, **kw): return ['.']
 
 # required to make hook-PyQt5 happy
 QT_VERSION_STR = '99.99.99'
