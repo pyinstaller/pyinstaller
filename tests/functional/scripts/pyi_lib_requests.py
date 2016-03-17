@@ -6,6 +6,7 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 # -----------------------------------------------------------------------------
+import socket
 
 try:
     import BaseHTTPServer
@@ -40,7 +41,6 @@ else:
     basedir = os.path.dirname(__file__)
 
 
-SERVER_PORT = 8443
 SERVER_CERT = os.path.join(basedir, u"server.pem")
 
 
@@ -49,11 +49,33 @@ if not os.path.exists(SERVER_CERT):
 
 
 def main():
-    # SSL server copied from here:
-    # http://www.piware.de/2011/01/creating-an-https-server-in-python/
-    httpd = BaseHTTPServer.HTTPServer(
-        ('localhost', SERVER_PORT),
-        SimpleHTTPServer.SimpleHTTPRequestHandler)
+
+    SERVER_PORT = 8443
+    httpd = None
+
+    # Since unit tests run in parallel, the port may be in use, so
+    # retry creating the server while incrementing the port number
+    while SERVER_PORT < 8493:  # Max 50 retries
+        try:
+            # SSL server copied from here:
+            # http://www.piware.de/2011/01/creating-an-https-server-in-python/
+            httpd = BaseHTTPServer.HTTPServer(
+                ('localhost', SERVER_PORT),
+                SimpleHTTPServer.SimpleHTTPRequestHandler)
+        except socket.error as e:
+            if e.errno == 98:  # Address in use
+                SERVER_PORT += 1
+                continue
+            else:
+                # Some other socket.error
+                raise
+        else:
+            # Success
+            break
+    else:
+        # Did not break from loop, so we ran out of retries
+        assert False, "Could not bind server port: all ports in use."
+
     httpd.socket = ssl.wrap_socket(
         httpd.socket, certfile=SERVER_CERT, server_side=True,
         ssl_version=ssl.PROTOCOL_TLSv1,
