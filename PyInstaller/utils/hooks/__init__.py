@@ -173,47 +173,50 @@ print(list(diff))
     return module_imports
 
 
-def qt4_plugins_dir(ns='PyQt4'):
-    qt4_plugin_dirs = eval_statement(
+def qtX_plugins_dir(ns='PyQt4'):
+    if 'QT_PLUGIN_PATH' in os.environ and os.path.isdir(os.environ['QT_PLUGIN_PATH']):
+        return str(os.environ['QT_PLUGIN_PATH'])
+
+    qtX_plugin_dirs = eval_statement(
         "from %s.QtCore import QCoreApplication;"
         "app=QCoreApplication([]);"
         # For Python 2 print would give "<PyQt4.QtCore.QStringList
         # object at 0x....>", so we need to convert each element separately
         "str=getattr(__builtins__, 'unicode', str);" # for Python 2
         "print([str(p) for p in app.libraryPaths()])" % ns)
-    if not qt4_plugin_dirs:
+    if not qtX_plugin_dirs:
         logger.error('Cannot find %s plugin directories' % ns)
         return ""
-    for d in qt4_plugin_dirs:
+    for d in qtX_plugin_dirs:
         if os.path.isdir(d):
             return str(d)  # must be 8-bit chars for one-file builds
     logger.error('Cannot find existing %s plugin directory' % ns)
     return ""
 
 
-def qt4_phonon_plugins_dir(ns='PyQt4'):
-    qt4_plugin_dirs = eval_statement(
-        "from PyQt4.QtGui import QApplication;"
+def qtX_phonon_plugins_dir(ns='PyQt4'):
+    qtX_plugin_dirs = eval_statement(
+        "from %(ns)s.QtGui import QApplication;"
         "app=QApplication([]); app.setApplicationName('pyinstaller');"
-        "from PyQt4.phonon import Phonon;"
+        "from %(ns)s.phonon import Phonon;"
         "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        # For Python 2 print would give "<PyQt4.QtCore.QStringList
+        # For Python 2 print would give "<PyQtX.QtCore.QStringList
         # object at 0x....>", so we need to convert each element separately
         "str=getattr(__builtins__, 'unicode', str);" # for Python 2
-        "print([str(p) for p in app.libraryPaths()])")
-    if not qt4_plugin_dirs:
-        logger.error("Cannot find PyQt4 phonon plugin directories")
+        "print([str(p) for p in app.libraryPaths()])" % {'ns': ns})
+    if not qtX_plugin_dirs:
+        logger.error("Cannot find %s phonon plugin directories" % ns)
         return ""
-    for d in qt4_plugin_dirs:
+    for d in qtX_plugin_dirs:
         if os.path.isdir(d):
             return str(d)  # must be 8-bit chars for one-file builds
-    logger.error("Cannot find existing PyQt4 phonon plugin directory")
+    logger.error("Cannot find existing %s phonon plugin directory" % ns)
     return ""
 
 
-def qt4_plugins_binaries(plugin_type, ns='PyQt4'):
+def qtX_plugins_binaries(plugin_type, ns='PyQt4'):
     """Return list of dynamic libraries formatted for mod.binaries."""
-    pdir = qt4_plugins_dir(ns=ns)
+    pdir = qtX_plugins_dir(ns=ns)
     files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
 
     # Windows:
@@ -229,11 +232,32 @@ def qt4_plugins_binaries(plugin_type, ns='PyQt4'):
     if is_win:
         files = [f for f in files if not f.endswith("d4.dll")]
 
-    dest_dir = os.path.join('qt4_plugins', plugin_type)
+    qtX_plugins = 'qt4_plugins' if ns == 'PyQt4' else 'qt5_plugins'
+    dest_dir = os.path.join(qtX_plugins, plugin_type)
     binaries = [
         (f, dest_dir)
         for f in files]
     return binaries
+
+
+def qt4_plugins_dir():
+    return qtX_plugins_dir(ns='PyQt4')
+
+def qt4_phonon_plugins_dir():
+    return qtX_phonon_plugins_dir(ns='PyQt4')
+
+def qt4_plugins_binaries(plugin_type):
+    return qtX_plugins_binaries(plugin_type, ns='PyQt4')
+
+
+def qt5_plugins_dir():
+    return qtX_plugins_dir(ns='PyQt5')
+
+def qt5_phonon_plugins_dir():
+    return qtX_phonon_plugins_dir(ns='PyQt5')
+
+def qt5_plugins_binaries(plugin_type):
+    return qtX_plugins_binaries(plugin_type, ns='PyQt5')
 
 
 def qt4_menu_nib_dir():
@@ -288,57 +312,6 @@ def qt4_menu_nib_dir():
         logger.error('Cannot find qt_menu.nib directory')
     return menu_dir
 
-def qt5_plugins_dir():
-    if 'QT_PLUGIN_PATH' in os.environ and os.path.isdir(os.environ['QT_PLUGIN_PATH']):
-        return str(os.environ['QT_PLUGIN_PATH'])
-
-    qt5_plugin_dirs = eval_statement(
-        "from PyQt5.QtCore import QCoreApplication;"
-        "app=QCoreApplication([]);"
-        # For Python 2 print would give "<PyQt4.QtCore.QStringList
-        # object at 0x....>", so we need to convert each element separately
-        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
-        "print([str(p) for p in app.libraryPaths()])")
-    if not qt5_plugin_dirs:
-        logger.error("Cannot find PyQt5 plugin directories")
-        return ""
-    for d in qt5_plugin_dirs:
-        if os.path.isdir(d):
-            return str(d)  # must be 8-bit chars for one-file builds
-    logger.error("Cannot find existing PyQt5 plugin directory")
-    return ""
-
-
-def qt5_phonon_plugins_dir():
-    qt5_plugin_dirs = eval_statement(
-        "from PyQt5.QtGui import QApplication;"
-        "app=QApplication([]); app.setApplicationName('pyinstaller');"
-        "from PyQt5.phonon import Phonon;"
-        "v=Phonon.VideoPlayer(Phonon.VideoCategory);"
-        # For Python 2 print would give "<PyQt4.QtCore.QStringList
-        # object at 0x....>", so we need to convert each element separately
-        "str=getattr(__builtins__, 'unicode', str);" # for Python 2
-        "print([str(p) for p in app.libraryPaths()])")
-    if not qt5_plugin_dirs:
-        logger.error("Cannot find PyQt5 phonon plugin directories")
-        return ""
-    for d in qt5_plugin_dirs:
-        if os.path.isdir(d):
-            return str(d)  # must be 8-bit chars for one-file builds
-    logger.error("Cannot find existing PyQt5 phonon plugin directory")
-    return ""
-
-
-def qt5_plugins_binaries(plugin_type):
-    """Return list of dynamic libraries formatted for mod.binaries."""
-    pdir = qt5_plugins_dir()
-    files = misc.dlls_in_dir(os.path.join(pdir, plugin_type))
-    dest_dir = os.path.join('qt5_plugins', plugin_type)
-    binaries = [
-        (f, dest_dir)
-        for f in files]
-    return binaries
-
 
 def qt5_menu_nib_dir():
     """Return path to Qt resource dir qt_menu.nib. OSX only"""
@@ -387,6 +360,7 @@ def qt5_menu_nib_dir():
     if not menu_dir:
         logger.error('Cannot find qt_menu.nib directory')
     return menu_dir
+
 
 def get_homebrew_path(formula = ''):
     '''Return the homebrew path to the requested formula, or the global prefix when
