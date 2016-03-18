@@ -56,7 +56,9 @@ if is_win:
 elif is_cygwin:
     PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver}
 elif is_darwin:
-    PYDYLIB_NAMES = {'Python', '.Python', 'libpython%d.%d.dylib' % _pyver}
+    PYDYLIB_NAMES = {'Python', '.Python', 
+                     'libpython%d.%d.dylib' % _pyver, 
+                     'libpython%d.%dm.dylib' % _pyver}
 elif is_aix:
     # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
     PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver}
