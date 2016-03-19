@@ -380,20 +380,31 @@ def configure(ctx):
         #   Mac OS X 10.5 is UNIX 03 compliant.
         ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=600')
         ctx.env.append_value('DEFINES', '_REENTRANT')
-        # Recent GCC 5.x complains about _BSD_SOURCE:
-        #  warning "_BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE"
-        if is_linux:
-            ctx.env.append_value('DEFINES', '_DEFAULT_SOURCE')
-        # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
+
+        # mkdtemp() is available only if _BSD_SOURCE is defined.
         ctx.env.append_value('DEFINES', '_BSD_SOURCE')
-        # On Mac OS X is 'mkdtemp' available only with _DARWIN_C_SOURCE.
-        if is_darwin:
+
+        if is_linux:
+            # Recent GCC 5.x complains about _BSD_SOURCE under Linux:
+            #     _BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE
+            ctx.env.append_value('DEFINES', '_DEFAULT_SOURCE')
+
+            # TODO What other platforms support _FORTIFY_SOURCE macro? OS X?
+            # TODO OS X's CLang appears to support this macro as well. See:
+            # http://permalink.gmane.org/gmane.comp.compilers.clang.devel/2442
+
+            # For security, enable the _FORTIFY_SOURCE macro detecting buffer
+            # overflows in various string and memory manipulation functions.
+            if ctx.env.CC_NAME == 'gcc':
+                # Undefine this macro if already defined by default to avoid
+                # "macro redefinition" errors.
+                ctx.env.append_value('CFLAGS', '-U_FORTIFY_SOURCE')
+
+                # Define this macro.
+                ctx.env.append_value('DEFINES', '_FORTIFY_SOURCE=2')
+        # On Mac OS X, mkdtemp() is available only with _DARWIN_C_SOURCE.
+        elif is_darwin:
             ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
-        # Macro _FORTIFY_SOURCE forces some checks to detect some buffer overflow errors
-        # in various string and memory manipulation functions.
-        # TODO What other platforms support _FORTIFY_SOURCE macro? OS X?
-        if is_linux and ctx.env.CC_NAME == 'gcc':
-            ctx.env.append_value('DEFINES', '_FORTIFY_SOURCE=2')
 
     if is_win:
         ctx.env.append_value('DEFINES', 'WIN32')
