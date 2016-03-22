@@ -10,12 +10,9 @@
 
 # Library imports
 # ---------------
-import glob
 import locale
 import os
-import shutil
 import sys
-import subprocess
 
 # Third-party imports
 # -------------------
@@ -23,9 +20,9 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import architecture, is_darwin, is_win, is_py2
+from PyInstaller.compat import is_darwin, is_win, is_py2
 from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, \
-    skipif_notwin, skipif_notosx
+    skipif_notwin, skipif_notosx, xfail
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -194,6 +191,7 @@ def test_module_attributes(tmpdir, pyi_builder):
     pyi_builder.test_script('pyi_module_attributes.py')
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
 

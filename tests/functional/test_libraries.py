@@ -17,7 +17,7 @@ import os
 # -------------
 import sys
 
-from PyInstaller.compat import is_win, is_py3
+from PyInstaller.compat import is_win, is_py3, is_darwin
 from PyInstaller.utils.tests import importorskip, xfail
 
 # :todo: find a way to get this from `conftest` or such
@@ -94,8 +94,10 @@ def test_gevent_monkey(pyi_builder):
         """)
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
+
 
 @importorskip('FixTk')
 def test_tkinter_FixTk(pyi_builder):
@@ -191,10 +193,12 @@ def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
 
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('sphinx')
 def test_sphinx(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_sphinx.py')
+
 
 @importorskip('pylint')
 def test_pylint(pyi_builder):
@@ -213,6 +217,7 @@ def test_pylint(pyi_builder):
         """)
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('pygments')
 def test_pygments(pyi_builder):
     pyi_builder.test_source(
@@ -226,6 +231,8 @@ def test_pygments(pyi_builder):
         print(highlight(code, PythonLexer(), HtmlFormatter()))
         """)
 
+
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('markdown')
 def test_markdown(pyi_builder):
     # Markdown uses __import__ed extensions. Make sure these work by
@@ -235,6 +242,7 @@ def test_markdown(pyi_builder):
         import markdown
         print(markdown.markdown('testing',  ['toc']))
         """)
+
 
 @importorskip('PyQt4')
 def test_PyQt4_QtWebKit(pyi_builder):
@@ -280,6 +288,7 @@ def test_zope_interface(pyi_builder):
         """)
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('idlelib')
 def test_idlelib(pyi_builder):
     pyi_builder.test_source(
@@ -289,6 +298,7 @@ def test_idlelib(pyi_builder):
         """)
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('keyring')
 def test_keyring(pyi_builder):
     pyi_builder.test_source("import keyring")
@@ -304,6 +314,7 @@ def test_lxml_isoschematron(pyi_builder):
         """)
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('numpy')
 def test_numpy(pyi_builder):
     pyi_builder.test_source(
@@ -327,6 +338,7 @@ def test_pyodbc(pyi_builder):
         """)
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('pytz')
 def test_pytz(pyi_builder):
     pyi_builder.test_source(
@@ -489,6 +501,7 @@ def test_scipy(pyi_builder):
         """)
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('sqlalchemy')
 def test_sqlalchemy(pyi_builder):
     pyi_builder.test_source(
@@ -532,6 +545,7 @@ for pkg in all_qt_pkgs:
     p = importorskip(pkg)(p)
     excludes.append(p)
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('matplotlib')
 @pytest.mark.parametrize("excludes", excludes, ids=all_qt_pkgs)
 def test_matplotlib(pyi_builder, excludes):
