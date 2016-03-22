@@ -260,6 +260,7 @@ def qt_menu_nib_dir(namespace):
     """
     if namespace not in ['PyQt4', 'PyQt5', 'PySide']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
+    menu_dir = None
 
     path = exec_statement("""
     from {0}.QtCore import QLibraryInfo
@@ -267,14 +268,14 @@ def qt_menu_nib_dir(namespace):
     str = getattr(__builtins__, 'unicode', str)  # for Python 2
     print(str(path))
     """.format(namespace))
-    path = os.path.join(path, 'Resources')
-
-    # Check directory existence
-    path = os.path.join(path, 'qt_menu.nib')
-    if os.path.exists(path):
-        menu_dir = path
-        logger.debug('Found qt_menu.nib for {0} at {1}'.format(namespace, path))
-    else:
+    for location in [os.path.join(path, 'Resources'), os.path.join(path, 'QtGui.framework', 'Resources')]:
+        # Check directory existence
+        path = os.path.join(location, 'qt_menu.nib')
+        if os.path.exists(path):
+            menu_dir = path
+            logger.debug('Found qt_menu.nib for {0} at {1}'.format(namespace, path))
+            break
+    if not menu_dir:
         raise Exception("""
             Cannot find qt_menu.nib for {0}
             Path checked: {1}
