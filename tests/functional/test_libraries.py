@@ -194,7 +194,6 @@ def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
 
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('sphinx')
 def test_sphinx(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
@@ -218,7 +217,6 @@ def test_pylint(pyi_builder):
         """)
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('pygments')
 def test_pygments(pyi_builder):
     pyi_builder.test_source(
@@ -233,7 +231,6 @@ def test_pygments(pyi_builder):
         """)
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('markdown')
 def test_markdown(pyi_builder):
     # Markdown uses __import__ed extensions. Make sure these work by
@@ -305,7 +302,6 @@ def test_idlelib(pyi_builder):
         """)
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('keyring')
 def test_keyring(pyi_builder):
     pyi_builder.test_source("import keyring")
@@ -321,7 +317,6 @@ def test_lxml_isoschematron(pyi_builder):
         """)
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('numpy')
 def test_numpy(pyi_builder):
     pyi_builder.test_source(
@@ -345,7 +340,6 @@ def test_pyodbc(pyi_builder):
         """)
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('pytz')
 def test_pytz(pyi_builder):
     pyi_builder.test_source(
@@ -508,7 +502,6 @@ def test_scipy(pyi_builder):
         """)
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('sqlalchemy')
 def test_sqlalchemy(pyi_builder):
     pyi_builder.test_source(
@@ -552,7 +545,6 @@ for pkg in all_qt_pkgs:
     p = importorskip(pkg)(p)
     excludes.append(p)
 
-@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('matplotlib')
 @pytest.mark.parametrize("excludes", excludes, ids=all_qt_pkgs)
 def test_matplotlib(pyi_builder, excludes):
