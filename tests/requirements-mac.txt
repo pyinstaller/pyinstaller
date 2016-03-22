@@ -1,0 +1,5 @@
+# gevent wheels for mac os x cause pytest to crash on travis
+--no-binary gevent
+-r requirements.txt
+
+pyenchant

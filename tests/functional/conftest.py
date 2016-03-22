@@ -62,6 +62,20 @@ _SPEC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs')
 # ====
 # Fixtures
 # --------
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    # execute all other hooks to obtain the report object
+    outcome = yield
+    rep = outcome.get_result()
+
+    # set an report attribute for each phase of a call, which can
+    # be "setup", "call", "teardown"
+
+    setattr(item, "rep_" + rep.when, rep)
+
+
 @pytest.fixture
 def script_dir():
     return py.path.local(_SCRIPT_DIR)
@@ -418,6 +432,14 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
+    def del_temp_dir():
+        if request.node.rep_setup.passed:
+            if request.node.rep_call.passed:
+                if os.path.exists(tmp):
+                    shutil.rmtree(tmp)
+
+    if is_darwin:
+        request.addfinalizer(del_temp_dir)
     return AppBuilder(tmp, request.param, pyi_modgraph)
 
 
