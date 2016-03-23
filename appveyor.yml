@@ -114,6 +114,7 @@ install:
   - "%CMD_IN_ENV% pip-accel install -i https://pypi.anaconda.org/giumas/simple lxml" 
 
   # Install the PyInstaller test dependencies.
+  - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
   - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
 
   # Install PyInstaller into virtualenv.
