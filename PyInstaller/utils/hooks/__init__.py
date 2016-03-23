@@ -6,23 +6,17 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 import copy
 import glob
 import os
 import pkg_resources
 import pkgutil
-import re
 import sys
 import textwrap
 
-from ... import compat
-from ...compat import is_py2, is_win, is_py3, is_darwin, EXTENSION_SUFFIXES
-from ...utils import misc
+from ...compat import base_prefix, exec_python, is_py2, is_py3, is_venv, EXTENSION_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
-from ...depend.bindepend import findSystemLibrary
 
 logger = logging.getLogger(__name__)
 
@@ -76,14 +70,15 @@ def __exec_python_cmd(cmd, env=None):
     pp_env['PYTHONPATH'] = pp
 
     try:
-        txt = compat.exec_python(*cmd, env=pp_env)
+        txt = exec_python(*cmd, env=pp_env)
     except OSError as e:
         raise SystemExit("Execution failed: %s" % e)
     return txt.strip()
 
 
 def exec_statement(statement):
-    """Executes a Python statement in an externally spawned interpreter, and
+    """
+    Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
     """
     statement = textwrap.dedent(statement)
@@ -97,14 +92,14 @@ def exec_script(script_filename, env=None, *args):
     returns anything that was emitted in the standard output as a
     single string.
 
-    To prevent missuse, the script passed to utils.hooks.exec_script
+    To prevent misuse, the script passed to utils.hooks.exec_script
     must be located in the `PyInstaller/utils/hooks/subproc` directory.
     """
     script_filename = os.path.basename(script_filename)
     script_filename = os.path.join(os.path.dirname(__file__), 'subproc', script_filename)
     if not os.path.exists(script_filename):
-        raise SystemError("To prevent missuse, the script passed to "
-                          "PyInstaller.utils.hooks.exec-script must be located "
+        raise SystemError("To prevent misuse, the script passed to "
+                          "PyInstaller.utils.hooks.exec_script must be located "
                           "in the `PyInstaller/utils/hooks/subproc` directory.")
 
     cmd = [script_filename]
@@ -144,39 +139,40 @@ def get_pyextension_imports(modname):
     """
 
     statement = """
-import sys
-# Importing distutils filters common modules, especiall in virtualenv.
-import distutils
-original_modlist = set(sys.modules.keys())
-# When importing this module - sys.modules gets updated.
-import %(modname)s
-all_modlist = set(sys.modules.keys())
-diff = all_modlist - original_modlist
-# Module list contain original modname. We do not need it there.
-diff.discard('%(modname)s')
-# Print module list to stdout.
-print(list(diff))
-""" % {'modname': modname}
+        import sys
+        # Importing distutils filters common modules, especially in virtualenv.
+        import distutils
+        original_modlist = set(sys.modules.keys())
+        # When importing this module - sys.modules gets updated.
+        import %(modname)s
+        all_modlist = set(sys.modules.keys())
+        diff = all_modlist - original_modlist
+        # Module list contain original modname. We do not need it there.
+        diff.discard('%(modname)s')
+        # Print module list to stdout.
+        print(list(diff))
+    """ % {'modname': modname}
     module_imports = eval_statement(statement)
 
     if not module_imports:
         logger.error('Cannot find imports for module %s' % modname)
         return []  # Means no imports found or looking for imports failed.
-    #module_imports = filter(lambda x: not x.startswith('distutils'), module_imports)
+    # module_imports = filter(lambda x: not x.startswith('distutils'), module_imports)
     return module_imports
 
 
+def get_homebrew_path(formula=''):
     """
+    Return the homebrew path to the requested formula, or the global prefix when
+    called with no argument.  Returns the path as a string or None if not found.
+    :param formula:
     """
-def get_homebrew_path(formula = ''):
-    '''Return the homebrew path to the requested formula, or the global prefix when
-       called with no argument.  Returns the path as a string or None if not found.'''
     import subprocess
-    brewcmd = ['brew','--prefix']
+    brewcmd = ['brew', '--prefix']
     path = None
     if formula:
         brewcmd.append(formula)
-        dbgstr = 'homebrew formula "%s"' %formula
+        dbgstr = 'homebrew formula "%s"' % formula
     else:
         dbgstr = 'homebrew prefix'
     try:
@@ -289,9 +285,9 @@ def get_module_attribute(module_name, attr_name):
     # with actual attribute values. That's the hope, anyway.
     attr_value_if_undefined = '!)ABadCafe@(D15ea5e#*DeadBeef$&Fee1Dead%^'
     attr_value = exec_statement("""
-import %s as m
-print(getattr(m, %r, %r))
-""" % (module_name, attr_name, attr_value_if_undefined))
+        import %s as m
+        print(getattr(m, %r, %r))
+    """ % (module_name, attr_name, attr_value_if_undefined))
 
     if attr_value == attr_value_if_undefined:
         raise AttributeError(
@@ -310,7 +306,7 @@ def get_module_file_attribute(package):
 
     Parameters
     ----------
-    module_name : str
+    package : str
         Fully-qualified name of this module.
 
     Returns
@@ -328,17 +324,16 @@ def get_module_file_attribute(package):
     except (AttributeError, ImportError):
         # Statement to return __file__ attribute of a package.
         __file__statement = """
-import %s as p
-print(p.__file__)
-"""
+            import %s as p
+            print(p.__file__)
+        """
         attr = exec_statement(__file__statement % package)
         if not attr.strip():
             raise ImportError
     return attr
 
 
-def is_module_satisfies(
-    requirements, version=None, version_attr='__version__'):
+def is_module_satisfies(requirements, version=None, version_attr='__version__'):
     """
     `True` if the module, package, or C extension described by the passed
     requirements string both exists and satisfies these requirements.
@@ -508,7 +503,7 @@ def is_package(module_name):
     try:
         loader = pkgutil.find_loader(module_name)
     except Exception:
-        # When it fails to find a module loader then it points probably to a clas
+        # When it fails to find a module loader then it points probably to a class
         # or function and module is not a package. Just return False.
         return False
     else:
@@ -592,7 +587,7 @@ def collect_submodules(package, subdir=None, pattern=None, endswith=False):
             for f in filenames:
                 extension = os.path.splitext(f)[1]
                 if ((remove_file_extension(f) != '__init__') and
-                    extension in PY_EXECUTABLE_SUFFIXES):
+                        extension in PY_EXECUTABLE_SUFFIXES):
                     modname = mod_path + "." + remove_file_extension(f)
                     # TODO convert this into regex matching.
                     # Skip submodules not matching pattern.
@@ -688,7 +683,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     for dirpath, dirnames, files in os.walk(pkg_dir):
         for f in files:
             extension = os.path.splitext(f)[1]
-            if include_py_files or (not extension in PY_IGNORE_EXTENSIONS):
+            if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/file.dat)
@@ -698,6 +693,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
                 datas.append((source, dest))
 
     return datas
+
 
 def collect_system_data_files(path, destdir=None, include_py_files=False):
     """
@@ -717,7 +713,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     for dirpath, dirnames, files in os.walk(path):
         for f in files:
             extension = os.path.splitext(f)[1]
-            if include_py_files or (not extension in PY_IGNORE_EXTENSIONS):
+            if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/file.dat)
@@ -737,10 +733,10 @@ def _find_prefix(filename):
     prefixes, depending on the version of virtualenv.
     Try to find the correct one, which is assumed to be the longest one.
     """
-    if not compat.is_venv:
+    if not is_venv:
         return sys.prefix
     filename = os.path.abspath(filename)
-    prefixes = [os.path.abspath(sys.prefix), compat.base_prefix]
+    prefixes = [os.path.abspath(sys.prefix), base_prefix]
     possible_prefixes = []
     for prefix in prefixes:
         common = os.path.commonprefix([prefix, filename])
@@ -748,6 +744,7 @@ def _find_prefix(filename):
             possible_prefixes.append(prefix)
     possible_prefixes.sort(key=lambda p: len(p), reverse=True)
     return possible_prefixes[0]
+
 
 def relpath_to_config_or_make(filename):
     """
@@ -805,7 +802,8 @@ def copy_metadata(package_name):
     # metadata.
     #
     # So, in cases 1-3, copy the metadata directory. In case 4, emit an error
-    # -- there's no metadata to copy. See https://pythonhosted.org/setuptools/pkg_resources.html#getting-or-creating-distributions.
+    # -- there's no metadata to copy.
+    # See https://pythonhosted.org/setuptools/pkg_resources.html#getting-or-creating-distributions.
     # Unfortunately, there's no documentation on the ``egg_info`` attribute; it
     # was found through trial and error.
     dist = pkg_resources.get_distribution(package_name)
@@ -826,7 +824,7 @@ def copy_metadata(package_name):
     logger.debug('Package {} metadata found in {} belongs in {}'.format(
       package_name, metadata_dir, dest_dir))
 
-    return [ (metadata_dir, dest_dir) ]
+    return [(metadata_dir, dest_dir)]
 
 # These imports need to be here due to these modules recursively importing this module.
 from .django import *
