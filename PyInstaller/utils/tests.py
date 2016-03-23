@@ -46,3 +46,16 @@ def importorskip(*modules):
     # Return pytest decorator.
     return skipif(not mods_avail,
                   reason='requires modules %s' % ', '.join(modules))
+
+
+def skip(reason):
+    """
+    Unconditionally skip the currently decorated test with the passed reason.
+
+    Parameters
+    ----------
+    reason : str
+        Human-readable message justifying the skipping of this test.
+    """
+
+    return skipif(True, reason=reason)
