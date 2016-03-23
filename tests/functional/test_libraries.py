@@ -72,6 +72,7 @@ def test_cherrypy(pyi_builder):
         """ % sys.version_info[0])
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('enchant')
 def test_enchant(pyi_builder):
     pyi_builder.test_script('pyi_lib_enchant.py')
@@ -100,10 +101,12 @@ def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('FixTk')
 def test_tkinter_FixTk(pyi_builder):
     # check if Tkinter includes FixTk
-    # TODO: FixTk doesn't exist in Python 3.4. Check when it was removed.
+    # TODO: Python 3 contains module 'tkinter._fix' - does it need any special test or handling?
+    # TODO: How does the following code check if FixTk is included?
     pyi_builder.test_source("""
     try:
         # In Python 2 the module name is 'Tkinter'
@@ -667,6 +670,7 @@ def test_pil_img_conversion(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('PIL', 'FixTk')
 def test_pil_FixTk(pyi_builder):
     # hook-PIL is excluding FixTk, but is must still be included

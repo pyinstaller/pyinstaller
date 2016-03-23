@@ -10,12 +10,11 @@
 
 import os
 import pytest
-import sys
 import glob
 import ctypes, ctypes.util
 
-from PyInstaller.compat import is_win
-from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, \
+from PyInstaller.compat import is_darwin
+from PyInstaller.utils.tests import skipif, importorskip, \
   skipif_notwin, xfail, is_py2
 
 
@@ -466,7 +465,7 @@ def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
         ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
 
 
-
+@xfail(is_darwin, reason='Issue #1895.')
 def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
 
     from PyInstaller.building.build_main import Analysis
