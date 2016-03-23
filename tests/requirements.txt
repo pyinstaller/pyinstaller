@@ -14,7 +14,7 @@ mock
 
 # Helper tools
 zest.releaser # Makes releasing easier
-wheel  # For creating .whl packages in Appveyour to avoid compiling again.
+wheel>0.24.0  # For creating .whl packages in Appveyour to avoid compiling again.
 check-manifest  # Checks MANIFEST.in
 pyroma  # Checks if package follows best practices of Python packaging.
 chardet  # character encoding detector.
