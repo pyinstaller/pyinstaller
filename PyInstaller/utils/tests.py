@@ -12,6 +12,8 @@
 Decorators for skipping PyInstaller tests when specific requirements are not met.
 """
 
+import sys
+import traceback
 import pytest
 from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3
 
@@ -43,6 +45,15 @@ def importorskip(*modules):
             __import__(m)
         except (ImportError, SyntaxError):
             mods_avail = False
+        # Catch any other exception and print it with stacktrace to stderr.
+        # This should allow to run other tests when there is something wrong
+        # with the imported module.
+        except Exception as e:
+            mods_avail = False
+            print("importorskip: Exception in module '%s':" % m)
+            print('-'*60)
+            traceback.print_exc(file=sys.stdout)
+            print('-'*60)
     # Return pytest decorator.
     return skipif(not mods_avail,
                   reason='requires modules %s' % ', '.join(modules))
