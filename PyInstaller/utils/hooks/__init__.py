@@ -14,7 +14,8 @@ import pkgutil
 import sys
 import textwrap
 
-from ...compat import base_prefix, exec_python, is_py2, is_py3, is_venv, EXTENSION_SUFFIXES
+from ...compat import base_prefix, exec_command_stdout, exec_python, is_darwin, is_py2, is_py3, is_venv,\
+    open_file, EXTENSION_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
 
@@ -825,6 +826,53 @@ def copy_metadata(package_name):
       package_name, metadata_dir, dest_dir))
 
     return [(metadata_dir, dest_dir)]
+
+
+def get_installer(module):
+    """
+    Try to find which package manager installed a module.
+
+    :param module: Module to check
+    :return: Package manager or None
+    """
+    file_name = get_module_file_attribute(module)
+    site_dir = file_name[:file_name.index('site-packages') + len('site-packages')]
+    # This is necessary for situations where the project name and module name don't match, i.e.
+    # Project name: pyenchant Module name: enchant
+    pkgs = pkg_resources.find_distributions(site_dir)
+    package = None
+    for pkg in pkgs:
+        if module.lower() in pkg.key:
+            package = pkg
+            break
+    metadata_dir, dest_dir = copy_metadata(package)[0]
+    # Check for an INSTALLER file in the metedata_dir and return the first line
+    # which should be the program that installed the module.
+    installer_file = os.path.join(metadata_dir, 'INSTALLER')
+    if os.path.isdir(metadata_dir) and os.path.exists(installer_file):
+        with open_file(installer_file, 'r') as installer_file_object:
+            lines = installer_file_object.readlines()
+            if lines[0] != '':
+                installer = lines[0].rstrip('\r\n')
+                logger.debug(
+                    'Found installer: \'{0}\' for module: \'{1}\' from package: \'{2}\''.format(installer, module,
+                                                                                                package))
+                return installer
+    if is_darwin:
+        try:
+            output = exec_command_stdout('port', 'provides', file_name)
+            if 'is provided by' in output:
+                logger.debug(
+                    'Found installer: \'macports\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
+                return 'macports'
+        except OSError:
+            pass
+        real_path = os.path.realpath(file_name)
+        if 'Cellar' in real_path:
+            logger.debug(
+                'Found installer: \'homebrew\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
+            return 'homebrew'
+    return None
 
 # These imports need to be here due to these modules recursively importing this module.
 from .django import *
