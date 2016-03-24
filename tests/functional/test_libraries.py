@@ -491,6 +491,7 @@ def test_scapy3(pyi_builder):
         """)
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('scipy')
 def test_scipy(pyi_builder):
     pyi_builder.test_source(
