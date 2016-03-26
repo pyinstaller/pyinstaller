@@ -51,7 +51,7 @@ if pattern:
     
     cachefile = os.path.join(CONF['workpath'], 'loaders.cache')
     with open(cachefile, 'w') as fp:
-        fp.write(cachedata)
+        fp.write(cachedata.decode('utf-8'))
     
     datas.append((cachefile, 'lib/gdk-pixbuf-2.0/2.10.0'))
 else:
