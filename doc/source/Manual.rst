@@ -235,7 +235,7 @@ If the command is not found, make sure the execution path includes
 the proper directory:
 
 * Windows: ``C:\PythonXY\Scripts`` where *XY* stands for the
-  major and minor Python verysion number,
+  major and minor Python version number,
   for example ``C:\Python34\Scripts`` for Python 3.4)
 * Linux: ``/usr/bin/``
 * OS X (using the default Apple-supplied Python) ``/usr/bin``
